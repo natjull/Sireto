@@ -86,6 +86,11 @@ def _http_get_json(url: str, headers: Dict[str, str], *, timeout: float = 15.0, 
                 return json.loads(data.decode("utf-8"))
         except HTTPError as e:
             status = e.code
+            body = ""
+            try:
+                body = e.read().decode("utf-8", errors="ignore")
+            except Exception:
+                body = ""
             if status in (429, 500, 502, 503, 504):
                 retry_after = e.headers.get("Retry-After")
                 if retry_after:
@@ -100,6 +105,7 @@ def _http_get_json(url: str, headers: Dict[str, str], *, timeout: float = 15.0, 
                 last_exc = e
                 continue
             else:
+                logger.error("HTTP %s on %s -> %s", status, url, body[:200])
                 raise
         except URLError as e:
             delay = min(2.0 * attempt, 10.0)
@@ -153,42 +159,31 @@ def fetch_establishments_for_commune(
     per_page = 1000
 
     for flt in filters:
-        # First page to get total
-        params = {flt.key: flt.value, "nombre": per_page, "debut": 0}
-        url = f"{endpoint}?{urlencode(params)}"
-        payload = _http_get_json(url, headers, logger=logger)
+        params = {"q": f"{flt.key}:{flt.value}", "nombre": per_page}
+        cursor = "*"
+        fetched = 0
+        total = None
 
-        # API structures typically return header.total and etablissements[]
-        header = payload.get("header", {})
-        total = int(header.get("total", 0))
-        results = payload.get("etablissements", []) or payload.get("etablissement", []) or []
-
-        logger.info(
-            "SIRENE page 1/?: %s=%s -> total=%s, returned=%s",
-            flt.key,
-            flt.value,
-            total,
-            len(results),
-        )
-
-        for rec in results:
-            siret = str(rec.get("siret", "")).strip()
-            if siret and siret not in seen_siret:
-                all_records.append(rec)
-                seen_siret.add(siret)
-
-        # Remaining pages
-        fetched = len(results)
-        while fetched < total:
-            params["debut"] = fetched
+        while True:
+            if cursor is not None:
+                params["curseur"] = cursor
             url = f"{endpoint}?{urlencode(params)}"
             payload = _http_get_json(url, headers, logger=logger)
+            header = payload.get("header", {})
+            if total is None:
+                total = int(header.get("total", 0))
+                logger.info(
+                    "SIRENE fetch start: %s=%s -> total=%s",
+                    flt.key,
+                    flt.value,
+                    total,
+                )
             results = payload.get("etablissements", []) or payload.get("etablissement", []) or []
             logger.debug(
-                "SIRENE page next: %s=%s -> offset=%s, batch=%s",
+                "SIRENE page: %s=%s -> cursor=%s batch=%s",
                 flt.key,
                 flt.value,
-                fetched,
+                cursor,
                 len(results),
             )
             for rec in results:
@@ -197,6 +192,11 @@ def fetch_establishments_for_commune(
                     all_records.append(rec)
                     seen_siret.add(siret)
             fetched += len(results)
+
+            cursor_next = header.get("curseurSuivant")
+            if not cursor_next or not results:
+                break
+            cursor = cursor_next
 
     logger.info(
         "SIRENE fetch done: commune=%s (insee=%s, cp=%s), records=%s",
