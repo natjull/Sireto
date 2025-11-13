@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+venv/
+.env.local
+.env.*.local
+.DS_Store
+.idea/
+.vscode/
+.pytest_cache/
+.mypy_cache/
+.mermaid
+node_modules/

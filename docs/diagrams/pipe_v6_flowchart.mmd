@@ -1,0 +1,46 @@
+flowchart TD
+
+    %% Entrée CRM
+    A["CSV CRM<br/>(nom client, n&deg; voie, voie, CP, code INSEE/JINSEI...)"] --> B["Détection communes<br/>INSEE en priorité, sinon CP+ville"]
+
+    %% SIRENE source de vérité
+    B --> C["Appels API SIRENE<br/>par commune + pagination"]
+    C --> D["Cache SQLite SIRENE<br/>établissements par commune"]
+
+    %% LLM #1
+    A --> E["LLM #1 via Ollama<br/>Normalisation nom + adresse<br/>+ tag PUBLIC/PRIVE/EQUIPEMENT"]
+    E --> E1["CRM enrichi<br/>nom/adresse normalisés<br/>+ catégorie CRM"]
+
+    %% Requêtes INPI / DataGouv
+    E1 --> F["Construction requêtes<br/>INPI RNE + DataGouv<br/>(nom normalisé + commune)"]
+    F --> H["API INPI RNE"]
+    F --> I["API Recherche entreprise<br/>annuaire-entreprises.data.gouv.fr"]
+
+    %% Requêtes Qwant (3 sites)
+    A --> G["Construction requête Qwant commune<br/>(nom brut + n&deg; voie + voie + CP)"]
+    G --> J1["Qwant<br/>site:pappers.fr"]
+    G --> J2["Qwant<br/>site:annuaire-entreprises.data.gouv.fr"]
+    G --> J3["Qwant<br/>site:societe.com"]
+
+    %% Collecte candidats
+    H --> K["Collecte SIREN/SIRET candidats"]
+    I --> K
+    J1 --> K
+    J2 --> K
+    J3 --> K
+
+    K --> L["Déduplication candidats<br/>(max 10 / source)"]
+    L --> M["Lookup SIREN/SIRET<br/>dans cache SQLite SIRENE<br/>(ou API si manquant)"]
+    M --> N["JSON candidats normalisés<br/>+ infos SIRENE<br/>+ provenance + type juridique"]
+
+    %% LLM #2 arbitrage
+    A --> O["Contexte CRM brut"]
+    E1 --> O
+    N --> P["LLM #2 via Ollama<br/>Comparaison CRM vs candidats<br/>avec filtre public/privé/équipement"]
+
+    P --> Q{"Candidat fiable ?"}
+
+    Q -->|Oui| R["Sortie MATCH<br/>SIRET retenu<br/>+ score confiance<br/>+ sources impliquées"]
+    Q -->|Non| S["Sortie REVIEW ou NO_MATCH<br/>(incl. cas équipement urbain)"]
+
+    R & S --> T["Export final<br/>CSV/JSON pour CRM<br/>+ métriques/logs"]
