@@ -86,7 +86,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "output_path": "output/results.csv",
         "sqlite_path": "data/sirene_cache.sqlite",
         "log_path": "logs/pipe_v6.log",
-        "sirene_api_url": "https://api.insee.fr/entreprises/sirene/V3",
+        "sirene_api_url": "https://api.insee.fr/api-sirene/3.11",
         "sirene_token": "",
         "rne_api_url": "https://api.inpi.fr/api/rne/",
         "rne_client_id": "",
