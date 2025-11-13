@@ -45,6 +45,7 @@ class PipelineConfig:
     confidence_review_min: float = 0.6
 
     log_level: str = "INFO"
+    store_source_raw: bool = True
 
     extra: MutableMapping[str, Any] = field(default_factory=dict)
 
@@ -99,6 +100,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "confidence_auto_match": 0.85,
         "confidence_review_min": 0.6,
         "log_level": "INFO",
+        "store_source_raw": True,
     }
 
     extracted: dict[str, Any] = {
@@ -116,6 +118,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "max_candidates_per_source": int,
         "confidence_auto_match": float,
         "confidence_review_min": float,
+        "store_source_raw": lambda value: str(value).lower() in {"1", "true", "yes", "on"},
     }
 
     for field_name, caster in numeric_fields.items():
