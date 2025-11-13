@@ -19,7 +19,7 @@ def _expand_path(value: str | Path) -> Path:
     return Path(value).expanduser().resolve()
 
 
-@dataclass(slots=True)
+@dataclass
 class PipelineConfig:
     """Centralized configuration values for the Pipe V6 orchestrator."""
 
