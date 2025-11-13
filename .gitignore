@@ -13,3 +13,5 @@ venv/
 .mypy_cache/
 .mermaid
 node_modules/
+data/reports/
+output/
