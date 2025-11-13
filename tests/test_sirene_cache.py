@@ -13,6 +13,7 @@ if str(SRC_DIR) not in sys.path:
 
 from pipe_v6 import sirene_cache
 from pipe_v6.config import PipelineConfig
+from pipe_v6.commune_detection import CommuneKey
 
 
 def _make_config(tmp_path: Path) -> PipelineConfig:
@@ -212,3 +213,64 @@ def test_upsert_establishments_deduplicates_and_fallbacks(tmp_path: Path) -> Non
     assert row["etablissement_siege"] == 1
     assert row["etat_administratif"] == "F"
     assert row["source_raw"] is not None
+
+
+def test_exists_in_cache_with_insee_and_postcode(tmp_path: Path) -> None:
+    conn = sirene_cache.init_db(tmp_path / "cache.sqlite")
+    conn.execute(
+        """INSERT INTO establishments (siret, siren, nic, etablissement_siege, postcode, city, insee_code)
+        VALUES ('11111111111111','111111111','11111',0,'69007','LYON','69381')"""
+    )
+    conn.commit()
+
+    cached, count = sirene_cache.exists_in_cache(
+        CommuneKey("69381", None, None), conn
+    )
+    assert cached is True and count == 1
+
+    cached_cp, count_cp = sirene_cache.exists_in_cache(
+        CommuneKey(None, "69007", None), conn
+    )
+    assert cached_cp is True and count_cp == 1
+
+
+def test_get_or_fetch_commune_returns_cached(tmp_path: Path) -> None:
+    conn = sirene_cache.init_db(tmp_path / "cache.sqlite")
+    conn.row_factory = sqlite3.Row
+    sirene_cache.upsert_establishments([_sample_record()], conn, store_source_raw=False)
+
+    config = _make_config(tmp_path)
+    result = sirene_cache.get_or_fetch_commune(
+        CommuneKey("69387", None, None), config, conn=conn
+    )
+    assert result["status"] == "CACHED"
+    assert result["count"] == 1
+    assert result["inserted"] == 0
+
+
+def test_get_or_fetch_commune_downloads_when_missing(tmp_path: Path, monkeypatch) -> None:
+    conn = sirene_cache.init_db(tmp_path / "cache.sqlite")
+    config = _make_config(tmp_path)
+    commune = CommuneKey(None, "69007", None)
+
+    sample = _sample_record()
+    sample["adresseEtablissement"]["codePostalEtablissement"] = "69007"
+    sample["adresseEtablissement"]["codeCommuneEtablissement"] = "69007"
+
+    calls = {}
+
+    def fake_fetch(commune_arg, config_arg, logger=None):  # type: ignore[override]
+        calls["commune"] = commune_arg
+        return [sample]
+
+    monkeypatch.setattr(
+        "pipe_v6.sirene_cache.sirene_client.fetch_establishments_for_commune",
+        fake_fetch,
+    )
+
+    result = sirene_cache.get_or_fetch_commune(commune, config, conn=conn)
+
+    assert result["status"] == "DOWNLOADED"
+    assert result["count"] == 1
+    assert result["inserted"] == 1
+    assert "commune" in calls

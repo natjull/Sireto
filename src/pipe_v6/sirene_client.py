@@ -1,12 +1,7 @@
 """SIRENE API client (task 2.2).
 
-Implements fetching all establishments for a given commune with:
-- API v3.11 base: see docs/docsAPI/APISirene.md
-- Header auth: X-INSEE-Api-Key-Integration
-- Pagination with nombre=1000 and offset via debut
-- Support for ARR mapping (Paris/Lyon/Marseille) when provided the parent INSEE code
-
-This module is network-only; DB writes are handled in task 2.3/2.4.
+Implements fetching all establishments for a given commune and exposes
+helper utilities used by the cache layer (task 2.4).
 """
 
 from __future__ import annotations
@@ -29,7 +24,7 @@ LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class _Filter:
+class Filter:
     key: str
     value: str
 
@@ -42,7 +37,7 @@ def _mask_key(k: str) -> str:
     return f"{k[:4]}…{k[-4:]}"
 
 
-def _arrondissement_codes_for_parent(insee_code: str) -> List[str]:
+def arrondissement_codes_for_parent(insee_code: str) -> List[str]:
     """Return arrondissement INSEE codes for Paris, Lyon, Marseille parent codes.
 
     - Paris parent: 75056 -> 75101..75120
@@ -60,7 +55,7 @@ def _arrondissement_codes_for_parent(insee_code: str) -> List[str]:
     return [insee_code]
 
 
-def _resolve_filters(commune: CommuneKey) -> List[_Filter]:
+def resolve_filters_for_commune(commune: CommuneKey) -> List[Filter]:
     """Compute the list of filters to fetch for this commune.
 
     Priority:
@@ -71,10 +66,10 @@ def _resolve_filters(commune: CommuneKey) -> List[_Filter]:
     """
 
     if commune.insee_code:
-        codes = _arrondissement_codes_for_parent(commune.insee_code)
-        return [_Filter("codeCommuneEtablissement", c) for c in codes]
+        codes = arrondissement_codes_for_parent(commune.insee_code)
+        return [Filter("codeCommuneEtablissement", c) for c in codes]
     if commune.postcode:
-        return [_Filter("codePostalEtablissement", commune.postcode)]
+        return [Filter("codePostalEtablissement", commune.postcode)]
     raise ValueError("Cannot resolve filter: INSEE code or postcode required")
 
 
@@ -145,7 +140,7 @@ def fetch_establishments_for_commune(
         "User-Agent": "Sireto-PipeV6/2.2",
     }
 
-    filters = _resolve_filters(commune)
+    filters = resolve_filters_for_commune(commune)
     logger.info(
         "SIRENE fetch: base=%s, key=%s, filters=%s",
         config.sirene_api_url,
@@ -214,4 +209,9 @@ def fetch_establishments_for_commune(
     return all_records
 
 
-__all__ = ["fetch_establishments_for_commune"]
+__all__ = [
+    "fetch_establishments_for_commune",
+    "arrondissement_codes_for_parent",
+    "resolve_filters_for_commune",
+    "Filter",
+]
