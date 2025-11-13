@@ -2,10 +2,12 @@
 
 from __future__ import annotations
 
-from pathlib import Path
+import json
 import logging
 import sqlite3
-from typing import Iterable
+import unicodedata
+from pathlib import Path
+from typing import Iterable, Sequence, Tuple
 
 from .config import PipelineConfig
 
@@ -151,4 +153,246 @@ def _create_indexes(cursor: sqlite3.Cursor) -> None:
     )
 
 
-__all__ = ["init_db", "get_cache_connection"]
+_ESTABLISHMENT_COLUMNS: Tuple[str, ...] = (
+    "siret",
+    "siren",
+    "nic",
+    "etablissement_siege",
+    "denomination",
+    "denomination_ci",
+    "denomination_unite_legale",
+    "nom_unite_legale",
+    "prenom1_unite_legale",
+    "enseigne1",
+    "enseigne2",
+    "enseigne3",
+    "street_number",
+    "street_type",
+    "street_name",
+    "address_full",
+    "postcode",
+    "city",
+    "commune_libelle_raw",
+    "insee_code",
+    "geo_latitude",
+    "geo_longitude",
+    "etat_administratif",
+    "date_debut",
+    "date_dernier_traitement",
+    "activite_principale",
+    "nomenclature_activite",
+    "tranche_effectifs",
+    "annee_effectifs",
+    "legal_nature",
+    "source_raw",
+)
+
+
+def upsert_establishments(
+    records: Iterable[dict],
+    conn: sqlite3.Connection,
+    *,
+    store_source_raw: bool | None = None,
+    logger: logging.Logger | None = None,
+) -> int:
+    """Upsert a batch of SIRENE establishments into the cache."""
+
+    logger = logger or LOGGER
+    store_raw = True if store_source_raw is None else store_source_raw
+
+    projected: list[tuple] = []
+    skipped = 0
+
+    for record in records:
+        projected_row = _project_record(record, store_raw)
+        if projected_row is None:
+            skipped += 1
+            continue
+        projected.append(projected_row)
+
+    if not projected:
+        if skipped:
+            logger.debug("All records skipped during upsert (count=%s)", skipped)
+        return 0
+
+    placeholders = ",".join(["?"] * len(_ESTABLISHMENT_COLUMNS))
+    sql = (
+        "INSERT OR REPLACE INTO establishments ("
+        + ",".join(_ESTABLISHMENT_COLUMNS)
+        + ") VALUES ("
+        + placeholders
+        + ")"
+    )
+
+    with conn:
+        conn.executemany(sql, projected)
+
+    logger.info(
+        "Upserted %s SIRENE establishments (skipped=%s)", len(projected), skipped
+    )
+    return len(projected)
+
+
+def _project_record(record: dict, store_source_raw: bool) -> tuple | None:
+    siret = _safe_str(record.get("siret"))
+    if not siret or len(siret) != 14:
+        return None
+
+    siren = _safe_str(record.get("siren")) or siret[:9]
+    nic = _safe_str(record.get("nic")) or siret[-5:]
+
+    ul = record.get("uniteLegale") or {}
+    addr = record.get("adresseEtablissement") or {}
+
+    denomination_unite_legale = _safe_str(ul.get("denominationUniteLegale"))
+    nom_ul = _safe_str(ul.get("nomUniteLegale"))
+    prenom_ul = _safe_str(ul.get("prenom1UniteLegale"))
+    enseigne1 = _safe_str(record.get("enseigne1Etablissement"))
+    enseigne2 = _safe_str(record.get("enseigne2Etablissement"))
+    enseigne3 = _safe_str(record.get("enseigne3Etablissement"))
+
+    denomination = _pick_denomination(
+        denomination_unite_legale,
+        [enseigne1, enseigne2, enseigne3],
+        nom_ul,
+        prenom_ul,
+    )
+    denomination_ci = _normalize_ci(denomination) if denomination else None
+
+    number = _safe_str(addr.get("numeroVoieEtablissement"))
+    repetition = _safe_str(addr.get("indiceRepetitionEtablissement"))
+    street_number = _compose_street_number(number, repetition)
+    street_type = _safe_str(addr.get("typeVoieEtablissement"))
+    street_name = _safe_str(addr.get("libelleVoieEtablissement"))
+    complement = _safe_str(addr.get("complementAdresseEtablissement"))
+    address_full = _compose_address(complement, street_number, street_type, street_name)
+
+    postcode = _pad_code(_safe_str(addr.get("codePostalEtablissement")))
+    commune_raw = _safe_str(addr.get("libelleCommuneEtablissement"))
+    city = _normalize_ci(commune_raw)
+    insee_code = _pad_code(_safe_str(addr.get("codeCommuneEtablissement")))
+
+    etat_admin = _safe_str(record.get("etatAdministratifEtablissement"))
+    date_debut = _safe_str(record.get("dateCreationEtablissement")) or _safe_str(
+        record.get("dateDebut"),
+    )
+    date_dernier_traitement = _safe_str(
+        record.get("dateDernierTraitementEtablissement")
+    )
+
+    activite_principale = _safe_str(record.get("activitePrincipaleEtablissement")) or _safe_str(
+        ul.get("activitePrincipaleUniteLegale"),
+    )
+    nomenclature_activite = _safe_str(
+        record.get("nomenclatureActivitePrincipaleEtablissement")
+    ) or _safe_str(ul.get("nomenclatureActivitePrincipaleUniteLegale"))
+    tranche_effectifs = _safe_str(record.get("trancheEffectifsEtablissement")) or _safe_str(
+        ul.get("trancheEffectifsUniteLegale"),
+    )
+    annee_effectifs = _safe_str(record.get("anneeEffectifsEtablissement")) or _safe_str(
+        ul.get("anneeEffectifsUniteLegale"),
+    )
+    legal_nature = _safe_str(ul.get("categorieJuridiqueUniteLegale"))
+
+    etablissement_siege = 1 if record.get("etablissementSiege") else 0
+
+    source_raw = json.dumps(record, ensure_ascii=False) if store_source_raw else None
+
+    row = (
+        siret,
+        siren,
+        nic,
+        etablissement_siege,
+        denomination,
+        denomination_ci,
+        denomination_unite_legale,
+        nom_ul,
+        prenom_ul,
+        enseigne1,
+        enseigne2,
+        enseigne3,
+        street_number,
+        street_type,
+        street_name,
+        address_full,
+        postcode,
+        city,
+        commune_raw,
+        insee_code,
+        None,
+        None,
+        etat_admin,
+        date_debut,
+        date_dernier_traitement,
+        activite_principale,
+        nomenclature_activite,
+        tranche_effectifs,
+        annee_effectifs,
+        legal_nature,
+        source_raw,
+    )
+
+    return row
+
+
+def _safe_str(value: object) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _pick_denomination(
+    denomination_ul: str | None,
+    enseignes: Sequence[str | None],
+    nom_ul: str | None,
+    prenom_ul: str | None,
+) -> str | None:
+    if denomination_ul:
+        return denomination_ul
+    for enseigne in enseignes:
+        if enseigne:
+            return enseigne
+    if nom_ul and prenom_ul:
+        return f"{nom_ul} {prenom_ul}".strip()
+    return nom_ul or prenom_ul
+
+
+def _normalize_ci(value: str | None) -> str | None:
+    if not value:
+        return None
+    text = unicodedata.normalize("NFKD", value)
+    text = "".join(ch for ch in text if not unicodedata.combining(ch))
+    text = text.upper().replace("-", " ")
+    text = " ".join(text.split())
+    return text or None
+
+
+def _compose_street_number(number: str | None, repetition: str | None) -> str | None:
+    if number and repetition:
+        return f"{number} {repetition}"
+    return number or repetition
+
+
+def _compose_address(
+    complement: str | None,
+    street_number: str | None,
+    street_type: str | None,
+    street_name: str | None,
+) -> str | None:
+    parts = [complement, street_number, street_type, street_name]
+    joined = " ".join(part for part in parts if part)
+    joined = " ".join(joined.split())
+    return joined or None
+
+
+def _pad_code(value: str | None) -> str | None:
+    if value is None:
+        return None
+    digits = value.strip()
+    if digits.isdigit() and len(digits) < 5:
+        digits = digits.zfill(5)
+    return digits or None
+
+
+__all__ = ["init_db", "get_cache_connection", "upsert_establishments"]

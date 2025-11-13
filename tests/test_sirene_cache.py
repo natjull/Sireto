@@ -4,6 +4,7 @@ from pathlib import Path
 import sys
 
 import pytest
+import sqlite3
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 SRC_DIR = PROJECT_ROOT / "src"
@@ -112,3 +113,102 @@ def test_init_db_creates_file_on_disk(tmp_path: Path) -> None:
     conn.close()
 
     assert db_path.exists(), "Database file should be created on disk"
+
+
+def _sample_record() -> dict:
+    return {
+        "siret": "12345678901234",
+        "siren": "123456789",
+        "nic": "01234",
+        "etablissementSiege": True,
+        "enseigne1Etablissement": "Enseigne One",
+        "etatAdministratifEtablissement": "A",
+        "dateCreationEtablissement": "2020-01-01",
+        "dateDernierTraitementEtablissement": "2024-01-01",
+        "activitePrincipaleEtablissement": "61.10Z",
+        "nomenclatureActivitePrincipaleEtablissement": "NAFRev2",
+        "trancheEffectifsEtablissement": "11",
+        "anneeEffectifsEtablissement": "2023",
+        "adresseEtablissement": {
+            "numeroVoieEtablissement": "12",
+            "indiceRepetitionEtablissement": "BIS",
+            "typeVoieEtablissement": "RUE",
+            "libelleVoieEtablissement": "DU TEST",
+            "complementAdresseEtablissement": "COMPLEMENT",
+            "codePostalEtablissement": "6907",
+            "libelleCommuneEtablissement": "Lyon",
+            "codeCommuneEtablissement": "69387",
+        },
+        "uniteLegale": {
+            "denominationUniteLegale": "Covage Grand Lyon",
+            "nomUniteLegale": "DOE",
+            "prenom1UniteLegale": "JOHN",
+            "categorieJuridiqueUniteLegale": "5710",
+            "activitePrincipaleUniteLegale": "61.90Z",
+            "nomenclatureActivitePrincipaleUniteLegale": "NAFRev2",
+            "trancheEffectifsUniteLegale": "12",
+            "anneeEffectifsUniteLegale": "2022",
+        },
+    }
+
+
+def test_upsert_establishments_projects_and_inserts(tmp_path: Path) -> None:
+    conn = sirene_cache.init_db(tmp_path / "cache.sqlite")
+    conn.row_factory = sqlite3.Row
+    record = _sample_record()
+
+    inserted = sirene_cache.upsert_establishments([record], conn, store_source_raw=False)
+    assert inserted == 1
+
+    row = conn.execute(
+        "SELECT * FROM establishments WHERE siret = ?",
+        ("12345678901234",),
+    ).fetchone()
+
+    assert row["denomination"] == "Covage Grand Lyon"
+    assert row["denomination_ci"] == "COVAGE GRAND LYON"
+    assert row["street_number"] == "12 BIS"
+    assert row["address_full"] == "COMPLEMENT 12 BIS RUE DU TEST"
+    assert row["postcode"] == "06907"
+    assert row["city"] == "LYON"
+    assert row["commune_libelle_raw"] == "Lyon"
+    assert row["etat_administratif"] == "A"
+    assert row["date_debut"] == "2020-01-01"
+    assert row["activite_principale"] == "61.10Z"
+    assert row["tranche_effectifs"] == "11"
+    assert row["legal_nature"] == "5710"
+    assert row["source_raw"] is None
+
+
+def test_upsert_establishments_deduplicates_and_fallbacks(tmp_path: Path) -> None:
+    conn = sirene_cache.init_db(tmp_path / "cache.sqlite")
+    conn.row_factory = sqlite3.Row
+    record = _sample_record()
+    record["uniteLegale"]["denominationUniteLegale"] = None
+    record["enseigne1Etablissement"] = None
+    record["enseigne2Etablissement"] = "Second"
+    record["etablissementSiege"] = False
+
+    second = _sample_record()
+    second["siret"] = "12345678901234"
+    second["etatAdministratifEtablissement"] = "F"
+    second["uniteLegale"]["denominationUniteLegale"] = None
+    second["enseigne1Etablissement"] = None
+    second["enseigne2Etablissement"] = None
+    second["enseigne3Etablissement"] = None
+
+    inserted = sirene_cache.upsert_establishments(
+        [record, second], conn, store_source_raw=True
+    )
+    assert inserted == 2  # both attempted inserts
+
+    row = conn.execute(
+        "SELECT denomination, etablissement_siege, etat_administratif, source_raw FROM establishments WHERE siret = ?",
+        ("12345678901234",),
+    ).fetchone()
+
+    # Last insert replaces previous row (etat F) and fallback to person name
+    assert row["denomination"] == "DOE JOHN"
+    assert row["etablissement_siege"] == 1
+    assert row["etat_administratif"] == "F"
+    assert row["source_raw"] is not None
