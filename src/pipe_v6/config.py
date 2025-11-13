@@ -19,6 +19,18 @@ def _expand_path(value: str | Path) -> Path:
     return Path(value).expanduser().resolve()
 
 
+def _as_bool(value: Any) -> bool:
+    """Best-effort coercion of user-provided values to ``bool``."""
+
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return bool(value)
+    return str(value).strip().lower() in {"1", "true", "yes", "on"}
+
+
 @dataclass
 class PipelineConfig:
     """Centralized configuration values for the Pipe V6 orchestrator."""
@@ -39,6 +51,17 @@ class PipelineConfig:
     temperature: float = 0.0
     top_p: float = 1.0
     max_tokens: int = 512
+
+    ollama_base_url: str = "http://localhost:11434"
+    llm_timeout_sec: float = 120.0
+    llm_connect_timeout_sec: float = 5.0
+    llm_max_retries: int = 3
+    llm_retry_backoff_base_sec: float = 1.0
+    llm_max_concurrency: int = 2
+    llm_log_prompts: bool = False
+    llm_log_responses: bool = False
+    llm_json_mode_default: bool = False
+    llm_seed: int | None = 42
 
     max_candidates_per_source: int = 10
     confidence_auto_match: float = 0.85
@@ -96,6 +119,16 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "temperature": 0.0,
         "top_p": 1.0,
         "max_tokens": 512,
+        "ollama_base_url": "http://localhost:11434",
+        "llm_timeout_sec": 120.0,
+        "llm_connect_timeout_sec": 5.0,
+        "llm_max_retries": 3,
+        "llm_retry_backoff_base_sec": 1.0,
+        "llm_max_concurrency": 2,
+        "llm_log_prompts": False,
+        "llm_log_responses": False,
+        "llm_json_mode_default": False,
+        "llm_seed": 42,
         "max_candidates_per_source": 10,
         "confidence_auto_match": 0.85,
         "confidence_review_min": 0.6,
@@ -111,20 +144,41 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
     for key in path_keys:
         extracted[key] = _expand_path(extracted[key])
 
-    numeric_fields = {
+    numeric_casts: dict[str, Any] = {
         "temperature": float,
         "top_p": float,
         "max_tokens": int,
+        "llm_timeout_sec": float,
+        "llm_connect_timeout_sec": float,
+        "llm_max_retries": int,
+        "llm_retry_backoff_base_sec": float,
+        "llm_max_concurrency": int,
         "max_candidates_per_source": int,
         "confidence_auto_match": float,
         "confidence_review_min": float,
-        "store_source_raw": lambda value: str(value).lower() in {"1", "true", "yes", "on"},
     }
 
-    for field_name, caster in numeric_fields.items():
+    for field_name, caster in numeric_casts.items():
         value = extracted[field_name]
         if isinstance(value, str):
             extracted[field_name] = caster(value)
+
+    bool_fields = [
+        "store_source_raw",
+        "llm_log_prompts",
+        "llm_log_responses",
+        "llm_json_mode_default",
+    ]
+    for field_name in bool_fields:
+        extracted[field_name] = _as_bool(extracted[field_name])
+
+    seed_value = extracted.get("llm_seed")
+    if seed_value in ("", None):
+        extracted["llm_seed"] = None
+    elif isinstance(seed_value, str):
+        extracted["llm_seed"] = int(seed_value)
+    elif isinstance(seed_value, (int, float)):
+        extracted["llm_seed"] = int(seed_value)
 
     log_level = str(extracted["log_level"]).upper()
     extracted["log_level"] = log_level
