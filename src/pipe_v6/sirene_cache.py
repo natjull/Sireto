@@ -10,6 +10,8 @@ from pathlib import Path
 from typing import Iterable, Sequence, Tuple
 
 from .config import PipelineConfig
+from .commune_detection import CommuneKey
+from . import sirene_client
 
 LOGGER = logging.getLogger(__name__)
 
@@ -395,4 +397,99 @@ def _pad_code(value: str | None) -> str | None:
     return digits or None
 
 
-__all__ = ["init_db", "get_cache_connection", "upsert_establishments"]
+def exists_in_cache(commune: CommuneKey, conn: sqlite3.Connection) -> tuple[bool, int]:
+    """Return whether establishments for this commune are already cached."""
+
+    filters = sirene_client.resolve_filters_for_commune(commune)
+    if not filters:
+        return False, 0
+
+    cursor = conn.cursor()
+    if filters[0].key == "codeCommuneEtablissement":
+        insee_values = [flt.value for flt in filters]
+        placeholders = ",".join(["?"] * len(insee_values))
+        query = f"SELECT COUNT(*) FROM establishments WHERE insee_code IN ({placeholders})"
+        cursor.execute(query, insee_values)
+    else:
+        # postcode only case (single filter)
+        cursor.execute(
+            "SELECT COUNT(*) FROM establishments WHERE postcode = ?",
+            (filters[0].value,),
+        )
+    count = int(cursor.fetchone()[0])
+    cursor.close()
+    return (count > 0), count
+
+
+def get_or_fetch_commune(
+    commune: CommuneKey,
+    config: PipelineConfig,
+    conn: sqlite3.Connection | None = None,
+    *,
+    logger: logging.Logger | None = None,
+    force_download: bool = False,
+) -> dict:
+    """Ensure the commune data exists in cache, downloading it otherwise."""
+
+    logger = logger or LOGGER
+    close_conn = False
+    if conn is None:
+        conn = get_cache_connection(config)
+        close_conn = True
+
+    try:
+        cached = 0
+        cached_exists = False
+        if not force_download:
+            cached_exists, cached = exists_in_cache(commune, conn)
+        if cached_exists and cached > 0 and not force_download:
+            logger.info(
+                "Commune cache hit: insee=%s postcode=%s count=%s",
+                commune.insee_code,
+                commune.postcode,
+                cached,
+            )
+            return {
+                "status": "CACHED",
+                "count": cached,
+                "inserted": 0,
+                "filters": sirene_client.resolve_filters_for_commune(commune),
+            }
+
+        records = sirene_client.fetch_establishments_for_commune(
+            commune, config, logger=logger
+        )
+        inserted = upsert_establishments(
+            records,
+            conn,
+            store_source_raw=config.store_source_raw,
+            logger=logger,
+        )
+        _, count = exists_in_cache(commune, conn)
+        status = "DOWNLOADED" if count else "EMPTY"
+        logger.info(
+            "Commune fetch: insee=%s postcode=%s total_api=%s inserted=%s count=%s",
+            commune.insee_code,
+            commune.postcode,
+            len(records),
+            inserted,
+            count,
+        )
+        return {
+            "status": status,
+            "count": count,
+            "inserted": inserted,
+            "filters": sirene_client.resolve_filters_for_commune(commune),
+        }
+    finally:
+        if close_conn:
+            conn.close()
+
+
+__all__ = [
+    "init_db",
+    "get_cache_connection",
+    "upsert_establishments",
+    "exists_in_cache",
+    "get_or_fetch_commune",
+]
