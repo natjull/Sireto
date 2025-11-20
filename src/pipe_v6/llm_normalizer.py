@@ -12,7 +12,10 @@ import json
 import logging
 import re
 import unicodedata
+from pathlib import Path
 from typing import Mapping
+
+import pandas as pd
 
 from .config import PipelineConfig
 from .llm_utils import LLMCallError, LLMResponse, OllamaClient
@@ -58,6 +61,56 @@ _OPERATIONAL_TOKENS = {
     "DIRECTION",
     "SERVICE",
 }
+
+_PROMPT_FEW_SHOT = """
+1) INPUT
+- Nom brut : ITAFRAN Site 2
+- Adresse : 21 AVENUE DE L INDUSTRIE
+- Code postal : 69960
+- Commune : CORBAS
+OUTPUT
+{"normalized_name": "ITAFRAN", "normalized_address": "21 AVENUE DE L INDUSTRIE 69960", "category": "PRIVE"}
+
+2) INPUT
+- Nom brut : Groupe SIRENE (IPO)
+- Adresse : 17 Rue Emile Zola
+- Code postal : 69150
+- Commune : DECINES-CHARPIEU
+OUTPUT
+{"normalized_name": "GROUPE SIRENE", "normalized_address": "17 RUE EMILE ZOLA 69150", "category": "PRIVE"}
+
+3) INPUT
+- Nom brut : Mairie de Corbas
+- Adresse : 1 Place de la République
+- Code postal : 69960
+- Commune : CORBAS
+OUTPUT
+{"normalized_name": "MAIRIE", "normalized_address": "1 PLACE DE LA REPUBLIQUE 69960", "category": "PUBLIC"}
+
+4) INPUT
+- Nom brut : École Élémentaire Jules Ferry
+- Adresse : 12 Rue de Paris
+- Code postal : 75011
+- Commune : PARIS
+OUTPUT
+{"normalized_name": "ECOLE ELEMENTAIRE JULES FERRY", "normalized_address": "12 RUE DE PARIS 75011", "category": "PUBLIC"}
+
+5) INPUT
+- Nom brut : Armoire Télécom NRO-CORBAS-01
+- Adresse : 45 Rue Marcel Mérieux
+- Code postal : 69960
+- Commune : CORBAS
+OUTPUT
+{"normalized_name": "ARMOIRE TELECOM NRO CORBAS 01", "normalized_address": "45 RUE MARCEL MERIEUX 69960", "category": "EQUIPEMENT_URBAIN"}
+
+6) INPUT
+- Nom brut : Bâtiment non identifié
+- Adresse : 99 Rue Inconnue
+- Code postal : 69000
+- Commune : LYON
+OUTPUT
+{"normalized_name": "BATIMENT NON IDENTIFIE", "normalized_address": "99 RUE INCONNUE 69000", "category": "INCONNU"}
+"""
 
 
 class NormalizationParseError(ValueError):
@@ -251,6 +304,161 @@ def parse_llm_response(
     return parse_normalizer_output(response.parsed_json, expected_city=expected_city, logger=logger)
 
 
+# ---------------------------------------------------------------------------
+# Public orchestrating helpers (task 3.3)
+# ---------------------------------------------------------------------------
+
+
+def build_normalizer_prompt(row: pd.Series) -> str:
+    """Construct the French prompt for the CRM normalizer LLM.
+
+    The prompt is strict about JSON-only output and encodes the business rules
+    defined for task 3.3. It gracefully mentions missing address components so
+    the model can still return a parseable result.
+    """
+
+    def _value(key: str) -> str:
+        val = row.get(key, "")
+        if pd.isna(val):
+            return ""
+        return str(val)
+
+    crm_name = _value("crm_name")
+    street_number = _value("street_number")
+    street_name = _value("street_name")
+    postcode = _value("postcode")
+    city = _value("city")
+
+    missing_parts: list[str] = []
+    if pd.isna(street_number) or not str(street_number).strip():
+        street_number = "0"  # placeholder accepted by the address regex
+        missing_parts.append("numéro de voie")
+    if pd.isna(postcode) or not str(postcode).strip():
+        postcode = "00000"  # placeholder to keep address parseable
+        missing_parts.append("code postal")
+
+    missing_note = "\n" + "\n".join(
+        [
+            "CHAMPS MANQUANTS : " + ", ".join(missing_parts),
+            "Si un champ est manquant, garde la valeur fournie (ou le placeholder) et mets category=INCONNU si tu n'es pas sûr.",
+        ]
+    ) if missing_parts else ""
+
+    examples = _PROMPT_FEW_SHOT.strip()
+
+    prompt = f"""
+Tu es un assistant chargé de normaliser des lignes CRM françaises.
+Tu dois répondre UNIQUEMENT avec un objet JSON valide, sans texte avant ni après, sans balises ```.
+
+Format JSON OBLIGATOIRE :
+{{
+  "normalized_name": "NOM NORMALISE MAJUSCULES",
+  "normalized_address": "NUMERO VOIE CODE_POSTAL",
+  "category": "PUBLIC|PRIVE|EQUIPEMENT_URBAIN|INCONNU"
+}}
+
+Règles strictes pour normalized_name :
+1. TOUT EN MAJUSCULES.
+2. Supprime les formes juridiques : SAS, SARL, SASU, SA, ASSOCIATION, ENTREPRISE, etc.
+3. Supprime les marqueurs opérationnels : SITE, AGENCE, BUREAU, DIRECTION, SERVICE, ANTENNE.
+4. Supprime le nom de la commune si présent.
+5. Translittère les accents (É→E, À→A...).
+
+Règles strictes pour normalized_address :
+- Format exact : "<numero> <voie> <code postal>" en MAJUSCULES, SANS ville.
+- Si le numéro manque, utilise "0" (ou le numéro fourni).
+- Si le code postal manque, utilise "00000".
+- Pas de virgules, pas de ville, pas de pays.
+
+Catégories (une seule) :
+PUBLIC : collectivités, services de l'Etat, établissements publics (EPA/EPIC), hôpitaux publics, écoles publiques.
+PRIVE : sociétés commerciales, artisans, professions libérales, associations privées, boutiques (Orange, banques...).
+EQUIPEMENT_URBAIN : infrastructures sans personne morale claire (armoire télécom, NRO, antenne, abri bus, station vélo, transformateur, parking automatique anonyme).
+INCONNU : informations insuffisantes.
+
+Cas limites :
+- Parking Vinci/Indigo -> PRIVE
+- Parking sans marque -> EQUIPEMENT_URBAIN
+- Gare SNCF ou station métro RATP -> PUBLIC (EPIC)
+- Boutique SNCF ou Orange Boutique -> PRIVE
+- La Poste bureau -> PUBLIC
+- Association sportive locale -> PRIVE
+
+Si tu hésites : choisis la catégorie la plus probable; si vraiment impossible, mets INCONNU.
+
+Exemples :
+{examples}
+
+DONNEES CRM A NORMALISER :
+- Nom brut : {crm_name}
+- Adresse brute : {street_number} {street_name}
+- Code postal : {postcode}
+- Commune : {city}{missing_note}
+
+Réponds maintenant UNIQUEMENT avec l'objet JSON demandé.
+""".strip()
+
+    return prompt
+
+
+def normalize_crm_entry(
+    row: pd.Series,
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+    client: OllamaClient | None = None,
+) -> NormalizedCRMEntry:
+    """Normalize a CRM row with the LLM (task 3.3).
+
+    Raises ``LLMCallError`` or ``NormalizationParseError`` on failure; callers
+    (pipeline layer) decide how to handle errors.
+    """
+
+    log = logger or LOGGER
+
+    if pd.isna(row.get("crm_id")):
+        raise ValueError("crm_id is mandatory for normalization")
+
+    if pd.isna(row.get("street_number")) or pd.isna(row.get("postcode")):
+        log.warning(
+            "CRM %s: Missing address components (number=%s, postcode=%s)",
+            row.get("crm_id"),
+            row.get("street_number"),
+            row.get("postcode"),
+        )
+
+    prompt = build_normalizer_prompt(row)
+
+    result = normalize_with_llm(
+        prompt=prompt,
+        config=config,
+        logger=log,
+        client=client,
+        expected_city=row.get("city") if not pd.isna(row.get("city")) else None,
+    )
+
+    log.debug(
+        "CRM %s normalized: name=%s, addr=%s, category=%s",
+        row.get("crm_id"),
+        result.normalized_name,
+        result.normalized_address,
+        result.category,
+    )
+
+    return result
+
+
+def dump_normalizer_prompt(row: pd.Series, output_path: str | None = None) -> str:
+    """Utility to inspect the built prompt for a given CRM row.
+
+    If ``output_path`` is provided, the prompt is written to disk for debugging.
+    """
+
+    prompt = build_normalizer_prompt(row)
+    if output_path:
+        Path(output_path).write_text(prompt, encoding="utf-8")
+    return prompt
+
+
 __all__ = [
     "CRM_CATEGORY_VALUES",
     "NormalizedCRMEntry",
@@ -258,4 +466,7 @@ __all__ = [
     "normalize_with_llm",
     "parse_llm_response",
     "parse_normalizer_output",
+    "normalize_crm_entry",
+    "dump_normalizer_prompt",
+    "build_normalizer_prompt",
 ]
