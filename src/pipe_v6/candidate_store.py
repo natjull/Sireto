@@ -7,6 +7,7 @@ RNE, DataGouv, and Qwant before SIRENE enrichment and LLM arbitrage.
 from __future__ import annotations
 
 import logging
+import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -189,6 +190,145 @@ class NormalizedCandidate:
             "sources": list(self.sources),
             "raw_candidates": [rc.to_dict() for rc in self.raw_candidates],
         }
+
+
+def _deduplicate_sources(raw_candidates: list[RawCandidate]) -> list[str]:
+    seen: set[str] = set()
+    ordered: list[str] = []
+    for cand in raw_candidates:
+        if cand.source in seen:
+            continue
+        seen.add(cand.source)
+        ordered.append(cand.source)
+    return ordered
+
+
+def enrich_candidates_from_sirene(
+    groups: dict[tuple[str, str], list[RawCandidate]],
+    conn: sqlite3.Connection,
+    logger: logging.Logger | None = None,
+) -> list[NormalizedCandidate]:
+    """Enrich grouped RawCandidates with SIRENE cache data.
+
+    - For SIRET keys: fetch exact match; fallback to RawCandidate if missing.
+    - For SIREN keys: fetch up to 20 active establishments; if none active, fallback to closed.
+    - One NormalizedCandidate per establishment row (per SIRET), sharing the group's raw_candidates.
+    """
+
+    log = logger or LOGGER
+    if not groups:
+        return []
+
+    conn.row_factory = sqlite3.Row
+
+    normalized: list[NormalizedCandidate] = []
+    missing = 0
+    fallback_used = 0
+
+    for key, raw_candidates in groups.items():
+        key_type, value = key
+
+        if key_type == "siret":
+            row = conn.execute(
+                "SELECT siret, siren, denomination, address_full, postcode, city, insee_code, legal_nature, etat_administratif "
+                "FROM establishments WHERE siret = ?",
+                (value,),
+            ).fetchone()
+
+            if row:
+                norm = NormalizedCandidate(
+                    siren=row["siren"],
+                    siret=row["siret"],
+                    name=row["denomination"] or "",
+                    address=row["address_full"] or "",
+                    postcode=row["postcode"] or "",
+                    city=row["city"] or "",
+                    insee_code=row["insee_code"],
+                    legal_nature=row["legal_nature"],
+                    sources=_deduplicate_sources(raw_candidates),
+                    raw_candidates=raw_candidates,
+                )
+                normalized.append(norm)
+                log.debug("SIRET %s: found 1 row", value)
+            else:
+                missing += 1
+                log.warning("SIRET %s not found in cache, using fallback", value)
+                name = next((c.label for c in raw_candidates if c.label), "NOM_INCONNU")
+                address = next(
+                    (c.extra.get("adresse") for c in raw_candidates if c.extra.get("adresse")),
+                    "",
+                )
+                norm = NormalizedCandidate(
+                    siren=raw_candidates[0].siren or "INCONNU",
+                    siret=value,
+                    name=name,
+                    address=address or "",
+                    postcode="",
+                    city="",
+                    insee_code=None,
+                    legal_nature=None,
+                    sources=_deduplicate_sources(raw_candidates),
+                    raw_candidates=raw_candidates,
+                )
+                normalized.append(norm)
+                fallback_used += 1
+            continue
+
+        if key_type == "siren":
+            # Active establishments first
+            rows = conn.execute(
+                "SELECT siret, siren, denomination, address_full, postcode, city, insee_code, legal_nature, etat_administratif "
+                "FROM establishments WHERE siren = ? AND etat_administratif = 'A' LIMIT 20",
+                (value,),
+            ).fetchall()
+
+            if not rows:
+                rows = conn.execute(
+                    "SELECT siret, siren, denomination, address_full, postcode, city, insee_code, legal_nature, etat_administratif "
+                    "FROM establishments WHERE siren = ? LIMIT 20",
+                    (value,),
+                ).fetchall()
+                if rows:
+                    log.warning(
+                        "SIREN %s has no active establishments, including closed ones", value
+                    )
+                else:
+                    log.warning("SIREN %s not found in cache, skipping", value)
+                    missing += 1
+                    continue
+
+            log.debug("SIREN %s: found %s row(s)", value, len(rows))
+
+            sources = _deduplicate_sources(raw_candidates)
+
+            for row in rows:
+                norm = NormalizedCandidate(
+                    siren=row["siren"],
+                    siret=row["siret"],
+                    name=row["denomination"] or "",
+                    address=row["address_full"] or "",
+                    postcode=row["postcode"] or "",
+                    city=row["city"] or "",
+                    insee_code=row["insee_code"],
+                    legal_nature=row["legal_nature"],
+                    sources=sources,
+                    raw_candidates=raw_candidates,
+                )
+                normalized.append(norm)
+            continue
+
+        # Unknown key type – should not happen
+        log.debug("Unknown group key type %s (ignored)", key_type)
+
+    log.info(
+        "Enriched %d groups -> %d normalized candidates (missing=%d, fallback=%d)",
+        len(groups),
+        len(normalized),
+        missing,
+        fallback_used,
+    )
+
+    return normalized
 
 
 __all__ = [
