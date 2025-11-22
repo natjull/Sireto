@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import sqlite3
 from pathlib import Path
 import sys
 
@@ -127,6 +128,7 @@ class TestNormalizedCandidate:
             legal_nature="5710",
             sources=["RNE", "DATAGOUV"],
             raw_candidates=[raw],
+            category="PRIVE",
         )
 
         assert norm.siren == "123456789"
@@ -146,6 +148,7 @@ class TestNormalizedCandidate:
             legal_nature=None,
             sources=["RNE"],
             raw_candidates=[],
+            category="INCONNU",
         )
 
         with pytest.raises(AttributeError):
@@ -166,6 +169,7 @@ class TestNormalizedCandidate:
             legal_nature=None,
             sources=["DATAGOUV"],
             raw_candidates=[raw],
+            category="PRIVE",
         )
 
         data = norm.to_dict()
@@ -173,6 +177,7 @@ class TestNormalizedCandidate:
         assert data["siret"] == "12345678901234"
         assert data["sources"] == ["DATAGOUV"]
         assert data["raw_candidates"][0]["source"] == "DATAGOUV"
+        assert data["category"] == "PRIVE"
 
 
 class TestEnrichCandidatesFromSirene:
@@ -244,6 +249,7 @@ class TestEnrichCandidatesFromSirene:
         assert cand.name == "ACME"
         assert cand.address == "1 RUE"
         assert cand.sources == ["RNE"]
+        assert cand.category == "PRIVE"
 
     def test_siret_not_in_cache_fallback(self, tmp_path: Path):
         conn = self._conn(tmp_path)
@@ -260,6 +266,7 @@ class TestEnrichCandidatesFromSirene:
         cand = res[0]
         assert cand.name == "MISSING"
         assert cand.siret == "99999999999999"
+        assert cand.category == "INCONNU"
 
     def test_siren_known_multiple_establishments(self, tmp_path: Path):
         conn = self._conn(tmp_path)
@@ -288,6 +295,7 @@ class TestEnrichCandidatesFromSirene:
         assert siret_list == ["12345678900010", "12345678900011", "12345678900012"]
         # raw_candidates shared
         assert all(len(c.raw_candidates) == 1 for c in res)
+        assert all(c.category == "INCONNU" for c in res)
 
     def test_siren_no_active_includes_closed(self, tmp_path: Path):
         conn = self._conn(tmp_path)
@@ -312,6 +320,7 @@ class TestEnrichCandidatesFromSirene:
 
         assert len(res) == 1
         assert res[0].name == "ACME CLOSED"
+        assert res[0].category == "INCONNU"
 
     def test_sources_deduplication_order(self, tmp_path: Path):
         conn = self._conn(tmp_path)
@@ -365,3 +374,75 @@ class TestEnrichCandidatesFromSirene:
         conn = self._conn(tmp_path)
         res = enrich_candidates_from_sirene({}, conn)
         assert res == []
+
+    def test_enrichment_assigns_public_category(self, tmp_path: Path):
+        conn = self._conn(tmp_path)
+        self._insert_establishment(
+            conn,
+            siret="12345678900001",
+            siren="123456789",
+            denomination="HOPITAL PUBLIC",
+            address_full="1 RUE DE LA SANTE",
+            postcode="75014",
+            city="PARIS",
+            legal_nature="7210",
+        )
+
+        groups = {
+            ("siret", "12345678900001"): [
+                create_raw_candidate(source="RNE", siret="12345678900001"),
+            ]
+        }
+
+        res = enrich_candidates_from_sirene(groups, conn)
+
+        assert len(res) == 1
+        assert res[0].category == "PUBLIC"
+
+    def test_enrichment_assigns_prive_category(self, tmp_path: Path):
+        conn = self._conn(tmp_path)
+        self._insert_establishment(
+            conn,
+            siret="98765432100010",
+            siren="987654321",
+            denomination="ACME SAS",
+            address_full="10 AVENUE",
+            postcode="69000",
+            city="LYON",
+            legal_nature="5710",
+        )
+
+        groups = {
+            ("siret", "98765432100010"): [
+                create_raw_candidate(source="DATAGOUV", siret="98765432100010"),
+            ]
+        }
+
+        res = enrich_candidates_from_sirene(groups, conn)
+
+        assert len(res) == 1
+        assert res[0].category == "PRIVE"
+
+    def test_enrichment_handles_null_legal_nature(self, tmp_path: Path):
+        conn = self._conn(tmp_path)
+        self._insert_establishment(
+            conn,
+            siret="22222222200022",
+            siren="222222222",
+            denomination="UNKNOWN ENTITY",
+            address_full="2 RUE",
+            postcode="31000",
+            city="TOULOUSE",
+            legal_nature=None,
+        )
+
+        groups = {
+            ("siret", "22222222200022"): [
+                create_raw_candidate(source="QWANT_PAPPERS", siret="22222222200022"),
+            ]
+        }
+
+        res = enrich_candidates_from_sirene(groups, conn)
+
+        assert len(res) == 1
+        assert res[0].category == "INCONNU"
