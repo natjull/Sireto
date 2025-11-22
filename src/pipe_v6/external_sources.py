@@ -11,14 +11,22 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import time
 from typing import Any, Dict, List
 from urllib.error import HTTPError, URLError
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urlparse
 from urllib.request import Request, urlopen
 
+import pandas as pd
+
 from .config import PipelineConfig
-from .candidate_store import RawCandidate, candidate_key, create_raw_candidate
+from .candidate_store import (
+    RawCandidate,
+    InvalidCandidateError,
+    candidate_key,
+    create_raw_candidate,
+)
 from .rne_client import RneClient, _map_company_to_candidates
 
 
@@ -27,6 +35,10 @@ LOGGER = logging.getLogger(__name__)
 
 class DataGouvApiError(RuntimeError):
     """Raised when the DataGouv API fails after retries or returns invalid data."""
+
+
+class QwantApiError(RuntimeError):
+    """Raised when the Qwant API fails after retries or returns invalid data."""
 
 
 def search_rne(
@@ -94,8 +106,12 @@ def search_rne(
 
 __all__ = [
     "DataGouvApiError",
+    "QwantApiError",
     "search_datagouv",
     "search_rne",
+    "qwant_search",
+    "search_qwant_sites",
+    "extract_siren_siret_from_url",
 ]
 
 
@@ -353,3 +369,254 @@ def search_datagouv(
     )
 
     return candidates
+
+
+# --------------------------------------------------------------------------- Qwant
+
+
+def _http_get_qwant(
+    url: str,
+    params: Dict[str, Any],
+    *,
+    timeout: float = 20.0,
+    connect_timeout: float = 5.0,
+    max_retries: int = 3,
+    logger: logging.Logger | None = None,
+) -> Dict[str, Any]:
+    """GET JSON from Qwant with retry on 429/5xx."""
+
+    logger = logger or LOGGER
+    _ = connect_timeout  # kept for signature parity / future fine-tuning
+    query = urlencode(params, doseq=True)
+    full_url = f"{url}?{query}"
+    headers = {
+        "Accept": "application/json",
+        "User-Agent": "Sireto-PipeV6/2.2",
+    }
+
+    last_exc: Exception | None = None
+    for attempt in range(1, max_retries + 1):
+        try:
+            req = Request(full_url, headers=headers, method="GET")
+            with urlopen(req, timeout=timeout) as resp:
+                raw = resp.read().decode("utf-8")
+                return json.loads(raw)
+        except HTTPError as e:
+            status = e.code
+            body = ""
+            try:
+                body = e.read().decode("utf-8", errors="ignore")
+            except Exception:
+                body = ""
+
+            if status in (429, 500, 502, 503, 504):
+                retry_after = e.headers.get("Retry-After")
+                delay = float(retry_after) if retry_after else min(2.0 * attempt, 10.0)
+                logger.warning(
+                    "Qwant HTTP %s (attempt %s/%s) – sleeping %.1fs",
+                    status,
+                    attempt,
+                    max_retries,
+                    delay,
+                )
+                time.sleep(delay)
+                last_exc = e
+                continue
+
+            raise
+        except URLError as e:
+            last_exc = e
+            if attempt >= max_retries:
+                break
+            delay = min(2.0 * attempt, 10.0)
+            logger.warning(
+                "Qwant URLError %s (attempt %s/%s) – sleeping %.1fs",
+                e.reason,
+                attempt,
+                max_retries,
+                delay,
+            )
+            time.sleep(delay)
+        except Exception as e:  # pragma: no cover - safety net
+            last_exc = e
+            break
+
+    if last_exc:
+        raise QwantApiError(
+            f"Qwant API call failed after {max_retries} retries: {last_exc}"
+        ) from last_exc
+    raise QwantApiError("Qwant API call failed without specific exception")
+
+
+def extract_siren_siret_from_url(url: str) -> tuple[str | None, str | None]:
+    """Extract SIREN/SIRET from URL path + query string.
+
+    Strategy: pick last 14-digit (SIRET) if present; else last 9-digit (SIREN).
+    Returns (siren, siret) with siret possibly None.
+    """
+
+    parsed = urlparse(url)
+    search_zone = parsed.path + ("?" + parsed.query if parsed.query else "")
+
+    patterns_14 = re.findall(r"\b(\d{14})\b", search_zone)
+    if patterns_14:
+        siret = patterns_14[-1]
+        siren = siret[:9]
+        return siren, siret
+
+    patterns_9 = re.findall(r"\b(\d{9})\b", search_zone)
+    if patterns_9:
+        siren = patterns_9[-1]
+        return siren, None
+
+    return None, None
+
+
+def qwant_search(
+    query: str,
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+) -> list[dict]:
+    """Search Qwant and return raw items."""
+
+    log = logger or LOGGER
+
+    params = {
+        "q": query,
+        "count": 20,
+        "offset": 0,
+        "locale": "fr_FR",
+        "safesearch": 0,
+    }
+
+    url = config.qwant_base_url
+    log.debug("Qwant API call: %s?q=%s", url, query[:100])
+
+    response = _http_get_qwant(
+        url,
+        params,
+        timeout=float(config.llm_timeout_sec),
+        connect_timeout=float(config.llm_connect_timeout_sec),
+        max_retries=int(config.llm_max_retries),
+        logger=log,
+    )
+
+    try:
+        items = response["data"]["result"]["items"]
+    except Exception as exc:  # pragma: no cover - keyed errors tested separately
+        raise QwantApiError(f"Qwant response missing expected fields: {exc}") from exc
+
+    if not isinstance(items, list):
+        raise QwantApiError("Qwant response 'items' is not a list")
+
+    log.debug("Qwant returned %d items", len(items))
+    return items
+
+
+QWANT_SITES = {
+    "QWANT_PAPPERS": "site:pappers.fr",
+    "QWANT_ANNUAIRE": "site:annuaire-entreprises.data.gouv.fr",
+    "QWANT_SOCIETE": "site:societe.com",
+}
+
+
+def search_qwant_sites(
+    row: pd.Series,
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+) -> List[RawCandidate]:
+    """Search Qwant on three business sites and return RawCandidate list."""
+
+    log = logger or LOGGER
+
+    def _value(key: str) -> str:
+        val = row.get(key, "")
+        if pd.isna(val):
+            return ""
+        return str(val).strip()
+
+    parts: list[str] = []
+    for col in ["crm_name", "street_number", "street_name", "postcode"]:
+        val = _value(col)
+        if val:
+            parts.append(val)
+
+    base_query = " ".join(parts)
+    if not base_query:
+        log.warning("Empty query for Qwant - skipping")
+        return []
+
+    all_candidates: list[RawCandidate] = []
+    counts: dict[str, int] = {}
+
+    for source_name, site_modifier in QWANT_SITES.items():
+        query = f"{base_query} {site_modifier}"
+
+        log.debug("Qwant search: source=%s query=%s", source_name, query[:100])
+
+        try:
+            items = qwant_search(query, config, log)
+        except QwantApiError as e:
+            log.error("Qwant search failed for %s: %s", source_name, e)
+            items = []
+
+        source_candidates: list[RawCandidate] = []
+        rank = 0
+
+        for item in items:
+            url = item.get("url")
+            if not url:
+                continue
+
+            siren, siret = extract_siren_siret_from_url(url)
+            if not siren and not siret:
+                log.debug("No SIREN/SIRET in URL: %s", url)
+                continue
+
+            label = (item.get("title") or "").strip()
+
+            extra: dict[str, Any] = {
+                "query": base_query,
+                "site_modifier": site_modifier,
+                "rank": rank,
+                "title": item.get("title"),
+                "desc": item.get("desc"),
+            }
+            if config.store_source_raw:
+                extra["raw"] = item
+
+            try:
+                candidate = create_raw_candidate(
+                    source=source_name,
+                    siren=siren,
+                    siret=siret,
+                    label=label,
+                    url=url,
+                    extra=extra,
+                )
+            except InvalidCandidateError as exc:
+                log.debug("Invalid candidate from %s: %s", source_name, exc)
+                continue
+
+            source_candidates.append(candidate)
+            rank += 1
+
+        deduped = _deduplicate_candidates(
+            source_candidates,
+            max_candidates=config.max_candidates_per_source,
+        )
+
+        counts[source_name] = len(deduped)
+        all_candidates.extend(deduped)
+
+    log.info(
+        "Qwant candidates: crm_name=%s postcode=%s -> total=%d (PAPPERS=%d, ANNUAIRE=%d, SOCIETE=%d)",
+        _value("crm_name"),
+        _value("postcode"),
+        len(all_candidates),
+        counts.get("QWANT_PAPPERS", 0),
+        counts.get("QWANT_ANNUAIRE", 0),
+        counts.get("QWANT_SOCIETE", 0),
+    )
+
+    return all_candidates
