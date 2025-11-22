@@ -1,0 +1,40 @@
+{
+  "results": [
+    {
+      "formality": {
+        "content": {
+          "personneMorale": {
+            "siren": "123456789",
+            "denomination": "ITAFRAN",
+            "formeJuridique": "SARL",
+            "etatEntreprise": "Actif",
+            "dateImmatriculation": "2015-03-12",
+            "etablissementSiege": {
+              "siret": "12345678900012",
+              "adresse": {
+                "codePostal": "69960",
+                "ville": "CORBAS"
+              }
+            },
+            "autresEtablissements": [
+              {
+                "siret": "12345678900020",
+                "adresse": {
+                  "codePostal": "69960",
+                  "ville": "CORBAS"
+                }
+              },
+              {
+                "siret": "12345678900038",
+                "adresse": {
+                  "codePostal": "75001",
+                  "ville": "PARIS"
+                }
+              }
+            ]
+          }
+        }
+      }
+    }
+  ]
+}

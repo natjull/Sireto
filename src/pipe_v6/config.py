@@ -45,6 +45,7 @@ class PipelineConfig:
     rne_api_url: str
     rne_client_id: str
     rne_client_secret: str
+    rne_token_url: str
     qwant_base_url: str
 
     model_name: str = "gpt-oss:20b"
@@ -112,6 +113,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "sirene_api_url": "https://api.insee.fr/api-sirene/3.11",
         "sirene_token": "",
         "rne_api_url": "https://api.inpi.fr/api/rne/",
+        "rne_token_url": "https://api.inpi.fr/api/sso/oauth2/token",
         "rne_client_id": "",
         "rne_client_secret": "",
         "qwant_base_url": "https://api.qwant.com/api/search/web",

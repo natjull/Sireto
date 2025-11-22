@@ -32,6 +32,7 @@ def _dummy_config() -> PipelineConfig:
         sirene_api_url="https://example",
         sirene_token="token",
         rne_api_url="https://example",
+        rne_token_url="https://api.inpi.fr/api/sso/oauth2/token",
         rne_client_id="id",
         rne_client_secret="secret",
         qwant_base_url="https://example",

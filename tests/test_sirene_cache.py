@@ -25,6 +25,7 @@ def _make_config(tmp_path: Path) -> PipelineConfig:
         "sirene_api_url": "https://api.insee.fr/entreprises/sirene/V3",
         "sirene_token": "token",
         "rne_api_url": "https://api.inpi.fr/api/rne/",
+        "rne_token_url": "https://api.inpi.fr/api/sso/oauth2/token",
         "rne_client_id": "client",
         "rne_client_secret": "secret",
         "qwant_base_url": "https://api.qwant.com/api/search/web",
