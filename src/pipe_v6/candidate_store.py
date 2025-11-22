@@ -124,6 +124,34 @@ def candidate_key(candidate: RawCandidate) -> tuple[str, str] | None:
     return None
 
 
+def group_raw_candidates(
+    candidates: list[RawCandidate],
+) -> dict[tuple[str, str], list[RawCandidate]]:
+    """Group candidates by SIRET/SIREN key, preserving order.
+
+    - Uses ``candidate_key`` (SIRET priority over SIREN).
+    - Excludes candidates without identifiers.
+
+    Args:
+        candidates: Flat list from multiple sources (RNE, DataGouv, Qwant).
+
+    Returns:
+        Dict mapping ("siret"|"siren", value) -> list of RawCandidate.
+    """
+
+    from collections import defaultdict
+
+    groups: dict[tuple[str, str], list[RawCandidate]] = defaultdict(list)
+
+    for candidate in candidates:
+        key = candidate_key(candidate)
+        if key is None:
+            continue
+        groups[key].append(candidate)
+
+    return dict(groups)
+
+
 __all__ = [
     "RawCandidate",
     "RAW_CANDIDATE_SOURCES",
@@ -131,4 +159,5 @@ __all__ = [
     "InvalidCandidateError",
     "create_raw_candidate",
     "candidate_key",
+    "group_raw_candidates",
 ]
