@@ -10,7 +10,7 @@ import logging
 from typing import List
 
 from .config import PipelineConfig
-from .candidate_store import RawCandidate
+from .candidate_store import RawCandidate, candidate_key
 from .rne_client import RneClient, _map_company_to_candidates
 
 
@@ -60,8 +60,10 @@ def search_rne(
             )
         )
 
-    if len(candidates) > config.max_candidates_per_source:
-        candidates = candidates[: config.max_candidates_per_source]
+    candidates = _deduplicate_candidates(
+        candidates,
+        max_candidates=config.max_candidates_per_source,
+    )
 
     log.info(
         "RNE candidates: name=%s city=%s postcode=%s -> %s",
@@ -81,3 +83,34 @@ def search_rne(
 __all__ = [
     "search_rne",
 ]
+
+
+def _deduplicate_candidates(
+    candidates: List[RawCandidate],
+    *,
+    max_candidates: int,
+) -> List[RawCandidate]:
+    """Keep at most `max_candidates`, deduplicating on SIRET/SIREN keys."""
+
+    if max_candidates <= 0:
+        return []
+
+    deduped: list[RawCandidate] = []
+    seen: set[tuple[str, str]] = set()
+
+    for candidate in candidates:
+        if len(deduped) >= max_candidates:
+            break
+
+        key = candidate_key(candidate)
+        if key is None:
+            deduped.append(candidate)
+            continue
+
+        if key in seen:
+            continue
+
+        seen.add(key)
+        deduped.append(candidate)
+
+    return deduped

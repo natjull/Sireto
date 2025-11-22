@@ -14,6 +14,7 @@ SRC_DIR = PROJECT_ROOT / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
 
+from pipe_v6.candidate_store import create_raw_candidate
 from pipe_v6.config import PipelineConfig
 from pipe_v6.rne_client import RneApiError, RneClient, _map_company_to_candidates
 from pipe_v6.external_sources import search_rne
@@ -113,6 +114,62 @@ def test_search_rne_limits_results(monkeypatch):
     assert call_count["value"] == 1
 
 
+def test_search_rne_deduplicates_candidates(monkeypatch):
+    data = _load_fixture("rne_sample.json")
+    company = data["results"][0]
+
+    def fake_search(self, name, postcode, max_results):
+        return [company]
+
+    def fake_map(company, query, rank_offset=0, store_raw=True):
+        return [
+            create_raw_candidate(
+                source="RNE",
+                siren="123456789",
+                siret="12345678900012",
+            ),
+            create_raw_candidate(
+                source="RNE",
+                siren="123456789",
+                siret="12345678900012",
+            ),
+            create_raw_candidate(
+                source="RNE",
+                siren="123456789",
+                siret="12345678900021",
+            ),
+            create_raw_candidate(
+                source="RNE",
+                siren="123456789",
+                siret="12345678900038",
+            ),
+        ]
+
+    monkeypatch.setattr(RneClient, "search_companies", fake_search)
+    monkeypatch.setattr(
+        "pipe_v6.external_sources._map_company_to_candidates",
+        fake_map,
+    )
+
+    config = _dummy_config()
+    config.max_candidates_per_source = 3
+
+    results = search_rne(
+        normalized_name="ITAFRAN",
+        city="CORBAS",
+        config=config,
+        logger=DummyLogger(),
+        postcode="69960",
+    )
+
+    assert len(results) == 3
+    assert {c.siret for c in results if c.siret} == {
+        "12345678900012",
+        "12345678900021",
+        "12345678900038",
+    }
+
+
 def test_token_cache_reuse(monkeypatch):
     token_calls = {"count": 0}
 
@@ -150,4 +207,3 @@ def test_raises_on_invalid_results(monkeypatch):
 
     with pytest.raises(RneApiError):
         client.search_companies("A", None, max_results=5)
-
