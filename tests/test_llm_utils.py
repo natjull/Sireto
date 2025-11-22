@@ -60,6 +60,7 @@ def _make_config(tmp_path: Path) -> PipelineConfig:
         sirene_api_url="https://sirene.example",
         sirene_token="token",
         rne_api_url="https://rne.example",
+        rne_token_url="https://api.inpi.fr/api/sso/oauth2/token",
         rne_client_id="client",
         rne_client_secret="secret",
         qwant_base_url="https://qwant.example",
