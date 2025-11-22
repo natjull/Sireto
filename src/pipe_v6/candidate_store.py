@@ -11,6 +11,8 @@ import sqlite3
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
+from pipe_v6.category_mapping import map_legal_to_category
+
 
 RAW_CANDIDATE_SOURCES = (
     "RNE",
@@ -174,6 +176,7 @@ class NormalizedCandidate:
     legal_nature: str | None
     sources: list[str]
     raw_candidates: list[RawCandidate]
+    category: str
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dictionary for export/logging."""
@@ -189,6 +192,7 @@ class NormalizedCandidate:
             "legal_nature": self.legal_nature,
             "sources": list(self.sources),
             "raw_candidates": [rc.to_dict() for rc in self.raw_candidates],
+            "category": self.category,
         }
 
 
@@ -247,6 +251,7 @@ def enrich_candidates_from_sirene(
                     legal_nature=row["legal_nature"],
                     sources=_deduplicate_sources(raw_candidates),
                     raw_candidates=raw_candidates,
+                    category=map_legal_to_category(row["legal_nature"], log),
                 )
                 normalized.append(norm)
                 log.debug("SIRET %s: found 1 row", value)
@@ -269,6 +274,7 @@ def enrich_candidates_from_sirene(
                     legal_nature=None,
                     sources=_deduplicate_sources(raw_candidates),
                     raw_candidates=raw_candidates,
+                    category=map_legal_to_category(None, log),
                 )
                 normalized.append(norm)
                 fallback_used += 1
@@ -313,6 +319,7 @@ def enrich_candidates_from_sirene(
                     legal_nature=row["legal_nature"],
                     sources=sources,
                     raw_candidates=raw_candidates,
+                    category=map_legal_to_category(row["legal_nature"], log),
                 )
                 normalized.append(norm)
             continue
@@ -340,4 +347,5 @@ __all__ = [
     "candidate_key",
     "group_raw_candidates",
     "NormalizedCandidate",
+    "map_legal_to_category",
 ]
