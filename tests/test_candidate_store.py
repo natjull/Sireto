@@ -19,6 +19,7 @@ from pipe_v6.candidate_store import (
     RawCandidate,
     candidate_key,
     create_raw_candidate,
+    NormalizedCandidate,
 )
 
 
@@ -108,3 +109,65 @@ class TestCandidateSerialization:
         assert data["label"] == "ACME"
         assert data["extra"]["score"] == 0.95
 
+
+class TestNormalizedCandidate:
+    def test_create_normalized_candidate_all_fields(self):
+        raw = create_raw_candidate(source="RNE", siret="12345678901234", label="ACME")
+
+        norm = NormalizedCandidate(
+            siren="123456789",
+            siret="12345678901234",
+            name="ACME",
+            address="1 RUE DE PARIS",
+            postcode="75001",
+            city="PARIS",
+            insee_code="75056",
+            legal_nature="5710",
+            sources=["RNE", "DATAGOUV"],
+            raw_candidates=[raw],
+        )
+
+        assert norm.siren == "123456789"
+        assert norm.siret == "12345678901234"
+        assert norm.sources == ["RNE", "DATAGOUV"]
+        assert norm.raw_candidates[0].label == "ACME"
+
+    def test_normalized_candidate_is_frozen(self):
+        norm = NormalizedCandidate(
+            siren="123456789",
+            siret=None,
+            name="ACME",
+            address="1 RUE",
+            postcode="75001",
+            city="PARIS",
+            insee_code=None,
+            legal_nature=None,
+            sources=["RNE"],
+            raw_candidates=[],
+        )
+
+        with pytest.raises(AttributeError):
+            # frozen dataclass should prevent mutation
+            norm.name = "NEW"
+
+    def test_normalized_candidate_to_dict(self):
+        raw = create_raw_candidate(source="DATAGOUV", siret="12345678901234", label="ACME")
+
+        norm = NormalizedCandidate(
+            siren="123456789",
+            siret="12345678901234",
+            name="ACME",
+            address="1 RUE",
+            postcode="75001",
+            city="PARIS",
+            insee_code="75056",
+            legal_nature=None,
+            sources=["DATAGOUV"],
+            raw_candidates=[raw],
+        )
+
+        data = norm.to_dict()
+        assert data["siren"] == "123456789"
+        assert data["siret"] == "12345678901234"
+        assert data["sources"] == ["DATAGOUV"]
+        assert data["raw_candidates"][0]["source"] == "DATAGOUV"

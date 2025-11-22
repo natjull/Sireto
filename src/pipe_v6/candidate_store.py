@@ -1,4 +1,4 @@
-"""Common candidate structures for Pipe V6 (task 4.1).
+"""Common candidate structures for Pipe V6 (tasks 4.x, 5.x).
 
 Defines the unified data model used to represent raw candidates coming from
 RNE, DataGouv, and Qwant before SIRENE enrichment and LLM arbitrage.
@@ -6,6 +6,7 @@ RNE, DataGouv, and Qwant before SIRENE enrichment and LLM arbitrage.
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from typing import Any, Literal
 
@@ -29,6 +30,9 @@ CandidateSource = Literal[
 
 class InvalidCandidateError(ValueError):
     """Raised when a RawCandidate fails validation."""
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 def _normalize_siren(siren: str | None) -> str | None:
@@ -152,6 +156,41 @@ def group_raw_candidates(
     return dict(groups)
 
 
+@dataclass(frozen=True)
+class NormalizedCandidate:
+    """SIRENE-enriched candidate ready for LLM #2 arbitration.
+
+    Fields mirror the contract defined in AGENTS (task 5.2).
+    """
+
+    siren: str
+    siret: str | None
+    name: str
+    address: str
+    postcode: str
+    city: str
+    insee_code: str | None
+    legal_nature: str | None
+    sources: list[str]
+    raw_candidates: list[RawCandidate]
+
+    def to_dict(self) -> dict[str, Any]:
+        """Serialize to a plain dictionary for export/logging."""
+
+        return {
+            "siren": self.siren,
+            "siret": self.siret,
+            "name": self.name,
+            "address": self.address,
+            "postcode": self.postcode,
+            "city": self.city,
+            "insee_code": self.insee_code,
+            "legal_nature": self.legal_nature,
+            "sources": list(self.sources),
+            "raw_candidates": [rc.to_dict() for rc in self.raw_candidates],
+        }
+
+
 __all__ = [
     "RawCandidate",
     "RAW_CANDIDATE_SOURCES",
@@ -160,4 +199,5 @@ __all__ = [
     "create_raw_candidate",
     "candidate_key",
     "group_raw_candidates",
+    "NormalizedCandidate",
 ]
