@@ -47,6 +47,7 @@ class PipelineConfig:
     rne_client_secret: str
     rne_token_url: str
     qwant_base_url: str
+    datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
 
     model_name: str = "gpt-oss:20b"
     temperature: float = 0.0
@@ -117,6 +118,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "rne_client_id": "",
         "rne_client_secret": "",
         "qwant_base_url": "https://api.qwant.com/api/search/web",
+        "datagouv_api_url": "https://recherche-entreprises.api.gouv.fr",
         "model_name": "gpt-oss:20b",
         "temperature": 0.0,
         "top_p": 1.0,
