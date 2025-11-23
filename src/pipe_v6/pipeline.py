@@ -4,7 +4,9 @@ from __future__ import annotations
 
 import logging
 import sqlite3
-from typing import Any, Sequence
+from typing import Any, Iterable, Sequence
+
+import pandas as pd
 
 from .candidate_store import (
     group_raw_candidates,
@@ -12,12 +14,13 @@ from .candidate_store import (
 )
 from .commune_detection import CommuneKey
 from .config import PipelineConfig
+from .crm_loader import load_crm
 from .external_sources import search_datagouv, search_qwant_sites, search_rne
 from .llm_matcher import classify_final_status, decide_match, filter_candidates_by_category
 from .llm_normalizer import NormalizationParseError, normalize_crm_entry
 from .llm_utils import LLMCallError, OllamaClient
 from .rne_client import RneClient
-from .sirene_cache import get_or_fetch_commune
+from .sirene_cache import get_cache_connection, get_or_fetch_commune
 
 
 LOGGER = logging.getLogger(__name__)
@@ -257,3 +260,111 @@ def process_crm_row(
 
 
 __all__.append("process_crm_row")
+
+
+# ---------------------------------------------------------------------------
+# Pipeline complet (8.3)
+# ---------------------------------------------------------------------------
+
+
+RESULT_COLUMNS = [
+    "crm_id",
+    "status",
+    "chosen_siret",
+    "confidence",
+    "reason",
+    "crm_category",
+    "normalized_name",
+    "normalized_address",
+    "candidate_count_total",
+    "candidate_count_used",
+    "sources",
+]
+
+
+def _progress(iterable: Iterable, total: int, description: str):
+    """Yield from iterable with tqdm if available, otherwise passthrough.
+
+    Falls back silently when tqdm is not installed to avoid an extra dependency
+    requirement at runtime.
+    """
+
+    try:  # pragma: no cover - dependency optional
+        from tqdm import tqdm
+
+        return tqdm(iterable, total=total, desc=description)
+    except Exception:  # noqa: BLE001 - broad to keep fallback simple
+        return iterable
+
+
+def run_pipeline(
+    config: PipelineConfig,
+    *,
+    max_rows: int | None = None,
+    logger: logging.Logger | None = None,
+) -> pd.DataFrame:
+    """Run the full Pipe V6 pipeline over the CRM CSV.
+
+    Steps:
+    1. Load CRM (optional row cap via ``max_rows``).
+    2. Extract communes and preload SIRENE cache.
+    3. Process each CRM row sequentially with shared RNE + LLM clients.
+    4. Return a DataFrame containing only pipeline result columns.
+    """
+
+    log = logger or LOGGER
+
+    df = load_crm(config.crm_path)
+    if max_rows is not None:
+        df = df.head(max_rows)
+
+    if df.empty:
+        log.warning("CRM input is empty; returning empty results DataFrame.")
+        return pd.DataFrame(columns=RESULT_COLUMNS)
+
+    communes = extract_communes(df)
+
+    conn = get_cache_connection(config)
+    llm_client: OllamaClient | None = None
+    rne_client: RneClient | None = None
+
+    try:
+        preload_sirene(communes, config, logger=log, conn=conn)
+
+        rne_client = RneClient(config=config, logger=log)
+        llm_client = OllamaClient(config=config, logger=log)
+
+        results: list[dict] = []
+        iterable = _progress(
+            df.itertuples(index=False, name="CRMRow"),
+            total=len(df),
+            description="Processing CRM",
+        )
+
+        for row in iterable:
+            result = process_crm_row(
+                row,
+                config,
+                conn,
+                log,
+                rne_client=rne_client,
+                llm_client=llm_client,
+            )
+            results.append(result)
+
+        return pd.DataFrame(results, columns=RESULT_COLUMNS)
+
+    finally:
+        try:
+            if llm_client:
+                llm_client.close()
+        except Exception:
+            log.exception("Failed to close Ollama client")
+
+        try:
+            conn.close()
+        except Exception:
+            log.exception("Failed to close SQLite connection")
+
+
+__all__.append("run_pipeline")
