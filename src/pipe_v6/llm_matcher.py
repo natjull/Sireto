@@ -298,6 +298,33 @@ def decide_match(
             client.close()
 
 
+def classify_final_status(
+    decision: LLMMatchDecision,
+    config: PipelineConfig,
+) -> Literal["MATCH", "REVIEW", "NO_MATCH"]:
+    """
+    Convert a raw LLM decision into final status based on confidence thresholds.
+
+    Rules (task 7.5):
+    - If decision is NO_MATCH -> return NO_MATCH regardless of confidence.
+    - Else (BEST_MATCH):
+        - confidence >= confidence_auto_match -> MATCH
+        - confidence_review_min <= confidence < confidence_auto_match -> REVIEW
+        - otherwise -> NO_MATCH
+    """
+
+    if decision.decision == "NO_MATCH":
+        return "NO_MATCH"
+
+    conf = decision.confidence
+
+    if conf >= config.confidence_auto_match:
+        return "MATCH"
+    if conf >= config.confidence_review_min:
+        return "REVIEW"
+    return "NO_MATCH"
+
+
 __all__ = [
     "LLMMatchDecision",
     "MatchDecisionParseError",
@@ -305,4 +332,5 @@ __all__ = [
     "build_matcher_prompt",
     "parse_match_decision",
     "decide_match",
+    "classify_final_status",
 ]
