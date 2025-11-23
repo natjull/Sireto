@@ -1,4 +1,4 @@
-"""LLM #2 candidate filtering and decision parsing (tasks 7.1-7.2)."""
+"""LLM #2 candidate filtering, prompting, and arbitration (tasks 7.1-7.4)."""
 
 from __future__ import annotations
 
@@ -9,6 +9,7 @@ from typing import Literal
 from pipe_v6.config import PipelineConfig
 from pipe_v6.candidate_store import NormalizedCandidate
 from pipe_v6.llm_normalizer import NormalizedCRMEntry
+from pipe_v6.llm_utils import LLMCallError, OllamaClient
 
 LOGGER = logging.getLogger(__name__)
 
@@ -241,10 +242,67 @@ def parse_match_decision(
     )
 
 
+def decide_match(
+    row,
+    norm_entry: NormalizedCRMEntry,
+    candidates: list[NormalizedCandidate],
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+    client: OllamaClient | None = None,
+) -> LLMMatchDecision:
+    """
+    Call LLM #2 to decide the best candidate SIRET or NO_MATCH (task 7.4).
+
+    Behavior:
+    - If no candidates, returns NO_MATCH without calling LLM.
+    - Builds the matcher prompt and calls Ollama in JSON mode.
+    - Parses and validates the JSON response (parse_match_decision).
+    - On any error (LLM call, parsing), returns NO_MATCH with reason.
+    """
+
+    log = logger or LOGGER
+
+    if not candidates:
+        log.info("No candidates available, returning NO_MATCH without LLM call.")
+        return LLMMatchDecision(
+            decision="NO_MATCH",
+            chosen_siret=None,
+            confidence=0.0,
+            reason="No candidates found after filtering",
+        )
+
+    owns_client = False
+    if client is None:
+        client = OllamaClient(config, logger=log)
+        owns_client = True
+
+    try:
+        prompt = build_matcher_prompt(row, norm_entry, candidates)
+        response = client.call_json(prompt)
+
+        if response.parsed_json is None:
+            raise MatchDecisionParseError("LLM response missing JSON payload")
+
+        return parse_match_decision(response.parsed_json, candidates, logger=log)
+
+    except Exception as exc:  # catch all to never raise upstream
+        log.error("LLM matcher failed: %s", exc, exc_info=True)
+        return LLMMatchDecision(
+            decision="NO_MATCH",
+            chosen_siret=None,
+            confidence=0.0,
+            reason=f"LLM_ERROR: {type(exc).__name__}",
+        )
+    finally:
+        if owns_client:
+            client.close()
+
+
 __all__ = [
     "LLMMatchDecision",
     "MatchDecisionParseError",
     "filter_candidates_by_category",
     "build_matcher_prompt",
     "parse_match_decision",
+    "decide_match",
 ]
