@@ -1,10 +1,12 @@
-"""LLM #2 decision parsing and structures (task 7.1)."""
+"""LLM #2 candidate filtering and decision parsing (tasks 7.1-7.2)."""
 
 from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
 from typing import Literal
+
+from pipe_v6.config import PipelineConfig
 
 from pipe_v6.candidate_store import NormalizedCandidate
 
@@ -27,6 +29,63 @@ class LLMMatchDecision:
 
 def _valid_sirets(candidates: list[NormalizedCandidate]) -> set[str]:
     return {c.siret for c in candidates if c.siret}
+
+
+def filter_candidates_by_category(
+    crm_category: str,
+    candidates: list[NormalizedCandidate],
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+) -> list[NormalizedCandidate]:
+    """
+    Filter candidates according to CRM category with optional fallback.
+
+    Rules (task 7.2):
+    - PUBLIC  -> keep candidates.category == PUBLIC
+    - PRIVE   -> keep candidates.category == PRIVE
+    - EQUIPEMENT_URBAIN -> return [] (LLM will be bypassed later)
+    - INCONNU -> no filtering
+    - If filtering disabled in config -> no filtering
+    - If filtered list is empty but original non-empty and fallback enabled -> use all candidates
+    - Limit final list to config.max_candidates_llm_matcher, ordered by source count desc.
+    """
+
+    log = logger or LOGGER
+
+    if not config.category_filter_enabled:
+        filtered = list(candidates)
+    else:
+        crm_category = (crm_category or "").upper()
+
+        if crm_category == "PUBLIC":
+            filtered = [c for c in candidates if c.category == "PUBLIC"]
+        elif crm_category == "PRIVE":
+            filtered = [c for c in candidates if c.category == "PRIVE"]
+        elif crm_category == "EQUIPEMENT_URBAIN":
+            # No legal entity expected; LLM will be short-circuited by caller.
+            return []
+        else:  # INCONNU or any other -> no filter
+            filtered = list(candidates)
+
+        if not filtered and candidates and config.category_filter_fallback:
+            log.info(
+                "No candidates after category filter (%s). Falling back to all %d candidates.",
+                crm_category or "INCONNU",
+                len(candidates),
+            )
+            filtered = list(candidates)
+
+    if len(filtered) > config.max_candidates_llm_matcher:
+        filtered = sorted(filtered, key=lambda c: len(c.sources), reverse=True)[
+            : config.max_candidates_llm_matcher
+        ]
+        log.info(
+            "Too many candidates (%d), keeping top %d by source count.",
+            len(candidates),
+            config.max_candidates_llm_matcher,
+        )
+
+    return filtered
 
 
 def parse_match_decision(
@@ -103,5 +162,6 @@ def parse_match_decision(
 __all__ = [
     "LLMMatchDecision",
     "MatchDecisionParseError",
+    "filter_candidates_by_category",
     "parse_match_decision",
 ]

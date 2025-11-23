@@ -68,6 +68,10 @@ class PipelineConfig:
     max_candidates_per_source: int = 10
     confidence_auto_match: float = 0.85
     confidence_review_min: float = 0.6
+    # Candidate filtering (task 7.2)
+    category_filter_enabled: bool = True
+    category_filter_fallback: bool = True
+    max_candidates_llm_matcher: int = 15
 
     log_level: str = "INFO"
     store_source_raw: bool = True
@@ -136,6 +140,9 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "max_candidates_per_source": 10,
         "confidence_auto_match": 0.85,
         "confidence_review_min": 0.6,
+        "category_filter_enabled": True,
+        "category_filter_fallback": True,
+        "max_candidates_llm_matcher": 15,
         "log_level": "INFO",
         "store_source_raw": True,
     }
@@ -160,6 +167,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "max_candidates_per_source": int,
         "confidence_auto_match": float,
         "confidence_review_min": float,
+        "max_candidates_llm_matcher": int,
     }
 
     for field_name, caster in numeric_casts.items():
@@ -172,6 +180,8 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_log_prompts",
         "llm_log_responses",
         "llm_json_mode_default",
+        "category_filter_enabled",
+        "category_filter_fallback",
     ]
     for field_name in bool_fields:
         extracted[field_name] = _as_bool(extracted[field_name])
