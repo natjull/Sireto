@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from typing import Literal
 
 from pipe_v6.config import PipelineConfig
-
 from pipe_v6.candidate_store import NormalizedCandidate
+from pipe_v6.llm_normalizer import NormalizedCRMEntry
 
 LOGGER = logging.getLogger(__name__)
 
@@ -29,6 +29,88 @@ class LLMMatchDecision:
 
 def _valid_sirets(candidates: list[NormalizedCandidate]) -> set[str]:
     return {c.siret for c in candidates if c.siret}
+
+
+def _val(row, key: str) -> str:
+    if hasattr(row, "get"):
+        try:
+            value = row.get(key, "")
+        except Exception:
+            value = ""
+    else:
+        value = getattr(row, key, "")
+    return "" if value is None else str(value)
+
+
+def build_matcher_prompt(
+    row,
+    norm_entry: NormalizedCRMEntry,
+    candidates: list[NormalizedCandidate],
+) -> str:
+    """
+    Construct the French prompt for LLM #2 arbitration (task 7.3).
+
+    The prompt is intentionally verbose, structured, and ends with strict JSON
+    output instructions to maximise parsability.
+    """
+
+    crm_name = _val(row, "crm_name")
+    street_number = _val(row, "street_number")
+    street_name = _val(row, "street_name")
+    postcode = _val(row, "postcode")
+    city = _val(row, "city")
+
+    lines: list[str] = []
+    lines.append("CONSIGNE : tu dois choisir le meilleur candidat SIRET ou conclure NO_MATCH.")
+    lines.append("")
+    lines.append("# DONNEES CRM ORIGINALES")
+    lines.append(f"Nom : {crm_name}")
+    lines.append(f"Adresse : {street_number} {street_name}".strip())
+    lines.append(f"Code postal : {postcode}")
+    lines.append(f"Ville : {city}")
+    lines.append("")
+    lines.append("# DONNEES CRM NORMALISEES (LLM #1)")
+    lines.append(f"Nom normalise : {norm_entry.normalized_name}")
+    lines.append(f"Adresse normalisee : {norm_entry.normalized_address}")
+    lines.append(f"Catégorie identifiee : {norm_entry.category}")
+    lines.append("")
+    lines.append("# CANDIDATS SIRENE (choisis un SIRET OU NO_MATCH)")
+
+    for idx, cand in enumerate(candidates, start=1):
+        source_count = len(cand.sources)
+        multi_source = "Oui" if source_count >= 2 else "Non"
+        lines.append(f"## Candidat {idx}")
+        lines.append(f"- SIRET : {cand.siret}")
+        lines.append(f"- SIREN : {cand.siren}")
+        lines.append(f"- Nom : {cand.name}")
+        lines.append(f"- Adresse : {cand.address}")
+        lines.append(f"- Code postal : {cand.postcode}")
+        lines.append(f"- Ville : {cand.city}")
+        lines.append(f"- Code INSEE : {cand.insee_code or 'N/A'}")
+        lines.append(f"- Catégorie SIRENE : {cand.category}")
+        lines.append(
+            f"- Sources : {', '.join(cand.sources)} ({source_count} source{'s' if source_count > 1 else ''})"
+        )
+        lines.append(f"- Multi-source : {multi_source}")
+        lines.append("")
+
+    lines.append("# INSTRUCTIONS")
+    lines.append("1. Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans ```.")
+    lines.append("2. Si aucun candidat n'est suffisamment fiable, renvoie decision=\"NO_MATCH\".")
+    lines.append("3. Il est INTERDIT d'inventer un SIRET absent de la liste.")
+    lines.append("4. Privilégie les candidats multi-source et cohérents avec l'adresse.")
+    lines.append("5. La catégorie SIRENE doit rester compatible avec la catégorie CRM.")
+    lines.append("6. En cas de doute, choisis NO_MATCH (mieux vaut un faux négatif).")
+    lines.append("")
+    lines.append("FORMAT DE REPONSE STRICT :")
+    lines.append('{')
+    lines.append('  "decision": "BEST_MATCH" ou "NO_MATCH",')
+    lines.append('  "chosen_siret": "12345678901234" ou null,')
+    lines.append('  "confidence": 0.0-1.0,')
+    lines.append('  "reason": "Explication courte en français"')
+    lines.append('}')
+
+    return "\n".join(lines)
 
 
 def filter_candidates_by_category(
@@ -163,5 +245,6 @@ __all__ = [
     "LLMMatchDecision",
     "MatchDecisionParseError",
     "filter_candidates_by_category",
+    "build_matcher_prompt",
     "parse_match_decision",
 ]
