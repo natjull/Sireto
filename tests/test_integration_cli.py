@@ -3,8 +3,17 @@ from __future__ import annotations
 from pathlib import Path
 import json
 from unittest.mock import patch
+import sys
 
 import pandas as pd
+
+# Ensure project modules are importable when running tests from repo root
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
 
 from scripts.run_pipe_v6 import main
 from pipe_v6.pipeline import RESULT_COLUMNS
@@ -81,4 +90,3 @@ def test_cli_end_to_end_with_mocked_pipeline(tmp_path, monkeypatch) -> None:
     stats = json.loads(stats_json.read_text(encoding="utf-8"))
     assert stats.get("total_rows") == 5
     assert "status" in stats and "candidates" in stats
-
