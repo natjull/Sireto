@@ -123,8 +123,24 @@ class OllamaClient:
         if json_mode_active:
             try:
                 parsed_json = json.loads(text)
-            except json.JSONDecodeError as exc:
-                raise LLMCallError("LLM output is not valid JSON") from exc
+            except json.JSONDecodeError:
+                # Lenient fallback: strip code fences / leading text and try to extract first JSON object.
+                cleaned = text.strip()
+                if cleaned.startswith("```"):
+                    cleaned = cleaned.strip("`")
+                    # remove optional language label
+                    if cleaned.lower().startswith("json"):
+                        cleaned = cleaned[4:].strip()
+                start = cleaned.find("{")
+                end = cleaned.rfind("}")
+                if start != -1 and end != -1 and end > start:
+                    candidate = cleaned[start : end + 1]
+                    try:
+                        parsed_json = json.loads(candidate)
+                    except json.JSONDecodeError as exc:
+                        raise LLMCallError("LLM output is not valid JSON") from exc
+                else:
+                    raise LLMCallError("LLM output is not valid JSON")
 
         return LLMResponse(
             text=text,
