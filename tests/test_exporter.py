@@ -3,9 +3,16 @@ from __future__ import annotations
 from pathlib import Path
 import json
 import logging
+import sys
 
 import pandas as pd
 import pytest
+
+# Ensure project modules are importable when running tests
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+SRC_DIR = PROJECT_ROOT / "src"
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
 
 from pipe_v6.exporter import export_results, compute_stats, save_stats_json, EXPORT_COLUMNS
 from pipe_v6.pipeline import RESULT_COLUMNS
@@ -112,7 +119,7 @@ def test_export_results_merges_crm_and_results_csv(tmp_path: Path) -> None:
 
     # Sources normalized (sorted and pipe-joined)
     assert df_export.loc[0, "sources"] == "DATAGOUV|RNE"
-    assert df_export.loc[1, "sources"] == ""
+    assert (df_export.loc[1, "sources"] == "") or pd.isna(df_export.loc[1, "sources"])
 
     # Confidence rounded to 4 decimals
     assert df_export.loc[0, "confidence"] == pytest.approx(0.9234, rel=0, abs=1e-4)

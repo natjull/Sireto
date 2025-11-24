@@ -158,8 +158,22 @@ def compute_stats(df_results: pd.DataFrame) -> dict:
     category_percentages = _percentages(category_counts, total_rows)
 
     # Candidate averages (use zeros when missing)
-    avg_total = float(df_results.get("candidate_count_total", pd.Series(dtype=float)).fillna(0).mean() or 0.0)
-    avg_used = float(df_results.get("candidate_count_used", pd.Series(dtype=float)).fillna(0).mean() or 0.0)
+    if total_rows == 0:
+        avg_total = 0.0
+        avg_used = 0.0
+    else:
+        avg_total = float(
+            df_results.get("candidate_count_total", pd.Series(dtype=float))
+            .fillna(0)
+            .mean()
+            or 0.0
+        )
+        avg_used = float(
+            df_results.get("candidate_count_used", pd.Series(dtype=float))
+            .fillna(0)
+            .mean()
+            or 0.0
+        )
 
     # Confidence stats on MATCH rows only
     match_mask = df_results.get("status", pd.Series(dtype=str)) == "MATCH"
