@@ -35,18 +35,24 @@ def _as_bool(value: Any) -> bool:
 class PipelineConfig:
     """Centralized configuration values for the Pipe V6 orchestrator."""
 
-    crm_path: Path
-    output_path: Path
-    sqlite_path: Path
-    log_path: Path
+    crm_path: Path = _expand_path("data/crm.csv")
+    output_path: Path = _expand_path("output/results.csv")
+    sqlite_path: Path = _expand_path("data/sirene_cache.sqlite")
+    log_path: Path = _expand_path("logs/pipe_v6.log")
 
-    sirene_api_url: str
-    sirene_token: str
-    rne_api_url: str
-    rne_client_id: str
-    rne_client_secret: str
-    rne_token_url: str
-    qwant_base_url: str
+    sirene_api_url: str = "https://api.insee.fr/api-sirene/3.11"
+    sirene_token: str = ""
+    # RNE (INPI) authentication now uses /api/sso/login with username/password.
+    # Legacy client_id/client_secret fields are kept for backward compatibility
+    # and as a fallback if username/password are not provided.
+    rne_api_url: str = "https://registre-national-entreprises.inpi.fr/api/"
+    rne_login_url: str = "https://registre-national-entreprises.inpi.fr/api/sso/login"
+    rne_username: str = ""
+    rne_password: str = ""
+    rne_client_id: str = ""  # deprecated
+    rne_client_secret: str = ""  # deprecated
+    rne_token_url: str = "https://api.inpi.fr/api/sso/oauth2/token"  # deprecated
+    qwant_base_url: str = "https://api.qwant.com/api/search/web"
     datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
 
     model_name: str = "gpt-oss:20b"
@@ -117,7 +123,12 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "log_path": "logs/pipe_v6.log",
         "sirene_api_url": "https://api.insee.fr/api-sirene/3.11",
         "sirene_token": "",
-        "rne_api_url": "https://api.inpi.fr/api/rne/",
+        # RNE endpoints (June 2025 doc): login + companies root
+        "rne_api_url": "https://registre-national-entreprises.inpi.fr/api/",
+        "rne_login_url": "https://registre-national-entreprises.inpi.fr/api/sso/login",
+        "rne_username": "",
+        "rne_password": "",
+        # Legacy values for backward compatibility (not used if username/password provided)
         "rne_token_url": "https://api.inpi.fr/api/sso/oauth2/token",
         "rne_client_id": "",
         "rne_client_secret": "",

@@ -34,22 +34,25 @@ def _mask_key(k: str) -> str:
     return f"{k[:4]}…{k[-4:]}"
 
 
-def _http_post_form(
+def _http_post_json(
     url: str,
-    data: Dict[str, str],
+    data: Dict[str, Any],
     *,
     timeout: float = 15.0,
     max_retries: int = 3,
     logger: logging.Logger | None = None,
+    extra_headers: Dict[str, str] | None = None,
 ) -> Dict[str, Any]:
-    """POST form-url-encoded and return parsed JSON with retry on 429/5xx."""
+    """POST JSON and return parsed JSON with retry on 429/5xx."""
 
     logger = logger or LOGGER
-    payload = urlencode(data).encode("utf-8")
+    payload = json.dumps(data).encode("utf-8")
     headers = {
-        "Content-Type": "application/x-www-form-urlencoded",
+        "Content-Type": "application/json",
         "User-Agent": "Sireto-PipeV6/2.2",
     }
+    if extra_headers:
+        headers.update(extra_headers)
 
     last_exc: Exception | None = None
     for attempt in range(1, max_retries + 1):
@@ -178,29 +181,76 @@ class RneClient:
         if self._token and now < self._expires_at:
             return self._token
 
-        token_url = getattr(self.config, "rne_token_url", "").rstrip("/")
-        client_id = getattr(self.config, "rne_client_id", "")
-        client_secret = getattr(self.config, "rne_client_secret", "")
-        if not token_url or not client_id or not client_secret:
-            raise RneApiError("RNE credentials are not configured (token_url/client_id/client_secret)")
+        # Primary: username/password login (doc v4.0 June 2025)
+        login_url = getattr(self.config, "rne_login_url", "").rstrip("/")
+        username = getattr(self.config, "rne_username", "") or getattr(self.config, "rne_client_id", "")
+        password = getattr(self.config, "rne_password", "") or getattr(self.config, "rne_client_secret", "")
+        token = None
+        expires_in = 3600.0
 
-        self.logger.info("RNE auth: client_id=%s", _mask_key(client_id))
-        data = {
-            "grant_type": "client_credentials",
-            "client_id": client_id,
-            "client_secret": client_secret,
-        }
-        payload = _http_post_form(
-            token_url,
-            data,
-            timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
-            max_retries=self._max_retries,
-            logger=self.logger,
-        )
-        token = payload.get("access_token")
-        expires_in = float(payload.get("expires_in", 3600.0))
+        def _auth_via_login() -> str | None:
+            if not login_url or not username or not password:
+                return None
+            self.logger.info("RNE auth (login): username=%s", _mask_key(username))
+            data = {"username": username, "password": password}
+            # INPI login endpoint requires Origin/Referer headers (per doc v4.0)
+            extra_headers = {}
+            if "registre-national-entreprises" in login_url:
+                base = login_url.split("/api/")[0]
+                extra_headers = {
+                    "Origin": base,
+                    "Referer": f"{base}/",
+                    "Accept": "application/json",
+                }
+
+            payload = _http_post_json(
+                login_url,
+                data,
+                timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
+                max_retries=self._max_retries,
+                logger=self.logger,
+                extra_headers=extra_headers,
+            )
+            tok = payload.get("token") or payload.get("access_token")
+            nonlocal expires_in
+            expires_in = float(payload.get("expires_in", 3600.0))
+            return tok
+
+        def _auth_via_oauth() -> str | None:
+            token_url = getattr(self.config, "rne_token_url", "").rstrip("/")
+            client_id = getattr(self.config, "rne_client_id", "")
+            client_secret = getattr(self.config, "rne_client_secret", "")
+            if not token_url or not client_id or not client_secret:
+                return None
+            self.logger.info("RNE auth (oauth2 client_credentials): client_id=%s", _mask_key(client_id))
+            data = {
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret,
+            }
+            payload = _http_post_json(
+                token_url,
+                data,
+                timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
+                max_retries=self._max_retries,
+                logger=self.logger,
+            )
+            nonlocal expires_in
+            expires_in = float(payload.get("expires_in", 3600.0))
+            return payload.get("access_token") or payload.get("token")
+
+        # Try login first, then fallback to legacy oauth2 if needed.
+        token = None
+        try:
+            token = _auth_via_login()
+        except RneApiError as exc:
+            self.logger.warning("RNE login auth failed (%s), trying legacy oauth2", exc)
+
         if not token:
-            raise RneApiError("RNE auth response missing access_token")
+            token = _auth_via_oauth()
+
+        if not token:
+            raise RneApiError("RNE auth response missing token")
 
         # Margin of 60 seconds to avoid edge expiration.
         self._token = token
@@ -220,8 +270,11 @@ class RneClient:
         base = getattr(self.config, "rne_api_url", "").rstrip("/")
         if not base:
             raise RneApiError("rne_api_url is not configured")
-
-        endpoint = urljoin(base + "/", "companies")
+        # Accept both the root API URL (".../api/") and a direct companies endpoint.
+        if base.endswith("/companies"):
+            endpoint = base
+        else:
+            endpoint = urljoin(base + "/", "companies")
         page_size = min(max_results, 100)
         collected: list[Dict[str, Any]] = []
         page = 1
@@ -243,6 +296,10 @@ class RneClient:
                 "Accept": "application/json",
                 "User-Agent": "Sireto-PipeV6/2.2",
             }
+            if "registre-national-entreprises" in base:
+                origin = base.split("/api")[0]
+                headers["Origin"] = origin
+                headers["Referer"] = f"{origin}/"
 
             try:
                 payload = _http_get_json(
@@ -401,3 +458,6 @@ __all__ = [
     "RneClient",
     "_map_company_to_candidates",
 ]
+
+# Backward compatibility for tests that still patch the old helper name.
+_http_post_form = _http_post_json  # type: ignore
