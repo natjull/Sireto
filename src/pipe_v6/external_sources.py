@@ -530,7 +530,21 @@ def search_qwant_sites(
     log = logger or LOGGER
 
     def _value(key: str) -> str:
-        val = row.get(key, "")
+        # tolerate Series, dict-like, or itertuples rows
+        if hasattr(row, "get"):
+            try:
+                val = row.get(key, "")  # type: ignore[call-arg]
+            except Exception:
+                val = ""
+        elif hasattr(row, "_asdict"):
+            val = row._asdict().get(key, "")  # type: ignore[call-arg]
+        elif hasattr(row, key):
+            val = getattr(row, key, "")
+        else:
+            try:
+                val = row[key]  # type: ignore[index]
+            except Exception:
+                val = ""
         if pd.isna(val):
             return ""
         return str(val).strip()

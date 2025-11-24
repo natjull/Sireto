@@ -323,7 +323,10 @@ class RneClient:
                 else:
                     raise
 
-            results = payload.get("results")
+            if isinstance(payload, list):
+                results = payload
+            else:
+                results = payload.get("results")
             if results is None:
                 raise RneApiError("Invalid RNE response: missing 'results' key")
 
