@@ -138,9 +138,11 @@ class OllamaClient:
                     try:
                         parsed_json = json.loads(candidate)
                     except json.JSONDecodeError as exc:
-                        raise LLMCallError("LLM output is not valid JSON") from exc
+                        preview = text.strip().replace("\n", " ")[:200]
+                        raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})") from exc
                 else:
-                    raise LLMCallError("LLM output is not valid JSON")
+                    preview = text.strip().replace("\n", " ")[:200]
+                    raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
 
         return LLMResponse(
             text=text,
