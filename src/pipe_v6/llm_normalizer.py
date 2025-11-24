@@ -13,7 +13,7 @@ import logging
 import re
 import unicodedata
 from pathlib import Path
-from typing import Mapping
+from typing import Any, Mapping
 
 import pandas as pd
 
@@ -305,6 +305,31 @@ def parse_llm_response(
 
 
 # ---------------------------------------------------------------------------
+# Helper to access rows that may be Series, dict-like, or NamedTuple
+# ---------------------------------------------------------------------------
+
+def _row_get(row: Any, key: str, default: Any = None) -> Any:
+    """Best-effort getter that works for pandas Series, dict-like objects, or itertuples rows."""
+
+    if hasattr(row, "get"):
+        try:
+            return row.get(key, default)  # type: ignore[call-arg]
+        except Exception:
+            pass
+    if hasattr(row, "_asdict"):
+        try:
+            return row._asdict().get(key, default)  # type: ignore[call-arg]
+        except Exception:
+            pass
+    if hasattr(row, key):
+        return getattr(row, key, default)
+    try:
+        return row[key]  # type: ignore[index]
+    except Exception:
+        return default
+
+
+# ---------------------------------------------------------------------------
 # Public orchestrating helpers (task 3.3)
 # ---------------------------------------------------------------------------
 
@@ -318,7 +343,7 @@ def build_normalizer_prompt(row: pd.Series) -> str:
     """
 
     def _value(key: str) -> str:
-        val = row.get(key, "")
+        val = _row_get(row, key, "")
         if pd.isna(val):
             return ""
         return str(val)
@@ -415,15 +440,18 @@ def normalize_crm_entry(
 
     log = logger or LOGGER
 
-    if pd.isna(row.get("crm_id")):
+    crm_id = _row_get(row, "crm_id")
+    if pd.isna(crm_id):
         raise ValueError("crm_id is mandatory for normalization")
 
-    if pd.isna(row.get("street_number")) or pd.isna(row.get("postcode")):
+    street_number = _row_get(row, "street_number")
+    postcode = _row_get(row, "postcode")
+    if pd.isna(street_number) or pd.isna(postcode):
         log.warning(
             "CRM %s: Missing address components (number=%s, postcode=%s)",
-            row.get("crm_id"),
-            row.get("street_number"),
-            row.get("postcode"),
+            crm_id,
+            street_number,
+            postcode,
         )
 
     prompt = build_normalizer_prompt(row)
@@ -433,12 +461,12 @@ def normalize_crm_entry(
         config=config,
         logger=log,
         client=client,
-        expected_city=row.get("city") if not pd.isna(row.get("city")) else None,
+        expected_city=_row_get(row, "city") if not pd.isna(_row_get(row, "city")) else None,
     )
 
     log.debug(
         "CRM %s normalized: name=%s, addr=%s, category=%s",
-        row.get("crm_id"),
+        crm_id,
         result.normalized_name,
         result.normalized_address,
         result.category,
