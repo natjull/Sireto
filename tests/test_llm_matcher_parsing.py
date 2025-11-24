@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+import logging
 
 import pytest
 
@@ -35,7 +36,7 @@ def _candidate(siret: str) -> NormalizedCandidate:
 
 
 class TestParseMatchDecision:
-    def test_valid_best_match(self):
+    def test_valid_best_match(self, caplog):
         candidates = [_candidate("12345678901234")]
         data = {
             "decision": "BEST_MATCH",
@@ -92,7 +93,8 @@ class TestParseMatchDecision:
             "confidence": 0.9,
         }
 
-        res = parse_match_decision(data, candidates)
+        with caplog.at_level(logging.WARNING, logger="pipe_v6.llm_matcher"):
+            res = parse_match_decision(data, candidates)
 
         assert res.decision == "NO_MATCH"
         assert res.chosen_siret is None
