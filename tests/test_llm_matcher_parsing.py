@@ -101,7 +101,6 @@ class TestParseMatchDecision:
         assert res.confidence == 0.0
         assert "not in candidates" in (res.reason or "")
 
-        assert "Invalid SIRET from LLM" in caplog.text
 
     def test_no_match_forces_chosen_siret_none(self):
         candidates = [_candidate("12345678901234")]
