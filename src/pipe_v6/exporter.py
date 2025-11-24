@@ -117,3 +117,91 @@ def export_results(
 
 
 __all__ = ["export_results", "EXPORT_COLUMNS"]
+
+
+# ---------------------------------------------------------------------------
+# Stats helpers (task 9.2)
+# ---------------------------------------------------------------------------
+
+
+def _percentages(counts: dict[str, int], total: int) -> dict[str, float]:
+    if total == 0:
+        return {key: 0.0 for key in counts}
+    return {key: round(value / total, 4) for key, value in counts.items()}
+
+
+def compute_stats(df_results: pd.DataFrame) -> dict:
+    """Compute aggregate metrics over pipeline results.
+
+    - Includes all rows (MATCH / REVIEW / NO_MATCH, erreurs comprises).
+    - Percentages are floats in [0,1], rounded to 4 decimals.
+    - Candidate averages use zeros for missing values.
+    - Confidence stats are computed on MATCH rows only; 0.0 if none.
+    """
+
+    total_rows = int(len(df_results))
+
+    # Status counts / percentages
+    status_keys = ["MATCH", "REVIEW", "NO_MATCH"]
+    status_counts = {key: 0 for key in status_keys}
+    value_counts = df_results.get("status", pd.Series(dtype=str)).value_counts()
+    for key in status_keys:
+        status_counts[key] = int(value_counts.get(key, 0))
+    status_percentages = _percentages(status_counts, total_rows)
+
+    # CRM category counts / percentages
+    category_keys = ["PUBLIC", "PRIVE", "EQUIPEMENT_URBAIN", "INCONNU"]
+    category_counts = {key: 0 for key in category_keys}
+    cat_counts = df_results.get("crm_category", pd.Series(dtype=str)).value_counts()
+    for key in category_keys:
+        category_counts[key] = int(cat_counts.get(key, 0))
+    category_percentages = _percentages(category_counts, total_rows)
+
+    # Candidate averages (use zeros when missing)
+    avg_total = float(df_results.get("candidate_count_total", pd.Series(dtype=float)).fillna(0).mean() or 0.0)
+    avg_used = float(df_results.get("candidate_count_used", pd.Series(dtype=float)).fillna(0).mean() or 0.0)
+
+    # Confidence stats on MATCH rows only
+    match_mask = df_results.get("status", pd.Series(dtype=str)) == "MATCH"
+    match_conf = pd.to_numeric(
+        df_results.get("confidence", pd.Series(dtype=float)).where(match_mask),
+        errors="coerce",
+    ).dropna()
+    if match_conf.empty:
+        conf_stats = {"mean": 0.0, "min": 0.0, "max": 0.0}
+    else:
+        conf_stats = {
+            "mean": float(round(match_conf.mean(), 4)),
+            "min": float(round(match_conf.min(), 4)),
+            "max": float(round(match_conf.max(), 4)),
+        }
+
+    return {
+        "total_rows": total_rows,
+        "status": {
+            "counts": status_counts,
+            "percentages": status_percentages,
+        },
+        "crm_category": {
+            "counts": category_counts,
+            "percentages": category_percentages,
+        },
+        "candidates": {
+            "avg_total": round(avg_total, 4),
+            "avg_used": round(avg_used, 4),
+        },
+        "confidence": conf_stats,
+    }
+
+
+def save_stats_json(stats: dict, path: Path) -> None:
+    """Persist stats dict to JSON file."""
+
+    import json
+
+    target = Path(path)
+    with target.open("w", encoding="utf-8") as fh:
+        json.dump(stats, fh, indent=2, ensure_ascii=False)
+
+
+__all__.extend(["compute_stats", "save_stats_json"])
