@@ -12,7 +12,7 @@ from .candidate_store import (
     group_raw_candidates,
     enrich_candidates_from_sirene,
 )
-from .commune_detection import CommuneKey
+from .commune_detection import CommuneKey, extract_communes
 from .config import PipelineConfig
 from .crm_loader import load_crm
 from .external_sources import search_datagouv, search_qwant_sites, search_rne
@@ -70,7 +70,7 @@ def preload_sirene(
     log.info("SIRENE preload completed for %d commune(s).", len(communes))
 
 
-__all__ = ["preload_sirene"]
+__all__ = ["preload_sirene", "run_pipeline", "process_crm_row"]
 
 
 def _get(row: Any, key: str, default: Any = None) -> Any:
