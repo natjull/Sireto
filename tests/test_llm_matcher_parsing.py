@@ -44,7 +44,8 @@ class TestParseMatchDecision:
             "reason": "Bonne correspondance",
         }
 
-        res = parse_match_decision(data, candidates)
+        with caplog.at_level(logging.WARNING, logger="pipe_v6.llm_matcher"):
+            res = parse_match_decision(data, candidates)
 
         assert isinstance(res, LLMMatchDecision)
         assert res.decision == "BEST_MATCH"
