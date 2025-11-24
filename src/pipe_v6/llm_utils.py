@@ -54,6 +54,27 @@ def _truncate_for_log(value: str, limit: int = 2000) -> str:
     return f"{value[:limit]}… (total {len(value)} chars)"
 
 
+def _extract_json_object(text: str) -> Any | None:
+    """Best-effort extraction of the first JSON object from arbitrary text."""
+
+    if not text:
+        return None
+    cleaned = text.strip()
+    try:
+        return json.loads(cleaned)
+    except Exception:
+        pass
+
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start != -1 and end != -1 and end > start:
+        candidate = cleaned[start : end + 1]
+        try:
+            return json.loads(candidate)
+        except Exception:
+            return None
+    return None
+
 def _ns_to_ms(value: Any) -> float | None:
     if value is None:
         return None
@@ -153,10 +174,27 @@ class OllamaClient:
         )
 
     def call_json(self, prompt: str, **kwargs: Any) -> LLMResponse:
-        """Shortcut for ``call_text`` with JSON enforcement enabled."""
+        """Call the LLM and parse the first JSON object from the response text.
 
-        kwargs.setdefault("json_mode", True)
-        return self.call_text(prompt, **kwargs)
+        We avoid Ollama's `format=json` here because some models (e.g., gpt-oss)
+        return an empty `response` field in that mode. Instead, we request plain
+        text and extract the first JSON object.
+        """
+
+        kwargs.setdefault("json_mode", False)
+        response = self.call_text(prompt, **kwargs)
+        parsed = _extract_json_object(response.text)
+        if parsed is None:
+            preview = response.text.strip().replace("\n", " ")[:200]
+            raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
+
+        return LLMResponse(
+            text=response.text,
+            model=response.model,
+            raw=response.raw,
+            metrics=response.metrics,
+            parsed_json=parsed,
+        )
 
     # ------------------------------------------------------------------
     # Internals
