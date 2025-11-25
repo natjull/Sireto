@@ -181,7 +181,7 @@ class OllamaClient:
         text and extract the first JSON object.
         """
 
-        kwargs.setdefault("json_mode", False)
+        kwargs.setdefault("json_mode", True)
         response = self.call_text(prompt, **kwargs)
         parsed = _extract_json_object(response.text)
         if parsed is None:
