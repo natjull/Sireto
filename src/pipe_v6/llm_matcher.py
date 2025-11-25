@@ -38,6 +38,11 @@ def _val(row, key: str) -> str:
             value = row.get(key, "")
         except Exception:
             value = ""
+    elif hasattr(row, "_asdict"):
+        try:
+            value = row._asdict().get(key, "")  # type: ignore[call-arg]
+        except Exception:
+            value = ""
     else:
         value = getattr(row, key, "")
     return "" if value is None else str(value)
