@@ -1,0 +1,42 @@
+crm_path: data/testcrm/data_56_subset_corbas_decines.csv
+output_path: data/reports/results.csv
+sqlite_path: data/sirene_cache.sqlite
+log_path: logs/pipe_v6.log
+sirene_api_url: https://api.insee.fr/api-sirene/3.11
+sirene_token: ***REDACTED-INSEE-TOKEN***
+# RNE (INPI) – documentation v4.0 juin 2025
+rne_api_url: https://registre-national-entreprises.inpi.fr/api/
+rne_login_url: https://registre-national-entreprises.inpi.fr/api/sso/login
+rne_username: jullia.nathan@gmail.com
+rne_password: "***REDACTED-INPI-PASSWORD***"
+# Legacy fields kept for compatibility (unused if username/password are set)
+rne_token_url: https://api.inpi.fr/api/sso/oauth2/token
+rne_client_id: jullia.nathan@gmail.com
+rne_client_secret: "***REDACTED-INPI-PASSWORD***"
+# Qwant public API endpoint v3; legacy /api/search/web now returns 404.
+qwant_base_url: https://api.qwant.com/v3/search/web
+# Set false to disable Qwant completely (useful if blocked by captcha).
+qwant_enabled: true
+datagouv_api_url: https://recherche-entreprises.api.gouv.fr
+model_name: gpt-oss:20b
+temperature: 0.0
+top_p: 1.0
+max_tokens: 512
+llm_timeout_sec: 120.0
+llm_connect_timeout_sec: 5.0
+llm_max_retries: 3
+llm_retry_backoff_base_sec: 1.0
+# Serialise LLM calls to avoid truncated outputs with gpt-oss
+llm_max_concurrency: 1
+llm_log_prompts: false
+llm_log_responses: false
+llm_json_mode_default: false
+llm_seed: 42
+max_candidates_per_source: 10
+confidence_auto_match: 0.85
+confidence_review_min: 0.6
+category_filter_enabled: true
+category_filter_fallback: true
+max_candidates_llm_matcher: 15
+log_level: INFO
+store_source_raw: true

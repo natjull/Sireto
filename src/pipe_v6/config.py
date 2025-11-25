@@ -68,7 +68,7 @@ class PipelineConfig:
     llm_connect_timeout_sec: float = 5.0
     llm_max_retries: int = 3
     llm_retry_backoff_base_sec: float = 1.0
-    llm_max_concurrency: int = 2
+    llm_max_concurrency: int = 1
     llm_log_prompts: bool = False
     llm_log_responses: bool = False
     llm_json_mode_default: bool = False
@@ -148,7 +148,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_connect_timeout_sec": 5.0,
         "llm_max_retries": 3,
         "llm_retry_backoff_base_sec": 1.0,
-        "llm_max_concurrency": 2,
+        "llm_max_concurrency": 1,
         "llm_log_prompts": False,
         "llm_log_responses": False,
         "llm_json_mode_default": False,
