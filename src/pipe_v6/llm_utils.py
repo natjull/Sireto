@@ -181,7 +181,8 @@ class OllamaClient:
         text and extract the first JSON object.
         """
 
-        kwargs.setdefault("json_mode", True)
+        # Avoid Ollama format=json which sometimes returns empty responses with gpt-oss
+        kwargs.setdefault("json_mode", False)
         response = self.call_text(prompt, **kwargs)
         parsed = _extract_json_object(response.text)
         if parsed is None:
