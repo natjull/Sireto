@@ -14,9 +14,11 @@ import logging
 import re
 import time
 from typing import Any, Dict, List
-from urllib.error import HTTPError, URLError
 from urllib.parse import urlencode, urlparse
+from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+import requests
 
 import pandas as pd
 
@@ -374,6 +376,51 @@ def search_datagouv(
 # --------------------------------------------------------------------------- Qwant
 
 
+_QWANT_BLOCKED = False  # module-level fuse to stop hammering when captcha/403 detected
+_QWANT_SESSION: requests.Session | None = None
+_QWANT_LAST_CALL_TS: float | None = None
+_QWANT_RATE_LIMIT_DELAY = 0.3  # seconds between calls to avoid triggering protections
+
+
+def _qwant_session() -> requests.Session:
+    global _QWANT_SESSION
+    if _QWANT_SESSION is None:
+        _QWANT_SESSION = requests.Session()
+    return _QWANT_SESSION
+
+
+def _qwant_headers() -> Dict[str, str]:
+    # Browser-like headers reduce captcha blocks compared to generic UA.
+    return {
+        "Accept": "application/json",
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Origin": "https://www.qwant.com",
+        "Referer": "https://www.qwant.com/",
+        "Connection": "keep-alive",
+        "Sec-Fetch-Site": "same-origin",
+        "Sec-Fetch-Mode": "cors",
+        "Sec-Fetch-Dest": "empty",
+    }
+
+
+def _qwant_browser_headers() -> Dict[str, str]:
+    return {
+        "User-Agent": (
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/131.0.0.0 Safari/537.36"
+        ),
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
+        "Connection": "keep-alive",
+    }
+
+
 def _http_get_qwant(
     url: str,
     params: Dict[str, Any],
@@ -383,59 +430,123 @@ def _http_get_qwant(
     max_retries: int = 3,
     logger: logging.Logger | None = None,
 ) -> Dict[str, Any]:
-    """GET JSON from Qwant with retry on 429/5xx."""
+    """GET JSON from Qwant with retry on 429/5xx and clearer errors.
+
+    Qwant's public endpoint occasionally returns bot-challenge HTML. We try to look
+    as close as possible to a browser call (Origin/Referer/UA) and raise a
+    structured QwantApiError on any non-JSON response.
+    """
 
     logger = logger or LOGGER
-    _ = connect_timeout  # kept for signature parity / future fine-tuning
-    query = urlencode(params, doseq=True)
-    full_url = f"{url}?{query}"
-    headers = {
-        "Accept": "application/json",
-        "User-Agent": "Sireto-PipeV6/2.2",
-    }
+    global _QWANT_BLOCKED, _QWANT_LAST_CALL_TS
+
+    def _respect_rate_limit() -> None:
+        global _QWANT_LAST_CALL_TS
+        if _QWANT_LAST_CALL_TS is None:
+            return
+        elapsed = time.time() - _QWANT_LAST_CALL_TS
+        if elapsed < _QWANT_RATE_LIMIT_DELAY:
+            time.sleep(_QWANT_RATE_LIMIT_DELAY - elapsed)
 
     last_exc: Exception | None = None
+    session = _qwant_session()
+
     for attempt in range(1, max_retries + 1):
         try:
-            req = Request(full_url, headers=headers, method="GET")
-            with urlopen(req, timeout=timeout) as resp:
-                raw = resp.read().decode("utf-8")
-                return json.loads(raw)
-        except HTTPError as e:
-            status = e.code
-            body = ""
-            try:
-                body = e.read().decode("utf-8", errors="ignore")
-            except Exception:
-                body = ""
+            _respect_rate_limit()
+            resp = session.get(
+                url,
+                headers=_qwant_headers(),
+                params=params,
+                timeout=timeout,
+            )
+            _QWANT_LAST_CALL_TS = time.time()
 
-            if status in (429, 500, 502, 503, 504):
-                retry_after = e.headers.get("Retry-After")
+            if resp.status_code == 403:
+                _QWANT_BLOCKED = True
+                # Try to solve DataDome-style challenge if URL provided.
+                try:
+                    payload = resp.json()
+                    challenge_url = payload.get("url") if isinstance(payload, dict) else None
+                except Exception:
+                    challenge_url = None
+
+                if challenge_url:
+                    logger.warning("Qwant 403 with challenge; attempting bypass")
+                    try:
+                        session.get(
+                            challenge_url,
+                            headers=_qwant_browser_headers(),
+                            timeout=timeout,
+                        )
+                        # Retry once immediately after solving challenge
+                        resp = session.get(
+                            url,
+                            headers=_qwant_headers(),
+                            params=params,
+                            timeout=timeout,
+                        )
+                        _QWANT_LAST_CALL_TS = time.time()
+                        if resp.status_code != 403:
+                            _QWANT_BLOCKED = False
+                        else:
+                            raise QwantApiError(
+                                "Qwant returned 403 after challenge attempt (captcha)")
+                    except Exception as exc:
+                        raise QwantApiError(
+                            f"Qwant 403 (captcha) and challenge fetch failed: {exc}"
+                        ) from exc
+                else:
+                    raise QwantApiError(
+                        "Qwant returned 403 (captcha) with no challenge url"
+                    )
+
+            if resp.status_code in (429, 500, 502, 503, 504):
+                retry_after = resp.headers.get("Retry-After")
                 delay = float(retry_after) if retry_after else min(2.0 * attempt, 10.0)
                 logger.warning(
                     "Qwant HTTP %s (attempt %s/%s) – sleeping %.1fs",
-                    status,
+                    resp.status_code,
                     attempt,
                     max_retries,
                     delay,
                 )
                 time.sleep(delay)
-                last_exc = e
+                last_exc = requests.HTTPError(f"HTTP {resp.status_code}")
                 continue
 
-            raise
-        except URLError as e:
+            if not resp.ok:
+                body_preview = resp.text[:200] if resp.text else ""
+                raise QwantApiError(
+                    f"Qwant request failed HTTP {resp.status_code}: {body_preview}"
+                )
+
+            try:
+                return resp.json()
+            except json.JSONDecodeError as exc:
+                raise QwantApiError("Qwant response is not valid JSON") from exc
+
+        except requests.RequestException as e:
             last_exc = e
             if attempt >= max_retries:
                 break
             delay = min(2.0 * attempt, 10.0)
             logger.warning(
-                "Qwant URLError %s (attempt %s/%s) – sleeping %.1fs",
-                e.reason,
+                "Qwant request error %s (attempt %s/%s) – sleeping %.1fs",
+                getattr(e.response, "status_code", "?"),
                 attempt,
                 max_retries,
                 delay,
             )
+            time.sleep(delay)
+        except QwantApiError as e:
+            last_exc = e
+            if _QWANT_BLOCKED:
+                # Stop retrying immediately on captcha
+                break
+            if attempt >= max_retries:
+                break
+            delay = min(2.0 * attempt, 10.0)
             time.sleep(delay)
         except Exception as e:  # pragma: no cover - safety net
             last_exc = e
@@ -472,6 +583,37 @@ def extract_siren_siret_from_url(url: str) -> tuple[str | None, str | None]:
     return None, None
 
 
+def _flatten_qwant_items(container: Any) -> list[dict]:
+    """Flatten Qwant 'items' which may be a list or a dict of sections.
+
+    Qwant v3 sometimes returns data.result.items as a dict with keys like
+    'mainline' (list of blocks) and 'headline'. Each block can contain an
+    'items' list. This helper extracts all dict entries that look like items.
+    """
+
+    flat: list[dict] = []
+
+    def _collect(obj: Any) -> None:
+        if isinstance(obj, dict):
+            flat.append(obj)
+
+    if isinstance(container, list):
+        for entry in container:
+            _collect(entry)
+    elif isinstance(container, dict):
+        for value in container.values():
+            if isinstance(value, list):
+                for block in value:
+                    if isinstance(block, dict) and isinstance(block.get("items"), list):
+                        for sub in block["items"]:
+                            _collect(sub)
+                    else:
+                        _collect(block)
+            else:
+                _collect(value)
+    return flat
+
+
 def qwant_search(
     query: str,
     config: PipelineConfig,
@@ -481,36 +623,70 @@ def qwant_search(
 
     log = logger or LOGGER
 
+    log = logger or LOGGER
+
+    if _QWANT_BLOCKED:
+        log.warning("Qwant disabled after previous 403/captcha; skipping search")
+        return []
+
+    if not config.qwant_enabled:
+        log.info("Qwant disabled via config; skipping search")
+        return []
+
     params = {
         "q": query,
-        "count": 20,
+        "count": 10,  # Qwant API expects count=10 (400 otherwise)
         "offset": 0,
         "locale": "fr_FR",
         "safesearch": 0,
+        "uiv": 4,
+        "t": "web",
     }
 
-    url = config.qwant_base_url
-    log.debug("Qwant API call: %s?q=%s", url, query[:100])
+    # Try configured endpoint first, then fall back to the canonical v3 path if
+    # the configured one fails (common when legacy /api/search/web is used).
+    candidate_urls = [config.qwant_base_url]
+    if "api.qwant.com/v3/search/web" not in config.qwant_base_url:
+        candidate_urls.append("https://api.qwant.com/v3/search/web")
 
-    response = _http_get_qwant(
-        url,
-        params,
-        timeout=float(config.llm_timeout_sec),
-        connect_timeout=float(config.llm_connect_timeout_sec),
-        max_retries=int(config.llm_max_retries),
-        logger=log,
-    )
+    last_error: Exception | None = None
+    for url in candidate_urls:
+        log.debug("Qwant API call: %s?q=%s", url, query[:100])
+        try:
+            response = _http_get_qwant(
+                url,
+                params,
+                timeout=float(config.llm_timeout_sec),
+                connect_timeout=float(config.llm_connect_timeout_sec),
+                max_retries=int(config.llm_max_retries),
+                logger=log,
+            )
+            try:
+                items_container = response["data"]["result"]["items"]
+            except Exception as exc:  # pragma: no cover - keyed errors tested separately
+                raise QwantApiError(
+                    f"Qwant response missing expected fields: {exc}"
+                ) from exc
 
-    try:
-        items = response["data"]["result"]["items"]
-    except Exception as exc:  # pragma: no cover - keyed errors tested separately
-        raise QwantApiError(f"Qwant response missing expected fields: {exc}") from exc
+            items = _flatten_qwant_items(items_container)
 
-    if not isinstance(items, list):
-        raise QwantApiError("Qwant response 'items' is not a list")
+            if not isinstance(items, list):
+                raise QwantApiError("Qwant response 'items' is not a list")
 
-    log.debug("Qwant returned %d items", len(items))
-    return items
+            log.debug("Qwant returned %d items", len(items))
+            return items
+        except QwantApiError as exc:  # noqa: BLE001 - controlled errors only
+            last_error = exc
+            log.warning("Qwant endpoint %s failed: %s", url, exc)
+            # If blocked, stop looping to avoid hammering
+            if _QWANT_BLOCKED:
+                break
+            continue
+
+    if last_error:
+        raise last_error
+
+    raise QwantApiError("Qwant search failed without captured error")
 
 
 QWANT_SITES = {

@@ -52,7 +52,10 @@ class PipelineConfig:
     rne_client_id: str = ""  # deprecated
     rne_client_secret: str = ""  # deprecated
     rne_token_url: str = "https://api.inpi.fr/api/sso/oauth2/token"  # deprecated
-    qwant_base_url: str = "https://api.qwant.com/api/search/web"
+    # Qwant public API endpoint (v3 as of 2025). The older
+    # https://api.qwant.com/api/search/web now returns 404.
+    qwant_base_url: str = "https://api.qwant.com/v3/search/web"
+    qwant_enabled: bool = True
     datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
 
     model_name: str = "gpt-oss:20b"
@@ -132,7 +135,9 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "rne_token_url": "https://api.inpi.fr/api/sso/oauth2/token",
         "rne_client_id": "",
         "rne_client_secret": "",
-        "qwant_base_url": "https://api.qwant.com/api/search/web",
+        # Keep the v3 endpoint as default; the legacy /api/search/web returns 404.
+        "qwant_base_url": "https://api.qwant.com/v3/search/web",
+        "qwant_enabled": True,
         "datagouv_api_url": "https://recherche-entreprises.api.gouv.fr",
         "model_name": "gpt-oss:20b",
         "temperature": 0.0,
@@ -193,6 +198,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_json_mode_default",
         "category_filter_enabled",
         "category_filter_fallback",
+        "qwant_enabled",
     ]
     for field_name in bool_fields:
         extracted[field_name] = _as_bool(extracted[field_name])

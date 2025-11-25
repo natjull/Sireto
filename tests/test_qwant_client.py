@@ -32,7 +32,7 @@ def _dummy_config() -> PipelineConfig:
         rne_token_url="https://api.inpi.fr/api/sso/oauth2/token",
         rne_client_id="id",
         rne_client_secret="secret",
-        qwant_base_url="https://api.qwant.com/api/search/web",
+        qwant_base_url="https://api.qwant.com/v3/search/web",
         datagouv_api_url="https://recherche-entreprises.api.gouv.fr",
     )
 
