@@ -180,64 +180,22 @@ class OllamaClient:
         return an empty `response` field in that mode. Instead, we request plain
         text and extract the first JSON object.
         """
+
         # Avoid Ollama format=json which sometimes returns empty responses with gpt-oss
         kwargs.setdefault("json_mode", False)
-
-        max_attempts = max(1, int(getattr(self._config, "llm_json_parse_attempts", 2) or 1))
-        backoff_base = float(getattr(self._config, "llm_retry_backoff_base_sec", 1.0) or 1.0)
-        last_error: Exception | None = None
-        last_response: LLMResponse | None = None
-
-        for attempt in range(1, max_attempts + 1):
-            if attempt > 1:
-                self._logger.warning(
-                    "LLM JSON parse failed (attempt %s/%s), retrying...",
-                    attempt - 1,
-                    max_attempts,
-                )
-                self._sleep_backoff(backoff_base, attempt - 1, False)
-
-            response = self.call_text(prompt, **kwargs)
-            last_response = response
-            parsed = _extract_json_object(response.text)
-            if parsed is not None:
-                return LLMResponse(
-                    text=response.text,
-                    model=response.model,
-                    raw=response.raw,
-                    metrics=response.metrics,
-                    parsed_json=parsed,
-                )
-
+        response = self.call_text(prompt, **kwargs)
+        parsed = _extract_json_object(response.text)
+        if parsed is None:
             preview = response.text.strip().replace("\n", " ")[:200]
-            last_error = LLMCallError(
-                f"LLM output is not valid JSON (preview: {preview})"
-            )
+            raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
 
-        repair_enabled = bool(getattr(self._config, "llm_json_repair_enabled", True))
-        if repair_enabled and last_response is not None:
-            repair_prompt = (
-                "The previous output was not valid JSON. Re-emit ONLY the JSON object "
-                "requested, without markdown fences or commentary. Original instruction:\n"
-                f"{prompt}\n\nYour last response was:\n{last_response.text}\n"
-            )
-            repair_response = self.call_text(repair_prompt, **kwargs)
-            parsed = _extract_json_object(repair_response.text)
-            if parsed is not None:
-                return LLMResponse(
-                    text=repair_response.text,
-                    model=repair_response.model,
-                    raw=repair_response.raw,
-                    metrics=repair_response.metrics,
-                    parsed_json=parsed,
-                )
-            preview = repair_response.text.strip().replace("\n", " ")[:200]
-            last_error = LLMCallError(
-                f"LLM output is not valid JSON after repair attempt (preview: {preview})"
-            )
-
-        assert last_error is not None
-        raise last_error
+        return LLMResponse(
+            text=response.text,
+            model=response.model,
+            raw=response.raw,
+            metrics=response.metrics,
+            parsed_json=parsed,
+        )
 
     # ------------------------------------------------------------------
     # Internals

@@ -72,8 +72,6 @@ class PipelineConfig:
     llm_log_prompts: bool = False
     llm_log_responses: bool = False
     llm_json_mode_default: bool = False
-    llm_json_parse_attempts: int = 2
-    llm_json_repair_enabled: bool = True
     llm_seed: int | None = 42
 
     max_candidates_per_source: int = 10
@@ -154,8 +152,6 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_log_prompts": False,
         "llm_log_responses": False,
         "llm_json_mode_default": False,
-        "llm_json_parse_attempts": 2,
-        "llm_json_repair_enabled": True,
         "llm_seed": 42,
         "max_candidates_per_source": 10,
         "confidence_auto_match": 0.85,
@@ -184,7 +180,6 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_max_retries": int,
         "llm_retry_backoff_base_sec": float,
         "llm_max_concurrency": int,
-        "llm_json_parse_attempts": int,
         "max_candidates_per_source": int,
         "confidence_auto_match": float,
         "confidence_review_min": float,
@@ -201,7 +196,6 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_log_prompts",
         "llm_log_responses",
         "llm_json_mode_default",
-        "llm_json_repair_enabled",
         "category_filter_enabled",
         "category_filter_fallback",
         "qwant_enabled",
