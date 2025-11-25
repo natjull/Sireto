@@ -75,6 +75,52 @@ def _extract_json_object(text: str) -> Any | None:
             return None
     return None
 
+
+def _repair_json_like(text: str) -> Any | None:
+    """Attempt a lenient repair of nearly-valid JSON (common LLM truncations).
+
+    Heuristics:
+    - trim surrounding whitespace and code fences
+    - if braces are unbalanced, close the object
+    - remove trailing commas before a closing brace
+    Returns parsed object or None if repair fails.
+    """
+
+    if not text:
+        return None
+
+    cleaned = text.strip()
+    if cleaned.startswith("```"):
+        cleaned = cleaned.strip("`").strip()
+        if cleaned.lower().startswith("json"):
+            cleaned = cleaned[4:].strip()
+
+    # If no opening brace, nothing to repair.
+    if "{" not in cleaned:
+        return None
+
+    # Keep substring from first "{".
+    start = cleaned.find("{")
+    candidate = cleaned[start:]
+
+    # Remove trailing text after last "}" if present.
+    if "}" in candidate:
+        candidate = candidate[: candidate.rfind("}") + 1]
+
+    # Balance braces by appending closing ones if needed.
+    open_count = candidate.count("{")
+    close_count = candidate.count("}")
+    if open_count > close_count:
+        candidate = candidate + ("}" * (open_count - close_count))
+
+    # Remove trailing comma before final closing brace
+    candidate = re.sub(r",\s*}\s*$", "}", candidate)
+
+    try:
+        return json.loads(candidate)
+    except Exception:
+        return None
+
 def _ns_to_ms(value: Any) -> float | None:
     if value is None:
         return None
@@ -186,6 +232,9 @@ class OllamaClient:
         def _try_once() -> LLMResponse:
             resp = self.call_text(prompt, **kwargs)
             parsed_inner = _extract_json_object(resp.text)
+            if parsed_inner is None:
+                parsed_inner = _repair_json_like(resp.text)
+
             if parsed_inner is not None:
                 return LLMResponse(
                     text=resp.text,
