@@ -182,19 +182,42 @@ class OllamaClient:
         """
 
         kwargs.setdefault("json_mode", False)
-        response = self.call_text(prompt, **kwargs)
-        parsed = _extract_json_object(response.text)
-        if parsed is None:
-            preview = response.text.strip().replace("\n", " ")[:200]
-            raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
 
-        return LLMResponse(
-            text=response.text,
-            model=response.model,
-            raw=response.raw,
-            metrics=response.metrics,
-            parsed_json=parsed,
+        def _try_once() -> LLMResponse:
+            resp = self.call_text(prompt, **kwargs)
+            parsed_inner = _extract_json_object(resp.text)
+            if parsed_inner is not None:
+                return LLMResponse(
+                    text=resp.text,
+                    model=resp.model,
+                    raw=resp.raw,
+                    metrics=resp.metrics,
+                    parsed_json=parsed_inner,
+                )
+            return LLMResponse(
+                text=resp.text,
+                model=resp.model,
+                raw=resp.raw,
+                metrics=resp.metrics,
+                parsed_json=None,
+            )
+
+        first = _try_once()
+        if first.parsed_json is not None:
+            return first
+
+        # Retry once on empty/invalid JSON output (common with some Ollama models).
+        self._logger.warning(
+            "LLM output not valid JSON, retrying once (preview: %s)",
+            first.text.strip().replace("\n", " ")[:120],
         )
+
+        second = _try_once()
+        if second.parsed_json is not None:
+            return second
+
+        preview = second.text.strip().replace("\n", " ")[:200]
+        raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
 
     # ------------------------------------------------------------------
     # Internals
