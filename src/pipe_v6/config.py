@@ -64,7 +64,7 @@ class PipelineConfig:
     max_tokens: int = 512
 
     ollama_base_url: str = "http://localhost:11434"
-    llm_timeout_sec: float = 120.0
+    llm_timeout_sec: float = 160.0
     llm_connect_timeout_sec: float = 5.0
     llm_max_retries: int = 3
     llm_retry_backoff_base_sec: float = 1.0
@@ -144,7 +144,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "top_p": 1.0,
         "max_tokens": 512,
         "ollama_base_url": "http://localhost:11434",
-        "llm_timeout_sec": 120.0,
+        "llm_timeout_sec": 160.0,
         "llm_connect_timeout_sec": 5.0,
         "llm_max_retries": 3,
         "llm_retry_backoff_base_sec": 1.0,
