@@ -283,7 +283,22 @@ def decide_match(
 
     try:
         prompt = build_matcher_prompt(row, norm_entry, candidates)
-        response = client.call_json(prompt)
+        prompt_len = len(prompt)
+        prompt_tokens_est = int(len(prompt.split()) * 1.3)
+        crm_id = getattr(row, "crm_id", None)
+        if crm_id is None and hasattr(row, "get"):
+            try:
+                crm_id = row.get("crm_id")
+            except Exception:  # pragma: no cover - safe fallback
+                crm_id = None
+        log.info(
+            "LLM matcher call: crm_id=%s candidates=%s prompt_len=%s chars (~%s tokens)",
+            crm_id,
+            len(candidates),
+            prompt_len,
+            prompt_tokens_est,
+        )
+        response = client.call_json(prompt, num_predict=config.max_tokens_matcher)
 
         if response.parsed_json is None:
             raise MatchDecisionParseError("LLM response missing JSON payload")
