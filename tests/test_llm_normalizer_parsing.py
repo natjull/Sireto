@@ -55,6 +55,22 @@ def test_parse_normalizer_output_rejects_unknown_category():
         parse_normalizer_output(_payload(category="AUTRE"))
 
 
+def test_parse_normalizer_output_accepts_alphanumeric_number_suffix():
+    result = parse_normalizer_output(
+        _payload(normalized_address="2BIS RUE DE CATALOGNE 69150")
+    )
+
+    assert result.normalized_address == "2BIS RUE DE CATALOGNE 69150"
+
+
+def test_parse_normalizer_output_accepts_spaced_suffix():
+    result = parse_normalizer_output(
+        _payload(normalized_address="12 TER RUE DES FLEURS 75011")
+    )
+
+    assert result.normalized_address == "12 TER RUE DES FLEURS 75011"
+
+
 def test_parse_normalizer_output_cleans_tokens_and_city():
     payload = _payload(
         normalized_name="SAS CABLAGE FIBRE AGENCE LYON",
