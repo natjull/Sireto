@@ -63,6 +63,7 @@ class PipelineConfig:
     top_p: float = 1.0
     max_tokens: int = 512
     max_tokens_matcher: int = 2048
+    max_tokens_normalizer: int = 1024
 
     ollama_base_url: str = "http://localhost:11434"
     llm_timeout_sec: float = 160.0
@@ -145,6 +146,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "top_p": 1.0,
         "max_tokens": 512,
         "max_tokens_matcher": 2048,
+        "max_tokens_normalizer": 1024,
         "ollama_base_url": "http://localhost:11434",
         "llm_timeout_sec": 160.0,
         "llm_connect_timeout_sec": 5.0,
@@ -178,6 +180,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "top_p": float,
         "max_tokens": int,
         "max_tokens_matcher": int,
+        "max_tokens_normalizer": int,
         "llm_timeout_sec": float,
         "llm_connect_timeout_sec": float,
         "llm_max_retries": int,

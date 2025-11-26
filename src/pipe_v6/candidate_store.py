@@ -295,9 +295,18 @@ def enrich_candidates_from_sirene(
                     (value,),
                 ).fetchall()
                 if rows:
-                    log.warning(
-                        "SIREN %s has no active establishments, including closed ones", value
-                    )
+                    has_status = any(row["etat_administratif"] for row in rows)
+                    has_active = any(row["etat_administratif"] == "A" for row in rows)
+                    if has_status and not has_active:
+                        log.warning(
+                            "SIREN %s has no active establishments (statuses=%s)",
+                            value,
+                            {row["etat_administratif"] for row in rows if row["etat_administratif"]},
+                        )
+                    elif not has_status:
+                        log.warning(
+                            "SIREN %s missing etat_administratif; treating as unknown", value
+                        )
                 else:
                     log.warning("SIREN %s not found in cache, skipping", value)
                     missing += 1

@@ -102,15 +102,16 @@ def process_crm_row(
 
     crm_id = _get(row, "crm_id")
 
-    def _base_result(
-        *,
-        status: str,
-        chosen_siret: str | None,
-        confidence: float,
-        reason: str | None,
-        crm_category: str,
-        normalized_name: str,
-        normalized_address: str,
+def _base_result(
+    *,
+    status: str,
+    chosen_siret: str | None,
+    chosen_name: str | None,
+    confidence: float,
+    reason: str | None,
+    crm_category: str,
+    normalized_name: str,
+    normalized_address: str,
         candidate_count_total: int = 0,
         candidate_count_used: int = 0,
         sources: list[str] | None = None,
@@ -119,6 +120,7 @@ def process_crm_row(
             "crm_id": crm_id,
             "status": status,
             "chosen_siret": chosen_siret,
+            "chosen_name": chosen_name,
             "confidence": confidence,
             "reason": reason,
             "crm_category": crm_category,
@@ -138,6 +140,7 @@ def process_crm_row(
             return _base_result(
                 status="NO_MATCH",
                 chosen_siret=None,
+                chosen_name=None,
                 confidence=0.0,
                 reason=f"LLM_NORMALIZATION_ERROR: {type(exc).__name__} - {exc}",
                 crm_category="INCONNU",
@@ -153,6 +156,7 @@ def process_crm_row(
             return _base_result(
                 status="NO_MATCH",
                 chosen_siret=None,
+                chosen_name=None,
                 confidence=0.0,
                 reason="EQUIPEMENT_URBAIN: pas d'entité légale attendue",
                 crm_category=norm_entry.category,
@@ -222,14 +226,19 @@ def process_crm_row(
             chosen_candidate = next((c for c in filtered if c.siret == chosen_siret), None)
             if chosen_candidate:
                 sources = chosen_candidate.sources
+                chosen_name = chosen_candidate.name
             else:
                 logger.error(
                     "CRM %s: chosen_siret %s not found in filtered candidates", crm_id, chosen_siret
                 )
+                chosen_name = None
+        else:
+            chosen_name = None
 
         return _base_result(
             status=status,
             chosen_siret=chosen_siret,
+            chosen_name=chosen_name,
             confidence=decision.confidence,
             reason=decision.reason,
             crm_category=norm_entry.category,
@@ -248,6 +257,7 @@ def process_crm_row(
             "crm_id": crm_id,
             "status": "NO_MATCH",
             "chosen_siret": None,
+            "chosen_name": None,
             "confidence": 0.0,
             "reason": f"PIPELINE_ERROR: {type(exc).__name__}",
             "crm_category": "INCONNU",
@@ -271,6 +281,7 @@ RESULT_COLUMNS = [
     "crm_id",
     "status",
     "chosen_siret",
+    "chosen_name",
     "confidence",
     "reason",
     "crm_category",
