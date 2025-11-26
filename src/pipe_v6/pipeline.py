@@ -102,34 +102,34 @@ def process_crm_row(
 
     crm_id = _get(row, "crm_id")
 
-def _base_result(
-    *,
-    status: str,
-    chosen_siret: str | None,
-    chosen_name: str | None,
-    confidence: float,
-    reason: str | None,
-    crm_category: str,
-    normalized_name: str,
-    normalized_address: str,
-    candidate_count_total: int = 0,
-    candidate_count_used: int = 0,
-    sources: list[str] | None = None,
-) -> dict:
-    return {
-        "crm_id": crm_id,
-        "status": status,
-        "chosen_siret": chosen_siret,
-        "chosen_name": chosen_name,
-        "confidence": confidence,
-        "reason": reason,
-        "crm_category": crm_category,
-        "normalized_name": normalized_name,
-        "normalized_address": normalized_address,
-        "candidate_count_total": candidate_count_total,
-        "candidate_count_used": candidate_count_used,
-        "sources": sources or [],
-    }
+    def _base_result(
+        *,
+        status: str,
+        chosen_siret: str | None,
+        chosen_name: str | None,
+        confidence: float,
+        reason: str | None,
+        crm_category: str,
+        normalized_name: str,
+        normalized_address: str,
+        candidate_count_total: int = 0,
+        candidate_count_used: int = 0,
+        sources: list[str] | None = None,
+    ) -> dict:
+        return {
+            "crm_id": crm_id,
+            "status": status,
+            "chosen_siret": chosen_siret,
+            "chosen_name": chosen_name,
+            "confidence": confidence,
+            "reason": reason,
+            "crm_category": crm_category,
+            "normalized_name": normalized_name,
+            "normalized_address": normalized_address,
+            "candidate_count_total": candidate_count_total,
+            "candidate_count_used": candidate_count_used,
+            "sources": sources or [],
+        }
 
     try:
         # 1) Normalisation LLM #1
