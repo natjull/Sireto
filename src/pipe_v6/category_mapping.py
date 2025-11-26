@@ -35,6 +35,7 @@ LEGAL_NATURE_MAPPING: Dict[str, str] = {
     "5532": "PUBLIC",
     "5542": "PUBLIC",
     "5552": "PUBLIC",
+    "5558": "PUBLIC",  # Société publique locale (SPL) - variante
     # Secteur privé - sociétés commerciales
     "5410": "PRIVE",
     "5415": "PRIVE",
@@ -61,6 +62,23 @@ LEGAL_NATURE_MAPPING: Dict[str, str] = {
     "9240": "PRIVE",
     "9260": "PRIVE",
     "9300": "PRIVE",
+
+    # Manquants identifiés dans les logs / cache (SIRENE v3.11)
+    # Sociétés / coop / mutuelles / finance
+    "5202": "PRIVE",  # Société en commandite par actions
+    "5485": "PRIVE",  # Coopérative agricole (code détaillé)
+    "5699": "PRIVE",  # Autre société de financement / non codée
+    "5699": "PRIVE",
+    "6540": "PRIVE",  # Mutuelle / union (code rare)
+    "6541": "PRIVE",  # Mutuelle / union (variante)
+    "6589": "PRIVE",  # Organisme d’assurance divers
+    "6599": "PRIVE",  # Autre organisme financier
+    "6220": "PRIVE",  # Société en nom collectif (SNC) activité bancaire
+    "7171": "PUBLIC", # Syndicat mixte fermé (assimilé public)
+    "7353": "PUBLIC", # Établissement public industriel ou commercial local
+    "7361": "PUBLIC", # Régie autonome (eau/énergie/transport)
+    "9150": "PRIVE",  # Association intermédiaire / économie sociale (par défaut privé)
+    "3120": "PRIVE",  # Exploitant agricole personne morale
 }
 
 

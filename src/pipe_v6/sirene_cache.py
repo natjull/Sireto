@@ -274,7 +274,26 @@ def _project_record(record: dict, store_source_raw: bool) -> tuple | None:
     city = _normalize_ci(commune_raw)
     insee_code = _pad_code(_safe_str(addr.get("codeCommuneEtablissement")))
 
+    # The API may not expose etatAdministratifEtablissement at the root; fall back to the
+    # latest period (dateFin NULL = current) if missing.
     etat_admin = _safe_str(record.get("etatAdministratifEtablissement"))
+    if etat_admin is None:
+        periods = record.get("periodesEtablissement") or []
+        current = None
+        # Prefer current period (dateFin null), else the most recent by dateDebut/dateFin
+        for p in periods:
+            if p.get("dateFin") in (None, ""):
+                current = p
+                break
+        if current is None and periods:
+            # Sort periods descending by dateFin then dateDebut (lexicographic YYYY-MM-DD)
+            current = sorted(
+                periods,
+                key=lambda x: (x.get("dateFin") or "9999-99-99", x.get("dateDebut") or "0000-00-00"),
+                reverse=True,
+            )[0]
+        if current:
+            etat_admin = _safe_str(current.get("etatAdministratifEtablissement"))
     date_debut = _safe_str(record.get("dateCreationEtablissement")) or _safe_str(
         record.get("dateDebut"),
     )

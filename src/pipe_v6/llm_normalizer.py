@@ -112,6 +112,12 @@ OUTPUT
 {"normalized_name": "BATIMENT NON IDENTIFIE", "normalized_address": "99 RUE INCONNUE 69000", "category": "INCONNU"}
 """
 
+# Suffix to force JSON termination and help the model stop cleanly.
+_PROMPT_STOP_SUFFIX = "Ajoute le token </END_JSON> juste après l'accolade fermante.\n</END_JSON>"
+
+# Suffix pour forcer la clôture JSON et limiter le texte après l'objet
+_PROMPT_STOP_SUFFIX = "\nAjoute le token </END_JSON> juste après l'accolade fermante.\n</END_JSON>"
+
 
 class NormalizationParseError(ValueError):
     """Raised when the LLM output cannot be coerced into a valid structure."""
@@ -149,8 +155,31 @@ def normalize_with_llm(
         client = OllamaClient(config, logger=log)
         owns_client = True
 
+    stop_tokens = ["</END_JSON>"]
+    max_tokens = getattr(config, "max_tokens_normalizer", config.max_tokens)
+    attempts = 2
+    last_exc: Exception | None = None
+
     try:
-        response = client.call_json(prompt)
+        for attempt in range(1, attempts + 1):
+            try:
+                response = client.call_json(
+                    prompt,
+                    stop=stop_tokens,
+                    num_predict=max_tokens if attempt == 1 else int(max_tokens * 1.5),
+                )
+                break
+            except Exception as exc:
+                last_exc = exc
+                if attempt == attempts:
+                    raise
+                log.warning(
+                    "Normalizer LLM retry (%s/%s) after error: %s",
+                    attempt,
+                    attempts,
+                    exc,
+                )
+                continue
     finally:
         if owns_client:
             client.close()
@@ -421,6 +450,7 @@ DONNEES CRM A NORMALISER :
 - Commune : {city}{missing_note}
 
 Réponds maintenant UNIQUEMENT avec l'objet JSON demandé.
+{_PROMPT_STOP_SUFFIX}
 """.strip()
 
     return prompt

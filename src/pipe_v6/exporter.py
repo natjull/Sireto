@@ -27,6 +27,7 @@ EXPORT_COLUMNS: list[str] = [
     # Pipeline result columns (10)
     "status",
     "chosen_siret",
+    "chosen_name",
     "confidence",
     "crm_category",
     "normalized_name",
