@@ -67,20 +67,26 @@ def build_matcher_prompt(
     city = _val(row, "city")
 
     lines: list[str] = []
-    lines.append("CONSIGNE : tu dois choisir le meilleur candidat SIRET ou conclure NO_MATCH.")
+
+    lines.append(
+        "Tu es un expert du matching d’entreprises françaises. Mission : choisir le meilleur SIRET parmi la liste ou conclure NO_MATCH. N’invente jamais de SIRET."
+    )
     lines.append("")
+
     lines.append("# DONNEES CRM ORIGINALES")
-    lines.append(f"Nom : {crm_name}")
-    lines.append(f"Adresse : {street_number} {street_name}".strip())
-    lines.append(f"Code postal : {postcode}")
-    lines.append(f"Ville : {city}")
+    lines.append(f"- Nom brut : {crm_name}")
+    lines.append(f"- Adresse : {street_number} {street_name}".strip())
+    lines.append(f"- Code postal : {postcode}")
+    lines.append(f"- Ville : {city}")
     lines.append("")
-    lines.append("# DONNEES CRM NORMALISEES (LLM #1)")
-    lines.append(f"Nom normalise : {norm_entry.normalized_name}")
-    lines.append(f"Adresse normalisee : {norm_entry.normalized_address}")
-    lines.append(f"Catégorie identifiee : {norm_entry.category}")
+
+    lines.append("# DONNEES NORMALISEES (LLM #1)")
+    lines.append(f"- Nom normalisé : {norm_entry.normalized_name}")
+    lines.append(f"- Adresse normalisée : {norm_entry.normalized_address}")
+    lines.append(f"- Catégorie CRM : {norm_entry.category}")
     lines.append("")
-    lines.append("# CANDIDATS SIRENE (choisis un SIRET OU NO_MATCH)")
+
+    lines.append("# CANDIDATS SIRET (déjà filtrés)")
 
     for idx, cand in enumerate(candidates, start=1):
         source_count = len(cand.sources)
@@ -100,21 +106,30 @@ def build_matcher_prompt(
         lines.append(f"- Multi-source : {multi_source}")
         lines.append("")
 
-    lines.append("# INSTRUCTIONS")
-    lines.append("1. Réponds UNIQUEMENT en JSON valide, sans texte avant/après, sans ```.")
-    lines.append("2. Si aucun candidat n'est suffisamment fiable, renvoie decision=\"NO_MATCH\".")
-    lines.append("3. Il est INTERDIT d'inventer un SIRET absent de la liste.")
-    lines.append("4. Privilégie les candidats multi-source et cohérents avec l'adresse.")
-    lines.append("5. La catégorie SIRENE doit rester compatible avec la catégorie CRM.")
-    lines.append("6. En cas de doute, choisis NO_MATCH (mieux vaut un faux négatif).")
+    lines.append("# REGLES DE MATCHING (applique-les dans cet ordre)")
+    lines.append("1) Adresse = critère principal : adresse exacte (numéro+voie+CP) => forte confiance; adresse partielle => confiance moyenne; adresse différente => très faible.")
+    lines.append("2) Multi-source : 2+ sources indépendantes augmentent la confiance.")
+    lines.append("3) Catégorie : privilégie les candidats cohérents avec la catégorie CRM. Incohérence = pénalité, sauf si l’adresse est parfaite.")
+    lines.append("4) Nom : peut différer (enseigne vs raison sociale, rachat, sigle). Adresse parfaite > similarité de nom; sinon, utilise la similarité comme soutien.")
+    lines.append("5) En cas de doute ou d’égalité → NO_MATCH (mieux vaut un faux négatif qu’un faux positif).")
     lines.append("")
-    lines.append("FORMAT DE REPONSE STRICT :")
-    lines.append('{')
+
+    lines.append("# BAREME DE CONFIANCE (indicatif)")
+    lines.append("- Adresse exacte : +0.40")
+    lines.append("- Adresse partielle : +0.20")
+    lines.append("- Nom identique/similaire : +0.30 ; nom différent mais enseigne/secteur reconnaissable : +0.15")
+    lines.append("- Multi-source (≥2) : +0.15")
+    lines.append("- Catégorie cohérente : +0.10")
+    lines.append("Clampe la confiance entre 0 et 1.")
+    lines.append("")
+
+    lines.append("# FORMAT DE REPONSE (JSON UNIQUEMENT, aucun texte avant/après, pas de ```)")
+    lines.append("{")
     lines.append('  "decision": "BEST_MATCH" ou "NO_MATCH",')
     lines.append('  "chosen_siret": "12345678901234" ou null,')
-    lines.append('  "confidence": 0.0-1.0,')
-    lines.append('  "reason": "Explication courte en français"')
-    lines.append('}')
+    lines.append('  "confidence": nombre entre 0 et 1,')
+    lines.append('  "reason": "explication courte (adresse/nom/sources)"')
+    lines.append("}")
 
     return "\n".join(lines)
 
