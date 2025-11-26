@@ -27,8 +27,10 @@ CRM_CATEGORY_VALUES = ("PUBLIC", "PRIVE", "EQUIPEMENT_URBAIN", "INCONNU")
 
 _NAME_ALLOWED_RE = re.compile(r"^[A-Z0-9 '&\-/]+$")
 _ADDRESS_ALLOWED_RE = re.compile(r"^[A-Z0-9 '()\-/]+$")
+# Accept numeric street numbers with optional alphabetic suffixes (BIS/TER/QUATER) or single letters.
+# Examples matched: "2B", "2 BIS", "2BIS", "12 TER", "4 QUATER".
 _ADDRESS_RE = re.compile(
-    r"^(?P<number>[0-9]{1,5}[A-Z0-9]{0,2})\s+(?P<street>[A-Z0-9' \-]+?)\s+(?P<postcode>\d{5})$"
+    r"^(?P<number>[0-9]{1,5}(?: ?[A-Z]{1,4})?)\s+(?P<street>[A-Z0-9' \-]+?)\s+(?P<postcode>\d{5})$"
 )
 
 _LEGAL_FORM_TOKENS = {
