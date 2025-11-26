@@ -183,6 +183,17 @@ class OllamaClient:
 
         # Avoid Ollama format=json which sometimes returns empty responses with gpt-oss
         kwargs.setdefault("json_mode", False)
+
+        # Rough prompt length estimate to spot likely max_tokens issues.
+        prompt_token_est = int(len(prompt.split()) * 1.3)
+        max_tokens = kwargs.get("num_predict", self._config.max_tokens)
+        if prompt_token_est + max_tokens > max_tokens * 1.5:  # heuristic margin
+            self._logger.warning(
+                "LLM call_json: prompt may be long (est %s tokens) vs max_tokens %s",
+                prompt_token_est,
+                max_tokens,
+            )
+
         response = self.call_text(prompt, **kwargs)
         parsed = _extract_json_object(response.text)
         if parsed is None:
@@ -275,7 +286,23 @@ class OllamaClient:
                 except ValueError as exc:
                     raise LLMCallError("Ollama response is not valid JSON") from exc
 
-                self._log_response(payload_json.get("response", ""))
+                resp_text = payload_json.get("response", "")
+                if not resp_text:
+                    self._logger.warning(
+                        "LLM response is empty. done_reason=%s prompt_eval=%s eval=%s",
+                        payload_json.get("done_reason"),
+                        payload_json.get("prompt_eval_count"),
+                        payload_json.get("eval_count"),
+                    )
+                self._logger.debug(
+                    "LLM metrics: done_reason=%s prompt_eval=%s eval=%s load_ms=%s total_ms=%s",
+                    payload_json.get("done_reason"),
+                    payload_json.get("prompt_eval_count"),
+                    payload_json.get("eval_count"),
+                    _ns_to_ms(payload_json.get("load_duration")),
+                    _ns_to_ms(payload_json.get("total_duration")),
+                )
+                self._log_response(resp_text)
                 return payload_json
 
         assert last_error is not None
