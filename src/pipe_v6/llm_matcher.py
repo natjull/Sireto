@@ -110,6 +110,7 @@ def build_matcher_prompt(
     lines.append("- Une entreprise peut changer de nom (rebranding), être rachetée ou fusionner.")
     lines.append("- Si l'adresse (numéro + voie + code postal + ville) est identique et précise, considère qu'il s'agit probablement du même établissement même si le nom a changé.")
     lines.append("- Indices forts de rebranding : même adresse exacte + multi-source (QWANT_*, RNE, DATAGOUV), SIREN/SIRET identique dans plusieurs sources, nom de groupe connu au lieu d'une ancienne enseigne.")
+    lines.append("- Si le même SIREN/SIRET ressort dans les premiers résultats des trois requêtes Qwant, c'est un signal très fort, même si le nom diffère.")
     lines.append("")
 
     lines.append("# REGLES DE MATCHING (applique-les dans cet ordre)")
