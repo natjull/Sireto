@@ -729,7 +729,11 @@ def search_qwant_sites(
     for col in ["crm_name", "street_number", "street_name", "postcode"]:
         val = _value(col)
         if val:
-            parts.append(val)
+            if col == "postcode":
+                # Wrap postcode in quotes to force exact match in Qwant queries.
+                parts.append(f'"{val}"')
+            else:
+                parts.append(val)
 
     base_query = " ".join(parts)
     if not base_query:
