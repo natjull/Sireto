@@ -58,7 +58,11 @@ class PipelineConfig:
     qwant_enabled: bool = True
     datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
 
+    # LLM provider selection ("ollama" or "openrouter") and model configuration.
+    llm_provider: str = "ollama"
     model_name: str = "gpt-oss:20b"
+    normalizer_model_name: str | None = None
+    matcher_model_name: str | None = None
     temperature: float = 0.0
     top_p: float = 1.0
     max_tokens: int = 512
@@ -66,6 +70,8 @@ class PipelineConfig:
     max_tokens_normalizer: int = 1024
 
     ollama_base_url: str = "http://localhost:11434"
+    openrouter_api_url: str = "https://openrouter.ai/api/v1/chat/completions"
+    openrouter_api_key: str = ""
     llm_timeout_sec: float = 160.0
     llm_connect_timeout_sec: float = 5.0
     llm_max_retries: int = 3
@@ -141,13 +147,18 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "qwant_base_url": "https://api.qwant.com/v3/search/web",
         "qwant_enabled": True,
         "datagouv_api_url": "https://recherche-entreprises.api.gouv.fr",
+        "llm_provider": "ollama",
         "model_name": "gpt-oss:20b",
+        "normalizer_model_name": None,
+        "matcher_model_name": None,
         "temperature": 0.0,
         "top_p": 1.0,
         "max_tokens": 512,
         "max_tokens_matcher": 2048,
         "max_tokens_normalizer": 1024,
         "ollama_base_url": "http://localhost:11434",
+        "openrouter_api_url": "https://openrouter.ai/api/v1/chat/completions",
+        "openrouter_api_key": "",
         "llm_timeout_sec": 160.0,
         "llm_connect_timeout_sec": 5.0,
         "llm_max_retries": 3,
@@ -219,6 +230,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
 
     log_level = str(extracted["log_level"]).upper()
     extracted["log_level"] = log_level
+    extracted["llm_provider"] = str(extracted.get("llm_provider", "ollama")).lower()
 
     known_keys = set(defaults)
     extras = {

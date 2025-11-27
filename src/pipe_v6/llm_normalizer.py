@@ -18,7 +18,7 @@ from typing import Any, Mapping
 import pandas as pd
 
 from .config import PipelineConfig
-from .llm_utils import LLMCallError, LLMResponse, OllamaClient
+from .llm_utils import LLMCallError, LLMResponse, create_llm_client
 
 
 LOGGER = logging.getLogger(__name__)
@@ -146,7 +146,7 @@ def normalize_with_llm(
     config: PipelineConfig,
     *,
     logger: logging.Logger | None = None,
-    client: OllamaClient | None = None,
+    client=None,
     expected_city: str | None = None,
 ) -> NormalizedCRMEntry:
     """Call the Ollama normalizer (JSON mode) and return a validated entry."""
@@ -154,11 +154,12 @@ def normalize_with_llm(
     log = logger or LOGGER
     owns_client = False
     if client is None:
-        client = OllamaClient(config, logger=log)
+        client = create_llm_client(config, logger=log)
         owns_client = True
 
     stop_tokens = ["</END_JSON>"]
     max_tokens = getattr(config, "max_tokens_normalizer", config.max_tokens)
+    model_name = getattr(config, "normalizer_model_name", None) or config.model_name
     attempts = 2
     last_exc: Exception | None = None
 
@@ -167,6 +168,7 @@ def normalize_with_llm(
             try:
                 response = client.call_json(
                     prompt,
+                    model=model_name,
                     stop=stop_tokens,
                     num_predict=max_tokens if attempt == 1 else int(max_tokens * 1.5),
                 )
@@ -462,7 +464,7 @@ def normalize_crm_entry(
     row: pd.Series,
     config: PipelineConfig,
     logger: logging.Logger | None = None,
-    client: OllamaClient | None = None,
+    client=None,
 ) -> NormalizedCRMEntry:
     """Normalize a CRM row with the LLM (task 3.3).
 

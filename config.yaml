@@ -42,3 +42,10 @@ category_filter_fallback: true
 max_candidates_llm_matcher: 15
 log_level: INFO
 store_source_raw: true
+
+# OpenRouter configuration
+llm_provider: openrouter
+openrouter_api_key: "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"
+openrouter_api_url: https://openrouter.ai/api/v1/chat/completions
+normalizer_model_name: mistralai/mistral-small-3.2-24b-instruct
+matcher_model_name: mistralai/mistral-medium-3.1
