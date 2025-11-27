@@ -80,13 +80,13 @@ def build_matcher_prompt(
     lines.append(f"- Ville : {city}")
     lines.append("")
 
-    lines.append("# DONNEES NORMALISEES (LLM #1)")
+    lines.append("# DONNEES CRM NORMALISEES (LLM #1)")
     lines.append(f"- Nom normalisé : {norm_entry.normalized_name}")
     lines.append(f"- Adresse normalisée : {norm_entry.normalized_address}")
     lines.append(f"- Catégorie CRM : {norm_entry.category}")
     lines.append("")
 
-    lines.append("# CANDIDATS SIRET (déjà filtrés)")
+    lines.append("# CANDIDATS SIRENE / SIRET (déjà filtrés)")
 
     for idx, cand in enumerate(candidates, start=1):
         source_count = len(cand.sources)
@@ -124,6 +124,7 @@ def build_matcher_prompt(
     lines.append("")
 
     lines.append("# FORMAT DE REPONSE (JSON UNIQUEMENT, aucun texte avant/après, pas de ```)")
+    lines.append("Reponds UNIQUEMENT en JSON valide, pas de texte libre.")
     lines.append("{")
     lines.append('  "decision": "BEST_MATCH" ou "NO_MATCH",')
     lines.append('  "chosen_siret": "12345678901234" ou null,')
