@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
+import concurrent.futures
 import logging
+import os
 import sqlite3
 from typing import Any, Iterable, Sequence
 
@@ -325,6 +327,18 @@ def run_pipeline(
 
     log = logger or LOGGER
 
+    def _should_parallelize() -> tuple[bool, int]:
+        if str(getattr(config, "llm_provider", "")).lower() != "openrouter":
+            return False, 0
+        workers = max(
+            1,
+            min(
+                int(getattr(config, "llm_max_concurrency", 1) or 1),
+                os.cpu_count() or 4,
+            ),
+        )
+        return workers > 1, workers
+
     df = load_crm(config.crm_path)
     if max_rows is not None:
         df = df.head(max_rows)
@@ -335,13 +349,50 @@ def run_pipeline(
 
     communes = extract_communes(df)
 
+    # Initialize cache and preload SIRENE sequentially (I/O bound).
     conn = get_cache_connection(config)
-    llm_client: OllamaClient | None = None
+    parallel_enabled, max_workers = _should_parallelize()
+    llm_client = None
     rne_client: RneClient | None = None
 
     try:
         preload_sirene(communes, config, logger=log, conn=conn)
 
+        if parallel_enabled:
+            log.info(
+                "Running pipeline in parallel mode (provider=openrouter) with %d workers",
+                max_workers,
+            )
+
+            def _task(row):
+                local_conn = get_cache_connection(config, initialize=False)
+                local_llm = create_llm_client(config=config, logger=log)
+                local_rne = RneClient(config=config, logger=log)
+                try:
+                    return process_crm_row(
+                        row,
+                        config,
+                        local_conn,
+                        log,
+                        rne_client=local_rne,
+                        llm_client=local_llm,
+                    )
+                finally:
+                    try:
+                        local_llm.close()
+                    except Exception:
+                        log.exception("Failed to close LLM client")
+                    try:
+                        local_conn.close()
+                    except Exception:
+                        log.exception("Failed to close SQLite connection")
+
+            with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+                rows = list(df.itertuples(index=False, name="CRMRow"))
+                results = list(_progress(executor.map(_task, rows), total=len(rows), description="Processing CRM"))
+            return pd.DataFrame(results, columns=RESULT_COLUMNS)
+
+        # Sequential fallback (Ollama or single-worker)
         rne_client = RneClient(config=config, logger=log)
         llm_client = create_llm_client(config=config, logger=log)
 
