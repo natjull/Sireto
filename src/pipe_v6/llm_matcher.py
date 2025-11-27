@@ -100,6 +100,12 @@ def build_matcher_prompt(
         lines.append(f"- Ville : {cand.city}")
         lines.append(f"- Code INSEE : {cand.insee_code or 'N/A'}")
         lines.append(f"- Catégorie SIRENE : {cand.category}")
+        if getattr(cand, "qwant_ranks", None):
+            ranks = ", ".join(
+                f"{src.split('_',1)[1].lower()}=rank{rk}"
+                for src, rk in sorted(cand.qwant_ranks.items())
+            )
+            lines.append(f"- Rangs Qwant (0=top) : {ranks}")
         lines.append(
             f"- Sources : {', '.join(cand.sources)} ({source_count} source{'s' if source_count > 1 else ''})"
         )
