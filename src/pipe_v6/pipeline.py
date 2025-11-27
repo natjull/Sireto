@@ -169,19 +169,20 @@ def process_crm_row(
         # 3) Collecte des candidats externes (RNE, DataGouv, Qwant)
         all_candidates: list = []
 
-        try:
-            all_candidates.extend(
-                search_rne(
-                    norm_entry.normalized_name,
-                    city=_get(row, "city", ""),
-                    postcode=_get(row, "postcode", None),
-                    config=config,
-                    logger=logger,
-                    client=rne_client,
+        if getattr(config, "rne_enabled", True):
+            try:
+                all_candidates.extend(
+                    search_rne(
+                        norm_entry.normalized_name,
+                        city=_get(row, "city", ""),
+                        postcode=_get(row, "postcode", None),
+                        config=config,
+                        logger=logger,
+                        client=rne_client,
+                    )
                 )
-            )
-        except Exception as exc:  # RneApiError or other
-            logger.error("CRM %s: RNE search failed: %s", crm_id, exc)
+            except Exception as exc:  # RneApiError or other
+                logger.error("CRM %s: RNE search failed: %s", crm_id, exc)
 
         try:
             all_candidates.extend(

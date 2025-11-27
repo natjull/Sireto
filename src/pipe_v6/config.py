@@ -57,6 +57,7 @@ class PipelineConfig:
     qwant_base_url: str = "https://api.qwant.com/v3/search/web"
     qwant_enabled: bool = True
     datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
+    rne_enabled: bool = True
 
     # LLM provider selection ("ollama" or "openrouter") and model configuration.
     llm_provider: str = "ollama"
@@ -147,6 +148,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "qwant_base_url": "https://api.qwant.com/v3/search/web",
         "qwant_enabled": True,
         "datagouv_api_url": "https://recherche-entreprises.api.gouv.fr",
+        "rne_enabled": True,
         "llm_provider": "ollama",
         "model_name": "gpt-oss:20b",
         "normalizer_model_name": None,
@@ -216,6 +218,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "category_filter_enabled",
         "category_filter_fallback",
         "qwant_enabled",
+        "rne_enabled",
     ]
     for field_name in bool_fields:
         extracted[field_name] = _as_bool(extracted[field_name])
