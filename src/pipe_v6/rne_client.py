@@ -203,14 +203,25 @@ class RneClient:
                     "Accept": "application/json",
                 }
 
-            payload = _http_post_json(
-                login_url,
-                data,
-                timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
-                max_retries=self._max_retries,
-                logger=self.logger,
-                extra_headers=extra_headers,
-            )
+            try:
+                payload = _http_post_form(
+                    login_url,
+                    data,
+                    timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
+                    max_retries=self._max_retries,
+                    logger=self.logger,
+                    extra_headers=extra_headers,
+                )
+            except TypeError:
+                # Backward compatibility: tests may monkeypatch _http_post_form with a simplified
+                # signature that does not accept extra_headers.
+                payload = _http_post_form(
+                    login_url,
+                    data,
+                    timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
+                    max_retries=self._max_retries,
+                    logger=self.logger,
+                )
             tok = payload.get("token") or payload.get("access_token")
             nonlocal expires_in
             expires_in = float(payload.get("expires_in", 3600.0))
@@ -228,7 +239,7 @@ class RneClient:
                 "client_id": client_id,
                 "client_secret": client_secret,
             }
-            payload = _http_post_json(
+            payload = _http_post_form(
                 token_url,
                 data,
                 timeout=float(getattr(self.config, "llm_connect_timeout_sec", 5.0) or 5.0),
