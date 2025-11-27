@@ -18,7 +18,7 @@ from .crm_loader import load_crm
 from .external_sources import search_datagouv, search_qwant_sites, search_rne
 from .llm_matcher import classify_final_status, decide_match, filter_candidates_by_category
 from .llm_normalizer import NormalizationParseError, normalize_crm_entry
-from .llm_utils import LLMCallError, OllamaClient
+from .llm_utils import LLMCallError, create_llm_client
 from .rne_client import RneClient
 from .sirene_cache import get_cache_connection, get_or_fetch_commune
 
@@ -91,7 +91,7 @@ def process_crm_row(
     logger: logging.Logger,
     *,
     rne_client: RneClient | None = None,
-    llm_client: OllamaClient | None = None,
+    llm_client=None,
 ) -> dict:
     """Process a single CRM line from normalization to LLM #2 arbitration.
 
@@ -343,7 +343,7 @@ def run_pipeline(
         preload_sirene(communes, config, logger=log, conn=conn)
 
         rne_client = RneClient(config=config, logger=log)
-        llm_client = OllamaClient(config=config, logger=log)
+        llm_client = create_llm_client(config=config, logger=log)
 
         results: list[dict] = []
         iterable = _progress(

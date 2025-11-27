@@ -109,6 +109,7 @@ class OllamaClient:
         self,
         prompt: str,
         *,
+        model: str | None = None,
         temperature: float | None = None,
         top_p: float | None = None,
         num_predict: int | None = None,
@@ -121,6 +122,7 @@ class OllamaClient:
 
         response_payload = self._invoke(
             prompt=str(prompt),
+            model=model,
             temperature=temperature,
             top_p=top_p,
             num_predict=num_predict,
@@ -216,6 +218,7 @@ class OllamaClient:
         self,
         *,
         prompt: str,
+        model: str | None,
         temperature: float | None,
         top_p: float | None,
         num_predict: int | None,
@@ -226,6 +229,7 @@ class OllamaClient:
     ) -> Dict[str, Any]:
         payload = self._build_payload(
             prompt=prompt,
+            model=model,
             temperature=temperature,
             top_p=top_p,
             num_predict=num_predict,
@@ -318,6 +322,7 @@ class OllamaClient:
         self,
         *,
         prompt: str,
+        model: str | None,
         temperature: float | None,
         top_p: float | None,
         num_predict: int | None,
@@ -326,6 +331,7 @@ class OllamaClient:
         json_mode: bool | None,
     ) -> Dict[str, Any]:
         config = self._config
+        resolved_model = model or config.model_name
         resolved_temperature = temperature if temperature is not None else config.temperature
         resolved_top_p = top_p if top_p is not None else config.top_p
         resolved_num_predict = num_predict if num_predict is not None else config.max_tokens
@@ -343,7 +349,7 @@ class OllamaClient:
         options = {k: v for k, v in options.items() if v is not None}
 
         payload: Dict[str, Any] = {
-            "model": config.model_name,
+            "model": resolved_model,
             "prompt": prompt,
             "stream": False,
             "options": options,
@@ -375,9 +381,236 @@ class OllamaClient:
             self._logger.debug("LLM response length=%s chars", len(response_text))
 
 
+class OpenRouterClient:
+    """Client to call OpenRouter chat completion API with the same interface as OllamaClient."""
+
+    def __init__(
+        self,
+        config: PipelineConfig,
+        *,
+        logger: logging.Logger | None = None,
+        session: Session | None = None,
+    ) -> None:
+        self._config = config
+        self._logger = logger or LOGGER
+        self._session = session or requests.Session()
+        self._owns_session = session is None
+        concurrency = max(1, int(getattr(config, "llm_max_concurrency", 4) or 4))
+        self._semaphore = threading.Semaphore(concurrency)
+
+    def close(self) -> None:
+        if self._owns_session:
+            self._session.close()
+
+    def call_text(
+        self,
+        prompt: str,
+        *,
+        model: str | None = None,
+        temperature: float | None = None,
+        top_p: float | None = None,
+        num_predict: int | None = None,
+        stop: Iterable[str] | None = None,
+        seed: int | None = None,  # unused by OpenRouter but kept for symmetry
+        timeout: float | None = None,
+        json_mode: bool | None = None,
+    ) -> LLMResponse:
+        """Call OpenRouter and return the raw text response."""
+
+        json_mode_active = json_mode if json_mode is not None else self._config.llm_json_mode_default
+        text, payload = self._post(
+            prompt=str(prompt),
+            model=model,
+            temperature=temperature,
+            top_p=top_p,
+            num_predict=num_predict,
+            stop=stop,
+            timeout=timeout,
+            json_mode=json_mode_active,
+        )
+
+        parsed_json: Any | None = None
+        if json_mode_active:
+            try:
+                parsed_json = json.loads(text)
+            except json.JSONDecodeError:
+                parsed_json = _extract_json_object(text)
+                if parsed_json is None:
+                    preview = text.strip().replace("\n", " ")[:200]
+                    raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
+
+        return LLMResponse(
+            text=text,
+            model=model or getattr(self._config, "model_name", ""),
+            raw=payload,
+            metrics=None,
+            parsed_json=parsed_json,
+        )
+
+    def call_json(self, prompt: str, **kwargs: Any) -> LLMResponse:
+        """Call OpenRouter and extract the first JSON object from the response."""
+
+        kwargs.setdefault("json_mode", False)
+        response = self.call_text(prompt, **kwargs)
+        parsed = response.parsed_json if kwargs.get("json_mode") else _extract_json_object(response.text)
+        if parsed is None:
+            preview = response.text.strip().replace("\n", " ")[:200]
+            raise LLMCallError(f"LLM output is not valid JSON (preview: {preview})")
+
+        return LLMResponse(
+            text=response.text,
+            model=response.model,
+            raw=response.raw,
+            metrics=response.metrics,
+            parsed_json=parsed,
+        )
+
+    def _post(
+        self,
+        *,
+        prompt: str,
+        model: str | None,
+        temperature: float | None,
+        top_p: float | None,
+        num_predict: int | None,
+        stop: Iterable[str] | None,
+        timeout: float | None,
+        json_mode: bool,
+    ) -> tuple[str, Dict[str, Any]]:
+        cfg = self._config
+        api_key = getattr(cfg, "openrouter_api_key", "") or ""
+        if not api_key:
+            raise LLMCallError("OpenRouter API key missing (set SIRETO_OPENROUTER_API_KEY or config)")
+
+        resolved_model = model or getattr(cfg, "model_name", "")
+        resolved_temperature = temperature if temperature is not None else cfg.temperature
+        resolved_top_p = top_p if top_p is not None else cfg.top_p
+        resolved_max_tokens = num_predict if num_predict is not None else cfg.max_tokens
+
+        body: Dict[str, Any] = {
+            "model": resolved_model,
+            "messages": [{"role": "user", "content": prompt}],
+            "temperature": resolved_temperature,
+            "top_p": resolved_top_p,
+            "max_tokens": resolved_max_tokens,
+        }
+        if stop:
+            body["stop"] = list(stop)
+        if json_mode:
+            body["response_format"] = {"type": "json_object"}
+
+        url = (cfg.openrouter_api_url or "https://openrouter.ai/api/v1/chat/completions").rstrip("/")
+        headers = {
+            "Authorization": f"Bearer {api_key}",
+            "Content-Type": "application/json",
+            "HTTP-Referer": "https://sireto.local",
+            "X-Title": "SIRETO Pipe V6",
+        }
+
+        connect_timeout = float(getattr(cfg, "llm_connect_timeout_sec", 5.0) or 5.0)
+        read_timeout = float(timeout if timeout is not None else getattr(cfg, "llm_timeout_sec", 120.0) or 120.0)
+        max_retries = max(1, int(getattr(cfg, "llm_max_retries", 3) or 1))
+        backoff_base = float(getattr(cfg, "llm_retry_backoff_base_sec", 1.0) or 1.0)
+
+        self._log_prompt(prompt)
+
+        with self._semaphore:
+            last_error: Exception | None = None
+            for attempt in range(1, max_retries + 1):
+                try:
+                    response = self._session.post(
+                        url,
+                        headers=headers,
+                        json=body,
+                        timeout=(connect_timeout, read_timeout),
+                    )
+                except (Timeout, RequestException) as exc:
+                    last_error = exc
+                    self._logger.warning(
+                        "LLM call network error (attempt %s/%s): %s",
+                        attempt,
+                        max_retries,
+                        exc,
+                    )
+                    self._sleep_backoff(backoff_base, attempt, attempt == max_retries)
+                    continue
+
+                if response.status_code >= 500:
+                    last_error = LLMCallError(
+                        f"LLM server error HTTP {response.status_code}: {response.text[:500]}"
+                    )
+                    self._logger.warning(
+                        "LLM server error %s (attempt %s/%s)",
+                        response.status_code,
+                        attempt,
+                        max_retries,
+                    )
+                    self._sleep_backoff(backoff_base, attempt, attempt == max_retries)
+                    continue
+
+                if response.status_code >= 400:
+                    raise LLMCallError(
+                        f"LLM request rejected with HTTP {response.status_code}: {response.text[:500]}"
+                    )
+
+                try:
+                    payload_json: Dict[str, Any] = response.json()
+                except ValueError as exc:
+                    raise LLMCallError("OpenRouter response is not valid JSON") from exc
+
+                try:
+                    text = payload_json["choices"][0]["message"]["content"]
+                except Exception as exc:  # noqa: BLE001 - keep robust
+                    raise LLMCallError("OpenRouter response missing content") from exc
+
+                self._log_response(text)
+                return text, payload_json
+
+        assert last_error is not None
+        raise LLMCallError(f"LLM call failed after {max_retries} attempts: {last_error}")
+
+    def _sleep_backoff(self, base: float, attempt: int, is_last_attempt: bool) -> None:
+        if is_last_attempt:
+            return
+        delay = base * (2 ** (attempt - 1))
+        time.sleep(min(delay, 10.0))
+
+    def _log_prompt(self, prompt: str) -> None:
+        if getattr(self._config, "llm_log_prompts", False):
+            self._logger.info("LLM prompt (%s chars): %s", len(prompt), _truncate_for_log(prompt))
+        else:
+            self._logger.debug("LLM prompt length=%s chars", len(prompt))
+
+    def _log_response(self, response_text: str) -> None:
+        if getattr(self._config, "llm_log_responses", False):
+            self._logger.info(
+                "LLM response (%s chars): %s",
+                len(response_text),
+                _truncate_for_log(response_text),
+            )
+        else:
+            self._logger.debug("LLM response length=%s chars", len(response_text))
+
+
+def create_llm_client(
+    config: PipelineConfig,
+    *,
+    logger: logging.Logger | None = None,
+    session: Session | None = None,
+):
+    """Factory to create the appropriate LLM client based on configuration."""
+
+    provider = getattr(config, "llm_provider", "ollama").lower()
+    if provider == "openrouter":
+        return OpenRouterClient(config, logger=logger, session=session)
+    return OllamaClient(config, logger=logger, session=session)
+
+
 __all__ = [
     "LLMCallError",
     "LLMResponse",
     "LLMResponseMetrics",
     "OllamaClient",
+    "OpenRouterClient",
+    "create_llm_client",
 ]

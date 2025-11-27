@@ -9,7 +9,7 @@ from typing import Literal
 from pipe_v6.config import PipelineConfig
 from pipe_v6.candidate_store import NormalizedCandidate
 from pipe_v6.llm_normalizer import NormalizedCRMEntry
-from pipe_v6.llm_utils import LLMCallError, OllamaClient
+from pipe_v6.llm_utils import create_llm_client
 
 LOGGER = logging.getLogger(__name__)
 
@@ -268,7 +268,7 @@ def decide_match(
     candidates: list[NormalizedCandidate],
     config: PipelineConfig,
     logger: logging.Logger | None = None,
-    client: OllamaClient | None = None,
+    client=None,
 ) -> LLMMatchDecision:
     """
     Call LLM #2 to decide the best candidate SIRET or NO_MATCH (task 7.4).
@@ -293,7 +293,7 @@ def decide_match(
 
     owns_client = False
     if client is None:
-        client = OllamaClient(config, logger=log)
+        client = create_llm_client(config, logger=log)
         owns_client = True
 
     try:
@@ -313,7 +313,12 @@ def decide_match(
             prompt_len,
             prompt_tokens_est,
         )
-        response = client.call_json(prompt, num_predict=config.max_tokens_matcher)
+        model_name = getattr(config, "matcher_model_name", None) or config.model_name
+        response = client.call_json(
+            prompt,
+            num_predict=config.max_tokens_matcher,
+            model=model_name,
+        )
 
         if response.parsed_json is None:
             raise MatchDecisionParseError("LLM response missing JSON payload")

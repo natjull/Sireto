@@ -26,7 +26,7 @@ class DummyClient:
         self.parsed_json = parsed_json
         self.called = False
 
-    def call_json(self, prompt: str):
+    def call_json(self, prompt: str, **_kwargs):
         self.called = True
         return DummyResponse(self.parsed_json)
 
@@ -127,7 +127,7 @@ class TestDecideMatch:
 
     def test_exception_fallback(self):
         class FailingClient(DummyClient):
-            def call_json(self, prompt: str):
+            def call_json(self, prompt: str, **_kwargs):
                 raise RuntimeError("boom")
 
         cfg = _config()
