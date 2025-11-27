@@ -177,6 +177,7 @@ class NormalizedCandidate:
     sources: list[str]
     raw_candidates: list[RawCandidate]
     category: str
+    qwant_ranks: dict[str, int] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dictionary for export/logging."""
@@ -193,6 +194,7 @@ class NormalizedCandidate:
             "sources": list(self.sources),
             "raw_candidates": [rc.to_dict() for rc in self.raw_candidates],
             "category": self.category,
+            "qwant_ranks": dict(self.qwant_ranks),
         }
 
 
@@ -232,6 +234,20 @@ def enrich_candidates_from_sirene(
     for key, raw_candidates in groups.items():
         key_type, value = key
 
+        # Aggregate per-source Qwant ranks (lower = better) for this group
+        qwant_ranks: dict[str, int] = {}
+        for rc in raw_candidates:
+            if rc.source.startswith("QWANT_"):
+                rank_val = rc.extra.get("rank")
+                try:
+                    if rank_val is None:
+                        continue
+                    rank_int = int(rank_val)
+                except Exception:
+                    continue
+                if rc.source not in qwant_ranks or rank_int < qwant_ranks[rc.source]:
+                    qwant_ranks[rc.source] = rank_int
+
         if key_type == "siret":
             row = conn.execute(
                 "SELECT siret, siren, denomination, address_full, postcode, city, insee_code, legal_nature, etat_administratif "
@@ -252,6 +268,7 @@ def enrich_candidates_from_sirene(
                     sources=_deduplicate_sources(raw_candidates),
                     raw_candidates=raw_candidates,
                     category=map_legal_to_category(row["legal_nature"], log),
+                    qwant_ranks=qwant_ranks,
                 )
                 normalized.append(norm)
                 log.debug("SIRET %s: found 1 row", value)
@@ -275,6 +292,7 @@ def enrich_candidates_from_sirene(
                     sources=_deduplicate_sources(raw_candidates),
                     raw_candidates=raw_candidates,
                     category=map_legal_to_category(None, log),
+                    qwant_ranks=qwant_ranks,
                 )
                 normalized.append(norm)
                 fallback_used += 1
@@ -329,6 +347,7 @@ def enrich_candidates_from_sirene(
                     sources=sources,
                     raw_candidates=raw_candidates,
                     category=map_legal_to_category(row["legal_nature"], log),
+                    qwant_ranks=qwant_ranks,
                 )
                 normalized.append(norm)
             continue
