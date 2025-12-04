@@ -32,65 +32,6 @@ from xgboost import XGBClassifier, XGBRanker
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-
-def adjust_scores_with_rerank(raw_scores, feats):
-    """
-    Post-processing / reranking heuristics (inference-only).
-
-    Goals:
-    - Protéger les alias à adresse parfaite mais sans correspondance de nom (ex: Timcod).
-    - Départager les adresses saturées en s'appuyant sur le nom d'unité légale (ex: DigitBoxing).
-    """
-    scores = []
-    for sc, f in zip(raw_scores, feats):
-        adj = sc
-        # pénalise l'absence de nom
-        if f.get("has_any_name", 1.0) == 0.0:
-            adj *= 0.9
-        # petit bonus si adresse parfaite + même numéro
-        if f.get("addr_jaro", 0.0) == 1.0 and f.get("street_number_diff", 9999) == 0:
-            adj += 0.05 * f.get("name_jaro_max", 0.0)
-        scores.append(adj)
-
-    scores = np.array(scores)
-
-    # --- Détection des adresses parfaites ---
-    perfect_idxs = [
-        i
-        for i, f in enumerate(feats)
-        if f.get("addr_jaro", 0.0) >= 0.98
-        and f.get("street_number_diff", 9999) == 0
-        and f.get("postcode_match", 0.0) == 1.0
-    ]
-    n_perfect = len(perfect_idxs)
-
-    # --- Règle "adresse saturée" : bonus UL léger pour départager les co-locataires ---
-    if n_perfect >= 2:
-        ul_max = max(feats[i].get("name_sim_max_ul", 0.0) for i in perfect_idxs)
-        for i in perfect_idxs:
-            ul_sim = feats[i].get("name_sim_max_ul", 0.0)
-            # appliquer un bonus seulement si l'UL apporte vraiment quelque chose
-            if ul_sim < 0.6:
-                continue
-            if ul_sim + 0.1 < ul_max:
-                continue
-            is_ul = feats[i].get("is_ul_name_max", 0.0)
-            bonus = 0.4 * ul_sim * (0.5 + 0.5 * is_ul)
-            scores[i] += bonus
-
-    # --- Règle "ancre d'adresse unique" : remonter un seul candidat parfait ---
-    if n_perfect == 1:
-        perfect_idx = perfect_idxs[0]
-        top_idx = int(np.argmax(scores))
-        if top_idx != perfect_idx:
-            top_addr = feats[top_idx].get("addr_jaro", 0.0)
-            top_numdiff = feats[top_idx].get("street_number_diff", 9999)
-            # on ne force le switch que si le top actuel n'a pas une bonne adresse
-            if top_addr < 0.9 or top_numdiff > 0:
-                scores[perfect_idx] = scores[top_idx] + 0.1
-
-    return scores
-
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
     build_address,
@@ -282,8 +223,18 @@ def main():
         Xs = scaler.transform(X)
         raw_scores = clf.predict(Xs) if is_ranker else clf.predict_proba(Xs)[:, 1]
 
-        # Post-traitement / reranking heuristique (inference-only)
-        scores = adjust_scores_with_rerank(raw_scores, feats)
+        # Post-adjustments (inference-only):
+        # - pénalise les candidats sans nom
+        # - bonifie légèrement les adresses parfaitement identiques selon le nom
+        scores = []
+        for sc, f in zip(raw_scores, feats):
+            adj = sc
+            if f.get("has_any_name", 1.0) == 0.0:
+                adj *= 0.9
+            if f.get("addr_jaro", 0.0) == 1.0 and f.get("street_number_diff", 9999) == 0:
+                adj += 0.05 * f.get("name_jaro_max", 0.0)
+            scores.append(adj)
+        scores = np.array(scores)
 
         topk_idx = np.argsort(scores)[::-1][:TOP_K]
         for rank, idx_k in enumerate(topk_idx, start=1):
