@@ -26,7 +26,6 @@ import pandas as pd
 import pyarrow.parquet as pq
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-import xgboost as xgb
 from xgboost import XGBClassifier, XGBRanker
 
 # Add src to path for imports
@@ -471,7 +470,7 @@ def train_xgb_classifier(
         split.y_train,
         eval_set=[(X_val_scaled, split.y_val)],
         verbose=50,
-        callbacks=[xgb.callback.EarlyStopping(rounds=50, save_best=True)],
+        early_stopping_rounds=50,
     )
 
     best_iter = getattr(clf, "best_iteration", None)
@@ -521,7 +520,7 @@ def train_xgb_ranker(
         eval_set=[(X_val_scaled, split.y_val)],
         eval_group=[split.groups_val],
         verbose=50,
-        callbacks=[xgb.callback.EarlyStopping(rounds=50, save_best=True)],
+        early_stopping_rounds=50,
     )
 
     best_iter = getattr(ranker, "best_iteration", None)
