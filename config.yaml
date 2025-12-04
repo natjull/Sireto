@@ -5,6 +5,7 @@ log_path: logs/pipe_v6.log
 sirene_api_url: https://api.insee.fr/api-sirene/3.11
 sirene_token: b64f4924-bfcc-461f-8f49-24bfcc661fa0
 # RNE (INPI) – documentation v4.0 juin 2025
+rne_enabled: false
 rne_api_url: https://registre-national-entreprises.inpi.fr/api/
 rne_login_url: https://registre-national-entreprises.inpi.fr/api/sso/login
 rne_username: jullia.nathan@gmail.com

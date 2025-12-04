@@ -8,6 +8,13 @@ from typing import Dict
 # Codes categorieJuridiqueUniteLegale (4 chiffres) -> catégorie métier
 # Catégories cibles : PUBLIC, PRIVE, INCONNU.
 LEGAL_NATURE_MAPPING: Dict[str, str] = {
+    # Ajouts ciblés (logs non mappés)
+    # 2110 : Indivision entre personnes physiques -> personne(s) privée(s)
+    "2110": "PRIVE",
+    # 5660 : Autre SA coopérative à directoire (coopérative ≈ privé/ESS)
+    "5660": "PRIVE",
+    # 6596 : Coopérative (catégorie juridique listée dans les familles ESS)
+    "6596": "PRIVE",
     # Secteur public - administrations et collectivités
     "7111": "PUBLIC",
     "7112": "PUBLIC",
