@@ -471,6 +471,7 @@ def train_xgb_classifier(
         split.y_train,
         eval_set=[(X_val_scaled, split.y_val)],
         verbose=50,
+        callbacks=[xgb.callback.EarlyStopping(rounds=50, save_best=True)],
     )
 
     best_iter = getattr(clf, "best_iteration", None)
@@ -520,6 +521,7 @@ def train_xgb_ranker(
         eval_set=[(X_val_scaled, split.y_val)],
         eval_group=[split.groups_val],
         verbose=50,
+        callbacks=[xgb.callback.EarlyStopping(rounds=50, save_best=True)],
     )
 
     best_iter = getattr(ranker, "best_iteration", None)
