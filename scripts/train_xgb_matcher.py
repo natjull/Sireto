@@ -33,7 +33,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
-    build_address,
     make_features,
     normalize_text,
 )
@@ -295,10 +294,12 @@ def prepare_ranking_dataset() -> RankingDataset:
             continue
 
         group_size = 0
-        cand_bundle: List[Tuple[int, str, dict]] = []  # (label, siret, cand_data)
 
         # Positive pair
-        cand_bundle.append((1, siret, cand_data))
+        feature_rows.append(make_features(row, cand_data))
+        labels.append(1)
+        query_ids.append(query_id)
+        group_size += 1
 
         # Collect negative candidates (same location = hard negatives)
         insee = row.get("insee", "")
@@ -337,22 +338,10 @@ def prepare_ranking_dataset() -> RankingDataset:
             neg_siret = crm.loc[neg_idx, "siret"]
             neg_data = parquet_data.get(neg_siret)
             if neg_data:
-                cand_bundle.append((0, neg_siret, neg_data))
-
-        # Compute competitor counts per address within this query
-        address_map: Dict[Tuple[str | None, str | None], int] = {}
-        for _, _, cdata in cand_bundle:
-            key = (build_address(cdata), str(cdata.get("numeroVoie")) if cdata.get("numeroVoie") else None)
-            address_map[key] = address_map.get(key, 0) + 1
-
-        # Emit features with competitor counts
-        for lbl, siret_val, cdata in cand_bundle:
-            key = (build_address(cdata), str(cdata.get("numeroVoie")) if cdata.get("numeroVoie") else None)
-            comp_count = address_map.get(key, 0)
-            feature_rows.append(make_features(row, cdata, competitor_count=comp_count))
-            labels.append(lbl)
-            query_ids.append(query_id)
-            group_size += 1
+                feature_rows.append(make_features(row, neg_data))
+                labels.append(0)
+                query_ids.append(query_id)
+                group_size += 1
 
         groups.append(group_size)
         query_id += 1
@@ -447,9 +436,9 @@ def train_xgb_classifier(
     X_val_scaled = scaler.transform(split.X_val)
 
     params = {
-        "n_estimators": 1500,
+        "n_estimators": 1000,
         "learning_rate": 0.05,
-        "max_depth": 7,
+        "max_depth": 6,
         "subsample": 0.9,
         "colsample_bytree": 0.9,
         "objective": "binary:logistic",
@@ -470,7 +459,6 @@ def train_xgb_classifier(
         split.y_train,
         eval_set=[(X_val_scaled, split.y_val)],
         verbose=50,
-        early_stopping_rounds=50,
     )
 
     best_iter = getattr(clf, "best_iteration", None)
@@ -495,15 +483,14 @@ def train_xgb_ranker(
     X_val_scaled = scaler.transform(split.X_val)
 
     params = {
-        "n_estimators": 1500,
+        "n_estimators": 1000,
         "learning_rate": 0.05,
-        "max_depth": 7,
+        "max_depth": 6,
         "subsample": 0.9,
         "colsample_bytree": 0.9,
         "objective": "rank:pairwise",
         "random_state": 42,
         "n_jobs": -1,
-        "eval_metric": "ndcg@32",
     }
 
     if use_gpu:
@@ -520,7 +507,6 @@ def train_xgb_ranker(
         eval_set=[(X_val_scaled, split.y_val)],
         eval_group=[split.groups_val],
         verbose=50,
-        early_stopping_rounds=50,
     )
 
     best_iter = getattr(ranker, "best_iteration", None)
@@ -683,11 +669,6 @@ def plot_feature_importance(
 
     sorted_features = sorted(importance_named.items(), key=lambda x: x[1], reverse=True)
     names, values = zip(*sorted_features)
-
-    # Print top 15 for quick inspection
-    print(f"\nTop features for {model_name} (gain):")
-    for feat, val in sorted_features[:15]:
-        print(f"  {feat:<35} {val:.4f}")
 
     plt.figure(figsize=(10, 6))
     plt.barh(range(len(names)), values, align="center")

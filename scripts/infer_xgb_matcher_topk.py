@@ -52,55 +52,6 @@ TOP_K = 5
 BATCH_SIZE = 100_000
 
 
-# ---------- Reranking rules ----------
-
-
-def intelligent_rerank(candidates_with_scores, top_k: int = TOP_K):
-    """Apply rule-based adjustments on top of model scores."""
-    adjusted = []
-    for siret, cand, raw_score, feats in candidates_with_scores:
-        adj = raw_score
-
-        # 1) Perfect address without a name: strong penalty / bonus if name strong
-        if (
-            feats.get("addr_jaro", 0) == 1.0
-            and feats.get("street_number_diff", 9999) == 0
-            and feats.get("postcode_match", 0) == 1.0
-        ):
-            if feats.get("has_any_name", 0) == 0:
-                adj *= 0.70
-            elif feats.get("name_jaro_max", 0) < 0.5:
-                adj *= 0.85
-            elif feats.get("name_jaro_max", 0) >= 0.8:
-                adj *= 1.10
-
-        # 2) Missing critical tokens (coverage < 70%)
-        coverage = feats.get("name_token_coverage", 1.0)
-        if coverage < 0.7:
-            adj *= 1.0 - ((1.0 - coverage) * 0.3)
-
-        # 3) Tie-break when multiple candidates share the same address
-        competitors = feats.get("same_address_competitor_count", 0)
-        if competitors >= 2:
-            if feats.get("has_any_name", 0) == 1:
-                adj *= 1.15
-            else:
-                adj *= 0.80
-
-        # 4) Substring-only matches (high Jaro but zero full-token match)
-        if feats.get("name_jaro_max", 0) > 0.7 and feats.get("name_full_token_match_count", 0) == 0:
-            adj *= 0.90
-
-        # 5) First token missing on short names
-        if feats.get("name_crm_first_token_match", 1) == 0 and feats.get("name_length_max", 10) < 20:
-            adj *= 0.95
-
-        adjusted.append((siret, cand, adj, feats))
-
-    adjusted.sort(key=lambda x: x[2], reverse=True)
-    return adjusted[:top_k]
-
-
 # ---------- Data loading ----------
 
 
@@ -266,29 +217,28 @@ def main():
         if not cand_list:
             continue
 
-        # Compute address competitor counts (for tie-break features)
-        address_map = {}
-        for _, c in cand_list:
-            key = (build_address(c), str(c.get("numeroVoie")) if c.get("numeroVoie") else None)
-            address_map.setdefault(key, 0)
-            address_map[key] += 1
-
         # Compute features using shared module
-        feats = []
-        for _, c in cand_list:
-            key = (build_address(c), str(c.get("numeroVoie")) if c.get("numeroVoie") else None)
-            feats.append(make_features(r, c, competitor_count=address_map.get(key, 0)))
+        feats = [make_features(r, c) for _, c in cand_list]
         X = pd.DataFrame(feats)[feature_order]
         Xs = scaler.transform(X)
         raw_scores = clf.predict(Xs) if is_ranker else clf.predict_proba(Xs)[:, 1]
 
-        candidates_with_scores = [
-            (siret, cand, score, feat)
-            for (siret, cand), score, feat in zip(cand_list, raw_scores, feats)
-        ]
-        reranked = intelligent_rerank(candidates_with_scores, top_k=TOP_K)
+        # Post-adjustments (inference-only):
+        # - pénalise les candidats sans nom
+        # - bonifie légèrement les adresses parfaitement identiques selon le nom
+        scores = []
+        for sc, f in zip(raw_scores, feats):
+            adj = sc
+            if f.get("has_any_name", 1.0) == 0.0:
+                adj *= 0.9
+            if f.get("addr_jaro", 0.0) == 1.0 and f.get("street_number_diff", 9999) == 0:
+                adj += 0.05 * f.get("name_jaro_max", 0.0)
+            scores.append(adj)
+        scores = np.array(scores)
 
-        for rank, (siret_k, cand_k, score_k, feat_k) in enumerate(reranked, start=1):
+        topk_idx = np.argsort(scores)[::-1][:TOP_K]
+        for rank, idx_k in enumerate(topk_idx, start=1):
+            siret_k, cand_k = cand_list[idx_k]
             cand_name = primary_name(cand_k) or f"SIRET {siret_k}"
             rows_out.append({
                 "crm_name": r["crm_name"],
@@ -296,7 +246,7 @@ def main():
                 "crm_postcode": r.get("postcode"),
                 "crm_city": r.get("crm_city"),
                 "siret_candidate": siret_k,
-                "score": float(score_k),
+                "score": float(scores[idx_k]),
                 "candidate_name": cand_name,
                 "candidate_addr": build_address(cand_k),
                 "candidate_city": cand_k.get("city"),
