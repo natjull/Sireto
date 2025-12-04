@@ -42,6 +42,27 @@ from .naming import (
 # Thresholds for city-like detection
 CITY_OVERLAP_THRESHOLD = 0.7
 CITY_MAX_TOKENS = 3
+STOPWORDS = {
+    "SARL",
+    "SAS",
+    "SASU",
+    "SCI",
+    "SC",
+    "SNC",
+    "EARL",
+    "EURL",
+    "SA",
+    "SELARL",
+    "SELAS",
+    "SELASU",
+    "SCOP",
+    "SCIC",
+    "SCEA",
+    "EI",
+    "EIRL",
+    "AUTOENTREPRENEUR",
+    "AUTO-ENTREPRENEUR",
+}
 
 
 # Feature names in order (used for training and inference)
@@ -78,6 +99,17 @@ FEATURE_NAMES: List[str] = [
     "addr_token_overlap",
     "street_name_jaro",
     "name_addr_consistency",
+    # Enhanced robustness features
+    "addr_perfect_name_required",
+    "name_token_coverage",
+    "name_full_token_match_count",
+    "name_crm_first_token_match",
+    "addr_jaro_squared",
+    "name_addr_product_strong",
+    "same_address_competitor_count",
+    "has_name_at_perfect_address",
+    "name_addr_gap_product",
+    "token_position_weighted_overlap",
 ]
 
 
@@ -371,6 +403,103 @@ def acronym_match(a: str, b: str) -> int:
 
 
 # --------------------------------------------------------------------------- #
+# Additional scoring helpers
+# --------------------------------------------------------------------------- #
+
+
+def _candidate_token_union(candidate_names: List[CandidateName]) -> Set[str]:
+    """Union of tokens across all candidate names."""
+    tokens: Set[str] = set()
+    for nm in candidate_names:
+        if nm.text:
+            tokens.update(_tokenize(nm.text))
+    return tokens
+
+
+def compute_name_token_coverage(crm_tokens: Set[str], cand_tokens: Set[str]) -> float:
+    """Share of CRM tokens covered by any candidate name token."""
+    if not crm_tokens:
+        return 1.0
+    covered = crm_tokens & cand_tokens
+    return len(covered) / len(crm_tokens)
+
+
+def compute_name_full_token_match_count(crm_tokens: Set[str], cand_tokens: Set[str]) -> float:
+    """Count of exact token matches between CRM name and candidate names."""
+    if not crm_tokens or not cand_tokens:
+        return 0.0
+    return float(len(crm_tokens & cand_tokens))
+
+
+def compute_name_crm_first_token_match(crm_tokens_list: List[str], cand_tokens: Set[str]) -> float:
+    """Check if first discriminant CRM token appears in candidate tokens."""
+    if not crm_tokens_list:
+        return 0.0
+    first = crm_tokens_list[0]
+    if first in STOPWORDS and len(crm_tokens_list) > 1:
+        first = crm_tokens_list[1]
+    return float(first in cand_tokens)
+
+
+def compute_token_position_weighted_overlap(crm_tokens_list: List[str], best_name_tokens: List[str]) -> float:
+    """Weighted overlap giving more weight to leading CRM tokens."""
+    if not crm_tokens_list:
+        return 0.0
+    if not best_name_tokens:
+        return 0.0
+    denom = sum(1.0 / (i + 1) for i in range(len(crm_tokens_list)))
+    score = 0.0
+    for i, tok in enumerate(crm_tokens_list):
+        weight = 1.0 / (i + 1)
+        if tok in best_name_tokens:
+            score += weight
+    return score / denom if denom else 0.0
+
+
+def compute_addr_perfect_name_required(
+    addr_jaro: float,
+    street_number_diff: float,
+    postcode_match: float,
+    has_any_name: float,
+    name_jaro_max: float,
+) -> float:
+    """Penalize perfect address without a supporting name, reward when both are strong."""
+    perfect_addr = addr_jaro == 1.0 and street_number_diff == 0.0 and postcode_match == 1.0
+    if not perfect_addr:
+        return 0.0
+    if has_any_name == 0.0:
+        return -1.0
+    if name_jaro_max < 0.5:
+        return -0.5
+    if name_jaro_max >= 0.8:
+        return 1.0
+    return 0.0
+
+
+def compute_name_addr_product_strong(name_jaro_max: float, addr_jaro: float) -> float:
+    """Stronger interaction requiring both name and address to be decent."""
+    if name_jaro_max < 0.5 or addr_jaro < 0.5:
+        return 0.0
+    return (name_jaro_max ** 1.5) * (addr_jaro ** 1.5)
+
+
+def compute_has_name_at_perfect_address(
+    addr_jaro: float,
+    street_number_diff: float,
+    postcode_match: float,
+    has_any_name: float,
+) -> float:
+    perfect_addr = addr_jaro == 1.0 and street_number_diff == 0.0 and postcode_match == 1.0
+    return float(perfect_addr and has_any_name == 1.0)
+
+
+def compute_name_addr_gap_product(name_jaro_gap: float, addr_jaro: float) -> float:
+    if name_jaro_gap > 0.1 and addr_jaro > 0.7:
+        return name_jaro_gap * addr_jaro
+    return 0.0
+
+
+# --------------------------------------------------------------------------- #
 # Aggregation helpers for bag-of-names strategy
 # --------------------------------------------------------------------------- #
 
@@ -417,6 +546,10 @@ def _init_name_feature_defaults() -> Dict[str, float]:
         "person_name_jaro_max": 0.0,
         "name_city_overlap_max": 0.0,
         "name_is_city_like_max": 0.0,
+        "name_token_coverage": 0.0,
+        "name_full_token_match_count": 0.0,
+        "name_crm_first_token_match": 0.0,
+        "token_position_weighted_overlap": 0.0,
     }
 
 
@@ -425,15 +558,14 @@ def _init_name_feature_defaults() -> Dict[str, float]:
 # --------------------------------------------------------------------------- #
 
 
-def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
+def make_features(crm_row: pd.Series, cand: dict, competitor_count: float = 0.0) -> Dict[str, float]:
     """
     Compute all similarity features between a CRM row and a SIRENE candidate.
-
-    This function is used by both training and inference to ensure consistency.
 
     Args:
         crm_row: Pandas Series with CRM data (crm_name, crm_address, postcode, etc.)
         cand: Dictionary with SIRENE candidate data
+        competitor_count: number of candidates sharing same address/number (for tie-break)
 
     Returns:
         Dictionary with all feature values
@@ -443,8 +575,12 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
     crm_addr = normalize_text(crm_row.get("crm_address", ""))
     cand_addr = build_address(cand)
 
+    crm_tokens_list = crm_name.split()
+    crm_tokens_set = set(crm_tokens_list)
+
     # Bag of names for the candidate
     candidate_names: List[CandidateName] = build_candidate_names(cand)
+    cand_tokens_union = _candidate_token_union(candidate_names)
 
     # Street components
     crm_street_num = extract_street_number(crm_row.get("crm_address"))
@@ -483,14 +619,14 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
                     "jaro": sim_jaro,
                     "lev": sim_lev,
                     "tok": tok,
-                "fw": float(fw),
-                "contains_crm": float(contains_crm),
-                "crm_contains": float(crm_contains),
-                "acronym": float(acr),
-                "city_overlap": city_overlap,
-                "is_city_like": is_city_like,
-                "is_person_nm": is_person_nm,
-            }
+                    "fw": float(fw),
+                    "contains_crm": float(contains_crm),
+                    "crm_contains": float(crm_contains),
+                    "acronym": float(acr),
+                    "city_overlap": city_overlap,
+                    "is_city_like": is_city_like,
+                    "is_person_nm": is_person_nm,
+                }
             )
 
         # Global maxima
@@ -499,7 +635,7 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
 
         sims_sorted = sorted(sims, key=lambda x: x["jaro"], reverse=True)
 
-        # Option hard: prefer non city-like names for the maxima when available
+        # Prefer non city-like names for maxima when available
         non_city_sims = [s for s in sims_sorted if not s["is_city_like"]]
         sims_for_max = non_city_sims or sims_sorted
 
@@ -539,6 +675,21 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
             [s["jaro"] for s in sims if s["nm"].is_sigle] or [0.0]
         )
 
+        # Token-level indicators
+        top_name_tokens = top["nm"].text.split()
+        name_features["name_token_coverage"] = compute_name_token_coverage(
+            crm_tokens_set, cand_tokens_union
+        )
+        name_features["name_full_token_match_count"] = compute_name_full_token_match_count(
+            crm_tokens_set, cand_tokens_union
+        )
+        name_features["name_crm_first_token_match"] = compute_name_crm_first_token_match(
+            crm_tokens_list, cand_tokens_union
+        )
+        name_features["token_position_weighted_overlap"] = compute_token_position_weighted_overlap(
+            crm_tokens_list, top_name_tokens
+        )
+
     # ---------------- Address & location features -----------------
     addr_features = {
         "addr_jaro": jaro_sim(crm_addr, cand_addr),
@@ -552,5 +703,34 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
 
     features = {**name_features, **addr_features}
     features["name_addr_consistency"] = name_features["name_jaro_max"] * addr_features["addr_jaro"]
+
+    # Enhanced robustness features
+    features["addr_perfect_name_required"] = compute_addr_perfect_name_required(
+        features["addr_jaro"],
+        features["street_number_diff"],
+        features["postcode_match"],
+        features.get("has_any_name", 0.0),
+        features.get("name_jaro_max", 0.0),
+    )
+    features["name_token_coverage"] = features.get("name_token_coverage", 0.0)
+    features["name_full_token_match_count"] = features.get("name_full_token_match_count", 0.0)
+    features["name_crm_first_token_match"] = features.get("name_crm_first_token_match", 0.0)
+    features["addr_jaro_squared"] = features["addr_jaro"] ** 2
+    features["name_addr_product_strong"] = compute_name_addr_product_strong(
+        features.get("name_jaro_max", 0.0), features.get("addr_jaro", 0.0)
+    )
+    features["same_address_competitor_count"] = float(competitor_count)
+    features["has_name_at_perfect_address"] = compute_has_name_at_perfect_address(
+        features["addr_jaro"],
+        features["street_number_diff"],
+        features["postcode_match"],
+        features.get("has_any_name", 0.0),
+    )
+    features["name_addr_gap_product"] = compute_name_addr_gap_product(
+        features.get("name_jaro_gap", 0.0), features.get("addr_jaro", 0.0)
+    )
+    features["token_position_weighted_overlap"] = features.get(
+        "token_position_weighted_overlap", 0.0
+    )
 
     return features
