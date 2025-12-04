@@ -91,6 +91,7 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
         "codePostalEtablissement",
         "libelleCommuneEtablissement",
         "codeCommuneEtablissement",
+        "categorieJuridiqueUniteLegale",
     ]
     pf = pq.ParquetFile(PARQUET_PATH)
     mapping: Dict[str, dict] = {}
@@ -118,6 +119,7 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
                 "postcode": r.get("codePostalEtablissement"),
                 "city": r.get("libelleCommuneEtablissement"),
                 "insee": r.get("codeCommuneEtablissement"),
+                "cj_ul": r.get("categorieJuridiqueUniteLegale"),
             }
             if cand.get("siren"):
                 sirens.add(str(cand["siren"]))

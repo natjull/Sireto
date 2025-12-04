@@ -33,9 +33,15 @@ from .naming import (
     CandidateName,
     NameSource,
     build_candidate_names,
+    looks_like_person_name,
     normalize_name,
     normalize_text,
 )
+
+
+# Thresholds for city-like detection
+CITY_OVERLAP_THRESHOLD = 0.7
+CITY_MAX_TOKENS = 3
 
 
 # Feature names in order (used for training and inference)
@@ -59,6 +65,10 @@ FEATURE_NAMES: List[str] = [
     "is_ul_name_max",
     "is_sigle_max",
     "name_length_max",
+    "has_person_name",
+    "person_name_jaro_max",
+    "name_city_overlap_max",
+    "name_is_city_like_max",
     # Address / location features (unchanged)
     "addr_jaro",
     "addr_levenshtein",
@@ -67,6 +77,7 @@ FEATURE_NAMES: List[str] = [
     "street_number_diff",
     "addr_token_overlap",
     "street_name_jaro",
+    "name_addr_consistency",
 ]
 
 
@@ -100,6 +111,46 @@ def levenshtein_norm(a: str, b: str) -> float:
         return 0.0
     dist = Levenshtein.distance(a, b)
     return 1.0 - dist / max(len(a), len(b))
+
+
+# --------------------------------------------------------------------------- #
+# CRM name cleanup
+# --------------------------------------------------------------------------- #
+
+
+def _remove_tokens(text: str, tokens_to_remove: Set[str]) -> str:
+    if not text:
+        return ""
+    tokens = text.split()
+    filtered = [t for t in tokens if t not in tokens_to_remove]
+    return " ".join(filtered)
+
+
+def strip_location_from_crm_name(crm_row: pd.Series) -> str:
+    """Remove city/CP/INSEE tokens from the CRM name to avoid city bias.
+
+    Keeps the normalized version; if everything is removed, fall back to the original
+    normalized name to avoid empty strings.
+    """
+
+    original_norm = normalize_name(crm_row.get("crm_name", ""))
+    if not original_norm:
+        return ""
+
+    city = normalize_text(crm_row.get("crm_city_addr") or crm_row.get("crm_city"))
+    postcode = normalize_text(crm_row.get("postcode"))
+    insee = normalize_text(crm_row.get("insee"))
+
+    tokens_to_remove: Set[str] = set()
+    if city:
+        tokens_to_remove.update(city.split())
+    if postcode:
+        tokens_to_remove.add(postcode)
+    if insee:
+        tokens_to_remove.add(insee)
+
+    cleaned = _remove_tokens(original_norm, tokens_to_remove)
+    return cleaned or original_norm
 
 
 # --------------------------------------------------------------------------- #
@@ -362,6 +413,10 @@ def _init_name_feature_defaults() -> Dict[str, float]:
         "is_ul_name_max": 0.0,
         "is_sigle_max": 0.0,
         "name_length_max": 0.0,
+        "has_person_name": 0.0,
+        "person_name_jaro_max": 0.0,
+        "name_city_overlap_max": 0.0,
+        "name_is_city_like_max": 0.0,
     }
 
 
@@ -384,7 +439,7 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         Dictionary with all feature values
     """
     # Normalize inputs
-    crm_name = normalize_name(crm_row.get("crm_name", ""))
+    crm_name = strip_location_from_crm_name(crm_row)
     crm_addr = normalize_text(crm_row.get("crm_address", ""))
     cand_addr = build_address(cand)
 
@@ -401,6 +456,9 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
     cand_street_name = get_street_name(cand)
 
     crm_city = crm_row.get("crm_city_addr") or crm_row.get("crm_city", "")
+    crm_city_norm = normalize_text(crm_city)
+    cand_city_norm = normalize_text(cand.get("city"))
+    crm_is_person = looks_like_person_name(crm_name)
 
     # ---------------- Name similarities (aggregated) -----------------
     name_features = _init_name_feature_defaults()
@@ -415,6 +473,9 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
             contains_crm = contains_check(nm.text, crm_name)
             crm_contains = contains_check(crm_name, nm.text)
             acr = acronym_match(crm_name, nm.text)
+            city_overlap = max(token_overlap(nm.text, cand_city_norm), token_overlap(nm.text, crm_city_norm))
+            is_city_like = city_overlap > CITY_OVERLAP_THRESHOLD and len(nm.text.split()) <= CITY_MAX_TOKENS
+            is_person_nm = nm.source == NameSource.PERSON_NAME or looks_like_person_name(nm.text)
 
             sims.append(
                 {
@@ -422,11 +483,14 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
                     "jaro": sim_jaro,
                     "lev": sim_lev,
                     "tok": tok,
-                    "fw": float(fw),
-                    "contains_crm": float(contains_crm),
-                    "crm_contains": float(crm_contains),
-                    "acronym": float(acr),
-                }
+                "fw": float(fw),
+                "contains_crm": float(contains_crm),
+                "crm_contains": float(crm_contains),
+                "acronym": float(acr),
+                "city_overlap": city_overlap,
+                "is_city_like": is_city_like,
+                "is_person_nm": is_person_nm,
+            }
             )
 
         # Global maxima
@@ -434,8 +498,13 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         name_features["name_count"] = float(len(candidate_names))
 
         sims_sorted = sorted(sims, key=lambda x: x["jaro"], reverse=True)
-        top = sims_sorted[0]
-        second = sims_sorted[1]["jaro"] if len(sims_sorted) > 1 else 0.0
+
+        # Option hard: prefer non city-like names for the maxima when available
+        non_city_sims = [s for s in sims_sorted if not s["is_city_like"]]
+        sims_for_max = non_city_sims or sims_sorted
+
+        top = sims_for_max[0]
+        second = sims_for_max[1]["jaro"] if len(sims_for_max) > 1 else 0.0
 
         name_features.update(
             {
@@ -452,6 +521,10 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
                 "is_ul_name_max": float(top["nm"].is_ul_name),
                 "is_sigle_max": float(top["nm"].is_sigle),
                 "name_length_max": float(len(top["nm"].text)),
+                "has_person_name": float(any(s["is_person_nm"] for s in sims)),
+                "person_name_jaro_max": max([s["jaro"] for s in sims if s["is_person_nm"]] or [0.0]),
+                "name_city_overlap_max": max(s["city_overlap"] for s in sims),
+                "name_is_city_like_max": float(max(s["is_city_like"] for s in sims)),
             }
         )
 
@@ -478,4 +551,6 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
     }
 
     features = {**name_features, **addr_features}
+    features["name_addr_consistency"] = name_features["name_jaro_max"] * addr_features["addr_jaro"]
+
     return features

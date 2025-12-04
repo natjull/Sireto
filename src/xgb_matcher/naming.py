@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
-from typing import List
+from typing import List, Set
 
 import pandas as pd
 
@@ -40,6 +40,80 @@ LEGAL_STOPWORDS = {
     "SOCIETE",
     "ENTREPRISE",
     "ETABLISSEMENT",
+}
+
+# Minimal but high-coverage list of common French first names (uppercased, no accents)
+# Used only for a lightweight heuristic; keep it short to avoid false positives.
+COMMON_FIRST_NAMES: Set[str] = {
+    "JEAN",
+    "PIERRE",
+    "PAUL",
+    "JACQUES",
+    "MICHEL",
+    "ALAIN",
+    "LOUIS",
+    "CLAUDE",
+    "GERARD",
+    "FRANCOIS",
+    "HENRI",
+    "ANDRE",
+    "RENE",
+    "MARC",
+    "DANIEL",
+    "NICOLAS",
+    "OLIVIER",
+    "LAURENT",
+    "ALEXANDRE",
+    "THOMAS",
+    "LUC",
+    "ANTOINE",
+    "SIMON",
+    "VICTOR",
+    "GABRIEL",
+    "JULIEN",
+    "YANN",
+    "ARTHUR",
+    "PAULINE",
+    "MARIE",
+    "ANNE",
+    "NATHALIE",
+    "CHRISTINE",
+    "CATHERINE",
+    "ISABELLE",
+    "SOPHIE",
+    "LAURENCE",
+    "CELINE",
+    "SANDRINE",
+    "EMILIE",
+    "JULIE",
+    "ELISE",
+    "LAURA",
+    "ANNA",
+    "SARAH",
+    "CLARA",
+    "EVA",
+    "LENA",
+    "LEA",
+    "MANON",
+    "MAELLE",
+    "AMANDINE",
+    "AUDREY",
+    "MARION",
+    "HELENE",
+    "FLORENCE",
+}
+
+# Codes SIRENE (categorieJuridiqueUniteLegale) correspondant aux personnes physiques / EI
+# Utilisés pour autoriser l'usage de noms de personne dans le bag-of-names.
+PERSON_UL_CODES: Set[str] = {
+    "1000",  # Entrepreneur individuel
+    "1100",  # Entrepreneur individuel à responsabilité limitée
+    "1200",
+    "1300",
+    "1400",
+    "1500",
+    "1600",
+    "2110",  # Indivision entre personnes physiques
 }
 
 
@@ -103,6 +177,31 @@ def normalize_name(raw: str | None, *, max_len: int = 100) -> str:
     return truncate_name(cleaned, max_len=max_len)
 
 
+def looks_like_person_name(text: str | None) -> bool:
+    """Heuristic detection of a person full name.
+
+    Criteria (all must hold):
+      - non-empty, normalized
+      - 2 or 3 tokens
+      - no digits
+      - at least one token is a common French first name
+      - none of the tokens are legal stopwords (SARL, SAS, ...)
+    """
+    if not text:
+        return False
+    norm = normalize_text(text)
+    if not norm:
+        return False
+    tokens = norm.split()
+    if not (2 <= len(tokens) <= 3):
+        return False
+    if any(any(ch.isdigit() for ch in tok) for tok in tokens):
+        return False
+    if any(tok in LEGAL_STOPWORDS for tok in tokens):
+        return False
+    return any(tok in COMMON_FIRST_NAMES for tok in tokens)
+
+
 def build_candidate_names(cand: dict) -> List[CandidateName]:
     """Return all available normalized names for a SIRET candidate."""
     names: List[CandidateName] = []
@@ -127,7 +226,11 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
     person_fullname = None
     if cand.get("prenom_usuel_ul") or cand.get("nom_ul"):
         person_fullname = " ".join(filter(None, [cand.get("prenom_usuel_ul"), cand.get("nom_ul")]))
-    add(person_fullname, NameSource.PERSON_NAME, is_ul=True, is_sigle=False)
+
+    # On n'inclut les noms de personnes que si la CJ UL correspond à une personne physique / EI
+    cj_ul = cand.get("cj_ul")
+    if cj_ul in PERSON_UL_CODES and person_fullname:
+        add(person_fullname, NameSource.PERSON_NAME, is_ul=True, is_sigle=False)
 
     return names
 
@@ -147,4 +250,5 @@ __all__ = [
     "normalize_name",
     "normalize_text",
     "primary_name",
+    "looks_like_person_name",
 ]

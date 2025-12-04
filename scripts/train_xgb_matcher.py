@@ -178,6 +178,7 @@ def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
         "codePostalEtablissement",
         "libelleCommuneEtablissement",
         "codeCommuneEtablissement",
+        "categorieJuridiqueUniteLegale",
     ]
     pf = pq.ParquetFile(HISTO_PATH)
     mapping: Dict[str, dict] = {}
@@ -201,6 +202,7 @@ def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
                 "postcode": r.get("codePostalEtablissement"),
                 "city": r.get("libelleCommuneEtablissement"),
                 "insee": r.get("codeCommuneEtablissement"),
+                "cj_ul": r.get("categorieJuridiqueUniteLegale"),
             }
             if cand.get("siren"):
                 sirens.add(str(cand["siren"]))
