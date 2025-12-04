@@ -27,7 +27,7 @@ from typing import Dict, List
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
-from xgboost import XGBClassifier
+from xgboost import XGBClassifier, XGBRanker
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -188,8 +188,15 @@ def main():
     print(f"Candidates loaded: {len(candidates)}")
 
     print("Loading model artifacts...")
-    clf = XGBClassifier()
-    clf.load_model(MODEL_PATH)
+    # The saved default model may be a classifier or a ranker depending on training.
+    try:
+        clf = XGBClassifier()
+        clf.load_model(MODEL_PATH)
+        is_ranker = False
+    except TypeError:
+        clf = XGBRanker()
+        clf.load_model(MODEL_PATH)
+        is_ranker = True
     with open(SCALER_PATH, "rb") as f:
         scaler = pickle.load(f)
     with open(FEATURE_META_PATH) as f:
@@ -214,7 +221,20 @@ def main():
         feats = [make_features(r, c) for _, c in cand_list]
         X = pd.DataFrame(feats)[feature_order]
         Xs = scaler.transform(X)
-        scores = clf.predict_proba(Xs)[:, 1]
+        raw_scores = clf.predict(Xs) if is_ranker else clf.predict_proba(Xs)[:, 1]
+
+        # Post-adjustments (inference-only):
+        # - pénalise les candidats sans nom
+        # - bonifie légèrement les adresses parfaitement identiques selon le nom
+        scores = []
+        for sc, f in zip(raw_scores, feats):
+            adj = sc
+            if f.get("has_any_name", 1.0) == 0.0:
+                adj *= 0.9
+            if f.get("addr_jaro", 0.0) == 1.0 and f.get("street_number_diff", 9999) == 0:
+                adj += 0.05 * f.get("name_jaro_max", 0.0)
+            scores.append(adj)
+        scores = np.array(scores)
 
         topk_idx = np.argsort(scores)[::-1][:TOP_K]
         for rank, idx_k in enumerate(topk_idx, start=1):

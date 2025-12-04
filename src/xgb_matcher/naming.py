@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import re
 from typing import List, Set
 
 import pandas as pd
@@ -130,6 +131,8 @@ def normalize_text(text: str | None) -> str:
     if text is None or (isinstance(text, float) and pd.isna(text)):
         return ""
     t = str(text).upper()
+    # Harmonize separators (DECINES-CHARPIEU == DECINES CHARPIEU)
+    t = t.replace("-", " ")
     replacements = {
         "É": "E",
         "È": "E",
@@ -208,7 +211,8 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
 
     def add(val: str | None, source: NameSource, *, is_ul: bool = False, is_sigle: bool = False):
         norm = normalize_name(val)
-        if norm:
+        # Ignore pure numeric or ultra-short tokens (e.g., "38") which are usually noise
+        if norm and not norm.isdigit() and len(norm) > 2:
             names.append(CandidateName(text=norm, source=source, is_ul_name=is_ul, is_sigle=is_sigle))
 
     # Etablissement level
