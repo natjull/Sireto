@@ -22,7 +22,7 @@ import json
 import pickle
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Set
 
 import numpy as np
 import pandas as pd
@@ -50,6 +50,56 @@ SCALER_PATH = MODEL_DIR / "xgb_matcher_scaler.pkl"
 FEATURE_META_PATH = MODEL_DIR / "xgb_matcher_features.json"
 TOP_K = 5
 BATCH_SIZE = 100_000
+
+
+# ---------- Reranking helpers ----------
+
+
+def extract_significant_tokens(text: str, min_len: int = 3) -> Set[str]:
+    """Extract significant tokens (min_len+ chars) from normalized text."""
+    if not text:
+        return set()
+    norm = normalize_text(text)
+    return {tok for tok in norm.split() if len(tok) >= min_len}
+
+
+def compute_ul_token_bonus(crm_name: str, cand: dict) -> float:
+    """
+    Compute bonus for partial keyword matches in UL names.
+    
+    Helps portmanteau names like 'DigitBoxing' match 'SPORT BOXING & CO'.
+    Returns a score in [0, 1] based on how many CRM tokens appear in UL names.
+    """
+    crm_tokens = extract_significant_tokens(crm_name)
+    if not crm_tokens:
+        return 0.0
+    
+    # Collect all UL name tokens
+    ul_fields = ["denomination_ul", "denomination_usuelle_ul", "sigle_ul"]
+    ul_tokens: Set[str] = set()
+    for field in ul_fields:
+        val = cand.get(field)
+        if val:
+            ul_tokens.update(extract_significant_tokens(str(val)))
+    
+    if not ul_tokens:
+        return 0.0
+    
+    # Check for substring matches (e.g., 'BOXING' in 'DIGITBOXING' or vice versa)
+    matches = 0
+    for crm_tok in crm_tokens:
+        for ul_tok in ul_tokens:
+            # Direct token match
+            if crm_tok == ul_tok:
+                matches += 1
+                break
+            # Substring in either direction (for portmanteaux)
+            if len(crm_tok) >= 4 and len(ul_tok) >= 4:
+                if crm_tok in ul_tok or ul_tok in crm_tok:
+                    matches += 0.7
+                    break
+    
+    return min(1.0, matches / len(crm_tokens))
 
 
 # ---------- Data loading ----------
@@ -226,14 +276,78 @@ def main():
         # Post-adjustments (inference-only):
         # - pénalise les candidats sans nom
         # - bonifie légèrement les adresses parfaitement identiques selon le nom
-        scores = []
-        for sc, f in zip(raw_scores, feats):
+        # - bonifie les candidats avec nom UL quand le nom établissement est absent
+        # - bonus token pour les portmanteaux (ex: BOXING dans DigitBoxing)
+        crm_name_raw = r.get("crm_name", "")
+        
+        # First pass: compute base adjustments
+        adjusted_scores = []
+        for idx, (sc, f) in enumerate(zip(raw_scores, feats)):
             adj = sc
+            _, cand = cand_list[idx]
+            
+            # Penalty for candidates without any name
             if f.get("has_any_name", 1.0) == 0.0:
                 adj *= 0.9
-            if f.get("addr_jaro", 0.0) == 1.0 and f.get("street_number_diff", 9999) == 0:
+            
+            # Bonus for perfect address match scaled by name similarity
+            addr_quality = f.get("addr_jaro", 0.0)
+            street_match = f.get("street_number_diff", 9999) == 0
+            if addr_quality == 1.0 and street_match:
                 adj += 0.05 * f.get("name_jaro_max", 0.0)
-            scores.append(adj)
+            
+            # UL name boost: when etablissement name is weak/absent but UL name matches
+            name_sim_etab = f.get("name_sim_max_etab", 0.0)
+            name_sim_ul = f.get("name_sim_max_ul", 0.0)
+            
+            if name_sim_etab < 0.35 and name_sim_ul > 0.3:
+                if addr_quality == 1.0 and street_match:
+                    # Perfect address + UL name = very strong signal
+                    ul_boost = name_sim_ul * 0.80 + 0.30
+                else:
+                    # Good address + UL name = moderate boost
+                    ul_boost = name_sim_ul * addr_quality * 0.40
+                adj += ul_boost
+            
+            # Token substring bonus for portmanteau names
+            if addr_quality >= 0.85:
+                token_bonus = compute_ul_token_bonus(crm_name_raw, cand)
+                if token_bonus > 0:
+                    adj += token_bonus * 0.30
+            
+            adjusted_scores.append((adj, addr_quality, street_match, name_sim_ul))
+        
+        # Second pass: apply address-relative anchor bonus
+        # If there's a candidate with perfect address and meaningful UL name,
+        # heavily penalize candidates with much worse addresses
+        perfect_addr_candidates = [
+            (i, s, ul) for i, (s, aq, sm, ul) in enumerate(adjusted_scores) 
+            if aq == 1.0 and sm and ul > 0.3
+        ]
+        
+        scores = []
+        if perfect_addr_candidates:
+            # We have at least one perfect-address candidate with UL name
+            best_perfect_score = max(s for _, s, _ in perfect_addr_candidates)
+            
+            for idx, (adj, addr_quality, street_match, name_sim_ul) in enumerate(adjusted_scores):
+                if addr_quality == 1.0 and street_match:
+                    # Perfect address candidates get a boost relative to best imperfect scorer
+                    # This ensures they compete favorably
+                    if name_sim_ul > 0.3:
+                        # Has UL name - ensure it's competitive with wrong-address high scorers
+                        bonus = max(0, (best_perfect_score - adj) * 0.3 + 0.5)
+                        adj += bonus
+                else:
+                    # Non-perfect address candidates get penalized if there are good
+                    # perfect-address alternatives
+                    address_penalty = (1.0 - addr_quality) * 1.2
+                    adj -= address_penalty
+                
+                scores.append(adj)
+        else:
+            scores = [adj for adj, _, _, _ in adjusted_scores]
+        
         scores = np.array(scores)
 
         topk_idx = np.argsort(scores)[::-1][:TOP_K]
