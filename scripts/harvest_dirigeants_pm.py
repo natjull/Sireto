@@ -43,7 +43,7 @@ LOGGER = logging.getLogger(__name__)
 BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 PER_PAGE = 25  # API maximum
 MAX_PAGES = 400  # API maximum (400 * 25 = 10,000 results max)
-WORKERS = 1  # Single worker for predictable rate limiting
+WORKERS = 2  # Overlap network latency while respecting global rate limit
 MAX_RETRIES = 4
 BACKOFF_BASE = 0.5
 
