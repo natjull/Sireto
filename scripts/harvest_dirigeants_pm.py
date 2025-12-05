@@ -50,8 +50,8 @@ BACKOFF_BASE = 0.5
 DB_PATH = Path("data/dirigeants_pm.sqlite")
 PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 
-# Strict rate: 7 req/s = 1 request every 143ms
-REQUEST_INTERVAL = 1.0 / 7.0  # ~0.143 seconds
+# Strict rate: 6.66 req/s = 1 request every 150ms
+REQUEST_INTERVAL = 1.0 / 6.66  # ~0.150 seconds
 
 
 # --------------------------- Rate Limiter ---------------------------------- #
