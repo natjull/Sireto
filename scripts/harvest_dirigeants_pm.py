@@ -30,6 +30,8 @@ from typing import Iterable, List, Optional
 import pandas as pd
 import requests
 from tqdm import tqdm
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 # --------------------------- Logging --------------------------------------- #
 logging.basicConfig(
@@ -50,8 +52,8 @@ BACKOFF_BASE = 0.5
 DB_PATH = Path("data/dirigeants_pm.sqlite")
 PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 
-# Strict rate: 6.6 req/s = 1 request every 151ms
-REQUEST_INTERVAL = 1.0 / 6.6  # ~0.151 seconds
+# Strict rate: 6.6 req/s = 1 request every 151ms (API documented limit)
+REQUEST_INTERVAL = 1.0 / 6.6  # ~0.151 seconds; tune here if the provider changes the cap
 
 # NAF sections for auto-sharding when commune hits 10k
 NAF_SECTIONS = [
@@ -178,7 +180,7 @@ def save_progress(
             VALUES (?, ?, ?, ?)
             ON CONFLICT(scope_key)
             DO UPDATE SET last_page=excluded.last_page, 
-                          total_results=COALESCE(excluded.total_results, total_results),
+                          total_results=COALESCE(excluded.total_results, harvest_progress.total_results),
                           completed=excluded.completed
             """,
             (scope.key, last_page, total_results, int(completed)),
@@ -251,7 +253,8 @@ def fetch_page(
             
             resp = session.get(BASE_URL, params=params, timeout=15)
             if resp.status_code == 429:
-                delay = float(resp.headers.get("Retry-After", 3.0))
+                retry_after = float(resp.headers.get("Retry-After", 3.0))
+                delay = max(retry_after, BACKOFF_BASE * (2 ** attempt))
                 LOGGER.warning("429 on %s page %d, sleeping %.1fs", scope.key, page, delay)
                 time.sleep(delay)
                 continue
@@ -330,6 +333,8 @@ def fetch_all_for_scope(
         )
         for section in NAF_SECTIONS:
             new_scope = Scope(scope.code_commune, section_naf=section)
+            # PERSIST immediately so shards survive script interruption
+            save_progress(conn, db_lock, new_scope, 0, None, completed=False)
             scope_queue.put(new_scope)
         save_progress(conn, db_lock, scope, 0, total_results, completed=True)
         return
@@ -360,9 +365,11 @@ def fetch_all_for_scope(
         
         LOGGER.info("Found %d unique NAF codes in %s:%s", len(naf_codes_seen), scope.code_commune, scope.section_naf)
         
-        # Create scope for each NAF code
+        # Create scope for each NAF code and PERSIST immediately
         for naf_code in naf_codes_seen:
             new_scope = Scope(scope.code_commune, activite_principale=naf_code)
+            # PERSIST immediately so shards survive script interruption
+            save_progress(conn, db_lock, new_scope, 0, None, completed=False)
             scope_queue.put(new_scope)
         
         save_progress(conn, db_lock, scope, 0, total_results, completed=True)
@@ -415,6 +422,18 @@ def worker(
         "Connection": "keep-alive",
         "User-Agent": "Sireto-HarvestDirigeantsPM/2.0",
     })
+    adapter = HTTPAdapter(
+        pool_connections=WORKERS * 4,
+        pool_maxsize=WORKERS * 4,
+        max_retries=Retry(
+            total=2,
+            backoff_factor=0.3,
+            status_forcelist=[500, 502, 503, 504],
+            allowed_methods=["GET"],
+        ),
+    )
+    session.mount("https://", adapter)
+    session.mount("http://", adapter)
 
     while True:
         try:
@@ -449,23 +468,39 @@ def main() -> None:
         completed_keys.add(key)
     
     remaining = [s for s in all_scopes if s.key not in completed_keys]
-    LOGGER.info("Scopes to process: %d (already completed: %d)", 
-                len(remaining), len(completed_keys))
+    
+    # ALSO load pending sharded scopes (persisted but not completed, e.g. after interruption)
+    pending_shards = []
+    cur = conn.execute("SELECT scope_key FROM harvest_progress WHERE completed=0")
+    for (key,) in cur.fetchall():
+        if ":" in key:  # It's a sharded scope (section or NAF code)
+            parts = key.split(":")
+            if parts[1] == "NAF":
+                # Level 2: commune:NAF:code
+                pending_shards.append(Scope(parts[0], activite_principale=parts[2]))
+            else:
+                # Level 1: commune:section
+                pending_shards.append(Scope(parts[0], section_naf=parts[1]))
+    
+    LOGGER.info("Scopes to process: %d communes + %d pending shards (already completed: %d)", 
+                len(remaining), len(pending_shards), len(completed_keys))
 
-    if not remaining:
+    all_remaining = remaining + pending_shards
+    
+    if not all_remaining:
         LOGGER.info("All scopes already processed!")
         conn.close()
         return
 
     scope_queue: queue.Queue[Scope] = queue.Queue()
-    for s in remaining:
+    for s in all_remaining:
         scope_queue.put(s)
 
     limiter = RateLimiter(REQUEST_INTERVAL)
     db_lock = threading.Lock()
 
     # Progress bar (estimate ~5 pages per scope on average)
-    page_counter = tqdm(total=len(remaining) * 5, desc="Pages", smoothing=0.1)
+    page_counter = tqdm(total=len(all_remaining) * 5, desc="Pages", smoothing=0.1)
 
     threads = []
     for _ in range(WORKERS):
