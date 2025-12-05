@@ -1,26 +1,19 @@
 #!/usr/bin/env python3
 """
-Harvest all enterprises whose dirigeants include at least one personne morale,
-with sharding to bypass the 10k-results-per-request cap of the API.
+Harvest all enterprises whose dirigeants include at least one personne morale.
 
-Features:
-  - Pre-scan each département; if total_results < 10k, fetch by département.
-    If total_results == 10k (cap reached), shard by communes of the département.
-  - Commune list loaded from local parquet StockEtablissement_utf8.parquet
-    (columns codeCommuneEtablissement, codeDepartementEtablissement) for accuracy.
-  - Parallel workers (default 4) + shared token bucket limiter (<7 req/s global).
-  - requests.Session keep-alive + gzip.
-  - minimal=true + include=dirigeants to keep dirigeants while reducing payload.
-  - Retries with backoff, re-try on empty pages, checkpoint per scope
-    (departement or commune) for resumability.
-  - Duplicate-safe INSERT OR IGNORE.
-  - tqdm progress on pages.
+Robust commune-based approach:
+  - Load all communes from local parquet file
+  - Expand Paris/Lyon/Marseille to arrondissements (like sirene_client.py)
+  - Fetch each commune/arrondissement directly (no pre-scan)
+  - Detect and warn if 10k limit reached (indicates potential data loss)
+  - Parallel workers + rate limiting
+  - Checkpoint per commune for resumability
 
 Tables in data/dirigeants_pm.sqlite:
   dirigeants_pm(siren_entreprise, siren_dirigeant, denomination_dirigeant,
-                qualite, source_departement, source_commune, date_capture)
-  harvest_progress(scope_type, departement, commune, last_page)
-    scope_type ∈ {'DEP','COM'}
+               qualite, code_commune, date_capture)
+  harvest_progress(code_commune PRIMARY KEY, last_page, total_results, completed)
 """
 
 from __future__ import annotations
@@ -29,32 +22,35 @@ import queue
 import sqlite3
 import threading
 import time
+import logging
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional
 
 import pandas as pd
 import requests
 from tqdm import tqdm
 
+# --------------------------- Logging --------------------------------------- #
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+)
+LOGGER = logging.getLogger(__name__)
+
 # --------------------------- Tunables ------------------------------------- #
 BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 PER_PAGE = 25  # API maximum
+MAX_PAGES = 400  # API maximum (400 * 25 = 10,000 results max)
 WORKERS = 4
 RATE_LIMIT_RPS = 6.5  # stay below 7 req/s
 RATE_WINDOW = 10.0
 MAX_RETRIES = 4
 BACKOFF_BASE = 0.3
-EMPTY_PAGE_RETRIES = 2
 
 DB_PATH = Path("data/dirigeants_pm.sqlite")
 PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
-
-DEPARTEMENTS = (
-    [f"{i:02d}" for i in range(1, 96)]
-    + ["2A", "2B"]
-    + ["971", "972", "973", "974", "975", "976", "978", "986", "987", "988"]
-)
 
 
 # --------------------------- Rate Limiter ---------------------------------- #
@@ -83,18 +79,23 @@ class RateLimiter:
                 self.cond.wait(timeout=max(0.01, 1.0 / self.refill_rate))
 
 
-# --------------------------- Data models ----------------------------------- #
-@dataclass(frozen=True)
-class Scope:
-    scope_type: str  # 'DEP' or 'COM'
-    departement: str
-    commune: Optional[str] = None
-
-
-@dataclass
-class PageState:
-    scope: Scope
-    last_page: int
+# --------------------------- Arrondissement handling ----------------------- #
+def expand_arrondissements(insee_code: str) -> List[str]:
+    """Expand Paris/Lyon/Marseille parent codes to arrondissements.
+    
+    Like sirene_client.py:
+    - Paris parent: 75056 -> 75101..75120
+    - Lyon parent: 69123 -> 69381..69389
+    - Marseille parent: 13055 -> 13201..13216
+    Otherwise, returns [insee_code].
+    """
+    if insee_code == "75056":
+        return [f"75{100 + i:03d}" for i in range(1, 21)]  # 75101..75120
+    if insee_code == "69123":
+        return [f"6938{i}" for i in range(1, 10)]  # 69381..69389
+    if insee_code == "13055":
+        return [f"132{str(i).zfill(2)}" for i in range(1, 17)]  # 13201..13216
+    return [insee_code]
 
 
 # --------------------------- DB helpers ------------------------------------ #
@@ -106,49 +107,56 @@ def ensure_db(conn: sqlite3.Connection) -> None:
           siren_dirigeant TEXT,
           denomination_dirigeant TEXT,
           qualite TEXT,
-          source_departement TEXT,
-          source_commune TEXT,
+          code_commune TEXT,
           date_capture TEXT DEFAULT (datetime('now')),
-          UNIQUE(siren_entreprise, siren_dirigeant, qualite, source_commune)
+          UNIQUE(siren_entreprise, siren_dirigeant, qualite, code_commune)
         );
         """
     )
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS harvest_progress (
-          scope_type TEXT,
-          departement TEXT,
-          commune TEXT,
-          last_page INTEGER,
-          PRIMARY KEY(scope_type, departement, commune)
+          code_commune TEXT PRIMARY KEY,
+          last_page INTEGER DEFAULT 0,
+          total_results INTEGER,
+          completed INTEGER DEFAULT 0
         );
         """
     )
     conn.commit()
 
 
-def load_progress(conn: sqlite3.Connection, scope: Scope) -> PageState:
+def load_progress(conn: sqlite3.Connection, code_commune: str) -> tuple[int, bool]:
+    """Returns (last_page, completed)."""
     cur = conn.execute(
-        """
-        SELECT last_page FROM harvest_progress
-        WHERE scope_type=? AND departement=? AND commune IS ?
-        """,
-        (scope.scope_type, scope.departement, scope.commune),
+        "SELECT last_page, completed FROM harvest_progress WHERE code_commune=?",
+        (code_commune,),
     )
     row = cur.fetchone()
-    return PageState(scope, row[0] if row else 0)
+    if row:
+        return row[0], bool(row[1])
+    return 0, False
 
 
-def save_progress(conn: sqlite3.Connection, state: PageState, lock: threading.Lock) -> None:
+def save_progress(
+    conn: sqlite3.Connection,
+    lock: threading.Lock,
+    code_commune: str,
+    last_page: int,
+    total_results: Optional[int] = None,
+    completed: bool = False,
+) -> None:
     with lock:
         conn.execute(
             """
-            INSERT INTO harvest_progress (scope_type, departement, commune, last_page)
+            INSERT INTO harvest_progress (code_commune, last_page, total_results, completed)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT(scope_type, departement, commune)
-            DO UPDATE SET last_page=excluded.last_page
+            ON CONFLICT(code_commune)
+            DO UPDATE SET last_page=excluded.last_page, 
+                          total_results=COALESCE(excluded.total_results, total_results),
+                          completed=excluded.completed
             """,
-            (state.scope.scope_type, state.scope.departement, state.scope.commune, state.last_page),
+            (code_commune, last_page, total_results, int(completed)),
         )
         conn.commit()
 
@@ -158,9 +166,8 @@ def upsert_rows(conn: sqlite3.Connection, rows: Iterable[tuple], lock: threading
         conn.executemany(
             """
             INSERT OR IGNORE INTO dirigeants_pm
-            (siren_entreprise, siren_dirigeant, denomination_dirigeant,
-             qualite, source_departement, source_commune)
-            VALUES (?, ?, ?, ?, ?, ?)
+            (siren_entreprise, siren_dirigeant, denomination_dirigeant, qualite, code_commune)
+            VALUES (?, ?, ?, ?, ?)
             """,
             rows,
         )
@@ -168,33 +175,26 @@ def upsert_rows(conn: sqlite3.Connection, rows: Iterable[tuple], lock: threading
 
 
 # --------------------------- Commune list ---------------------------------- #
-def load_communes_for_departement(dep: str) -> list[str]:
+def load_all_communes() -> List[str]:
+    """Load all unique commune codes from parquet, expanding Paris/Lyon/Marseille."""
     if not PARQUET_PATH.exists():
         raise FileNotFoundError(f"Parquet file not found: {PARQUET_PATH}")
-    # Read only codeCommuneEtablissement (codeDepartementEtablissement doesn't exist)
+    
     df = pd.read_parquet(PARQUET_PATH, columns=["codeCommuneEtablissement"])
-    df = df.dropna()
-    df["codeCommuneEtablissement"] = df["codeCommuneEtablissement"].astype(str)
-    
-    # Extract département from code commune
-    # - 2A, 2B: Corse (starts with "2A" or "2B")
-    # - 971-988: DOM-TOM (3 first chars)
-    # - 01-95: Metropolitan France (2 first chars)
-    def extract_dept(code: str) -> str:
-        if code.startswith("2A") or code.startswith("2B"):
-            return code[:2]
-        elif len(code) >= 3 and code[:3] in ["971", "972", "973", "974", "975", "976", "978", "986", "987", "988"]:
-            return code[:3]
-        else:
-            return code[:2]
-    
-    df["dept"] = df["codeCommuneEtablissement"].apply(extract_dept)
-    communes = (
-        df[df["dept"] == dep]["codeCommuneEtablissement"]
+    raw_communes = (
+        df["codeCommuneEtablissement"]
+        .dropna()
         .drop_duplicates()
+        .astype(str)
         .tolist()
     )
-    return sorted(communes)
+    
+    # Expand Paris/Lyon/Marseille to arrondissements
+    all_codes: List[str] = []
+    for code in raw_communes:
+        all_codes.extend(expand_arrondissements(code))
+    
+    return sorted(set(all_codes))
 
 
 # --------------------------- HTTP ------------------------------------------ #
@@ -205,37 +205,41 @@ def backoff_sleep(attempt: int) -> None:
 def fetch_page(
     session: requests.Session,
     limiter: RateLimiter,
-    scope: Scope,
+    code_commune: str,
     page: int,
 ) -> Optional[dict]:
+    """Fetch a single page for a commune. Returns None on failure."""
     for attempt in range(MAX_RETRIES):
         limiter.acquire()
         try:
             params = {
+                "code_commune": code_commune,
                 "per_page": PER_PAGE,
                 "page": page,
                 "minimal": True,
                 "include": "dirigeants",
             }
-            if scope.scope_type == "DEP":
-                params["departement"] = scope.departement
-            else:
-                params["code_commune"] = scope.commune
-
-            resp = session.get(BASE_URL, params=params, timeout=10)
+            resp = session.get(BASE_URL, params=params, timeout=15)
             if resp.status_code == 429:
+                delay = float(resp.headers.get("Retry-After", 2.0))
+                LOGGER.warning("429 on commune %s page %d, sleeping %.1fs", code_commune, page, delay)
+                time.sleep(delay)
+                continue
+            if resp.status_code in (500, 502, 503, 504):
                 backoff_sleep(attempt)
                 continue
             resp.raise_for_status()
             return resp.json()
-        except Exception:
+        except Exception as e:
             if attempt == MAX_RETRIES - 1:
+                LOGGER.error("Failed to fetch commune %s page %d: %s", code_commune, page, e)
                 return None
             backoff_sleep(attempt)
     return None
 
 
-def extract_rows(scope: Scope, payload: dict) -> list[tuple]:
+def extract_rows(code_commune: str, payload: dict) -> List[tuple]:
+    """Extract dirigeants PM rows from API response."""
     rows = []
     for res in payload.get("results", []) or []:
         siren_ent = res.get("siren")
@@ -253,115 +257,99 @@ def extract_rows(scope: Scope, payload: dict) -> list[tuple]:
                     siren_dir,
                     d.get("denomination"),
                     d.get("qualite"),
-                    scope.departement,
-                    scope.commune,
+                    code_commune,
                 )
             )
     return rows
 
 
-# --------------------------- Worker ---------------------------------------- #
-def process_scope(
+# --------------------------- Core fetch function --------------------------- #
+def fetch_all_for_commune(
     session: requests.Session,
     limiter: RateLimiter,
     conn: sqlite3.Connection,
     db_lock: threading.Lock,
-    page_counter: tqdm,
-    scope: Scope,
+    code_commune: str,
+    progress_bar: tqdm,
 ) -> None:
-    state = load_progress(conn, scope)
-    start_page = state.last_page + 1
-
-    first_payload = fetch_page(session, limiter, scope, start_page)
+    """Robustly fetch ALL dirigeants PM for a single commune.
+    
+    Features:
+    - Resume from last_page if interrupted
+    - Detect 10k limit and log WARNING
+    - Save progress after each page
+    - Mark commune as completed when done
+    """
+    last_page, completed = load_progress(conn, code_commune)
+    if completed:
+        return  # Already done
+    
+    start_page = last_page + 1
+    
+    # First page to get total_results
+    first_payload = fetch_page(session, limiter, code_commune, start_page)
     if not first_payload:
         return
-    total_pages = first_payload.get("total_pages", start_page)
-
-    def handle_page(page: int, payload: dict) -> bool:
-        rows = extract_rows(scope, payload)
-        if rows:
-            upsert_rows(conn, rows, db_lock)
-        elif not payload.get("results"):
-            return False
-        return True
-
-    def do_page(page: int, payload: dict) -> bool:
-        if handle_page(page, payload):
-            page_counter.update(1)
-            state.last_page = page
-            save_progress(conn, state, db_lock)
-            return True
-        # retry empty page
-        for _ in range(EMPTY_PAGE_RETRIES):
-            retry_payload = fetch_page(session, limiter, scope, page)
-            if retry_payload and handle_page(page, retry_payload):
-                page_counter.update(1)
-                state.last_page = page
-                save_progress(conn, state, db_lock)
-                return True
-        return False
-
-    if not do_page(start_page, first_payload):
-        return
-
-    for page in range(start_page + 1, total_pages + 1):
-        payload = fetch_page(session, limiter, scope, page)
+    
+    total_results = first_payload.get("total_results", 0)
+    total_pages = first_payload.get("total_pages", 1)
+    
+    # CRITICAL: Detect 10k limit
+    if total_results >= 10000:
+        LOGGER.warning(
+            "⚠️ COMMUNE %s HAS %d RESULTS (10k LIMIT) - POTENTIAL DATA LOSS!",
+            code_commune, total_results
+        )
+    
+    # Process first page
+    rows = extract_rows(code_commune, first_payload)
+    if rows:
+        upsert_rows(conn, rows, db_lock)
+    save_progress(conn, db_lock, code_commune, start_page, total_results)
+    progress_bar.update(1)
+    
+    # Process remaining pages
+    for page in range(start_page + 1, min(total_pages + 1, MAX_PAGES + 1)):
+        payload = fetch_page(session, limiter, code_commune, page)
         if not payload:
             break
-        if not do_page(page, payload):
+        
+        rows = extract_rows(code_commune, payload)
+        if rows:
+            upsert_rows(conn, rows, db_lock)
+        save_progress(conn, db_lock, code_commune, page, total_results)
+        progress_bar.update(1)
+        
+        # Stop if no more results
+        if not payload.get("results"):
             break
+    
+    # Mark as completed
+    save_progress(conn, db_lock, code_commune, total_pages, total_results, completed=True)
 
 
+# --------------------------- Worker ---------------------------------------- #
 def worker(
-    scope_queue: "queue.Queue[Scope]",
+    commune_queue: "queue.Queue[str]",
     limiter: RateLimiter,
     db_lock: threading.Lock,
     page_counter: tqdm,
     conn: sqlite3.Connection,
 ):
     session = requests.Session()
-    session.headers.update({"Accept-Encoding": "gzip, deflate", "Connection": "keep-alive"})
+    session.headers.update({
+        "Accept-Encoding": "gzip, deflate",
+        "Connection": "keep-alive",
+        "User-Agent": "Sireto-HarvestDirigeantsPM/1.0",
+    })
 
     while True:
         try:
-            scope = scope_queue.get_nowait()
+            code_commune = commune_queue.get_nowait()
         except queue.Empty:
             break
-        process_scope(session, limiter, conn, db_lock, page_counter, scope)
-        scope_queue.task_done()
-
-
-# --------------------------- Pre-scan -------------------------------------- #
-def prescan_and_build_scopes() -> list[Scope]:
-    scopes: list[Scope] = []
-    session = requests.Session()
-    limiter = RateLimiter(RATE_LIMIT_RPS, RATE_WINDOW)
-
-    for dep in tqdm(DEPARTEMENTS, desc="Pré-scan départements"):
-        limiter.acquire()
-        r = session.get(
-            BASE_URL,
-            params={
-                "departement": dep,
-                "per_page": 1,
-                "page": 1,
-                "minimal": True,
-                "include": "dirigeants",
-            },
-            timeout=10,
-        )
-        if r.status_code != 200:
-            continue
-        data = r.json()
-        total = data.get("total_results", 0)
-        if total < 10000:
-            scopes.append(Scope("DEP", dep))
-        else:
-            # shard by communes
-            communes = load_communes_for_departement(dep)
-            for com in communes:
-                scopes.append(Scope("COM", dep, com))
-    return scopes
+        fetch_all_for_commune(session, limiter, conn, db_lock, code_commune, page_counter)
+        commune_queue.task_done()
 
 
 # --------------------------- Main ------------------------------------------ #
@@ -370,31 +358,40 @@ def main() -> None:
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     ensure_db(conn)
 
-    scopes = prescan_and_build_scopes()
+    LOGGER.info("Loading communes from parquet...")
+    all_communes = load_all_communes()
+    LOGGER.info("Found %d communes (including arrondissements)", len(all_communes))
 
-    scope_queue: queue.Queue[Scope] = queue.Queue()
-    for s in scopes:
-        scope_queue.put(s)
+    # Filter out already completed communes
+    completed_communes = set()
+    cur = conn.execute("SELECT code_commune FROM harvest_progress WHERE completed=1")
+    for (code,) in cur.fetchall():
+        completed_communes.add(code)
+    
+    remaining = [c for c in all_communes if c not in completed_communes]
+    LOGGER.info("Communes to process: %d (already completed: %d)", 
+                len(remaining), len(completed_communes))
+
+    if not remaining:
+        LOGGER.info("All communes already processed!")
+        conn.close()
+        return
+
+    commune_queue: queue.Queue[str] = queue.Queue()
+    for c in remaining:
+        commune_queue.put(c)
 
     limiter = RateLimiter(RATE_LIMIT_RPS, RATE_WINDOW)
     db_lock = threading.Lock()
 
-    # progress estimate: assume 400 pages per scope minus progress already done
-    total_pages_est = 0
-    cur = conn.execute("SELECT scope_type, departement, commune, last_page FROM harvest_progress")
-    prog_map = {(t, d, c): lp for t, d, c, lp in cur.fetchall()}
-    for s in scopes:
-        key = (s.scope_type, s.departement, s.commune)
-        already = prog_map.get(key, 0)
-        total_pages_est += max(0, 400 - already)
-
-    page_counter = tqdm(total=total_pages_est, desc="Pages", smoothing=0.1)
+    # Progress bar estimates ~5 pages per commune on average
+    page_counter = tqdm(total=len(remaining) * 5, desc="Pages", smoothing=0.1)
 
     threads = []
     for _ in range(WORKERS):
         t = threading.Thread(
             target=worker,
-            args=(scope_queue, limiter, db_lock, page_counter, conn),
+            args=(commune_queue, limiter, db_lock, page_counter, conn),
             daemon=True,
         )
         t.start()
@@ -404,6 +401,16 @@ def main() -> None:
         t.join()
 
     page_counter.close()
+    
+    # Final report
+    cur = conn.execute(
+        "SELECT COUNT(*), SUM(CASE WHEN total_results >= 10000 THEN 1 ELSE 0 END) "
+        "FROM harvest_progress WHERE completed=1"
+    )
+    completed, over_10k = cur.fetchone()
+    LOGGER.info("Harvest complete: %d communes, %d with 10k+ results (check logs)", 
+                completed, over_10k or 0)
+    
     conn.close()
 
 
