@@ -43,40 +43,33 @@ LOGGER = logging.getLogger(__name__)
 BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 PER_PAGE = 25  # API maximum
 MAX_PAGES = 400  # API maximum (400 * 25 = 10,000 results max)
-WORKERS = 4
-RATE_LIMIT_RPS = 6.5  # stay below 7 req/s
-RATE_WINDOW = 10.0
+WORKERS = 1  # Single worker for predictable rate limiting
 MAX_RETRIES = 4
-BACKOFF_BASE = 0.3
+BACKOFF_BASE = 0.5
 
 DB_PATH = Path("data/dirigeants_pm.sqlite")
 PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 
+# Strict rate: 7 req/s = 1 request every 143ms
+REQUEST_INTERVAL = 1.0 / 7.0  # ~0.143 seconds
+
 
 # --------------------------- Rate Limiter ---------------------------------- #
 class RateLimiter:
-    def __init__(self, rps: float, window: float):
-        self.capacity = int(rps * window)
-        self.tokens = self.capacity
-        self.refill_rate = rps
-        self.last = time.monotonic()
+    """Simple strict rate limiter: enforces minimum interval between requests."""
+    
+    def __init__(self, interval: float):
+        self.interval = interval
+        self.last_request = 0.0
         self.lock = threading.Lock()
-        self.cond = threading.Condition(self.lock)
 
     def acquire(self) -> None:
-        with self.cond:
-            while True:
-                now = time.monotonic()
-                elapsed = now - self.last
-                if elapsed > 0:
-                    refill = elapsed * self.refill_rate
-                    if refill >= 1:
-                        self.tokens = min(self.capacity, self.tokens + int(refill))
-                        self.last = now
-                if self.tokens > 0:
-                    self.tokens -= 1
-                    return
-                self.cond.wait(timeout=max(0.01, 1.0 / self.refill_rate))
+        with self.lock:
+            now = time.monotonic()
+            elapsed = now - self.last_request
+            if elapsed < self.interval:
+                time.sleep(self.interval - elapsed)
+            self.last_request = time.monotonic()
 
 
 # --------------------------- Arrondissement handling ----------------------- #
@@ -381,7 +374,7 @@ def main() -> None:
     for c in remaining:
         commune_queue.put(c)
 
-    limiter = RateLimiter(RATE_LIMIT_RPS, RATE_WINDOW)
+    limiter = RateLimiter(REQUEST_INTERVAL)
     db_lock = threading.Lock()
 
     # Progress bar estimates ~5 pages per commune on average
