@@ -2,18 +2,18 @@
 """
 Harvest all enterprises whose dirigeants include at least one personne morale.
 
-Robust commune-based approach:
+Robust commune-based approach with AUTO-SHARDING:
   - Load all communes from local parquet file
-  - Expand Paris/Lyon/Marseille to arrondissements (like sirene_client.py)
-  - Fetch each commune/arrondissement directly (no pre-scan)
-  - Detect and warn if 10k limit reached (indicates potential data loss)
-  - Parallel workers + rate limiting
-  - Checkpoint per commune for resumability
+  - Expand Paris/Lyon/Marseille to arrondissements
+  - Fetch each commune directly
+  - **AUTO-SHARD by NAF section if commune hits 10k limit**
+  - Parallel workers + strict rate limiting
+  - Checkpoint per scope for resumability
 
 Tables in data/dirigeants_pm.sqlite:
   dirigeants_pm(siren_entreprise, siren_dirigeant, denomination_dirigeant,
                qualite, code_commune, date_capture)
-  harvest_progress(code_commune PRIMARY KEY, last_page, total_results, completed)
+  harvest_progress(scope_key PRIMARY KEY, last_page, total_results, completed)
 """
 
 from __future__ import annotations
@@ -53,6 +53,12 @@ PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 # Strict rate: 6.6 req/s = 1 request every 151ms
 REQUEST_INTERVAL = 1.0 / 6.6  # ~0.151 seconds
 
+# NAF sections for auto-sharding when commune hits 10k
+NAF_SECTIONS = [
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", 
+    "N", "O", "P", "Q", "R", "S", "T", "U"
+]
+
 
 # --------------------------- Rate Limiter ---------------------------------- #
 class RateLimiter:
@@ -72,22 +78,48 @@ class RateLimiter:
             self.last_request = time.monotonic()
 
 
+# --------------------------- Scope ----------------------------------------- #
+@dataclass(frozen=True)
+class Scope:
+    """A scope defines what to fetch: commune + optional NAF filters.
+    
+    Multi-level sharding:
+    - Level 0: commune only (section_naf=None, activite_principale=None)
+    - Level 1: commune + section NAF (section_naf='A'-'U', activite_principale=None)
+    - Level 2: commune + full NAF code (section_naf=None, activite_principale='01.11A')
+    """
+    code_commune: str
+    section_naf: Optional[str] = None  # 'A'-'U' for section sharding
+    activite_principale: Optional[str] = None  # Full NAF code for deep sharding
+    
+    @property
+    def key(self) -> str:
+        """Unique key for progress tracking."""
+        if self.activite_principale:
+            return f"{self.code_commune}:NAF:{self.activite_principale}"
+        if self.section_naf:
+            return f"{self.code_commune}:{self.section_naf}"
+        return self.code_commune
+    
+    @property
+    def shard_level(self) -> int:
+        """Return the sharding depth: 0=commune, 1=section, 2=full NAF."""
+        if self.activite_principale:
+            return 2
+        if self.section_naf:
+            return 1
+        return 0
+
+
 # --------------------------- Arrondissement handling ----------------------- #
 def expand_arrondissements(insee_code: str) -> List[str]:
-    """Expand Paris/Lyon/Marseille parent codes to arrondissements.
-    
-    Like sirene_client.py:
-    - Paris parent: 75056 -> 75101..75120
-    - Lyon parent: 69123 -> 69381..69389
-    - Marseille parent: 13055 -> 13201..13216
-    Otherwise, returns [insee_code].
-    """
+    """Expand Paris/Lyon/Marseille parent codes to arrondissements."""
     if insee_code == "75056":
-        return [f"75{100 + i:03d}" for i in range(1, 21)]  # 75101..75120
+        return [f"75{100 + i:03d}" for i in range(1, 21)]
     if insee_code == "69123":
-        return [f"6938{i}" for i in range(1, 10)]  # 69381..69389
+        return [f"6938{i}" for i in range(1, 10)]
     if insee_code == "13055":
-        return [f"132{str(i).zfill(2)}" for i in range(1, 17)]  # 13201..13216
+        return [f"132{str(i).zfill(2)}" for i in range(1, 17)]
     return [insee_code]
 
 
@@ -109,7 +141,7 @@ def ensure_db(conn: sqlite3.Connection) -> None:
     conn.execute(
         """
         CREATE TABLE IF NOT EXISTS harvest_progress (
-          code_commune TEXT PRIMARY KEY,
+          scope_key TEXT PRIMARY KEY,
           last_page INTEGER DEFAULT 0,
           total_results INTEGER,
           completed INTEGER DEFAULT 0
@@ -119,11 +151,11 @@ def ensure_db(conn: sqlite3.Connection) -> None:
     conn.commit()
 
 
-def load_progress(conn: sqlite3.Connection, code_commune: str) -> tuple[int, bool]:
+def load_progress(conn: sqlite3.Connection, scope: Scope) -> tuple[int, bool]:
     """Returns (last_page, completed)."""
     cur = conn.execute(
-        "SELECT last_page, completed FROM harvest_progress WHERE code_commune=?",
-        (code_commune,),
+        "SELECT last_page, completed FROM harvest_progress WHERE scope_key=?",
+        (scope.key,),
     )
     row = cur.fetchone()
     if row:
@@ -134,7 +166,7 @@ def load_progress(conn: sqlite3.Connection, code_commune: str) -> tuple[int, boo
 def save_progress(
     conn: sqlite3.Connection,
     lock: threading.Lock,
-    code_commune: str,
+    scope: Scope,
     last_page: int,
     total_results: Optional[int] = None,
     completed: bool = False,
@@ -142,14 +174,14 @@ def save_progress(
     with lock:
         conn.execute(
             """
-            INSERT INTO harvest_progress (code_commune, last_page, total_results, completed)
+            INSERT INTO harvest_progress (scope_key, last_page, total_results, completed)
             VALUES (?, ?, ?, ?)
-            ON CONFLICT(code_commune)
+            ON CONFLICT(scope_key)
             DO UPDATE SET last_page=excluded.last_page, 
                           total_results=COALESCE(excluded.total_results, total_results),
                           completed=excluded.completed
             """,
-            (code_commune, last_page, total_results, int(completed)),
+            (scope.key, last_page, total_results, int(completed)),
         )
         conn.commit()
 
@@ -182,7 +214,6 @@ def load_all_communes() -> List[str]:
         .tolist()
     )
     
-    # Expand Paris/Lyon/Marseille to arrondissements
     all_codes: List[str] = []
     for code in raw_communes:
         all_codes.extend(expand_arrondissements(code))
@@ -198,24 +229,30 @@ def backoff_sleep(attempt: int) -> None:
 def fetch_page(
     session: requests.Session,
     limiter: RateLimiter,
-    code_commune: str,
+    scope: Scope,
     page: int,
 ) -> Optional[dict]:
-    """Fetch a single page for a commune. Returns None on failure."""
+    """Fetch a single page for a scope. Returns None on failure."""
     for attempt in range(MAX_RETRIES):
         limiter.acquire()
         try:
             params = {
-                "code_commune": code_commune,
+                "code_commune": scope.code_commune,
                 "per_page": PER_PAGE,
                 "page": page,
                 "minimal": True,
                 "include": "dirigeants",
             }
+            # Add NAF filters based on sharding level
+            if scope.activite_principale:
+                params["activite_principale"] = scope.activite_principale
+            elif scope.section_naf:
+                params["section_activite_principale"] = scope.section_naf
+            
             resp = session.get(BASE_URL, params=params, timeout=15)
             if resp.status_code == 429:
-                delay = float(resp.headers.get("Retry-After", 2.0))
-                LOGGER.warning("429 on commune %s page %d, sleeping %.1fs", code_commune, page, delay)
+                delay = float(resp.headers.get("Retry-After", 3.0))
+                LOGGER.warning("429 on %s page %d, sleeping %.1fs", scope.key, page, delay)
                 time.sleep(delay)
                 continue
             if resp.status_code in (500, 502, 503, 504):
@@ -225,7 +262,7 @@ def fetch_page(
             return resp.json()
         except Exception as e:
             if attempt == MAX_RETRIES - 1:
-                LOGGER.error("Failed to fetch commune %s page %d: %s", code_commune, page, e)
+                LOGGER.error("Failed to fetch %s page %d: %s", scope.key, page, e)
                 return None
             backoff_sleep(attempt)
     return None
@@ -257,73 +294,116 @@ def extract_rows(code_commune: str, payload: dict) -> List[tuple]:
 
 
 # --------------------------- Core fetch function --------------------------- #
-def fetch_all_for_commune(
+def fetch_all_for_scope(
     session: requests.Session,
     limiter: RateLimiter,
     conn: sqlite3.Connection,
     db_lock: threading.Lock,
-    code_commune: str,
+    scope: Scope,
     progress_bar: tqdm,
+    scope_queue: "queue.Queue[Scope]",
 ) -> None:
-    """Robustly fetch ALL dirigeants PM for a single commune.
+    """Robustly fetch ALL dirigeants PM for a scope.
     
-    Features:
-    - Resume from last_page if interrupted
-    - Detect 10k limit and log WARNING
-    - Save progress after each page
-    - Mark commune as completed when done
+    If a commune (without NAF filter) hits 10k, we AUTO-SHARD by adding
+    NAF-filtered scopes to the queue instead of losing data.
     """
-    last_page, completed = load_progress(conn, code_commune)
+    last_page, completed = load_progress(conn, scope)
     if completed:
-        return  # Already done
+        return
     
     start_page = last_page + 1
     
     # First page to get total_results
-    first_payload = fetch_page(session, limiter, code_commune, start_page)
+    first_payload = fetch_page(session, limiter, scope, start_page)
     if not first_payload:
         return
     
     total_results = first_payload.get("total_results", 0)
     total_pages = first_payload.get("total_pages", 1)
     
-    # CRITICAL: Detect 10k limit
-    if total_results >= 10000:
-        LOGGER.warning(
-            "⚠️ COMMUNE %s HAS %d RESULTS (10k LIMIT) - POTENTIAL DATA LOSS!",
-            code_commune, total_results
+    # AUTO-SHARD LEVEL 1: commune hits 10k → split by NAF sections
+    if total_results >= 10000 and scope.shard_level == 0:
+        LOGGER.info(
+            "🔀 AUTO-SHARD L1: Commune %s has %d results, splitting by NAF sections",
+            scope.code_commune, total_results
+        )
+        for section in NAF_SECTIONS:
+            new_scope = Scope(scope.code_commune, section_naf=section)
+            scope_queue.put(new_scope)
+        save_progress(conn, db_lock, scope, 0, total_results, completed=True)
+        return
+    
+    # AUTO-SHARD LEVEL 2: section still hits 10k → split by full NAF codes
+    if total_results >= 10000 and scope.shard_level == 1:
+        LOGGER.info(
+            "🔀 AUTO-SHARD L2: %s:%s has %d results, fetching NAF codes to split further",
+            scope.code_commune, scope.section_naf, total_results
+        )
+        # Extract all unique NAF codes from results to shard by
+        naf_codes_seen = set()
+        # Process all pages to collect NAF codes (we'll re-fetch with specific NAF later)
+        for res in first_payload.get("results", []) or []:
+            naf = res.get("activite_principale")
+            if naf:
+                naf_codes_seen.add(naf)
+        
+        # Fetch remaining pages to get all NAF codes
+        for page in range(2, min(total_pages + 1, MAX_PAGES + 1)):
+            payload = fetch_page(session, limiter, scope, page)
+            if not payload or not payload.get("results"):
+                break
+            for res in payload.get("results", []) or []:
+                naf = res.get("activite_principale")
+                if naf:
+                    naf_codes_seen.add(naf)
+        
+        LOGGER.info("Found %d unique NAF codes in %s:%s", len(naf_codes_seen), scope.code_commune, scope.section_naf)
+        
+        # Create scope for each NAF code
+        for naf_code in naf_codes_seen:
+            new_scope = Scope(scope.code_commune, activite_principale=naf_code)
+            scope_queue.put(new_scope)
+        
+        save_progress(conn, db_lock, scope, 0, total_results, completed=True)
+        return
+    
+    # LEVEL 2 still hits 10k? Log ERROR but continue (extremely rare edge case)
+    if total_results >= 10000 and scope.shard_level == 2:
+        LOGGER.error(
+            "❌ CANNOT SHARD FURTHER: %s with NAF %s has %d results - POTENTIAL DATA LOSS!",
+            scope.code_commune, scope.activite_principale, total_results
         )
     
     # Process first page
-    rows = extract_rows(code_commune, first_payload)
+    rows = extract_rows(scope.code_commune, first_payload)
     if rows:
         upsert_rows(conn, rows, db_lock)
-    save_progress(conn, db_lock, code_commune, start_page, total_results)
+    save_progress(conn, db_lock, scope, start_page, total_results)
     progress_bar.update(1)
     
     # Process remaining pages
     for page in range(start_page + 1, min(total_pages + 1, MAX_PAGES + 1)):
-        payload = fetch_page(session, limiter, code_commune, page)
+        payload = fetch_page(session, limiter, scope, page)
         if not payload:
             break
         
-        rows = extract_rows(code_commune, payload)
+        rows = extract_rows(scope.code_commune, payload)
         if rows:
             upsert_rows(conn, rows, db_lock)
-        save_progress(conn, db_lock, code_commune, page, total_results)
+        save_progress(conn, db_lock, scope, page, total_results)
         progress_bar.update(1)
         
-        # Stop if no more results
         if not payload.get("results"):
             break
     
     # Mark as completed
-    save_progress(conn, db_lock, code_commune, total_pages, total_results, completed=True)
+    save_progress(conn, db_lock, scope, total_pages, total_results, completed=True)
 
 
 # --------------------------- Worker ---------------------------------------- #
 def worker(
-    commune_queue: "queue.Queue[str]",
+    scope_queue: "queue.Queue[Scope]",
     limiter: RateLimiter,
     db_lock: threading.Lock,
     page_counter: tqdm,
@@ -333,16 +413,19 @@ def worker(
     session.headers.update({
         "Accept-Encoding": "gzip, deflate",
         "Connection": "keep-alive",
-        "User-Agent": "Sireto-HarvestDirigeantsPM/1.0",
+        "User-Agent": "Sireto-HarvestDirigeantsPM/2.0",
     })
 
     while True:
         try:
-            code_commune = commune_queue.get_nowait()
+            scope = scope_queue.get(timeout=1.0)
         except queue.Empty:
-            break
-        fetch_all_for_commune(session, limiter, conn, db_lock, code_commune, page_counter)
-        commune_queue.task_done()
+            # Check if queue is really empty (other workers might add items)
+            if scope_queue.empty():
+                break
+            continue
+        fetch_all_for_scope(session, limiter, conn, db_lock, scope, page_counter, scope_queue)
+        scope_queue.task_done()
 
 
 # --------------------------- Main ------------------------------------------ #
@@ -355,36 +438,40 @@ def main() -> None:
     all_communes = load_all_communes()
     LOGGER.info("Found %d communes (including arrondissements)", len(all_communes))
 
-    # Filter out already completed communes
-    completed_communes = set()
-    cur = conn.execute("SELECT code_commune FROM harvest_progress WHERE completed=1")
-    for (code,) in cur.fetchall():
-        completed_communes.add(code)
+    # Build initial scopes (just communes, no NAF filter)
+    # NAF-sharded scopes will be added dynamically if needed
+    all_scopes = [Scope(c) for c in all_communes]
+
+    # Filter out already completed scopes
+    completed_keys = set()
+    cur = conn.execute("SELECT scope_key FROM harvest_progress WHERE completed=1")
+    for (key,) in cur.fetchall():
+        completed_keys.add(key)
     
-    remaining = [c for c in all_communes if c not in completed_communes]
-    LOGGER.info("Communes to process: %d (already completed: %d)", 
-                len(remaining), len(completed_communes))
+    remaining = [s for s in all_scopes if s.key not in completed_keys]
+    LOGGER.info("Scopes to process: %d (already completed: %d)", 
+                len(remaining), len(completed_keys))
 
     if not remaining:
-        LOGGER.info("All communes already processed!")
+        LOGGER.info("All scopes already processed!")
         conn.close()
         return
 
-    commune_queue: queue.Queue[str] = queue.Queue()
-    for c in remaining:
-        commune_queue.put(c)
+    scope_queue: queue.Queue[Scope] = queue.Queue()
+    for s in remaining:
+        scope_queue.put(s)
 
     limiter = RateLimiter(REQUEST_INTERVAL)
     db_lock = threading.Lock()
 
-    # Progress bar estimates ~5 pages per commune on average
+    # Progress bar (estimate ~5 pages per scope on average)
     page_counter = tqdm(total=len(remaining) * 5, desc="Pages", smoothing=0.1)
 
     threads = []
     for _ in range(WORKERS):
         t = threading.Thread(
             target=worker,
-            args=(commune_queue, limiter, db_lock, page_counter, conn),
+            args=(scope_queue, limiter, db_lock, page_counter, conn),
             daemon=True,
         )
         t.start()
@@ -400,9 +487,9 @@ def main() -> None:
         "SELECT COUNT(*), SUM(CASE WHEN total_results >= 10000 THEN 1 ELSE 0 END) "
         "FROM harvest_progress WHERE completed=1"
     )
-    completed, over_10k = cur.fetchone()
-    LOGGER.info("Harvest complete: %d communes, %d with 10k+ results (check logs)", 
-                completed, over_10k or 0)
+    completed_count, over_10k = cur.fetchone()
+    LOGGER.info("Harvest complete: %d scopes, %d auto-sharded (10k+)", 
+                completed_count, over_10k or 0)
     
     conn.close()
 
