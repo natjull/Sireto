@@ -331,11 +331,13 @@ def fetch_all_for_scope(
             "🔀 AUTO-SHARD L1: Commune %s has %d results, splitting by NAF sections",
             scope.code_commune, total_results
         )
+        # Process each section IMMEDIATELY (not queued for later)
         for section in NAF_SECTIONS:
             new_scope = Scope(scope.code_commune, section_naf=section)
             # PERSIST immediately so shards survive script interruption
             save_progress(conn, db_lock, new_scope, 0, None, completed=False)
-            scope_queue.put(new_scope)
+            # Process the section NOW (recursive call)
+            fetch_all_for_scope(session, limiter, conn, db_lock, new_scope, progress_bar, scope_queue)
         save_progress(conn, db_lock, scope, 0, total_results, completed=True)
         return
     
@@ -365,12 +367,13 @@ def fetch_all_for_scope(
         
         LOGGER.info("Found %d unique NAF codes in %s:%s", len(naf_codes_seen), scope.code_commune, scope.section_naf)
         
-        # Create scope for each NAF code and PERSIST immediately
+        # Process each NAF code IMMEDIATELY (not queued for later)
         for naf_code in naf_codes_seen:
             new_scope = Scope(scope.code_commune, activite_principale=naf_code)
             # PERSIST immediately so shards survive script interruption
             save_progress(conn, db_lock, new_scope, 0, None, completed=False)
-            scope_queue.put(new_scope)
+            # Process the NAF code NOW (recursive call)
+            fetch_all_for_scope(session, limiter, conn, db_lock, new_scope, progress_bar, scope_queue)
         
         save_progress(conn, db_lock, scope, 0, total_results, completed=True)
         return
