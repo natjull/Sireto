@@ -101,6 +101,7 @@ class Scope:
     section_activite_principale: Optional[str] = None
     activite_principale: Optional[str] = None
     tranche_effectif_salarie: Optional[str] = None
+    etat_administratif: Optional[str] = None  # A=Actif, C=Cessé
     
     @property
     def key(self) -> str:
@@ -116,6 +117,8 @@ class Scope:
             parts.append(f"NAF:{self.activite_principale}")
         if self.tranche_effectif_salarie:
             parts.append(f"TE:{self.tranche_effectif_salarie}")
+        if self.etat_administratif:
+            parts.append(f"EA:{self.etat_administratif}")
         return "|".join(parts) if parts else "ALL"
     
     def to_params(self) -> Dict[str, Any]:
@@ -131,17 +134,20 @@ class Scope:
             params["activite_principale"] = self.activite_principale
         if self.tranche_effectif_salarie:
             params["tranche_effectif_salarie"] = self.tranche_effectif_salarie
+        if self.etat_administratif:
+            params["etat_administratif"] = self.etat_administratif
         return params
     
     @property
     def depth(self) -> int:
-        """Return drilling depth (0-4)."""
+        """Return drilling depth (0-5)."""
         d = 0
         if self.departement: d += 1
         if self.code_postal: d += 1
         if self.section_activite_principale: d += 1
         if self.activite_principale: d += 1
         if self.tranche_effectif_salarie: d += 1
+        if self.etat_administratif: d += 1
         return d
 
 
@@ -465,6 +471,23 @@ def fetch_recursive(client: APIClient, conn: sqlite3.Connection, scope: Scope,
                 section_activite_principale=scope.section_activite_principale,
                 activite_principale=scope.activite_principale,
                 tranche_effectif_salarie=tranche,
+                etat_administratif=scope.etat_administratif,
+            )
+            fetch_recursive(client, conn, new_scope, pbar, stats)
+        mark_completed(conn, scope, total)
+        return
+    
+    # Level 5 → 6: tranche_effectif → etat_administratif
+    if scope.tranche_effectif_salarie and not scope.etat_administratif:
+        LOGGER.info("🔀 DRILL-DOWN L6: %s has %d results, splitting by etat_administratif", scope.key, total)
+        for etat in ["A", "C"]:  # Actif, Cessé
+            new_scope = Scope(
+                departement=scope.departement,
+                code_postal=scope.code_postal,
+                section_activite_principale=scope.section_activite_principale,
+                activite_principale=scope.activite_principale,
+                tranche_effectif_salarie=scope.tranche_effectif_salarie,
+                etat_administratif=etat,
             )
             fetch_recursive(client, conn, new_scope, pbar, stats)
         mark_completed(conn, scope, total)
