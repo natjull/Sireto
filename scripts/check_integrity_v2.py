@@ -35,7 +35,6 @@ LOGGER = logging.getLogger(__name__)
 BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 DB_PATH = Path("data/harvest_v2.sqlite")
 PARQUET_PATH = Path("data/StockUniteLegale_utf8.parquet")
-BATCH_SIZE = 25  # SIRENs per API call (q parameter batching)
 MAX_RETRIES = 4
 BACKOFF_BASE = 0.5
 REQUEST_INTERVAL = 1.0 / 7.0  # 7 req/s
@@ -106,16 +105,14 @@ def upsert_dirigeants(conn: sqlite3.Connection, siren_ent: str, dirigeants: list
 
 
 # --------------------------- API ------------------------------------------- #
-def fetch_batch(session: requests.Session, limiter: RateLimiter, sirens: List[str]) -> Optional[dict]:
-    """Fetch a batch of SIRENs using the q parameter."""
-    q = " ".join(sirens)
-    
+def fetch_single_siren(session: requests.Session, limiter: RateLimiter, siren: str) -> Optional[dict]:
+    """Fetch a single SIREN via the q parameter."""
     for attempt in range(MAX_RETRIES):
         limiter.acquire()
         try:
             params = {
-                "q": q,
-                "per_page": BATCH_SIZE,
+                "q": siren,
+                "per_page": 1,
                 "page": 1,
                 "minimal": True,
                 "include": "dirigeants",
@@ -129,10 +126,15 @@ def fetch_batch(session: requests.Session, limiter: RateLimiter, sirens: List[st
                 time.sleep(BACKOFF_BASE * (2 ** attempt))
                 continue
             resp.raise_for_status()
-            return resp.json()
+            data = resp.json()
+            # Return first result if SIREN matches
+            for res in data.get("results", []) or []:
+                if res.get("siren") == siren:
+                    return res
+            return None  # Not found
         except Exception as e:
             if attempt == MAX_RETRIES - 1:
-                LOGGER.warning("Failed batch: %s", e)
+                LOGGER.warning("Failed SIREN %s: %s", siren, e)
                 return None
             time.sleep(BACKOFF_BASE * (2 ** attempt))
     return None
@@ -171,11 +173,11 @@ def main() -> None:
         conn.close()
         return
     
-    # Fetch missing SIRENs in batches
+    # Fetch missing SIRENs one by one
     missing_list = sorted(missing_sirens)
-    total_batches = (len(missing_list) + BATCH_SIZE - 1) // BATCH_SIZE
     
-    LOGGER.info("Fetching %d missing SIRENs in %d batches...", len(missing_list), total_batches)
+    LOGGER.info("Fetching %d missing SIRENs (1 request per SIREN @ 7 req/s)...", len(missing_list))
+    LOGGER.info("Estimated time: %.1f hours", len(missing_list) / 7.0 / 3600)
     
     limiter = RateLimiter(REQUEST_INTERVAL)
     session = requests.Session()
@@ -188,23 +190,23 @@ def main() -> None:
     dir_count = 0
     found_sirens = set()
     
-    pbar = tqdm(range(0, len(missing_list), BATCH_SIZE), desc="Batches", unit="batch")
-    for i in pbar:
-        batch = missing_list[i:i + BATCH_SIZE]
-        payload = fetch_batch(session, limiter, batch)
+    pbar = tqdm(missing_list, desc="SIRENs", unit="siren")
+    for siren in pbar:
+        res = fetch_single_siren(session, limiter, siren)
         
-        if payload:
-            for res in payload.get("results", []) or []:
-                siren = res.get("siren")
-                if siren:
-                    upsert_entreprise(conn, res)
-                    dir_count += upsert_dirigeants(conn, siren, res.get("dirigeants"))
-                    ent_count += 1
-                    found_sirens.add(siren)
-            conn.commit()
+        if res:
+            upsert_entreprise(conn, res)
+            dir_count += upsert_dirigeants(conn, siren, res.get("dirigeants"))
+            ent_count += 1
+            found_sirens.add(siren)
+            
+            # Commit every 100 SIRENs
+            if ent_count % 100 == 0:
+                conn.commit()
         
         pbar.set_postfix({"Found": ent_count, "Dir": dir_count})
     
+    conn.commit()
     pbar.close()
     
     # Final report
