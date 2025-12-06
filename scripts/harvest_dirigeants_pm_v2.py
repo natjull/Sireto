@@ -371,8 +371,12 @@ def get_codes_postaux_for_departement(dep: str) -> List[str]:
     return codes
 
 
-def get_naf_codes_from_results(client: APIClient, scope: Scope) -> List[str]:
-    """Scan pages to discover all NAF codes present in results."""
+def get_naf_codes_from_results(client: APIClient, conn: sqlite3.Connection, 
+                                scope: Scope, pbar: tqdm, stats: dict) -> List[str]:
+    """
+    Scan pages to discover all NAF codes present in results.
+    IMPORTANT: Also saves data during the scan to prevent data loss.
+    """
     naf_codes = set()
     total = client.get_total_results(scope)
     pages_to_scan = min((total + PER_PAGE - 1) // PER_PAGE, MAX_PAGES)
@@ -381,6 +385,15 @@ def get_naf_codes_from_results(client: APIClient, scope: Scope) -> List[str]:
         payload = client.fetch(scope, page=page, per_page=PER_PAGE)
         if not payload or not payload.get("results"):
             break
+        
+        # SAVE DATA during discovery (prevents data loss on 400 errors)
+        e, d = process_results(conn, payload)
+        stats["ent_total"] += e
+        stats["dir_total"] += d
+        pbar.update(1)
+        pbar.set_postfix({"Ent": stats["ent_total"], "Dir": stats["dir_total"]})
+        
+        # Discover NAF codes
         for res in payload.get("results", []):
             naf = res.get("activite_principale")
             if naf:
@@ -446,9 +459,9 @@ def fetch_recursive(client: APIClient, conn: sqlite3.Connection, scope: Scope,
     
     # Level 3 → 4: section NAF → activite_principale
     if scope.section_activite_principale and not scope.activite_principale:
-        LOGGER.info("🔀 DRILL-DOWN: %s has %d results, discovering NAF codes", scope.key, total)
-        naf_codes = get_naf_codes_from_results(client, scope)
-        LOGGER.info("Found %d NAF codes in %s", len(naf_codes), scope.key)
+        LOGGER.info("🔀 DRILL-DOWN: %s has %d results, discovering NAF codes + SAVING DATA", scope.key, total)
+        naf_codes = get_naf_codes_from_results(client, conn, scope, pbar, stats)
+        LOGGER.info("Found %d NAF codes in %s (data already saved)", len(naf_codes), scope.key)
         for naf in naf_codes:
             new_scope = Scope(
                 departement=scope.departement,
