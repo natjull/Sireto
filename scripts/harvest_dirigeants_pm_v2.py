@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Harvest all enterprises whose dirigeants include at least one personne morale.
+Harvest ALL enterprises from the API Recherche d'entreprises.
 
-VERSION 2: Recursive Drill-Down Approach
-=========================================
+VERSION 2: Recursive Drill-Down Approach - FULL DATA
+=====================================================
 Instead of hardcoded sharding, this version uses intelligent recursive drill-down:
   1. Start with département
   2. If >10k results → drill down to code_postal
@@ -11,15 +11,15 @@ Instead of hardcoded sharding, this version uses intelligent recursive drill-dow
   4. If still >10k → drill down to activite_principale  
   5. If still >10k → drill down to tranche_effectif_salarie
 
-Advantages:
-  - Guarantees 100% data capture
-  - Fast on rural areas (stops at département level)
-  - Automatically drills deeper only where needed
-  - No hardcoded sharding logic
+Captures:
+  - ALL enterprises (not filtered by dirigeant type)
+  - ALL dirigeants (both personne physique and personne morale)
 
-Tables in data/dirigeants_pm_v2.sqlite:
-  dirigeants_pm(siren_entreprise, siren_dirigeant, denomination_dirigeant,
-               qualite, date_capture)
+Tables in data/harvest_v2.sqlite:
+  entreprises(siren, nom_complet, nature_juridique, activite_principale,
+              categorie_entreprise, tranche_effectif, etat_administratif, date_capture)
+  dirigeants(siren_entreprise, type_dirigeant, siren_dirigeant, denomination,
+             nom, prenoms, qualite, date_capture)
   fetch_progress(scope_key PRIMARY KEY, total_results, completed)
 """
 
@@ -28,7 +28,7 @@ from __future__ import annotations
 import sqlite3
 import time
 import logging
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import List, Optional, Dict, Any
 
@@ -51,7 +51,7 @@ MAX_PAGES = 400  # 400 * 25 = 10,000
 MAX_RETRIES = 4
 BACKOFF_BASE = 0.5
 
-DB_PATH = Path("data/dirigeants_pm_v2.sqlite")
+DB_PATH = Path("data/harvest_v2.sqlite")
 
 # Strict rate: 7 req/s
 REQUEST_INTERVAL = 1.0 / 7.0  # ~0.143 seconds
@@ -147,16 +147,44 @@ class Scope:
 
 # --------------------------- DB helpers ------------------------------------ #
 def ensure_db(conn: sqlite3.Connection) -> None:
+    # Entreprises table
     conn.execute("""
-        CREATE TABLE IF NOT EXISTS dirigeants_pm (
-          siren_entreprise TEXT,
-          siren_dirigeant TEXT,
-          denomination_dirigeant TEXT,
-          qualite TEXT,
-          date_capture TEXT DEFAULT (datetime('now')),
-          UNIQUE(siren_entreprise, siren_dirigeant, qualite)
+        CREATE TABLE IF NOT EXISTS entreprises (
+          siren TEXT PRIMARY KEY,
+          nom_complet TEXT,
+          nature_juridique TEXT,
+          activite_principale TEXT,
+          section_activite_principale TEXT,
+          categorie_entreprise TEXT,
+          tranche_effectif TEXT,
+          etat_administratif TEXT,
+          date_creation TEXT,
+          date_capture TEXT DEFAULT (datetime('now'))
         );
     """)
+    
+    # Dirigeants table (both PP and PM)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS dirigeants (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          siren_entreprise TEXT,
+          type_dirigeant TEXT,
+          -- PM fields
+          siren_dirigeant TEXT,
+          denomination TEXT,
+          -- PP fields
+          nom TEXT,
+          prenoms TEXT,
+          annee_naissance TEXT,
+          nationalite TEXT,
+          -- Common
+          qualite TEXT,
+          date_capture TEXT DEFAULT (datetime('now')),
+          UNIQUE(siren_entreprise, type_dirigeant, siren_dirigeant, nom, prenoms, qualite)
+        );
+    """)
+    
+    # Progress table
     conn.execute("""
         CREATE TABLE IF NOT EXISTS fetch_progress (
           scope_key TEXT PRIMARY KEY,
@@ -164,8 +192,10 @@ def ensure_db(conn: sqlite3.Connection) -> None:
           completed INTEGER DEFAULT 0
         );
     """)
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_siren_ent ON dirigeants_pm(siren_entreprise);")
-    conn.execute("CREATE INDEX IF NOT EXISTS idx_siren_dir ON dirigeants_pm(siren_dirigeant);")
+    
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_ent_siren ON entreprises(siren);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dir_siren_ent ON dirigeants(siren_entreprise);")
+    conn.execute("CREATE INDEX IF NOT EXISTS idx_dir_siren_dir ON dirigeants(siren_dirigeant);")
     conn.commit()
 
 
@@ -183,15 +213,47 @@ def mark_completed(conn: sqlite3.Connection, scope: Scope, total_results: int) -
     conn.commit()
 
 
-def upsert_rows(conn: sqlite3.Connection, rows: List[tuple]) -> None:
-    if not rows:
-        return
-    conn.executemany("""
-        INSERT OR IGNORE INTO dirigeants_pm
-        (siren_entreprise, siren_dirigeant, denomination_dirigeant, qualite)
-        VALUES (?, ?, ?, ?)
-    """, rows)
-    conn.commit()
+def upsert_entreprise(conn: sqlite3.Connection, ent: dict) -> None:
+    conn.execute("""
+        INSERT OR REPLACE INTO entreprises
+        (siren, nom_complet, nature_juridique, activite_principale, section_activite_principale,
+         categorie_entreprise, tranche_effectif, etat_administratif, date_creation)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    """, (
+        ent.get("siren"),
+        ent.get("nom_complet"),
+        ent.get("nature_juridique"),
+        ent.get("activite_principale"),
+        ent.get("section_activite_principale"),
+        ent.get("categorie_entreprise"),
+        ent.get("tranche_effectif_salarie"),
+        ent.get("etat_administratif"),
+        ent.get("date_creation"),
+    ))
+
+
+def upsert_dirigeants(conn: sqlite3.Connection, siren_ent: str, dirigeants: list) -> int:
+    count = 0
+    for d in dirigeants or []:
+        type_dir = d.get("type_dirigeant", "")
+        try:
+            if type_dir == "personne morale":
+                conn.execute("""
+                    INSERT OR IGNORE INTO dirigeants
+                    (siren_entreprise, type_dirigeant, siren_dirigeant, denomination, qualite)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (siren_ent, type_dir, d.get("siren"), d.get("denomination"), d.get("qualite")))
+            else:
+                conn.execute("""
+                    INSERT OR IGNORE INTO dirigeants
+                    (siren_entreprise, type_dirigeant, nom, prenoms, annee_naissance, nationalite, qualite)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
+                """, (siren_ent, type_dir, d.get("nom"), d.get("prenoms"), 
+                      d.get("annee_de_naissance"), d.get("nationalite"), d.get("qualite")))
+            count += 1
+        except sqlite3.IntegrityError:
+            pass  # Duplicate, skip
+    return count
 
 
 # --------------------------- HTTP ------------------------------------------ #
@@ -200,7 +262,7 @@ class APIClient:
         self.session = requests.Session()
         self.session.headers.update({
             "Accept-Encoding": "gzip, deflate",
-            "User-Agent": "Sireto-HarvestDirigeantsPM/2.0",
+            "User-Agent": "Sireto-Harvest/2.0",
         })
         self.limiter = limiter
     
@@ -248,48 +310,51 @@ class APIClient:
 
 
 # --------------------------- Core Logic ------------------------------------ #
-def extract_pm_dirigeants(payload: dict) -> List[tuple]:
-    """Extract dirigeants PM rows from API response."""
-    rows = []
+def process_results(conn: sqlite3.Connection, payload: dict) -> tuple:
+    """Extract and save all data from API response. Returns (ent_count, dir_count)."""
+    ent_count = 0
+    dir_count = 0
+    
     for res in payload.get("results", []) or []:
-        siren_ent = res.get("siren")
-        if not siren_ent:
+        siren = res.get("siren")
+        if not siren:
             continue
-        for d in res.get("dirigeants") or []:
-            if d.get("type_dirigeant") != "personne morale":
-                continue
-            siren_dir = d.get("siren")
-            if not siren_dir:
-                continue
-            rows.append((siren_ent, siren_dir, d.get("denomination"), d.get("qualite")))
-    return rows
+        
+        # Save enterprise
+        upsert_entreprise(conn, res)
+        ent_count += 1
+        
+        # Save all dirigeants
+        dir_count += upsert_dirigeants(conn, siren, res.get("dirigeants"))
+    
+    conn.commit()
+    return ent_count, dir_count
 
 
 def download_all_pages(client: APIClient, conn: sqlite3.Connection, scope: Scope, 
-                       total_results: int, pbar: tqdm) -> int:
+                       total_results: int, pbar: tqdm) -> tuple:
     """Download all pages for a scope that has <10k results."""
     total_pages = min((total_results + PER_PAGE - 1) // PER_PAGE, MAX_PAGES)
-    pm_count = 0
+    ent_count = 0
+    dir_count = 0
     
     for page in range(1, total_pages + 1):
         payload = client.fetch(scope, page=page, per_page=PER_PAGE)
         if not payload:
             break
-        rows = extract_pm_dirigeants(payload)
-        if rows:
-            upsert_rows(conn, rows)
-            pm_count += len(rows)
+        e, d = process_results(conn, payload)
+        ent_count += e
+        dir_count += d
         pbar.update(1)
         
         if not payload.get("results"):
             break
     
-    return pm_count
+    return ent_count, dir_count
 
 
 def get_codes_postaux_for_departement(dep: str) -> List[str]:
     """Generate plausible postal codes for a département."""
-    # Simple approach: generate all 5-digit codes starting with département number
     codes = []
     if len(dep) == 2:
         for i in range(1000):
@@ -320,16 +385,7 @@ def get_naf_codes_from_results(client: APIClient, scope: Scope) -> List[str]:
 
 def fetch_recursive(client: APIClient, conn: sqlite3.Connection, scope: Scope, 
                     pbar: tqdm, stats: dict) -> None:
-    """
-    Recursive drill-down fetch.
-    
-    Hierarchy:
-    1. département
-    2. code_postal
-    3. section_activite_principale
-    4. activite_principale
-    5. tranche_effectif_salarie
-    """
+    """Recursive drill-down fetch."""
     # Skip if already completed
     if is_completed(conn, scope):
         return
@@ -343,16 +399,15 @@ def fetch_recursive(client: APIClient, conn: sqlite3.Connection, scope: Scope,
     
     # If under limit, download directly
     if total < MAX_RESULTS:
-        pm_count = download_all_pages(client, conn, scope, total, pbar)
+        ent, dir = download_all_pages(client, conn, scope, total, pbar)
         mark_completed(conn, scope, total)
-        stats["pm_total"] += pm_count
+        stats["ent_total"] += ent
+        stats["dir_total"] += dir
         stats["scopes_completed"] += 1
-        pbar.set_postfix({"PM": stats["pm_total"], "scopes": stats["scopes_completed"]})
+        pbar.set_postfix({"Ent": stats["ent_total"], "Dir": stats["dir_total"]})
         return
     
     # Need to drill down
-    depth = scope.depth
-    
     # Level 1 → 2: département → code_postal
     if scope.departement and not scope.code_postal:
         LOGGER.info("🔀 DRILL-DOWN: %s has %d results, splitting by code_postal", scope.key, total)
@@ -392,7 +447,7 @@ def fetch_recursive(client: APIClient, conn: sqlite3.Connection, scope: Scope,
             new_scope = Scope(
                 departement=scope.departement,
                 code_postal=scope.code_postal,
-                section_activite_principale=None,  # Use specific NAF instead
+                section_activite_principale=None,
                 activite_principale=naf,
                 tranche_effectif_salarie=scope.tranche_effectif_salarie,
             )
@@ -417,10 +472,10 @@ def fetch_recursive(client: APIClient, conn: sqlite3.Connection, scope: Scope,
     
     # If we get here, we've exhausted all levels and still have >10k
     LOGGER.error("❌ CANNOT DRILL FURTHER: %s has %d results - DATA LOSS!", scope.key, total)
-    # Download what we can (first 10k)
-    pm_count = download_all_pages(client, conn, scope, total, pbar)
+    ent, dir = download_all_pages(client, conn, scope, total, pbar)
     mark_completed(conn, scope, total)
-    stats["pm_total"] += pm_count
+    stats["ent_total"] += ent
+    stats["dir_total"] += dir
     stats["scopes_completed"] += 1
 
 
@@ -433,12 +488,11 @@ def main() -> None:
     limiter = RateLimiter(REQUEST_INTERVAL)
     client = APIClient(limiter)
     
-    LOGGER.info("Starting recursive drill-down harvest...")
+    LOGGER.info("Starting recursive drill-down harvest (FULL DATA)...")
     LOGGER.info("Départements to process: %d", len(DEPARTEMENTS))
     
-    stats = {"pm_total": 0, "scopes_completed": 0}
+    stats = {"ent_total": 0, "dir_total": 0, "scopes_completed": 0}
     
-    # Estimate: ~107 départements * average 5 pages = 535 pages (rough estimate)
     pbar = tqdm(total=len(DEPARTEMENTS) * 100, desc="Pages", smoothing=0.1)
     
     for dep in DEPARTEMENTS:
@@ -448,9 +502,11 @@ def main() -> None:
     pbar.close()
     
     # Final report
-    cur = conn.execute("SELECT COUNT(*) FROM dirigeants_pm")
-    total = cur.fetchone()[0]
-    LOGGER.info("Harvest complete! Total dirigeants PM: %d", total)
+    cur = conn.execute("SELECT COUNT(*) FROM entreprises")
+    total_ent = cur.fetchone()[0]
+    cur = conn.execute("SELECT COUNT(*) FROM dirigeants")
+    total_dir = cur.fetchone()[0]
+    LOGGER.info("Harvest complete! Entreprises: %d, Dirigeants: %d", total_ent, total_dir)
     conn.close()
 
 
