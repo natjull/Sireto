@@ -258,6 +258,10 @@ def fetch_page(
                 LOGGER.warning("429 on %s page %d, sleeping %.1fs", scope.key, page, delay)
                 time.sleep(delay)
                 continue
+            if resp.status_code == 400:
+                # Invalid NAF code (old nomenclature) - skip gracefully
+                LOGGER.warning("400 Bad Request on %s (invalid NAF code?) - skipping", scope.key)
+                return None  # Don't retry, just skip this scope
             if resp.status_code in (500, 502, 503, 504):
                 backoff_sleep(attempt)
                 continue
