@@ -1,14 +1,15 @@
 #!/usr/bin/env python3
 """
-Integrity check and completion script for harvest_v2.
+Recovery script for missing SIRENs.
 
-This script:
-1. Loads all SIRENs from StockUniteLegale parquet (source of truth)
-2. Compares with SIRENs in harvest_v2.sqlite
-3. Identifies missing SIRENs
-4. Fetches missing SIRENs via API and completes the database
+Reads the list of diffusible missing SIRENs from data/reports/recoverable_sirens_all_france.txt
+and fetches each one via the API, inserting into harvest_v2.sqlite.
 
-Run this AFTER the main harvest_v2 script has finished.
+Features:
+- Rate limiting (7 req/s)
+- Checkpoint every 100 SIRENs for resumability
+- Logs non-found SIRENs
+- Progress bar with ETA
 """
 
 from __future__ import annotations
@@ -16,10 +17,10 @@ from __future__ import annotations
 import sqlite3
 import time
 import logging
+import argparse
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Optional, Set
 
-import pandas as pd
 import requests
 from tqdm import tqdm
 
@@ -34,10 +35,14 @@ LOGGER = logging.getLogger(__name__)
 # --------------------------- Config ---------------------------------------- #
 BASE_URL = "https://recherche-entreprises.api.gouv.fr/search"
 DB_PATH = Path("data/harvest_v2.sqlite")
-PARQUET_PATH = Path("data/StockUniteLegale_utf8.parquet")
+SIRENS_FILE = Path("data/reports/recoverable_sirens_all_france.txt")
+NOT_FOUND_FILE = Path("data/reports/sirens_not_found.txt")
+PROGRESS_FILE = Path("data/reports/recovery_progress.txt")
+
 MAX_RETRIES = 4
 BACKOFF_BASE = 0.5
 REQUEST_INTERVAL = 1.0 / 7.0  # 7 req/s
+COMMIT_INTERVAL = 100  # Commit every N SIRENs
 
 
 # --------------------------- Rate Limiter ---------------------------------- #
@@ -55,12 +60,6 @@ class RateLimiter:
 
 
 # --------------------------- DB helpers ------------------------------------ #
-def get_harvested_sirens(conn: sqlite3.Connection) -> Set[str]:
-    """Get all SIRENs already in the harvest database."""
-    cur = conn.execute("SELECT DISTINCT siren FROM entreprises")
-    return {row[0] for row in cur.fetchall()}
-
-
 def upsert_entreprise(conn: sqlite3.Connection, ent: dict) -> None:
     conn.execute("""
         INSERT OR REPLACE INTO entreprises
@@ -105,7 +104,7 @@ def upsert_dirigeants(conn: sqlite3.Connection, siren_ent: str, dirigeants: list
 
 
 # --------------------------- API ------------------------------------------- #
-def fetch_single_siren(session: requests.Session, limiter: RateLimiter, siren: str) -> Optional[dict]:
+def fetch_siren(session: requests.Session, limiter: RateLimiter, siren: str) -> Optional[dict]:
     """Fetch a single SIREN via the q parameter."""
     for attempt in range(MAX_RETRIES):
         limiter.acquire()
@@ -127,11 +126,15 @@ def fetch_single_siren(session: requests.Session, limiter: RateLimiter, siren: s
                 continue
             resp.raise_for_status()
             data = resp.json()
-            # Return first result if SIREN matches
+            # Return first result if SIREN matches exactly
             for res in data.get("results", []) or []:
                 if res.get("siren") == siren:
                     return res
             return None  # Not found
+        except requests.exceptions.SSLError as e:
+            LOGGER.warning("SSL error on %s (attempt %d): %s", siren, attempt + 1, e)
+            time.sleep(5)
+            continue
         except Exception as e:
             if attempt == MAX_RETRIES - 1:
                 LOGGER.warning("Failed SIREN %s: %s", siren, e)
@@ -140,90 +143,115 @@ def fetch_single_siren(session: requests.Session, limiter: RateLimiter, siren: s
     return None
 
 
+# --------------------------- Progress ------------------------------------ #
+def load_progress() -> Set[str]:
+    """Load already recovered SIRENs from progress file."""
+    if PROGRESS_FILE.exists():
+        with open(PROGRESS_FILE, "r") as f:
+            return set(line.strip() for line in f if line.strip())
+    return set()
+
+
+def save_progress(siren: str) -> None:
+    """Append a recovered SIREN to progress file."""
+    with open(PROGRESS_FILE, "a") as f:
+        f.write(siren + "\n")
+
+
+def save_not_found(siren: str) -> None:
+    """Append a not-found SIREN to not-found file."""
+    with open(NOT_FOUND_FILE, "a") as f:
+        f.write(siren + "\n")
+
+
 # --------------------------- Main ------------------------------------------ #
 def main() -> None:
+    parser = argparse.ArgumentParser(description="Recover missing SIRENs")
+    parser.add_argument("--limit", type=int, default=None, help="Limit number of SIRENs to process (for testing)")
+    parser.add_argument("--start-from", type=int, default=0, help="Start from this index in the file")
+    args = parser.parse_args()
+    
     # Check files exist
-    if not DB_PATH.exists():
-        LOGGER.error("Database not found: %s", DB_PATH)
-        return
-    if not PARQUET_PATH.exists():
-        LOGGER.error("Parquet not found: %s", PARQUET_PATH)
+    if not SIRENS_FILE.exists():
+        LOGGER.error("SIRENs file not found: %s", SIRENS_FILE)
+        LOGGER.info("Run analyze_missing_sirens.py first to generate the file.")
         return
     
-    # Load source SIRENs
-    LOGGER.info("Loading source SIRENs from parquet...")
-    df = pd.read_parquet(PARQUET_PATH, columns=["siren"])
-    source_sirens = set(df["siren"].dropna().drop_duplicates().astype(str).tolist())
-    LOGGER.info("Source SIRENs: %d", len(source_sirens))
+    # Load SIRENs to recover
+    LOGGER.info("Loading SIRENs to recover from %s...", SIRENS_FILE)
+    with open(SIRENS_FILE, "r") as f:
+        all_sirens = [line.strip() for line in f if line.strip()]
+    LOGGER.info("Total SIRENs in file: %d", len(all_sirens))
     
-    # Load harvested SIRENs
+    # Load already processed SIRENs
+    already_done = load_progress()
+    LOGGER.info("Already processed: %d", len(already_done))
+    
+    # Filter out already done
+    sirens_to_process = [s for s in all_sirens if s not in already_done]
+    LOGGER.info("Remaining to process: %d", len(sirens_to_process))
+    
+    # Apply start-from
+    if args.start_from > 0:
+        sirens_to_process = sirens_to_process[args.start_from:]
+        LOGGER.info("Starting from index %d, remaining: %d", args.start_from, len(sirens_to_process))
+    
+    # Apply limit
+    if args.limit:
+        sirens_to_process = sirens_to_process[:args.limit]
+        LOGGER.info("Limited to %d SIRENs", args.limit)
+    
+    if not sirens_to_process:
+        LOGGER.info("No SIRENs to process!")
+        return
+    
+    # Estimate time
+    est_hours = len(sirens_to_process) / 7 / 3600
+    LOGGER.info("Estimated time: %.1f hours (%.1f days)", est_hours, est_hours / 24)
+    
+    # Setup
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
-    LOGGER.info("Loading harvested SIRENs from database...")
-    harvested_sirens = get_harvested_sirens(conn)
-    LOGGER.info("Harvested SIRENs: %d", len(harvested_sirens))
-    
-    # Find missing
-    missing_sirens = source_sirens - harvested_sirens
-    LOGGER.info("Missing SIRENs: %d (%.2f%%)", 
-                len(missing_sirens), 
-                100 * len(missing_sirens) / len(source_sirens) if source_sirens else 0)
-    
-    if not missing_sirens:
-        LOGGER.info("✅ All SIRENs are present! No completion needed.")
-        conn.close()
-        return
-    
-    # Fetch missing SIRENs one by one
-    missing_list = sorted(missing_sirens)
-    
-    LOGGER.info("Fetching %d missing SIRENs (1 request per SIREN @ 7 req/s)...", len(missing_list))
-    LOGGER.info("Estimated time: %.1f hours", len(missing_list) / 7.0 / 3600)
-    
     limiter = RateLimiter(REQUEST_INTERVAL)
     session = requests.Session()
     session.headers.update({
         "Accept-Encoding": "gzip, deflate",
-        "User-Agent": "Sireto-IntegrityCheck/1.0",
+        "User-Agent": "Sireto-Recovery/1.0",
     })
     
     ent_count = 0
     dir_count = 0
-    found_sirens = set()
+    not_found_count = 0
     
-    pbar = tqdm(missing_list, desc="SIRENs", unit="siren")
-    for siren in pbar:
-        res = fetch_single_siren(session, limiter, siren)
+    pbar = tqdm(sirens_to_process, desc="SIRENs", unit="siren")
+    for i, siren in enumerate(pbar):
+        res = fetch_siren(session, limiter, siren)
         
         if res:
             upsert_entreprise(conn, res)
             dir_count += upsert_dirigeants(conn, siren, res.get("dirigeants"))
             ent_count += 1
-            found_sirens.add(siren)
-            
-            # Commit every 100 SIRENs
-            if ent_count % 100 == 0:
-                conn.commit()
+            save_progress(siren)
+        else:
+            not_found_count += 1
+            save_not_found(siren)
+            save_progress(siren)  # Mark as processed even if not found
         
-        pbar.set_postfix({"Found": ent_count, "Dir": dir_count})
+        # Commit periodically
+        if (i + 1) % COMMIT_INTERVAL == 0:
+            conn.commit()
+        
+        pbar.set_postfix({"Found": ent_count, "Dir": dir_count, "NotFound": not_found_count})
     
     conn.commit()
+    conn.close()
     pbar.close()
     
     # Final report
-    not_found = missing_sirens - found_sirens
     LOGGER.info("=" * 60)
-    LOGGER.info("Completion finished!")
+    LOGGER.info("Recovery complete!")
     LOGGER.info("  Entreprises added: %d", ent_count)
     LOGGER.info("  Dirigeants added: %d", dir_count)
-    LOGGER.info("  Still not found: %d (may be non-diffusible or inactive)", len(not_found))
-    
-    if not_found:
-        LOGGER.info("  Not found SIRENs saved to: data/not_found_sirens.txt")
-        with open("data/not_found_sirens.txt", "w") as f:
-            for s in sorted(not_found):
-                f.write(s + "\n")
-    
-    conn.close()
+    LOGGER.info("  Not found: %d", not_found_count)
 
 
 if __name__ == "__main__":
