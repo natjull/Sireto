@@ -14,6 +14,8 @@ class NameSource(str, Enum):
     ETAB_ENSEIGNE = "ETAB_ENSEIGNE"
     ETAB_ENSEIGNE_X = "ETAB_ENSEIGNE_X"  # enseigne2/3
     ETAB_DENOM = "ETAB_DENOM"
+    SIREN_ETAB_NAME = "SIREN_ETAB_NAME"
+    PM_DIRIGEANT = "PM_DIRIGEANT"
     UL_SIGLE = "UL_SIGLE"
     UL_DENOM_USUELLE = "UL_DENOM_USUELLE"
     UL_DENOM = "UL_DENOM"
@@ -220,6 +222,20 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
     add(cand.get("denomination"), NameSource.ETAB_DENOM, is_ul=False)
     add(cand.get("enseigne2"), NameSource.ETAB_ENSEIGNE_X, is_ul=False)
     add(cand.get("enseigne3"), NameSource.ETAB_ENSEIGNE_X, is_ul=False)
+
+    # Other SIRETs of same SIREN (establishment names)
+    siren_etab_names = cand.get("siren_etab_names") or []
+    if isinstance(siren_etab_names, str):
+        siren_etab_names = [siren_etab_names]
+    for val in siren_etab_names:
+        add(val, NameSource.SIREN_ETAB_NAME, is_ul=False)
+
+    # Dirigeant personne morale (name of controlling company)
+    pm_dirigeant_names = cand.get("pm_dirigeant_names") or []
+    if isinstance(pm_dirigeant_names, str):
+        pm_dirigeant_names = [pm_dirigeant_names]
+    for val in pm_dirigeant_names:
+        add(val, NameSource.PM_DIRIGEANT, is_ul=False)
 
     # Unite Legale level
     add(cand.get("sigle_ul"), NameSource.UL_SIGLE, is_ul=True, is_sigle=True)
