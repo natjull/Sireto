@@ -7,7 +7,7 @@ Trains two models:
 
 Data:
  - CRM sample: data/entrainements.csv (delimiter=';')
- - Harvest DB: data/harvest_full.sqlite
+ - SIRET data: data/StockEtablissement_utf8.parquet
 
 Features are computed using the shared module: src.xgb_matcher.features
 """
@@ -15,9 +15,7 @@ Features are computed using the shared module: src.xgb_matcher.features
 from __future__ import annotations
 
 import json
-import json
 import pickle
-import sqlite3
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -25,6 +23,7 @@ from typing import Dict, Iterable, List, Tuple
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from xgboost import XGBClassifier, XGBRanker
@@ -55,7 +54,8 @@ HAS_LIGHTGBM = False
 # Paths
 DATA_DIR = Path("data")
 CRM_PATH = DATA_DIR / "entrainements.csv"
-HARVEST_DB = DATA_DIR / "harvest_full.sqlite"
+HISTO_PATH = DATA_DIR / "StockEtablissement_utf8.parquet"
+UNITE_LEGALE_PATH = DATA_DIR / "StockUniteLegale_utf8.parquet"
 MODEL_DIR = Path("models")
 
 # Training config
@@ -103,211 +103,119 @@ def load_crm() -> pd.DataFrame:
     return df
 
 
-def _chunked(seq: List[str], size: int = 900) -> Iterable[List[str]]:
-    for i in range(0, len(seq), size):
-        yield seq[i : i + size]
-
-
-def _parse_enseignes(raw: str | None) -> List[str]:
-    if not raw:
-        return []
-    s = str(raw).strip()
-    if not s or s.upper() == "[ND]":
-        return []
-    if s.startswith("["):
-        try:
-            values = json.loads(s)
-            return [v for v in values if v and str(v).upper() != "[ND]"]
-        except json.JSONDecodeError:
-            return [s]
-    return [s]
-
-
-def whitelist_sirets_from_sqlite(sirets: Iterable[str]) -> set[str]:
-    """Keep only SIRETs present in harvest_full.sqlite."""
-    target = [s for s in set(sirets) if s]
-    if not target or not HARVEST_DB.exists():
-        return set()
+def whitelist_sirets_from_parquet(sirets: Iterable[str]) -> set[str]:
+    """Stream parquet and keep only SIRETs present in CRM."""
+    target = set(sirets)
     keep: set[str] = set()
-    con = sqlite3.connect(HARVEST_DB)
-    cur = con.cursor()
-    for chunk in _chunked(target):
-        q = ",".join("?" for _ in chunk)
-        cur.execute(f"SELECT siret FROM etablissements WHERE siret IN ({q})", chunk)
-        keep.update(r[0] for r in cur.fetchall() if r[0])
-    con.close()
+    pf = pq.ParquetFile(HISTO_PATH)
+    for batch in pf.iter_batches(columns=["siret"], batch_size=100_000):
+        for s in batch.column("siret").to_pylist():
+            if s in target:
+                keep.add(s)
+        if len(keep) == len(target):
+            break
     return keep
 
 
-def load_pm_dirigeant_names(sirens: set[str]) -> Dict[str, List[str]]:
-    if not sirens or not HARVEST_DB.exists():
+def load_unite_legale_names(sirens: set[str]) -> Dict[str, dict]:
+    """Load Unite Legale names for given sirens if parquet is available."""
+    if not UNITE_LEGALE_PATH.exists() or not sirens:
         return {}
-    con = sqlite3.connect(HARVEST_DB)
-    cur = con.cursor()
-    out: Dict[str, set[str]] = {s: set() for s in sirens}
-    for chunk in _chunked(list(sirens)):
-        q = ",".join("?" for _ in chunk)
-        cur.execute(
-            f"""
-            SELECT siren, denomination
-            FROM dirigeants
-            WHERE siren IN ({q})
-              AND type_dirigeant = 'personne morale'
-              AND denomination IS NOT NULL
-            """,
-            chunk,
-        )
-        for siren, denom in cur.fetchall():
-            if denom and siren in out:
-                out[siren].add(denom)
-    con.close()
-    return {k: sorted(v) for k, v in out.items() if v}
+    cols = [
+        "siren",
+        "sigleUniteLegale",
+        "denominationUniteLegale",
+        "denominationUsuelle1UniteLegale",
+        "denominationUsuelle2UniteLegale",
+        "denominationUsuelle3UniteLegale",
+        "nomUniteLegale",
+        "nomUsageUniteLegale",
+        "prenomUsuelUniteLegale",
+        "pseudonymeUniteLegale",
+    ]
+    pf = pq.ParquetFile(UNITE_LEGALE_PATH)
+    mapping: Dict[str, dict] = {}
+    for batch in pf.iter_batches(columns=cols, batch_size=100_000):
+        pdf = batch.to_pandas()
+        pdf = pdf[pdf["siren"].isin(sirens)]
+        for _, r in pdf.iterrows():
+            mapping[r["siren"]] = {
+                "sigle_ul": r.get("sigleUniteLegale"),
+                "denomination_ul": r.get("denominationUniteLegale"),
+                "denomination_usuelle_ul": " ".join(
+                    filter(
+                        None,
+                        [
+                            r.get("denominationUsuelle1UniteLegale"),
+                            r.get("denominationUsuelle2UniteLegale"),
+                            r.get("denominationUsuelle3UniteLegale"),
+                        ],
+                    )
+                ),
+                "nom_ul": r.get("nomUniteLegale"),
+                "nom_usage_ul": r.get("nomUsageUniteLegale"),
+                "prenom_usuel_ul": r.get("prenomUsuelUniteLegale"),
+                "pseudonyme_ul": r.get("pseudonymeUniteLegale"),
+            }
+    return mapping
 
 
-def load_siren_etab_names(sirens: set[str]) -> Dict[str, List[str]]:
-    if not sirens or not HARVEST_DB.exists():
-        return {}
-    con = sqlite3.connect(HARVEST_DB)
-    cur = con.cursor()
-    out: Dict[str, set[str]] = {s: set() for s in sirens}
-    for chunk in _chunked(list(sirens)):
-        q = ",".join("?" for _ in chunk)
-        cur.execute(
-            f"""
-            SELECT siren, nom_commercial, liste_enseignes
-            FROM etablissements
-            WHERE siren IN ({q})
-            """,
-            chunk,
-        )
-        for siren, nom_commercial, liste_enseignes in cur.fetchall():
-            if siren not in out:
-                continue
-            names = []
-            if nom_commercial:
-                names.append(nom_commercial)
-            names.extend(_parse_enseignes(liste_enseignes))
-            for n in names:
-                if n:
-                    out[siren].add(n)
-    con.close()
-    return {k: sorted(v) for k, v in out.items() if v}
-
-
-def load_harvest_subset(keep_sirets: set[str]) -> Dict[str, dict]:
-    """Load establishment data for given SIRETs from harvest_full.sqlite."""
-    if not keep_sirets or not HARVEST_DB.exists():
-        return {}
-    con = sqlite3.connect(HARVEST_DB)
-    cur = con.cursor()
+def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
+    """
+    Load SIRENE establishment data for given SIRETs and enrich with Unite Legale names when available.
+    """
+    columns = [
+        "siret",
+        "siren",
+        "enseigne1Etablissement",
+        "enseigne2Etablissement",
+        "enseigne3Etablissement",
+        "denominationUsuelleEtablissement",
+        "numeroVoieEtablissement",
+        "typeVoieEtablissement",
+        "libelleVoieEtablissement",
+        "complementAdresseEtablissement",
+        "codePostalEtablissement",
+        "libelleCommuneEtablissement",
+        "codeCommuneEtablissement",
+        "categorieJuridiqueUniteLegale",
+    ]
+    pf = pq.ParquetFile(HISTO_PATH)
     mapping: Dict[str, dict] = {}
     sirens: set[str] = set()
 
-    for chunk in _chunked(sorted(keep_sirets)):
-        q = ",".join("?" for _ in chunk)
-        cur.execute(
-            f"""
-            SELECT
-                e.siret,
-                e.siren,
-                e.adresse,
-                e.code_postal,
-                e.libelle_commune,
-                e.commune,
-                e.nom_commercial,
-                e.liste_enseignes,
-                s.numero_voie,
-                s.type_voie,
-                s.libelle_voie,
-                s.complement_adresse,
-                s.code_postal AS s_code_postal,
-                s.libelle_commune AS s_libelle_commune,
-                s.commune AS s_commune,
-                ent.nom_complet,
-                ent.nom_raison_sociale,
-                ent.sigle,
-                ent.nature_juridique
-            FROM etablissements e
-            LEFT JOIN sieges s ON s.siret = e.siret
-            LEFT JOIN entreprises ent ON ent.siren = e.siren
-            WHERE e.siret IN ({q})
-            """,
-            chunk,
-        )
-        for r in cur.fetchall():
-            (
-                siret,
-                siren,
-                adresse,
-                e_cp,
-                e_city,
-                e_insee,
-                nom_commercial,
-                liste_enseignes,
-                numero_voie,
-                type_voie,
-                libelle_voie,
-                complement_adresse,
-                s_cp,
-                s_city,
-                s_insee,
-                nom_complet,
-                nom_raison_sociale,
-                sigle,
-                nature_juridique,
-            ) = r
-
-            names = []
-            if nom_commercial:
-                names.append(nom_commercial)
-            names.extend(_parse_enseignes(liste_enseignes))
-            seen = set()
-            enseignes = []
-            for n in names:
-                if n and n not in seen:
-                    enseignes.append(n)
-                    seen.add(n)
-            enseigne1 = enseignes[0] if len(enseignes) > 0 else None
-            enseigne2 = enseignes[1] if len(enseignes) > 1 else None
-            enseigne3 = enseignes[2] if len(enseignes) > 2 else None
-
+    for batch in pf.iter_batches(columns=columns, batch_size=100_000):
+        pdf = batch.to_pandas()
+        pdf = pdf[pdf["siret"].isin(keep_sirets)]
+        for _, r in pdf.iterrows():
             cand = {
-                "siret": siret,
-                "siren": siren,
-                "enseigne1": enseigne1,
-                "enseigne2": enseigne2,
-                "enseigne3": enseigne3,
-                "denomination": None,
-                "numeroVoie": numero_voie,
-                "typeVoie": type_voie,
-                "libelleVoie": libelle_voie,
-                "complementAdresse": complement_adresse or adresse,
-                "postcode": s_cp or e_cp,
-                "city": s_city or e_city,
-                "insee": s_insee or e_insee,
-                "cj_ul": nature_juridique,
-                "sigle_ul": sigle,
-                "denomination_ul": nom_raison_sociale or nom_complet,
-                "denomination_usuelle_ul": nom_complet
-                if nom_complet and nom_complet != nom_raison_sociale
-                else None,
+                "siret": r.get("siret"),
+                "siren": r.get("siren"),
+                "enseigne1": r.get("enseigne1Etablissement"),
+                "enseigne2": r.get("enseigne2Etablissement"),
+                "enseigne3": r.get("enseigne3Etablissement"),
+                "denomination": r.get("denominationUsuelleEtablissement"),
+                "numeroVoie": r.get("numeroVoieEtablissement"),
+                "typeVoie": r.get("typeVoieEtablissement"),
+                "libelleVoie": r.get("libelleVoieEtablissement"),
+                "complementAdresse": r.get("complementAdresseEtablissement"),
+                "postcode": r.get("codePostalEtablissement"),
+                "city": r.get("libelleCommuneEtablissement"),
+                "insee": r.get("codeCommuneEtablissement"),
+                "cj_ul": r.get("categorieJuridiqueUniteLegale"),
             }
-            if siren:
-                sirens.add(str(siren))
-            mapping[str(siret)] = cand
+            if cand.get("siren"):
+                sirens.add(str(cand["siren"]))
+            mapping[r["siret"]] = cand
 
-    con.close()
-
-    if sirens:
-        pm_map = load_pm_dirigeant_names(sirens)
-        siren_names_map = load_siren_etab_names(sirens)
+    # Enrich with Unite Legale names
+    ul_names = load_unite_legale_names(sirens)
+    if ul_names:
         for siret, cand in mapping.items():
             siren = cand.get("siren")
-            if siren:
-                if siren in pm_map:
-                    cand["pm_dirigeant_names"] = pm_map[siren]
-                if siren in siren_names_map:
-                    cand["siren_etab_names"] = siren_names_map[siren]
+            if siren and siren in ul_names:
+                cand.update(ul_names[siren])
+
     return mapping
 
 
@@ -352,16 +260,16 @@ def prepare_ranking_dataset() -> RankingDataset:
     crm = load_crm()
     print(f"CRM rows loaded: {len(crm)}")
 
-    print("Filtering SIRET against harvest_full.sqlite...")
-    whitelist = whitelist_sirets_from_sqlite(crm["siret"].tolist())
+    print("Filtering SIRET against parquet whitelist...")
+    whitelist = whitelist_sirets_from_parquet(crm["siret"].tolist())
     crm = crm[crm["siret"].isin(whitelist)].reset_index(drop=True)
-    print(f"CRM rows after harvest filter: {len(crm)}")
+    print(f"CRM rows after parquet whitelist: {len(crm)}")
 
     if len(crm) == 0:
         return RankingDataset(pd.DataFrame(), pd.Series(dtype=int))
 
-    print("Loading harvest data for matching SIRETs...")
-    harvest_data = load_harvest_subset(whitelist)
+    print("Loading parquet data for matching SIRETs...")
+    parquet_data = load_parquet_subset(whitelist)
 
     print("Building location index...")
     loc_index = build_location_index(crm)
@@ -381,7 +289,7 @@ def prepare_ranking_dataset() -> RankingDataset:
     query_id = 0
     for idx, row in iterator:
         siret = row["siret"]
-        cand_data = harvest_data.get(siret)
+        cand_data = parquet_data.get(siret)
         if not cand_data:
             continue
 
@@ -402,17 +310,17 @@ def prepare_ranking_dataset() -> RankingDataset:
                 neg_candidates.update(loc_index[loc_key])
         neg_candidates.discard(idx)
 
-        # Filter to those with harvest data
+        # Filter to those with parquet data
         neg_candidates_list = [
             i for i in neg_candidates
-            if crm.loc[i, "siret"] in harvest_data
+            if crm.loc[i, "siret"] in parquet_data
         ]
 
         # Sample negatives
         if len(neg_candidates_list) < N_NEGATIVES:
             all_indices = [
                 i for i in crm.index
-                if i != idx and crm.loc[i, "siret"] in harvest_data
+                if i != idx and crm.loc[i, "siret"] in parquet_data
             ]
             rng.shuffle(all_indices)
             neg_candidates_list = all_indices[:N_NEGATIVES]
@@ -428,7 +336,7 @@ def prepare_ranking_dataset() -> RankingDataset:
         # Generate negative pairs
         for neg_idx in neg_candidates_list:
             neg_siret = crm.loc[neg_idx, "siret"]
-            neg_data = harvest_data.get(neg_siret)
+            neg_data = parquet_data.get(neg_siret)
             if neg_data:
                 feature_rows.append(make_features(row, neg_data))
                 labels.append(0)
@@ -838,7 +746,7 @@ def save_models(
             model.booster_.save_model(str(model_path))
         else:
             model_path = MODEL_DIR / f"{safe_name}.json"
-            model.get_booster().save_model(str(model_path))
+            model.save_model(str(model_path))
 
         print(f"Saved {name} to {model_path}")
 
@@ -849,7 +757,7 @@ def save_models(
         best_model.booster_.save_model(str(default_path))
     else:
         default_path = MODEL_DIR / "xgb_matcher.json"
-        best_model.get_booster().save_model(str(default_path))
+        best_model.save_model(str(default_path))
     print(f"Saved best model ({best_model_name}) as default: {default_path}")
 
     # Save feature metadata
