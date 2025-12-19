@@ -3,12 +3,12 @@ Offline scoring of the trained XGBoost matcher on a CRM CSV, producing top-k can
 
 Inputs:
   - CRM file: data/testcrm/data_56_subset_corbas_decines.csv
-  - Parquet SIRENE: data/StockEtablissement_utf8.parquet
+  - Harvest DB: data/harvest_full.sqlite
   - Trained artifacts: models/xgb_matcher.json, models/xgb_matcher_scaler.pkl, models/xgb_matcher_features.json
 
 Strategy:
   1) Read CRM, collect the set of codePostal and codeCommune present.
-  2) Stream the parquet once, keeping only rows whose codePostal or codeCommune is in those sets.
+  2) Query harvest_full.sqlite, keeping only rows whose codePostal or codeCommune is in those sets.
      This builds an in-memory candidate pool with name + address for the relevant communes.
   3) For each CRM row, score all candidates sharing the same codeCommune if available,
      otherwise the same codePostal. Return top-k (default 5).
@@ -20,13 +20,13 @@ from __future__ import annotations
 
 import json
 import pickle
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Dict, List, Set
 
 import numpy as np
 import pandas as pd
-import pyarrow.parquet as pq
 from xgboost import XGBClassifier, XGBRanker
 
 # Add src to path for imports
@@ -42,14 +42,12 @@ from src.xgb_matcher.naming import primary_name
 
 # Config
 CRM_PATH = Path("data/testcrm/data_56_subset_corbas_decines.csv")
-PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
-UNITE_LEGALE_PATH = Path("data/StockUniteLegale_utf8.parquet")  # optional
+HARVEST_DB = Path("data/harvest_full.sqlite")
 MODEL_DIR = Path("models")
 MODEL_PATH = MODEL_DIR / "xgb_matcher.json"
 SCALER_PATH = MODEL_DIR / "xgb_matcher_scaler.pkl"
 FEATURE_META_PATH = MODEL_DIR / "xgb_matcher_features.json"
 TOP_K = 5
-BATCH_SIZE = 100_000
 
 
 # ---------- Reranking helpers ----------
@@ -121,105 +119,201 @@ def load_crm(path: Path) -> pd.DataFrame:
     return df
 
 
+def _chunked(seq: List[str], size: int = 900) -> List[List[str]]:
+    return [seq[i : i + size] for i in range(0, len(seq), size)]
+
+
+def _parse_enseignes(raw: str | None) -> List[str]:
+    if not raw:
+        return []
+    s = str(raw).strip()
+    if not s or s.upper() == "[ND]":
+        return []
+    if s.startswith("["):
+        try:
+            values = json.loads(s)
+            return [v for v in values if v and str(v).upper() != "[ND]"]
+        except json.JSONDecodeError:
+            return [s]
+    return [s]
+
+
+def _load_pm_dirigeant_names(con: sqlite3.Connection, sirens: set[str]) -> Dict[str, List[str]]:
+    if not sirens:
+        return {}
+    cur = con.cursor()
+    out: Dict[str, set[str]] = {s: set() for s in sirens}
+    for chunk in _chunked(sorted(sirens)):
+        q = ",".join("?" for _ in chunk)
+        cur.execute(
+            f"""
+            SELECT siren, denomination
+            FROM dirigeants
+            WHERE siren IN ({q})
+              AND type_dirigeant = 'personne morale'
+              AND denomination IS NOT NULL
+            """,
+            chunk,
+        )
+        for siren, denom in cur.fetchall():
+            if denom and siren in out:
+                out[siren].add(denom)
+    return {k: sorted(v) for k, v in out.items() if v}
+
+
+def _load_siren_etab_names(con: sqlite3.Connection, sirens: set[str]) -> Dict[str, List[str]]:
+    if not sirens:
+        return {}
+    cur = con.cursor()
+    out: Dict[str, set[str]] = {s: set() for s in sirens}
+    for chunk in _chunked(sorted(sirens)):
+        q = ",".join("?" for _ in chunk)
+        cur.execute(
+            f"""
+            SELECT siren, nom_commercial, liste_enseignes
+            FROM etablissements
+            WHERE siren IN ({q})
+            """,
+            chunk,
+        )
+        for siren, nom_commercial, liste_enseignes in cur.fetchall():
+            if siren not in out:
+                continue
+            names = []
+            if nom_commercial:
+                names.append(nom_commercial)
+            names.extend(_parse_enseignes(liste_enseignes))
+            for n in names:
+                if n:
+                    out[siren].add(n)
+    return {k: sorted(v) for k, v in out.items() if v}
+
+
 def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[str, dict]:
     """
-    Load candidates from parquet, filtered by location.
+    Load candidates from harvest_full.sqlite, filtered by location.
 
     Excludes candidates without any name field (matching would be meaningless).
     """
-    cols = [
-        "siret",
-        "enseigne1Etablissement",
-        "enseigne2Etablissement",
-        "enseigne3Etablissement",
-        "denominationUsuelleEtablissement",
-        "siren",
-        "numeroVoieEtablissement",
-        "typeVoieEtablissement",
-        "libelleVoieEtablissement",
-        "complementAdresseEtablissement",
-        "codePostalEtablissement",
-        "libelleCommuneEtablissement",
-        "codeCommuneEtablissement",
-        "categorieJuridiqueUniteLegale",
-    ]
-    pf = pq.ParquetFile(PARQUET_PATH)
+    if not HARVEST_DB.exists() or (not postcodes and not insee):
+        return {}
+    con = sqlite3.connect(HARVEST_DB)
+    cur = con.cursor()
     mapping: Dict[str, dict] = {}
-
-    # First pass: collect all rows for CP/INSEE and the set of siren
     sirens: set[str] = set()
 
-    for batch in pf.iter_batches(columns=cols, batch_size=BATCH_SIZE):
-        pdf = batch.to_pandas()
-        mask = pdf["codePostalEtablissement"].isin(postcodes) | pdf["codeCommuneEtablissement"].isin(insee)
-        pdf = pdf[mask]
+    where_clauses = []
+    params: List[str] = []
+    if postcodes:
+        q = ",".join("?" for _ in postcodes)
+        where_clauses.append(f"e.code_postal IN ({q})")
+        params.extend(sorted(postcodes))
+    if insee:
+        q = ",".join("?" for _ in insee)
+        where_clauses.append(f"e.commune IN ({q})")
+        params.extend(sorted(insee))
 
-        for _, r in pdf.iterrows():
-            cand = {
-                "siret": r["siret"],
-                "siren": r.get("siren"),
-                "denomination": r.get("denominationUsuelleEtablissement"),
-                "enseigne1": r.get("enseigne1Etablissement"),
-                "enseigne2": r.get("enseigne2Etablissement"),
-                "enseigne3": r.get("enseigne3Etablissement"),
-                "numeroVoie": r.get("numeroVoieEtablissement"),
-                "typeVoie": r.get("typeVoieEtablissement"),
-                "libelleVoie": r.get("libelleVoieEtablissement"),
-                "complementAdresse": r.get("complementAdresseEtablissement"),
-                "postcode": r.get("codePostalEtablissement"),
-                "city": r.get("libelleCommuneEtablissement"),
-                "insee": r.get("codeCommuneEtablissement"),
-                "cj_ul": r.get("categorieJuridiqueUniteLegale"),
-            }
-            if cand.get("siren"):
-                sirens.add(str(cand["siren"]))
-            mapping[r["siret"]] = cand
+    where_sql = " OR ".join(where_clauses)
+    cur.execute(
+        f"""
+        SELECT
+            e.siret,
+            e.siren,
+            e.adresse,
+            e.code_postal,
+            e.libelle_commune,
+            e.commune,
+            e.nom_commercial,
+            e.liste_enseignes,
+            s.numero_voie,
+            s.type_voie,
+            s.libelle_voie,
+            s.complement_adresse,
+            s.code_postal AS s_code_postal,
+            s.libelle_commune AS s_libelle_commune,
+            s.commune AS s_commune,
+            ent.nom_complet,
+            ent.nom_raison_sociale,
+            ent.sigle,
+            ent.nature_juridique
+        FROM etablissements e
+        LEFT JOIN sieges s ON s.siret = e.siret
+        LEFT JOIN entreprises ent ON ent.siren = e.siren
+        WHERE {where_sql}
+        """,
+        params,
+    )
+    for r in cur.fetchall():
+        (
+            siret,
+            siren,
+            adresse,
+            e_cp,
+            e_city,
+            e_insee,
+            nom_commercial,
+            liste_enseignes,
+            numero_voie,
+            type_voie,
+            libelle_voie,
+            complement_adresse,
+            s_cp,
+            s_city,
+            s_insee,
+            nom_complet,
+            nom_raison_sociale,
+            sigle,
+            nature_juridique,
+        ) = r
 
-    # Optional enrichment with UniteLegale names if file exists
-    if UNITE_LEGALE_PATH.exists() and sirens:
-        print("  Loading UniteLegale names for candidates...")
-        ul_cols = [
-            "siren",
-            "sigleUniteLegale",
-            "denominationUniteLegale",
-            "denominationUsuelle1UniteLegale",
-            "denominationUsuelle2UniteLegale",
-            "denominationUsuelle3UniteLegale",
-            "nomUniteLegale",
-            "nomUsageUniteLegale",
-            "prenomUsuelUniteLegale",
-            "pseudonymeUniteLegale",
-        ]
-        pf_ul = pq.ParquetFile(UNITE_LEGALE_PATH)
-        ul_map: Dict[str, dict] = {}
-        for batch in pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE):
-            pdf = batch.to_pandas()
-            pdf = pdf[pdf["siren"].isin(sirens)]
-            for _, r in pdf.iterrows():
-                ul_map[r["siren"]] = {
-                    "sigle_ul": r.get("sigleUniteLegale"),
-                    "denomination_ul": r.get("denominationUniteLegale"),
-                    "denomination_usuelle_ul": " ".join(
-                        filter(
-                            None,
-                            [
-                                r.get("denominationUsuelle1UniteLegale"),
-                                r.get("denominationUsuelle2UniteLegale"),
-                                r.get("denominationUsuelle3UniteLegale"),
-                            ],
-                        )
-                    ),
-                    "nom_ul": r.get("nomUniteLegale"),
-                    "nom_usage_ul": r.get("nomUsageUniteLegale"),
-                    "prenom_usuel_ul": r.get("prenomUsuelUniteLegale"),
-                    "pseudonyme_ul": r.get("pseudonymeUniteLegale"),
-                }
-        # Merge into mapping
-        for siret, cand in mapping.items():
-            siren = cand.get("siren")
-            if siren and siren in ul_map:
-                cand.update(ul_map[siren])
+        names = []
+        if nom_commercial:
+            names.append(nom_commercial)
+        names.extend(_parse_enseignes(liste_enseignes))
+        seen = set()
+        enseignes = []
+        for n in names:
+            if n and n not in seen:
+                enseignes.append(n)
+                seen.add(n)
+        enseigne1 = enseignes[0] if len(enseignes) > 0 else None
+        enseigne2 = enseignes[1] if len(enseignes) > 1 else None
+        enseigne3 = enseignes[2] if len(enseignes) > 2 else None
 
+        cand = {
+            "siret": siret,
+            "siren": siren,
+            "denomination": None,
+            "enseigne1": enseigne1,
+            "enseigne2": enseigne2,
+            "enseigne3": enseigne3,
+            "numeroVoie": numero_voie,
+            "typeVoie": type_voie,
+            "libelleVoie": libelle_voie,
+            "complementAdresse": complement_adresse or adresse,
+            "postcode": s_cp or e_cp,
+            "city": s_city or e_city,
+            "insee": s_insee or e_insee,
+            "cj_ul": nature_juridique,
+            "sigle_ul": sigle,
+            "denomination_ul": nom_raison_sociale or nom_complet,
+            "denomination_usuelle_ul": nom_complet if nom_complet and nom_complet != nom_raison_sociale else None,
+        }
+        if siren:
+            sirens.add(str(siren))
+        mapping[str(siret)] = cand
+
+    pm_map = _load_pm_dirigeant_names(con, sirens)
+    siren_names_map = _load_siren_etab_names(con, sirens)
+    for siret, cand in mapping.items():
+        siren = cand.get("siren")
+        if siren:
+            if siren in pm_map:
+                cand["pm_dirigeant_names"] = pm_map[siren]
+            if siren in siren_names_map:
+                cand["siren_etab_names"] = siren_names_map[siren]
+
+    con.close()
     return mapping
 
 
@@ -233,7 +327,7 @@ def main():
     insee = set(crm["insee"].dropna().unique()) if "insee" in crm else set()
     print(f"Postcodes of interest: {len(postcodes)} | INSEE codes: {len(insee)}")
 
-    print("Building candidate pool from parquet (filtered by CP/INSEE)...")
+    print("Building candidate pool from harvest_full.sqlite (filtered by CP/INSEE)...")
     candidates = load_candidates_for_locations(postcodes, insee)
     print(f"Candidates loaded: {len(candidates)}")
 
