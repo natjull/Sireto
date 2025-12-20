@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import json
 import pickle
+import sqlite3
 import sys
 from pathlib import Path
 from typing import Dict, List, Set
@@ -44,6 +45,7 @@ from src.xgb_matcher.naming import primary_name
 CRM_PATH = Path("data/testcrm/data_56_subset_corbas_decines.csv")
 PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 UNITE_LEGALE_PATH = Path("data/StockUniteLegale_utf8.parquet")  # optional
+HARVEST_DB = Path("data/harvest_full.sqlite")
 MODEL_DIR = Path("models")
 MODEL_PATH = MODEL_DIR / "xgb_matcher.json"
 SCALER_PATH = MODEL_DIR / "xgb_matcher_scaler.pkl"
@@ -119,6 +121,36 @@ def load_crm(path: Path) -> pd.DataFrame:
     # This dataset has no SIRET ground truth; we generate synthetic ids for bookkeeping
     df["crm_id"] = df.index
     return df
+
+
+def _chunked(seq: List[str], size: int = 900) -> List[List[str]]:
+    return [seq[i : i + size] for i in range(0, len(seq), size)]
+
+
+def load_pm_dirigeant_names(sirens: set[str]) -> Dict[str, List[str]]:
+    """Load PM dirigeant names (personne morale) from harvest_full.sqlite."""
+    if not HARVEST_DB.exists() or not sirens:
+        return {}
+    con = sqlite3.connect(HARVEST_DB)
+    cur = con.cursor()
+    out: Dict[str, set[str]] = {s: set() for s in sirens}
+    for chunk in _chunked(sorted(sirens)):
+        q = ",".join("?" for _ in chunk)
+        cur.execute(
+            f"""
+            SELECT siren, denomination
+            FROM dirigeants
+            WHERE siren IN ({q})
+              AND type_dirigeant = 'personne morale'
+              AND denomination IS NOT NULL
+            """,
+            chunk,
+        )
+        for siren, denom in cur.fetchall():
+            if denom and siren in out:
+                out[siren].add(denom)
+    con.close()
+    return {k: sorted(v) for k, v in out.items() if v}
 
 
 def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[str, dict]:
@@ -220,6 +252,14 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
             if siren and siren in ul_map:
                 cand.update(ul_map[siren])
 
+    # Enrich with PM dirigeant names (from harvest_full.sqlite)
+    pm_names = load_pm_dirigeant_names(sirens)
+    if pm_names:
+        for siret, cand in mapping.items():
+            siren = cand.get("siren")
+            if siren and siren in pm_names:
+                cand["pm_dirigeant_names"] = pm_names[siren]
+
     return mapping
 
 
@@ -273,82 +313,8 @@ def main():
         Xs = scaler.transform(X)
         raw_scores = clf.predict(Xs) if is_ranker else clf.predict_proba(Xs)[:, 1]
 
-        # Post-adjustments (inference-only):
-        # - pénalise les candidats sans nom
-        # - bonifie légèrement les adresses parfaitement identiques selon le nom
-        # - bonifie les candidats avec nom UL quand le nom établissement est absent
-        # - bonus token pour les portmanteaux (ex: BOXING dans DigitBoxing)
-        crm_name_raw = r.get("crm_name", "")
-        
-        # First pass: compute base adjustments
-        adjusted_scores = []
-        for idx, (sc, f) in enumerate(zip(raw_scores, feats)):
-            adj = sc
-            _, cand = cand_list[idx]
-            
-            # Penalty for candidates without any name
-            if f.get("has_any_name", 1.0) == 0.0:
-                adj *= 0.9
-            
-            # Bonus for perfect address match scaled by name similarity
-            addr_quality = f.get("addr_jaro", 0.0)
-            street_match = f.get("street_number_diff", 9999) == 0
-            if addr_quality == 1.0 and street_match:
-                adj += 0.05 * f.get("name_jaro_max", 0.0)
-            
-            # UL name boost: when etablissement name is weak/absent but UL name matches
-            name_sim_etab = f.get("name_sim_max_etab", 0.0)
-            name_sim_ul = f.get("name_sim_max_ul", 0.0)
-            
-            if name_sim_etab < 0.35 and name_sim_ul > 0.3:
-                if addr_quality == 1.0 and street_match:
-                    # Perfect address + UL name = very strong signal
-                    ul_boost = name_sim_ul * 0.80 + 0.30
-                else:
-                    # Good address + UL name = moderate boost
-                    ul_boost = name_sim_ul * addr_quality * 0.40
-                adj += ul_boost
-            
-            # Token substring bonus for portmanteau names
-            if addr_quality >= 0.85:
-                token_bonus = compute_ul_token_bonus(crm_name_raw, cand)
-                if token_bonus > 0:
-                    adj += token_bonus * 0.30
-            
-            adjusted_scores.append((adj, addr_quality, street_match, name_sim_ul))
-        
-        # Second pass: apply address-relative anchor bonus
-        # If there's a candidate with perfect address and meaningful UL name,
-        # heavily penalize candidates with much worse addresses
-        perfect_addr_candidates = [
-            (i, s, ul) for i, (s, aq, sm, ul) in enumerate(adjusted_scores) 
-            if aq == 1.0 and sm and ul > 0.3
-        ]
-        
-        scores = []
-        if perfect_addr_candidates:
-            # We have at least one perfect-address candidate with UL name
-            best_perfect_score = max(s for _, s, _ in perfect_addr_candidates)
-            
-            for idx, (adj, addr_quality, street_match, name_sim_ul) in enumerate(adjusted_scores):
-                if addr_quality == 1.0 and street_match:
-                    # Perfect address candidates get a boost relative to best imperfect scorer
-                    # This ensures they compete favorably
-                    if name_sim_ul > 0.3:
-                        # Has UL name - ensure it's competitive with wrong-address high scorers
-                        bonus = max(0, (best_perfect_score - adj) * 0.3 + 0.5)
-                        adj += bonus
-                else:
-                    # Non-perfect address candidates get penalized if there are good
-                    # perfect-address alternatives
-                    address_penalty = (1.0 - addr_quality) * 1.2
-                    adj -= address_penalty
-                
-                scores.append(adj)
-        else:
-            scores = [adj for adj, _, _, _ in adjusted_scores]
-        
-        scores = np.array(scores)
+        # Pure model scores - no post-adjustments
+        scores = np.array(raw_scores)
 
         topk_idx = np.argsort(scores)[::-1][:TOP_K]
         for rank, idx_k in enumerate(topk_idx, start=1):

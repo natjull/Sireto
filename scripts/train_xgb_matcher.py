@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import pickle
+import sqlite3
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -56,6 +57,7 @@ DATA_DIR = Path("data")
 CRM_PATH = DATA_DIR / "entrainements.csv"
 HISTO_PATH = DATA_DIR / "StockEtablissement_utf8.parquet"
 UNITE_LEGALE_PATH = DATA_DIR / "StockUniteLegale_utf8.parquet"
+HARVEST_DB = DATA_DIR / "harvest_full.sqlite"
 MODEL_DIR = Path("models")
 
 # Training config
@@ -160,6 +162,37 @@ def load_unite_legale_names(sirens: set[str]) -> Dict[str, dict]:
     return mapping
 
 
+def _chunked(seq: List[str], size: int = 900) -> Iterable[List[str]]:
+    for i in range(0, len(seq), size):
+        yield seq[i : i + size]
+
+
+def load_pm_dirigeant_names(sirens: set[str]) -> Dict[str, List[str]]:
+    """Load PM dirigeant names (personne morale) from harvest_full.sqlite."""
+    if not HARVEST_DB.exists() or not sirens:
+        return {}
+    con = sqlite3.connect(HARVEST_DB)
+    cur = con.cursor()
+    out: Dict[str, set[str]] = {s: set() for s in sirens}
+    for chunk in _chunked(sorted(sirens)):
+        q = ",".join("?" for _ in chunk)
+        cur.execute(
+            f"""
+            SELECT siren, denomination
+            FROM dirigeants
+            WHERE siren IN ({q})
+              AND type_dirigeant = 'personne morale'
+              AND denomination IS NOT NULL
+            """,
+            chunk,
+        )
+        for siren, denom in cur.fetchall():
+            if denom and siren in out:
+                out[siren].add(denom)
+    con.close()
+    return {k: sorted(v) for k, v in out.items() if v}
+
+
 def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
     """
     Load SIRENE establishment data for given SIRETs and enrich with Unite Legale names when available.
@@ -215,6 +248,14 @@ def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
             siren = cand.get("siren")
             if siren and siren in ul_names:
                 cand.update(ul_names[siren])
+
+    # Enrich with PM dirigeant names (from harvest_full.sqlite)
+    pm_names = load_pm_dirigeant_names(sirens)
+    if pm_names:
+        for siret, cand in mapping.items():
+            siren = cand.get("siren")
+            if siren and siren in pm_names:
+                cand["pm_dirigeant_names"] = pm_names[siren]
 
     return mapping
 
@@ -746,7 +787,7 @@ def save_models(
             model.booster_.save_model(str(model_path))
         else:
             model_path = MODEL_DIR / f"{safe_name}.json"
-            model.save_model(str(model_path))
+            model.get_booster().save_model(str(model_path))
 
         print(f"Saved {name} to {model_path}")
 
@@ -757,7 +798,7 @@ def save_models(
         best_model.booster_.save_model(str(default_path))
     else:
         default_path = MODEL_DIR / "xgb_matcher.json"
-        best_model.save_model(str(default_path))
+        best_model.get_booster().save_model(str(default_path))
     print(f"Saved best model ({best_model_name}) as default: {default_path}")
 
     # Save feature metadata
