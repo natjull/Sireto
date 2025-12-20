@@ -22,6 +22,7 @@ import json
 import pickle
 import sqlite3
 import sys
+import logging
 from pathlib import Path
 from typing import Dict, List, Set
 
@@ -53,8 +54,37 @@ FEATURE_META_PATH = MODEL_DIR / "xgb_matcher_features.json"
 TOP_K = 5
 BATCH_SIZE = 100_000
 
+# Rerank coefficients
+BOOST_PERFECT_ADDR = 0.15    # D1
+PENALTY_WRONG_ADDR = 0.10    # D1
+BOOST_PUBLIC_SCHOOL = 0.20   # B1
+PENALTY_ASSOCIATION = 0.15   # B1
 
 # ---------- Reranking helpers ----------
+
+logger = logging.getLogger(__name__)
+
+SCHOOL_TOKENS = {
+    "COLLEGE",
+    "COLLGE",
+    "CLG",
+    "LYCEE",
+    "LYCE",
+    "ECOLE",
+    "ACADEMY",
+}
+
+ASSOCIATION_TOKENS = {
+    "ASSOCIATION",
+    "ASSO",
+    "FOYER",
+    "AMICALE",
+    "CONSEIL",
+    "PARENTS",
+    "PARENT",
+    "FSE",
+    "SOCIO",
+}
 
 
 def extract_significant_tokens(text: str, min_len: int = 3) -> Set[str]:
@@ -102,6 +132,71 @@ def compute_ul_token_bonus(crm_name: str, cand: dict) -> float:
                     break
     
     return min(1.0, matches / len(crm_tokens))
+
+
+def _tokenize(text: str) -> Set[str]:
+    if not text:
+        return set()
+    return set(normalize_text(text).split())
+
+
+def _is_school_crm(crm_row: pd.Series) -> bool:
+    name = crm_row.get("crm_name", "")
+    tokens = _tokenize(name)
+    return any(tok in SCHOOL_TOKENS for tok in tokens)
+
+
+def _is_public_school_candidate(cand_name: str) -> bool:
+    tokens = _tokenize(cand_name)
+    return any(tok in SCHOOL_TOKENS for tok in tokens)
+
+
+def _is_association_candidate(cand_name: str) -> bool:
+    tokens = _tokenize(cand_name)
+    return any(tok in ASSOCIATION_TOKENS for tok in tokens)
+
+
+def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Series) -> np.ndarray:
+    """
+    Apply post-inference rerank rules on scores.
+
+    Args:
+        scores: raw model scores (per candidate)
+        features: list of feature dicts (with extra metadata keys)
+        crm_row: CRM row (for school detection)
+    """
+    adjusted = scores.astype(float).copy()
+    is_school = _is_school_crm(crm_row)
+
+    for i, feat in enumerate(features):
+        delta = 0.0
+        siret = feat.get("_siret", "")
+        cand_name = feat.get("_cand_name", "") or ""
+
+        # D1: address-based rerank
+        addr_jaro = float(feat.get("addr_jaro", 0.0))
+        street_number_diff = float(feat.get("street_number_diff", 9999))
+        name_jaro_max = float(feat.get("name_jaro_max", 0.0))
+        if addr_jaro >= 0.97 and (street_number_diff == 0 or street_number_diff == 9999) and name_jaro_max >= 0.8:
+            delta += BOOST_PERFECT_ADDR
+            logger.info("rerank_adjust|%s|%s|D1_PERFECT_ADDR|+%.3f", crm_row.get("crm_name"), siret, BOOST_PERFECT_ADDR)
+        elif addr_jaro <= 0.70 and street_number_diff >= 5 and name_jaro_max < 0.6:
+            delta -= PENALTY_WRONG_ADDR
+            logger.info("rerank_adjust|%s|%s|D1_WRONG_ADDR|-%.3f", crm_row.get("crm_name"), siret, PENALTY_WRONG_ADDR)
+
+        # B1: public school vs association
+        if is_school:
+            if _is_association_candidate(cand_name) and name_jaro_max < 0.5:
+                delta -= PENALTY_ASSOCIATION
+                logger.info("rerank_adjust|%s|%s|B1_ASSOCIATION|-%.3f", crm_row.get("crm_name"), siret, PENALTY_ASSOCIATION)
+            elif _is_public_school_candidate(cand_name):
+                delta += BOOST_PUBLIC_SCHOOL
+                logger.info("rerank_adjust|%s|%s|B1_PUBLIC_SCHOOL|+%.3f", crm_row.get("crm_name"), siret, BOOST_PUBLIC_SCHOOL)
+
+        if delta != 0.0:
+            adjusted[i] = adjusted[i] + delta
+
+    return adjusted
 
 
 # ---------- Data loading ----------
@@ -267,6 +362,10 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
 
 
 def main():
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s %(name)s %(message)s",
+    )
     print("Loading CRM subset...")
     crm = load_crm(CRM_PATH)
     postcodes = set(crm["postcode"].dropna().unique()) if "postcode" in crm else set()
@@ -308,13 +407,20 @@ def main():
             continue
 
         # Compute features using shared module
-        feats = [make_features(r, c) for _, c in cand_list]
+        feats = []
+        for siret, c in cand_list:
+            feat = make_features(r, c)
+            feat["_siret"] = siret
+            feat["_cand_name"] = primary_name(c) or f"SIRET {siret}"
+            feats.append(feat)
         X = pd.DataFrame(feats)[feature_order]
         Xs = scaler.transform(X)
         raw_scores = clf.predict(Xs) if is_ranker else clf.predict_proba(Xs)[:, 1]
 
         # Pure model scores - no post-adjustments
         scores = np.array(raw_scores)
+        # Apply rerank rules
+        scores = apply_rerank_rules(scores, feats, r)
 
         topk_idx = np.argsort(scores)[::-1][:TOP_K]
         for rank, idx_k in enumerate(topk_idx, start=1):
