@@ -14,6 +14,7 @@ class NameSource(str, Enum):
     ETAB_ENSEIGNE = "ETAB_ENSEIGNE"
     ETAB_ENSEIGNE_X = "ETAB_ENSEIGNE_X"  # enseigne2/3
     ETAB_DENOM = "ETAB_DENOM"
+    PM_DIRIGEANT = "PM_DIRIGEANT"
     UL_SIGLE = "UL_SIGLE"
     UL_DENOM_USUELLE = "UL_DENOM_USUELLE"
     UL_DENOM = "UL_DENOM"
@@ -221,6 +222,13 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
     add(cand.get("enseigne2"), NameSource.ETAB_ENSEIGNE_X, is_ul=False)
     add(cand.get("enseigne3"), NameSource.ETAB_ENSEIGNE_X, is_ul=False)
 
+    # Dirigeant personne morale (name of controlling company)
+    pm_dirigeant_names = cand.get("pm_dirigeant_names") or []
+    if isinstance(pm_dirigeant_names, str):
+        pm_dirigeant_names = [pm_dirigeant_names]
+    for val in pm_dirigeant_names:
+        add(val, NameSource.PM_DIRIGEANT, is_ul=False)
+
     # Unite Legale level
     add(cand.get("sigle_ul"), NameSource.UL_SIGLE, is_ul=True, is_sigle=True)
     add(cand.get("denomination_usuelle_ul"), NameSource.UL_DENOM_USUELLE, is_ul=True)
@@ -240,10 +248,36 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
 
 
 def primary_name(cand: dict) -> str:
-    """Return the first available normalized name (for display), else empty."""
+    """Return the best available normalized name for display.
+    
+    Priority order:
+    1. Etablissement names (enseigne, denomination)
+    2. Unite Legale names (sigle, denomination_usuelle, denomination)
+    3. PM Dirigeant names (fallback only)
+    4. Person name (last resort)
+    """
     names = build_candidate_names(cand)
     if not names:
         return ""
+    
+    # Priority: ETAB > UL > PM_DIRIGEANT > PERSON
+    priority_sources = [
+        NameSource.ETAB_ENSEIGNE,
+        NameSource.ETAB_DENOM,
+        NameSource.ETAB_ENSEIGNE_X,
+        NameSource.UL_SIGLE,
+        NameSource.UL_DENOM_USUELLE,
+        NameSource.UL_DENOM,
+        NameSource.PM_DIRIGEANT,
+        NameSource.PERSON_NAME,
+    ]
+    
+    for source in priority_sources:
+        for nm in names:
+            if nm.source == source:
+                return nm.text
+    
+    # Fallback to first available
     return names[0].text
 
 
