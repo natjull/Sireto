@@ -34,6 +34,8 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
+    build_address,
+    jaro_sim,
     make_features,
     normalize_text,
 )
@@ -59,6 +61,7 @@ HISTO_PATH = DATA_DIR / "StockEtablissement_utf8.parquet"
 UNITE_LEGALE_PATH = DATA_DIR / "StockUniteLegale_utf8.parquet"
 HARVEST_DB = DATA_DIR / "harvest_full.sqlite"
 MODEL_DIR = Path("models")
+MODEL_VERSION = "v2"  # Version suffix for model artifacts (v1 = baseline, v2 = hard negatives + new features)
 
 # Training config
 N_NEGATIVES = 10  # Negative samples per positive
@@ -212,6 +215,7 @@ def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
         "libelleCommuneEtablissement",
         "codeCommuneEtablissement",
         "categorieJuridiqueUniteLegale",
+        "etablissementSiege",  # NEW: is this the headquarters?
     ]
     pf = pq.ParquetFile(HISTO_PATH)
     mapping: Dict[str, dict] = {}
@@ -236,6 +240,7 @@ def load_parquet_subset(keep_sirets: set[str]) -> Dict[str, dict]:
                 "city": r.get("libelleCommuneEtablissement"),
                 "insee": r.get("codeCommuneEtablissement"),
                 "cj_ul": r.get("categorieJuridiqueUniteLegale"),
+                "is_siege": r.get("etablissementSiege"),
             }
             if cand.get("siren"):
                 sirens.add(str(cand["siren"]))
@@ -342,41 +347,81 @@ def prepare_ranking_dataset() -> RankingDataset:
         query_ids.append(query_id)
         group_size += 1
 
-        # Collect negative candidates (same location = hard negatives)
+        # ====== HARD NEGATIVE MINING ======
+        # Strategy: Collect confusers in priority order
+        # 1. Same address, different SIRET (address confusers) - HARDEST
+        # 2. Same SIREN, different NIC (sibling establishments)
+        # 3. Same location (INSEE/CP), different SIRET
+        
+        target_siret = siret
+        target_siren = target_siret[:9] if len(target_siret) >= 9 else None
+        crm_addr_raw = row.get("crm_address", "") or ""
+        target_addr_key = f"{row.get('postcode', '')}:{str(crm_addr_raw)[:20]}"
+        
+        hard_negatives: List[str] = []  # SIRETs to use as hard negatives
+        
+        # --- Type 1: Address confusers (same address, different SIRET) ---
+        # Build address index on-the-fly from parquet_data
+        for other_siret, other_data in parquet_data.items():
+            if other_siret == target_siret:
+                continue
+            other_addr_key = f"{other_data.get('postcode', '')}:{str(other_data.get('libelleVoie', ''))[:20]}"
+            # Same postcode and similar street
+            if other_data.get("postcode") == row.get("postcode"):
+                crm_addr = normalize_text(row.get("crm_address", ""))
+                cand_addr = build_address(other_data)
+                # High address similarity but different SIRET = hard negative
+                if crm_addr and cand_addr and jaro_sim(crm_addr, cand_addr) > 0.85:
+                    hard_negatives.append(other_siret)
+                    if len(hard_negatives) >= 3:  # Cap at 3 address confusers
+                        break
+        
+        # --- Type 2: Sibling establishments (same SIREN, different NIC) ---
+        if target_siren:
+            for other_siret, other_data in parquet_data.items():
+                if other_siret == target_siret:
+                    continue
+                if str(other_data.get("siren", "")) == target_siren:
+                    if other_siret not in hard_negatives:
+                        hard_negatives.append(other_siret)
+                        if len(hard_negatives) >= 5:  # Cap at 5 total hard negatives
+                            break
+        
+        # --- Type 3: Location-based negatives (fill remaining slots) ---
         insee = row.get("insee", "")
         postcode = row.get("postcode", "")
-        neg_candidates = set()
+        loc_candidates = set()
         for loc_key in [f"insee:{insee}", f"postcode:{postcode}"]:
             if loc_key in loc_index:
-                neg_candidates.update(loc_index[loc_key])
-        neg_candidates.discard(idx)
-
-        # Filter to those with parquet data
-        neg_candidates_list = [
-            i for i in neg_candidates
+                loc_candidates.update(loc_index[loc_key])
+        loc_candidates.discard(idx)
+        
+        # Filter to those with parquet data and not already in hard_negatives
+        loc_candidates_list = [
+            i for i in loc_candidates
             if crm.loc[i, "siret"] in parquet_data
+            and crm.loc[i, "siret"] not in hard_negatives
         ]
-
-        # Sample negatives
-        if len(neg_candidates_list) < N_NEGATIVES:
-            all_indices = [
-                i for i in crm.index
-                if i != idx and crm.loc[i, "siret"] in parquet_data
-            ]
-            rng.shuffle(all_indices)
-            neg_candidates_list = all_indices[:N_NEGATIVES]
-        else:
-            neg_candidates_list = list(
-                rng.choice(
-                    neg_candidates_list,
-                    size=min(N_NEGATIVES, len(neg_candidates_list)),
-                    replace=False,
-                )
+        
+        # Sample remaining slots (total N_NEGATIVES)
+        remaining_slots = N_NEGATIVES - len(hard_negatives)
+        if remaining_slots > 0 and loc_candidates_list:
+            sampled = rng.choice(
+                loc_candidates_list,
+                size=min(remaining_slots, len(loc_candidates_list)),
+                replace=False,
             )
+            for loc_idx in sampled:
+                hard_negatives.append(crm.loc[loc_idx, "siret"])
+        
+        # If still not enough, sample from anywhere
+        if len(hard_negatives) < N_NEGATIVES:
+            all_sirets = [s for s in parquet_data.keys() if s != target_siret and s not in hard_negatives]
+            rng.shuffle(all_sirets)
+            hard_negatives.extend(all_sirets[:N_NEGATIVES - len(hard_negatives)])
 
-        # Generate negative pairs
-        for neg_idx in neg_candidates_list:
-            neg_siret = crm.loc[neg_idx, "siret"]
+        # Generate negative pairs from hard negatives
+        for neg_siret in hard_negatives[:N_NEGATIVES]:
             neg_data = parquet_data.get(neg_siret)
             if neg_data:
                 feature_rows.append(make_features(row, neg_data))
@@ -502,10 +547,11 @@ def train_xgb_classifier(
         verbose=50,
     )
 
+    # Use best iteration from early stopping if available
     best_iter = getattr(clf, "best_iteration", None)
     if best_iter is None:
         best_iter = params.get("n_estimators")
-    print(f"Best iteration (approx): {best_iter}")
+    print(f"Best iteration: {best_iter}")
 
     return clf, best_iter
 
@@ -770,7 +816,7 @@ def save_models(
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
 
     # Save scaler (shared by all models)
-    scaler_path = MODEL_DIR / "xgb_matcher_scaler.pkl"
+    scaler_path = MODEL_DIR / f"xgb_matcher_scaler_{MODEL_VERSION}.pkl"
     with open(scaler_path, "wb") as f:
         pickle.dump(scaler, f)
     print(f"Saved scaler to {scaler_path}")
@@ -783,32 +829,33 @@ def save_models(
         safe_name = name.lower().replace(" ", "_")
 
         if "lgbm" in name.lower():
-            model_path = MODEL_DIR / f"{safe_name}.txt"
+            model_path = MODEL_DIR / f"{safe_name}_{MODEL_VERSION}.txt"
             model.booster_.save_model(str(model_path))
         else:
-            model_path = MODEL_DIR / f"{safe_name}.json"
+            model_path = MODEL_DIR / f"{safe_name}_{MODEL_VERSION}.json"
             model.get_booster().save_model(str(model_path))
 
         print(f"Saved {name} to {model_path}")
 
-    # Save best model as default
+    # Save best model as versioned default
     best_model, best_iter = models[best_model_name]
     if "lgbm" in best_model_name.lower():
-        default_path = MODEL_DIR / "xgb_matcher.txt"
+        default_path = MODEL_DIR / f"xgb_matcher_{MODEL_VERSION}.txt"
         best_model.booster_.save_model(str(default_path))
     else:
-        default_path = MODEL_DIR / "xgb_matcher.json"
+        default_path = MODEL_DIR / f"xgb_matcher_{MODEL_VERSION}.json"
         best_model.get_booster().save_model(str(default_path))
-    print(f"Saved best model ({best_model_name}) as default: {default_path}")
+    print(f"Saved best model ({best_model_name}) as: {default_path}")
 
     # Save feature metadata
     meta = {
+        "version": MODEL_VERSION,
         "feature_order": feature_names,
         "n_features": len(feature_names),
         "best_model": best_model_name,
         "best_iteration": best_iter,
     }
-    meta_path = MODEL_DIR / "xgb_matcher_features.json"
+    meta_path = MODEL_DIR / f"xgb_matcher_features_{MODEL_VERSION}.json"
     meta_path.write_text(json.dumps(meta, indent=2))
     print(f"Saved feature metadata to {meta_path}")
 

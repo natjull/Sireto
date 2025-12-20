@@ -79,6 +79,9 @@ FEATURE_NAMES: List[str] = [
     "addr_token_overlap",
     "street_name_jaro",
     "name_addr_consistency",
+    # Structural features (NEW)
+    "is_siege",
+    "substring_match_score",
 ]
 
 
@@ -371,6 +374,55 @@ def acronym_match(a: str, b: str) -> int:
     return 0
 
 
+def _compute_substring_match(crm_name: str, candidate_names: List["CandidateName"]) -> float:
+    """
+    Compute substring match score between CRM name tokens and candidate name tokens.
+    
+    Helps detect portmanteau matches like:
+      - "DigitBoxing" ↔ "SPORT BOXING & CO" (BOXING is substring)
+      - "OREXAD SOL" ↔ "SOLYRO" (SOL is prefix)
+    
+    Returns a score in [0, 1] based on the proportion of significant CRM tokens
+    that appear as substrings in candidate name tokens.
+    """
+    if not crm_name or not candidate_names:
+        return 0.0
+    
+    # Extract significant tokens (4+ chars) from CRM name
+    crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 4}
+    if not crm_tokens:
+        return 0.0
+    
+    # Collect all candidate tokens
+    cand_tokens: Set[str] = set()
+    for nm in candidate_names:
+        cand_tokens.update(tok for tok in nm.text.split() if len(tok) >= 4)
+    
+    if not cand_tokens:
+        return 0.0
+    
+    # Count matches (exact, substring, or prefix)
+    matches = 0
+    for crm_tok in crm_tokens:
+        for cand_tok in cand_tokens:
+            # Exact match
+            if crm_tok == cand_tok:
+                matches += 1
+                break
+            # CRM token is substring of candidate token (or vice versa)
+            # Minimum 4 chars to avoid spurious matches
+            if len(crm_tok) >= 4 and len(cand_tok) >= 4:
+                if crm_tok in cand_tok or cand_tok in crm_tok:
+                    matches += 0.7
+                    break
+                # Prefix match (first 4 chars)
+                if crm_tok[:4] == cand_tok[:4]:
+                    matches += 0.5
+                    break
+    
+    return min(1.0, matches / len(crm_tokens))
+
+
 # --------------------------------------------------------------------------- #
 # Aggregation helpers for bag-of-names strategy
 # --------------------------------------------------------------------------- #
@@ -558,5 +610,9 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
 
     features = {**name_features, **addr_features}
     features["name_addr_consistency"] = name_features["name_jaro_max"] * addr_features["addr_jaro"]
+
+    # Structural features
+    features["is_siege"] = float(str(cand.get("is_siege", "")).lower() in ("true", "1", "oui", "yes"))
+    features["substring_match_score"] = _compute_substring_match(crm_name, candidate_names)
 
     return features

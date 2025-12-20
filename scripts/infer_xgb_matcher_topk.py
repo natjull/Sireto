@@ -47,7 +47,8 @@ PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 UNITE_LEGALE_PATH = Path("data/StockUniteLegale_utf8.parquet")  # optional
 HARVEST_DB = Path("data/harvest_full.sqlite")
 MODEL_DIR = Path("models")
-MODEL_PATH = MODEL_DIR / "xgb_matcher.json"
+MODEL_VERSION = "v1"  # v1 = baseline (stable), v2 = hard negatives (regression on address matching)
+MODEL_PATH = MODEL_DIR / "xgb_matcher.json"  # v1 uses original filenames
 SCALER_PATH = MODEL_DIR / "xgb_matcher_scaler.pkl"
 FEATURE_META_PATH = MODEL_DIR / "xgb_matcher_features.json"
 TOP_K = 5
@@ -174,6 +175,7 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
         "libelleCommuneEtablissement",
         "codeCommuneEtablissement",
         "categorieJuridiqueUniteLegale",
+        "etablissementSiege",  # NEW: is this the headquarters?
     ]
     pf = pq.ParquetFile(PARQUET_PATH)
     mapping: Dict[str, dict] = {}
@@ -202,6 +204,7 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
                 "city": r.get("libelleCommuneEtablissement"),
                 "insee": r.get("codeCommuneEtablissement"),
                 "cj_ul": r.get("categorieJuridiqueUniteLegale"),
+                "is_siege": r.get("etablissementSiege"),
             }
             if cand.get("siren"):
                 sirens.add(str(cand["siren"]))
