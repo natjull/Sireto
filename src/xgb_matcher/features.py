@@ -61,6 +61,7 @@ FEATURE_NAMES: List[str] = [
     "name_sim_max_etab",
     "name_sim_max_ul",
     "name_sim_max_sigle",
+    "name_sim_max_pm_dirigeant",
     "type_of_max_name",
     "is_ul_name_max",
     "is_sigle_max",
@@ -380,10 +381,11 @@ _SOURCE_ENCODING = {
     NameSource.ETAB_ENSEIGNE: 1,
     NameSource.ETAB_DENOM: 2,
     NameSource.ETAB_ENSEIGNE_X: 3,
-    NameSource.UL_SIGLE: 4,
-    NameSource.UL_DENOM_USUELLE: 5,
-    NameSource.UL_DENOM: 6,
-    NameSource.PERSON_NAME: 7,
+    NameSource.PM_DIRIGEANT: 4,
+    NameSource.UL_SIGLE: 5,
+    NameSource.UL_DENOM_USUELLE: 6,
+    NameSource.UL_DENOM: 7,
+    NameSource.PERSON_NAME: 8,
 }
 
 
@@ -409,6 +411,7 @@ def _init_name_feature_defaults() -> Dict[str, float]:
         "name_sim_max_etab": 0.0,
         "name_sim_max_ul": 0.0,
         "name_sim_max_sigle": 0.0,
+        "name_sim_max_pm_dirigeant": 0.0,
         "type_of_max_name": 0.0,
         "is_ul_name_max": 0.0,
         "is_sigle_max": 0.0,
@@ -537,6 +540,9 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         )
         name_features["name_sim_max_sigle"] = max(
             [s["jaro"] for s in sims if s["nm"].is_sigle] or [0.0]
+        )
+        name_features["name_sim_max_pm_dirigeant"] = max(
+            [s["jaro"] for s in sims if s["nm"].source == NameSource.PM_DIRIGEANT] or [0.0]
         )
 
     # ---------------- Address & location features -----------------
