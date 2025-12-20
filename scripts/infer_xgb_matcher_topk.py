@@ -58,7 +58,8 @@ BATCH_SIZE = 100_000
 BOOST_PERFECT_ADDR = 0.15    # D1
 PENALTY_WRONG_ADDR = 0.10    # D1
 BOOST_PUBLIC_SCHOOL = 0.20   # B1
-PENALTY_ASSOCIATION = 0.15   # B1
+PENALTY_ASSOCIATION = 0.25   # B1
+PENALTY_HOLDING_MISMATCH = 0.20  # A1
 
 # ---------- Reranking helpers ----------
 
@@ -82,9 +83,12 @@ ASSOCIATION_TOKENS = {
     "CONSEIL",
     "PARENTS",
     "PARENT",
+    "ELEVES",
+    "SPORTIVE",
     "FSE",
     "SOCIO",
 }
+HOLDING_TOKENS = {"HOLDING", "GROUPE", "CORPORATION", "GIE"}
 
 
 def extract_significant_tokens(text: str, min_len: int = 3) -> Set[str]:
@@ -156,6 +160,19 @@ def _is_association_candidate(cand_name: str) -> bool:
     return any(tok in ASSOCIATION_TOKENS for tok in tokens)
 
 
+def _association_token_count(cand_name: str) -> int:
+    tokens = _tokenize(cand_name)
+    return len(ASSOCIATION_TOKENS & tokens)
+
+
+def _holding_mismatch(crm_name: str, cand_name: str) -> bool:
+    crm_tokens = _tokenize(crm_name)
+    cand_tokens = _tokenize(cand_name)
+    if not cand_tokens:
+        return False
+    return not (HOLDING_TOKENS & crm_tokens) and bool(HOLDING_TOKENS & cand_tokens)
+
+
 def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Series) -> np.ndarray:
     """
     Apply post-inference rerank rules on scores.
@@ -186,12 +203,19 @@ def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Ser
 
         # B1: public school vs association
         if is_school:
-            if _is_association_candidate(cand_name) and name_jaro_max < 0.5:
-                delta -= PENALTY_ASSOCIATION
-                logger.info("rerank_adjust|%s|%s|B1_ASSOCIATION|-%.3f", crm_row.get("crm_name"), siret, PENALTY_ASSOCIATION)
+            assoc_count = _association_token_count(cand_name)
+            if assoc_count:
+                assoc_penalty = PENALTY_ASSOCIATION * min(3, assoc_count)
+                delta -= assoc_penalty
+                logger.info("rerank_adjust|%s|%s|B1_ASSOCIATION|-%.3f", crm_row.get("crm_name"), siret, assoc_penalty)
             elif _is_public_school_candidate(cand_name):
                 delta += BOOST_PUBLIC_SCHOOL
                 logger.info("rerank_adjust|%s|%s|B1_PUBLIC_SCHOOL|+%.3f", crm_row.get("crm_name"), siret, BOOST_PUBLIC_SCHOOL)
+
+        # A1: penalize holding/group/corporation when absent from CRM (address must be close)
+        if addr_jaro > 0.8 and _holding_mismatch(crm_row.get("crm_name", ""), cand_name):
+            delta -= PENALTY_HOLDING_MISMATCH
+            logger.info("rerank_adjust|%s|%s|A1_HOLDING_MISMATCH|-%.3f", crm_row.get("crm_name"), siret, PENALTY_HOLDING_MISMATCH)
 
         if delta != 0.0:
             adjusted[i] = adjusted[i] + delta
