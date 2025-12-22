@@ -274,6 +274,48 @@ def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Ser
         if delta != 0.0:
             adjusted[i] = adjusted[i] + delta
 
+    # D4: Dominant Name Uniqueness Boost
+    # Identify unique brand-like matches in the commune that should win even if address is wrong
+    tier1_indices = [] # Super Dominant (Exact substring or perfect acronym)
+    tier2_indices = [] # Strong Match (High Jaro or high semantic)
+    
+    for i, feat in enumerate(features):
+        name_jaro_max = float(feat.get("name_jaro_max", 0.0))
+        name_contains_crm_max = float(feat.get("name_contains_crm_max", 0.0))
+        name_semantic_max = float(feat.get("name_semantic_max", 0.0))
+        acronym_match_max = float(feat.get("acronym_match_max", 0.0))
+        
+        # Tier 1: Exceptional evidence
+        is_tier1 = (
+            (name_contains_crm_max == 1.0 and name_jaro_max >= 0.7) or # Brand found
+            acronym_match_max >= 1.0 # Perfect acronym
+        )
+        if is_tier1:
+            tier1_indices.append(i)
+            continue
+            
+        # Tier 2: Very high similarity
+        is_tier2 = (
+            name_jaro_max >= 0.95 or
+            name_semantic_max >= 0.85
+        )
+        if is_tier2:
+            tier2_indices.append(i)
+
+    # Strategy: Boost only if a single hero emerges from the best available tier
+    boost_idx = None
+    if len(tier1_indices) == 1:
+        boost_idx = tier1_indices[0]
+    elif len(tier1_indices) == 0 and len(tier2_indices) == 1:
+        boost_idx = tier2_indices[0]
+
+    if boost_idx is not None:
+        idx = boost_idx
+        siret = features[idx].get("_siret", "")
+        boost_val = 0.75 # Massive boost to ensure victory over address confusers
+        adjusted[idx] += boost_val
+        logger.info("rerank_adjust|%s|%s|D4_DOMINANT_UNIQUE|+%.3f", crm_row.get("crm_name"), siret, boost_val)
+
     return adjusted
 
 
