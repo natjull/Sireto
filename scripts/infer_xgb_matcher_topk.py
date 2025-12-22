@@ -220,12 +220,40 @@ def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Ser
         addr_jaro = float(feat.get("addr_jaro", 0.0))
         street_number_diff = float(feat.get("street_number_diff", 9999))
         name_jaro_max = float(feat.get("name_jaro_max", 0.0))
-        if addr_jaro >= 0.97 and (street_number_diff == 0 or street_number_diff == 9999) and name_jaro_max >= 0.8:
-            delta += BOOST_PERFECT_ADDR
-            logger.info("rerank_adjust|%s|%s|D1_PERFECT_ADDR|+%.3f", crm_row.get("crm_name"), siret, BOOST_PERFECT_ADDR)
-        elif addr_jaro <= 0.70 and street_number_diff >= 5 and name_jaro_max < 0.6:
+        acronym_match_max = float(feat.get("acronym_match_max", 0.0))
+        
+        # Expert logic: boost if perfect address AND (solid name OR acronym match)
+        if addr_jaro >= 0.97 and (street_number_diff == 0 or street_number_diff == 9999):
+            if name_jaro_max >= 0.8 or (acronym_match_max > 0.5 and name_jaro_max >= 0.4):
+                delta += BOOST_PERFECT_ADDR
+                logger.info("rerank_adjust|%s|%s|D1_PERFECT_ADDR|+%.3f", crm_row.get("crm_name"), siret, BOOST_PERFECT_ADDR)
+
+        # Penalty logic: tougher on short names (like ASL) which match easily by accident
+        query_len = len(str(crm_row.get("crm_name", "")).replace(" ", ""))
+        penalty_name_threshold = 0.6 if query_len > 4 else 0.95
+        
+        if addr_jaro <= 0.70 and street_number_diff >= 5 and name_jaro_max < penalty_name_threshold:
             delta -= PENALTY_WRONG_ADDR
-            logger.info("rerank_adjust|%s|%s|D1_WRONG_ADDR|-%.3f", crm_row.get("crm_name"), siret, PENALTY_WRONG_ADDR)
+            logger.debug("rerank_adjust|%s|%s|D1_WRONG_ADDR|-%.3f", crm_row.get("crm_name"), siret, PENALTY_WRONG_ADDR)
+
+        # D2: Semantic boost for weak lexical match but strong semantic signal
+        # Only apply when semantic is DOMINANT over lexical (prevents false boosting)
+        # Example: "DigitBoxing" <-> "SPORT BOXING" (Jaro=0.63, Sem=0.65)
+        name_semantic_max = float(feat.get("name_semantic_max", 0.0))
+        if (addr_jaro >= 0.97 
+            and name_semantic_max >= 0.55  # Strong semantic signal
+            and name_semantic_max > name_jaro_max  # Semantic must be better than lexical
+            and name_jaro_max < 0.65):  # Lexical is genuinely weak
+            semantic_boost = 0.20
+            delta += semantic_boost
+            logger.info("rerank_adjust|%s|%s|D2_SEMANTIC_BOOST|+%.3f", crm_row.get("crm_name"), siret, semantic_boost)
+
+        # D3: Penalize candidates with perfect address but NO name signal at all
+        # These are likely false positives that score high only due to address match
+        if addr_jaro >= 0.97 and name_jaro_max < 0.3 and name_semantic_max < 0.1 and acronym_match_max < 0.5:
+            empty_name_penalty = 0.15
+            delta -= empty_name_penalty
+            logger.debug("rerank_adjust|%s|%s|D3_EMPTY_NAME|-%.3f", crm_row.get("crm_name"), siret, empty_name_penalty)
 
         # B1: public school vs association
         if is_school:

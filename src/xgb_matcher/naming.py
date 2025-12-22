@@ -31,17 +31,10 @@ LEGAL_STOPWORDS = {
     "SCIC",
     "SCOP",
     "SA",
+    "SNC",
     "SELARL",
     "SELAS",
     "SELASU",
-    "SNC",
-    "ASSOCIATION",
-    "ASSOC",
-    "ASL",
-    "FONDATION",
-    "SOCIETE",
-    "ENTREPRISE",
-    "ETABLISSEMENT",
 }
 
 # Minimal but high-coverage list of common French first names (uppercased, no accents)
@@ -127,32 +120,34 @@ class CandidateName:
     is_sigle: bool
 
 
-def normalize_text(text: str | None) -> str:
-    """Uppercase + accent stripping + whitespace collapse."""
+def normalize_text(text: str | None, *, uppercase: bool = True) -> str:
+    """Accent stripping + whitespace collapse. Uppercase is optional."""
     if text is None or (isinstance(text, float) and pd.isna(text)):
         return ""
-    t = str(text).upper()
-    # Harmonize separators (DECINES-CHARPIEU == DECINES CHARPIEU)
+    
+    t = str(text)
+    if uppercase:
+        t = t.upper()
+        
     t = t.replace("-", " ")
+    # Replace common french accents (both cases)
     replacements = {
-        "É": "E",
-        "È": "E",
-        "Ê": "E",
-        "Ë": "E",
-        "À": "A",
-        "Â": "A",
-        "Ä": "A",
-        "Ô": "O",
-        "Ö": "O",
-        "Û": "U",
-        "Ü": "U",
-        "Ù": "U",
-        "Î": "I",
-        "Ï": "I",
+        "É": "E", "È": "E", "Ê": "E", "Ë": "E",
+        "à": "a", "â": "a", "ä": "a", "á": "a",
+        "é": "e", "è": "e", "ê": "e", "ë": "e",
+        "î": "i", "ï": "i", "í": "i",
+        "ô": "o", "ö": "o", "ó": "o",
+        "û": "u", "ü": "u", "ú": "u", "ù": "u",
+        "ç": "c",
+        "À": "A", "Â": "A", "Ä": "A", "Á": "A",
+        "Î": "I", "Ï": "I", "Í": "I",
+        "Ô": "O", "Ö": "O", "Ó": "O",
+        "Û": "U", "Ü": "U", "Ú": "U", "Ù": "U",
         "Ç": "C",
     }
     for old, new in replacements.items():
         t = t.replace(old, new)
+        
     return " ".join(t.split())
 
 
@@ -172,12 +167,20 @@ def truncate_name(text: str, max_len: int = 100) -> str:
     return cutoff
 
 
-def normalize_name(raw: str | None, *, max_len: int = 100) -> str:
-    base = normalize_text(raw)
+def normalize_name(raw: str | None, *, max_len: int = 100, uppercase: bool = True) -> str:
+    """Normalize name, optionally preserving case."""
+    base = normalize_text(raw, uppercase=uppercase)
     if not base:
         return ""
-    stripped = _strip_legal_terms(base)
-    cleaned = stripped or base  # fallback if all tokens removed
+    
+    # Strip legal terms (case-insensitive if we chose not to uppercase)
+    tokens = base.split()
+    if uppercase:
+        tokens = [tok for tok in tokens if tok not in LEGAL_STOPWORDS]
+    else:
+        tokens = [tok for tok in tokens if tok.upper() not in LEGAL_STOPWORDS]
+        
+    cleaned = " ".join(tokens) or base
     return truncate_name(cleaned, max_len=max_len)
 
 
