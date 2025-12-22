@@ -48,11 +48,35 @@ PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 UNITE_LEGALE_PATH = Path("data/StockUniteLegale_utf8.parquet")  # optional
 HARVEST_DB = Path("data/harvest_full.sqlite")
 MODEL_DIR = Path("models")
-MODEL_PATH = MODEL_DIR / "xgb_matcher.json"
-SCALER_PATH = MODEL_DIR / "xgb_matcher_scaler.pkl"
-FEATURE_META_PATH = MODEL_DIR / "xgb_matcher_features.json"
 TOP_K = 5
 BATCH_SIZE = 100_000
+
+
+def find_latest_model():
+    """Find the most recent model based on timestamp in filename."""
+    # Look for timestamped models (format: xgb_matcher_YYYYMMDD_HHMMSS.json)
+    pattern = list(MODEL_DIR.glob("xgb_matcher_[0-9]*_[0-9]*.json"))
+    if pattern:
+        # Sort by timestamp in filename (descending) and take latest
+        latest = sorted(pattern, reverse=True)[0]
+        timestamp = latest.stem.replace("xgb_matcher_", "")
+        print(f"Using latest model: {timestamp}")
+        return (
+            latest,
+            MODEL_DIR / f"xgb_matcher_scaler_{timestamp}.pkl",
+            MODEL_DIR / f"xgb_matcher_features_{timestamp}.json",
+        )
+    else:
+        # Fallback to default (non-timestamped) model
+        print("Using default model (no timestamp)")
+        return (
+            MODEL_DIR / "xgb_matcher.json",
+            MODEL_DIR / "xgb_matcher_scaler.pkl",
+            MODEL_DIR / "xgb_matcher_features.json",
+        )
+
+
+MODEL_PATH, SCALER_PATH, FEATURE_META_PATH = find_latest_model()
 
 # Rerank coefficients
 BOOST_PERFECT_ADDR = 0.15    # D1
