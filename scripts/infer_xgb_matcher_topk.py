@@ -19,6 +19,7 @@ Features are computed using the shared module: src.xgb_matcher.features
 from __future__ import annotations
 
 import json
+import re
 import pickle
 import sqlite3
 import sys
@@ -37,6 +38,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
     build_address,
+    jaro_sim,
     make_features,
     normalize_text,
 )
@@ -286,9 +288,11 @@ def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Ser
         acronym_match_max = float(feat.get("acronym_match_max", 0.0))
         
         # Tier 1: Exceptional evidence
+        # For acronyms, require at least modest address match to avoid false positives
+        addr_jaro = float(feat.get("addr_jaro", 0.0))
         is_tier1 = (
-            (name_contains_crm_max == 1.0 and name_jaro_max >= 0.7) or # Brand found
-            acronym_match_max >= 1.0 # Perfect acronym
+            (name_contains_crm_max == 1.0 and name_jaro_max >= 0.7) or  # Brand found
+            (acronym_match_max >= 1.0 and addr_jaro >= 0.70)  # Perfect acronym BUT with reasonable address
         )
         if is_tier1:
             tier1_indices.append(i)
@@ -315,6 +319,140 @@ def apply_rerank_rules(scores: np.ndarray, features: List[dict], crm_row: pd.Ser
         boost_val = 0.75 # Massive boost to ensure victory over address confusers
         adjusted[idx] += boost_val
         logger.info("rerank_adjust|%s|%s|D4_DOMINANT_UNIQUE|+%.3f", crm_row.get("crm_name"), siret, boost_val)
+
+    # D5: Strong name match boost
+    for i, feat in enumerate(features):
+        name_jaro = float(feat.get("name_jaro_max", 0.0))
+        name_len = float(feat.get("name_length_max", 0.0))
+        addr = float(feat.get("addr_jaro", 0.0))
+        if name_len < 6 or addr < 0.85:
+            continue
+        if name_jaro >= 0.95:
+            adjusted[i] += 0.40
+        elif name_jaro >= 0.90:
+            adjusted[i] += 0.25
+
+    # D7: Source-aware tie-break (PM downranked when UL equivalent exists)
+    ul_denoms_pool = set()
+    for feat in features:
+        for d in feat.get("_ul_denoms", []):
+            if d:
+                ul_denoms_pool.add(d)
+    crm_norm = normalize_text(crm_row.get("crm_name", ""))
+    for i, feat in enumerate(features):
+        type_max = float(feat.get("type_of_max_name", 0.0))
+        is_ul = float(feat.get("is_ul_name_max", 0.0))
+        addr = float(feat.get("addr_jaro", 0.0))
+        if type_max == 4 and is_ul == 0.0 and addr >= 0.90:
+            for ul_d in ul_denoms_pool:
+                if jaro_sim(crm_norm, ul_d) >= 0.85:
+                    adjusted[i] -= 0.15
+                    break
+
+    # D8: Contains-boost for strong address matches
+    for i, feat in enumerate(features):
+        addr = float(feat.get("addr_jaro", 0.0))
+        contains = float(feat.get("name_contains_crm_max", 0.0))
+        jaro = float(feat.get("name_jaro_max", 0.0))
+        if addr >= 0.97 and contains == 1.0 and jaro >= 0.80:
+            adjusted[i] += 0.20
+
+    # D6: Alias boost (parentheses) - rerank only
+    crm_raw = crm_row.get("crm_name", "")
+    aliases = [normalize_text(m) for m in re.findall(r"\(([^)]+)\)", crm_raw)]
+    blacklist = {"SIEGE", "BAT", "BATIMENT", "ETAGE", "LOCAL", "AGENCE", "RDC"}
+    aliases = [a for a in aliases if len(a) >= 3 and a not in blacklist and not a.isdigit()]
+    alias_match = [False] * len(features)
+    if aliases:
+        for i, feat in enumerate(features):
+            cand_norm = normalize_text(feat.get("_cand_name", ""))
+            for alias in aliases:
+                if jaro_sim(alias, cand_norm) >= 0.80 or alias in cand_norm:
+                    alias_match[i] = True
+                    addr = float(feat.get("addr_jaro", 0.0))
+                    if addr >= 0.95:
+                        adjusted[i] += 0.25
+                    break
+
+        # D10: Boost unique alias match with near-perfect address → force rank 1
+        alias_perfect_addr_matches = []
+        for i, feat in enumerate(features):
+            if not alias_match[i]:
+                continue
+            addr = float(feat.get("addr_jaro", 0.0))
+            street_name_jaro = float(feat.get("street_name_jaro", 0.0))
+            street_number_diff = float(feat.get("street_number_diff", 9999))
+            # Check alias Jaro quality
+            cand_norm = normalize_text(feat.get("_cand_name", ""))
+            best_alias_jaro = max(jaro_sim(alias, cand_norm) for alias in aliases) if aliases else 0.0
+            # Guard rails: alias_jaro >= 0.85, addr >= 0.96, street >= 0.95, diff <= 2
+            if best_alias_jaro >= 0.85 and addr >= 0.96 and street_name_jaro >= 0.95 and street_number_diff <= 2:
+                alias_perfect_addr_matches.append(i)
+        if len(alias_perfect_addr_matches) == 1:
+            idx = alias_perfect_addr_matches[0]
+            # Force rank 1 by setting score to max + margin
+            adjusted[idx] = max(adjusted) + 0.10
+            siret = features[idx].get("_siret", "")
+            logger.info("rerank|%s|%s|D10_ALIAS_FORCE_TOP|score=%.3f", crm_row.get("crm_name"), siret, adjusted[idx])
+
+    # D9: Establishment head office tie-break
+    for i, feat in enumerate(features):
+        addr = float(feat.get("addr_jaro", 0.0))
+        if addr < 0.97:
+            continue
+        if feat.get("_is_siege"):
+            adjusted[i] += 0.10
+
+    # D11: Token-match boost - when a significant CRM token appears in candidate name + perfect address
+    crm_name_norm = normalize_text(crm_row.get("crm_name", ""))
+    crm_tokens = {tok for tok in crm_name_norm.split() if len(tok) >= 3}
+    # Exclude common stopwords
+    stopwords = {"AND", "THE", "LES", "DES", "DU", "DE", "LA", "LE", "ET", "GROUPE", "SOCIETE", "HOLDING"}
+    crm_tokens = crm_tokens - stopwords
+    
+    if crm_tokens:
+        for i, feat in enumerate(features):
+            addr = float(feat.get("addr_jaro", 0.0))
+            if addr < 0.97:
+                continue
+            
+            # Skip D11 for associations when CRM is a school - they shouldn't get token boost
+            # (e.g., "FOYER SOCIO EDUCATIF DU COLLEGE" should not beat the actual "COLLEGE")
+            cand_name = feat.get("_cand_name", "")
+            if is_school and _is_association_candidate(cand_name):
+                continue
+            
+            # Collect tokens from _cand_name AND all _ul_denoms
+            all_cand_names = [normalize_text(cand_name)]
+            for ul_name in feat.get("_ul_denoms", []):
+                if ul_name:
+                    all_cand_names.append(ul_name)
+            
+            cand_tokens = set()
+            for name in all_cand_names:
+                cand_tokens.update(name.split())
+            
+            # Direct token match
+            common_tokens = crm_tokens & cand_tokens
+            
+            # Substring match: check if candidate token is IN a CRM token (for CamelCase like DIGITBOXING)
+            # or vice-versa - only for tokens >= 4 chars to avoid false positives
+            substring_matches = set()
+            for cand_tok in cand_tokens:
+                if len(cand_tok) >= 4:
+                    for crm_tok in crm_tokens:
+                        if len(crm_tok) >= 6 and cand_tok in crm_tok:
+                            substring_matches.add(cand_tok)
+                            break
+            
+            all_matches = common_tokens | substring_matches
+            if all_matches:
+                # Boost proportional to number of matching tokens
+                boost = min(0.30 * len(all_matches), 0.60)
+                adjusted[i] += boost
+                siret = feat.get("_siret", "")
+                logger.info("rerank|%s|%s|D11_TOKEN_MATCH(%s)|+%.2f", 
+                            crm_row.get("crm_name"), siret, all_matches, boost)
 
     return adjusted
 
@@ -381,6 +519,7 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
         "enseigne3Etablissement",
         "denominationUsuelleEtablissement",
         "siren",
+        "etablissementSiege",
         "numeroVoieEtablissement",
         "typeVoieEtablissement",
         "libelleVoieEtablissement",
@@ -402,6 +541,12 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
         pdf = pdf[mask]
 
         for _, r in pdf.iterrows():
+            siege_val = r.get("etablissementSiege")
+            if isinstance(siege_val, str):
+                siege_norm = siege_val.strip().upper()
+                is_siege = siege_norm in {"TRUE", "VRAI", "1", "OUI", "YES"}
+            else:
+                is_siege = bool(siege_val)
             cand = {
                 "siret": r["siret"],
                 "siren": r.get("siren"),
@@ -409,6 +554,7 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
                 "enseigne1": r.get("enseigne1Etablissement"),
                 "enseigne2": r.get("enseigne2Etablissement"),
                 "enseigne3": r.get("enseigne3Etablissement"),
+                "is_siege": is_siege,
                 "numeroVoie": r.get("numeroVoieEtablissement"),
                 "typeVoie": r.get("typeVoieEtablissement"),
                 "libelleVoie": r.get("libelleVoieEtablissement"),
@@ -529,6 +675,12 @@ def main():
             feat = make_features(r, c)
             feat["_siret"] = siret
             feat["_cand_name"] = primary_name(c) or f"SIRET {siret}"
+            feat["_ul_denoms"] = [
+                normalize_text(c.get("denomination_ul") or ""),
+                normalize_text(c.get("denomination_usuelle_ul") or ""),
+                normalize_text(c.get("sigle_ul") or ""),
+            ]
+            feat["_is_siege"] = bool(c.get("is_siege"))
             feats.append(feat)
         X = pd.DataFrame(feats)[feature_order]
         Xs = scaler.transform(X)
@@ -539,8 +691,23 @@ def main():
         
         # Pick top candidates for re-scoring (e.g. top 50)
         # We need a decent pool for the classifier to work on.
-        stage1_top_n = min(50, len(rank_scores))
+        stage1_top_n = min(200, len(rank_scores))
         top_n_idx = np.argsort(rank_scores)[::-1][:stage1_top_n]
+
+        # Address-rescue: recover near-perfect address matches outside top-N
+        rescue_indices = []
+        top_n_set = set(top_n_idx)
+        for i, feat in enumerate(feats):
+            if i in top_n_set:
+                continue
+            addr_jaro = float(feat.get("addr_jaro", 0.0))
+            street_name_jaro = float(feat.get("street_name_jaro", 0.0))
+            street_number_diff = float(feat.get("street_number_diff", 9999))
+            if addr_jaro >= 0.96 and street_name_jaro >= 0.95 and street_number_diff <= 2:
+                rescue_indices.append(i)
+        rescue_indices = rescue_indices[:50]
+        if rescue_indices:
+            top_n_idx = np.unique(np.concatenate([top_n_idx, np.array(rescue_indices, dtype=int)]))
         
         # --- STAGE 2: Classifier ---
         # Re-score only the top-N from stage 1 with the classifier to get probabilities
