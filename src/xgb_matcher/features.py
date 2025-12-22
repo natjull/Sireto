@@ -131,14 +131,14 @@ def _remove_tokens(text: str, tokens_to_remove: Set[str]) -> str:
     return " ".join(filtered)
 
 
-def strip_location_from_crm_name(crm_row: pd.Series) -> str:
+def strip_location_from_crm_name(crm_row: pd.Series, preserve_case: bool = False) -> str:
     """Remove city/CP/INSEE tokens from the CRM name to avoid city bias.
 
     Keeps the normalized version; if everything is removed, fall back to the original
     normalized name to avoid empty strings.
     """
 
-    original_norm = normalize_name(crm_row.get("crm_name", ""))
+    original_norm = normalize_name(crm_row.get("crm_name", ""), uppercase=not preserve_case)
     if not original_norm:
         return ""
 
@@ -154,7 +154,14 @@ def strip_location_from_crm_name(crm_row: pd.Series) -> str:
     if insee:
         tokens_to_remove.add(insee)
 
-    cleaned = _remove_tokens(original_norm, tokens_to_remove)
+    # Use a case-insensitive match for removal if preserving case
+    if preserve_case:
+        tokens = original_norm.split()
+        filtered = [t for t in tokens if t.upper() not in tokens_to_remove]
+        cleaned = " ".join(filtered)
+    else:
+        cleaned = _remove_tokens(original_norm, tokens_to_remove)
+        
     return cleaned or original_norm
 
 
@@ -333,13 +340,28 @@ def contains_check(container: str, contained: str) -> int:
 
 
 def _extract_acronym(text: str) -> str:
-    """Extract initials from a multi-word string (e.g., 'SOCIETE NATIONALE' -> 'SN')."""
+    """Extract initials from a multi-word string, ignoring small words and common city names."""
     if not text:
         return ""
+    
+    # Common French stopwords and specific geography to ignore in acronyms
+    STOPWORDS = {"DE", "DU", "LA", "LE", "DES", "ET", "LES", "D", "L", "AUX", "AU"}
+    GEOGRAPHY = {"LYON", "CORBAS", "DECINES", "MEYZIEU", "VILLEURBANNE"}
+    
     words = text.split()
     if len(words) <= 1:
         return ""
-    return "".join(w[0] for w in words if w)
+        
+    initials = []
+    for w in words:
+        w_norm = w.strip().upper()
+        if not w_norm:
+            continue
+        if w_norm in STOPWORDS or w_norm in GEOGRAPHY:
+            continue
+        initials.append(w_norm[0])
+        
+    return "".join(initials)
 
 
 def _is_acronym(text: str) -> bool:
@@ -364,13 +386,21 @@ def acronym_match(a: str, b: str) -> int:
     b_is_acronym = _is_acronym(b.replace(" ", ""))
 
     if a_is_acronym and not b_is_acronym:
-        # a is acronym, b is expanded form
-        expanded_acronym = _extract_acronym(b)
-        return int(a.replace(" ", "") == expanded_acronym)
+        query_acro = a.replace(" ", "").upper()
+        cand_acro = _extract_acronym(b)
+        
+        # 1. Exact match
+        if query_acro == cand_acro:
+            return 1
+        # 2. Prefix match (e.g. ASL matches Association Syndicale Libre ...)
+        if len(query_acro) >= 2 and cand_acro.startswith(query_acro):
+            return 1
+        return 0
     elif b_is_acronym and not a_is_acronym:
-        # b is acronym, a is expanded form
-        expanded_acronym = _extract_acronym(a)
-        return int(b.replace(" ", "") == expanded_acronym)
+        query_acro = b.replace(" ", "").upper()
+        cand_acro = _extract_acronym(a)
+        if query_acro == cand_acro or (len(query_acro) >= 2 and cand_acro.startswith(query_acro)):
+            return 1
 
     return 0
 
@@ -558,7 +588,10 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
             ]
             if not semantic_pool:
                 semantic_pool = [s["nm"].text for s in sims]
-            name_features["name_semantic_max"] = max_semantic_similarity(crm_name, semantic_pool)
+            
+            # Use original case version for semantic embedding (CamelCase split needs it)
+            crm_name_semantic = strip_location_from_crm_name(crm_row, preserve_case=True)
+            name_features["name_semantic_max"] = max_semantic_similarity(crm_name_semantic, semantic_pool)
 
     # ---------------- Address & location features -----------------
     addr_features = {
