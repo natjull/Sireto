@@ -80,9 +80,30 @@ def _embed_cached(model_name: str, text: str) -> Optional[np.ndarray]:
     return _normalize(vec.astype(np.float32, copy=False))
 
 
+def _normalize_for_embedding(text: str) -> str:
+    """Normalize text before embedding for better tokenization.
+    
+    Splits CamelCase, separates digits, normalizes whitespace.
+    Example: 'DigitBoxing15Pro' -> 'Digit Boxing 15 Pro'
+    """
+    import re
+    if not text:
+        return ""
+    # 1. Split CamelCase: 'DigitBoxing' -> 'Digit Boxing'
+    text = re.sub(r'([a-z])([A-Z])', r'\1 \2', text)
+    # 2. Split acronyms from words: 'XMLParser' -> 'XML Parser'
+    text = re.sub(r'([A-Z]+)([A-Z][a-z])', r'\1 \2', text)
+    # 3. Separate digits: 'Box2Ring' -> 'Box 2 Ring'
+    text = re.sub(r'(\d+)', r' \1 ', text)
+    # 4. Normalize whitespace
+    return ' '.join(text.split())
+
+
 def embed_text(text: str) -> Optional[np.ndarray]:
+    """Embed text with preprocessing for better matching."""
     model_name = _model_name()
-    return _embed_cached(model_name, text)
+    normalized = _normalize_for_embedding(text)
+    return _embed_cached(model_name, normalized)
 
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:

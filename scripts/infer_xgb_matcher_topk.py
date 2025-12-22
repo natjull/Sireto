@@ -52,31 +52,33 @@ TOP_K = 5
 BATCH_SIZE = 100_000
 
 
-def find_latest_model():
-    """Find the most recent model based on timestamp in filename."""
-    # Look for timestamped models (format: xgb_matcher_YYYYMMDD_HHMMSS.json)
-    pattern = list(MODEL_DIR.glob("xgb_matcher_[0-9]*_[0-9]*.json"))
+def find_latest_models():
+    """Find the most recent ranker and classifier models."""
+    # Look for timestamped metadata (format: xgb_matcher_features_YYYYMMDD_HHMMSS.json)
+    pattern = list(MODEL_DIR.glob("xgb_matcher_features_[0-9]*_[0-9]*.json"))
     if pattern:
-        # Sort by timestamp in filename (descending) and take latest
-        latest = sorted(pattern, reverse=True)[0]
-        timestamp = latest.stem.replace("xgb_matcher_", "")
-        print(f"Using latest model: {timestamp}")
-        return (
-            latest,
-            MODEL_DIR / f"xgb_matcher_scaler_{timestamp}.pkl",
-            MODEL_DIR / f"xgb_matcher_features_{timestamp}.json",
-        )
+        latest_meta = sorted(pattern, reverse=True)[0]
+        timestamp = latest_meta.stem.replace("xgb_matcher_features_", "")
+        print(f"Using latest model cascade: {timestamp}")
+        return {
+            "ranker": MODEL_DIR / f"xgbranker_{timestamp}.json",
+            "classifier": MODEL_DIR / f"xgbclassifier_{timestamp}.json",
+            "scaler": MODEL_DIR / f"xgb_matcher_scaler_{timestamp}.pkl",
+            "meta": latest_meta,
+            "timestamp": timestamp,
+        }
     else:
-        # Fallback to default (non-timestamped) model
         print("Using default model (no timestamp)")
-        return (
-            MODEL_DIR / "xgb_matcher.json",
-            MODEL_DIR / "xgb_matcher_scaler.pkl",
-            MODEL_DIR / "xgb_matcher_features.json",
-        )
+        return {
+            "ranker": MODEL_DIR / "xgbranker.json",
+            "classifier": MODEL_DIR / "xgbclassifier.json",
+            "scaler": MODEL_DIR / "xgb_matcher_scaler.pkl",
+            "meta": MODEL_DIR / "xgb_matcher_features.json",
+            "timestamp": "default",
+        }
 
 
-MODEL_PATH, SCALER_PATH, FEATURE_META_PATH = find_latest_model()
+MODEL_PATHS = find_latest_models()
 
 # Rerank coefficients
 BOOST_PERFECT_ADDR = 0.15    # D1
@@ -424,19 +426,16 @@ def main():
     candidates = load_candidates_for_locations(postcodes, insee)
     print(f"Candidates loaded: {len(candidates)}")
 
-    print("Loading model artifacts...")
-    # The saved default model may be a classifier or a ranker depending on training.
-    try:
-        clf = XGBClassifier()
-        clf.load_model(MODEL_PATH)
-        is_ranker = False
-    except TypeError:
-        clf = XGBRanker()
-        clf.load_model(MODEL_PATH)
-        is_ranker = True
-    with open(SCALER_PATH, "rb") as f:
+    print("Loading model cascade (Ranker + Classifier)...")
+    ranker = XGBRanker()
+    ranker.load_model(str(MODEL_PATHS["ranker"]))
+    
+    classifier = XGBClassifier()
+    classifier.load_model(str(MODEL_PATHS["classifier"]))
+    
+    with open(MODEL_PATHS["scaler"], "rb") as f:
         scaler = pickle.load(f)
-    with open(FEATURE_META_PATH) as f:
+    with open(MODEL_PATHS["meta"]) as f:
         meta = json.load(f)
     feature_order = meta["feature_order"]
 
@@ -463,16 +462,33 @@ def main():
             feats.append(feat)
         X = pd.DataFrame(feats)[feature_order]
         Xs = scaler.transform(X)
-        raw_scores = clf.predict(Xs) if is_ranker else clf.predict_proba(Xs)[:, 1]
-
-        # Pure model scores - no post-adjustments
-        scores = np.array(raw_scores)
-        # Apply rerank rules
-        scores = apply_rerank_rules(scores, feats, r)
-
+        
+        # --- STAGE 1: Ranker ---
+        # Get raw ranking scores for all candidates
+        rank_scores = ranker.predict(Xs)
+        
+        # Pick top candidates for re-scoring (e.g. top 50)
+        # We need a decent pool for the classifier to work on.
+        stage1_top_n = min(50, len(rank_scores))
+        top_n_idx = np.argsort(rank_scores)[::-1][:stage1_top_n]
+        
+        # --- STAGE 2: Classifier ---
+        # Re-score only the top-N from stage 1 with the classifier to get probabilities
+        Xs_n = Xs[top_n_idx]
+        feats_n = [feats[i] for i in top_n_idx]
+        cand_list_n = [cand_list[i] for i in top_n_idx]
+        
+        # predict_proba returns [P_neg, P_pos]
+        class_probs = classifier.predict_proba(Xs_n)[:, 1]
+        
+        # Apply rerank rules on classifier probabilities
+        scores = np.array(class_probs)
+        scores = apply_rerank_rules(scores, feats_n, r)
+        
+        # Final Top-K selection
         topk_idx = np.argsort(scores)[::-1][:TOP_K]
         for rank, idx_k in enumerate(topk_idx, start=1):
-            siret_k, cand_k = cand_list[idx_k]
+            siret_k, cand_k = cand_list_n[idx_k]
             cand_name = primary_name(cand_k) or f"SIRET {siret_k}"
             rows_out.append({
                 "crm_name": r["crm_name"],
