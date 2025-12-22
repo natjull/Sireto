@@ -18,6 +18,7 @@ import json
 import pickle
 import sqlite3
 import sys
+from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
@@ -766,16 +767,20 @@ def save_models(
     feature_names: List[str],
     best_model_name: str,
 ):
-    """Save all trained models and metadata."""
+    """Save all trained models and metadata with timestamp suffix."""
     MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    
+    # Generate timestamp suffix for this training run
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    print(f"Model version: {timestamp}")
 
-    # Save scaler (shared by all models)
-    scaler_path = MODEL_DIR / "xgb_matcher_scaler.pkl"
+    # Save scaler (with timestamp)
+    scaler_path = MODEL_DIR / f"xgb_matcher_scaler_{timestamp}.pkl"
     with open(scaler_path, "wb") as f:
         pickle.dump(scaler, f)
     print(f"Saved scaler to {scaler_path}")
 
-    # Save each model
+    # Save each model (with timestamp)
     for name, (model, best_iter) in models.items():
         if model is None:
             continue
@@ -783,32 +788,33 @@ def save_models(
         safe_name = name.lower().replace(" ", "_")
 
         if "lgbm" in name.lower():
-            model_path = MODEL_DIR / f"{safe_name}.txt"
+            model_path = MODEL_DIR / f"{safe_name}_{timestamp}.txt"
             model.booster_.save_model(str(model_path))
         else:
-            model_path = MODEL_DIR / f"{safe_name}.json"
+            model_path = MODEL_DIR / f"{safe_name}_{timestamp}.json"
             model.get_booster().save_model(str(model_path))
 
         print(f"Saved {name} to {model_path}")
 
-    # Save best model as default
+    # Save best model with timestamp
     best_model, best_iter = models[best_model_name]
     if "lgbm" in best_model_name.lower():
-        default_path = MODEL_DIR / "xgb_matcher.txt"
+        default_path = MODEL_DIR / f"xgb_matcher_{timestamp}.txt"
         best_model.booster_.save_model(str(default_path))
     else:
-        default_path = MODEL_DIR / "xgb_matcher.json"
+        default_path = MODEL_DIR / f"xgb_matcher_{timestamp}.json"
         best_model.get_booster().save_model(str(default_path))
-    print(f"Saved best model ({best_model_name}) as default: {default_path}")
+    print(f"Saved best model ({best_model_name}) as: {default_path}")
 
-    # Save feature metadata
+    # Save feature metadata (with timestamp)
     meta = {
+        "timestamp": timestamp,
         "feature_order": feature_names,
         "n_features": len(feature_names),
         "best_model": best_model_name,
         "best_iteration": best_iter,
     }
-    meta_path = MODEL_DIR / "xgb_matcher_features.json"
+    meta_path = MODEL_DIR / f"xgb_matcher_features_{timestamp}.json"
     meta_path.write_text(json.dumps(meta, indent=2))
     print(f"Saved feature metadata to {meta_path}")
 

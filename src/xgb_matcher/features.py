@@ -23,6 +23,7 @@ Features computed:
 
 from __future__ import annotations
 
+import os
 import re
 from typing import Dict, List, Set
 
@@ -37,11 +38,13 @@ from .naming import (
     normalize_name,
     normalize_text,
 )
+from .semantic import max_semantic_similarity
 
 
 # Thresholds for city-like detection
 CITY_OVERLAP_THRESHOLD = 0.7
 CITY_MAX_TOKENS = 3
+SEMANTIC_GATE_JARO = float(os.getenv("XGB_SEMANTIC_GATE_JARO", "0.90"))
 
 
 # Feature names in order (used for training and inference)
@@ -70,6 +73,7 @@ FEATURE_NAMES: List[str] = [
     "person_name_jaro_max",
     "name_city_overlap_max",
     "name_is_city_like_max",
+    "name_semantic_max",
     # Address / location features (unchanged)
     "addr_jaro",
     "addr_levenshtein",
@@ -420,6 +424,7 @@ def _init_name_feature_defaults() -> Dict[str, float]:
         "person_name_jaro_max": 0.0,
         "name_city_overlap_max": 0.0,
         "name_is_city_like_max": 0.0,
+        "name_semantic_max": 0.0,
     }
 
 
@@ -544,6 +549,16 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         name_features["name_sim_max_pm_dirigeant"] = max(
             [s["jaro"] for s in sims if s["nm"].source == NameSource.PM_DIRIGEANT] or [0.0]
         )
+
+        if name_features["name_jaro_max"] < SEMANTIC_GATE_JARO:
+            semantic_pool = [
+                s["nm"].text
+                for s in sims
+                if not s["is_city_like"] and not s["is_person_nm"]
+            ]
+            if not semantic_pool:
+                semantic_pool = [s["nm"].text for s in sims]
+            name_features["name_semantic_max"] = max_semantic_similarity(crm_name, semantic_pool)
 
     # ---------------- Address & location features -----------------
     addr_features = {
