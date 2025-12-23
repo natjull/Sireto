@@ -627,6 +627,10 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
 
     # ---------------- New features from reranking rules (Phase 3) -----------------
     
+    # Get primary candidate name for new features
+    from src.xgb_matcher.naming import primary_name
+    primary_cand_name = primary_name(cand) or ""
+    
     # D9: is_siege - head office indicator
     features["is_siege"] = float(cand.get("is_siege", False))
     
