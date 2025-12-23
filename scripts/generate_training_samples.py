@@ -148,13 +148,7 @@ def generate_samples_for_query(
     # Compute features for all candidates
     all_features = []
     for siret, cand in cand_list:
-        feat = make_features(
-            crm_name=crm_row.get("crm_name", ""),
-            crm_address=crm_row.get("crm_address", ""),
-            crm_city=crm_row.get("crm_city", ""),
-            candidate=cand,
-            crm_row=crm_row,
-        )
+        feat = make_features(crm_row, cand)
         feat["_siret"] = siret
         feat["_is_positive"] = (siret == ground_truth)
         feat["_score"] = compute_simple_score(feat)
