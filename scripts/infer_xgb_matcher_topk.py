@@ -43,12 +43,13 @@ from src.xgb_matcher.features import (
     normalize_text,
 )
 from src.xgb_matcher.naming import primary_name
+from src.xgb_matcher.candidates import (
+    load_candidates_for_locations as load_candidates_shared,
+    get_candidates_for_query,
+)
 
 # Config
 CRM_PATH = Path("data/testcrm/data_56_subset_corbas_decines.csv")
-PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
-UNITE_LEGALE_PATH = Path("data/StockUniteLegale_utf8.parquet")  # optional
-HARVEST_DB = Path("data/harvest_full.sqlite")
 MODEL_DIR = Path("models")
 TOP_K = 5
 BATCH_SIZE = 100_000
@@ -638,8 +639,8 @@ def main():
     insee = set(crm["insee"].dropna().unique()) if "insee" in crm else set()
     print(f"Postcodes of interest: {len(postcodes)} | INSEE codes: {len(insee)}")
 
-    print("Building candidate pool from parquet (filtered by CP/INSEE)...")
-    candidates = load_candidates_for_locations(postcodes, insee)
+    print("Building candidate pool from shared module (filtered by CP/INSEE)...")
+    candidates = load_candidates_shared(postcodes, insee)
     print(f"Candidates loaded: {len(candidates)}")
 
     print("Loading model cascade (Ranker + Classifier)...")
