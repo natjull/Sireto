@@ -34,6 +34,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.xgb_matcher.candidates import (
     load_candidates_for_locations,
     get_candidates_for_query,
+    build_location_index,
 )
 from src.xgb_matcher.features import FEATURE_NAMES, make_features
 from src.xgb_matcher.naming import primary_name
@@ -126,6 +127,7 @@ def compute_simple_score(features: Dict) -> float:
 def generate_samples_for_query(
     crm_row: pd.Series,
     candidates: Dict[str, dict],
+    candidate_index: Optional[Dict[str, Dict[str, List[Tuple[str, dict]]]]] = None,
     max_negatives: int = MAX_NEGATIVES_PER_QUERY,
     hard_negative_ratio: float = HARD_NEGATIVE_RATIO,
 ) -> List[Dict]:
@@ -140,7 +142,7 @@ def generate_samples_for_query(
     query_id = crm_row.name  # Use index as query_id
     
     # Get candidates for this location
-    cand_list = get_candidates_for_query(postcode, insee, candidates)
+    cand_list = get_candidates_for_query(postcode, insee, candidates, index=candidate_index)
     
     if not cand_list:
         return []
@@ -204,13 +206,14 @@ def generate_samples_for_query(
 def generate_all_samples(
     df: pd.DataFrame,
     candidates: Dict[str, dict],
+    candidate_index: Optional[Dict[str, Dict[str, List[Tuple[str, dict]]]]] = None,
     max_negatives: int = MAX_NEGATIVES_PER_QUERY,
 ) -> pd.DataFrame:
     """Generate training samples for all queries in dataframe."""
     all_samples = []
     
     for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating samples"):
-        samples = generate_samples_for_query(row, candidates, max_negatives)
+        samples = generate_samples_for_query(row, candidates, candidate_index, max_negatives)
         all_samples.extend(samples)
     
     return pd.DataFrame(all_samples)
@@ -256,18 +259,19 @@ def main():
     
     candidates = load_candidates_for_locations(all_postcodes, all_insee)
     print(f"   Candidates loaded: {len(candidates)}")
+    candidate_index = build_location_index(candidates)
     
     # Generate samples for each split
     print("\n4. Generating training samples...")
-    train_samples = generate_all_samples(train_df, candidates, args.max_negatives)
+    train_samples = generate_all_samples(train_df, candidates, candidate_index, args.max_negatives)
     print(f"   Train: {len(train_samples)} samples ({train_samples['label'].sum()} positives)")
     
     print("\n5. Generating dev samples...")
-    dev_samples = generate_all_samples(dev_df, candidates, args.max_negatives)
+    dev_samples = generate_all_samples(dev_df, candidates, candidate_index, args.max_negatives)
     print(f"   Dev: {len(dev_samples)} samples ({dev_samples['label'].sum()} positives)")
     
     print("\n6. Generating test samples...")
-    test_samples = generate_all_samples(test_df, candidates, args.max_negatives)
+    test_samples = generate_all_samples(test_df, candidates, candidate_index, args.max_negatives)
     print(f"   Test: {len(test_samples)} samples ({test_samples['label'].sum()} positives)")
     
     # Save samples

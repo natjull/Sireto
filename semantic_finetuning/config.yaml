@@ -1,0 +1,53 @@
+# SIRET-BERT Fine-Tuning Configuration
+# Optimized for MacBook M4 Pro (24GB unified RAM)
+
+# Model configuration
+model:
+  base_model: "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
+  output_dir: "models/semantic/siret-bert-v1"
+  
+# Training hyperparameters
+training:
+  batch_size: 16
+  epochs: 2
+  learning_rate: 2.0e-5
+  warmup_ratio: 0.1  # ~10% of training steps
+  weight_decay: 0.01
+  fp16: false  # MPS doesn't support fp16 training
+  gradient_accumulation_steps: 4  # Effective batch size = 64
+  gradient_checkpointing: false
+  clear_cache_every: 200
+  
+# Dataset configuration
+dataset:
+  train_file: "data/semantic_train.jsonl"
+  eval_file: "data/semantic_eval.jsonl"
+  max_samples: null  # null = use all
+  hard_negative_ratio: 0.5  # 50% hard negatives
+  max_negatives_per_sample: 5
+  
+# Hardware configuration
+hardware:
+  device: "mps"  # Metal Performance Shaders for Apple Silicon
+  dataloader_workers: 0  # MPS works best with 0 workers
+  pin_memory: false  # Not supported on MPS
+  
+# Loss configuration
+loss:
+  type: "MultipleNegativesRankingLoss"
+  scale: 20.0  # Default MNRL scale
+  
+# Evaluation configuration
+evaluation:
+  eval_steps: 1000
+  save_steps: 1000
+  logging_steps: 50
+  metric_for_best_model: "eval_similarity"
+  
+# Preprocessing
+preprocessing:
+  max_length: 128  # Max tokens per text
+  normalize_embeddings: true
+  
+# Seed for reproducibility
+seed: 42

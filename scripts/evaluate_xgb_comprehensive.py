@@ -31,7 +31,11 @@ from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.xgb_matcher.candidates import load_candidates_for_locations, get_candidates_for_query
+from src.xgb_matcher.candidates import (
+    load_candidates_for_locations,
+    get_candidates_for_query,
+    build_location_index,
+)
 from src.xgb_matcher.features import FEATURE_NAMES, make_features
 from src.xgb_matcher.naming import primary_name, normalize_text
 
@@ -79,11 +83,13 @@ class Evaluator:
         ranker: xgb.Booster,
         classifier: xgb.XGBClassifier,
         candidates: Dict[str, dict],
+        candidate_index: Dict[str, Dict[str, List[Tuple[str, dict]]]] | None = None,
         use_policy: bool = True,
     ):
         self.ranker = ranker
         self.classifier = classifier
         self.candidates = candidates
+        self.candidate_index = candidate_index
         self.use_policy = use_policy
         
         self.stage1_top_n = 200
@@ -95,7 +101,12 @@ class Evaluator:
         insee = row.get("insee", "")
         
         # Get candidates
-        cand_list = get_candidates_for_query(postcode, insee, self.candidates)
+        cand_list = get_candidates_for_query(
+            postcode,
+            insee,
+            self.candidates,
+            index=self.candidate_index,
+        )
         
         if not cand_list:
             return {"status": "no_candidates"}
@@ -217,6 +228,7 @@ def main():
     print(f"\n2. Building candidate pool...")
     candidates = load_candidates_for_locations(postcodes, insee)
     print(f"   Candidates: {len(candidates)}")
+    candidate_index = build_location_index(candidates)
     
     # Load models
     model_paths = find_latest_models()
@@ -233,7 +245,13 @@ def main():
     
     if args.policy in ["off", "both"]:
         print("\n4. Evaluating WITHOUT policy layer...")
-        evaluator = Evaluator(ranker, classifier, candidates, use_policy=False)
+        evaluator = Evaluator(
+            ranker,
+            classifier,
+            candidates,
+            candidate_index=candidate_index,
+            use_policy=False,
+        )
         metrics_off = evaluator.evaluate_dataset(df)
         all_results["policy_off"] = metrics_off
         
@@ -244,7 +262,13 @@ def main():
     
     if args.policy in ["on", "both"]:
         print("\n5. Evaluating WITH policy layer...")
-        evaluator = Evaluator(ranker, classifier, candidates, use_policy=True)
+        evaluator = Evaluator(
+            ranker,
+            classifier,
+            candidates,
+            candidate_index=candidate_index,
+            use_policy=True,
+        )
         metrics_on = evaluator.evaluate_dataset(df)
         all_results["policy_on"] = metrics_on
         
