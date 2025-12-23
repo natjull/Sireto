@@ -83,7 +83,25 @@ FEATURE_NAMES: List[str] = [
     "addr_token_overlap",
     "street_name_jaro",
     "name_addr_consistency",
+    # New features from reranking rules (Phase 3)
+    "is_siege",           # D9: head office indicator
+    "is_association",     # B1: association candidate indicator
+    "alias_match",        # D6: alias in parentheses match
+    "token_overlap_ul",   # D11: token overlap with UL names
+    "ul_vs_pm_indicator", # D7: UL vs PM dirigeant source indicator
 ]
+
+
+# Association tokens for B1 rule
+ASSOCIATION_TOKENS: Set[str] = {
+    "ASSOCIATION", "ASSO", "FOYER", "AMICALE", "CONSEIL",
+    "PARENTS", "PARENT", "ELEVES", "SPORTIVE", "FSE", "SOCIO",
+}
+
+# School tokens for B1 rule
+SCHOOL_TOKENS: Set[str] = {
+    "COLLEGE", "CLG", "LYCEE", "LYCE", "ECOLE", "ACADEMY",
+}
 
 
 # --------------------------------------------------------------------------- #
@@ -607,4 +625,48 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
     features = {**name_features, **addr_features}
     features["name_addr_consistency"] = name_features["name_jaro_max"] * addr_features["addr_jaro"]
 
+    # ---------------- New features from reranking rules (Phase 3) -----------------
+    
+    # D9: is_siege - head office indicator
+    features["is_siege"] = float(cand.get("is_siege", False))
+    
+    # B1: is_association - check if candidate name contains association tokens
+    cand_name_tokens = set(normalize_text(primary_cand_name).split()) if primary_cand_name else set()
+    features["is_association"] = float(bool(cand_name_tokens & ASSOCIATION_TOKENS))
+    
+    # D6: alias_match - check if aliases in parentheses match candidate name
+    crm_raw = crm_row.get("crm_name", "")
+    aliases = [normalize_text(m) for m in re.findall(r"\(([^)]+)\)", str(crm_raw))]
+    blacklist = {"SIEGE", "BAT", "BATIMENT", "ETAGE", "LOCAL", "AGENCE", "RDC"}
+    aliases = [a for a in aliases if len(a) >= 3 and a not in blacklist and not a.isdigit()]
+    alias_match_score = 0.0
+    if aliases and primary_cand_name:
+        cand_norm = normalize_text(primary_cand_name)
+        for alias in aliases:
+            if jaro_sim(alias, cand_norm) >= 0.80 or alias in cand_norm:
+                alias_match_score = 1.0
+                break
+    features["alias_match"] = alias_match_score
+    
+    # D11: token_overlap_ul - token overlap with UL names
+    ul_tokens: Set[str] = set()
+    for field in ["denomination_ul", "denomination_usuelle_ul", "sigle_ul"]:
+        val = cand.get(field)
+        if val:
+            ul_tokens.update(normalize_text(str(val)).split())
+    crm_tokens = {tok for tok in crm_norm.split() if len(tok) >= 3}
+    common_tokens = crm_tokens & ul_tokens
+    features["token_overlap_ul"] = len(common_tokens) / len(crm_tokens) if crm_tokens else 0.0
+    
+    # D7: ul_vs_pm_indicator - 1 if best match is from UL, 0 if from PM, 0.5 otherwise
+    type_max = features.get("type_of_max_name", 0.0)
+    is_ul_max = features.get("is_ul_name_max", 0.0)
+    if is_ul_max == 1.0:
+        features["ul_vs_pm_indicator"] = 1.0
+    elif type_max == 4.0:  # PM_DIRIGEANT
+        features["ul_vs_pm_indicator"] = 0.0
+    else:
+        features["ul_vs_pm_indicator"] = 0.5
+
     return features
+
