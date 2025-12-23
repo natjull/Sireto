@@ -50,7 +50,7 @@ def load_pm_dirigeant_names(
             SELECT siren, denomination
             FROM dirigeants
             WHERE siren IN ({placeholders})
-              AND type = 'personne morale'
+              AND type_dirigeant = 'personne morale'
               AND denomination IS NOT NULL
             """,
             chunk,

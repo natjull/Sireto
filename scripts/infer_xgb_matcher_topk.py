@@ -653,9 +653,11 @@ def main():
         scaler = pickle.load(f)
     with open(MODEL_PATHS["meta"]) as f:
         meta = json.load(f)
-    feature_order = meta["feature_order"]
+    feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
+    use_scaler = scaler is not None
 
     print(f"Using {len(feature_order)} features: {feature_order}")
+    print(f"Scaler: {'enabled' if use_scaler else 'disabled'}")
 
     rows_out: List[dict] = []
     for _, r in crm.iterrows():
@@ -683,7 +685,7 @@ def main():
             feat["_is_siege"] = bool(c.get("is_siege"))
             feats.append(feat)
         X = pd.DataFrame(feats)[feature_order]
-        Xs = scaler.transform(X)
+        Xs = scaler.transform(X) if use_scaler else X.values
         
         # --- STAGE 1: Ranker ---
         # Get raw ranking scores for all candidates
