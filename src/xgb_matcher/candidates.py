@@ -9,7 +9,7 @@ from __future__ import annotations
 
 import sqlite3
 from pathlib import Path
-from typing import Dict, List, Optional, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import pyarrow.parquet as pq
 
@@ -215,11 +215,33 @@ def load_candidates_for_locations(
     return mapping
 
 
+def build_location_index(
+    all_candidates: Dict[str, dict],
+) -> Dict[str, Dict[str, List[Tuple[str, dict]]]]:
+    """
+    Build indices to retrieve candidates by INSEE or postcode in O(1).
+    
+    Returns:
+        {"insee": {code: [(siret, cand), ...]}, "postcode": {cp: [(siret, cand), ...]}}
+    """
+    by_insee: Dict[str, List[Tuple[str, dict]]] = {}
+    by_postcode: Dict[str, List[Tuple[str, dict]]] = {}
+    for siret, cand in all_candidates.items():
+        insee = cand.get("insee") or ""
+        if insee:
+            by_insee.setdefault(insee, []).append((siret, cand))
+        postcode = cand.get("postcode") or ""
+        if postcode:
+            by_postcode.setdefault(postcode, []).append((siret, cand))
+    return {"insee": by_insee, "postcode": by_postcode}
+
+
 def get_candidates_for_query(
     postcode: Optional[str],
     insee: Optional[str],
     all_candidates: Dict[str, dict],
-) -> List[tuple]:
+    index: Optional[Dict[str, Dict[str, List[Tuple[str, dict]]]]] = None,
+) -> List[Tuple[str, dict]]:
     """
     Filter candidates for a specific query based on location.
     
@@ -227,10 +249,26 @@ def get_candidates_for_query(
         postcode: Query postal code
         insee: Query INSEE code
         all_candidates: Full candidate pool from load_candidates_for_locations
+        index: Optional index from build_location_index for fast lookup
         
     Returns:
         List of (siret, candidate_dict) tuples matching the location
     """
+    if index:
+        results: List[Tuple[str, dict]] = []
+        seen: Set[str] = set()
+        if insee and insee in index["insee"]:
+            for siret, cand in index["insee"][insee]:
+                if siret not in seen:
+                    results.append((siret, cand))
+                    seen.add(siret)
+        if postcode and postcode in index["postcode"]:
+            for siret, cand in index["postcode"][postcode]:
+                if siret not in seen:
+                    results.append((siret, cand))
+                    seen.add(siret)
+        return results
+
     results = []
     for siret, cand in all_candidates.items():
         cand_pc = cand.get("postcode", "")
