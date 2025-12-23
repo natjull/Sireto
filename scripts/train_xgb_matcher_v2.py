@@ -83,16 +83,21 @@ def prepare_data(
     """
     Prepare data for XGBoost training.
     
+    IMPORTANT: Data is sorted by query_id to ensure groups align with feature matrix.
+    
     Returns:
         X: Feature matrix
         y: Labels
         groups: Query group sizes (for ranking)
     """
-    X = df[feature_names].values.astype(np.float32)
-    y = df["label"].values.astype(np.float32)
+    # Sort by query_id to ensure groups are aligned with data order
+    df_sorted = df.sort_values("query_id").reset_index(drop=True)
     
-    # Compute group sizes for ranking
-    groups = df.groupby("query_id").size().values
+    X = df_sorted[feature_names].values.astype(np.float32)
+    y = df_sorted["label"].values.astype(np.float32)
+    
+    # Compute group sizes in sorted order (preserves order)
+    groups = df_sorted.groupby("query_id", sort=False).size().values
     
     return X, y, groups
 
