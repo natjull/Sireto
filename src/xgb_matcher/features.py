@@ -658,7 +658,7 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         val = cand.get(field)
         if val:
             ul_tokens.update(normalize_text(str(val)).split())
-    crm_tokens = {tok for tok in crm_norm.split() if len(tok) >= 3}
+    crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 3}
     common_tokens = crm_tokens & ul_tokens
     features["token_overlap_ul"] = len(common_tokens) / len(crm_tokens) if crm_tokens else 0.0
     
