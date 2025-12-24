@@ -114,13 +114,7 @@ class Evaluator:
         # Compute features
         feats = []
         for siret, cand in cand_list:
-            feat = make_features(
-                crm_name=row.get("crm_name", ""),
-                crm_address=row.get("crm_address", ""),
-                crm_city=row.get("crm_city", ""),
-                candidate=cand,
-                crm_row=row,
-            )
+            feat = make_features(crm_row=row, cand=cand)
             feat["_siret"] = siret
             feat["_cand_name"] = primary_name(cand) or ""
             

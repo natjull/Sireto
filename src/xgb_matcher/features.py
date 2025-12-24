@@ -74,6 +74,8 @@ FEATURE_NAMES: List[str] = [
     "name_city_overlap_max",
     "name_is_city_like_max",
     "name_semantic_max",
+    "name_semantic_second",
+    "name_semantic_gap",
     # Address / location features (unchanged)
     "addr_jaro",
     "addr_levenshtein",
@@ -89,6 +91,7 @@ FEATURE_NAMES: List[str] = [
     "alias_match",        # D6: alias in parentheses match
     "token_overlap_ul",   # D11: token overlap with UL names
     "ul_vs_pm_indicator", # D7: UL vs PM dirigeant source indicator
+    "is_crm_school",      # Context: CRM query refers to a school
 ]
 
 
@@ -98,9 +101,10 @@ ASSOCIATION_TOKENS: Set[str] = {
     "PARENTS", "PARENT", "ELEVES", "SPORTIVE", "FSE", "SOCIO",
 }
 
-# School tokens for B1 rule
+# School tokens for context detection (D11 and B1)
 SCHOOL_TOKENS: Set[str] = {
-    "COLLEGE", "CLG", "LYCEE", "LYCE", "ECOLE", "ACADEMY",
+    "COLLEGE", "CLG", "LYCEE", "LYCE", "ECOLE", "INSTITUT", "UNIVERSITE", 
+    "UFR", "FACULTE", "CTRE", "CENTRE", "FORMATION", "CFA", "MFR", "ACADEMY",
 }
 
 
@@ -473,6 +477,8 @@ def _init_name_feature_defaults() -> Dict[str, float]:
         "name_city_overlap_max": 0.0,
         "name_is_city_like_max": 0.0,
         "name_semantic_max": 0.0,
+        "name_semantic_second": 0.0,
+        "name_semantic_gap": 0.0,
     }
 
 
@@ -515,6 +521,10 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
     crm_city_norm = normalize_text(crm_city)
     cand_city_norm = normalize_text(cand.get("city"))
     crm_is_person = looks_like_person_name(crm_name)
+    
+    # Detect school context in CRM name
+    crm_tokens_all = set(crm_name.split())
+    is_crm_school = float(bool(crm_tokens_all & SCHOOL_TOKENS))
 
     # ---------------- Name similarities (aggregated) -----------------
     name_features = _init_name_feature_defaults()
@@ -598,18 +608,23 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
             [s["jaro"] for s in sims if s["nm"].source == NameSource.PM_DIRIGEANT] or [0.0]
         )
 
-        if name_features["name_jaro_max"] < SEMANTIC_GATE_JARO:
-            semantic_pool = [
-                s["nm"].text
-                for s in sims
-                if not s["is_city_like"] and not s["is_person_nm"]
-            ]
-            if not semantic_pool:
-                semantic_pool = [s["nm"].text for s in sims]
-            
-            # Use original case version for semantic embedding (CamelCase split needs it)
-            crm_name_semantic = strip_location_from_crm_name(crm_row, preserve_case=True)
-            name_features["name_semantic_max"] = max_semantic_similarity(crm_name_semantic, semantic_pool)
+        semantic_pool = [
+            s["nm"].text
+            for s in sims
+            if not s["is_city_like"] and not s["is_person_nm"]
+        ]
+        if not semantic_pool:
+            semantic_pool = [s["nm"].text for s in sims]
+        
+        # Use original case version for semantic embedding (CamelCase split needs it)
+        crm_name_semantic = strip_location_from_crm_name(crm_row, preserve_case=True)
+        
+        # Calculate semantic scores using batch GPU encoding
+        from .semantic import top2_semantic_similarities
+        sem_max, sem_second, sem_gap = top2_semantic_similarities(crm_name_semantic, semantic_pool)
+        name_features["name_semantic_max"] = sem_max
+        name_features["name_semantic_second"] = sem_second
+        name_features["name_semantic_gap"] = sem_gap
 
     # ---------------- Address & location features -----------------
     addr_features = {
@@ -652,15 +667,35 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
                 break
     features["alias_match"] = alias_match_score
     
-    # D11: token_overlap_ul - token overlap with UL names
+    # D11: token_overlap_ul - token overlap with UL names including substring matches
     ul_tokens: Set[str] = set()
     for field in ["denomination_ul", "denomination_usuelle_ul", "sigle_ul"]:
         val = cand.get(field)
         if val:
             ul_tokens.update(normalize_text(str(val)).split())
+    
     crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 3}
-    common_tokens = crm_tokens & ul_tokens
-    features["token_overlap_ul"] = len(common_tokens) / len(crm_tokens) if crm_tokens else 0.0
+    stopwords = {"GROUPE", "SOCIETE", "HOLDING"}
+    crm_tokens = crm_tokens - stopwords
+    
+    if not crm_tokens:
+        features["token_overlap_ul"] = 0.0
+    else:
+        # Direct token match
+        common_tokens = crm_tokens & ul_tokens
+        
+        # Substring match: check if a candidate token is IN a CRM token 
+        # (for CamelCase like DIGITBOXING) or vice-versa.
+        substring_matches = set()
+        for cand_tok in ul_tokens:
+            if len(cand_tok) >= 4:
+                for crm_tok in crm_tokens:
+                    if (len(crm_tok) >= 6 and cand_tok in crm_tok) or (len(crm_tok) >= 4 and crm_tok in cand_tok):
+                        substring_matches.add(cand_tok)
+                        break
+        
+        all_matches = common_tokens | substring_matches
+        features["token_overlap_ul"] = len(all_matches) / len(crm_tokens)
     
     # D7: ul_vs_pm_indicator - 1 if best match is from UL, 0 if from PM, 0.5 otherwise
     type_max = features.get("type_of_max_name", 0.0)
@@ -671,6 +706,9 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         features["ul_vs_pm_indicator"] = 0.0
     else:
         features["ul_vs_pm_indicator"] = 0.5
+        
+    # Context features
+    features["is_crm_school"] = is_crm_school
 
     return features
 
