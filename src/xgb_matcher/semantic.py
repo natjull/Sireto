@@ -205,6 +205,67 @@ def top2_semantic_similarities(
     return max_sim, second_sim, gap
 
 
+def top2_semantic_similarities_batch(
+    crm_name: str,
+    candidate_name_lists: List[List[str]],
+) -> List[Tuple[float, float, float]]:
+    """Compute top-2 semantic similarities for many candidate lists at once.
+
+    This is a performance helper that batches embedding lookups/encoding, while
+    keeping the exact scoring logic of `top2_semantic_similarities` (cosine via
+    dot product on normalized embeddings).
+    """
+    if not crm_name or not candidate_name_lists:
+        return [(0.0, 0.0, 0.0) for _ in candidate_name_lists]
+
+    if not _semantic_enabled():
+        return [(0.0, 0.0, 0.0) for _ in candidate_name_lists]
+
+    # Flatten all candidate names.
+    flat_names: List[str] = []
+    for names in candidate_name_lists:
+        if not names:
+            continue
+        flat_names.extend([n for n in names if n])
+
+    if not flat_names:
+        return [(0.0, 0.0, 0.0) for _ in candidate_name_lists]
+
+    # Encode CRM + all candidate texts once (duplicates are fine; cache will dedupe).
+    unique_texts = [crm_name] + list(dict.fromkeys(flat_names))
+    embeddings = batch_encode_texts(unique_texts)
+
+    crm_emb = embeddings.get(crm_name)
+    if crm_emb is None:
+        return [(0.0, 0.0, 0.0) for _ in candidate_name_lists]
+
+    out: List[Tuple[float, float, float]] = []
+    for names in candidate_name_lists:
+        if not names:
+            out.append((0.0, 0.0, 0.0))
+            continue
+
+        sims: List[float] = []
+        for name in names:
+            if not name:
+                continue
+            cand_emb = embeddings.get(name)
+            if cand_emb is None:
+                continue
+            sims.append(float(np.dot(crm_emb, cand_emb)))
+
+        if not sims:
+            out.append((0.0, 0.0, 0.0))
+            continue
+
+        sims.sort(reverse=True)
+        max_sim = sims[0]
+        second_sim = sims[1] if len(sims) > 1 else 0.0
+        out.append((max_sim, second_sim, max_sim - second_sim))
+
+    return out
+
+
 def get_cache_stats() -> Tuple[int, int]:
     """Return (cache_size, cache_memory_mb) for monitoring."""
     cache_size = len(_EMBEDDING_CACHE)
@@ -283,6 +344,7 @@ __all__ = [
     "max_semantic_similarity",
     "batch_encode_texts",
     "top2_semantic_similarities",
+    "top2_semantic_similarities_batch",
     "get_cache_stats",
     "clear_cache",
 ]
