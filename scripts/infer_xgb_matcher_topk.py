@@ -18,6 +18,8 @@ Features are computed using the shared module: src.xgb_matcher.features
 
 from __future__ import annotations
 
+import argparse
+import os
 import json
 import re
 import pickle
@@ -30,7 +32,9 @@ from typing import Dict, List, Set
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+import xgboost as xgb
 from xgboost import XGBClassifier, XGBRanker
+from tqdm import tqdm
 
 # Add src to path for imports
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -38,21 +42,55 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
     build_address,
+    build_semantic_name_pool,
     jaro_sim,
-    make_features,
+    make_features_from_preprocessed,
     normalize_text,
+    preprocess_crm_row,
 )
-from src.xgb_matcher.naming import primary_name
+from src.xgb_matcher.naming import build_candidate_names, primary_name
 from src.xgb_matcher.candidates import (
     load_candidates_for_locations as load_candidates_shared,
     get_candidates_for_query,
 )
+from src.xgb_matcher.semantic import batch_encode_texts, get_cache_stats, top2_semantic_similarities_batch
 
 # Config
-CRM_PATH = Path("data/testcrm/data_56_subset_corbas_decines.csv")
+CRM_PATH = Path("data/testcrm/data_aligned.csv")
 MODEL_DIR = Path("models")
 TOP_K = 5
 BATCH_SIZE = 100_000
+USE_RERANK_RULES = False  # Set via --no-rerank flag
+
+
+def _parse_args() -> argparse.Namespace:
+    p = argparse.ArgumentParser(description="Infer XGB matcher top-k (optionally with TreeSHAP contribs).")
+    p.add_argument("--crm-path", type=Path, default=CRM_PATH)
+    p.add_argument("--output-path", type=Path, default=Path("reports/xgb_infer_topk.csv"))
+    p.add_argument("--top-k", type=int, default=TOP_K)
+    p.add_argument("--write-csv", action="store_true", default=True)
+    p.add_argument("--with-shap", action="store_true", help="Add TreeSHAP explanations for each top-k row.")
+    p.add_argument("--shap-top-n", type=int, default=int(os.getenv("XGB_SHAP_TOP_N", "10")))
+    p.add_argument(
+        "--include-closed-candidates",
+        action="store_true",
+        help="Include closed establishments (etatAdministratifEtablissement == 'F') in the candidate pool.",
+    )
+    p.add_argument(
+        "--keep-unnamed-candidates",
+        action="store_true",
+        help="Disable filtering of candidates without names (may increase noise).",
+    )
+    return p.parse_args()
+
+
+def _sigmoid(x: float) -> float:
+    # Numerically stable sigmoid (xgboost margins can be large).
+    if x >= 0:
+        z = np.exp(-x)
+        return float(1.0 / (1.0 + z))
+    z = np.exp(x)
+    return float(z / (1.0 + z))
 
 
 def find_latest_models():
@@ -472,6 +510,10 @@ def load_crm(path: Path) -> pd.DataFrame:
         "Code Postal": "postcode",
         "Code INSEE": "insee",
     })
+    # Clean up postcode/insee values (remove .0 suffix from float-like strings)
+    for col in ["postcode", "insee"]:
+        if col in df.columns:
+            df[col] = df[col].apply(lambda x: str(int(float(x))) if pd.notna(x) and x not in ["", "nan"] else x)
     # This dataset has no SIRET ground truth; we generate synthetic ids for bookkeeping
     df["crm_id"] = df.index
     return df
@@ -629,18 +671,40 @@ def load_candidates_for_locations(postcodes: set[str], insee: set[str]) -> Dict[
 
 
 def main():
+    args = _parse_args()
     logging.basicConfig(
         level=logging.INFO,
         format="%(asctime)s %(levelname)s %(name)s %(message)s",
     )
     print("Loading CRM subset...")
-    crm = load_crm(CRM_PATH)
+    crm = load_crm(args.crm_path)
+    crm_records = crm.to_dict("records")
+    crm_pre = [preprocess_crm_row(r) for r in crm_records]
     postcodes = set(crm["postcode"].dropna().unique()) if "postcode" in crm else set()
     insee = set(crm["insee"].dropna().unique()) if "insee" in crm else set()
     print(f"Postcodes of interest: {len(postcodes)} | INSEE codes: {len(insee)}")
 
+    semantic_enabled = os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
+    with_shap = args.with_shap or (os.getenv("XGB_SHAP_ENABLED", "0") == "1")
+    if semantic_enabled:
+        crm_semantic_names = [
+            c.get("crm_name_semantic", "") for c in crm_pre if c.get("crm_name_semantic")
+        ]
+        unique_crm_semantic = list(dict.fromkeys(crm_semantic_names))
+        if unique_crm_semantic:
+            print(f"[Semantic] Warmup CRM embeddings: {len(unique_crm_semantic)} unique names...")
+            batch_encode_texts(unique_crm_semantic)
+            cache_size, cache_mb = get_cache_stats()
+            print(f"[Semantic] Cache: {cache_size} embeddings (~{cache_mb:.1f} MB)")
+
     print("Building candidate pool from shared module (filtered by CP/INSEE)...")
-    candidates = load_candidates_shared(postcodes, insee)
+    include_closed = args.include_closed_candidates or (os.getenv("XGB_INCLUDE_CLOSED", "0") == "1")
+    candidates = load_candidates_shared(
+        postcodes,
+        insee,
+        include_closed_establishments=include_closed,
+        drop_unnamed_candidates=not args.keep_unnamed_candidates,
+    )
     print(f"Candidates loaded: {len(candidates)}")
 
     print("Loading model cascade (Ranker + Classifier)...")
@@ -650,8 +714,11 @@ def main():
     classifier = XGBClassifier()
     classifier.load_model(str(MODEL_PATHS["classifier"]))
     
-    with open(MODEL_PATHS["scaler"], "rb") as f:
-        scaler = pickle.load(f)
+    scaler = None
+    scaler_path = MODEL_PATHS.get("scaler")
+    if scaler_path and scaler_path.exists():
+        with open(scaler_path, "rb") as f:
+            scaler = pickle.load(f)
     with open(MODEL_PATHS["meta"]) as f:
         meta = json.load(f)
     feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
@@ -660,47 +727,55 @@ def main():
     print(f"Using {len(feature_order)} features: {feature_order}")
     print(f"Scaler: {'enabled' if use_scaler else 'disabled'}")
 
+    # Build index for fast candidate lookup by postcode and INSEE
+    print("Building candidate index by postcode/INSEE...")
+    cand_by_postcode: Dict[str, List[tuple]] = {}
+    cand_by_insee: Dict[str, List[tuple]] = {}
+    for siret, c in candidates.items():
+        cp = c.get("postcode")
+        insee = c.get("insee")
+        if cp:
+            cand_by_postcode.setdefault(cp, []).append((siret, c))
+        if insee:
+            cand_by_insee.setdefault(insee, []).append((siret, c))
+    print(f"  Index: {len(cand_by_postcode)} postcodes, {len(cand_by_insee)} INSEE codes")
+
     rows_out: List[dict] = []
-    for _, r in crm.iterrows():
-        # Pool: prefer same INSEE, else same postcode
-        cand_list = []
-        for siret, c in candidates.items():
-            same_insee = c.get("insee") and r.get("insee") and c["insee"] == r["insee"]
-            same_cp = c.get("postcode") and r.get("postcode") and c["postcode"] == r["postcode"]
-            if same_insee or same_cp:
-                cand_list.append((siret, c))
+    for r, crm_ctx in tqdm(zip(crm_records, crm_pre), total=len(crm_records), desc="Infer"):
+        # Pool: use indexed lookup instead of iterating all candidates
+        query_insee = r.get("insee")
+        query_cp = r.get("postcode")
+        
+        # Prefer INSEE match, fallback to postcode
+        if query_insee and query_insee in cand_by_insee:
+            cand_list = cand_by_insee[query_insee]
+        elif query_cp and query_cp in cand_by_postcode:
+            cand_list = cand_by_postcode[query_cp]
+        else:
+            continue
         if not cand_list:
             continue
 
-        # Compute features using shared module
-        feats = []
+        # --- STAGE 1: Fast ranking (skip semantic features for speed) ---
+        feats_stage1 = []
         for siret, c in cand_list:
-            feat = make_features(r, c)
-            feat["_siret"] = siret
-            feat["_cand_name"] = primary_name(c) or f"SIRET {siret}"
-            feat["_ul_denoms"] = [
-                normalize_text(c.get("denomination_ul") or ""),
-                normalize_text(c.get("denomination_usuelle_ul") or ""),
-                normalize_text(c.get("sigle_ul") or ""),
-            ]
-            feat["_is_siege"] = bool(c.get("is_siege"))
-            feats.append(feat)
-        X = pd.DataFrame(feats)[feature_order]
-        Xs = scaler.transform(X) if use_scaler else X.values
+            feat = make_features_from_preprocessed(crm_ctx, c, skip_semantic=True)
+            feats_stage1.append(feat)
         
-        # --- STAGE 1: Ranker ---
+        X1 = pd.DataFrame(feats_stage1)[feature_order]
+        Xs1 = scaler.transform(X1) if use_scaler else X1.values
+        
         # Get raw ranking scores for all candidates
-        rank_scores = ranker.predict(Xs)
+        rank_scores = ranker.predict(Xs1)
         
-        # Pick top candidates for re-scoring (e.g. top 50)
-        # We need a decent pool for the classifier to work on.
+        # Pick top candidates for re-scoring
         stage1_top_n = min(200, len(rank_scores))
         top_n_idx = np.argsort(rank_scores)[::-1][:stage1_top_n]
 
         # Address-rescue: recover near-perfect address matches outside top-N
         rescue_indices = []
         top_n_set = set(top_n_idx)
-        for i, feat in enumerate(feats):
+        for i, feat in enumerate(feats_stage1):
             if i in top_n_set:
                 continue
             addr_jaro = float(feat.get("addr_jaro", 0.0))
@@ -712,25 +787,117 @@ def main():
         if rescue_indices:
             top_n_idx = np.unique(np.concatenate([top_n_idx, np.array(rescue_indices, dtype=int)]))
         
-        # --- STAGE 2: Classifier ---
-        # Re-score only the top-N from stage 1 with the classifier to get probabilities
-        Xs_n = Xs[top_n_idx]
-        feats_n = [feats[i] for i in top_n_idx]
-        cand_list_n = [cand_list[i] for i in top_n_idx]
+        # --- STAGE 2: Full scoring with semantic features on top-N only ---
+        feats_n = []
+        cand_list_n = []
+        semantic_pools = []
+        for idx in top_n_idx:
+            siret, c = cand_list[idx]
+            # Reuse stage-1 features; only semantic differs between stage-1 and stage-2.
+            feat = feats_stage1[idx]
+
+            if semantic_enabled:
+                cand_city_norm = c.get("_xgb_cached_city_norm") or normalize_text(c.get("city"))
+                semantic_pools.append(
+                    build_semantic_name_pool(
+                        build_candidate_names(c),
+                        crm_city_norm=crm_ctx.get("crm_city_norm", ""),
+                        cand_city_norm=cand_city_norm,
+                    )
+                )
+
+            feat["_siret"] = siret
+            feat["_cand_name"] = primary_name(c) or f"SIRET {siret}"
+            feat["_ul_denoms"] = [
+                normalize_text(c.get("denomination_ul") or ""),
+                normalize_text(c.get("denomination_usuelle_ul") or ""),
+                normalize_text(c.get("sigle_ul") or ""),
+            ]
+            feat["_is_siege"] = bool(c.get("is_siege"))
+            feats_n.append(feat)
+            cand_list_n.append((siret, c))
+
+        if semantic_enabled:
+            sem = top2_semantic_similarities_batch(crm_ctx.get("crm_name_semantic", ""), semantic_pools)
+            for feat, (sem_max, sem_second, sem_gap) in zip(feats_n, sem, strict=True):
+                feat["name_semantic_max"] = sem_max
+                feat["name_semantic_second"] = sem_second
+                feat["name_semantic_gap"] = sem_gap
+        
+        X_n = pd.DataFrame(feats_n)[feature_order]
+        Xs_n = scaler.transform(X_n) if use_scaler else X_n.values
         
         # predict_proba returns [P_neg, P_pos]
         class_probs = classifier.predict_proba(Xs_n)[:, 1]
         
-        # Apply rerank rules on classifier probabilities
+        # Apply rerank rules on classifier probabilities (if enabled)
         scores = np.array(class_probs)
-        scores = apply_rerank_rules(scores, feats_n, r)
+        if USE_RERANK_RULES:
+            scores = apply_rerank_rules(scores, feats_n, r)
         
         # Final Top-K selection
-        topk_idx = np.argsort(scores)[::-1][:TOP_K]
+        topk_idx = np.argsort(scores)[::-1][: args.top_k]
+        shap_contribs = None
+        X_n_shap = None
+        Xs_n_shap = None
+        if with_shap and len(topk_idx) > 0:
+            booster = classifier.get_booster()
+            X_n_shap = X_n.iloc[topk_idx]
+            Xs_n_shap = Xs_n[topk_idx]
+            dm = xgb.DMatrix(Xs_n_shap, feature_names=feature_order)
+            shap_contribs = booster.predict(dm, pred_contribs=True)
+
+        if len(topk_idx) > 0:
+            top0 = topk_idx[0]
+            siret0, cand0 = cand_list_n[top0]
+            cand_name0 = primary_name(cand0) or f"SIRET {siret0}"
+            print(
+                f"[infer] crm_id={r.get('crm_id')} | {r.get('crm_name','')}"
+                f" -> TOP1 {siret0} | {cand_name0}"
+            )
+
         for rank, idx_k in enumerate(topk_idx, start=1):
             siret_k, cand_k = cand_list_n[idx_k]
             cand_name = primary_name(cand_k) or f"SIRET {siret_k}"
+            etat_admin = str(cand_k.get("etat_admin") or "").strip().upper() or None
+            candidate_state = None
+            if etat_admin is not None:
+                candidate_state = "FERME" if etat_admin == "F" else "OUVERT"
+            shap_json = None
+            if shap_contribs is not None and X_n_shap is not None and Xs_n_shap is not None:
+                contrib_row = shap_contribs[rank - 1]
+                bias = float(contrib_row[-1])
+                vals = contrib_row[:-1]
+                margin = float(contrib_row.sum())
+                prob_from_margin = _sigmoid(margin)
+
+                top_n = max(0, int(args.shap_top_n))
+                top_feats = []
+                if top_n:
+                    order = np.argsort(np.abs(vals))[::-1][:top_n]
+                    raw_row = X_n_shap.iloc[rank - 1]
+                    scaled_row = Xs_n_shap[rank - 1]
+                    for fi in order:
+                        feat_name = feature_order[int(fi)]
+                        top_feats.append(
+                            {
+                                "feature": feat_name,
+                                "shap": float(vals[int(fi)]),
+                                "value": float(raw_row[feat_name]),
+                                "model_input": float(scaled_row[int(fi)]),
+                            }
+                        )
+                shap_json = json.dumps(
+                    {
+                        "bias": bias,
+                        "margin": margin,
+                        "prob_from_margin": prob_from_margin,
+                        "top": top_feats,
+                    },
+                    ensure_ascii=False,
+                )
             rows_out.append({
+                "crm_id": r.get("crm_id"),
                 "crm_name": r["crm_name"],
                 "crm_address": r.get("crm_address"),
                 "crm_postcode": r.get("postcode"),
@@ -742,14 +909,18 @@ def main():
                 "candidate_city": cand_k.get("city"),
                 "candidate_postcode": cand_k.get("postcode"),
                 "candidate_insee": cand_k.get("insee"),
+                "candidate_state": candidate_state,
+                "candidate_last_treatment_date": cand_k.get("last_treatment_date"),
                 "rank": rank,
+                "shap": shap_json,
             })
 
     out_df = pd.DataFrame(rows_out).sort_values(["crm_name", "rank", "score"], ascending=[True, True, False])
-    out_path = Path("reports/xgb_infer_topk.csv")
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_df.to_csv(out_path, index=False)
-    print(f"Saved top-{TOP_K} results to {out_path} ({len(out_df)} rows)")
+    out_path = args.output_path
+    if args.write_csv:
+        out_path.parent.mkdir(parents=True, exist_ok=True)
+        out_df.to_csv(out_path, index=False)
+        print(f"Saved top-{args.top_k} results to {out_path} ({len(out_df)} rows)")
 
 
 if __name__ == "__main__":
