@@ -40,7 +40,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from src.xgb_matcher.features import FEATURE_NAMES
 
 # Configuration
-DEFAULT_SAMPLES = Path("data/samples_aligned.parquet")
+DEFAULT_SAMPLES = Path("data/samples_aligned_v3.parquet")
 MODEL_DIR = Path("models")
 
 # XGBoost hyperparameters

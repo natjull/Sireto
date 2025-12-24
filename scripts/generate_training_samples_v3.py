@@ -30,6 +30,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import FEATURE_NAMES, make_features, normalize_text, jaro_sim
+from src.xgb_matcher.candidates import load_candidates_for_locations
 
 # Configuration
 DEFAULT_OUTPUT = Path("data/samples_aligned_v3.parquet")
@@ -80,82 +81,44 @@ def create_siren_split(df: pd.DataFrame, seed: int = SEED):
     )
 
 
-def load_candidates_by_location(insee_codes: Set[str], postcodes: Set[str]) -> Dict[str, List[dict]]:
+def load_candidates_by_location(
+    insee_codes: Set[str], 
+    postcodes: Set[str]
+) -> Dict[str, List[dict]]:
     """
-    Single parquet scan, build candidates indexed by INSEE and postcode.
+    Load candidates indexed by INSEE and postcode using shared logic.
     
-    Returns:
-        Dict with keys like "insee:69123" or "cp:69007" -> list of candidate dicts
+    This version uses src.xgb_matcher.candidates.load_candidates_for_locations 
+    to ensure full enrichment (UL names, PM dirigeants from SQLite).
     """
-    cols = [
-        "siret", "siren",
-        "enseigne1Etablissement", "enseigne2Etablissement", "enseigne3Etablissement",
-        "denominationUsuelleEtablissement", "etablissementSiege",
-        "numeroVoieEtablissement", "typeVoieEtablissement", "libelleVoieEtablissement",
-        "complementAdresseEtablissement",
-        "codePostalEtablissement", "libelleCommuneEtablissement", "codeCommuneEtablissement",
-        "categorieJuridiqueUniteLegale", "etatAdministratifEtablissement",
-    ]
+    print("  Loading and enriching candidates (this may take a few minutes)...")
+    full_mapping = load_candidates_for_locations(
+        postcodes=postcodes,
+        insee_codes=insee_codes,
+        verbose=True
+    )
     
     by_insee: Dict[str, List[dict]] = defaultdict(list)
     by_cp: Dict[str, List[dict]] = defaultdict(list)
     
-    pf = pq.ParquetFile(PARQUET_PATH)
-    
-    print("  Scanning parquet for relevant locations...")
-    for batch in tqdm(pf.iter_batches(columns=cols, batch_size=BATCH_SIZE), desc="  Parquet"):
-        pdf = batch.to_pandas()
+    for cand in full_mapping.values():
+        insee = cand.get("insee")
+        cp = cand.get("postcode")
         
-        # Filter to relevant locations + active only
-        mask = (
-            (pdf["codeCommuneEtablissement"].isin(insee_codes)) |
-            (pdf["codePostalEtablissement"].isin(postcodes))
-        )
-        pdf = pdf[mask]
-        pdf = pdf[pdf["etatAdministratifEtablissement"] != "F"]
-        
-        for _, r in pdf.iterrows():
-            siege_val = r.get("etablissementSiege")
-            is_siege = (
-                siege_val.strip().upper() in {"TRUE", "VRAI", "1"} 
-                if isinstance(siege_val, str) else bool(siege_val)
-            )
+        if insee and insee in insee_codes:
+            by_insee[insee].append(cand)
+        if cp and cp in postcodes:
+            by_cp[cp].append(cand)
             
-            cand = {
-                "siret": r["siret"],
-                "siren": r.get("siren"),
-                "denomination": r.get("denominationUsuelleEtablissement"),
-                "enseigne1": r.get("enseigne1Etablissement"),
-                "enseigne2": r.get("enseigne2Etablissement"),
-                "enseigne3": r.get("enseigne3Etablissement"),
-                "is_siege": is_siege,
-                "numeroVoie": r.get("numeroVoieEtablissement"),
-                "typeVoie": r.get("typeVoieEtablissement"),
-                "libelleVoie": r.get("libelleVoieEtablissement"),
-                "complementAdresse": r.get("complementAdresseEtablissement"),
-                "postcode": r.get("codePostalEtablissement"),
-                "city": r.get("libelleCommuneEtablissement"),
-                "insee": r.get("codeCommuneEtablissement"),
-                "cj_ul": r.get("categorieJuridiqueUniteLegale"),
-            }
-            
-            insee = r.get("codeCommuneEtablissement")
-            cp = r.get("codePostalEtablissement")
-            
-            if insee and insee in insee_codes:
-                by_insee[insee].append(cand)
-            if cp and cp in postcodes:
-                by_cp[cp].append(cand)
-    
-    # Merge into single dict
+    # Merge into single dict with prefixes for get_candidates_for_query
     result: Dict[str, List[dict]] = {}
     for k, v in by_insee.items():
         result[f"insee:{k}"] = v
     for k, v in by_cp.items():
         result[f"cp:{k}"] = v
     
-    total = sum(len(v) for v in result.values())
-    print(f"  Loaded {total} candidate entries across {len(result)} location keys")
+    total_locations = len(result)
+    print(f"  Indexed {len(full_mapping)} unique candidates across {total_locations} location keys")
     
     return result
 

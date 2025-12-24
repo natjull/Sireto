@@ -42,6 +42,7 @@ def load_pm_dirigeant_names(
 
     # Chunk SIRENs for SQLite parameter limit
     siren_list = list(sirens)
+    from tqdm import tqdm
     for i in range(0, len(siren_list), 900):
         chunk = siren_list[i : i + 900]
         placeholders = ",".join(["?"] * len(chunk))
@@ -116,7 +117,15 @@ def load_candidates_for_locations(
     sirens: Set[str] = set()
 
     # First pass: collect all rows for CP/INSEE
-    for batch in pf.iter_batches(columns=cols, batch_size=BATCH_SIZE):
+    if verbose:
+        from tqdm import tqdm
+        batches = list(pf.iter_batches(columns=cols, batch_size=BATCH_SIZE))
+        desc = "  [1/3] Reading establishments"
+    else:
+        batches = pf.iter_batches(columns=cols, batch_size=BATCH_SIZE)
+        desc = None
+
+    for batch in (tqdm(batches, desc=desc) if desc else batches):
         pdf = batch.to_pandas()
         mask = (
             pdf["codePostalEtablissement"].isin(postcodes) | 
@@ -126,8 +135,8 @@ def load_candidates_for_locations(
         
         # Filter only active establishments
         pdf = pdf[pdf["etatAdministratifEtablissement"] != "F"]
-
-        for _, r in pdf.iterrows():
+        
+        for r in pdf.to_dict("records"):
             # Parse siege boolean from various formats
             siege_val = r.get("etablissementSiege")
             if isinstance(siege_val, str):
@@ -137,7 +146,7 @@ def load_candidates_for_locations(
                 is_siege = bool(siege_val)
             
             cand = {
-                "siret": r["siret"],
+                "siret": r.get("siret"),
                 "siren": r.get("siren"),
                 "denomination": r.get("denominationUsuelleEtablissement"),
                 "enseigne1": r.get("enseigne1Etablissement"),
@@ -155,7 +164,7 @@ def load_candidates_for_locations(
             }
             if cand.get("siren"):
                 sirens.add(str(cand["siren"]))
-            mapping[r["siret"]] = cand
+            mapping[r.get("siret")] = cand
 
     # Enrichment with UniteLegale names
     if ul_path.exists() and sirens:
@@ -175,11 +184,21 @@ def load_candidates_for_locations(
         ]
         pf_ul = pq.ParquetFile(ul_path)
         ul_map: Dict[str, dict] = {}
-        for batch in pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE):
+        
+        if verbose:
+            from tqdm import tqdm
+            batches = list(pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE))
+            desc = "  [2/3] Loading UniteLegale info"
+        else:
+            batches = pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE)
+            desc = None
+
+        for batch in (tqdm(batches, desc=desc) if desc else batches):
             pdf = batch.to_pandas()
-            pdf = pdf[pdf["siren"].isin(sirens)]
-            for _, r in pdf.iterrows():
-                ul_map[r["siren"]] = {
+            matches = pdf[pdf["siren"].isin(sirens)]
+            
+            for r in matches.to_dict("records"):
+                ul_map[r.get("siren")] = {
                     "sigle_ul": r.get("sigleUniteLegale"),
                     "denomination_ul": r.get("denominationUniteLegale"),
                     "denomination_usuelle_ul": " ".join(
@@ -205,6 +224,8 @@ def load_candidates_for_locations(
 
     # Enrich with PM dirigeant names
     if load_pm_names and harvest_db.exists():
+        if verbose:
+            print("  [3/3] Loading PM dirigeant names from SQLite...")
         pm_names = load_pm_dirigeant_names(sirens, harvest_db)
         if pm_names:
             for siret, cand in mapping.items():
