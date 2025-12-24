@@ -8,10 +8,13 @@ ensuring alignment between train and serve environments.
 from __future__ import annotations
 
 import sqlite3
+import math
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 import pyarrow.parquet as pq
+
+from .naming import build_candidate_names
 
 # Paths (configurable, with defaults)
 DEFAULT_PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
@@ -70,6 +73,8 @@ def load_candidates_for_locations(
     ul_path: Path = DEFAULT_UL_PATH,
     harvest_db: Path = DEFAULT_HARVEST_DB,
     load_pm_names: bool = True,
+    include_closed_establishments: bool = False,
+    drop_unnamed_candidates: bool = True,
     verbose: bool = True,
 ) -> Dict[str, dict]:
     """
@@ -85,6 +90,8 @@ def load_candidates_for_locations(
         ul_path: Path to UniteLegale parquet file
         harvest_db: Path to harvest SQLite database for PM dirigeants
         load_pm_names: Whether to load PM dirigeant names
+        include_closed_establishments: If True, include establishments with etatAdministratifEtablissement == 'F'.
+        drop_unnamed_candidates: If True, drop candidates with no usable name fields.
         verbose: Print progress messages
         
     Returns:
@@ -107,6 +114,7 @@ def load_candidates_for_locations(
         "codeCommuneEtablissement",
         "categorieJuridiqueUniteLegale",
         "etatAdministratifEtablissement",
+        "dateDernierTraitementEtablissement",
     ]
     
     if not parquet_path.exists():
@@ -119,13 +127,14 @@ def load_candidates_for_locations(
     # First pass: collect all rows for CP/INSEE
     if verbose:
         from tqdm import tqdm
-        batches = list(pf.iter_batches(columns=cols, batch_size=BATCH_SIZE))
         desc = "  [1/3] Reading establishments"
+        total = math.ceil(pf.metadata.num_rows / BATCH_SIZE) if pf.metadata else None
     else:
-        batches = pf.iter_batches(columns=cols, batch_size=BATCH_SIZE)
         desc = None
+        total = None
 
-    for batch in (tqdm(batches, desc=desc) if desc else batches):
+    batches = pf.iter_batches(columns=cols, batch_size=BATCH_SIZE)
+    for batch in (tqdm(batches, desc=desc, total=total) if desc else batches):
         pdf = batch.to_pandas()
         mask = (
             pdf["codePostalEtablissement"].isin(postcodes) | 
@@ -133,8 +142,9 @@ def load_candidates_for_locations(
         )
         pdf = pdf[mask]
         
-        # Filter only active establishments
-        pdf = pdf[pdf["etatAdministratifEtablissement"] != "F"]
+        # By default we filter only active establishments; when enabled we keep closed ones too.
+        if not include_closed_establishments:
+            pdf = pdf[pdf["etatAdministratifEtablissement"] != "F"]
         
         for r in pdf.to_dict("records"):
             # Parse siege boolean from various formats
@@ -161,6 +171,8 @@ def load_candidates_for_locations(
                 "city": r.get("libelleCommuneEtablissement"),
                 "insee": r.get("codeCommuneEtablissement"),
                 "cj_ul": r.get("categorieJuridiqueUniteLegale"),
+                "etat_admin": r.get("etatAdministratifEtablissement"),
+                "last_treatment_date": r.get("dateDernierTraitementEtablissement"),
             }
             if cand.get("siren"):
                 sirens.add(str(cand["siren"]))
@@ -187,13 +199,14 @@ def load_candidates_for_locations(
         
         if verbose:
             from tqdm import tqdm
-            batches = list(pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE))
             desc = "  [2/3] Loading UniteLegale info"
+            total = math.ceil(pf_ul.metadata.num_rows / BATCH_SIZE) if pf_ul.metadata else None
         else:
-            batches = pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE)
             desc = None
+            total = None
 
-        for batch in (tqdm(batches, desc=desc) if desc else batches):
+        batches = pf_ul.iter_batches(columns=ul_cols, batch_size=BATCH_SIZE)
+        for batch in (tqdm(batches, desc=desc, total=total) if desc else batches):
             pdf = batch.to_pandas()
             matches = pdf[pdf["siren"].isin(sirens)]
             
@@ -232,6 +245,14 @@ def load_candidates_for_locations(
                 siren = cand.get("siren")
                 if siren and siren in pm_names:
                     cand["pm_dirigeant_names"] = pm_names[siren]
+
+    # Drop candidates with no usable names (these tend to pollute top-k with address-only matches).
+    if drop_unnamed_candidates:
+        before = len(mapping)
+        mapping = {siret: cand for siret, cand in mapping.items() if build_candidate_names(cand)}
+        if verbose:
+            dropped = before - len(mapping)
+            print(f"  Dropped {dropped} / {before} candidates without names")
 
     return mapping
 
