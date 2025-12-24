@@ -25,7 +25,7 @@ from __future__ import annotations
 
 import os
 import re
-from typing import Dict, List, Set
+from typing import Any, Dict, List, Mapping, Set
 
 import pandas as pd
 from rapidfuzz.distance import JaroWinkler, Levenshtein
@@ -205,6 +205,11 @@ def build_address(cand: dict) -> str:
     Returns:
         Normalized address string
     """
+    if isinstance(cand, dict):
+        cached = cand.get("_xgb_cached_addr_norm")
+        if isinstance(cached, str):
+            return cached
+
     parts = [
         cand.get("numeroVoie"),
         cand.get("typeVoie"),
@@ -213,7 +218,10 @@ def build_address(cand: dict) -> str:
     addr = " ".join(str(x) for x in parts if x and str(x).strip())
     if not addr and cand.get("complementAdresse"):
         addr = str(cand["complementAdresse"])
-    return normalize_text(addr)
+    addr_norm = normalize_text(addr)
+    if isinstance(cand, dict):
+        cand["_xgb_cached_addr_norm"] = addr_norm
+    return addr_norm
 
 
 def extract_street_number(addr: str | None) -> str | None:
@@ -246,11 +254,29 @@ def get_street_name(cand: dict) -> str:
 
     Used for street_name_jaro feature to compare street names independently.
     """
+    if isinstance(cand, dict):
+        cached = cand.get("_xgb_cached_street_name_norm")
+        if isinstance(cached, str):
+            return cached
     parts = [
         cand.get("typeVoie"),
         cand.get("libelleVoie"),
     ]
-    return normalize_text(" ".join(str(x) for x in parts if x and str(x).strip()))
+    norm = normalize_text(" ".join(str(x) for x in parts if x and str(x).strip()))
+    if isinstance(cand, dict):
+        cand["_xgb_cached_street_name_norm"] = norm
+    return norm
+
+
+def _candidate_city_norm(cand: dict) -> str:
+    if isinstance(cand, dict):
+        cached = cand.get("_xgb_cached_city_norm")
+        if isinstance(cached, str):
+            return cached
+    norm = normalize_text(cand.get("city"))
+    if isinstance(cand, dict):
+        cand["_xgb_cached_city_norm"] = norm
+    return norm
 
 
 def extract_street_name_from_address(addr: str | None) -> str:
@@ -486,45 +512,105 @@ def _init_name_feature_defaults() -> Dict[str, float]:
 # Main feature computation
 # --------------------------------------------------------------------------- #
 
+def preprocess_crm_row(crm_row: Mapping[str, Any]) -> Dict[str, Any]:
+    """Precompute CRM-side normalizations once per row (for faster inference)."""
+    crm_address_raw = crm_row.get("crm_address", "")
+    crm_name = strip_location_from_crm_name(crm_row)
+    crm_city = crm_row.get("crm_city_addr") or crm_row.get("crm_city", "")
 
-def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
+    crm_tokens_all = set(crm_name.split())
+    is_crm_school = float(bool(crm_tokens_all & SCHOOL_TOKENS))
+
+    # D6: alias extraction (normalized, filtered)
+    crm_raw = crm_row.get("crm_name", "")
+    aliases = [normalize_text(m) for m in re.findall(r"\(([^)]+)\)", str(crm_raw))]
+    blacklist = {"SIEGE", "BAT", "BATIMENT", "ETAGE", "LOCAL", "AGENCE", "RDC"}
+    aliases = [a for a in aliases if len(a) >= 3 and a not in blacklist and not a.isdigit()]
+
+    # D11: CRM token set (normalized + stopword filtered)
+    crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 3}
+    crm_tokens -= {"GROUPE", "SOCIETE", "HOLDING"}
+
+    return {
+        "crm_name": crm_name,
+        "crm_name_semantic": strip_location_from_crm_name(crm_row, preserve_case=True),
+        "crm_addr": normalize_text(crm_address_raw),
+        "crm_city": crm_city,
+        "crm_city_norm": normalize_text(crm_city),
+        "crm_street_num": extract_street_number(crm_address_raw),
+        "crm_street_name": extract_street_name_from_address(crm_address_raw),
+        "postcode": crm_row.get("postcode"),
+        "aliases": aliases,
+        "crm_tokens": crm_tokens,
+        "is_crm_school": is_crm_school,
+    }
+
+
+def build_semantic_name_pool(
+    candidate_names: List[CandidateName],
+    *,
+    crm_city_norm: str,
+    cand_city_norm: str,
+) -> List[str]:
+    """Build the semantic candidate-name pool with the same rules as make_features()."""
+    if not candidate_names:
+        return []
+
+    pool: List[str] = []
+    for nm in candidate_names:
+        city_overlap = max(
+            token_overlap(nm.text, cand_city_norm),
+            token_overlap(nm.text, crm_city_norm),
+        )
+        is_city_like = city_overlap > CITY_OVERLAP_THRESHOLD and len(nm.text.split()) <= CITY_MAX_TOKENS
+        is_person_nm = nm.source == NameSource.PERSON_NAME or looks_like_person_name(nm.text)
+        if not is_city_like and not is_person_nm:
+            pool.append(nm.text)
+
+    if pool:
+        return pool
+    return [nm.text for nm in candidate_names]
+
+
+def make_features_from_preprocessed(
+    crm: Mapping[str, Any],
+    cand: dict,
+    skip_semantic: bool = False,
+) -> Dict[str, float]:
     """
     Compute all similarity features between a CRM row and a SIRENE candidate.
 
     This function is used by both training and inference to ensure consistency.
 
     Args:
-        crm_row: Pandas Series with CRM data (crm_name, crm_address, postcode, etc.)
+        crm: Preprocessed CRM dict (see preprocess_crm_row)
         cand: Dictionary with SIRENE candidate data
+        skip_semantic: If True, skip expensive semantic features (for stage-1 ranking)
 
     Returns:
         Dictionary with all feature values
     """
     # Normalize inputs
-    crm_name = strip_location_from_crm_name(crm_row)
-    crm_addr = normalize_text(crm_row.get("crm_address", ""))
+    crm_name = crm.get("crm_name", "")
+    crm_addr = crm.get("crm_addr", "")
     cand_addr = build_address(cand)
 
     # Bag of names for the candidate
     candidate_names: List[CandidateName] = build_candidate_names(cand)
 
     # Street components
-    crm_street_num = extract_street_number(crm_row.get("crm_address"))
+    crm_street_num = crm.get("crm_street_num")
     cand_street_num = cand.get("numeroVoie")
     if cand_street_num:
         cand_street_num = str(cand_street_num)
 
-    crm_street_name = extract_street_name_from_address(crm_row.get("crm_address"))
+    crm_street_name = crm.get("crm_street_name", "")
     cand_street_name = get_street_name(cand)
 
-    crm_city = crm_row.get("crm_city_addr") or crm_row.get("crm_city", "")
-    crm_city_norm = normalize_text(crm_city)
-    cand_city_norm = normalize_text(cand.get("city"))
-    crm_is_person = looks_like_person_name(crm_name)
-    
-    # Detect school context in CRM name
-    crm_tokens_all = set(crm_name.split())
-    is_crm_school = float(bool(crm_tokens_all & SCHOOL_TOKENS))
+    crm_city = crm.get("crm_city", "")
+    crm_city_norm = crm.get("crm_city_norm", "")
+    cand_city_norm = _candidate_city_norm(cand)
+    is_crm_school = float(crm.get("is_crm_school", 0.0))
 
     # ---------------- Name similarities (aggregated) -----------------
     name_features = _init_name_feature_defaults()
@@ -617,20 +703,21 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
             semantic_pool = [s["nm"].text for s in sims]
         
         # Use original case version for semantic embedding (CamelCase split needs it)
-        crm_name_semantic = strip_location_from_crm_name(crm_row, preserve_case=True)
+        crm_name_semantic = crm.get("crm_name_semantic", "")
         
-        # Calculate semantic scores using batch GPU encoding
-        from .semantic import top2_semantic_similarities
-        sem_max, sem_second, sem_gap = top2_semantic_similarities(crm_name_semantic, semantic_pool)
-        name_features["name_semantic_max"] = sem_max
-        name_features["name_semantic_second"] = sem_second
-        name_features["name_semantic_gap"] = sem_gap
+        # Calculate semantic scores using batch GPU encoding (skip if requested)
+        if not skip_semantic:
+            from .semantic import top2_semantic_similarities
+            sem_max, sem_second, sem_gap = top2_semantic_similarities(crm_name_semantic, semantic_pool)
+            name_features["name_semantic_max"] = sem_max
+            name_features["name_semantic_second"] = sem_second
+            name_features["name_semantic_gap"] = sem_gap
 
     # ---------------- Address & location features -----------------
     addr_features = {
         "addr_jaro": jaro_sim(crm_addr, cand_addr),
         "addr_levenshtein": levenshtein_norm(crm_addr, cand_addr),
-        "postcode_match": float(postal_match(crm_row.get("postcode"), cand.get("postcode"))),
+        "postcode_match": float(postal_match(crm.get("postcode"), cand.get("postcode"))),
         "city_match": float(city_match(crm_city, cand.get("city"))),
         "street_number_diff": street_number_diff(crm_street_num, cand_street_num),
         "addr_token_overlap": token_overlap(crm_addr, cand_addr),
@@ -654,10 +741,7 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
     features["is_association"] = float(bool(cand_name_tokens & ASSOCIATION_TOKENS))
     
     # D6: alias_match - check if aliases in parentheses match candidate name
-    crm_raw = crm_row.get("crm_name", "")
-    aliases = [normalize_text(m) for m in re.findall(r"\(([^)]+)\)", str(crm_raw))]
-    blacklist = {"SIEGE", "BAT", "BATIMENT", "ETAGE", "LOCAL", "AGENCE", "RDC"}
-    aliases = [a for a in aliases if len(a) >= 3 and a not in blacklist and not a.isdigit()]
+    aliases = crm.get("aliases") or []
     alias_match_score = 0.0
     if aliases and primary_cand_name:
         cand_norm = normalize_text(primary_cand_name)
@@ -674,9 +758,7 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
         if val:
             ul_tokens.update(normalize_text(str(val)).split())
     
-    crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 3}
-    stopwords = {"GROUPE", "SOCIETE", "HOLDING"}
-    crm_tokens = crm_tokens - stopwords
+    crm_tokens = crm.get("crm_tokens") or set()
     
     if not crm_tokens:
         features["token_overlap_ul"] = 0.0
@@ -712,3 +794,8 @@ def make_features(crm_row: pd.Series, cand: dict) -> Dict[str, float]:
 
     return features
 
+
+def make_features(crm_row: pd.Series, cand: dict, skip_semantic: bool = False) -> Dict[str, float]:
+    """Backward-compatible wrapper (builds CRM preprocessing on the fly)."""
+    crm = preprocess_crm_row(crm_row)
+    return make_features_from_preprocessed(crm, cand, skip_semantic=skip_semantic)

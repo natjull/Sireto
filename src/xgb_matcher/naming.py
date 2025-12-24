@@ -211,6 +211,12 @@ def looks_like_person_name(text: str | None) -> bool:
 
 def build_candidate_names(cand: dict) -> List[CandidateName]:
     """Return all available normalized names for a SIRET candidate."""
+    # Cache in the candidate dict to avoid repeated normalization across many queries.
+    if isinstance(cand, dict):
+        cached = cand.get("_xgb_cached_candidate_names")
+        if cached is not None:
+            return cached
+
     names: List[CandidateName] = []
 
     def add(val: str | None, source: NameSource, *, is_ul: bool = False, is_sigle: bool = False):
@@ -247,6 +253,8 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
     if cj_ul in PERSON_UL_CODES and person_fullname:
         add(person_fullname, NameSource.PERSON_NAME, is_ul=True, is_sigle=False)
 
+    if isinstance(cand, dict):
+        cand["_xgb_cached_candidate_names"] = names
     return names
 
 
@@ -259,6 +267,11 @@ def primary_name(cand: dict) -> str:
     3. PM Dirigeant names (fallback only)
     4. Person name (last resort)
     """
+    if isinstance(cand, dict):
+        cached = cand.get("_xgb_cached_primary_name")
+        if cached is not None:
+            return cached
+
     names = build_candidate_names(cand)
     if not names:
         return ""
@@ -278,10 +291,16 @@ def primary_name(cand: dict) -> str:
     for source in priority_sources:
         for nm in names:
             if nm.source == source:
-                return nm.text
+                chosen = nm.text
+                if isinstance(cand, dict):
+                    cand["_xgb_cached_primary_name"] = chosen
+                return chosen
     
     # Fallback to first available
-    return names[0].text
+    chosen = names[0].text
+    if isinstance(cand, dict):
+        cand["_xgb_cached_primary_name"] = chosen
+    return chosen
 
 
 __all__ = [
