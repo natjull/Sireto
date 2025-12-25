@@ -55,7 +55,156 @@ flowchart TD
 
 ---
 
-## Plan de développement complet pour Codex
+# ROUTING XGBoost SIRETO v1.0
+
+Règles de décision (score = probabilité XGBoost du meilleur candidat) :
+
+```
+AUTO = (
+    score >= 0.99
+    OR (score >= 0.95 AND name_semantic_max >= 0.75)
+    OR (score >= 0.98 AND name_semantic_second >= 0.65)
+)
+REVIEW = score >= 0.70 (sinon)
+NO_MATCH = score < 0.70
+```
+
+Note de stratégie : nous sommes en cours de réflexion sur la manière d'inclure cette "pépite" XGBoost comme socle principal, avec des lookup web utilisés uniquement pour la revue (REVIEW) et non pour l'auto‑match, afin de maximiser la sûreté (zéro faux positif).
+
+---
+
+# Diagramme cible Pipe V7 (XGBoost-first + fallback Web déterministe)
+
+Objectif : faire du **XGBoost** le socle (AUTO ≈ 88% du bon candidat sur set de test, sans faux positif) et remplacer les LLM par un traitement **100% déterministe**. Les appels “web” ne servent qu’à tenter d’**upgrader** des cas `REVIEW` / `NO_MATCH` en `MATCH` **sans jamais créer de faux positif**.
+
+```mermaid
+flowchart TD
+
+    %% Entrée CRM
+    A[CSV CRM<br/>(nom, n° voie, voie, CP, commune, INSEE...)] --> B[Pré-traitements déterministes<br/>(normalisation light + clés communes)]
+
+    %% Pool candidats SIRENE local
+    B --> C[Préchargement / pool candidats SIRENE<br/>(par INSEE, sinon CP+ville)]
+    C --> D[(Cache SQLite / parquet SIRENE)]
+
+    %% Scoring ML
+    B --> E[Scoring XGBoost top-k<br/>(features nom/adresse + sémantique)]
+    E --> F{Routing XGBoost v1.0<br/>(AUTO / REVIEW / NO_MATCH)}
+
+    %% Sortie directe
+    F -->|AUTO| G[Sortie MATCH (XGB)<br/>SIRET=top1 + score + features]
+
+    %% Fallback Web "officiel"
+    F -->|REVIEW / NO_MATCH| H[Web lookup multi-sites (1 requête)<br/>Google/Brave alternés (quotas)]
+    H --> I[Extraction SIREN/SIRET depuis URLs/snippets<br/>+ dédup par identifiant]
+    I --> J[Validation SIRENE + règles déterministes<br/>(commune/CP + adresse + consensus multi-sites)]
+    J --> K{Match web “sans risque” ?}
+
+    K -->|Oui| L[Upgrade MATCH (WEB)<br/>SIRET retenu + preuves]
+    K -->|Non| M[Conserver REVIEW/NO_MATCH<br/>(pas d’auto-match)]
+
+    G & L & M --> N[Export final<br/>CSV/JSON + métriques/logs]
+```
+
+### Principes du Pipe V7
+
+- **Plus de LLM** : uniquement des features ML (XGBoost) + des règles déterministes.
+- **Sécurité** : on ne sort `MATCH` (via web) que si l’évidence est “multi-sources + cohérente SIRENE”.
+- **Sobriété quotas** : web lookup uniquement pour `REVIEW` / `NO_MATCH`, avec cache des requêtes et alternance Google/Brave.
+- **Traçabilité** : pour chaque décision `MATCH`, conserver “preuves” (sites/URLs + checks passés).
+
+### Lookup Web : Google + Brave (remplacement Qwant)
+
+But : conserver **la même forme de requête** que le lookup Qwant actuel, mais via des APIs “officielles”, en une requête multi-sites :
+
+- Sites cibles (1 requête) : `pappers.fr`, `annuaire-entreprises.data.gouv.fr`, `societe.com`, `entreprises.lefigaro.fr`
+- Exemple de query (à ajuster par moteur) :
+  - `("{CP}" {NUMERO} {VOIE} {NOM}) (site:pappers.fr OR site:annuaire-entreprises.data.gouv.fr OR site:societe.com OR site:entreprises.lefigaro.fr)`
+- **Alternance quota** :
+  - stratégie simple : round-robin Google ↔ Brave (ou “si Google quota atteint → Brave”)
+  - persister des compteurs dans un petit cache SQLite/JSON (pour rester strictement sous les limites free)
+- **Google** : l’API “Custom Search / Programmable Search Engine” nécessite une clé **et** un identifiant de moteur (`cx`).
+- **Important (sécurité repo)** : ne jamais committer de clés ; utiliser des variables d’env (ex. `SIRETO_GOOGLE_API_KEY`, `SIRETO_GOOGLE_CSE_ID`, `SIRETO_BRAVE_API_KEY`).
+
+### Décision déterministe “WEB MATCH” (objectif : 0 faux positif)
+
+Idée générale : on ne fait “web→MATCH” que si le web donne un **SIRET unique** et que SIRENE confirme **commune + adresse**. Sinon, on ne force pas (on garde `REVIEW/NO_MATCH`).
+
+Règles proposées (conservatrices, à calibrer) :
+
+1) **Collecte & normalisation**
+   - extraire `siret` (14 chiffres) et `siren` (9 chiffres) depuis **URL** + éventuellement **snippet/title**
+   - construire des groupes par `siret` (prioritaire), sinon par `siren`
+   - “preuves” = (site, provider, rank, url)
+
+2) **Validation SIRENE (hard filters)**
+   - rejet si `postcode/city/insee` incompatibles avec la ligne CRM (selon disponibilité)
+   - rejet si le SIRET pointe vers un établissement manifestement hors zone (commune différente) sauf cas limite “CP partagé” (option)
+   - rejet si adresse incohérente (numéro de voie incompatible si présent, et similarité voie trop basse)
+
+3) **Consensus multi-sources (anti-faux-positif)**
+   - `MATCH` si un même `siret` est trouvé :
+     - sur **≥ 2 sites distincts** (ex. pappers + societe), OU
+     - par **2 providers** (Google + Brave), même si 1 seul site
+   - et si la validation SIRENE “strict” passe (CP exact + similarité voie haute + numéro de voie compatible)
+
+4) **Gestion des SIREN (sans SIRET)**
+   - par défaut : **pas de MATCH** sur SIREN seul
+   - exception possible (si besoin de recall) : si le SIREN n’a **qu’un seul établissement actif** dans la commune ET que l’adresse match strictement → produire le SIRET associé
+
+5) **Cas ambigus**
+   - plusieurs SIRET valides ou pas de consensus : ne pas arbitrer → conserver `REVIEW` (ou `NO_MATCH` si le web est vide)
+
+### Script de routing en sortie XGBoost (spécification)
+
+Besoin : un script “mince” qui applique **ROUTING XGBoost v1.0** sur les sorties top-k, puis déclenche (ou non) le fallback web.
+
+- Entrée : un CSV top-k (ex. produit par `scripts/infer_xgb_matcher_topk.py`) groupable par `crm_id`
+- Données minimales attendues par ligne :
+  - `crm_id`, `rank`, `siret_candidate`, `score`
+  - + les features nécessaires au routing : `name_semantic_max`, `name_semantic_second` (à inclure dans le CSV top-k, ou à recalculer à partir des features)
+- Sortie (1 ligne par `crm_id`) :
+  - `crm_id`, `xgb_status` (`AUTO`/`REVIEW`/`NO_MATCH`), `chosen_siret_xgb`, `score_top1`, `score_top2`
+  - `web_status` (`UPGRADE_MATCH`/`NO_UPGRADE`), `chosen_siret_web` (optionnel), `web_evidence` (json)
+  - `final_status` (`MATCH`/`REVIEW`/`NO_MATCH`), `chosen_siret_final`
+
+---
+
+## Plan de mise en œuvre (Pipe V7 – cible, sans LLM)
+
+### 1) Routing XGBoost (sortie “AUTO/REVIEW/NO_MATCH”)
+
+- Ajouter un script dédié (ex. `scripts/route_xgb_results.py`) ou compléter `scripts/infer_xgb_matcher_topk.py` pour produire :
+  - un fichier “résumé par CRM” (1 ligne par `crm_id`) avec les champs nécessaires au routing
+  - un export stable consommable par la suite “web fallback”
+
+### 2) Fallback Web “officiel” (Google/Brave) – adaptation minimale du lookup Qwant
+
+- Objectif minimal : garder la signature et les structures existantes de `src/pipe_v6/external_sources.py` :
+  - conserver `extract_siren_siret_from_url()` et la logique “sites → RawCandidate”
+  - remplacer `qwant_search()` par un petit “moteur” `web_search()` qui appelle **Google** ou **Brave**
+  - étendre la liste des sites avec `entreprises.lefigaro.fr`
+- Ajouter :
+  - un cache local de résultats (clé = query + provider + page) pour ne pas reconsommer les quotas
+  - une stratégie d’alternance (round-robin + backoff si quota/429)
+
+### 3) Décision déterministe WEB (upgrade sans faux positif)
+
+- Implémenter un module “validator” qui prend :
+  - ligne CRM + hits web + cache SIRENE
+  - renvoie : `MATCH` (avec preuves) ou “pas d’upgrade”
+- Démarrer conservateur (consensus multi-sources + checks stricts) puis élargir progressivement :
+  - ajout d’heuristiques “SIREN→SIRET unique” (ultra strict)
+  - meilleure normalisation d’adresse (tokenisation + jaro/levenshtein déjà présents côté features)
+
+### 4) Pipeline orchestration V7
+
+- Orchestration : `XGB routing` → `web fallback` (si nécessaire) → `export`
+- Métriques : taux d’upgrade web, taux de web vide, distribution des preuves (sites/providers)
+
+---
+
+## Plan de développement complet pour Codex (Pipe V6 – historique, avec LLM)
 
 Je pars du principe que :
 

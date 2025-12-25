@@ -6,6 +6,8 @@ __pycache__/
 venv/
 .env.local
 .env.*.local
+.secrets/*
+!.secrets/README.md
 .DS_Store
 .idea/
 .vscode/
