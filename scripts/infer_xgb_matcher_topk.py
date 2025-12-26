@@ -863,6 +863,9 @@ def main():
             candidate_state = None
             if etat_admin is not None:
                 candidate_state = "FERME" if etat_admin == "F" else "OUVERT"
+            feat_row = feats_n[idx_k]
+            name_semantic_max = float(feat_row.get("name_semantic_max", 0.0) or 0.0)
+            name_semantic_second = float(feat_row.get("name_semantic_second", 0.0) or 0.0)
             shap_json = None
             if shap_contribs is not None and X_n_shap is not None and Xs_n_shap is not None:
                 contrib_row = shap_contribs[rank - 1]
@@ -904,6 +907,8 @@ def main():
                 "crm_city": r.get("crm_city"),
                 "siret_candidate": siret_k,
                 "score": float(scores[idx_k]),
+                "name_semantic_max": name_semantic_max,
+                "name_semantic_second": name_semantic_second,
                 "candidate_name": cand_name,
                 "candidate_addr": build_address(cand_k),
                 "candidate_city": cand_k.get("city"),

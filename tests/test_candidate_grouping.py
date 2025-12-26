@@ -17,7 +17,7 @@ def test_group_by_siret_multiple_sources():
     candidates = [
         create_raw_candidate(source="RNE", siret="12345678901234", label="ACME"),
         create_raw_candidate(source="DATAGOUV", siret="12345678901234", label="ACME SA"),
-        create_raw_candidate(source="QWANT_PAPPERS", siret="12345678901234", label="Acme"),
+        create_raw_candidate(source="WEB_PAPPERS", siret="12345678901234", label="Acme"),
     ]
 
     groups = group_raw_candidates(candidates)
@@ -27,7 +27,7 @@ def test_group_by_siret_multiple_sources():
     assert len(groups[("siret", "12345678901234")]) == 3
 
     sources = [c.source for c in groups[("siret", "12345678901234")]]
-    assert sources == ["RNE", "DATAGOUV", "QWANT_PAPPERS"]
+    assert sources == ["RNE", "DATAGOUV", "WEB_PAPPERS"]
 
 
 def test_group_by_siren_when_siret_absent():
@@ -45,7 +45,7 @@ def test_group_by_siren_when_siret_absent():
 
 def test_exclude_candidates_without_identifiers():
     candidates = [
-        create_raw_candidate(source="QWANT_ANNUAIRE", label="Unknown Company"),
+        create_raw_candidate(source="WEB_ANNUAIRE", label="Unknown Company"),
         create_raw_candidate(source="RNE", siret="12345678901234", label="Valid"),
     ]
 
@@ -57,7 +57,7 @@ def test_exclude_candidates_without_identifiers():
 
 def test_preserve_order_within_group():
     candidates = [
-        create_raw_candidate(source="QWANT_SOCIETE", siret="11111111111111"),
+        create_raw_candidate(source="WEB_SOCIETE", siret="11111111111111"),
         create_raw_candidate(source="RNE", siret="11111111111111"),
         create_raw_candidate(source="DATAGOUV", siret="11111111111111"),
     ]
@@ -65,7 +65,7 @@ def test_preserve_order_within_group():
     groups = group_raw_candidates(candidates)
 
     sources = [c.source for c in groups[("siret", "11111111111111")]]
-    assert sources == ["QWANT_SOCIETE", "RNE", "DATAGOUV"]
+    assert sources == ["WEB_SOCIETE", "RNE", "DATAGOUV"]
 
 
 def test_siret_and_siren_separate_groups():
@@ -90,8 +90,8 @@ def test_empty_input_returns_empty_dict():
 
 def test_all_candidates_without_ids_returns_empty_dict():
     candidates = [
-        create_raw_candidate(source="QWANT_ANNUAIRE", label="A"),
-        create_raw_candidate(source="QWANT_SOCIETE", label="B"),
+        create_raw_candidate(source="WEB_ANNUAIRE", label="A"),
+        create_raw_candidate(source="WEB_SOCIETE", label="B"),
     ]
 
     groups = group_raw_candidates(candidates)
