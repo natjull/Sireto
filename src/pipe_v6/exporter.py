@@ -33,6 +33,8 @@ EXPORT_COLUMNS: list[str] = [
     "normalized_name",
     "normalized_address",
     "reason",
+    "xgb_status",
+    "xgb_shap",
     "sources",
     "candidate_count_total",
     "candidate_count_used",

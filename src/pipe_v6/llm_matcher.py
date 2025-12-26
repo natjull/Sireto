@@ -100,12 +100,12 @@ def build_matcher_prompt(
         lines.append(f"- Ville : {cand.city}")
         lines.append(f"- Code INSEE : {cand.insee_code or 'N/A'}")
         lines.append(f"- Catégorie SIRENE : {cand.category}")
-        if getattr(cand, "qwant_ranks", None):
+        if getattr(cand, "web_ranks", None):
             ranks = ", ".join(
                 f"{src.split('_',1)[1].lower()}=rank{rk}"
-                for src, rk in sorted(cand.qwant_ranks.items())
+                for src, rk in sorted(cand.web_ranks.items())
             )
-            lines.append(f"- Rangs Qwant (0=top) : {ranks}")
+            lines.append(f"- Rangs Web (0=top) : {ranks}")
         lines.append(
             f"- Sources : {', '.join(cand.sources)} ({source_count} source{'s' if source_count > 1 else ''})"
         )
@@ -115,13 +115,13 @@ def build_matcher_prompt(
     lines.append("# CAS DE CHANGEMENT DE NOM / RACHAT")
     lines.append("- Une entreprise peut changer de nom (rebranding), être rachetée ou fusionner.")
     lines.append("- Si l'adresse (numéro + voie + code postal + ville) est identique et précise, considère qu'il s'agit probablement du même établissement même si le nom a changé.")
-    lines.append("- Indices forts de rebranding : même adresse exacte + multi-source (QWANT_*, RNE, DATAGOUV), SIREN/SIRET identique dans plusieurs sources, nom de groupe connu au lieu d'une ancienne enseigne.")
-    lines.append("- Si le même SIREN/SIRET ressort dans les premiers résultats des trois requêtes Qwant, c'est un signal très fort, même si le nom diffère.")
+    lines.append("- Indices forts de rebranding : même adresse exacte + multi-source (WEB_*, RNE, DATAGOUV), SIREN/SIRET identique dans plusieurs sources, nom de groupe connu au lieu d'une ancienne enseigne.")
+    lines.append("- Si le même SIREN/SIRET ressort dans les premiers résultats web multi-sites, c'est un signal très fort, même si le nom diffère.")
     lines.append("")
 
     lines.append("# REGLES DE MATCHING (applique-les dans cet ordre)")
     lines.append("1) Adresse = critère principal : adresse exacte (numéro+voie+CP+ville) => très forte confiance; adresse partielle => confiance moyenne; adresse différente => très faible.")
-    lines.append("2) Multi-source : 2+ sources indépendantes (QWANT_*, RNE, DATAGOUV) augmentent fortement la confiance.")
+    lines.append("2) Multi-source : 2+ sources indépendantes (WEB_*, RNE, DATAGOUV) augmentent fortement la confiance.")
     lines.append("3) Catégorie : privilégie les candidats cohérents avec la catégorie CRM. Incohérence = pénalité, sauf si l'adresse est parfaite et unique.")
     lines.append("4) Nom : peut être très différent (enseigne vs raison sociale, rachat, sigle). Si l'adresse est parfaite et multi-source, accepte des différences importantes de nom, y compris un nom de groupe.")
     lines.append("5) NO_MATCH seulement si aucun candidat n'a une adresse précise cohérente, ou s'il y a plusieurs candidats avec des adresses fortes mais contradictoires. Ne retourne pas NO_MATCH uniquement parce que le nom a changé si adresse + sources convergent.")

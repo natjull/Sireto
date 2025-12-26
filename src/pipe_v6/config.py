@@ -56,6 +56,18 @@ class PipelineConfig:
     # https://api.qwant.com/api/search/web now returns 404.
     qwant_base_url: str = "https://api.qwant.com/v3/search/web"
     qwant_enabled: bool = True
+    # Official web search providers (Google Custom Search + Brave Search)
+    google_api_key: str = ""
+    google_cse_id: str = ""
+    brave_api_key: str = ""
+    web_search_enabled: bool = True
+    google_daily_quota: int = 100
+    brave_daily_quota: int = 67
+    web_cache_path: Path = _expand_path("data/web_cache.sqlite")
+    web_cache_ttl_days: int = 7
+    web_negative_cache_ttl_hours: int = 24
+    # XGBoost routing output (CSV from scripts/route_xgb_results.py).
+    xgb_routed_path: Path | None = None
     datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
     rne_enabled: bool = True
 
@@ -147,6 +159,16 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         # Keep the v3 endpoint as default; the legacy /api/search/web returns 404.
         "qwant_base_url": "https://api.qwant.com/v3/search/web",
         "qwant_enabled": True,
+        "google_api_key": "",
+        "google_cse_id": "",
+        "brave_api_key": "",
+        "web_search_enabled": None,
+        "google_daily_quota": 100,
+        "brave_daily_quota": 67,
+        "web_cache_path": "data/web_cache.sqlite",
+        "web_cache_ttl_days": 7,
+        "web_negative_cache_ttl_hours": 24,
+        "xgb_routed_path": "",
         "datagouv_api_url": "https://recherche-entreprises.api.gouv.fr",
         "rne_enabled": True,
         "llm_provider": "ollama",
@@ -184,9 +206,19 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         key: _from_sources(key, default) for key, default in defaults.items()
     }
 
-    path_keys = {"crm_path", "output_path", "sqlite_path", "log_path"}
+    # If web_search_enabled is not set, fall back to qwant_enabled for backward compatibility.
+    if extracted.get("web_search_enabled") in (None, ""):
+        extracted["web_search_enabled"] = extracted.get("qwant_enabled", True)
+
+    path_keys = {"crm_path", "output_path", "sqlite_path", "log_path", "web_cache_path"}
     for key in path_keys:
         extracted[key] = _expand_path(extracted[key])
+
+    # xgb_routed_path is optional (empty string => None)
+    if extracted.get("xgb_routed_path") in (None, ""):
+        extracted["xgb_routed_path"] = None
+    else:
+        extracted["xgb_routed_path"] = _expand_path(extracted["xgb_routed_path"])
 
     numeric_casts: dict[str, Any] = {
         "temperature": float,
@@ -203,6 +235,10 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "confidence_auto_match": float,
         "confidence_review_min": float,
         "max_candidates_llm_matcher": int,
+        "google_daily_quota": int,
+        "brave_daily_quota": int,
+        "web_cache_ttl_days": int,
+        "web_negative_cache_ttl_hours": int,
     }
 
     for field_name, caster in numeric_casts.items():
@@ -218,6 +254,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "category_filter_enabled",
         "category_filter_fallback",
         "qwant_enabled",
+        "web_search_enabled",
         "rne_enabled",
     ]
     for field_name in bool_fields:

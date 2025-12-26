@@ -1,7 +1,8 @@
 """Common candidate structures for Pipe V6 (tasks 4.x, 5.x).
 
 Defines the unified data model used to represent raw candidates coming from
-RNE, DataGouv, and Qwant before SIRENE enrichment and LLM arbitrage.
+RNE, DataGouv, and official web search (Google/Brave) before SIRENE enrichment
+and LLM arbitrage.
 """
 
 from __future__ import annotations
@@ -17,17 +18,19 @@ from pipe_v6.category_mapping import map_legal_to_category
 RAW_CANDIDATE_SOURCES = (
     "RNE",
     "DATAGOUV",
-    "QWANT_PAPPERS",
-    "QWANT_ANNUAIRE",
-    "QWANT_SOCIETE",
+    "WEB_PAPPERS",
+    "WEB_ANNUAIRE",
+    "WEB_SOCIETE",
+    "WEB_LEFIGARO",
 )
 
 CandidateSource = Literal[
     "RNE",
     "DATAGOUV",
-    "QWANT_PAPPERS",
-    "QWANT_ANNUAIRE",
-    "QWANT_SOCIETE",
+    "WEB_PAPPERS",
+    "WEB_ANNUAIRE",
+    "WEB_SOCIETE",
+    "WEB_LEFIGARO",
 ]
 
 
@@ -140,7 +143,7 @@ def group_raw_candidates(
     - Excludes candidates without identifiers.
 
     Args:
-        candidates: Flat list from multiple sources (RNE, DataGouv, Qwant).
+        candidates: Flat list from multiple sources (RNE, DataGouv, Web).
 
     Returns:
         Dict mapping ("siret"|"siren", value) -> list of RawCandidate.
@@ -177,7 +180,7 @@ class NormalizedCandidate:
     sources: list[str]
     raw_candidates: list[RawCandidate]
     category: str
-    qwant_ranks: dict[str, int] = field(default_factory=dict)
+    web_ranks: dict[str, int] = field(default_factory=dict)
 
     def to_dict(self) -> dict[str, Any]:
         """Serialize to a plain dictionary for export/logging."""
@@ -194,7 +197,7 @@ class NormalizedCandidate:
             "sources": list(self.sources),
             "raw_candidates": [rc.to_dict() for rc in self.raw_candidates],
             "category": self.category,
-            "qwant_ranks": dict(self.qwant_ranks),
+            "web_ranks": dict(self.web_ranks),
         }
 
 
@@ -234,10 +237,10 @@ def enrich_candidates_from_sirene(
     for key, raw_candidates in groups.items():
         key_type, value = key
 
-        # Aggregate per-source Qwant ranks (lower = better) for this group
-        qwant_ranks: dict[str, int] = {}
+        # Aggregate per-source web ranks (lower = better) for this group
+        web_ranks: dict[str, int] = {}
         for rc in raw_candidates:
-            if rc.source.startswith("QWANT_"):
+            if rc.source.startswith("WEB_"):
                 rank_val = rc.extra.get("rank")
                 try:
                     if rank_val is None:
@@ -245,8 +248,8 @@ def enrich_candidates_from_sirene(
                     rank_int = int(rank_val)
                 except Exception:
                     continue
-                if rc.source not in qwant_ranks or rank_int < qwant_ranks[rc.source]:
-                    qwant_ranks[rc.source] = rank_int
+                if rc.source not in web_ranks or rank_int < web_ranks[rc.source]:
+                    web_ranks[rc.source] = rank_int
 
         if key_type == "siret":
             row = conn.execute(
@@ -268,7 +271,7 @@ def enrich_candidates_from_sirene(
                     sources=_deduplicate_sources(raw_candidates),
                     raw_candidates=raw_candidates,
                     category=map_legal_to_category(row["legal_nature"], log),
-                    qwant_ranks=qwant_ranks,
+                    web_ranks=web_ranks,
                 )
                 normalized.append(norm)
                 log.debug("SIRET %s: found 1 row", value)
@@ -292,7 +295,7 @@ def enrich_candidates_from_sirene(
                     sources=_deduplicate_sources(raw_candidates),
                     raw_candidates=raw_candidates,
                     category=map_legal_to_category(None, log),
-                    qwant_ranks=qwant_ranks,
+                    web_ranks=web_ranks,
                 )
                 normalized.append(norm)
                 fallback_used += 1
@@ -347,7 +350,7 @@ def enrich_candidates_from_sirene(
                     sources=sources,
                     raw_candidates=raw_candidates,
                     category=map_legal_to_category(row["legal_nature"], log),
-                    qwant_ranks=qwant_ranks,
+                    web_ranks=web_ranks,
                 )
                 normalized.append(norm)
             continue

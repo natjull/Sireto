@@ -59,7 +59,7 @@ class TestRawCandidateCreation:
 
     def test_candidate_without_identifiers_allowed(self):
         cand = create_raw_candidate(
-            source="QWANT_ANNUAIRE",
+            source="WEB_ANNUAIRE",
             label="Some business",
             url="https://example.com",
         )
@@ -89,7 +89,7 @@ class TestCandidateKey:
 
     def test_key_without_identifiers(self):
         cand = create_raw_candidate(
-            source="QWANT_ANNUAIRE",
+            source="WEB_ANNUAIRE",
             label="Unknown business",
         )
 
@@ -312,7 +312,7 @@ class TestEnrichCandidatesFromSirene:
 
         groups = {
             ("siren", "123456789"): [
-                create_raw_candidate(source="QWANT_PAPPERS", siren="123456789", label="ACME"),
+                create_raw_candidate(source="WEB_PAPPERS", siren="123456789", label="ACME"),
             ]
         }
 
@@ -339,13 +339,13 @@ class TestEnrichCandidatesFromSirene:
                 create_raw_candidate(source="RNE", siret="12345678900055"),
                 create_raw_candidate(source="DATAGOUV", siret="12345678900055"),
                 create_raw_candidate(source="RNE", siret="12345678900055"),
-                create_raw_candidate(source="QWANT_PAPPERS", siret="12345678900055"),
+                create_raw_candidate(source="WEB_PAPPERS", siret="12345678900055"),
             ]
         }
 
         res = enrich_candidates_from_sirene(groups, conn)
 
-        assert res[0].sources == ["RNE", "DATAGOUV", "QWANT_PAPPERS"]
+        assert res[0].sources == ["RNE", "DATAGOUV", "WEB_PAPPERS"]
 
     def test_siren_respects_limit_20(self, tmp_path: Path):
         conn = self._conn(tmp_path)
@@ -438,7 +438,7 @@ class TestEnrichCandidatesFromSirene:
 
         groups = {
             ("siret", "22222222200022"): [
-                create_raw_candidate(source="QWANT_PAPPERS", siret="22222222200022"),
+                create_raw_candidate(source="WEB_PAPPERS", siret="22222222200022"),
             ]
         }
 

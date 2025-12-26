@@ -64,7 +64,7 @@ def test_build_matcher_prompt_contains_sections():
 def test_build_matcher_prompt_includes_multi_source_flag():
     row = {"crm_name": "ACME", "street_number": "", "street_name": "", "postcode": "", "city": ""}
     norm = NormalizedCRMEntry("ACME", "1 RUE 00000", "PRIVE")
-    candidates = [_cand(1, "PRIVE", ["RNE", "DATAGOUV", "QWANT"])]
+    candidates = [_cand(1, "PRIVE", ["RNE", "DATAGOUV", "WEB"])]
 
     prompt = build_matcher_prompt(row, norm, candidates)
 

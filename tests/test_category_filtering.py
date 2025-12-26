@@ -129,7 +129,7 @@ class TestFilterCandidatesByCategory:
     def test_limit_and_sort_by_sources(self):
         candidates = [
             _candidate("12345678900001", "PRIVE", ["RNE"]),
-            _candidate("12345678900002", "PRIVE", ["RNE", "DATAGOUV", "QWANT"]),
+            _candidate("12345678900002", "PRIVE", ["RNE", "DATAGOUV", "WEB"]),
             _candidate("12345678900003", "PRIVE", ["RNE", "DATAGOUV"]),
         ]
         cfg = _config(max_candidates_llm_matcher=2)

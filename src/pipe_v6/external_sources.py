@@ -3,16 +3,19 @@
 Implements:
 - RNE search (task 4.2)
 - DataGouv Annuaire-entreprises search (task 4.3)
-
-Qwant sources will be added in subsequent tasks.
+- Official web search (Google / Brave) for multisite lookups.
 """
 
 from __future__ import annotations
 
+import hashlib
 import json
 import logging
 import re
+import sqlite3
 import time
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Dict, List
 from urllib.parse import urlencode, urlparse
 from urllib.error import HTTPError, URLError
@@ -34,13 +37,21 @@ from .rne_client import RneClient, _map_company_to_candidates
 
 LOGGER = logging.getLogger(__name__)
 
+# Brave rate limiter: 1 request per second on the Free plan
+_BRAVE_LAST_REQUEST_TS: float = 0.0
+_BRAVE_RATE_LIMIT_SEC: float = 1.0
+
 
 class DataGouvApiError(RuntimeError):
     """Raised when the DataGouv API fails after retries or returns invalid data."""
 
 
-class QwantApiError(RuntimeError):
-    """Raised when the Qwant API fails after retries or returns invalid data."""
+class WebSearchApiError(RuntimeError):
+    """Raised when the web search API fails after retries or returns invalid data."""
+
+
+class QwantApiError(WebSearchApiError):
+    """Deprecated alias for legacy Qwant errors (kept for backward compatibility)."""
 
 
 def search_rne(
@@ -108,12 +119,14 @@ def search_rne(
 
 __all__ = [
     "DataGouvApiError",
+    "WebSearchApiError",
     "QwantApiError",
     "search_datagouv",
     "search_rne",
-    "qwant_search",
-    "search_qwant_sites",
+    "web_search",
+    "search_web_sites",
     "extract_siren_siret_from_url",
+    "extract_siren_siret_from_text",
 ]
 
 
@@ -373,190 +386,444 @@ def search_datagouv(
     return candidates
 
 
-# --------------------------------------------------------------------------- Qwant
+# --------------------------------------------------------------------------- Web search (Google/Brave)
 
 
-_QWANT_BLOCKED = False  # module-level fuse to stop hammering when captcha/403 detected
-_QWANT_SESSION: requests.Session | None = None
-_QWANT_LAST_CALL_TS: float | None = None
-_QWANT_RATE_LIMIT_DELAY = 0.3  # seconds between calls to avoid triggering protections
+WEB_PROVIDER_GOOGLE = "google"
+WEB_PROVIDER_BRAVE = "brave"
+WEB_PROVIDERS = (WEB_PROVIDER_GOOGLE, WEB_PROVIDER_BRAVE)
 
 
-def _qwant_session() -> requests.Session:
-    global _QWANT_SESSION
-    if _QWANT_SESSION is None:
-        _QWANT_SESSION = requests.Session()
-    return _QWANT_SESSION
+@dataclass(frozen=True)
+class WebSearchResult:
+    provider: str
+    items: list[dict]
+    from_cache: bool = False
 
 
-def _qwant_headers() -> Dict[str, str]:
-    # Browser-like headers reduce captcha blocks compared to generic UA.
-    return {
-        "Accept": "application/json",
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/131.0.0.0 Safari/537.36"
-        ),
-        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Origin": "https://www.qwant.com",
-        "Referer": "https://www.qwant.com/",
-        "Connection": "keep-alive",
-        "Sec-Fetch-Site": "same-origin",
-        "Sec-Fetch-Mode": "cors",
-        "Sec-Fetch-Dest": "empty",
-    }
+WEB_SITES = {
+    "WEB_PAPPERS": "pappers.fr",
+    "WEB_ANNUAIRE": "annuaire-entreprises.data.gouv.fr",
+    "WEB_SOCIETE": "societe.com",
+    "WEB_LEFIGARO": "entreprises.lefigaro.fr",
+}
 
 
-def _qwant_browser_headers() -> Dict[str, str]:
-    return {
-        "User-Agent": (
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/131.0.0.0 Safari/537.36"
-        ),
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7",
-        "Connection": "keep-alive",
-    }
+def _hash_query(query: str) -> str:
+    return hashlib.sha1(query.encode("utf-8")).hexdigest()
 
 
-def _http_get_qwant(
-    url: str,
-    params: Dict[str, Any],
+def _open_web_cache(path: Path) -> sqlite3.Connection:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    conn = sqlite3.connect(path)
+    conn.execute("PRAGMA journal_mode=WAL")
+    conn.execute("PRAGMA synchronous=NORMAL")
+    _init_web_cache(conn)
+    conn.row_factory = sqlite3.Row
+    return conn
+
+
+def _init_web_cache(conn: sqlite3.Connection) -> None:
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS web_cache (
+            cache_key TEXT PRIMARY KEY,
+            provider TEXT,
+            query_hash TEXT,
+            query TEXT,
+            response_json TEXT,
+            created_at REAL,
+            expires_at REAL,
+            negative INTEGER DEFAULT 0,
+            result_count INTEGER DEFAULT 0
+        )
+        """
+    )
+    conn.execute(
+        """
+        CREATE TABLE IF NOT EXISTS web_requests (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            provider TEXT,
+            ts REAL,
+            query_hash TEXT,
+            status_code INTEGER,
+            from_cache INTEGER DEFAULT 0
+        )
+        """
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_web_cache_provider_query ON web_cache(provider, query_hash)"
+    )
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_web_requests_provider_ts ON web_requests(provider, ts)"
+    )
+    conn.commit()
+
+
+def _cache_key(provider: str, query_hash: str) -> str:
+    return f"{provider}:{query_hash}"
+
+
+def _cache_get(
+    conn: sqlite3.Connection,
+    provider: str,
+    query_hash: str,
+    now: float,
+) -> list[dict] | None:
+    key = _cache_key(provider, query_hash)
+    row = conn.execute(
+        "SELECT response_json, expires_at FROM web_cache WHERE cache_key = ?",
+        (key,),
+    ).fetchone()
+    if not row:
+        return None
+    if row["expires_at"] is not None and row["expires_at"] < now:
+        conn.execute("DELETE FROM web_cache WHERE cache_key = ?", (key,))
+        conn.commit()
+        return None
+    try:
+        return json.loads(row["response_json"])
+    except Exception:
+        return None
+
+
+def _cache_set(
+    conn: sqlite3.Connection,
     *,
-    timeout: float = 20.0,
-    connect_timeout: float = 5.0,
-    max_retries: int = 3,
-    logger: logging.Logger | None = None,
-) -> Dict[str, Any]:
-    """GET JSON from Qwant with retry on 429/5xx and clearer errors.
+    provider: str,
+    query_hash: str,
+    query: str,
+    items: list[dict],
+    ttl_seconds: float,
+    negative: bool,
+    now: float,
+) -> None:
+    key = _cache_key(provider, query_hash)
+    expires_at = now + ttl_seconds if ttl_seconds > 0 else None
+    conn.execute(
+        """
+        INSERT OR REPLACE INTO web_cache
+        (cache_key, provider, query_hash, query, response_json, created_at, expires_at, negative, result_count)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        """,
+        (
+            key,
+            provider,
+            query_hash,
+            query,
+            json.dumps(items, ensure_ascii=False),
+            now,
+            expires_at,
+            1 if negative else 0,
+            len(items),
+        ),
+    )
+    conn.commit()
 
-    Qwant's public endpoint occasionally returns bot-challenge HTML. We try to look
-    as close as possible to a browser call (Origin/Referer/UA) and raise a
-    structured QwantApiError on any non-JSON response.
+
+def _record_request(
+    conn: sqlite3.Connection,
+    provider: str,
+    query_hash: str,
+    *,
+    status_code: int,
+    from_cache: bool,
+    now: float,
+) -> None:
+    conn.execute(
+        """
+        INSERT INTO web_requests (provider, ts, query_hash, status_code, from_cache)
+        VALUES (?, ?, ?, ?, ?)
+        """,
+        (provider, now, query_hash, status_code, 1 if from_cache else 0),
+    )
+    conn.commit()
+
+
+def _remaining_quota(
+    conn: sqlite3.Connection,
+    provider: str,
+    limit: int,
+    now: float,
+) -> int:
+    since = now - 24 * 3600
+    row = conn.execute(
+        "SELECT COUNT(*) AS cnt FROM web_requests WHERE provider = ? AND ts >= ? AND from_cache = 0",
+        (provider, since),
+    ).fetchone()
+    used = int(row["cnt"]) if row else 0
+    return max(limit - used, 0)
+
+
+def _provider_enabled(provider: str, config: PipelineConfig) -> bool:
+    if provider == WEB_PROVIDER_GOOGLE:
+        return bool(config.google_api_key and config.google_cse_id)
+    if provider == WEB_PROVIDER_BRAVE:
+        return bool(config.brave_api_key)
+    return False
+
+
+def _last_provider(conn: sqlite3.Connection) -> str | None:
+    row = conn.execute(
+        "SELECT provider FROM web_requests WHERE from_cache = 0 ORDER BY ts DESC LIMIT 1"
+    ).fetchone()
+    return row["provider"] if row else None
+
+
+def _select_provider(
+    conn: sqlite3.Connection,
+    config: PipelineConfig,
+    now: float,
+    logger: logging.Logger,
+) -> str | None:
+    google_remaining = (
+        _remaining_quota(conn, WEB_PROVIDER_GOOGLE, config.google_daily_quota, now)
+        if _provider_enabled(WEB_PROVIDER_GOOGLE, config)
+        else 0
+    )
+    brave_remaining = (
+        _remaining_quota(conn, WEB_PROVIDER_BRAVE, config.brave_daily_quota, now)
+        if _provider_enabled(WEB_PROVIDER_BRAVE, config)
+        else 0
+    )
+
+    if google_remaining <= 0 and brave_remaining <= 0:
+        logger.warning(
+            "Web search skipped: quotas exhausted (google=%s, brave=%s)",
+            google_remaining,
+            brave_remaining,
+        )
+        return None
+
+    if google_remaining > 0 and brave_remaining > 0:
+        if google_remaining != brave_remaining:
+            return WEB_PROVIDER_GOOGLE if google_remaining > brave_remaining else WEB_PROVIDER_BRAVE
+        last = _last_provider(conn)
+        return WEB_PROVIDER_BRAVE if last == WEB_PROVIDER_GOOGLE else WEB_PROVIDER_GOOGLE
+
+    return WEB_PROVIDER_GOOGLE if google_remaining > 0 else WEB_PROVIDER_BRAVE
+
+
+def _google_search(
+    query: str,
+    config: PipelineConfig,
+    logger: logging.Logger,
+) -> tuple[int, list[dict]]:
+    if not config.google_api_key or not config.google_cse_id:
+        raise WebSearchApiError("Google API key or CSE id missing")
+    params = {
+        "key": config.google_api_key,
+        "cx": config.google_cse_id,
+        "q": query,
+        "num": 10,
+    }
+    resp = requests.get(
+        "https://www.googleapis.com/customsearch/v1",
+        params=params,
+        timeout=float(config.llm_timeout_sec),
+    )
+    status = resp.status_code
+    if status != 200:
+        logger.warning("Google search HTTP %s: %s", status, resp.text[:200])
+        return status, []
+    try:
+        data = resp.json()
+    except json.JSONDecodeError as exc:
+        raise WebSearchApiError("Google response is not valid JSON") from exc
+    items = []
+    for idx, item in enumerate(data.get("items") or [], start=1):
+        url = item.get("link")
+        if not url:
+            continue
+        items.append(
+            {
+                "url": url,
+                "title": item.get("title"),
+                "snippet": item.get("snippet"),
+                "rank": idx - 1,
+            }
+        )
+    return status, items
+
+
+def _brave_search(
+    query: str,
+    config: PipelineConfig,
+    logger: logging.Logger,
+) -> tuple[int, list[dict]]:
+    global _BRAVE_LAST_REQUEST_TS
+    
+    if not config.brave_api_key:
+        raise WebSearchApiError("Brave API key missing")
+    
+    # Rate limiting: ensure at least 1 second between Brave requests
+    now = time.time()
+    elapsed = now - _BRAVE_LAST_REQUEST_TS
+    if elapsed < _BRAVE_RATE_LIMIT_SEC:
+        sleep_time = _BRAVE_RATE_LIMIT_SEC - elapsed
+        logger.debug("Brave rate limit: sleeping %.2fs", sleep_time)
+        time.sleep(sleep_time)
+    _BRAVE_LAST_REQUEST_TS = time.time()
+    headers = {
+        "Accept": "application/json",
+        "X-Subscription-Token": config.brave_api_key,
+    }
+    params = {
+        "q": query,
+        "count": 10,
+        "offset": 0,
+        "search_lang": "fr",
+    }
+    resp = requests.get(
+        "https://api.search.brave.com/res/v1/web/search",
+        params=params,
+        headers=headers,
+        timeout=float(config.llm_timeout_sec),
+    )
+    status = resp.status_code
+    if status != 200:
+        logger.warning("Brave search HTTP %s: %s", status, resp.text[:200])
+        return status, []
+    try:
+        data = resp.json()
+    except json.JSONDecodeError as exc:
+        raise WebSearchApiError("Brave response is not valid JSON") from exc
+    results = data.get("web", {}).get("results") or []
+    items = []
+    for idx, item in enumerate(results, start=1):
+        url = item.get("url")
+        if not url:
+            continue
+        items.append(
+            {
+                "url": url,
+                "title": item.get("title"),
+                "snippet": item.get("description"),
+                "rank": idx - 1,
+            }
+        )
+    return status, items
+
+
+def web_search(
+    query: str,
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+) -> WebSearchResult:
+    """Search the web via Google or Brave, with cache and quotas.
+
+    `query` is the base query (without provider-specific site filters). For
+    Google PSE, site filters can be configured in the engine, so we keep the
+    query clean.
     """
 
-    logger = logger or LOGGER
-    global _QWANT_BLOCKED, _QWANT_LAST_CALL_TS
+    log = logger or LOGGER
+    if not config.web_search_enabled:
+        log.info("Web search disabled via config; skipping search")
+        return WebSearchResult(provider="disabled", items=[], from_cache=True)
 
-    def _respect_rate_limit() -> None:
-        global _QWANT_LAST_CALL_TS
-        if _QWANT_LAST_CALL_TS is None:
-            return
-        elapsed = time.time() - _QWANT_LAST_CALL_TS
-        if elapsed < _QWANT_RATE_LIMIT_DELAY:
-            time.sleep(_QWANT_RATE_LIMIT_DELAY - elapsed)
+    now = time.time()
+    query_hash = _hash_query(query)
 
-    last_exc: Exception | None = None
-    session = _qwant_session()
+    conn = _open_web_cache(Path(config.web_cache_path))
+    try:
+        google_query = _build_query_for_provider(query, WEB_PROVIDER_GOOGLE, config)
+        brave_query = _build_query_for_provider(query, WEB_PROVIDER_BRAVE, config)
 
-    for attempt in range(1, max_retries + 1):
+        cached_google = _cache_get(conn, WEB_PROVIDER_GOOGLE, _hash_query(google_query), now)
+        if cached_google is not None:
+            _record_request(
+                conn,
+                WEB_PROVIDER_GOOGLE,
+                _hash_query(google_query),
+                status_code=200,
+                from_cache=True,
+                now=now,
+            )
+            return WebSearchResult(
+                provider=WEB_PROVIDER_GOOGLE, items=cached_google, from_cache=True
+            )
+
+        cached_brave = _cache_get(conn, WEB_PROVIDER_BRAVE, _hash_query(brave_query), now)
+        if cached_brave is not None:
+            _record_request(
+                conn,
+                WEB_PROVIDER_BRAVE,
+                _hash_query(brave_query),
+                status_code=200,
+                from_cache=True,
+                now=now,
+            )
+            return WebSearchResult(
+                provider=WEB_PROVIDER_BRAVE, items=cached_brave, from_cache=True
+            )
+
+        provider = _select_provider(conn, config, now, log)
+        if provider is None:
+            return WebSearchResult(provider="none", items=[], from_cache=False)
+
+        status_code = 0
+        items: list[dict] = []
+        provider_query = _build_query_for_provider(query, provider, config)
+        provider_hash = _hash_query(provider_query)
         try:
-            _respect_rate_limit()
-            resp = session.get(
-                url,
-                headers=_qwant_headers(),
-                params=params,
-                timeout=timeout,
+            if provider == WEB_PROVIDER_GOOGLE:
+                status_code, items = _google_search(provider_query, config, log)
+            else:
+                status_code, items = _brave_search(provider_query, config, log)
+        except WebSearchApiError as exc:
+            log.error("Web search failed (%s): %s", provider, exc)
+            status_code = 0
+            items = []
+
+        _record_request(
+            conn,
+            provider,
+            provider_hash,
+            status_code=status_code,
+            from_cache=False,
+            now=now,
+        )
+
+        if items:
+            ttl = float(config.web_cache_ttl_days) * 24 * 3600
+            _cache_set(
+                conn,
+                provider=provider,
+                query_hash=provider_hash,
+                query=provider_query,
+                items=items,
+                ttl_seconds=ttl,
+                negative=False,
+                now=now,
             )
-            _QWANT_LAST_CALL_TS = time.time()
-
-            if resp.status_code == 403:
-                _QWANT_BLOCKED = True
-                # Try to solve DataDome-style challenge if URL provided.
-                try:
-                    payload = resp.json()
-                    challenge_url = payload.get("url") if isinstance(payload, dict) else None
-                except Exception:
-                    challenge_url = None
-
-                if challenge_url:
-                    logger.warning("Qwant 403 with challenge; attempting bypass")
-                    try:
-                        session.get(
-                            challenge_url,
-                            headers=_qwant_browser_headers(),
-                            timeout=timeout,
-                        )
-                        # Retry once immediately after solving challenge
-                        resp = session.get(
-                            url,
-                            headers=_qwant_headers(),
-                            params=params,
-                            timeout=timeout,
-                        )
-                        _QWANT_LAST_CALL_TS = time.time()
-                        if resp.status_code != 403:
-                            _QWANT_BLOCKED = False
-                        else:
-                            raise QwantApiError(
-                                "Qwant returned 403 after challenge attempt (captcha)")
-                    except Exception as exc:
-                        raise QwantApiError(
-                            f"Qwant 403 (captcha) and challenge fetch failed: {exc}"
-                        ) from exc
-                else:
-                    raise QwantApiError(
-                        "Qwant returned 403 (captcha) with no challenge url"
-                    )
-
-            if resp.status_code in (429, 500, 502, 503, 504):
-                retry_after = resp.headers.get("Retry-After")
-                delay = float(retry_after) if retry_after else min(2.0 * attempt, 10.0)
-                logger.warning(
-                    "Qwant HTTP %s (attempt %s/%s) – sleeping %.1fs",
-                    resp.status_code,
-                    attempt,
-                    max_retries,
-                    delay,
-                )
-                time.sleep(delay)
-                last_exc = requests.HTTPError(f"HTTP {resp.status_code}")
-                continue
-
-            if not resp.ok:
-                body_preview = resp.text[:200] if resp.text else ""
-                raise QwantApiError(
-                    f"Qwant request failed HTTP {resp.status_code}: {body_preview}"
-                )
-
-            try:
-                return resp.json()
-            except json.JSONDecodeError as exc:
-                raise QwantApiError("Qwant response is not valid JSON") from exc
-
-        except requests.RequestException as e:
-            last_exc = e
-            if attempt >= max_retries:
-                break
-            delay = min(2.0 * attempt, 10.0)
-            logger.warning(
-                "Qwant request error %s (attempt %s/%s) – sleeping %.1fs",
-                getattr(e.response, "status_code", "?"),
-                attempt,
-                max_retries,
-                delay,
+        else:
+            ttl = float(config.web_negative_cache_ttl_hours) * 3600
+            _cache_set(
+                conn,
+                provider=provider,
+                query_hash=provider_hash,
+                query=provider_query,
+                items=[],
+                ttl_seconds=ttl,
+                negative=True,
+                now=now,
             )
-            time.sleep(delay)
-        except QwantApiError as e:
-            last_exc = e
-            if _QWANT_BLOCKED:
-                # Stop retrying immediately on captcha
-                break
-            if attempt >= max_retries:
-                break
-            delay = min(2.0 * attempt, 10.0)
-            time.sleep(delay)
-        except Exception as e:  # pragma: no cover - safety net
-            last_exc = e
-            break
 
-    if last_exc:
-        raise QwantApiError(
-            f"Qwant API call failed after {max_retries} retries: {last_exc}"
-        ) from last_exc
-    raise QwantApiError("Qwant API call failed without specific exception")
+        return WebSearchResult(provider=provider, items=items, from_cache=False)
+    finally:
+        conn.close()
+
+
+def qwant_search(
+    query: str,
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+) -> list[dict]:
+    """Deprecated Qwant wrapper, mapped to web_search for backward compatibility."""
+
+    result = web_search(query, config, logger)
+    return result.items
 
 
 def extract_siren_siret_from_url(url: str) -> tuple[str | None, str | None]:
@@ -568,14 +835,19 @@ def extract_siren_siret_from_url(url: str) -> tuple[str | None, str | None]:
 
     parsed = urlparse(url)
     search_zone = parsed.path + ("?" + parsed.query if parsed.query else "")
+    return extract_siren_siret_from_text(search_zone)
 
-    patterns_14 = re.findall(r"\b(\d{14})\b", search_zone)
+
+def extract_siren_siret_from_text(text: str) -> tuple[str | None, str | None]:
+    """Extract SIREN/SIRET from free text (URL/title/snippet)."""
+
+    patterns_14 = re.findall(r"\b(\d{14})\b", text)
     if patterns_14:
         siret = patterns_14[-1]
         siren = siret[:9]
         return siren, siret
 
-    patterns_9 = re.findall(r"\b(\d{9})\b", search_zone)
+    patterns_9 = re.findall(r"\b(\d{9})\b", text)
     if patterns_9:
         siren = patterns_9[-1]
         return siren, None
@@ -583,125 +855,33 @@ def extract_siren_siret_from_url(url: str) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _flatten_qwant_items(container: Any) -> list[dict]:
-    """Flatten Qwant 'items' which may be a list or a dict of sections.
-
-    Qwant v3 sometimes returns data.result.items as a dict with keys like
-    'mainline' (list of blocks) and 'headline'. Each block can contain an
-    'items' list. This helper extracts all dict entries that look like items.
-    """
-
-    flat: list[dict] = []
-
-    def _collect(obj: Any) -> None:
-        if isinstance(obj, dict):
-            flat.append(obj)
-
-    if isinstance(container, list):
-        for entry in container:
-            _collect(entry)
-    elif isinstance(container, dict):
-        for value in container.values():
-            if isinstance(value, list):
-                for block in value:
-                    if isinstance(block, dict) and isinstance(block.get("items"), list):
-                        for sub in block["items"]:
-                            _collect(sub)
-                    else:
-                        _collect(block)
-            else:
-                _collect(value)
-    return flat
+def _match_site(url: str) -> tuple[str, str] | None:
+    parsed = urlparse(url)
+    host = (parsed.hostname or "").lower()
+    for source_name, domain in WEB_SITES.items():
+        if host == domain or host.endswith(f".{domain}"):
+            return source_name, domain
+    return None
 
 
-def qwant_search(
-    query: str,
-    config: PipelineConfig,
-    logger: logging.Logger | None = None,
-) -> list[dict]:
-    """Search Qwant and return raw items."""
-
-    log = logger or LOGGER
-
-    log = logger or LOGGER
-
-    if _QWANT_BLOCKED:
-        log.warning("Qwant disabled after previous 403/captcha; skipping search")
-        return []
-
-    if not config.qwant_enabled:
-        log.info("Qwant disabled via config; skipping search")
-        return []
-
-    params = {
-        "q": query,
-        "count": 10,  # Qwant API expects count=10 (400 otherwise)
-        "offset": 0,
-        "locale": "fr_FR",
-        "safesearch": 0,
-        "uiv": 4,
-        "t": "web",
-    }
-
-    # Try configured endpoint first, then fall back to the canonical v3 path if
-    # the configured one fails (common when legacy /api/search/web is used).
-    candidate_urls = [config.qwant_base_url]
-    if "api.qwant.com/v3/search/web" not in config.qwant_base_url:
-        candidate_urls.append("https://api.qwant.com/v3/search/web")
-
-    last_error: Exception | None = None
-    for url in candidate_urls:
-        log.debug("Qwant API call: %s?q=%s", url, query[:100])
-        try:
-            response = _http_get_qwant(
-                url,
-                params,
-                timeout=float(config.llm_timeout_sec),
-                connect_timeout=float(config.llm_connect_timeout_sec),
-                max_retries=int(config.llm_max_retries),
-                logger=log,
-            )
-            try:
-                items_container = response["data"]["result"]["items"]
-            except Exception as exc:  # pragma: no cover - keyed errors tested separately
-                raise QwantApiError(
-                    f"Qwant response missing expected fields: {exc}"
-                ) from exc
-
-            items = _flatten_qwant_items(items_container)
-
-            if not isinstance(items, list):
-                raise QwantApiError("Qwant response 'items' is not a list")
-
-            log.debug("Qwant returned %d items", len(items))
-            return items
-        except QwantApiError as exc:  # noqa: BLE001 - controlled errors only
-            last_error = exc
-            log.warning("Qwant endpoint %s failed: %s", url, exc)
-            # If blocked, stop looping to avoid hammering
-            if _QWANT_BLOCKED:
-                break
-            continue
-
-    if last_error:
-        raise last_error
-
-    raise QwantApiError("Qwant search failed without captured error")
+def _build_multisite_query(base_query: str) -> str:
+    site_clause = " OR ".join(f"site:{domain}" for domain in WEB_SITES.values())
+    return f"{base_query} ({site_clause})"
 
 
-QWANT_SITES = {
-    "QWANT_PAPPERS": "site:pappers.fr",
-    "QWANT_ANNUAIRE": "site:annuaire-entreprises.data.gouv.fr",
-    "QWANT_SOCIETE": "site:societe.com",
-}
+def _build_query_for_provider(base_query: str, provider: str, config: PipelineConfig) -> str:
+    # Google PSE can enforce sites at the engine level; keep query clean.
+    if provider == WEB_PROVIDER_GOOGLE and config.google_cse_id:
+        return base_query
+    return _build_multisite_query(base_query)
 
 
-def search_qwant_sites(
+def search_web_sites(
     row: pd.Series,
     config: PipelineConfig,
     logger: logging.Logger | None = None,
 ) -> List[RawCandidate]:
-    """Search Qwant on three business sites and return RawCandidate list."""
+    """Search the web on multiple business sites with a single query."""
 
     log = logger or LOGGER
 
@@ -730,87 +910,115 @@ def search_qwant_sites(
         val = _value(col)
         if val:
             if col == "postcode":
-                # Wrap postcode in quotes to force exact match in Qwant queries.
                 parts.append(f'"{val}"')
             else:
                 parts.append(val)
 
     base_query = " ".join(parts)
     if not base_query:
-        log.warning("Empty query for Qwant - skipping")
+        log.warning("Empty query for web search - skipping")
         return []
 
+    query = base_query
+    log.debug("Web search base query: %s", query[:200])
+
+    try:
+        result = web_search(query, config, log)
+    except WebSearchApiError as exc:
+        log.error("Web search failed: %s", exc)
+        return []
+
+    items = result.items
+    provider = result.provider
+
     all_candidates: list[RawCandidate] = []
-    counts: dict[str, int] = {}
+    counts: dict[str, int] = {key: 0 for key in WEB_SITES}
+    seen_per_source: dict[str, set[tuple[str, str]]] = {key: set() for key in WEB_SITES}
 
-    for source_name, site_modifier in QWANT_SITES.items():
-        query = f"{base_query} {site_modifier}"
+    rank = 0
+    for item in items:
+        url = item.get("url")
+        if not url:
+            continue
 
-        log.debug("Qwant search: source=%s query=%s", source_name, query[:100])
+        matched = _match_site(url)
+        if matched is None:
+            continue
+        source_name, domain = matched
+        if counts[source_name] >= config.max_candidates_per_source:
+            continue
+
+        siren, siret = extract_siren_siret_from_url(url)
+        if not siren and not siret:
+            text = " ".join(
+                str(x)
+                for x in [
+                    item.get("title"),
+                    item.get("snippet"),
+                ]
+                if x
+            )
+            siren, siret = extract_siren_siret_from_text(text)
+        if not siren and not siret:
+            log.debug("No SIREN/SIRET found in URL/snippet: %s", url)
+            continue
+
+        label = (item.get("title") or "").strip()
+
+        key = ("siret", siret) if siret else ("siren", siren) if siren else None
+        if key is not None:
+            if key in seen_per_source[source_name]:
+                continue
+            seen_per_source[source_name].add(key)
+
+        extra: dict[str, Any] = {
+            "query": base_query,
+            "site_domain": domain,
+            "provider": provider,
+            "rank": rank,
+            "title": item.get("title"),
+            "snippet": item.get("snippet"),
+        }
+        if config.store_source_raw:
+            extra["raw"] = item
 
         try:
-            items = qwant_search(query, config, log)
-        except QwantApiError as e:
-            log.error("Qwant search failed for %s: %s", source_name, e)
-            items = []
+            candidate = create_raw_candidate(
+                source=source_name,
+                siren=siren,
+                siret=siret,
+                label=label,
+                url=url,
+                extra=extra,
+            )
+        except InvalidCandidateError as exc:
+            log.debug("Invalid candidate from %s: %s", source_name, exc)
+            continue
 
-        source_candidates: list[RawCandidate] = []
-        rank = 0
-
-        for item in items:
-            url = item.get("url")
-            if not url:
-                continue
-
-            siren, siret = extract_siren_siret_from_url(url)
-            if not siren and not siret:
-                log.debug("No SIREN/SIRET in URL: %s", url)
-                continue
-
-            label = (item.get("title") or "").strip()
-
-            extra: dict[str, Any] = {
-                "query": base_query,
-                "site_modifier": site_modifier,
-                "rank": rank,
-                "title": item.get("title"),
-                "desc": item.get("desc"),
-            }
-            if config.store_source_raw:
-                extra["raw"] = item
-
-            try:
-                candidate = create_raw_candidate(
-                    source=source_name,
-                    siren=siren,
-                    siret=siret,
-                    label=label,
-                    url=url,
-                    extra=extra,
-                )
-            except InvalidCandidateError as exc:
-                log.debug("Invalid candidate from %s: %s", source_name, exc)
-                continue
-
-            source_candidates.append(candidate)
-            rank += 1
-
-        deduped = _deduplicate_candidates(
-            source_candidates,
-            max_candidates=config.max_candidates_per_source,
-        )
-
-        counts[source_name] = len(deduped)
-        all_candidates.extend(deduped)
+        all_candidates.append(candidate)
+        counts[source_name] += 1
+        rank += 1
 
     log.info(
-        "Qwant candidates: crm_name=%s postcode=%s -> total=%d (PAPPERS=%d, ANNUAIRE=%d, SOCIETE=%d)",
+        "Web candidates: crm_name=%s postcode=%s -> total=%d (PAPPERS=%d, ANNUAIRE=%d, SOCIETE=%d, LEFIGARO=%d) provider=%s",
         _value("crm_name"),
         _value("postcode"),
         len(all_candidates),
-        counts.get("QWANT_PAPPERS", 0),
-        counts.get("QWANT_ANNUAIRE", 0),
-        counts.get("QWANT_SOCIETE", 0),
+        counts.get("WEB_PAPPERS", 0),
+        counts.get("WEB_ANNUAIRE", 0),
+        counts.get("WEB_SOCIETE", 0),
+        counts.get("WEB_LEFIGARO", 0),
+        provider,
     )
 
     return all_candidates
+
+
+def search_qwant_sites(
+    row: pd.Series,
+    config: PipelineConfig,
+    logger: logging.Logger | None = None,
+) -> List[RawCandidate]:
+    """Deprecated alias for backward compatibility."""
+
+    return search_web_sites(row, config, logger)
