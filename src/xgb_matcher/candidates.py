@@ -254,7 +254,8 @@ def load_candidates_for_locations(
             dropped = before - len(mapping)
             print(f"  Dropped {dropped} / {before} candidates without names")
 
-    return mapping
+    # Return dict sorted by SIRET for deterministic iteration order
+    return dict(sorted(mapping.items()))
 
 
 def build_location_index(
