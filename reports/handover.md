@@ -1,0 +1,31 @@
+## Session 2025-12-27T16:02:08Z — Codex Ctx0
+- Phase ciblée : Phase 0 (Diagnostic & Plan)
+- Objectif : stabiliser diagnostics + détailler plan + protocoles handover
+- Changements :
+  - scripts/diagnostic_xgb_routing.py : ajout script diagnostic reproductible
+  - scripts/fix_diagnostic_report.py : correction coverage + regen report/plot
+  - reports/diagnostic_analysis.json : coverage corrigée + meta ajoutée
+  - reports/diagnostic_report.md : régénéré avec coverage cohérente
+  - reports/diagnostic_plots.png : régénéré
+  - reports/entity_matching_audit.md : plan enrichi (handover + training + Ctx0/1/2/3) + v3 comme base
+- Tests/commandes exécutées :
+  - python scripts/fix_diagnostic_report.py → OK
+- Etat : ✅ terminé
+- Prochaines étapes immédiates :
+  - Ctx1 : Quick Wins (routing sans SHAP + export features + ranker_fast)
+  - Lancer diagnostic reproductible si besoin : python scripts/diagnostic_xgb_routing.py
+
+## Session 2025-12-27T16:29:19Z — Codex Ctx1
+- Phase ciblée : Phase 1 (Quick Wins)
+- Objectif : routing sans SHAP + export features + ranker_fast
+- Changements :
+  - scripts/infer_xgb_matcher_topk.py : export des features de routing + option `--export-routing-features` + usage ranker_fast si dispo
+  - scripts/train_xgb_matcher_v2.py : entraînement + sauvegarde du ranker_fast (features sémantiques zéro) + métadonnées associées
+  - scripts/route_xgb_results.py : routing basé sur colonnes directes + règles adresse‑seule + seuils segmentés
+- Tests/commandes exécutées :
+  - Aucune (non exécutées)
+- Etat : ✅ terminé
+- Prochaines étapes immédiates :
+  - Entraîner un ranker_fast : `XGB_SEMANTIC_ENABLED=0 python scripts/train_xgb_matcher_v2.py --samples data/samples_aligned_v3.parquet`
+  - Générer top‑k avec export features : `python scripts/infer_xgb_matcher_topk.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --output-path reports/xgb_infer_topk_phase1.csv`
+  - Routage quick wins : `python scripts/route_xgb_results.py --input-path reports/xgb_infer_topk_phase1.csv --output-path reports/routed_phase1.csv`
