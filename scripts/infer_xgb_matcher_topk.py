@@ -738,6 +738,13 @@ def main():
             cand_by_postcode.setdefault(cp, []).append((siret, c))
         if insee:
             cand_by_insee.setdefault(insee, []).append((siret, c))
+    
+    # Sort candidate lists by SIRET for deterministic ordering
+    for cp in cand_by_postcode:
+        cand_by_postcode[cp].sort(key=lambda x: x[0])
+    for insee in cand_by_insee:
+        cand_by_insee[insee].sort(key=lambda x: x[0])
+    
     print(f"  Index: {len(cand_by_postcode)} postcodes, {len(cand_by_insee)} INSEE codes")
 
     rows_out: List[dict] = []
