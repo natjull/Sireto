@@ -66,6 +66,28 @@ class PipelineConfig:
     web_cache_path: Path = _expand_path("data/web_cache.sqlite")
     web_cache_ttl_days: int = 7
     web_negative_cache_ttl_hours: int = 24
+    # Serper.dev Places API (V7 Places-guided candidate generation)
+    serper_api_key: str = ""
+    places_lookup_enabled: bool = True
+    places_lookup_mode: str = "places"  # "places" (Serper) or "legacy" (Google CSE + Brave)
+    # Places validation thresholds (adaptive by pool size)
+    places_name_semantic_min: float = 0.60
+    places_addr_overlap_min: float = 0.50
+    places_crm_name_semantic_min: float = 0.60
+    places_crm_addr_overlap_min: float = 0.50
+    places_crm_addr_overlap_strict: float = 0.80
+    places_position_max: int = 2
+    places_distance_max_m: float = 200.0
+    places_gap_min: float = 0.03
+    # Adaptive score thresholds: τ(pool_size)
+    places_threshold_small: float = 0.95   # pool <= 5
+    places_threshold_medium: float = 0.97  # pool 6-20
+    places_threshold_large: float = 0.99   # pool > 20
+    # Candidate generation tuning
+    places_arm_a_max_rows: int = 5000
+    places_arm_a_street_jaro_min: float = 0.70
+    places_geo_enrich_enabled: bool = True
+    harvest_db_path: Path = _expand_path("data/harvest_full.sqlite")
     # XGBoost routing output (CSV from scripts/route_xgb_results.py).
     xgb_routed_path: Path | None = None
     datagouv_api_url: str = "https://recherche-entreprises.api.gouv.fr"
@@ -168,6 +190,25 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "web_cache_path": "data/web_cache.sqlite",
         "web_cache_ttl_days": 7,
         "web_negative_cache_ttl_hours": 24,
+        # Serper Places (V7)
+        "serper_api_key": "",
+        "places_lookup_enabled": True,
+        "places_lookup_mode": "places",
+        "places_name_semantic_min": 0.60,
+        "places_addr_overlap_min": 0.50,
+        "places_crm_name_semantic_min": 0.60,
+        "places_crm_addr_overlap_min": 0.50,
+        "places_crm_addr_overlap_strict": 0.80,
+        "places_position_max": 2,
+        "places_distance_max_m": 200.0,
+        "places_gap_min": 0.03,
+        "places_threshold_small": 0.95,
+        "places_threshold_medium": 0.97,
+        "places_threshold_large": 0.99,
+        "places_arm_a_max_rows": 5000,
+        "places_arm_a_street_jaro_min": 0.70,
+        "places_geo_enrich_enabled": True,
+        "harvest_db_path": "data/harvest_full.sqlite",
         "xgb_routed_path": "",
         "datagouv_api_url": "https://recherche-entreprises.api.gouv.fr",
         "rne_enabled": True,
@@ -210,7 +251,14 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
     if extracted.get("web_search_enabled") in (None, ""):
         extracted["web_search_enabled"] = extracted.get("qwant_enabled", True)
 
-    path_keys = {"crm_path", "output_path", "sqlite_path", "log_path", "web_cache_path"}
+    path_keys = {
+        "crm_path",
+        "output_path",
+        "sqlite_path",
+        "log_path",
+        "web_cache_path",
+        "harvest_db_path",
+    }
     for key in path_keys:
         extracted[key] = _expand_path(extracted[key])
 
@@ -239,6 +287,20 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "brave_daily_quota": int,
         "web_cache_ttl_days": int,
         "web_negative_cache_ttl_hours": int,
+        # Places thresholds
+        "places_name_semantic_min": float,
+        "places_addr_overlap_min": float,
+        "places_crm_name_semantic_min": float,
+        "places_crm_addr_overlap_min": float,
+        "places_crm_addr_overlap_strict": float,
+        "places_position_max": int,
+        "places_distance_max_m": float,
+        "places_gap_min": float,
+        "places_threshold_small": float,
+        "places_threshold_medium": float,
+        "places_threshold_large": float,
+        "places_arm_a_max_rows": int,
+        "places_arm_a_street_jaro_min": float,
     }
 
     for field_name, caster in numeric_casts.items():
@@ -256,6 +318,8 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "qwant_enabled",
         "web_search_enabled",
         "rne_enabled",
+        "places_lookup_enabled",
+        "places_geo_enrich_enabled",
     ]
     for field_name in bool_fields:
         extracted[field_name] = _as_bool(extracted[field_name])
