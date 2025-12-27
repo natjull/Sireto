@@ -70,6 +70,9 @@ CLASSIFIER_PARAMS = {
 NUM_BOOST_ROUNDS = 200
 EARLY_STOPPING_ROUNDS = 20
 
+# Semantic feature list (zeroed out for ranker_fast to align stage-1 inference)
+SEMANTIC_FEATURES = [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
+
 
 def load_samples(path: Path) -> pd.DataFrame:
     """Load training samples from parquet."""
@@ -100,6 +103,22 @@ def prepare_data(
     groups = df_sorted.groupby("query_id", sort=False).size().values
     
     return X, y, groups
+
+
+def _zero_out_features(
+    X: np.ndarray,
+    feature_names: List[str],
+    features_to_zero: List[str],
+) -> np.ndarray:
+    """Return a copy of X with selected features zeroed (for ranker_fast)."""
+    if not features_to_zero:
+        return X
+    idx = [feature_names.index(f) for f in features_to_zero if f in feature_names]
+    if not idx:
+        return X
+    Xz = X.copy()
+    Xz[:, idx] = 0.0
+    return Xz
 
 
 def compute_hit_at_k(
@@ -275,6 +294,16 @@ def main():
     
     # Train ranker
     ranker = train_ranker(X_train, y_train, groups_train, X_dev, y_dev, groups_dev)
+
+    # Train ranker_fast (semantic features zeroed to align stage-1 inference)
+    if SEMANTIC_FEATURES:
+        print("\n--- Training Ranker FAST (no-semantic features) ---")
+        X_train_fast = _zero_out_features(X_train, FEATURE_NAMES, SEMANTIC_FEATURES)
+        X_dev_fast = _zero_out_features(X_dev, FEATURE_NAMES, SEMANTIC_FEATURES)
+        X_test_fast = _zero_out_features(X_test, FEATURE_NAMES, SEMANTIC_FEATURES)
+        ranker_fast = train_ranker(X_train_fast, y_train, groups_train, X_dev_fast, y_dev, groups_dev)
+    else:
+        ranker_fast = None
     
     # Train classifier
     classifier = train_classifier(X_train, y_train, X_dev, y_dev)
@@ -299,22 +328,40 @@ def main():
             print(f"  Hit@5: {metrics['hit_at_5']:.4f}")
             print(f"  MRR:   {metrics['mrr']:.4f}")
             print(f"  AUC:   {metrics['auc']:.4f}")
+
+    if ranker_fast is not None:
+        for split_name, X, y, groups in [
+            ("dev", X_dev_fast, y_dev, groups_dev),
+            ("test", X_test_fast, y_test, groups_test),
+        ]:
+            metrics = evaluate_model(ranker_fast, X, y, groups, "ranker_fast", split_name)
+            all_metrics.append(metrics)
+            print(f"\nRANKER_FAST on {split_name}:")
+            print(f"  Hit@1: {metrics['hit_at_1']:.4f}")
+            print(f"  Hit@3: {metrics['hit_at_3']:.4f}")
+            print(f"  Hit@5: {metrics['hit_at_5']:.4f}")
+            print(f"  MRR:   {metrics['mrr']:.4f}")
+            print(f"  AUC:   {metrics['auc']:.4f}")
     
     # Save models
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     args.output_dir.mkdir(parents=True, exist_ok=True)
     
     ranker_path = args.output_dir / f"xgbranker_{timestamp}.json"
+    ranker_fast_path = args.output_dir / f"xgbranker_fast_{timestamp}.json"
     classifier_path = args.output_dir / f"xgbclassifier_{timestamp}.json"
     meta_path = args.output_dir / f"xgb_matcher_features_{timestamp}.json"
     
     ranker.save_model(str(ranker_path))
+    if ranker_fast is not None:
+        ranker_fast.save_model(str(ranker_fast_path))
     classifier.save_model(str(classifier_path))
     
     # Save metadata
     metadata = {
         "timestamp": timestamp,
         "feature_names": FEATURE_NAMES,
+        "semantic_features_zeroed_for_ranker_fast": SEMANTIC_FEATURES,
         "ranker_params": RANKER_PARAMS,
         "classifier_params": CLASSIFIER_PARAMS,
         "metrics": all_metrics,
@@ -328,6 +375,8 @@ def main():
     
     print(f"\n--- Models saved ---")
     print(f"  Ranker: {ranker_path}")
+    if ranker_fast is not None:
+        print(f"  Ranker FAST: {ranker_fast_path}")
     print(f"  Classifier: {classifier_path}")
     print(f"  Metadata: {meta_path}")
     

@@ -25,6 +25,7 @@ from __future__ import annotations
 import argparse
 import json
 import logging
+import re
 import sqlite3
 import sys
 from pathlib import Path
@@ -99,7 +100,7 @@ def _pick_top_rows(group: pd.DataFrame) -> tuple[pd.Series, pd.Series | None, li
     top1 = rows_list[0] if rows_list else None
     top2 = rows_list[1] if len(rows_list) > 1 else None
     
-    # Parse SHAP features for routing rules
+    # Parse SHAP features for optional fallback (routing prefers direct columns)
     if top1 is not None:
         shap_raw = top1.get("shap")
         if pd.notna(shap_raw) and shap_raw:
@@ -114,26 +115,58 @@ def _pick_top_rows(group: pd.DataFrame) -> tuple[pd.Series, pd.Series | None, li
     return top1, top2, rows_list
 
 
+def _get_feature(row: pd.Series, name: str, default: float = 0.0) -> float:
+    """Fetch feature value from direct columns, fallback to SHAP payload if present."""
+    if name in row:
+        val = row.get(name)
+        if pd.notna(val):
+            return _safe_float(val, default)
+    shap_data = row.get("_shap_features", {})
+    if isinstance(shap_data, dict) and name in shap_data:
+        return _safe_float(shap_data.get(name), default)
+    return default
+
+
+def _crm_word_count(raw_name: str) -> int:
+    if not raw_name:
+        return 0
+    tokens = re.findall(r"[A-Z0-9]+", raw_name.upper())
+    return len([t for t in tokens if t])
+
+
+def _has_complete_address(row: pd.Series) -> bool:
+    street_number = _safe_str(row.get("street_number"))
+    street_name = _safe_str(row.get("street_name"))
+    crm_address = _safe_str(row.get("crm_address"))
+    has_number = bool(street_number) or bool(re.match(r"^\s*\d+", crm_address))
+    if street_name:
+        has_street = True
+    else:
+        addr_tokens = re.findall(r"[A-Z0-9]+", crm_address.upper()) if crm_address else []
+        has_street = len(addr_tokens) >= 2
+    return bool(has_number and has_street)
+
+
 def _route_xgb(top1: pd.Series) -> str:
-    """Apply XGBoost routing rules v2.1.
-    
-    Changes from v2.0:
-    - Stricter blocking for semantic-only matches even with low token overlap
-    - Lower score threshold for PM dirigeant matches
-    - Promote contains matches at lower score threshold
-    """
+    """Apply XGBoost routing rules (Phase 1 Quick Wins, SHAP-independent)."""
     score = _safe_float(top1.get("score"))
     name_semantic_max = _safe_float(top1.get("name_semantic_max"))
     name_semantic_second = _safe_float(top1.get("name_semantic_second"))
-    
-    # Access SHAP features from parsed shap column if available
-    shap_data = top1.get("_shap_features", {})
-    name_jaro_max = _safe_float(shap_data.get("name_jaro_max", top1.get("name_jaro_max")))
-    name_token_overlap_max = _safe_float(shap_data.get("name_token_overlap_max", top1.get("name_token_overlap_max")))
-    name_sim_max_etab = _safe_float(shap_data.get("name_sim_max_etab", top1.get("name_sim_max_etab")))
-    name_crm_contains_cand_max = _safe_float(shap_data.get("name_crm_contains_cand_max", top1.get("name_crm_contains_cand_max")))
-    name_sim_max_pm_dirigeant = _safe_float(shap_data.get("name_sim_max_pm_dirigeant", top1.get("name_sim_max_pm_dirigeant")))
-    
+
+    name_jaro_max = _get_feature(top1, "name_jaro_max")
+    name_token_overlap_max = _get_feature(top1, "name_token_overlap_max")
+    name_sim_max_etab = _get_feature(top1, "name_sim_max_etab")
+    name_crm_contains_cand_max = _get_feature(top1, "name_crm_contains_cand_max")
+    name_sim_max_pm_dirigeant = _get_feature(top1, "name_sim_max_pm_dirigeant")
+    addr_token_overlap = _get_feature(top1, "addr_token_overlap")
+    name_length_max = _get_feature(top1, "name_length_max")
+
+    crm_name = _safe_str(top1.get("crm_name"))
+    name_word_count = _crm_word_count(crm_name)
+    if name_word_count == 0:
+        name_word_count = 2 if name_length_max <= 6 else 3
+    address_complete = _has_complete_address(top1)
+
     # BLOCK: Semantic-only match without solid lexical evidence
     # Must have LOW values for ALL: jaro, etab, pm, token_overlap
     # E.g., "RUBIX FRANCE" -> "FRANCE MECANIQUE" (token_overlap=0.33, etab=0)
@@ -149,6 +182,14 @@ def _route_xgb(top1: pd.Series) -> str:
     
     if is_semantic_only and score >= 0.95:
         # Force REVIEW even if score is high
+        return "REVIEW"
+
+    # BLOCK: Address-only matches (high address overlap, almost no name overlap)
+    if name_token_overlap_max < 0.10 and addr_token_overlap > 0.80:
+        return "REVIEW"
+
+    # BLOCK: Minimal lexical evidence
+    if name_jaro_max < 0.60 and name_token_overlap_max < 0.30:
         return "REVIEW"
     
     # PROMOTE: Strong match via various signals
@@ -188,10 +229,20 @@ def _route_xgb(top1: pd.Series) -> str:
     )
     if is_token_match:
         return "AUTO"
-    
-    # Standard v1.0 rules
+
+    # Segmented thresholds (short names & incomplete address are riskier)
+    if name_word_count <= 2:
+        threshold = 0.995
+    elif name_word_count <= 4:
+        threshold = 0.99
+    else:
+        threshold = 0.98
+    if not address_complete:
+        threshold = min(0.999, threshold + 0.005)
+
+    # Standard v1.0 rules + segmented thresholds
     auto = (
-        score >= 0.99
+        score >= threshold
         or (score >= 0.95 and name_semantic_max >= 0.75)
         or (score >= 0.98 and name_semantic_second >= 0.65)
     )

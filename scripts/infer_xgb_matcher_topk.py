@@ -81,6 +81,12 @@ def _parse_args() -> argparse.Namespace:
         action="store_true",
         help="Disable filtering of candidates without names (may increase noise).",
     )
+    p.add_argument(
+        "--export-routing-features",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Include routing feature columns in the output CSV (default: true).",
+    )
     return p.parse_args()
 
 
@@ -101,8 +107,10 @@ def find_latest_models():
         latest_meta = sorted(pattern, reverse=True)[0]
         timestamp = latest_meta.stem.replace("xgb_matcher_features_", "")
         print(f"Using latest model cascade: {timestamp}")
+        ranker_fast_path = MODEL_DIR / f"xgbranker_fast_{timestamp}.json"
         return {
             "ranker": MODEL_DIR / f"xgbranker_{timestamp}.json",
+            "ranker_fast": ranker_fast_path if ranker_fast_path.exists() else None,
             "classifier": MODEL_DIR / f"xgbclassifier_{timestamp}.json",
             "scaler": MODEL_DIR / f"xgb_matcher_scaler_{timestamp}.pkl",
             "meta": latest_meta,
@@ -110,8 +118,10 @@ def find_latest_models():
         }
     else:
         print("Using default model (no timestamp)")
+        ranker_fast_path = MODEL_DIR / "xgbranker_fast.json"
         return {
             "ranker": MODEL_DIR / "xgbranker.json",
+            "ranker_fast": ranker_fast_path if ranker_fast_path.exists() else None,
             "classifier": MODEL_DIR / "xgbclassifier.json",
             "scaler": MODEL_DIR / "xgb_matcher_scaler.pkl",
             "meta": MODEL_DIR / "xgb_matcher_features.json",
@@ -709,7 +719,12 @@ def main():
 
     print("Loading model cascade (Ranker + Classifier)...")
     ranker = XGBRanker()
-    ranker.load_model(str(MODEL_PATHS["ranker"]))
+    ranker_path = MODEL_PATHS.get("ranker_fast") or MODEL_PATHS["ranker"]
+    ranker.load_model(str(ranker_path))
+    if MODEL_PATHS.get("ranker_fast"):
+        print(f"  Using ranker_fast for stage-1: {ranker_path}")
+    else:
+        print(f"  Using ranker: {ranker_path}")
     
     classifier = XGBClassifier()
     classifier.load_model(str(MODEL_PATHS["classifier"]))
@@ -906,7 +921,7 @@ def main():
                     },
                     ensure_ascii=False,
                 )
-            rows_out.append({
+            row_out = {
                 "crm_id": r.get("crm_id"),
                 "crm_name": r["crm_name"],
                 "crm_address": r.get("crm_address"),
@@ -925,7 +940,24 @@ def main():
                 "candidate_last_treatment_date": cand_k.get("last_treatment_date"),
                 "rank": rank,
                 "shap": shap_json,
-            })
+            }
+
+            if args.export_routing_features:
+                row_out.update(
+                    {
+                        "name_jaro_max": float(feat_row.get("name_jaro_max", 0.0)),
+                        "name_token_overlap_max": float(feat_row.get("name_token_overlap_max", 0.0)),
+                        "name_sim_max_etab": float(feat_row.get("name_sim_max_etab", 0.0)),
+                        "name_crm_contains_cand_max": float(feat_row.get("name_crm_contains_cand_max", 0.0)),
+                        "name_sim_max_pm_dirigeant": float(feat_row.get("name_sim_max_pm_dirigeant", 0.0)),
+                        "addr_jaro": float(feat_row.get("addr_jaro", 0.0)),
+                        "addr_token_overlap": float(feat_row.get("addr_token_overlap", 0.0)),
+                        "street_number_diff": float(feat_row.get("street_number_diff", 9999)),
+                        "name_length_max": float(feat_row.get("name_length_max", 0.0)),
+                    }
+                )
+
+            rows_out.append(row_out)
 
     out_df = pd.DataFrame(rows_out).sort_values(["crm_name", "rank", "score"], ascending=[True, True, False])
     out_path = args.output_path
