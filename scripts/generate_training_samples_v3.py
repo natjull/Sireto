@@ -25,6 +25,7 @@ from typing import Dict, List, Optional, Set, Tuple
 import numpy as np
 import pandas as pd
 import pyarrow.parquet as pq
+import xgboost as xgb
 from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -38,9 +39,11 @@ DEFAULT_SPLITS_DIR = Path("data/splits")
 TRAINING_DATA = Path("data/entrainements.csv")
 PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
 UL_PATH = Path("data/StockUniteLegale_utf8.parquet")
+MODEL_DIR = Path("models")
 
 MAX_NEGATIVES = 50  # Per query
 HARD_RATIO = 0.5
+SAME_ADDR_NEG_MAX = 10  # Max extra negatives with same address but different name
 SEED = 42
 BATCH_SIZE = 100_000
 PREFILTER_TOP_K = 500  # Max candidates to fully score with make_features()
@@ -95,6 +98,7 @@ def load_candidates_by_location(
     full_mapping = load_candidates_for_locations(
         postcodes=postcodes,
         insee_codes=insee_codes,
+        include_closed_establishments=True,
         verbose=True
     )
     
@@ -156,11 +160,59 @@ def quick_score(crm_name: str, cand: dict) -> float:
     return jaro_sim(normalize_text(crm_name), normalize_text(cand_name))
 
 
+def find_latest_ranker(models_dir: Path) -> Tuple[Optional[Path], Optional[Path], bool]:
+    """Return (ranker_path, meta_path, is_fast)."""
+    fast = sorted(models_dir.glob("xgbranker_fast_*.json"), reverse=True)
+    if fast:
+        ranker_path = fast[0]
+        ts = ranker_path.stem.replace("xgbranker_fast_", "")
+        meta_path = models_dir / f"xgb_matcher_features_{ts}.json"
+        return ranker_path, (meta_path if meta_path.exists() else None), True
+    regular = sorted(models_dir.glob("xgbranker_*.json"), reverse=True)
+    if regular:
+        ranker_path = regular[0]
+        ts = ranker_path.stem.replace("xgbranker_", "")
+        meta_path = models_dir / f"xgb_matcher_features_{ts}.json"
+        return ranker_path, (meta_path if meta_path.exists() else None), False
+    return None, None, False
+
+
+def load_ranker_meta(meta_path: Optional[Path]) -> Tuple[List[str], List[str]]:
+    """Load feature order and semantic-zero list from metadata."""
+    if not meta_path or not meta_path.exists():
+        return FEATURE_NAMES, [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
+    with open(meta_path) as f:
+        meta = json.load(f)
+    feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
+    semantic_zero = meta.get("semantic_features_zeroed_for_ranker_fast") or []
+    return feature_order, semantic_zero
+
+
+def score_with_ranker(
+    feats: List[dict],
+    *,
+    ranker: xgb.Booster,
+    feature_order: List[str],
+    zero_features: List[str] | None = None,
+) -> np.ndarray:
+    """Score candidates using the provided ranker model."""
+    X = np.array([[f.get(fn, 0.0) for fn in feature_order] for f in feats], dtype=np.float32)
+    if zero_features:
+        idx = [feature_order.index(f) for f in zero_features if f in feature_order]
+        if idx:
+            X[:, idx] = 0.0
+    dmat = xgb.DMatrix(X, feature_names=feature_order)
+    return ranker.predict(dmat)
+
+
 def generate_samples_for_query(
     crm_row: pd.Series,
     candidates: List[dict],
     max_neg: int = MAX_NEGATIVES,
     prefilter_k: int = PREFILTER_TOP_K,
+    ranker: xgb.Booster | None = None,
+    ranker_feature_order: Optional[List[str]] = None,
+    ranker_zero_features: Optional[List[str]] = None,
 ) -> List[dict]:
     """Generate samples for one query with pre-filtering."""
     gt_siret = crm_row.get("ground_truth_siret", "")
@@ -199,8 +251,22 @@ def generate_samples_for_query(
         feat = make_features(crm_row, cand)
         feat["_siret"] = cand["siret"]
         feat["_is_pos"] = (cand["siret"] == gt_siret)
-        feat["_score"] = compute_score(feat)
         all_feats.append(feat)
+
+    # Score for hard negatives: prefer ranker if provided
+    if ranker is not None:
+        feature_order = ranker_feature_order or FEATURE_NAMES
+        scores = score_with_ranker(
+            all_feats,
+            ranker=ranker,
+            feature_order=feature_order,
+            zero_features=ranker_zero_features or [],
+        )
+        for f, s in zip(all_feats, scores):
+            f["_score"] = float(s)
+    else:
+        for f in all_feats:
+            f["_score"] = compute_score(f)
     
     positives = [f for f in all_feats if f["_is_pos"]]
     negatives = [f for f in all_feats if not f["_is_pos"]]
@@ -214,7 +280,32 @@ def generate_samples_for_query(
     hard = neg_sorted[:num_hard]
     rest = neg_sorted[num_hard:]
     rand = random.sample(rest, min(max_neg - num_hard, len(rest))) if rest else []
-    selected = hard + rand
+
+    # Add "same address, different name" negatives (critical FP pattern)
+    same_addr = [
+        f
+        for f in negatives
+        if float(f.get("addr_jaro", 0.0)) >= 0.95
+        and float(f.get("name_jaro_max", 0.0)) < 0.50
+    ]
+    same_addr = sorted(same_addr, key=lambda x: x.get("addr_jaro", 0.0), reverse=True)
+    same_addr = same_addr[: min(SAME_ADDR_NEG_MAX, max_neg)]
+
+    # Merge with priority: hard -> same_addr -> random, while preserving max_neg and uniqueness
+    selected = []
+    seen = set()
+    for group in (hard, same_addr, rand):
+        for f in group:
+            siret = f.get("_siret")
+            if siret in seen:
+                continue
+            selected.append(f)
+            if siret:
+                seen.add(siret)
+            if len(selected) >= max_neg:
+                break
+        if len(selected) >= max_neg:
+            break
     
     samples = []
     for f in positives:
@@ -238,6 +329,9 @@ def generate_all_samples(
     df: pd.DataFrame,
     candidates_by_loc: Dict[str, List[dict]],
     max_neg: int,
+    ranker: xgb.Booster | None = None,
+    ranker_feature_order: Optional[List[str]] = None,
+    ranker_zero_features: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """Generate samples for all queries."""
     all_samples = []
@@ -246,7 +340,14 @@ def generate_all_samples(
         cands = get_candidates_for_query(
             row.get("insee"), row.get("postcode"), candidates_by_loc
         )
-        samples = generate_samples_for_query(row, cands, max_neg)
+        samples = generate_samples_for_query(
+            row,
+            cands,
+            max_neg,
+            ranker=ranker,
+            ranker_feature_order=ranker_feature_order,
+            ranker_zero_features=ranker_zero_features,
+        )
         all_samples.extend(samples)
     
     return pd.DataFrame(all_samples)
@@ -258,6 +359,13 @@ def main():
     parser.add_argument("--splits-dir", type=Path, default=DEFAULT_SPLITS_DIR)
     parser.add_argument("--max-negatives", type=int, default=MAX_NEGATIVES)
     parser.add_argument("--seed", type=int, default=SEED)
+    parser.add_argument("--ranker-model", type=Path, default=None, help="Path to ranker model for hard negatives")
+    parser.add_argument("--ranker-meta", type=Path, default=None, help="Path to ranker metadata JSON")
+    parser.add_argument(
+        "--disable-ranker-hard-negatives",
+        action="store_true",
+        help="Fallback to heuristic hard negatives if no ranker is available",
+    )
     args = parser.parse_args()
     
     random.seed(args.seed)
@@ -287,16 +395,64 @@ def main():
     
     candidates_by_loc = load_candidates_by_location(insee_codes, postcodes)
     
+    # Load ranker model for hard negatives if available
+    ranker = None
+    ranker_feature_order: Optional[List[str]] = None
+    ranker_zero_features: List[str] = []
+    is_fast = False
+    ranker_info = None
+    if not args.disable_ranker_hard_negatives:
+        ranker_path = args.ranker_model
+        meta_path = args.ranker_meta
+        if ranker_path is None:
+            ranker_path, meta_path, is_fast = find_latest_ranker(MODEL_DIR)
+        else:
+            is_fast = "fast" in ranker_path.name.lower()
+        if ranker_path and ranker_path.exists():
+            ranker = xgb.Booster()
+            ranker.load_model(str(ranker_path))
+            ranker_feature_order, semantic_zero = load_ranker_meta(meta_path)
+            ranker_zero_features = semantic_zero if is_fast else []
+            ranker_info = {
+                "path": str(ranker_path),
+                "meta": str(meta_path) if meta_path else None,
+                "is_fast": is_fast,
+            }
+            print(f"\n[HardNeg] Using ranker: {ranker_path} (fast={is_fast})")
+        else:
+            print("\n[HardNeg] No ranker model found → fallback to heuristic scoring.")
+
     print("\n4. Generating train samples...")
-    train_samples = generate_all_samples(train_df, candidates_by_loc, args.max_negatives)
+    train_samples = generate_all_samples(
+        train_df,
+        candidates_by_loc,
+        args.max_negatives,
+        ranker=ranker,
+        ranker_feature_order=ranker_feature_order,
+        ranker_zero_features=ranker_zero_features,
+    )
     print(f"   → {len(train_samples)} samples ({train_samples['label'].sum()} pos)")
     
     print("\n5. Generating dev samples...")
-    dev_samples = generate_all_samples(dev_df, candidates_by_loc, args.max_negatives)
+    dev_samples = generate_all_samples(
+        dev_df,
+        candidates_by_loc,
+        args.max_negatives,
+        ranker=ranker,
+        ranker_feature_order=ranker_feature_order,
+        ranker_zero_features=ranker_zero_features,
+    )
     print(f"   → {len(dev_samples)} samples ({dev_samples['label'].sum()} pos)")
     
     print("\n6. Generating test samples...")
-    test_samples = generate_all_samples(test_df, candidates_by_loc, args.max_negatives)
+    test_samples = generate_all_samples(
+        test_df,
+        candidates_by_loc,
+        args.max_negatives,
+        ranker=ranker,
+        ranker_feature_order=ranker_feature_order,
+        ranker_zero_features=ranker_zero_features,
+    )
     print(f"   → {len(test_samples)} samples ({test_samples['label'].sum()} pos)")
     
     train_samples["split"] = "train"
@@ -309,8 +465,14 @@ def main():
     all_samples.to_parquet(args.output, index=False)
     print(f"\n7. Saved {len(all_samples)} samples → {args.output}")
     
-    meta = {"generated": datetime.now().isoformat(), "seed": args.seed, 
-            "train": len(train_samples), "dev": len(dev_samples), "test": len(test_samples)}
+    meta = {
+        "generated": datetime.now().isoformat(),
+        "seed": args.seed,
+        "train": len(train_samples),
+        "dev": len(dev_samples),
+        "test": len(test_samples),
+        "hard_negative_ranker": ranker_info,
+    }
     with open(args.output.with_suffix(".json"), "w") as f:
         json.dump(meta, f, indent=2)
     

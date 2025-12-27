@@ -28,9 +28,11 @@ from typing import Dict, List, Tuple
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+from sklearn.calibration import CalibratedClassifierCV
 from sklearn.metrics import (
     accuracy_score,
     average_precision_score,
+    brier_score_loss,
     precision_recall_curve,
     roc_auc_score,
 )
@@ -146,6 +148,32 @@ def compute_hit_at_k(
     return hits / len(groups)
 
 
+def compute_recall_at_k(
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    groups: np.ndarray,
+    k: int = 10,
+) -> float:
+    """Compute Recall@K across groups (handles multiple positives)."""
+    recalls = []
+    start = 0
+    for group_size in groups:
+        end = start + group_size
+        group_labels = y_true[start:end]
+        group_scores = y_pred[start:end]
+        total_pos = float(np.sum(group_labels))
+        if total_pos <= 0:
+            start = end
+            continue
+        top_k_indices = np.argsort(group_scores)[::-1][:k]
+        hits = float(np.sum(group_labels[top_k_indices]))
+        recalls.append(hits / total_pos)
+        start = end
+    if not recalls:
+        return 0.0
+    return float(np.mean(recalls))
+
+
 def compute_mrr(
     y_true: np.ndarray,
     y_pred: np.ndarray,
@@ -232,6 +260,20 @@ def train_classifier(
     return classifier
 
 
+def calibrate_classifier(
+    classifier: xgb.XGBClassifier,
+    X_calib: np.ndarray,
+    y_calib: np.ndarray,
+    method: str,
+) -> CalibratedClassifierCV | None:
+    """Calibrate a prefit classifier using Platt (sigmoid) or isotonic."""
+    if method == "none":
+        return None
+    calibrator = CalibratedClassifierCV(classifier, method=method, cv="prefit")
+    calibrator.fit(X_calib, y_calib)
+    return calibrator
+
+
 def evaluate_model(
     model,
     X: np.ndarray,
@@ -241,7 +283,8 @@ def evaluate_model(
     split_name: str,
 ) -> Dict:
     """Evaluate model and return metrics."""
-    if model_type == "ranker":
+    """Evaluate model and return metrics."""
+    if model_type in ("ranker", "ranker_fast"):
         dmatrix = xgb.DMatrix(X)
         y_pred = model.predict(dmatrix)
     else:
@@ -254,9 +297,13 @@ def evaluate_model(
         "hit_at_1": compute_hit_at_k(y, y_pred, groups, k=1),
         "hit_at_3": compute_hit_at_k(y, y_pred, groups, k=3),
         "hit_at_5": compute_hit_at_k(y, y_pred, groups, k=5),
+        "recall_at_10": compute_recall_at_k(y, y_pred, groups, k=10),
+        "recall_at_20": compute_recall_at_k(y, y_pred, groups, k=20),
         "mrr": compute_mrr(y, y_pred, groups),
         "auc": roc_auc_score(y, y_pred) if len(np.unique(y)) > 1 else 0.0,
     }
+    if model_type not in ("ranker", "ranker_fast"):
+        metrics["brier"] = brier_score_loss(y, y_pred) if len(np.unique(y)) > 1 else 0.0
     
     return metrics
 
@@ -265,6 +312,12 @@ def main():
     parser = argparse.ArgumentParser(description="Train XGBoost matcher v2")
     parser.add_argument("--samples", type=Path, default=DEFAULT_SAMPLES)
     parser.add_argument("--output-dir", type=Path, default=MODEL_DIR)
+    parser.add_argument(
+        "--calibration",
+        choices=["none", "sigmoid", "isotonic"],
+        default="isotonic",
+        help="Calibration method for classifier probabilities",
+    )
     args = parser.parse_args()
     
     print("=" * 60)
@@ -307,6 +360,12 @@ def main():
     
     # Train classifier
     classifier = train_classifier(X_train, y_train, X_dev, y_dev)
+
+    # Calibrate classifier probabilities (dev set)
+    calibrator = None
+    if args.calibration != "none":
+        print(f"\n--- Calibrating Classifier ({args.calibration}) ---")
+        calibrator = calibrate_classifier(classifier, X_dev, y_dev, args.calibration)
     
     # Evaluate
     print("\n" + "=" * 60)
@@ -319,15 +378,22 @@ def main():
         ("dev", X_dev, y_dev, groups_dev),
         ("test", X_test, y_test, groups_test),
     ]:
-        for model_type, model in [("ranker", ranker), ("classifier", classifier)]:
+        eval_models = [("ranker", ranker), ("classifier", classifier)]
+        if calibrator is not None:
+            eval_models.append(("calibrated", calibrator))
+        for model_type, model in eval_models:
             metrics = evaluate_model(model, X, y, groups, model_type, split_name)
             all_metrics.append(metrics)
             print(f"\n{model_type.upper()} on {split_name}:")
             print(f"  Hit@1: {metrics['hit_at_1']:.4f}")
             print(f"  Hit@3: {metrics['hit_at_3']:.4f}")
             print(f"  Hit@5: {metrics['hit_at_5']:.4f}")
+            print(f"  Recall@10: {metrics['recall_at_10']:.4f}")
+            print(f"  Recall@20: {metrics['recall_at_20']:.4f}")
             print(f"  MRR:   {metrics['mrr']:.4f}")
             print(f"  AUC:   {metrics['auc']:.4f}")
+            if "brier" in metrics:
+                print(f"  Brier: {metrics['brier']:.4f}")
 
     if ranker_fast is not None:
         for split_name, X, y, groups in [
@@ -340,6 +406,8 @@ def main():
             print(f"  Hit@1: {metrics['hit_at_1']:.4f}")
             print(f"  Hit@3: {metrics['hit_at_3']:.4f}")
             print(f"  Hit@5: {metrics['hit_at_5']:.4f}")
+            print(f"  Recall@10: {metrics['recall_at_10']:.4f}")
+            print(f"  Recall@20: {metrics['recall_at_20']:.4f}")
             print(f"  MRR:   {metrics['mrr']:.4f}")
             print(f"  AUC:   {metrics['auc']:.4f}")
     
@@ -350,12 +418,16 @@ def main():
     ranker_path = args.output_dir / f"xgbranker_{timestamp}.json"
     ranker_fast_path = args.output_dir / f"xgbranker_fast_{timestamp}.json"
     classifier_path = args.output_dir / f"xgbclassifier_{timestamp}.json"
+    calibrator_path = args.output_dir / f"xgbclassifier_calibrator_{args.calibration}_{timestamp}.pkl"
     meta_path = args.output_dir / f"xgb_matcher_features_{timestamp}.json"
     
     ranker.save_model(str(ranker_path))
     if ranker_fast is not None:
         ranker_fast.save_model(str(ranker_fast_path))
-    classifier.save_model(str(classifier_path))
+    classifier.get_booster().save_model(str(classifier_path))
+    if calibrator is not None:
+        with open(calibrator_path, "wb") as f:
+            pickle.dump(calibrator, f)
     
     # Save metadata
     metadata = {
@@ -364,6 +436,8 @@ def main():
         "semantic_features_zeroed_for_ranker_fast": SEMANTIC_FEATURES,
         "ranker_params": RANKER_PARAMS,
         "classifier_params": CLASSIFIER_PARAMS,
+        "calibration_method": args.calibration,
+        "calibrator_path": str(calibrator_path) if calibrator is not None else None,
         "metrics": all_metrics,
         "samples_file": str(args.samples),
         "train_size": len(train_df),
@@ -378,6 +452,8 @@ def main():
     if ranker_fast is not None:
         print(f"  Ranker FAST: {ranker_fast_path}")
     print(f"  Classifier: {classifier_path}")
+    if calibrator is not None:
+        print(f"  Calibrator: {calibrator_path}")
     print(f"  Metadata: {meta_path}")
     
     print("\n" + "=" * 60)

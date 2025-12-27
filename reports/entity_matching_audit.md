@@ -8,7 +8,7 @@ Cet audit complète et corrige l’analyse initiale avec un regard **data scienc
 1. **Skew train/serve avéré** : le ranker est entraîné avec des features sémantiques, mais l’inférence stage‑1 les désactive → risque de rater le vrai candidat avant la phase de scoring. (`scripts/train_xgb_matcher_v2.py`, `scripts/infer_xgb_matcher_topk.py`)
 2. **Routing dépendant de SHAP** : `_route_xgb()` lit des features depuis `shap`, mais le CSV top‑k ne contient pas ces features si `--with-shap` n’est pas activé → promotions AUTO rarement déclenchées. (`scripts/route_xgb_results.py`, `scripts/infer_xgb_matcher_topk.py`)
 3. **Calibration très mauvaise** : les scores 0.99+ ont ~10% d’erreur réelle (sur le set diagnostiqué) → seuils AUTO trop optimistes. (`reports/diagnostic_report.md`, `reports/diagnostic_analysis.json`)
-4. **Hard negatives annoncés mais pas implémentés** : l’échantillonnage utilise un score heuristique au lieu d’un vrai top‑K ranker → faible apprentissage des confusions critiques (même adresse / nom différent). (`scripts/generate_training_samples.py`)
+4. **Hard negatives annoncés mais pas implémentés** : l’échantillonnage utilise un score heuristique au lieu d’un vrai top‑K ranker → faible apprentissage des confusions critiques (même adresse / nom différent). (`scripts/generate_training_samples_v3.py`)
 5. **Risque “adresse‑seule”** : le modèle sur‑pondère l’adresse et produit des faux positifs co‑localisés (centre commercial / ZI), exactement les erreurs observées.
 
 **Conséquence** : la politique actuelle d’AUTO est structurellement risquée. La bonne trajectoire SOTA passe par **(1) alignement train/serve**, **(2) hard negative mining real‑world**, **(3) calibration + seuils segmentés**, **(4) pipeline en 2 étages** (ranker → classif décision) et **(5) boucles de feedback depuis Places**.
@@ -21,13 +21,16 @@ Cet audit complète et corrige l’analyse initiale avec un regard **data scienc
 - `reports/diagnostic_report.md`
 - `reports/diagnostic_analysis.json`
 - `reports/diagnostic_plots.png`
-- Code: `scripts/train_xgb_matcher_v2.py`, `scripts/infer_xgb_matcher_topk.py`, `scripts/generate_training_samples.py`, `scripts/route_xgb_results.py`, `src/xgb_matcher/*`, `src/pipe_v6/places_*`
+- Code: `scripts/train_xgb_matcher_v2.py`, `scripts/infer_xgb_matcher_topk.py`, `scripts/generate_training_samples_v3.py`, `scripts/route_xgb_results.py`, `src/xgb_matcher/*`, `src/pipe_v6/places_*`
 
-> **Note critique importante** : `diagnostic_report.md` et `diagnostic_analysis.json` sont **partiellement incohérents** sur la *coverage*. Ex. à θ=0.995 :
-> - `diagnostic_report.md` indique **73.1% couverture (98/134)**
-> - `diagnostic_analysis.json` indique **coverage=0.4066** avec **auto_count=98**
-> 
-> **Interprétation probable** : la colonne *coverage* du JSON est calculée contre un dénominateur différent (peut‑être l’ensemble CRM total), ou bug de calcul. Les *comptes* (auto_count=98, errors=4) sont cohérents avec 98/134=73.1%. Il faut vérifier la logique du script de diagnostic avant d’utiliser la coverage comme KPI.
+> **Politique officielle (v3 par défaut)** :  
+> - `scripts/generate_training_samples_v3.py` est **la base unique** pour la génération d’échantillons.  
+> - `scripts/generate_training_samples.py` et `scripts/generate_training_samples_v2.py` sont **dépréciés** (ne plus utiliser).  
+> - Toute nouvelle feature / stratégie d’échantillonnage doit être ajoutée à **v3**.
+
+> **Note critique (corrigée)** : une incohérence de *coverage* existait entre `diagnostic_report.md` et `diagnostic_analysis.json` (dénominateur différent). Elle est **corrigée** via `scripts/fix_diagnostic_report.py`, qui impose :  
+> `coverage = auto_count / total_count` avec `total_count = somme(calibration.count)`.  
+> Le JSON conserve `coverage_raw` pour traçabilité.
 
 ---
 
@@ -110,6 +113,7 @@ La feature `addr_token_overlap` agit comme un “super‑signal” même sans pr
 - **address_density** : nb d’établissements à la même adresse → signal de risque.
 - **match numérique** : chiffres / codes (ex “APAJH 69”).
 - **catégories juridiques** (PUBLIC / PRIVE / ASSO) en feature.
+- **commonness_name_idf** : pénaliser les noms/tokens très fréquents (FRANCE, BATIMENT, SOCIETE).
 
 ---
 
@@ -118,6 +122,7 @@ La feature `addr_token_overlap` agit comme un “super‑signal” même sans pr
 ### Étape 1 : Ranker rapide (no‑semantic)
 - Optimisé pour **rappeler le bon candidat** dans le top‑K.
 - Features “cheap” uniquement (lexical + adresse + tokens).
+- **Métrique clé** : Recall@10 / Recall@20 (plafond de performance finale).
 
 ### Étape 2 : Classifier (full)
 - Features complètes (sémantique + meta‑features).
@@ -164,10 +169,108 @@ return "AUTO" if s >= thr else "REVIEW"
 
 # Schéma directeur d’implémentation (Codex)
 
+## Protocoles de handover (obligatoires)
+**Objectif** : garantir des transitions parfaites entre fenêtres de contexte.
+
+**Règles générales pour chaque session Codex**
+1. **Lire** `reports/entity_matching_audit.md` avant toute action.
+2. **Tracer** le travail dans un court “testament” (voir format ci‑dessous).
+3. **Ne jamais** démarrer une nouvelle phase tant que la phase précédente n’est pas au moins “Phase READY”.
+
+**Format du testament (à laisser à chaque fin de session)**
+Créer / mettre à jour : `reports/handover.md`
+```
+## Session <date_utc> — Codex Ctx <N>
+- Phase ciblée : <Phase 0/1/2/3>
+- Objectif : <objectif précis>
+- Changements :
+  - <fichier> : <résumé>
+- Tests/commandes exécutées :
+  - <commande> → <résultat court>
+- Etat :
+  - ✅ terminé / ⚠️ partiel / ❌ bloqué
+- Prochaines étapes immédiates :
+  - <1>
+  - <2>
+```
+
+---
+
+## Découpage par fenêtre de contexte (Codex = Ctx0)
+**Principe** : chaque fenêtre a une mission unique, des entrées/sorties claires, et un critère d’arrêt.
+
+### Ctx0 — Diagnostic & Plan (actuel)
+**Mission** : stabiliser les diagnostics + détailler le plan + protocoles handover.  
+**Entrées** : `reports/diagnostic_*`, `reports/entity_matching_audit.md`  
+**Sorties attendues** :
+- Diagnostic cohérent (`coverage` correct) + report/plot régénérés
+- Plan d’implémentation détaillé + training schedule par phase
+- Protocoles de handover ajoutés
+**Critère d’arrêt** : les sections “Entraînement” + “Handover” sont présentes et `diagnostic_report.md` cohérent.
+
+### Ctx1 — Quick Wins (Phase 1)
+**Mission** : routing indépendant de SHAP + export features + ranker_fast.  
+**Entrées** : `scripts/infer_xgb_matcher_topk.py`, `scripts/route_xgb_results.py`, `scripts/train_xgb_matcher_v2.py`  
+**Sorties attendues** :
+- CSV top‑k contient features de routing
+- `_route_xgb()` utilise features directes
+- Ranker stage‑1 aligné (no‑semantic)
+**Critère d’arrêt** : Phase 1 “Definition of Done” OK + `reports/handover.md` mis à jour.
+
+### Ctx2 — Sprint ML (Phase 2)
+**Mission** : hard negative mining + nouvelles features + calibration.  
+**Entrées** : `scripts/generate_training_samples_v3.py`, `src/xgb_matcher/features.py`, `scripts/train_xgb_matcher_v2.py`  
+**Sorties attendues** :
+- dataset v4 avec hard negatives réalistes
+- nouvelles features intégrées
+- calibrateur sauvegardé
+**Critère d’arrêt** : Phase 2 “Definition of Done” OK + `reports/handover.md` mis à jour.
+
+**Note importante** : v1/v2 de génération d’échantillons sont dépréciées. Tout changement va dans v3.
+
+### Ctx3 — SOTA (Phase 3)
+**Mission** : pipeline 2‑étapes, multi‑blocking, silver labels.  
+**Entrées** : nouveaux scripts ranker/decider, blocking, Places feedback  
+**Sorties attendues** :
+- pipeline 2‑étapes stable
+- multi‑blocking actif
+- silver labels intégrés
+**Critère d’arrêt** : Phase 3 “Definition of Done” OK + `reports/handover.md` mis à jour.
+
+---
+
 ## Phase 0 — Pré‑requis (1–2 jours)
 - **Corriger la génération des diagnostics** : coverage, risk‑coverage, calibration ECE.
 - **Exporter les features nécessaires au routing** directement dans le top‑k CSV.
 - **Aligner train/serve** du ranker (features identiques).
+
+### Détails de code (Phase 0)
+**Objectif** : rendre les diagnostics reproductibles et cohérents.
+
+- **Script de correction** (déjà ajouté) : `scripts/fix_diagnostic_report.py`
+  - Entrée : `reports/diagnostic_analysis.json`
+  - Sorties : `reports/diagnostic_analysis.json` (corrigé), `reports/diagnostic_report.md`, `reports/diagnostic_plots.png`
+  - Logique : `coverage = auto_count / total_count` avec `total_count = somme(calibration.count)`
+  - Ajout de `meta.total_count` + `coverage_raw` pour traçabilité
+
+- **Script de diagnostic reproductible** (implémenté) :
+  - **Fichier** : `scripts/diagnostic_xgb_routing.py`
+  - **Entrées** :
+    - CSV avec ground truth (`ground_truth_siret`) : ex `data/splits/test.csv`
+    - Modèles XGB (ranker + classifier)
+    - Paramètres : `--pool-mode` (insee_then_postcode / union), `--thresholds`
+  - **Sorties** :
+    - `reports/diagnostic_analysis.json` (recalculé)
+    - `reports/diagnostic_report.md`
+    - `reports/diagnostic_plots.png`
+  - **Règle de coverage** :
+    - `coverage_total = auto_count / total_count`
+    - `coverage_eligible = auto_count / eligible_count` (eligible = ground truth dans pool)
+  - **Validation** :
+    - Vérifier `auto_count = somme` et cohérence avec precision@1
+  - **Commandes** :
+    - `python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv`
+    - Variante rapide : `python scripts/diagnostic_xgb_routing.py --limit 200`
 
 ## Phase 1 — Quick Wins (1–3 jours)
 **Objectif : améliorer l’AUTO immédiatement sans casser le recall**
@@ -183,6 +286,60 @@ return "AUTO" if s >= thr else "REVIEW"
 3. **Seuils segmentés immédiats**
    - Implémenter le routing segmenté du diagnostic (nom court/long, adresse complète).
    - Ajouter une règle “adresse‑seule → REVIEW”.
+
+### Entraînement (Phase 1) — quand & comment (MacBook M4 Pro, 24GB)
+**But** : valider rapidement le pipeline sans lancer un entraînement complet.
+
+- **Quand** :
+  - Dès que le routing est indépendant de SHAP **et** que le ranker_fast existe.
+- **Quoi** :
+  - Entraîner uniquement le **ranker_fast** (no‑semantic), pour aligner le stage‑1.
+  - Pas de re‑training complet du classifier à ce stade (sauf bug).
+- **Modalités** :
+  - Désactiver la sémantique pour accélérer : `XGB_SEMANTIC_ENABLED=0`
+  - Limiter les samples (si besoin) : `--max-negatives 50` dans `generate_training_samples_v3.py`
+  - Utiliser un dataset réduit pour smoke tests (ex. `--limit 200` sur diagnostic)
+  - Threads recommandés : `OMP_NUM_THREADS=6` (évite la saturation CPU sur macOS)
+
+**Commandes rapides** :
+```
+XGB_SEMANTIC_ENABLED=0 OMP_NUM_THREADS=6 python scripts/generate_training_samples_v3.py --output data/samples_aligned_qw.parquet --max-negatives 50
+XGB_SEMANTIC_ENABLED=0 OMP_NUM_THREADS=6 python scripts/train_xgb_matcher_v2.py --samples data/samples_aligned_qw.parquet
+python scripts/diagnostic_xgb_routing.py --limit 200
+```
+
+### Détails de code (Phase 1)
+**Fichiers impactés + contrat attendu**
+
+- `scripts/infer_xgb_matcher_topk.py`
+  - Ajouter l’export des features de routing dans `rows_out` :
+    - `name_jaro_max`, `name_token_overlap_max`, `name_sim_max_etab`,
+      `name_crm_contains_cand_max`, `name_sim_max_pm_dirigeant`,
+      `addr_jaro`, `addr_token_overlap`, `street_number_diff`, `name_length_max`
+  - Ajouter option `--export-routing-features` (bool) pour activer/désactiver
+
+- `scripts/route_xgb_results.py`
+  - Modifier `_route_xgb()` pour utiliser les colonnes directes si disponibles
+  - Garder fallback SHAP (si présent) uniquement en dernier recours
+  - Ajouter logique “adresse‑seule” : si `name_token_overlap_max < 0.1` et `addr_token_overlap > 0.8` ⇒ REVIEW
+  - Ajouter seuils segmentés (nom court / long, adresse complète)
+
+- `scripts/train_xgb_matcher_v2.py`
+  - Ajouter un **ranker_fast** :
+    - same params, mais features `skip_semantic=True`
+    - nom modèle : `xgbranker_fast_<timestamp>.json`
+  - Référencer ce modèle en phase 1 dans l’inférence
+
+**Definition of Done Phase 1**
+- Top‑k CSV contient toutes les features de routing (vérif : colonnes présentes)
+- `_route_xgb()` n’est plus dépendant de SHAP
+- Ranker stage‑1 = modèle dédié no‑semantic
+- AUTO rate stable ou en hausse, FP rate en baisse sur set diagnostic
+
+**Validation Phase 1 (commandes)**
+- `python scripts/infer_xgb_matcher_topk.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --output-path reports/xgb_infer_topk_phase1.csv --with-shap`
+- `python scripts/route_xgb_results.py --input-path reports/xgb_infer_topk_phase1.csv --output-path reports/routed_phase1.csv`
+- `python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv --limit 200`
 
 ## Phase 2 — Sprint ML (1–2 semaines)
 **Objectif : réduire massivement les FP et stabiliser l’AUTO**
@@ -204,6 +361,82 @@ return "AUTO" if s >= thr else "REVIEW"
 4. **Meta‑features pour décision**
    - `score_gap`, `score_ratio`, `top3_avg`, `pool_size`, `has_name_evidence`.
 
+5. **Métriques Ranker (obligatoires)**
+   - Monitorer **Recall@10** et **Recall@20**.
+   - Ne pas utiliser Precision@1 comme KPI principal du ranker.
+
+### Entraînement (Phase 2) — quand & comment (MacBook M4 Pro, 24GB)
+**But** : entraînement complet après features + hard negatives + calibration.
+
+- **Quand** :
+  - Une fois **hard negatives** en place + nouvelles features intégrées.
+  - Une fois la **calibration** ajoutée dans le pipeline d’entraînement.
+- **Quoi** :
+  - Re‑entraîner **ranker + classifier** avec les nouvelles features.
+  - Entraîner le calibrateur (Platt ou isotonic) sur le split dev.
+- **Modalités (adaptées Mac)** :
+  - Entraînement CPU (XGBoost n’utilise pas MPS).
+  - Limiter threads : `OMP_NUM_THREADS=6` / `MKL_NUM_THREADS=6`
+  - Sémantique : **cohérence stricte** train/infer
+    - Soit **tout OFF** (`XGB_SEMANTIC_ENABLED=0`) pour un modèle “no‑semantic” stable
+    - Soit **tout ON** (`XGB_SEMANTIC_ENABLED=1`) *si et seulement si* tu acceptes le coût (embeddings)
+  - Si sémantique ON : `XGB_SEMANTIC_DEVICE=mps` + `XGB_SEMANTIC_BATCH_SIZE=128`
+
+**Commandes recommandées** :
+```
+# Génération dataset complet (hard negatives inclus)
+XGB_SEMANTIC_ENABLED=0 OMP_NUM_THREADS=6 python scripts/generate_training_samples_v3.py --output data/samples_aligned_v4.parquet
+
+# Entraînement complet
+XGB_SEMANTIC_ENABLED=0 OMP_NUM_THREADS=6 python scripts/train_xgb_matcher_v2.py --samples data/samples_aligned_v4.parquet
+
+# Diagnostic complet
+python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv
+```
+
+### Détails de code (Phase 2)
+- **Base officielle** : `scripts/generate_training_samples_v3.py`
+  - Remplacer la logique de hard negatives actuelle par **ranker top‑K**
+  - Ajouter sampling “same_address_diff_name” et “same_name_diff_city”
+  - Garantir que le GT est inclus même si le pré‑filtre l’écarte
+  - Journaliser les cas **GT absent du pool** + taux d’exclusion
+
+- `src/xgb_matcher/features.py`
+  - Nouvelles features :
+    - `address_density` (nb candidats à la même adresse)
+    - `idf_name_score` (TF‑IDF char‑ngrams)
+    - `numeric_token_match`
+    - `legal_form_category`
+    - `commonness_name_idf` (pénalise tokens fréquents : FRANCE, BATIMENT, SOCIETE)
+    - **Features issues des règles de reranking (à intégrer au modèle)** :
+      - `name_evidence_max` = max(jaro, token_overlap, acronym, contains, UL/PM)
+      - `addr_perfect_strict` = addr_jaro>=0.97 & street_name_jaro>=0.95 & street_number_diff<=2
+      - `addr_strong_no_num` = addr_jaro>=0.97 & street_number_diff==9999
+      - `addr_only_risk` = addr_perfect_strict & name_evidence_max < 0.3
+      - `semantic_only_risk` = name_semantic_max>0.7 & name_jaro_max<0.4 & token_overlap<0.2
+      - `holding_mismatch` (bool, mots HOLDING/GROUPE/CORPORATION en cand mais pas en CRM)
+      - `alias_perfect_addr` = alias_match & addr_perfect_strict
+      - `name_uniqueness_gap` = best_name_score_top1 − best_name_score_top2 (pool-level)
+      - `addr_density_is_high` = address_density > seuil (ex: 5)
+
+- `scripts/train_xgb_matcher_v2.py`
+  - Ajouter calibration post‑hoc (Platt / Isotonic)
+  - Sauver calibrateur : `models/xgb_calibrator_<ts>.pkl`
+
+- `scripts/infer_xgb_matcher_topk.py`
+  - Charger calibrateur si présent pour scorer AUTO
+  - Calculer meta‑features top‑K (gap, ratio, pool_size)
+
+**Definition of Done Phase 2**
+- Hard negatives réalistes dans le dataset
+- Calibration activée (ECE < 2–3% visée)
+- AUTO rules basées sur score calibré + meta‑features
+
+**Validation Phase 2 (commandes)**
+- `python scripts/generate_training_samples_v3.py --output data/samples_aligned_v4.parquet`
+- `python scripts/train_xgb_matcher_v2.py --samples data/samples_aligned_v4.parquet`
+- `python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv`
+
 ## Phase 3 — SOTA (2–4 semaines)
 **Objectif : pipeline robuste avec garanties quasi‑zéro FP**
 
@@ -222,6 +455,101 @@ return "AUTO" if s >= thr else "REVIEW"
 4. **Boucle Places → retraining**
    - Cas Places “très sûrs” → silver labels
    - Feedback pour améliorer hard negatives et recall
+
+### Entraînement (Phase 3) — quand & comment (MacBook M4 Pro, 24GB)
+**But** : produire le modèle final “prod‑ready”.
+
+- **Quand** :
+  - Quand la pipeline 2‑étapes + multi‑blocking + calibration sont stables.
+  - Quand les diagnostics sont satisfaisants sur un set test dédié.
+- **Quoi** :
+  - Entraînement **final** ranker + classifier + calibrateur.
+  - Génération d’une model card à partir des métriques et versions.
+- **Modalités** :
+  - Ré‑entraîner sur dataset complet (hard negatives + silver labels Places).
+  - Sémantique ON/OFF **cohérente** avec l’inférence en prod.
+  - Sur Mac M4 : threads limités + batch size raisonnable.
+
+**Commandes recommandées** :
+```
+XGB_SEMANTIC_ENABLED=0 OMP_NUM_THREADS=6 python scripts/train_xgb_ranker.py
+XGB_SEMANTIC_ENABLED=0 OMP_NUM_THREADS=6 python scripts/train_xgb_decider.py
+python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/splits/test.csv
+```
+
+### Détails de code (Phase 3)
+- **Ranker 2‑étapes** : `scripts/train_xgb_ranker.py` + `scripts/train_xgb_decider.py`
+- **Multi‑blocking** : `src/xgb_matcher/candidates.py` + nouveau module `blocking.py`
+- **Risk‑coverage par segment** : `scripts/diagnostic_xgb_routing.py` + seuils per‑segment
+- **Silver labels** : pipeline d’extraction depuis Places + intégration dans `generate_training_samples_v3.py`
+
+**Definition of Done Phase 3**
+- AUTO FP rate ≤ 0.1% (sur set test dédié)
+- Coverage AUTO ≥ 80% (sur segments fiables)
+- Reste routé en REVIEW/Places
+
+**Validation Phase 3 (commandes)**
+- `python scripts/train_xgb_ranker.py` + `python scripts/train_xgb_decider.py`
+- `python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/splits/test.csv`
+- `python scripts/route_xgb_results.py --places-mode --input-path reports/xgb_infer_topk_phase3.csv --output-path reports/routed_phase3.csv`
+
+---
+
+## Plan SOTA complet (Blueprint opérationnel)
+**Objectif** : converger vers un matching industriel, traçable, calibré, avec ~0 faux positif en AUTO.
+
+### 1) Candidate Generation (Multi‑Blocking)
+- **Bloquages simultanés** :
+  - INSEE / CP (baseline)
+  - trigrammes nom (TF‑IDF char‑ngrams)
+  - tokens rue (street_name + typeVoie normalisés)
+  - phonétique (Soundex/Metaphone FR)
+- **Fusion + dédup** par SIRET
+- **Outputs** : pool candidat enrichi + stats pool (taille moyenne, densité adresse)
+
+### 2) Ranker (Recall‑first)
+- **But** : Recall@10/20 très élevé (plafond de la perf finale)
+- **Features** : cheap lexical + adresse (pas de sémantique si trop coûteuse)
+- **KPI obligatoire** : Recall@10 ≥ 98%, Recall@20 ≥ 99% (sur set test)
+
+### 3) Decider (Calibrated Classifier)
+- **Features** : full + meta‑features (gap, ratio, pool size, name_evidence_max)
+- **Calibration** : Platt/Isotonic sur dev + ECE < 2%
+- **Routing** : seuils segmentés + garde‑fous (addr_only_risk, semantic_only_risk)
+
+### 4) Fallback Places / Web (safe‑upgrade)
+- **Uniquement** pour REVIEW / NO_MATCH
+- **Upgrade** uniquement si preuves multi‑sources + validation SIRENE stricte
+- **No false positives** comme invariant
+
+### 5) Feedback Loop (Silver Labels)
+- **Collecte** : cas Places “très sûrs”
+- **Injection** : dans dataset v5 (avec tag provenance)
+- **Monitoring** : drift (nom/adresse), taux d’upgrade Places
+
+### 6) Monitoring & Reporting
+- Risk‑coverage par segment (nom court/long, adresse complète/incomplète)
+- ECE + calibration bins
+- FP sentinel set (cases “fragiles” récurrents)
+- **Model card auto‑générée** à partir des métriques + versions
+
+### 7) Gates de mise en prod
+- AUTO FP rate ≤ 0.1%
+- Coverage AUTO ≥ 80% (sur segments fiables)
+- Recall@20 ranker ≥ 99%
+- ECE ≤ 2%
+- Zéro régression sur le “sentinel set”
+
+---
+
+## Checklist “Nouvelle fenêtre de contexte”
+1. Ouvrir `reports/entity_matching_audit.md` pour le plan en cours.
+2. Vérifier les diagnostics :
+   - `python scripts/fix_diagnostic_report.py`
+   - Consulter `reports/diagnostic_report.md`
+3. Identifier la phase active (Quick Wins / Sprint ML / SOTA)
+4. Lister les fichiers à toucher (voir détails ci‑dessus)
+5. Valider avec un run minimal (top‑k + routing)
 
 ---
 

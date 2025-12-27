@@ -19,6 +19,7 @@ from .features import (
     first_word_match,
     contains_check,
     acronym_match,
+    numeric_token_match,
     # Feature computation
     make_features,
     FEATURE_NAMES,
@@ -40,6 +41,7 @@ __all__ = [
     "first_word_match",
     "contains_check",
     "acronym_match",
+    "numeric_token_match",
     "make_features",
     "FEATURE_NAMES",
     "build_candidate_names",

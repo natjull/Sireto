@@ -17,8 +17,12 @@ Features computed:
   - name_contains_crm: 1 if candidate name contains CRM name
   - name_crm_contains_cand: 1 if CRM name contains candidate name
   - acronym_match: 1 if acronym matches expanded form
+  - idf_name: Average IDF of overlapping name tokens
+  - numeric_token_match: Numeric token overlap between names
   - addr_token_overlap: Ratio of common words in addresses
+  - address_density: Number of candidates sharing the same address (per location)
   - street_name_jaro: Jaro similarity on street name only (no number)
+  - legal_form_category: Encoded legal form category (PUBLIC/PRIVE/INCONNU)
 """
 
 from __future__ import annotations
@@ -29,6 +33,11 @@ from typing import Any, Dict, List, Mapping, Set
 
 import pandas as pd
 from rapidfuzz.distance import JaroWinkler, Levenshtein
+
+try:
+    from src.pipe_v6.category_mapping import map_legal_to_category
+except ImportError:  # Fallback when PYTHONPATH=src
+    from pipe_v6.category_mapping import map_legal_to_category
 
 from .naming import (
     CandidateName,
@@ -46,6 +55,28 @@ CITY_OVERLAP_THRESHOLD = 0.7
 CITY_MAX_TOKENS = 3
 SEMANTIC_GATE_JARO = float(os.getenv("XGB_SEMANTIC_GATE_JARO", "0.90"))
 
+# Stopwords to down-weight generic name overlap (avoid LES/DU false positives)
+NAME_STOPWORDS: Set[str] = {
+    "LES", "DU", "DE", "LA", "LE", "DES", "D", "L", "AUX", "AU",
+}
+
+# Global IDF map for name tokens (set by candidate loader)
+_GLOBAL_NAME_IDF: Dict[str, float] = {}
+_GLOBAL_NAME_IDF_DEFAULT: float = 0.0
+
+
+def set_global_name_idf_map(idf_map: Mapping[str, float] | None, default_idf: float | None = None) -> None:
+    """Register a global IDF map for name tokens (used by idf_name feature)."""
+    global _GLOBAL_NAME_IDF, _GLOBAL_NAME_IDF_DEFAULT
+    _GLOBAL_NAME_IDF = dict(idf_map) if idf_map else {}
+    if default_idf is None:
+        if _GLOBAL_NAME_IDF:
+            _GLOBAL_NAME_IDF_DEFAULT = max(_GLOBAL_NAME_IDF.values())
+        else:
+            _GLOBAL_NAME_IDF_DEFAULT = 0.0
+    else:
+        _GLOBAL_NAME_IDF_DEFAULT = float(default_idf)
+
 
 # Feature names in order (used for training and inference)
 FEATURE_NAMES: List[str] = [
@@ -57,6 +88,8 @@ FEATURE_NAMES: List[str] = [
     "name_jaro_gap",
     "name_levenshtein_max",
     "name_token_overlap_max",
+    "idf_name",
+    "numeric_token_match",
     "name_first_word_match_max",
     "name_contains_crm_max",
     "name_crm_contains_cand_max",
@@ -83,8 +116,10 @@ FEATURE_NAMES: List[str] = [
     "city_match",
     "street_number_diff",
     "addr_token_overlap",
+    "address_density",
     "street_name_jaro",
     "name_addr_consistency",
+    "legal_form_category",
     # New features from reranking rules (Phase 3)
     "is_siege",           # D9: head office indicator
     "is_association",     # B1: association candidate indicator
@@ -332,26 +367,58 @@ def street_number_diff(n1: str | None, n2: str | None) -> float:
         return 9999.0
 
 
+def _address_density_for_candidate(crm: Mapping[str, Any], cand: dict) -> float:
+    """Return address density for the candidate, preferring INSEE-based grouping."""
+    insee = crm.get("insee")
+    if insee:
+        density = cand.get("_xgb_addr_density_insee")
+        if density is not None:
+            return float(density)
+    density = cand.get("_xgb_addr_density_cp")
+    if density is not None:
+        return float(density)
+    density = cand.get("address_density")
+    if density is not None:
+        return float(density)
+    return 1.0
+
+
 # --------------------------------------------------------------------------- #
 # Token-based features (new for improved ranking)
 # --------------------------------------------------------------------------- #
 
 
-def _tokenize(text: str) -> Set[str]:
-    """Split normalized text into set of tokens (words)."""
+def _tokenize(
+    text: str,
+    *,
+    stopwords: Set[str] | None = None,
+    min_len: int = 1,
+) -> Set[str]:
+    """Split normalized text into set of tokens (words), with optional filtering."""
     if not text:
         return set()
-    return set(text.split())
+    tokens = text.split()
+    if stopwords:
+        tokens = [t for t in tokens if t not in stopwords]
+    if min_len > 1:
+        tokens = [t for t in tokens if len(t) >= min_len]
+    return set(tokens)
 
 
-def token_overlap(a: str, b: str) -> float:
+def token_overlap(
+    a: str,
+    b: str,
+    *,
+    stopwords: Set[str] | None = None,
+    min_len: int = 1,
+) -> float:
     """
     Compute ratio of common tokens between two strings.
 
     Returns |A ∩ B| / |A ∪ B| (Jaccard similarity on tokens).
     """
-    tokens_a = _tokenize(a)
-    tokens_b = _tokenize(b)
+    tokens_a = _tokenize(a, stopwords=stopwords, min_len=min_len)
+    tokens_b = _tokenize(b, stopwords=stopwords, min_len=min_len)
     if not tokens_a and not tokens_b:
         return 1.0
     if not tokens_a or not tokens_b:
@@ -385,6 +452,29 @@ def contains_check(container: str, contained: str) -> int:
     if not container or not contained:
         return 0
     return int(contained in container)
+
+
+def _idf_overlap(a: str, b: str) -> float:
+    """Average IDF of overlapping name tokens (0 if no overlap or no IDF map)."""
+    if not _GLOBAL_NAME_IDF:
+        return 0.0
+    tokens_a = _tokenize(a, stopwords=NAME_STOPWORDS, min_len=2)
+    tokens_b = _tokenize(b, stopwords=NAME_STOPWORDS, min_len=2)
+    if not tokens_a or not tokens_b:
+        return 0.0
+    overlap = tokens_a & tokens_b
+    if not overlap:
+        return 0.0
+    return sum(_GLOBAL_NAME_IDF.get(tok, _GLOBAL_NAME_IDF_DEFAULT) for tok in overlap) / len(overlap)
+
+
+def numeric_token_match(a: str, b: str) -> float:
+    """Overlap ratio of numeric tokens between two strings."""
+    nums_a = set(re.findall(r"\d+", a or ""))
+    nums_b = set(re.findall(r"\d+", b or ""))
+    if not nums_a or not nums_b:
+        return 0.0
+    return len(nums_a & nums_b) / max(len(nums_a), len(nums_b))
 
 
 def _extract_acronym(text: str) -> str:
@@ -486,6 +576,8 @@ def _init_name_feature_defaults() -> Dict[str, float]:
         "name_jaro_gap": 0.0,
         "name_levenshtein_max": 0.0,
         "name_token_overlap_max": 0.0,
+        "idf_name": 0.0,
+        "numeric_token_match": 0.0,
         "name_first_word_match_max": 0.0,
         "name_contains_crm_max": 0.0,
         "name_crm_contains_cand_max": 0.0,
@@ -528,7 +620,7 @@ def preprocess_crm_row(crm_row: Mapping[str, Any]) -> Dict[str, Any]:
     aliases = [a for a in aliases if len(a) >= 3 and a not in blacklist and not a.isdigit()]
 
     # D11: CRM token set (normalized + stopword filtered)
-    crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 3}
+    crm_tokens = {tok for tok in crm_name.split() if len(tok) >= 3 and tok not in NAME_STOPWORDS}
     crm_tokens -= {"GROUPE", "SOCIETE", "HOLDING"}
 
     return {
@@ -540,6 +632,7 @@ def preprocess_crm_row(crm_row: Mapping[str, Any]) -> Dict[str, Any]:
         "crm_street_num": extract_street_number(crm_address_raw),
         "crm_street_name": extract_street_name_from_address(crm_address_raw),
         "postcode": crm_row.get("postcode"),
+        "insee": crm_row.get("insee"),
         "aliases": aliases,
         "crm_tokens": crm_tokens,
         "is_crm_school": is_crm_school,
@@ -559,8 +652,8 @@ def build_semantic_name_pool(
     pool: List[str] = []
     for nm in candidate_names:
         city_overlap = max(
-            token_overlap(nm.text, cand_city_norm),
-            token_overlap(nm.text, crm_city_norm),
+            token_overlap(nm.text, cand_city_norm, stopwords=NAME_STOPWORDS, min_len=2),
+            token_overlap(nm.text, crm_city_norm, stopwords=NAME_STOPWORDS, min_len=2),
         )
         is_city_like = city_overlap > CITY_OVERLAP_THRESHOLD and len(nm.text.split()) <= CITY_MAX_TOKENS
         is_person_nm = nm.source == NameSource.PERSON_NAME or looks_like_person_name(nm.text)
@@ -620,12 +713,15 @@ def make_features_from_preprocessed(
         for nm in candidate_names:
             sim_jaro = jaro_sim(crm_name, nm.text)
             sim_lev = levenshtein_norm(crm_name, nm.text)
-            tok = token_overlap(crm_name, nm.text)
+            tok = token_overlap(crm_name, nm.text, stopwords=NAME_STOPWORDS, min_len=2)
             fw = first_word_match(crm_name, nm.text)
             contains_crm = contains_check(nm.text, crm_name)
             crm_contains = contains_check(crm_name, nm.text)
             acr = acronym_match(crm_name, nm.text)
-            city_overlap = max(token_overlap(nm.text, cand_city_norm), token_overlap(nm.text, crm_city_norm))
+            city_overlap = max(
+                token_overlap(nm.text, cand_city_norm, stopwords=NAME_STOPWORDS, min_len=2),
+                token_overlap(nm.text, crm_city_norm, stopwords=NAME_STOPWORDS, min_len=2),
+            )
             is_city_like = city_overlap > CITY_OVERLAP_THRESHOLD and len(nm.text.split()) <= CITY_MAX_TOKENS
             is_person_nm = nm.source == NameSource.PERSON_NAME or looks_like_person_name(nm.text)
 
@@ -658,6 +754,9 @@ def make_features_from_preprocessed(
         top = sims_for_max[0]
         second = sims_for_max[1]["jaro"] if len(sims_for_max) > 1 else 0.0
 
+        idf_name = _idf_overlap(crm_name, top["nm"].text)
+        numeric_match = numeric_token_match(crm_name, top["nm"].text)
+
         name_features.update(
             {
                 "name_jaro_max": top["jaro"],
@@ -665,6 +764,8 @@ def make_features_from_preprocessed(
                 "name_jaro_gap": top["jaro"] - second,
                 "name_levenshtein_max": top["lev"],
                 "name_token_overlap_max": max(s["tok"] for s in sims),
+                "idf_name": idf_name,
+                "numeric_token_match": numeric_match,
                 "name_first_word_match_max": max(s["fw"] for s in sims),
                 "name_contains_crm_max": max(s["contains_crm"] for s in sims),
                 "name_crm_contains_cand_max": max(s["crm_contains"] for s in sims),
@@ -721,11 +822,19 @@ def make_features_from_preprocessed(
         "city_match": float(city_match(crm_city, cand.get("city"))),
         "street_number_diff": street_number_diff(crm_street_num, cand_street_num),
         "addr_token_overlap": token_overlap(crm_addr, cand_addr),
+        "address_density": _address_density_for_candidate(crm, cand),
         "street_name_jaro": jaro_sim(crm_street_name, cand_street_name),
     }
 
     features = {**name_features, **addr_features}
     features["name_addr_consistency"] = name_features["name_jaro_max"] * addr_features["addr_jaro"]
+    legal_category = map_legal_to_category(cand.get("cj_ul"))
+    if legal_category == "PUBLIC":
+        features["legal_form_category"] = 1.0
+    elif legal_category == "PRIVE":
+        features["legal_form_category"] = -1.0
+    else:
+        features["legal_form_category"] = 0.0
 
     # ---------------- New features from reranking rules (Phase 3) -----------------
     

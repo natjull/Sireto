@@ -18,14 +18,74 @@
 ## Session 2025-12-27T16:29:19Z — Codex Ctx1
 - Phase ciblée : Phase 1 (Quick Wins)
 - Objectif : routing sans SHAP + export features + ranker_fast
+- Note importante : **Toujours inclure les établissements fermés** (`--include-closed-candidates`) pour maximiser le recall (le score ou le tri gérera la préférence ouvert/fermé).
 - Changements :
   - scripts/infer_xgb_matcher_topk.py : export des features de routing + option `--export-routing-features` + usage ranker_fast si dispo
   - scripts/train_xgb_matcher_v2.py : entraînement + sauvegarde du ranker_fast (features sémantiques zéro) + métadonnées associées
   - scripts/route_xgb_results.py : routing basé sur colonnes directes + règles adresse‑seule + seuils segmentés
 - Tests/commandes exécutées :
-  - Aucune (non exécutées)
-- Etat : ✅ terminé
+  - `python scripts/generate_training_samples_v3.py ...` (small align dataset)
+  - `python scripts/train_xgb_matcher_v2.py ...` (ranker_fast training + fix code)
+  - `python scripts/infer_xgb_matcher_topk.py ...` (validation on subset)
+  - `python scripts/route_xgb_results.py ...` (routing validation)
+- Etat : ✅ terminé (Ratio AUTO: 78.4%, REVIEW: 21.6% sur subset test avec établissements fermés)
 - Prochaines étapes immédiates :
-  - Entraîner un ranker_fast : `XGB_SEMANTIC_ENABLED=0 python scripts/train_xgb_matcher_v2.py --samples data/samples_aligned_v3.parquet`
-  - Générer top‑k avec export features : `python scripts/infer_xgb_matcher_topk.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --output-path reports/xgb_infer_topk_phase1.csv`
-  - Routage quick wins : `python scripts/route_xgb_results.py --input-path reports/xgb_infer_topk_phase1.csv --output-path reports/routed_phase1.csv`
+  - Ctx2 : Sprint ML (Hard Negatives, Calibration, New Features)
+
+## Session 2025-12-27T19:58:00Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML)
+- Objectif : Reduire les FP via Hard Negatives + Calibrer les scores
+- Changements :
+  - `scripts/generate_training_samples_v3.py` : implémenter hard negatives via ranker top-K (et non simple heuristic)
+  - `src/xgb_matcher/features.py` : ajouter feature `address_density`, `idf_name`, et **gestion stopwords** ("LES", "DU")
+  - `scripts/train_xgb_matcher_v2.py` : activer calibration (Isotonic/Platt)
+- Points d'attention (Feedback Phase 1) :
+  - **FP à tuer (IDs 1, 53)** : Substring sans sémantique (Sabeco/SABE), "LES" qui gonfle le score (LES DOUCEURS/LES MURIERS).
+  - **FN à récupérer (IDs 19, 24, 67, 80, 112)** : Acronymes (JNC/J.N.C, ASL/Assoc), Pluriels (PRIMEUR/S), Stopwords (BANQUE/S).
+- Etat : ⚠️ à faire
+
+## Session 2025-12-27T21:11:18Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML)
+- Objectif : hard negatives via ranker + nouvelles features + calibration
+- Changements :
+  - `src/xgb_matcher/features.py` : stopwords nom ("LES", "DU", …), feature `idf_name` (overlap IDF), feature `address_density`, routing tokens ajustés
+  - `src/xgb_matcher/candidates.py` : calcul IDF global + densité d’adresse par INSEE/CP + injection dans features
+  - `scripts/generate_training_samples_v3.py` : hard negatives basés sur un ranker (auto‑détection `xgbranker_fast_*`) + meta ranker
+  - `scripts/train_xgb_matcher_v2.py` : calibration Platt/Isotonic (dev set) + Brier + sauvegarde calibrator
+  - `scripts/infer_xgb_matcher_topk.py` : chargement calibrator + scores calibrés
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ⚠️ partiel (code prêt, entraînement + génération samples non exécutés)
+- Prochaines étapes immédiates :
+  - Générer un dataset v3/v4 avec hard negatives via ranker
+  - Réentraîner `train_xgb_matcher_v2.py` avec calibration
+  - Ré‑inférer + router pour vérifier baisse FP
+
+## Session 2025-12-27T21:29:13Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML)
+- Objectif : compléter les manquants de l’audit Phase 2 (Opus 4.5)
+- Changements :
+  - `src/xgb_matcher/features.py` : feature `numeric_token_match`, `legal_form_category`, doc + defaults
+  - `scripts/infer_xgb_matcher_topk.py` : meta-features (score_gap/ratio/top3_avg/pool_size/has_name_evidence) + export routing
+  - `scripts/generate_training_samples_v3.py` : negatives "same address / different name"
+  - `scripts/train_xgb_matcher_v2.py` : Recall@10/20 (metric + logs)
+  - `scripts/route_xgb_results.py` : gating via score_gap/ratio + has_name_evidence
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ⚠️ partiel (code prêt, entraînement + génération samples non exécutés)
+- Prochaines étapes immédiates :
+  - Générer samples v4 + réentraîner + ré‑inférer
+
+## Session 2025-12-27T21:37:46Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML)
+- Objectif : inclure les établissements fermés en training
+- Changements :
+  - `scripts/generate_training_samples_v3.py` : `include_closed_establishments=True` par défaut
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Régénérer les samples (avec fermés) puis réentraîner
