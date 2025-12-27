@@ -152,6 +152,9 @@ def _route_xgb(top1: pd.Series) -> str:
     score = _safe_float(top1.get("score"))
     name_semantic_max = _safe_float(top1.get("name_semantic_max"))
     name_semantic_second = _safe_float(top1.get("name_semantic_second"))
+    score_gap = _safe_float(top1.get("score_gap"))
+    score_ratio = _safe_float(top1.get("score_ratio"))
+    has_name_evidence = int(_safe_float(top1.get("has_name_evidence"), default=1.0))
 
     name_jaro_max = _get_feature(top1, "name_jaro_max")
     name_token_overlap_max = _get_feature(top1, "name_token_overlap_max")
@@ -182,6 +185,16 @@ def _route_xgb(top1: pd.Series) -> str:
     
     if is_semantic_only and score >= 0.95:
         # Force REVIEW even if score is high
+        return "REVIEW"
+
+    # BLOCK: weak separation between top1 and top2 (high ambiguity)
+    if score_gap and score_gap < 0.05:
+        return "REVIEW"
+    if score_ratio and score_ratio < 1.02:
+        return "REVIEW"
+
+    # BLOCK: no lexical evidence at all
+    if has_name_evidence == 0:
         return "REVIEW"
 
     # BLOCK: Address-only matches (high address overlap, almost no name overlap)

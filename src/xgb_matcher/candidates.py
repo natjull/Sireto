@@ -9,12 +9,14 @@ from __future__ import annotations
 
 import sqlite3
 import math
+from collections import defaultdict
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
 import pyarrow.parquet as pq
 
-from .naming import build_candidate_names
+from .naming import build_candidate_names, normalize_text, primary_name
+from .features import NAME_STOPWORDS, build_address, set_global_name_idf_map
 
 # Paths (configurable, with defaults)
 DEFAULT_PARQUET_PATH = Path("data/StockEtablissement_utf8.parquet")
@@ -64,6 +66,59 @@ def load_pm_dirigeant_names(
                 out[siren].add(denom)
     con.close()
     return {k: sorted(v) for k, v in out.items() if v}
+
+
+def _tokenize_name_for_idf(text: str | None) -> Set[str]:
+    """Tokenize a name for IDF computation (uppercased, stopwords removed)."""
+    if not text:
+        return set()
+    tokens = normalize_text(text).split()
+    return {t for t in tokens if t and t not in NAME_STOPWORDS and len(t) >= 2}
+
+
+def compute_name_idf_map(candidates: Dict[str, dict]) -> Tuple[Dict[str, float], float]:
+    """Compute IDF map for candidate name tokens over the loaded pool."""
+    doc_freq: Dict[str, int] = defaultdict(int)
+    doc_count = 0
+    for cand in candidates.values():
+        name = primary_name(cand)
+        tokens = _tokenize_name_for_idf(name)
+        if not tokens:
+            continue
+        doc_count += 1
+        for tok in tokens:
+            doc_freq[tok] += 1
+    if doc_count == 0:
+        return {}, 0.0
+    idf_map = {
+        tok: math.log((doc_count + 1) / (df + 1)) + 1.0
+        for tok, df in doc_freq.items()
+    }
+    default_idf = math.log((doc_count + 1) / 1) + 1.0
+    return idf_map, default_idf
+
+
+def _attach_address_density(
+    candidates: Dict[str, dict],
+    *,
+    key: str,
+    target_field: str,
+) -> None:
+    """Attach address density per location key (insee or postcode)."""
+    groups: Dict[str, List[dict]] = defaultdict(list)
+    for cand in candidates.values():
+        loc = cand.get(key)
+        if loc:
+            groups[loc].append(cand)
+    for _, group in groups.items():
+        counts: Dict[str, int] = defaultdict(int)
+        for cand in group:
+            addr = build_address(cand)
+            if addr:
+                counts[addr] += 1
+        for cand in group:
+            addr = build_address(cand)
+            cand[target_field] = counts.get(addr, 1) if addr else 1
 
 
 def load_candidates_for_locations(
@@ -253,6 +308,15 @@ def load_candidates_for_locations(
         if verbose:
             dropped = before - len(mapping)
             print(f"  Dropped {dropped} / {before} candidates without names")
+
+    # Compute global name IDF map and register it for feature computation.
+    if mapping:
+        idf_map, default_idf = compute_name_idf_map(mapping)
+        set_global_name_idf_map(idf_map, default_idf)
+
+        # Address density per INSEE and per postcode (used by address_density feature)
+        _attach_address_density(mapping, key="insee", target_field="_xgb_addr_density_insee")
+        _attach_address_density(mapping, key="postcode", target_field="_xgb_addr_density_cp")
 
     # Return dict sorted by SIRET for deterministic iteration order
     return dict(sorted(mapping.items()))

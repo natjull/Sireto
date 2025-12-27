@@ -176,6 +176,17 @@ def extract_significant_tokens(text: str, min_len: int = 3) -> Set[str]:
     return {tok for tok in norm.split() if len(tok) >= min_len}
 
 
+def has_name_evidence(feat_row: dict) -> int:
+    """Heuristic flag: at least one strong lexical signal in name features."""
+    return int(
+        (feat_row.get("name_jaro_max", 0.0) >= 0.60)
+        or (feat_row.get("name_token_overlap_max", 0.0) >= 0.30)
+        or (feat_row.get("name_sim_max_etab", 0.0) >= 0.60)
+        or (feat_row.get("name_crm_contains_cand_max", 0.0) >= 0.60)
+        or (feat_row.get("numeric_token_match", 0.0) >= 0.50)
+    )
+
+
 def compute_ul_token_bonus(crm_name: str, cand: dict) -> float:
     """
     Compute bonus for partial keyword matches in UL names.
@@ -739,6 +750,18 @@ def main():
     feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
     use_scaler = scaler is not None
 
+    # Optional probability calibrator
+    calibrator = None
+    calibrator_path = meta.get("calibrator_path")
+    if calibrator_path:
+        calib_path = Path(calibrator_path)
+        if not calib_path.exists():
+            calib_path = MODEL_DIR / calib_path.name
+        if calib_path.exists():
+            with open(calib_path, "rb") as f:
+                calibrator = pickle.load(f)
+            print(f"Calibrator: {calib_path}")
+
     print(f"Using {len(feature_order)} features: {feature_order}")
     print(f"Scaler: {'enabled' if use_scaler else 'disabled'}")
 
@@ -850,12 +873,30 @@ def main():
         Xs_n = scaler.transform(X_n) if use_scaler else X_n.values
         
         # predict_proba returns [P_neg, P_pos]
-        class_probs = classifier.predict_proba(Xs_n)[:, 1]
+        X_input = Xs_n if use_scaler else X_n.values
+        class_probs = classifier.predict_proba(X_input)[:, 1]
+        if calibrator is not None:
+            class_probs = calibrator.predict_proba(X_input)[:, 1]
         
         # Apply rerank rules on classifier probabilities (if enabled)
         scores = np.array(class_probs)
         if USE_RERANK_RULES:
             scores = apply_rerank_rules(scores, feats_n, r)
+
+        # Meta-features for routing
+        pool_size_stage1 = len(cand_list)
+        pool_size_stage2 = len(scores)
+        scores_sorted = np.sort(scores)[::-1]
+        top1_score = float(scores_sorted[0]) if len(scores_sorted) else 0.0
+        top2_score = float(scores_sorted[1]) if len(scores_sorted) > 1 else 0.0
+        if len(scores_sorted) >= 3:
+            top3_avg = float(np.mean(scores_sorted[:3]))
+        elif len(scores_sorted) > 0:
+            top3_avg = float(np.mean(scores_sorted))
+        else:
+            top3_avg = 0.0
+        score_gap = top1_score - top2_score
+        score_ratio = top1_score / (top2_score + 1e-9) if top2_score > 0 else 1.0
         
         # Final Top-K selection
         topk_idx = np.argsort(scores)[::-1][: args.top_k]
@@ -929,6 +970,13 @@ def main():
                 "crm_city": r.get("crm_city"),
                 "siret_candidate": siret_k,
                 "score": float(scores[idx_k]),
+                "score_top1": top1_score,
+                "score_top2": top2_score,
+                "score_gap": score_gap,
+                "score_ratio": score_ratio,
+                "top3_avg": top3_avg,
+                "pool_size": pool_size_stage2,
+                "pool_size_stage1": pool_size_stage1,
                 "name_semantic_max": name_semantic_max,
                 "name_semantic_second": name_semantic_second,
                 "candidate_name": cand_name,
@@ -939,6 +987,7 @@ def main():
                 "candidate_state": candidate_state,
                 "candidate_last_treatment_date": cand_k.get("last_treatment_date"),
                 "rank": rank,
+                "has_name_evidence": has_name_evidence(feat_row),
                 "shap": shap_json,
             }
 
@@ -950,10 +999,14 @@ def main():
                         "name_sim_max_etab": float(feat_row.get("name_sim_max_etab", 0.0)),
                         "name_crm_contains_cand_max": float(feat_row.get("name_crm_contains_cand_max", 0.0)),
                         "name_sim_max_pm_dirigeant": float(feat_row.get("name_sim_max_pm_dirigeant", 0.0)),
+                        "idf_name": float(feat_row.get("idf_name", 0.0)),
+                        "numeric_token_match": float(feat_row.get("numeric_token_match", 0.0)),
                         "addr_jaro": float(feat_row.get("addr_jaro", 0.0)),
                         "addr_token_overlap": float(feat_row.get("addr_token_overlap", 0.0)),
+                        "address_density": float(feat_row.get("address_density", 1.0)),
                         "street_number_diff": float(feat_row.get("street_number_diff", 9999)),
                         "name_length_max": float(feat_row.get("name_length_max", 0.0)),
+                        "legal_form_category": float(feat_row.get("legal_form_category", 0.0)),
                     }
                 )
 
