@@ -730,7 +730,7 @@ def make_features_from_preprocessed(
     # ---------------- New features from reranking rules (Phase 3) -----------------
     
     # Get primary candidate name for new features
-    from src.xgb_matcher.naming import primary_name
+    from .naming import primary_name
     primary_cand_name = primary_name(cand) or ""
     
     # D9: is_siege - head office indicator
