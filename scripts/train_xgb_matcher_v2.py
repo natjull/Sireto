@@ -41,6 +41,39 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import FEATURE_NAMES
 
+
+# Calibrator wrapper classes (at module level for pickle serialization)
+class IsotonicCalibrator:
+    """Wrapper for isotonic calibration of a base classifier."""
+    def __init__(self, base_estimator, iso_reg):
+        self.base_estimator = base_estimator
+        self.iso_reg = iso_reg
+
+    def predict_proba(self, X):
+        proba = self.base_estimator.predict_proba(X)[:, 1]
+        calibrated = self.iso_reg.predict(proba)
+        calibrated = np.clip(calibrated, 0, 1)  # Ensure valid probabilities
+        return np.column_stack([1 - calibrated, calibrated])
+
+    def predict(self, X):
+        return (self.predict_proba(X)[:, 1] >= 0.5).astype(int)
+
+
+class SigmoidCalibrator:
+    """Wrapper for sigmoid (Platt) calibration of a base classifier."""
+    def __init__(self, base_estimator, lr):
+        self.base_estimator = base_estimator
+        self.lr = lr
+
+    def predict_proba(self, X):
+        proba = self.base_estimator.predict_proba(X)[:, 1]
+        calibrated = self.lr.predict_proba(proba.reshape(-1, 1))
+        return calibrated
+
+    def predict(self, X):
+        return (self.predict_proba(X)[:, 1] >= 0.5).astype(int)
+
+
 # Configuration
 DEFAULT_SAMPLES = Path("data/samples_aligned_v3.parquet")
 MODEL_DIR = Path("models")
@@ -269,8 +302,27 @@ def calibrate_classifier(
     """Calibrate a prefit classifier using Platt (sigmoid) or isotonic."""
     if method == "none":
         return None
-    calibrator = CalibratedClassifierCV(classifier, method=method, cv="prefit")
-    calibrator.fit(X_calib, y_calib)
+    # Use CalibratedClassifierCV in the new sklearn API (no 'prefit' for cv)
+    # Instead, we pass the fitted estimator and use ensemble=False
+    from sklearn.calibration import CalibratedClassifierCV
+    try:
+        # sklearn >= 1.4: use fitted estimator directly without cv='prefit'
+        calibrator = CalibratedClassifierCV(estimator=classifier, method=method, cv='prefit', ensemble=False)
+        calibrator.fit(X_calib, y_calib)
+    except (TypeError, ValueError):
+        # Fallback: manually calibrate using probabilities
+        from sklearn.isotonic import IsotonicRegression
+        from sklearn.linear_model import LogisticRegression
+        
+        y_proba = classifier.predict_proba(X_calib)[:, 1]
+        if method == "isotonic":
+            iso = IsotonicRegression(out_of_bounds='clip')
+            iso.fit(y_proba, y_calib)
+            calibrator = IsotonicCalibrator(classifier, iso)
+        else:  # sigmoid/platt
+            lr = LogisticRegression()
+            lr.fit(y_proba.reshape(-1, 1), y_calib)
+            calibrator = SigmoidCalibrator(classifier, lr)
     return calibrator
 
 
