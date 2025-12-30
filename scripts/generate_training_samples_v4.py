@@ -175,10 +175,20 @@ def load_candidates_for_loc(
 ) -> List[dict]:
     if insee:
         dataset = dataset_insee or ds.dataset(partitions_dir / "insee", format="parquet", partitioning="hive")
-        table = dataset.to_table(filter=ds.field("insee") == insee)
+        # Convert insee to int to match the partition column type
+        try:
+            insee_int = int(insee)
+            table = dataset.to_table(filter=ds.field("insee") == insee_int)
+        except (ValueError, TypeError):
+            return []
     elif postcode:
         dataset = dataset_cp or ds.dataset(partitions_dir / "cp", format="parquet", partitioning="hive")
-        table = dataset.to_table(filter=ds.field("postcode") == postcode)
+        # Convert postcode to int to match the partition column type
+        try:
+            postcode_int = int(postcode)
+            table = dataset.to_table(filter=ds.field("postcode") == postcode_int)
+        except (ValueError, TypeError):
+            return []
     else:
         return []
     candidates = table.to_pylist()
@@ -189,7 +199,7 @@ def load_candidates_for_loc(
     return candidates
 
 
-def build_tfidf_index(candidates: List[dict]) -> Tuple[TfidfVectorizer, any, List[str]]:
+def build_tfidf_index(candidates: List[dict]) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
     names = [normalize_text(primary_name(cand) or "") for cand in candidates]
     vectorizer = TfidfVectorizer(
         analyzer="word",
@@ -198,7 +208,11 @@ def build_tfidf_index(candidates: List[dict]) -> Tuple[TfidfVectorizer, any, Lis
         token_pattern=r"(?u)\b\w+\b",
         min_df=1,
     )
-    matrix = vectorizer.fit_transform(names)
+    try:
+        matrix = vectorizer.fit_transform(names)
+    except ValueError:
+        # Empty vocabulary - all names are empty or stopwords
+        return None, None, names
     return vectorizer, matrix, names
 
 
@@ -362,7 +376,11 @@ def generate_split(
         # TF-IDF prefilter
         vectorizer, cand_matrix, _ = build_tfidf_index(candidates)
         crm_names = group["crm_name"].tolist()
-        top_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
+        if vectorizer is not None and cand_matrix is not None:
+            top_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
+        else:
+            # Fallback: no TF-IDF available, use empty indices to trigger random sampling
+            top_indices = [[] for _ in crm_names]
 
         # Build siret -> candidate index map to ensure GT inclusion
         siret_index = {cand.get("siret"): i for i, cand in enumerate(candidates)}

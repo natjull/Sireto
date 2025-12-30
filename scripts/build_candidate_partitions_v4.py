@@ -43,7 +43,14 @@ def load_training_data(path: Path) -> pd.DataFrame:
 
 
 def _normalize_codes(series: pd.Series) -> pd.Series:
-    return series.apply(lambda x: str(int(float(x))) if pd.notna(x) and x not in ["", "nan"] else x)
+    def _safe_convert(x):
+        if pd.isna(x) or x in ["", "nan"]:
+            return x
+        try:
+            return str(int(float(x)))
+        except (ValueError, TypeError):
+            return None  # Invalid code, will be filtered out
+    return series.apply(_safe_convert)
 
 
 def _parse_siege(val) -> bool:
@@ -124,7 +131,7 @@ def _query_etab_ul(
             e.codePostalEtablissement AS postcode,
             e.libelleCommuneEtablissement AS city,
             e.codeCommuneEtablissement AS insee,
-            e.categorieJuridiqueUniteLegale AS cj_ul,
+            ul.categorieJuridiqueUniteLegale AS cj_ul,
             e.etatAdministratifEtablissement AS etat_admin,
             e.dateDernierTraitementEtablissement AS last_treatment_date,
             ul.sigleUniteLegale AS sigle_ul,
