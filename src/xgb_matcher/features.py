@@ -34,10 +34,32 @@ from typing import Any, Dict, List, Mapping, Set
 import pandas as pd
 from rapidfuzz.distance import JaroWinkler, Levenshtein
 
-try:
-    from src.pipe_v6.category_mapping import map_legal_to_category
-except ImportError:  # Fallback when PYTHONPATH=src
-    from pipe_v6.category_mapping import map_legal_to_category
+# Inlined from pipe_v6.category_mapping to avoid circular imports
+LEGAL_NATURE_MAPPING = {
+    # PUBLIC
+    "7111": "PUBLIC", "7112": "PUBLIC", "7120": "PUBLIC", "7150": "PUBLIC", "7160": "PUBLIC",
+    "7210": "PUBLIC", "7220": "PUBLIC", "7230": "PUBLIC", "7312": "PUBLIC", "7313": "PUBLIC",
+    "7314": "PUBLIC", "7321": "PUBLIC", "7331": "PUBLIC", "7344": "PUBLIC", "7345": "PUBLIC",
+    "7346": "PUBLIC", "7347": "PUBLIC", "7348": "PUBLIC", "7354": "PUBLIC", "7389": "PUBLIC",
+    "5532": "PUBLIC", "5542": "PUBLIC", "5552": "PUBLIC", "5558": "PUBLIC",
+    "7171": "PUBLIC", "7353": "PUBLIC", "7361": "PUBLIC",
+    # PRIVE
+    "2110": "PRIVE", "5660": "PRIVE", "6596": "PRIVE",
+    "5410": "PRIVE", "5415": "PRIVE", "5499": "PRIVE", "5505": "PRIVE", "5510": "PRIVE",
+    "5560": "PRIVE", "5599": "PRIVE", "5710": "PRIVE", "5720": "PRIVE", "5770": "PRIVE", "5785": "PRIVE",
+    "1000": "PRIVE", "1100": "PRIVE", "1200": "PRIVE", "1300": "PRIVE", "1400": "PRIVE",
+    "1500": "PRIVE", "1600": "PRIVE",
+    "9220": "PRIVE", "9230": "PRIVE", "9240": "PRIVE", "9260": "PRIVE", "9300": "PRIVE",
+    "5202": "PRIVE", "5485": "PRIVE", "5699": "PRIVE", "6540": "PRIVE", "6541": "PRIVE",
+    "6589": "PRIVE", "6599": "PRIVE", "6220": "PRIVE", "9150": "PRIVE", "3120": "PRIVE",
+}
+
+def map_legal_to_category(legal_nature: str | None) -> str:
+    """Convert SIRENE legal nature code to PUBLIC/PRIVE/INCONNU."""
+    if not legal_nature:
+        return "INCONNU"
+    return LEGAL_NATURE_MAPPING.get(legal_nature, "INCONNU")
+
 
 from .naming import (
     CandidateName,

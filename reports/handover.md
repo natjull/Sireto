@@ -89,3 +89,41 @@
   - ✅ terminé
 - Prochaines étapes immédiates :
   - Régénérer les samples (avec fermés) puis réentraîner
+
+## Session 2025-12-29T20:52:45Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML)
+- Objectif : déblocage génération samples + diagnostics temps
+- Changements :
+  - `scripts/generate_training_samples_v3.py` : respect `XGB_SEMANTIC_ENABLED`, cap pool via `XGB_MAX_POOL_FOR_SCORING`, logs slow queries, `nan_to_num` avant ranker, GC périodique
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Relancer génération avec `PYTHONUNBUFFERED=1` et `XGB_SAMPLE_SLOW_SEC=30` pour identifier les queries lentes
+
+## Session 2025-12-30T16:46:21Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML) → V4 perf
+- Objectif : Partitioning + TF‑IDF prefilter (Phase B/C)
+- Changements :
+  - `scripts/build_candidate_partitions_v4.py` : création store partitionné `data/candidates_v4/` (insee + cp)
+  - `scripts/generate_training_samples_v4.py` : génération samples via partitions + TF‑IDF par commune
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Construire les partitions puis générer les samples v4
+
+## Session 2025-12-30T17:40:31Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML) → V4 perf
+- Objectif : Enrichissement UL/PM obligatoire dans le store partitionné
+- Changements :
+  - `scripts/build_candidate_partitions_v4.py` : jointure UL via DuckDB + enrichissement PM dirigeants via SQLite
+  - `requirements.txt` : ajout `duckdb` et `scikit-learn`
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Rebuilder les partitions V4 avec UL/PM
