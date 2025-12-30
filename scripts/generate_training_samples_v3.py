@@ -15,8 +15,11 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import random
 import sys
+import time
+import gc
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -47,6 +50,10 @@ SAME_ADDR_NEG_MAX = 10  # Max extra negatives with same address but different na
 SEED = 42
 BATCH_SIZE = 100_000
 PREFILTER_TOP_K = 500  # Max candidates to fully score with make_features()
+SEMANTIC_ENABLED = os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
+MAX_POOL_FOR_SCORING = int(os.getenv("XGB_MAX_POOL_FOR_SCORING", "10000"))
+SLOW_QUERY_SEC = float(os.getenv("XGB_SAMPLE_SLOW_SEC", "30"))
+GC_EVERY = int(os.getenv("XGB_GC_EVERY", "2000"))
 
 
 def load_training_data(path: Path) -> pd.DataFrame:
@@ -197,6 +204,7 @@ def score_with_ranker(
 ) -> np.ndarray:
     """Score candidates using the provided ranker model."""
     X = np.array([[f.get(fn, 0.0) for fn in feature_order] for f in feats], dtype=np.float32)
+    X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
     if zero_features:
         idx = [feature_order.index(f) for f in zero_features if f in feature_order]
         if idx:
@@ -215,6 +223,7 @@ def generate_samples_for_query(
     ranker_zero_features: Optional[List[str]] = None,
 ) -> List[dict]:
     """Generate samples for one query with pre-filtering."""
+    t0 = time.perf_counter()
     gt_siret = crm_row.get("ground_truth_siret", "")
     query_id = crm_row["crm_id"]
     crm_name = crm_row.get("crm_name", "")
@@ -224,6 +233,8 @@ def generate_samples_for_query(
     
     # ===== PRE-FILTER: Keep only top-K by quick jaro score =====
     # This reduces from ~5000 candidates to ~500 before expensive make_features()
+    t_prefilter_start = time.perf_counter()
+    
     if len(candidates) > prefilter_k:
         # Ensure ground truth is always included
         gt_cand = None
@@ -233,6 +244,11 @@ def generate_samples_for_query(
                 gt_cand = c
             else:
                 other_cands.append(c)
+        
+        # If pool is HUGE (e.g. Paris, Lille), randomly sample BEFORE scoring
+        # This trades some recall for speed — acceptable for training data
+        if MAX_POOL_FOR_SCORING > 0 and len(other_cands) > MAX_POOL_FOR_SCORING:
+            other_cands = random.sample(other_cands, MAX_POOL_FOR_SCORING)
         
         # Score and filter non-GT candidates
         scored = [(quick_score(crm_name, c), c) for c in other_cands]
@@ -244,14 +260,17 @@ def generate_samples_for_query(
             filtered_cands.append(gt_cand)
         
         candidates = filtered_cands
-    
+
+    t_prefilter_end = time.perf_counter()
+
     # ===== FULL FEATURE COMPUTATION on filtered candidates =====
     all_feats = []
     for cand in candidates:
-        feat = make_features(crm_row, cand)
+        feat = make_features(crm_row, cand, skip_semantic=not SEMANTIC_ENABLED)
         feat["_siret"] = cand["siret"]
         feat["_is_pos"] = (cand["siret"] == gt_siret)
         all_feats.append(feat)
+    t_features = time.perf_counter()
 
     # Score for hard negatives: prefer ranker if provided
     if ranker is not None:
@@ -267,6 +286,7 @@ def generate_samples_for_query(
     else:
         for f in all_feats:
             f["_score"] = compute_score(f)
+    t_ranker = time.perf_counter()
     
     positives = [f for f in all_feats if f["_is_pos"]]
     negatives = [f for f in all_feats if not f["_is_pos"]]
@@ -321,7 +341,25 @@ def generate_samples_for_query(
         s["query_id"] = query_id
         s["siret"] = f["_siret"]
         samples.append(s)
-    
+
+    total_time = time.perf_counter() - t0
+    if total_time >= SLOW_QUERY_SEC:
+        insee = crm_row.get("insee")
+        postcode = crm_row.get("postcode")
+        print(
+            "[slow] crm_id=%s insee=%s cp=%s cand=%s prefilter=%s "
+            "t_prefilter=%.2fs t_features=%.2fs t_ranker=%.2fs total=%.2fs",
+            query_id,
+            insee,
+            postcode,
+            len(candidates),
+            prefilter_k,
+            t_prefilter_end - t_prefilter_start,
+            t_features - t_prefilter_end,
+            t_ranker - t_features,
+            total_time,
+        )
+
     return samples
 
 
@@ -336,7 +374,7 @@ def generate_all_samples(
     """Generate samples for all queries."""
     all_samples = []
     
-    for _, row in tqdm(df.iterrows(), total=len(df), desc="Generating"):
+    for idx, row in tqdm(df.iterrows(), total=len(df), desc="Generating"):
         cands = get_candidates_for_query(
             row.get("insee"), row.get("postcode"), candidates_by_loc
         )
@@ -349,6 +387,8 @@ def generate_all_samples(
             ranker_zero_features=ranker_zero_features,
         )
         all_samples.extend(samples)
+        if GC_EVERY > 0 and idx > 0 and idx % GC_EVERY == 0:
+            gc.collect()
     
     return pd.DataFrame(all_samples)
 
