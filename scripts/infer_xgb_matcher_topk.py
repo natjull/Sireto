@@ -55,8 +55,42 @@ from src.xgb_matcher.candidates import (
 )
 from src.xgb_matcher.semantic import batch_encode_texts, get_cache_stats, top2_semantic_similarities_batch
 
+
+# Calibrator wrapper classes (must match train_xgb_matcher_v2.py for pickle compatibility)
+class IsotonicCalibrator:
+    """Wrapper for isotonic calibration of a base classifier."""
+    def __init__(self, base_estimator, iso_reg):
+        self.base_estimator = base_estimator
+        self.iso_reg = iso_reg
+
+    def predict_proba(self, X):
+        proba = self.base_estimator.predict_proba(X)[:, 1]
+        calibrated = self.iso_reg.predict(proba)
+        calibrated = np.clip(calibrated, 0, 1)
+        return np.column_stack([1 - calibrated, calibrated])
+
+    def predict(self, X):
+        return (self.predict_proba(X)[:, 1] >= 0.5).astype(int)
+
+
+class SigmoidCalibrator:
+    """Wrapper for sigmoid (Platt) calibration of a base classifier."""
+    def __init__(self, base_estimator, lr):
+        self.base_estimator = base_estimator
+        self.lr = lr
+
+    def predict_proba(self, X):
+        proba = self.base_estimator.predict_proba(X)[:, 1]
+        calibrated = self.lr.predict_proba(proba.reshape(-1, 1))
+        return calibrated
+
+    def predict(self, X):
+        return (self.predict_proba(X)[:, 1] >= 0.5).astype(int)
+
+
 # Config
 CRM_PATH = Path("data/testcrm/data_aligned.csv")
+
 MODEL_DIR = Path("models")
 TOP_K = 5
 BATCH_SIZE = 100_000
