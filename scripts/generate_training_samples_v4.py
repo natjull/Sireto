@@ -57,6 +57,23 @@ SEED = 42
 SEMANTIC_ENABLED = os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
 
 
+def _norm_code(x: object) -> str | None:
+    if x is None:
+        return None
+    try:
+        if pd.isna(x):
+            return None
+    except Exception:
+        pass
+    s = str(x).strip()
+    if not s or s.lower() == "nan":
+        return None
+    try:
+        return str(int(float(s)))
+    except Exception:
+        return s
+
+
 def load_training_data(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, sep=";", dtype=str, encoding="utf-8-sig")
     df = df.rename(columns={
@@ -67,7 +84,10 @@ def load_training_data(path: Path) -> pd.DataFrame:
         "CODE_INSEE": "insee",
         "SIRET": "ground_truth_siret",
     })
+    df["ground_truth_siret"] = df["ground_truth_siret"].astype(str).str.strip()
     df = df[df["ground_truth_siret"].notna() & (df["ground_truth_siret"].str.len() == 14)]
+    df["postcode"] = df["postcode"].apply(_norm_code)
+    df["insee"] = df["insee"].apply(_norm_code)
     df["crm_id"] = range(len(df))
     df["siren"] = df["ground_truth_siret"].str[:9]
     df["loc_key"] = df["insee"].fillna("") + "|" + df["postcode"].fillna("")

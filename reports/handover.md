@@ -127,3 +127,81 @@
   - ✅ terminé
 - Prochaines étapes immédiates :
   - Rebuilder les partitions V4 avec UL/PM
+
+## Session 2025-12-30T21:26:22Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML) → V4 perf
+- Objectif : tests de validation samples/recall pour expliquer la dégradation
+- Changements :
+  - `scripts/evaluate_samples_v4.py` : métriques couverture + hard negatives + recall@K ranker
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Lancer `scripts/evaluate_samples_v4.py` sur samples v4
+
+## Session 2025-12-30T21:41:30Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML) → V4 perf
+- Objectif : diagnostic des GT manquants
+- Changements :
+  - `scripts/analyze_missing_gt_v4.py` : analyse des GT absents (mismatch CRM vs SIRENE, présence dans store)
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Lancer l’analyse des GT manquants sur `samples_v4.parquet`
+
+## Session 2025-12-30T21:46:01Z — Codex Ctx2
+- Phase ciblée : Phase 2 (Sprint ML) → V4 perf
+- Objectif : corriger le mismatch CP/INSEE dans v4
+- Changements :
+  - `scripts/generate_training_samples_v4.py` : normalisation CP/INSEE + SIRET (évite mismatch store)
+- Tests/commandes exécutées :
+  - `date -u +"%Y-%m-%dT%H:%M:%SZ"` → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Régénérer `samples_v4.parquet` puis rerun l’analyse des GT manquants
+
+## Session 2025-12-31T00:00:00Z — Codex Ctx2 (Ctx3 handover)
+- Phase ciblée : Phase 3 (SOTA / 2‑étages)
+- Objectif : préparer passage vers pipeline ranker + decider (SOTA)
+- Etat global :
+  - ✅ V4 partitions + TF‑IDF prefilter + UL/PM enrichis
+  - ✅ Analyse GT manquants (cause principale: CRM_LOC_MISMATCH attendu)
+  - ✅ Ranker recall@20 ~99% (sur samples v4)
+  - ❌ Decider 2‑étages pas encore implémenté
+- Changements clés apportés par Ctx2 :
+  - `scripts/build_candidate_partitions_v4.py` : build partitions + UL (DuckDB) + PM dirigeants (SQLite)
+  - `scripts/generate_training_samples_v4.py` : TF‑IDF blocking par commune + partitions V4 (output compatible aval)
+  - `scripts/evaluate_samples_v4.py` : audit samples + recall@K ranker
+  - `scripts/analyze_missing_gt_v4.py` : diagnostic GT manquants
+  - `scripts/generate_training_samples_v3.py` : fixes perf (semantic gating, cap pool, slow logs, GC)
+  - `scripts/train_xgb_matcher_v2.py` : calibration + recall@10/20
+  - `scripts/infer_xgb_matcher_topk.py` : meta‑features + routing evidence
+  - `src/xgb_matcher/features.py` : numeric_token_match + legal_form_category + idf_name + address_density + stopwords
+- Périmètre V4 actuel :
+  - Partitioning par INSEE/CP → coverage ~71% (reste CRM_LOC_MISMATCH ~79% des manquants)
+  - GT_NOT_IN_SIRENE ~16% (data issue)
+  - CP/INSEE mismatch corrigé via normalisation
+- Tests / scripts disponibles :
+  - `scripts/evaluate_samples_v4.py --samples data/samples_v4.parquet`
+  - `scripts/analyze_missing_gt_v4.py --samples data/samples_v4.parquet --partitions-dir data/candidates_v4`
+  - `scripts/diagnostic_xgb_routing.py` pour risk‑coverage comparatif
+- Commandes usuelles (à relancer si besoin) :
+  - Build partitions:
+    `python scripts/build_candidate_partitions_v4.py --training-csv data/entrainements.csv --parquet-path data/StockEtablissement_utf8.parquet --ul-path data/StockUniteLegale_utf8.parquet --harvest-db data/harvest.db --output-dir data/candidates_v4 --code-batch 200`
+  - Samples v4:
+    `XGB_SEMANTIC_ENABLED=0 python scripts/generate_training_samples_v4.py --output data/samples_v4.parquet --partitions-dir data/candidates_v4 --prefilter-k 500 --max-negatives 50`
+  - Training:
+    `XGB_SEMANTIC_ENABLED=0 python scripts/train_xgb_matcher_v2.py --samples data/samples_v4.parquet --calibration isotonic`
+  - Inference:
+    `python scripts/infer_xgb_matcher_topk.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --output-path reports/xgb_infer_v4.csv --top-k 5 --include-closed-candidates`
+  - Routing:
+    `python scripts/route_xgb_results.py --input-path reports/xgb_infer_v4.csv --output-path reports/routed_v4.csv`
+- Prochaines étapes Ctx3 (SOTA 2‑étages) :
+  1) Implémenter pipeline **ranker_fast retrieval → decider calibré** (nouveaux scripts train_ranker/train_decider).
+  2) Multi‑blocking (TF‑IDF + address hash + numeric) pour recovery du CRM_LOC_MISMATCH si souhaité.
+  3) Décision finale : routing strict (gap, evidence, density) + web/Places uniquement sur REVIEW.
+  4) Ré‑évaluation risk‑coverage + taux AUTO (zéro FP).
