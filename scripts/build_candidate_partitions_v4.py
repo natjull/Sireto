@@ -28,7 +28,7 @@ from tqdm import tqdm
 DEFAULT_TRAINING = Path("data/entrainements.csv")
 DEFAULT_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 DEFAULT_UL = Path("data/StockUniteLegale_utf8.parquet")
-DEFAULT_HARVEST_DB = Path("data/harvest.db")
+DEFAULT_HARVEST_DB = Path("data/harvest_full.sqlite")
 DEFAULT_OUT_DIR = Path("data/candidates_v4")
 CODE_BATCH = 200
 
@@ -140,7 +140,11 @@ def _query_etab_ul(
                 ul.denominationUsuelle1UniteLegale,
                 ul.denominationUsuelle2UniteLegale,
                 ul.denominationUsuelle3UniteLegale
-            )) AS denomination_usuelle_ul
+            )) AS denomination_usuelle_ul,
+            ul.nomUniteLegale AS nom_ul,
+            ul.nomUsageUniteLegale AS nom_usage_ul,
+            ul.prenomUsuelUniteLegale AS prenom_usuel_ul,
+            ul.pseudonymeUniteLegale AS pseudonyme_ul
         FROM read_parquet('{etab_path.as_posix()}') e
         LEFT JOIN read_parquet('{ul_path.as_posix()}') ul
           ON e.siren = ul.siren

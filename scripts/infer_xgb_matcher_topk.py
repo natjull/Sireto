@@ -47,6 +47,7 @@ from src.xgb_matcher.features import (
     make_features_from_preprocessed,
     normalize_text,
     preprocess_crm_row,
+    semantic_gate_allows,
 )
 from src.xgb_matcher.naming import build_candidate_names, primary_name
 from src.xgb_matcher.candidates import (
@@ -781,6 +782,13 @@ def main():
             scaler = pickle.load(f)
     with open(MODEL_PATHS["meta"]) as f:
         meta = json.load(f)
+    meta_semantic = meta.get("semantic_enabled_samples")
+    semantic_env = int(os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1")
+    if meta_semantic is not None and int(meta_semantic) != semantic_env:
+        print(
+            f"[WARN] Semantic enabled mismatch: meta={meta_semantic} vs env={semantic_env} "
+            "(train/serve skew risk)"
+        )
     feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
     use_scaler = scaler is not None
 
@@ -899,9 +907,17 @@ def main():
         if semantic_enabled:
             sem = top2_semantic_similarities_batch(crm_ctx.get("crm_name_semantic", ""), semantic_pools)
             for feat, (sem_max, sem_second, sem_gap) in zip(feats_n, sem, strict=True):
-                feat["name_semantic_max"] = sem_max
-                feat["name_semantic_second"] = sem_second
-                feat["name_semantic_gap"] = sem_gap
+                if semantic_gate_allows(
+                    feat.get("name_jaro_max", 0.0),
+                    feat.get("name_token_overlap_max", 0.0),
+                ):
+                    feat["name_semantic_max"] = sem_max
+                    feat["name_semantic_second"] = sem_second
+                    feat["name_semantic_gap"] = sem_gap
+                else:
+                    feat["name_semantic_max"] = 0.0
+                    feat["name_semantic_second"] = 0.0
+                    feat["name_semantic_gap"] = 0.0
         
         X_n = pd.DataFrame(feats_n)[feature_order]
         Xs_n = scaler.transform(X_n) if use_scaler else X_n.values

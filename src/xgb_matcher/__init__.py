@@ -23,6 +23,7 @@ from .features import (
     # Feature computation
     make_features,
     FEATURE_NAMES,
+    semantic_gate_allows,
 )
 
 from .naming import build_candidate_names, primary_name, NameSource, CandidateName
@@ -44,6 +45,7 @@ __all__ = [
     "numeric_token_match",
     "make_features",
     "FEATURE_NAMES",
+    "semantic_gate_allows",
     "build_candidate_names",
     "primary_name",
     "NameSource",

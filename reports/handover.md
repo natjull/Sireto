@@ -205,3 +205,59 @@
   2) Multi‑blocking (TF‑IDF + address hash + numeric) pour recovery du CRM_LOC_MISMATCH si souhaité.
   3) Décision finale : routing strict (gap, evidence, density) + web/Places uniquement sur REVIEW.
   4) Ré‑évaluation risk‑coverage + taux AUTO (zéro FP).
+
+## Session 2025-12-31T07:55:19Z — Codex Ctx3
+- Phase ciblée : Phase 3 (SOTA / 2‑étages)
+- Objectif : pipeline ranker+decider + multi‑blocking + silver labels (Places)
+- Changements :
+  - src/xgb_matcher/blocking.py : utilitaires multi‑blocking (TF‑IDF, address hash, numeric, densité)
+  - src/xgb_matcher/partitioned_store.py : store partitionné (INSEE/CP/DEP)
+  - scripts/train_xgb_ranker.py : entraînement ranker stage‑1 + meta two‑stage
+  - scripts/train_xgb_decider.py : entraînement decider + calibration + top‑K optionnel
+  - scripts/infer_xgb_two_stage.py : inférence 2‑étages + multi‑blocking via partitions
+  - scripts/build_silver_labels_from_places.py : extraction silver labels Places
+- Tests/commandes exécutées :
+  - date -u +"%Y-%m-%dT%H:%M:%SZ" → OK
+- Etat :
+  - ⚠️ partiel (code ajouté, entraînement/inférence non exécutés)
+- Prochaines étapes immédiates :
+  - Générer samples v4 puis entraîner ranker+decider (scripts/train_xgb_ranker.py + scripts/train_xgb_decider.py)
+  - Lancer infer 2‑étages (scripts/infer_xgb_two_stage.py) puis router (scripts/route_xgb_results.py)
+  - Extraire silver labels Places via scripts/build_silver_labels_from_places.py
+
+## Session 2025-12-31T12:26:52Z — Codex Ctx3
+- Phase ciblée : Phase 3 (SOTA / 2‑étages)
+- Objectif : intégrer sémantique fine‑tunée + gating lexical + retrieval sémantique
+- Changements :
+  - src/xgb_matcher/semantic.py : modèle sémantique fine‑tuné par défaut si dispo
+  - src/xgb_matcher/features.py : gating lexical sémantique (jaro/token overlap)
+  - scripts/infer_xgb_matcher_topk.py : gating sémantique lors du scoring
+  - scripts/infer_xgb_two_stage.py : retrieval sémantique (dept pool) + gating sémantique
+  - scripts/route_xgb_results.py : blocage AUTO en “semantic‑only” (jaro<0.5 & tok<0.2)
+  - src/xgb_matcher/__init__.py : export semantic_gate_allows
+- Tests/commandes exécutées :
+  - date -u +"%Y-%m-%dT%H:%M:%SZ" → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Entraîner avec sémantique ON si souhaité (XGB_SEMANTIC_ENABLED=1)
+  - Activer retrieval sémantique via --semantic-retrieval-k
+
+## Session 2025-12-31T12:36:07Z — Codex Ctx3
+- Phase ciblée : Phase 3 (SOTA / 2‑étages)
+- Objectif : corriger feedback (semantic retrieval + tests + train/serve skew)
+- Changements :
+  - scripts/infer_xgb_two_stage.py : semantic retrieval effectif + warnings pool_mode/semantic
+  - scripts/generate_training_samples_v4.py : colonne semantic_enabled (pour alignement)
+  - scripts/train_xgb_ranker.py : warning + meta semantic_enabled_samples
+  - scripts/train_xgb_decider.py : warning + meta semantic_enabled_samples
+  - scripts/infer_xgb_matcher_topk.py : warning mismatch semantic
+  - tests/test_semantic_gating.py : tests unitaires gating
+  - scripts/check_semantic_model.py : smoke test chargement modèle fine‑tuné
+- Tests/commandes exécutées :
+  - date -u +"%Y-%m-%dT%H:%M:%SZ" → OK
+- Etat :
+  - ✅ terminé
+- Prochaines étapes immédiates :
+  - Régénérer samples v4 avec XGB_SEMANTIC_ENABLED=1
+  - Entraîner ranker+decider puis inférer
