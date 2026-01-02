@@ -52,6 +52,7 @@ MAX_NEGATIVES = 50
 HARD_RATIO = 0.5
 SAME_ADDR_NEG_MAX = 10
 PREFILTER_TOP_K = 500
+MIN_CANDIDATES_SUBSET = 100  # Guarantee at least this many candidates after TF-IDF prefilter
 SEED = 42
 
 SEMANTIC_ENABLED = os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
@@ -337,6 +338,7 @@ def generate_samples_for_query(
         s["label"] = 1
         s["query_id"] = query_id
         s["siret"] = f["_siret"]
+        s["semantic_enabled"] = int(SEMANTIC_ENABLED)
         samples.append(s)
 
     for f in selected:
@@ -344,6 +346,7 @@ def generate_samples_for_query(
         s["label"] = 0
         s["query_id"] = query_id
         s["siret"] = f["_siret"]
+        s["semantic_enabled"] = int(SEMANTIC_ENABLED)
         samples.append(s)
 
     return samples
@@ -409,12 +412,20 @@ def generate_split(
         for row, idx_list in zip(group.itertuples(index=False), top_indices):
             row_dict = row._asdict()
             gt_siret = row_dict.get("ground_truth_siret")
-            if idx_list:
+            # FIX: Guarantee at least MIN_CANDIDATES_SUBSET candidates
+            # TF-IDF prefilter may return very few candidates for specific proper nouns
+            if idx_list and len(idx_list) >= MIN_CANDIDATES_SUBSET:
                 subset = [candidates[i] for i in idx_list if i < len(candidates)]
             else:
+                # Combine TF-IDF matches with random samples to reach MIN_CANDIDATES_SUBSET
                 if candidates:
-                    k = min(prefilter_k, len(candidates))
-                    subset = random.sample(candidates, k)
+                    tfidf_set = set(idx_list) if idx_list else set()
+                    tfidf_cands = [candidates[i] for i in tfidf_set if i < len(candidates)]
+                    remaining_idx = [i for i in range(len(candidates)) if i not in tfidf_set]
+                    needed = max(0, min(MIN_CANDIDATES_SUBSET, prefilter_k) - len(tfidf_cands))
+                    random_extra_idx = random.sample(remaining_idx, min(needed, len(remaining_idx))) if remaining_idx else []
+                    random_extra = [candidates[i] for i in random_extra_idx]
+                    subset = tfidf_cands + random_extra
                 else:
                     subset = []
             if gt_siret and gt_siret in siret_index:

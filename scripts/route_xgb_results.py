@@ -170,6 +170,11 @@ def _route_xgb(top1: pd.Series) -> str:
         name_word_count = 2 if name_length_max <= 6 else 3
     address_complete = _has_complete_address(top1)
 
+    # HARD BLOCK: semantic-only evidence is never enough for AUTO
+    # If lexical evidence is too weak, force REVIEW regardless of score
+    if name_jaro_max < 0.50 and name_token_overlap_max < 0.20:
+        return "REVIEW"
+
     # BLOCK: Semantic-only match without solid lexical evidence
     # Must have LOW values for ALL: jaro, etab, pm, token_overlap
     # E.g., "RUBIX FRANCE" -> "FRANCE MECANIQUE" (token_overlap=0.33, etab=0)

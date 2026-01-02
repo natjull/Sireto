@@ -8,6 +8,7 @@ from __future__ import annotations
 import os
 import re
 from functools import lru_cache
+from pathlib import Path
 from typing import Iterable, Optional, List, Tuple, Dict
 
 import numpy as np
@@ -30,7 +31,13 @@ def _semantic_enabled() -> bool:
 
 
 def _model_name() -> str:
-    return os.getenv("XGB_SEMANTIC_MODEL", _DEFAULT_MODEL)
+    env = os.getenv("XGB_SEMANTIC_MODEL")
+    if env:
+        return env
+    local = Path("models/semantic/siret-bert-deploy")
+    if local.exists():
+        return str(local)
+    return _DEFAULT_MODEL
 
 
 def _device() -> Optional[str]:

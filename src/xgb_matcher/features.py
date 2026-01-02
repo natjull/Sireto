@@ -76,6 +76,9 @@ from .semantic import max_semantic_similarity
 CITY_OVERLAP_THRESHOLD = 0.7
 CITY_MAX_TOKENS = 3
 SEMANTIC_GATE_JARO = float(os.getenv("XGB_SEMANTIC_GATE_JARO", "0.90"))
+SEMANTIC_GATE_ENABLED = os.getenv("XGB_SEMANTIC_GATE_ENABLED", "1") == "1"
+SEMANTIC_GATE_JARO_MIN = float(os.getenv("XGB_SEMANTIC_GATE_JARO_MIN", "0.50"))
+SEMANTIC_GATE_TOKEN_MIN = float(os.getenv("XGB_SEMANTIC_GATE_TOKEN_MIN", "0.20"))
 
 # Stopwords to down-weight generic name overlap (avoid LES/DU false positives)
 NAME_STOPWORDS: Set[str] = {
@@ -98,6 +101,21 @@ def set_global_name_idf_map(idf_map: Mapping[str, float] | None, default_idf: fl
             _GLOBAL_NAME_IDF_DEFAULT = 0.0
     else:
         _GLOBAL_NAME_IDF_DEFAULT = float(default_idf)
+
+
+def semantic_gate_allows(name_jaro_max: float | None, name_token_overlap_max: float | None) -> bool:
+    """Return True if semantic features are allowed under lexical gating."""
+    if not SEMANTIC_GATE_ENABLED:
+        return True
+    try:
+        jaro = float(name_jaro_max or 0.0)
+    except Exception:
+        jaro = 0.0
+    try:
+        tok = float(name_token_overlap_max or 0.0)
+    except Exception:
+        tok = 0.0
+    return not (jaro < SEMANTIC_GATE_JARO_MIN and tok < SEMANTIC_GATE_TOKEN_MIN)
 
 
 # Feature names in order (used for training and inference)
@@ -828,8 +846,12 @@ def make_features_from_preprocessed(
         # Use original case version for semantic embedding (CamelCase split needs it)
         crm_name_semantic = crm.get("crm_name_semantic", "")
         
-        # Calculate semantic scores using batch GPU encoding (skip if requested)
-        if not skip_semantic:
+        # Calculate semantic scores using batch GPU encoding (skip if requested or gated)
+        semantic_allowed = (not skip_semantic) and semantic_gate_allows(
+            name_features.get("name_jaro_max", 0.0),
+            name_features.get("name_token_overlap_max", 0.0),
+        )
+        if semantic_allowed:
             from .semantic import top2_semantic_similarities
             sem_max, sem_second, sem_gap = top2_semantic_similarities(crm_name_semantic, semantic_pool)
             name_features["name_semantic_max"] = sem_max

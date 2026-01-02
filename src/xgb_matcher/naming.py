@@ -234,7 +234,8 @@ def build_candidate_names(cand: dict) -> List[CandidateName]:
     # Dirigeant personne morale (name of controlling company)
     pm_dirigeant_names = cand.get("pm_dirigeant_names") or []
     if isinstance(pm_dirigeant_names, str):
-        pm_dirigeant_names = [pm_dirigeant_names]
+        # V4 partitions store PM names as pipe-separated string
+        pm_dirigeant_names = [n.strip() for n in pm_dirigeant_names.split("|") if n.strip()]
     for val in pm_dirigeant_names:
         add(val, NameSource.PM_DIRIGEANT, is_ul=False)
 
