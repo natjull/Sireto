@@ -39,6 +39,7 @@ from src.xgb_matcher.features import (
     set_global_name_idf_map,
     build_address,
 )
+from src.xgb_matcher.blocking import normalize_text_for_tfidf
 from src.xgb_matcher.naming import primary_name
 
 
@@ -221,7 +222,7 @@ def load_candidates_for_loc(
 
 
 def build_tfidf_index(candidates: List[dict]) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
-    names = [normalize_text(primary_name(cand) or "") for cand in candidates]
+    names = [normalize_text_for_tfidf(primary_name(cand) or "") for cand in candidates]
     vectorizer = TfidfVectorizer(
         analyzer="word",
         ngram_range=(1, 2),
@@ -243,7 +244,7 @@ def prefilter_candidates_tfidf(
     cand_matrix,
     top_k: int,
 ) -> List[List[int]]:
-    crm_norm = [normalize_text(n or "") for n in crm_names]
+    crm_norm = [normalize_text_for_tfidf(n or "") for n in crm_names]
     q = vectorizer.transform(crm_norm)
     sims = q @ cand_matrix.T
 
