@@ -304,10 +304,35 @@ def primary_name(cand: dict) -> str:
     return chosen
 
 
+def candidate_tfidf_text(cand: dict) -> str:
+    """Return a concatenated bag-of-names string for TF-IDF indexing."""
+    if isinstance(cand, dict):
+        cached = cand.get("_xgb_cached_tfidf_text")
+        if cached is not None:
+            return cached
+
+    names = build_candidate_names(cand)
+    if not names:
+        text = ""
+    else:
+        seen = set()
+        parts = []
+        for nm in names:
+            if nm.text and nm.text not in seen:
+                seen.add(nm.text)
+                parts.append(nm.text)
+        text = " ".join(parts)
+
+    if isinstance(cand, dict):
+        cand["_xgb_cached_tfidf_text"] = text
+    return text
+
+
 __all__ = [
     "NameSource",
     "CandidateName",
     "build_candidate_names",
+    "candidate_tfidf_text",
     "normalize_name",
     "normalize_text",
     "primary_name",
