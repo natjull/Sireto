@@ -249,12 +249,19 @@ def _build_candidate_pool(
         if dept_candidates and (dept_prefilter_k > 0):
             dept_key = department_from_code(insee, postcode) or "unknown"
             key = ("dept", dept_key)
-            vec, mat, _ = tfidf_cache.get(key, (None, None, None))
+            vec, mat, names = tfidf_cache.get(key, (None, None, None))
             if vec is None:
-                vec, mat, _ = build_tfidf_index(dept_candidates)
-                tfidf_cache[key] = (vec, mat, None)
+                vec, mat, names = build_tfidf_index(dept_candidates)
+                tfidf_cache[key] = (vec, mat, names)
             if vec is not None and mat is not None:
-                idx = prefilter_candidates_tfidf(crm_name, vec, mat, min(dept_prefilter_k, len(dept_candidates)))
+                idx = prefilter_candidates_tfidf(
+                    crm_name,
+                    vec,
+                    mat,
+                    min(dept_prefilter_k, len(dept_candidates)),
+                    cand_names=names,
+                    char_top_k=min(200, dept_prefilter_k),
+                )
                 extra.extend([dept_candidates[i] for i in idx])
 
         # Semantic retrieval (ANN-style) to recover CRM_LOC_MISMATCH
@@ -278,9 +285,16 @@ def _build_candidate_pool(
     candidates = list(pool.values())
     MIN_CANDIDATES_INFER = 100  # Guarantee at least this many candidates after TF-IDF prefilter
     if prefilter_k and len(candidates) > prefilter_k:
-        vec, mat, _ = build_tfidf_index(candidates)
+        vec, mat, names = build_tfidf_index(candidates)
         if vec is not None and mat is not None:
-            idx = prefilter_candidates_tfidf(crm_name, vec, mat, prefilter_k)
+            idx = prefilter_candidates_tfidf(
+                crm_name,
+                vec,
+                mat,
+                prefilter_k,
+                cand_names=names,
+                char_top_k=min(200, prefilter_k),
+            )
             # FIX: Guarantee minimum candidates by combining TF-IDF + random
             if len(idx) >= MIN_CANDIDATES_INFER:
                 candidates = [candidates[i] for i in idx]
