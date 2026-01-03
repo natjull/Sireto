@@ -18,7 +18,7 @@ import re
 import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer
 
-from .naming import normalize_text, primary_name
+from .naming import candidate_tfidf_text, normalize_text, primary_name
 from .features import build_address
 
 
@@ -27,6 +27,8 @@ STREET_STOPWORDS: Set[str] = {
     "IMP", "IMPASSE", "ALL", "ALLEE", "PL", "PLACE", "SQ", "SQUARE",
     "ROUTE", "RTE", "QUAI", "SENTIER", "ZA", "ZI", "ZAC",
 }
+
+_TFIDF_PUNCT_RE = re.compile(r"[^\w\s]")
 
 
 def normalize_code(value: object) -> Optional[str]:
@@ -168,8 +170,8 @@ def attach_address_density(candidates: Iterable[dict]) -> None:
 def build_tfidf_index(
     candidates: List[dict],
 ) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
-    """Build TF-IDF index for candidate primary names."""
-    names = [normalize_text(primary_name(c) or "") for c in candidates]
+    """Build TF-IDF index for candidate bag-of-names text."""
+    names = [normalize_text_for_tfidf(candidate_tfidf_text(c) or "") for c in candidates]
     vectorizer = TfidfVectorizer(
         analyzer="word",
         ngram_range=(1, 2),
@@ -189,13 +191,43 @@ def prefilter_candidates_tfidf(
     vectorizer: TfidfVectorizer,
     cand_matrix,
     top_k: int,
+    *,
+    cand_names: List[str] | None = None,
+    char_top_k: int | None = None,
 ) -> List[int]:
     """Return candidate indices for top-k TF-IDF similarity."""
     if not crm_name or cand_matrix is None:
         return []
-    q = vectorizer.transform([normalize_text(crm_name)])
+    crm_norm = normalize_text_for_tfidf(crm_name)
+    q = vectorizer.transform([crm_norm])
     sims = q @ cand_matrix.T
     row = sims.getrow(0)
+    if row.nnz == 0 and cand_names:
+        # Fallback to char-ngrams for acronyms / typos / near-matches.
+        char_vec = TfidfVectorizer(
+            analyzer="char_wb",
+            ngram_range=(3, 5),
+            lowercase=False,
+            min_df=1,
+        )
+        try:
+            char_mat = char_vec.fit_transform(cand_names)
+        except ValueError:
+            return []
+        q_char = char_vec.transform([crm_norm])
+        sims = q_char @ char_mat.T
+        row = sims.getrow(0)
+        if row.nnz == 0:
+            return []
+        idx = row.indices
+        data = row.data
+        limit = char_top_k or top_k
+        if len(idx) > limit:
+            sel = np.argpartition(data, -limit)[-limit:]
+            idx = idx[sel]
+            data = data[sel]
+        order = np.argsort(data)[::-1]
+        return idx[order].tolist()
     if row.nnz == 0:
         return []
     idx = row.indices
@@ -207,3 +239,49 @@ def prefilter_candidates_tfidf(
     order = np.argsort(data)[::-1]
     return idx[order].tolist()
 
+
+def normalize_text_for_tfidf(text: str | None) -> str:
+    """Normalize text for TF-IDF with light plural expansion."""
+    base = normalize_text(text)
+    if not base:
+        return ""
+    # Remove punctuation for acronym friendliness, then collapse whitespace.
+    base = _TFIDF_PUNCT_RE.sub(" ", base)
+    base = " ".join(base.split())
+    tokens = base.split()
+    # Add compact acronyms from single-letter sequences (e.g., J.N.C -> JNC).
+    acronyms: List[str] = []
+    buf: List[str] = []
+    for tok in tokens:
+        if len(tok) == 1 and tok.isalpha():
+            buf.append(tok)
+        else:
+            if len(buf) >= 2:
+                acronyms.append("".join(buf))
+            buf = []
+    if len(buf) >= 2:
+        acronyms.append("".join(buf))
+    if acronyms:
+        tokens = tokens + acronyms
+    out: List[str] = []
+    seen = set()
+    for tok in tokens:
+        if not tok:
+            continue
+        if tok not in seen:
+            out.append(tok)
+            seen.add(tok)
+        # Add light singular variants to improve recall on plurals.
+        if tok.isalpha() and len(tok) >= 5:
+            if tok.endswith("AUX") and len(tok) >= 6:
+                sing = tok[:-3] + "AL"
+            elif tok.endswith("S") and not tok.endswith("SS"):
+                sing = tok[:-1]
+            elif tok.endswith("X"):
+                sing = tok[:-1]
+            else:
+                sing = None
+            if sing and sing not in seen:
+                out.append(sing)
+                seen.add(sing)
+    return " ".join(out)
