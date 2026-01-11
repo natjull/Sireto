@@ -43,9 +43,9 @@ from src.xgb_matcher.blocking import normalize_text_for_tfidf
 from src.xgb_matcher.naming import primary_name, build_candidate_names
 
 
-DEFAULT_OUTPUT = Path("data/samples_aligned_v4.parquet")
+DEFAULT_OUTPUT = Path("data/samples_v4_with_ranker.parquet")
 TRAINING_DATA = Path("data/entrainements.csv")
-PARTITIONS_DIR = Path("data/candidates_v4")
+PARTITIONS_DIR = Path("data/candidates_v4_active")
 ETAB_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 MODEL_DIR = Path("models")
 

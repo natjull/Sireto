@@ -85,7 +85,7 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--crm-path", type=Path, required=True)
     p.add_argument("--output-path", type=Path, default=Path("reports/xgb_two_stage_topk.csv"))
     p.add_argument("--top-k", type=int, default=5)
-    p.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v4"))
+    p.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v4_active"))
     p.add_argument("--pool-mode", choices=["insee_then_postcode", "union", "multi"], default="insee_then_postcode")
     p.add_argument("--prefilter-k", type=int, default=500)
     p.add_argument("--dept-prefilter-k", type=int, default=200)

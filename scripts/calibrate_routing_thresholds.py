@@ -12,7 +12,7 @@ thresholds for AUTO/REVIEW routing that achieve:
 Usage:
     python scripts/calibrate_routing_thresholds.py \
         --inference-path reports/xgb_two_stage_topk.csv \
-        --ground-truth-path data/samples_v4_fixed.parquet \
+        --ground-truth-path data/samples_v4_with_ranker.parquet \
         --output-path configs/routing_thresholds_calibrated.yaml
 
 Output:

@@ -3,7 +3,7 @@
 Build partitioned candidate store (v4) for fast per-commune loading.
 
 Outputs:
-  data/candidates_v4/
+  data/candidates_v4_active/
     insee/   (partitioned by insee code)
     cp/      (partitioned by postcode)
 
@@ -29,7 +29,7 @@ DEFAULT_TRAINING = Path("data/entrainements.csv")
 DEFAULT_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 DEFAULT_UL = Path("data/StockUniteLegale_utf8.parquet")
 DEFAULT_HARVEST_DB = Path("data/harvest_full.sqlite")
-DEFAULT_OUT_DIR = Path("data/candidates_v4")
+DEFAULT_OUT_DIR = Path("data/candidates_v4_active")
 CODE_BATCH = 200
 
 
