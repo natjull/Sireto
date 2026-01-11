@@ -124,8 +124,12 @@ def normalize_text(text: str | None, *, uppercase: bool = True) -> str:
     """Accent stripping + whitespace collapse. Uppercase is optional."""
     if text is None or (isinstance(text, float) and pd.isna(text)):
         return ""
-    
+
     t = str(text)
+
+    # Filter SIRENE placeholder values
+    if t.strip() in ("[ND]", "[nd]", "ND", "nan", "NaN", "None"):
+        return ""
     if uppercase:
         t = t.upper()
         

@@ -48,7 +48,7 @@ flowchart TD
     P --> Q{Candidat fiable ?}
 
     Q -->|Oui| R[Sortie MATCH<br/>SIRET retenu<br/>+ score confiance<br/>+ sources impliquées]
-    Q -->|Non| S[Sortie REVIEW ou NO_MATCH<br/>(incl. cas équipement urbain)]
+    Q -->|Non| S[Sortie REVIEW<br/>(NO_MATCH uniquement après Places)]
 
     R & S --> T[Export final<br/>CSV/JSON pour CRM<br/>+ métriques/logs]
 ```
@@ -65,8 +65,7 @@ AUTO = (
     OR (score >= 0.95 AND name_semantic_max >= 0.75)
     OR (score >= 0.98 AND name_semantic_second >= 0.65)
 )
-REVIEW = score >= 0.70 (sinon)
-NO_MATCH = score < 0.70
+REVIEW = sinon (pas de NO_MATCH avant Places)
 ```
 
 Note de stratégie : nous sommes en cours de réflexion sur la manière d'inclure cette "pépite" XGBoost comme socle principal, avec des lookup web utilisés uniquement pour la revue (REVIEW) et non pour l'auto‑match, afin de maximiser la sûreté (zéro faux positif).
@@ -75,7 +74,7 @@ Note de stratégie : nous sommes en cours de réflexion sur la manière d'inclur
 
 # Diagramme cible Pipe V7 (XGBoost-first + fallback Web déterministe)
 
-Objectif : faire du **XGBoost** le socle (AUTO ≈ 88% du bon candidat sur set de test, sans faux positif) et remplacer les LLM par un traitement **100% déterministe**. Les appels “web” ne servent qu’à tenter d’**upgrader** des cas `REVIEW` / `NO_MATCH` en `MATCH` **sans jamais créer de faux positif**.
+Objectif : faire du **XGBoost** le socle (AUTO ≈ 88% du bon candidat sur set de test, sans faux positif) et remplacer les LLM par un traitement **100% déterministe**. Les appels “web” ne servent qu’à tenter d’**upgrader** des cas `REVIEW` en `MATCH` **sans jamais créer de faux positif**.
 
 ```mermaid
 flowchart TD
@@ -89,19 +88,19 @@ flowchart TD
 
     %% Scoring ML
     B --> E[Scoring XGBoost top-k<br/>(features nom/adresse + sémantique)]
-    E --> F{Routing XGBoost v1.0<br/>(AUTO / REVIEW / NO_MATCH)}
+    E --> F{Routing XGBoost v1.0<br/>(AUTO / REVIEW)}
 
     %% Sortie directe
     F -->|AUTO| G[Sortie MATCH (XGB)<br/>SIRET=top1 + score + features]
 
     %% Fallback Web "officiel"
-    F -->|REVIEW / NO_MATCH| H[Web lookup multi-sites (1 requête)<br/>Google/Brave alternés (quotas)]
+    F -->|REVIEW| H[Web lookup multi-sites (1 requête)<br/>Google/Brave alternés (quotas)]
     H --> I[Extraction SIREN/SIRET depuis URLs/snippets<br/>+ dédup par identifiant]
     I --> J[Validation SIRENE + règles déterministes<br/>(commune/CP + adresse + consensus multi-sites)]
     J --> K{Match web “sans risque” ?}
 
     K -->|Oui| L[Upgrade MATCH (WEB)<br/>SIRET retenu + preuves]
-    K -->|Non| M[Conserver REVIEW/NO_MATCH<br/>(pas d’auto-match)]
+    K -->|Non| M[Conserver REVIEW<br/>(NO_MATCH uniquement après Places/WEB)]
 
     G & L & M --> N[Export final<br/>CSV/JSON + métriques/logs]
 ```
@@ -110,7 +109,7 @@ flowchart TD
 
 - **Plus de LLM** : uniquement des features ML (XGBoost) + des règles déterministes.
 - **Sécurité** : on ne sort `MATCH` (via web) que si l’évidence est “multi-sources + cohérente SIRENE”.
-- **Sobriété quotas** : web lookup uniquement pour `REVIEW` / `NO_MATCH`, avec cache des requêtes et alternance Google/Brave.
+- **Sobriété quotas** : web lookup uniquement pour `REVIEW`, avec cache des requêtes et alternance Google/Brave.
 - **Traçabilité** : pour chaque décision `MATCH`, conserver “preuves” (sites/URLs + checks passés).
 
 ### Lookup Web : Google + Brave (remplacement Qwant)
@@ -128,7 +127,7 @@ But : conserver **la même forme de requête** que le lookup Qwant actuel, mais 
 
 ### Décision déterministe “WEB MATCH” (objectif : 0 faux positif)
 
-Idée générale : on ne fait “web→MATCH” que si le web donne un **SIRET unique** et que SIRENE confirme **commune + adresse**. Sinon, on ne force pas (on garde `REVIEW/NO_MATCH`).
+Idée générale : on ne fait “web→MATCH” que si le web donne un **SIRET unique** et que SIRENE confirme **commune + adresse**. Sinon, on ne force pas (on garde `REVIEW`; `NO_MATCH` seulement après échec Places/WEB).
 
 Règles proposées (conservatrices, à calibrer) :
 
@@ -153,7 +152,7 @@ Règles proposées (conservatrices, à calibrer) :
    - exception possible (si besoin de recall) : si le SIREN n’a **qu’un seul établissement actif** dans la commune ET que l’adresse match strictement → produire le SIRET associé
 
 5) **Cas ambigus**
-   - plusieurs SIRET valides ou pas de consensus : ne pas arbitrer → conserver `REVIEW` (ou `NO_MATCH` si le web est vide)
+   - plusieurs SIRET valides ou pas de consensus : ne pas arbitrer → conserver `REVIEW` (NO_MATCH seulement après échec Places/WEB)
 
 ### Script de routing en sortie XGBoost (spécification)
 
@@ -164,15 +163,15 @@ Besoin : un script “mince” qui applique **ROUTING XGBoost v1.0** sur les sor
   - `crm_id`, `rank`, `siret_candidate`, `score`
   - + les features nécessaires au routing : `name_semantic_max`, `name_semantic_second` (à inclure dans le CSV top-k, ou à recalculer à partir des features)
 - Sortie (1 ligne par `crm_id`) :
-  - `crm_id`, `xgb_status` (`AUTO`/`REVIEW`/`NO_MATCH`), `chosen_siret_xgb`, `score_top1`, `score_top2`
+  - `crm_id`, `xgb_status` (`AUTO`/`REVIEW`), `chosen_siret_xgb`, `score_top1`, `score_top2`
   - `web_status` (`UPGRADE_MATCH`/`NO_UPGRADE`), `chosen_siret_web` (optionnel), `web_evidence` (json)
-  - `final_status` (`MATCH`/`REVIEW`/`NO_MATCH`), `chosen_siret_final`
+  - `final_status` (`MATCH`/`NO_MATCH`), `chosen_siret_final`
 
 ---
 
 ## Plan de mise en œuvre (Pipe V7 – cible, sans LLM)
 
-### 1) Routing XGBoost (sortie “AUTO/REVIEW/NO_MATCH”)
+### 1) Routing XGBoost (sortie “AUTO/REVIEW”)
 
 - Ajouter un script dédié (ex. `scripts/route_xgb_results.py`) ou compléter `scripts/infer_xgb_matcher_topk.py` pour produire :
   - un fichier “résumé par CRM” (1 ligne par `crm_id`) avec les champs nécessaires au routing
@@ -212,6 +211,9 @@ Je pars du principe que :
 * orchestrateur : un script CLI type `scripts/run_pipe_v6.py`
 * structure : package `src/pipe_v6/` (noms adaptables à ton repo actuel)
 * LLM : **Ollama** (`http://localhost:11434`, modèle `gpt-oss:20b`)
+
+> **Note Phase 4** : le pipeline actuel (Places‑as‑CRM) n’émet **pas de NO_MATCH avant Places**.  
+> Les sections V6 ci‑dessous sont **legacy** et peuvent mentionner NO_MATCH en sortie LLM.
 
 Pour chaque tâche :
 

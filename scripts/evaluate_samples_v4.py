@@ -59,6 +59,8 @@ def main() -> None:
     p.add_argument("--samples", type=Path, required=True)
     p.add_argument("--splits-dir", type=Path, default=Path("data/splits"))
     p.add_argument("--model-dir", type=Path, default=Path("models"))
+    p.add_argument("--ranker-model", type=Path, default=None, help="Optional explicit ranker model path")
+    p.add_argument("--meta-path", type=Path, default=None, help="Optional explicit meta/features path")
     p.add_argument("--k", type=str, default="1,3,5,10,20")
     args = p.parse_args()
 
@@ -104,7 +106,10 @@ def main() -> None:
         print(f"\nSemantic max mean: {mean_sem:.6f} | non-zero rate: {nz_sem:.2%}")
 
     # Ranker recall@K
-    ranker_path, meta_path = find_latest_ranker(args.model_dir)
+    ranker_path = args.ranker_model
+    meta_path = args.meta_path
+    if ranker_path is None:
+        ranker_path, meta_path = find_latest_ranker(args.model_dir)
     if ranker_path is None:
         print("\nNo ranker model found → skip recall@K.")
         return

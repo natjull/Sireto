@@ -40,13 +40,13 @@ from src.xgb_matcher.features import (
     build_address,
 )
 from src.xgb_matcher.blocking import normalize_text_for_tfidf
-from src.xgb_matcher.naming import primary_name
+from src.xgb_matcher.naming import primary_name, build_candidate_names
 
 
 DEFAULT_OUTPUT = Path("data/samples_aligned_v4.parquet")
-DEFAULT_SPLITS_DIR = Path("data/splits")
 TRAINING_DATA = Path("data/entrainements.csv")
 PARTITIONS_DIR = Path("data/candidates_v4")
+ETAB_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 MODEL_DIR = Path("models")
 
 MAX_NEGATIVES = 50
@@ -105,10 +105,40 @@ def create_siren_split(df: pd.DataFrame, seed: int = SEED):
     dev_sirens = set(sirens[int(n * 0.70):int(n * 0.85)])
     test_sirens = set(sirens[int(n * 0.85):])
     return (
-        df[df["siren"].isin(train_sirens)].copy(),
-        df[df["siren"].isin(dev_sirens)].copy(),
-        df[df["siren"].isin(test_sirens)].copy(),
+        df[df["siren"].isin(list(train_sirens))].copy(),
+        df[df["siren"].isin(list(dev_sirens))].copy(),
+        df[df["siren"].isin(list(test_sirens))].copy(),
     )
+
+
+def _is_closed_status(value: object) -> bool:
+    if value is None:
+        return False
+    return str(value).strip().upper().startswith("F")
+
+
+def _load_etat_admin_map(etab_path: Path, sirets: List[str]) -> Dict[str, str]:
+    dataset = ds.dataset(etab_path, format="parquet")
+    out: Dict[str, str] = {}
+    chunk_size = 1000
+    for i in range(0, len(sirets), chunk_size):
+        chunk = [s for s in sirets[i : i + chunk_size] if s]
+        if not chunk:
+            continue
+        filt = ds.field("siret").isin(chunk)
+        table = dataset.to_table(filter=filt, columns=["siret", "etatAdministratifEtablissement"])
+        if table.num_rows == 0:
+            try:
+                chunk_int = [int(s) for s in chunk]
+            except Exception:
+                chunk_int = []
+            if chunk_int:
+                filt = ds.field("siret").isin(chunk_int)
+                table = dataset.to_table(filter=filt, columns=["siret", "etatAdministratifEtablissement"])
+        if table.num_rows > 0:
+            for siret, etat in table.to_pandas().values.tolist():
+                out[str(siret)] = etat
+    return out
 
 
 def find_latest_ranker(models_dir: Path) -> Tuple[Optional[Path], Optional[Path], bool]:
@@ -175,7 +205,7 @@ def _compute_idf_map(candidates: List[dict]) -> Tuple[Dict[str, float], float]:
 
 
 def _attach_address_density(candidates: List[dict], key: str, target_field: str) -> None:
-    buckets: Dict[str, int] = defaultdict(int)
+    buckets: Dict[Tuple[str, str], int] = defaultdict(int)
     for cand in candidates:
         addr = build_address(cand)
         if addr:
@@ -221,8 +251,29 @@ def load_candidates_for_loc(
     return candidates
 
 
-def build_tfidf_index(candidates: List[dict]) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
-    names = [normalize_text_for_tfidf(primary_name(cand) or "") for cand in candidates]
+def _dedupe_preserve(seq: List[str]) -> List[str]:
+    seen = set()
+    out = []
+    for item in seq:
+        if item and item not in seen:
+            seen.add(item)
+            out.append(item)
+    return out
+
+
+def _candidate_tfidf_name(cand: dict, name_mode: str) -> str:
+    if name_mode == "bag":
+        bag = [cn.text for cn in build_candidate_names(cand)]
+        return " ".join(_dedupe_preserve(bag))
+    return primary_name(cand) or ""
+
+
+def build_tfidf_index(
+    candidates: List[dict],
+    *,
+    name_mode: str = "primary",
+) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
+    names = [normalize_text_for_tfidf(_candidate_tfidf_name(cand, name_mode) or "") for cand in candidates]
     vectorizer = TfidfVectorizer(
         analyzer="word",
         ngram_range=(1, 2),
@@ -272,8 +323,10 @@ def generate_samples_for_query(
     ranker: xgb.Booster | None = None,
     ranker_feature_order: Optional[List[str]] = None,
     ranker_zero_features: Optional[List[str]] = None,
+    max_same_siren_negatives: int | None = None,
 ) -> List[dict]:
     gt_siret = crm_row.get("ground_truth_siret", "")
+    gt_siren = gt_siret[:9] if gt_siret else ""
     query_id = crm_row["crm_id"]
 
     if not candidates:
@@ -304,6 +357,21 @@ def generate_samples_for_query(
     negatives = [f for f in all_feats if not f["_is_pos"]]
     if not positives:
         return []
+
+    if gt_siren and max_same_siren_negatives is not None and max_same_siren_negatives >= 0:
+        same_siren = []
+        other_negs = []
+        for f in negatives:
+            siret = f.get("_siret") or ""
+            if siret.startswith(gt_siren):
+                same_siren.append(f)
+            else:
+                other_negs.append(f)
+        if max_same_siren_negatives == 0:
+            negatives = other_negs
+        else:
+            same_siren = sorted(same_siren, key=lambda x: x.get("_score", 0.0), reverse=True)
+            negatives = other_negs + same_siren[:max_same_siren_negatives]
 
     num_hard = int(max_neg * HARD_RATIO)
     neg_sorted = sorted(negatives, key=lambda x: x["_score"], reverse=True)
@@ -362,8 +430,14 @@ def generate_split(
     ranker_feature_order: Optional[List[str]],
     ranker_zero_features: Optional[List[str]],
     split_name: str,
-    writer,
-) -> Tuple[int, int, any]:
+    writer: pq.ParquetWriter | None,
+    output_path: Path,
+    *,
+    drop_unnamed_candidates: bool,
+    tfidf_name_mode: str,
+    max_same_siren_negatives: int | None,
+    exclude_closed_candidates: bool,
+) -> Tuple[int, int, pq.ParquetWriter | None]:
     total_samples = 0
     total_pos = 0
 
@@ -389,6 +463,22 @@ def generate_split(
         )
         if not candidates:
             continue
+        candidates_pool = candidates
+
+        if exclude_closed_candidates:
+            candidates_pool = [
+                c for c in candidates_pool
+                if str(c.get("etat_admin") or "").strip().upper() != "F"
+            ]
+            if not candidates_pool:
+                continue
+
+        if drop_unnamed_candidates:
+            candidates = [c for c in candidates_pool if build_candidate_names(c)]
+            if not candidates:
+                candidates = candidates_pool
+        else:
+            candidates = candidates_pool
 
         # Per-location IDF + address density
         idf_map, default_idf = _compute_idf_map(candidates)
@@ -398,7 +488,7 @@ def generate_split(
         _attach_address_density(candidates, key=key, target_field=field)
 
         # TF-IDF prefilter
-        vectorizer, cand_matrix, _ = build_tfidf_index(candidates)
+        vectorizer, cand_matrix, _ = build_tfidf_index(candidates, name_mode=tfidf_name_mode)
         crm_names = group["crm_name"].tolist()
         if vectorizer is not None and cand_matrix is not None:
             top_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
@@ -406,12 +496,12 @@ def generate_split(
             # Fallback: no TF-IDF available, use empty indices to trigger random sampling
             top_indices = [[] for _ in crm_names]
 
-        # Build siret -> candidate index map to ensure GT inclusion
-        siret_index = {cand.get("siret"): i for i, cand in enumerate(candidates)}
+        # Build siret -> candidate map to ensure GT inclusion
+        siret_index = {cand.get("siret"): cand for cand in candidates_pool}
 
         samples_batch: List[dict] = []
-        for row, idx_list in zip(group.itertuples(index=False), top_indices):
-            row_dict = row._asdict()
+        for row, idx_list in zip(group.itertuples(index=False, name="Row"), top_indices):
+            row_dict = row._asdict()  # type: ignore[union-attr]
             gt_siret = row_dict.get("ground_truth_siret")
             # FIX: Guarantee at least MIN_CANDIDATES_SUBSET candidates
             # TF-IDF prefilter may return very few candidates for specific proper nouns
@@ -430,7 +520,7 @@ def generate_split(
                 else:
                     subset = []
             if gt_siret and gt_siret in siret_index:
-                gt_cand = candidates[siret_index[gt_siret]]
+                gt_cand = siret_index[gt_siret]
                 if gt_cand not in subset:
                     subset.append(gt_cand)
             samples = generate_samples_for_query(
@@ -440,6 +530,7 @@ def generate_split(
                 ranker=ranker,
                 ranker_feature_order=ranker_feature_order,
                 ranker_zero_features=ranker_zero_features,
+                max_same_siren_negatives=max_same_siren_negatives,
             )
             samples_batch.extend(samples)
 
@@ -448,7 +539,7 @@ def generate_split(
             df_tmp["split"] = split_name
             table = pa.Table.from_pandas(df_tmp, preserve_index=False)
             if writer is None:
-                writer = pq.ParquetWriter(str(generate_split.output_path), table.schema)
+                writer = pq.ParquetWriter(str(output_path), table.schema)
             writer.write_table(table)
             total_samples += len(df_tmp)
             total_pos += int(df_tmp["label"].sum())
@@ -459,11 +550,62 @@ def generate_split(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Generate training samples v4 (partitioned + TF-IDF).")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
-    parser.add_argument("--splits-dir", type=Path, default=DEFAULT_SPLITS_DIR)
     parser.add_argument("--training-csv", type=Path, default=TRAINING_DATA)
     parser.add_argument("--partitions-dir", type=Path, default=PARTITIONS_DIR)
+    parser.add_argument("--etab-parquet", type=Path, default=ETAB_PARQUET)
     parser.add_argument("--prefilter-k", type=int, default=PREFILTER_TOP_K)
     parser.add_argument("--max-negatives", type=int, default=MAX_NEGATIVES)
+    parser.add_argument(
+        "--tfidf-name-mode",
+        choices=["primary", "bag"],
+        default="primary",
+        help="TF-IDF name source: primary (default) or bag-of-names.",
+    )
+    parser.add_argument(
+        "--drop-unnamed-candidates",
+        dest="drop_unnamed_candidates",
+        action="store_true",
+        default=True,
+        help="Drop candidates with no usable names (default: enabled).",
+    )
+    parser.add_argument(
+        "--keep-unnamed-candidates",
+        dest="drop_unnamed_candidates",
+        action="store_false",
+        help="Keep candidates with no usable names.",
+    )
+    parser.add_argument(
+        "--max-same-siren-negatives",
+        type=int,
+        default=0,
+        help="Cap same-SIREN negatives per query (0 exclude, -1 unlimited).",
+    )
+    parser.add_argument(
+        "--exclude-closed-gt",
+        dest="exclude_closed_gt",
+        action="store_true",
+        default=True,
+        help="Exclude GT with etatAdministratifEtablissement == 'F'.",
+    )
+    parser.add_argument(
+        "--include-closed-gt",
+        dest="exclude_closed_gt",
+        action="store_false",
+        help="Keep closed GT in training samples.",
+    )
+    parser.add_argument(
+        "--exclude-closed-candidates",
+        dest="exclude_closed_candidates",
+        action="store_true",
+        default=True,
+        help="Exclude candidates with etat_admin == 'F'.",
+    )
+    parser.add_argument(
+        "--include-closed-candidates",
+        dest="exclude_closed_candidates",
+        action="store_false",
+        help="Include candidates with etat_admin == 'F'.",
+    )
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--ranker-model", type=Path, default=None)
     parser.add_argument("--ranker-meta", type=Path, default=None)
@@ -472,6 +614,8 @@ def main() -> None:
 
     random.seed(args.seed)
     np.random.seed(args.seed)
+    if not args.exclude_closed_gt and args.exclude_closed_candidates:
+        print("[WARN] include_closed_gt with exclude_closed_candidates may drop closed GT queries.")
 
     print("=" * 60)
     print("Sample Generation v4 (Partitioned + TF-IDF)")
@@ -480,15 +624,24 @@ def main() -> None:
     print("\n1. Loading CRM data...")
     df = load_training_data(args.training_csv)
     print(f"   Rows: {len(df)}, SIRENs: {df['siren'].nunique()}")
+    if args.exclude_closed_gt:
+        if not args.etab_parquet.exists():
+            raise FileNotFoundError(f"Establishment parquet not found: {args.etab_parquet}")
+        gt_sirets = df["ground_truth_siret"].astype(str).tolist()
+        status_map = _load_etat_admin_map(args.etab_parquet, gt_sirets)
+        closed_mask = df["ground_truth_siret"].map(
+            lambda s: _is_closed_status(status_map.get(str(s)))
+        )
+        missing = df["ground_truth_siret"].map(lambda s: str(s) not in status_map).sum()
+        before = len(df)
+        df = df[~closed_mask].copy()
+        print(
+            f"   Excluded closed GT: {before - len(df)} removed (missing status: {missing})"
+        )
 
     print("\n2. SIREN split...")
     train_df, dev_df, test_df = create_siren_split(df, args.seed)
     print(f"   Train: {len(train_df)}, Dev: {len(dev_df)}, Test: {len(test_df)}")
-
-    args.splits_dir.mkdir(parents=True, exist_ok=True)
-    train_df.to_csv(args.splits_dir / "train.csv", index=False)
-    dev_df.to_csv(args.splits_dir / "dev.csv", index=False)
-    test_df.to_csv(args.splits_dir / "test.csv", index=False)
 
     ranker = None
     ranker_feature_order: Optional[List[str]] = None
@@ -518,9 +671,8 @@ def main() -> None:
 
     output_path = args.output
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    generate_split.output_path = output_path
 
-    writer = None
+    writer: pq.ParquetWriter | None = None
     total_counts = {}
 
     train_count, train_pos, writer = generate_split(
@@ -533,6 +685,11 @@ def main() -> None:
         ranker_zero_features,
         "train",
         writer,
+        output_path,
+        drop_unnamed_candidates=args.drop_unnamed_candidates,
+        tfidf_name_mode=args.tfidf_name_mode,
+        max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
+        exclude_closed_candidates=args.exclude_closed_candidates,
     )
     total_counts["train"] = train_count
 
@@ -546,6 +703,11 @@ def main() -> None:
         ranker_zero_features,
         "dev",
         writer,
+        output_path,
+        drop_unnamed_candidates=args.drop_unnamed_candidates,
+        tfidf_name_mode=args.tfidf_name_mode,
+        max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
+        exclude_closed_candidates=args.exclude_closed_candidates,
     )
     total_counts["dev"] = dev_count
 
@@ -559,6 +721,11 @@ def main() -> None:
         ranker_zero_features,
         "test",
         writer,
+        output_path,
+        drop_unnamed_candidates=args.drop_unnamed_candidates,
+        tfidf_name_mode=args.tfidf_name_mode,
+        max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
+        exclude_closed_candidates=args.exclude_closed_candidates,
     )
     total_counts["test"] = test_count
 
@@ -573,6 +740,12 @@ def main() -> None:
         "test": test_count,
         "hard_negative_ranker": ranker_info,
         "prefilter_k": args.prefilter_k,
+        "tfidf_name_mode": args.tfidf_name_mode,
+        "drop_unnamed_candidates": args.drop_unnamed_candidates,
+        "max_same_siren_negatives": args.max_same_siren_negatives,
+        "exclude_closed_gt": args.exclude_closed_gt,
+        "exclude_closed_candidates": args.exclude_closed_candidates,
+        "etab_parquet": str(args.etab_parquet),
         "partitions_dir": str(args.partitions_dir),
     }
     with open(output_path.with_suffix(".json"), "w") as f:
