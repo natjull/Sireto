@@ -17,7 +17,7 @@ Metrics computed:
 Usage:
     python scripts/evaluate_places_matching.py \
         --places-results-path reports/routed_with_places.csv \
-        --ground-truth-path data/samples_v4_fixed.parquet \
+        --ground-truth-path data/samples_v4_with_ranker.parquet \
         --output-path reports/places_matching_evaluation.json
 """
 

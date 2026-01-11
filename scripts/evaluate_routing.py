@@ -17,7 +17,7 @@ Metrics computed:
 Usage:
     python scripts/evaluate_routing.py \
         --routed-path reports/routed_results.csv \
-        --ground-truth-path data/samples_v4_fixed.parquet \
+        --ground-truth-path data/samples_v4_with_ranker.parquet \
         --output-path reports/routing_evaluation.json
 """
 

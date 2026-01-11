@@ -91,7 +91,7 @@ models/xgb_decider_calibrator_isotonic_20260103_132351.pkl  # Calibrateur isoton
 ```
 data/samples_v4_with_ranker.parquet    # Source canonique : samples d'entraînement avec splits train/dev/test (colonne `split`)
 data/old/2026-01-11_splits/            # [ARCHIVÉ] Anciens CSV splits (train.csv, dev.csv, test.csv) - ne plus utiliser
-data/candidates_v4/                    # Store partitionné des candidats SIRENE
+data/candidates_v4_active/             # Store partitionné des candidats SIRENE (open-only)
 data/StockEtablissement_utf8.parquet   # Base SIRENE établissements
 data/StockUniteLegale_utf8.parquet     # Base SIRENE unités légales
 ```
@@ -199,7 +199,7 @@ XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py \
   --crm-path data/old/2026-01-11_splits/test.csv \
   --output-path reports/xgb_two_stage_topk_test.csv \
   --top-k 20 \
-  --partitions-dir data/candidates_v4 \
+  --partitions-dir data/candidates_v4_active \
   --meta-path models/xgb_two_stage_meta_20260103_132351.json
 ```
 

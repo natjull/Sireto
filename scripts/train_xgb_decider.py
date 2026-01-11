@@ -187,7 +187,7 @@ def calibrate_classifier(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Train XGBoost Decider (Stage 2)")
-    parser.add_argument("--samples", type=Path, default=Path("data/samples_aligned_v4.parquet"))
+    parser.add_argument("--samples", type=Path, default=Path("data/samples_v4_with_ranker.parquet"))
     parser.add_argument("--output-dir", type=Path, default=Path("models"))
     parser.add_argument("--timestamp", type=str, default=None)
     parser.add_argument("--meta-path", type=Path, default=None)

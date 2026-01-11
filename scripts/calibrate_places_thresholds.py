@@ -13,7 +13,7 @@ Works with labeled training samples where we have ground truth SIRET.
 
 Usage:
     python scripts/calibrate_places_thresholds.py \
-        --samples-path data/samples_v4_fixed.parquet \
+        --samples-path data/samples_v4_with_ranker.parquet \
         --output-path configs/places_thresholds_calibrated.yaml
 
 Output:
