@@ -45,7 +45,9 @@ python scripts/generate_training_samples.py
 **Sortie :**
 - `data/samples_aligned.parquet` : Tous les samples avec features
 - `data/samples_aligned.json` : Métadonnées
-- `data/splits/train.csv`, `dev.csv`, `test.csv` : Splits par SIREN
+- `data/splits/train.csv`, `dev.csv`, `test.csv` : Splits par SIREN **[DEPRECATED 2026-01-11]**
+
+**Note (2026-01-11)** : Les fichiers CSV `data/splits/*.csv` sont **archivés** dans `data/old/2026-01-11_splits/`. La source canonique est désormais `data/samples_v4_with_ranker.parquet` avec une colonne `split` (train/dev/test).
 
 **Durée estimée :** 30-60 minutes (dépend du volume de données)
 

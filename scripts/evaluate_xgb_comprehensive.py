@@ -40,18 +40,43 @@ from src.xgb_matcher.features import FEATURE_NAMES, make_features
 from src.xgb_matcher.naming import primary_name, normalize_text
 
 # Import policy layer
-from scripts.infer_xgb_matcher_topk import apply_rerank_rules, find_latest_models
+from scripts.old.infer_xgb_matcher_topk import apply_rerank_rules, find_latest_models
 
 # Paths
-SPLITS_DIR = Path("data/splits")
+SPLITS_DIR = Path("data/old/2026-01-11_splits")  # DEPRECATED - use parquet
+DEFAULT_SAMPLES = Path("data/samples_v4_with_ranker.parquet")
 REPORTS_DIR = Path("reports")
 
 
-def load_split(split_name: str) -> pd.DataFrame:
-    """Load a data split (train/dev/test)."""
+def load_split(split_name: str, use_parquet: bool = True) -> pd.DataFrame:
+    """Load a data split (train/dev/test).
+    
+    If use_parquet=True and DEFAULT_SAMPLES exists, loads from parquet and filters by split.
+    Otherwise falls back to CSV.
+    
+    Note: Parquet mode may not work with policy layer (missing CRM fields).
+    """
+    # Try parquet first if enabled
+    if use_parquet and DEFAULT_SAMPLES.exists():
+        df = pd.read_parquet(DEFAULT_SAMPLES)
+        df = df[df["split"] == split_name].copy()
+        if df.empty:
+            raise ValueError(f"No rows for split '{split_name}' in {DEFAULT_SAMPLES}")
+        
+        # Reconstruct ground_truth_siret from label==1 rows
+        gt_map = df[df["label"] == 1].groupby("query_id")["siret"].first().to_dict()
+        df["ground_truth_siret"] = df["query_id"].map(gt_map)
+        
+        # Warn about policy layer limitations
+        if "crm_name" not in df.columns:
+            print(f"   [!] Warning: Parquet mode - policy layer may not work (missing CRM fields)")
+        
+        return df
+    
+    # Fall back to CSV
     path = SPLITS_DIR / f"{split_name}.csv"
     if not path.exists():
-        raise FileNotFoundError(f"Split not found: {path}")
+        raise FileNotFoundError(f"Split not found: {path} (and parquet not available)")
     return pd.read_csv(path, dtype=str)
 
 
@@ -205,7 +230,12 @@ def main():
     parser.add_argument("--dataset", choices=["train", "dev", "test"], default="test")
     parser.add_argument("--policy", choices=["on", "off", "both"], default="both")
     parser.add_argument("--output", type=Path, default=None)
+    parser.add_argument("--use-parquet", action="store_true", default=True, help="Use parquet file (default: True)")
+    parser.add_argument("--use-csv", action="store_true", help="Force CSV mode (deprecated splits)")
     args = parser.parse_args()
+    
+    # Determine parquet mode
+    use_parquet = args.use_parquet and not args.use_csv
     
     print("=" * 60)
     print("XGBoost Matcher Comprehensive Evaluation")
@@ -213,7 +243,7 @@ def main():
     
     # Load data
     print(f"\n1. Loading {args.dataset} split...")
-    df = load_split(args.dataset)
+    df = load_split(args.dataset, use_parquet=use_parquet)
     print(f"   Rows: {len(df)}")
     
     # Build candidate pool

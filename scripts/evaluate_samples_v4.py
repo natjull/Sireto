@@ -57,7 +57,7 @@ def _hit_at_k(y_true: np.ndarray, y_pred: np.ndarray, groups: np.ndarray, k: int
 def main() -> None:
     p = argparse.ArgumentParser(description="Evaluate samples v4 quality.")
     p.add_argument("--samples", type=Path, required=True)
-    p.add_argument("--splits-dir", type=Path, default=Path("data/splits"))
+    p.add_argument("--splits-dir", type=Path, default=None, help="DEPRECATED: CSV splits dir (default: use parquet split column)")
     p.add_argument("--model-dir", type=Path, default=Path("models"))
     p.add_argument("--ranker-model", type=Path, default=None, help="Optional explicit ranker model path")
     p.add_argument("--meta-path", type=Path, default=None, help="Optional explicit meta/features path")
@@ -76,10 +76,16 @@ def main() -> None:
 
     # Coverage by split
     for split in ["train", "dev", "test"]:
-        if (args.splits_dir / f"{split}.csv").exists():
-            base = pd.read_csv(args.splits_dir / f"{split}.csv")
-            total_queries = base["crm_id"].nunique()
-        else:
+        # Compute total queries: try CSV if splits_dir provided, else use parquet
+        total_queries = None
+        if args.splits_dir is not None:
+            csv_path = args.splits_dir / f"{split}.csv"
+            if csv_path.exists():
+                base = pd.read_csv(csv_path)
+                total_queries = base["crm_id"].nunique()
+        
+        if total_queries is None:
+            # Fallback: use parquet query_id count for this split
             total_queries = df[df["split"] == split]["query_id"].nunique()
 
         df_split = df[df["split"] == split]

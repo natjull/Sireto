@@ -3,8 +3,11 @@
 Reproducible diagnostic for XGBoost routing (risk-coverage + calibration).
 
 Inputs:
-  - CSV with ground truth SIRET (default: data/splits/test.csv)
+  - CSV or parquet with ground truth SIRET (default: data/samples_v4_with_ranker.parquet)
   - XGBoost models (ranker + classifier)
+
+NOTE: Parquet mode requires CSV with CRM fields (crm_name, crm_address, etc.) for
+feature recomputation. Use --input-path with a CSV file for full functionality.
 
 Outputs:
   - reports/diagnostic_analysis.json
@@ -50,7 +53,7 @@ from src.xgb_matcher.features import (
 from src.xgb_matcher.naming import build_candidate_names, primary_name
 from src.xgb_matcher.semantic import top2_semantic_similarities_batch
 
-from scripts.infer_xgb_matcher_topk import apply_rerank_rules, find_latest_models
+from scripts.old.infer_xgb_matcher_topk import apply_rerank_rules, find_latest_models
 
 
 def _utc_now() -> str:
@@ -281,7 +284,8 @@ def _plot_risk_coverage(thresholds: List[float], coverage: List[float], error_ra
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Diagnostic XGB routing (risk-coverage + calibration).")
-    parser.add_argument("--input-path", type=Path, default=Path("data/splits/test.csv"))
+    parser.add_argument("--input-path", type=Path, default=Path("data/samples_v4_with_ranker.parquet"))
+    parser.add_argument("--split", choices=["train", "dev", "test"], default="test", help="Split to evaluate (only used if input is parquet)")
     parser.add_argument("--output-dir", type=Path, default=Path("reports"))
     parser.add_argument("--pool-mode", choices=["insee_then_postcode", "union"], default="insee_then_postcode")
     parser.add_argument("--thresholds", type=str, default="0.90,0.95,0.99,0.995")
@@ -296,7 +300,24 @@ def main() -> None:
     parser.add_argument("--model-dir", type=Path, default=None)
     args = parser.parse_args()
 
-    df = pd.read_csv(args.input_path, dtype=str)
+    # Load input data (CSV or parquet)
+    if args.input_path.suffix == ".parquet":
+        # Parquet mode: filter by split, but warn about limitations
+        print("=" * 60)
+        print("ERROR: Parquet mode is not fully supported for this script.")
+        print("=" * 60)
+        print()
+        print("This script recomputes features from CRM fields (crm_name, crm_address, etc.)")
+        print("which are not present in the parquet file.")
+        print()
+        print("Please use a CSV file with CRM fields instead:")
+        print("  python scripts/diagnostic_xgb_routing.py --input-path data/old/2026-01-11_splits/test.csv")
+        print()
+        print("Or use evaluate_xgb_comprehensive.py for parquet-based evaluation.")
+        sys.exit(1)
+    else:
+        df = pd.read_csv(args.input_path, dtype=str)
+    
     if args.limit and args.limit > 0:
         df = df.head(args.limit)
 
