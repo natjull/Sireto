@@ -44,7 +44,9 @@ from src.xgb_matcher.features import (
     normalize_text,
     preprocess_crm_row,
     semantic_gate_allows,
+    set_global_name_idf_map,
 )
+from src.xgb_matcher.candidates import compute_name_idf_map
 from src.xgb_matcher.naming import build_candidate_names, primary_name
 from src.xgb_matcher.partitioned_store import PartitionedCandidateStore
 from src.xgb_matcher.semantic import batch_encode_texts, get_cache_stats, top2_semantic_similarities_batch
@@ -417,6 +419,11 @@ def main() -> None:
         cand_list = [(c.get("siret"), c) for c in candidates if c.get("siret")]
         if not cand_list:
             continue
+
+        # Compute IDF map for this candidate pool (CRITICAL for idf_name feature)
+        candidates_dict = {str(siret): c for siret, c in cand_list if siret}
+        idf_map, default_idf = compute_name_idf_map(candidates_dict)
+        set_global_name_idf_map(idf_map, default_idf)
 
         # Stage 1 features (no semantic)
         feats_stage1 = [make_features_from_preprocessed(crm_ctx, c, skip_semantic=True) for _, c in cand_list]
