@@ -291,8 +291,9 @@
   - 3cc4bc6 — Improve TF‑IDF retrieval with bag‑of‑names.
   - d99c2f7 — Use TF‑IDF fallback in two‑stage inference.
   - 6a49a33 — Align training TF‑IDF normalization.
+- **Note Data (2026-01-11)** : `data/splits/` a été archivé dans `data/old/2026-01-11_splits/`. La source canonique est désormais `data/samples_v4_with_ranker.parquet` (colonne `split` pour train/dev/test).
 - Tests/commandes exécutées :
-  - `XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --partitions-dir data/candidates_v4_fixed --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed.csv --top-k 5 --meta-path models/xgb_two_stage_meta_20260103_132351.json`
+  - `XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --partitions-dir data/candidates_v4 --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed.csv --top-k 5 --meta-path models/xgb_two_stage_meta_20260103_132351.json`
   - `XGB_SEMANTIC_ENABLED=1 ... --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed2.csv`
   - `XGB_SEMANTIC_ENABLED=1 ... --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed3.csv`
 - Résultats clés (top‑5) :
@@ -431,13 +432,14 @@
   - `scripts/evaluate_samples_v4.py` : options `--ranker-model` + `--meta-path`
   - `scripts/evaluate_routing.py` : fix JSON serialization (numpy types)
   - `scripts/evaluate_decider_on_samples.py` : nouveau script d’évaluation decider (AUC/PR/Brier/ECE + hit@k + thresholds)
+- **Note Data (2026-01-11)** : Les exemples ci-dessous utilisent `data/splits/test.csv` (legacy). Préférer extraire le split test depuis `data/samples_v4_with_ranker.parquet` (filtrer `split == 'test'` et reconstruire le CSV CRM source si nécessaire).
 - Tests/commandes exécutées :
   - `python scripts/evaluate_samples_v4.py --samples data/samples_v4_with_ranker.parquet --ranker-model models/xgbranker_fast_20260103_132351.json --meta-path models/xgb_two_stage_meta_20260103_132351.json`
   - `python scripts/evaluate_decider_on_samples.py --samples data/samples_v4_with_ranker.parquet --model models/xgb_decider_20260103_132351.json --calibrator models/xgb_decider_calibrator_isotonic_20260103_132351.pkl --meta models/xgb_two_stage_meta_20260103_132351.json --output reports/decider_eval.json`
-  - `XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py --crm-path data/splits/test.csv --output-path reports/xgb_two_stage_topk_test.csv --top-k 20 --partitions-dir data/candidates_v4 --pool-mode insee_then_postcode --prefilter-k 500 --dept-prefilter-k 200 --max-dept-candidates 50000 --meta-path models/xgb_two_stage_meta_20260103_132351.json --ranker-fast-model models/xgbranker_fast_20260103_132351.json --decider-model models/xgb_decider_20260103_132351.json --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl`
+  - `XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py --crm-path data/old/2026-01-11_splits/test.csv --output-path reports/xgb_two_stage_topk_test.csv --top-k 20 --partitions-dir data/candidates_v4 --pool-mode insee_then_postcode --prefilter-k 500 --dept-prefilter-k 200 --max-dept-candidates 50000 --meta-path models/xgb_two_stage_meta_20260103_132351.json --ranker-fast-model models/xgbranker_fast_20260103_132351.json --decider-model models/xgb_decider_20260103_132351.json --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl`
   - `python scripts/route_xgb_results.py --input-path reports/xgb_two_stage_topk_test.csv --output-path reports/routed_phase4_test.csv --thresholds configs/routing_thresholds.yaml --budget-mode normal`
-  - `python scripts/evaluate_routing.py --routed-path reports/routed_phase4_test.csv --ground-truth-path data/splits/test.csv --output-path reports/routing_evaluation_test.json`
-  - `python scripts/calibrate_routing_thresholds.py --inference-path reports/xgb_two_stage_topk_test.csv --ground-truth-path data/splits/test.csv --output-path reports/routing_thresholds_calibrated_test.yaml --report-path reports/routing_calibration_test.json --target-fp-rate 0.001`
+  - `python scripts/evaluate_routing.py --routed-path reports/routed_phase4_test.csv --ground-truth-path data/old/2026-01-11_splits/test.csv --output-path reports/routing_evaluation_test.json`
+  - `python scripts/calibrate_routing_thresholds.py --inference-path reports/xgb_two_stage_topk_test.csv --ground-truth-path data/old/2026-01-11_splits/test.csv --output-path reports/routing_thresholds_calibrated_test.yaml --report-path reports/routing_calibration_test.json --target-fp-rate 0.001`
 - Etat : ⚠️ partiel (Places matching non évalué faute de clé/API; routing precision très basse vs objectif 0 FP)
 - Prochaines étapes immédiates :
   - Inspecter `reports/routing_evaluation_test.json` (AUTO precision ~75%) + renforcer règles “certainty”

@@ -271,7 +271,7 @@ d**Mission** : hard negative mining + nouvelles features + calibration.
 - **Script de diagnostic reproductible** (implémenté) :
   - **Fichier** : `scripts/diagnostic_xgb_routing.py`
   - **Entrées** :
-    - CSV avec ground truth (`ground_truth_siret`) : ex `data/splits/test.csv`
+    - CSV avec ground truth (`ground_truth_siret`) : **LEGACY** : `data/old/2026-01-11_splits/test.csv` OU extraire depuis `data/samples_v4_with_ranker.parquet` (split='test')
     - Modèles XGB (ranker + classifier)
     - Paramètres : `--pool-mode` (insee_then_postcode / union), `--thresholds`
   - **Sorties** :
@@ -283,8 +283,8 @@ d**Mission** : hard negative mining + nouvelles features + calibration.
     - `coverage_eligible = auto_count / eligible_count` (eligible = ground truth dans pool)
   - **Validation** :
     - Vérifier `auto_count = somme` et cohérence avec precision@1
-  - **Commandes** :
-    - `python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv`
+  - **Commandes (legacy)** :
+    - `python scripts/diagnostic_xgb_routing.py --input-path data/old/2026-01-11_splits/test.csv`
     - Variante rapide : `python scripts/diagnostic_xgb_routing.py --limit 200`
 
 ## Phase 1 — Quick Wins (1–3 jours)
@@ -354,7 +354,7 @@ python scripts/diagnostic_xgb_routing.py --limit 200
 **Validation Phase 1 (commandes)**
 - `python scripts/infer_xgb_matcher_topk.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --output-path reports/xgb_infer_topk_phase1.csv --with-shap`
 - `python scripts/route_xgb_results.py --input-path reports/xgb_infer_topk_phase1.csv --output-path reports/routed_phase1.csv`
-- `python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv --limit 200`
+- `python scripts/diagnostic_xgb_routing.py --input-path data/old/2026-01-11_splits/test.csv --limit 200` (legacy; préférer extraire split test du parquet)
 
 ## Phase 2 — Sprint ML (1–2 semaines)
 **Objectif : réduire massivement les FP et stabiliser l’AUTO**
@@ -450,7 +450,7 @@ python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv
 **Validation Phase 2 (commandes)**
 - `python scripts/generate_training_samples_v3.py --output data/samples_aligned_v4.parquet`
 - `python scripts/train_xgb_matcher_v2.py --samples data/samples_aligned_v4.parquet`
-- `python scripts/diagnostic_xgb_routing.py --input-path data/splits/test.csv`
+- `python scripts/diagnostic_xgb_routing.py --input-path data/old/2026-01-11_splits/test.csv` (legacy; préférer extraire split test du parquet)
 
 ## Phase 3 — SOTA (2–4 semaines)
 **Objectif : pipeline robuste avec garanties quasi‑zéro FP**
@@ -505,7 +505,7 @@ python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/spl
 
 **Validation Phase 3 (commandes)**
 - `python scripts/train_xgb_ranker.py` + `python scripts/train_xgb_decider.py`
-- `python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/splits/test.csv`
+- `python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/old/2026-01-11_splits/test.csv` (legacy; préférer extraire split test du parquet)
 - `python scripts/route_xgb_results.py --places-mode --input-path reports/xgb_infer_topk_phase3.csv --output-path reports/routed_phase3.csv`
 
 ## Phase 4 — SOTA Routing & Cost‑Aware Decision (1–2 semaines)
@@ -919,7 +919,7 @@ ROUTING_METRICS = {
 
 **Commandes recommandées** :
 ```bash
-# Générer ground truth élargi
+# Générer ground truth élargi (en utilisant le parquet canonique)
 python scripts/build_evaluation_dataset.py \
     --sources crm_history,places_validated \
     --min-samples-per-segment 100 \
@@ -959,6 +959,8 @@ python scripts/simulate_places_costs.py \
     --cost-per-call 0.001 \
     --monthly-volume 10000
 ```
+
+**Note (2026-01-11)** : `data/splits/` a été archivé dans `data/old/2026-01-11_splits/`. La source canonique pour splits train/dev/test est désormais `data/samples_v4_with_ranker.parquet` (colonne `split`).
 
 ### Détails de code (Phase 4)
 
@@ -1069,7 +1071,7 @@ python scripts/simulate_places_costs.py \
 ### Validation Phase 4 (commandes)
 
 ```bash
-# Inférence standard
+# Inférence standard (utiliser un CSV CRM réel, pas les splits d'entraînement)
 XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py \
     --crm-path data/evaluation_holdout.csv \
     --partitions-dir data/candidates_v4_fixed \
@@ -1105,6 +1107,8 @@ python scripts/simulate_places_costs.py \
     --monthly-volume 10000 \
     --cost-per-call 0.001
 ```
+
+**Note (2026-01-11)** : Les splits train/dev/test sont définis dans `data/samples_v4_with_ranker.parquet` (colonne `split`). Pour tester sur le split test historique, utiliser `data/old/2026-01-11_splits/test.csv` (archivé).
 
 ---
 
