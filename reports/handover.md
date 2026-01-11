@@ -261,3 +261,185 @@
 - Prochaines étapes immédiates :
   - Régénérer samples v4 avec XGB_SEMANTIC_ENABLED=1
   - Entraîner ranker+decider puis inférer
+
+## Session 2026-01-03T17:30:00Z — Codex Ctx3
+- Phase ciblée : Phase 3 (SOTA / 2‑étages) — Audit “obvious” + fixes retrieval (TF‑IDF) + validation locale
+- Objectif : résoudre les faux négatifs évidents avant routing (ATOUT GAZ, L2G, TIMCOD, Couleur Primeur, JNC, SABECO).
+- Duo ranker/decider utilisé (meta) :
+  - Meta : `models/xgb_two_stage_meta_20260103_132351.json`
+  - Ranker_fast : `models/xgbranker_fast_20260103_132351.json`
+  - Decider : `models/xgb_decider_20260103_132351.json`
+  - Calibrator : `models/xgb_decider_calibrator_isotonic_20260103_132351.pkl`
+- Performances XGBoost (issues du meta 20260103_132351) :
+  - Ranker_fast (test) : hit@1=0.8823, hit@3=0.9517, hit@5=0.9681, recall@10=0.9827, recall@20=0.9936, MRR=0.9208
+  - Ranker_fast (dev) : hit@1=0.8893, hit@3=0.9606, hit@5=0.9723, recall@10=0.9872, recall@20=0.9923, MRR=0.9284
+  - Decider calibré (test) : AUC=0.99117, AP=0.87339, Brier=0.00553, hit@1=0.9020, hit@3=0.9653, hit@5=0.9777
+  - Decider calibré (dev) : AUC=0.99206, AP=0.88261, Brier=0.00527, hit@1=0.9068, hit@3=0.9693, hit@5=0.9805
+- Changements (code) :
+  - src/xgb_matcher/naming.py :
+    - ajout `candidate_tfidf_text()` (concat + dédup bag‑of‑names, cache `_xgb_cached_tfidf_text`).
+  - src/xgb_matcher/blocking.py :
+    - TF‑IDF basé sur **bag‑of‑names** (au lieu de `primary_name`).
+    - normalisation TF‑IDF renforcée (`normalize_text_for_tfidf`) : suppression ponctuation, acronymes compacts (J.N.C → JNC), expansion légère singulier/pluriel.
+    - fallback TF‑IDF **char‑ngram** (3‑5) activé **uniquement** si word‑TF‑IDF retourne nnz=0.
+  - scripts/infer_xgb_two_stage.py :
+    - passage des `cand_names` vers prefilter pour fallback char‑ngram.
+    - cache TF‑IDF enrichi (names).
+  - scripts/generate_training_samples_v4.py :
+    - alignement de la normalisation TF‑IDF (utilise `normalize_text_for_tfidf`).
+- Commits poussés (origin/main) :
+  - 3cc4bc6 — Improve TF‑IDF retrieval with bag‑of‑names.
+  - d99c2f7 — Use TF‑IDF fallback in two‑stage inference.
+  - 6a49a33 — Align training TF‑IDF normalization.
+- Tests/commandes exécutées :
+  - `XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py --crm-path data/testcrm/data_56_subset_corbas_decines.csv --partitions-dir data/candidates_v4_fixed --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed.csv --top-k 5 --meta-path models/xgb_two_stage_meta_20260103_132351.json`
+  - `XGB_SEMANTIC_ENABLED=1 ... --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed2.csv`
+  - `XGB_SEMANTIC_ENABLED=1 ... --output-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed3.csv`
+- Résultats clés (top‑5) :
+  - ATOUT GAZ (crm_id 54) → **SIRET 53011730800029 rank 1**.
+  - L2G (crm_id 94) → **SIRET 44888664800055 rank 1**.
+  - TIMCOD (crm_id 115) → **SIRET 48048580400037 rank 1**.
+  - COULEUR PRIMEUR (crm_id 24) → **SIRET 42037022300034 rank 1** (pluriels corrigés).
+  - JNC (crm_id 80) → **SIRET 79341104200013 rank 1** (acronymes corrigés).
+  - SABECO (crm_id 1) → **SIRET 79422623300037 rank 2** (rank 1 = SABEXTRA, decider préfère un homonyme).
+- Observations / alertes :
+  - Le modèle sémantique affiche un warning de tokenizer (regex Mistral) mais l’inférence fonctionne.
+  - SABECO reste un cas où le **ranking** (decider) préfère un homonyme ; corriger nécessiterait un retrain ou un tie‑breaker dédié (non fait).
+  - Aucun retrain effectué sur ces changements (seulement retrieval).
+- Prochaines étapes immédiates :
+  - Poursuivre vers le **routing** (ROUTING XGBoost v1.0) à partir de `reports/xgb_two_stage_topk_56_with_closed_sem_fixed3.csv`.
+
+## Session 2026-01-03T18:45:00Z — Codex Ctx4 (handover)
+- Phase ciblée : Phase 4 (SOTA Routing & Places‑as‑CRM)
+- Objectif : aligner la doc d'architecture avec "AUTO/REVIEW uniquement avant Places" + préparer calibration automatique.
+- Changements (doc/archi) :
+  - `reports/entity_matching_audit.md` :
+    - NO_MATCH uniquement **après** Places (AUTO/REVIEW pré‑Places)
+    - ajout "Places‑as‑CRM (decider identique)" + calibration automatique Places (`score_min/gap_min`)
+    - ajout "Calibration AUTO vs REVIEW (automatique)"
+    - commands Phase 4: `--top-k 20` + chemins modèles explicites
+  - `AGENTS.md` :
+    - routing v1.0 = AUTO/REVIEW only
+    - diagramme V7 + texte: NO_MATCH seulement après Places/WEB
+    - note legacy ajoutée pour V6
+  - `README.md` : note Phase 4 (AUTO/REVIEW pré‑Places)
+  - `docs/PRODUCTION_DEPLOYMENT_PROMPT.md` : outputs/metrics ajustés (NO_MATCH post‑Places)
+  - `docs/diagrams/pipe_v6_flowchart.mmd` : sortie REVIEW (NO_MATCH après Places)
+  - `docs/diagrams/pipe_v6_flowchart.svg` : régénéré (mermaid-cli)
+- État : ✅ doc alignée, code non touché
+- Prochaines étapes immédiates (code) :
+  1) Implémenter `scripts/calibrate_routing_thresholds.py` (calibration AUTO/REVIEW).
+  2) Wire `scripts/route_xgb_results.py` pour charger `configs/routing_thresholds.yaml` + AUTO/REVIEW only.
+  3) Implémenter `scripts/calibrate_places_thresholds.py` + `scripts/evaluate_places_matching.py`.
+  4) Ajouter `address_close()` + seuils Places dans `src/pipe_v6/places_validator.py`.
+  5) Mettre à jour `src/pipe_v6/places_orchestrator.py` (pool recall@20 + Places‑as‑CRM).
+- Notes :
+  - NO_MATCH **uniquement** après Places (pas de NO_MATCH pré‑Places).
+  - Modèles decider **chemins explicites** (pas d'auto‑latest). Référence : `models/xgb_decider_20260103_132351.json` + calibrator associé.
+
+## Session 2026-01-04T00:15:00Z — Codex Ctx5 (Phase 4 Implementation)
+- Phase ciblée : Phase 4 (SOTA Routing + Places‑as‑CRM) — **Implémentation complète**
+- Objectif : implémenter le routing cost-aware + Places‑as‑CRM avec le même decider XGB
+- Duo modèles (chemins explicites, pas d'auto‑latest) :
+  - Decider : `models/xgb_decider_20260103_132351.json`
+  - Calibrator : `models/xgb_decider_calibrator_isotonic_20260103_132351.pkl`
+  - Meta : `models/xgb_two_stage_meta_20260103_132351.json`
+- Changements (code) :
+  - **`configs/routing_thresholds.yaml`** (CRÉÉ) :
+    - Seuils segmentés (unique_name_full_addr, common_name_full_addr, short_name, etc.)
+    - Règles de certitude (perfect_match, identical_name, model_certainty, contains_match)
+    - Résolution same‑SIREN automatique
+    - Règles de blocage (no_lexical_evidence, semantic_only, address_only, high_density, weak_gap)
+    - Règles de promotion (strong_etab, contains, pm_dirigeant, token_overlap)
+    - Budget modes (aggressive/normal/permissive)
+  - **`configs/places_thresholds.yaml`** (CRÉÉ) :
+    - Chemins modèles explicites (decider, calibrator, meta)
+    - Pool config (xgb_topk: 20, arm_a, arm_b)
+    - Gate config (min_addr_overlap, min_name_semantic)
+    - Seuils promotion Places (score_min: 0.97, gap_min: 0.05)
+    - Config address_close (addr_jaro_min, street_number_diff_max, distance_max_m)
+  - **`scripts/route_xgb_results.py`** (RÉÉCRIT) :
+    - `route_cost_aware()` : routing Phase 4 avec certainty → same‑SIREN → blocking → segment → promotion → gap → threshold
+    - `is_absolute_certainty()` : 4 règles FP‑impossible
+    - `resolve_same_siren()` : résolution automatique intra‑SIREN (préférence OUVERT)
+    - `check_blocking_rules()` : 6 règles → force REVIEW
+    - `check_promotion_rules()` : 4 règles → force AUTO
+    - `get_segment_config()` : seuils variables par segment
+    - `apply_budget_mode()` : multiplicateurs aggressive/normal/permissive
+    - `RoutingConfig` + `RoutingMetrics` dataclasses
+  - **`src/pipe_v6/places_validator.py`** (MIS À JOUR) :
+    - `address_close()` : validation combinée postcode + Jaro + street_number_diff + geo_distance
+  - **`src/pipe_v6/places_xgb_rescorer.py`** (RÉÉCRIT) :
+    - Chemins modèles explicites (DEFAULT_DECIDER_MODEL, DEFAULT_CALIBRATOR_PATH, DEFAULT_META_PATH)
+    - Même gating sémantique que l'inférence (`semantic_gate_allows()`)
+    - Classes IsotonicCalibrator / SigmoidCalibrator (pickle compat)
+    - `score_candidates()` / `score_candidates_with_features()`
+  - **`src/pipe_v6/places_orchestrator.py`** (MIS À JOUR) :
+    - Pool = recall@20 + arm_a + arm_b
+    - Mini‑gate CRM ↔ Places
+    - Integration `address_close()` avant promotion MATCH_PLACES
+    - REVIEW devient NO_MATCH après Places
+  - **`scripts/calibrate_routing_thresholds.py`** (CRÉÉ) :
+    - Calibration seuils AUTO/REVIEW par segment avec target FP rate
+    - Génère YAML + rapport JSON
+  - **`scripts/calibrate_places_thresholds.py`** (CRÉÉ) :
+    - Calibration seuils Places (score_min, gap_min) + address_close params
+  - **`scripts/evaluate_routing.py`** (CRÉÉ) :
+    - Évaluation routing vs ground truth (precision AUTO, FP/FN rate, cost analysis)
+  - **`scripts/evaluate_places_matching.py`** (CRÉÉ) :
+    - Évaluation Places matching (MATCH_PLACES precision, pool coverage, source contribution)
+  - **`scripts/simulate_places_costs.py`** (EXISTANT) :
+    - Simulation coûts API Places selon budget mode
+- Tests exécutés (Corbas/Decines, 134 CRM) :
+  - `python scripts/route_xgb_results.py --input-path reports/xgb_two_stage_topk_56_with_closed_sem_fixed3.csv --output-path reports/phase4_routed_test.csv --thresholds configs/routing_thresholds.yaml --budget-mode normal`
+  - Résultats :
+    - AUTO rate : **49.3%** (66/134)
+    - AUTO_CERTAIN : 56 (perfect_match: 43, identical_name: 9, contains_match: 3, model_certainty: 1)
+    - AUTO_SAME_SIREN : 5
+    - AUTO (promoted) : 5 (contains: 4, token_overlap: 1)
+    - REVIEW rate : **50.7%** (68/134)
+    - Blocked by : address_only (7), high_density (6), no_lexical_evidence (5), weak_gap (5), weak_ratio (4), no_name_evidence (1)
+    - Review reason : below_threshold (37), low_gap (1)
+    - Estimated Places API calls : 68
+    - Estimated cost : $0.07
+  - Segment breakdown :
+    - short_name : 22 total, 2 AUTO (9.1%)
+    - common_name_full_addr : 19 total, 3 AUTO (15.8%)
+    - common_name_partial_addr : 2 total, 0 AUTO (0.0%)
+- Bugs corrigés :
+  - `ValueError: The truth value of a Series is ambiguous` → fix `if resolved_row is not None`
+- État : ✅ code complet, tests Corbas/Decines passés
+- Prochaines étapes :
+  1) Calibrer les seuils sur samples d'entraînement labelisés (ground truth)
+  2) Évaluer FP rate / precision avec `evaluate_routing.py` sur données labelisées
+  3) Tester le mode Places (`--places-mode`) sur cas REVIEW
+  4) Affiner `address_close()` params via `calibrate_places_thresholds.py`
+  5) Production : `--budget-mode normal` recommandé pour équilibre coût/qualité
+
+## Session 2026-01-04T11:18:30Z — Codex Ctx6 (Phase 4 Audit + Tests)
+- Phase ciblée : Phase 4 (Audit & validation)
+- Objectif : auditer l’implémentation Phase 4, corriger les incohérences, exécuter les tests DS sur data d’entraînement
+- Changements :
+  - `scripts/route_xgb_results.py` : applique `resolved_siret` (same‑SIREN) dans la sortie + champs `resolved_*`
+  - `src/pipe_v6/places_orchestrator.py` :
+    - `REVIEW_PLACES_FAILED` si API Places en erreur
+    - application `ratio_min` + seuils par segment (adresse complète/incomplète)
+    - helper `_has_complete_address`
+  - `src/pipe_v6/places_validator.py` : ajout check `ratio_min` + evidence `ratio_after`
+  - `src/pipe_v6/config.py` : ajout `places_ratio_min`
+  - `scripts/infer_xgb_two_stage.py` : auto‑détection séparateur CSV (virgule/point‑virgule)
+  - `scripts/evaluate_samples_v4.py` : options `--ranker-model` + `--meta-path`
+  - `scripts/evaluate_routing.py` : fix JSON serialization (numpy types)
+  - `scripts/evaluate_decider_on_samples.py` : nouveau script d’évaluation decider (AUC/PR/Brier/ECE + hit@k + thresholds)
+- Tests/commandes exécutées :
+  - `python scripts/evaluate_samples_v4.py --samples data/samples_v4_with_ranker.parquet --ranker-model models/xgbranker_fast_20260103_132351.json --meta-path models/xgb_two_stage_meta_20260103_132351.json`
+  - `python scripts/evaluate_decider_on_samples.py --samples data/samples_v4_with_ranker.parquet --model models/xgb_decider_20260103_132351.json --calibrator models/xgb_decider_calibrator_isotonic_20260103_132351.pkl --meta models/xgb_two_stage_meta_20260103_132351.json --output reports/decider_eval.json`
+  - `XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py --crm-path data/splits/test.csv --output-path reports/xgb_two_stage_topk_test.csv --top-k 20 --partitions-dir data/candidates_v4 --pool-mode insee_then_postcode --prefilter-k 500 --dept-prefilter-k 200 --max-dept-candidates 50000 --meta-path models/xgb_two_stage_meta_20260103_132351.json --ranker-fast-model models/xgbranker_fast_20260103_132351.json --decider-model models/xgb_decider_20260103_132351.json --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl`
+  - `python scripts/route_xgb_results.py --input-path reports/xgb_two_stage_topk_test.csv --output-path reports/routed_phase4_test.csv --thresholds configs/routing_thresholds.yaml --budget-mode normal`
+  - `python scripts/evaluate_routing.py --routed-path reports/routed_phase4_test.csv --ground-truth-path data/splits/test.csv --output-path reports/routing_evaluation_test.json`
+  - `python scripts/calibrate_routing_thresholds.py --inference-path reports/xgb_two_stage_topk_test.csv --ground-truth-path data/splits/test.csv --output-path reports/routing_thresholds_calibrated_test.yaml --report-path reports/routing_calibration_test.json --target-fp-rate 0.001`
+- Etat : ⚠️ partiel (Places matching non évalué faute de clé/API; routing precision très basse vs objectif 0 FP)
+- Prochaines étapes immédiates :
+  - Inspecter `reports/routing_evaluation_test.json` (AUTO precision ~75%) + renforcer règles “certainty”
+  - Re‑calibrer routing/thresholds sur dataset élargi + re‑router
+  - Lancer évaluation Places si clé Serper dispo

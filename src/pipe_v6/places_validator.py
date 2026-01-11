@@ -261,6 +261,147 @@ def validate_places_result(
     return PlacesGateResult(is_valid=True, reason="crm_places_gate_ok", checks=checks)
 
 
+def address_close(
+    crm_address: str | None,
+    crm_postcode: str | None,
+    candidate_address: str | None,
+    candidate_postcode: str | None,
+    candidate_lat: float | None = None,
+    candidate_lon: float | None = None,
+    places_lat: float | None = None,
+    places_lon: float | None = None,
+    *,
+    addr_jaro_min: float = 0.90,
+    street_name_jaro_min: float = 0.85,
+    street_number_diff_max: int = 2,
+    distance_max_m: float = 80.0,
+    postcode_exact: bool = True,
+) -> tuple[bool, dict[str, Any]]:
+    """
+    Phase 4: Check if candidate address is "close" to CRM/Places address.
+
+    address_close combines:
+    1. Postcode match (exact or prefix)
+    2. Street address similarity (Jaro-Winkler)
+    3. Street number proximity (if extractable)
+    4. Geo distance (if coordinates available)
+
+    Args:
+        crm_address: CRM street address
+        crm_postcode: CRM postcode
+        candidate_address: Candidate street address
+        candidate_postcode: Candidate postcode
+        candidate_lat/lon: Candidate coordinates (optional)
+        places_lat/lon: Places coordinates (optional)
+        addr_jaro_min: Minimum Jaro similarity for full address
+        street_name_jaro_min: Minimum Jaro similarity for street name only
+        street_number_diff_max: Maximum street number difference
+        distance_max_m: Maximum distance in meters
+        postcode_exact: Require exact postcode match
+
+    Returns:
+        (is_close, checks_dict) tuple
+    """
+    import re
+
+    checks: dict[str, Any] = {}
+
+    # Normalize inputs
+    crm_addr = (crm_address or "").strip().upper()
+    cand_addr = (candidate_address or "").strip().upper()
+    crm_pc = (crm_postcode or "").strip()
+    cand_pc = (candidate_postcode or "").strip()
+
+    # Check 1: Postcode
+    if postcode_exact:
+        postcode_ok = crm_pc == cand_pc and bool(crm_pc)
+    else:
+        # Allow prefix match (e.g., 69 matches 69003)
+        postcode_ok = (
+            crm_pc == cand_pc
+            or (crm_pc and cand_pc and cand_pc.startswith(crm_pc[:2]))
+        )
+    checks["postcode_match"] = postcode_ok
+
+    if not postcode_ok and postcode_exact:
+        checks["reason"] = "postcode_mismatch"
+        return False, checks
+
+    # Check 2: Full address Jaro similarity
+    if crm_addr and cand_addr:
+        addr_jaro = jaro_winkler(crm_addr, cand_addr)
+        checks["addr_jaro"] = addr_jaro
+
+        if addr_jaro >= addr_jaro_min:
+            checks["reason"] = "addr_jaro_pass"
+            return True, checks
+    else:
+        checks["addr_jaro"] = 0.0
+
+    # Check 3: Extract and compare street numbers
+    def extract_street_number(addr: str) -> int | None:
+        match = re.match(r"^\s*(\d+)", addr)
+        if match:
+            try:
+                return int(match.group(1))
+            except ValueError:
+                pass
+        return None
+
+    crm_num = extract_street_number(crm_addr)
+    cand_num = extract_street_number(cand_addr)
+    checks["crm_street_num"] = crm_num
+    checks["cand_street_num"] = cand_num
+
+    if crm_num is not None and cand_num is not None:
+        num_diff = abs(crm_num - cand_num)
+        checks["street_number_diff"] = num_diff
+
+        if num_diff > street_number_diff_max:
+            checks["reason"] = "street_number_too_far"
+            return False, checks
+
+    # Check 4: Street name similarity (remove numbers first)
+    def extract_street_name(addr: str) -> str:
+        # Remove leading numbers and common prefixes
+        cleaned = re.sub(r"^\s*\d+\s*[-–]?\s*\d*\s*", "", addr)
+        cleaned = re.sub(r"^(BIS|TER|QUATER)\s+", "", cleaned, flags=re.IGNORECASE)
+        return cleaned.strip()
+
+    crm_street = extract_street_name(crm_addr)
+    cand_street = extract_street_name(cand_addr)
+
+    if crm_street and cand_street:
+        street_jaro = jaro_winkler(crm_street, cand_street)
+        checks["street_name_jaro"] = street_jaro
+
+        if street_jaro >= street_name_jaro_min:
+            checks["reason"] = "street_name_pass"
+            return True, checks
+    else:
+        checks["street_name_jaro"] = 0.0
+
+    # Check 5: Geo distance (if coordinates available)
+    if (
+        candidate_lat is not None
+        and candidate_lon is not None
+        and places_lat is not None
+        and places_lon is not None
+    ):
+        distance = haversine_distance(places_lat, places_lon, candidate_lat, candidate_lon)
+        checks["distance_m"] = distance
+
+        if distance <= distance_max_m:
+            checks["reason"] = "distance_pass"
+            return True, checks
+    else:
+        checks["distance_m"] = None
+
+    # No check passed
+    checks["reason"] = "no_check_passed"
+    return False, checks
+
+
 def validate_places_candidate(
     places_result: PlacesResult,
     candidate: SireneCandidate,
@@ -455,6 +596,9 @@ def make_places_decision(
     top1_candidate, score_after = candidates_scored[0]
     score_top2 = candidates_scored[1][1] if pool_size > 1 else 0.0
     gap_after = score_after - score_top2
+    ratio_after = (
+        score_after / (score_top2 + 1e-9) if pool_size > 1 and score_top2 > 0 else float("inf")
+    )
 
     # Check if top-1 changed
     top1_changed = top1_candidate.siret != original_top1_siret
@@ -478,6 +622,7 @@ def make_places_decision(
         "top1_source": top1_candidate.source,
         "places_title": places_result.title,
         "places_address": places_result.address,
+        "ratio_after": ratio_after,
         "validation_checks": validation.checks,
     }
 
@@ -491,6 +636,9 @@ def make_places_decision(
     elif gap_after < config.places_gap_min:
         decision = "REVIEW"
         evidence["reason"] = f"gap_after={gap_after:.4f} < {config.places_gap_min}"
+    elif ratio_after < getattr(config, "places_ratio_min", 1.0):
+        decision = "REVIEW"
+        evidence["reason"] = f"ratio_after={ratio_after:.4f} < {getattr(config, 'places_ratio_min', 1.0)}"
     else:
         decision = "MATCH_PLACES"
         evidence["reason"] = "all_conditions_met"
@@ -590,4 +738,5 @@ __all__ = [
     "get_adaptive_threshold",
     "make_places_decision",
     "build_observability_record",
+    "address_close",
 ]

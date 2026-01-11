@@ -108,6 +108,7 @@ def _query_etab_ul(
     ul_path: Path,
     codes: List[str],
     code_col: str,
+    include_closed_establishments: bool,
 ) -> pd.DataFrame:
     code_df = pd.DataFrame({"code": codes})
     try:
@@ -115,6 +116,9 @@ def _query_etab_ul(
     except Exception:
         pass
     con.register("code_filter", code_df)
+    closed_clause = ""
+    if not include_closed_establishments:
+        closed_clause = "AND (e.etatAdministratifEtablissement IS NULL OR e.etatAdministratifEtablissement != 'F')"
     query = f"""
         SELECT
             e.siret AS siret,
@@ -149,6 +153,7 @@ def _query_etab_ul(
         LEFT JOIN read_parquet('{ul_path.as_posix()}') ul
           ON e.siren = ul.siren
         WHERE e.{code_col} IN (SELECT code FROM code_filter)
+          {closed_clause}
     """
     return con.execute(query).df()
 
@@ -160,6 +165,7 @@ def build_partitions(
     harvest_db: Path,
     output_dir: Path,
     code_batch: int,
+    include_closed_establishments: bool,
 ) -> None:
     df = load_training_data(training_csv)
     df["postcode"] = _normalize_codes(df["postcode"])
@@ -183,7 +189,14 @@ def build_partitions(
         batch = insee_list[i : i + code_batch]
         if not batch:
             continue
-        pdf = _query_etab_ul(con, parquet_path, ul_path, batch, "codeCommuneEtablissement")
+        pdf = _query_etab_ul(
+            con,
+            parquet_path,
+            ul_path,
+            batch,
+            "codeCommuneEtablissement",
+            include_closed_establishments,
+        )
         if pdf.empty:
             continue
         pdf["postcode"] = _normalize_codes(pdf["postcode"])
@@ -198,7 +211,14 @@ def build_partitions(
         batch = cp_list[i : i + code_batch]
         if not batch:
             continue
-        pdf = _query_etab_ul(con, parquet_path, ul_path, batch, "codePostalEtablissement")
+        pdf = _query_etab_ul(
+            con,
+            parquet_path,
+            ul_path,
+            batch,
+            "codePostalEtablissement",
+            include_closed_establishments,
+        )
         if pdf.empty:
             continue
         pdf["postcode"] = _normalize_codes(pdf["postcode"])
@@ -220,6 +240,11 @@ def main() -> None:
     parser.add_argument("--harvest-db", type=Path, default=DEFAULT_HARVEST_DB)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUT_DIR)
     parser.add_argument("--code-batch", type=int, default=CODE_BATCH)
+    parser.add_argument(
+        "--include-closed-establishments",
+        action="store_true",
+        help="Include establishments with etatAdministratifEtablissement == 'F'.",
+    )
     args = parser.parse_args()
 
     build_partitions(
@@ -229,6 +254,7 @@ def main() -> None:
         harvest_db=args.harvest_db,
         output_dir=args.output_dir,
         code_batch=args.code_batch,
+        include_closed_establishments=args.include_closed_establishments,
     )
 
 

@@ -11,6 +11,12 @@ Sireto V6 prend des entrées CRM (nom client, adresse, code INSEE/JINSEI) et pas
 
 Le cache SQLite local agit comme source de vérité pour les données SIRENE et évite les appels redondants.
 
+## Note Phase 4 (V7 / Places)
+
+- Le routing XGBoost sort **uniquement AUTO vs REVIEW** (pas de NO_MATCH avant Places).
+- Les cas REVIEW passent par **Places‑as‑CRM** (decider identique).
+- **NO_MATCH n’apparaît qu’après Places** si aucune promotion n’est possible.
+
 ## Diagramme de flux
 
 ![Pipe V6 flowchart](docs/diagrams/pipe_v6_flowchart.svg)

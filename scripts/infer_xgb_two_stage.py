@@ -114,16 +114,28 @@ def _parse_args() -> argparse.Namespace:
 
 
 def load_crm(path: Path) -> pd.DataFrame:
-    df = pd.read_csv(path, sep=";", dtype=str)
-    df = df.rename(
-        columns={
-            "Client final": "crm_name",
-            "Adresse": "crm_address",
-            "Commune": "crm_city",
-            "Code Postal": "postcode",
-            "Code INSEE": "insee",
-        }
-    )
+    import csv
+
+    sample = path.read_text(encoding="utf-8", errors="ignore")[:2048]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=";,\t")
+        delimiter = dialect.delimiter
+    except Exception:
+        delimiter = ";"
+
+    df = pd.read_csv(path, sep=delimiter, dtype=str)
+
+    # If file already has standardized columns, keep as-is
+    if "crm_name" not in df.columns:
+        df = df.rename(
+            columns={
+                "Client final": "crm_name",
+                "Adresse": "crm_address",
+                "Commune": "crm_city",
+                "Code Postal": "postcode",
+                "Code INSEE": "insee",
+            }
+        )
     for col in ["postcode", "insee"]:
         if col in df.columns:
             df[col] = df[col].apply(

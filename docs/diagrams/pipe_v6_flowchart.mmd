@@ -41,6 +41,6 @@ flowchart TD
     P --> Q{"Candidat fiable ?"}
 
     Q -->|Oui| R["Sortie MATCH<br/>SIRET retenu<br/>+ score confiance<br/>+ sources impliquées"]
-    Q -->|Non| S["Sortie REVIEW ou NO_MATCH<br/>(incl. cas équipement urbain)"]
+    Q -->|Non| S["Sortie REVIEW<br/>(NO_MATCH uniquement après Places)"]
 
     R & S --> T["Export final<br/>CSV/JSON pour CRM<br/>+ métriques/logs"]

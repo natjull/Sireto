@@ -79,6 +79,7 @@ class PipelineConfig:
     places_position_max: int = 2
     places_distance_max_m: float = 200.0
     places_gap_min: float = 0.03
+    places_ratio_min: float = 1.0
     # Adaptive score thresholds: τ(pool_size)
     places_threshold_small: float = 0.95   # pool <= 5
     places_threshold_medium: float = 0.97  # pool 6-20
@@ -202,6 +203,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "places_position_max": 2,
         "places_distance_max_m": 200.0,
         "places_gap_min": 0.03,
+        "places_ratio_min": 1.0,
         "places_threshold_small": 0.95,
         "places_threshold_medium": 0.97,
         "places_threshold_large": 0.99,

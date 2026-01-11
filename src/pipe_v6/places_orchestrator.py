@@ -1,17 +1,24 @@
 """Orchestrator for Places-guided candidate generation and XGB rescoring.
 
+Phase 4: Places-as-CRM
+======================
 This module ties together:
 - Serper Places API client
 - Candidate generation (Arm A + Arm B)
-- XGB rescoring with Places-normalized data
+- XGB rescoring with ORIGINAL CRM data (same decider as inference)
 - Decision logic with adaptive thresholds
+- Mini-gate CRM ↔ Places validation
+- Pool: recall@20 + arm_a + arm_b
+
+Key principle: NO_MATCH is only possible AFTER Places processing.
+XGB routing outputs AUTO or REVIEW only.
 
 Usage:
     from pipe_v6.places_orchestrator import process_review_case
 
     result = process_review_case(
         crm_row=...,
-        xgb_topk=...,
+        xgb_topk=...,  # recall@20
         config=config,
         conn=sirene_conn,
     )
@@ -22,6 +29,7 @@ from __future__ import annotations
 import logging
 import sqlite3
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Tuple
 
 from .config import PipelineConfig
@@ -40,6 +48,7 @@ from .places_candidate_generator import (
 from .places_validator import (
     PlacesDecisionResult,
     PlacesGateResult,
+    address_close,
     build_observability_record,
     make_places_decision,
     validate_places_result,
@@ -47,6 +56,33 @@ from .places_validator import (
 from .places_xgb_rescorer import PlacesXgbRescorer
 
 LOGGER = logging.getLogger(__name__)
+
+# Cached Places thresholds (loaded once per process)
+_PLACES_THRESHOLDS: dict | None = None
+
+
+def _load_places_thresholds() -> dict:
+    """Load configs/places_thresholds.yaml if present."""
+    global _PLACES_THRESHOLDS
+    if _PLACES_THRESHOLDS is not None:
+        return _PLACES_THRESHOLDS
+    try:
+        import yaml
+    except Exception:
+        _PLACES_THRESHOLDS = {}
+        return _PLACES_THRESHOLDS
+
+    path = Path("configs/places_thresholds.yaml")
+    if not path.exists():
+        _PLACES_THRESHOLDS = {}
+        return _PLACES_THRESHOLDS
+
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            _PLACES_THRESHOLDS = yaml.safe_load(f) or {}
+    except Exception:
+        _PLACES_THRESHOLDS = {}
+    return _PLACES_THRESHOLDS
 
 
 @dataclass
@@ -138,6 +174,19 @@ def _crm_address_from_row(crm_row: CrmRow) -> str:
         return crm_row.crm_address
     parts = [crm_row.street_number, crm_row.street_name]
     return " ".join(p for p in parts if p)
+
+
+def _has_complete_address(address: str | None) -> bool:
+    """Return True if the address looks complete (number + street tokens)."""
+    import re
+
+    if not address:
+        return False
+    addr = address.strip()
+    has_number = bool(re.match(r"^\s*\d+", addr))
+    tokens = re.findall(r"[A-Z0-9]+", addr.upper())
+    has_street = len(tokens) >= 2
+    return bool(has_number and has_street)
 
 
 def enrich_candidate_from_cache(
@@ -246,9 +295,9 @@ def process_review_case(
             xgb_status=xgb_status,
             places_response=None,
             places_decision=None,
-            final_status=xgb_status,
+            final_status="REVIEW_PLACES_FAILED",
             final_siret=xgb_topk[0].siret if xgb_topk else None,
-            observability={"error": str(exc)},
+            observability={"error": str(exc), "reason": "places_api_failed"},
             error=str(exc),
         )
 
@@ -259,13 +308,58 @@ def process_review_case(
             xgb_status=xgb_status,
             places_response=places_response,
             places_decision=None,
-            final_status=xgb_status,
-            final_siret=xgb_topk[0].siret if xgb_topk else None,
+            final_status="NO_MATCH",
+            final_siret=None,
             observability={"reason": "no_places_results"},
         )
 
     # Use first Places result (best match from Google)
     best_place = places_response.places[0]
+
+    # Load Places thresholds/config overrides (Phase 4)
+    places_cfg = _load_places_thresholds()
+    gate_cfg = places_cfg.get("gate", {}) if isinstance(places_cfg, dict) else {}
+    promotion_cfg = places_cfg.get("promotion", {}) if isinstance(places_cfg, dict) else {}
+    addr_cfg = places_cfg.get("address_close", {}) if isinstance(places_cfg, dict) else {}
+
+    # Apply gate overrides to config (if provided)
+    if gate_cfg:
+        if "max_position" in gate_cfg:
+            setattr(config, "places_position_max", gate_cfg.get("max_position"))
+        if "min_addr_overlap" in gate_cfg:
+            setattr(config, "places_crm_addr_overlap_min", gate_cfg.get("min_addr_overlap"))
+        if "min_name_semantic" in gate_cfg:
+            setattr(config, "places_crm_name_semantic_min", gate_cfg.get("min_name_semantic"))
+        if "addr_overlap_bypass" in gate_cfg:
+            setattr(config, "places_crm_addr_overlap_strict", gate_cfg.get("addr_overlap_bypass"))
+
+    # Apply promotion overrides to config (score/gap)
+    if promotion_cfg:
+        if "score_min" in promotion_cfg:
+            score_min = promotion_cfg.get("score_min")
+            setattr(config, "places_threshold_small", score_min)
+            setattr(config, "places_threshold_medium", score_min)
+            setattr(config, "places_threshold_large", score_min)
+        if "gap_min" in promotion_cfg:
+            setattr(config, "places_gap_min", promotion_cfg.get("gap_min"))
+        if "ratio_min" in promotion_cfg:
+            setattr(config, "places_ratio_min", promotion_cfg.get("ratio_min"))
+
+    # Apply segment-specific thresholds (complete vs partial address)
+    segments_cfg = places_cfg.get("segments", {}) if isinstance(places_cfg, dict) else {}
+    if segments_cfg:
+        places_address = best_place.address or _crm_address_from_row(crm_row)
+        address_complete = _has_complete_address(places_address)
+        seg_key = "complete_address" if address_complete else "partial_address"
+        seg = segments_cfg.get(seg_key, {})
+        if seg:
+            if "score_min" in seg:
+                score_min = seg.get("score_min")
+                setattr(config, "places_threshold_small", score_min)
+                setattr(config, "places_threshold_medium", score_min)
+                setattr(config, "places_threshold_large", score_min)
+            if "gap_min" in seg:
+                setattr(config, "places_gap_min", seg.get("gap_min"))
 
     # Pre-gate: validate Places vs CRM (avoid wrong Places hit)
     crm_address = _crm_address_from_row(crm_row)
@@ -286,8 +380,8 @@ def process_review_case(
             xgb_status=xgb_status,
             places_response=places_response,
             places_decision=None,
-            final_status=xgb_status,
-            final_siret=xgb_topk[0].siret if xgb_topk else None,
+            final_status="NO_MATCH",
+            final_siret=None,
             observability={
                 "reason": "places_gate_failed",
                 "places_gate": {
@@ -322,7 +416,7 @@ def process_review_case(
             xgb_status=xgb_status,
             places_response=places_response,
             places_decision=None,
-            final_status=xgb_status,
+            final_status="NO_MATCH",
             final_siret=None,
             observability={"reason": "empty_pool"},
         )
@@ -352,7 +446,32 @@ def process_review_case(
         xgb_topk[0].score - xgb_topk[1].score if len(xgb_topk) > 1 else 0.0
     )
 
-    # Step 5: Make decision
+    # Step 5: Make decision with address_close validation
+    # Phase 4: Check address_close for top candidate before promotion
+    top_candidate = scored[0][0] if scored else None
+    addr_close_result = None
+    addr_close_checks = {}
+
+    if top_candidate is not None:
+        # Prefer Places address/postcode for address_close (real-world location)
+        places_address = best_place.address or _crm_address_from_row(crm_row)
+        places_postcode = best_place.postcode or crm_row.postcode
+        addr_close_result, addr_close_checks = address_close(
+            crm_address=places_address,
+            crm_postcode=places_postcode,
+            candidate_address=top_candidate.full_address,
+            candidate_postcode=top_candidate.postcode,
+            candidate_lat=top_candidate.geo_latitude,
+            candidate_lon=top_candidate.geo_longitude,
+            places_lat=best_place.latitude,
+            places_lon=best_place.longitude,
+            addr_jaro_min=addr_cfg.get("addr_jaro_min", 0.90),
+            street_name_jaro_min=addr_cfg.get("street_name_jaro_min", 0.85),
+            street_number_diff_max=addr_cfg.get("street_number_diff_max", 2),
+            distance_max_m=addr_cfg.get("distance_max_m", 80),
+            postcode_exact=addr_cfg.get("postcode_exact", True),
+        )
+
     decision = make_places_decision(
         places_result=best_place,
         candidates_scored=scored,
@@ -366,12 +485,29 @@ def process_review_case(
     )
 
     # Determine final status
+    # Phase 4: NO_MATCH only after Places fails to promote
     if decision.decision == "MATCH_PLACES":
-        final_status = "MATCH_PLACES"
-        final_siret = decision.chosen_siret
+        # Additional check: address_close must pass for promotion
+        if addr_close_result:
+            final_status = "MATCH_PLACES"
+            final_siret = decision.chosen_siret
+        else:
+            # Address not close enough - demote to REVIEW
+            log.info(
+                "MATCH_PLACES demoted to NO_MATCH: address_close failed for crm_id=%s (%s)",
+                crm_row.crm_id,
+                addr_close_checks.get("reason", "unknown"),
+            )
+            final_status = "NO_MATCH"
+            final_siret = None
+    elif decision.decision == "REVIEW":
+        # Phase 4: After Places, REVIEW becomes NO_MATCH
+        final_status = "NO_MATCH"
+        final_siret = None
     else:
-        final_status = xgb_status  # Keep original REVIEW/NO_MATCH
-        final_siret = original_top1_siret
+        # NO_MATCH from decision
+        final_status = "NO_MATCH"
+        final_siret = None
 
     # Build observability record
     observability = build_observability_record(
@@ -381,6 +517,11 @@ def process_review_case(
         places_query=query,
         places_gate=places_gate,
     )
+
+    # Add Phase 4 address_close metrics
+    observability["address_close_passed"] = addr_close_result
+    observability["address_close_checks"] = addr_close_checks
+    observability["pool_recall_topk"] = len(xgb_topk)
 
     return PlacesProcessingResult(
         crm_id=crm_row.crm_id,

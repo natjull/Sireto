@@ -37,7 +37,9 @@ Cet audit complète et corrige l’analyse initiale avec un regard **data scienc
 ## Objectif produit (rappel)
 
 1. **XGBoost doit auto‑matcher le maximum possible** avec un **risque quasi nul** (taux FP proche de 0).
-2. Les cas **REVIEW / NO_MATCH** passent dans un **second pipeline Places** pour “rattraper” le bon SIRET.
+2. Les cas **REVIEW** passent dans un **second pipeline Places** pour “rattraper” le bon SIRET.
+   - **Pas de NO_MATCH avant Places** : la décision est **AUTO vs REVIEW** en sortie XGB.
+   - **NO_MATCH n’existe qu’après Places** si aucune promotion n’est possible.
 3. **Jamais de faux positif en sortie automatique** (la revue ou Places absorbe l’incertitude).
 
 ---
@@ -218,7 +220,7 @@ Créer / mettre à jour : `reports/handover.md`
 **Critère d’arrêt** : Phase 1 “Definition of Done” OK + `reports/handover.md` mis à jour.
 
 ### Ctx2 — Sprint ML (Phase 2)
-**Mission** : hard negative mining + nouvelles features + calibration.  
+d**Mission** : hard negative mining + nouvelles features + calibration.  
 **Entrées** : `scripts/generate_training_samples_v3.py`, `src/xgb_matcher/features.py`, `scripts/train_xgb_matcher_v2.py`  
 **Sorties attendues** :
 - dataset v4 avec hard negatives réalistes
@@ -236,6 +238,19 @@ Créer / mettre à jour : `reports/handover.md`
 - multi‑blocking actif
 - silver labels intégrés
 **Critère d’arrêt** : Phase 3 “Definition of Done” OK + `reports/handover.md` mis à jour.
+
+---
+
+### Ctx4 — SOTA Routing (Phase 4)
+**Mission** : Maximiser le taux AUTO sans faux positif, en conscience du coût Places aval.
+**Entrées** : `scripts/route_xgb_results.py`, `src/pipe_v6/places_orchestrator.py`, ground truth élargi
+**Sorties attendues** :
+- Routing cost‑aware (minimise appels Serper)
+- Règles de certitude absolue implémentées
+- Segmentation + seuils appris sur ground truth diversifié
+- Résolution same‑SIREN automatique
+- Métriques : AUTO rate, FP rate, Places call rate, coût estimé
+**Critère d'arrêt** : Phase 4 "Definition of Done" OK + `reports/handover.md` mis à jour.
 
 ---
 
@@ -493,6 +508,604 @@ python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/spl
 - `python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/splits/test.csv`
 - `python scripts/route_xgb_results.py --places-mode --input-path reports/xgb_infer_topk_phase3.csv --output-path reports/routed_phase3.csv`
 
+## Phase 4 — SOTA Routing & Cost‑Aware Decision (1–2 semaines)
+**Objectif : Maximiser AUTO sans FP, minimiser les appels Places (coût Serper)**
+
+**Note clé** : Le fallback Places adopte un **mode Places‑as‑CRM**.
+Le **decider XGB est réutilisé tel quel** (mêmes features + calibrator),
+sur un pool **recall@20 + arm_a + arm_b**, avec promotion MATCH_PLACES
+pilotée par une **calibration automatique**.
+
+### Contexte : Pipeline Places aval et coûts
+
+Le routing détermine ce qui part en **AUTO** (gratuit, instantané) vs **REVIEW** (appel Serper Places payant).
+
+**Architecture post‑routing** :
+```
+┌──────────────┐     ┌─────────────────────────────────────────────────────────┐
+│   XGBoost    │     │                    ROUTING                              │
+│   Inference  │────►├────────────────────────────────────────────────────────►│
+│   (top‑k)    │     │  AUTO ────► Résultat final (coût = 0)                   │
+└──────────────┘     │                                                         │
+                     │  REVIEW ───► Places API (Serper) ───► Rescoring ───►    │
+                     │              │                          │               │
+                     │              │ ~0.001$/req              │               │
+                     │              ▼                          ▼               │
+                     │         Validation     MATCH_PLACES ou NO_MATCH        │
+                     │                                                         │
+                     │  (pas de NO_MATCH avant Places)                        │
+                     └─────────────────────────────────────────────────────────┘
+```
+
+**Coûts Serper.dev** (janvier 2026) :
+- Plan gratuit : 2 500 requêtes/mois
+- Plan payant : ~0.001$ / requête (1 000 req = 1$)
+- Rate limit : 1 req/sec (respecté dans `serper_places_client.py`)
+
+**Équation économique** :
+```
+Coût_total = nb_REVIEW × coût_par_requête
+Objectif = Maximiser(AUTO_rate) sous contrainte FP_rate ≈ 0 ET Coût_total < Budget
+```
+
+### Stratégie Phase 4 : Routing Cost‑Aware
+
+**Principe** : Ne pas envoyer en REVIEW des cas qui ne bénéficieront pas de Places.
+
+| Cas | Places utile ? | Décision optimale |
+|-----|----------------|-------------------|
+| Match parfait (lexical + adresse) | Non | AUTO |
+| Ambiguïté same‑SIREN | Non (même entreprise) | AUTO (prendre OUVERT) |
+| Score élevé, faible gap | Peut‑être | REVIEW si budget |
+| Nom court/générique, score moyen | Oui | REVIEW |
+| Aucun candidat viable | Non | REVIEW (Places tentée, NO_MATCH seulement après échec) |
+| Adresse incomplète/incorrecte | Limité | REVIEW avec flag "low_places_value" |
+
+### Stratégie Phase 4B : Places‑as‑CRM (Decider identique)
+
+**Objectif** : utiliser le **decider XGB tel quel** (mêmes features, même ordre, même calibrator)
+en remplaçant l'entrée CRM par le **résultat Places** (pseudo‑CRM).  
+Pas de roue réinventée : c'est le **même pipeline d'inférence** que `infer_xgb_two_stage.py`.
+
+**Invariants (obligatoires)** :
+- `preprocess_crm_row()` + `make_features_from_preprocessed()` inchangés
+- `feature_order` issu du meta decider
+- même modèle decider + calibrator (chemins **explicites**)
+- même gating sémantique (`XGB_SEMANTIC_ENABLED` + `semantic_gate_allows`)
+- mêmes filtres candidats (drop_unnamed/exclude_closed/dedupe)
+- pool large : **recall@20** + arm_a + arm_b
+
+**Différences acceptées** :
+- CRM remplacé par Places (`crm_name = places.title`, `crm_address = places.address`)
+- mini‑gate CRM↔Places conservé (CP/ville + overlap minimum)
+
+### 1) Règles de certitude absolue (FP impossible)
+
+Ces règles ont priorité maximale et bypassent tous les autres checks.
+
+```python
+def is_absolute_certainty(row: pd.Series) -> bool:
+    """
+    Règles où un faux positif est théoriquement impossible.
+    Ces cas vont directement en AUTO sans passer par les seuils.
+    """
+    score = row['score']
+    jaro = row['name_jaro_max']
+    tok_overlap = row['name_token_overlap_max']
+    addr_jaro = row['addr_jaro']
+    street_diff = row['street_number_diff']
+    semantic = row['name_semantic_max']
+
+    # R1: Match lexical quasi‑parfait + adresse parfaite
+    # Ex: "GE FRUITS" → "GE FRUITS" @ même adresse
+    if (jaro >= 0.98 and tok_overlap >= 0.90 and
+        addr_jaro >= 0.98 and street_diff == 0 and
+        score >= 0.90):
+        return True
+
+    # R2: Nom identique (jaro=1) + ville identique + score élevé
+    # Ex: "CHAMPILYON" → "CHAMPILYON" à Corbas
+    if (jaro == 1.0 and score >= 0.95):
+        return True
+
+    # R3: Score parfait (1.0) + preuve lexicale forte
+    # Le modèle est absolument certain ET on a une preuve indépendante
+    if (score >= 0.999 and (jaro >= 0.90 or tok_overlap >= 0.70)):
+        return True
+
+    # R4: Contains match parfait + score élevé
+    # Ex: "TIMCOD RHONE-ALPES" contenu dans nom candidat
+    if (row['name_crm_contains_cand_max'] >= 0.95 and
+        score >= 0.95 and addr_jaro >= 0.80):
+        return True
+
+    return False
+```
+
+### 2) Résolution automatique Same‑SIREN
+
+Quand les top candidats appartiennent au même SIREN, c'est la même entreprise avec des établissements différents.
+
+```python
+def resolve_same_siren(top_k: List[dict]) -> Tuple[dict, str]:
+    """
+    Quand top1 et top2 ont le même SIREN, résoudre automatiquement.
+    Retourne (candidat choisi, décision).
+    """
+    if len(top_k) < 2:
+        return top_k[0], None
+
+    siren_top1 = top_k[0]['siret'][:9]
+    siren_top2 = top_k[1]['siret'][:9]
+
+    # Pas d'ambiguïté si SIREN différents
+    if siren_top1 != siren_top2:
+        return top_k[0], None
+
+    # Même SIREN : trier par (état, score) et prendre le meilleur
+    same_siren = [c for c in top_k if c['siret'][:9] == siren_top1]
+
+    # Priorité : OUVERT > FERME, puis score décroissant
+    def sort_key(c):
+        state_priority = 0 if c['candidate_state'] == 'OUVERT' else 1
+        return (state_priority, -c['score'])
+
+    same_siren.sort(key=sort_key)
+    best = same_siren[0]
+
+    # Conditions pour AUTO : score suffisant + preuve lexicale
+    if (top_k[0]['score'] >= 0.90 and
+        top_k[0]['name_jaro_max'] >= 0.80):
+        return best, "AUTO_SAME_SIREN"
+
+    return best, "REVIEW_SAME_SIREN"
+```
+
+### 3) Segmentation et seuils cost‑aware
+
+Adapter les seuils selon la "valeur attendue" d'un appel Places.
+
+```python
+def get_segment_config(row: pd.Series) -> dict:
+    """
+    Retourne la configuration de routing par segment.
+    Inclut le seuil AUTO et un flag "places_value" (utilité de Places).
+    """
+    name_words = count_words(row['crm_name'])
+    name_idf = row.get('idf_name', 0)  # Rareté du nom
+    addr_complete = has_complete_address(row)
+    pool_size = row.get('pool_size', 100)
+    score_gap = row.get('score_gap', 0)
+
+    # Segment 1: Nom unique + adresse complète → Places peu utile
+    if name_idf >= 5 and addr_complete:
+        return {
+            'threshold': 0.95,      # Seuil bas (confiance élevée)
+            'places_value': 'low',  # Places n'apportera rien
+            'gap_min': 0.03,        # Gap relaxé
+        }
+
+    # Segment 2: Nom courant + adresse complète → Places moyennement utile
+    if name_idf < 5 and addr_complete:
+        return {
+            'threshold': 0.98,
+            'places_value': 'medium',
+            'gap_min': 0.05,
+        }
+
+    # Segment 3: Nom unique + adresse partielle → Places peut aider
+    if name_idf >= 5 and not addr_complete:
+        return {
+            'threshold': 0.97,
+            'places_value': 'medium',
+            'gap_min': 0.05,
+        }
+
+    # Segment 4: Nom courant + adresse partielle → Places très utile
+    if name_idf < 5 and not addr_complete:
+        return {
+            'threshold': 0.995,     # Seuil très strict
+            'places_value': 'high', # Places peut vraiment aider
+            'gap_min': 0.08,
+        }
+
+    # Segment 5: Nom très court (1-2 mots) → Toujours risqué
+    if name_words <= 2:
+        return {
+            'threshold': 0.995,
+            'places_value': 'high',
+            'gap_min': 0.10,
+        }
+
+    # Défaut
+    return {
+        'threshold': 0.99,
+        'places_value': 'medium',
+        'gap_min': 0.05,
+    }
+```
+
+### 4) Routing principal cost‑aware
+
+```python
+def route_cost_aware(row: pd.Series, top_k: List[dict], budget_mode: str = "normal") -> str:
+    """
+    Routing principal avec conscience du coût Places.
+
+    budget_mode:
+    - "aggressive": Minimise les appels Places (seuils stricts pour REVIEW)
+    - "normal": Équilibre AUTO/REVIEW
+    - "permissive": Maximise le recall Places (plus de REVIEW)
+    """
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 0: Certitude absolue (bypass tout)
+    # ─────────────────────────────────────────────────────────────
+    if is_absolute_certainty(row):
+        return "AUTO_CERTAIN"
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 1: Résolution same‑SIREN
+    # ─────────────────────────────────────────────────────────────
+    resolved, siren_decision = resolve_same_siren(top_k)
+    if siren_decision:
+        return siren_decision  # "AUTO_SAME_SIREN" ou "REVIEW_SAME_SIREN"
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 2: Règles de blocage (force REVIEW)
+    # ─────────────────────────────────────────────────────────────
+
+    # B1: Aucune preuve lexicale
+    if row['name_jaro_max'] < 0.50 and row['name_token_overlap_max'] < 0.20:
+        return "REVIEW"  # Places peut trouver le bon nom
+
+    # B2: Semantic‑only match
+    if is_semantic_only_match(row):
+        if row['score'] >= 0.998:
+            pass  # Bypass si modèle très confiant
+        else:
+            return "REVIEW"
+
+    # B3: Address‑only match (risque co‑location)
+    if row['name_token_overlap_max'] < 0.10 and row['addr_token_overlap'] > 0.80:
+        return "REVIEW"
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 3: Configuration par segment
+    # ─────────────────────────────────────────────────────────────
+    config = get_segment_config(row)
+    threshold = config['threshold']
+    gap_min = config['gap_min']
+    places_value = config['places_value']
+
+    # Ajuster selon budget_mode
+    if budget_mode == "aggressive":
+        threshold *= 0.995  # Légèrement plus permissif pour AUTO
+        gap_min *= 0.8      # Gap relaxé
+    elif budget_mode == "permissive":
+        threshold *= 1.005  # Plus strict, plus de REVIEW
+        gap_min *= 1.2
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 4: Règles de promotion (force AUTO)
+    # ─────────────────────────────────────────────────────────────
+
+    score = row['score']
+
+    # P1: Strong establishment match
+    if score >= 0.95 and row['name_sim_max_etab'] >= 0.70:
+        return "AUTO"
+
+    # P2: Contains match
+    if score >= 0.90 and row['name_crm_contains_cand_max'] >= 0.90:
+        return "AUTO"
+
+    # P3: PM dirigeant match
+    if score >= 0.95 and row['name_sim_max_pm_dirigeant'] >= 0.70:
+        return "AUTO"
+
+    # P4: High token overlap
+    if score >= 0.98 and row['name_token_overlap_max'] >= 0.50:
+        return "AUTO"
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 5: Vérification gap (ambiguïté)
+    # ─────────────────────────────────────────────────────────────
+
+    score_gap = row.get('score_gap', 0)
+    score_ratio = row.get('score_ratio', 1)
+
+    if score_gap < gap_min:
+        # Ambiguïté forte — mais Places utile seulement si les candidats sont vraiment différents
+        if places_value == "low":
+            # Places n'aidera pas, on REVIEW quand même pour sécurité
+            return "REVIEW_LOW_PLACES_VALUE"
+        return "REVIEW"
+
+    if score_ratio < 1.02 + (0.02 if budget_mode == "aggressive" else 0):
+        return "REVIEW"
+
+    # ─────────────────────────────────────────────────────────────
+    # ÉTAPE 6: Décision finale par seuil
+    # ─────────────────────────────────────────────────────────────
+
+    if score >= threshold:
+        return "AUTO"
+
+    # Score sous seuil → REVIEW (pas de NO_MATCH avant Places)
+    if budget_mode == "aggressive" and places_value == "low":
+        return "AUTO_BUDGET"  # Flag pour audit
+    return "REVIEW"
+```
+
+### 4B) Calibration AUTO vs REVIEW (automatique)
+
+**Principe** : le routing ne sort **que AUTO ou REVIEW**.  
+La calibration cherche des seuils (par segment) qui maximisent l’AUTO **sous contrainte FPR**,
+et tout le reste devient REVIEW (pas de NO_MATCH pré‑Places).
+
+Inputs :
+- set GT diversifié (holdout)
+- features de routing + scores calibrés
+
+Outputs :
+- `configs/routing_thresholds.yaml` avec seuils AUTO par segment
+- metrics : auto_rate, fp_rate, places_call_rate
+
+### 5) Promotion MATCH_PLACES (calibration automatique)
+
+**But** : convertir un score decider (Places‑as‑CRM) en MATCH_PLACES **sans faux positif**,
+en calibrant automatiquement les seuils sur un set GT.
+
+```python
+# Conditions (toutes obligatoires)
+# 1) Gate CRM↔Places OK (mini‑gate)
+# 2) address_close == True (CP + rue + numéro OU distance <= seuil)
+# 3) score_places_top1 >= score_min  (calibré)
+# 4) gap_places >= gap_min           (calibré)
+#
+# Calibration :
+# - grid search sur score_min × gap_min
+# - objectif : FP rate <= 0.1% (ou target_fpr)
+# - segmentation optionnelle : adresse complète vs partielle
+```
+
+### 6) Métriques et monitoring
+
+```python
+ROUTING_METRICS = {
+    # Volume
+    'total_records': 0,
+    'auto_count': 0,
+    'auto_certain_count': 0,
+    'auto_same_siren_count': 0,
+    'auto_budget_count': 0,
+    'review_count': 0,
+    'review_low_places_value_count': 0,
+    'no_match_final_count': 0,  # uniquement après Places
+
+    # Qualité (requiert ground truth)
+    'auto_correct': 0,
+    'auto_incorrect': 0,  # FP !
+    'review_would_be_correct': 0,  # AUTO manqués
+
+    # Coût
+    'estimated_places_calls': 0,  # = review_count (pas de NO_MATCH pré‑Places)
+    'estimated_cost_usd': 0.0,    # = review_count × 0.001
+
+    # Efficacité
+    'auto_rate': 0.0,             # auto_count / total
+    'fp_rate': 0.0,               # auto_incorrect / auto_count
+    'places_call_rate': 0.0,      # review_count / total
+    'cost_per_record': 0.0,       # estimated_cost / total
+}
+```
+
+### Entraînement (Phase 4) — quand & comment
+
+**But** : Valider les seuils sur un ground truth diversifié, pas Corbas/Décines.
+
+- **Quand** :
+  - Une fois le ground truth élargi disponible (voir section "Élargir le ground truth")
+  - Après avoir collecté des labels sur d'autres villes/secteurs
+- **Quoi** :
+  - Pas de re‑training XGBoost (modèle fixé)
+  - Calibration **automatique** des seuils routing + Places (score_min/gap_min)
+  - Validation des règles de certitude absolue (FP = 0 garanti)
+- **Modalités** :
+  - Cross‑validation par ville/région pour éviter l'overfitting géographique
+  - Métriques séparées par segment
+  - A/B testing des budget_modes
+
+**Commandes recommandées** :
+```bash
+# Générer ground truth élargi
+python scripts/build_evaluation_dataset.py \
+    --sources crm_history,places_validated \
+    --min-samples-per-segment 100 \
+    --output data/evaluation_dataset.parquet
+
+# Calibrer les seuils par segment
+python scripts/calibrate_routing_thresholds.py \
+    --eval-data data/evaluation_dataset.parquet \
+    --output-config configs/routing_thresholds.yaml \
+    --target-fpr 0.001
+
+# Calibrer les seuils Places (Places‑as‑CRM)
+python scripts/calibrate_places_thresholds.py \
+    --eval-data data/evaluation_dataset.parquet \
+    --decider-model models/xgb_decider_20260103_132351.json \
+    --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl \
+    --output-config configs/places_thresholds.yaml \
+    --target-fpr 0.001
+
+# Valider sur holdout
+python scripts/evaluate_routing.py \
+    --eval-data data/evaluation_holdout.parquet \
+    --thresholds configs/routing_thresholds.yaml \
+    --output reports/routing_evaluation.json
+
+# Valider Places‑as‑CRM sur holdout
+python scripts/evaluate_places_matching.py \
+    --eval-data data/evaluation_holdout.parquet \
+    --decider-model models/xgb_decider_20260103_132351.json \
+    --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl \
+    --places-thresholds configs/places_thresholds.yaml \
+    --output reports/places_evaluation_phase4.json
+
+# Simuler les coûts Places
+python scripts/simulate_places_costs.py \
+    --routed-csv reports/routed_phase4.csv \
+    --cost-per-call 0.001 \
+    --monthly-volume 10000
+```
+
+### Détails de code (Phase 4)
+
+**Fichiers impactés + contrat attendu**
+
+- `scripts/route_xgb_results.py`
+  - Refactoring de `_route_xgb()` en `route_cost_aware()`
+  - Ajout des règles de certitude absolue
+  - Ajout de la résolution same‑SIREN
+  - Ajout de `--budget-mode` (aggressive/normal/permissive)
+  - Ajout d’options explicites pour modèles decider Places (`--decider-model`, `--calibrator-path`)
+  - Export des métriques de routing
+
+- `scripts/calibrate_routing_thresholds.py` (nouveau)
+  - Entrée : ground truth élargi
+  - Sortie : `configs/routing_thresholds.yaml`
+  - Logique : Trouver seuil par segment où FPR ≤ 0.001
+
+- `scripts/calibrate_places_thresholds.py` (nouveau)
+  - Entrée : ground truth élargi + résultats Places‑as‑CRM
+  - Sortie : `configs/places_thresholds.yaml`
+  - Logique : grid‑search `score_min` × `gap_min` sous contrainte FPR ≤ 0.001
+
+- `scripts/evaluate_places_matching.py` (nouveau)
+  - Entrée : holdout + thresholds Places + modèles decider explicites
+  - Sortie : `reports/places_evaluation_phase4.json`
+
+- `src/pipe_v6/places_xgb_rescorer.py`
+  - Ajouter `crm_mode="places|original"` (default: places pour Phase 4)
+  - Réutiliser **exactement** la logique d'inférence du decider (feature order + calibrator)
+  - Chemins de modèles **explicites** (pas d’auto‑latest)
+
+- `src/pipe_v6/places_orchestrator.py`
+  - Pool **recall@20** + arm_a + arm_b
+  - Mini‑gate CRM↔Places (CP/ville + overlap minimum)
+  - Promotion MATCH_PLACES si `address_close` + `score_min` + `gap_min`
+
+- `src/pipe_v6/places_validator.py`
+  - Ajouter `address_close()` (CP + rue + numéro OU distance <= seuil)
+  - Paramètres configurables : `places_addr_jaro_min`, `places_distance_max_m`
+
+- `scripts/evaluate_routing.py` (nouveau)
+  - Entrée : holdout + thresholds
+  - Sortie : métriques détaillées par segment
+  - Inclut simulation de coût
+
+- `scripts/build_evaluation_dataset.py` (nouveau)
+  - Collecte de labels depuis : historique CRM validé, Places API (high confidence), validation manuelle
+  - Stratification par : ville, secteur, longueur nom, complétude adresse
+
+- `configs/routing_thresholds.yaml` (nouveau)
+  ```yaml
+  segments:
+    unique_name_full_addr:
+      threshold: 0.95
+      gap_min: 0.03
+      places_value: low
+    common_name_full_addr:
+      threshold: 0.98
+      gap_min: 0.05
+      places_value: medium
+    # ... autres segments
+
+  certainty_rules:
+    enabled: true
+    min_jaro_perfect: 0.98
+    min_addr_jaro_perfect: 0.98
+
+  same_siren_resolution:
+    enabled: true
+    min_score: 0.90
+    prefer_ouvert: true
+
+  budget:
+    mode: normal  # aggressive/normal/permissive
+    max_monthly_calls: 2500
+    alert_threshold: 0.8
+  ```
+
+- `configs/places_thresholds.yaml` (nouveau)
+  ```yaml
+  promotion:
+    score_min: 0.97
+    gap_min: 0.05
+    addr_jaro_min: 0.90
+    distance_max_m: 80
+  gating:
+    require_postcode: true
+    min_addr_overlap: 0.35
+  ```
+
+### Definition of Done Phase 4
+
+- [ ] Règles de certitude absolue implémentées et validées (FP = 0 sur test set)
+- [ ] Résolution same‑SIREN automatique active
+- [ ] Seuils calibrés sur ground truth diversifié (pas seulement Corbas/Décines)
+- [ ] Routing XGB = **AUTO/REVIEW uniquement** (NO_MATCH après Places)
+- [ ] Seuils Places calibrés automatiquement (`score_min`, `gap_min`) + `address_close`
+- [ ] Métriques de coût intégrées au reporting
+- [ ] `budget_mode` fonctionnel (aggressive/normal/permissive)
+- [ ] Documentation des seuils dans `configs/routing_thresholds.yaml`
+- [ ] Documentation Places dans `configs/places_thresholds.yaml`
+- [ ] Chemins de modèles decider explicites (pas d’auto‑latest) pour Places‑as‑CRM
+- [ ] Tests unitaires pour chaque règle de routing
+- [ ] AUTO FP rate ≤ 0.1% sur holdout diversifié
+- [ ] Réduction du Places call rate d'au moins 20% vs Phase 3
+
+### Validation Phase 4 (commandes)
+
+```bash
+# Inférence standard
+XGB_SEMANTIC_ENABLED=1 python scripts/infer_xgb_two_stage.py \
+    --crm-path data/evaluation_holdout.csv \
+    --partitions-dir data/candidates_v4_fixed \
+    --output-path reports/xgb_infer_phase4.csv \
+    --top-k 20 \
+    --decider-model models/xgb_decider_20260103_132351.json \
+    --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl
+
+# Routing cost‑aware
+python scripts/route_xgb_results.py \
+    --input-path reports/xgb_infer_phase4.csv \
+    --output-path reports/routed_phase4.csv \
+    --budget-mode normal \
+    --thresholds configs/routing_thresholds.yaml
+
+# Évaluation (requiert ground truth)
+python scripts/evaluate_routing.py \
+    --routed-csv reports/routed_phase4.csv \
+    --ground-truth data/evaluation_holdout.csv \
+    --output reports/routing_evaluation_phase4.json
+
+# Évaluation Places‑as‑CRM (requiert Places thresholds)
+python scripts/evaluate_places_matching.py \
+    --eval-data data/evaluation_holdout.parquet \
+    --decider-model models/xgb_decider_20260103_132351.json \
+    --calibrator-path models/xgb_decider_calibrator_isotonic_20260103_132351.pkl \
+    --places-thresholds configs/places_thresholds.yaml \
+    --output reports/places_evaluation_phase4.json
+
+# Simulation coût mensuel
+python scripts/simulate_places_costs.py \
+    --routed-csv reports/routed_phase4.csv \
+    --monthly-volume 10000 \
+    --cost-per-call 0.001
+```
+
 ---
 
 ## Plan SOTA complet (Blueprint opérationnel)
@@ -518,9 +1131,10 @@ python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/spl
 - **Routing** : seuils segmentés + garde‑fous (addr_only_risk, semantic_only_risk)
 
 ### 4) Fallback Places / Web (safe‑upgrade)
-- **Uniquement** pour REVIEW / NO_MATCH
-- **Upgrade** uniquement si preuves multi‑sources + validation SIRENE stricte
-- **No false positives** comme invariant
+- **Uniquement** pour REVIEW (pas de NO_MATCH pré‑Places)
+- **Places‑as‑CRM** : decider XGB identique (mêmes features + calibrator)
+- **Upgrade** uniquement si `address_close` + seuils Places calibrés
+- **NO_MATCH** uniquement après échec Places
 
 ### 5) Feedback Loop (Silver Labels)
 - **Collecte** : cas Places “très sûrs”
@@ -542,14 +1156,15 @@ python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/spl
 
 ---
 
-## Checklist “Nouvelle fenêtre de contexte”
+## Checklist "Nouvelle fenêtre de contexte"
 1. Ouvrir `reports/entity_matching_audit.md` pour le plan en cours.
 2. Vérifier les diagnostics :
    - `python scripts/fix_diagnostic_report.py`
    - Consulter `reports/diagnostic_report.md`
-3. Identifier la phase active (Quick Wins / Sprint ML / SOTA)
+3. Identifier la phase active (Quick Wins / Sprint ML / SOTA / SOTA Routing)
 4. Lister les fichiers à toucher (voir détails ci‑dessus)
 5. Valider avec un run minimal (top‑k + routing)
+6. Pour Phase 4 : vérifier le budget Places restant avant de lancer des REVIEW
 
 ---
 
@@ -585,7 +1200,7 @@ python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/spl
 ## 5) Seuils de décision
 - **AUTO** : seuils segmentés (nom court/long, adresse complète/incomplète)
 - **REVIEW** : zone d’incertitude
-- **NO_MATCH** : score faible / conflits majeurs
+- **NO_MATCH** : uniquement après Places si aucune promotion n’est possible
 
 ## 6) Limites connues
 - Adresses co‑localisées (centres commerciaux, ZI)
@@ -601,4 +1216,15 @@ python scripts/diagnostic_xgb_routing.py --pool-mode union --input-path data/spl
 
 ## Conclusion
 
-Le système actuel est prometteur mais **structurellement fragile** à cause du train/serve skew, de la mauvaise calibration et d’un routing dépendant de SHAP. Les Quick Wins permettent d’améliorer immédiatement le **taux d’AUTO fiable**. Le Sprint ML et la phase SOTA rendent le système robuste, traçable et sûr, tout en maximisant l’automatisation.
+Le système actuel est prometteur mais **structurellement fragile** à cause du train/serve skew, de la mauvaise calibration et d'un routing dépendant de SHAP. Les Quick Wins permettent d'améliorer immédiatement le **taux d'AUTO fiable**. Le Sprint ML et la phase SOTA rendent le système robuste, traçable et sûr, tout en maximisant l'automatisation.
+
+**Phase 4 (SOTA Routing)** complète le pipeline avec une vision **cost‑aware** :
+- Les règles de certitude absolue capturent les "easy wins" sans risque
+- La résolution same‑SIREN élimine les faux positifs d'ambiguïté intra‑entreprise
+- La segmentation par utilité Places évite les appels API inutiles
+- Le budget_mode permet d'ajuster le compromis AUTO/coût selon les contraintes
+
+**Objectifs finaux** :
+- AUTO rate ≥ 60% avec FP rate ≤ 0.1%
+- Places call rate ≤ 30% du volume total
+- Coût Places mensuel < budget alloué
