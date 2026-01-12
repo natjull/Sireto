@@ -46,6 +46,8 @@ def normalize_siret(siret: str | int | None) -> str | None:
 
 ## 3. Routing Scenarios (Calibrated Scores)
 
+### 3.1 Canonical (parquet test split)
+
 Evaluated on canonical test split (2,193 queries, Hit@1 = 90.7%):
 
 | Threshold | AUTO% | Precision | FP | FN |
@@ -60,6 +62,41 @@ Evaluated on canonical test split (2,193 queries, Hit@1 = 90.7%):
 | 0.995 | 2.1 | 100.0 | 0 | 1,942 |
 
 **Recommended threshold: 0.45** (75.5% AUTO, 95.9% precision, 68 FP)
+
+### 3.2 End-to-end inference (`reports/xgb_two_stage_topk_test.csv`)
+
+Generated with the IDF fix using `data/old/2026-01-11_splits/test.csv` (2,853 queries).  
+Note: 929 queries (32.6%) do not have the GT SIRET in the candidate pool, which caps precision.
+
+**All queries (GT may be missing):**
+
+| Threshold | AUTO% | Precision | FP | FN |
+|-----------|-------|-----------|----|----|
+| 0.35 | 77.0 | 73.0 | 594 | 106 |
+| **0.40** | **75.8** | **73.5** | **573** | **120** |
+| 0.45 | 69.6 | 75.4 | 489 | 213 |
+| 0.50 | 69.2 | 75.4 | 485 | 222 |
+| 0.65 | 63.7 | 76.5 | 427 | 319 |
+| 0.75 | 58.2 | 77.0 | 381 | 431 |
+| 0.85 | 45.7 | 79.0 | 274 | 679 |
+| 0.95 | 30.2 | 81.5 | 160 | 1,007 |
+
+**GT in pool only (1,924 queries):**
+
+| Threshold | AUTO% | Precision | FP | FN |
+|-----------|-------|-----------|----|----|
+| 0.35 | 91.8 | 90.8 | 163 | 106 |
+| 0.40 | 91.0 | 90.8 | 161 | 120 |
+| 0.45 | 85.0 | 91.5 | 139 | 213 |
+| 0.50 | 84.5 | 91.6 | 137 | 222 |
+| **0.65** | **78.4** | **92.2** | **118** | **319** |
+| 0.75 | 71.8 | 92.5 | 103 | 431 |
+| 0.85 | 56.7 | 94.5 | 60 | 679 |
+| 0.95 | 38.1 | 95.8 | 31 | 1,007 |
+
+**Recommended threshold (end-to-end):**
+- `0.40` if prioritizing AUTO rate >= 75% on full queries
+- `0.65` if evaluating only cases where GT exists in pool
 
 ## 4. Inference Pipeline
 

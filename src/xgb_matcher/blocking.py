@@ -169,9 +169,20 @@ def attach_address_density(candidates: Iterable[dict]) -> None:
 
 def build_tfidf_index(
     candidates: List[dict],
+    *,
+    name_mode: str = "bag",
 ) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
-    """Build TF-IDF index for candidate bag-of-names text."""
-    names = [normalize_text_for_tfidf(candidate_tfidf_text(c) or "") for c in candidates]
+    """Build TF-IDF index for candidate names.
+    
+    Args:
+        candidates: List of candidate dicts.
+        name_mode: "bag" for bag-of-names (candidate_tfidf_text), 
+                   "primary" for primary_name only (aligned with train config).
+    """
+    if name_mode == "primary":
+        names = [normalize_text_for_tfidf(primary_name(c) or "") for c in candidates]
+    else:
+        names = [normalize_text_for_tfidf(candidate_tfidf_text(c) or "") for c in candidates]
     vectorizer = TfidfVectorizer(
         analyzer="word",
         ngram_range=(1, 2),
