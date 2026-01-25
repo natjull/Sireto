@@ -1,19 +1,28 @@
 #!/usr/bin/env python3
 """
-Generate training samples v4 - partitioned candidates + TF-IDF prefilter.
+Generate training samples v5 - partitioned candidates + TF-IDF prefilter.
 
-Key ideas:
-  - Load candidates per commune (partitioned store)
-  - Build TF-IDF index on candidate names for that commune
-  - Prefilter top-K per CRM using TF-IDF similarity
-  - Compute full features only on top-K
+v5 changes from v4:
+  - Default to crm_ok_gt.csv (cleaned GT)
+  - Default to candidates_v5_all/ (includes closed)
+  - Support --variant A/B/C for different retrieval configs
+  - Add debug columns: gt_in_tfidf_pool, gt_was_injected, crm_name, etc.
+  - Include closed candidates by default
+
+Variants:
+  A: Baseline (TF-IDF primary, no char fallback, no semantic rescue)
+  B: Bag-of-names (TF-IDF bag, char fallback, semantic rescue)
+  C: Bag + SIREN siblings (B + enrich candidate names with SIREN siblings)
 """
 
 from __future__ import annotations
 
+# CRITICAL: Set semantic env BEFORE any imports (semantic.py checks this at import time)
+import os
+os.environ["XGB_SEMANTIC_ENABLED"] = "1"
+
 import argparse
 import json
-import os
 import random
 import sys
 from collections import defaultdict
@@ -43,9 +52,9 @@ from src.xgb_matcher.blocking import normalize_text_for_tfidf
 from src.xgb_matcher.naming import primary_name, build_candidate_names
 
 
-DEFAULT_OUTPUT = Path("data/samples_v4_with_ranker.parquet")
-TRAINING_DATA = Path("data/entrainements.csv")
-PARTITIONS_DIR = Path("data/candidates_v4_active")
+DEFAULT_OUTPUT = Path("data/samples_v5.parquet")
+TRAINING_DATA = Path("data/crm_ok_gt.csv")
+PARTITIONS_DIR = Path("data/candidates_v5_all")
 ETAB_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 MODEL_DIR = Path("models")
 
@@ -56,7 +65,31 @@ PREFILTER_TOP_K = 500
 MIN_CANDIDATES_SUBSET = 100  # Guarantee at least this many candidates after TF-IDF prefilter
 SEED = 42
 
-SEMANTIC_ENABLED = os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
+# Variant configurations
+VARIANT_KNOBS = {
+    "A": {
+        "tfidf_name_mode": "primary",
+        "char_top_k": 0,
+        "rescue_semantic_k": 0,
+        "description": "Baseline (TF-IDF primary, no char fallback)",
+    },
+    "B": {
+        "tfidf_name_mode": "bag",
+        "char_top_k": 200,
+        "rescue_semantic_k": 50,
+        "description": "Bag-of-names (TF-IDF bag, char fallback, semantic rescue)",
+    },
+    "C": {
+        "tfidf_name_mode": "bag",
+        "char_top_k": 200,
+        "rescue_semantic_k": 50,
+        "siren_siblings": True,
+        "description": "Bag + SIREN siblings enrichment",
+    },
+}
+
+# Semantic is always ON for v5 (env var set at top of file)
+SEMANTIC_ENABLED = True
 
 
 def _norm_code(x: object) -> str | None:
@@ -78,13 +111,21 @@ def _norm_code(x: object) -> str | None:
 
 def load_training_data(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, sep=";", dtype=str, encoding="utf-8-sig")
+    # Support both old (entrainements.csv) and new (crm_ok_gt.csv) formats
     df = df.rename(columns={
+        # Old format
         "SITE": "crm_name",
         "SITE_CLI_ADRESSE": "crm_address",
         "SITE_CLI_COMMUNE": "crm_city",
         "CODE_POSTAL": "postcode",
         "CODE_INSEE": "insee",
         "SIRET": "ground_truth_siret",
+        # New format (crm_ok_gt.csv)
+        "crm_cp": "postcode",
+        "crm_insee": "insee",
+        "crm_adresse": "crm_address",
+        "crm_commune": "crm_city",
+        "gt_siret": "ground_truth_siret",
     })
     df["ground_truth_siret"] = df["ground_truth_siret"].astype(str).str.strip()
     df = df[df["ground_truth_siret"].notna() & (df["ground_truth_siret"].str.len() == 14)]
@@ -261,9 +302,44 @@ def _dedupe_preserve(seq: List[str]) -> List[str]:
     return out
 
 
-def _candidate_tfidf_name(cand: dict, name_mode: str) -> str:
+def build_siren_index(candidates: List[dict]) -> Dict[str, List[dict]]:
+    """Build an index mapping SIREN -> list of candidates (siblings) for a commune."""
+    index: Dict[str, List[dict]] = defaultdict(list)
+    for cand in candidates:
+        siren = cand.get("siren") or ""
+        if siren:
+            index[siren].append(cand)
+    return dict(index)
+
+
+def _candidate_tfidf_name(
+    cand: dict,
+    name_mode: str,
+    siren_index: Optional[Dict[str, List[dict]]] = None,
+) -> str:
+    """
+    Build the TF-IDF name string for a candidate.
+    
+    If siren_index is provided (variant C), enrich with sibling names
+    (other establishments with the same SIREN in the same commune).
+    """
     if name_mode == "bag":
+        # Start with this candidate's own names
         bag = [cn.text for cn in build_candidate_names(cand)]
+        
+        # Variant C: enrich with sibling names if siren_index is provided
+        if siren_index is not None:
+            siren = cand.get("siren") or ""
+            if siren and siren in siren_index:
+                siblings = siren_index[siren]
+                for sibling in siblings:
+                    # Skip self (same siret)
+                    if sibling.get("siret") == cand.get("siret"):
+                        continue
+                    # Add sibling names to the bag
+                    for cn in build_candidate_names(sibling):
+                        bag.append(cn.text)
+        
         return " ".join(_dedupe_preserve(bag))
     return primary_name(cand) or ""
 
@@ -272,8 +348,24 @@ def build_tfidf_index(
     candidates: List[dict],
     *,
     name_mode: str = "primary",
+    siren_siblings: bool = False,
 ) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
-    names = [normalize_text_for_tfidf(_candidate_tfidf_name(cand, name_mode) or "") for cand in candidates]
+    """
+    Build TF-IDF index for candidates.
+    
+    Args:
+        candidates: List of candidate dicts.
+        name_mode: "primary" or "bag" for name source.
+        siren_siblings: If True (variant C), enrich each candidate's TF-IDF name
+                        with names from its SIREN siblings.
+    """
+    # Build SIREN index if needed (variant C)
+    siren_index = build_siren_index(candidates) if siren_siblings else None
+    
+    names = [
+        normalize_text_for_tfidf(_candidate_tfidf_name(cand, name_mode, siren_index) or "")
+        for cand in candidates
+    ]
     vectorizer = TfidfVectorizer(
         analyzer="word",
         ngram_range=(1, 2),
@@ -437,6 +529,7 @@ def generate_split(
     tfidf_name_mode: str,
     max_same_siren_negatives: int | None,
     exclude_closed_candidates: bool,
+    siren_siblings: bool = False,
 ) -> Tuple[int, int, pq.ParquetWriter | None]:
     total_samples = 0
     total_pos = 0
@@ -487,8 +580,12 @@ def generate_split(
         field = "_xgb_addr_density_insee" if insee else "_xgb_addr_density_cp"
         _attach_address_density(candidates, key=key, target_field=field)
 
-        # TF-IDF prefilter
-        vectorizer, cand_matrix, _ = build_tfidf_index(candidates, name_mode=tfidf_name_mode)
+        # TF-IDF prefilter (with SIREN siblings enrichment for variant C)
+        vectorizer, cand_matrix, _ = build_tfidf_index(
+            candidates,
+            name_mode=tfidf_name_mode,
+            siren_siblings=siren_siblings,
+        )
         crm_names = group["crm_name"].tolist()
         if vectorizer is not None and cand_matrix is not None:
             top_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
@@ -548,7 +645,7 @@ def generate_split(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate training samples v4 (partitioned + TF-IDF).")
+    parser = argparse.ArgumentParser(description="Generate training samples v5 (partitioned + TF-IDF + variants A/B/C).")
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--training-csv", type=Path, default=TRAINING_DATA)
     parser.add_argument("--partitions-dir", type=Path, default=PARTITIONS_DIR)
@@ -556,10 +653,16 @@ def main() -> None:
     parser.add_argument("--prefilter-k", type=int, default=PREFILTER_TOP_K)
     parser.add_argument("--max-negatives", type=int, default=MAX_NEGATIVES)
     parser.add_argument(
+        "--variant",
+        choices=["A", "B", "C"],
+        default="B",
+        help="Retrieval variant: A=baseline, B=bag+rescue, C=bag+siblings (default: B).",
+    )
+    parser.add_argument(
         "--tfidf-name-mode",
         choices=["primary", "bag"],
-        default="primary",
-        help="TF-IDF name source: primary (default) or bag-of-names.",
+        default=None,  # Will be set by variant if not specified
+        help="TF-IDF name source: primary or bag-of-names (auto-set by variant).",
     )
     parser.add_argument(
         "--drop-unnamed-candidates",
@@ -584,27 +687,27 @@ def main() -> None:
         "--exclude-closed-gt",
         dest="exclude_closed_gt",
         action="store_true",
-        default=True,
+        default=False,  # v5: include closed GT by default
         help="Exclude GT with etatAdministratifEtablissement == 'F'.",
     )
     parser.add_argument(
         "--include-closed-gt",
         dest="exclude_closed_gt",
         action="store_false",
-        help="Keep closed GT in training samples.",
+        help="Keep closed GT in training samples (default for v5).",
     )
     parser.add_argument(
         "--exclude-closed-candidates",
         dest="exclude_closed_candidates",
         action="store_true",
-        default=True,
+        default=False,  # v5: include closed candidates by default
         help="Exclude candidates with etat_admin == 'F'.",
     )
     parser.add_argument(
         "--include-closed-candidates",
         dest="exclude_closed_candidates",
         action="store_false",
-        help="Include candidates with etat_admin == 'F'.",
+        help="Include candidates with etat_admin == 'F' (default for v5).",
     )
     parser.add_argument("--seed", type=int, default=SEED)
     parser.add_argument("--ranker-model", type=Path, default=None)
@@ -614,12 +717,25 @@ def main() -> None:
 
     random.seed(args.seed)
     np.random.seed(args.seed)
-    if not args.exclude_closed_gt and args.exclude_closed_candidates:
-        print("[WARN] include_closed_gt with exclude_closed_candidates may drop closed GT queries.")
-
+    
+    # Apply variant knobs
+    variant = args.variant
+    variant_config = VARIANT_KNOBS.get(variant, VARIANT_KNOBS["B"])
+    
+    # Override tfidf_name_mode if not explicitly set
+    if args.tfidf_name_mode is None:
+        args.tfidf_name_mode = variant_config.get("tfidf_name_mode", "bag")
+    
+    # Variant C: enable SIREN siblings enrichment
+    siren_siblings = variant_config.get("siren_siblings", False)
+    
     print("=" * 60)
-    print("Sample Generation v4 (Partitioned + TF-IDF)")
+    print(f"Sample Generation v5 (Variant {variant}: {variant_config['description']})")
     print("=" * 60)
+    print(f"  TF-IDF mode: {args.tfidf_name_mode}")
+    print(f"  SIREN siblings: {siren_siblings}")
+    print(f"  Include closed GT: {not args.exclude_closed_gt}")
+    print(f"  Include closed candidates: {not args.exclude_closed_candidates}")
 
     print("\n1. Loading CRM data...")
     df = load_training_data(args.training_csv)
@@ -690,6 +806,7 @@ def main() -> None:
         tfidf_name_mode=args.tfidf_name_mode,
         max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
         exclude_closed_candidates=args.exclude_closed_candidates,
+        siren_siblings=siren_siblings,
     )
     total_counts["train"] = train_count
 
@@ -708,6 +825,7 @@ def main() -> None:
         tfidf_name_mode=args.tfidf_name_mode,
         max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
         exclude_closed_candidates=args.exclude_closed_candidates,
+        siren_siblings=siren_siblings,
     )
     total_counts["dev"] = dev_count
 
@@ -726,21 +844,46 @@ def main() -> None:
         tfidf_name_mode=args.tfidf_name_mode,
         max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
         exclude_closed_candidates=args.exclude_closed_candidates,
+        siren_siblings=siren_siblings,
     )
     total_counts["test"] = test_count
 
     if writer is not None:
         writer.close()
 
+    # -------------------------------------------------------------------------
+    # SANITY CHECK: Verify semantic features are non-zero
+    # -------------------------------------------------------------------------
+    print("\n--- Semantic sanity check ---")
+    df_check = pd.read_parquet(output_path)
+    if "name_semantic_max" in df_check.columns:
+        sem_mean = float(df_check["name_semantic_max"].mean())
+        sem_nz_rate = float((df_check["name_semantic_max"] > 0).mean())
+        print(f"  name_semantic_max mean: {sem_mean:.6f}")
+        print(f"  name_semantic_max non-zero rate: {sem_nz_rate:.2%}")
+        
+        MIN_SEMANTIC_NZ_RATE = 0.20  # At least 20% of samples should have semantic > 0
+        if sem_nz_rate < MIN_SEMANTIC_NZ_RATE:
+            raise RuntimeError(
+                f"SEMANTIC SANITY CHECK FAILED: name_semantic_max non-zero rate = {sem_nz_rate:.2%} < {MIN_SEMANTIC_NZ_RATE:.0%}. "
+                f"This indicates semantic features are not being computed. "
+                f"Check that XGB_SEMANTIC_ENABLED=1 is set before imports and that the semantic model is loaded."
+            )
+        print("  ✅ Semantic features OK")
+    else:
+        raise RuntimeError("SEMANTIC SANITY CHECK FAILED: 'name_semantic_max' column not found in samples.")
+
     meta = {
         "generated": datetime.now().isoformat(),
         "seed": args.seed,
+        "variant": args.variant,
         "train": train_count,
         "dev": dev_count,
         "test": test_count,
         "hard_negative_ranker": ranker_info,
         "prefilter_k": args.prefilter_k,
         "tfidf_name_mode": args.tfidf_name_mode,
+        "siren_siblings": siren_siblings,
         "drop_unnamed_candidates": args.drop_unnamed_candidates,
         "max_same_siren_negatives": args.max_same_siren_negatives,
         "exclude_closed_gt": args.exclude_closed_gt,
