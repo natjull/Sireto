@@ -52,24 +52,14 @@ class PipelineConfig:
     rne_client_id: str = ""  # deprecated
     rne_client_secret: str = ""  # deprecated
     rne_token_url: str = "https://api.inpi.fr/api/sso/oauth2/token"  # deprecated
-    # Qwant public API endpoint (v3 as of 2025). The older
-    # https://api.qwant.com/api/search/web now returns 404.
-    qwant_base_url: str = "https://api.qwant.com/v3/search/web"
-    qwant_enabled: bool = True
-    # Official web search providers (Google Custom Search + Brave Search)
-    google_api_key: str = ""
-    google_cse_id: str = ""
-    brave_api_key: str = ""
     web_search_enabled: bool = True
-    google_daily_quota: int = 100
-    brave_daily_quota: int = 67
     web_cache_path: Path = _expand_path("data/web_cache.sqlite")
     web_cache_ttl_days: int = 7
     web_negative_cache_ttl_hours: int = 24
     # Serper.dev Places API (V7 Places-guided candidate generation)
     serper_api_key: str = ""
     places_lookup_enabled: bool = True
-    places_lookup_mode: str = "places"  # "places" (Serper) or "legacy" (Google CSE + Brave)
+    places_lookup_mode: str = "places"
     # Places validation thresholds (adaptive by pool size)
     places_name_semantic_min: float = 0.60
     places_addr_overlap_min: float = 0.50
@@ -180,14 +170,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "rne_client_id": "",
         "rne_client_secret": "",
         # Keep the v3 endpoint as default; the legacy /api/search/web returns 404.
-        "qwant_base_url": "https://api.qwant.com/v3/search/web",
-        "qwant_enabled": True,
-        "google_api_key": "",
-        "google_cse_id": "",
-        "brave_api_key": "",
         "web_search_enabled": None,
-        "google_daily_quota": 100,
-        "brave_daily_quota": 67,
         "web_cache_path": "data/web_cache.sqlite",
         "web_cache_ttl_days": 7,
         "web_negative_cache_ttl_hours": 24,
@@ -249,10 +232,7 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         key: _from_sources(key, default) for key, default in defaults.items()
     }
 
-    # If web_search_enabled is not set, fall back to qwant_enabled for backward compatibility.
-    if extracted.get("web_search_enabled") in (None, ""):
-        extracted["web_search_enabled"] = extracted.get("qwant_enabled", True)
-
+    # Path expansion
     path_keys = {
         "crm_path",
         "output_path",
@@ -285,8 +265,6 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "confidence_auto_match": float,
         "confidence_review_min": float,
         "max_candidates_llm_matcher": int,
-        "google_daily_quota": int,
-        "brave_daily_quota": int,
         "web_cache_ttl_days": int,
         "web_negative_cache_ttl_hours": int,
         # Places thresholds
@@ -317,7 +295,6 @@ def load_config(path: str | Path | None = None) -> PipelineConfig:
         "llm_json_mode_default",
         "category_filter_enabled",
         "category_filter_fallback",
-        "qwant_enabled",
         "web_search_enabled",
         "rne_enabled",
         "places_lookup_enabled",
