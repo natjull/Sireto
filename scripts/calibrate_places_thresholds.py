@@ -341,9 +341,9 @@ def generate_yaml(report: PlacesCalibrationReport, output_path: Path) -> None:
         "version": "1.0",
         "calibrated_date": pd.Timestamp.now().strftime("%Y-%m-%d"),
         "models": {
-            "decider_model": "models/xgb_decider_20260103_132351.json",
-            "calibrator_path": "models/xgb_decider_calibrator_isotonic_20260103_132351.pkl",
-            "meta_path": "models/xgb_two_stage_meta_20260103_132351.json",
+            "decider_model": "models/xgb_decider_20260124_210218.json",
+            "calibrator_path": "models/xgb_decider_calibrator_isotonic_20260124_210218.pkl",
+            "meta_path": "models/xgb_two_stage_meta_20260124_210218.json",
         },
         "pool": {
             "xgb_topk": 20,
