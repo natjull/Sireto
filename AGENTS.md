@@ -23,18 +23,12 @@ flowchart TD
     F --> H[API INPI RNE]
     F --> I[API Recherche entreprise<br/>annuaire-entreprises.data.gouv.fr]
 
-    %% Requêtes Qwant (3 sites)
-    A --> G[Construction requête Qwant commune<br/>(nom brut + n° voie + voie + CP)]
-    G --> J1[Qwant<br/>site:pappers.fr]
-    G --> J2[Qwant<br/>site:annuaire-entreprises.data.gouv.fr]
-    G --> J3[Qwant<br/>site:societe.com]
+    
 
     %% Collecte candidats
     H --> K[Collecte SIREN/SIRET candidats]
     I --> K
-    J1 --> K
-    J2 --> K
-    J3 --> K
+    
 
     K --> L[Déduplication candidats<br/>(max 10 / source)]
     L --> M[Lookup SIREN/SIRET<br/>dans cache SQLite SIRENE<br/>(ou API si manquant)]
@@ -93,14 +87,14 @@ flowchart TD
     %% Sortie directe
     F -->|AUTO| G[Sortie MATCH (XGB)<br/>SIRET=top1 + score + features]
 
-    %% Fallback Web "officiel"
-    F -->|REVIEW| H[Web lookup multi-sites (1 requête)<br/>Google/Brave alternés (quotas)]
-    H --> I[Extraction SIREN/SIRET depuis URLs/snippets<br/>+ dédup par identifiant]
-    I --> J[Validation SIRENE + règles déterministes<br/>(commune/CP + adresse + consensus multi-sites)]
-    J --> K{Match web “sans risque” ?}
+    %% Fallback Places (Phase 4)
+    F -->|REVIEW| H[Places-guided Lookup<br/>(Serper.dev + Arm A/B)]
+    H --> I[XGB Rescoring (Stage 2)<br/>Places-as-CRM]
+    I --> J[Validation déterministe<br/>(Gate + Address Close)]
+    J --> K{Match Places ?}
 
-    K -->|Oui| L[Upgrade MATCH (WEB)<br/>SIRET retenu + preuves]
-    K -->|Non| M[Conserver REVIEW<br/>(NO_MATCH uniquement après Places/WEB)]
+    K -->|Oui| L[Upgrade MATCH (PLACES)<br/>SIRET retenu + preuves]
+    K -->|Non| M[Conserver REVIEW<br/>(ou NO_MATCH selon thresholds)]
 
     G & L & M --> N[Export final<br/>CSV/JSON + métriques/logs]
 ```
@@ -109,25 +103,16 @@ flowchart TD
 
 - **Plus de LLM** : uniquement des features ML (XGBoost) + des règles déterministes.
 - **Sécurité** : on ne sort `MATCH` (via web) que si l’évidence est “multi-sources + cohérente SIRENE”.
-- **Sobriété quotas** : web lookup uniquement pour `REVIEW`, avec cache des requêtes et alternance Google/Brave.
+- **Places-guided** : lookup uniquement pour `REVIEW`, via Serper.dev (Arm A/B).
 - **Traçabilité** : pour chaque décision `MATCH`, conserver “preuves” (sites/URLs + checks passés).
 
-### Lookup Web : Google + Brave (remplacement Qwant)
+### Fallback Places (Phase 4)
 
-But : conserver **la même forme de requête** que le lookup Qwant actuel, mais via des APIs “officielles”, en une requête multi-sites :
+L’utilisation de Google/Brave est abandonnée au profit de **Serper.dev (Places)** pour la génération de candidats en cas de `REVIEW` XGBoost.
 
-- Sites cibles (1 requête) : `pappers.fr`, `annuaire-entreprises.data.gouv.fr`, `societe.com`, `entreprises.lefigaro.fr`
-- Exemple de query (à ajuster par moteur) :
-  - `("{CP}" {NUMERO} {VOIE} {NOM}) (site:pappers.fr OR site:annuaire-entreprises.data.gouv.fr OR site:societe.com OR site:entreprises.lefigaro.fr)`
-- **Alternance quota** :
-  - stratégie simple : round-robin Google ↔ Brave (ou “si Google quota atteint → Brave”)
-  - persister des compteurs dans un petit cache SQLite/JSON (pour rester strictement sous les limites free)
-- **Google** : l’API “Custom Search / Programmable Search Engine” nécessite une clé **et** un identifiant de moteur (`cx`).
-- **Important (sécurité repo)** : ne jamais committer de clés ; utiliser des variables d’env (ex. `SIRETO_GOOGLE_API_KEY`, `SIRETO_GOOGLE_CSE_ID`, `SIRETO_BRAVE_API_KEY`).
+### Décision déterministe PLACES (objectif : 0 faux positif)
 
-### Décision déterministe “WEB MATCH” (objectif : 0 faux positif)
-
-Idée générale : on ne fait “web→MATCH” que si le web donne un **SIRET unique** et que SIRENE confirme **commune + adresse**. Sinon, on ne force pas (on garde `REVIEW`; `NO_MATCH` seulement après échec Places/WEB).
+Idée générale : on ne fait “places→MATCH” que si le web donne un **SIRET unique** et que SIRENE confirme **commune + adresse**. Sinon, on ne force pas (on garde `REVIEW`; `NO_MATCH` seulement après échec Places/WEB).
 
 Règles proposées (conservatrices, à calibrer) :
 

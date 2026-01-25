@@ -14,10 +14,6 @@ rne_password: "inpiTli@99699!"
 rne_token_url: https://api.inpi.fr/api/sso/oauth2/token
 rne_client_id: jullia.nathan@gmail.com
 rne_client_secret: "inpiTli@99699!"
-# Qwant public API endpoint v3; legacy /api/search/web now returns 404.
-qwant_base_url: https://api.qwant.com/v3/search/web
-# Set false to disable Qwant completely (useful if blocked by captcha).
-qwant_enabled: true
 datagouv_api_url: https://recherche-entreprises.api.gouv.fr
 model_name: gpt-oss:20b
 temperature: 0.0
