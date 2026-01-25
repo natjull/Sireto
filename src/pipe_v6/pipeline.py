@@ -18,12 +18,13 @@ from .candidate_store import (
 from .commune_detection import CommuneKey, extract_communes
 from .config import PipelineConfig
 from .crm_loader import load_crm
-from .external_sources import search_datagouv, search_web_sites, search_rne
+from .external_sources import search_datagouv, search_rne
 from .llm_matcher import classify_final_status, decide_match, filter_candidates_by_category
 from .llm_normalizer import NormalizationParseError, normalize_crm_entry
 from .llm_utils import LLMCallError, create_llm_client
 from .rne_client import RneClient
 from .sirene_cache import get_cache_connection, get_or_fetch_commune
+from .places_orchestrator import process_review_case, CrmRow, XgbTopkCandidate
 from xgb_matcher.features import (
     normalize_text,
     jaro_sim,
@@ -386,10 +387,7 @@ def process_crm_row(
         except Exception as exc:
             logger.error("CRM %s: DataGouv search failed: %s", crm_id, exc)
 
-        try:
-            all_candidates.extend(search_web_sites(row, config=config, logger=logger))
-        except Exception as exc:
-            logger.error("CRM %s: Web search failed: %s", crm_id, exc)
+
 
         # 4) Agrégation et enrichissement SIRENE
         groups = group_raw_candidates(all_candidates)
@@ -472,7 +470,7 @@ def process_crm_row_xgb(
     conn: sqlite3.Connection,
     logger: logging.Logger,
 ) -> dict:
-    """Process a single CRM row using XGBoost routing + web fallback."""
+    """Process a single CRM row using XGBoost routing + Places-guided fallback."""
 
     crm_id = _get(row, "crm_id")
     xgb_status = (_get(row, "xgb_status") or "").strip().upper()
@@ -531,57 +529,53 @@ def process_crm_row_xgb(
             sources=[],
         )
 
-    # Web fallback for REVIEW / NO_MATCH
+    # Places fallback for REVIEW / NO_MATCH
     try:
-        raw_candidates = search_web_sites(row, config=config, logger=logger)
+        crm_row = CrmRow(
+            crm_id=str(crm_id),
+            crm_name=str(_get(row, "crm_name", "")),
+            crm_address=str(_get(row, "crm_address", "")) or None,
+            street_number=str(_get(row, "street_number", "")) or None,
+            street_name=str(_get(row, "street_name", "")) or None,
+            postcode=str(_get(row, "postcode", "")) or None,
+            city=str(_get(row, "city", "")) or None,
+            insee_code=str(_get(row, "insee", "")) or None,
+        )
+        
+        # Prepare xgb_topk if available in the row data
+        xgb_topk = []
+        if chosen_siret_xgb:
+            xgb_topk.append(XgbTopkCandidate(siret=str(chosen_siret_xgb), score=score_top1, rank=0))
+
+        places_res = process_review_case(
+            crm_row=crm_row,
+            xgb_topk=xgb_topk,
+            config=config,
+            conn=conn,
+            xgb_status=xgb_status,
+            logger=logger
+        )
+
+        return _base_result(
+            status=places_res.final_status,
+            chosen_siret=places_res.final_siret,
+            chosen_name=None, # Will be enriched later if needed or we could look up in conn
+            confidence=float(places_res.observability.get("score_places_top1", 0.0)) or score_top1,
+            reason=f"PLACES: {places_res.final_status} ({places_res.observability.get('reason', 'N/A')})",
+            sources=["PLACES"],
+            candidate_count_total=places_res.observability.get("pool_size", 0),
+        )
+
     except Exception as exc:
-        logger.error("CRM %s: Web search failed: %s", crm_id, exc)
+        logger.error("CRM %s: Places fallback failed: %s", crm_id, exc)
         return _base_result(
             status=xgb_status,
             chosen_siret=None,
             chosen_name=None,
             confidence=score_top1,
-            reason="WEB_SEARCH_ERROR",
+            reason=f"PLACES_ERROR: {type(exc).__name__}",
             sources=[],
         )
-
-    groups = group_raw_candidates(raw_candidates)
-    candidates = enrich_candidates_from_sirene(groups, conn, logger)
-    candidate_count_total = len(candidates)
-
-    chosen, evidence, confidence, eligible_count = _select_web_candidate(
-        row,
-        candidates,
-        strict_for_no_match=(xgb_status == "NO_MATCH"),
-        logger=logger,
-    )
-
-    if not chosen:
-        return _base_result(
-            status=xgb_status,
-            chosen_siret=None,
-            chosen_name=None,
-            confidence=score_top1,
-            reason="WEB_NO_UPGRADE",
-            sources=[],
-            candidate_count_total=candidate_count_total,
-            candidate_count_used=eligible_count,
-        )
-
-    reason = "WEB_UPGRADE"
-    if evidence:
-        reason = f"WEB_UPGRADE: {json.dumps(evidence, ensure_ascii=False)}"
-
-    return _base_result(
-        status="MATCH",
-        chosen_siret=chosen.siret,
-        chosen_name=chosen.name,
-        confidence=confidence,
-        reason=reason,
-        sources=chosen.sources,
-        candidate_count_total=candidate_count_total,
-        candidate_count_used=eligible_count,
-    )
 
 
 __all__.append("process_crm_row_xgb")

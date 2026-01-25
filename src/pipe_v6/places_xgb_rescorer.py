@@ -48,9 +48,9 @@ LOGGER = logging.getLogger(__name__)
 # ============================================================================
 
 # Default model paths from handover (Phase 4)
-DEFAULT_DECIDER_MODEL = "models/xgb_decider_20260103_132351.json"
-DEFAULT_CALIBRATOR_PATH = "models/xgb_decider_calibrator_isotonic_20260103_132351.pkl"
-DEFAULT_META_PATH = "models/xgb_two_stage_meta_20260103_132351.json"
+DEFAULT_DECIDER_MODEL = "models/xgb_decider_20260124_210218.json"
+DEFAULT_CALIBRATOR_PATH = "models/xgb_decider_calibrator_isotonic_20260124_210218.pkl"
+DEFAULT_META_PATH = "models/xgb_two_stage_meta_20260124_210218.json"
 
 
 def _semantic_enabled() -> bool:
