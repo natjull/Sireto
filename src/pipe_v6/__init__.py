@@ -29,7 +29,6 @@ from .places_orchestrator import (
     process_review_case,
     PlacesProcessingResult,
 )
-from .web_lookup import lookup_candidates, is_places_mode, is_legacy_mode
 
 __all__ = [
     # Config
@@ -54,8 +53,4 @@ __all__ = [
     "XgbTopkCandidate",
     "process_review_case",
     "PlacesProcessingResult",
-    # Unified lookup
-    "lookup_candidates",
-    "is_places_mode",
-    "is_legacy_mode",
 ]

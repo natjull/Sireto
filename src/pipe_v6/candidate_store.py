@@ -1,7 +1,7 @@
 """Common candidate structures for Pipe V6 (tasks 4.x, 5.x).
 
 Defines the unified data model used to represent raw candidates coming from
-RNE, DataGouv, and official web search (Google/Brave) before SIRENE enrichment
+RNE and DataGouv before SIRENE enrichment
 and LLM arbitrage.
 """
 
