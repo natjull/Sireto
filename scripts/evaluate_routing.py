@@ -156,8 +156,22 @@ def load_ground_truth(path: Path) -> pd.DataFrame:
 
 def merge_data(routed_df: pd.DataFrame, gt_df: pd.DataFrame) -> pd.DataFrame:
     """Merge routed results with ground truth."""
+    
+    def normalize_siret(siret):
+        if pd.isna(siret):
+            return None
+        s = str(siret).replace(" ", "").strip()
+        return s.zfill(14) if s else None
+
+    # Prepare GT
+    gt_df = gt_df.copy()
+    gt_df["siret_gt_norm"] = gt_df["siret_gt"].apply(normalize_siret)
+    
+    # Group GT by crm_id to support multi-label
+    gt_grouped = gt_df.groupby("crm_id")["siret_gt_norm"].apply(set).reset_index(name="valid_sirets")
+    
     # Merge on crm_id
-    merged = routed_df.merge(gt_df[["crm_id", "siret_gt"]], on="crm_id", how="left")
+    merged = routed_df.merge(gt_grouped, on="crm_id", how="left")
 
     # Determine chosen SIRET
     if "chosen_siret_final" in merged.columns:
@@ -167,19 +181,22 @@ def merge_data(routed_df: pd.DataFrame, gt_df: pd.DataFrame) -> pd.DataFrame:
     else:
         merged["chosen_siret"] = merged.get("siret_candidate", "")
 
-    # FIX: Normalize SIRETs to 14 chars with zero-padding before comparison
-    # This fixes cases like "7565021800318" vs "07565021800318"
-    def normalize_siret(siret):
-        if pd.isna(siret):
-            return None
-        s = str(siret).replace(" ", "").strip()
-        return s.zfill(14) if s else None
-
     merged["chosen_siret_norm"] = merged["chosen_siret"].apply(normalize_siret)
-    merged["siret_gt_norm"] = merged["siret_gt"].apply(normalize_siret)
 
-    # Add is_correct column (using normalized SIRETs)
-    merged["is_correct"] = merged["chosen_siret_norm"] == merged["siret_gt_norm"]
+    # Check correctness (is chosen in valid set?)
+    def check_correct(row):
+        valid = row["valid_sirets"]
+        if not isinstance(valid, set): # No GT found
+            return False
+        
+        chosen = row["chosen_siret_norm"]
+        if not chosen:
+            return False # NO_MATCH when GT exists is technically a miss (FN) for positive GT
+            
+        return chosen in valid
+
+    merged["is_correct"] = merged.apply(check_correct, axis=1)
+    merged["has_gt"] = merged["valid_sirets"].notna()
 
     # Determine status
     if "final_status" in merged.columns:
@@ -192,7 +209,7 @@ def merge_data(routed_df: pd.DataFrame, gt_df: pd.DataFrame) -> pd.DataFrame:
     LOGGER.info(
         "Merged: %d rows (%.1f%% have ground truth)",
         len(merged),
-        merged["siret_gt"].notna().mean() * 100,
+        merged["has_gt"].mean() * 100,
     )
     return merged
 
@@ -207,7 +224,7 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
     eval_result = RoutingEvaluation()
 
     # Filter to rows with ground truth
-    df_gt = df[df["siret_gt"].notna()].copy()
+    df_gt = df[df["has_gt"]].copy()
     eval_result.total_records = len(df_gt)
 
     if eval_result.total_records == 0:
@@ -248,8 +265,8 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
     no_match_mask = df_gt["status"] == "NO_MATCH"
     no_match_df = df_gt[no_match_mask]
     eval_result.no_match_count = len(no_match_df)
-    # For NO_MATCH, "correct" means there truly was no match (siret_gt is null or special value)
-    eval_result.no_match_had_correct = (no_match_df["siret_gt"].notna() & (no_match_df["siret_gt"] != "")).sum()
+    # For NO_MATCH, "had correct match" means has_gt is True (which is already filtered in df_gt)
+    eval_result.no_match_had_correct = eval_result.no_match_count # Since df_gt only has rows with GT
 
     # FP/FN rates
     eval_result.fp_rate = (

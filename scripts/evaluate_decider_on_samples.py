@@ -11,9 +11,9 @@ Outputs:
 Usage:
   python scripts/evaluate_decider_on_samples.py \
     --samples data/samples_v4_with_ranker.parquet \
-    --model models/xgb_decider_20260103_132351.json \
-    --calibrator models/xgb_decider_calibrator_isotonic_20260103_132351.pkl \
-    --meta models/xgb_two_stage_meta_20260103_132351.json \
+    --model models/xgb_decider_20260124_210218.json \
+    --calibrator models/xgb_decider_calibrator_isotonic_20260124_210218.pkl \
+    --meta models/xgb_two_stage_meta_20260124_210218.json \
     --output reports/decider_eval.json
 """
 
@@ -214,11 +214,11 @@ def _eval_split(df: pd.DataFrame, feature_order: List[str], model, calibrator, s
 def main() -> None:
     p = argparse.ArgumentParser(description="Evaluate XGB decider on samples parquet")
     p.add_argument("--samples", type=Path, default=Path("data/samples_v4_with_ranker.parquet"))
-    p.add_argument("--model", type=Path, default=Path("models/xgb_decider_20260103_132351.json"))
+    p.add_argument("--model", type=Path, default=Path("models/xgb_decider_20260124_210218.json"))
     p.add_argument(
-        "--calibrator", type=Path, default=Path("models/xgb_decider_calibrator_isotonic_20260103_132351.pkl")
+        "--calibrator", type=Path, default=Path("models/xgb_decider_calibrator_isotonic_20260124_210218.pkl")
     )
-    p.add_argument("--meta", type=Path, default=Path("models/xgb_two_stage_meta_20260103_132351.json"))
+    p.add_argument("--meta", type=Path, default=Path("models/xgb_two_stage_meta_20260124_210218.json"))
     p.add_argument("--output", type=Path, default=Path("reports/decider_eval.json"))
     args = p.parse_args()
 
