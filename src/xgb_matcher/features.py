@@ -167,6 +167,10 @@ FEATURE_NAMES: List[str] = [
     "token_overlap_ul",   # D11: token overlap with UL names
     "ul_vs_pm_indicator", # D7: UL vs PM dirigeant source indicator
     "is_crm_school",      # Context: CRM query refers to a school
+    # V6 discriminant features
+    "geo_exact_match",    # INSEE CRM == INSEE candidat (1 if match, 0 otherwise)
+    "name_norm_exact",    # Exact match after normalization (1 if identical, 0 otherwise)
+    "street_number_match", # Street number exact match (1 if match, 0 otherwise)
 ]
 
 
@@ -944,6 +948,31 @@ def make_features_from_preprocessed(
         
     # Context features
     features["is_crm_school"] = is_crm_school
+
+    # -------------------------------------------------------------------------
+    # V6 discriminant features
+    # -------------------------------------------------------------------------
+    
+    # geo_exact_match: INSEE CRM == INSEE candidat
+    crm_insee = crm.get("insee")
+    cand_insee = cand.get("codeCommuneEtablissement") or cand.get("insee")
+    if crm_insee and cand_insee:
+        features["geo_exact_match"] = float(str(crm_insee).strip() == str(cand_insee).strip())
+    else:
+        features["geo_exact_match"] = 0.0
+    
+    # name_norm_exact: Exact match after normalization
+    # Compare best candidate name (by jaro) to CRM name (both normalized)
+    best_cand_name_text = ""
+    if candidate_names:
+        best_cand_name_text = max(candidate_names, key=lambda nm: jaro_sim(crm_name, nm.text)).text
+    features["name_norm_exact"] = float(crm_name == best_cand_name_text and crm_name != "")
+    
+    # street_number_match: Street number exact match
+    if crm_street_num and cand_street_num:
+        features["street_number_match"] = float(str(crm_street_num).strip() == str(cand_street_num).strip())
+    else:
+        features["street_number_match"] = 0.0
 
     return features
 
