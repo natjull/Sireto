@@ -41,6 +41,23 @@ class SigmoidCalibrator:
         calibrated = self.lr.predict_proba(proba.reshape(-1, 1))
         return calibrated
 
+
+def _normalize_siret(value) -> str | None:
+    if pd.isna(value):
+        return None
+    s = str(value).strip().replace(" ", "")
+    if not s or s.lower() == "nan":
+        return None
+    if "e" in s.lower():
+        try:
+            s = str(int(float(s)))
+        except (ValueError, OverflowError):
+            pass
+    digits = "".join(ch for ch in s if ch.isdigit())
+    if not digits:
+        return None
+    return digits.zfill(14)
+
 def _load_feature_order(meta_path: Path | None) -> list[str]:
     if meta_path and meta_path.exists():
         with open(meta_path, "r", encoding="utf-8") as f:
@@ -56,6 +73,7 @@ def main():
     parser.add_argument("--meta", type=Path, default=Path("models/xgb_two_stage_meta_20260124_210218.json"))
     parser.add_argument("--output", type=Path, default=Path("reports/benchmark_v6a_topk.csv"))
     parser.add_argument("--top-k", type=int, default=20)
+    parser.add_argument("--split", type=str, default="test", choices=["train", "dev", "test", "all"])
     args = parser.parse_args()
 
     print(f"Loading samples from {args.samples}...")
@@ -63,8 +81,11 @@ def main():
     
     # Filter for test split
     if "split" in df.columns:
-        df = df[df["split"] == "test"].copy()
-        print(f"Filtered to test split: {len(df)} rows")
+        if args.split != "all":
+            df = df[df["split"] == args.split].copy()
+            print(f"Filtered to {args.split} split: {len(df)} rows")
+        else:
+            print(f"Using all splits: {len(df)} rows")
     else:
         print("Warning: No 'split' column found, using all data")
 
@@ -91,6 +112,8 @@ def main():
         scores = model.predict_proba(X)[:, 1]
     
     df["score"] = scores
+    if "siret" in df.columns:
+        df["siret"] = df["siret"].apply(_normalize_siret)
 
     # Rank and filter Top-K
     print(f"Ranking and filtering Top-{args.top_k}...")
@@ -130,6 +153,10 @@ def main():
         "query_id": "crm_id",
         "siret": "siret_candidate"
     })
+
+    df_topk["crm_id"] = df_topk["crm_id"].astype(str)
+    if "siret_candidate" in df_topk.columns:
+        df_topk["siret_candidate"] = df_topk["siret_candidate"].apply(_normalize_siret)
 
     # Ensure required columns for routing rules are present
     # Some routing rules might look for crm_name, crm_address etc. which might be missing in the samples parquet

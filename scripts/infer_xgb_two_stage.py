@@ -136,16 +136,16 @@ def load_crm(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, sep=delimiter, dtype=str)
 
     # If file already has standardized columns, keep as-is
-    if "crm_name" not in df.columns:
-        df = df.rename(
-            columns={
-                "Client final": "crm_name",
-                "Adresse": "crm_address",
-                "Commune": "crm_city",
-                "Code Postal": "postcode",
-                "Code INSEE": "insee",
-            }
-        )
+    
+    df = df.rename(
+        columns={
+            "Client final": "crm_name",
+            "Adresse": "crm_address",
+            "Commune": "crm_city",
+            "Code Postal": "postcode",
+            "Code INSEE": "insee", "crm_insee": "insee", "crm_cp": "postcode", "crm_adresse": "crm_address", "crm_commune": "crm_city",
+        }
+    )
     for col in ["postcode", "insee"]:
         if col in df.columns:
             df[col] = df[col].apply(
@@ -153,6 +153,9 @@ def load_crm(path: Path) -> pd.DataFrame:
             )
     if "crm_id" not in df.columns:
         df["crm_id"] = df.index
+    print(f"DEBUG: df columns: {df.columns.tolist()}")
+    print(df.head())
+
     return df
 
 
@@ -334,7 +337,7 @@ def _build_candidate_pool_with_debug(
                     min(dept_prefilter_k, len(dept_candidates)),
                     cand_names=names,
                     char_top_k=min(200, prefilter_k),
-                )
+            )
                 extra.extend([dept_candidates[i] for i in idx])
 
         if dept_candidates and semantic_retrieval_k > 0:
@@ -343,7 +346,7 @@ def _build_candidate_pool_with_debug(
                 dept_candidates,
                 semantic_retrieval_k,
                 semantic_retrieval_min_sim,
-            )
+        )
             extra.extend(sem_hits)
 
         if max_dept_candidates and len(extra) > max_dept_candidates:
@@ -369,7 +372,7 @@ def _build_candidate_pool_with_debug(
                 prefilter_k,
                 cand_names=names,
                 char_top_k=min(200, prefilter_k),
-            )
+        )
             if len(idx) >= MIN_CANDIDATES_INFER:
                 candidates = [candidates[i] for i in idx]
             else:
@@ -452,7 +455,7 @@ def _build_candidate_pool(
                     min(dept_prefilter_k, len(dept_candidates)),
                     cand_names=names,
                     char_top_k=min(200, prefilter_k),
-                )
+            )
                 extra.extend([dept_candidates[i] for i in idx])
 
         # Semantic retrieval (ANN-style) to recover CRM_LOC_MISMATCH
@@ -462,7 +465,7 @@ def _build_candidate_pool(
                 dept_candidates,
                 semantic_retrieval_k,
                 semantic_retrieval_min_sim,
-            )
+        )
             extra.extend(sem_hits)
 
         if max_dept_candidates and len(extra) > max_dept_candidates:
@@ -485,7 +488,7 @@ def _build_candidate_pool(
                 prefilter_k,
                 cand_names=names,
                 char_top_k=min(200, prefilter_k),
-            )
+        )
             # FIX: Guarantee minimum candidates by combining TF-IDF + random
             if len(idx) >= MIN_CANDIDATES_INFER:
                 candidates = [candidates[i] for i in idx]
@@ -543,7 +546,7 @@ def main() -> None:
             "Semantic enabled mismatch: meta=%s vs env=%s (train/serve skew risk)",
             meta_semantic,
             semantic_env,
-        )
+    )
 
     ranker_path = args.ranker_fast_model or meta.get("ranker_fast_model") or args.ranker_model or meta.get("ranker_model")
     if not ranker_path:
@@ -596,14 +599,14 @@ def main() -> None:
                 args.dept_prefilter_k, args.max_dept_candidates,
                 args.semantic_retrieval_k, args.semantic_retrieval_min_sim,
                 args.drop_unnamed, args.exclude_closed, tfidf_cache, gt_siret,
-            )
+        )
         else:
             candidates = _build_candidate_pool(
                 store, r, crm_ctx, args.pool_mode, args.prefilter_k,
                 args.dept_prefilter_k, args.max_dept_candidates,
                 args.semantic_retrieval_k, args.semantic_retrieval_min_sim,
                 args.drop_unnamed, args.exclude_closed, tfidf_cache,
-            )
+        )
             debug_info = None
         if not candidates:
             continue
@@ -669,8 +672,8 @@ def main() -> None:
                         build_candidate_names(c),
                         crm_city_norm=crm_ctx.get("crm_city_norm", ""),
                         cand_city_norm=cand_city_norm,
-                    )
                 )
+            )
             feat["_siret"] = siret
             feat["_cand_name"] = primary_name(c) or f"SIRET {siret}"
             feat["_ul_denoms"] = [
@@ -688,7 +691,7 @@ def main() -> None:
                 if semantic_gate_allows(
                     feat.get("name_jaro_max", 0.0),
                     feat.get("name_token_overlap_max", 0.0),
-                ):
+            ):
                     feat["name_semantic_max"] = sem_max
                     feat["name_semantic_second"] = sem_second
                     feat["name_semantic_gap"] = sem_gap
@@ -748,7 +751,7 @@ def main() -> None:
                 "stage1_rank": debug_info.stage1_rank,
                 "stage2_rank": debug_info.stage2_rank,
                 "loss_reason": debug_info.loss_reason,
-            })
+        })
 
         for rank, idx_k in enumerate(topk_idx, start=1):
             siret_k, cand_k = cand_list_n[idx_k]
@@ -787,7 +790,7 @@ def main() -> None:
                 "candidate_last_treatment_date": cand_k.get("last_treatment_date"),
                 "rank": rank,
                 "has_name_evidence": has_name_evidence(feat_row),
-            }
+        }
 
             if args.export_routing_features:
                 row_out.update(
@@ -805,8 +808,8 @@ def main() -> None:
                         "street_number_diff": float(feat_row.get("street_number_diff", 9999)),
                         "name_length_max": float(feat_row.get("name_length_max", 0.0)),
                         "legal_form_category": float(feat_row.get("legal_form_category", 0.0)),
-                    }
-                )
+                }
+            )
 
             rows_out.append(row_out)
 

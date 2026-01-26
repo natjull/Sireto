@@ -1,3 +1,5 @@
+from __future__ import annotations
+import numpy as np
 """
 Route XGBoost top-k results into AUTO / REVIEW with optional Places lookup.
 
@@ -30,11 +32,11 @@ Usage:
     python scripts/route_xgb_results.py --input-path data/topk.csv --output-path output/routed.csv --budget-mode aggressive
 """
 
-from __future__ import annotations
 
 import argparse
 import json
 import logging
+import pickle
 import re
 import sqlite3
 import sys
@@ -67,6 +69,19 @@ from pipe_v6.places_orchestrator import (
 )
 from pipe_v6.places_validator import build_observability_record
 from pipe_v6.places_xgb_rescorer import PlacesXgbRescorer
+from xgb_matcher.routing_risk import build_feature_row, default_feature_columns
+
+class IsotonicCalibrator:
+    def __init__(self, base_estimator, iso_reg):
+        self.base_estimator = base_estimator
+        self.iso_reg = iso_reg
+
+    def predict_proba(self, X):
+        proba = self.base_estimator.predict_proba(X)[:, 1]
+        calibrated = self.iso_reg.predict(proba)
+        calibrated = np.clip(calibrated, 0, 1)
+        return np.column_stack([1 - calibrated, calibrated])
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -166,6 +181,20 @@ def _parse_args() -> argparse.Namespace:
         help="Budget mode: aggressive=minimize Places calls, permissive=maximize recall",
     )
     p.add_argument("--ground-truth", type=Path, default=None, help="Path to ground truth CSV for validation")
+    p.add_argument("--risk-model", type=Path, default=None, help="Path to routing risk model pickle")
+    p.add_argument("--risk-calibrator", type=Path, default=None, help="Path to routing risk calibrator pickle")
+    p.add_argument("--risk-meta", type=Path, default=None, help="Path to routing risk meta JSON")
+    p.add_argument("--risk-threshold", type=float, default=None, help="Override risk threshold")
+    p.add_argument(
+        "--disable-certainty-rules",
+        action="store_true",
+        help="Disable certainty rules (AUTO_CERTAIN) - let risk model decide all cases",
+    )
+    p.add_argument(
+        "--disable-promotion-rules",
+        action="store_true",
+        help="Disable promotion rules - let risk model decide all cases",
+    )
     return p.parse_args()
 
 
@@ -187,6 +216,23 @@ def _safe_str(value, default: str = "") -> str:
     if pd.isna(value):
         return default
     return str(value).strip() or default
+
+
+def _normalize_siret(value) -> str | None:
+    if pd.isna(value):
+        return None
+    s = str(value).strip().replace(" ", "")
+    if not s or s.lower() == "nan":
+        return None
+    if "e" in s.lower():
+        try:
+            s = str(int(float(s)))
+        except (ValueError, OverflowError):
+            pass
+    digits = "".join(ch for ch in s if ch.isdigit())
+    if not digits:
+        return None
+    return digits.zfill(14)
 
 
 def _crm_word_count(raw_name: str) -> int:
@@ -284,7 +330,13 @@ def is_absolute_certainty(row: pd.Series, cfg: RoutingConfig) -> Tuple[bool, str
     if r2.get("enabled", True):
         score_gap = _safe_float(row.get("score_gap"))
         gap_min = r2.get("gap_min", 0.05)  # Default: require 5% gap for identical names
-        if jaro >= r2.get("name_jaro_exact", 1.0) and score >= r2.get("score_min", 0.95) and score_gap >= gap_min:
+                # Homonyme protection: require higher gap in dense areas
+        density = _get_feature(row, "address_density", 1.0)
+        actual_gap_min = gap_min
+        if jaro >= 0.99 and density >= 5.0:
+             actual_gap_min = max(gap_min, 0.25)
+        
+        if jaro >= r2.get("name_jaro_exact", 1.0) and score >= r2.get("score_min", 0.95) and score_gap >= actual_gap_min:
             return True, "identical_name"
 
     # R3: Model certainty + lexical evidence
@@ -452,6 +504,18 @@ def check_blocking_rules(row: pd.Series, cfg: RoutingConfig) -> Tuple[bool, str]
 
 
 def check_promotion_rules(row: pd.Series, cfg: RoutingConfig) -> Tuple[bool, str]:
+    # P0: Model Trust (Priority Over Blocking)
+    score = _safe_float(row.get("score"))
+    score_gap = _safe_float(row.get("score_gap"))
+    
+    # "Trust the Model": If score is high and gap is decent, ignore heuristics.
+    if score >= 0.90 and score_gap >= 0.20:
+        return True, "model_trust_high"
+
+    # "Solo Candidate": If gap is huge, score can be medium.
+    if score >= 0.80 and score_gap >= 0.50:
+        return True, "model_trust_solo"
+
     """
     Check if promotion rules force AUTO.
     Returns (is_promoted, rule_name).
@@ -552,6 +616,40 @@ def apply_budget_mode(
     return threshold * thr_mult, gap_min * gap_mult
 
 
+def _load_risk_assets(
+    model_path: Path | None,
+    calibrator_path: Path | None,
+    meta_path: Path | None,
+) -> Tuple[object | None, object | None, List[str], float | None]:
+    model = None
+    calibrator = None
+    feature_names: List[str] = []
+    threshold = None
+
+    if meta_path and meta_path.exists():
+        with open(meta_path, "r", encoding="utf-8") as f:
+            meta = json.load(f)
+        feature_names = meta.get("features") or []
+        threshold = meta.get("threshold")
+        if not model_path and meta.get("model_path"):
+            model_path = Path(meta.get("model_path"))
+        if not calibrator_path and meta.get("calibrator_path"):
+            calibrator_path = Path(meta.get("calibrator_path"))
+
+    if model_path and model_path.exists():
+        with open(model_path, "rb") as f:
+            model = pickle.load(f)
+
+    if calibrator_path and calibrator_path.exists():
+        with open(calibrator_path, "rb") as f:
+            calibrator = pickle.load(f)
+
+    if not feature_names:
+        feature_names = default_feature_columns()
+
+    return model, calibrator, feature_names, threshold
+
+
 # ============================================================================
 # Phase 4: Main Routing Function (Cost-Aware)
 # ============================================================================
@@ -591,6 +689,14 @@ def route_cost_aware(
         return siren_decision, metadata
 
     # ─────────────────────────────────────────────────────────────
+    # STEP 1.5: Promotion rules (Model Trust - overrides blocking)
+    # ─────────────────────────────────────────────────────────────
+    is_promoted, promo_rule = check_promotion_rules(top1, cfg)
+    if is_promoted:
+        metadata["promoted_by"] = promo_rule
+        return "AUTO", metadata
+
+    # ─────────────────────────────────────────────────────────────
     # STEP 2: Blocking rules (force REVIEW)
     # ─────────────────────────────────────────────────────────────
     is_blocked, block_rule = check_blocking_rules(top1, cfg)
@@ -613,13 +719,7 @@ def route_cost_aware(
     metadata["threshold"] = threshold
     metadata["gap_min"] = gap_min
 
-    # ─────────────────────────────────────────────────────────────
-    # STEP 4: Promotion rules (force AUTO)
-    # ─────────────────────────────────────────────────────────────
-    is_promoted, promo_rule = check_promotion_rules(top1, cfg)
-    if is_promoted:
-        metadata["promoted_by"] = promo_rule
-        return "AUTO", metadata
+
 
     # ─────────────────────────────────────────────────────────────
     # STEP 5: Gap check (ambiguity)
@@ -654,6 +754,59 @@ def route_cost_aware(
 
     return "REVIEW", metadata
 
+
+def route_with_risk_model(
+    top1: pd.Series,
+    top2: pd.Series | None,
+    rows_list: List[pd.Series],
+    cfg: RoutingConfig,
+    risk_model: object,
+    risk_calibrator: object | None,
+    risk_features: List[str],
+    risk_threshold: float,
+    disable_certainty_rules: bool = False,
+    disable_promotion_rules: bool = False,
+) -> Tuple[str, Dict[str, Any]]:
+    metadata: Dict[str, Any] = {}
+
+    # Certainty rules (can be disabled to let risk model decide)
+    if not disable_certainty_rules:
+        is_certain, certainty_rule = is_absolute_certainty(top1, cfg)
+        if is_certain:
+            metadata["certainty_rule"] = certainty_rule
+            return "AUTO_CERTAIN", metadata
+
+    # Same-SIREN resolution (always enabled - it's about picking the right establishment)
+    resolved_row, siren_decision = resolve_same_siren(rows_list, cfg)
+    if siren_decision:
+        metadata["same_siren_resolved"] = True
+        if resolved_row is not None:
+            metadata["resolved_siret"] = _safe_str(resolved_row.get("siret_candidate"))
+            metadata["resolved_score"] = _safe_float(resolved_row.get("score"))
+            metadata["resolved_rank"] = int(_safe_float(resolved_row.get("rank"), 0))
+
+    # Risk model scoring
+    features = build_feature_row(top1, top2, risk_features)
+    if risk_calibrator is not None:
+        proba = risk_calibrator.predict_proba([features])[:, 1]
+    else:
+        proba = risk_model.predict_proba([features])[:, 1]
+
+    score = float(proba[0])
+    metadata["risk_score"] = score
+    metadata["risk_threshold"] = risk_threshold
+
+    # Dual-threshold routing: be more conservative if top candidates have different SIRENs
+    is_same_siren = metadata.get("same_siren_resolved", False)
+    effective_threshold = risk_threshold
+    if not is_same_siren:
+        effective_threshold = max(risk_threshold, 0.98)
+    metadata["risk_threshold_effective"] = effective_threshold
+
+    if score >= effective_threshold:
+        return "AUTO_RISK", metadata
+    return "REVIEW", metadata
+    return "REVIEW", metadata
 
 # ============================================================================
 # Legacy Routing (Backward Compatibility)
@@ -871,6 +1024,16 @@ def main() -> None:
     config = load_config(args.config_path)
     routing_cfg = load_routing_config(args.thresholds)
 
+    risk_model, risk_calibrator, risk_features, risk_threshold = _load_risk_assets(
+        args.risk_model,
+        args.risk_calibrator,
+        args.risk_meta,
+    )
+    if args.risk_threshold is not None:
+        risk_threshold = args.risk_threshold
+    if risk_model is not None and risk_threshold is None:
+        risk_threshold = 0.90
+
     # Override places mode from args
     if args.places_mode:
         config.places_lookup_mode = "places"
@@ -878,7 +1041,10 @@ def main() -> None:
         config.places_lookup_mode = "legacy"
 
     LOGGER.info("Loading input from %s", args.input_path)
-    df = pd.read_csv(args.input_path)
+    df = pd.read_csv(args.input_path, dtype={"crm_id": str, "siret_candidate": str})
+
+    if "siret_candidate" in df.columns:
+        df["siret_candidate"] = df["siret_candidate"].apply(_normalize_siret)
 
     if "crm_id" not in df.columns:
         raise ValueError("Missing required column: crm_id")
@@ -887,6 +1053,12 @@ def main() -> None:
 
     LOGGER.info("Budget mode: %s", args.budget_mode)
     LOGGER.info("Using routing config: %s", args.thresholds if args.thresholds.exists() else "defaults")
+    if risk_model is not None:
+        LOGGER.info("Routing risk model enabled (threshold=%.3f)", risk_threshold)
+        if args.disable_certainty_rules:
+            LOGGER.info("Certainty rules DISABLED (risk model decides all)")
+        if args.disable_promotion_rules:
+            LOGGER.info("Promotion rules DISABLED")
 
     # Open SIRENE cache if Places mode
     conn = None
@@ -920,8 +1092,21 @@ def main() -> None:
         if top1 is None:
             continue
 
-        # Phase 4 routing
-        xgb_status, route_meta = route_cost_aware(top1, top2, all_rows, routing_cfg, args.budget_mode)
+        if risk_model is not None:
+            xgb_status, route_meta = route_with_risk_model(
+                top1,
+                top2,
+                all_rows,
+                routing_cfg,
+                risk_model,
+                risk_calibrator,
+                risk_features,
+                float(risk_threshold) if risk_threshold is not None else 0.9,
+                disable_certainty_rules=args.disable_certainty_rules,
+                disable_promotion_rules=args.disable_promotion_rules,
+            )
+        else:
+            xgb_status, route_meta = route_cost_aware(top1, top2, all_rows, routing_cfg, args.budget_mode)
 
         # Skip AUTO cases if requested
         if args.only_review and xgb_status.startswith("AUTO"):
@@ -948,6 +1133,9 @@ def main() -> None:
         for key in ["certainty_rule", "blocked_by", "promoted_by", "review_reason", "same_siren_resolved"]:
             if key in route_meta:
                 row_out[f"route_{key}"] = route_meta[key]
+        for key in ["risk_score", "risk_threshold"]:
+            if key in route_meta:
+                row_out[f"route_{key}"] = route_meta[key]
         for key in ["resolved_siret", "resolved_score", "resolved_rank"]:
             if key in route_meta:
                 row_out[key] = route_meta[key]
@@ -958,7 +1146,7 @@ def main() -> None:
 
         # Places lookup for REVIEW cases
         final_status = xgb_status
-        final_siret = row_out["chosen_siret_xgb"]
+        final_siret = str(row_out["chosen_siret_xgb"]).strip().replace(".0", "").zfill(14) if pd.notna(row_out["chosen_siret_xgb"]) else None
 
         if args.places_mode and xgb_status.startswith("REVIEW") and conn is not None:
             LOGGER.info("[%d/%d] Processing REVIEW case: crm_id=%s", idx, total, crm_id)
