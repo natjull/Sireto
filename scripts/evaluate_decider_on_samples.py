@@ -151,6 +151,9 @@ def _eval_split(df: pd.DataFrame, feature_order: List[str], model, calibrator, s
     if df.empty:
         return {"split": split_name, "error": "empty"}
 
+    for col in feature_order:
+        if col not in df.columns:
+            df[col] = 0.0
     X = df[feature_order].values.astype(np.float32)
     y = df["label"].values.astype(np.float32)
 
@@ -190,8 +193,8 @@ def _eval_split(df: pd.DataFrame, feature_order: List[str], model, calibrator, s
     }
 
     # Ranking metrics using calibrated scores
-    df_sorted["_score"] = cal_scores
-    df_sorted = df_sorted.sort_values("query_id").reset_index(drop=True)
+    df["_score"] = cal_scores
+    df_sorted = df.sort_values("query_id").reset_index(drop=True)
     y_sorted = df_sorted["label"].values.astype(np.float32)
     scores_sorted = df_sorted["_score"].values.astype(np.float32)
     groups_sorted = df_sorted.groupby("query_id", sort=False).size().values

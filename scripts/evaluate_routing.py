@@ -51,6 +51,7 @@ LOGGER = logging.getLogger(__name__)
 class RoutingEvaluation:
     """Complete routing evaluation results."""
 
+    metric: str = "strict_siret"
     total_records: int = 0
 
     # AUTO metrics
@@ -130,6 +131,49 @@ def _parse_args() -> argparse.Namespace:
 # ============================================================================
 
 
+def _read_csv_auto(path: Path) -> pd.DataFrame:
+    df = pd.read_csv(path, dtype=str)
+    if df.shape[1] == 1 and ";" in df.columns[0]:
+        df = pd.read_csv(path, dtype=str, sep=";")
+    return df
+
+
+def _normalize_siret(value) -> str | None:
+    if pd.isna(value):
+        return None
+    s = str(value).strip().replace(" ", "")
+    if not s or s.lower() == "nan":
+        return None
+    if "e" in s.lower():
+        try:
+            s = str(int(float(s)))
+        except (ValueError, OverflowError):
+            pass
+    digits = "".join(ch for ch in s if ch.isdigit())
+    if not digits:
+        return None
+    return digits.zfill(14)
+
+
+def _normalize_siren(value) -> str | None:
+    if pd.isna(value):
+        return None
+    s = str(value).strip().replace(" ", "")
+    if not s or s.lower() == "nan":
+        return None
+    if "e" in s.lower():
+        try:
+            s = str(int(float(s)))
+        except (ValueError, OverflowError):
+            pass
+    digits = "".join(ch for ch in s if ch.isdigit())
+    if not digits:
+        return None
+    if len(digits) >= 9:
+        return digits[:9].zfill(9)
+    return digits.zfill(9)
+
+
 def load_routed(path: Path) -> pd.DataFrame:
     """Load routed results."""
     df = pd.read_csv(path, dtype=str)
@@ -142,13 +186,22 @@ def load_ground_truth(path: Path) -> pd.DataFrame:
     if path.suffix == ".parquet":
         df = pd.read_parquet(path)
     else:
-        df = pd.read_csv(path, dtype=str)
+        df = _read_csv_auto(path)
 
-    # Normalize column names
-    if "siret" in df.columns and "siret_gt" not in df.columns:
-        df = df.rename(columns={"siret": "siret_gt"})
-    if "ground_truth_siret" in df.columns:
-        df = df.rename(columns={"ground_truth_siret": "siret_gt"})
+    if "label" in df.columns and "siret" in df.columns and ("crm_id" in df.columns or "query_id" in df.columns):
+        id_col = "crm_id" if "crm_id" in df.columns else "query_id"
+        df = df[df["label"].astype(str) == "1"][ [id_col, "siret"] ].rename(
+            columns={id_col: "crm_id", "siret": "siret_gt"}
+        )
+    else:
+        if "siret" in df.columns and "siret_gt" not in df.columns:
+            df = df.rename(columns={"siret": "siret_gt"})
+        if "ground_truth_siret" in df.columns:
+            df = df.rename(columns={"ground_truth_siret": "siret_gt"})
+        if "gt_siret" in df.columns and "siret_gt" not in df.columns:
+            df = df.rename(columns={"gt_siret": "siret_gt"})
+        if "crm_id" not in df.columns and "query_id" in df.columns:
+            df = df.rename(columns={"query_id": "crm_id"})
 
     LOGGER.info("Loaded ground truth: %d rows from %s", len(df), path)
     return df
@@ -156,21 +209,26 @@ def load_ground_truth(path: Path) -> pd.DataFrame:
 
 def merge_data(routed_df: pd.DataFrame, gt_df: pd.DataFrame) -> pd.DataFrame:
     """Merge routed results with ground truth."""
-    
-    def normalize_siret(siret):
-        if pd.isna(siret):
-            return None
-        s = str(siret).replace(" ", "").strip()
-        return s.zfill(14) if s else None
-
-    # Prepare GT
     gt_df = gt_df.copy()
-    gt_df["siret_gt_norm"] = gt_df["siret_gt"].apply(normalize_siret)
-    
-    # Group GT by crm_id to support multi-label
-    gt_grouped = gt_df.groupby("crm_id")["siret_gt_norm"].apply(set).reset_index(name="valid_sirets")
-    
-    # Merge on crm_id
+    if "crm_id" not in gt_df.columns:
+        raise ValueError("Ground truth is missing crm_id")
+
+    gt_df["crm_id"] = gt_df["crm_id"].astype(str)
+    if "siret_gt" in gt_df.columns:
+        gt_df["siret_gt_norm"] = gt_df["siret_gt"].apply(_normalize_siret)
+    else:
+        gt_df["siret_gt_norm"] = None
+
+    if "siren_gt" in gt_df.columns:
+        gt_df["siren_gt_norm"] = gt_df["siren_gt"].apply(_normalize_siren)
+    else:
+        gt_df["siren_gt_norm"] = gt_df["siret_gt_norm"].apply(lambda s: s[:9] if s else None)
+
+    gt_grouped = gt_df.groupby("crm_id").agg(
+        valid_sirets=("siret_gt_norm", lambda x: set(v for v in x if v)),
+        valid_sirens=("siren_gt_norm", lambda x: set(v for v in x if v)),
+    ).reset_index()
+
     merged = routed_df.merge(gt_grouped, on="crm_id", how="left")
 
     # Determine chosen SIRET
@@ -181,22 +239,26 @@ def merge_data(routed_df: pd.DataFrame, gt_df: pd.DataFrame) -> pd.DataFrame:
     else:
         merged["chosen_siret"] = merged.get("siret_candidate", "")
 
-    merged["chosen_siret_norm"] = merged["chosen_siret"].apply(normalize_siret)
+    merged["chosen_siret_norm"] = merged["chosen_siret"].apply(_normalize_siret)
+    merged["chosen_siren_norm"] = merged["chosen_siret_norm"].apply(lambda s: s[:9] if s else None)
 
-    # Check correctness (is chosen in valid set?)
-    def check_correct(row):
-        valid = row["valid_sirets"]
-        if not isinstance(valid, set): # No GT found
+    def _check_correct(row, valid_col: str, chosen_col: str) -> bool:
+        valid = row.get(valid_col)
+        chosen = row.get(chosen_col)
+        if not isinstance(valid, set) or not chosen:
             return False
-        
-        chosen = row["chosen_siret_norm"]
-        if not chosen:
-            return False # NO_MATCH when GT exists is technically a miss (FN) for positive GT
-            
         return chosen in valid
 
-    merged["is_correct"] = merged.apply(check_correct, axis=1)
-    merged["has_gt"] = merged["valid_sirets"].notna()
+    merged["is_correct_strict"] = merged.apply(
+        lambda row: _check_correct(row, "valid_sirets", "chosen_siret_norm"), axis=1
+    )
+    merged["is_correct_siren"] = merged.apply(
+        lambda row: _check_correct(row, "valid_sirens", "chosen_siren_norm"), axis=1
+    )
+    merged["has_gt"] = merged.apply(
+        lambda row: isinstance(row.get("valid_sirets"), set) or isinstance(row.get("valid_sirens"), set),
+        axis=1,
+    )
 
     # Determine status
     if "final_status" in merged.columns:
@@ -219,9 +281,9 @@ def merge_data(routed_df: pd.DataFrame, gt_df: pd.DataFrame) -> pd.DataFrame:
 # ============================================================================
 
 
-def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluation:
+def evaluate_routing(df: pd.DataFrame, cost_per_call: float, correct_col: str, metric: str) -> RoutingEvaluation:
     """Evaluate routing decisions."""
-    eval_result = RoutingEvaluation()
+    eval_result = RoutingEvaluation(metric=metric)
 
     # Filter to rows with ground truth
     df_gt = df[df["has_gt"]].copy()
@@ -238,7 +300,7 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
     auto_mask = df_gt["status"].str.startswith("AUTO", na=False)
     auto_df = df_gt[auto_mask]
     eval_result.auto_count = len(auto_df)
-    eval_result.auto_correct = auto_df["is_correct"].sum()
+    eval_result.auto_correct = auto_df[correct_col].sum()
     eval_result.auto_incorrect = eval_result.auto_count - eval_result.auto_correct
     eval_result.auto_rate = eval_result.auto_count / eval_result.total_records
     eval_result.auto_precision = (
@@ -251,14 +313,14 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
     review_mask = df_gt["status"].str.startswith("REVIEW", na=False)
     review_df = df_gt[review_mask]
     eval_result.review_count = len(review_df)
-    eval_result.review_would_be_correct = review_df["is_correct"].sum()
+    eval_result.review_would_be_correct = review_df[correct_col].sum()
     eval_result.review_would_be_incorrect = eval_result.review_count - eval_result.review_would_be_correct
 
     # MATCH_PLACES metrics
     places_mask = df_gt["status"] == "MATCH_PLACES"
     places_df = df_gt[places_mask]
     eval_result.match_places_count = len(places_df)
-    eval_result.match_places_correct = places_df["is_correct"].sum()
+    eval_result.match_places_correct = places_df[correct_col].sum()
     eval_result.match_places_incorrect = eval_result.match_places_count - eval_result.match_places_correct
 
     # NO_MATCH metrics
@@ -275,7 +337,7 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
         else 0
     )
 
-    total_correct = df_gt["is_correct"].sum()
+    total_correct = df_gt[correct_col].sum()
     eval_result.fn_rate = (
         eval_result.review_would_be_correct / total_correct
         if total_correct > 0
@@ -297,9 +359,9 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
                 "total": len(seg_df),
                 "auto_count": len(seg_auto),
                 "auto_rate": len(seg_auto) / len(seg_df) if len(seg_df) > 0 else 0,
-                "auto_correct": seg_auto["is_correct"].sum(),
+                "auto_correct": seg_auto[correct_col].sum(),
                 "auto_precision": (
-                    seg_auto["is_correct"].sum() / len(seg_auto)
+                    seg_auto[correct_col].sum() / len(seg_auto)
                     if len(seg_auto) > 0
                     else 0
                 ),
@@ -311,8 +373,8 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
             rule_df = df_gt[df_gt["route_certainty_rule"] == rule]
             eval_result.certainty_metrics[rule] = {
                 "count": len(rule_df),
-                "correct": rule_df["is_correct"].sum(),
-                "precision": rule_df["is_correct"].mean(),
+                "correct": rule_df[correct_col].sum(),
+                "precision": rule_df[correct_col].mean(),
             }
 
     return eval_result
@@ -323,8 +385,7 @@ def evaluate_routing(df: pd.DataFrame, cost_per_call: float) -> RoutingEvaluatio
 # ============================================================================
 
 
-def save_evaluation(eval_result: RoutingEvaluation, output_path: Path) -> None:
-    """Save evaluation results to JSON."""
+def _evaluation_to_dict(eval_result: RoutingEvaluation) -> Dict[str, Any]:
     def _to_builtin(obj):
         if isinstance(obj, dict):
             return {k: _to_builtin(v) for k, v in obj.items()}
@@ -338,6 +399,7 @@ def save_evaluation(eval_result: RoutingEvaluation, output_path: Path) -> None:
         return obj
 
     result_dict = {
+        "metric": eval_result.metric,
         "total_records": eval_result.total_records,
         "auto_metrics": {
             "count": eval_result.auto_count,
@@ -374,17 +436,32 @@ def save_evaluation(eval_result: RoutingEvaluation, output_path: Path) -> None:
         "certainty_rule_breakdown": eval_result.certainty_metrics,
     }
 
+    return _to_builtin(result_dict)
+
+
+def save_evaluation(
+    eval_result: RoutingEvaluation,
+    output_path: Path,
+    extra_metrics: Dict[str, RoutingEvaluation] | None = None,
+) -> None:
+    """Save evaluation results to JSON."""
+    result_dict = _evaluation_to_dict(eval_result)
+    if extra_metrics:
+        result_dict["additional_metrics"] = {
+            name: _evaluation_to_dict(res) for name, res in extra_metrics.items()
+        }
+
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with open(output_path, "w", encoding="utf-8") as f:
-        json.dump(_to_builtin(result_dict), f, indent=2, ensure_ascii=False)
+        json.dump(result_dict, f, indent=2, ensure_ascii=False)
 
     LOGGER.info("Wrote evaluation to %s", output_path)
 
 
-def print_summary(eval_result: RoutingEvaluation) -> None:
+def print_summary(eval_result: RoutingEvaluation, label: str) -> None:
     """Print evaluation summary."""
     LOGGER.info("=" * 60)
-    LOGGER.info("ROUTING EVALUATION SUMMARY")
+    LOGGER.info("ROUTING EVALUATION SUMMARY (%s)", label)
     LOGGER.info("=" * 60)
     LOGGER.info("Total records: %d", eval_result.total_records)
     LOGGER.info("")
@@ -429,11 +506,13 @@ def main() -> None:
     merged = merge_data(routed_df, gt_df)
 
     # Evaluate
-    eval_result = evaluate_routing(merged, args.cost_per_call)
+    eval_strict = evaluate_routing(merged, args.cost_per_call, "is_correct_strict", "strict_siret")
+    eval_siren = evaluate_routing(merged, args.cost_per_call, "is_correct_siren", "same_siren")
 
     # Output
-    save_evaluation(eval_result, args.output_path)
-    print_summary(eval_result)
+    save_evaluation(eval_strict, args.output_path, extra_metrics={"same_siren": eval_siren})
+    print_summary(eval_strict, "STRICT_SIRET")
+    print_summary(eval_siren, "SAME_SIREN")
 
 
 if __name__ == "__main__":
