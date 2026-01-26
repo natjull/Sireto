@@ -1,0 +1,76 @@
+{
+  "metric": "strict_siret",
+  "total_records": 2512,
+  "auto_metrics": {
+    "count": 1676,
+    "correct": 1674,
+    "incorrect": 2,
+    "rate": 0.6671974522292994,
+    "precision": 0.9988066825775657
+  },
+  "review_metrics": {
+    "count": 836,
+    "would_be_correct": 476,
+    "would_be_incorrect": 360
+  },
+  "match_places_metrics": {
+    "count": 0,
+    "correct": 0,
+    "incorrect": 0
+  },
+  "no_match_metrics": {
+    "count": 0,
+    "had_correct_match": 0
+  },
+  "error_rates": {
+    "fp_rate": 0.0011933174224343676,
+    "fn_rate": 0.2213953488372093
+  },
+  "cost_analysis": {
+    "estimated_places_calls": 836,
+    "estimated_cost_usd": 0.836,
+    "places_calls_saved": 1676,
+    "savings_usd": 1.676
+  },
+  "segment_breakdown": {},
+  "certainty_rule_breakdown": {},
+  "additional_metrics": {
+    "same_siren": {
+      "metric": "same_siren",
+      "total_records": 2512,
+      "auto_metrics": {
+        "count": 1676,
+        "correct": 1674,
+        "incorrect": 2,
+        "rate": 0.6671974522292994,
+        "precision": 0.9988066825775657
+      },
+      "review_metrics": {
+        "count": 836,
+        "would_be_correct": 476,
+        "would_be_incorrect": 360
+      },
+      "match_places_metrics": {
+        "count": 0,
+        "correct": 0,
+        "incorrect": 0
+      },
+      "no_match_metrics": {
+        "count": 0,
+        "had_correct_match": 0
+      },
+      "error_rates": {
+        "fp_rate": 0.0011933174224343676,
+        "fn_rate": 0.2213953488372093
+      },
+      "cost_analysis": {
+        "estimated_places_calls": 836,
+        "estimated_cost_usd": 0.836,
+        "places_calls_saved": 1676,
+        "savings_usd": 1.676
+      },
+      "segment_breakdown": {},
+      "certainty_rule_breakdown": {}
+    }
+  }
+}
