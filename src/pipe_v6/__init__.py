@@ -1,6 +1,6 @@
 """Pipe V6/V7 package: CRM ↔ SIRENE matching pipeline.
 
-V7 adds Places-guided candidate generation as an alternative to legacy web search.
+V7 uses simplified Places fallback: "Places as CRM Repair".
 """
 
 from .config import PipelineConfig, load_config
@@ -12,22 +12,9 @@ from .serper_places_client import (
     PlacesResult,
     PlacesSearchResponse,
 )
-from .places_candidate_generator import (
-    SireneCandidate,
-    generate_candidates_by_address,
-    generate_candidates_by_radius,
-    merge_candidate_pools,
-)
-from .places_validator import (
-    validate_places_candidate,
-    make_places_decision,
-    PlacesDecisionResult,
-)
-from .places_orchestrator import (
-    CrmRow,
-    XgbTopkCandidate,
-    process_review_case,
-    PlacesProcessingResult,
+from .places_fallback import (
+    fallback_with_places,
+    PlacesFallbackResult,
 )
 
 __all__ = [
@@ -39,18 +26,7 @@ __all__ = [
     "build_places_query",
     "PlacesResult",
     "PlacesSearchResponse",
-    # Candidate generation
-    "SireneCandidate",
-    "generate_candidates_by_address",
-    "generate_candidates_by_radius",
-    "merge_candidate_pools",
-    # Validation
-    "validate_places_candidate",
-    "make_places_decision",
-    "PlacesDecisionResult",
-    # Orchestration
-    "CrmRow",
-    "XgbTopkCandidate",
-    "process_review_case",
-    "PlacesProcessingResult",
+    # Places Fallback (V7 simplified)
+    "fallback_with_places",
+    "PlacesFallbackResult",
 ]
