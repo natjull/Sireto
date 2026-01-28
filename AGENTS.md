@@ -109,14 +109,14 @@ flowchart TD
     %% Sortie directe
     F -->|AUTO| G[Sortie MATCH (XGB)<br/>SIRET=top1 + score + features]
 
-    %% Fallback Places (Phase 4)
-    F -->|REVIEW| H[Places-guided Lookup<br/>(Serper.dev + Arm A/B)]
-    H --> I[XGB Rescorer (Stage 2)<br/>Places-as-CRM]
-    I --> J[Validation déterministe<br/>(Gate + Address Close)]
-    J --> K{Match Places ?}
-
-    K -->|Oui| L[Upgrade MATCH (PLACES)<br/>SIRET retenu + preuves]
-    K -->|Non| M[Conserver REVIEW<br/>(ou NO_MATCH selon thresholds)]
+    %% Fallback Places (Simplifié - "Places as CRM Repair")
+    F -->|REVIEW| H[Serper Places API<br/>(nom + adresse)]
+    H --> I{Dept-guard<br/>places.postcode[:2] == crm.postcode[:2]}
+    I -->|Non| M[NO_MATCH]
+    I -->|Oui| J[Rerun XGB Pipeline<br/>avec Places top-1 comme CRM]
+    J --> K{XGB Status ?}
+    K -->|AUTO| L[MATCH_PLACES<br/>SIRET retenu]
+    K -->|REVIEW| M
 
     G & L & M --> N[Export final<br/>CSV/JSON + métriques/logs]
 ```
@@ -124,7 +124,8 @@ flowchart TD
 ### Principes du Pipe V7
 
 - **Plus de LLM** : uniquement des features ML (XGBoost) + des règles déterministes.
-- **Sécurité** : 74.5% AUTO @ 99.84% precision. On ne sort `MATCH` (via web) que si l'évidence est "multi-sources + cohérente SIRENE".
-- **Places-guided** : lookup uniquement pour `REVIEW`, via Serper.dev (Arm A/B).
-- **Traçabilité** : pour chaque décision `MATCH`, conserver "preuves" (sites/URLs + checks passés).
+- **Sécurité** : 74.5% AUTO @ 99.84% precision.
+- **Places-guided simplifié** : "Places as CRM Repair" - Google identifie l'entreprise, XGB identifie le SIRET.
+- **Dept-guard** : rejet si le code postal Places ne correspond pas au département CRM.
+- **Post-Places binaire** : soit MATCH_PLACES, soit NO_MATCH (pas de REVIEW après Places).
 

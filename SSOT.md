@@ -62,5 +62,59 @@ python scripts/route_xgb_results.py \
   --output-path routed.csv
 ```
 
+## 6. Places Fallback (REVIEW → MATCH_PLACES ou NO_MATCH)
+
+Pour les cas REVIEW, un fallback Places simple est disponible : **"Places as CRM Repair"**.
+
+### Principe
+
+```python
+def fallback_places(crm):
+    places = search_places(crm.name, crm.address, crm.city)
+    
+    if not places:
+        return NO_MATCH
+    
+    # Dept-guard: reject if Google found something in wrong area
+    if places[0].postcode[:2] != crm.postcode[:2]:
+        return NO_MATCH
+    
+    # Use Google's top-1 as "repaired CRM" and rerun EXACT same pipeline
+    repaired_crm = {
+        "crm_name": places[0].title,
+        "crm_address": places[0].address,
+        "postcode": places[0].postcode,
+    }
+    
+    result = run_full_xgb_pipeline(repaired_crm)  # Stages 1, 2, 3 identical
+    
+    if result.status == "AUTO":
+        return MATCH_PLACES(result.siret)
+    else:
+        return NO_MATCH  # Post-Places, no more REVIEW possible
+```
+
+### Key Insight
+
+Google connaît l'identité des entreprises (successions, changements de nom, fusions). 
+On fait confiance à Google pour "quelle entreprise" et à XGBoost pour "quel SIRET".
+
+### Usage
+
+```bash
+python scripts/route_xgb_results.py \
+  --input-path topk.csv \
+  --places-mode \
+  --output-path routed.csv
+```
+
+### Fichiers
+
+| Fichier | Description |
+|---------|-------------|
+| `src/pipe_v6/places_fallback.py` | Logique du fallback simplifié |
+| `src/pipe_v6/serper_places_client.py` | Client API Serper + cache |
+| `src/xgb_matcher/infer.py` | Engine d'inférence réutilisable |
+
 ---
 *Note : Ce document est la source unique de vérité pour le routing SIRETO. Toute modification des seuils ou des modèles doit être reflétée ici.*
