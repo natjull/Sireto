@@ -20,7 +20,7 @@ import pickle
 import sys
 from pathlib import Path
 from dataclasses import dataclass
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -36,10 +36,11 @@ from src.xgb_matcher.blocking import (
     dedupe_candidates,
     department_from_code,
     extract_numeric_tokens,
-    filter_candidates_by_address_hash,
-    filter_candidates_by_numeric_tokens,
     build_tfidf_index,
+    build_char_tfidf_index,
     prefilter_candidates_tfidf,
+    build_address_hash_index,
+    build_numeric_token_index,
 )
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
@@ -85,6 +86,19 @@ class SigmoidCalibrator:
 
     def predict(self, X):
         return (self.predict_proba(X)[:, 1] >= 0.5).astype(int)
+
+
+
+@dataclass
+class DeptCacheItem:
+    candidates: List[dict]
+    tfidf_vec: Any  # TfidfVectorizer
+    tfidf_mat: Any  # sparse matrix
+    tfidf_names: List[str]
+    char_vec: Any = None
+    char_mat: Any = None
+    addr_index: Dict[str, List[int]] | None = None
+    num_index: Dict[str, List[int]] | None = None
 
 
 def _parse_args() -> argparse.Namespace:
@@ -317,6 +331,58 @@ def _check_gt_in_list(candidates: List[dict], gt_siret: str | None) -> bool:
     return False
 
 
+def _get_dept_cache_item(
+    *,
+    dept_cache: Dict[str, DeptCacheItem],
+    dept_key: str | None,
+    store: PartitionedCandidateStore,
+    insee: str | None,
+    postcode: str | None,
+    drop_unnamed: bool,
+    exclude_closed: bool,
+    max_dept_candidates: int,
+    tfidf_name_mode: str,
+    siren_siblings: bool,
+) -> DeptCacheItem | None:
+    if not dept_key:
+        return None
+    cached = dept_cache.get(dept_key)
+    if cached is not None:
+        return cached
+
+    dept_candidates = store.load_by_department(insee, postcode)
+    if not dept_candidates:
+        return None
+    dept_candidates = _apply_candidate_filters(dept_candidates, drop_unnamed, exclude_closed)
+    if max_dept_candidates and len(dept_candidates) > max_dept_candidates:
+        dept_candidates = dept_candidates[:max_dept_candidates]
+
+    vec, mat, names = build_tfidf_index(
+        dept_candidates,
+        name_mode=tfidf_name_mode,
+        siren_siblings=siren_siblings,
+    )
+    char_vec, char_mat = (None, None)
+    if names:
+        char_vec, char_mat = build_char_tfidf_index(names)
+
+    addr_index = build_address_hash_index(dept_candidates)
+    num_index = build_numeric_token_index(dept_candidates)
+
+    item = DeptCacheItem(
+        candidates=dept_candidates,
+        tfidf_vec=vec,
+        tfidf_mat=mat,
+        tfidf_names=names,
+        char_vec=char_vec,
+        char_mat=char_mat,
+        addr_index=addr_index,
+        num_index=num_index,
+    )
+    dept_cache[dept_key] = item
+    return item
+
+
 def _build_candidate_pool_with_debug(
     store: PartitionedCandidateStore,
     crm_row: dict,
@@ -329,7 +395,7 @@ def _build_candidate_pool_with_debug(
     semantic_retrieval_min_sim: float,
     drop_unnamed: bool,
     exclude_closed: bool,
-    tfidf_cache: Dict[Tuple[str, str], tuple],
+    dept_cache: Dict[str, DeptCacheItem],
     tfidf_name_mode: str = "bag",
     siren_siblings: bool = True,
     min_candidates: int = 150,
@@ -372,56 +438,95 @@ def _build_candidate_pool_with_debug(
             else:
                 debug.loss_reason = "FILTERED_OTHER"
 
+    whitelisted_sirets = set()
     if pool_mode == "multi":
-        dept_candidates = store.load_by_department(insee, postcode)
-        dept_candidates = _apply_candidate_filters(dept_candidates, drop_unnamed, exclude_closed)
-        if max_dept_candidates and len(dept_candidates) > max_dept_candidates:
-            dept_candidates = dept_candidates[:max_dept_candidates]
-        extra: List[dict] = []
-
-        addr_hash = address_hash(crm_pre.get("crm_street_num"), crm_pre.get("crm_street_name"))
-        extra.extend(filter_candidates_by_address_hash(dept_candidates, addr_hash))
-
-        numeric_tokens = extract_numeric_tokens(crm_name)
-        if numeric_tokens:
-            extra.extend(filter_candidates_by_numeric_tokens(dept_candidates, numeric_tokens))
-
-        if dept_candidates and (dept_prefilter_k > 0):
-            dept_key = department_from_code(insee, postcode) or "unknown"
-            key = ("dept", dept_key)
-            vec, mat, names = tfidf_cache.get(key, (None, None, None))
-            if vec is None:
-                vec, mat, names = build_tfidf_index(dept_candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
-                tfidf_cache[key] = (vec, mat, names)
-            if vec is not None and mat is not None:
-                idx = prefilter_candidates_tfidf(
-                    crm_name,
-                    vec,
-                    mat,
-                    min(dept_prefilter_k, len(dept_candidates)),
-                    cand_names=names,
-                    char_top_k=min(char_top_k, dept_prefilter_k),
-            )
-                extra.extend([dept_candidates[i] for i in idx])
-
-        if dept_candidates and semantic_retrieval_k > 0:
-            sem_hits = _semantic_top_k_candidates(
-                crm_name,
-                dept_candidates,
-                semantic_retrieval_k,
-                semantic_retrieval_min_sim,
+        dept_key = department_from_code(insee, postcode)
+        cache_item = _get_dept_cache_item(
+            dept_cache=dept_cache,
+            dept_key=dept_key,
+            store=store,
+            insee=insee,
+            postcode=postcode,
+            drop_unnamed=drop_unnamed,
+            exclude_closed=exclude_closed,
+            max_dept_candidates=max_dept_candidates,
+            tfidf_name_mode=tfidf_name_mode,
+            siren_siblings=siren_siblings,
         )
-            extra.extend(sem_hits)
+        if cache_item:
+            dept_candidates = cache_item.candidates
+            extra: List[dict] = []
 
-        if max_dept_candidates and len(extra) > max_dept_candidates:
-            extra = extra[:max_dept_candidates]
+            addr_h = address_hash(crm_pre.get("crm_street_num"), crm_pre.get("crm_street_name"))
+            if addr_h and cache_item.addr_index:
+                addr_indices = cache_item.addr_index.get(addr_h, [])
+                for idx in addr_indices:
+                    cand = dept_candidates[idx]
+                    extra.append(cand)
+                    siret = str(cand.get("siret") or "")
+                    if siret:
+                        whitelisted_sirets.add(siret)
 
-        for cand in extra:
-            siret = str(cand.get("siret") or "")
-            if siret:
-                pool[siret] = cand
+            numeric_tokens = extract_numeric_tokens(crm_name)
+            if numeric_tokens and cache_item.num_index:
+                num_indices: set[int] = set()
+                for token in numeric_tokens:
+                    num_indices.update(cache_item.num_index.get(token, []))
+                for idx in sorted(num_indices):
+                    cand = dept_candidates[idx]
+                    extra.append(cand)
+                    siret = str(cand.get("siret") or "")
+                    if siret:
+                        whitelisted_sirets.add(siret)
 
-    candidates = list(pool.values())
+            if dept_candidates and (dept_prefilter_k > 0):
+                vec = cache_item.tfidf_vec
+                mat = cache_item.tfidf_mat
+                names = cache_item.tfidf_names
+                char_vec = cache_item.char_vec
+                char_mat = cache_item.char_mat
+
+                if vec is not None and mat is not None:
+                    idx = prefilter_candidates_tfidf(
+                        crm_name,
+                        vec,
+                        mat,
+                        min(dept_prefilter_k, len(dept_candidates)),
+                        cand_names=names,
+                        char_top_k=min(char_top_k, dept_prefilter_k),
+                        char_vectorizer=char_vec,
+                        char_matrix=char_mat,
+                    )
+                    extra.extend([dept_candidates[i] for i in idx])
+
+            if dept_candidates and semantic_retrieval_k > 0:
+                sem_hits = _semantic_top_k_candidates(
+                    crm_name,
+                    dept_candidates,
+                    semantic_retrieval_k,
+                    semantic_retrieval_min_sim,
+                )
+                extra.extend(sem_hits)
+
+            if max_dept_candidates and len(extra) > max_dept_candidates:
+                extra = extra[:max_dept_candidates]
+
+            for cand in extra:
+                siret = str(cand.get("siret") or "")
+                if siret:
+                    pool[siret] = cand
+
+
+    pool_candidates = list(pool.values())
+    candidates_dict = {str(c.get("siret") or ""): c for c in pool_candidates if c.get("siret")}
+    if candidates_dict:
+        idf_map, default_idf = compute_name_idf_map(candidates_dict)
+    else:
+        idf_map, default_idf = {}, 0.0
+    set_global_name_idf_map(idf_map, default_idf)
+    attach_address_density(pool_candidates)
+
+    candidates = pool_candidates
     
     # Step 3: TF-IDF prefilter (Issue 1: use Variant C settings)
     pre_tfidf_size = len(candidates)
@@ -435,20 +540,29 @@ def _build_candidate_pool_with_debug(
                 prefilter_k,
                 cand_names=names,
                 char_top_k=min(char_top_k, prefilter_k),
-        )
-            if len(idx) >= min_candidates:
-                candidates = [candidates[i] for i in idx]
+            )
+            tfidf_cands = [candidates[i] for i in idx]
+            tfidf_sirets = {str(c.get("siret")) for c in tfidf_cands if c.get("siret")}
+
+            # Merge TF-IDF results with whitelisted extras
+            final_cands = list(tfidf_cands)
+            for cand in pool.values():
+                siret = str(cand.get("siret") or "")
+                if siret in whitelisted_sirets and siret not in tfidf_sirets:
+                    final_cands.append(cand)
+
+            if len(final_cands) >= min_candidates:
+                candidates = final_cands
             else:
-                tfidf_cands = [candidates[i] for i in idx]
-                tfidf_set = set(idx)
-                remaining = [c for i, c in enumerate(candidates) if i not in tfidf_set]
-                needed = min(min_candidates, prefilter_k) - len(tfidf_cands)
+                final_sirets = {str(c.get("siret") or "") for c in final_cands if c.get("siret")}
+                remaining = [c for c in candidates if str(c.get("siret") or "") not in final_sirets]
+                needed = min(min_candidates, prefilter_k) - len(final_cands)
                 if needed > 0 and remaining:
                     seed = _stable_seed(str(crm_row.get("crm_id") or crm_row.get("crm_name") or ""))
                     random_extra = _deterministic_sample(remaining, needed, seed)
-                    candidates = tfidf_cands + random_extra
+                    candidates = final_cands + random_extra
                 else:
-                    candidates = tfidf_cands
+                    candidates = final_cands
 
     if debug:
         debug.tfidf_pool_size = len(candidates)
@@ -456,7 +570,6 @@ def _build_candidate_pool_with_debug(
         if debug.in_filtered_pool and not debug.in_tfidf_pool:
             debug.loss_reason = "PRUNED_BY_TFIDF"
 
-    attach_address_density(candidates)
     return candidates, debug
 
 
@@ -472,7 +585,7 @@ def _build_candidate_pool(
     semantic_retrieval_min_sim: float,
     drop_unnamed: bool,
     exclude_closed: bool,
-    tfidf_cache: Dict[Tuple[str, str], tuple],
+    dept_cache: Dict[str, DeptCacheItem],
     tfidf_name_mode: str = "bag",
     siren_siblings: bool = True,
     min_candidates: int = 150,
@@ -493,57 +606,95 @@ def _build_candidate_pool(
 
     pool = dedupe_candidates(_apply_candidate_filters(base_candidates, drop_unnamed, exclude_closed))
 
+    whitelisted_sirets = set()
     if pool_mode == "multi":
-        dept_candidates = store.load_by_department(insee, postcode)
-        dept_candidates = _apply_candidate_filters(dept_candidates, drop_unnamed, exclude_closed)
-        if max_dept_candidates and len(dept_candidates) > max_dept_candidates:
-            dept_candidates = dept_candidates[:max_dept_candidates]
-        extra: List[dict] = []
-
-        addr_hash = address_hash(crm_pre.get("crm_street_num"), crm_pre.get("crm_street_name"))
-        extra.extend(filter_candidates_by_address_hash(dept_candidates, addr_hash))
-
-        numeric_tokens = extract_numeric_tokens(crm_name)
-        if numeric_tokens:
-            extra.extend(filter_candidates_by_numeric_tokens(dept_candidates, numeric_tokens))
-
-        if dept_candidates and (dept_prefilter_k > 0):
-            dept_key = department_from_code(insee, postcode) or "unknown"
-            key = ("dept", dept_key)
-            vec, mat, names = tfidf_cache.get(key, (None, None, None))
-            if vec is None:
-                vec, mat, names = build_tfidf_index(dept_candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
-                tfidf_cache[key] = (vec, mat, names)
-            if vec is not None and mat is not None:
-                idx = prefilter_candidates_tfidf(
-                    crm_name,
-                    vec,
-                    mat,
-                    min(dept_prefilter_k, len(dept_candidates)),
-                    cand_names=names,
-                    char_top_k=min(char_top_k, dept_prefilter_k),
-            )
-                extra.extend([dept_candidates[i] for i in idx])
-
-        # Semantic retrieval (ANN-style) to recover CRM_LOC_MISMATCH
-        if dept_candidates and semantic_retrieval_k > 0:
-            sem_hits = _semantic_top_k_candidates(
-                crm_name,
-                dept_candidates,
-                semantic_retrieval_k,
-                semantic_retrieval_min_sim,
+        dept_key = department_from_code(insee, postcode)
+        cache_item = _get_dept_cache_item(
+            dept_cache=dept_cache,
+            dept_key=dept_key,
+            store=store,
+            insee=insee,
+            postcode=postcode,
+            drop_unnamed=drop_unnamed,
+            exclude_closed=exclude_closed,
+            max_dept_candidates=max_dept_candidates,
+            tfidf_name_mode=tfidf_name_mode,
+            siren_siblings=siren_siblings,
         )
-            extra.extend(sem_hits)
+        if cache_item:
+            dept_candidates = cache_item.candidates
+            extra: List[dict] = []
 
-        if max_dept_candidates and len(extra) > max_dept_candidates:
-            extra = extra[:max_dept_candidates]
+            addr_h = address_hash(crm_pre.get("crm_street_num"), crm_pre.get("crm_street_name"))
+            if addr_h and cache_item.addr_index:
+                addr_indices = cache_item.addr_index.get(addr_h, [])
+                for idx in addr_indices:
+                    cand = dept_candidates[idx]
+                    extra.append(cand)
+                    siret = str(cand.get("siret") or "")
+                    if siret:
+                        whitelisted_sirets.add(siret)
 
-        for cand in extra:
-            siret = str(cand.get("siret") or "")
-            if siret:
-                pool[siret] = cand
+            numeric_tokens = extract_numeric_tokens(crm_name)
+            if numeric_tokens and cache_item.num_index:
+                num_indices: set[int] = set()
+                for token in numeric_tokens:
+                    num_indices.update(cache_item.num_index.get(token, []))
+                for idx in sorted(num_indices):
+                    cand = dept_candidates[idx]
+                    extra.append(cand)
+                    siret = str(cand.get("siret") or "")
+                    if siret:
+                        whitelisted_sirets.add(siret)
 
-    candidates = list(pool.values())
+            if dept_candidates and (dept_prefilter_k > 0):
+                vec = cache_item.tfidf_vec
+                mat = cache_item.tfidf_mat
+                names = cache_item.tfidf_names
+                char_vec = cache_item.char_vec
+                char_mat = cache_item.char_mat
+
+                if vec is not None and mat is not None:
+                    idx = prefilter_candidates_tfidf(
+                        crm_name,
+                        vec,
+                        mat,
+                        min(dept_prefilter_k, len(dept_candidates)),
+                        cand_names=names,
+                        char_top_k=min(char_top_k, dept_prefilter_k),
+                        char_vectorizer=char_vec,
+                        char_matrix=char_mat,
+                    )
+                    extra.extend([dept_candidates[i] for i in idx])
+
+            if dept_candidates and semantic_retrieval_k > 0:
+                sem_hits = _semantic_top_k_candidates(
+                    crm_name,
+                    dept_candidates,
+                    semantic_retrieval_k,
+                    semantic_retrieval_min_sim,
+                )
+                extra.extend(sem_hits)
+
+            if max_dept_candidates and len(extra) > max_dept_candidates:
+                extra = extra[:max_dept_candidates]
+
+            for cand in extra:
+                siret = str(cand.get("siret") or "")
+                if siret:
+                    pool[siret] = cand
+
+
+    pool_candidates = list(pool.values())
+    candidates_dict = {str(c.get("siret") or ""): c for c in pool_candidates if c.get("siret")}
+    if candidates_dict:
+        idf_map, default_idf = compute_name_idf_map(candidates_dict)
+    else:
+        idf_map, default_idf = {}, 0.0
+    set_global_name_idf_map(idf_map, default_idf)
+    attach_address_density(pool_candidates)
+
+    candidates = pool_candidates
     # Issue 1: TF-IDF prefilter with Variant C settings for better recall
     if prefilter_k and len(candidates) > prefilter_k:
         vec, mat, names = build_tfidf_index(candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
@@ -555,13 +706,21 @@ def _build_candidate_pool(
                 prefilter_k,
                 cand_names=names,
                 char_top_k=min(char_top_k, prefilter_k),
-        )
+            )
+            tfidf_cands = [candidates[i] for i in idx]
+            tfidf_sirets = {str(c.get("siret")) for c in tfidf_cands if c.get("siret")}
+
+            # Merge TF-IDF results with whitelisted extras
+            final_cands = list(tfidf_cands)
+            for cand in pool.values():
+                siret = str(cand.get("siret") or "")
+                if siret in whitelisted_sirets and siret not in tfidf_sirets:
+                    final_cands.append(cand)
+
             # Guarantee minimum candidates by combining TF-IDF + random padding
-            if len(idx) >= min_candidates:
-                candidates = [candidates[i] for i in idx]
+            if len(final_cands) >= min_candidates:
+                candidates = final_cands
             else:
-                # Combine TF-IDF matches with random samples
-                tfidf_cands = [candidates[i] for i in idx]
                 tfidf_set = set(idx)
                 remaining = [c for i, c in enumerate(candidates) if i not in tfidf_set]
                 needed = min(min_candidates, prefilter_k) - len(tfidf_cands)
@@ -572,7 +731,6 @@ def _build_candidate_pool(
                 else:
                     candidates = tfidf_cands
 
-    attach_address_density(candidates)
     return candidates
 
 
@@ -660,7 +818,33 @@ def main() -> None:
             logger.info("Calibrator: %s", calib_path)
 
     store = PartitionedCandidateStore(args.partitions_dir)
-    tfidf_cache: Dict[Tuple[str, str], tuple] = {}
+    # Replaced tfidf_cache with dept_cache
+    dept_cache: Dict[str, DeptCacheItem] = {}
+
+    # Warmup departments
+    if args.pool_mode == "multi":
+        dept_samples: Dict[str, Tuple[str | None, str | None]] = {}
+        for r in crm_records:
+            dept = department_from_code(r.get("insee"), r.get("postcode"))
+            if dept and dept not in dept_samples:
+                dept_samples[dept] = (r.get("insee"), r.get("postcode"))
+
+        logger.info("Warming up cache for %d departments...", len(dept_samples))
+        for dept in tqdm(sorted(dept_samples.keys()), desc="Warmup"):
+            insee_val, postcode_val = dept_samples[dept]
+            _get_dept_cache_item(
+                dept_cache=dept_cache,
+                dept_key=dept,
+                store=store,
+                insee=insee_val,
+                postcode=postcode_val,
+                drop_unnamed=args.drop_unnamed,
+                exclude_closed=args.exclude_closed,
+                max_dept_candidates=args.max_dept_candidates,
+                tfidf_name_mode=args.tfidf_name_mode,
+                siren_siblings=args.siren_siblings,
+            )
+        logger.info("Warmup complete. Cache size: %d depts", len(dept_cache))
 
     # Debug GT mode setup
     debug_gt_mode = args.debug_gt
@@ -684,7 +868,7 @@ def main() -> None:
                 store, r, crm_ctx, args.pool_mode, args.prefilter_k,
                 args.dept_prefilter_k, args.max_dept_candidates,
                 args.semantic_retrieval_k, args.semantic_retrieval_min_sim,
-                args.drop_unnamed, args.exclude_closed, tfidf_cache,
+                args.drop_unnamed, args.exclude_closed, dept_cache,
                 tfidf_name_mode=args.tfidf_name_mode,
                 siren_siblings=args.siren_siblings,
                 min_candidates=args.min_candidates,
@@ -696,7 +880,7 @@ def main() -> None:
                 store, r, crm_ctx, args.pool_mode, args.prefilter_k,
                 args.dept_prefilter_k, args.max_dept_candidates,
                 args.semantic_retrieval_k, args.semantic_retrieval_min_sim,
-                args.drop_unnamed, args.exclude_closed, tfidf_cache,
+                args.drop_unnamed, args.exclude_closed, dept_cache,
                 tfidf_name_mode=args.tfidf_name_mode,
                 siren_siblings=args.siren_siblings,
                 min_candidates=args.min_candidates,
@@ -709,11 +893,6 @@ def main() -> None:
         cand_list = [(c.get("siret"), c) for c in candidates if c.get("siret")]
         if not cand_list:
             continue
-
-        # Compute IDF map for this candidate pool (CRITICAL for idf_name feature)
-        candidates_dict = {str(siret): c for siret, c in cand_list if siret}
-        idf_map, default_idf = compute_name_idf_map(candidates_dict)
-        set_global_name_idf_map(idf_map, default_idf)
 
         # Stage 1 features (no semantic)
         feats_stage1 = [make_features_from_preprocessed(crm_ctx, c, skip_semantic=True) for _, c in cand_list]
