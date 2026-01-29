@@ -17,8 +17,6 @@ Usage:
 from __future__ import annotations
 
 import json
-import logging
-import os
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -30,13 +28,8 @@ import xgboost as xgb
 from xgboost import XGBClassifier
 
 from .blocking import (
-    address_hash,
     attach_address_density,
     dedupe_candidates,
-    department_from_code,
-    extract_numeric_tokens,
-    filter_candidates_by_address_hash,
-    filter_candidates_by_numeric_tokens,
     build_tfidf_index,
     prefilter_candidates_tfidf,
 )
@@ -53,10 +46,7 @@ from .features import (
 from .candidates import compute_name_idf_map
 from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
-from .semantic import batch_encode_texts, top2_semantic_similarities_batch
-
-LOGGER = logging.getLogger(__name__)
-
+from .semantic import top2_semantic_similarities_batch
 
 @dataclass
 class InferenceResult:
@@ -118,6 +108,8 @@ class XgbInferenceEngine:
         store: PartitionedCandidateStore,
         feature_order: List[str],
         risk_model: Any | None = None,
+        risk_calibrator: Any | None = None,
+        risk_features: List[str] | None = None,
         risk_threshold: float = 0.835,
         calibrator: Any | None = None,
     ):
@@ -126,6 +118,8 @@ class XgbInferenceEngine:
         self.store = store
         self.feature_order = feature_order
         self.risk_model = risk_model
+        self.risk_calibrator = risk_calibrator
+        self.risk_features = risk_features or []
         self.risk_threshold = risk_threshold
         self.calibrator = calibrator
         self._tfidf_cache: Dict[Tuple[str, str], tuple] = {}
@@ -139,6 +133,7 @@ class XgbInferenceEngine:
         meta_path: Path | str | None = None,
         risk_model_path: Path | str | None = None,
         risk_meta_path: Path | str | None = None,
+        risk_calibrator_path: Path | str | None = None,
         calibrator_path: Path | str | None = None,
     ) -> "XgbInferenceEngine":
         """Load models and create engine."""
@@ -165,6 +160,7 @@ class XgbInferenceEngine:
         # Load risk model if provided
         risk_model = None
         risk_threshold = 0.835
+        risk_features: List[str] = []
         if risk_model_path:
             risk_path = Path(risk_model_path)
             if risk_path.exists():
@@ -177,6 +173,14 @@ class XgbInferenceEngine:
                 with open(risk_meta) as f:
                     meta = json.load(f)
                 risk_threshold = meta.get("threshold", 0.835)
+                risk_features = meta.get("features") or []
+
+        risk_calibrator = None
+        if risk_calibrator_path:
+            calib_path = Path(risk_calibrator_path)
+            if calib_path.exists():
+                with open(calib_path, "rb") as f:
+                    risk_calibrator = pickle.load(f)
         
         # Load calibrator if provided
         calibrator = None
@@ -192,6 +196,8 @@ class XgbInferenceEngine:
             store=store,
             feature_order=feature_order,
             risk_model=risk_model,
+            risk_calibrator=risk_calibrator,
+            risk_features=risk_features,
             risk_threshold=risk_threshold,
             calibrator=calibrator,
         )
@@ -202,6 +208,8 @@ class XgbInferenceEngine:
         top_k: int = 5,
         prefilter_k: int = 500,
         pool_mode: str = "insee_then_postcode",
+        drop_unnamed: bool = True,
+        exclude_closed: bool = False,
     ) -> InferenceResult:
         """Run full two-stage inference on a single CRM row.
         
@@ -213,9 +221,10 @@ class XgbInferenceEngine:
         # Build candidate pool
         candidates = self._build_candidate_pool(
             crm_row=crm_row,
-            crm_pre=crm_pre,
             pool_mode=pool_mode,
             prefilter_k=prefilter_k,
+            drop_unnamed=drop_unnamed,
+            exclude_closed=exclude_closed,
         )
         
         if not candidates:
@@ -340,8 +349,12 @@ class XgbInferenceEngine:
             top1_row["score_gap"] = score_gap
             top1_row["score_ratio"] = score_ratio
             
-            risk_features = build_feature_row(top1_row, top2_row, default_feature_columns())
-            risk_score = float(self.risk_model.predict_proba([risk_features])[:, 1][0])
+            feature_list = self.risk_features or default_feature_columns()
+            risk_features = build_feature_row(top1_row, top2_row, feature_list)
+            if self.risk_calibrator is not None:
+                risk_score = float(self.risk_calibrator.predict_proba([risk_features])[:, 1][0])
+            else:
+                risk_score = float(self.risk_model.predict_proba([risk_features])[:, 1][0])
             
             if risk_score >= self.risk_threshold:
                 status = "AUTO"
@@ -377,9 +390,10 @@ class XgbInferenceEngine:
     def _build_candidate_pool(
         self,
         crm_row: Dict[str, Any],
-        crm_pre: Dict[str, Any],
         pool_mode: str,
         prefilter_k: int,
+        drop_unnamed: bool,
+        exclude_closed: bool,
     ) -> List[Dict[str, Any]]:
         """Build candidate pool from partitioned store."""
         insee = crm_row.get("insee")
@@ -395,8 +409,11 @@ class XgbInferenceEngine:
         else:
             base_candidates = self.store.load_by_insee(insee) + self.store.load_by_postcode(postcode)
         
-        # Filter unnamed candidates
-        base_candidates = [c for c in base_candidates if build_candidate_names(c)]
+        base_candidates = self._apply_candidate_filters(
+            base_candidates,
+            drop_unnamed=drop_unnamed,
+            exclude_closed=exclude_closed,
+        )
         pool = dedupe_candidates(base_candidates)
         candidates = list(pool.values())
         
@@ -425,6 +442,20 @@ class XgbInferenceEngine:
         
         attach_address_density(candidates)
         return candidates
+
+    def _apply_candidate_filters(
+        self,
+        candidates: List[Dict[str, Any]],
+        *,
+        drop_unnamed: bool,
+        exclude_closed: bool,
+    ) -> List[Dict[str, Any]]:
+        out = candidates
+        if drop_unnamed:
+            out = [c for c in out if build_candidate_names(c)]
+        if exclude_closed:
+            out = [c for c in out if str(c.get("etat_admin") or "").strip().upper() != "F"]
+        return out
     
     def _rescue_by_address(
         self,
