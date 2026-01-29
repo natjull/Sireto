@@ -1,8 +1,13 @@
 from __future__ import annotations
 
-from typing import Dict, Iterable, List
+import json
+import pickle
+from pathlib import Path
+from typing import Dict, Iterable, List, Tuple
 
 import pandas as pd
+
+from .calibration import load_calibrator
 
 
 BASE_FEATURES: List[str] = [
@@ -62,7 +67,9 @@ def build_feature_row(
     values["score_top1"] = score_top1
     values["score_top2"] = score_top2
     values["score_gap"] = score_top1 - score_top2
-    values["score_ratio"] = score_top1 / score_top2 if score_top2 > 0 else 100.0
+    # Use floor 0.001 to align with training dataset
+    denom = score_top2 if score_top2 > 1e-6 else 0.001
+    values["score_ratio"] = score_top1 / denom
 
     for feat in feats:
         v1 = _safe_float(top1.get(feat))
@@ -72,3 +79,30 @@ def build_feature_row(
         values[f"delta_{feat}"] = v1 - v2
 
     return [values.get(name, 0.0) for name in feature_names]
+
+
+def load_risk_model(
+    model_path: Path,
+    meta_path: Path,
+    calibrator_path: Path | None = None
+) -> Tuple[object, object | None, List[str], float]:
+    """Load risk model assets (model, calibrator, meta)."""
+    with open(meta_path, "r", encoding="utf-8") as f:
+        meta = json.load(f)
+    
+    features = meta.get("features", default_feature_columns())
+    threshold = meta.get("threshold", 0.835)
+    
+    with open(model_path, "rb") as f:
+        model = pickle.load(f)
+        
+    calibrator = None
+    if calibrator_path and calibrator_path.exists():
+        try:
+            calibrator = load_calibrator(calibrator_path)
+        except Exception:
+            # Fallback for standard pickles if not wrapped
+            with open(calibrator_path, "rb") as f:
+                calibrator = pickle.load(f)
+                
+    return model, calibrator, features, threshold

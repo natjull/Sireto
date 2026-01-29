@@ -32,12 +32,16 @@ from xgboost import XGBClassifier
 
 if TYPE_CHECKING:
     from .profile import InferenceProfile
-
 from .blocking import (
-    attach_address_density,
-    dedupe_candidates,
     build_tfidf_index,
+    build_char_tfidf_index,
     prefilter_candidates_tfidf,
+    dedupe_candidates,
+    attach_address_density,
+    address_hash,
+    extract_numeric_tokens,
+    build_address_hash_index,
+    build_numeric_token_index,
 )
 from .features import (
     FEATURE_NAMES,
@@ -53,6 +57,27 @@ from .candidates import compute_name_idf_map
 from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
 from .semantic import top2_semantic_similarities_batch, is_semantic_available
+from .calibration import load_calibrator
+
+
+def _department_from_code(insee: str | None, postcode: str | None) -> str | None:
+    if insee and len(str(insee)) >= 2:
+        return str(insee)[:2]
+    if postcode and len(str(postcode)) >= 2:
+        return str(postcode)[:2]
+    return None
+
+
+@dataclass
+class DeptCacheItem:
+    candidates: List[dict]
+    tfidf_vec: Any
+    tfidf_mat: Any
+    tfidf_names: List[str]
+    char_vec: Any = None
+    char_mat: Any = None
+    addr_index: Dict[str, List[int]] | None = None
+    num_index: Dict[str, List[int]] | None = None
 
 @dataclass
 class InferenceResult:
@@ -146,7 +171,7 @@ class XgbInferenceEngine:
         self.stage1_top_n = stage1_top_n
         self.drop_unnamed = drop_unnamed
         self.exclude_closed = exclude_closed
-        self._tfidf_cache: Dict[Tuple[str, str], tuple] = {}
+        self._dept_cache: Dict[str, DeptCacheItem] = {}
         
         # Fail-fast: semantic must be enabled
         if os.getenv("XGB_SEMANTIC_ENABLED", "0") != "1":
@@ -217,13 +242,14 @@ class XgbInferenceEngine:
                     meta = json.load(f)
                 risk_threshold = meta.get("threshold", 0.835)
                 risk_features = meta.get("features") or []
+                if not risk_calibrator_path:
+                    risk_calibrator_path = meta.get("calibrator_path")
 
         risk_calibrator = None
         if risk_calibrator_path:
             calib_path = Path(risk_calibrator_path)
             if calib_path.exists():
-                with open(calib_path, "rb") as f:
-                    risk_calibrator = pickle.load(f)
+                risk_calibrator = load_calibrator(calib_path)
         
         # Load calibrator if provided
         calibrator = None
@@ -279,13 +305,21 @@ class XgbInferenceEngine:
         if profile.risk_model_path and profile.risk_model_path.exists():
             with open(profile.risk_model_path, "rb") as f:
                 risk_model = pickle.load(f)
+        risk_calibrator_path = None
         if profile.risk_meta_path and profile.risk_meta_path.exists():
             with open(profile.risk_meta_path) as f:
                 meta = json.load(f)
             risk_features = meta.get("features") or []
             risk_threshold = meta.get("threshold", profile.risk_threshold)
+            risk_calibrator_path = meta.get("calibrator_path")
         
-        # Load calibrator
+        # Load risk calibrator (if available)
+        if risk_calibrator_path:
+            calib_path = Path(risk_calibrator_path)
+            if calib_path.exists():
+                risk_calibrator = load_calibrator(calib_path)
+
+        # Load decider calibrator
         calibrator = None
         if profile.calibrator_path and profile.calibrator_path.exists():
             with open(profile.calibrator_path, "rb") as f:
@@ -332,9 +366,10 @@ class XgbInferenceEngine:
             exclude_closed = self.exclude_closed
 
         # Build candidate pool (uses instance config from profile)
-        candidates = self._build_candidate_pool(
+        candidates, idf_map, default_idf = self._build_candidate_pool(
             crm_row=crm_row,
             crm_id=crm_input.crm_id,
+            crm_pre=crm_pre,
             pool_mode=pool_mode,
             drop_unnamed=drop_unnamed,
             exclude_closed=exclude_closed,
@@ -365,9 +400,7 @@ class XgbInferenceEngine:
                 pool_size=0,
             )
         
-        # Compute IDF map
-        candidates_dict = {str(siret): c for siret, c in cand_list if siret}
-        idf_map, default_idf = compute_name_idf_map(candidates_dict)
+        # Compute IDF map from full candidate pool (pre-TF-IDF)
         set_global_name_idf_map(idf_map, default_idf)
         
         # Stage 1: Ranker (no semantic)
@@ -440,7 +473,8 @@ class XgbInferenceEngine:
         top1_score = float(scores[top1_idx]) if topk_idx else 0.0
         top2_score = float(scores[topk_idx[1]]) if len(topk_idx) > 1 else 0.0
         score_gap = top1_score - top2_score
-        score_ratio = top1_score / (top2_score + 1e-9) if top2_score > 0 else 1.0
+        denom = top2_score if top2_score > 1e-6 else 0.001
+        score_ratio = top1_score / denom
         top1_siret = str(cand_list_n[top1_idx][0])
         top1_feat = feats_n[top1_idx]
         
@@ -456,6 +490,7 @@ class XgbInferenceEngine:
             if len(topk_idx) > 1:
                 top2_idx = topk_idx[1]
                 top2_row = pd.Series(feats_n[top2_idx])
+                top2_row["score"] = float(scores[top2_idx])
             
             top1_row = pd.Series(top1_feat)
             top1_row["score"] = top1_score
@@ -504,10 +539,11 @@ class XgbInferenceEngine:
         self,
         crm_row: Dict[str, Any],
         crm_id: str,
+        crm_pre: Dict[str, Any],
         pool_mode: str,
         drop_unnamed: bool,
         exclude_closed: bool,
-    ) -> List[Dict[str, Any]]:
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, float], float]:
         """Build candidate pool from partitioned store.
         
         Uses instance config (prefilter_k, min_candidates, tfidf_name_mode, siren_siblings).
@@ -518,6 +554,9 @@ class XgbInferenceEngine:
         crm_name = crm_row.get("crm_name", "")
         
         base_candidates: List[Dict] = []
+        whitelisted_sirets: set[str] = set()
+
+        # Load base candidates
         if pool_mode == "insee_then_postcode":
             if insee:
                 base_candidates = self.store.load_by_insee(insee)
@@ -525,14 +564,68 @@ class XgbInferenceEngine:
                 base_candidates = self.store.load_by_postcode(postcode)
         else:
             base_candidates = self.store.load_by_insee(insee) + self.store.load_by_postcode(postcode)
-        
+
         base_candidates = self._apply_candidate_filters(
             base_candidates,
             drop_unnamed=drop_unnamed,
             exclude_closed=exclude_closed,
         )
         pool = dedupe_candidates(base_candidates)
-        candidates = list(pool.values())
+
+        if pool_mode == "multi":
+            dept_key = _department_from_code(insee, postcode)
+            cache_item = self._get_dept_cache_item(
+                dept_key=dept_key,
+                insee=insee,
+                postcode=postcode,
+                drop_unnamed=drop_unnamed,
+                exclude_closed=exclude_closed,
+            )
+            if cache_item:
+                dept_candidates = cache_item.candidates
+                extra: List[Dict[str, Any]] = []
+
+                addr_h = address_hash(
+                    crm_pre.get("crm_street_num"),
+                    crm_pre.get("crm_street_name"),
+                )
+                if addr_h and cache_item.addr_index:
+                    addr_indices = cache_item.addr_index.get(addr_h, [])
+                    for idx in addr_indices:
+                        cand = dept_candidates[idx]
+                        extra.append(cand)
+                        siret = str(cand.get("siret") or "")
+                        if siret:
+                            whitelisted_sirets.add(siret)
+
+                numeric_tokens = extract_numeric_tokens(crm_name)
+                if numeric_tokens and cache_item.num_index:
+                    num_indices: set[int] = set()
+                    for token in numeric_tokens:
+                        num_indices.update(cache_item.num_index.get(token, []))
+                    for idx in sorted(num_indices):
+                        cand = dept_candidates[idx]
+                        extra.append(cand)
+                        siret = str(cand.get("siret") or "")
+                        if siret:
+                            whitelisted_sirets.add(siret)
+
+                for cand in extra:
+                    siret = str(cand.get("siret") or "")
+                    if siret:
+                        pool[siret] = cand
+
+        pool_candidates = list(pool.values())
+        candidates_dict = {
+            str(c.get("siret") or ""): c for c in pool_candidates if c.get("siret")
+        }
+        if candidates_dict:
+            idf_map, default_idf = compute_name_idf_map(candidates_dict)
+        else:
+            idf_map, default_idf = {}, 0.0
+        attach_address_density(pool_candidates)
+
+        candidates = pool_candidates
         
         # TF-IDF prefilter (uses instance config)
         prefilter_k = self.prefilter_k
@@ -546,31 +639,103 @@ class XgbInferenceEngine:
                 name_mode=self.tfidf_name_mode,
                 siren_siblings=self.siren_siblings,
             )
+            char_vec, char_mat = (None, None)
+            if names:
+                char_vec, char_mat = build_char_tfidf_index(names)
             if vec is not None and mat is not None:
                 idx = prefilter_candidates_tfidf(
-                    crm_name, vec, mat, prefilter_k,
-                    cand_names=names, char_top_k=char_top_k,
+                    crm_name,
+                    vec,
+                    mat,
+                    prefilter_k,
+                    cand_names=names,
+                    char_top_k=char_top_k,
+                    char_vectorizer=char_vec,
+                    char_matrix=char_mat,
                 )
-                if len(idx) >= min_candidates:
-                    candidates = [candidates[i] for i in idx]
+                
+                # Identify TF-IDF winners
+                tfidf_cands = [candidates[i] for i in idx]
+                tfidf_sirets = {str(c.get("siret")) for c in tfidf_cands if c.get("siret")}
+                
+                # Whitelist rescue: ensure strong address matches survive TF-IDF
+                final_cands = list(tfidf_cands)
+                for cand in pool.values():
+                    siret = str(cand.get("siret") or "")
+                    if siret in whitelisted_sirets and siret not in tfidf_sirets:
+                        final_cands.append(cand)
+                
+                if len(final_cands) >= min_candidates:
+                    candidates = final_cands
                 else:
                     # Deterministic padding with crm_id as seed
                     import random
-                    tfidf_cands = [candidates[i] for i in idx]
-                    tfidf_set = set(idx)
-                    remaining = [c for i, c in enumerate(candidates) if i not in tfidf_set]
-                    needed = min_candidates - len(tfidf_cands)
+                    final_sirets = {str(c.get("siret") or "") for c in final_cands if c.get("siret")}
+                    remaining = [c for c in candidates if str(c.get("siret") or "") not in final_sirets]
+                    needed = min(min_candidates, prefilter_k) - len(final_cands)
                     if needed > 0 and remaining:
-                        # Deterministic seed from crm_id (stable across runs)
-                        seed = self._stable_seed(crm_id)
+                        # Deterministic seed aligned with legacy script (crm_id or crm_name fallback)
+                        seed_val = str(crm_id) if crm_id else ""
+                        if not seed_val:
+                            seed_val = crm_row.get("crm_name", "")
+
+                        seed = self._stable_seed(seed_val)
                         rng = random.Random(seed)
                         random_extra = rng.sample(remaining, min(needed, len(remaining)))
-                        candidates = tfidf_cands + random_extra
+                        candidates = final_cands + random_extra
                     else:
-                        candidates = tfidf_cands
+                        candidates = final_cands
         
-        attach_address_density(candidates)
-        return candidates
+        return candidates, idf_map, default_idf
+
+    def _get_dept_cache_item(
+        self,
+        *,
+        dept_key: str | None,
+        insee: str | None,
+        postcode: str | None,
+        drop_unnamed: bool,
+        exclude_closed: bool,
+    ) -> DeptCacheItem | None:
+        if not dept_key:
+            return None
+        cached = self._dept_cache.get(dept_key)
+        if cached is not None:
+            return cached
+
+        dept_candidates = self.store.load_by_department(insee, postcode)
+        if not dept_candidates:
+            return None
+        dept_candidates = self._apply_candidate_filters(
+            dept_candidates,
+            drop_unnamed=drop_unnamed,
+            exclude_closed=exclude_closed,
+        )
+
+        vec, mat, names = build_tfidf_index(
+            dept_candidates,
+            name_mode=self.tfidf_name_mode,
+            siren_siblings=self.siren_siblings,
+        )
+        char_vec, char_mat = (None, None)
+        if names:
+            char_vec, char_mat = build_char_tfidf_index(names)
+
+        addr_index = build_address_hash_index(dept_candidates)
+        num_index = build_numeric_token_index(dept_candidates)
+
+        item = DeptCacheItem(
+            candidates=dept_candidates,
+            tfidf_vec=vec,
+            tfidf_mat=mat,
+            tfidf_names=names,
+            char_vec=char_vec,
+            char_mat=char_mat,
+            addr_index=addr_index,
+            num_index=num_index,
+        )
+        self._dept_cache[dept_key] = item
+        return item
 
     def _apply_candidate_filters(
         self,

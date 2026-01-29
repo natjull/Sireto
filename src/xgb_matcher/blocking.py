@@ -12,7 +12,7 @@ Provides lightweight, dependency-free helpers to:
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable, List, Dict, Optional, Set, Tuple
+from typing import Iterable, List, Dict, Optional, Set, Tuple, Any
 import re
 
 import numpy as np
@@ -250,14 +250,35 @@ def build_tfidf_index(
     return vectorizer, matrix, names
 
 
+def build_char_tfidf_index(
+    cand_names: List[str],
+) -> Tuple[Optional[TfidfVectorizer], Optional[Any]]:
+    """Build char-ngram TF-IDF index for acronym/typo matching."""
+    if not cand_names:
+        return None, None
+    char_vec = TfidfVectorizer(
+        analyzer="char_wb",
+        ngram_range=(3, 5),
+        lowercase=False,
+        min_df=1,
+    )
+    try:
+        char_mat = char_vec.fit_transform(cand_names)
+        return char_vec, char_mat
+    except ValueError:
+        return None, None
+
+
 def prefilter_candidates_tfidf(
     crm_name: str,
     vectorizer: TfidfVectorizer,
-    cand_matrix,
+    cand_matrix: Any,
     top_k: int,
     *,
     cand_names: List[str] | None = None,
     char_top_k: int | None = None,
+    char_vectorizer: TfidfVectorizer | None = None,
+    char_matrix: Any | None = None,
 ) -> List[int]:
     """Return candidate indices for top-k TF-IDF similarity.
     
@@ -287,17 +308,18 @@ def prefilter_candidates_tfidf(
     
     # Always try char-ngram fallback for better recall (not just when word fails)
     char_indices = set()
-    if cand_names:
-        char_vec = TfidfVectorizer(
-            analyzer="char_wb",
-            ngram_range=(3, 5),
-            lowercase=False,
-            min_df=1,
-        )
+    
+    # Use cached char index if provided, otherwise fit on-the-fly (slow!)
+    c_vec = char_vectorizer
+    c_mat = char_matrix
+    
+    if (c_vec is None or c_mat is None) and cand_names:
+        c_vec, c_mat = build_char_tfidf_index(cand_names)
+            
+    if c_vec is not None and c_mat is not None:
         try:
-            char_mat = char_vec.fit_transform(cand_names)
-            q_char = char_vec.transform([crm_norm])
-            char_sims = q_char @ char_mat.T
+            q_char = c_vec.transform([crm_norm])
+            char_sims = q_char @ c_mat.T
             char_row = char_sims.getrow(0)
             if char_row.nnz > 0:
                 c_idx = char_row.indices
@@ -327,6 +349,27 @@ def prefilter_candidates_tfidf(
     else:
         # Only char matches available
         return list(char_indices)[:top_k]
+
+
+def build_address_hash_index(candidates: Iterable[dict]) -> Dict[str, List[int]]:
+    """Build O(1) index for address hash filtering (stores candidate indices)."""
+    index = defaultdict(list)
+    for idx, cand in enumerate(candidates):
+        h = candidate_address_hash(cand)
+        if h:
+            index[h].append(idx)
+    return dict(index)
+
+
+def build_numeric_token_index(candidates: Iterable[dict]) -> Dict[str, List[int]]:
+    """Build O(1) index for numeric token filtering (stores candidate indices)."""
+    index = defaultdict(list)
+    for idx, cand in enumerate(candidates):
+        tokens = candidate_numeric_tokens(cand)
+        for t in tokens:
+            index[t].append(idx)
+    return dict(index)
+
 
 
 def normalize_text_for_tfidf(text: str | None) -> str:
