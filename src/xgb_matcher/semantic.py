@@ -11,6 +11,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Iterable, Optional, List, Tuple, Dict
 
+import logging
 import numpy as np
 
 try:
@@ -18,6 +19,9 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     SentenceTransformer = None
 
+# Global flag to track if we've already warned about semantic unavailability
+_SEMANTIC_WARNED: bool = False
+_logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
 _ENCODERS: dict[str, "SentenceTransformer"] = {}
@@ -28,6 +32,36 @@ _EMBEDDING_CACHE: Dict[str, np.ndarray] = {}
 
 def _semantic_enabled() -> bool:
     return os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
+
+
+def is_semantic_available() -> bool:
+    """Check if semantic features are actually available (model can load).
+    
+    Returns True only if:
+    - XGB_SEMANTIC_ENABLED=1
+    - sentence_transformers is installed
+    - Model can be loaded
+    """
+    if not _semantic_enabled():
+        return False
+    if SentenceTransformer is None:
+        return False
+    # Try to get encoder (will cache on success)
+    encoder = _get_encoder(_model_name())
+    return encoder is not None
+
+
+def _warn_semantic_unavailable(reason: str = "sentence_transformers not installed") -> None:
+    """Warn once if semantic is enabled but unavailable."""
+    global _SEMANTIC_WARNED
+    if _SEMANTIC_WARNED:
+        return
+    _SEMANTIC_WARNED = True
+    _logger.warning(
+        "[Semantic] %s. Semantic features will be ZERO. "
+        "Install with: pip install sentence-transformers",
+        reason,
+    )
 
 
 def _model_name() -> str:
@@ -66,6 +100,7 @@ def _get_encoder(model_name: str) -> Optional["SentenceTransformer"]:
     if not _semantic_enabled():
         return None
     if SentenceTransformer is None:
+        _warn_semantic_unavailable("sentence_transformers not installed")
         return None
     if model_name in _ENCODERS:
         return _ENCODERS[model_name]
@@ -122,6 +157,10 @@ def batch_encode_texts(texts: List[str]) -> Dict[str, np.ndarray]:
     global _EMBEDDING_CACHE
     
     if not _semantic_enabled():
+        return {}
+    
+    if SentenceTransformer is None:
+        _warn_semantic_unavailable("sentence_transformers not installed")
         return {}
     
     # Normalize all texts
@@ -354,4 +393,5 @@ __all__ = [
     "top2_semantic_similarities_batch",
     "get_cache_stats",
     "clear_cache",
+    "is_semantic_available",
 ]

@@ -5,10 +5,14 @@ Two-stage XGBoost inference with multi-blocking and partitioned candidates.
 Stage 1: Ranker (fast, no semantic)
 Stage 2: Decider (full features + optional calibration)
 """
-
 from __future__ import annotations
 
+# CRITICAL: Enable semantic BEFORE any xgb_matcher imports (train/serve alignment)
+import os
+os.environ["XGB_SEMANTIC_ENABLED"] = "1"
+
 import argparse
+import hashlib
 import json
 import logging
 import os
@@ -50,7 +54,7 @@ from src.xgb_matcher.features import (
 from src.xgb_matcher.candidates import compute_name_idf_map
 from src.xgb_matcher.naming import build_candidate_names, primary_name
 from src.xgb_matcher.partitioned_store import PartitionedCandidateStore
-from src.xgb_matcher.semantic import batch_encode_texts, get_cache_stats, top2_semantic_similarities_batch
+from src.xgb_matcher.semantic import batch_encode_texts, get_cache_stats, top2_semantic_similarities_batch, is_semantic_available
 
 
 # Calibrator wrapper classes (pickle compatibility)
@@ -91,6 +95,10 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v4_active"))
     p.add_argument("--pool-mode", choices=["insee_then_postcode", "union", "multi"], default="insee_then_postcode")
     p.add_argument("--prefilter-k", type=int, default=500)
+    p.add_argument("--min-candidates", type=int, default=150)
+    p.add_argument("--char-top-k", type=int, default=200)
+    p.add_argument("--tfidf-name-mode", choices=["primary", "bag"], default="bag")
+    p.add_argument("--siren-siblings", action=argparse.BooleanOptionalAction, default=True)
     p.add_argument("--dept-prefilter-k", type=int, default=200)
     p.add_argument("--max-dept-candidates", type=int, default=50000)
     p.add_argument(
@@ -108,6 +116,12 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--drop-unnamed", action="store_true", default=True)
     p.add_argument("--exclude-closed", action="store_true", default=False)
     p.add_argument("--export-routing-features", action=argparse.BooleanOptionalAction, default=True)
+    p.add_argument(
+        "--allow-no-semantic",
+        action="store_true",
+        default=False,
+        help="Allow running without semantic embeddings (semantic features will be zero).",
+    )
     p.add_argument("--meta-path", type=Path, default=None)
     p.add_argument("--ranker-model", type=Path, default=None)
     p.add_argument("--ranker-fast-model", type=Path, default=None)
@@ -228,6 +242,52 @@ def _apply_candidate_filters(
     return out
 
 
+def _stable_seed(value: str) -> int:
+    base = value or ""
+    digest = hashlib.md5(base.encode("utf-8")).hexdigest()
+    return int(digest, 16) & 0x7FFFFFFF
+
+
+def _deterministic_sample(items: List[dict], k: int, seed_value: int) -> List[dict]:
+    if k <= 0 or not items:
+        return []
+    import random
+    rng = random.Random(seed_value)
+    return rng.sample(items, min(k, len(items)))
+
+
+def _is_closed_candidate(cand: dict) -> bool:
+    return str(cand.get("etat_admin") or "").strip().upper() == "F"
+
+
+def _promote_open_over_closed(topk_idx: List[int], cand_list_n: List[Tuple[str, dict]]) -> List[int]:
+    """Promote open establishments when same SIREN has open/closed in top-k."""
+    if not topk_idx:
+        return topk_idx
+
+    order = list(topk_idx)
+    open_pos: Dict[str, int] = {}
+    closed_pos: Dict[str, int] = {}
+
+    for pos, idx in enumerate(order):
+        cand = cand_list_n[idx][1]
+        siren = str(cand.get("siren") or "").strip()
+        if not siren:
+            continue
+        if _is_closed_candidate(cand):
+            closed_pos.setdefault(siren, pos)
+        else:
+            open_pos.setdefault(siren, pos)
+
+    for siren, c_pos in closed_pos.items():
+        o_pos = open_pos.get(siren)
+        if o_pos is None or c_pos >= o_pos:
+            continue
+        order[c_pos], order[o_pos] = order[o_pos], order[c_pos]
+
+    return order
+
+
 @dataclass
 class GTDebugInfo:
     """Debug info tracking where GT SIRET was lost in the pipeline."""
@@ -270,6 +330,10 @@ def _build_candidate_pool_with_debug(
     drop_unnamed: bool,
     exclude_closed: bool,
     tfidf_cache: Dict[Tuple[str, str], tuple],
+    tfidf_name_mode: str = "bag",
+    siren_siblings: bool = True,
+    min_candidates: int = 150,
+    char_top_k: int = 200,
     gt_siret: str | None = None,
 ) -> Tuple[List[dict], GTDebugInfo | None]:
     """Build candidate pool with optional GT debug tracking."""
@@ -327,7 +391,7 @@ def _build_candidate_pool_with_debug(
             key = ("dept", dept_key)
             vec, mat, names = tfidf_cache.get(key, (None, None, None))
             if vec is None:
-                vec, mat, names = build_tfidf_index(dept_candidates)
+                vec, mat, names = build_tfidf_index(dept_candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
                 tfidf_cache[key] = (vec, mat, names)
             if vec is not None and mat is not None:
                 idx = prefilter_candidates_tfidf(
@@ -336,7 +400,7 @@ def _build_candidate_pool_with_debug(
                     mat,
                     min(dept_prefilter_k, len(dept_candidates)),
                     cand_names=names,
-                    char_top_k=min(200, prefilter_k),
+                    char_top_k=min(char_top_k, dept_prefilter_k),
             )
                 extra.extend([dept_candidates[i] for i in idx])
 
@@ -359,11 +423,10 @@ def _build_candidate_pool_with_debug(
 
     candidates = list(pool.values())
     
-    # Step 3: TF-IDF prefilter
+    # Step 3: TF-IDF prefilter (Issue 1: use Variant C settings)
     pre_tfidf_size = len(candidates)
-    MIN_CANDIDATES_INFER = 100
     if prefilter_k and len(candidates) > prefilter_k:
-        vec, mat, names = build_tfidf_index(candidates)
+        vec, mat, names = build_tfidf_index(candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
         if vec is not None and mat is not None:
             idx = prefilter_candidates_tfidf(
                 crm_name,
@@ -371,18 +434,18 @@ def _build_candidate_pool_with_debug(
                 mat,
                 prefilter_k,
                 cand_names=names,
-                char_top_k=min(200, prefilter_k),
+                char_top_k=min(char_top_k, prefilter_k),
         )
-            if len(idx) >= MIN_CANDIDATES_INFER:
+            if len(idx) >= min_candidates:
                 candidates = [candidates[i] for i in idx]
             else:
                 tfidf_cands = [candidates[i] for i in idx]
                 tfidf_set = set(idx)
                 remaining = [c for i, c in enumerate(candidates) if i not in tfidf_set]
-                needed = min(MIN_CANDIDATES_INFER, prefilter_k) - len(tfidf_cands)
+                needed = min(min_candidates, prefilter_k) - len(tfidf_cands)
                 if needed > 0 and remaining:
-                    import random
-                    random_extra = random.sample(remaining, min(needed, len(remaining)))
+                    seed = _stable_seed(str(crm_row.get("crm_id") or crm_row.get("crm_name") or ""))
+                    random_extra = _deterministic_sample(remaining, needed, seed)
                     candidates = tfidf_cands + random_extra
                 else:
                     candidates = tfidf_cands
@@ -410,6 +473,10 @@ def _build_candidate_pool(
     drop_unnamed: bool,
     exclude_closed: bool,
     tfidf_cache: Dict[Tuple[str, str], tuple],
+    tfidf_name_mode: str = "bag",
+    siren_siblings: bool = True,
+    min_candidates: int = 150,
+    char_top_k: int = 200,
 ) -> List[dict]:
     insee = crm_row.get("insee")
     postcode = crm_row.get("postcode")
@@ -445,7 +512,7 @@ def _build_candidate_pool(
             key = ("dept", dept_key)
             vec, mat, names = tfidf_cache.get(key, (None, None, None))
             if vec is None:
-                vec, mat, names = build_tfidf_index(dept_candidates)
+                vec, mat, names = build_tfidf_index(dept_candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
                 tfidf_cache[key] = (vec, mat, names)
             if vec is not None and mat is not None:
                 idx = prefilter_candidates_tfidf(
@@ -454,7 +521,7 @@ def _build_candidate_pool(
                     mat,
                     min(dept_prefilter_k, len(dept_candidates)),
                     cand_names=names,
-                    char_top_k=min(200, prefilter_k),
+                    char_top_k=min(char_top_k, dept_prefilter_k),
             )
                 extra.extend([dept_candidates[i] for i in idx])
 
@@ -477,9 +544,9 @@ def _build_candidate_pool(
                 pool[siret] = cand
 
     candidates = list(pool.values())
-    MIN_CANDIDATES_INFER = 100  # Guarantee at least this many candidates after TF-IDF prefilter
+    # Issue 1: TF-IDF prefilter with Variant C settings for better recall
     if prefilter_k and len(candidates) > prefilter_k:
-        vec, mat, names = build_tfidf_index(candidates)
+        vec, mat, names = build_tfidf_index(candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
         if vec is not None and mat is not None:
             idx = prefilter_candidates_tfidf(
                 crm_name,
@@ -487,20 +554,20 @@ def _build_candidate_pool(
                 mat,
                 prefilter_k,
                 cand_names=names,
-                char_top_k=min(200, prefilter_k),
+                char_top_k=min(char_top_k, prefilter_k),
         )
-            # FIX: Guarantee minimum candidates by combining TF-IDF + random
-            if len(idx) >= MIN_CANDIDATES_INFER:
+            # Guarantee minimum candidates by combining TF-IDF + random padding
+            if len(idx) >= min_candidates:
                 candidates = [candidates[i] for i in idx]
             else:
                 # Combine TF-IDF matches with random samples
                 tfidf_cands = [candidates[i] for i in idx]
                 tfidf_set = set(idx)
                 remaining = [c for i, c in enumerate(candidates) if i not in tfidf_set]
-                needed = min(MIN_CANDIDATES_INFER, prefilter_k) - len(tfidf_cands)
+                needed = min(min_candidates, prefilter_k) - len(tfidf_cands)
                 if needed > 0 and remaining:
-                    import random
-                    random_extra = random.sample(remaining, min(needed, len(remaining)))
+                    seed = _stable_seed(str(crm_row.get("crm_id") or crm_row.get("crm_name") or ""))
+                    random_extra = _deterministic_sample(remaining, needed, seed)
                     candidates = tfidf_cands + random_extra
                 else:
                     candidates = tfidf_cands
@@ -514,18 +581,37 @@ def main() -> None:
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
     logger = logging.getLogger(__name__)
 
+    if args.allow_no_semantic:
+        os.environ["XGB_ALLOW_NO_SEMANTIC"] = "1"
+
     crm = load_crm(args.crm_path)
     crm_records = crm.to_dict("records")
     crm_pre = [preprocess_crm_row(r) for r in crm_records]
 
-    semantic_enabled = True
+    # Issue 2: Check if semantic is actually available (vs just enabled in env)
+    semantic_available = is_semantic_available()
+    if not semantic_available:
+        if args.allow_no_semantic:
+            logger.warning(
+                "⚠️  SEMANTIC UNAVAILABLE: sentence_transformers not installed or model failed to load. "
+                "Features (name_semantic_max, name_semantic_gap, etc.) will be ZERO. "
+                "This WILL degrade routing precision. Install: pip install sentence-transformers"
+            )
+        else:
+            raise RuntimeError(
+                "SEMANTIC UNAVAILABLE: sentence_transformers not installed or model failed to load. "
+                "Set --allow-no-semantic to run anyway (CAUTION: degraded features). "
+                "Install: pip install sentence-transformers"
+            )
+    semantic_enabled = semantic_available  # Only use semantic if actually available
+    
     if os.getenv("XGB_SEMANTIC_ENABLED", "0") != "1":
         logger.info("Semantic is forced ON in inference (XGB_SEMANTIC_ENABLED=0).")
     if args.semantic_retrieval_k > 0 and args.pool_mode != "multi":
         logger.warning("semantic_retrieval_k is set but pool_mode=%s; semantic retrieval runs only in pool_mode=multi.", args.pool_mode)
     crm_semantic_names = [c.get("crm_name_semantic", "") for c in crm_pre if c.get("crm_name_semantic")]
     unique_crm_semantic = list(dict.fromkeys(crm_semantic_names))
-    if unique_crm_semantic:
+    if unique_crm_semantic and semantic_enabled:
         logger.info("[Semantic] Warmup CRM embeddings: %d unique names", len(unique_crm_semantic))
         batch_encode_texts(unique_crm_semantic)
         cache_size, cache_mb = get_cache_stats()
@@ -598,7 +684,12 @@ def main() -> None:
                 store, r, crm_ctx, args.pool_mode, args.prefilter_k,
                 args.dept_prefilter_k, args.max_dept_candidates,
                 args.semantic_retrieval_k, args.semantic_retrieval_min_sim,
-                args.drop_unnamed, args.exclude_closed, tfidf_cache, gt_siret,
+                args.drop_unnamed, args.exclude_closed, tfidf_cache,
+                tfidf_name_mode=args.tfidf_name_mode,
+                siren_siblings=args.siren_siblings,
+                min_candidates=args.min_candidates,
+                char_top_k=args.char_top_k,
+                gt_siret=gt_siret,
         )
         else:
             candidates = _build_candidate_pool(
@@ -606,6 +697,10 @@ def main() -> None:
                 args.dept_prefilter_k, args.max_dept_candidates,
                 args.semantic_retrieval_k, args.semantic_retrieval_min_sim,
                 args.drop_unnamed, args.exclude_closed, tfidf_cache,
+                tfidf_name_mode=args.tfidf_name_mode,
+                siren_siblings=args.siren_siblings,
+                min_candidates=args.min_candidates,
+                char_top_k=args.char_top_k,
         )
             debug_info = None
         if not candidates:
@@ -709,13 +804,14 @@ def main() -> None:
         pool_size_stage1 = len(cand_list)
         pool_size_stage2 = len(scores)
         scores_sorted = np.sort(scores)[::-1]
-        top1_score = float(scores_sorted[0]) if len(scores_sorted) else 0.0
-        top2_score = float(scores_sorted[1]) if len(scores_sorted) > 1 else 0.0
         top3_avg = float(np.mean(scores_sorted[:3])) if len(scores_sorted) >= 3 else float(np.mean(scores_sorted)) if len(scores_sorted) else 0.0
+
+        topk_idx = np.argsort(scores)[::-1][: args.top_k].tolist()
+        topk_idx = _promote_open_over_closed(topk_idx, cand_list_n)
+        top1_score = float(scores[topk_idx[0]]) if topk_idx else 0.0
+        top2_score = float(scores[topk_idx[1]]) if len(topk_idx) > 1 else 0.0
         score_gap = top1_score - top2_score
         score_ratio = top1_score / (top2_score + 1e-9) if top2_score > 0 else 1.0
-
-        topk_idx = np.argsort(scores)[::-1][: args.top_k]
 
         # Debug GT: Track if GT survived stage2 top-k and compute final debug row
         if debug_info and gt_siret:
@@ -806,6 +902,14 @@ def main() -> None:
                         "addr_token_overlap": float(feat_row.get("addr_token_overlap", 0.0)),
                         "address_density": float(feat_row.get("address_density", 1.0)),
                         "street_number_diff": float(feat_row.get("street_number_diff", 9999)),
+                        # Issue 3: Add missing routing features for routing_risk_meta.json
+                        "name_semantic_gap": float(feat_row.get("name_semantic_gap", 0.0)),
+                        "name_semantic_second": float(feat_row.get("name_semantic_second", 0.0)),
+                        "name_contains_crm_max": float(feat_row.get("name_contains_crm_max", 0.0)),
+                        "postcode_match": float(feat_row.get("postcode_match", 0.0)),
+                        "city_match": float(feat_row.get("city_match", 0.0)),
+                        "street_name_jaro": float(feat_row.get("street_name_jaro", 0.0)),
+                        "name_addr_consistency": float(feat_row.get("name_addr_consistency", 0.0)),
                         "name_length_max": float(feat_row.get("name_length_max", 0.0)),
                         "legal_form_category": float(feat_row.get("legal_form_category", 0.0)),
                 }
@@ -813,7 +917,13 @@ def main() -> None:
 
             rows_out.append(row_out)
 
-    out_df = pd.DataFrame(rows_out).sort_values(["crm_name", "rank", "score"], ascending=[True, True, False])
+    # Issue 4: Handle empty output gracefully (avoid KeyError on sort)
+    if not rows_out:
+        logger.warning("No inference results produced. Output will be empty.")
+        out_df = pd.DataFrame(columns=["crm_id", "crm_name", "siret_candidate", "score", "rank"])
+    else:
+        out_df = pd.DataFrame(rows_out).sort_values(["crm_name", "rank", "score"], ascending=[True, True, False])
+    
     args.output_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(args.output_path, index=False)
     logger.info("Saved top-%d results to %s (%d rows)", args.top_k, args.output_path, len(out_df))

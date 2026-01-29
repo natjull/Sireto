@@ -16,16 +16,22 @@ Usage:
 
 from __future__ import annotations
 
+import hashlib
 import json
+import logging
+import os
 import pickle
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List, Tuple, TYPE_CHECKING
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
 from xgboost import XGBClassifier
+
+if TYPE_CHECKING:
+    from .profile import InferenceProfile
 
 from .blocking import (
     attach_address_density,
@@ -46,7 +52,7 @@ from .features import (
 from .candidates import compute_name_idf_map
 from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
-from .semantic import top2_semantic_similarities_batch
+from .semantic import top2_semantic_similarities_batch, is_semantic_available
 
 @dataclass
 class InferenceResult:
@@ -112,6 +118,15 @@ class XgbInferenceEngine:
         risk_features: List[str] | None = None,
         risk_threshold: float = 0.835,
         calibrator: Any | None = None,
+        # Profile-driven configuration
+        tfidf_name_mode: str = "bag",
+        siren_siblings: bool = True,
+        prefilter_k: int = 500,
+        char_top_k: int = 200,
+        min_candidates: int = 150,
+        stage1_top_n: int = 200,
+        drop_unnamed: bool = True,
+        exclude_closed: bool = False,
     ):
         self.ranker = ranker
         self.decider = decider
@@ -122,7 +137,35 @@ class XgbInferenceEngine:
         self.risk_features = risk_features or []
         self.risk_threshold = risk_threshold
         self.calibrator = calibrator
+        # Profile-driven config
+        self.tfidf_name_mode = tfidf_name_mode
+        self.siren_siblings = siren_siblings
+        self.prefilter_k = prefilter_k
+        self.char_top_k = char_top_k
+        self.min_candidates = min_candidates
+        self.stage1_top_n = stage1_top_n
+        self.drop_unnamed = drop_unnamed
+        self.exclude_closed = exclude_closed
         self._tfidf_cache: Dict[Tuple[str, str], tuple] = {}
+        
+        # Fail-fast: semantic must be enabled
+        if os.getenv("XGB_SEMANTIC_ENABLED", "0") != "1":
+            raise RuntimeError(
+                "SEMANTIC SKEW RISK: XGB_SEMANTIC_ENABLED != '1'. "
+                "Set os.environ['XGB_SEMANTIC_ENABLED'] = '1' BEFORE importing xgb_matcher modules."
+            )
+
+        if not is_semantic_available():
+            if os.getenv("XGB_ALLOW_NO_SEMANTIC", "0") == "1":
+                logging.getLogger(__name__).warning(
+                    "Semantic embeddings unavailable. Proceeding with semantic disabled; "
+                    "name_semantic_* features will be ZERO."
+                )
+            else:
+                raise RuntimeError(
+                    "SEMANTIC UNAVAILABLE: sentence_transformers not installed or model failed to load. "
+                    "Install with: pip install sentence-transformers or set XGB_ALLOW_NO_SEMANTIC=1."
+                )
     
     @classmethod
     def from_models(
@@ -202,27 +245,97 @@ class XgbInferenceEngine:
             calibrator=calibrator,
         )
     
+    @classmethod
+    def from_profile(cls, profile: "InferenceProfile") -> "XgbInferenceEngine":
+        """Create engine from InferenceProfile (ensures train/serve alignment).
+        
+        This is the recommended way to instantiate the engine as it guarantees
+        configuration matches training knobs.
+        """
+        # Validate profile (raises if semantic mismatch)
+        profile.validate(strict=True)
+        
+        # Load ranker (use ranker_fast for Stage 1 if available)
+        ranker_path = profile.get_stage1_ranker_path()
+        if not ranker_path or not ranker_path.exists():
+            raise FileNotFoundError(f"Ranker not found: {ranker_path}")
+        ranker = xgb.Booster()
+        ranker.load_model(str(ranker_path))
+        
+        # Load decider
+        if not profile.decider_path or not profile.decider_path.exists():
+            raise FileNotFoundError(f"Decider not found: {profile.decider_path}")
+        decider = XGBClassifier()
+        decider.load_model(str(profile.decider_path))
+        
+        # Load store
+        store = PartitionedCandidateStore(profile.partitions_dir)
+        
+        # Load risk model
+        risk_model = None
+        risk_calibrator = None
+        risk_features: List[str] = []
+        risk_threshold = profile.risk_threshold
+        if profile.risk_model_path and profile.risk_model_path.exists():
+            with open(profile.risk_model_path, "rb") as f:
+                risk_model = pickle.load(f)
+        if profile.risk_meta_path and profile.risk_meta_path.exists():
+            with open(profile.risk_meta_path) as f:
+                meta = json.load(f)
+            risk_features = meta.get("features") or []
+            risk_threshold = meta.get("threshold", profile.risk_threshold)
+        
+        # Load calibrator
+        calibrator = None
+        if profile.calibrator_path and profile.calibrator_path.exists():
+            with open(profile.calibrator_path, "rb") as f:
+                calibrator = pickle.load(f)
+        
+        return cls(
+            ranker=ranker,
+            decider=decider,
+            store=store,
+            feature_order=profile.feature_order,
+            risk_model=risk_model,
+            risk_calibrator=risk_calibrator,
+            risk_features=risk_features,
+            risk_threshold=risk_threshold,
+            calibrator=calibrator,
+            tfidf_name_mode=profile.tfidf_name_mode,
+            siren_siblings=profile.siren_siblings,
+            prefilter_k=profile.prefilter_k,
+            char_top_k=profile.char_top_k,
+            min_candidates=profile.min_candidates,
+            stage1_top_n=profile.stage1_top_n,
+            drop_unnamed=profile.drop_unnamed,
+            exclude_closed=profile.exclude_closed,
+        )
+    
     def infer_single(
         self,
         crm_input: CrmInput,
         top_k: int = 5,
-        prefilter_k: int = 500,
         pool_mode: str = "insee_then_postcode",
-        drop_unnamed: bool = True,
-        exclude_closed: bool = False,
+        drop_unnamed: bool | None = None,
+        exclude_closed: bool | None = None,
     ) -> InferenceResult:
         """Run full two-stage inference on a single CRM row.
         
-        This is the core logic extracted from infer_xgb_two_stage.py.
+        Uses profile-driven config for prefilter_k, min_candidates, etc.
         """
         crm_row = crm_input.to_dict()
         crm_pre = preprocess_crm_row(crm_row)
         
-        # Build candidate pool
+        if drop_unnamed is None:
+            drop_unnamed = self.drop_unnamed
+        if exclude_closed is None:
+            exclude_closed = self.exclude_closed
+
+        # Build candidate pool (uses instance config from profile)
         candidates = self._build_candidate_pool(
             crm_row=crm_row,
+            crm_id=crm_input.crm_id,
             pool_mode=pool_mode,
-            prefilter_k=prefilter_k,
             drop_unnamed=drop_unnamed,
             exclude_closed=exclude_closed,
         )
@@ -267,8 +380,8 @@ class XgbInferenceEngine:
             xgb.DMatrix(X1.values, feature_names=self.feature_order)
         )
         
-        # Top-N selection
-        stage1_top_n = min(200, len(scores_stage1))
+        # Top-N selection (use instance config)
+        stage1_top_n = min(self.stage1_top_n, len(scores_stage1))
         top_n_idx = np.argsort(scores_stage1)[::-1][:stage1_top_n]
         
         # Address rescue
@@ -319,15 +432,15 @@ class XgbInferenceEngine:
             probs = self.calibrator.predict_proba(X_n.values)[:, 1]
         
         scores = np.array(probs)
-        scores_sorted = np.sort(scores)[::-1]
-        top1_score = float(scores_sorted[0]) if len(scores_sorted) else 0.0
-        top2_score = float(scores_sorted[1]) if len(scores_sorted) > 1 else 0.0
+        sorted_idx = np.argsort(scores)[::-1]
+        topk_idx = sorted_idx[:top_k].tolist()
+        topk_idx = self._promote_open_over_closed(topk_idx, cand_list_n)
+
+        top1_idx = topk_idx[0]
+        top1_score = float(scores[top1_idx]) if topk_idx else 0.0
+        top2_score = float(scores[topk_idx[1]]) if len(topk_idx) > 1 else 0.0
         score_gap = top1_score - top2_score
         score_ratio = top1_score / (top2_score + 1e-9) if top2_score > 0 else 1.0
-        
-        # Get top-k
-        topk_idx = np.argsort(scores)[::-1][:top_k]
-        top1_idx = topk_idx[0]
         top1_siret = str(cand_list_n[top1_idx][0])
         top1_feat = feats_n[top1_idx]
         
@@ -390,12 +503,16 @@ class XgbInferenceEngine:
     def _build_candidate_pool(
         self,
         crm_row: Dict[str, Any],
+        crm_id: str,
         pool_mode: str,
-        prefilter_k: int,
         drop_unnamed: bool,
         exclude_closed: bool,
     ) -> List[Dict[str, Any]]:
-        """Build candidate pool from partitioned store."""
+        """Build candidate pool from partitioned store.
+        
+        Uses instance config (prefilter_k, min_candidates, tfidf_name_mode, siren_siblings).
+        crm_id is used as seed for deterministic padding.
+        """
         insee = crm_row.get("insee")
         postcode = crm_row.get("postcode")
         crm_name = crm_row.get("crm_name", "")
@@ -417,25 +534,37 @@ class XgbInferenceEngine:
         pool = dedupe_candidates(base_candidates)
         candidates = list(pool.values())
         
-        # TF-IDF prefilter
-        MIN_CANDIDATES = 100
+        # TF-IDF prefilter (uses instance config)
+        prefilter_k = self.prefilter_k
+        min_candidates = self.min_candidates
+        char_top_k = self.char_top_k
+        
         if prefilter_k and len(candidates) > prefilter_k:
-            vec, mat, names = build_tfidf_index(candidates)
+            # Build TF-IDF index with profile-aligned settings
+            vec, mat, names = build_tfidf_index(
+                candidates,
+                name_mode=self.tfidf_name_mode,
+                siren_siblings=self.siren_siblings,
+            )
             if vec is not None and mat is not None:
                 idx = prefilter_candidates_tfidf(
                     crm_name, vec, mat, prefilter_k,
-                    cand_names=names, char_top_k=min(200, prefilter_k),
+                    cand_names=names, char_top_k=char_top_k,
                 )
-                if len(idx) >= MIN_CANDIDATES:
+                if len(idx) >= min_candidates:
                     candidates = [candidates[i] for i in idx]
                 else:
+                    # Deterministic padding with crm_id as seed
+                    import random
                     tfidf_cands = [candidates[i] for i in idx]
                     tfidf_set = set(idx)
                     remaining = [c for i, c in enumerate(candidates) if i not in tfidf_set]
-                    needed = MIN_CANDIDATES - len(tfidf_cands)
+                    needed = min_candidates - len(tfidf_cands)
                     if needed > 0 and remaining:
-                        import random
-                        random_extra = random.sample(remaining, min(needed, len(remaining)))
+                        # Deterministic seed from crm_id (stable across runs)
+                        seed = self._stable_seed(crm_id)
+                        rng = random.Random(seed)
+                        random_extra = rng.sample(remaining, min(needed, len(remaining)))
                         candidates = tfidf_cands + random_extra
                     else:
                         candidates = tfidf_cands
@@ -473,6 +602,51 @@ class XgbInferenceEngine:
             if addr_jaro >= 0.96 and street_name_jaro >= 0.95 and street_number_diff <= 2:
                 rescue.append(i)
         return rescue[:50]
+
+    @staticmethod
+    def _stable_seed(value: str) -> int:
+        base = value or ""
+        digest = hashlib.md5(base.encode("utf-8")).hexdigest()
+        return int(digest, 16) & 0x7FFFFFFF
+
+    @staticmethod
+    def _is_closed(cand: Dict[str, Any]) -> bool:
+        return str(cand.get("etat_admin") or "").strip().upper() == "F"
+
+    def _promote_open_over_closed(
+        self,
+        topk_idx: List[int],
+        cand_list_n: List[Tuple[str, Dict[str, Any]]],
+    ) -> List[int]:
+        """Promote open establishments when same SIREN has open/closed in top-k."""
+        if not topk_idx:
+            return topk_idx
+
+        order = list(topk_idx)
+        pos_by_idx = {idx: pos for pos, idx in enumerate(order)}
+        open_pos: Dict[str, int] = {}
+        closed_pos: Dict[str, int] = {}
+
+        for pos, idx in enumerate(order):
+            cand = cand_list_n[idx][1]
+            siren = str(cand.get("siren") or "").strip()
+            if not siren:
+                continue
+            if self._is_closed(cand):
+                closed_pos.setdefault(siren, pos)
+            else:
+                open_pos.setdefault(siren, pos)
+
+        for siren, c_pos in closed_pos.items():
+            o_pos = open_pos.get(siren)
+            if o_pos is None or c_pos >= o_pos:
+                continue
+            idx_closed = order[c_pos]
+            idx_open = order[o_pos]
+            order[c_pos], order[o_pos] = idx_open, idx_closed
+            pos_by_idx[idx_closed], pos_by_idx[idx_open] = o_pos, c_pos
+
+        return order
 
 
 __all__ = [

@@ -115,6 +115,51 @@ python scripts/route_xgb_results.py \
 | `src/pipe_v6/places_fallback.py` | Logique du fallback simplifié |
 | `src/pipe_v6/serper_places_client.py` | Client API Serper + cache |
 | `src/xgb_matcher/infer.py` | Engine d'inférence réutilisable |
+| `src/xgb_matcher/profile.py` | InferenceProfile (train/serve alignment) |
+
+## 7. Train/Serve Alignment (InferenceProfile)
+
+Pour garantir que l'inférence reproduit exactement les conditions d'entraînement, le module `profile.py` centralise toutes les configurations.
+
+### Invariants critiques
+
+| Paramètre | Valeur Training | Vérification |
+|-----------|-----------------|--------------|
+| **Semantic** | `XGB_SEMANTIC_ENABLED=1` | Fail-fast si désactivé |
+| **TF-IDF mode** | `bag` + `siren_siblings=True` | Variant C |
+| **Stage 1 Ranker** | `ranker_fast` (semantic=0) | Skip semantic pour Stage 1 |
+| **Prefilter k** | 500 | Min candidates = 100 |
+| **Char top-k** | 200 | Fallback acronymes |
+
+### Usage
+
+```python
+# CRITICAL: Set before any imports
+import os
+os.environ["XGB_SEMANTIC_ENABLED"] = "1"
+
+from xgb_matcher.profile import InferenceProfile
+from xgb_matcher.infer import XgbInferenceEngine
+
+# Load profile from model metadata (auto-aligns with training)
+profile = InferenceProfile.from_latest_meta("models/")
+engine = XgbInferenceEngine.from_profile(profile)
+
+# Infer - uses profile-aligned config
+result = engine.infer_single(crm_input)
+```
+
+### Fail-fast Guards
+
+Le `XgbInferenceEngine.__init__()` vérifie :
+1. `XGB_SEMANTIC_ENABLED == "1"` (RuntimeError sinon)
+2. Profile validation via `profile.validate(strict=True)`
+
+### Reproducibility
+
+- TF-IDF padding utilise `crm_id` comme seed (déterministe)
+- Stage 1 top-N = 200 (configurable via `stage1_top_n`)
+- Address rescue threshold: jaro >= 0.96, street_name_jaro >= 0.95
 
 ---
 *Note : Ce document est la source unique de vérité pour le routing SIRETO. Toute modification des seuils ou des modèles doit être reflétée ici.*

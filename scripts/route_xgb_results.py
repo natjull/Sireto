@@ -12,8 +12,11 @@ Usage:
     python scripts/route_xgb_results.py --input-path data/topk.csv --output-path output/routed.csv
     python scripts/route_xgb_results.py --input-path data/topk.csv --output-path output/routed.csv --places-mode
 """
-
 from __future__ import annotations
+
+# CRITICAL: Enable semantic BEFORE any xgb_matcher imports (train/serve alignment)
+import os
+os.environ["XGB_SEMANTIC_ENABLED"] = "1"
 
 import argparse
 import json
