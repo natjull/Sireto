@@ -19,9 +19,8 @@ import argparse
 import json
 import logging
 import pickle
-import re
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Tuple
 
@@ -83,9 +82,18 @@ def _parse_args() -> argparse.Namespace:
 # ============================================================================
 
 
+def _is_missing(value: object) -> bool:
+    if value is None:
+        return True
+    try:
+        return bool(pd.isna(value))
+    except Exception:
+        return False
+
+
 def _safe_float(value, default: float = 0.0) -> float:
     try:
-        if pd.isna(value):
+        if _is_missing(value):
             return default
         return float(value)
     except Exception:
@@ -93,9 +101,20 @@ def _safe_float(value, default: float = 0.0) -> float:
 
 
 def _safe_str(value, default: str = "") -> str:
-    if pd.isna(value):
+    if _is_missing(value):
         return default
     return str(value).strip() or default
+
+
+def _first_str(row: pd.Series, *keys: str, default: str = "") -> str:
+    for key in keys:
+        if key in row.index:
+            value = row.get(key)
+            if not _is_missing(value):
+                text = str(value).strip()
+                if text:
+                    return text
+    return default
 
 
 def _normalize_siret(value) -> str | None:
@@ -126,15 +145,6 @@ def _pick_top_rows(group: pd.DataFrame) -> Tuple[pd.Series | None, pd.Series | N
     top1 = rows_list[0] if rows_list else None
     top2 = rows_list[1] if len(rows_list) > 1 else None
     return top1, top2, rows_list
-
-
-def _get_feature(row: pd.Series, name: str, default: float = 0.0) -> float:
-    """Fetch feature value from row."""
-    if name in row.index:
-        val = row.get(name)
-        if pd.notna(val):
-            return _safe_float(val, default)
-    return default
 
 
 # ============================================================================
@@ -315,6 +325,7 @@ def main() -> None:
                     partitions_dir=args.partitions_dir,
                     risk_model_path=args.risk_model or Path("models/routing_risk_model.pkl"),
                     risk_meta_path=args.risk_meta or Path("models/routing_risk_meta.json"),
+                    risk_calibrator_path=args.risk_calibrator,
                 )
                 LOGGER.info("Places fallback engine initialized")
             except Exception as exc:
@@ -326,8 +337,8 @@ def main() -> None:
     rows_out: List[dict] = []
     metrics = RoutingMetrics()
 
-    groups = list(df.groupby("crm_id", dropna=False))
-    total = len(groups)
+    groups = df.groupby("crm_id", dropna=False)
+    total = groups.ngroups
 
     for idx, (crm_id, group) in enumerate(groups, 1):
         top1, top2, all_rows = _pick_top_rows(group)
@@ -349,11 +360,17 @@ def main() -> None:
             xgb_status = "REVIEW"
             route_meta = {}
 
-        # Skip AUTO cases if requested
+        # Skip AUTO rows in output if requested, but keep metrics
         if args.only_review and xgb_status.startswith("AUTO"):
+            metrics.add_decision(xgb_status)
             continue
 
         # Base output row
+        crm_name = _first_str(top1, "crm_name", "name")
+        crm_address = _first_str(top1, "crm_address", "crm_adresse", "address")
+        crm_postcode = _first_str(top1, "crm_postcode", "postcode", "crm_cp")
+        crm_city = _first_str(top1, "crm_city", "crm_commune", "city")
+
         row_out = {
             "crm_id": crm_id,
             "xgb_status": xgb_status,
@@ -362,10 +379,10 @@ def main() -> None:
             "score_top2": _safe_float(top2.get("score") if top2 is not None else None),
             "score_gap": _safe_float(top1.get("score_gap")),
             "score_ratio": _safe_float(top1.get("score_ratio")),
-            "crm_name": _safe_str(top1.get("crm_name")),
-            "crm_address": _safe_str(top1.get("crm_address")),
-            "crm_postcode": _safe_str(top1.get("crm_postcode")),
-            "crm_city": _safe_str(top1.get("crm_city")),
+            "crm_name": crm_name,
+            "crm_address": crm_address,
+            "crm_postcode": crm_postcode,
+            "crm_city": crm_city,
         }
 
         # Add routing metadata
@@ -386,10 +403,10 @@ def main() -> None:
             try:
                 result = fallback_with_places(
                     crm_id=str(crm_id),
-                    crm_name=_safe_str(top1.get("crm_name")),
-                    crm_address=_safe_str(top1.get("crm_address")) or None,
-                    crm_postcode=_safe_str(top1.get("crm_postcode")) or None,
-                    crm_city=_safe_str(top1.get("crm_city")) or None,
+                    crm_name=crm_name,
+                    crm_address=crm_address or None,
+                    crm_postcode=crm_postcode or None,
+                    crm_city=crm_city or None,
                     crm_insee=None,
                     config=config,
                     engine=xgb_engine,
@@ -416,8 +433,8 @@ def main() -> None:
 
         row_out["final_status"] = final_status
         row_out["chosen_siret_final"] = final_siret
-        rows_out.append(row_out)
         metrics.add_decision(final_status)
+        rows_out.append(row_out)
 
     # Write output
     out_df = pd.DataFrame(rows_out)

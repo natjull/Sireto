@@ -111,6 +111,17 @@ def fallback_with_places(
         postcode=crm_postcode,
         city=crm_city,
     )
+
+    if not query.strip():
+        log.info("[Places Fallback] Empty query for crm_id=%s", crm_id)
+        return PlacesFallbackResult(
+            crm_id=crm_id,
+            original_status="REVIEW",
+            final_status="NO_MATCH",
+            final_siret=None,
+            places_used=False,
+            reason="empty_query",
+        )
     
     log.info("[Places Fallback] crm_id=%s query='%s'", crm_id, query[:80])
     
@@ -146,7 +157,25 @@ def fallback_with_places(
     crm_dept = _dept_from_postcode(crm_postcode)
     places_dept = _dept_from_postcode(top1.postcode)
     
-    if crm_dept and places_dept and crm_dept != places_dept:
+    if not crm_dept or not places_dept:
+        log.info(
+            "[Places Fallback] Dept guard unavailable for crm_id=%s: crm_postcode=%s places_postcode=%s",
+            crm_id, crm_postcode, top1.postcode,
+        )
+        return PlacesFallbackResult(
+            crm_id=crm_id,
+            original_status="REVIEW",
+            final_status="NO_MATCH",
+            final_siret=None,
+            places_used=True,
+            places_title=top1.title,
+            places_address=top1.address,
+            places_postcode=top1.postcode,
+            dept_guard_passed=False,
+            reason="missing_dept_guard",
+        )
+
+    if crm_dept != places_dept:
         log.info(
             "[Places Fallback] Dept guard failed for crm_id=%s: CRM=%s vs Places=%s",
             crm_id, crm_dept, places_dept,
