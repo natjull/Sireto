@@ -167,28 +167,81 @@ def attach_address_density(candidates: Iterable[dict]) -> None:
         cand["_xgb_addr_density_cp"] = by_cp.get((cp, addr), 1)
 
 
+def build_siren_index(candidates: List[dict]) -> Dict[str, List[dict]]:
+    """Build index mapping SIREN -> list of candidates (siblings) for enrichment."""
+    from collections import defaultdict
+    index: Dict[str, List[dict]] = defaultdict(list)
+    for cand in candidates:
+        siren = cand.get("siren") or ""
+        if siren:
+            index[siren].append(cand)
+    return dict(index)
+
+
+def _candidate_tfidf_name_with_siblings(
+    cand: dict,
+    siren_index: Dict[str, List[dict]] | None,
+) -> str:
+    """Build TF-IDF name string enriched with SIREN siblings (Variant C)."""
+    from .naming import build_candidate_names
+    
+    # Start with this candidate's own names
+    bag = [cn.text for cn in build_candidate_names(cand)]
+    
+    # Enrich with sibling names if siren_index is provided
+    if siren_index is not None:
+        siren = cand.get("siren") or ""
+        if siren and siren in siren_index:
+            for sibling in siren_index[siren]:
+                # Skip self (same siret)
+                if sibling.get("siret") == cand.get("siret"):
+                    continue
+                for cn in build_candidate_names(sibling):
+                    bag.append(cn.text)
+    
+    # Dedupe while preserving order
+    seen: Set[str] = set()
+    deduped = []
+    for name in bag:
+        if name and name not in seen:
+            seen.add(name)
+            deduped.append(name)
+    return " ".join(deduped)
+
+
 def build_tfidf_index(
     candidates: List[dict],
     *,
     name_mode: str = "bag",
-) -> Tuple[Optional[TfidfVectorizer], Optional[any], List[str]]:
+    siren_siblings: bool = False,
+) -> Tuple[Optional[TfidfVectorizer], Optional[object], List[str]]:
     """Build TF-IDF index for candidate names.
     
     Args:
         candidates: List of candidate dicts.
         name_mode: "bag" for bag-of-names (candidate_tfidf_text), 
                    "primary" for primary_name only (aligned with train config).
+        siren_siblings: If True, enrich each candidate's names with SIREN siblings
+                        (Variant C from training - recommended for best recall).
     """
+    # Build SIREN index if needed for sibling enrichment
+    siren_index = build_siren_index(candidates) if siren_siblings else None
+    
     if name_mode == "primary":
         names = [normalize_text_for_tfidf(primary_name(c) or "") for c in candidates]
+    elif siren_siblings:
+        names = [normalize_text_for_tfidf(_candidate_tfidf_name_with_siblings(c, siren_index)) for c in candidates]
     else:
         names = [normalize_text_for_tfidf(candidate_tfidf_text(c) or "") for c in candidates]
+    
+    # Use (1,3) ngrams for better acronym/partial matching (improves recall)
     vectorizer = TfidfVectorizer(
         analyzer="word",
-        ngram_range=(1, 2),
+        ngram_range=(1, 3),
         lowercase=False,
         token_pattern=r"(?u)\b\w+\b",
         min_df=1,
+        max_df=0.95,  # Ignore very common terms
     )
     try:
         matrix = vectorizer.fit_transform(names)
@@ -206,15 +259,35 @@ def prefilter_candidates_tfidf(
     cand_names: List[str] | None = None,
     char_top_k: int | None = None,
 ) -> List[int]:
-    """Return candidate indices for top-k TF-IDF similarity."""
+    """Return candidate indices for top-k TF-IDF similarity.
+    
+    Uses word TF-IDF first, then char-ngram fallback for acronyms/typos.
+    Combines both for improved recall on edge cases.
+    """
     if not crm_name or cand_matrix is None:
         return []
     crm_norm = normalize_text_for_tfidf(crm_name)
     q = vectorizer.transform([crm_norm])
     sims = q @ cand_matrix.T
     row = sims.getrow(0)
-    if row.nnz == 0 and cand_names:
-        # Fallback to char-ngrams for acronyms / typos / near-matches.
+    
+    # Collect word-based matches
+    word_indices = set()
+    if row.nnz > 0:
+        idx = row.indices
+        data = row.data
+        # Take more candidates from word matching (1.5x top_k) for recall
+        word_limit = int(top_k * 1.5)
+        if len(idx) > word_limit:
+            sel = np.argpartition(data, -word_limit)[-word_limit:]
+            idx = idx[sel]
+            data = data[sel]
+        order = np.argsort(data)[::-1]
+        word_indices = set(idx[order].tolist())
+    
+    # Always try char-ngram fallback for better recall (not just when word fails)
+    char_indices = set()
+    if cand_names:
         char_vec = TfidfVectorizer(
             analyzer="char_wb",
             ngram_range=(3, 5),
@@ -223,32 +296,37 @@ def prefilter_candidates_tfidf(
         )
         try:
             char_mat = char_vec.fit_transform(cand_names)
+            q_char = char_vec.transform([crm_norm])
+            char_sims = q_char @ char_mat.T
+            char_row = char_sims.getrow(0)
+            if char_row.nnz > 0:
+                c_idx = char_row.indices
+                c_data = char_row.data
+                limit = char_top_k or top_k
+                if len(c_idx) > limit:
+                    sel = np.argpartition(c_data, -limit)[-limit:]
+                    c_idx = c_idx[sel]
+                    c_data = c_data[sel]
+                c_order = np.argsort(c_data)[::-1]
+                char_indices = set(c_idx[c_order].tolist())
         except ValueError:
-            return []
-        q_char = char_vec.transform([crm_norm])
-        sims = q_char @ char_mat.T
-        row = sims.getrow(0)
-        if row.nnz == 0:
-            return []
-        idx = row.indices
-        data = row.data
-        limit = char_top_k or top_k
-        if len(idx) > limit:
-            sel = np.argpartition(data, -limit)[-limit:]
-            idx = idx[sel]
-            data = data[sel]
-        order = np.argsort(data)[::-1]
-        return idx[order].tolist()
-    if row.nnz == 0:
+            pass
+    
+    # Combine word and char indices (union), prioritize word matches
+    if not word_indices and not char_indices:
         return []
-    idx = row.indices
-    data = row.data
-    if len(idx) > top_k:
-        sel = np.argpartition(data, -top_k)[-top_k:]
-        idx = idx[sel]
-        data = data[sel]
-    order = np.argsort(data)[::-1]
-    return idx[order].tolist()
+    
+    # If we have word matches, use them as base and add char matches
+    if word_indices:
+        combined = list(word_indices)
+        # Add char-only matches (not already in word matches) up to char_top_k
+        char_only = char_indices - word_indices
+        char_limit = char_top_k or int(top_k * 0.4)
+        combined.extend(list(char_only)[:char_limit])
+        return combined[:top_k + char_limit]  # Allow slight overflow for recall
+    else:
+        # Only char matches available
+        return list(char_indices)[:top_k]
 
 
 def normalize_text_for_tfidf(text: str | None) -> str:
