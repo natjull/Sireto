@@ -1,7 +1,7 @@
 # SIRETO Routing SSOT (Single Source of Truth)
 
-**Date** : 26 janvier 2026  
-**Performance** : **74.5% AUTO @ 99.84% Precision**
+**Date** : 1 février 2026  
+**Performance cible** : **74.5% AUTO @ 99.84% Precision**
 
 ## 1. Architecture du Pipeline (Pipe V7)
 
@@ -13,153 +13,42 @@ CRM Input → [Stage 1: Ranker] → [Stage 2: Decider] → [Stage 3: Risk Model]
 
 | Stage | Modèle | Rôle |
 |-------|--------|------|
-| **Stage 1** | `xgbranker_20260124_210313.json` | Sélectionne les top-k candidats SIRENE par requête |
-| **Stage 2** | `xgb_decider_20260124_210218.json` | Score chaque candidat (probabilité de match) |
-| **Stage 3** | `routing_risk_model.pkl` | Décide si la requête peut être AUTO ou doit aller en REVIEW |
+| **Stage 1** | `xgbranker_fast_..._ultima.json` | Sélectionne les top-k candidats SIRENE (ML Pruning) |
+| **Stage 2** | `xgb_decider_..._hardneg.json` | Score chaque candidat (probabilité de match) |
+| **Stage 3** | `routing_risk_model.pkl` | Décide si la requête est AUTO ou REVIEW |
 
-## 2. Métamodèle de Risque (Stage 3)
+## 2. Stratégie de Retrieval "Ultima" (Stage 1)
 
-Le métamodèle analyse la "scène" de la requête (68 features) pour décider du routing.
+Le retrieval est conçu pour un recall quasi-total sans fallback départemental.
 
-**Seuil de décision** :
-```python
-if risk_score >= 0.835:
-    return "AUTO_RISK"
-else:
-    return "REVIEW"
-```
+| Paramètre | Valeur | Rationale |
+|-----------|--------|-----------|
+| **Pool Mode** | `insee_then_postcode` | Strict commune, fallback CP local |
+| **TF-IDF Name** | `bag` (No L2 Norm) | Capture toutes les enseignes/SIREN sans dilution |
+| **TF-IDF Addr** | `tokens` (No L2 Norm) | **Nouveau** : Repêche via tokens d'adresse (ex: "RUE PAIX") |
+| **Rescue** | `addr_hash` + `numeric` | Whitelist systématique pour matchs exacts |
+| **Prefilter k** | 500 | Union des canaux Nom + Adresse |
+| **Stage 1 top-N** | 200 | Envoyés au Stage 2 (Decider) |
 
-## 3. Métriques de Référence (Test Set - 2 512 requêtes)
+## 3. Stratégie d'Entraînement
 
-| Métrique | Valeur |
-|----------|--------|
-| **Taux d'AUTO** | **74.5%** (1 872 / 2 512) |
-| **Précision réelle** | **99.84%** (3 vrais FPs après audit) |
-| **Couverture CRM** | **97.8%** |
+L'alignement Train/Serve est garanti par l'usage des mêmes modules de retrieval.
 
-## 4. Artefacts Canoniques
+- **Phase 1 : Ranker FAST** (No Semantic)
+  - Entraîné sur le pool de retrieval brut (A/B/C Ultima).
+  - Objectif : Maximiser le Recall@N.
+- **Phase 2 : Decider + Risk**
+  - Mining de **Hard Negatives** via le Ranker FAST nouvellement entraîné.
+  - Entraînement du Decider sur ces cas complexes.
+  - Entraînement du Risk Model sur la distribution d'inférence réelle.
 
-| Artefact | Chemin | Description |
+## 4. Artefacts Canoniques (En cours)
+
+| Artefact | Chemin (Ultima) | Description |
 |----------|--------|-------------|
-| **Ranker** | `models/xgbranker_20260124_210313.json` | Stage 1 |
-| **Decider** | `models/xgb_decider_20260124_210218.json` | Stage 2 |
-| **Risk Model** | `models/routing_risk_model.pkl` | Stage 3 Routing |
-| **Risk Meta** | `models/routing_risk_meta.json` | Threshold & Features |
-| **GT Data** | `data/crm_ok_gt.csv` | Gold Standard |
-
-## 5. Pipeline d'Inférence
-
-```bash
-# 1. Inférence Ranker + Decider
-python scripts/infer_xgb_two_stage.py --input-path crm.csv --output-path topk.csv
-
-# 2. Routing (AUTO/REVIEW)
-python scripts/route_xgb_results.py \
-  --input-path topk.csv \
-  --risk-meta models/routing_risk_meta.json \
-  --disable-certainty-rules \
-  --disable-promotion-rules \
-  --output-path routed.csv
-```
-
-## 6. Places Fallback (REVIEW → MATCH_PLACES ou NO_MATCH)
-
-Pour les cas REVIEW, un fallback Places simple est disponible : **"Places as CRM Repair"**.
-
-### Principe
-
-```python
-def fallback_places(crm):
-    places = search_places(crm.name, crm.address, crm.city)
-    
-    if not places:
-        return NO_MATCH
-    
-    # Dept-guard: reject if Google found something in wrong area
-    if places[0].postcode[:2] != crm.postcode[:2]:
-        return NO_MATCH
-    
-    # Use Google's top-1 as "repaired CRM" and rerun EXACT same pipeline
-    repaired_crm = {
-        "crm_name": places[0].title,
-        "crm_address": places[0].address,
-        "postcode": places[0].postcode,
-    }
-    
-    result = run_full_xgb_pipeline(repaired_crm)  # Stages 1, 2, 3 identical
-    
-    if result.status == "AUTO":
-        return MATCH_PLACES(result.siret)
-    else:
-        return NO_MATCH  # Post-Places, no more REVIEW possible
-```
-
-### Key Insight
-
-Google connaît l'identité des entreprises (successions, changements de nom, fusions). 
-On fait confiance à Google pour "quelle entreprise" et à XGBoost pour "quel SIRET".
-
-### Usage
-
-```bash
-python scripts/route_xgb_results.py \
-  --input-path topk.csv \
-  --places-mode \
-  --output-path routed.csv
-```
-
-### Fichiers
-
-| Fichier | Description |
-|---------|-------------|
-| `src/pipe_v6/places_fallback.py` | Logique du fallback simplifié |
-| `src/pipe_v6/serper_places_client.py` | Client API Serper + cache |
-| `src/xgb_matcher/infer.py` | Engine d'inférence réutilisable |
-| `src/xgb_matcher/profile.py` | InferenceProfile (train/serve alignment) |
-
-## 7. Train/Serve Alignment (InferenceProfile)
-
-Pour garantir que l'inférence reproduit exactement les conditions d'entraînement, le module `profile.py` centralise toutes les configurations.
-
-### Invariants critiques
-
-| Paramètre | Valeur Training | Vérification |
-|-----------|-----------------|--------------|
-| **Semantic** | `XGB_SEMANTIC_ENABLED=1` | Fail-fast si désactivé |
-| **TF-IDF mode** | `bag` + `siren_siblings=True` | Variant C |
-| **Stage 1 Ranker** | `ranker_fast` (semantic=0) | Skip semantic pour Stage 1 |
-| **Prefilter k** | 500 | Min candidates = 100 |
-| **Char top-k** | 200 | Fallback acronymes |
-
-### Usage
-
-```python
-# CRITICAL: Set before any imports
-import os
-os.environ["XGB_SEMANTIC_ENABLED"] = "1"
-
-from xgb_matcher.profile import InferenceProfile
-from xgb_matcher.infer import XgbInferenceEngine
-
-# Load profile from model metadata (auto-aligns with training)
-profile = InferenceProfile.from_latest_meta("models/")
-engine = XgbInferenceEngine.from_profile(profile)
-
-# Infer - uses profile-aligned config
-result = engine.infer_single(crm_input)
-```
-
-### Fail-fast Guards
-
-Le `XgbInferenceEngine.__init__()` vérifie :
-1. `XGB_SEMANTIC_ENABLED == "1"` (RuntimeError sinon)
-2. Profile validation via `profile.validate(strict=True)`
-
-### Reproducibility
-
-- TF-IDF padding utilise `crm_id` comme seed (déterministe)
-- Stage 1 top-N = 200 (configurable via `stage1_top_n`)
-- Address rescue threshold: jaro >= 0.96, street_name_jaro >= 0.95
+| **Ranker** | `models/xgbranker_fast_20260131_v5fast_B_ultima.json` | Stage 1 Champion |
+| **Decider** | `models/xgb_decider_20260131_v5fast_B_ultima_hardneg.json` | Stage 2 (Training...) |
+| **GT Data** | `data/crm_ok_gt.csv` | Gold Standard (17k sites) |
 
 ---
-*Note : Ce document est la source unique de vérité pour le routing SIRETO. Toute modification des seuils ou des modèles doit être reflétée ici.*
+*Note : Ce document est la source unique de vérité. Toute modification doit respecter le principe de "Zero Skew".*
