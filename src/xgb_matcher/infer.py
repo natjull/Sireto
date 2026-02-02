@@ -21,6 +21,7 @@ import json
 import logging
 import os
 import pickle
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
@@ -39,12 +40,14 @@ from .blocking import (
     dedupe_candidates,
     attach_address_density,
     address_hash,
+    department_from_code,
     extract_numeric_tokens,
     build_address_hash_index,
     build_numeric_token_index,
 )
 from .features import (
     FEATURE_NAMES,
+    FAST_RANKER_FEATURE_NAMES,
     build_address,
     build_semantic_name_pool,
     make_features_from_preprocessed,
@@ -58,14 +61,6 @@ from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
 from .semantic import top2_semantic_similarities_batch, is_semantic_available
 from .calibration import load_calibrator
-
-
-def _department_from_code(insee: str | None, postcode: str | None) -> str | None:
-    if insee and len(str(insee)) >= 2:
-        return str(insee)[:2]
-    if postcode and len(str(postcode)) >= 2:
-        return str(postcode)[:2]
-    return None
 
 
 @dataclass
@@ -138,6 +133,7 @@ class XgbInferenceEngine:
         decider: XGBClassifier,
         store: PartitionedCandidateStore,
         feature_order: List[str],
+        ranker_feature_order: List[str] | None = None,
         risk_model: Any | None = None,
         risk_calibrator: Any | None = None,
         risk_features: List[str] | None = None,
@@ -157,6 +153,7 @@ class XgbInferenceEngine:
         self.decider = decider
         self.store = store
         self.feature_order = feature_order
+        self.ranker_feature_order = ranker_feature_order or feature_order
         self.risk_model = risk_model
         self.risk_calibrator = risk_calibrator
         self.risk_features = risk_features or []
@@ -171,7 +168,8 @@ class XgbInferenceEngine:
         self.stage1_top_n = stage1_top_n
         self.drop_unnamed = drop_unnamed
         self.exclude_closed = exclude_closed
-        self._dept_cache: Dict[str, DeptCacheItem] = {}
+        self._dept_cache: OrderedDict[str, DeptCacheItem] = OrderedDict()
+        self._max_dept_cache = 5
         
         # Fail-fast: semantic must be enabled
         if os.getenv("XGB_SEMANTIC_ENABLED", "0") != "1":
@@ -207,12 +205,19 @@ class XgbInferenceEngine:
         """Load models and create engine."""
         # Load meta for feature order
         feature_order = FEATURE_NAMES
+        ranker_feature_order = None
         if meta_path:
             meta_path = Path(meta_path)
             if meta_path.exists():
                 with open(meta_path) as f:
                     meta = json.load(f)
                 feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
+                ranker_feature_order = meta.get("ranker_feature_order") or None
+                ranker_fast_feature_order = meta.get("ranker_fast_feature_order") or None
+                if ranker_fast_feature_order and "fast" in str(ranker_path).lower():
+                    ranker_feature_order = ranker_fast_feature_order
+        if "fast" in str(ranker_path).lower() and not ranker_feature_order:
+            ranker_feature_order = FAST_RANKER_FEATURE_NAMES
         
         # Load ranker
         ranker = xgb.Booster()
@@ -264,6 +269,7 @@ class XgbInferenceEngine:
             decider=decider,
             store=store,
             feature_order=feature_order,
+            ranker_feature_order=ranker_feature_order,
             risk_model=risk_model,
             risk_calibrator=risk_calibrator,
             risk_features=risk_features,
@@ -330,6 +336,7 @@ class XgbInferenceEngine:
             decider=decider,
             store=store,
             feature_order=profile.feature_order,
+            ranker_feature_order=profile.get_stage1_feature_order(),
             risk_model=risk_model,
             risk_calibrator=risk_calibrator,
             risk_features=risk_features,
@@ -408,9 +415,10 @@ class XgbInferenceEngine:
             make_features_from_preprocessed(crm_pre, c, skip_semantic=True)
             for _, c in cand_list
         ]
-        X1 = pd.DataFrame(feats_stage1)[self.feature_order]
+        ranker_feature_order = self.ranker_feature_order or self.feature_order
+        X1 = pd.DataFrame(feats_stage1)[ranker_feature_order]
         scores_stage1 = self.ranker.predict(
-            xgb.DMatrix(X1.values, feature_names=self.feature_order)
+            xgb.DMatrix(X1.values, feature_names=ranker_feature_order)
         )
         
         # Top-N selection (use instance config)
@@ -573,7 +581,7 @@ class XgbInferenceEngine:
         pool = dedupe_candidates(base_candidates)
 
         if pool_mode == "multi":
-            dept_key = _department_from_code(insee, postcode)
+            dept_key = department_from_code(insee, postcode)
             cache_item = self._get_dept_cache_item(
                 dept_key=dept_key,
                 insee=insee,
@@ -701,6 +709,7 @@ class XgbInferenceEngine:
             return None
         cached = self._dept_cache.get(dept_key)
         if cached is not None:
+            self._dept_cache.move_to_end(dept_key)
             return cached
 
         dept_candidates = self.store.load_by_department(insee, postcode)
@@ -735,6 +744,8 @@ class XgbInferenceEngine:
             num_index=num_index,
         )
         self._dept_cache[dept_key] = item
+        while len(self._dept_cache) > self._max_dept_cache:
+            self._dept_cache.popitem(last=False)
         return item
 
     def _apply_candidate_filters(

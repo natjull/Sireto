@@ -31,7 +31,9 @@ import os
 import re
 from typing import Any, Dict, List, Mapping, Set
 
+import numpy as np
 import pandas as pd
+from rapidfuzz import process as rf_process
 from rapidfuzz.distance import JaroWinkler, Levenshtein
 
 # Inlined from pipe_v6.category_mapping to avoid circular imports
@@ -69,7 +71,6 @@ from .naming import (
     normalize_name,
     normalize_text,
 )
-from .semantic import max_semantic_similarity
 
 
 # Thresholds for city-like detection
@@ -171,6 +172,50 @@ FEATURE_NAMES: List[str] = [
     "geo_exact_match",    # INSEE CRM == INSEE candidat (1 if match, 0 otherwise)
     "name_norm_exact",    # Exact match after normalization (1 if identical, 0 otherwise)
     "street_number_match", # Street number exact match (1 if match, 0 otherwise)
+]
+
+SEMANTIC_FEATURE_NAMES: List[str] = [
+    name for name in FEATURE_NAMES if name.startswith("name_semantic_")
+]
+
+FAST_RANKER_FEATURE_SET: Set[str] = {
+    "has_any_name",
+    "name_count",
+    "name_jaro_max",
+    "name_jaro_second",
+    "name_jaro_gap",
+    "name_levenshtein_max",
+    "name_token_overlap_max",
+    "idf_name",
+    "numeric_token_match",
+    "name_first_word_match_max",
+    "name_contains_crm_max",
+    "name_crm_contains_cand_max",
+    "acronym_match_max",
+    "name_sim_max_etab",
+    "name_sim_max_ul",
+    "name_sim_max_sigle",
+    "name_sim_max_pm_dirigeant",
+    "type_of_max_name",
+    "is_ul_name_max",
+    "is_sigle_max",
+    "name_length_max",
+    "addr_jaro",
+    "addr_levenshtein",
+    "postcode_match",
+    "city_match",
+    "street_number_diff",
+    "addr_token_overlap",
+    "address_density",
+    "street_name_jaro",
+    "name_addr_consistency",
+    "geo_exact_match",
+    "name_norm_exact",
+    "street_number_match",
+}
+
+FAST_RANKER_FEATURE_NAMES: List[str] = [
+    name for name in FEATURE_NAMES if name in FAST_RANKER_FEATURE_SET
 ]
 
 
@@ -754,9 +799,31 @@ def make_features_from_preprocessed(
 
     if candidate_names:
         sims = []
-        for nm in candidate_names:
-            sim_jaro = jaro_sim(crm_name, nm.text)
-            sim_lev = levenshtein_norm(crm_name, nm.text)
+        cand_texts = [nm.text for nm in candidate_names]
+        if crm_name and cand_texts and all(cand_texts):
+            jaro_scores = rf_process.cdist(
+                [crm_name],
+                cand_texts,
+                scorer=JaroWinkler.similarity,
+                processor=None,
+            )
+            lev_dists = rf_process.cdist(
+                [crm_name],
+                cand_texts,
+                scorer=Levenshtein.distance,
+                processor=None,
+            )
+            jaro_scores = np.asarray(jaro_scores)[0]
+            lev_dists = np.asarray(lev_dists)[0]
+            max_lens = np.array([max(len(crm_name), len(t)) for t in cand_texts], dtype=float)
+            lev_scores = 1.0 - (lev_dists / max_lens)
+        else:
+            jaro_scores = [jaro_sim(crm_name, nm.text) for nm in candidate_names]
+            lev_scores = [levenshtein_norm(crm_name, nm.text) for nm in candidate_names]
+
+        for idx, nm in enumerate(candidate_names):
+            sim_jaro = float(jaro_scores[idx])
+            sim_lev = float(lev_scores[idx])
             tok = token_overlap(crm_name, nm.text, stopwords=NAME_STOPWORDS, min_len=2)
             fw = first_word_match(crm_name, nm.text)
             contains_crm = contains_check(nm.text, crm_name)
