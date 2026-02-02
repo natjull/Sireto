@@ -18,6 +18,8 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from .features import FAST_RANKER_FEATURE_NAMES
+
 
 @dataclass
 class InferenceProfile:
@@ -34,6 +36,8 @@ class InferenceProfile:
     # Feature configuration
     feature_order: List[str] = field(default_factory=list)
     semantic_features: List[str] = field(default_factory=list)
+    ranker_feature_order: List[str] = field(default_factory=list)
+    ranker_fast_feature_order: List[str] = field(default_factory=list)
 
     # TF-IDF / candidate retrieval knobs
     tfidf_name_mode: str = "bag"  # "primary" or "bag"
@@ -89,6 +93,11 @@ class InferenceProfile:
                     "use_ranker_fast=True but ranker_fast_path not set. "
                     "Falling back to ranker_path (may cause skew if Stage 1 uses skip_semantic=True)."
                 )
+        if self.use_ranker_fast and not self.ranker_fast_feature_order and self.ranker_feature_order:
+            issues.append(
+                "use_ranker_fast=True but ranker_fast_feature_order not set. "
+                "Falling back to ranker_feature_order."
+            )
 
         # TF-IDF mode check
         if self.tfidf_name_mode not in ("primary", "bag"):
@@ -101,6 +110,17 @@ class InferenceProfile:
         if self.use_ranker_fast and self.ranker_fast_path:
             return self.ranker_fast_path
         return self.ranker_path
+
+    def get_stage1_feature_order(self) -> List[str]:
+        """Get the appropriate feature order for Stage 1."""
+        if self.use_ranker_fast and self.ranker_fast_path:
+            if self.ranker_fast_feature_order:
+                return self.ranker_fast_feature_order
+            if FAST_RANKER_FEATURE_NAMES:
+                return FAST_RANKER_FEATURE_NAMES
+        if self.ranker_feature_order:
+            return self.ranker_feature_order
+        return self.feature_order
 
     @classmethod
     def from_meta(
@@ -149,6 +169,8 @@ class InferenceProfile:
         # Feature order
         feature_order = meta.get("feature_order") or meta.get("feature_names") or []
         semantic_features = meta.get("semantic_features_zeroed_for_ranker_fast") or []
+        ranker_feature_order = meta.get("ranker_feature_order") or feature_order
+        ranker_fast_feature_order = meta.get("ranker_fast_feature_order") or []
 
         # Load samples metadata if available
         samples_meta: Dict[str, Any] = {}
@@ -185,6 +207,8 @@ class InferenceProfile:
             risk_meta_path=risk_meta_path,
             feature_order=feature_order,
             semantic_features=semantic_features,
+            ranker_feature_order=ranker_feature_order,
+            ranker_fast_feature_order=ranker_fast_feature_order,
             tfidf_name_mode=tfidf_name_mode,
             siren_siblings=siren_siblings,
             prefilter_k=prefilter_k,
@@ -219,6 +243,8 @@ class InferenceProfile:
             "ranker_fast_path": str(self.ranker_fast_path) if self.ranker_fast_path else None,
             "decider_path": str(self.decider_path) if self.decider_path else None,
             "feature_order": self.feature_order[:5] + ["..."] if len(self.feature_order) > 5 else self.feature_order,
+            "ranker_feature_order": self.ranker_feature_order[:5] + ["..."] if len(self.ranker_feature_order) > 5 else self.ranker_feature_order,
+            "ranker_fast_feature_order": self.ranker_fast_feature_order[:5] + ["..."] if len(self.ranker_fast_feature_order) > 5 else self.ranker_fast_feature_order,
             "tfidf_name_mode": self.tfidf_name_mode,
             "siren_siblings": self.siren_siblings,
             "prefilter_k": self.prefilter_k,
