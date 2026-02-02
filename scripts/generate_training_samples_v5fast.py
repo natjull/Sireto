@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
+    FAST_RANKER_FEATURE_NAMES,
     build_address,
     build_semantic_name_pool,
     make_features_from_preprocessed,
@@ -50,7 +51,15 @@ from src.xgb_matcher.features import (
     preprocess_crm_row,
     set_global_name_idf_map,
 )
-from src.xgb_matcher.blocking import normalize_text_for_tfidf
+from src.xgb_matcher.blocking import (
+    normalize_text_for_tfidf,
+    build_address_hash_index,
+    build_numeric_token_index,
+    address_hash,
+    extract_numeric_tokens,
+    build_address_tfidf_index,
+    prefilter_candidates_address_tfidf,
+)
 from src.xgb_matcher.naming import primary_name, build_candidate_names
 from src.xgb_matcher.semantic import (
     batch_encode_texts,
@@ -236,12 +245,19 @@ def find_latest_ranker(models_dir: Path) -> Tuple[Optional[Path], Optional[Path]
     return None, None, False
 
 
-def load_ranker_meta(meta_path: Optional[Path]) -> Tuple[List[str], List[str]]:
+def load_ranker_meta(meta_path: Optional[Path], *, is_fast: bool) -> Tuple[List[str], List[str]]:
     if not meta_path or not meta_path.exists():
-        return FEATURE_NAMES, [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
+        feature_order = FAST_RANKER_FEATURE_NAMES if is_fast else FEATURE_NAMES
+        return feature_order, [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
     with open(meta_path) as f:
         meta = json.load(f)
     feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
+    ranker_feature_order = meta.get("ranker_feature_order") or feature_order
+    ranker_fast_feature_order = meta.get("ranker_fast_feature_order") or []
+    if is_fast:
+        feature_order = ranker_fast_feature_order or FAST_RANKER_FEATURE_NAMES
+    else:
+        feature_order = ranker_feature_order
     semantic_zero = meta.get("semantic_features_zeroed_for_ranker_fast") or []
     return feature_order, semantic_zero
 
@@ -679,16 +695,39 @@ def generate_split(
         field = "_xgb_addr_density_insee" if insee else "_xgb_addr_density_cp"
         _attach_address_density(candidates, key=key, target_field=field)
 
+        # Build retrieval indices
         vectorizer, cand_matrix, _ = build_tfidf_index(
             candidates,
             name_mode=tfidf_name_mode,
             siren_siblings=siren_siblings,
         )
+        addr_vectorizer, addr_matrix = build_address_tfidf_index(candidates)
+        
+        addr_index = build_address_hash_index(candidates)
+        num_index = build_numeric_token_index(candidates)
+
         crm_names = group["crm_name"].tolist()
+        crm_addresses = group["crm_address"].tolist()
+        
+        # 1. Name Retrieval (TF-IDF)
         if vectorizer is not None and cand_matrix is not None:
-            top_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
+            name_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
         else:
-            top_indices = [[] for _ in crm_names]
+            name_indices = [[] for _ in crm_names]
+            
+        # 2. Address Retrieval (TF-IDF)
+        if addr_vectorizer is not None and addr_matrix is not None:
+            # We process addresses one by one as the current helper is single-query or we need to update it
+            # But wait, prefilter_candidates_address_tfidf is single query in my implementation?
+            # Let's check blocking.py: prefilter_candidates_address_tfidf takes "crm_address: str".
+            # So we need to loop.
+            addr_indices_list = []
+            for addr in crm_addresses:
+                addr_indices_list.append(
+                    prefilter_candidates_address_tfidf(addr, addr_vectorizer, addr_matrix, prefilter_k)
+                )
+        else:
+            addr_indices_list = [[] for _ in crm_addresses]
 
         siret_index = {cand.get("siret"): cand for cand in candidates_pool}
 
@@ -703,14 +742,68 @@ def generate_split(
         subset_rows: List[dict] = []
         subset_candidates: List[List[dict]] = []
         subset_pre: List[dict] = []
+        
+        lost_gt_log: List[dict] = []
 
-        for row_dict, crm_pre, idx_list in zip(group_rows, group_pre, top_indices):
+        for row_dict, crm_pre, idx_list, addr_idx_list in zip(group_rows, group_pre, name_indices, addr_indices_list):
+            # 1. Apply Universal Rescue (Address + Numeric)
+            rescue_idx = set()
+            
+            # Address Hash Rescue
+            addr_h = address_hash(crm_pre.get("crm_street_num"), crm_pre.get("crm_street_name"))
+            if addr_h and addr_index:
+                rescue_idx.update(addr_index.get(addr_h, []))
+            
+            # Numeric Token Rescue
+            numeric_tokens = extract_numeric_tokens(row_dict.get("crm_name"))
+            if numeric_tokens and num_index:
+                for token in numeric_tokens:
+                    rescue_idx.update(num_index.get(token, []))
+            
+            # Merge indices (TF-IDF + Rescue)
+            combined_idx = sorted(list(set(idx_list) | set(addr_idx_list) | rescue_idx))
+            
+            # 2. GT Loss Analysis
             gt_siret = row_dict.get("ground_truth_siret")
-            if idx_list and len(idx_list) >= MIN_CANDIDATES_SUBSET:
-                subset = [candidates[i] for i in idx_list if i < len(candidates)]
+            if gt_siret and gt_siret in siret_index:
+                # Find GT index in candidates list
+                # optimization: candidates list is fixed for the group
+                # searching by object identity or siret
+                # siret_index values are references to objects in candidates_pool
+                # checking identity might be faster if candidates_pool == candidates (mostly yes)
+                
+                # We need the index in 'candidates' list
+                gt_cand = siret_index[gt_siret]
+                try:
+                    gt_idx = candidates.index(gt_cand)
+                    if gt_idx not in combined_idx:
+                        # LOST GT!
+                        loss_reason = []
+                        if gt_idx not in idx_list:
+                            loss_reason.append("TFIDF_NAME")
+                        if gt_idx not in addr_idx_list:
+                            loss_reason.append("TFIDF_ADDR")
+                        if gt_idx not in rescue_idx:
+                            loss_reason.append("RESCUE")
+                        
+                        lost_gt_log.append({
+                            "crm_id": row_dict.get("crm_id"),
+                            "crm_name": row_dict.get("crm_name"),
+                            "crm_address": row_dict.get("crm_address"),
+                            "gt_siret": gt_siret,
+                            "gt_name_primary": primary_name(gt_cand),
+                            "loss_reason": "+".join(loss_reason),
+                            "split": split_name,
+                            "loc_key": loc_key
+                        })
+                except ValueError:
+                    pass
+
+            if combined_idx and len(combined_idx) >= MIN_CANDIDATES_SUBSET:
+                subset = [candidates[i] for i in combined_idx if i < len(candidates)]
             else:
                 if candidates:
-                    tfidf_set = set(idx_list) if idx_list else set()
+                    tfidf_set = set(combined_idx)
                     tfidf_cands = [candidates[i] for i in tfidf_set if i < len(candidates)]
                     remaining_idx = [i for i in range(len(candidates)) if i not in tfidf_set]
                     needed = max(0, min(MIN_CANDIDATES_SUBSET, prefilter_k) - len(tfidf_cands))
@@ -719,14 +812,15 @@ def generate_split(
                     subset = tfidf_cands + random_extra
                 else:
                     subset = []
-            if gt_siret and gt_siret in siret_index:
-                gt_cand = siret_index[gt_siret]
-                if gt_cand not in subset:
-                    subset.append(gt_cand)
-
             subset_rows.append(row_dict)
             subset_candidates.append(subset)
             subset_pre.append(crm_pre)
+        
+        # Write lost GT log incrementally to avoid memory buildup
+        if lost_gt_log:
+            log_path = output_path.parent / f"lost_gt_analysis_{output_path.stem}.csv"
+            log_df = pd.DataFrame(lost_gt_log)
+            log_df.to_csv(log_path, mode='a', header=not log_path.exists(), index=False)
 
         samples_batch: List[dict] = []
         for row_dict, crm_pre, subset in zip(subset_rows, subset_pre, subset_candidates):
@@ -890,7 +984,7 @@ def main() -> None:
         if ranker_path and ranker_path.exists():
             ranker = xgb.Booster()
             ranker.load_model(str(ranker_path))
-            ranker_feature_order, semantic_zero = load_ranker_meta(meta_path)
+            ranker_feature_order, semantic_zero = load_ranker_meta(meta_path, is_fast=is_fast)
             ranker_zero_features = semantic_zero if is_fast else []
             ranker_info = {
                 "path": str(ranker_path),

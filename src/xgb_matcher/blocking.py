@@ -242,6 +242,7 @@ def build_tfidf_index(
         token_pattern=r"(?u)\b\w+\b",
         min_df=1,
         max_df=0.95,  # Ignore very common terms
+        norm=None,    # Disable L2 normalization to avoid length penalty on bag-of-names
     )
     try:
         matrix = vectorizer.fit_transform(names)
@@ -250,23 +251,65 @@ def build_tfidf_index(
     return vectorizer, matrix, names
 
 
-def build_char_tfidf_index(
-    cand_names: List[str],
+
+def build_address_tfidf_index(
+    candidates: List[dict],
 ) -> Tuple[Optional[TfidfVectorizer], Optional[Any]]:
-    """Build char-ngram TF-IDF index for acronym/typo matching."""
-    if not cand_names:
+    """Build TF-IDF index for candidate addresses (Address First Retrieval)."""
+    addresses = [normalize_text_for_tfidf(build_address(c) or "") for c in candidates]
+    
+    # Check if we have any addresses
+    if not any(addresses):
         return None, None
-    char_vec = TfidfVectorizer(
-        analyzer="char_wb",
-        ngram_range=(3, 5),
+
+    vectorizer = TfidfVectorizer(
+        analyzer="word",
+        ngram_range=(1, 2), # Capture street names properly
         lowercase=False,
+        token_pattern=r"(?u)\b\w+\b",
         min_df=1,
+        max_df=0.95,
+        norm=None, # No length penalty for long addresses
     )
     try:
-        char_mat = char_vec.fit_transform(cand_names)
-        return char_vec, char_mat
+        matrix = vectorizer.fit_transform(addresses)
     except ValueError:
         return None, None
+    return vectorizer, matrix
+
+
+def prefilter_candidates_address_tfidf(
+    crm_address: str,
+    vectorizer: TfidfVectorizer,
+    cand_matrix: Any,
+    top_k: int,
+) -> List[int]:
+    """Return candidate indices for top-k TF-IDF similarity on address."""
+    if not crm_address or cand_matrix is None:
+        return []
+    
+    crm_norm = normalize_text_for_tfidf(crm_address)
+    if not crm_norm:
+        return []
+        
+    q = vectorizer.transform([crm_norm])
+    sims = q @ cand_matrix.T
+    row = sims.getrow(0)
+    
+    if row.nnz == 0:
+        return []
+        
+    idx = row.indices
+    data = row.data
+    
+    if len(idx) > top_k:
+        sel = np.argpartition(data, -top_k)[-top_k:]
+        idx = idx[sel]
+        data = data[sel]
+        
+    order = np.argsort(data)[::-1]
+    return idx[order].tolist()
+
 
 
 def prefilter_candidates_tfidf(
@@ -288,6 +331,9 @@ def prefilter_candidates_tfidf(
     if not crm_name or cand_matrix is None:
         return []
     crm_norm = normalize_text_for_tfidf(crm_name)
+    if not crm_norm: # Handle empty normalized name
+        return []
+        
     q = vectorizer.transform([crm_norm])
     sims = q @ cand_matrix.T
     row = sims.getrow(0)
@@ -349,6 +395,58 @@ def prefilter_candidates_tfidf(
     else:
         # Only char matches available
         return list(char_indices)[:top_k]
+
+
+def prefilter_candidates_address_tfidf(
+    crm_address: str,
+    vectorizer: TfidfVectorizer,
+    cand_matrix: Any,
+    top_k: int,
+) -> List[int]:
+    """Return candidate indices for top-k TF-IDF similarity on address."""
+    if not crm_address or cand_matrix is None:
+        return []
+    
+    crm_norm = normalize_text_for_tfidf(crm_address)
+    if not crm_norm:
+        return []
+        
+    q = vectorizer.transform([crm_norm])
+    sims = q @ cand_matrix.T
+    row = sims.getrow(0)
+    
+    if row.nnz == 0:
+        return []
+        
+    idx = row.indices
+    data = row.data
+    
+    if len(idx) > top_k:
+        sel = np.argpartition(data, -top_k)[-top_k:]
+        idx = idx[sel]
+        data = data[sel]
+        
+    order = np.argsort(data)[::-1]
+    return idx[order].tolist()
+
+
+def build_char_tfidf_index(
+    cand_names: List[str],
+) -> Tuple[Optional[TfidfVectorizer], Optional[Any]]:
+    """Build char-ngram TF-IDF index for acronym/typo matching."""
+    if not cand_names:
+        return None, None
+    char_vec = TfidfVectorizer(
+        analyzer="char_wb",
+        ngram_range=(3, 5),
+        lowercase=False,
+        min_df=1,
+    )
+    try:
+        char_mat = char_vec.fit_transform(cand_names)
+        return char_vec, char_mat
+    except ValueError:
+        return None, None
 
 
 def build_address_hash_index(candidates: Iterable[dict]) -> Dict[str, List[int]]:
