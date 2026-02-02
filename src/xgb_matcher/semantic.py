@@ -7,9 +7,10 @@ from __future__ import annotations
 
 import os
 import re
+from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
-from typing import Iterable, Optional, List, Tuple, Dict
+from typing import Iterable, Optional, List, Tuple, Dict, Any
 
 import logging
 import numpy as np
@@ -24,10 +25,13 @@ _SEMANTIC_WARNED: bool = False
 _logger = logging.getLogger(__name__)
 
 _DEFAULT_MODEL = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
-_ENCODERS: dict[str, "SentenceTransformer"] = {}
+_ENCODERS: Dict[str, Any] = {}
 
 # Cache for batch-encoded embeddings (text -> normalized vector)
-_EMBEDDING_CACHE: Dict[str, np.ndarray] = {}
+# LRU-bounded: oldest entries evicted when size exceeds _MAX_EMBEDDING_CACHE.
+_MAX_EMBEDDING_CACHE = 200_000  # ~300 MB for 384-dim float32
+_EMBEDDING_CACHE: OrderedDict[str, np.ndarray] = OrderedDict()
+_SEMANTIC_CLIENT: Any | None = None
 
 
 def _semantic_enabled() -> bool:
@@ -96,7 +100,7 @@ def _batch_size() -> int:
         return 512
 
 
-def _get_encoder(model_name: str) -> Optional["SentenceTransformer"]:
+def _get_encoder(model_name: str) -> Optional[Any]:
     if not _semantic_enabled():
         return None
     if SentenceTransformer is None:
@@ -117,6 +121,12 @@ def _get_encoder(model_name: str) -> Optional["SentenceTransformer"]:
     except Exception as e:
         print(f"[Semantic] Failed to load model: {e}")
         return None
+
+
+def set_semantic_client(client) -> None:
+    """Set a remote semantic client (multiprocess server)."""
+    global _SEMANTIC_CLIENT
+    _SEMANTIC_CLIENT = client
 
 
 def _normalize(vec: np.ndarray) -> np.ndarray:
@@ -166,29 +176,38 @@ def batch_encode_texts(texts: List[str]) -> Dict[str, np.ndarray]:
     # Normalize all texts
     normalized_texts = [_normalize_for_embedding(t) for t in texts]
     
-    # Find texts not yet in cache
+    # Find texts not yet in cache (move hits to end for LRU)
     texts_to_encode = []
     for norm_text in normalized_texts:
-        if norm_text and norm_text not in _EMBEDDING_CACHE:
+        if not norm_text:
+            continue
+        if norm_text in _EMBEDDING_CACHE:
+            _EMBEDDING_CACHE.move_to_end(norm_text)
+        else:
             texts_to_encode.append(norm_text)
     
     # Remove duplicates while preserving order
     texts_to_encode = list(dict.fromkeys(texts_to_encode))
     
     if texts_to_encode:
-        encoder = _get_encoder(_model_name())
-        if encoder is not None:
-            # Batch encode on GPU
-            embeddings = encoder.encode(
-                texts_to_encode,
-                batch_size=_batch_size(),
-                show_progress_bar=False,
-                convert_to_numpy=True,
-                normalize_embeddings=True,  # Already normalized
-            )
-            # Populate cache
+        embeddings = None
+        if _SEMANTIC_CLIENT is not None:
+            embeddings = _SEMANTIC_CLIENT.encode(texts_to_encode)
+        else:
+            encoder = _get_encoder(_model_name())
+            if encoder is not None:
+                embeddings = encoder.encode(
+                    texts_to_encode,
+                    batch_size=_batch_size(),
+                    show_progress_bar=False,
+                    convert_to_numpy=True,
+                    normalize_embeddings=True,  # Already normalized
+                )
+        if embeddings is not None:
             for text, emb in zip(texts_to_encode, embeddings):
                 _EMBEDDING_CACHE[text] = emb.astype(np.float32, copy=False)
+            while len(_EMBEDDING_CACHE) > _MAX_EMBEDDING_CACHE:
+                _EMBEDDING_CACHE.popitem(last=False)
     
     # Return only the requested texts
     result = {}
@@ -312,7 +331,7 @@ def top2_semantic_similarities_batch(
     return out
 
 
-def get_cache_stats() -> Tuple[int, int]:
+def get_cache_stats() -> Tuple[int, float]:
     """Return (cache_size, cache_memory_mb) for monitoring."""
     cache_size = len(_EMBEDDING_CACHE)
     if cache_size > 0:
@@ -327,7 +346,7 @@ def get_cache_stats() -> Tuple[int, int]:
 def clear_cache():
     """Clear the embedding cache to free memory."""
     global _EMBEDDING_CACHE
-    _EMBEDDING_CACHE = {}
+    _EMBEDDING_CACHE = OrderedDict()
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -394,4 +413,5 @@ __all__ = [
     "get_cache_stats",
     "clear_cache",
     "is_semantic_available",
+    "set_semantic_client",
 ]

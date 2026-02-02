@@ -43,6 +43,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
+    FAST_RANKER_FEATURE_NAMES,
     make_features,
     normalize_text,
     set_global_name_idf_map,
@@ -198,12 +199,19 @@ def find_latest_ranker(models_dir: Path) -> Tuple[Optional[Path], Optional[Path]
     return None, None, False
 
 
-def load_ranker_meta(meta_path: Optional[Path]) -> Tuple[List[str], List[str]]:
+def load_ranker_meta(meta_path: Optional[Path], *, is_fast: bool) -> Tuple[List[str], List[str]]:
     if not meta_path or not meta_path.exists():
-        return FEATURE_NAMES, [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
+        feature_order = FAST_RANKER_FEATURE_NAMES if is_fast else FEATURE_NAMES
+        return feature_order, [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
     with open(meta_path) as f:
         meta = json.load(f)
     feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
+    ranker_feature_order = meta.get("ranker_feature_order") or feature_order
+    ranker_fast_feature_order = meta.get("ranker_fast_feature_order") or []
+    if is_fast:
+        feature_order = ranker_fast_feature_order or FAST_RANKER_FEATURE_NAMES
+    else:
+        feature_order = ranker_feature_order
     semantic_zero = meta.get("semantic_features_zeroed_for_ranker_fast") or []
     return feature_order, semantic_zero
 
@@ -616,10 +624,6 @@ def generate_split(
                     subset = tfidf_cands + random_extra
                 else:
                     subset = []
-            if gt_siret and gt_siret in siret_index:
-                gt_cand = siret_index[gt_siret]
-                if gt_cand not in subset:
-                    subset.append(gt_cand)
             samples = generate_samples_for_query(
                 pd.Series(row_dict),
                 subset,
@@ -774,7 +778,7 @@ def main() -> None:
         if ranker_path and ranker_path.exists():
             ranker = xgb.Booster()
             ranker.load_model(str(ranker_path))
-            ranker_feature_order, semantic_zero = load_ranker_meta(meta_path)
+            ranker_feature_order, semantic_zero = load_ranker_meta(meta_path, is_fast=is_fast)
             ranker_zero_features = semantic_zero if is_fast else []
             ranker_info = {
                 "path": str(ranker_path),
