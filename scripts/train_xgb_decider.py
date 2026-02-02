@@ -28,7 +28,7 @@ from sklearn.metrics import (
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.xgb_matcher.features import FEATURE_NAMES
+from src.xgb_matcher.features import FEATURE_NAMES, FAST_RANKER_FEATURE_NAMES
 
 
 # Calibrator wrapper classes (must match inference for pickle compatibility)
@@ -227,9 +227,13 @@ def main() -> None:
     ranker = None
     feature_order = FEATURE_NAMES
     zero_features: List[str] = []
+    ranker_feature_order: List[str] = FEATURE_NAMES
+    ranker_fast_feature_order: List[str] = []
     if args.ranker_meta and args.ranker_meta.exists():
         meta = _load_meta(args.ranker_meta)
         feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
+        ranker_feature_order = meta.get("ranker_feature_order") or feature_order
+        ranker_fast_feature_order = meta.get("ranker_fast_feature_order") or []
         zero_features = meta.get("semantic_features_zeroed_for_ranker_fast") or []
         if not args.ranker_model:
             ranker_path = meta.get("ranker_fast_model") or meta.get("ranker_model")
@@ -239,6 +243,10 @@ def main() -> None:
     if args.ranker_model and args.ranker_model.exists():
         ranker = xgb.Booster()
         ranker.load_model(str(args.ranker_model))
+        if "fast" in args.ranker_model.name.lower():
+            feature_order = ranker_fast_feature_order or FAST_RANKER_FEATURE_NAMES or ranker_feature_order
+        else:
+            feature_order = ranker_feature_order
 
     if ranker is not None and args.top_k > 0:
         train_df = filter_topk_by_ranker(train_df, ranker, feature_order, args.top_k, zero_features)

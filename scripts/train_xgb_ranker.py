@@ -24,7 +24,11 @@ import os
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
-from src.xgb_matcher.features import FEATURE_NAMES
+from src.xgb_matcher.features import (
+    FEATURE_NAMES,
+    FAST_RANKER_FEATURE_NAMES,
+    SEMANTIC_FEATURE_NAMES,
+)
 
 
 RANKER_PARAMS = {
@@ -41,7 +45,7 @@ RANKER_PARAMS = {
 NUM_BOOST_ROUNDS = 200
 EARLY_STOPPING_ROUNDS = 20
 
-SEMANTIC_FEATURES = [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
+SEMANTIC_FEATURES = SEMANTIC_FEATURE_NAMES
 
 
 def load_samples(path: Path) -> pd.DataFrame:
@@ -219,14 +223,14 @@ def main() -> None:
     )
 
     ranker_fast = None
-    if args.train_ranker_fast and SEMANTIC_FEATURES and not args.skip_semantic:
+    if args.train_ranker_fast and FAST_RANKER_FEATURE_NAMES:
         print("\n--- Training Ranker FAST (semantic zeroed) ---")
-        X_train_fast = _zero_out_features(X_train, FEATURE_NAMES, SEMANTIC_FEATURES)
-        X_dev_fast = _zero_out_features(X_dev, FEATURE_NAMES, SEMANTIC_FEATURES)
-        dtrain_fast = xgb.DMatrix(X_train_fast, label=y_train)
-        dtrain_fast.set_group(groups_train)
-        ddev_fast = xgb.DMatrix(X_dev_fast, label=y_dev)
-        ddev_fast.set_group(groups_dev)
+        X_train_fast, y_train_fast, groups_train_fast = prepare_data(train_df, FAST_RANKER_FEATURE_NAMES)
+        X_dev_fast, y_dev_fast, groups_dev_fast = prepare_data(dev_df, FAST_RANKER_FEATURE_NAMES)
+        dtrain_fast = xgb.DMatrix(X_train_fast, label=y_train_fast)
+        dtrain_fast.set_group(groups_train_fast)
+        ddev_fast = xgb.DMatrix(X_dev_fast, label=y_dev_fast)
+        ddev_fast.set_group(groups_dev_fast)
         ranker_fast = xgb.train(
             RANKER_PARAMS,
             dtrain_fast,
@@ -240,10 +244,10 @@ def main() -> None:
     for split_name, X, y, groups in [("dev", X_dev, y_dev, groups_dev), ("test", X_test, y_test, groups_test)]:
         metrics.append(evaluate_ranker(ranker, X, y, groups, split_name, "ranker"))
     if ranker_fast is not None:
-        X_dev_fast = _zero_out_features(X_dev, FEATURE_NAMES, SEMANTIC_FEATURES)
-        X_test_fast = _zero_out_features(X_test, FEATURE_NAMES, SEMANTIC_FEATURES)
-        metrics.append(evaluate_ranker(ranker_fast, X_dev_fast, y_dev, groups_dev, "dev", "ranker_fast"))
-        metrics.append(evaluate_ranker(ranker_fast, X_test_fast, y_test, groups_test, "test", "ranker_fast"))
+        X_dev_fast, y_dev_fast, groups_dev_fast = prepare_data(dev_df, FAST_RANKER_FEATURE_NAMES)
+        X_test_fast, y_test_fast, groups_test_fast = prepare_data(test_df, FAST_RANKER_FEATURE_NAMES)
+        metrics.append(evaluate_ranker(ranker_fast, X_dev_fast, y_dev_fast, groups_dev_fast, "dev", "ranker_fast"))
+        metrics.append(evaluate_ranker(ranker_fast, X_test_fast, y_test_fast, groups_test_fast, "test", "ranker_fast"))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     ranker_path = args.output_dir / f"xgbranker_{timestamp}.json"
@@ -259,6 +263,8 @@ def main() -> None:
             "timestamp": timestamp,
             "feature_names": FEATURE_NAMES,
             "feature_order": FEATURE_NAMES,
+            "ranker_feature_order": FEATURE_NAMES,
+            "ranker_fast_feature_order": FAST_RANKER_FEATURE_NAMES,
             "semantic_features_zeroed_for_ranker_fast": SEMANTIC_FEATURES,
             "semantic_enabled_samples": semantic_enabled_samples,
             "semantic_enabled_env_train": semantic_enabled_env,
