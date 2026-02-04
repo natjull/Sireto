@@ -133,7 +133,23 @@ def filter_candidates_by_address_hash(
 
 
 def dedupe_candidates(candidates: Iterable[dict]) -> Dict[str, dict]:
-    """Deduplicate candidates by SIRET (last wins)."""
+    """Deduplicate candidates by SIRET.
+    
+    Since v5 partitions (data/candidates_v5_all/) are guaranteed to have no 
+    duplicate SIRETs within a single partition (INSEE or CP), this function 
+    primarily serves to handle the pool_mode="multi" case where a SIRET may 
+    appear in both INSEE and CP partitions.
+    
+    Uses simple dict assignment (last wins), which is O(n) and very fast.
+    This is the canonical dedupe logic - aligned with training which also 
+    processes one partition at a time.
+    
+    Args:
+        candidates: Iterable of candidate dicts with 'siret' keys.
+        
+    Returns:
+        Dict mapping siret -> candidate (deduplicated).
+    """
     mapping: Dict[str, dict] = {}
     for cand in candidates:
         siret = str(cand.get("siret") or "").strip()
@@ -234,15 +250,13 @@ def build_tfidf_index(
     else:
         names = [normalize_text_for_tfidf(candidate_tfidf_text(c) or "") for c in candidates]
     
-    # Use (1,3) ngrams for better acronym/partial matching (improves recall)
+    # Align TF-IDF settings with training (generate_training_samples_v5fast.py)
     vectorizer = TfidfVectorizer(
         analyzer="word",
-        ngram_range=(1, 3),
+        ngram_range=(1, 2),
         lowercase=False,
         token_pattern=r"(?u)\b\w+\b",
         min_df=1,
-        max_df=0.95,  # Ignore very common terms
-        norm=None,    # Disable L2 normalization to avoid length penalty on bag-of-names
     )
     try:
         matrix = vectorizer.fit_transform(names)

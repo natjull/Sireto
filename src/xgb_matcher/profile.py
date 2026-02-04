@@ -51,7 +51,7 @@ class InferenceProfile:
     exclude_closed: bool = False
 
     # Partitions
-    partitions_dir: Path = field(default_factory=lambda: Path("data/candidates_v4_active"))
+    partitions_dir: Path = field(default_factory=lambda: Path("data/candidates_v5_all"))
 
     # Semantic
     semantic_required: bool = True
