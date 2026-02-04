@@ -36,7 +36,9 @@ if TYPE_CHECKING:
 from .blocking import (
     build_tfidf_index,
     build_char_tfidf_index,
+    build_address_tfidf_index,
     prefilter_candidates_tfidf,
+    prefilter_candidates_address_tfidf,
     dedupe_candidates,
     attach_address_density,
     address_hash,
@@ -104,13 +106,16 @@ class CrmInput:
     
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> "CrmInput":
+        crm_city = str(d.get("crm_city", "") or "") or None
+        if not crm_city:
+            crm_city = str(d.get("crm_city_addr", "") or "") or None
         return cls(
             crm_id=str(d.get("crm_id", "")),
             crm_name=str(d.get("crm_name", "") or ""),
             crm_address=str(d.get("crm_address", "") or "") or None,
             postcode=str(d.get("postcode", "") or "") or None,
             insee=str(d.get("insee", "") or "") or None,
-            crm_city=str(d.get("crm_city", "") or "") or None,
+            crm_city=crm_city,
         )
     
     def to_dict(self) -> Dict[str, Any]:
@@ -121,6 +126,7 @@ class CrmInput:
             "postcode": self.postcode,
             "insee": self.insee,
             "crm_city": self.crm_city,
+            "crm_city_addr": self.crm_city,
         }
 
 
@@ -328,8 +334,7 @@ class XgbInferenceEngine:
         # Load decider calibrator
         calibrator = None
         if profile.calibrator_path and profile.calibrator_path.exists():
-            with open(profile.calibrator_path, "rb") as f:
-                calibrator = pickle.load(f)
+            calibrator = load_calibrator(profile.calibrator_path)
         
         return cls(
             ranker=ranker,
@@ -352,6 +357,191 @@ class XgbInferenceEngine:
             exclude_closed=profile.exclude_closed,
         )
     
+    def infer_topk(
+        self,
+        crm_input: CrmInput,
+        top_k: int = 5,
+        pool_mode: str = "insee_then_postcode",
+        drop_unnamed: bool | None = None,
+        exclude_closed: bool | None = None,
+        export_routing_features: bool = True,
+    ) -> List["TopKRow"]:
+        """Run two-stage inference and return top-k rows for CSV export.
+        
+        This is the canonical batch inference method, producing output compatible
+        with route_xgb_results.py and the legacy infer_xgb_two_stage.py script.
+        
+        Returns:
+            List of TopKRow objects (one per top-k candidate)
+        """
+        crm_row = crm_input.to_dict()
+        crm_pre = preprocess_crm_row(crm_row)
+        
+        if drop_unnamed is None:
+            drop_unnamed = self.drop_unnamed
+        if exclude_closed is None:
+            exclude_closed = self.exclude_closed
+
+        # Build candidate pool
+        candidates, idf_map, default_idf = self._build_candidate_pool(
+            crm_row=crm_row,
+            crm_id=crm_input.crm_id,
+            crm_pre=crm_pre,
+            pool_mode=pool_mode,
+            drop_unnamed=drop_unnamed,
+            exclude_closed=exclude_closed,
+        )
+        
+        if not candidates:
+            return []
+        
+        cand_list = [(c.get("siret"), c) for c in candidates if c.get("siret")]
+        if not cand_list:
+            return []
+        
+        set_global_name_idf_map(idf_map, default_idf)
+        
+        # Stage 1: Ranker (no semantic)
+        feats_stage1 = [
+            make_features_from_preprocessed(crm_pre, c, skip_semantic=True)
+            for _, c in cand_list
+        ]
+        ranker_feature_order = self.ranker_feature_order or self.feature_order
+        X1 = pd.DataFrame(feats_stage1)[ranker_feature_order]
+        scores_stage1 = self.ranker.predict(
+            xgb.DMatrix(X1.values, feature_names=ranker_feature_order)
+        )
+        
+        # Top-N selection
+        stage1_top_n = min(self.stage1_top_n, len(scores_stage1))
+        top_n_idx = np.argsort(scores_stage1)[::-1][:stage1_top_n]
+        
+        # Address rescue
+        rescue_indices = self._rescue_by_address(feats_stage1, set(top_n_idx))
+        if rescue_indices:
+            top_n_idx = np.unique(np.concatenate([top_n_idx, np.array(rescue_indices, dtype=int)]))
+        
+        # Stage 2: Decider (with semantic)
+        feats_n = []
+        cand_list_n = []
+        semantic_pools = []
+        
+        for idx in top_n_idx:
+            siret, c = cand_list[idx]
+            feat = feats_stage1[idx].copy()
+            cand_city_norm = c.get("_xgb_cached_city_norm") or normalize_text(c.get("city"))
+            semantic_pools.append(
+                build_semantic_name_pool(
+                    build_candidate_names(c),
+                    crm_city_norm=crm_pre.get("crm_city_norm", ""),
+                    cand_city_norm=cand_city_norm,
+                )
+            )
+            feat["_siret"] = siret
+            feat["_cand_name"] = primary_name(c) or f"SIRET {siret}"
+            feats_n.append(feat)
+            cand_list_n.append((siret, c))
+        
+        # Add semantic features
+        sem = top2_semantic_similarities_batch(crm_pre.get("crm_name_semantic", ""), semantic_pools)
+        for feat, (sem_max, sem_second, sem_gap) in zip(feats_n, sem, strict=True):
+            if semantic_gate_allows(
+                feat.get("name_jaro_max", 0.0),
+                feat.get("name_token_overlap_max", 0.0),
+            ):
+                feat["name_semantic_max"] = sem_max
+                feat["name_semantic_second"] = sem_second
+                feat["name_semantic_gap"] = sem_gap
+            else:
+                feat["name_semantic_max"] = 0.0
+                feat["name_semantic_second"] = 0.0
+                feat["name_semantic_gap"] = 0.0
+        
+        # Stage 2 scoring
+        X_n = pd.DataFrame(feats_n)[self.feature_order]
+        probs = self.decider.predict_proba(X_n.values)[:, 1]
+        if self.calibrator is not None:
+            probs = self.calibrator.predict_proba(X_n.values)[:, 1]
+        
+        scores = np.array(probs)
+        pool_size_stage1 = len(cand_list)
+        pool_size_stage2 = len(scores)
+        scores_sorted = np.sort(scores)[::-1]
+        top3_avg = float(np.mean(scores_sorted[:3])) if len(scores_sorted) >= 3 else float(np.mean(scores_sorted)) if len(scores_sorted) else 0.0
+
+        sorted_idx = np.argsort(scores)[::-1]
+        topk_idx = sorted_idx[:top_k].tolist()
+        topk_idx = self._promote_open_over_closed(topk_idx, cand_list_n)
+
+        top1_score = float(scores[topk_idx[0]]) if topk_idx else 0.0
+        top2_score = float(scores[topk_idx[1]]) if len(topk_idx) > 1 else 0.0
+        score_gap = top1_score - top2_score
+        denom = top2_score if top2_score > 1e-6 else 0.001
+        score_ratio = top1_score / denom
+        
+        # Build output rows
+        rows: List[TopKRow] = []
+        for rank, idx_k in enumerate(topk_idx, start=1):
+            siret_k, cand_k = cand_list_n[idx_k]
+            etat_admin = str(cand_k.get("etat_admin") or "").strip().upper() or None
+            candidate_state = None
+            if etat_admin is not None:
+                candidate_state = "FERME" if etat_admin == "F" else "OUVERT"
+            feat_row = feats_n[idx_k]
+            
+            row = TopKRow(
+                crm_id=crm_input.crm_id,
+                crm_name=crm_input.crm_name,
+                crm_address=crm_input.crm_address,
+                crm_postcode=crm_input.postcode,
+                crm_city=crm_input.crm_city,
+                siret_candidate=str(siret_k),
+                score=float(scores[idx_k]),
+                score_top1=top1_score,
+                score_top2=top2_score,
+                score_gap=score_gap,
+                score_ratio=score_ratio,
+                top3_avg=top3_avg,
+                pool_size=pool_size_stage2,
+                pool_size_stage1=pool_size_stage1,
+                candidate_name=primary_name(cand_k) or f"SIRET {siret_k}",
+                candidate_addr=build_address(cand_k),
+                candidate_city=cand_k.get("city"),
+                candidate_postcode=str(cand_k.get("postcode") or ""),
+                candidate_insee=str(cand_k.get("insee") or ""),
+                candidate_state=candidate_state,
+                candidate_last_treatment_date=cand_k.get("last_treatment_date"),
+                rank=rank,
+                has_name_evidence=_has_name_evidence(feat_row),
+            )
+            
+            if export_routing_features:
+                row.name_jaro_max = float(feat_row.get("name_jaro_max", 0.0))
+                row.name_token_overlap_max = float(feat_row.get("name_token_overlap_max", 0.0))
+                row.name_sim_max_etab = float(feat_row.get("name_sim_max_etab", 0.0))
+                row.name_crm_contains_cand_max = float(feat_row.get("name_crm_contains_cand_max", 0.0))
+                row.name_sim_max_pm_dirigeant = float(feat_row.get("name_sim_max_pm_dirigeant", 0.0))
+                row.idf_name = float(feat_row.get("idf_name", 0.0))
+                row.numeric_token_match = float(feat_row.get("numeric_token_match", 0.0))
+                row.addr_jaro = float(feat_row.get("addr_jaro", 0.0))
+                row.addr_token_overlap = float(feat_row.get("addr_token_overlap", 0.0))
+                row.address_density = float(feat_row.get("address_density", 1.0))
+                row.street_number_diff = float(feat_row.get("street_number_diff", 9999))
+                row.name_semantic_max = float(feat_row.get("name_semantic_max", 0.0))
+                row.name_semantic_second = float(feat_row.get("name_semantic_second", 0.0))
+                row.name_semantic_gap = float(feat_row.get("name_semantic_gap", 0.0))
+                row.name_contains_crm_max = float(feat_row.get("name_contains_crm_max", 0.0))
+                row.postcode_match = float(feat_row.get("postcode_match", 0.0))
+                row.city_match = float(feat_row.get("city_match", 0.0))
+                row.street_name_jaro = float(feat_row.get("street_name_jaro", 0.0))
+                row.name_addr_consistency = float(feat_row.get("name_addr_consistency", 0.0))
+                row.name_length_max = float(feat_row.get("name_length_max", 0.0))
+                row.legal_form_category = float(feat_row.get("legal_form_category", 0.0))
+            
+            rows.append(row)
+        
+        return rows
+
     def infer_single(
         self,
         crm_input: CrmInput,
@@ -554,12 +744,18 @@ class XgbInferenceEngine:
     ) -> Tuple[List[Dict[str, Any]], Dict[str, float], float]:
         """Build candidate pool from partitioned store.
         
+        ULTIMA STRATEGY (aligned with training):
+        - Double TF-IDF retrieval: Name + Address
+        - Universal rescue: addr_hash + numeric_tokens (all pool modes)
+        - Deterministic padding for min_candidates
+        
         Uses instance config (prefilter_k, min_candidates, tfidf_name_mode, siren_siblings).
         crm_id is used as seed for deterministic padding.
         """
         insee = crm_row.get("insee")
         postcode = crm_row.get("postcode")
         crm_name = crm_row.get("crm_name", "")
+        crm_address = crm_pre.get("crm_addr", "")
         
         base_candidates: List[Dict] = []
         whitelisted_sirets: set[str] = set()
@@ -578,8 +774,44 @@ class XgbInferenceEngine:
             drop_unnamed=drop_unnamed,
             exclude_closed=exclude_closed,
         )
+        # Dedupe by SIRET: O(n) dict assignment. In insee_then_postcode mode 
+        # with clean v5 partitions, this is mostly a no-op. In pool_mode="multi",
+        # it removes duplicates when a SIRET appears in both INSEE and CP partitions.
+        # Training script does NOT call dedupe_candidates because it processes 
+        # one partition at a time - this is aligned as long as partitions are clean.
         pool = dedupe_candidates(base_candidates)
 
+        # ── Universal Rescue (all pool modes) ──────────────────────────────────
+        # Build indices on filtered pool for rescue operations
+        pool_list = list(pool.values())
+        addr_index = build_address_hash_index(pool_list)
+        num_index = build_numeric_token_index(pool_list)
+
+        # 1. Address Hash Rescue
+        addr_h = address_hash(
+            crm_pre.get("crm_street_num"),
+            crm_pre.get("crm_street_name"),
+        )
+        if addr_h and addr_index:
+            for idx in addr_index.get(addr_h, []):
+                if idx < len(pool_list):
+                    cand = pool_list[idx]
+                    siret = str(cand.get("siret") or "")
+                    if siret:
+                        whitelisted_sirets.add(siret)
+
+        # 2. Numeric Token Rescue
+        numeric_tokens = extract_numeric_tokens(crm_name)
+        if numeric_tokens and num_index:
+            for token in numeric_tokens:
+                for idx in num_index.get(token, []):
+                    if idx < len(pool_list):
+                        cand = pool_list[idx]
+                        siret = str(cand.get("siret") or "")
+                        if siret:
+                            whitelisted_sirets.add(siret)
+
+        # ── Department-wide rescue (pool_mode=multi only) ───────────────────────
         if pool_mode == "multi":
             dept_key = department_from_code(insee, postcode)
             cache_item = self._get_dept_cache_item(
@@ -593,30 +825,28 @@ class XgbInferenceEngine:
                 dept_candidates = cache_item.candidates
                 extra: List[Dict[str, Any]] = []
 
-                addr_h = address_hash(
-                    crm_pre.get("crm_street_num"),
-                    crm_pre.get("crm_street_name"),
-                )
+                # Address hash rescue from department pool
                 if addr_h and cache_item.addr_index:
-                    addr_indices = cache_item.addr_index.get(addr_h, [])
-                    for idx in addr_indices:
-                        cand = dept_candidates[idx]
-                        extra.append(cand)
-                        siret = str(cand.get("siret") or "")
-                        if siret:
-                            whitelisted_sirets.add(siret)
+                    for idx in cache_item.addr_index.get(addr_h, []):
+                        if idx < len(dept_candidates):
+                            cand = dept_candidates[idx]
+                            extra.append(cand)
+                            siret = str(cand.get("siret") or "")
+                            if siret:
+                                whitelisted_sirets.add(siret)
 
-                numeric_tokens = extract_numeric_tokens(crm_name)
+                # Numeric token rescue from department pool
                 if numeric_tokens and cache_item.num_index:
                     num_indices: set[int] = set()
                     for token in numeric_tokens:
                         num_indices.update(cache_item.num_index.get(token, []))
                     for idx in sorted(num_indices):
-                        cand = dept_candidates[idx]
-                        extra.append(cand)
-                        siret = str(cand.get("siret") or "")
-                        if siret:
-                            whitelisted_sirets.add(siret)
+                        if idx < len(dept_candidates):
+                            cand = dept_candidates[idx]
+                            extra.append(cand)
+                            siret = str(cand.get("siret") or "")
+                            if siret:
+                                whitelisted_sirets.add(siret)
 
                 for cand in extra:
                     siret = str(cand.get("siret") or "")
@@ -635,14 +865,22 @@ class XgbInferenceEngine:
 
         candidates = pool_candidates
         
-        # TF-IDF prefilter (uses instance config)
+        # ── TF-IDF prefilter (ULTIMA: Name + Address double retrieval) ─────────
         prefilter_k = self.prefilter_k
         min_candidates = self.min_candidates
         char_top_k = self.char_top_k
         
-        if prefilter_k and len(candidates) > prefilter_k:
-            # Build TF-IDF index with profile-aligned settings
-            vec, mat, names = build_tfidf_index(
+        # Only skip TF-IDF prefilter if pool is truly small (align with training)
+        # Training ALWAYS applies TF-IDF prefilter (Name + Address double retrieval)
+        # Pools are NOT small in insee_then_postcode mode (median ~9k, max 158k)
+        SMALL_POOL_THRESHOLD = 500
+        effective_prefilter_k = prefilter_k
+        if pool_mode == "insee_then_postcode" and len(candidates) <= SMALL_POOL_THRESHOLD:
+            effective_prefilter_k = 0
+        
+        if effective_prefilter_k and len(candidates) > effective_prefilter_k:
+            # Build Name TF-IDF index
+            name_vec, name_mat, names = build_tfidf_index(
                 candidates,
                 name_mode=self.tfidf_name_mode,
                 siren_siblings=self.siren_siblings,
@@ -650,20 +888,39 @@ class XgbInferenceEngine:
             char_vec, char_mat = (None, None)
             if names:
                 char_vec, char_mat = build_char_tfidf_index(names)
-            if vec is not None and mat is not None:
-                idx = prefilter_candidates_tfidf(
+            
+            # Build Address TF-IDF index
+            addr_vec, addr_mat = build_address_tfidf_index(candidates)
+            
+            # Name retrieval
+            name_idx: List[int] = []
+            if name_vec is not None and name_mat is not None:
+                name_idx = prefilter_candidates_tfidf(
                     crm_name,
-                    vec,
-                    mat,
-                    prefilter_k,
+                    name_vec,
+                    name_mat,
+                    effective_prefilter_k,
                     cand_names=names,
                     char_top_k=char_top_k,
                     char_vectorizer=char_vec,
                     char_matrix=char_mat,
                 )
-                
-                # Identify TF-IDF winners
-                tfidf_cands = [candidates[i] for i in idx]
+            
+            # Address retrieval
+            addr_idx: List[int] = []
+            if addr_vec is not None and addr_mat is not None:
+                addr_idx = prefilter_candidates_address_tfidf(
+                    crm_address,
+                    addr_vec,
+                    addr_mat,
+                    effective_prefilter_k,
+                )
+            
+            # Merge: Union of Name and Address retrieval
+            combined_idx = sorted(list(set(name_idx) | set(addr_idx)))
+            
+            if combined_idx:
+                tfidf_cands = [candidates[i] for i in combined_idx if i < len(candidates)]
                 tfidf_sirets = {str(c.get("siret")) for c in tfidf_cands if c.get("siret")}
                 
                 # Whitelist rescue: ensure strong address matches survive TF-IDF
@@ -680,9 +937,9 @@ class XgbInferenceEngine:
                     import random
                     final_sirets = {str(c.get("siret") or "") for c in final_cands if c.get("siret")}
                     remaining = [c for c in candidates if str(c.get("siret") or "") not in final_sirets]
-                    needed = min(min_candidates, prefilter_k) - len(final_cands)
+                    needed = min(min_candidates, effective_prefilter_k) - len(final_cands)
                     if needed > 0 and remaining:
-                        # Deterministic seed aligned with legacy script (crm_id or crm_name fallback)
+                        # Deterministic seed aligned with legacy script
                         seed_val = str(crm_id) if crm_id else ""
                         if not seed_val:
                             seed_val = crm_row.get("crm_name", "")
@@ -825,8 +1082,119 @@ class XgbInferenceEngine:
         return order
 
 
+@dataclass
+class TopKRow:
+    """Single row in top-k output (compatible with route_xgb_results.py)."""
+    
+    crm_id: str
+    crm_name: str
+    crm_address: str | None
+    crm_postcode: str | None
+    crm_city: str | None
+    siret_candidate: str
+    score: float
+    score_top1: float
+    score_top2: float
+    score_gap: float
+    score_ratio: float
+    top3_avg: float
+    pool_size: int
+    pool_size_stage1: int
+    candidate_name: str
+    candidate_addr: str | None
+    candidate_city: str | None
+    candidate_postcode: str | None
+    candidate_insee: str | None
+    candidate_state: str | None
+    rank: int
+    has_name_evidence: int
+    candidate_last_treatment_date: str | None = None
+    # Routing features (optional)
+    name_jaro_max: float = 0.0
+    name_token_overlap_max: float = 0.0
+    name_sim_max_etab: float = 0.0
+    name_crm_contains_cand_max: float = 0.0
+    name_sim_max_pm_dirigeant: float = 0.0
+    idf_name: float = 0.0
+    numeric_token_match: float = 0.0
+    addr_jaro: float = 0.0
+    addr_token_overlap: float = 0.0
+    address_density: float = 1.0
+    street_number_diff: float = 9999.0
+    name_semantic_max: float = 0.0
+    name_semantic_second: float = 0.0
+    name_semantic_gap: float = 0.0
+    name_contains_crm_max: float = 0.0
+    postcode_match: float = 0.0
+    city_match: float = 0.0
+    street_name_jaro: float = 0.0
+    name_addr_consistency: float = 0.0
+    name_length_max: float = 0.0
+    legal_form_category: float = 0.0
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "crm_id": self.crm_id,
+            "crm_name": self.crm_name,
+            "crm_address": self.crm_address,
+            "crm_postcode": self.crm_postcode,
+            "crm_city": self.crm_city,
+            "siret_candidate": self.siret_candidate,
+            "score": self.score,
+            "score_top1": self.score_top1,
+            "score_top2": self.score_top2,
+            "score_gap": self.score_gap,
+            "score_ratio": self.score_ratio,
+            "top3_avg": self.top3_avg,
+            "pool_size": self.pool_size,
+            "pool_size_stage1": self.pool_size_stage1,
+            "candidate_name": self.candidate_name,
+            "candidate_addr": self.candidate_addr,
+            "candidate_city": self.candidate_city,
+            "candidate_postcode": self.candidate_postcode,
+            "candidate_insee": self.candidate_insee,
+            "candidate_state": self.candidate_state,
+            "candidate_last_treatment_date": self.candidate_last_treatment_date,
+            "rank": self.rank,
+            "has_name_evidence": self.has_name_evidence,
+            "name_jaro_max": self.name_jaro_max,
+            "name_token_overlap_max": self.name_token_overlap_max,
+            "name_sim_max_etab": self.name_sim_max_etab,
+            "name_crm_contains_cand_max": self.name_crm_contains_cand_max,
+            "name_sim_max_pm_dirigeant": self.name_sim_max_pm_dirigeant,
+            "idf_name": self.idf_name,
+            "numeric_token_match": self.numeric_token_match,
+            "addr_jaro": self.addr_jaro,
+            "addr_token_overlap": self.addr_token_overlap,
+            "address_density": self.address_density,
+            "street_number_diff": self.street_number_diff,
+            "name_semantic_max": self.name_semantic_max,
+            "name_semantic_second": self.name_semantic_second,
+            "name_semantic_gap": self.name_semantic_gap,
+            "name_contains_crm_max": self.name_contains_crm_max,
+            "postcode_match": self.postcode_match,
+            "city_match": self.city_match,
+            "street_name_jaro": self.street_name_jaro,
+            "name_addr_consistency": self.name_addr_consistency,
+            "name_length_max": self.name_length_max,
+            "legal_form_category": self.legal_form_category,
+        }
+
+
+def _has_name_evidence(feat_row: Dict[str, Any]) -> int:
+    """Check if candidate has sufficient name evidence for matching."""
+    return int(
+        (feat_row.get("name_jaro_max", 0.0) >= 0.60)
+        or (feat_row.get("name_token_overlap_max", 0.0) >= 0.30)
+        or (feat_row.get("name_sim_max_etab", 0.0) >= 0.60)
+        or (feat_row.get("name_crm_contains_cand_max", 0.0) >= 0.60)
+        or (feat_row.get("numeric_token_match", 0.0) >= 0.50)
+    )
+
+
 __all__ = [
     "XgbInferenceEngine",
     "InferenceResult",
     "CrmInput",
+    "TopKRow",
 ]

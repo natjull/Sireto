@@ -29,9 +29,18 @@ _ENCODERS: Dict[str, Any] = {}
 
 # Cache for batch-encoded embeddings (text -> normalized vector)
 # LRU-bounded: oldest entries evicted when size exceeds _MAX_EMBEDDING_CACHE.
-_MAX_EMBEDDING_CACHE = 200_000  # ~300 MB for 384-dim float32
+# Configurable via XGB_SEMANTIC_CACHE_SIZE env var (default 50k for memory safety).
+_MAX_EMBEDDING_CACHE_DEFAULT = 50_000  # ~75 MB for 384-dim float32 (reduced for memory safety)
 _EMBEDDING_CACHE: OrderedDict[str, np.ndarray] = OrderedDict()
 _SEMANTIC_CLIENT: Any | None = None
+
+
+def _max_embedding_cache() -> int:
+    """Get max embedding cache size from env or default."""
+    try:
+        return int(os.getenv("XGB_SEMANTIC_CACHE_SIZE", str(_MAX_EMBEDDING_CACHE_DEFAULT)))
+    except ValueError:
+        return _MAX_EMBEDDING_CACHE_DEFAULT
 
 
 def _semantic_enabled() -> bool:
@@ -94,10 +103,11 @@ def _device() -> Optional[str]:
 
 
 def _batch_size() -> int:
+    """Get semantic encoding batch size from env (default 128 for memory safety)."""
     try:
-        return int(os.getenv("XGB_SEMANTIC_BATCH_SIZE", "512"))
+        return int(os.getenv("XGB_SEMANTIC_BATCH_SIZE", "128"))
     except ValueError:
-        return 512
+        return 128
 
 
 def _get_encoder(model_name: str) -> Optional[Any]:
@@ -206,7 +216,7 @@ def batch_encode_texts(texts: List[str]) -> Dict[str, np.ndarray]:
         if embeddings is not None:
             for text, emb in zip(texts_to_encode, embeddings):
                 _EMBEDDING_CACHE[text] = emb.astype(np.float32, copy=False)
-            while len(_EMBEDDING_CACHE) > _MAX_EMBEDDING_CACHE:
+            while len(_EMBEDDING_CACHE) > _max_embedding_cache():
                 _EMBEDDING_CACHE.popitem(last=False)
     
     # Return only the requested texts
