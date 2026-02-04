@@ -21,6 +21,7 @@ import argparse
 import sqlite3
 from collections import defaultdict
 from pathlib import Path
+import shutil
 from typing import Dict, List, Set, Tuple
 
 import duckdb
@@ -218,6 +219,16 @@ def build_partitions(
     print(f"INSEE codes: {len(insee_codes)} | Postcodes: {len(postcodes)}")
     output_insee = output_dir / "insee"
     output_cp = output_dir / "cp"
+    
+    # Nettoyage des partitions existantes pour éviter l'accumulation de doublons
+    # (PyArrow write_to_dataset ajoute des fichiers au lieu d'écraser)
+    for subdir in [output_insee, output_cp]:
+        if subdir.exists():
+            file_count = sum(1 for _ in subdir.rglob("*.parquet"))
+            if file_count > 0:
+                print(f"⚠️  Nettoyage de {subdir} ({file_count} fichiers parquet existants)")
+                shutil.rmtree(subdir)
+    
     output_insee.mkdir(parents=True, exist_ok=True)
     output_cp.mkdir(parents=True, exist_ok=True)
 
