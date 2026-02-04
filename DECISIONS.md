@@ -60,3 +60,17 @@ Rationale:
 Consequences:
 - Modification de `blocking.py` (Address TF-IDF) et alignement de tous les scripts de génération et d'inférence.
 - Nouveau record de Recall Retrieval Relatif à ~97% (hors communes inexistantes).
+
+## 2026-02-04 - Unification retrieval + verrouillage des parametres (Option B + C)
+
+Decision:
+- Extraire la logique de retrieval dans un module partage (`src/xgb_matcher/retrieval.py`) consomme par training et inference.
+- Verrouiller les parametres retrieval dans une configuration unique (ex: `InferenceProfile`/YAML) avec validation runtime.
+
+Rationale:
+- Eviter le train/serve skew en supprimant la duplication entre scripts.
+- Stabiliser la strategie metier + data science avec des parametres uniques et auditables.
+
+Consequences:
+- Refactor des scripts pour deleguer la construction du pool au module partage.
+- Ajout de checks de configuration (prefilter_k, stage1_top_n, tfidf ngrams, rescue, pool_mode) avant execution.
