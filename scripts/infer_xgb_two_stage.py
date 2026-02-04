@@ -71,6 +71,8 @@ from src.xgb_matcher.semantic import (
     _device,
 )
 from src.xgb_matcher.semantic_server import semantic_server_process, SemanticClient
+from src.xgb_matcher.infer import XgbInferenceEngine, CrmInput, TopKRow
+from src.xgb_matcher.profile import InferenceProfile
 
 # LRU dept_cache: keeps at most MAX_DEPT_CACHE departments in memory
 MAX_DEPT_CACHE = 5
@@ -128,11 +130,22 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--crm-path", type=Path, required=True)
     p.add_argument("--output-path", type=Path, default=Path("reports/xgb_two_stage_topk.csv"))
     p.add_argument("--top-k", type=int, default=5)
-    p.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v4_active"))
+    p.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v5_all"))
     p.add_argument("--pool-mode", choices=["insee_then_postcode", "union", "multi"], default="insee_then_postcode")
     p.add_argument("--prefilter-k", type=int, default=500)
     p.add_argument("--min-candidates", type=int, default=150)
-    p.add_argument("--stage1-top-n", type=int, default=200)
+    p.add_argument(
+        "--stage1-top-n",
+        type=int,
+        default=50,
+        help="Top-N candidates after Stage1 ranker. Default=50 (aligned with training).",
+    )
+    p.add_argument(
+        "--force-stage1-min-500",
+        action="store_true",
+        default=False,
+        help="Force stage1_top_n >= 500 (legacy behavior, not aligned with training).",
+    )
     p.add_argument("--char-top-k", type=int, default=200)
     p.add_argument("--tfidf-name-mode", choices=["primary", "bag"], default="bag")
     p.add_argument("--siren-siblings", action=argparse.BooleanOptionalAction, default=True)
@@ -204,8 +217,6 @@ def load_crm(path: Path) -> pd.DataFrame:
             )
     if "crm_id" not in df.columns:
         df["crm_id"] = df.index
-    print(f"DEBUG: df columns: {df.columns.tolist()}")
-    print(df.head())
 
     return df
 
@@ -600,8 +611,6 @@ def _build_candidate_pool_with_debug(
     # Step 3: TF-IDF prefilter (Issue 1: use Variant C settings)
     pre_tfidf_size = len(candidates)
     effective_prefilter_k = prefilter_k
-    if pool_mode == "insee_then_postcode":
-        effective_prefilter_k = 0
     if effective_prefilter_k and len(candidates) > effective_prefilter_k:
         vec, mat, names = build_tfidf_index(candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
         if vec is not None and mat is not None:
@@ -745,7 +754,7 @@ def _build_candidate_pool(
                 addr_idx = []
                 if addr_vec is not None and addr_mat is not None:
                     addr_idx = prefilter_candidates_address_tfidf(
-                        crm_pre.get("crm_address"),
+                    crm_pre.get("crm_address") or "",
                         addr_vec,
                         addr_mat,
                         min(dept_prefilter_k, len(dept_candidates)),
@@ -785,8 +794,6 @@ def _build_candidate_pool(
     candidates = pool_candidates
     # Issue 1: TF-IDF prefilter with Variant C settings for better recall
     effective_prefilter_k = prefilter_k
-    if pool_mode == "insee_then_postcode":
-        effective_prefilter_k = 0
     if effective_prefilter_k and len(candidates) > effective_prefilter_k:
         # Build Name Index
         vec, mat, names = build_tfidf_index(candidates, name_mode=tfidf_name_mode, siren_siblings=siren_siblings)
@@ -808,7 +815,7 @@ def _build_candidate_pool(
         addr_idx = []
         if addr_vec is not None and addr_mat is not None:
             addr_idx = prefilter_candidates_address_tfidf(
-                crm_pre.get("crm_address"),
+                crm_pre.get("crm_address") or "",
                 addr_vec,
                 addr_mat,
                 effective_prefilter_k,
@@ -1113,7 +1120,9 @@ def main() -> None:
     crm_records = crm.to_dict("records")
     for idx, r in enumerate(crm_records):
         r["_orig_index"] = idx
-    crm_pre = [preprocess_crm_row(r) for r in crm_records]
+    crm_pre: List[dict] = []
+    if args.pool_mode == "multi" or args.debug_gt:
+        crm_pre = [preprocess_crm_row(r) for r in crm_records]
 
     # Sort CRM by department only when using pool_mode=multi (dept cache locality).
     if args.pool_mode == "multi":
@@ -1146,13 +1155,14 @@ def main() -> None:
         logger.info("Semantic is forced ON in inference (XGB_SEMANTIC_ENABLED=0).")
     if args.semantic_retrieval_k > 0 and args.pool_mode != "multi":
         logger.warning("semantic_retrieval_k is set but pool_mode=%s; semantic retrieval runs only in pool_mode=multi.", args.pool_mode)
-    crm_semantic_names = [c.get("crm_name_semantic", "") for c in crm_pre if c.get("crm_name_semantic")]
-    unique_crm_semantic = list(dict.fromkeys(crm_semantic_names))
-    if unique_crm_semantic and semantic_enabled:
-        logger.info("[Semantic] Warmup CRM embeddings: %d unique names", len(unique_crm_semantic))
-        batch_encode_texts(unique_crm_semantic)
-        cache_size, cache_mb = get_cache_stats()
-        logger.info("[Semantic] Cache: %d embeddings (~%.1f MB)", cache_size, cache_mb)
+    if crm_pre:
+        crm_semantic_names = [c.get("crm_name_semantic", "") for c in crm_pre if c.get("crm_name_semantic")]
+        unique_crm_semantic = list(dict.fromkeys(crm_semantic_names))
+        if unique_crm_semantic and semantic_enabled:
+            logger.info("[Semantic] Warmup CRM embeddings: %d unique names", len(unique_crm_semantic))
+            batch_encode_texts(unique_crm_semantic)
+            cache_size, cache_mb = get_cache_stats()
+            logger.info("[Semantic] Cache: %d embeddings (~%.1f MB)", cache_size, cache_mb)
 
     model_dir = Path("models")
     meta_path = args.meta_path or _find_latest_meta(model_dir)
@@ -1207,7 +1217,10 @@ def main() -> None:
         if calib_path.exists():
             with open(calib_path, "rb") as f:
                 calibrator = pickle.load(f)
+            calibrator_path = calib_path
             logger.info("Calibrator: %s", calib_path)
+        else:
+            calibrator_path = None
 
     store = PartitionedCandidateStore(args.partitions_dir)
     dept_cache: OrderedDict[str, DeptCacheItem] = OrderedDict()
@@ -1234,8 +1247,11 @@ def main() -> None:
     debug_rows: List[dict] = []
 
     stage1_top_n = args.stage1_top_n
-    if args.pool_mode != "multi":
+    if args.force_stage1_min_500 and args.pool_mode != "multi":
         stage1_top_n = max(stage1_top_n, 500)
+        logger.info("Stage1 top_n forced to >= 500 (legacy behavior via --force-stage1-min-500)")
+    else:
+        logger.info("Stage1 top_n set to %d (aligned with training)", stage1_top_n)
 
     # Build shared config dict for _infer_query / worker
     infer_cfg = {
@@ -1507,15 +1523,80 @@ def main() -> None:
         progress.close()
     else:
         if args.pool_mode != "multi":
-            # ── Sequential path for INSEE/CP pools ────────────────────────
-            for r, crm_ctx in tqdm(zip(crm_records, crm_pre), total=len(crm_records), desc="Infer"):
-                rows_out.extend(
-                    _infer_query(
-                        r, crm_ctx, store, dept_cache,
-                        ranker, classifier, calibrator,
-                        stage1_feature_order, decider_feature_order, semantic_enabled, infer_cfg,
+            # ── Sequential path for INSEE/CP pools (using XgbInferenceEngine) ────
+            # Build engine from profile
+            if meta_path:
+                profile = InferenceProfile.from_meta(meta_path, strict=not args.allow_no_semantic)
+            else:
+                if not ranker_path or not decider_path:
+                    raise FileNotFoundError(
+                        "Meta path not provided and ranker/decider paths not set. "
+                        "Provide --meta-path or both --ranker-model and --decider-model."
                     )
+                profile = InferenceProfile(
+                    ranker_path=Path(ranker_path),
+                    ranker_fast_path=Path(ranker_path) if ranker_is_fast else None,
+                    decider_path=Path(decider_path),
+                    calibrator_path=Path(calibrator_path) if calibrator_path else None,
+                    feature_order=decider_feature_order,
+                    ranker_feature_order=ranker_feature_order,
+                    ranker_fast_feature_order=ranker_fast_feature_order,
+                    tfidf_name_mode=args.tfidf_name_mode,
+                    siren_siblings=args.siren_siblings,
+                    prefilter_k=args.prefilter_k,
+                    char_top_k=args.char_top_k,
+                    min_candidates=args.min_candidates,
+                    stage1_top_n=stage1_top_n,
+                    drop_unnamed=args.drop_unnamed,
+                    exclude_closed=args.exclude_closed,
+                    partitions_dir=Path(args.partitions_dir),
+                    semantic_required=not args.allow_no_semantic,
+                    use_ranker_fast=ranker_is_fast,
                 )
+
+            # Override profile settings from CLI args
+            profile.prefilter_k = args.prefilter_k
+            profile.tfidf_name_mode = args.tfidf_name_mode
+            profile.siren_siblings = args.siren_siblings
+            profile.drop_unnamed = args.drop_unnamed
+            profile.exclude_closed = args.exclude_closed
+            profile.char_top_k = args.char_top_k
+            profile.min_candidates = args.min_candidates
+            profile.stage1_top_n = stage1_top_n
+            profile.partitions_dir = Path(args.partitions_dir)
+            profile.semantic_required = not args.allow_no_semantic
+            profile.use_ranker_fast = ranker_is_fast
+            if args.ranker_model:
+                profile.ranker_path = Path(args.ranker_model)
+            if args.ranker_fast_model:
+                profile.ranker_fast_path = Path(args.ranker_fast_model)
+            if args.decider_model:
+                profile.decider_path = Path(args.decider_model)
+            if args.calibrator_path:
+                profile.calibrator_path = Path(args.calibrator_path)
+
+            engine = XgbInferenceEngine.from_profile(profile)
+            
+            for r in tqdm(crm_records, total=len(crm_records), desc="Infer"):
+                orig_index = r.get("_orig_index")
+                crm_in = CrmInput(
+                    crm_id=str(r.get("crm_id") or orig_index),
+                    crm_name=str(r.get("crm_name") or ""),
+                    crm_address=str(r.get("crm_address") or ""),
+                    postcode=str(r.get("postcode") or ""),
+                    insee=str(r.get("insee") or ""),
+                    crm_city=str(r.get("crm_city") or ""),
+                )
+                topk_rows = engine.infer_topk(
+                    crm_in,
+                    top_k=args.top_k,
+                    pool_mode=args.pool_mode,
+                    export_routing_features=args.export_routing_features,
+                )
+                for tk in topk_rows:
+                    row_dict = tk.to_dict()
+                    row_dict["_orig_index"] = orig_index
+                    rows_out.append(row_dict)
         else:
             # ── Parallel path (dept batches) ──────────────────────────────
             # Group queries by department for ProcessPoolExecutor.
