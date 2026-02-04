@@ -1,5 +1,8 @@
 # Diagramme de référence Pipe V6
 
+Voir `handover.md` pour le contexte le plus recent : actions terminees, travaux en cours, prochaines etapes.
+Regle : chaque modification de code ou metier doit citer le commit GitHub correspondant dans `handover.md`.
+
 ![Pipe V6 flowchart](docs/diagrams/pipe_v6_flowchart.svg)
 
 _Source Mermaid ci-dessous et version éditable dans `docs/diagrams/pipe_v6_flowchart.mmd`._
@@ -128,4 +131,3 @@ flowchart TD
 - **Places-guided simplifié** : "Places as CRM Repair" - Google identifie l'entreprise, XGB identifie le SIRET.
 - **Dept-guard** : rejet si le code postal Places ne correspond pas au département CRM.
 - **Post-Places binaire** : soit MATCH_PLACES, soit NO_MATCH (pas de REVIEW après Places).
-
