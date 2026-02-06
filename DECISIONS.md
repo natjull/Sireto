@@ -115,3 +115,30 @@ Rationale:
 
 Consequences:
 - Re-evaluer recall@50 et hit@1 apres alignement complet.
+
+## 2026-02-05 - Optimisation "Turbo" pour la génération de samples
+
+Decision:
+- Implementation du mode "Turbo" dans `generate_training_samples_v5fast.py` via un negative sampling basé sur les rangs TF-IDF du retrieval.
+- Limitation du calcul des features lourdes (Jaro, address parser, etc.) aux seuls candidats sélectionnés (GT + 50 négatifs) au lieu de l'intégralité du pool (~500).
+
+Rationale:
+- Réduire le temps de génération des samples de plusieurs heures à moins de 30 minutes.
+- Permettre un cycle d'itération rapide pour la Data Science.
+
+Consequences:
+- Accélération massive de la production de datasets sans introduire de skew (le retrieval reste identique).
+
+## 2026-02-05 - Evolution de la policy Méga-Communes vers "Full INSEE"
+
+Decision:
+- Remplacement de la policy `cp_filter_insee` par `full_insee` pour les communes dépassant le seuil méga (100k).
+- Chargement de l'intégralité de la commune méga pour l'indexation TF-IDF locale au lieu de filtrer par code postal CRM.
+
+Rationale:
+- Le filtrage par CP CRM sur les grosses communes (Nice, Nantes, etc.) causait une perte de Coverage majeure (~60% des échecs NOT_IN_PARTITION) à cause des imprécisions de saisie CP.
+- Maximiser le Recall théorique en donnant au TF-IDF la visibilité sur toute la ville.
+
+Consequences:
+- Amélioration immédiate du Retrieval Coverage (passage de ~90% à ~93%+).
+- Nécessite l'Option C (Pre-indexation v7) pour maintenir la latence acceptable sur Paris/Lyon.
