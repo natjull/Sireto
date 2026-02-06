@@ -43,10 +43,9 @@ def normalize_code(value: object) -> Optional[str]:
     s = str(value).strip()
     if not s:
         return None
-    try:
-        return str(int(float(s)))
-    except Exception:
-        return s
+    if re.fullmatch(r"\d+\.0+", s):
+        s = s.split(".")[0]
+    return s
 
 
 def department_from_code(insee: Optional[str], postcode: Optional[str]) -> Optional[str]:
@@ -135,7 +134,7 @@ def filter_candidates_by_address_hash(
 def dedupe_candidates(candidates: Iterable[dict]) -> Dict[str, dict]:
     """Deduplicate candidates by SIRET.
     
-    Since v5 partitions (data/candidates_v5_all/) are guaranteed to have no 
+    Since v6 partitions (data/candidates_v6_all/) are guaranteed to have no 
     duplicate SIRETs within a single partition (INSEE or CP), this function 
     primarily serves to handle the pool_mode="multi" case where a SIRET may 
     appear in both INSEE and CP partitions.
@@ -251,12 +250,13 @@ def build_tfidf_index(
         names = [normalize_text_for_tfidf(candidate_tfidf_text(c) or "") for c in candidates]
     
     # Align TF-IDF settings with training (generate_training_samples_v5fast.py)
-    vectorizer = TfidfVectorizer(
+    vectorizer = TfidfVectorizer(  # type: ignore[arg-type]
         analyzer="word",
         ngram_range=(1, 2),
         lowercase=False,
         token_pattern=r"(?u)\b\w+\b",
         min_df=1,
+        norm=None,  # type: ignore[arg-type]
     )
     try:
         matrix = vectorizer.fit_transform(names)
@@ -276,14 +276,14 @@ def build_address_tfidf_index(
     if not any(addresses):
         return None, None
 
-    vectorizer = TfidfVectorizer(
+    vectorizer = TfidfVectorizer(  # type: ignore[arg-type]
         analyzer="word",
         ngram_range=(1, 2), # Capture street names properly
         lowercase=False,
         token_pattern=r"(?u)\b\w+\b",
         min_df=1,
         max_df=0.95,
-        norm=None, # No length penalty for long addresses
+        norm=None,  # type: ignore[arg-type]  # No length penalty for long addresses
     )
     try:
         matrix = vectorizer.fit_transform(addresses)
@@ -409,39 +409,6 @@ def prefilter_candidates_tfidf(
     else:
         # Only char matches available
         return list(char_indices)[:top_k]
-
-
-def prefilter_candidates_address_tfidf(
-    crm_address: str,
-    vectorizer: TfidfVectorizer,
-    cand_matrix: Any,
-    top_k: int,
-) -> List[int]:
-    """Return candidate indices for top-k TF-IDF similarity on address."""
-    if not crm_address or cand_matrix is None:
-        return []
-    
-    crm_norm = normalize_text_for_tfidf(crm_address)
-    if not crm_norm:
-        return []
-        
-    q = vectorizer.transform([crm_norm])
-    sims = q @ cand_matrix.T
-    row = sims.getrow(0)
-    
-    if row.nnz == 0:
-        return []
-        
-    idx = row.indices
-    data = row.data
-    
-    if len(idx) > top_k:
-        sel = np.argpartition(data, -top_k)[-top_k:]
-        idx = idx[sel]
-        data = data[sel]
-        
-    order = np.argsort(data)[::-1]
-    return idx[order].tolist()
 
 
 def build_char_tfidf_index(

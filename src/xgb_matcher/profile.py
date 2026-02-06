@@ -19,6 +19,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from .features import FAST_RANKER_FEATURE_NAMES
+from .retrieval_config import RetrievalConfigV1, RetrievalSignatureV1
 
 
 @dataclass
@@ -41,17 +42,17 @@ class InferenceProfile:
 
     # TF-IDF / candidate retrieval knobs
     tfidf_name_mode: str = "bag"  # "primary" or "bag"
-    siren_siblings: bool = True  # Variant C: enrich with SIREN siblings
+    siren_siblings: bool = False  # Variant B default
     prefilter_k: int = 500
     char_top_k: int = 200
-    min_candidates: int = 150
+    min_candidates: int = 100
 
     # Candidate filtering
     drop_unnamed: bool = True
     exclude_closed: bool = False
 
     # Partitions
-    partitions_dir: Path = field(default_factory=lambda: Path("data/candidates_v5_all"))
+    partitions_dir: Path = field(default_factory=lambda: Path("data/candidates_v6_all"))
 
     # Semantic
     semantic_required: bool = True
@@ -59,7 +60,7 @@ class InferenceProfile:
 
     # Stage 1 configuration
     use_ranker_fast: bool = True  # Use ranker_fast for Stage 1 (skip_semantic=True)
-    stage1_top_n: int = 200
+    stage1_top_n: int = 50
 
     # Risk model
     risk_threshold: float = 0.835
@@ -67,6 +68,8 @@ class InferenceProfile:
     # Metadata
     samples_file: str | None = None
     meta_path: Path | None = None
+    retrieval_config: RetrievalConfigV1 | None = None
+    retrieval_signature: RetrievalSignatureV1 | None = None
 
     def __post_init__(self):
         """Check semantic env and validate configuration."""
@@ -104,6 +107,27 @@ class InferenceProfile:
             issues.append(f"Invalid tfidf_name_mode: {self.tfidf_name_mode}. Must be 'primary' or 'bag'.")
 
         return issues
+
+    def build_retrieval_config(self) -> RetrievalConfigV1:
+        if self.retrieval_config is not None:
+            return self.retrieval_config
+        include_closed = not self.exclude_closed
+        config = RetrievalConfigV1(
+            pool_mode="insee_then_postcode",
+            include_closed=include_closed,
+            drop_unnamed=self.drop_unnamed,
+            tfidf_name_mode=self.tfidf_name_mode,
+            prefilter_k=self.prefilter_k,
+            char_top_k=self.char_top_k,
+            min_candidates=self.min_candidates,
+            stage1_top_n=self.stage1_top_n,
+            siren_siblings=self.siren_siblings,
+            rescue_addr_hash=True,
+            rescue_numeric_tokens=True,
+        )
+        self.retrieval_config = config
+        self.retrieval_signature = RetrievalSignatureV1.from_config(config)
+        return config
 
     def get_stage1_ranker_path(self) -> Path | None:
         """Get the appropriate ranker for Stage 1."""
@@ -195,6 +219,23 @@ class InferenceProfile:
         exclude_closed = samples_meta.get("exclude_closed_candidates", cls().exclude_closed)
         partitions_dir = samples_meta.get("partitions_dir", str(cls().partitions_dir))
 
+        retrieval_config = None
+        retrieval_signature = None
+        config_raw = meta.get("retrieval_config_v1") or samples_meta.get("retrieval_config_v1")
+        sig_raw = meta.get("retrieval_signature_v1") or samples_meta.get("retrieval_signature_v1")
+        if not config_raw or not sig_raw:
+            msg = "Missing retrieval_config_v1 or retrieval_signature_v1 in meta/samples."
+            if strict:
+                raise RuntimeError(msg)
+        retrieval_config = RetrievalConfigV1.from_dict(config_raw or {})
+        retrieval_signature = RetrievalSignatureV1.from_dict(sig_raw or {})
+
+        if retrieval_signature and retrieval_config:
+            if not retrieval_signature.matches(retrieval_config):
+                msg = "Retrieval signature mismatch: config does not match signature."
+                if strict:
+                    raise RuntimeError(msg)
+
         # Semantic was enabled during training?
         semantic_enabled_train = meta.get("semantic_enabled_samples", 1) == 1
 
@@ -209,15 +250,20 @@ class InferenceProfile:
             semantic_features=semantic_features,
             ranker_feature_order=ranker_feature_order,
             ranker_fast_feature_order=ranker_fast_feature_order,
-            tfidf_name_mode=tfidf_name_mode,
-            siren_siblings=siren_siblings,
-            prefilter_k=prefilter_k,
-            drop_unnamed=drop_unnamed,
-            exclude_closed=exclude_closed,
+            tfidf_name_mode=retrieval_config.tfidf_name_mode,
+            siren_siblings=retrieval_config.siren_siblings,
+            prefilter_k=retrieval_config.prefilter_k,
+            char_top_k=retrieval_config.char_top_k,
+            min_candidates=retrieval_config.min_candidates,
+            stage1_top_n=retrieval_config.stage1_top_n,
+            drop_unnamed=retrieval_config.drop_unnamed,
+            exclude_closed=not retrieval_config.include_closed,
             partitions_dir=Path(partitions_dir),
             semantic_required=semantic_enabled_train,
             samples_file=samples_file,
             meta_path=meta_path,
+            retrieval_config=retrieval_config,
+            retrieval_signature=retrieval_signature,
         )
 
         profile.validate(strict=strict)
@@ -238,6 +284,7 @@ class InferenceProfile:
 
     def to_dict(self) -> Dict[str, Any]:
         """Serialize profile to dict (for logging/debugging)."""
+        retrieval_signature = self.retrieval_signature
         return {
             "ranker_path": str(self.ranker_path) if self.ranker_path else None,
             "ranker_fast_path": str(self.ranker_fast_path) if self.ranker_fast_path else None,
@@ -252,6 +299,7 @@ class InferenceProfile:
             "semantic_enabled": self.semantic_enabled,
             "use_ranker_fast": self.use_ranker_fast,
             "partitions_dir": str(self.partitions_dir),
+            "retrieval_signature": retrieval_signature.hash if retrieval_signature else None,
         }
 
 
