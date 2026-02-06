@@ -141,4 +141,3 @@ Rationale:
 
 Consequences:
 - Amélioration immédiate du Retrieval Coverage (passage de ~90% à ~93%+).
-- Nécessite l'Option C (Pre-indexation v7) pour maintenir la latence acceptable sur Paris/Lyon.

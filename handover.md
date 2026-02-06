@@ -22,11 +22,10 @@ Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipel
 
 ## Travail en cours
 - **Génération Samples Decider (V6 Turbo)** : Utiliser le Ranker V6 pour miner les hard negatives (scène top-50).
-- **Performance Méga-Communes** : Le mode `full_insee` ralentit Paris/Lyon. L'Option C (Pre-indexation v7) est le prochain jalon technique.
 
 ## Problèmes / Points d'attention
 - **Coverage** : Actuellement à ~93%. Le gap restant (7%) est principalement dû à des SIRET réellement absents de SIRENE ou des noms totalement vides.
-- **Latence Inférence** : À surveiller sur les méga-communes en prod tant que v7 n'est pas implémentée.
+- **Latence Inférence** : Le mode `full_insee` est coûteux sur Paris/Lyon sans indexation.
 
 ## Artefacts principaux (V6 Canoniques)
 | Artefact | Chemin |
@@ -39,8 +38,7 @@ Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipel
 ## Prochaines étapes (DS Mode)
 1. Lancer la génération des samples **Decider** (V6 Turbo).
 2. Entraîner le **Decider** Champion.
-3. Implémenter l'**Option C** (Build v7 indexé) pour stabiliser la latence prod.
-4. Recalibrer le **Routing (Stage 3)** sur la distribution V6.
+3. Recalibrer le **Routing (Stage 3)** sur la distribution V6.
 
 ---
 *Note : Chaque modification de code doit citer le commit GitHub correspondant dans ce document.*
