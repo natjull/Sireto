@@ -28,10 +28,13 @@ Les partitions SIRENE sont la source canonique des candidats et le point de dép
 | **Génération** | `scripts/build_candidate_partitions_v5.py` | Pipeline unique de build |
 | **Nettoyage** | Suppression des partitions existantes avant build | Évite l'accumulation de doublons SIRET |
 | **Contraintes** | Pas de doublons SIRET dans une partition | Garantie pour TF-IDF + ranker |
+| **Mega-communes** | Seuil 100 000 lignes | Fallback CP filtre INSEE pour stabilite memoire |
 
 ## 3. Stratégie de Retrieval "Ultima" (Stage 1)
 
 Le retrieval est conçu pour un recall quasi-total sans fallback départemental.
+
+Standard unique : **Variant B** (Bag-of-names + char fallback).
 
 | Paramètre | Valeur | Rationale |
 |-----------|--------|-----------|
@@ -42,6 +45,7 @@ Le retrieval est conçu pour un recall quasi-total sans fallback départemental.
 | **Rescue** | `addr_hash` + `numeric` | Whitelist systématique (matchs exacts) |
 | **Prefilter k** | 500 | Union des canaux Nom + Adresse |
 | **Stage 1 top-N** | 50 | Envoyés au Stage 2 (Decider) |
+| **Rescue post-ranker** | Aucun | Pas d'ajout de candidats hors top-N |
 
 ## 4. Stratégie d'Entraînement
 
@@ -55,6 +59,7 @@ L'alignement Train/Serve est garanti par l'usage des mêmes modules de retrieval
   - Objectif : maximiser le Recall@50.
 - **Phase 2 : Decider**
   - Hard negatives minés via le Ranker FAST.
+  - Semantic retrieval **désactivé** (aucun ajout de candidats hors pool).
   - Semantic gate **désactivé par défaut** (`XGB_SEMANTIC_GATE_ENABLED=0`) pour éviter le skew.
 - **Phase 3 : Risk Model**
   - Entraîné sur la distribution d'inférence réelle (top-k + features de routing).
@@ -69,6 +74,12 @@ L'alignement Train/Serve est garanti par l'usage des mêmes modules de retrieval
 | **Decider (candidat)** | `models/xgb_decider_20260203_v5fast_B_ultima_hardneg.json` | Candidat non satisfaisant |
 | **Meta Pipeline** | TBD | Bloqué tant que le Decider n'est pas validé |
 | **GT Data** | `data/crm_ok_gt.csv` | Gold Standard (17k sites) |
+
+## 6. Environnement d'execution (SSOT)
+
+Les developpements et optimisations doivent respecter la contrainte materielle suivante :
+
+- Machine cible : MacBook Pro M4 Pro, 24 GB RAM (latence et memoire doivent rester compatibles)
 
 ---
 *Note : Ce document est la source unique de vérité. Toute modification doit respecter le principe de "Zero Skew".*
