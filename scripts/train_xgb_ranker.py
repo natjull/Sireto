@@ -1,241 +1,169 @@
-#!/usr/bin/env python3
 """
-Train XGBoost ranker for the 2-stage pipeline (Stage 1 retrieval).
-
-Outputs:
-  - xgbranker_<ts>.json
-  - xgbranker_fast_<ts>.json (optional, semantic features zeroed)
-  - xgb_two_stage_meta_<ts>.json (feature order + model paths)
+Train XGBoost Ranker (Stage 1) for SIRETO.
+SSOT-aligned version.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-import os
+from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import (
     FEATURE_NAMES,
-    FAST_RANKER_FEATURE_NAMES,
-    SEMANTIC_FEATURE_NAMES,
+)
+from src.xgb_matcher.retrieval_config import (
+    RetrievalConfigV1,
+    RetrievalSignatureV1,
 )
 
-
+# --- Configuration ---
 RANKER_PARAMS = {
-    "objective": "rank:ndcg",
-    "learning_rate": 0.1,
+    "objective": "rank:pairwise",
+    "tree_method": "hist",
+    "eta": 0.1,
     "max_depth": 6,
-    "min_child_weight": 10,
     "subsample": 0.8,
     "colsample_bytree": 0.8,
     "eval_metric": ["ndcg@5", "map@5"],
-    "seed": 42,
 }
-
-NUM_BOOST_ROUNDS = 200
+NUM_BOOST_ROUND = 200
 EARLY_STOPPING_ROUNDS = 20
 
-SEMANTIC_FEATURES = SEMANTIC_FEATURE_NAMES
+SEMANTIC_FEATURES = [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
 
 
-def load_samples(path: Path) -> pd.DataFrame:
-    return pd.read_parquet(path)
+def _load_samples_meta(samples_path: Path) -> Dict[str, Any]:
+    meta_path = Path(samples_path).with_suffix(".json")
+    if not meta_path.exists():
+        return {}
+    with open(meta_path, "r") as f:
+        return json.load(f)
 
 
-def prepare_data(df: pd.DataFrame, feature_names: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
-    df_sorted = df.sort_values("query_id").reset_index(drop=True)
-    X = df_sorted[feature_names].values.astype(np.float32)
-    y = df_sorted["label"].values.astype(np.float32)
-    groups = df_sorted.groupby("query_id", sort=False).size().values
-    return X, y, groups
-
-
-def _zero_out_features(X: np.ndarray, feature_names: List[str], features_to_zero: List[str]) -> np.ndarray:
-    if not features_to_zero:
-        return X
-    idx = [feature_names.index(f) for f in features_to_zero if f in feature_names]
-    if not idx:
-        return X
-    Xz = X.copy()
-    Xz[:, idx] = 0.0
-    return Xz
-
-
-def compute_hit_at_k(y_true: np.ndarray, y_pred: np.ndarray, groups: np.ndarray, k: int = 5) -> float:
-    hits = 0
-    start = 0
-    for group_size in groups:
-        end = start + group_size
-        group_labels = y_true[start:end]
-        group_scores = y_pred[start:end]
-        top_k_indices = np.argsort(group_scores)[::-1][:k]
-        if any(group_labels[i] == 1 for i in top_k_indices):
-            hits += 1
-        start = end
-    return hits / len(groups) if len(groups) else 0.0
-
-
-def compute_recall_at_k(y_true: np.ndarray, y_pred: np.ndarray, groups: np.ndarray, k: int = 10) -> float:
-    recalls = []
-    start = 0
-    for group_size in groups:
-        end = start + group_size
-        group_labels = y_true[start:end]
-        group_scores = y_pred[start:end]
-        total_pos = float(np.sum(group_labels))
-        if total_pos <= 0:
-            start = end
-            continue
-        top_k_indices = np.argsort(group_scores)[::-1][:k]
-        hits = float(np.sum(group_labels[top_k_indices]))
-        recalls.append(hits / total_pos)
-        start = end
-    return float(np.mean(recalls)) if recalls else 0.0
-
-
-def compute_mrr(y_true: np.ndarray, y_pred: np.ndarray, groups: np.ndarray) -> float:
-    reciprocal_ranks = []
-    start = 0
-    for group_size in groups:
-        end = start + group_size
-        group_labels = y_true[start:end]
-        group_scores = y_pred[start:end]
-        ranking = np.argsort(group_scores)[::-1]
-        for rank, idx in enumerate(ranking, 1):
-            if group_labels[idx] == 1:
-                reciprocal_ranks.append(1.0 / rank)
-                break
-        else:
-            reciprocal_ranks.append(0.0)
-        start = end
-    return float(np.mean(reciprocal_ranks)) if reciprocal_ranks else 0.0
-
-
-def evaluate_ranker(
-    model: xgb.Booster,
-    X: np.ndarray,
-    y: np.ndarray,
-    groups: np.ndarray,
-    split: str,
-    name: str,
-) -> Dict[str, float]:
-    dmat = xgb.DMatrix(X)
-    y_pred = model.predict(dmat)
-    return {
-        "split": split,
-        "model": name,
-        "hit_at_1": compute_hit_at_k(y, y_pred, groups, k=1),
-        "hit_at_3": compute_hit_at_k(y, y_pred, groups, k=3),
-        "hit_at_5": compute_hit_at_k(y, y_pred, groups, k=5),
-        "recall_at_10": compute_recall_at_k(y, y_pred, groups, k=10),
-        "recall_at_20": compute_recall_at_k(y, y_pred, groups, k=20),
-        "mrr": compute_mrr(y, y_pred, groups),
-    }
-
-
-def _load_meta(meta_path: Path) -> Dict:
-    if meta_path.exists():
-        try:
-            with open(meta_path) as f:
-                return json.load(f)
-        except Exception:
-            return {}
+def _load_meta(path: Path) -> Dict[str, Any]:
+    if path.exists():
+        with open(path, "r") as f:
+            return json.load(f)
     return {}
 
 
-def _save_meta(meta_path: Path, meta: Dict) -> None:
-    meta_path.parent.mkdir(parents=True, exist_ok=True)
-    with open(meta_path, "w") as f:
+def _save_meta(path: Path, meta: Dict[str, Any]) -> None:
+    with open(path, "w") as f:
         json.dump(meta, f, indent=2)
 
 
+def prepare_data(df: pd.DataFrame, feature_names: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """Prepare X, y, and groups for XGBoost ranking."""
+    df = df.sort_values("query_id")
+    X = df[feature_names].values.astype(np.float32)
+    y = df["label"].values.astype(np.int32)
+    groups = df.groupby("query_id").size().values
+    return X, y, groups
+
+
+def evaluate_ranker(
+    booster: xgb.Booster, X: np.ndarray, y: np.ndarray, groups: np.ndarray, split_name: str, model_name: str
+) -> Dict[str, Any]:
+    """Simple evaluation of the ranker."""
+    dmat = xgb.DMatrix(X, label=y, feature_names=FEATURE_NAMES)
+    dmat.set_group(groups)
+    res = booster.eval_set([(dmat, "eval")])
+    print(f"Metrics for {model_name} on {split_name}: {res}")
+
+    preds = booster.predict(dmat)
+    start = 0
+    hits = 0
+    total = len(groups)
+    for glen in groups:
+        g_preds = preds[start : start + glen]
+        g_labels = y[start : start + glen]
+        if len(g_labels) > 0 and g_labels[np.argmax(g_preds)] == 1:
+            hits += 1
+        start += glen
+    hit_rate = hits / total if total > 0 else 0
+    print(f"  Hit@1 ({split_name}): {hit_rate:.2%}")
+    return {"split": split_name, "model": model_name, "hit@1": hit_rate}
+
+
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Train XGBoost Ranker (Stage 1)")
-    parser.add_argument("--samples", type=Path, default=Path("data/samples_v4_with_ranker.parquet"))
-    parser.add_argument("--output-dir", type=Path, default=Path("models"))
-    parser.add_argument("--timestamp", type=str, default=None)
-    parser.add_argument("--meta-path", type=Path, default=None)
-    parser.add_argument("--skip-semantic", action="store_true", help="Zero semantic features for ranker training.")
-    parser.add_argument("--train-ranker-fast", action="store_true", default=True)
+    parser = argparse.ArgumentParser(description="Train SIRETO Stage 1 Ranker")
+    parser.add_argument("--samples", type=Path, required=True, help="Path to training samples parquet")
+    parser.add_argument("--output-dir", type=Path, default=Path("models"), help="Directory to save models")
+    parser.add_argument("--skip-semantic", action="store_true", help="Zero out semantic features")
     args = parser.parse_args()
 
-    timestamp = args.timestamp or datetime.now().strftime("%Y%m%d_%H%M%S")
-    meta_path = args.meta_path or (args.output_dir / f"xgb_two_stage_meta_{timestamp}.json")
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    meta_path = args.output_dir / f"xgb_two_stage_meta_{timestamp}.json"
 
-    print("=" * 60)
-    print("XGBoost Ranker Training (Stage 1)")
-    print("=" * 60)
-
-    df = load_samples(args.samples)
-    if "split" not in df.columns:
-        raise ValueError("Samples must include a 'split' column (train/dev/test).")
+    print("Loading data...")
+    df = pd.read_parquet(args.samples)
+    
+    semantic_enabled_samples = bool(df["semantic_enabled"].iloc[0]) if "semantic_enabled" in df.columns else False
+    semantic_enabled_env = os.environ.get("XGB_SEMANTIC_ENABLED", "0") == "1"
 
     train_df = df[df["split"] == "train"]
     dev_df = df[df["split"] == "dev"]
     test_df = df[df["split"] == "test"]
 
-    semantic_enabled_samples = None
-    if "semantic_enabled" in df.columns:
-        vals = sorted(df["semantic_enabled"].dropna().unique().tolist())
-        if vals:
-            semantic_enabled_samples = int(vals[0])
-            if len(vals) > 1:
-                print(f"[WARN] semantic_enabled has multiple values in samples: {vals}")
-
-    semantic_enabled_env = int(os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1")
-    if semantic_enabled_samples is not None and semantic_enabled_samples != semantic_enabled_env:
-        print(
-            f"[WARN] semantic_enabled mismatch: samples={semantic_enabled_samples} vs env={semantic_enabled_env} "
-            "(train/serve skew risk)"
-        )
+    print(f"Training on {len(train_df)} rows, validating on {len(dev_df)} rows.")
 
     X_train, y_train, groups_train = prepare_data(train_df, FEATURE_NAMES)
     X_dev, y_dev, groups_dev = prepare_data(dev_df, FEATURE_NAMES)
     X_test, y_test, groups_test = prepare_data(test_df, FEATURE_NAMES)
 
-    if args.skip_semantic and SEMANTIC_FEATURES:
-        X_train = _zero_out_features(X_train, FEATURE_NAMES, SEMANTIC_FEATURES)
-        X_dev = _zero_out_features(X_dev, FEATURE_NAMES, SEMANTIC_FEATURES)
-        X_test = _zero_out_features(X_test, FEATURE_NAMES, SEMANTIC_FEATURES)
+    if args.skip_semantic:
+        print("Zeroing out semantic features for training.")
+        idx = [FEATURE_NAMES.index(f) for f in SEMANTIC_FEATURES]
+        X_train[:, idx] = 0.0
+        X_dev[:, idx] = 0.0
+        X_test[:, idx] = 0.0
 
-    dtrain = xgb.DMatrix(X_train, label=y_train)
+    dtrain = xgb.DMatrix(X_train, label=y_train, feature_names=FEATURE_NAMES)
     dtrain.set_group(groups_train)
-    ddev = xgb.DMatrix(X_dev, label=y_dev)
+    ddev = xgb.DMatrix(X_dev, label=y_dev, feature_names=FEATURE_NAMES)
     ddev.set_group(groups_dev)
 
+    print("\n--- Training Full Ranker ---")
     ranker = xgb.train(
         RANKER_PARAMS,
         dtrain,
-        num_boost_round=NUM_BOOST_ROUNDS,
+        num_boost_round=NUM_BOOST_ROUND,
         evals=[(dtrain, "train"), (ddev, "dev")],
         early_stopping_rounds=EARLY_STOPPING_ROUNDS,
         verbose_eval=20,
     )
 
     ranker_fast = None
-    if args.train_ranker_fast and FAST_RANKER_FEATURE_NAMES:
+    if not args.skip_semantic:
         print("\n--- Training Ranker FAST (semantic zeroed) ---")
-        X_train_fast, y_train_fast, groups_train_fast = prepare_data(train_df, FAST_RANKER_FEATURE_NAMES)
-        X_dev_fast, y_dev_fast, groups_dev_fast = prepare_data(dev_df, FAST_RANKER_FEATURE_NAMES)
-        dtrain_fast = xgb.DMatrix(X_train_fast, label=y_train_fast)
-        dtrain_fast.set_group(groups_train_fast)
-        ddev_fast = xgb.DMatrix(X_dev_fast, label=y_dev_fast)
-        ddev_fast.set_group(groups_dev_fast)
+        X_train_fast = X_train.copy()
+        idx = [FEATURE_NAMES.index(f) for f in SEMANTIC_FEATURES]
+        X_train_fast[:, idx] = 0.0
+        X_dev_fast = X_dev.copy()
+        X_dev_fast[:, idx] = 0.0
+
+        dtrain_f = xgb.DMatrix(X_train_fast, label=y_train, feature_names=FEATURE_NAMES)
+        dtrain_f.set_group(groups_train)
+        ddev_f = xgb.DMatrix(X_dev_fast, label=y_dev, feature_names=FEATURE_NAMES)
+        ddev_f.set_group(groups_dev)
+
         ranker_fast = xgb.train(
             RANKER_PARAMS,
-            dtrain_fast,
-            num_boost_round=NUM_BOOST_ROUNDS,
-            evals=[(dtrain_fast, "train"), (ddev_fast, "dev")],
+            dtrain_f,
+            num_boost_round=NUM_BOOST_ROUND,
+            evals=[(dtrain_f, "train"), (ddev_f, "dev")],
             early_stopping_rounds=EARLY_STOPPING_ROUNDS,
             verbose_eval=20,
         )
@@ -244,10 +172,11 @@ def main() -> None:
     for split_name, X, y, groups in [("dev", X_dev, y_dev, groups_dev), ("test", X_test, y_test, groups_test)]:
         metrics.append(evaluate_ranker(ranker, X, y, groups, split_name, "ranker"))
     if ranker_fast is not None:
-        X_dev_fast, y_dev_fast, groups_dev_fast = prepare_data(dev_df, FAST_RANKER_FEATURE_NAMES)
-        X_test_fast, y_test_fast, groups_test_fast = prepare_data(test_df, FAST_RANKER_FEATURE_NAMES)
-        metrics.append(evaluate_ranker(ranker_fast, X_dev_fast, y_dev_fast, groups_dev_fast, "dev", "ranker_fast"))
-        metrics.append(evaluate_ranker(ranker_fast, X_test_fast, y_test_fast, groups_test_fast, "test", "ranker_fast"))
+        idx = [FEATURE_NAMES.index(f) for f in SEMANTIC_FEATURES]
+        X_dev_fast = X_dev.copy(); X_dev_fast[:, idx] = 0.0
+        X_test_fast = X_test.copy(); X_test_fast[:, idx] = 0.0
+        metrics.append(evaluate_ranker(ranker_fast, X_dev_fast, y_dev, groups_dev, "dev", "ranker_fast"))
+        metrics.append(evaluate_ranker(ranker_fast, X_test_fast, y_test, groups_test, "test", "ranker_fast"))
 
     args.output_dir.mkdir(parents=True, exist_ok=True)
     ranker_path = args.output_dir / f"xgbranker_{timestamp}.json"
@@ -257,6 +186,22 @@ def main() -> None:
         ranker_fast_path = args.output_dir / f"xgbranker_fast_{timestamp}.json"
         ranker_fast.save_model(str(ranker_fast_path))
 
+    samples_meta = _load_samples_meta(args.samples)
+    sig_v1_raw = samples_meta.get("retrieval_signature_v1")
+    retrieval_config = None
+    retrieval_signature = None
+    if sig_v1_raw:
+        config_raw = sig_v1_raw.get("config")
+        if config_raw:
+            retrieval_config = RetrievalConfigV1.from_dict(config_raw)
+            retrieval_signature = RetrievalSignatureV1.from_dict(sig_v1_raw)
+            if not retrieval_signature.matches(retrieval_config):
+                print("WARNING: Retrieval signature internal mismatch in samples metadata.")
+        else:
+            print("WARNING: Missing config inside retrieval_signature_v1.")
+    else:
+        print("WARNING: Missing retrieval_signature_v1 in samples metadata JSON.")
+
     meta = _load_meta(meta_path)
     meta.update(
         {
@@ -264,16 +209,17 @@ def main() -> None:
             "feature_names": FEATURE_NAMES,
             "feature_order": FEATURE_NAMES,
             "ranker_feature_order": FEATURE_NAMES,
-            "ranker_fast_feature_order": FAST_RANKER_FEATURE_NAMES,
+            "ranker_fast_feature_order": FEATURE_NAMES,
             "semantic_features_zeroed_for_ranker_fast": SEMANTIC_FEATURES,
             "semantic_enabled_samples": semantic_enabled_samples,
             "semantic_enabled_env_train": semantic_enabled_env,
             "ranker_params": RANKER_PARAMS,
             "ranker_skip_semantic": bool(args.skip_semantic),
-            "ranker_model": str(ranker_path),
-            "ranker_fast_model": str(ranker_fast_path) if ranker_fast_path else None,
+            "ranker_model": str(ranker_path.name),
+            "ranker_fast_model": str(ranker_fast_path.name) if ranker_fast_path else None,
             "ranker_metrics": metrics,
-            "samples_file": str(args.samples),
+            "samples_file": str(args.samples.name),
+            "retrieval_signature_v1": sig_v1_raw,
         }
     )
     _save_meta(meta_path, meta)

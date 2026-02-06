@@ -1,33 +1,31 @@
-#!/usr/bin/env python3
-"""
-Generate training samples v5 - partitioned candidates + TF-IDF prefilter.
-
-v5fast MEMORY-OPTIMIZED VERSION:
-  - Streaming Parquet writer (constant memory footprint)
-  - Per-query processing (no batch accumulation)
-  - Explicit GC after each loc_key
-  - Semantic late-compute (only on selected samples)
-  - Incremental stats (no final full-parquet read)
-  - Resume support (skip already processed loc_keys)
-  - Configurable flush interval
-
-Variants:
-  A: Baseline (TF-IDF primary, no char fallback, no semantic rescue)
-  B: Bag-of-names (TF-IDF bag, char fallback, semantic rescue)
-  C: Bag + SIREN siblings (B + enrich candidate names with SIREN siblings)
-"""
-
 from __future__ import annotations
 
-# CRITICAL: Set semantic env BEFORE any imports (semantic.py checks this at import time)
+# CRITICAL: Set semantic env BEFORE any imports
 import os
-os.environ["XGB_SEMANTIC_ENABLED"] = "1"
+import sys
+
+def _peek_mode(argv: list[str]) -> str:
+    for arg in argv:
+        if arg.startswith("--mode="):
+            value = arg.split("=", 1)[1].strip()
+            return value or "ranker"
+    if "--mode" not in argv:
+        return "ranker"
+    try:
+        idx = argv.index("--mode")
+        return argv[idx + 1]
+    except Exception:
+        return "ranker"
+
+
+_mode = _peek_mode(sys.argv)
+os.environ["XGB_SEMANTIC_ENABLED"] = "1" if _mode == "decider" else "0"
 
 import argparse
 import gc
 import json
 import random
-import sys
+import re
 from collections import defaultdict
 from datetime import datetime
 from pathlib import Path
@@ -40,7 +38,6 @@ import pyarrow.compute as pc
 import pyarrow.dataset as ds
 import pyarrow.parquet as pq
 import xgboost as xgb
-from sklearn.feature_extraction.text import TfidfVectorizer
 from tqdm import tqdm
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -57,13 +54,10 @@ from src.xgb_matcher.features import (
 )
 from src.xgb_matcher.blocking import (
     normalize_text_for_tfidf,
-    build_address_hash_index,
-    build_numeric_token_index,
-    address_hash,
-    extract_numeric_tokens,
-    build_address_tfidf_index,
-    prefilter_candidates_address_tfidf,
 )
+from src.xgb_matcher.partitioned_store import PartitionedCandidateStore
+from src.xgb_matcher.retrieval import build_candidate_pool
+from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.naming import primary_name, build_candidate_names
 from src.xgb_matcher.semantic import (
     top2_semantic_similarities_batch,
@@ -73,7 +67,7 @@ from src.xgb_matcher.semantic import (
 
 DEFAULT_OUTPUT = Path("data/samples_v5.parquet")
 TRAINING_DATA = Path("data/crm_ok_gt.csv")
-PARTITIONS_DIR = Path("data/candidates_v5_all")
+PARTITIONS_DIR = Path("data/candidates_v6_all")
 ETAB_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 MODEL_DIR = Path("models")
 
@@ -81,92 +75,50 @@ MAX_NEGATIVES = 50
 HARD_RATIO = 0.5
 SAME_ADDR_NEG_MAX = 10
 PREFILTER_TOP_K = 500
-MIN_CANDIDATES_SUBSET = 100  # Guarantee at least this many candidates after TF-IDF prefilter
+MIN_CANDIDATES_SUBSET = 100
 SEED = 42
 
 # Fast-path knobs
 FAST_INSEE_MAX = 200_000
 FAST_SAMPLE_FALLBACK = 10_000
 FAST_CANDIDATE_COLUMNS = [
-    "siret",
-    "siren",
-    "denomination",
-    "enseigne1",
-    "enseigne2",
-    "enseigne3",
-    "etablissementSiege",
-    "numeroVoie",
-    "typeVoie",
-    "libelleVoie",
-    "complementAdresse",
-    "postcode",
-    "city",
-    "cj_ul",
-    "etat_admin",
-    "sigle_ul",
-    "denomination_ul",
-    "denomination_usuelle_ul",
-    "nom_ul",
-    "nom_usage_ul",
-    "prenom_usuel_ul",
-    "pseudonyme_ul",
-    "is_siege",
-    "pm_dirigeant_names",
-    "insee",
+    "siret", "siren", "denomination", "enseigne1", "enseigne2", "enseigne3",
+    "etablissementSiege", "numeroVoie", "typeVoie", "libelleVoie",
+    "complementAdresse", "postcode", "city", "cj_ul", "etat_admin",
+    "sigle_ul", "denomination_ul", "denomination_usuelle_ul", "nom_ul",
+    "nom_usage_ul", "prenom_usuel_ul", "pseudonyme_ul", "is_siege",
+    "pm_dirigeant_names", "insee",
 ]
 
-# Memory knobs (defaults)
-DEFAULT_FLUSH_EVERY = 500  # Flush parquet every N samples
-MEGA_POOL_THRESHOLD = 100_000  # Log warning for pools larger than this
+DEFAULT_FLUSH_EVERY = 500
+MEGA_POOL_THRESHOLD = 100_000
 
-# Variant configurations
+# SSOT configuration
 VARIANT_KNOBS = {
-    "A": {
-        "tfidf_name_mode": "primary",
-        "char_top_k": 0,
-        "rescue_semantic_k": 0,
-        "description": "Baseline (TF-IDF primary, no char fallback)",
-    },
     "B": {
         "tfidf_name_mode": "bag",
         "char_top_k": 200,
-        "rescue_semantic_k": 50,
-        "description": "Bag-of-names (TF-IDF bag, char fallback, semantic rescue)",
-    },
-    "C": {
-        "tfidf_name_mode": "bag",
-        "char_top_k": 200,
-        "rescue_semantic_k": 50,
-        "siren_siblings": True,
-        "description": "Bag + SIREN siblings enrichment",
+        "siren_siblings": False,
+        "description": "Variant B (bag-of-names + char fallback)",
     },
 }
 
-# Semantic is always ON for v5 (env var set at top of file)
-SEMANTIC_ENABLED = True
+SEMANTIC_ENABLED = os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1"
 
-# Fixed schema for streaming writer
 SAMPLE_SCHEMA = pa.schema([
     *[(fn, pa.float32()) for fn in FEATURE_NAMES],
     ("label", pa.int32()),
     ("query_id", pa.int64()),
     ("siret", pa.string()),
+    ("siren", pa.string()),
+    ("etat_admin", pa.string()),
     ("semantic_enabled", pa.int32()),
     ("split", pa.string()),
 ])
 
 
 class StreamingParquetWriter:
-    """Memory-efficient streaming Parquet writer with column buffers."""
-    
-    def __init__(
-        self,
-        output_path: Path,
-        schema: pa.Schema,
-        flush_every: int = DEFAULT_FLUSH_EVERY,
-        *,
-        append_from: Optional[Path] = None,
-    ):
+    def __init__(self, output_path: Path, schema: pa.Schema, flush_every: int = DEFAULT_FLUSH_EVERY, *, append_from: Optional[Path] = None):
         self.output_path = output_path
         self.schema = schema
         self.flush_every = flush_every
@@ -175,78 +127,47 @@ class StreamingParquetWriter:
         self._buffers: Dict[str, List[Any]] = {field.name: [] for field in schema}
         self._count = 0
         self._total_written = 0
-        # Incremental stats for semantic sanity check
         self._semantic_nonzero_count = 0
         self._total_samples = 0
-
         if self._append_from is not None:
             self._initialize_with_existing(self._append_from)
     
     def add_sample(self, sample: Dict[str, Any]) -> None:
-        """Add a single sample to the buffer."""
         for field in self.schema:
             val = sample.get(field.name)
             if val is None:
-                if field.type == pa.float32():
-                    val = 0.0
-                elif field.type in (pa.int32(), pa.int64()):
-                    val = 0
-                else:
-                    val = ""
+                if field.type == pa.float32(): val = 0.0
+                elif field.type in (pa.int32(), pa.int64()): val = 0
+                else: val = ""
             self._buffers[field.name].append(val)
         self._count += 1
         self._total_samples += 1
-        
-        # Track semantic stats
         sem_max = sample.get("name_semantic_max", 0.0)
-        if sem_max and sem_max > 0:
-            self._semantic_nonzero_count += 1
-        
-        if self._count >= self.flush_every:
-            self.flush()
+        if sem_max and sem_max > 0: self._semantic_nonzero_count += 1
+        if self._count >= self.flush_every: self.flush()
     
     def flush(self) -> None:
-        """Flush buffer to Parquet file."""
-        if self._count == 0:
-            return
-        
-        # Build PyArrow arrays
+        if self._count == 0: return
         arrays = []
         for field in self.schema:
             data = self._buffers[field.name]
-            if field.type == pa.float32():
-                arr = pa.array(data, type=pa.float32())
-            elif field.type == pa.int32():
-                arr = pa.array(data, type=pa.int32())
-            elif field.type == pa.int64():
-                arr = pa.array(data, type=pa.int64())
-            else:
-                arr = pa.array(data, type=pa.string())
+            if field.type == pa.float32(): arr = pa.array(data, type=pa.float32())
+            elif field.type == pa.int32(): arr = pa.array(data, type=pa.int32())
+            elif field.type == pa.int64(): arr = pa.array(data, type=pa.int64())
+            else: arr = pa.array(data, type=pa.string())
             arrays.append(arr)
-        
         table = pa.Table.from_arrays(arrays, schema=self.schema)
-        
-        if self._writer is None:
-            self._writer = pq.ParquetWriter(str(self.output_path), self.schema)
-        
+        if self._writer is None: self._writer = pq.ParquetWriter(str(self.output_path), self.schema)
         self._writer.write_table(table)
         self._total_written += self._count
-        
-        # Clear buffers
-        for key in self._buffers:
-            self._buffers[key] = []
+        for key in self._buffers: self._buffers[key] = []
         self._count = 0
 
     def _initialize_with_existing(self, source_path: Path) -> None:
-        """Copy existing parquet data into the new output file for resume support."""
-        if not source_path.exists():
-            return
+        if not source_path.exists(): return
         parquet_file = pq.ParquetFile(source_path)
-        existing_schema = parquet_file.schema_arrow
-        if existing_schema != self.schema:
-            raise RuntimeError(
-                f"Resume schema mismatch: existing={existing_schema.names}, expected={self.schema.names}"
-            )
+        if parquet_file.schema_arrow != self.schema:
+            raise RuntimeError("Resume schema mismatch")
         self._writer = pq.ParquetWriter(str(self.output_path), self.schema)
         for idx in range(parquet_file.num_row_groups):
             table = parquet_file.read_row_group(idx)
@@ -259,85 +180,42 @@ class StreamingParquetWriter:
                 self._semantic_nonzero_count += int(nonzero)
     
     def close(self) -> Tuple[int, float]:
-        """Close writer and return (total_samples, semantic_nonzero_rate)."""
         self.flush()
-        if self._writer is not None:
-            self._writer.close()
-        
+        if self._writer is not None: self._writer.close()
         rate = self._semantic_nonzero_count / self._total_samples if self._total_samples > 0 else 0.0
         return self._total_written, rate
-    
-    def get_stats(self) -> Tuple[int, int, float]:
-        """Return (total_written, total_samples, semantic_nonzero_rate)."""
-        rate = self._semantic_nonzero_count / self._total_samples if self._total_samples > 0 else 0.0
-        return self._total_written + self._count, self._total_samples, rate
 
 
 class ProgressTracker:
-    """Track processed loc_keys for resume support."""
-    
     def __init__(self, progress_path: Path):
         self.progress_path = progress_path
         self.processed: Set[str] = set()
-        self._load()
-    
-    def _load(self) -> None:
         if self.progress_path.exists():
             with open(self.progress_path) as f:
-                for line in f:
-                    self.processed.add(line.strip())
+                for line in f: self.processed.add(line.strip())
     
-    def is_processed(self, loc_key: str) -> bool:
-        return loc_key in self.processed
-    
+    def is_processed(self, loc_key: str) -> bool: return loc_key in self.processed
     def mark_processed(self, loc_key: str) -> None:
         self.processed.add(loc_key)
-        with open(self.progress_path, "a") as f:
-            f.write(f"{loc_key}\n")
-    
+        with open(self.progress_path, "a") as f: f.write(f"{loc_key}\n")
     def clear(self) -> None:
         self.processed.clear()
-        if self.progress_path.exists():
-            self.progress_path.unlink()
+        if self.progress_path.exists(): self.progress_path.unlink()
 
 
 def _norm_code(x: object) -> str | None:
-    if x is None:
-        return None
-    try:
-        if pd.isna(x):
-            return None
-    except Exception:
-        pass
+    if x is None or pd.isna(x): return None
     s = str(x).strip()
-    if not s or s.lower() == "nan":
-        return None
-    try:
-        return str(int(float(s)))
-    except Exception:
-        return s
-
+    if not s or s.lower() == "nan": return None
+    if re.fullmatch(r"\d+\.0+", s):
+        s = s.split(".")[0]
+    return s or None
 
 def load_training_data(path: Path) -> pd.DataFrame:
     df = pd.read_csv(path, sep=";", dtype=str, encoding="utf-8-sig")
-    # Support both old (entrainements.csv) and new (crm_ok_gt.csv) formats
-    df = df.rename(columns={
-        # Old format
-        "SITE": "crm_name",
-        "SITE_CLI_ADRESSE": "crm_address",
-        "SITE_CLI_COMMUNE": "crm_city",
-        "CODE_POSTAL": "postcode",
-        "CODE_INSEE": "insee",
-        "SIRET": "ground_truth_siret",
-        # New format (crm_ok_gt.csv)
-        "crm_cp": "postcode",
-        "crm_insee": "insee",
-        "crm_adresse": "crm_address",
-        "crm_commune": "crm_city",
-        "gt_siret": "ground_truth_siret",
-    })
+    df = df.rename(columns={"crm_cp": "postcode", "crm_insee": "insee", "crm_adresse": "crm_address", "crm_commune": "crm_city", "gt_siret": "ground_truth_siret"})
     df["ground_truth_siret"] = df["ground_truth_siret"].astype(str).str.strip()
-    df = df[df["ground_truth_siret"].notna() & (df["ground_truth_siret"].str.len() == 14)]
+    df = df[df["ground_truth_siret"].str.len() == 14]
     df["postcode"] = df["postcode"].apply(_norm_code)
     df["insee"] = df["insee"].apply(_norm_code)
     df["crm_id"] = range(len(df))
@@ -345,502 +223,153 @@ def load_training_data(path: Path) -> pd.DataFrame:
     df["loc_key"] = df["insee"].fillna("") + "|" + df["postcode"].fillna("")
     return df
 
-
 def create_siren_split(df: pd.DataFrame, seed: int = SEED):
     sirens = df["siren"].unique().tolist()
-    random.seed(seed)
-    random.shuffle(sirens)
+    random.seed(seed); random.shuffle(sirens)
     n = len(sirens)
-    train_sirens = set(sirens[:int(n * 0.70)])
-    dev_sirens = set(sirens[int(n * 0.70):int(n * 0.85)])
-    test_sirens = set(sirens[int(n * 0.85):])
-    return (
-        df[df["siren"].isin(list(train_sirens))].copy(),
-        df[df["siren"].isin(list(dev_sirens))].copy(),
-        df[df["siren"].isin(list(test_sirens))].copy(),
-    )
-
-
-def _is_closed_status(value: object) -> bool:
-    if value is None:
-        return False
-    return str(value).strip().upper().startswith("F")
-
-
-def _load_etat_admin_map(etab_path: Path, sirets: List[str]) -> Dict[str, str]:
-    dataset = ds.dataset(etab_path, format="parquet")
-    out: Dict[str, str] = {}
-    chunk_size = 1000
-    for i in range(0, len(sirets), chunk_size):
-        chunk = [s for s in sirets[i : i + chunk_size] if s]
-        if not chunk:
-            continue
-        filt = ds.field("siret").isin(chunk)
-        table = dataset.to_table(filter=filt, columns=["siret", "etatAdministratifEtablissement"])
-        if table.num_rows == 0:
-            try:
-                chunk_int = [int(s) for s in chunk]
-            except Exception:
-                chunk_int = []
-            if chunk_int:
-                filt = ds.field("siret").isin(chunk_int)
-                table = dataset.to_table(filter=filt, columns=["siret", "etatAdministratifEtablissement"])
-        if table.num_rows > 0:
-            for siret, etat in table.to_pandas().values.tolist():
-                out[str(siret)] = etat
-    return out
-
+    train_s = set(sirens[:int(n * 0.70)]); dev_s = set(sirens[int(n * 0.70):int(n * 0.85)]); test_s = set(sirens[int(n * 0.85):])
+    return df[df["siren"].isin(train_s)].copy(), df[df["siren"].isin(dev_s)].copy(), df[df["siren"].isin(test_s)].copy()
 
 def find_latest_ranker(models_dir: Path) -> Tuple[Optional[Path], Optional[Path], bool]:
     fast = sorted(models_dir.glob("xgbranker_fast_*.json"), reverse=True)
     if fast:
-        ranker_path = fast[0]
-        ts = ranker_path.stem.replace("xgbranker_fast_", "")
-        meta_path = models_dir / f"xgb_matcher_features_{ts}.json"
-        return ranker_path, (meta_path if meta_path.exists() else None), True
-    regular = sorted(models_dir.glob("xgbranker_*.json"), reverse=True)
-    if regular:
-        ranker_path = regular[0]
-        ts = ranker_path.stem.replace("xgbranker_", "")
-        meta_path = models_dir / f"xgb_matcher_features_{ts}.json"
-        return ranker_path, (meta_path if meta_path.exists() else None), False
+        p = fast[0]; ts = p.stem.replace("xgbranker_fast_", ""); meta = models_dir / f"xgb_two_stage_meta_{ts}.json"
+        return p, (meta if meta.exists() else None), True
+    reg = sorted(models_dir.glob("xgbranker_*.json"), reverse=True)
+    if reg:
+        p = reg[0]; ts = p.stem.replace("xgbranker_", ""); meta = models_dir / f"xgb_two_stage_meta_{ts}.json"
+        return p, (meta if meta.exists() else None), False
     return None, None, False
-
 
 def load_ranker_meta(meta_path: Optional[Path], *, is_fast: bool) -> Tuple[List[str], List[str]]:
     if not meta_path or not meta_path.exists():
-        feature_order = FAST_RANKER_FEATURE_NAMES if is_fast else FEATURE_NAMES
-        return feature_order, [f for f in FEATURE_NAMES if f.startswith("name_semantic_")]
-    with open(meta_path) as f:
-        meta = json.load(f)
-    feature_order = meta.get("feature_order") or meta.get("feature_names") or FEATURE_NAMES
-    ranker_feature_order = meta.get("ranker_feature_order") or feature_order
-    ranker_fast_feature_order = meta.get("ranker_fast_feature_order") or []
-    if is_fast:
-        feature_order = ranker_fast_feature_order or FAST_RANKER_FEATURE_NAMES
-    else:
-        feature_order = ranker_feature_order
-    semantic_zero = meta.get("semantic_features_zeroed_for_ranker_fast") or []
-    return feature_order, semantic_zero
+        return (FAST_RANKER_FEATURE_NAMES if is_fast else FEATURE_NAMES), ([f for f in FEATURE_NAMES if f.startswith("name_semantic_")] if is_fast else [])
+    with open(meta_path) as f: meta = json.load(f)
+    f_order = meta.get("ranker_fast_feature_order" if is_fast else "ranker_feature_order") or meta.get("feature_order") or FEATURE_NAMES
+    return f_order, (meta.get("semantic_features_zeroed_for_ranker_fast") or [])
 
-
-def score_with_ranker(
-    feats: List[dict],
-    *,
-    ranker: xgb.Booster,
-    feature_order: List[str],
-    zero_features: List[str] | None = None,
-) -> np.ndarray:
+def score_with_ranker(feats: List[dict], ranker: xgb.Booster, feature_order: List[str], zero_features: List[str] | None = None) -> np.ndarray:
     X = np.array([[f.get(fn, 0.0) for fn in feature_order] for f in feats], dtype=np.float32)
-    X = np.nan_to_num(X, nan=0.0, posinf=0.0, neginf=0.0)
+    X = np.nan_to_num(X, nan=0.0)
     if zero_features:
         idx = [feature_order.index(f) for f in zero_features if f in feature_order]
-        if idx:
-            X[:, idx] = 0.0
-    dmat = xgb.DMatrix(X, feature_names=feature_order)
-    return ranker.predict(dmat)
+        if idx: X[:, idx] = 0.0
+    return ranker.predict(xgb.DMatrix(X, feature_names=feature_order))
 
-
-def _compute_idf_map(candidates: List[dict]) -> Tuple[Dict[str, float], float]:
-    doc_freq: Dict[str, int] = defaultdict(int)
-    doc_count = 0
-    for cand in candidates:
-        name = primary_name(cand)
-        if not name:
-            continue
-        tokens = {t for t in normalize_text(name).split() if len(t) >= 2}
-        if not tokens:
-            continue
-        doc_count += 1
-        for tok in tokens:
-            doc_freq[tok] += 1
-    if doc_count == 0:
-        return {}, 0.0
-    idf_map = {tok: np.log((doc_count + 1) / (df + 1)) + 1.0 for tok, df in doc_freq.items()}
-    default_idf = np.log((doc_count + 1) / 1) + 1.0
-    return idf_map, default_idf
-
-
-def _attach_address_density(candidates: List[dict], key: str, target_field: str) -> None:
-    buckets: Dict[Tuple[str, str], int] = defaultdict(int)
-    for cand in candidates:
-        addr = build_address(cand)
-        if addr:
-            buckets[(cand.get(key) or "", addr)] += 1
-    for cand in candidates:
-        addr = build_address(cand)
-        if addr:
-            cand[target_field] = buckets.get((cand.get(key) or "", addr), 1)
-        else:
-            cand[target_field] = 1
-
-
-def load_candidates_for_loc(
-    partitions_dir: Path,
-    insee: Optional[str],
-    postcode: Optional[str],
-    dataset_insee: Optional[ds.Dataset] = None,
-    dataset_cp: Optional[ds.Dataset] = None,
-) -> List[dict]:
-    dataset_insee_local = dataset_insee or ds.dataset(partitions_dir / "insee", format="parquet", partitioning="hive")
-    dataset_cp_local = dataset_cp or ds.dataset(partitions_dir / "cp", format="parquet", partitioning="hive")
-
-    insee_str = str(insee) if insee else None
-    postcode_str = str(postcode) if postcode else None
-
-    table = None
-    if insee_str:
-        try:
-            insee_int = int(insee_str)
-        except (ValueError, TypeError):
-            insee_int = None
-        if insee_int is not None:
-            insee_rows = dataset_insee_local.count_rows(filter=ds.field("insee") == insee_int)
-            if insee_rows <= FAST_INSEE_MAX:
-                table = dataset_insee_local.to_table(
-                    filter=ds.field("insee") == insee_int,
-                    columns=FAST_CANDIDATE_COLUMNS,
-                )
-
-    if table is None and postcode_str:
-        try:
-            postcode_int = int(postcode_str)
-        except (ValueError, TypeError):
-            postcode_int = None
-        if postcode_int is not None:
-            table = dataset_cp_local.to_table(
-                filter=ds.field("postcode") == postcode_int,
-                columns=FAST_CANDIDATE_COLUMNS,
-            )
-            if insee_str:
-                try:
-                    table = table.filter(table.column("insee") == insee_str)
-                except Exception:
-                    pass
-
-    if table is None:
-        return []
-
-    candidates = table.to_pylist()
-    for cand in candidates:
-        cand["siret"] = str(cand.get("siret") or "")
-        cand["siren"] = str(cand.get("siren") or "")
-    return candidates
-
-
-def _dedupe_preserve(seq: List[str]) -> List[str]:
-    seen = set()
-    out = []
-    for item in seq:
-        if item and item not in seen:
-            seen.add(item)
-            out.append(item)
-    return out
-
-
-def build_siren_index(candidates: List[dict]) -> Dict[str, List[dict]]:
-    """Build an index mapping SIREN -> list of candidates (siblings) for a commune."""
-    index: Dict[str, List[dict]] = defaultdict(list)
-    for cand in candidates:
-        siren = cand.get("siren") or ""
-        if siren:
-            index[siren].append(cand)
-    return dict(index)
-
-
-def _candidate_tfidf_name(
-    cand: dict,
-    name_mode: str,
-    siren_index: Optional[Dict[str, List[dict]]] = None,
-) -> str:
-    """
-    Build the TF-IDF name string for a candidate.
-    
-    If siren_index is provided (variant C), enrich with sibling names
-    (other establishments with the same SIREN in the same commune).
-    """
-    if name_mode == "bag":
-        # Start with this candidate's own names
-        bag = [cn.text for cn in build_candidate_names(cand)]
-        
-        # Variant C: enrich with sibling names if siren_index is provided
-        if siren_index is not None:
-            siren = cand.get("siren") or ""
-            if siren and siren in siren_index:
-                siblings = siren_index[siren]
-                for sibling in siblings:
-                    # Skip self (same siret)
-                    if sibling.get("siret") == cand.get("siret"):
-                        continue
-                    # Add sibling names to the bag
-                    for cn in build_candidate_names(sibling):
-                        bag.append(cn.text)
-        
-        return " ".join(_dedupe_preserve(bag))
-    return primary_name(cand) or ""
-
-
-def build_tfidf_index(
-    candidates: List[dict],
-    *,
-    name_mode: str = "primary",
-    siren_siblings: bool = False,
-) -> Tuple[Optional[TfidfVectorizer], Optional[Any], List[str]]:
-    """
-    Build TF-IDF index for candidates.
-    
-    Args:
-        candidates: List of candidate dicts.
-        name_mode: "primary" or "bag" for name source.
-        siren_siblings: If True (variant C), enrich each candidate's TF-IDF name
-                        with names from its SIREN siblings.
-    """
-    # Build SIREN index if needed (variant C)
-    siren_index = build_siren_index(candidates) if siren_siblings else None
-    
-    names = [
-        normalize_text_for_tfidf(_candidate_tfidf_name(cand, name_mode, siren_index) or "")
-        for cand in candidates
-    ]
-    vectorizer = TfidfVectorizer(
-        analyzer="word",
-        ngram_range=(1, 2),
-        lowercase=False,
-        token_pattern=r"(?u)\b\w+\b",
-        min_df=1,
-    )
-    try:
-        matrix = vectorizer.fit_transform(names)
-    except ValueError:
-        # Empty vocabulary - all names are empty or stopwords
-        return None, None, names
-    return vectorizer, matrix, names
-
-
-def prefilter_candidates_tfidf(
-    crm_names: List[str],
-    vectorizer: TfidfVectorizer,
-    cand_matrix,
-    top_k: int,
-) -> List[List[int]]:
-    crm_norm = [normalize_text_for_tfidf(n or "") for n in crm_names]
-    q = vectorizer.transform(crm_norm)
-    sims = q @ cand_matrix.T
-
-    top_indices: List[List[int]] = []
-    for i in range(sims.shape[0]):
-        row = sims.getrow(i)
-        if row.nnz == 0:
-            top_indices.append([])
-            continue
-        idx = row.indices
-        data = row.data
-        if len(idx) > top_k:
-            sel = np.argpartition(data, -top_k)[-top_k:]
-            idx = idx[sel]
-            data = data[sel]
-        order = np.argsort(data)[::-1]
-        top_indices.append(idx[order].tolist())
-    return top_indices
-
-
-def _inject_semantic_features_for_items(
-    crm_pre: dict,
-    items: List[Dict[str, Any]],
-    candidates: List[dict],
-    *,
-    siret_key: str,
-) -> None:
-    """Inject semantic features for items using candidate lookup by SIRET."""
-    if not SEMANTIC_ENABLED:
-        return
+def _inject_semantic_features_for_items(crm_pre: dict, items: List[Dict[str, Any]], candidates: List[dict], *, siret_key: str) -> None:
+    if not SEMANTIC_ENABLED: return
     crm_name_sem = crm_pre.get("crm_name_semantic", "")
-    if not crm_name_sem:
-        return
-
-    crm_city_norm = crm_pre.get("crm_city_norm", "")
-
-    # Build siret -> candidate index for quick lookup
+    if not crm_name_sem: return
     siret_to_cand = {c.get("siret"): c for c in candidates}
-
-    candidate_name_lists: List[List[str]] = []
-    target_items: List[dict] = []
-
+    name_lists = []; targets = []
     for item in items:
-        siret = item.get(siret_key, "")
-        cand = siret_to_cand.get(siret)
-        if not cand:
-            continue
-        names = build_candidate_names(cand)
-        if not names:
-            continue
-        cand_city_norm = normalize_text(cand.get("city"))
-        pool = build_semantic_name_pool(
-            names,
-            crm_city_norm=crm_city_norm,
-            cand_city_norm=cand_city_norm,
-        )
-        if not pool:
-            continue
-        candidate_name_lists.append(pool)
-        target_items.append(item)
-
-    if not candidate_name_lists:
-        return
-
-    sem_values = top2_semantic_similarities_batch(crm_name_sem, candidate_name_lists)
-    for item, sem_vals in zip(target_items, sem_values):
-        item["name_semantic_max"] = sem_vals[0]
-        item["name_semantic_second"] = sem_vals[1]
-        item["name_semantic_gap"] = sem_vals[2]
-
-
-def _inject_semantic_features_late(
-    crm_pre: dict,
-    samples: List[Dict[str, Any]],
-    candidates: List[dict],
-) -> None:
-    """Inject semantic features ONLY on selected samples (late compute for memory efficiency)."""
-    _inject_semantic_features_for_items(
-        crm_pre,
-        samples,
-        candidates,
-        siret_key="siret",
-    )
-
+        cand = siret_to_cand.get(item.get(siret_key, ""))
+        if not cand: continue
+        pool = build_semantic_name_pool(build_candidate_names(cand), crm_city_norm=crm_pre.get("crm_city_norm", ""), cand_city_norm=normalize_text(cand.get("city")))
+        if pool: name_lists.append(pool); targets.append(item)
+    if not name_lists: return
+    sem_values = top2_semantic_similarities_batch(crm_name_sem, name_lists)
+    for item, sv in zip(targets, sem_values):
+        item["name_semantic_max"] = sv[0]; item["name_semantic_second"] = sv[1]; item["name_semantic_gap"] = sv[2]
 
 def generate_samples_for_query(
     crm_row: pd.Series,
     crm_pre: dict,
     candidates: List[dict],
+    prefilter_sirets: Optional[List[str]] = None,
     max_neg: int = MAX_NEGATIVES,
     ranker: xgb.Booster | None = None,
     ranker_feature_order: Optional[List[str]] = None,
     ranker_zero_features: Optional[List[str]] = None,
-    max_same_siren_negatives: int | None = None,
     is_ranker_fast: bool = False,
+    semantic_expected: bool = False,
+    use_prefilter_sampling: bool = False,
 ) -> List[dict]:
-    """Generate training samples for a single CRM query.
-    
-    Memory-optimized: does NOT store _cand reference in features.
-    Semantic features computed late (only on selected samples).
-    """
-    gt_siret = crm_row.get("ground_truth_siret", "")
-    gt_siren = gt_siret[:9] if gt_siret else ""
-    query_id = crm_row["crm_id"]
+    gt_siret = crm_row.get("ground_truth_siret", ""); q_id = crm_row["crm_id"]
+    if not candidates: return []
+    def _norm_siret(val: object) -> str:
+        return str(val or "").zfill(14)
 
-    if not candidates:
-        return []
+    if use_prefilter_sampling and not ranker:
+        cand_map = {_norm_siret(c.get("siret")): c for c in candidates if c.get("siret")}
+        gt_norm = _norm_siret(gt_siret)
+        if gt_norm not in cand_map:
+            return []
+        ordered = []
+        if prefilter_sirets:
+            for s in prefilter_sirets:
+                norm = _norm_siret(s)
+                if norm in cand_map:
+                    ordered.append(norm)
+        if not ordered:
+            ordered = list(cand_map.keys())
 
-    # Build features WITHOUT semantic
-    # NOTE: NOT storing _cand to save memory
+        neg_ordered = [s for s in ordered if s != gt_norm]
+        num_hard = int(max_neg * HARD_RATIO)
+        hard = neg_ordered[:num_hard]
+        rest = neg_ordered[num_hard:]
+        rand = random.sample(rest, min(max_neg - len(hard), len(rest))) if rest else []
+        selected = hard + rand
+
+        samples = []
+        for siret_norm in [gt_norm] + selected:
+            cand = cand_map.get(siret_norm)
+            if not cand:
+                continue
+            f = make_features_from_preprocessed(crm_pre, cand, skip_semantic=True)
+            f.update({"_siret": cand["siret"], "_is_pos": (siret_norm == gt_norm), "_siren": cand.get("siren"), "_etat_admin": cand.get("etat_admin")})
+            s = {fn: f.get(fn, 0.0) for fn in FEATURE_NAMES}
+            s.update({
+                "label": int(f["_is_pos"]),
+                "query_id": q_id,
+                "siret": f["_siret"],
+                "siren": f["_siren"],
+                "etat_admin": f["_etat_admin"],
+                "semantic_enabled": int(semantic_expected),
+            })
+            samples.append(s)
+        return samples
+
     all_feats = []
     for cand in candidates:
-        feat = make_features_from_preprocessed(crm_pre, cand, skip_semantic=True)
-        feat["_siret"] = cand["siret"]
-        feat["_is_pos"] = (cand["siret"] == gt_siret)
-        all_feats.append(feat)
-
-    # If ranker is NOT fast, semantic features are needed for scoring.
-    # This keeps correctness for non-fast rankers (at higher memory cost).
-    if SEMANTIC_ENABLED and not is_ranker_fast:
-        _inject_semantic_features_for_items(
-            crm_pre,
-            all_feats,
-            candidates,
-            siret_key="_siret",
-        )
-
-    # Score with ranker (fast mode - no semantic features used)
-    if ranker is not None:
-        feature_order = ranker_feature_order or FEATURE_NAMES
-        scores = score_with_ranker(
-            all_feats,
-            ranker=ranker,
-            feature_order=feature_order,
-            zero_features=ranker_zero_features or [],
-        )
-        for f, s in zip(all_feats, scores):
-            f["_score"] = float(s)
+        f = make_features_from_preprocessed(crm_pre, cand, skip_semantic=True)
+        f.update({"_siret": cand["siret"], "_is_pos": (cand["siret"] == gt_siret), "_siren": cand.get("siren"), "_etat_admin": cand.get("etat_admin")})
+        all_feats.append(f)
+    if ranker:
+        scores = score_with_ranker(all_feats, ranker, ranker_feature_order or FEATURE_NAMES, ranker_zero_features)
+        for f, s in zip(all_feats, scores): f["_score"] = float(s)
     else:
-        for f in all_feats:
-            f["_score"] = 0.6 * f.get("name_jaro_max", 0.0) + 0.4 * f.get("addr_jaro", 0.0)
-
-    positives = [f for f in all_feats if f["_is_pos"]]
-    negatives = [f for f in all_feats if not f["_is_pos"]]
-    if not positives:
-        return []
-
-    # Same-SIREN filtering
-    if gt_siren and max_same_siren_negatives is not None and max_same_siren_negatives >= 0:
-        same_siren = []
-        other_negs = []
-        for f in negatives:
-            siret = f.get("_siret") or ""
-            if siret.startswith(gt_siren):
-                same_siren.append(f)
-            else:
-                other_negs.append(f)
-        if max_same_siren_negatives == 0:
-            negatives = other_negs
-        else:
-            same_siren = sorted(same_siren, key=lambda x: x.get("_score", 0.0), reverse=True)
-            negatives = other_negs + same_siren[:max_same_siren_negatives]
-
-    # Hard negative mining
+        for f in all_feats: f["_score"] = 0.6 * f.get("name_jaro_max", 0.0) + 0.4 * f.get("addr_jaro", 0.0)
+    pos = [f for f in all_feats if f["_is_pos"]]
+    neg = [f for f in all_feats if not f["_is_pos"]]
+    if not pos: return []
     num_hard = int(max_neg * HARD_RATIO)
-    neg_sorted = sorted(negatives, key=lambda x: x["_score"], reverse=True)
-    hard = neg_sorted[:num_hard]
-    rest = neg_sorted[num_hard:]
+    neg_s = sorted(neg, key=lambda x: x["_score"], reverse=True)
+    hard = neg_s[:num_hard]; rest = neg_s[num_hard:]
     rand = random.sample(rest, min(max_neg - num_hard, len(rest))) if rest else []
-
-    # Same-address negatives
-    same_addr = [
-        f for f in negatives
-        if float(f.get("addr_jaro", 0.0)) >= 0.95 and float(f.get("name_jaro_max", 0.0)) < 0.50
-    ]
-    same_addr = sorted(same_addr, key=lambda x: x.get("addr_jaro", 0.0), reverse=True)
-    same_addr = same_addr[: min(SAME_ADDR_NEG_MAX, max_neg)]
-
-    selected = []
-    seen = set()
+    same_addr = sorted([f for f in neg if float(f.get("addr_jaro", 0.0)) >= 0.95 and float(f.get("name_jaro_max", 0.0)) < 0.50], key=lambda x: x.get("addr_jaro", 0.0), reverse=True)[:max_neg]
+    selected = []; seen = set()
     for group in (hard, same_addr, rand):
         for f in group:
-            siret = f.get("_siret")
-            if siret in seen:
-                continue
-            selected.append(f)
-            if siret:
-                seen.add(siret)
-            if len(selected) >= max_neg:
-                break
-        if len(selected) >= max_neg:
-            break
-
-    # Build final samples (positives + selected negatives)
+            if f["_siret"] not in seen:
+                selected.append(f); seen.add(f["_siret"])
+                if len(selected) >= max_neg: break
+        if len(selected) >= max_neg: break
     samples = []
-    for f in positives:
+    for f in pos + selected:
         s = {fn: f.get(fn, 0.0) for fn in FEATURE_NAMES}
-        s["label"] = 1
-        s["query_id"] = query_id
-        s["siret"] = f["_siret"]
-        s["semantic_enabled"] = int(SEMANTIC_ENABLED)
+        s.update({
+            "label": int(f["_is_pos"]),
+            "query_id": q_id,
+            "siret": f["_siret"],
+            "siren": f["_siren"],
+            "etat_admin": f["_etat_admin"],
+            "semantic_enabled": int(semantic_expected),
+        })
         samples.append(s)
-
-    for f in selected:
-        s = {fn: f.get(fn, 0.0) for fn in FEATURE_NAMES}
-        s["label"] = 0
-        s["query_id"] = query_id
-        s["siret"] = f["_siret"]
-        s["semantic_enabled"] = int(SEMANTIC_ENABLED)
-        samples.append(s)
-
-    # LATE SEMANTIC: Compute semantic features only on the selected samples
-    if SEMANTIC_ENABLED and is_ranker_fast:
-        _inject_semantic_features_late(crm_pre, samples, candidates)
-
+    if semantic_expected:
+        _inject_semantic_features_for_items(crm_pre, samples, candidates, siret_key="siret")
     return samples
-
 
 def generate_split(
     df: pd.DataFrame,
@@ -848,564 +377,127 @@ def generate_split(
     prefilter_k: int,
     max_negatives: int,
     ranker: xgb.Booster | None,
-    ranker_feature_order: Optional[List[str]],
-    ranker_zero_features: Optional[List[str]],
+    ranker_f_order: List[str],
+    ranker_z_features: List[str],
     split_name: str,
     writer: StreamingParquetWriter,
-    output_path: Path,
-    progress_tracker: Optional[ProgressTracker],
-    log_base_path: Path,
-    *,
-    drop_unnamed_candidates: bool,
-    tfidf_name_mode: str,
-    max_same_siren_negatives: int | None,
-    exclude_closed_candidates: bool,
-    siren_siblings: bool = False,
-    is_ranker_fast: bool = False,
+    log_base: Path,
+    drop_unnamed: bool,
+    tfidf_mode: str,
+    exclude_closed: bool,
+    char_top_k: int,
+    is_fast: bool,
+    semantic_expected: bool,
+    use_prefilter_sampling: bool,
 ) -> Tuple[int, int]:
-    """Generate samples for a split with streaming output and memory cleanup."""
-    total_samples = 0
-    total_pos = 0
-
-    dataset_insee = ds.dataset(partitions_dir / "insee", format="parquet", partitioning="hive")
-    dataset_cp = ds.dataset(partitions_dir / "cp", format="parquet", partitioning="hive")
-
-    # Lost GT log file (append mode)
-    lost_gt_log_path = log_base_path.parent / f"lost_gt_analysis_{log_base_path.stem}.csv"
-    lost_gt_header_written = lost_gt_log_path.exists()
-
+    total_samples = 0; total_pos = 0
+    store = PartitionedCandidateStore(partitions_dir)
+    config = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not exclude_closed, drop_unnamed=drop_unnamed, tfidf_name_mode=tfidf_mode, prefilter_k=prefilter_k, char_top_k=char_top_k, min_candidates=MIN_CANDIDATES_SUBSET)
+    lost_gt_log = log_base.parent / f"lost_gt_analysis_{log_base.stem}.csv"
+    header_written = lost_gt_log.exists()
     grouped = df.groupby("loc_key")
-    pbar = tqdm(grouped, total=len(grouped), desc=f"Generating {split_name}")
-    
+    pbar = tqdm(grouped, desc=f"Generating {split_name}")
     for loc_key, group in pbar:
-        # Resume support: skip already processed loc_keys
-        full_key = f"{split_name}|{loc_key}"
-        if progress_tracker and progress_tracker.is_processed(full_key):
-            continue
-        
-        insee = None
-        postcode = None
-        if loc_key and "|" in loc_key:
-            insee, postcode = loc_key.split("|", 1)
-            insee = insee or None
-            postcode = postcode or None
-
-        candidates = load_candidates_for_loc(
-            partitions_dir,
-            insee,
-            postcode,
-            dataset_insee=dataset_insee,
-            dataset_cp=dataset_cp,
-        )
-        if not candidates:
-            if progress_tracker:
-                progress_tracker.mark_processed(full_key)
-            continue
-        
-        # Log mega pools (for monitoring)
-        num_candidates = len(candidates)
-        if num_candidates > MEGA_POOL_THRESHOLD:
-            pbar.write(f"  [MEGA POOL] {loc_key}: {num_candidates:,} candidates")
-        
-        candidates_pool = candidates
-
-        if exclude_closed_candidates:
-            candidates_pool = [
-                c for c in candidates_pool
-                if str(c.get("etat_admin") or "").strip().upper() != "F"
-            ]
-            if not candidates_pool:
-                if progress_tracker:
-                    progress_tracker.mark_processed(full_key)
-                continue
-
-        if drop_unnamed_candidates:
-            candidates = [c for c in candidates_pool if build_candidate_names(c)]
-            if not candidates:
-                candidates = candidates_pool
-        else:
-            candidates = candidates_pool
-
-        # IDF map and address_density computed on the deduplicated pool.
-        # v5 partitions are guaranteed clean (no SIRET duplicates within a partition),
-        # so no explicit dedupe is needed here - aligned with infer.py which uses
-        # dedupe_candidates() to handle the rare multi-partition case.
-        idf_map, default_idf = _compute_idf_map(candidates)
-        set_global_name_idf_map(idf_map, default_idf)
-        key = "insee" if insee else "postcode"
-        field = "_xgb_addr_density_insee" if insee else "_xgb_addr_density_cp"
-        _attach_address_density(candidates, key=key, target_field=field)
-
-        # Build retrieval indices
-        vectorizer, cand_matrix, _ = build_tfidf_index(
-            candidates,
-            name_mode=tfidf_name_mode,
-            siren_siblings=siren_siblings,
-        )
-        addr_vectorizer, addr_matrix = build_address_tfidf_index(candidates)
-        
-        addr_index = build_address_hash_index(candidates)
-        num_index = build_numeric_token_index(candidates)
-
-        crm_names = group["crm_name"].tolist()
-        crm_addresses = group["crm_address"].tolist()
-        
-        # 1. Name Retrieval (TF-IDF)
-        if vectorizer is not None and cand_matrix is not None:
-            name_indices = prefilter_candidates_tfidf(crm_names, vectorizer, cand_matrix, prefilter_k)
-        else:
-            name_indices = [[] for _ in crm_names]
-            
-        # 2. Address Retrieval (TF-IDF)
-        if addr_vectorizer is not None and addr_matrix is not None:
-            addr_indices_list = []
-            for addr in crm_addresses:
-                addr_indices_list.append(
-                    prefilter_candidates_address_tfidf(addr, addr_vectorizer, addr_matrix, prefilter_k)
-                )
-        else:
-            addr_indices_list = [[] for _ in crm_addresses]
-
-        siret_index = {cand.get("siret"): cand for cand in candidates_pool}
-
-        # Process each CRM row INDIVIDUALLY (streaming, no batch accumulation)
-        group_rows = [row._asdict() for row in group.itertuples(index=False, name="Row")]
-        
-        for row_idx, row_dict in enumerate(group_rows):
-            crm_pre = preprocess_crm_row(pd.Series(row_dict))
-            idx_list = name_indices[row_idx]
-            addr_idx_list = addr_indices_list[row_idx]
-            
-            # 1. Apply Universal Rescue (Address + Numeric)
-            rescue_idx = set()
-            
-            # Address Hash Rescue
-            addr_h = address_hash(crm_pre.get("crm_street_num"), crm_pre.get("crm_street_name"))
-            if addr_h and addr_index:
-                rescue_idx.update(addr_index.get(addr_h, []))
-            
-            # Numeric Token Rescue
-            numeric_tokens = extract_numeric_tokens(row_dict.get("crm_name"))
-            if numeric_tokens and num_index:
-                for token in numeric_tokens:
-                    rescue_idx.update(num_index.get(token, []))
-            
-            # Merge indices (TF-IDF + Rescue)
-            combined_idx = sorted(list(set(idx_list) | set(addr_idx_list) | rescue_idx))
-            
-            # 2. GT Loss Analysis (write incrementally)
-            gt_siret = row_dict.get("ground_truth_siret")
-            if gt_siret and gt_siret in siret_index:
-                gt_cand = siret_index[gt_siret]
-                try:
-                    gt_idx = candidates.index(gt_cand)
-                    if gt_idx not in combined_idx:
-                        # LOST GT - log immediately
-                        loss_reason = []
-                        if gt_idx not in idx_list:
-                            loss_reason.append("TFIDF_NAME")
-                        if gt_idx not in addr_idx_list:
-                            loss_reason.append("TFIDF_ADDR")
-                        if gt_idx not in rescue_idx:
-                            loss_reason.append("RESCUE")
-                        
-                        with open(lost_gt_log_path, "a") as f:
-                            if not lost_gt_header_written:
-                                f.write("crm_id,crm_name,gt_siret,loss_reason,split,loc_key\n")
-                                lost_gt_header_written = True
-                            crm_name_esc = str(row_dict.get("crm_name", "")).replace('"', '""')
-                            f.write(f'{row_dict.get("crm_id")},"{crm_name_esc}",{gt_siret},{"+".join(loss_reason)},{split_name},{loc_key}\n')
-                except ValueError:
-                    pass
-
-            # Build candidate subset
-            if combined_idx and len(combined_idx) >= MIN_CANDIDATES_SUBSET:
-                subset = [candidates[i] for i in combined_idx if i < len(candidates)]
-            else:
-                if candidates:
-                    tfidf_set = set(combined_idx)
-                    tfidf_cands = [candidates[i] for i in tfidf_set if i < len(candidates)]
-                    remaining_idx = [i for i in range(len(candidates)) if i not in tfidf_set]
-                    needed = max(0, min(MIN_CANDIDATES_SUBSET, prefilter_k) - len(tfidf_cands))
-                    random_extra_idx = random.sample(remaining_idx, min(needed, len(remaining_idx))) if remaining_idx else []
-                    random_extra = [candidates[i] for i in random_extra_idx]
-                    subset = tfidf_cands + random_extra
-                else:
-                    subset = []
-
-            # Generate samples for this single query
+        tfidf_cache = {}
+        for row_dict in group.to_dict("records"):
+            crm_pre = preprocess_crm_row(row_dict); gt_siret = row_dict.get("ground_truth_siret")
+            res = build_candidate_pool(store, row_dict, crm_pre, config, tfidf_cache, gt_siret)
+            if not res.candidates: continue
+            set_global_name_idf_map(res.idf_map, res.default_idf)
+            if gt_siret and not res.gt_in_tfidf_pool:
+                with open(lost_gt_log, "a") as f:
+                    if not header_written: f.write("crm_id,crm_name,gt_siret,loss_reason,split,loc_key\n"); header_written = True
+                    f.write(f'{row_dict.get("crm_id")},"{str(row_dict.get("crm_name")).replace(chr(34),chr(34)*2)}",{gt_siret},{res.loss_reason or "UNKNOWN"},{split_name},{loc_key}\n')
             samples = generate_samples_for_query(
-                pd.Series(row_dict),
-                crm_pre,
-                subset,
+                crm_row=pd.Series(row_dict),
+                crm_pre=crm_pre,
+                candidates=res.candidates,
+                prefilter_sirets=res.prefilter_sirets,
                 max_neg=max_negatives,
                 ranker=ranker,
-                ranker_feature_order=ranker_feature_order,
-                ranker_zero_features=ranker_zero_features,
-                max_same_siren_negatives=max_same_siren_negatives,
-                is_ranker_fast=is_ranker_fast,
+                ranker_feature_order=ranker_f_order,
+                ranker_zero_features=ranker_z_features,
+                is_ranker_fast=is_fast,
+                semantic_expected=semantic_expected,
+                use_prefilter_sampling=use_prefilter_sampling,
             )
-            
-            # Write samples to streaming writer
-            for sample in samples:
-                sample["split"] = split_name
-                writer.add_sample(sample)
-                total_samples += 1
-                if sample.get("label", 0) == 1:
-                    total_pos += 1
-
-        # Mark loc_key as processed
-        if progress_tracker:
-            progress_tracker.mark_processed(full_key)
-        
-        # AGGRESSIVE MEMORY CLEANUP after each loc_key
-        del candidates, candidates_pool, vectorizer, cand_matrix
-        del addr_vectorizer, addr_matrix, addr_index, num_index
-        del name_indices, addr_indices_list, siret_index, group_rows
+            for s in samples:
+                s["split"] = split_name; writer.add_sample(s)
+                total_samples += 1; total_pos += (1 if s["label"] == 1 else 0)
         gc.collect()
-
     return total_samples, total_pos
 
-
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Generate training samples v5 (partitioned + TF-IDF + variants A/B/C).")
+    parser = argparse.ArgumentParser()
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--training-csv", type=Path, default=TRAINING_DATA)
     parser.add_argument("--partitions-dir", type=Path, default=PARTITIONS_DIR)
-    parser.add_argument("--etab-parquet", type=Path, default=ETAB_PARQUET)
     parser.add_argument("--prefilter-k", type=int, default=PREFILTER_TOP_K)
+    parser.add_argument("--char-top-k", type=int, default=200)
     parser.add_argument("--max-negatives", type=int, default=MAX_NEGATIVES)
-    parser.add_argument(
-        "--variant",
-        choices=["A", "B", "C"],
-        default="B",
-        help="Retrieval variant: A=baseline, B=bag+rescue, C=bag+siblings (default: B).",
-    )
-    parser.add_argument(
-        "--tfidf-name-mode",
-        choices=["primary", "bag"],
-        default=None,  # Will be set by variant if not specified
-        help="TF-IDF name source: primary or bag-of-names (auto-set by variant).",
-    )
-    parser.add_argument(
-        "--drop-unnamed-candidates",
-        dest="drop_unnamed_candidates",
-        action="store_true",
-        default=True,
-        help="Drop candidates with no usable names (default: enabled).",
-    )
-    parser.add_argument(
-        "--keep-unnamed-candidates",
-        dest="drop_unnamed_candidates",
-        action="store_false",
-        help="Keep candidates with no usable names.",
-    )
-    parser.add_argument(
-        "--max-same-siren-negatives",
-        type=int,
-        default=0,
-        help="Cap same-SIREN negatives per query (0 exclude, -1 unlimited).",
-    )
-    parser.add_argument(
-        "--exclude-closed-gt",
-        dest="exclude_closed_gt",
-        action="store_true",
-        default=False,  # v5: include closed GT by default
-        help="Exclude GT with etatAdministratifEtablissement == 'F'.",
-    )
-    parser.add_argument(
-        "--include-closed-gt",
-        dest="exclude_closed_gt",
-        action="store_false",
-        help="Keep closed GT in training samples (default for v5).",
-    )
-    parser.add_argument(
-        "--exclude-closed-candidates",
-        dest="exclude_closed_candidates",
-        action="store_true",
-        default=False,  # v5: include closed candidates by default
-        help="Exclude candidates with etat_admin == 'F'.",
-    )
-    parser.add_argument(
-        "--include-closed-candidates",
-        dest="exclude_closed_candidates",
-        action="store_false",
-        help="Include candidates with etat_admin == 'F' (default for v5).",
-    )
-    parser.add_argument("--seed", type=int, default=SEED)
-    parser.add_argument("--ranker-model", type=Path, default=None)
-    parser.add_argument("--ranker-meta", type=Path, default=None)
-    parser.add_argument("--disable-ranker-hard-negatives", action="store_true")
-    
-    # Memory optimization args
-    parser.add_argument(
-        "--flush-every",
-        type=int,
-        default=DEFAULT_FLUSH_EVERY,
-        help=f"Flush parquet every N samples (default: {DEFAULT_FLUSH_EVERY}).",
-    )
-    parser.add_argument(
-        "--resume",
-        action="store_true",
-        help="Resume from last processed loc_key (skip already processed).",
-    )
-    parser.add_argument(
-        "--no-resume",
-        action="store_true",
-        help="Force restart (clear progress tracker).",
-    )
-    
+    parser.add_argument("--tfidf-name-mode", choices=["bag"], default="bag")
+    parser.add_argument("--exclude-closed-candidates", action="store_true", default=False)
+    parser.add_argument("--mode", choices=["ranker", "decider"], default="ranker")
+    parser.add_argument("--enable-ranker-hard-negatives", action="store_true", default=False)
     args = parser.parse_args()
-
-    random.seed(args.seed)
-    np.random.seed(args.seed)
-    
-    # Apply memory-safe defaults via env
-    os.environ.setdefault("XGB_SEMANTIC_BATCH_SIZE", "128")  # Reduced for memory safety
-    os.environ.setdefault("XGB_SEMANTIC_DEVICE", "mps")
-    os.environ.setdefault("XGB_SEMANTIC_GATE_ENABLED", "0")
-    os.environ.setdefault("XGB_SEMANTIC_CACHE_SIZE", "50000")  # Reduced for memory safety
-
-    variant = args.variant
-    variant_config = VARIANT_KNOBS.get(variant, VARIANT_KNOBS["B"])
-    
-    # Override tfidf_name_mode if not explicitly set
-    if args.tfidf_name_mode is None:
-        args.tfidf_name_mode = variant_config.get("tfidf_name_mode", "bag")
-    
-    # Variant C: enable SIREN siblings enrichment
-    siren_siblings = variant_config.get("siren_siblings", False)
-    
-    print("=" * 60)
-    print(f"Sample Generation v5fast MEMORY-OPTIMIZED (Variant {variant})")
-    print("=" * 60)
-    print(f"  TF-IDF mode: {args.tfidf_name_mode}")
-    print(f"  SIREN siblings: {siren_siblings}")
-    print(f"  Include closed GT: {not args.exclude_closed_gt}")
-    print(f"  Include closed candidates: {not args.exclude_closed_candidates}")
-    print(f"  Flush every: {args.flush_every} samples")
-    print(f"  Resume mode: {args.resume}")
-    print(f"  Semantic cache size: {os.environ.get('XGB_SEMANTIC_CACHE_SIZE', '50000')}")
-    print(f"  Semantic batch size: {os.environ.get('XGB_SEMANTIC_BATCH_SIZE', '128')}")
-
-    print("\n1. Loading CRM data...")
-    df = load_training_data(args.training_csv)
-    print(f"   Rows: {len(df)}, SIRENs: {df['siren'].nunique()}")
-    if args.exclude_closed_gt:
-        if not args.etab_parquet.exists():
-            raise FileNotFoundError(f"Establishment parquet not found: {args.etab_parquet}")
-        gt_sirets = df["ground_truth_siret"].astype(str).tolist()
-        status_map = _load_etat_admin_map(args.etab_parquet, gt_sirets)
-        closed_mask = df["ground_truth_siret"].map(
-            lambda s: _is_closed_status(status_map.get(str(s)))
-        )
-        missing = df["ground_truth_siret"].map(lambda s: str(s) not in status_map).sum()
-        before = len(df)
-        df = df[~closed_mask].copy()
-        print(
-            f"   Excluded closed GT: {before - len(df)} removed (missing status: {missing})"
-        )
-
-    print("\n2. SIREN split...")
-    train_df, dev_df, test_df = create_siren_split(df, args.seed)
-    print(f"   Train: {len(train_df)}, Dev: {len(dev_df)}, Test: {len(test_df)}")
-
-    ranker = None
-    ranker_feature_order: Optional[List[str]] = None
-    ranker_zero_features: List[str] = []
-    is_fast = False
-    ranker_info = None
-    if not args.disable_ranker_hard_negatives:
-        ranker_path = args.ranker_model
-        meta_path = args.ranker_meta
-        if ranker_path is None:
-            ranker_path, meta_path, is_fast = find_latest_ranker(MODEL_DIR)
-        else:
-            is_fast = "fast" in ranker_path.name.lower()
-        if ranker_path and ranker_path.exists():
-            ranker = xgb.Booster()
-            ranker.load_model(str(ranker_path))
-            ranker_feature_order, semantic_zero = load_ranker_meta(meta_path, is_fast=is_fast)
-            ranker_zero_features = semantic_zero if is_fast else []
-            ranker_info = {
-                "path": str(ranker_path),
-                "meta": str(meta_path) if meta_path else None,
-                "is_fast": is_fast,
-            }
-            print(f"\n[HardNeg] Using ranker: {ranker_path} (fast={is_fast})")
-        else:
-            print("\n[HardNeg] No ranker model found -> fallback to heuristic scoring.")
-
-    output_path = args.output
-    final_output_path = output_path
-    output_path.parent.mkdir(parents=True, exist_ok=True)
-    
-    # Progress tracker for resume support
-    progress_path = output_path.with_suffix(".progress")
-    progress_tracker = ProgressTracker(progress_path)
-    resume_append_from: Optional[Path] = None
-    
-    if args.no_resume:
-        progress_tracker.clear()
-        if output_path.exists():
-            output_path.unlink()
-    elif not args.resume:
-        # Fresh start by default
-        progress_tracker.clear()
-        if output_path.exists():
-            output_path.unlink()
-    else:
-        # Resume mode: require progress file
-        if not progress_path.exists():
-            raise RuntimeError("Resume requested but progress file is missing. Cannot safely resume.")
-        if not output_path.exists():
-            raise RuntimeError("Resume requested but output file is missing. Cannot safely resume.")
-        resume_append_from = output_path
-        resume_tmp_path = output_path.with_suffix(".resume.tmp.parquet")
-        if resume_tmp_path.exists():
-            resume_tmp_path.unlink()
-        output_path = resume_tmp_path
-
-    # Streaming writer
-    writer = StreamingParquetWriter(
-        output_path,
-        SAMPLE_SCHEMA,
-        flush_every=args.flush_every,
-        append_from=resume_append_from,
-    )
-
-    total_counts = {}
-    
-    try:
-        train_count, train_pos = generate_split(
-            train_df,
-            args.partitions_dir,
-            args.prefilter_k,
-            args.max_negatives,
-            ranker,
-            ranker_feature_order,
-            ranker_zero_features,
-            "train",
-            writer,
-            output_path,
-            progress_tracker if args.resume else None,
-            log_base_path=final_output_path,
-            drop_unnamed_candidates=args.drop_unnamed_candidates,
-            tfidf_name_mode=args.tfidf_name_mode,
-            max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
-            exclude_closed_candidates=args.exclude_closed_candidates,
-            siren_siblings=siren_siblings,
-            is_ranker_fast=is_fast,
-        )
-        total_counts["train"] = train_count
-        print(f"\n   Train: {train_count} samples ({train_pos} positives)")
-        
-        # Clear semantic cache between splits to free memory
-        clear_semantic_cache()
-        gc.collect()
-
-        dev_count, dev_pos = generate_split(
-            dev_df,
-            args.partitions_dir,
-            args.prefilter_k,
-            args.max_negatives,
-            ranker,
-            ranker_feature_order,
-            ranker_zero_features,
-            "dev",
-            writer,
-            output_path,
-            progress_tracker if args.resume else None,
-            log_base_path=final_output_path,
-            drop_unnamed_candidates=args.drop_unnamed_candidates,
-            tfidf_name_mode=args.tfidf_name_mode,
-            max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
-            exclude_closed_candidates=args.exclude_closed_candidates,
-            siren_siblings=siren_siblings,
-            is_ranker_fast=is_fast,
-        )
-        total_counts["dev"] = dev_count
-        print(f"\n   Dev: {dev_count} samples ({dev_pos} positives)")
-        
-        clear_semantic_cache()
-        gc.collect()
-
-        test_count, test_pos = generate_split(
-            test_df,
-            args.partitions_dir,
-            args.prefilter_k,
-            args.max_negatives,
-            ranker,
-            ranker_feature_order,
-            ranker_zero_features,
-            "test",
-            writer,
-            output_path,
-            progress_tracker if args.resume else None,
-            log_base_path=final_output_path,
-            drop_unnamed_candidates=args.drop_unnamed_candidates,
-            tfidf_name_mode=args.tfidf_name_mode,
-            max_same_siren_negatives=(None if args.max_same_siren_negatives < 0 else args.max_same_siren_negatives),
-            exclude_closed_candidates=args.exclude_closed_candidates,
-            siren_siblings=siren_siblings,
-            is_ranker_fast=is_fast,
-        )
-        total_counts["test"] = test_count
-        print(f"\n   Test: {test_count} samples ({test_pos} positives)")
-        
-    finally:
-        # Always close writer properly
-        total_written, semantic_rate = writer.close()
-
-    # -------------------------------------------------------------------------
-    # SANITY CHECK: Verify semantic features are non-zero (incremental stats)
-    # -------------------------------------------------------------------------
-    print("\n--- Semantic sanity check (incremental) ---")
-    print(f"  name_semantic_max non-zero rate: {semantic_rate:.2%}")
-    
-    MIN_SEMANTIC_NZ_RATE = 0.20  # At least 20% of samples should have semantic > 0
-    if semantic_rate < MIN_SEMANTIC_NZ_RATE:
+    semantic_expected = args.mode == "decider"
+    if semantic_expected != SEMANTIC_ENABLED:
         raise RuntimeError(
-            f"SEMANTIC SANITY CHECK FAILED: name_semantic_max non-zero rate = {semantic_rate:.2%} < {MIN_SEMANTIC_NZ_RATE:.0%}. "
-            f"This indicates semantic features are not being computed. "
-            f"Check that XGB_SEMANTIC_ENABLED=1 is set before imports and that the semantic model is loaded."
+            f"semantic_expected mismatch: mode={args.mode} env={int(SEMANTIC_ENABLED)}"
         )
-    print("  Semantic features OK")
-
-    if resume_append_from is not None:
-        os.replace(output_path, final_output_path)
-
+    
+    df = load_training_data(args.training_csv)
+    train_df, dev_df, test_df = create_siren_split(df, SEED)
+    ranker = None; r_fo = []; r_zf = []; is_fast = False; r_info = None
+    use_hard_negatives = args.enable_ranker_hard_negatives or args.mode == "decider"
+    use_prefilter_sampling = args.mode == "ranker" and not use_hard_negatives
+    if use_hard_negatives:
+        rp, mp, is_fast = find_latest_ranker(MODEL_DIR)
+        if rp:
+            ranker = xgb.Booster(); ranker.load_model(str(rp))
+            r_fo, r_zf = load_ranker_meta(mp, is_fast=is_fast); r_info = {"path": str(rp), "is_fast": is_fast}
+    
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    writer = StreamingParquetWriter(args.output, SAMPLE_SCHEMA)
+    counts = {}
+    for name, sdf in [("train", train_df), ("dev", dev_df), ("test", test_df)]:
+        c, p = generate_split(
+            sdf,
+            args.partitions_dir,
+            args.prefilter_k,
+            args.max_negatives,
+            ranker,
+            r_fo,
+            r_zf,
+            name,
+            writer,
+            args.output,
+            True,
+            args.tfidf_name_mode,
+            args.exclude_closed_candidates,
+            args.char_top_k,
+            is_fast,
+            semantic_expected,
+            use_prefilter_sampling,
+        )
+        counts[name] = (c, p); clear_semantic_cache(); gc.collect()
+    
+    written, sem_rate = writer.close()
+    if semantic_expected and sem_rate < 0.20:
+        raise RuntimeError(f"Semantic sanity check failed: {sem_rate:.2%}")
+    
+    rc = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not args.exclude_closed_candidates, drop_unnamed=True, tfidf_name_mode=args.tfidf_name_mode, prefilter_k=args.prefilter_k, char_top_k=args.char_top_k, min_candidates=MIN_CANDIDATES_SUBSET)
+    sig = rc.signature()
     meta = {
         "generated": datetime.now().isoformat(),
-        "seed": args.seed,
-        "variant": args.variant,
-        "train": total_counts.get("train", 0),
-        "dev": total_counts.get("dev", 0),
-        "test": total_counts.get("test", 0),
-        "total": total_written,
-        "semantic_nonzero_rate": semantic_rate,
-        "hard_negative_ranker": ranker_info,
-        "prefilter_k": args.prefilter_k,
-        "tfidf_name_mode": args.tfidf_name_mode,
-        "siren_siblings": siren_siblings,
-        "drop_unnamed_candidates": args.drop_unnamed_candidates,
-        "max_same_siren_negatives": args.max_same_siren_negatives,
-        "exclude_closed_gt": args.exclude_closed_gt,
-        "exclude_closed_candidates": args.exclude_closed_candidates,
-        "etab_parquet": str(args.etab_parquet),
-        "partitions_dir": str(args.partitions_dir),
-        "flush_every": args.flush_every,
-        "memory_optimized": True,
+        "counts": counts,
+        "total": written,
+        "semantic_rate": sem_rate,
+        "semantic_expected": semantic_expected,
+        "mode": args.mode,
+        "sampling_strategy": "prefilter" if use_prefilter_sampling else "full",
+        "retrieval_signature_v1": {"version": sig.version, "hash": sig.hash, "config": sig.config},
     }
-    with open(final_output_path.with_suffix(".json"), "w") as f:
-        json.dump(meta, f, indent=2)
+    with open(args.output.with_suffix(".json"), "w") as f: json.dump(meta, f, indent=2)
 
-    # Clean up progress file on success
-    if progress_path.exists():
-        progress_path.unlink()
-
-    print(f"\n Saved {total_written} samples to {final_output_path}")
-
-
-if __name__ == "__main__":
-    main()
+if __name__ == "__main__": main()

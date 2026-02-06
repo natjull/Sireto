@@ -29,6 +29,7 @@ from sklearn.metrics import (
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.xgb_matcher.features import FEATURE_NAMES, FAST_RANKER_FEATURE_NAMES
+from src.xgb_matcher.retrieval_config import RetrievalConfigV1, RetrievalSignatureV1
 
 
 # Calibrator wrapper classes (must match inference for pickle compatibility)
@@ -83,12 +84,34 @@ def load_samples(path: Path) -> pd.DataFrame:
     return pd.read_parquet(path)
 
 
+def _load_samples_meta(samples_path: Path) -> Dict:
+    meta_path = samples_path.with_suffix(".json")
+    if meta_path.exists():
+        try:
+            with open(meta_path) as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+
 def prepare_data(df: pd.DataFrame, feature_names: List[str]) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     df_sorted = df.sort_values("query_id").reset_index(drop=True)
     X = df_sorted[feature_names].values.astype(np.float32)
     y = df_sorted["label"].values.astype(np.float32)
     groups = df_sorted.groupby("query_id", sort=False).size().values
     return X, y, groups
+
+
+def prepare_data_with_df(
+    df: pd.DataFrame,
+    feature_names: List[str],
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, pd.DataFrame]:
+    df_sorted = df.sort_values("query_id").reset_index(drop=True)
+    X = df_sorted[feature_names].values.astype(np.float32)
+    y = df_sorted["label"].values.astype(np.float32)
+    groups = df_sorted.groupby("query_id", sort=False).size().values
+    return X, y, groups, df_sorted
 
 
 def _zero_out_features(X: np.ndarray, feature_names: List[str], features_to_zero: List[str]) -> np.ndarray:
@@ -116,6 +139,61 @@ def compute_hit_at_k(y_true: np.ndarray, y_pred: np.ndarray, groups: np.ndarray,
     return hits / len(groups) if len(groups) else 0.0
 
 
+def _is_closed(etat_admin: object) -> bool:
+    return str(etat_admin or "").strip().upper() == "F"
+
+
+def _promote_open_over_closed(order: List[int], sirens: List[object], etat_admin: List[object]) -> List[int]:
+    if not order:
+        return order
+    open_pos: Dict[str, int] = {}
+    closed_pos: Dict[str, int] = {}
+    for pos, idx in enumerate(order):
+        siren = str(sirens[idx] or "").strip()
+        if not siren:
+            continue
+        if _is_closed(etat_admin[idx]):
+            closed_pos.setdefault(siren, pos)
+        else:
+            open_pos.setdefault(siren, pos)
+
+    order = list(order)
+    for siren, c_pos in closed_pos.items():
+        o_pos = open_pos.get(siren)
+        if o_pos is None or c_pos >= o_pos:
+            continue
+        order[c_pos], order[o_pos] = order[o_pos], order[c_pos]
+    return order
+
+
+def compute_hit_at_k_with_promotion(
+    df_sorted: pd.DataFrame,
+    y_true: np.ndarray,
+    y_pred: np.ndarray,
+    groups: np.ndarray,
+    k: int = 1,
+) -> float:
+    if "siren" not in df_sorted.columns or "etat_admin" not in df_sorted.columns:
+        return compute_hit_at_k(y_true, y_pred, groups, k=k)
+
+    sirens = df_sorted["siren"].tolist()
+    etat_admin = df_sorted["etat_admin"].tolist()
+
+    hits = 0
+    start = 0
+    for group_size in groups:
+        end = start + group_size
+        group_labels = y_true[start:end]
+        group_scores = y_pred[start:end]
+        order = np.argsort(group_scores)[::-1].tolist()
+        order = _promote_open_over_closed(order, sirens[start:end], etat_admin[start:end])
+        top_k_indices = order[:k]
+        if any(group_labels[i] == 1 for i in top_k_indices):
+            hits += 1
+        start = end
+    return hits / len(groups) if len(groups) else 0.0
+
+
 def filter_topk_by_ranker(
     df: pd.DataFrame,
     ranker: xgb.Booster,
@@ -137,6 +215,7 @@ def filter_topk_by_ranker(
         top = group.nlargest(top_k, "_ranker_score")
         pos = group[group["label"] == 1]
         combined = pd.concat([top, pos]).drop_duplicates()
+
         selected_idx.extend(combined.index.tolist())
     filtered = df_sorted.loc[selected_idx].sort_values("query_id").reset_index(drop=True)
     return filtered
@@ -218,8 +297,8 @@ def main() -> None:
 
     semantic_enabled_env = int(os.getenv("XGB_SEMANTIC_ENABLED", "0") == "1")
     if semantic_enabled_samples is not None and semantic_enabled_samples != semantic_enabled_env:
-        print(
-            f"[WARN] semantic_enabled mismatch: samples={semantic_enabled_samples} vs env={semantic_enabled_env} "
+        raise RuntimeError(
+            f"semantic_enabled mismatch: samples={semantic_enabled_samples} vs env={semantic_enabled_env} "
             "(train/serve skew risk)"
         )
 
@@ -304,6 +383,15 @@ def main() -> None:
         with open(calibrator_path, "wb") as f:
             pickle.dump(calibrator, f)
 
+    samples_meta = _load_samples_meta(args.samples)
+    config_raw = samples_meta.get("retrieval_config_v1")
+    sig_raw = samples_meta.get("retrieval_signature_v1")
+    if not config_raw or not sig_raw:
+        raise RuntimeError("Missing retrieval_config_v1 or retrieval_signature_v1 in samples metadata.")
+    retrieval_config = RetrievalConfigV1.from_dict(config_raw)
+    retrieval_signature = RetrievalSignatureV1.from_dict(sig_raw)
+    if not retrieval_signature.matches(retrieval_config):
+        raise RuntimeError("Retrieval signature mismatch in samples metadata.")
     meta = _load_meta(meta_path)
     meta.update(
         {
@@ -319,6 +407,10 @@ def main() -> None:
             "samples_file": str(args.samples),
             "semantic_enabled_samples": semantic_enabled_samples,
             "semantic_enabled_env_train": semantic_enabled_env,
+            "decider_rescue_by_address": False,
+            "decider_rescue_by_address_limit": 0,
+            "retrieval_config_v1": samples_meta.get("retrieval_config_v1"),
+            "retrieval_signature_v1": samples_meta.get("retrieval_signature_v1"),
         }
     )
     _save_meta(meta_path, meta)
