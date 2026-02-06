@@ -16,12 +16,11 @@ Usage:
 
 from __future__ import annotations
 
-import hashlib
 import json
 import logging
 import os
 import pickle
-from collections import OrderedDict
+from dataclasses import replace
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, TYPE_CHECKING
@@ -33,20 +32,8 @@ from xgboost import XGBClassifier
 
 if TYPE_CHECKING:
     from .profile import InferenceProfile
-from .blocking import (
-    build_tfidf_index,
-    build_char_tfidf_index,
-    build_address_tfidf_index,
-    prefilter_candidates_tfidf,
-    prefilter_candidates_address_tfidf,
-    dedupe_candidates,
-    attach_address_density,
-    address_hash,
-    department_from_code,
-    extract_numeric_tokens,
-    build_address_hash_index,
-    build_numeric_token_index,
-)
+from .retrieval import build_candidate_pool
+from .retrieval_config import RetrievalConfigV1
 from .features import (
     FEATURE_NAMES,
     FAST_RANKER_FEATURE_NAMES,
@@ -58,23 +45,11 @@ from .features import (
     semantic_gate_allows,
     set_global_name_idf_map,
 )
-from .candidates import compute_name_idf_map
 from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
 from .semantic import top2_semantic_similarities_batch, is_semantic_available
 from .calibration import load_calibrator
 
-
-@dataclass
-class DeptCacheItem:
-    candidates: List[dict]
-    tfidf_vec: Any
-    tfidf_mat: Any
-    tfidf_names: List[str]
-    char_vec: Any = None
-    char_mat: Any = None
-    addr_index: Dict[str, List[int]] | None = None
-    num_index: Dict[str, List[int]] | None = None
 
 @dataclass
 class InferenceResult:
@@ -145,13 +120,14 @@ class XgbInferenceEngine:
         risk_features: List[str] | None = None,
         risk_threshold: float = 0.835,
         calibrator: Any | None = None,
+        retrieval_config: RetrievalConfigV1 | None = None,
         # Profile-driven configuration
         tfidf_name_mode: str = "bag",
-        siren_siblings: bool = True,
+        siren_siblings: bool = False,
         prefilter_k: int = 500,
         char_top_k: int = 200,
-        min_candidates: int = 150,
-        stage1_top_n: int = 200,
+        min_candidates: int = 100,
+        stage1_top_n: int = 50,
         drop_unnamed: bool = True,
         exclude_closed: bool = False,
     ):
@@ -165,17 +141,29 @@ class XgbInferenceEngine:
         self.risk_features = risk_features or []
         self.risk_threshold = risk_threshold
         self.calibrator = calibrator
-        # Profile-driven config
-        self.tfidf_name_mode = tfidf_name_mode
-        self.siren_siblings = siren_siblings
-        self.prefilter_k = prefilter_k
-        self.char_top_k = char_top_k
-        self.min_candidates = min_candidates
-        self.stage1_top_n = stage1_top_n
-        self.drop_unnamed = drop_unnamed
-        self.exclude_closed = exclude_closed
-        self._dept_cache: OrderedDict[str, DeptCacheItem] = OrderedDict()
-        self._max_dept_cache = 5
+        if retrieval_config is None:
+            retrieval_config = RetrievalConfigV1(
+                pool_mode="insee_then_postcode",
+                include_closed=not exclude_closed,
+                drop_unnamed=drop_unnamed,
+                tfidf_name_mode=tfidf_name_mode,
+                prefilter_k=prefilter_k,
+                char_top_k=char_top_k,
+                min_candidates=min_candidates,
+                stage1_top_n=stage1_top_n,
+                siren_siblings=siren_siblings,
+            )
+        self.retrieval_config = retrieval_config
+
+        # Profile-driven config (mirrored for backward compatibility)
+        self.tfidf_name_mode = retrieval_config.tfidf_name_mode
+        self.siren_siblings = retrieval_config.siren_siblings
+        self.prefilter_k = retrieval_config.prefilter_k
+        self.char_top_k = retrieval_config.char_top_k
+        self.min_candidates = retrieval_config.min_candidates
+        self.stage1_top_n = retrieval_config.stage1_top_n
+        self.drop_unnamed = retrieval_config.drop_unnamed
+        self.exclude_closed = not retrieval_config.include_closed
         
         # Fail-fast: semantic must be enabled
         if os.getenv("XGB_SEMANTIC_ENABLED", "0") != "1":
@@ -347,14 +335,7 @@ class XgbInferenceEngine:
             risk_features=risk_features,
             risk_threshold=risk_threshold,
             calibrator=calibrator,
-            tfidf_name_mode=profile.tfidf_name_mode,
-            siren_siblings=profile.siren_siblings,
-            prefilter_k=profile.prefilter_k,
-            char_top_k=profile.char_top_k,
-            min_candidates=profile.min_candidates,
-            stage1_top_n=profile.stage1_top_n,
-            drop_unnamed=profile.drop_unnamed,
-            exclude_closed=profile.exclude_closed,
+            retrieval_config=profile.build_retrieval_config(),
         )
     
     def infer_topk(
@@ -416,10 +397,7 @@ class XgbInferenceEngine:
         stage1_top_n = min(self.stage1_top_n, len(scores_stage1))
         top_n_idx = np.argsort(scores_stage1)[::-1][:stage1_top_n]
         
-        # Address rescue
-        rescue_indices = self._rescue_by_address(feats_stage1, set(top_n_idx))
-        if rescue_indices:
-            top_n_idx = np.unique(np.concatenate([top_n_idx, np.array(rescue_indices, dtype=int)]))
+        # No address-based rescue (SSOT)
         
         # Stage 2: Decider (with semantic)
         feats_n = []
@@ -615,10 +593,7 @@ class XgbInferenceEngine:
         stage1_top_n = min(self.stage1_top_n, len(scores_stage1))
         top_n_idx = np.argsort(scores_stage1)[::-1][:stage1_top_n]
         
-        # Address rescue
-        rescue_indices = self._rescue_by_address(feats_stage1, set(top_n_idx))
-        if rescue_indices:
-            top_n_idx = np.unique(np.concatenate([top_n_idx, np.array(rescue_indices, dtype=int)]))
+        # No address-based rescue (SSOT)
         
         # Stage 2: Decider (with semantic)
         feats_n = []
@@ -742,306 +717,29 @@ class XgbInferenceEngine:
         drop_unnamed: bool,
         exclude_closed: bool,
     ) -> Tuple[List[Dict[str, Any]], Dict[str, float], float]:
-        """Build candidate pool from partitioned store.
-        
-        ULTIMA STRATEGY (aligned with training):
-        - Double TF-IDF retrieval: Name + Address
-        - Universal rescue: addr_hash + numeric_tokens (all pool modes)
-        - Deterministic padding for min_candidates
-        
-        Uses instance config (prefilter_k, min_candidates, tfidf_name_mode, siren_siblings).
-        crm_id is used as seed for deterministic padding.
-        """
-        insee = crm_row.get("insee")
-        postcode = crm_row.get("postcode")
-        crm_name = crm_row.get("crm_name", "")
-        crm_address = crm_pre.get("crm_addr", "")
-        
-        base_candidates: List[Dict] = []
-        whitelisted_sirets: set[str] = set()
+        """Build candidate pool via unified retrieval (Variant B)."""
+        if pool_mode != "insee_then_postcode":
+            raise ValueError("Only pool_mode='insee_then_postcode' is supported (SSOT).")
 
-        # Load base candidates
-        if pool_mode == "insee_then_postcode":
-            if insee:
-                base_candidates = self.store.load_by_insee(insee)
-            if not base_candidates and postcode:
-                base_candidates = self.store.load_by_postcode(postcode)
-        else:
-            base_candidates = self.store.load_by_insee(insee) + self.store.load_by_postcode(postcode)
-
-        base_candidates = self._apply_candidate_filters(
-            base_candidates,
-            drop_unnamed=drop_unnamed,
-            exclude_closed=exclude_closed,
-        )
-        # Dedupe by SIRET: O(n) dict assignment. In insee_then_postcode mode 
-        # with clean v5 partitions, this is mostly a no-op. In pool_mode="multi",
-        # it removes duplicates when a SIRET appears in both INSEE and CP partitions.
-        # Training script does NOT call dedupe_candidates because it processes 
-        # one partition at a time - this is aligned as long as partitions are clean.
-        pool = dedupe_candidates(base_candidates)
-
-        # ── Universal Rescue (all pool modes) ──────────────────────────────────
-        # Build indices on filtered pool for rescue operations
-        pool_list = list(pool.values())
-        addr_index = build_address_hash_index(pool_list)
-        num_index = build_numeric_token_index(pool_list)
-
-        # 1. Address Hash Rescue
-        addr_h = address_hash(
-            crm_pre.get("crm_street_num"),
-            crm_pre.get("crm_street_name"),
-        )
-        if addr_h and addr_index:
-            for idx in addr_index.get(addr_h, []):
-                if idx < len(pool_list):
-                    cand = pool_list[idx]
-                    siret = str(cand.get("siret") or "")
-                    if siret:
-                        whitelisted_sirets.add(siret)
-
-        # 2. Numeric Token Rescue
-        numeric_tokens = extract_numeric_tokens(crm_name)
-        if numeric_tokens and num_index:
-            for token in numeric_tokens:
-                for idx in num_index.get(token, []):
-                    if idx < len(pool_list):
-                        cand = pool_list[idx]
-                        siret = str(cand.get("siret") or "")
-                        if siret:
-                            whitelisted_sirets.add(siret)
-
-        # ── Department-wide rescue (pool_mode=multi only) ───────────────────────
-        if pool_mode == "multi":
-            dept_key = department_from_code(insee, postcode)
-            cache_item = self._get_dept_cache_item(
-                dept_key=dept_key,
-                insee=insee,
-                postcode=postcode,
+        config = self.retrieval_config
+        if drop_unnamed != self.drop_unnamed or exclude_closed != self.exclude_closed:
+            config = replace(
+                config,
                 drop_unnamed=drop_unnamed,
-                exclude_closed=exclude_closed,
+                include_closed=not exclude_closed,
             )
-            if cache_item:
-                dept_candidates = cache_item.candidates
-                extra: List[Dict[str, Any]] = []
 
-                # Address hash rescue from department pool
-                if addr_h and cache_item.addr_index:
-                    for idx in cache_item.addr_index.get(addr_h, []):
-                        if idx < len(dept_candidates):
-                            cand = dept_candidates[idx]
-                            extra.append(cand)
-                            siret = str(cand.get("siret") or "")
-                            if siret:
-                                whitelisted_sirets.add(siret)
-
-                # Numeric token rescue from department pool
-                if numeric_tokens and cache_item.num_index:
-                    num_indices: set[int] = set()
-                    for token in numeric_tokens:
-                        num_indices.update(cache_item.num_index.get(token, []))
-                    for idx in sorted(num_indices):
-                        if idx < len(dept_candidates):
-                            cand = dept_candidates[idx]
-                            extra.append(cand)
-                            siret = str(cand.get("siret") or "")
-                            if siret:
-                                whitelisted_sirets.add(siret)
-
-                for cand in extra:
-                    siret = str(cand.get("siret") or "")
-                    if siret:
-                        pool[siret] = cand
-
-        pool_candidates = list(pool.values())
-        candidates_dict = {
-            str(c.get("siret") or ""): c for c in pool_candidates if c.get("siret")
-        }
-        if candidates_dict:
-            idf_map, default_idf = compute_name_idf_map(candidates_dict)
-        else:
-            idf_map, default_idf = {}, 0.0
-        attach_address_density(pool_candidates)
-
-        candidates = pool_candidates
-        
-        # ── TF-IDF prefilter (ULTIMA: Name + Address double retrieval) ─────────
-        prefilter_k = self.prefilter_k
-        min_candidates = self.min_candidates
-        char_top_k = self.char_top_k
-        
-        # Only skip TF-IDF prefilter if pool is truly small (align with training)
-        # Training ALWAYS applies TF-IDF prefilter (Name + Address double retrieval)
-        # Pools are NOT small in insee_then_postcode mode (median ~9k, max 158k)
-        SMALL_POOL_THRESHOLD = 500
-        effective_prefilter_k = prefilter_k
-        if pool_mode == "insee_then_postcode" and len(candidates) <= SMALL_POOL_THRESHOLD:
-            effective_prefilter_k = 0
-        
-        if effective_prefilter_k and len(candidates) > effective_prefilter_k:
-            # Build Name TF-IDF index
-            name_vec, name_mat, names = build_tfidf_index(
-                candidates,
-                name_mode=self.tfidf_name_mode,
-                siren_siblings=self.siren_siblings,
-            )
-            char_vec, char_mat = (None, None)
-            if names:
-                char_vec, char_mat = build_char_tfidf_index(names)
-            
-            # Build Address TF-IDF index
-            addr_vec, addr_mat = build_address_tfidf_index(candidates)
-            
-            # Name retrieval
-            name_idx: List[int] = []
-            if name_vec is not None and name_mat is not None:
-                name_idx = prefilter_candidates_tfidf(
-                    crm_name,
-                    name_vec,
-                    name_mat,
-                    effective_prefilter_k,
-                    cand_names=names,
-                    char_top_k=char_top_k,
-                    char_vectorizer=char_vec,
-                    char_matrix=char_mat,
-                )
-            
-            # Address retrieval
-            addr_idx: List[int] = []
-            if addr_vec is not None and addr_mat is not None:
-                addr_idx = prefilter_candidates_address_tfidf(
-                    crm_address,
-                    addr_vec,
-                    addr_mat,
-                    effective_prefilter_k,
-                )
-            
-            # Merge: Union of Name and Address retrieval
-            combined_idx = sorted(list(set(name_idx) | set(addr_idx)))
-            
-            if combined_idx:
-                tfidf_cands = [candidates[i] for i in combined_idx if i < len(candidates)]
-                tfidf_sirets = {str(c.get("siret")) for c in tfidf_cands if c.get("siret")}
-                
-                # Whitelist rescue: ensure strong address matches survive TF-IDF
-                final_cands = list(tfidf_cands)
-                for cand in pool.values():
-                    siret = str(cand.get("siret") or "")
-                    if siret in whitelisted_sirets and siret not in tfidf_sirets:
-                        final_cands.append(cand)
-                
-                if len(final_cands) >= min_candidates:
-                    candidates = final_cands
-                else:
-                    # Deterministic padding with crm_id as seed
-                    import random
-                    final_sirets = {str(c.get("siret") or "") for c in final_cands if c.get("siret")}
-                    remaining = [c for c in candidates if str(c.get("siret") or "") not in final_sirets]
-                    needed = min(min_candidates, effective_prefilter_k) - len(final_cands)
-                    if needed > 0 and remaining:
-                        # Deterministic seed aligned with legacy script
-                        seed_val = str(crm_id) if crm_id else ""
-                        if not seed_val:
-                            seed_val = crm_row.get("crm_name", "")
-
-                        seed = self._stable_seed(seed_val)
-                        rng = random.Random(seed)
-                        random_extra = rng.sample(remaining, min(needed, len(remaining)))
-                        candidates = final_cands + random_extra
-                    else:
-                        candidates = final_cands
-        
-        return candidates, idf_map, default_idf
-
-    def _get_dept_cache_item(
-        self,
-        *,
-        dept_key: str | None,
-        insee: str | None,
-        postcode: str | None,
-        drop_unnamed: bool,
-        exclude_closed: bool,
-    ) -> DeptCacheItem | None:
-        if not dept_key:
-            return None
-        cached = self._dept_cache.get(dept_key)
-        if cached is not None:
-            self._dept_cache.move_to_end(dept_key)
-            return cached
-
-        dept_candidates = self.store.load_by_department(insee, postcode)
-        if not dept_candidates:
-            return None
-        dept_candidates = self._apply_candidate_filters(
-            dept_candidates,
-            drop_unnamed=drop_unnamed,
-            exclude_closed=exclude_closed,
+        result = build_candidate_pool(
+            store=self.store,
+            crm_row=crm_row,
+            crm_pre=crm_pre,
+            config=config,
+            tfidf_cache={},
+            gt_siret=None,
         )
+        return result.candidates, result.idf_map, result.default_idf
 
-        vec, mat, names = build_tfidf_index(
-            dept_candidates,
-            name_mode=self.tfidf_name_mode,
-            siren_siblings=self.siren_siblings,
-        )
-        char_vec, char_mat = (None, None)
-        if names:
-            char_vec, char_mat = build_char_tfidf_index(names)
-
-        addr_index = build_address_hash_index(dept_candidates)
-        num_index = build_numeric_token_index(dept_candidates)
-
-        item = DeptCacheItem(
-            candidates=dept_candidates,
-            tfidf_vec=vec,
-            tfidf_mat=mat,
-            tfidf_names=names,
-            char_vec=char_vec,
-            char_mat=char_mat,
-            addr_index=addr_index,
-            num_index=num_index,
-        )
-        self._dept_cache[dept_key] = item
-        while len(self._dept_cache) > self._max_dept_cache:
-            self._dept_cache.popitem(last=False)
-        return item
-
-    def _apply_candidate_filters(
-        self,
-        candidates: List[Dict[str, Any]],
-        *,
-        drop_unnamed: bool,
-        exclude_closed: bool,
-    ) -> List[Dict[str, Any]]:
-        out = candidates
-        if drop_unnamed:
-            out = [c for c in out if build_candidate_names(c)]
-        if exclude_closed:
-            out = [c for c in out if str(c.get("etat_admin") or "").strip().upper() != "F"]
-        return out
     
-    def _rescue_by_address(
-        self,
-        feats_stage1: List[Dict],
-        top_n_set: set,
-    ) -> List[int]:
-        """Rescue candidates with near-perfect address match."""
-        rescue = []
-        for i, feat in enumerate(feats_stage1):
-            if i in top_n_set:
-                continue
-            addr_jaro = float(feat.get("addr_jaro", 0.0))
-            street_name_jaro = float(feat.get("street_name_jaro", 0.0))
-            street_number_diff = float(feat.get("street_number_diff", 9999))
-            if addr_jaro >= 0.96 and street_name_jaro >= 0.95 and street_number_diff <= 2:
-                rescue.append(i)
-        return rescue[:50]
-
-    @staticmethod
-    def _stable_seed(value: str) -> int:
-        base = value or ""
-        digest = hashlib.md5(base.encode("utf-8")).hexdigest()
-        return int(digest, 16) & 0x7FFFFFFF
-
     @staticmethod
     def _is_closed(cand: Dict[str, Any]) -> bool:
         return str(cand.get("etat_admin") or "").strip().upper() == "F"
