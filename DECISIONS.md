@@ -129,6 +129,40 @@ Rationale:
 Consequences:
 - Accélération massive de la production de datasets sans introduire de skew (le retrieval reste identique).
 
+## 2026-02-08 - P0: Cache TF-IDF persistant + Parallelisation + Instrumentation
+
+Decision:
+- Implementation d'un cache TF-IDF persistant sur disque (`data/tfidf_cache/<config_hash>/<partition>.pkl`) invalide par signature `RetrievalConfigV1`.
+- Parallelisation de la boucle `loc_key` dans `generate_training_samples_v5fast.py` via `ProcessPoolExecutor` (controlable par `XGB_SAMPLE_WORKERS` ou `--max-workers`).
+- Instrumentation p50/p95 par etape (partition_load, tfidf_fit, tfidf_query, feature_compute, semantic_encode) via `PipelineTimer`.
+
+Rationale:
+- Le TF-IDF est reconstruit per loc_key per run (bottleneck principal en iteration). Le cache persistant l'elimine pour les runs suivants.
+- Les loc_keys sont independants: la parallelisation donne un speedup x4-6 sur M4 Pro 12-core.
+- L'instrumentation permet d'identifier les outliers (mega-communes) et de mesurer les gains.
+
+Consequences:
+- Aucun changement de comportement ML (identique bit-a-bit si meme config).
+- Nouveaux fichiers: `src/xgb_matcher/tfidf_cache.py`, `src/xgb_matcher/timing.py`.
+- `build_candidate_pool()` accepte desormais des kwargs optionnels `persistent_cache`, `dense_store`, `timer` (backward-compatible).
+
+## 2026-02-08 - P1: Hybrid Dense+Sparse Retrieval (FAISS + TF-IDF)
+
+Decision:
+- Ajout d'un retrieval dense (FAISS ANN sur embeddings MiniLM/siret-bert) en complement du TF-IDF existant.
+- Mode hybride: `pool = union(top_k_sparse, top_k_dense, whitelist_rescue)` avec budget constant.
+- Le TF-IDF n'est pas retire; il est complete par le dense. La decision de retirer le sparse sera prise sur benchmark ablation.
+
+Rationale:
+- Le TF-IDF fait sauter 2-4% de GT (recall ceiling) sur les cas semantiques (acronymes, renommages, filiales).
+- Le dense retrieval capture la similarite semantique que le lexical rate par construction.
+- L'approche hybride conserve la robustesse lexicale tout en recuperant les cas perdus.
+
+Consequences:
+- Nouveaux fichiers: `src/xgb_matcher/dense_retrieval.py`, `scripts/precompute_embeddings.py`, `scripts/benchmark_retrieval.py`.
+- `RetrievalConfigV1` enrichi de `dense_retrieval_enabled` et `dense_top_k`.
+- Pre-requis: `pip install faiss-cpu sentence-transformers` (optionnel, graceful degradation si absent).
+
 ## 2026-02-05 - Evolution de la policy Méga-Communes vers "Full INSEE"
 
 Decision:

@@ -1,15 +1,19 @@
-"""Unified retrieval module (Variant B / SSOT).
+"""Unified retrieval module (Variant B / SSOT) — with hybrid dense+sparse support.
 
 Single code-path for candidate pool construction (train + serve).
 Strict insee_then_postcode, no department fallback.
+
+P0: Persistent TF-IDF cache + timing instrumentation.
+P1: Optional hybrid dense (FAISS) + sparse (TF-IDF) retrieval.
 """
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 import hashlib
 import random
-from typing import Dict, List, Optional, Set, Tuple
+from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 
 from .partitioned_store import PartitionedCandidateStore
 from .retrieval_config import RetrievalConfigV1
@@ -27,6 +31,13 @@ from .blocking import (
     build_address_hash_index,
     build_numeric_token_index,
 )
+
+if TYPE_CHECKING:
+    from .tfidf_cache import TfidfPersistentCache
+    from .dense_retrieval import PartitionEmbeddingStore
+    from .timing import PipelineTimer
+
+_logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -100,6 +111,113 @@ def _stable_seed(value: str) -> int:
     return int(digest, 16) & 0x7FFFFFFF
 
 
+# ---------------------------------------------------------------------------
+# TF-IDF artifact building (extracted for caching)
+# ---------------------------------------------------------------------------
+
+def _build_tfidf_artifacts(
+    candidates: List[dict],
+    config: RetrievalConfigV1,
+) -> tuple:
+    """Build all TF-IDF indexes and return as a cacheable artifact bundle."""
+    name_vec, name_mat, names = build_tfidf_index(
+        candidates,
+        name_mode=config.tfidf_name_mode,
+        siren_siblings=config.siren_siblings,
+    )
+    char_vec, char_mat = (None, None)
+    if names:
+        char_vec, char_mat = build_char_tfidf_index(names)
+    addr_vec, addr_mat = build_address_tfidf_index(candidates)
+    return (name_vec, name_mat, names, char_vec, char_mat, addr_vec, addr_mat)
+
+
+def _get_tfidf_artifacts(
+    candidates: List[dict],
+    config: RetrievalConfigV1,
+    tfidf_cache: Dict[Tuple[str, str], tuple],
+    cache_key: Tuple[str, str],
+    persistent_cache: Optional["TfidfPersistentCache"] = None,
+    partition_key: str = "",
+    timer: Optional["PipelineTimer"] = None,
+) -> tuple:
+    """Get TF-IDF artifacts: in-memory cache -> persistent cache -> build."""
+    # 1. In-memory cache (current run, shared within loc_key group)
+    cached = tfidf_cache.get(cache_key)
+    if cached and len(cached) >= 7:
+        return cached
+
+    # 2. Persistent cache (cross-run, on disk)
+    if persistent_cache and partition_key:
+        disk_cached = persistent_cache.get(partition_key)
+        if disk_cached and len(disk_cached) >= 7:
+            tfidf_cache[cache_key] = disk_cached
+            return disk_cached
+
+    # 3. Build from scratch
+    if timer:
+        with timer.stage("tfidf_fit"):
+            artifacts = _build_tfidf_artifacts(candidates, config)
+    else:
+        artifacts = _build_tfidf_artifacts(candidates, config)
+
+    # Populate both caches
+    tfidf_cache[cache_key] = artifacts
+    if persistent_cache and partition_key:
+        persistent_cache.put(partition_key, artifacts)
+    return artifacts
+
+
+# ---------------------------------------------------------------------------
+# Dense retrieval integration
+# ---------------------------------------------------------------------------
+
+def _dense_retrieval_indices(
+    crm_name: str,
+    candidates: List[dict],
+    partition_key: str,
+    dense_store: Optional["PartitionEmbeddingStore"],
+    top_k: int,
+    timer: Optional["PipelineTimer"] = None,
+) -> List[int]:
+    """Return candidate indices from dense (FAISS) retrieval. Empty if unavailable."""
+    if dense_store is None:
+        return []
+    if not dense_store.has_embeddings(partition_key):
+        return []
+
+    try:
+        from .dense_retrieval import encode_query
+    except ImportError:
+        return []
+
+    if timer:
+        with timer.stage("dense_encode"):
+            query_vec = encode_query(crm_name)
+    else:
+        query_vec = encode_query(crm_name)
+
+    if query_vec is None:
+        return []
+
+    if timer:
+        with timer.stage("dense_search"):
+            idx = dense_store.get_index(partition_key)
+    else:
+        idx = dense_store.get_index(partition_key)
+
+    if idx is None:
+        return []
+
+    scores, indices = idx.search(query_vec, top_k)
+    # Filter out -1 padding indices from FAISS
+    return [int(i) for i in indices if i >= 0 and i < len(candidates)]
+
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+
 def build_candidate_pool(
     store: PartitionedCandidateStore,
     crm_row: dict,
@@ -107,24 +225,44 @@ def build_candidate_pool(
     config: RetrievalConfigV1,
     tfidf_cache: Dict[Tuple[str, str], tuple],
     gt_siret: str | None = None,
+    *,
+    persistent_cache: Optional["TfidfPersistentCache"] = None,
+    dense_store: Optional["PartitionEmbeddingStore"] = None,
+    timer: Optional["PipelineTimer"] = None,
 ) -> CandidatePoolResult:
-    """Build candidate pool with unified code-path for train and inference."""
+    """Build candidate pool with unified code-path for train and inference.
+
+    New optional parameters (backward-compatible):
+        persistent_cache: Disk-backed TF-IDF cache (P0a).
+        dense_store: Pre-computed FAISS embeddings for hybrid retrieval (P1).
+        timer: Pipeline timing instrumentation (P0c).
+    """
     result = CandidatePoolResult(candidates=[])
 
     insee = crm_row.get("insee") or crm_row.get("crm_insee")
     postcode = crm_row.get("postcode") or crm_row.get("crm_cp")
     crm_name = crm_row.get("crm_name", "")
     crm_address = crm_pre.get("crm_addr", "")
+    partition_key = f"{insee or ''}_{postcode or ''}"
 
     gt_norm = str(gt_siret).zfill(14) if gt_siret else None
 
     # Step 1: Load base candidates (strict insee_then_postcode + mega policy)
-    base_candidates = store.load_by_insee_then_postcode(
-        insee,
-        postcode,
-        mega_insee_max_rows=config.mega_insee_max_rows,
-        mega_insee_policy=config.mega_insee_policy,
-    )
+    if timer:
+        with timer.stage("partition_load"):
+            base_candidates = store.load_by_insee_then_postcode(
+                insee,
+                postcode,
+                mega_insee_max_rows=config.mega_insee_max_rows,
+                mega_insee_policy=config.mega_insee_policy,
+            )
+    else:
+        base_candidates = store.load_by_insee_then_postcode(
+            insee,
+            postcode,
+            mega_insee_max_rows=config.mega_insee_max_rows,
+            mega_insee_policy=config.mega_insee_policy,
+        )
 
     result.pool_sizes["base"] = len(base_candidates)
     result.gt_in_base_pool = _check_siret_in_list(base_candidates, gt_norm)
@@ -177,60 +315,66 @@ def build_candidate_pool(
                         if siret:
                             whitelisted_sirets.add(siret)
 
-    # Step 4: TF-IDF prefilter (Name + Address union)
+    # Step 4: Prefilter — hybrid sparse (TF-IDF) + dense (FAISS) + rescue
     candidates = pool_list
     if config.prefilter_k and len(candidates) > config.prefilter_k:
         cache_key = ("main", f"{insee}_{postcode}")
-        name_vec, name_mat, names = tfidf_cache.get(cache_key, (None, None, None))
-        if name_vec is None:
-            name_vec, name_mat, names = build_tfidf_index(
-                candidates,
-                name_mode=config.tfidf_name_mode,
-                siren_siblings=config.siren_siblings,
-            )
-            tfidf_cache[cache_key] = (name_vec, name_mat, names)
 
-        char_vec = None
-        char_mat = None
-        if names:
-            char_vec, char_mat = build_char_tfidf_index(names)
-
-        addr_vec, addr_mat = build_address_tfidf_index(candidates)
+        # 4a. Sparse retrieval (TF-IDF) — with persistent cache
+        artifacts = _get_tfidf_artifacts(
+            candidates, config, tfidf_cache, cache_key,
+            persistent_cache=persistent_cache,
+            partition_key=partition_key,
+            timer=timer,
+        )
+        name_vec, name_mat, names, char_vec, char_mat, addr_vec, addr_mat = artifacts
 
         name_idx: List[int] = []
         if name_vec is not None and name_mat is not None:
-            name_idx = prefilter_candidates_tfidf(
-                crm_name,
-                name_vec,
-                name_mat,
-                config.prefilter_k,
-                cand_names=names,
-                char_top_k=config.char_top_k,
-                char_vectorizer=char_vec,
-                char_matrix=char_mat,
-            )
+            if timer:
+                with timer.stage("tfidf_query"):
+                    name_idx = prefilter_candidates_tfidf(
+                        crm_name, name_vec, name_mat, config.prefilter_k,
+                        cand_names=names, char_top_k=config.char_top_k,
+                        char_vectorizer=char_vec, char_matrix=char_mat,
+                    )
+            else:
+                name_idx = prefilter_candidates_tfidf(
+                    crm_name, name_vec, name_mat, config.prefilter_k,
+                    cand_names=names, char_top_k=config.char_top_k,
+                    char_vectorizer=char_vec, char_matrix=char_mat,
+                )
 
         addr_idx: List[int] = []
         if addr_vec is not None and addr_mat is not None:
             addr_idx = prefilter_candidates_address_tfidf(
-                crm_address,
-                addr_vec,
-                addr_mat,
-                config.prefilter_k,
+                crm_address, addr_vec, addr_mat, config.prefilter_k,
             )
 
-        combined_idx = list(dict.fromkeys(name_idx + addr_idx))
+        sparse_idx = list(dict.fromkeys(name_idx + addr_idx))
+
+        # 4b. Dense retrieval (FAISS) — if enabled and available
+        dense_idx: List[int] = []
+        if config.dense_retrieval_enabled and dense_store is not None:
+            dense_idx = _dense_retrieval_indices(
+                crm_name, candidates, partition_key,
+                dense_store, config.dense_top_k, timer,
+            )
+
+        # 4c. Union: sparse + dense (deduped, order-preserved)
+        combined_idx = list(dict.fromkeys(sparse_idx + dense_idx))
         if config.prefilter_union_cap:
             combined_idx = combined_idx[: config.prefilter_union_cap]
 
         if combined_idx:
-            tfidf_cands = [candidates[i] for i in combined_idx if i < len(candidates)]
-            tfidf_sirets = {str(c.get("siret")) for c in tfidf_cands if c.get("siret")}
+            prefilter_cands = [candidates[i] for i in combined_idx if i < len(candidates)]
+            prefilter_sirets = {str(c.get("siret")) for c in prefilter_cands if c.get("siret")}
 
-            final_cands = list(tfidf_cands)
+            # Add rescue whitelist candidates not already in the pool
+            final_cands = list(prefilter_cands)
             for cand in pool.values():
                 siret = str(cand.get("siret") or "")
-                if siret in whitelisted_sirets and siret not in tfidf_sirets:
+                if siret in whitelisted_sirets and siret not in prefilter_sirets:
                     final_cands.append(cand)
 
             if len(final_cands) >= config.min_candidates:
