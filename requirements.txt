@@ -1,3 +1,7 @@
 tqdm
 duckdb
 scikit-learn
+# P1: Dense retrieval (optional — install for hybrid FAISS mode)
+# faiss-cpu
+# sentence-transformers
+# torch

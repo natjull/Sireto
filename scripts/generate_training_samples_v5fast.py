@@ -63,6 +63,8 @@ from src.xgb_matcher.semantic import (
     top2_semantic_similarities_batch,
     clear_cache as clear_semantic_cache,
 )
+from src.xgb_matcher.tfidf_cache import TfidfPersistentCache
+from src.xgb_matcher.timing import PipelineTimer
 
 
 DEFAULT_OUTPUT = Path("data/samples_v5.parquet")
@@ -371,6 +373,70 @@ def generate_samples_for_query(
         _inject_semantic_features_for_items(crm_pre, samples, candidates, siret_key="siret")
     return samples
 
+def _process_loc_key(
+    loc_key: str,
+    group_records: List[dict],
+    partitions_dir: Path,
+    config: RetrievalConfigV1,
+    max_negatives: int,
+    ranker_path: Optional[Path],
+    ranker_f_order: List[str],
+    ranker_z_features: List[str],
+    is_fast: bool,
+    semantic_expected: bool,
+    use_prefilter_sampling: bool,
+    split_name: str,
+    persistent_cache: Optional[TfidfPersistentCache],
+) -> Tuple[List[dict], List[str]]:
+    """Process a single loc_key group. Designed for multiprocess execution.
+
+    Returns (samples_list, lost_gt_lines).
+    """
+    store = PartitionedCandidateStore(partitions_dir)
+
+    ranker = None
+    if ranker_path:
+        ranker = xgb.Booster()
+        ranker.load_model(str(ranker_path))
+
+    tfidf_cache: Dict = {}
+    samples: List[dict] = []
+    lost_lines: List[str] = []
+
+    for row_dict in group_records:
+        crm_pre = preprocess_crm_row(row_dict)
+        gt_siret = row_dict.get("ground_truth_siret")
+        res = build_candidate_pool(
+            store, row_dict, crm_pre, config, tfidf_cache, gt_siret,
+            persistent_cache=persistent_cache,
+        )
+        if not res.candidates:
+            continue
+        set_global_name_idf_map(res.idf_map, res.default_idf)
+        if gt_siret and not res.gt_in_tfidf_pool:
+            lost_lines.append(
+                f'{row_dict.get("crm_id")},"{str(row_dict.get("crm_name")).replace(chr(34),chr(34)*2)}",'
+                f'{gt_siret},{res.loss_reason or "UNKNOWN"},{split_name},{loc_key}'
+            )
+        batch = generate_samples_for_query(
+            crm_row=pd.Series(row_dict),
+            crm_pre=crm_pre,
+            candidates=res.candidates,
+            prefilter_sirets=res.prefilter_sirets,
+            max_neg=max_negatives,
+            ranker=ranker,
+            ranker_feature_order=ranker_f_order,
+            ranker_zero_features=ranker_z_features,
+            is_ranker_fast=is_fast,
+            semantic_expected=semantic_expected,
+            use_prefilter_sampling=use_prefilter_sampling,
+        )
+        for s in batch:
+            s["split"] = split_name
+            samples.append(s)
+    return samples, lost_lines
+
+
 def generate_split(
     df: pd.DataFrame,
     partitions_dir: Path,
@@ -389,42 +455,101 @@ def generate_split(
     is_fast: bool,
     semantic_expected: bool,
     use_prefilter_sampling: bool,
+    *,
+    ranker_path: Optional[Path] = None,
+    max_workers: int = 0,
 ) -> Tuple[int, int]:
     total_samples = 0; total_pos = 0
-    store = PartitionedCandidateStore(partitions_dir)
     config = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not exclude_closed, drop_unnamed=drop_unnamed, tfidf_name_mode=tfidf_mode, prefilter_k=prefilter_k, char_top_k=char_top_k, min_candidates=MIN_CANDIDATES_SUBSET)
     lost_gt_log = log_base.parent / f"lost_gt_analysis_{log_base.stem}.csv"
     header_written = lost_gt_log.exists()
+
+    # P0a: Persistent TF-IDF cache
+    persistent_cache = TfidfPersistentCache(config.signature().hash)
+    timer = PipelineTimer()
+
     grouped = df.groupby("loc_key")
-    pbar = tqdm(grouped, desc=f"Generating {split_name}")
-    for loc_key, group in pbar:
-        tfidf_cache = {}
-        for row_dict in group.to_dict("records"):
-            crm_pre = preprocess_crm_row(row_dict); gt_siret = row_dict.get("ground_truth_siret")
-            res = build_candidate_pool(store, row_dict, crm_pre, config, tfidf_cache, gt_siret)
-            if not res.candidates: continue
-            set_global_name_idf_map(res.idf_map, res.default_idf)
-            if gt_siret and not res.gt_in_tfidf_pool:
-                with open(lost_gt_log, "a") as f:
-                    if not header_written: f.write("crm_id,crm_name,gt_siret,loss_reason,split,loc_key\n"); header_written = True
-                    f.write(f'{row_dict.get("crm_id")},"{str(row_dict.get("crm_name")).replace(chr(34),chr(34)*2)}",{gt_siret},{res.loss_reason or "UNKNOWN"},{split_name},{loc_key}\n')
-            samples = generate_samples_for_query(
-                crm_row=pd.Series(row_dict),
-                crm_pre=crm_pre,
-                candidates=res.candidates,
-                prefilter_sirets=res.prefilter_sirets,
-                max_neg=max_negatives,
-                ranker=ranker,
-                ranker_feature_order=ranker_f_order,
-                ranker_zero_features=ranker_z_features,
-                is_ranker_fast=is_fast,
-                semantic_expected=semantic_expected,
-                use_prefilter_sampling=use_prefilter_sampling,
-            )
-            for s in samples:
-                s["split"] = split_name; writer.add_sample(s)
-                total_samples += 1; total_pos += (1 if s["label"] == 1 else 0)
-        gc.collect()
+    loc_keys = list(grouped.groups.keys())
+
+    # Decide: parallel or sequential
+    n_workers = max_workers if max_workers > 0 else int(os.environ.get("XGB_SAMPLE_WORKERS", "0"))
+
+    if n_workers > 1 and not semantic_expected:
+        # P0b: Parallel execution by loc_key (no semantic — safe for multiprocess)
+        from concurrent.futures import ProcessPoolExecutor, as_completed
+
+        futures = {}
+        with ProcessPoolExecutor(max_workers=n_workers) as executor:
+            for loc_key in loc_keys:
+                group = grouped.get_group(loc_key)
+                records = group.to_dict("records")
+                fut = executor.submit(
+                    _process_loc_key,
+                    loc_key, records, partitions_dir, config,
+                    max_negatives, ranker_path, ranker_f_order, ranker_z_features,
+                    is_fast, semantic_expected, use_prefilter_sampling,
+                    split_name, persistent_cache,
+                )
+                futures[fut] = loc_key
+
+            pbar = tqdm(as_completed(futures), total=len(futures), desc=f"Generating {split_name} (parallel)")
+            for fut in pbar:
+                samples, lost_lines = fut.result()
+                for s in samples:
+                    writer.add_sample(s)
+                    total_samples += 1
+                    total_pos += (1 if s["label"] == 1 else 0)
+                if lost_lines:
+                    with open(lost_gt_log, "a") as f:
+                        if not header_written:
+                            f.write("crm_id,crm_name,gt_siret,loss_reason,split,loc_key\n")
+                            header_written = True
+                        f.write("\n".join(lost_lines) + "\n")
+    else:
+        # Sequential (original path, with P0a cache + P0c timing)
+        store = PartitionedCandidateStore(partitions_dir)
+        pbar = tqdm(grouped, desc=f"Generating {split_name}")
+        for loc_key, group in pbar:
+            tfidf_cache: Dict = {}
+            for row_dict in group.to_dict("records"):
+                crm_pre = preprocess_crm_row(row_dict); gt_siret = row_dict.get("ground_truth_siret")
+                with timer.stage("build_candidate_pool"):
+                    res = build_candidate_pool(
+                        store, row_dict, crm_pre, config, tfidf_cache, gt_siret,
+                        persistent_cache=persistent_cache, timer=timer,
+                    )
+                if not res.candidates: continue
+                set_global_name_idf_map(res.idf_map, res.default_idf)
+                if gt_siret and not res.gt_in_tfidf_pool:
+                    with open(lost_gt_log, "a") as f:
+                        if not header_written: f.write("crm_id,crm_name,gt_siret,loss_reason,split,loc_key\n"); header_written = True
+                        f.write(f'{row_dict.get("crm_id")},"{str(row_dict.get("crm_name")).replace(chr(34),chr(34)*2)}",{gt_siret},{res.loss_reason or "UNKNOWN"},{split_name},{loc_key}\n')
+                with timer.stage("generate_samples"):
+                    samples = generate_samples_for_query(
+                        crm_row=pd.Series(row_dict),
+                        crm_pre=crm_pre,
+                        candidates=res.candidates,
+                        prefilter_sirets=res.prefilter_sirets,
+                        max_neg=max_negatives,
+                        ranker=ranker,
+                        ranker_feature_order=ranker_f_order,
+                        ranker_zero_features=ranker_z_features,
+                        is_ranker_fast=is_fast,
+                        semantic_expected=semantic_expected,
+                        use_prefilter_sampling=use_prefilter_sampling,
+                    )
+                for s in samples:
+                    s["split"] = split_name; writer.add_sample(s)
+                    total_samples += 1; total_pos += (1 if s["label"] == 1 else 0)
+            gc.collect()
+
+        # P0c: Log timing summary
+        import logging
+        logging.basicConfig(level=logging.INFO)
+        timer.log_summary(prefix=split_name)
+        cache_stats = persistent_cache.stats()
+        print(f"[TfidfCache] {split_name}: hits={cache_stats['hits']} misses={cache_stats['misses']}")
+
     return total_samples, total_pos
 
 def main() -> None:
