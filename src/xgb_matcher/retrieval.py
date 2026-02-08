@@ -321,37 +321,39 @@ def build_candidate_pool(
         cache_key = ("main", f"{insee}_{postcode}")
 
         # 4a. Sparse retrieval (TF-IDF) — with persistent cache
-        artifacts = _get_tfidf_artifacts(
-            candidates, config, tfidf_cache, cache_key,
-            persistent_cache=persistent_cache,
-            partition_key=partition_key,
-            timer=timer,
-        )
-        name_vec, name_mat, names, char_vec, char_mat, addr_vec, addr_mat = artifacts
+        sparse_idx: List[int] = []
+        if config.sparse_retrieval_enabled:
+            artifacts = _get_tfidf_artifacts(
+                candidates, config, tfidf_cache, cache_key,
+                persistent_cache=persistent_cache,
+                partition_key=partition_key,
+                timer=timer,
+            )
+            name_vec, name_mat, names, char_vec, char_mat, addr_vec, addr_mat = artifacts
 
-        name_idx: List[int] = []
-        if name_vec is not None and name_mat is not None:
-            if timer:
-                with timer.stage("tfidf_query"):
+            name_idx: List[int] = []
+            if name_vec is not None and name_mat is not None:
+                if timer:
+                    with timer.stage("tfidf_query"):
+                        name_idx = prefilter_candidates_tfidf(
+                            crm_name, name_vec, name_mat, config.prefilter_k,
+                            cand_names=names, char_top_k=config.char_top_k,
+                            char_vectorizer=char_vec, char_matrix=char_mat,
+                        )
+                else:
                     name_idx = prefilter_candidates_tfidf(
                         crm_name, name_vec, name_mat, config.prefilter_k,
                         cand_names=names, char_top_k=config.char_top_k,
                         char_vectorizer=char_vec, char_matrix=char_mat,
                     )
-            else:
-                name_idx = prefilter_candidates_tfidf(
-                    crm_name, name_vec, name_mat, config.prefilter_k,
-                    cand_names=names, char_top_k=config.char_top_k,
-                    char_vectorizer=char_vec, char_matrix=char_mat,
+
+            addr_idx: List[int] = []
+            if addr_vec is not None and addr_mat is not None:
+                addr_idx = prefilter_candidates_address_tfidf(
+                    crm_address, addr_vec, addr_mat, config.prefilter_k,
                 )
 
-        addr_idx: List[int] = []
-        if addr_vec is not None and addr_mat is not None:
-            addr_idx = prefilter_candidates_address_tfidf(
-                crm_address, addr_vec, addr_mat, config.prefilter_k,
-            )
-
-        sparse_idx = list(dict.fromkeys(name_idx + addr_idx))
+            sparse_idx = list(dict.fromkeys(name_idx + addr_idx))
 
         # 4b. Dense retrieval (FAISS) — if enabled and available
         dense_idx: List[int] = []
@@ -391,11 +393,13 @@ def build_candidate_pool(
                 else:
                     candidates = final_cands
 
+    result.pool_sizes["prefilter"] = len(candidates)
+    # Backward compatibility for existing reports/scripts expecting "tfidf" key
     result.pool_sizes["tfidf"] = len(candidates)
     result.gt_in_tfidf_pool = _check_siret_in_list(candidates, gt_norm)
 
     if result.gt_in_filtered_pool and not result.gt_in_tfidf_pool and not result.loss_reason:
-        result.loss_reason = "PRUNED_BY_TFIDF"
+        result.loss_reason = "PRUNED_BY_TFIDF" if config.sparse_retrieval_enabled else "PRUNED_BY_PREFILTER"
 
     if not result.gt_in_base_pool and not result.loss_reason:
         result.loss_reason = "NOT_IN_PARTITION"

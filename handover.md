@@ -20,6 +20,13 @@ Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipel
 - `scripts/build_candidate_partitions_v5.py` : Builder v6 string-safe.
 - `SSOT.md` / `DECISIONS.md` : Documentation technique et historique de design à jour.
 
+
+## Audit/Fix branche retrieval hybride (réalisé)
+- **Ablation dense-only corrigée** : ajout du flag `sparse_retrieval_enabled` dans `RetrievalConfigV1` pour permettre un vrai mode dense-only (sans branche TF-IDF), et propagation dans la signature de config. *(commit GitHub: `35fc3a3`)*
+- **Retrieval unifié ajusté** : la branche sparse est maintenant conditionnelle (`config.sparse_retrieval_enabled`), avec compatibilité descendante conservée sur `pool_sizes["tfidf"]` et nouveau motif de perte `PRUNED_BY_PREFILTER` quand sparse est désactivé. *(commit GitHub: `35fc3a3`)*
+- **Benchmark retrieval sécurisé** : `scripts/benchmark_retrieval.py` n’exécute plus dense/hybrid sans dense store pour éviter des métriques trompeuses; `dense_only` est désormais réellement dense. *(commit GitHub: `35fc3a3`)*
+- **Test de non-régression config** : ajout de `tests/test_retrieval_config_sparse.py` (round-trip + hash signature). *(commit GitHub: `35fc3a3`)*
+
 ## Travail en cours
 - **Génération Samples Decider (V6 Turbo)** : Utiliser le Ranker V6 pour miner les hard negatives (scène top-50).
 
