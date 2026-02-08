@@ -76,13 +76,12 @@ def run_benchmark(
         ),
     }
 
-    # Dense-only: disable TF-IDF by setting prefilter_k very high (bypass),
-    # then use dense to narrow. We simulate by using hybrid with char_top_k=0
+    # Dense-only: disable sparse branch entirely and keep only dense ANN retrieval.
     modes["dense_only"] = RetrievalConfigV1(
         prefilter_k=prefilter_k,
+        sparse_retrieval_enabled=False,
         dense_retrieval_enabled=True,
         dense_top_k=prefilter_k,
-        char_top_k=0,  # disable char fallback to isolate dense
     )
 
     dense_store = None
@@ -91,7 +90,8 @@ def run_benchmark(
         dense_store = PartitionEmbeddingStore(dense_dir)
         _logger.info("Dense store loaded from %s", dense_dir)
     else:
-        _logger.warning("No dense store at %s — dense/hybrid modes will fall back to sparse", dense_dir)
+        _logger.warning("No dense store at %s — running sparse_only only to avoid misleading dense metrics", dense_dir)
+        modes = {"sparse_only": modes["sparse_only"]}
 
     results: Dict[str, Dict[str, float]] = {}
 

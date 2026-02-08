@@ -62,6 +62,7 @@ class RetrievalConfigV1:
     mega_insee_policy: str = "full_insee"
 
     # Dense retrieval (P1 hybrid)
+    sparse_retrieval_enabled: bool = True
     dense_retrieval_enabled: bool = False
     dense_top_k: int = 500
 
@@ -99,6 +100,7 @@ class RetrievalConfigV1:
             "rescue_numeric_tokens": self.rescue_numeric_tokens,
             "mega_insee_max_rows": self.mega_insee_max_rows,
             "mega_insee_policy": self.mega_insee_policy,
+            "sparse_retrieval_enabled": self.sparse_retrieval_enabled,
             "dense_retrieval_enabled": self.dense_retrieval_enabled,
             "dense_top_k": self.dense_top_k,
         }
@@ -143,6 +145,7 @@ class RetrievalConfigV1:
             rescue_numeric_tokens=bool(data.get("rescue_numeric_tokens", cls().rescue_numeric_tokens)),
             mega_insee_max_rows=int(data.get("mega_insee_max_rows", cls().mega_insee_max_rows)),
             mega_insee_policy=data.get("mega_insee_policy", cls().mega_insee_policy),
+            sparse_retrieval_enabled=bool(data.get("sparse_retrieval_enabled", cls().sparse_retrieval_enabled)),
             dense_retrieval_enabled=bool(data.get("dense_retrieval_enabled", cls().dense_retrieval_enabled)),
             dense_top_k=int(data.get("dense_top_k", cls().dense_top_k)),
         )
