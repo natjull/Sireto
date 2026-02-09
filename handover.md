@@ -33,6 +33,7 @@ Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipel
 - **Câblage dense dans le générateur de samples** : ajout des flags CLI (`--enable-dense-retrieval`, `--dense-top-k`, `--dense-store-dir`) et passage du `PartitionEmbeddingStore` à `build_candidate_pool` pour exploiter les embeddings pré-calculés pendant la génération. *(commit GitHub: `a309a7c`)*
 - **Bascule V7 + manifest O(1)** : `PartitionedCandidateStore` charge `manifest/insee_counts.parquet` pour éviter `count_rows` sur méga-communes, avec fallback V6 inchangé; defaults de `generate_training_samples_v5fast.py`, `benchmark_retrieval.py`, `precompute_embeddings.py`, `infer_xgb_two_stage.py` et `InferenceProfile` alignés sur `data/candidates_v7_all`. *(commit GitHub: `a309a7c`)*
 - **Nettoyage des références V6** : suppression des chemins `candidates_v6_all` dans les scripts Python versionnés de support (`validate_partitions_v5.py`, `build_candidate_partitions_v5.py`) et neutralisation du commentaire V6 dans `blocking.py`. *(commit GitHub: `a309a7c`)*
+- **Option A embeddings (prêt à lancer)** : `scripts/precompute_embeddings.py` enrichi avec priorisation manifeste (`--sort-by-size`, `--mega-first`, `--mega-threshold`, `--min-rows`, `--max-partitions`), mode `--dry-run` et logs cumulés pour pilotage des runs longs. *(commit GitHub: `LOCAL_PENDING_PUSH`)*
 
 ## Problèmes / Points d'attention
 - **Coverage** : Actuellement à ~93%. Le gap restant (7%) est principalement dû à des SIRET réellement absents de SIRENE ou des noms totalement vides.
