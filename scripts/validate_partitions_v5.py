@@ -1,6 +1,6 @@
-"""Validate candidate partitions v5 (schema + duplicates + filters).
+"""Validate candidate partitions (schema + duplicates + filters).
 
-Stop-the-line validator for data/candidates_v6_all.
+Stop-the-line validator for `data/candidates_v7_all` by default.
 """
 
 from __future__ import annotations
@@ -196,8 +196,8 @@ def _scope_has_corsica(path: Path) -> bool:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Validate candidate partitions v5")
-    parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v6_all"))
+    parser = argparse.ArgumentParser(description="Validate candidate partitions")
+    parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v7_all"))
     parser.add_argument("--sample-partitions", type=int, default=20)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--full-scan", action="store_true")
