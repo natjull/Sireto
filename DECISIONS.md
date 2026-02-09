@@ -207,3 +207,18 @@ Consequences:
 - `PartitionedCandidateStore` est désormais compatible V7 optimisé tout en restant rétro-compatible V6.
 - Les defaults de `generate_training_samples_v5fast.py`, `benchmark_retrieval.py`, `precompute_embeddings.py`, `infer_xgb_two_stage.py` et `src/xgb_matcher/profile.py` ciblent V7.
 - Référence commit GitHub: `LOCAL_PENDING_PUSH`.
+
+## 2026-02-09 - Orchestration embeddings V7 (Option A)
+
+Decision:
+- Étendre `scripts/precompute_embeddings.py` avec une stratégie de priorisation pilotée par manifeste V7 avant exécution longue.
+- Ajouter un mode `--dry-run` pour valider la sélection de partitions sans calcul d'embeddings.
+
+Rationale:
+- Réduire le risque opérationnel des runs longs (~42M vecteurs) en validant d'abord la stratégie de sélection.
+- Prioriser les méga-communes permet d'obtenir un gain produit plus tôt.
+
+Consequences:
+- Nouvelles options CLI: `--sort-by-size`, `--mega-first`, `--mega-threshold`, `--min-rows`, `--max-partitions`, `--log-every`, `--dry-run`.
+- Ajout de tests d'ordre/filtrage pour la logique de sélection de partitions.
+- Référence commit GitHub: `LOCAL_PENDING_PUSH`.
