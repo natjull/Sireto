@@ -1,14 +1,9 @@
 #!/usr/bin/env python3
 """
-Build partitioned candidate store (v5) for fast per-commune loading.
+Build partitioned candidate store for fast per-commune loading.
 
-v5 changes from v4:
-  - Include closed establishments by default (--exclude-closed to disable)
-  - Accept --scope-csv for production-scope (all CRM codes, not just training)
-  - Output to data/candidates_v6_all/ by default
-
-Outputs:
-  data/candidates_v6_all/
+Default output:
+  data/candidates_v7_all/
     insee/   (partitioned by insee code)
     cp/      (partitioned by postcode)
 
@@ -37,7 +32,7 @@ DEFAULT_SCOPE = None  # Optional: use a different CSV for scope (all CRM codes)
 DEFAULT_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 DEFAULT_UL = Path("data/StockUniteLegale_utf8.parquet")
 DEFAULT_HARVEST_DB = Path("data/harvest_full.sqlite")
-DEFAULT_OUT_DIR = Path("data/candidates_v6_all")
+DEFAULT_OUT_DIR = Path("data/candidates_v7_all")
 CODE_BATCH = 200
 
 OUTPUT_COLUMNS = [

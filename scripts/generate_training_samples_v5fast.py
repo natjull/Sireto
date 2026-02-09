@@ -56,6 +56,7 @@ from src.xgb_matcher.blocking import (
     normalize_text_for_tfidf,
 )
 from src.xgb_matcher.partitioned_store import PartitionedCandidateStore
+from src.xgb_matcher.dense_retrieval import PartitionEmbeddingStore
 from src.xgb_matcher.retrieval import build_candidate_pool
 from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.naming import primary_name, build_candidate_names
@@ -69,7 +70,7 @@ from src.xgb_matcher.timing import PipelineTimer
 
 DEFAULT_OUTPUT = Path("data/samples_v5.parquet")
 TRAINING_DATA = Path("data/crm_ok_gt.csv")
-PARTITIONS_DIR = Path("data/candidates_v6_all")
+PARTITIONS_DIR = Path("data/candidates_v7_all")
 ETAB_PARQUET = Path("data/StockEtablissement_utf8.parquet")
 MODEL_DIR = Path("models")
 
@@ -387,6 +388,7 @@ def _process_loc_key(
     use_prefilter_sampling: bool,
     split_name: str,
     persistent_cache: Optional[TfidfPersistentCache],
+    dense_store_dir: Optional[Path],
 ) -> Tuple[List[dict], List[str]]:
     """Process a single loc_key group. Designed for multiprocess execution.
 
@@ -400,6 +402,7 @@ def _process_loc_key(
         ranker.load_model(str(ranker_path))
 
     tfidf_cache: Dict = {}
+    dense_store = PartitionEmbeddingStore(dense_store_dir) if config.dense_retrieval_enabled else None
     samples: List[dict] = []
     lost_lines: List[str] = []
 
@@ -409,6 +412,7 @@ def _process_loc_key(
         res = build_candidate_pool(
             store, row_dict, crm_pre, config, tfidf_cache, gt_siret,
             persistent_cache=persistent_cache,
+            dense_store=dense_store,
         )
         if not res.candidates:
             continue
@@ -455,18 +459,22 @@ def generate_split(
     is_fast: bool,
     semantic_expected: bool,
     use_prefilter_sampling: bool,
+    dense_retrieval_enabled: bool,
+    dense_top_k: int,
+    dense_store_dir: Optional[Path],
     *,
     ranker_path: Optional[Path] = None,
     max_workers: int = 0,
 ) -> Tuple[int, int]:
     total_samples = 0; total_pos = 0
-    config = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not exclude_closed, drop_unnamed=drop_unnamed, tfidf_name_mode=tfidf_mode, prefilter_k=prefilter_k, char_top_k=char_top_k, min_candidates=MIN_CANDIDATES_SUBSET)
+    config = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not exclude_closed, drop_unnamed=drop_unnamed, tfidf_name_mode=tfidf_mode, prefilter_k=prefilter_k, char_top_k=char_top_k, min_candidates=MIN_CANDIDATES_SUBSET, dense_retrieval_enabled=dense_retrieval_enabled, dense_top_k=dense_top_k)
     lost_gt_log = log_base.parent / f"lost_gt_analysis_{log_base.stem}.csv"
     header_written = lost_gt_log.exists()
 
     # P0a: Persistent TF-IDF cache
     persistent_cache = TfidfPersistentCache(config.signature().hash)
     timer = PipelineTimer()
+    dense_store = PartitionEmbeddingStore(dense_store_dir) if dense_retrieval_enabled else None
 
     grouped = df.groupby("loc_key")
     loc_keys = list(grouped.groups.keys())
@@ -488,7 +496,7 @@ def generate_split(
                     loc_key, records, partitions_dir, config,
                     max_negatives, ranker_path, ranker_f_order, ranker_z_features,
                     is_fast, semantic_expected, use_prefilter_sampling,
-                    split_name, persistent_cache,
+                    split_name, persistent_cache, dense_store_dir,
                 )
                 futures[fut] = loc_key
 
@@ -516,7 +524,7 @@ def generate_split(
                 with timer.stage("build_candidate_pool"):
                     res = build_candidate_pool(
                         store, row_dict, crm_pre, config, tfidf_cache, gt_siret,
-                        persistent_cache=persistent_cache, timer=timer,
+                        persistent_cache=persistent_cache, dense_store=dense_store, timer=timer,
                     )
                 if not res.candidates: continue
                 set_global_name_idf_map(res.idf_map, res.default_idf)
@@ -564,6 +572,9 @@ def main() -> None:
     parser.add_argument("--exclude-closed-candidates", action="store_true", default=False)
     parser.add_argument("--mode", choices=["ranker", "decider"], default="ranker")
     parser.add_argument("--enable-ranker-hard-negatives", action="store_true", default=False)
+    parser.add_argument("--enable-dense-retrieval", action="store_true", default=False)
+    parser.add_argument("--dense-top-k", type=int, default=500)
+    parser.add_argument("--dense-store-dir", type=Path, default=None)
     args = parser.parse_args()
     semantic_expected = args.mode == "decider"
     if semantic_expected != SEMANTIC_ENABLED:
@@ -604,6 +615,9 @@ def main() -> None:
             is_fast,
             semantic_expected,
             use_prefilter_sampling,
+            args.enable_dense_retrieval,
+            args.dense_top_k,
+            args.dense_store_dir,
         )
         counts[name] = (c, p); clear_semantic_cache(); gc.collect()
     
@@ -611,7 +625,7 @@ def main() -> None:
     if semantic_expected and sem_rate < 0.20:
         raise RuntimeError(f"Semantic sanity check failed: {sem_rate:.2%}")
     
-    rc = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not args.exclude_closed_candidates, drop_unnamed=True, tfidf_name_mode=args.tfidf_name_mode, prefilter_k=args.prefilter_k, char_top_k=args.char_top_k, min_candidates=MIN_CANDIDATES_SUBSET)
+    rc = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not args.exclude_closed_candidates, drop_unnamed=True, tfidf_name_mode=args.tfidf_name_mode, prefilter_k=args.prefilter_k, char_top_k=args.char_top_k, min_candidates=MIN_CANDIDATES_SUBSET, dense_retrieval_enabled=args.enable_dense_retrieval, dense_top_k=args.dense_top_k)
     sig = rc.signature()
     meta = {
         "generated": datetime.now().isoformat(),
@@ -621,6 +635,9 @@ def main() -> None:
         "semantic_expected": semantic_expected,
         "mode": args.mode,
         "sampling_strategy": "prefilter" if use_prefilter_sampling else "full",
+        "dense_retrieval_enabled": args.enable_dense_retrieval,
+        "dense_top_k": args.dense_top_k,
+        "dense_store_dir": str(args.dense_store_dir) if args.dense_store_dir else None,
         "retrieval_signature_v1": {"version": sig.version, "hash": sig.hash, "config": sig.config},
     }
     with open(args.output.with_suffix(".json"), "w") as f: json.dump(meta, f, indent=2)

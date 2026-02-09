@@ -8,7 +8,7 @@ semantic model (MiniLM or finetuned siret-bert) and stores:
 
 Usage:
     python scripts/precompute_embeddings.py \
-        --partitions-dir data/candidates_v6_all \
+        --partitions-dir data/candidates_v7_all \
         --output-dir data/dense_index \
         --batch-size 256
 
@@ -110,7 +110,7 @@ def encode_candidates(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pre-compute dense embeddings per partition.")
-    parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v6_all"))
+    parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v7_all"))
     parser.add_argument("--output-dir", type=Path, default=Path("data/dense_index"))
     parser.add_argument("--partition-type", choices=["insee", "cp", "both"], default="both")
     parser.add_argument("--model", type=str, default=None,

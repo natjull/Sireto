@@ -10,10 +10,11 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 import pyarrow as pa
 import pyarrow.dataset as ds
+import pyarrow.parquet as pq
 
 from .blocking import normalize_code, department_from_code
 
@@ -49,11 +50,32 @@ class PartitionedCandidateStore:
         self._cache_cp_insee: OrderedDict[str, List[dict]] = OrderedDict()
         self._cache_dept: OrderedDict[str, List[dict]] = OrderedDict()
         self._cache_insee_count: OrderedDict[str, int] = OrderedDict()
+        self._manifest_insee_counts = self._load_insee_manifest_counts()
 
         # Determine which columns are actually present in the datasets
         # (some columns like pm_dirigeant_names may be absent in older partitions)
         self._columns_insee = self._available_columns(self._dataset_insee)
         self._columns_cp = self._available_columns(self._dataset_cp)
+
+    def _load_insee_manifest_counts(self) -> Dict[str, int]:
+        """Load optional V7 manifest counts for O(1) INSEE row lookup."""
+        manifest_path = self.partitions_dir / "manifest" / "insee_counts.parquet"
+        if not manifest_path.exists():
+            return {}
+        try:
+            table = pq.read_table(manifest_path, columns=["insee", "row_count"])
+        except Exception:
+            return {}
+        counts: Dict[str, int] = {}
+        for row in table.to_pylist():
+            code = normalize_code(row.get("insee"))
+            if not code:
+                continue
+            try:
+                counts[code] = int(row.get("row_count") or 0)
+            except Exception:
+                continue
+        return counts
 
     @staticmethod
     def _available_columns(dataset: ds.Dataset) -> List[str] | None:
@@ -87,6 +109,11 @@ class PartitionedCandidateStore:
         if code in self._cache_insee_count:
             self._cache_insee_count.move_to_end(code)
             return self._cache_insee_count[code]
+        if code in self._manifest_insee_counts:
+            count = int(self._manifest_insee_counts[code])
+            self._cache_insee_count[code] = count
+            self._evict_lru(self._cache_insee_count, _MAX_STORE_CACHE_SIZE)
+            return count
         try:
             count = self._dataset_insee.count_rows(filter=ds.field("insee") == code)
         except Exception:

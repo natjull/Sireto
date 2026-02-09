@@ -134,7 +134,7 @@ def filter_candidates_by_address_hash(
 def dedupe_candidates(candidates: Iterable[dict]) -> Dict[str, dict]:
     """Deduplicate candidates by SIRET.
     
-    Since v6 partitions (data/candidates_v6_all/) are guaranteed to have no 
+    Since canonical partitions are guaranteed to have no 
     duplicate SIRETs within a single partition (INSEE or CP), this function 
     primarily serves to handle the pool_mode="multi" case where a SIRET may 
     appear in both INSEE and CP partitions.

@@ -7,7 +7,7 @@ Helps decide if TF-IDF can be phased out in favor of dense-only.
 Usage:
     python scripts/benchmark_retrieval.py \
         --crm-gt data/crm_ok_gt.csv \
-        --partitions-dir data/candidates_v6_all \
+        --partitions-dir data/candidates_v7_all \
         --dense-dir data/dense_index \
         --prefilter-k 500
 
@@ -174,7 +174,7 @@ def run_benchmark(
 def main() -> None:
     parser = argparse.ArgumentParser(description="Benchmark retrieval recall ablation.")
     parser.add_argument("--crm-gt", type=Path, default=Path("data/crm_ok_gt.csv"))
-    parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v6_all"))
+    parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v7_all"))
     parser.add_argument("--dense-dir", type=Path, default=Path("data/dense_index"))
     parser.add_argument("--prefilter-k", type=int, default=500)
     parser.add_argument("--output-csv", type=Path, default=None)

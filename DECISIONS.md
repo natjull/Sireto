@@ -175,3 +175,35 @@ Rationale:
 
 Consequences:
 - Amélioration immédiate du Retrieval Coverage (passage de ~90% à ~93%+).
+
+## 2026-02-08 - Adoption du retrieval hybride sparse + dense
+
+Decision:
+- Intégrer la branche d'audit retrieval hybride dans `main` pour unifier sparse TF-IDF + dense FAISS.
+- Conserver une activation opt-in du dense (`dense_retrieval_enabled=false` par défaut) pour ne pas dégrader la stabilité en production.
+- Conserver le cache TF-IDF persistant et l'instrumentation timing comme standard de génération des samples.
+
+Rationale:
+- Le sparse seul couvre mal les écarts sémantiques de dénomination, alors que le dense améliore le recall sur ces cas.
+- Le cache persistant réduit fortement les temps d'itération sans modifier le comportement ML.
+- Le mode opt-in permet un déploiement progressif avec benchmark contrôlé.
+
+Consequences:
+- Dépendances retrieval enrichies (`faiss-cpu`, `sentence-transformers`) et pré-calcul d'embeddings requis pour activer le dense.
+- Le script de génération des samples peut désormais être câblé pour exploiter directement le store d'embeddings pré-calculés.
+- Références commits GitHub: `9ab297e` (feature retrieval hybride), `35fc3a3` (correctifs audit dense-only/sparse flag).
+
+## 2026-02-09 - Bascule partitions V7 + lookup manifeste O(1)
+
+Decision:
+- Adopter `data/candidates_v7_all` comme défaut pour les scripts actifs de génération, benchmark et inférence.
+- Utiliser `manifest/insee_counts.parquet` quand disponible pour obtenir les tailles INSEE en O(1), avec fallback automatique vers `count_rows` si absent.
+
+Rationale:
+- Réduire les coûts I/O et la latence sur les méga-communes.
+- Aligner les workflows de train/serve/benchmark sur l’artefact de partition le plus complet.
+
+Consequences:
+- `PartitionedCandidateStore` est désormais compatible V7 optimisé tout en restant rétro-compatible V6.
+- Les defaults de `generate_training_samples_v5fast.py`, `benchmark_retrieval.py`, `precompute_embeddings.py`, `infer_xgb_two_stage.py` et `src/xgb_matcher/profile.py` ciblent V7.
+- Référence commit GitHub: `LOCAL_PENDING_PUSH`.
