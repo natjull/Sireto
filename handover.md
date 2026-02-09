@@ -32,7 +32,7 @@ Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipel
 - **Génération Samples Decider (V7 Turbo)** : Utiliser le Ranker V6 pour miner les hard negatives (scène top-50) sur partitions V7.
 - **Câblage dense dans le générateur de samples** : ajout des flags CLI (`--enable-dense-retrieval`, `--dense-top-k`, `--dense-store-dir`) et passage du `PartitionEmbeddingStore` à `build_candidate_pool` pour exploiter les embeddings pré-calculés pendant la génération. *(commit GitHub: `a309a7c`)*
 - **Bascule V7 + manifest O(1)** : `PartitionedCandidateStore` charge `manifest/insee_counts.parquet` pour éviter `count_rows` sur méga-communes, avec fallback V6 inchangé; defaults de `generate_training_samples_v5fast.py`, `benchmark_retrieval.py`, `precompute_embeddings.py`, `infer_xgb_two_stage.py` et `InferenceProfile` alignés sur `data/candidates_v7_all`. *(commit GitHub: `a309a7c`)*
-- **Nettoyage des références V6** : suppression des chemins `candidates_v6_all` dans les scripts Python actifs/legacy de support (`validate_partitions_v5.py`, `build_candidate_partitions_v5.py`, `debug_tfidf_norm_effect.py`) et neutralisation du commentaire V6 dans `blocking.py`. *(commit GitHub: `a309a7c`)*
+- **Nettoyage des références V6** : suppression des chemins `candidates_v6_all` dans les scripts Python versionnés de support (`validate_partitions_v5.py`, `build_candidate_partitions_v5.py`) et neutralisation du commentaire V6 dans `blocking.py`. *(commit GitHub: `a309a7c`)*
 
 ## Problèmes / Points d'attention
 - **Coverage** : Actuellement à ~93%. Le gap restant (7%) est principalement dû à des SIRET réellement absents de SIRENE ou des noms totalement vides.
