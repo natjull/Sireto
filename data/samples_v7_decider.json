@@ -1,0 +1,121 @@
+{
+  "generated": "2026-02-21T21:17:34.810908",
+  "counts": {
+    "train": [
+      578627,
+      11347
+    ],
+    "dev": [
+      126029,
+      2472
+    ],
+    "test": [
+      129738,
+      2544
+    ]
+  },
+  "total": 834394,
+  "semantic_rate": 0.9986864718586184,
+  "semantic_expected": true,
+  "mode": "decider",
+  "sampling_strategy": "full",
+  "dense_retrieval_enabled": true,
+  "dense_top_k": 500,
+  "dense_store_dir": null,
+  "retrieval_signature_v1": {
+    "version": "v1",
+    "hash": "7d5253b3693e4a37bc583516129379d5e72c38b6eb1ecbe9155520958595db49",
+    "config": {
+      "version": "v1",
+      "pool_mode": "insee_then_postcode",
+      "include_closed": true,
+      "drop_unnamed": true,
+      "tfidf_name_mode": "bag",
+      "tfidf_name_ngrams": [
+        1,
+        2
+      ],
+      "tfidf_name_token_pattern": "(?u)\\b\\w+\\b",
+      "tfidf_name_lowercase": false,
+      "tfidf_name_norm": null,
+      "tfidf_name_min_df": 1,
+      "tfidf_addr_ngrams": [
+        1,
+        2
+      ],
+      "tfidf_addr_token_pattern": "(?u)\\b\\w+\\b",
+      "tfidf_addr_lowercase": false,
+      "tfidf_addr_norm": null,
+      "tfidf_addr_min_df": 1,
+      "tfidf_addr_max_df": 0.95,
+      "char_ngrams": [
+        3,
+        5
+      ],
+      "char_analyzer": "char_wb",
+      "char_min_df": 1,
+      "char_top_k": 200,
+      "prefilter_k": 500,
+      "prefilter_k_mode": "per_channel",
+      "prefilter_union_cap": null,
+      "min_candidates": 100,
+      "stage1_top_n": 50,
+      "siren_siblings": false,
+      "max_siren_siblings": null,
+      "max_names_per_candidate": null,
+      "rescue_addr_hash": true,
+      "rescue_numeric_tokens": true,
+      "mega_insee_max_rows": 100000,
+      "mega_insee_policy": "full_insee",
+      "sparse_retrieval_enabled": true,
+      "dense_retrieval_enabled": true,
+      "dense_top_k": 500
+    }
+  },
+  "retrieval_config_v1": {
+    "version": "v1",
+    "pool_mode": "insee_then_postcode",
+    "include_closed": true,
+    "drop_unnamed": true,
+    "tfidf_name_mode": "bag",
+    "tfidf_name_ngrams": [
+      1,
+      2
+    ],
+    "tfidf_name_token_pattern": "(?u)\\b\\w+\\b",
+    "tfidf_name_lowercase": false,
+    "tfidf_name_norm": null,
+    "tfidf_name_min_df": 1,
+    "tfidf_addr_ngrams": [
+      1,
+      2
+    ],
+    "tfidf_addr_token_pattern": "(?u)\\b\\w+\\b",
+    "tfidf_addr_lowercase": false,
+    "tfidf_addr_norm": null,
+    "tfidf_addr_min_df": 1,
+    "tfidf_addr_max_df": 0.95,
+    "char_ngrams": [
+      3,
+      5
+    ],
+    "char_analyzer": "char_wb",
+    "char_min_df": 1,
+    "char_top_k": 200,
+    "prefilter_k": 500,
+    "prefilter_k_mode": "per_channel",
+    "prefilter_union_cap": null,
+    "min_candidates": 100,
+    "stage1_top_n": 50,
+    "siren_siblings": false,
+    "max_siren_siblings": null,
+    "max_names_per_candidate": null,
+    "rescue_addr_hash": true,
+    "rescue_numeric_tokens": true,
+    "mega_insee_max_rows": 100000,
+    "mega_insee_policy": "full_insee",
+    "sparse_retrieval_enabled": true,
+    "dense_retrieval_enabled": true,
+    "dense_top_k": 500
+  }
+}
