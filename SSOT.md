@@ -13,9 +13,9 @@ CRM Input → [Stage 1: Ranker] → [Stage 2: Decider] → [Stage 3: Risk Model]
 
 | Stage | Modèle | Rôle |
 |-------|--------|------|
-| **Stage 1** | `xgbranker_fast_..._v6_turbo.json` | Sélectionne les top-k candidats SIRENE (ML Pruning) |
-| **Stage 2** | `xgb_decider_..._v6_turbo.json` | Score chaque candidat (probabilité de match) |
-| **Stage 3** | `routing_risk_model.pkl` | Décide si la requête est AUTO ou REVIEW |
+| **Stage 1 (Fast Ranker)** | `xgbranker_fast_..._v7.json` | Sélectionne 50 candidats SIRENE sans sémantique (ML Pruning rapide). Modèle `rank:ndcg`. |
+| **Stage 2 (Semantic Re-Ranker)** | `xgbranker_..._v7.json` | Re-trie les 50 candidats avec les features sémantiques BERT pour extraire le "Top-1". Modèle `rank:ndcg`. |
+| **Stage 3 (Risk Calibrator)** | `routing_risk_model.pkl` | Juge le candidat Top-1 pour décider si la requête est AUTO ou REVIEW. Modèle `binary:logistic` Isotonic XGBoost. |
 
 ## 2. Partitions candidats (point de départ)
 
@@ -55,24 +55,26 @@ L'alignement Train/Serve est garanti par l'usage des mêmes modules de retrieval
   - Pool strict `insee_then_postcode` + double TF-IDF (nom + adresse) + rescue universel.
   - `prefilter_k=500`, padding deterministe si pool < min_candidates.
   - **Mega-policy** : `full_insee` (V6+) pour supprimer les pertes dues au CP CRM.
-- **Phase 1 : Ranker FAST** (No Semantic)
+- **Phase 1 : Ranker FAST (Stage 1 / No Semantic)**
   - Entraîné sur le pool de retrieval (ULTIMA B).
   - Sampling "Turbo" : 50 négatifs choisis via rangs TF-IDF du retrieval.
-  - Objectif : maximiser le Recall@50.
-- **Phase 2 : Decider**
+  - Objectif : maximiser le Recall@50 (`rank:ndcg`).
+- **Phase 2 : Semantic Re-Ranker (Stage 2)**
   - Hard negatives minés via le Ranker FAST (scène = top-50 ranker).
-  - Semantic retrieval **désactivé** (aucun ajout de candidats hors pool).
-  - Semantic gate **activé par défaut** (`XGB_SEMANTIC_ENABLED=1`) pour le Stage 2.
-- **Phase 3 : Risk Model**
-  - Entraîné sur la distribution d'inférence réelle (top-k + features de routing).
+  - Semantic gate **activé par défaut** (`XGB_SEMANTIC_ENABLED=1`) pour calculer la similarité cosinus BERT sur ces 50 candidats.
+  - Objectif : Extraire le meilleur candidat absolu (Top-1). Entraîné sur le même objectif `rank:ndcg` que l'Étage 1.
+- **Phase 3 : Risk Model (Stage 3 / Calibrator)**
+  - Séparation complète du concept "trouver le bon" (Stage 2) et "être sûr de soi" (Stage 3).
+  - Entraîné sur le candidat Top-1 sorti du Stage 2.
+  - Modèle XGBoost `binary:logistic` recalibré avec régression isotonique pour assurer l'absence de biais positionnel dans la probabilité finale.
 
 ## 5. Artefacts Canoniques (En cours)
 
-| Artefact | Chemin (V6 Turbo) | Description |
+| Artefact | Chemin (V7) | Description |
 |----------|--------|-------------|
-| **Ranker** | `models/xgbranker_20260205_195700.json` | Stage 1 Champion (v6 string-safe) |
-| **Ranker Meta** | `models/xgb_two_stage_meta_20260205_195700.json` | Meta Ranker aligné SSOT |
-| **Decider** | TBD | En attente de génération des samples Turbo |
+| **Ranker (Fast)** | `models/xgbranker_fast_20260221_224040.json` | Stage 1 Champion (Filtrage rapide) |
+| **Ranker (Semantic)** | `models/xgbranker_20260221_224040.json` | Stage 2 Champion (Re-ranking avec BERT) |
+| **Meta** | `models/xgb_two_stage_meta_20260221_224040.json` | Meta Ranker aligné SSOT |
 | **GT Data** | `data/crm_ok_gt.csv` | Gold Standard (corrigé INSEE/CP) |
 
 ## 6. Environnement d'execution (SSOT)

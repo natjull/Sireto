@@ -1,16 +1,16 @@
-# SIRETO Handover - 5 Février 2026
+# SIRETO Handover - 21 Février 2026
 
 ## État des Lieux
 Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipeline XGBoost, en résolvant les problèmes de fragmentation et de skew train/serve. Le socle est maintenant prêt pour une production industrielle.
 
 ## Actions terminées dans cette fenêtre
 - **Unification du Retrieval** : Toutes les briques de recherche (train + serve) passent par `src/xgb_matcher/retrieval.py`.
-- **Bascule Partitions V6** : Partitions reconstruites avec types `string` forcés. Résolution des bugs Corse (2A/2B) et zéros initiaux.
+- **Bascule Partitions V6/V7** : Partitions reconstruites avec types `string` forcés. Résolution des bugs Corse (2A/2B) et zéros initiaux. Option Dense traitée (`precompute_embeddings.py`).
 - **Validation Partitions** : Création de `scripts/validate_partitions_v5.py` (stop-the-line check).
-- **Mode Turbo Samples** : Accélération massive de la génération via sampling basé sur les rangs TF-IDF (calcul features lourdes seulement sur 51 candidats).
-- **Policy Mega-Communes** : Passage à `full_insee` pour maximiser le coverage (Nice, Nantes, etc. ne sont plus bridées par le CP CRM).
-- **Entraînement Ranker V6** : Premier ranker canonique entraîné avec Hit@1 (test) = 75.6% et Recall@50 = 99.96%.
-- **Correctif GT** : `data/crm_ok_gt.csv` nettoyé (INSEE/CP SIRENE injectés pour les cas mismatch non-méga; SIRET absents supprimés).
+- **Mode Turbo Samples & Skew Fix** : Analyse approfondie du Train/Serve Skew causé par l'injection forcée du Ground Truth lors de la génération des données Decider.
+- **Entraînement Ranker V7 (Étage 1)** : Ranker rapide entraîné avec Hit@50 = 100% (sur les cas qui passent le prisme TF-IDF).
+- **Entraînement Semantic Re-Ranker V7 (Étage 2)** : Abandon de l'objectif binaire (`binary:logistic`) pour le Decider au profit d'un pur Re-Ranker sémantique (`rank:ndcg`). Hit@1 boosté à ~80%.
+- **Lancement Inférence Globale** : Inférence V7 lancée sur `crm_ok_gt.csv` pour exporter les features de routage et préparer l'entraînement de l'Étage 3.
 
 ## Fichiers modifiés
 - `src/xgb_matcher/retrieval.py` : Cœur du retrieval unifié.
@@ -29,28 +29,27 @@ Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipel
 - **Gouvernance technique** : activation progressive du dense (opt-in) et conservation du sparse comme baseline stable. *(référence design: `DECISIONS.md`, 2026-02-08)*
 
 ## Travail en cours
-- **Génération Samples Decider (V7 Turbo)** : Utiliser le Ranker V6 pour miner les hard negatives (scène top-50) sur partitions V7.
-- **Câblage dense dans le générateur de samples** : ajout des flags CLI (`--enable-dense-retrieval`, `--dense-top-k`, `--dense-store-dir`) et passage du `PartitionEmbeddingStore` à `build_candidate_pool` pour exploiter les embeddings pré-calculés pendant la génération. *(commit GitHub: `a309a7c`)*
-- **Bascule V7 + manifest O(1)** : `PartitionedCandidateStore` charge `manifest/insee_counts.parquet` pour éviter `count_rows` sur méga-communes, avec fallback V6 inchangé; defaults de `generate_training_samples_v5fast.py`, `benchmark_retrieval.py`, `precompute_embeddings.py`, `infer_xgb_two_stage.py` et `InferenceProfile` alignés sur `data/candidates_v7_all`. *(commit GitHub: `a309a7c`)*
-- **Nettoyage des références V6** : suppression des chemins `candidates_v6_all` dans les scripts Python versionnés de support (`validate_partitions_v5.py`, `build_candidate_partitions_v5.py`) et neutralisation du commentaire V6 dans `blocking.py`. *(commit GitHub: `a309a7c`)*
-- **Option A embeddings (prêt à lancer)** : `scripts/precompute_embeddings.py` enrichi avec priorisation manifeste (`--sort-by-size`, `--mega-first`, `--mega-threshold`, `--min-rows`, `--max-partitions`), mode `--dry-run` et logs cumulés pour pilotage des runs longs. *(commit GitHub: `LOCAL_PENDING_PUSH`)*
+- **Extraction des Features Top-K (Inférence V7 en cours)** : `infer_xgb_two_stage.py` tourne sur les 17K requêtes pour encoder l'Étage 2 (Sémantique BERT MPS) et exporter `topk_v7_for_risk.csv`.
+- **Préparation de l'Étage 3 (Le Juge)** : Analyse de `scripts/train_routing_risk_model.py` validée pour entraîner un Risk Model XGBoost Isotonique ultra-fiable centré uniquement sur le candidat Top-1.
 
 ## Problèmes / Points d'attention
 - **Coverage** : Actuellement à ~93%. Le gap restant (7%) est principalement dû à des SIRET réellement absents de SIRENE ou des noms totalement vides.
 - **Latence Inférence** : Le mode `full_insee` est coûteux sur Paris/Lyon sans indexation.
 
-## Artefacts principaux (V7 en cours d'adoption)
+## Artefacts principaux (V7 Actifs)
 | Artefact | Chemin |
 |----------|--------|
 | Partitions | `data/candidates_v7_all/` |
-| Ranker | `models/xgbranker_20260205_195700.json` |
-| Meta | `models/xgb_two_stage_meta_20260205_195700.json` |
-| GT Data | `data/crm_ok_gt.csv` |
+| Ranker (Fast) | `models/xgbranker_fast_20260221_224040.json` |
+| Ranker (Semantic) | `models/xgbranker_20260221_224040.json` (Utilisé en "Decider_model") |
+| Meta | `models/xgb_two_stage_meta_20260221_224040.json` |
+| Re-Ranked Demos | `data/topk_v7_for_risk.csv` (en cours de gen.) |
 
 ## Prochaines étapes (DS Mode)
-1. Lancer la génération des samples **Decider** (V7 Turbo).
-2. Entraîner le **Decider** Champion.
-3. Recalibrer le **Routing (Stage 3)** sur la distribution V7.
+1. Attendre la fin de l'inférence dense de `topk_v7_for_risk.csv`.
+2. Générer le dataset Risk via `build_routing_eval_dataset.py`.
+3. Entraîner le **Risk Model (Stage 3 XGBoost Calibration)** sur le candidat Top-1.
+4. Évaluer le taux de routage AUTO final via la Risk Coverage Curve.
 
 ---
 *Note : Chaque modification de code doit citer le commit GitHub correspondant dans ce document.*
