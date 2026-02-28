@@ -54,6 +54,9 @@ class InferenceProfile:
     # Partitions
     partitions_dir: Path = field(default_factory=lambda: Path("data/candidates_v7_all"))
 
+    # Route B: SIREN-first index (optional)
+    siren_global_index_path: Path | None = None
+
     # Semantic
     semantic_required: bool = True
     semantic_enabled: bool = False  # Set from env at runtime
@@ -239,6 +242,11 @@ class InferenceProfile:
         # Semantic was enabled during training?
         semantic_enabled_train = meta.get("semantic_enabled_samples", 1) == 1
 
+        # Extract SIREN index path if present
+        siren_index_path = None
+        if retrieval_config and retrieval_config.siren_global_index_path:
+            siren_index_path = Path(retrieval_config.siren_global_index_path)
+
         profile = cls(
             ranker_path=ranker_path,
             ranker_fast_path=ranker_fast_path,
@@ -259,6 +267,7 @@ class InferenceProfile:
             drop_unnamed=retrieval_config.drop_unnamed,
             exclude_closed=not retrieval_config.include_closed,
             partitions_dir=Path(partitions_dir),
+            siren_global_index_path=siren_index_path,
             semantic_required=semantic_enabled_train,
             samples_file=samples_file,
             meta_path=meta_path,

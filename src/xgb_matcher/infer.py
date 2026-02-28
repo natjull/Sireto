@@ -34,6 +34,8 @@ if TYPE_CHECKING:
     from .profile import InferenceProfile
 from .retrieval import build_candidate_pool
 from .retrieval_config import RetrievalConfigV1
+from .siren_retrieval import SirenGlobalIndex, SirenToGeoIndex
+from .candidates import compute_name_idf_map
 from .features import (
     FEATURE_NAMES,
     FAST_RANKER_FEATURE_NAMES,
@@ -164,7 +166,13 @@ class XgbInferenceEngine:
         self.stage1_top_n = retrieval_config.stage1_top_n
         self.drop_unnamed = retrieval_config.drop_unnamed
         self.exclude_closed = not retrieval_config.include_closed
-        
+
+        # Route B SIREN-first index (optional, for global SIREN matching)
+        self.siren_global_index: SirenGlobalIndex | None = None
+        self.siren_to_geo: SirenToGeoIndex | None = None
+        self.siren_top_k = getattr(retrieval_config, 'siren_top_k', 50)
+        self.max_sirets_per_siren = getattr(retrieval_config, 'max_sirets_per_siren', 20)
+
         # Fail-fast: semantic must be enabled
         if os.getenv("XGB_SEMANTIC_ENABLED", "0") != "1":
             raise RuntimeError(
@@ -323,8 +331,8 @@ class XgbInferenceEngine:
         calibrator = None
         if profile.calibrator_path and profile.calibrator_path.exists():
             calibrator = load_calibrator(profile.calibrator_path)
-        
-        return cls(
+
+        engine = cls(
             ranker=ranker,
             decider=decider,
             store=store,
@@ -337,6 +345,24 @@ class XgbInferenceEngine:
             calibrator=calibrator,
             retrieval_config=profile.build_retrieval_config(),
         )
+
+        # Load SIREN global index if present (Route B)
+        if profile.siren_global_index_path:
+            index_path = Path(profile.siren_global_index_path)
+            if index_path.exists():
+                try:
+                    engine.siren_global_index = SirenGlobalIndex(index_path)
+                    engine.siren_to_geo = SirenToGeoIndex(index_path / "siren_to_geo.parquet")
+                    logging.getLogger(__name__).info(
+                        f"Loaded SIREN global index from {index_path}"
+                    )
+                except Exception as e:
+                    logging.getLogger(__name__).warning(
+                        f"Failed to load SIREN global index from {index_path}: {e}. "
+                        "Falling back to standard retrieval."
+                    )
+
+        return engine
     
     def infer_topk(
         self,
@@ -869,6 +895,95 @@ class XgbInferenceEngine:
             features=top1_feat,
         )
     
+    def _build_candidate_pool_v2(
+        self,
+        crm_row: Dict[str, Any],
+        crm_id: str,
+        crm_pre: Dict[str, Any],
+        drop_unnamed: bool,
+        exclude_closed: bool,
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, float], float]:
+        """Build candidate pool via Route B (SIREN-first global matching).
+
+        Phase 1: Query global SIREN TF-IDF index for top-K SIRENs by name similarity.
+        Phase 2: For each SIREN, retrieve its SIRETs from geo-partitioned store,
+                 prioritizing locations matching CRM geography.
+        Phase 3: Compute IDF map and return candidates.
+        """
+        if not self.siren_global_index or not self.siren_to_geo:
+            raise RuntimeError("SIREN global index not loaded.")
+
+        crm_name_bag = crm_pre.get("crm_name_bag", "")
+        crm_insee = crm_row.get("insee") or crm_row.get("crm_insee")
+        crm_postcode = crm_row.get("postcode") or crm_row.get("crm_cp")
+
+        # Phase 1: Query SIREN global index
+        top_sirens = self.siren_global_index.query(crm_name_bag, top_k=self.siren_top_k)
+        # Returns List[(siren_str, cosine_similarity_score), ...]
+
+        # Phase 2: Retrieve SIRETs for top SIRENs, geo-aware
+        candidates: List[Dict[str, Any]] = []
+        seen_sirets: set[str] = set()
+
+        for siren, _ in top_sirens:
+            siren_locs = self.siren_to_geo.get_locations(siren)
+            if not siren_locs:
+                continue
+
+            # Prioritize locations: INSEE match > postcode match > all others
+            sorted_locs = sorted(
+                siren_locs,
+                key=lambda loc: (loc[0] != crm_insee, loc[1] != crm_postcode)
+            )
+
+            loaded_for_siren = 0
+            for insee, postcode in sorted_locs:
+                if loaded_for_siren >= self.max_sirets_per_siren:
+                    break
+
+                # Load candidates from this partition
+                try:
+                    partition = self.store.load_by_insee(insee)
+                except Exception:
+                    # Partition load failure (e.g., missing file) — skip
+                    continue
+
+                for cand in partition:
+                    # Filter: must match SIREN and not already seen
+                    if (str(cand.get("siren") or "") == siren and
+                        str(cand.get("siret") or "") not in seen_sirets):
+
+                        # Apply filters
+                        if drop_unnamed and not any([
+                            cand.get("denomination"),
+                            cand.get("denomination_usuelle_ul"),
+                            cand.get("enseigne1"),
+                            cand.get("enseigne2"),
+                            cand.get("enseigne3"),
+                            cand.get("denomination_ul"),
+                            cand.get("sigle_ul"),
+                            cand.get("nom_ul"),
+                            cand.get("prenom_usuel_ul"),
+                        ]):
+                            continue
+
+                        if not exclude_closed and cand.get("etat_admin") == "F":
+                            continue
+
+                        candidates.append(cand)
+                        seen_sirets.add(str(cand.get("siret") or ""))
+                        loaded_for_siren += 1
+
+        # Phase 3: Compute IDF map
+        candidates_dict = {
+            str(c.get("siret") or ""): c
+            for c in candidates
+            if c.get("siret")
+        }
+        idf_map, default_idf = compute_name_idf_map(candidates_dict)
+
+        return candidates, idf_map, float(default_idf)
+
     def _build_candidate_pool(
         self,
         crm_row: Dict[str, Any],
@@ -878,10 +993,21 @@ class XgbInferenceEngine:
         drop_unnamed: bool,
         exclude_closed: bool,
     ) -> Tuple[List[Dict[str, Any]], Dict[str, float], float]:
-        """Build candidate pool via unified retrieval (Variant B)."""
+        """Build candidate pool via unified retrieval (Variant B or Route B SIREN-first)."""
         if pool_mode != "insee_then_postcode":
             raise ValueError("Only pool_mode='insee_then_postcode' is supported (SSOT).")
 
+        # Conditional routing: use Route B if SIREN index is available
+        if self.siren_global_index is not None and self.siren_to_geo is not None:
+            return self._build_candidate_pool_v2(
+                crm_row=crm_row,
+                crm_id=crm_id,
+                crm_pre=crm_pre,
+                drop_unnamed=drop_unnamed,
+                exclude_closed=exclude_closed,
+            )
+
+        # Fallback: use original retrieval (V7-compatible)
         config = self.retrieval_config
         if drop_unnamed != self.drop_unnamed or exclude_closed != self.exclude_closed:
             config = replace(
