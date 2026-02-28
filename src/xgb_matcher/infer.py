@@ -467,6 +467,32 @@ class XgbInferenceEngine:
                 candidate_state = "FERME" if etat_admin == "F" else "OUVERT"
             feat_row = feats_n[idx_k]
             
+            routing_confidence = None
+            routing_status = None
+            if rank == 1:
+                if self.risk_model is None:
+                    print(f"[DEBUG] risk_model is None")
+                elif not self.risk_features:
+                    print(f"[DEBUG] risk_features is empty")
+                else:
+                    risk_dict = feat_row.copy()
+                    risk_dict["score_top1"] = top1_score
+                    risk_dict["score_top2"] = top2_score
+                    risk_dict["score_gap"] = score_gap
+                    risk_dict["score_ratio"] = score_ratio
+                    
+                    X_risk = np.array([[float(risk_dict.get(f, 0.0)) for f in self.risk_features]], dtype=np.float32)
+                    try:
+                        prob = float(self.risk_model.predict_proba(X_risk)[0, 1])
+                        if self.risk_calibrator is not None:
+                            prob = float(self.risk_calibrator.predict_proba(X_risk)[0, 1])
+                        routing_confidence = prob
+                        routing_status = "AUTO" if prob >= self.risk_threshold else "REVIEW"
+                    except Exception as e:
+                        import traceback
+                        traceback.print_exc()
+                        print(f"Risk model crash: {e}")
+            
             row = TopKRow(
                 crm_id=crm_input.crm_id,
                 crm_name=crm_input.crm_name,
@@ -489,6 +515,8 @@ class XgbInferenceEngine:
                 candidate_insee=str(cand_k.get("insee") or ""),
                 candidate_state=candidate_state,
                 candidate_last_treatment_date=cand_k.get("last_treatment_date"),
+                routing_confidence=routing_confidence,
+                routing_status=routing_status,
                 rank=rank,
                 has_name_evidence=_has_name_evidence(feat_row),
             )
@@ -519,6 +547,139 @@ class XgbInferenceEngine:
             rows.append(row)
         
         return rows
+
+    def infer_topk_batch(
+        self,
+        crm_inputs: List[CrmInput],
+        top_k: int = 5,
+        pool_mode: str = "insee_then_postcode",
+        drop_unnamed: bool | None = None,
+        exclude_closed: bool | None = None,
+        export_routing_features: bool = True,
+    ) -> List[List["TopKRow"]]:
+        """Run two-stage inference on a batch of CRMs efficiently by utilizing GPU.
+        
+        Pre-computes embeddings for all queries and their Stage 1 top candidates
+        simultaneously, maximizing SentenceTransformer batch throughput on MPS/CUDA.
+        
+        Returns:
+            List of top-k lists, parallel to crm_inputs.
+        """
+        from .semantic import _semantic_enabled, batch_encode_texts
+        
+        if drop_unnamed is None:
+            drop_unnamed = self.drop_unnamed
+        if exclude_closed is None:
+            exclude_closed = self.exclude_closed
+            
+        import time
+        t_start_batch = time.time()
+            
+        # 1. Gather all candidates for all inputs (Stage 1 preparation)
+        batch_state = []
+        t_io = 0.0
+        
+        for crm_input in crm_inputs:
+            crm_row = crm_input.to_dict()
+            crm_pre = preprocess_crm_row(crm_row)
+            
+            t0 = time.time()
+            candidates, idf_map, default_idf = self._build_candidate_pool(
+                crm_row=crm_row,
+                crm_id=crm_input.crm_id,
+                crm_pre=crm_pre,
+                pool_mode=pool_mode,
+                drop_unnamed=drop_unnamed,
+                exclude_closed=exclude_closed,
+            )
+            t_io += (time.time() - t0)
+            
+            batch_state.append({
+                "crm_input": crm_input,
+                "crm_pre": crm_pre,
+                "candidates": candidates,
+                "idf_map": idf_map,
+                "default_idf": default_idf
+            })
+            
+        print(f"[Batched Infer] Step 1 (I/O & Candidate Pools): {t_io:.2f}s total for {len(crm_inputs)} items")
+            
+        # 2. If Semantic is enabled, pre-warm ALL needed representations
+        if _semantic_enabled():
+            all_texts_to_encode = []
+            
+            t_stage1 = 0.0
+            for state in batch_state:
+                if not state["candidates"]:
+                    continue
+                crm_pre = state["crm_pre"]
+                candidates = state["candidates"]
+                
+                # Add query representation
+                crm_name_sem = crm_pre.get("crm_name_semantic", "")
+                if crm_name_sem:
+                    all_texts_to_encode.append(crm_name_sem)
+                    
+                # We need to run essentially Stage 1 ranking to know which candidates needs semantic vectors
+                cand_list = [(c.get("siret"), c) for c in candidates if c.get("siret")]
+                if not cand_list:
+                    continue
+                    
+                t0 = time.time()
+                set_global_name_idf_map(state["idf_map"], state["default_idf"])
+                feats_stage1 = [
+                    make_features_from_preprocessed(crm_pre, c, skip_semantic=True)
+                    for _, c in cand_list
+                ]
+                
+                ranker_feature_order = self.ranker_feature_order or self.feature_order
+                X1 = pd.DataFrame(feats_stage1)[ranker_feature_order]
+                scores_stage1 = self.ranker.predict(
+                    xgb.DMatrix(X1.values, feature_names=ranker_feature_order)
+                )
+                
+                stage1_top_n = min(self.stage1_top_n, len(scores_stage1))
+                top_n_idx = np.argsort(scores_stage1)[::-1][:stage1_top_n]
+                t_stage1 += (time.time() - t0)
+                
+                # Pre-warm these top-N candidates
+                for idx in top_n_idx:
+                    _, c = cand_list[idx]
+                    cand_city_norm = c.get("_xgb_cached_city_norm") or normalize_text(c.get("city"))
+                    pool = build_semantic_name_pool(
+                        build_candidate_names(c),
+                        crm_city_norm=crm_pre.get("crm_city_norm", ""),
+                        cand_city_norm=cand_city_norm,
+                    )
+                    all_texts_to_encode.extend(pool)
+                    
+            print(f"[Batched Infer] Step 2 (Stage 1 XGBoost): {t_stage1:.2f}s total for {len(crm_inputs)} items")
+            
+            # Fire a massive encoding batch on the GPU! (Wait for completion)
+            if all_texts_to_encode:
+                print(f"[Batched Infer] Sending {len(all_texts_to_encode)} unique texts to MPS for Stage-2 Warming...")
+                import time
+                t0 = time.time()
+                batch_encode_texts(all_texts_to_encode)
+                print(f"[Batched Infer] Finished semantic encoding in {time.time() - t0:.2f}s")
+                
+        # 3. Now that the cache is supercharged, proceed sequentially (super fast)
+        results = []
+        t3 = time.time()
+        for crm_input in crm_inputs:
+            # We must call infer_topk now since the memory is hot
+            # It will immediately hit the embeddings cache and fly through Stage 2
+            topk_res = self.infer_topk(
+                crm_input=crm_input,
+                top_k=top_k,
+                pool_mode=pool_mode,
+                drop_unnamed=drop_unnamed,
+                exclude_closed=exclude_closed,
+                export_routing_features=export_routing_features
+            )
+            results.append(topk_res)
+            
+        return results
 
     def infer_single(
         self,
@@ -807,6 +968,8 @@ class TopKRow:
     rank: int
     has_name_evidence: int
     candidate_last_treatment_date: str | None = None
+    routing_confidence: float | None = None
+    routing_status: str | None = None
     # Routing features (optional)
     name_jaro_max: float = 0.0
     name_token_overlap_max: float = 0.0
@@ -853,6 +1016,8 @@ class TopKRow:
             "candidate_insee": self.candidate_insee,
             "candidate_state": self.candidate_state,
             "candidate_last_treatment_date": self.candidate_last_treatment_date,
+            "routing_confidence": self.routing_confidence,
+            "routing_status": self.routing_status,
             "rank": self.rank,
             "has_name_evidence": self.has_name_evidence,
             "name_jaro_max": self.name_jaro_max,
