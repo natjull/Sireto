@@ -1,55 +1,58 @@
-# SIRETO Handover - 21 Février 2026
+# SIRETO Handover - 28 Fevrier 2026
 
-## État des Lieux
-Nous avons finalisé l'alignement SSOT (Single Source of Truth) complet du pipeline XGBoost, en résolvant les problèmes de fragmentation et de skew train/serve. Le socle est maintenant prêt pour une production industrielle.
+## Etat des lieux
+Le pipeline V7 reste la baseline stable. La branche V8/Route B (SIREN-first) est maintenant integree au code, avec branchement train+serve effectif. Le prochain jalon est la validation metrique complete (coverage, Hit@1, latence) puis la recalibration du Stage 3.
 
-## Actions terminées dans cette fenêtre
-- **Unification du Retrieval** : Toutes les briques de recherche (train + serve) passent par `src/xgb_matcher/retrieval.py`.
-- **Bascule Partitions V6/V7** : Partitions reconstruites avec types `string` forcés. Résolution des bugs Corse (2A/2B) et zéros initiaux. Option Dense traitée (`precompute_embeddings.py`).
-- **Validation Partitions** : Création de `scripts/validate_partitions_v5.py` (stop-the-line check).
-- **Mode Turbo Samples & Skew Fix** : Analyse approfondie du Train/Serve Skew causé par l'injection forcée du Ground Truth lors de la génération des données Decider.
-- **Entraînement Ranker V7 (Étage 1)** : Ranker rapide entraîné avec Hit@50 = 100% (sur les cas qui passent le prisme TF-IDF).
-- **Entraînement Semantic Re-Ranker V7 (Étage 2)** : Abandon de l'objectif binaire (`binary:logistic`) pour le Decider au profit d'un pur Re-Ranker sémantique (`rank:ndcg`). Hit@1 boosté à ~80%.
-- **Lancement Inférence Globale** : Inférence V7 lancée sur `crm_ok_gt.csv` pour exporter les features de routage et préparer l'entraînement de l'Étage 3.
+## Actions terminees (fenetre recente)
+- **V8 features + hard negatives + hyperparams decider**: ajout de 7 features d'interaction, extension des hard negatives colocataires/homonymes/siblings, tuning decider (`lr=0.05`, `max_depth=7`, `400 rounds`). *(commit GitHub: `35fb441`)*
+- **Route B (SIREN-first) implementee**: nouvel index global SIREN, nouveau module de retrieval SIREN, branchement conditionnel dans l'inference profile/engine. *(commit GitHub: `3e090b7`)*
+- **Correctifs bloquants Route B**: fix DuckDB `:memory:`, fix champ CRM nom, fix filtre closed/open, ajout CLI `--siren-index` dans le generateur de samples. *(commit GitHub: `c356923`)*
+- **Branchement Route B dans le retrieval partage (training)**: `build_candidate_pool()` supporte Route B via indices SIREN, propagation sequentielle + multiprocess dans `generate_training_samples_v5fast.py`. *(commit GitHub: `1305012`)*
 
-## Fichiers modifiés
-- `src/xgb_matcher/retrieval.py` : Cœur du retrieval unifié.
-- `src/xgb_matcher/retrieval_config.py` : Configuration centralisée et signature (hash).
-- `src/xgb_matcher/partitioned_store.py` : Store robuste aux types string.
-- `scripts/generate_training_samples_v5fast.py` : Générateur Turbo aligné SSOT.
-- `scripts/build_candidate_partitions_v5.py` : Builder v6 string-safe.
-- `SSOT.md` / `DECISIONS.md` : Documentation technique et historique de design à jour.
+## Historique structurant (deja en place)
+- **Retrieval hybride sparse+dense + cache TF-IDF persistant + timing**: integration du socle P0/P1. *(commit GitHub: `9ab297e`)*
+- **Ablation dense-only corrigee + flag sparse explicite**: alignement des modes retrieval et signature de config. *(commit GitHub: `35fc3a3`)*
+- **Defaults partitions V7 + manifest INSEE O(1)**: bascule des chemins/scripts vers `data/candidates_v7_all`. *(commit GitHub: `a309a7c`)*
+- **Priorisation mega-communes embeddings**: orchestration dense amelioree pour runs longs. *(commit GitHub: `66b5b87`)*
 
-## Audit/Fix branche retrieval hybride (réalisé)
-- **Merge main <- audit retrieval hybride** : intégration de la couche dense FAISS + cache TF-IDF persistant + instrumentation timing, avec compatibilité descendante conservée. *(commit GitHub: `9ab297e`)*
-- **Ablation dense-only corrigée** : ajout du flag `sparse_retrieval_enabled` dans `RetrievalConfigV1` pour permettre un vrai mode dense-only (sans branche TF-IDF), et propagation dans la signature de config. *(commit GitHub: `35fc3a3`)*
-- **Retrieval unifié ajusté** : la branche sparse est maintenant conditionnelle (`config.sparse_retrieval_enabled`), avec compatibilité descendante conservée sur `pool_sizes["tfidf"]` et nouveau motif de perte `PRUNED_BY_PREFILTER` quand sparse est désactivé. *(commit GitHub: `35fc3a3`)*
-- **Benchmark retrieval sécurisé** : `scripts/benchmark_retrieval.py` n’exécute plus dense/hybrid sans dense store pour éviter des métriques trompeuses; `dense_only` est désormais réellement dense. *(commit GitHub: `35fc3a3`)*
-- **Test de non-régression config** : ajout de `tests/test_retrieval_config_sparse.py` (round-trip + hash signature). *(commit GitHub: `35fc3a3`)*
-- **Gouvernance technique** : activation progressive du dense (opt-in) et conservation du sparse comme baseline stable. *(référence design: `DECISIONS.md`, 2026-02-08)*
+## Fichiers modifies recemment
+- `src/xgb_matcher/features.py` *(commit GitHub: `35fb441`)*
+- `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`)*
+- `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
+- `scripts/build_siren_global_index.py` *(commits GitHub: `3e090b7`, `c356923`)*
+- `src/xgb_matcher/siren_retrieval.py` *(commit GitHub: `3e090b7`)*
+- `src/xgb_matcher/infer.py` *(commits GitHub: `3e090b7`, `c356923`)*
+- `src/xgb_matcher/retrieval.py` *(commit GitHub: `1305012`)*
+- `src/xgb_matcher/retrieval_config.py` *(commit GitHub: `3e090b7`)*
+- `src/xgb_matcher/profile.py` *(commit GitHub: `3e090b7`)*
 
 ## Travail en cours
-- **Extraction des Features Top-K (Inférence V7 en cours)** : `infer_xgb_two_stage.py` tourne sur les 17K requêtes pour encoder l'Étage 2 (Sémantique BERT MPS) et exporter `topk_v7_for_risk.csv`.
-- **Préparation de l'Étage 3 (Le Juge)** : Analyse de `scripts/train_routing_risk_model.py` validée pour entraîner un Risk Model XGBoost Isotonique ultra-fiable centré uniquement sur le candidat Top-1.
+- **Build index SIREN global**: generer les artefacts `data/siren_index/` sur jeu complet.
+- **Regeneration samples V8b (Route B)**: lancer dataset decider/ranker base sur nouveau pool SIREN-first.
+- **Retrain Stage 1 + Stage 2**: entrainer nouveaux modeles sur distribution Route B.
+- **Recalibration Stage 3**: seuil risk model a re-estimer sur nouvelles distributions de score (obligatoire).
 
-## Problèmes / Points d'attention
-- **Coverage** : Actuellement à ~93%. Le gap restant (7%) est principalement dû à des SIRET réellement absents de SIRENE ou des noms totalement vides.
-- **Latence Inférence** : Le mode `full_insee` est coûteux sur Paris/Lyon sans indexation.
+## Points d'attention
+- **Validation metrique manquante**: pas encore de benchmark consolide post-Route B.
+- **Latence Route B**: a mesurer en reel sur index 7M SIREN (objectif operationnel <200ms pour la phase SIREN query).
+- **Governance docs**: garder `handover.md` comme journal de commits (regle AGENTS).
 
-## Artefacts principaux (V7 Actifs)
+## Artefacts cibles (V8b)
 | Artefact | Chemin |
 |----------|--------|
-| Partitions | `data/candidates_v7_all/` |
-| Ranker (Fast) | `models/xgbranker_fast_20260221_224040.json` |
-| Ranker (Semantic) | `models/xgbranker_20260221_224040.json` (Utilisé en "Decider_model") |
-| Meta | `models/xgb_two_stage_meta_20260221_224040.json` |
-| Re-Ranked Demos | `data/topk_v7_for_risk.csv` (en cours de gen.) |
+| Partitions candidates | `data/candidates_v7_all/` |
+| Index SIREN global | `data/siren_index/` |
+| Samples decider Route B | `data/samples_v8b_decider.parquet` |
+| Ranker V8b | `models/v8b_ranker*.json` |
+| Decider V8b | `models/v8b_decider*.json` |
+| Meta two-stage | `models/xgb_two_stage_meta_*.json` |
 
-## Prochaines étapes (DS Mode)
-1. Attendre la fin de l'inférence dense de `topk_v7_for_risk.csv`.
-2. Générer le dataset Risk via `build_routing_eval_dataset.py`.
-3. Entraîner le **Risk Model (Stage 3 XGBoost Calibration)** sur le candidat Top-1.
-4. Évaluer le taux de routage AUTO final via la Risk Coverage Curve.
+## Prochaines etapes
+1. Construire `data/siren_index/` avec `scripts/build_siren_global_index.py`.
+2. Regenerer les samples via `scripts/generate_training_samples_v5fast.py --mode decider --siren-index data/siren_index/`.
+3. Reentrainer ranker puis decider sur les nouveaux samples.
+4. Refaire l'evaluation complete (coverage, Hit@1, segmentation erreurs).
+5. Recalibrer Stage 3 (`routing_risk_model.pkl`) et fixer le nouveau seuil AUTO/REVIEW.
 
 ---
-*Note : Chaque modification de code doit citer le commit GitHub correspondant dans ce document.*
+*Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*

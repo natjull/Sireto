@@ -206,7 +206,7 @@ Rationale:
 Consequences:
 - `PartitionedCandidateStore` est désormais compatible V7 optimisé tout en restant rétro-compatible V6.
 - Les defaults de `generate_training_samples_v5fast.py`, `benchmark_retrieval.py`, `precompute_embeddings.py`, `infer_xgb_two_stage.py` et `src/xgb_matcher/profile.py` ciblent V7.
-- Référence commit GitHub: `LOCAL_PENDING_PUSH`.
+- Référence commit GitHub: `a309a7c`.
 
 ## 2026-02-09 - Orchestration embeddings V7 (Option A)
 
@@ -221,4 +221,70 @@ Rationale:
 Consequences:
 - Nouvelles options CLI: `--sort-by-size`, `--mega-first`, `--mega-threshold`, `--min-rows`, `--max-partitions`, `--log-every`, `--dry-run`.
 - Ajout de tests d'ordre/filtrage pour la logique de sélection de partitions.
-- Référence commit GitHub: `LOCAL_PENDING_PUSH`.
+- Référence commit GitHub: `66b5b87`.
+
+## 2026-02-28 - V8 feature set et hard negatives cibles erreurs metier
+
+Decision:
+- Ajouter 7 features d'interaction pour mieux separer colocataires, homonymes geographiques et multi-sites SIREN.
+- Elargir la generation de hard negatives (same_addr, sibling SIREN, homonymes geo) pour entrainer Stage 2 sur les erreurs reelles.
+- Passer le decider sur un regime d'apprentissage plus fin (`learning_rate=0.05`, `max_depth=7`, `400 rounds`).
+
+Rationale:
+- Les erreurs Stage 2 etaient concentrees sur des cas adresse-forte / nom-faible et sur des collisions intra-SIREN.
+- Les features de base ne capturaient pas explicitement ces interactions.
+
+Consequences:
+- Les scripts de generation et d'entrainement produisent un dataset plus discriminant pour le decider.
+- La baseline attendue evolue de V7 vers V8 avant rebase Route B.
+- Référence commit GitHub: `35fb441`.
+
+## 2026-02-28 - Adoption de Route B (SIREN-first global matching)
+
+Decision:
+- Adopter une architecture hierarchique SIREN-first:
+  1) matching global au niveau SIREN (index TF-IDF global)
+  2) retrieval des SIRET par geographie de ce SIREN
+  3) ranking/scoring Stage 1 et Stage 2 inchanges structurellement.
+- Conserver la compatibilite descendante: fallback V7 si index SIREN absent.
+
+Rationale:
+- Le retrieval SIRET-only pouvait perdre le GT sur `PRUNED_BY_TFIDF` et `NOT_IN_PARTITION`.
+- Le niveau "entite legale" (SIREN) est un sous-probleme distinct du niveau "site" (SIRET).
+
+Consequences:
+- Nouveaux artefacts et modules: index global SIREN, mapping `siren -> geo`, retrieval SIREN.
+- Inference profile et retrieval config enrichis de knobs Route B.
+- Référence commit GitHub: `3e090b7`.
+
+## 2026-02-28 - Corrections de blocage et branchement train/serve Route B
+
+Decision:
+- Corriger les blockers operationnels Route B:
+  - connexion DuckDB memory mode,
+  - champ CRM nom utilise en requete SIREN,
+  - logique filtre etablissements fermes,
+  - exposition CLI `--siren-index`.
+- Brancher explicitement Route B dans le retrieval partage utilise par la generation de samples (y compris multiprocess).
+
+Rationale:
+- Sans ces correctifs, Route B restait partielle (code present mais non executable/non active en train).
+
+Consequences:
+- Route B devient executable de bout en bout pour la regeneration des samples et le retrain.
+- Les workers de generation chargent leurs index SIREN localement (safety multiprocess).
+- Références commits GitHub: `c356923`, `1305012`.
+
+## 2026-02-28 - Recalibration obligatoire du Stage 3 apres rebase Route B
+
+Decision:
+- Rendre explicite la recalibration obligatoire du risk model (Stage 3) apres retrain Stage 1/2 sur pool Route B.
+- Ne pas reutiliser tel quel le seuil historique `0.835` sans reevaluation.
+
+Rationale:
+- La distribution des scores top1/top2 change avec la recomposition du pool candidats.
+- Le niveau de precision AUTO cible (99.8%+) depend du calibrage post-shift.
+
+Consequences:
+- Executer une nouvelle courbe coverage/precision AUTO sur dataset d'evaluation regenere.
+- Versionner le nouveau seuil et la meta risk associee avant promotion.
