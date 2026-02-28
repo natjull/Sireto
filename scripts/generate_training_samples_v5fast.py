@@ -433,15 +433,23 @@ def _process_loc_key(
         ranker = xgb.Booster()
         ranker.load_model(str(ranker_path))
 
-    # Load SIREN indices if Route B is requested
+    # Load SIREN indices independently:
+    # - global index for Route B (name-only SIREN retrieval)
+    # - geo index for SIREN expansion (can work in --geo-only mode)
     siren_global_index = None
     siren_to_geo = None
     if siren_index_path and siren_index_path.exists():
         try:
             siren_global_index = SirenGlobalIndex(siren_index_path)
+        except Exception:
+            siren_global_index = None
+        try:
             siren_to_geo = SirenToGeoIndex(siren_index_path / "siren_to_geo.parquet")
         except Exception:
-            pass
+            siren_to_geo = None
+        # Route B requires both global and geo indices. Keep global disabled if geo is missing.
+        if siren_global_index is not None and siren_to_geo is None:
+            siren_global_index = None
 
     tfidf_cache: Dict = {}
     dense_store = PartitionEmbeddingStore(dense_store_dir) if config.dense_retrieval_enabled else None
@@ -516,15 +524,22 @@ def generate_split(
 ) -> Tuple[int, int]:
     total_samples = 0; total_pos = 0
 
-    # If siren_global_index and siren_to_geo are not provided, load them from path
+    # If indices are not provided, load them from path.
+    # Keep loading independent to support --geo-only (expansion without global index).
     if siren_index_path and siren_index_path.exists():
-        if siren_global_index is None or siren_to_geo is None:
+        if siren_global_index is None:
             try:
                 siren_global_index = SirenGlobalIndex(siren_index_path)
-                siren_to_geo = SirenToGeoIndex(siren_index_path / "siren_to_geo.parquet")
             except Exception:
                 siren_global_index = None
+        if siren_to_geo is None:
+            try:
+                siren_to_geo = SirenToGeoIndex(siren_index_path / "siren_to_geo.parquet")
+            except Exception:
                 siren_to_geo = None
+        # Route B requires both global and geo indices. Keep global disabled if geo is missing.
+        if siren_global_index is not None and siren_to_geo is None:
+            siren_global_index = None
 
     config = RetrievalConfigV1(
         pool_mode="insee_then_postcode",
@@ -671,16 +686,30 @@ def main() -> None:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     writer = StreamingParquetWriter(args.output, SAMPLE_SCHEMA)
 
-    # Load SIREN indices if Route B is requested
+    # Load SIREN indices independently:
+    # - Route B needs global + geo
+    # - Expansion only needs geo (supports --geo-only build artifact)
     siren_global_index = None
     siren_to_geo = None
     if args.siren_index and args.siren_index.exists():
         try:
             siren_global_index = SirenGlobalIndex(args.siren_index)
-            siren_to_geo = SirenToGeoIndex(args.siren_index / "siren_to_geo.parquet")
-            print(f"[Route B] Loaded SIREN global index from {args.siren_index}")
         except Exception as e:
-            print(f"[WARNING] Failed to load SIREN global index: {e}. Falling back to V7.")
+            print(f"[WARNING] Failed to load SIREN global index: {e}.")
+            siren_global_index = None
+        try:
+            siren_to_geo = SirenToGeoIndex(args.siren_index / "siren_to_geo.parquet")
+        except Exception as e:
+            print(f"[WARNING] Failed to load siren_to_geo index: {e}.")
+            siren_to_geo = None
+
+        if siren_global_index is not None and siren_to_geo is not None:
+            print(f"[Route B] Loaded SIREN global + geo index from {args.siren_index}")
+        elif siren_to_geo is not None:
+            print(f"[SIREN Expansion] Loaded geo index from {args.siren_index} (Route B global disabled)")
+            siren_global_index = None
+        else:
+            print("[WARNING] No usable SIREN indices loaded. Falling back to V7 without expansion.")
 
     counts = {}
     for name, sdf in [("train", train_df), ("dev", dev_df), ("test", test_df)]:
