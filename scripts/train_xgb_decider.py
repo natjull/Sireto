@@ -66,9 +66,9 @@ class SigmoidCalibrator:
 
 CLASSIFIER_PARAMS = {
     "objective": "binary:logistic",
-    "learning_rate": 0.1,
-    "max_depth": 6,
-    "min_child_weight": 5,
+    "learning_rate": 0.05,          # Reduced from 0.1 for finer learning with more rounds
+    "max_depth": 7,                 # Increased from 6 for better interaction terms
+    "min_child_weight": 3,          # Reduced from 5 to allow finer splits on new features
     "subsample": 0.8,
     "colsample_bytree": 0.8,
     "eval_metric": ["auc", "logloss"],
@@ -76,8 +76,8 @@ CLASSIFIER_PARAMS = {
     "scale_pos_weight": 100,
 }
 
-NUM_BOOST_ROUNDS = 200
-EARLY_STOPPING_ROUNDS = 20
+NUM_BOOST_ROUNDS = 400             # Increased from 200 for more rounds with lower lr
+EARLY_STOPPING_ROUNDS = 30         # Increased from 20
 
 
 def load_samples(path: Path) -> pd.DataFrame:
@@ -336,6 +336,17 @@ def main() -> None:
     X_dev, y_dev, groups_dev = prepare_data(dev_df, FEATURE_NAMES)
     X_test, y_test, groups_test = prepare_data(test_df, FEATURE_NAMES)
 
+    # Compute sample weights: upweight colocataire negatives (same-address, weak-name)
+    sample_weights = np.ones(len(X_train))
+    addr_jaro_idx = FEATURE_NAMES.index("addr_jaro")
+    name_jaro_idx = FEATURE_NAMES.index("name_jaro_max")
+    coloc_mask = (
+        (X_train[:, addr_jaro_idx] > 0.8) &
+        (X_train[:, name_jaro_idx] < 0.65) &
+        (y_train == 0)  # Only negatives
+    )
+    sample_weights[coloc_mask] = 3.0  # 3x weight for colocataire negatives
+
     classifier = xgb.XGBClassifier(
         n_estimators=NUM_BOOST_ROUNDS,
         early_stopping_rounds=EARLY_STOPPING_ROUNDS,
@@ -344,6 +355,7 @@ def main() -> None:
     classifier.fit(
         X_train,
         y_train,
+        sample_weight=sample_weights,
         eval_set=[(X_train, y_train), (X_dev, y_dev)],
         verbose=20,
     )
