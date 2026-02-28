@@ -229,6 +229,8 @@ def build_candidate_pool(
     persistent_cache: Optional["TfidfPersistentCache"] = None,
     dense_store: Optional["PartitionEmbeddingStore"] = None,
     timer: Optional["PipelineTimer"] = None,
+    siren_global_index: Optional[Any] = None,
+    siren_to_geo: Optional[Any] = None,
 ) -> CandidatePoolResult:
     """Build candidate pool with unified code-path for train and inference.
 
@@ -236,6 +238,8 @@ def build_candidate_pool(
         persistent_cache: Disk-backed TF-IDF cache (P0a).
         dense_store: Pre-computed FAISS embeddings for hybrid retrieval (P1).
         timer: Pipeline timing instrumentation (P0c).
+        siren_global_index: Route B SIREN global index (optional).
+        siren_to_geo: Route B SIREN → geo mapping (optional).
     """
     result = CandidatePoolResult(candidates=[])
 
@@ -247,6 +251,85 @@ def build_candidate_pool(
 
     gt_norm = str(gt_siret).zfill(14) if gt_siret else None
 
+    # === ROUTE B: SIREN-first retrieval (if indices provided) ===
+    if siren_global_index is not None and siren_to_geo is not None:
+        crm_name_bag = crm_pre.get("crm_name", "")
+
+        # Phase 1: Query SIREN global index
+        top_sirens = siren_global_index.query(crm_name_bag, top_k=config.siren_top_k)
+
+        # Phase 2: Retrieve SIRETs for top SIRENs, geo-aware
+        candidates: List[Dict[str, Any]] = []
+        seen_sirets: set[str] = set()
+
+        for siren, _ in top_sirens:
+            siren_locs = siren_to_geo.get_locations(siren)
+            if not siren_locs:
+                continue
+
+            # Prioritize locations: INSEE match > postcode match > all others
+            sorted_locs = sorted(
+                siren_locs,
+                key=lambda loc: (loc[0] != insee, loc[1] != postcode)
+            )
+
+            loaded_for_siren = 0
+            for loc_insee, loc_postcode in sorted_locs:
+                if loaded_for_siren >= config.max_sirets_per_siren:
+                    break
+
+                try:
+                    partition = store.load_by_insee(loc_insee)
+                except Exception:
+                    continue
+
+                for cand in partition:
+                    if (str(cand.get("siren") or "") == siren and
+                        str(cand.get("siret") or "") not in seen_sirets):
+
+                        # Apply filters
+                        if config.drop_unnamed and not any([
+                            cand.get("denomination"),
+                            cand.get("denomination_usuelle_ul"),
+                            cand.get("enseigne1"),
+                            cand.get("enseigne2"),
+                            cand.get("enseigne3"),
+                            cand.get("denomination_ul"),
+                            cand.get("sigle_ul"),
+                            cand.get("nom_ul"),
+                            cand.get("prenom_usuel_ul"),
+                        ]):
+                            continue
+
+                        if not config.include_closed and cand.get("etat_admin") == "F":
+                            continue
+
+                        candidates.append(cand)
+                        seen_sirets.add(str(cand.get("siret") or ""))
+                        loaded_for_siren += 1
+
+        # Phase 3: Compute IDF map
+        candidates_dict = {
+            str(c.get("siret") or ""): c
+            for c in candidates
+            if c.get("siret")
+        }
+        idf_map, default_idf = compute_name_idf_map(candidates_dict)
+
+        result.pool_sizes["base"] = len(candidates)
+        result.pool_sizes["filtered"] = len(candidates)
+        result.pool_sizes["prefilter"] = len(candidates)
+        result.pool_sizes["tfidf"] = len(candidates)
+        result.candidates = candidates
+        result.idf_map = idf_map
+        result.default_idf = float(default_idf)
+        result.gt_in_base_pool = _check_siret_in_list(candidates, gt_norm)
+        result.gt_in_filtered_pool = _check_siret_in_list(candidates, gt_norm)
+        result.gt_in_tfidf_pool = _check_siret_in_list(candidates, gt_norm)
+
+        return result
+
+    # === V7: Standard geo-partitioned retrieval (default) ===
     # Step 1: Load base candidates (strict insee_then_postcode + mega policy)
     if timer:
         with timer.stage("partition_load"):
