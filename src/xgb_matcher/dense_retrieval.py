@@ -57,8 +57,15 @@ class DenseIndex:
         else:
             nlist = max(16, int(np.sqrt(self.n)))
             quantizer = faiss.IndexFlatIP(self.dim)
-            self.index = faiss.IndexIVFFlat(
-                quantizer, self.dim, nlist, faiss.METRIC_INNER_PRODUCT
+            
+            # Product Quantization for extreme RAM reduction (compression 32x)
+            # 384 dimensions -> 48 blocks of 8 bits each
+            m = 48 if self.dim == 384 else (8 if self.dim == 64 else self.dim // 8)
+            if self.dim % m != 0:
+                m = 8 # Safe fallback
+                
+            self.index = faiss.IndexIVFPQ(
+                quantizer, self.dim, nlist, m, 8, faiss.METRIC_INNER_PRODUCT
             )
             self.index.nprobe = min(16, nlist)
             self.index.train(embeddings)
@@ -123,7 +130,7 @@ class PartitionEmbeddingStore:
     # -- Read / Write embeddings --
 
     def has_embeddings(self, partition_key: str) -> bool:
-        return self._embeddings_path(partition_key).exists()
+        return self._index_path(partition_key).exists()
 
     def save_embeddings(self, partition_key: str, embeddings: np.ndarray) -> None:
         self.store_dir.mkdir(parents=True, exist_ok=True)

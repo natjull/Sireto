@@ -33,7 +33,7 @@ import logging
 import sys
 import time
 from pathlib import Path
-from typing import Dict, List, Tuple
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 
@@ -152,26 +152,15 @@ def _order_partition_codes(
 
 def encode_candidates(
     candidates: List[dict],
-    model_name: str,
+    encoder: Any,
     batch_size: int = 256,
-    device: str | None = None,
 ) -> np.ndarray:
     """Encode all candidate names into dense embeddings.
 
     Each candidate's bag-of-names (via candidate_tfidf_text) is encoded.
     Returns (N, dim) float32 array with L2-normalized vectors.
     """
-    from sentence_transformers import SentenceTransformer
     from src.xgb_matcher.semantic import _normalize_for_embedding
-
-    if device is None:
-        try:
-            import torch
-            device = "mps" if torch.backends.mps.is_available() else "cpu"
-        except ImportError:
-            device = "cpu"
-
-    encoder = SentenceTransformer(model_name, device=device)
 
     texts = [_normalize_for_embedding(candidate_tfidf_text(c)) or " " for c in candidates]
 
@@ -217,6 +206,22 @@ def main() -> None:
 
     store = PartitionEmbeddingStore(args.output_dir)
     insee_counts = _load_insee_manifest_counts(args.partitions_dir)
+
+    encoder = None
+    if not args.dry_run:
+        from sentence_transformers import SentenceTransformer
+
+        device = args.device
+        if device is None:
+            try:
+                import torch
+
+                device = "mps" if torch.backends.mps.is_available() else "cpu"
+            except ImportError:
+                device = "cpu"
+
+        _logger.info("Loading SentenceTransformer once on device=%s", device)
+        encoder = SentenceTransformer(model_name, device=device)
 
     partition_types = ["insee", "cp"] if args.partition_type == "both" else [args.partition_type]
 
@@ -268,12 +273,11 @@ def main() -> None:
                 continue
 
             t0 = time.perf_counter()
-            embeddings = encode_candidates(candidates, model_name, args.batch_size, args.device)
+            embeddings = encode_candidates(candidates, encoder, args.batch_size)
             elapsed = time.perf_counter() - t0
 
-            store.save_embeddings(partition_key, embeddings)
-
-            # Also build and save the FAISS index
+            store.store_dir.mkdir(parents=True, exist_ok=True)
+            # Build and save ONLY the FAISS index (PQ compressed if large)
             idx = DenseIndex(embeddings)
             idx.save(store._index_path(partition_key))
 

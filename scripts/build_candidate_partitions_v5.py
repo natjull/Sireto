@@ -302,6 +302,9 @@ def _query_etab_ul(
     closed_clause = ""
     if not include_closed_establishments:
         closed_clause = "AND (e.etatAdministratifEtablissement IS NULL OR e.etatAdministratifEtablissement != 'F')"
+    else:
+        # Optimisation : Exclure systématiquement les établissements fermés depuis plus de 10 ans (avant 2016)
+        closed_clause = "AND (e.etatAdministratifEtablissement IS NULL OR e.etatAdministratifEtablissement != 'F' OR (e.etatAdministratifEtablissement = 'F' AND CAST(e.dateDebut AS DATE) >= DATE '2016-01-01'))"
     query = f"""
         SELECT
             e.siret AS siret,
@@ -396,7 +399,7 @@ def build_partitions(
         if pdf.empty:
             continue
         table = pa.Table.from_pandas(pdf, schema=OUTPUT_SCHEMA, preserve_index=False)
-        pq.write_to_dataset(table, root_path=output_insee, partition_cols=["insee"])
+        pq.write_to_dataset(table, root_path=output_insee, partition_cols=["insee"], compression="ZSTD")
 
     for i in tqdm(range(0, len(cp_list), code_batch), desc="CP partitions"):
         batch = cp_list[i : i + code_batch]
@@ -420,7 +423,7 @@ def build_partitions(
         if pdf.empty:
             continue
         table = pa.Table.from_pandas(pdf, schema=OUTPUT_SCHEMA, preserve_index=False)
-        pq.write_to_dataset(table, root_path=output_cp, partition_cols=["postcode"])
+        pq.write_to_dataset(table, root_path=output_cp, partition_cols=["postcode"], compression="ZSTD")
 
     print(f"✅ Partitions written to {output_dir}")
 
