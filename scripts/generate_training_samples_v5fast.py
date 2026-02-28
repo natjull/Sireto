@@ -76,7 +76,7 @@ MODEL_DIR = Path("models")
 
 MAX_NEGATIVES = 50
 HARD_RATIO = 0.5
-SAME_ADDR_NEG_MAX = 10
+SAME_ADDR_NEG_MAX = 20  # Increased from 10 to better capture colocataire negatives
 PREFILTER_TOP_K = 500
 MIN_CANDIDATES_SUBSET = 100
 SEED = 42
@@ -346,13 +346,43 @@ def generate_samples_for_query(
     pos = [f for f in all_feats if f["_is_pos"]]
     neg = [f for f in all_feats if not f["_is_pos"]]
     if not pos: return []
+
+    gt_siret = crm_row.get("ground_truth_siret", "")
+    gt_siren = str(gt_siret[:9]) if gt_siret and len(gt_siret) >= 9 else ""
+
     num_hard = int(max_neg * HARD_RATIO)
     neg_s = sorted(neg, key=lambda x: x["_score"], reverse=True)
     hard = neg_s[:num_hard]; rest = neg_s[num_hard:]
     rand = random.sample(rest, min(max_neg - num_hard, len(rest))) if rest else []
-    same_addr = sorted([f for f in neg if float(f.get("addr_jaro", 0.0)) >= 0.95 and float(f.get("name_jaro_max", 0.0)) < 0.50], key=lambda x: x.get("addr_jaro", 0.0), reverse=True)[:max_neg]
+
+    # Colocataire negatives: widened threshold to capture partial address matches
+    same_addr = sorted(
+        [f for f in neg
+         if float(f.get("addr_jaro", 0.0)) >= 0.80
+         and float(f.get("name_jaro_max", 0.0)) < 0.65],
+        key=lambda x: x.get("addr_jaro", 0.0), reverse=True
+    )[:SAME_ADDR_NEG_MAX]
+
+    # Geographic homonyme negatives: good semantic but wrong city
+    geo_homo_neg = sorted(
+        [f for f in neg
+         if float(f.get("name_semantic_max", 0.0)) > 0.85
+         and float(f.get("postcode_match", 0.0)) == 0.0
+         and float(f.get("name_jaro_max", 0.0)) > 0.75],
+        key=lambda x: x.get("name_semantic_max", 0.0), reverse=True
+    )[:5]
+
+    # Sibling-SIREN negatives: same SIREN, different SIRET (multi-site disambiguation)
+    sibling_neg = []
+    if gt_siren:
+        sibling_neg = sorted(
+            [f for f in neg
+             if str(f.get("_siren", ""))[:9] == gt_siren],
+            key=lambda x: x.get("_score", 0.0), reverse=True
+        )[:5]
+
     selected = []; seen = set()
-    for group in (hard, same_addr, rand):
+    for group in (hard, same_addr, geo_homo_neg, sibling_neg, rand):
         for f in group:
             if f["_siret"] not in seen:
                 selected.append(f); seen.add(f["_siret"])

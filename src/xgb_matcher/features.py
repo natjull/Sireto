@@ -172,6 +172,14 @@ FEATURE_NAMES: List[str] = [
     "geo_exact_match",    # INSEE CRM == INSEE candidat (1 if match, 0 otherwise)
     "name_norm_exact",    # Exact match after normalization (1 if identical, 0 otherwise)
     "street_number_match", # Street number exact match (1 if match, 0 otherwise)
+    # V8 new interaction features for colocataires, homonymes, multi-site SIREN
+    "addr_unsupported_by_name",    # addr_jaro * (1 - name_jaro_max) -- penalizes address-only match
+    "name_density_penalty",        # address_density * (1 - name_jaro_max) -- penalizes many candidates with weak name
+    "addr_jaro_per_density",       # addr_jaro / log(1 + address_density) -- normalizes address quality by density
+    "postcode_match_without_addr", # postcode_match * (1 - street_name_jaro) -- detects geographic homonymes
+    "full_addr_match_score",       # weighted address completeness: 0.5*street_name_jaro + 0.3*street_number_match + 0.2*postcode_match
+    "name_jaro_vs_enseigne",       # Jaro between CRM name and establishment-level name (enseigne), not UL name
+    "name_city_suffix_match",      # ratio of CRM city tokens appearing in candidate enseigne
 ]
 
 SEMANTIC_FEATURE_NAMES: List[str] = [
@@ -212,6 +220,8 @@ FAST_RANKER_FEATURE_SET: Set[str] = {
     "geo_exact_match",
     "name_norm_exact",
     "street_number_match",
+    "addr_unsupported_by_name",  # New V8: useful for Stage 1 to detect colocataires early
+    "name_jaro_vs_enseigne",     # New V8: useful for multi-site SIREN disambiguation
 }
 
 FAST_RANKER_FEATURE_NAMES: List[str] = [
@@ -1040,6 +1050,62 @@ def make_features_from_preprocessed(
         features["street_number_match"] = float(str(crm_street_num).strip() == str(cand_street_num).strip())
     else:
         features["street_number_match"] = 0.0
+
+    # -------------------------------------------------------------------------
+    # V8 new interaction features for colocataires, homonymes, multi-site SIREN
+    # -------------------------------------------------------------------------
+
+    # Feature A: addr_unsupported_by_name
+    # Penalizes high address similarity without name corroboration (colocataire signal)
+    features["addr_unsupported_by_name"] = (
+        addr_features["addr_jaro"] * (1.0 - name_features["name_jaro_max"])
+    )
+
+    # Feature B: name_density_penalty
+    # Penalizes high address density + weak name match (colocataire in dense areas)
+    density_norm = min(addr_features["address_density"], 100.0) / 100.0
+    features["name_density_penalty"] = (
+        density_norm * (1.0 - name_features["name_jaro_max"])
+    )
+
+    # Feature C: addr_jaro_per_density
+    # Normalizes address quality by the density of the location
+    import math
+    density = max(1.0, addr_features["address_density"])
+    features["addr_jaro_per_density"] = addr_features["addr_jaro"] / math.log1p(density)
+
+    # Feature D: postcode_match_without_addr
+    # Detects geographic homonymes: correct postcode but wrong street address
+    features["postcode_match_without_addr"] = (
+        addr_features["postcode_match"] * (1.0 - addr_features["street_name_jaro"])
+    )
+
+    # Feature E: full_addr_match_score
+    # Weighted address completeness (street > street_number > postcode)
+    features["full_addr_match_score"] = (
+        0.5 * addr_features["street_name_jaro"]
+        + 0.3 * features["street_number_match"]
+        + 0.2 * addr_features["postcode_match"]
+    )
+
+    # Feature F: name_jaro_vs_enseigne
+    # Jaro similarity against establishment-level name (enseigne), not UL name
+    # This helps disambiguate multi-site SIRENs where siblings share the same UL denomination
+    enseigne1 = cand.get("enseigne1") or cand.get("denomination") or ""
+    enseigne1_norm = normalize_name(enseigne1) if enseigne1 else ""
+    features["name_jaro_vs_enseigne"] = jaro_sim(crm_name, enseigne1_norm) if enseigne1_norm else 0.0
+
+    # Feature G: name_city_suffix_match
+    # Ratio of CRM city tokens appearing in candidate establishment name (enseigne)
+    # Helps with multi-site SIREN: ACTEMIUM CAEN vs ACTEMIUM METZ
+    crm_city_tokens = set(crm_city_norm.split()) - NAME_STOPWORDS if crm_city_norm else set()
+    enseigne_tokens = set(normalize_text(enseigne1).split()) if enseigne1 else set()
+
+    if crm_city_tokens and enseigne_tokens:
+        city_in_enseigne = len(crm_city_tokens & enseigne_tokens) / len(crm_city_tokens)
+    else:
+        city_in_enseigne = 0.0
+    features["name_city_suffix_match"] = city_in_enseigne
 
     return features
 
