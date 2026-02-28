@@ -66,6 +66,11 @@ class RetrievalConfigV1:
     dense_retrieval_enabled: bool = False
     dense_top_k: int = 500
 
+    # Route B: SIREN-first global matching
+    siren_global_index_path: Optional[str] = None
+    siren_top_k: int = 50
+    max_sirets_per_siren: int = 20
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "version": self.version,
@@ -103,6 +108,9 @@ class RetrievalConfigV1:
             "sparse_retrieval_enabled": self.sparse_retrieval_enabled,
             "dense_retrieval_enabled": self.dense_retrieval_enabled,
             "dense_top_k": self.dense_top_k,
+            "siren_global_index_path": self.siren_global_index_path,
+            "siren_top_k": self.siren_top_k,
+            "max_sirets_per_siren": self.max_sirets_per_siren,
         }
 
     @classmethod
@@ -148,6 +156,9 @@ class RetrievalConfigV1:
             sparse_retrieval_enabled=bool(data.get("sparse_retrieval_enabled", cls().sparse_retrieval_enabled)),
             dense_retrieval_enabled=bool(data.get("dense_retrieval_enabled", cls().dense_retrieval_enabled)),
             dense_top_k=int(data.get("dense_top_k", cls().dense_top_k)),
+            siren_global_index_path=data.get("siren_global_index_path", cls().siren_global_index_path),
+            siren_top_k=int(data.get("siren_top_k", cls().siren_top_k)),
+            max_sirets_per_siren=int(data.get("max_sirets_per_siren", cls().max_sirets_per_siren)),
         )
 
     def signature(self) -> "RetrievalSignatureV1":
