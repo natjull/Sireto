@@ -82,7 +82,7 @@ def build_siren_index(
     output_dir.mkdir(parents=True, exist_ok=True)
 
     logger.info("Loading and aggregating SIREN bags via DuckDB...")
-    con = duckdb.connect(memory=True)
+    con = duckdb.connect(":memory:")
 
     # Aggregation: for each SIREN, collect all name variants
     df = con.execute(f"""

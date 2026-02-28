@@ -913,7 +913,7 @@ class XgbInferenceEngine:
         if not self.siren_global_index or not self.siren_to_geo:
             raise RuntimeError("SIREN global index not loaded.")
 
-        crm_name_bag = crm_pre.get("crm_name_bag", "")
+        crm_name_bag = crm_pre.get("crm_name", "")
         crm_insee = crm_row.get("insee") or crm_row.get("crm_insee")
         crm_postcode = crm_row.get("postcode") or crm_row.get("crm_cp")
 
@@ -967,7 +967,7 @@ class XgbInferenceEngine:
                         ]):
                             continue
 
-                        if not exclude_closed and cand.get("etat_admin") == "F":
+                        if exclude_closed and cand.get("etat_admin") == "F":
                             continue
 
                         candidates.append(cand)

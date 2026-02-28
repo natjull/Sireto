@@ -492,12 +492,24 @@ def generate_split(
     dense_retrieval_enabled: bool,
     dense_top_k: int,
     dense_store_dir: Optional[Path],
+    siren_index_path: Optional[Path] = None,
     *,
     ranker_path: Optional[Path] = None,
     max_workers: int = 0,
 ) -> Tuple[int, int]:
     total_samples = 0; total_pos = 0
-    config = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not exclude_closed, drop_unnamed=drop_unnamed, tfidf_name_mode=tfidf_mode, prefilter_k=prefilter_k, char_top_k=char_top_k, min_candidates=MIN_CANDIDATES_SUBSET, dense_retrieval_enabled=dense_retrieval_enabled, dense_top_k=dense_top_k)
+    config = RetrievalConfigV1(
+        pool_mode="insee_then_postcode",
+        include_closed=not exclude_closed,
+        drop_unnamed=drop_unnamed,
+        tfidf_name_mode=tfidf_mode,
+        prefilter_k=prefilter_k,
+        char_top_k=char_top_k,
+        min_candidates=MIN_CANDIDATES_SUBSET,
+        dense_retrieval_enabled=dense_retrieval_enabled,
+        dense_top_k=dense_top_k,
+        siren_global_index_path=str(siren_index_path) if siren_index_path else None,
+    )
     lost_gt_log = log_base.parent / f"lost_gt_analysis_{log_base.stem}.csv"
     header_written = lost_gt_log.exists()
 
@@ -605,6 +617,7 @@ def main() -> None:
     parser.add_argument("--enable-dense-retrieval", action="store_true", default=False)
     parser.add_argument("--dense-top-k", type=int, default=500)
     parser.add_argument("--dense-store-dir", type=Path, default=None)
+    parser.add_argument("--siren-index", type=Path, default=None, help="Path to Route B SIREN global index (data/siren_index)")
     args = parser.parse_args()
     semantic_expected = args.mode == "decider"
     if semantic_expected != SEMANTIC_ENABLED:
@@ -648,6 +661,7 @@ def main() -> None:
             args.enable_dense_retrieval,
             args.dense_top_k,
             args.dense_store_dir,
+            args.siren_index,
         )
         counts[name] = (c, p); clear_semantic_cache(); gc.collect()
     
@@ -655,7 +669,18 @@ def main() -> None:
     if semantic_expected and sem_rate < 0.20:
         raise RuntimeError(f"Semantic sanity check failed: {sem_rate:.2%}")
     
-    rc = RetrievalConfigV1(pool_mode="insee_then_postcode", include_closed=not args.exclude_closed_candidates, drop_unnamed=True, tfidf_name_mode=args.tfidf_name_mode, prefilter_k=args.prefilter_k, char_top_k=args.char_top_k, min_candidates=MIN_CANDIDATES_SUBSET, dense_retrieval_enabled=args.enable_dense_retrieval, dense_top_k=args.dense_top_k)
+    rc = RetrievalConfigV1(
+        pool_mode="insee_then_postcode",
+        include_closed=not args.exclude_closed_candidates,
+        drop_unnamed=True,
+        tfidf_name_mode=args.tfidf_name_mode,
+        prefilter_k=args.prefilter_k,
+        char_top_k=args.char_top_k,
+        min_candidates=MIN_CANDIDATES_SUBSET,
+        dense_retrieval_enabled=args.enable_dense_retrieval,
+        dense_top_k=args.dense_top_k,
+        siren_global_index_path=str(args.siren_index) if args.siren_index else None,
+    )
     sig = rc.signature()
     meta = {
         "generated": datetime.now().isoformat(),
