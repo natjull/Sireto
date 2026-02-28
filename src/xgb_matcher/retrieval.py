@@ -251,8 +251,8 @@ def build_candidate_pool(
 
     gt_norm = str(gt_siret).zfill(14) if gt_siret else None
 
-    # === ROUTE B: SIREN-first retrieval (if indices provided) ===
-    if siren_global_index is not None and siren_to_geo is not None:
+    # === ROUTE B: SIREN-first retrieval (only if global SIREN index present, expansion mode excluded) ===
+    if siren_global_index is not None and not config.siren_expansion_enabled:
         crm_name_bag = crm_pre.get("crm_name", "")
 
         # Phase 1: Query SIREN global index
@@ -517,6 +517,24 @@ def build_candidate_pool(
                     siret = c.get("siret")
                     if c.get("siren") != siren or siret in seen_sirets:
                         continue
+
+                    # Apply business filters (consistent with Route B)
+                    if config.drop_unnamed and not any([
+                        c.get("denomination"),
+                        c.get("denomination_usuelle_ul"),
+                        c.get("enseigne1"),
+                        c.get("enseigne2"),
+                        c.get("enseigne3"),
+                        c.get("denomination_ul"),
+                        c.get("sigle_ul"),
+                        c.get("nom_ul"),
+                        c.get("prenom_usuel_ul"),
+                    ]):
+                        continue
+
+                    if not config.include_closed and c.get("etat_admin") == "F":
+                        continue
+
                     if insee_code == crm_insee:
                         exp_insee.append(c)
                     elif c.get("postcode") == crm_cp:
@@ -553,6 +571,12 @@ def build_candidate_pool(
             "expansion_added_cross": len(exp_other),
             "expanded_pool_final": len(candidates),
         })
+
+        # Recalculate GT metrics after expansion
+        result.gt_in_tfidf_pool = _check_siret_in_list(candidates, gt_norm)
+        if result.gt_in_filtered_pool and not result.gt_in_tfidf_pool and result.loss_reason == "PRUNED_BY_TFIDF":
+            # GT was recovered by expansion, clear loss reason
+            result.loss_reason = None
     elif config.siren_expansion_enabled and siren_to_geo is None:
         logger = logging.getLogger(__name__)
         logger.warning("siren_expansion_enabled=True but siren_to_geo not loaded — skipping expansion")

@@ -727,6 +727,8 @@ def main() -> None:
         dense_retrieval_enabled=args.enable_dense_retrieval,
         dense_top_k=args.dense_top_k,
         siren_global_index_path=str(args.siren_index) if args.siren_index else None,
+        siren_expansion_enabled=args.enable_siren_expansion,
+        siren_expansion_pool_cap=1500,
     )
     sig = rc.signature()
     meta = {
