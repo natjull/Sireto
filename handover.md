@@ -8,6 +8,7 @@ Le pipeline V7 reste la baseline stable. La branche V8/Route B (SIREN-first) est
 - **Route B (SIREN-first) implementee**: nouvel index global SIREN, nouveau module de retrieval SIREN, branchement conditionnel dans l'inference profile/engine. *(commit GitHub: `3e090b7`)*
 - **Correctifs bloquants Route B**: fix DuckDB `:memory:`, fix champ CRM nom, fix filtre closed/open, ajout CLI `--siren-index` dans le generateur de samples. *(commit GitHub: `c356923`)*
 - **Branchement Route B dans le retrieval partage (training)**: `build_candidate_pool()` supporte Route B via indices SIREN, propagation sequentielle + multiprocess dans `generate_training_samples_v5fast.py`. *(commit GitHub: `1305012`)*
+- **Fix expansion SIREN en mode geo-only**: chargement des index dissocie (global vs geo) dans le generateur de samples pour eviter la desactivation silencieuse de l'expansion quand seul `siren_to_geo.parquet` est present. *(commit GitHub: `c961371`)*
 
 ## Historique structurant (deja en place)
 - **Retrieval hybride sparse+dense + cache TF-IDF persistant + timing**: integration du socle P0/P1. *(commit GitHub: `9ab297e`)*
@@ -17,7 +18,7 @@ Le pipeline V7 reste la baseline stable. La branche V8/Route B (SIREN-first) est
 
 ## Fichiers modifies recemment
 - `src/xgb_matcher/features.py` *(commit GitHub: `35fb441`)*
-- `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`)*
+- `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
 - `scripts/build_siren_global_index.py` *(commits GitHub: `3e090b7`, `c356923`)*
 - `src/xgb_matcher/siren_retrieval.py` *(commit GitHub: `3e090b7`)*
