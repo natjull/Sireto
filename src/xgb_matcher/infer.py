@@ -1023,6 +1023,7 @@ class XgbInferenceEngine:
             config=config,
             tfidf_cache={},
             gt_siret=None,
+            siren_to_geo=self.siren_to_geo,
         )
         return result.candidates, result.idf_map, result.default_idf
 

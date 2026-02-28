@@ -487,6 +487,76 @@ def build_candidate_pool(
     if not result.gt_in_base_pool and not result.loss_reason:
         result.loss_reason = "NOT_IN_PARTITION"
 
+    # === Step 5: SIREN expansion (local + cross-partition) ===
+    if config.siren_expansion_enabled and siren_to_geo is not None and candidates:
+        pool_before = len(candidates)
+        seed_sirens = sorted({c.get("siren") for c in candidates if c.get("siren")})
+        seen_sirets = {c["siret"] for c in candidates if c.get("siret")}
+        crm_insee = crm_pre.get("insee") or ""
+        crm_cp = crm_pre.get("postcode") or ""
+
+        exp_insee: list[dict] = []
+        exp_cp: list[dict] = []
+        exp_other: list[dict] = []
+        loaded_partitions: dict[str, list] = {}  # cache local per INSEE
+
+        def _load(insee_code: str) -> list:
+            if insee_code not in loaded_partitions:
+                loaded_partitions[insee_code] = store.load_by_insee(insee_code)
+            return loaded_partitions[insee_code]
+
+        for siren in seed_sirens:
+            locs = siren_to_geo.get_locations(siren)
+            sorted_locs = sorted(locs, key=lambda loc: (loc[0] != crm_insee, loc[1] != crm_cp))
+            added_siren = 0
+
+            for insee_code, _ in sorted_locs:
+                if added_siren >= config.max_sirets_per_siren:
+                    break
+                for c in _load(insee_code):
+                    siret = c.get("siret")
+                    if c.get("siren") != siren or siret in seen_sirets:
+                        continue
+                    if insee_code == crm_insee:
+                        exp_insee.append(c)
+                    elif c.get("postcode") == crm_cp:
+                        exp_cp.append(c)
+                    else:
+                        exp_other.append(c)
+                    seen_sirets.add(siret)
+                    added_siren += 1
+
+        def _sort_key(c):
+            return (c.get("etat_admin") == "F", not c.get("is_siege", False), c.get("siret", ""))
+
+        expansion = (
+            sorted(exp_insee, key=_sort_key)
+            + sorted(exp_cp, key=_sort_key)
+            + sorted(exp_other, key=_sort_key)
+        )
+
+        if expansion:
+            candidates = candidates + expansion
+            if len(candidates) > config.siren_expansion_pool_cap:
+                candidates = candidates[:config.siren_expansion_pool_cap]
+
+            # Recalculer IDF sur pool élargi — retourner dans CandidatePoolResult
+            # NE PAS appeler set_global_name_idf_map() ici (le caller le fait)
+            tmp = {c["siret"]: c for c in candidates if c.get("siret")}
+            result.idf_map, result.default_idf = compute_name_idf_map(tmp)
+
+        # Telémétrie
+        result.pool_sizes.update({
+            "prefilter_before_expansion": pool_before,
+            "expansion_added_insee": len(exp_insee),
+            "expansion_added_postcode": len(exp_cp),
+            "expansion_added_cross": len(exp_other),
+            "expanded_pool_final": len(candidates),
+        })
+    elif config.siren_expansion_enabled and siren_to_geo is None:
+        logger = logging.getLogger(__name__)
+        logger.warning("siren_expansion_enabled=True but siren_to_geo not loaded — skipping expansion")
+
     attach_address_density(candidates)
     result.prefilter_sirets = [str(c.get("siret") or "") for c in candidates if c.get("siret")]
     result.candidates = candidates
