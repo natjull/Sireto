@@ -71,6 +71,10 @@ class RetrievalConfigV1:
     siren_top_k: int = 50
     max_sirets_per_siren: int = 20
 
+    # SIREN expansion (V7 + local + cross-partition)
+    siren_expansion_enabled: bool = False
+    siren_expansion_pool_cap: int = 1500
+
     def to_dict(self) -> Dict[str, Any]:
         return {
             "version": self.version,
@@ -111,6 +115,8 @@ class RetrievalConfigV1:
             "siren_global_index_path": self.siren_global_index_path,
             "siren_top_k": self.siren_top_k,
             "max_sirets_per_siren": self.max_sirets_per_siren,
+            "siren_expansion_enabled": self.siren_expansion_enabled,
+            "siren_expansion_pool_cap": self.siren_expansion_pool_cap,
         }
 
     @classmethod
@@ -159,6 +165,8 @@ class RetrievalConfigV1:
             siren_global_index_path=data.get("siren_global_index_path", cls().siren_global_index_path),
             siren_top_k=int(data.get("siren_top_k", cls().siren_top_k)),
             max_sirets_per_siren=int(data.get("max_sirets_per_siren", cls().max_sirets_per_siren)),
+            siren_expansion_enabled=bool(data.get("siren_expansion_enabled", cls().siren_expansion_enabled)),
+            siren_expansion_pool_cap=int(data.get("siren_expansion_pool_cap", cls().siren_expansion_pool_cap)),
         )
 
     def signature(self) -> "RetrievalSignatureV1":

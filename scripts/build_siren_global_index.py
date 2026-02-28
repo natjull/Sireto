@@ -76,90 +76,100 @@ def build_siren_index(
     etab_path: Path,
     ul_path: Path,
     output_dir: Path,
+    geo_only: bool = False,
 ) -> None:
-    """Build SIREN global index using DuckDB aggregation."""
+    """Build SIREN global index using DuckDB aggregation.
+
+    Args:
+        etab_path: Path to StockEtablissement parquet
+        ul_path: Path to StockUniteLegale parquet
+        output_dir: Output directory
+        geo_only: If True, only build siren_to_geo.parquet (~5 min); skip TF-IDF matrices (~30-45 min)
+    """
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    logger.info("Loading and aggregating SIREN bags via DuckDB...")
     con = duckdb.connect(":memory:")
 
-    # Aggregation: for each SIREN, collect all name variants
-    df = con.execute(f"""
-        SELECT
-            CAST(e.siren AS VARCHAR) AS siren,
-            COALESCE(STRING_AGG(DISTINCT COALESCE(e.enseigne1Etablissement, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(e.enseigne2Etablissement, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(e.enseigne3Etablissement, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(e.denominationUsuelleEtablissement, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(ul.denominationUniteLegale, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(ul.denominationUsuelle1UniteLegale, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(ul.denominationUsuelle2UniteLegale, ''), ' '), '') ||
-            ' ' ||
-            COALESCE(STRING_AGG(DISTINCT COALESCE(ul.sigleUniteLegale, ''), ' '), '')
-                AS name_bag_raw
-        FROM read_parquet('{etab_path}') e
-        LEFT JOIN read_parquet('{ul_path}') ul
-          ON CAST(e.siren AS VARCHAR) = CAST(ul.siren AS VARCHAR)
-        GROUP BY e.siren
-    """).df()
+    if not geo_only:
+        logger.info("Loading and aggregating SIREN bags via DuckDB...")
 
-    logger.info(f"Aggregated {len(df)} unique SIRENs")
+        # Aggregation: for each SIREN, collect all name variants
+        df = con.execute(f"""
+            SELECT
+                CAST(e.siren AS VARCHAR) AS siren,
+                COALESCE(STRING_AGG(DISTINCT COALESCE(e.enseigne1Etablissement, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(e.enseigne2Etablissement, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(e.enseigne3Etablissement, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(e.denominationUsuelleEtablissement, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(ul.denominationUniteLegale, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(ul.denominationUsuelle1UniteLegale, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(ul.denominationUsuelle2UniteLegale, ''), ' '), '') ||
+                ' ' ||
+                COALESCE(STRING_AGG(DISTINCT COALESCE(ul.sigleUniteLegale, ''), ' '), '')
+                    AS name_bag_raw
+            FROM read_parquet('{etab_path}') e
+            LEFT JOIN read_parquet('{ul_path}') ul
+              ON CAST(e.siren AS VARCHAR) = CAST(ul.siren AS VARCHAR)
+            GROUP BY e.siren
+        """).df()
 
-    # Normalize names (vectorized)
-    df["name_bag"] = (
-        df["name_bag_raw"]
-        .fillna("")
-        .str.upper()
-        .str.replace(r'[^\w\s]', ' ', regex=True)
-        .str.replace(r'\s+', ' ', regex=True)
-        .str.strip()
-    )
+        logger.info(f"Aggregated {len(df)} unique SIRENs")
 
-    siren_ids = df["siren"].values.astype(str)
-    name_bags = df["name_bag"].values
+        # Normalize names (vectorized)
+        df["name_bag"] = (
+            df["name_bag_raw"]
+            .fillna("")
+            .str.upper()
+            .str.replace(r'[^\w\s]', ' ', regex=True)
+            .str.replace(r'\s+', ' ', regex=True)
+            .str.strip()
+        )
 
-    logger.info("Building Word TF-IDF (n-gram 1-2, L2 norm)...")
-    word_vec = TfidfVectorizer(
-        analyzer="word",
-        ngram_range=(1, 2),
-        lowercase=False,
-        token_pattern=r"(?u)\b\w+\b",
-        min_df=2,
-        max_df=0.95,
-        norm='l2'  # L2 normalization critical for global SIREN index
-    )
-    word_matrix = word_vec.fit_transform(name_bags)
-    logger.info(f"Word matrix: {word_matrix.shape}, nnz={word_matrix.nnz}")
+        siren_ids = df["siren"].values.astype(str)
+        name_bags = df["name_bag"].values
 
-    logger.info("Building Char TF-IDF (char_wb 3-5, L2 norm)...")
-    char_vec = TfidfVectorizer(
-        analyzer="char_wb",
-        ngram_range=(3, 5),
-        lowercase=False,
-        min_df=2,
-        max_df=0.95,
-        norm='l2'
-    )
-    char_matrix = char_vec.fit_transform(name_bags)
-    logger.info(f"Char matrix: {char_matrix.shape}, nnz={char_matrix.nnz}")
+        logger.info("Building Word TF-IDF (n-gram 1-2, L2 norm)...")
+        word_vec = TfidfVectorizer(
+            analyzer="word",
+            ngram_range=(1, 2),
+            lowercase=False,
+            token_pattern=r"(?u)\b\w+\b",
+            min_df=2,
+            max_df=0.95,
+            norm='l2'  # L2 normalization critical for global SIREN index
+        )
+        word_matrix = word_vec.fit_transform(name_bags)
+        logger.info(f"Word matrix: {word_matrix.shape}, nnz={word_matrix.nnz}")
 
-    # Persist vectorizers and matrices
-    logger.info(f"Saving to {output_dir}...")
-    joblib.dump(word_vec, output_dir / "word_vectorizer.pkl")
-    joblib.dump(char_vec, output_dir / "char_vectorizer.pkl")
-    scipy.sparse.save_npz(output_dir / "word_matrix.npz", word_matrix.tocsr())
-    scipy.sparse.save_npz(output_dir / "char_matrix.npz", char_matrix.tocsr())
-    np.save(output_dir / "siren_ids.npy", siren_ids)
-    logger.info("Vectorizers and matrices saved.")
+        logger.info("Building Char TF-IDF (char_wb 3-5, L2 norm)...")
+        char_vec = TfidfVectorizer(
+            analyzer="char_wb",
+            ngram_range=(3, 5),
+            lowercase=False,
+            min_df=2,
+            max_df=0.95,
+            norm='l2'
+        )
+        char_matrix = char_vec.fit_transform(name_bags)
+        logger.info(f"Char matrix: {char_matrix.shape}, nnz={char_matrix.nnz}")
 
-    # Build siren_to_geo index: for each SIREN, all its geo locations
+        # Persist vectorizers and matrices
+        logger.info(f"Saving to {output_dir}...")
+        joblib.dump(word_vec, output_dir / "word_vectorizer.pkl")
+        joblib.dump(char_vec, output_dir / "char_vectorizer.pkl")
+        scipy.sparse.save_npz(output_dir / "word_matrix.npz", word_matrix.tocsr())
+        scipy.sparse.save_npz(output_dir / "char_matrix.npz", char_matrix.tocsr())
+        np.save(output_dir / "siren_ids.npy", siren_ids)
+        logger.info("Vectorizers and matrices saved.")
+
+    # Build siren_to_geo index: for each SIREN, all its geo locations (including closed)
     logger.info("Building siren_to_geo index...")
     geo_df = con.execute(f"""
         SELECT
@@ -168,7 +178,6 @@ def build_siren_index(
             CAST(e.codePostalEtablissement AS VARCHAR) AS postcode,
             COUNT(*) AS siret_count
         FROM read_parquet('{etab_path}') e
-        WHERE e.etatAdministratifEtablissement = 'A'
         GROUP BY e.siren, e.codeCommuneEtablissement, e.codePostalEtablissement
     """).df()
 
@@ -181,7 +190,7 @@ def build_siren_index(
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Build global SIREN-level TF-IDF index for Route B."
+        description="Build global SIREN-level TF-IDF index for Route B, or siren_to_geo.parquet only."
     )
     parser.add_argument(
         "--etab",
@@ -201,17 +210,22 @@ def main():
         default=Path("data/siren_index"),
         help="Output directory for index artifacts",
     )
+    parser.add_argument(
+        "--geo-only",
+        action="store_true",
+        help="Only build siren_to_geo.parquet (~5 min), skip TF-IDF matrices (~30-45 min)",
+    )
 
     args = parser.parse_args()
 
     if not args.etab.exists():
         logger.error(f"Establishment file not found: {args.etab}")
         exit(1)
-    if not args.ul.exists():
+    if not args.geo_only and not args.ul.exists():
         logger.error(f"Legal unit file not found: {args.ul}")
         exit(1)
 
-    build_siren_index(args.etab, args.ul, args.output)
+    build_siren_index(args.etab, args.ul, args.output, geo_only=args.geo_only)
 
 
 if __name__ == "__main__":

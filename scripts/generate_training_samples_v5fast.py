@@ -509,6 +509,7 @@ def generate_split(
     siren_index_path: Optional[Path] = None,
     siren_global_index: Optional[Any] = None,
     siren_to_geo: Optional[Any] = None,
+    siren_expansion_enabled: bool = False,
     *,
     ranker_path: Optional[Path] = None,
     max_workers: int = 0,
@@ -536,6 +537,7 @@ def generate_split(
         dense_retrieval_enabled=dense_retrieval_enabled,
         dense_top_k=dense_top_k,
         siren_global_index_path=str(siren_index_path) if siren_index_path else None,
+        siren_expansion_enabled=siren_expansion_enabled,
     )
     lost_gt_log = log_base.parent / f"lost_gt_analysis_{log_base.stem}.csv"
     header_written = lost_gt_log.exists()
@@ -647,6 +649,7 @@ def main() -> None:
     parser.add_argument("--dense-top-k", type=int, default=500)
     parser.add_argument("--dense-store-dir", type=Path, default=None)
     parser.add_argument("--siren-index", type=Path, default=None, help="Path to Route B SIREN global index (data/siren_index)")
+    parser.add_argument("--enable-siren-expansion", action="store_true", default=False, help="Enable SIREN expansion (V7 + local + cross-partition)")
     args = parser.parse_args()
     semantic_expected = args.mode == "decider"
     if semantic_expected != SEMANTIC_ENABLED:
@@ -705,6 +708,7 @@ def main() -> None:
             args.siren_index,
             siren_global_index,
             siren_to_geo,
+            args.enable_siren_expansion,
         )
         counts[name] = (c, p); clear_semantic_cache(); gc.collect()
     
