@@ -64,6 +64,7 @@ from src.xgb_matcher.semantic import (
     top2_semantic_similarities_batch,
     clear_cache as clear_semantic_cache,
 )
+from src.xgb_matcher.siren_retrieval import SirenGlobalIndex, SirenToGeoIndex
 from src.xgb_matcher.tfidf_cache import TfidfPersistentCache
 from src.xgb_matcher.timing import PipelineTimer
 
@@ -419,6 +420,7 @@ def _process_loc_key(
     split_name: str,
     persistent_cache: Optional[TfidfPersistentCache],
     dense_store_dir: Optional[Path],
+    siren_index_path: Optional[Path] = None,
 ) -> Tuple[List[dict], List[str]]:
     """Process a single loc_key group. Designed for multiprocess execution.
 
@@ -430,6 +432,16 @@ def _process_loc_key(
     if ranker_path:
         ranker = xgb.Booster()
         ranker.load_model(str(ranker_path))
+
+    # Load SIREN indices if Route B is requested
+    siren_global_index = None
+    siren_to_geo = None
+    if siren_index_path and siren_index_path.exists():
+        try:
+            siren_global_index = SirenGlobalIndex(siren_index_path)
+            siren_to_geo = SirenToGeoIndex(siren_index_path / "siren_to_geo.parquet")
+        except Exception:
+            pass
 
     tfidf_cache: Dict = {}
     dense_store = PartitionEmbeddingStore(dense_store_dir) if config.dense_retrieval_enabled else None
@@ -443,6 +455,8 @@ def _process_loc_key(
             store, row_dict, crm_pre, config, tfidf_cache, gt_siret,
             persistent_cache=persistent_cache,
             dense_store=dense_store,
+            siren_global_index=siren_global_index,
+            siren_to_geo=siren_to_geo,
         )
         if not res.candidates:
             continue
@@ -493,11 +507,24 @@ def generate_split(
     dense_top_k: int,
     dense_store_dir: Optional[Path],
     siren_index_path: Optional[Path] = None,
+    siren_global_index: Optional[Any] = None,
+    siren_to_geo: Optional[Any] = None,
     *,
     ranker_path: Optional[Path] = None,
     max_workers: int = 0,
 ) -> Tuple[int, int]:
     total_samples = 0; total_pos = 0
+
+    # If siren_global_index and siren_to_geo are not provided, load them from path
+    if siren_index_path and siren_index_path.exists():
+        if siren_global_index is None or siren_to_geo is None:
+            try:
+                siren_global_index = SirenGlobalIndex(siren_index_path)
+                siren_to_geo = SirenToGeoIndex(siren_index_path / "siren_to_geo.parquet")
+            except Exception:
+                siren_global_index = None
+                siren_to_geo = None
+
     config = RetrievalConfigV1(
         pool_mode="insee_then_postcode",
         include_closed=not exclude_closed,
@@ -539,6 +566,7 @@ def generate_split(
                     max_negatives, ranker_path, ranker_f_order, ranker_z_features,
                     is_fast, semantic_expected, use_prefilter_sampling,
                     split_name, persistent_cache, dense_store_dir,
+                    siren_index_path,
                 )
                 futures[fut] = loc_key
 
@@ -567,6 +595,7 @@ def generate_split(
                     res = build_candidate_pool(
                         store, row_dict, crm_pre, config, tfidf_cache, gt_siret,
                         persistent_cache=persistent_cache, dense_store=dense_store, timer=timer,
+                        siren_global_index=siren_global_index, siren_to_geo=siren_to_geo,
                     )
                 if not res.candidates: continue
                 set_global_name_idf_map(res.idf_map, res.default_idf)
@@ -638,6 +667,18 @@ def main() -> None:
     
     args.output.parent.mkdir(parents=True, exist_ok=True)
     writer = StreamingParquetWriter(args.output, SAMPLE_SCHEMA)
+
+    # Load SIREN indices if Route B is requested
+    siren_global_index = None
+    siren_to_geo = None
+    if args.siren_index and args.siren_index.exists():
+        try:
+            siren_global_index = SirenGlobalIndex(args.siren_index)
+            siren_to_geo = SirenToGeoIndex(args.siren_index / "siren_to_geo.parquet")
+            print(f"[Route B] Loaded SIREN global index from {args.siren_index}")
+        except Exception as e:
+            print(f"[WARNING] Failed to load SIREN global index: {e}. Falling back to V7.")
+
     counts = {}
     for name, sdf in [("train", train_df), ("dev", dev_df), ("test", test_df)]:
         c, p = generate_split(
@@ -662,6 +703,8 @@ def main() -> None:
             args.dense_top_k,
             args.dense_store_dir,
             args.siren_index,
+            siren_global_index,
+            siren_to_geo,
         )
         counts[name] = (c, p); clear_semantic_cache(); gc.collect()
     
