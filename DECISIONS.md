@@ -288,3 +288,26 @@ Rationale:
 Consequences:
 - Executer une nouvelle courbe coverage/precision AUTO sur dataset d'evaluation regenere.
 - Versionner le nouveau seuil et la meta risk associee avant promotion.
+
+## 2026-03-01 - Pivot produit vers V8b (V7 + SIREN expansion), Route B conservee en A/B
+
+Decision:
+- Le chemin principal "V8" est redefini en **V8b**:
+  - conserver le retrieval V7 (prefilter SIRET local INSEE/CP) comme seed principal,
+  - appliquer ensuite une expansion SIREN (local + cross-partition) via `siren_to_geo.parquet`.
+- Ne plus considerer Route B full SIREN-first global comme default de production.
+- Conserver Route B dans le code en mode optionnel pour comparaisons A/B offline.
+
+Rationale:
+- Le seed V7 local est plus robuste aux cas noms generiques/acronymes/typos qu'un top-K SIREN global seul.
+- L'expansion post-prefilter recupere les cas PRUNED_BY_TFIDF et une partie des NOT_IN_PARTITION sans casser la robustesse locale.
+- Ce compromis minimise le risque produit tout en augmentant la couverture candidats.
+
+Consequences:
+- La structure 3 stages ne change pas (Stage 1 -> Stage 2 -> Stage 3), mais la distribution d'entree change:
+  - retrain Stage 1 obligatoire,
+  - retrain Stage 2 obligatoire,
+  - recalibration Stage 3 obligatoire.
+- Nomenclature projet explicite:
+  - `V8 base` = Route B full SIREN-first,
+  - `V8b` = V7 + SIREN expansion (chemin courant).
