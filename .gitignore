@@ -8,6 +8,7 @@ venv/
 .env.*.local
 .secrets/*
 !.secrets/README.md
+config.yaml
 .DS_Store
 .idea/
 .vscode/

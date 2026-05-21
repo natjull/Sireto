@@ -3,17 +3,17 @@ output_path: data/reports/results.csv
 sqlite_path: data/sirene_cache.sqlite
 log_path: logs/pipe_v6.log
 sirene_api_url: https://api.insee.fr/api-sirene/3.11
-sirene_token: ***REDACTED-INSEE-TOKEN***
+sirene_token: ""  # INSEE Sirene API token
 # RNE (INPI) – documentation v4.0 juin 2025
 rne_enabled: false
 rne_api_url: https://registre-national-entreprises.inpi.fr/api/
 rne_login_url: https://registre-national-entreprises.inpi.fr/api/sso/login
-rne_username: jullia.nathan@gmail.com
-rne_password: "***REDACTED-INPI-PASSWORD***"
+rne_username: ""
+rne_password: ""
 # Legacy fields kept for compatibility (unused if username/password are set)
 rne_token_url: https://api.inpi.fr/api/sso/oauth2/token
-rne_client_id: jullia.nathan@gmail.com
-rne_client_secret: "***REDACTED-INPI-PASSWORD***"
+rne_client_id: ""
+rne_client_secret: ""
 datagouv_api_url: https://recherche-entreprises.api.gouv.fr
 model_name: gpt-oss:20b
 temperature: 0.0
@@ -42,7 +42,7 @@ store_source_raw: true
 
 # OpenRouter configuration
 llm_provider: openrouter
-openrouter_api_key: "***REDACTED-OPENROUTER-KEY***"
+openrouter_api_key: ""  # sk-or-v1-...
 openrouter_api_url: https://openrouter.ai/api/v1/chat/completions
 normalizer_model_name: mistralai/mistral-small-3.2-24b-instruct
 matcher_model_name: mistralai/mistral-medium-3.1
