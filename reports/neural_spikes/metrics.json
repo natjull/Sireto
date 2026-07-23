@@ -1,0 +1,203 @@
+{
+  "generated_at": "2026-07-23T13:33:32.677674+02:00",
+  "config": {
+    "seed": 42,
+    "holdout_queries": 400,
+    "max_partition_rows": 2500,
+    "cross_train_queries": 4000,
+    "cross_dev_queries": 600,
+    "cross_negatives": 5,
+    "cross_epochs": 2,
+    "dual_train_queries": 4000,
+    "dual_epochs": 2,
+    "trainable_layers": 2,
+    "max_length": 96,
+    "batch_size": 8,
+    "encode_batch_size": 128
+  },
+  "inputs": {
+    "samples": "data/samples_v7_decider.parquet",
+    "samples_sha256": "c0bd0299fc7fbc9b19ccc5c594d6f61ff35dd43659f2ac5cdfa6ef74e2174fcb",
+    "crm": "data/crm_ok_gt.csv",
+    "crm_sha256": "2e624326bdc96ea5ffb963ed765351e5ecb94d0720dfa403132bf7b742d883e4",
+    "base_model": "models/semantic/siret-bert-deploy",
+    "xgb_model": "models/xgb_decider_20260221_213148.json"
+  },
+  "holdout": {
+    "queries": 400,
+    "unique_gt_sirens": 382,
+    "partition_rows_min": 88,
+    "partition_rows_median": 1193.0,
+    "partition_rows_max": 2494
+  },
+  "data_quality": {
+    "candidate_text_coverage": 0.9993571428571428,
+    "cross_train_queries": 4000,
+    "cross_dev_queries": 600,
+    "dual_train_queries": 4000,
+    "train_negative_heldout_siren_overlap": 0
+  },
+  "cross_encoder": {
+    "xgb": {
+      "hit_at_1": 0.8525,
+      "hit_at_3": 0.965,
+      "hit_at_5": 0.98,
+      "same_siren_at_1": 0.8875,
+      "queries": 400
+    },
+    "neural": {
+      "hit_at_1": 0.5175,
+      "hit_at_3": 0.7575,
+      "hit_at_5": 0.8375,
+      "same_siren_at_1": 0.5625,
+      "queries": 400
+    },
+    "paired_hit_at_1": {
+      "delta": -0.33500003814697266,
+      "ci95_low": -0.382500022649765,
+      "ci95_high": -0.2850000262260437
+    },
+    "history": [
+      {
+        "hit_at_1": 0.5433333333333333,
+        "hit_at_3": 0.8283333333333334,
+        "hit_at_5": 0.97,
+        "same_siren_at_1": 0.6166666666666667,
+        "queries": 600,
+        "epoch": 1,
+        "loss": 1.65500772190094,
+        "seconds": 308.73765802383423
+      },
+      {
+        "hit_at_1": 0.59,
+        "hit_at_3": 0.865,
+        "hit_at_5": 0.975,
+        "same_siren_at_1": 0.6683333333333333,
+        "queries": 600,
+        "epoch": 2,
+        "loss": 1.3902888252735137,
+        "seconds": 248.9075059890747
+      }
+    ],
+    "rerank_by_xgb_top_k": {
+      "3": {
+        "candidate_k": 3,
+        "hit_at_1": 0.725,
+        "same_siren_at_1": 0.785,
+        "xgb_candidate_coverage": 0.965,
+        "queries": 400
+      },
+      "5": {
+        "candidate_k": 5,
+        "hit_at_1": 0.6825,
+        "same_siren_at_1": 0.7425,
+        "xgb_candidate_coverage": 0.98,
+        "queries": 400
+      },
+      "6": {
+        "candidate_k": 6,
+        "hit_at_1": 0.6775,
+        "same_siren_at_1": 0.735,
+        "xgb_candidate_coverage": 0.985,
+        "queries": 400
+      },
+      "10": {
+        "candidate_k": 10,
+        "hit_at_1": 0.6375,
+        "same_siren_at_1": 0.69,
+        "xgb_candidate_coverage": 0.99,
+        "queries": 400
+      },
+      "20": {
+        "candidate_k": 20,
+        "hit_at_1": 0.5725,
+        "same_siren_at_1": 0.6275,
+        "xgb_candidate_coverage": 0.9975,
+        "queries": 400
+      },
+      "50": {
+        "candidate_k": 50,
+        "hit_at_1": 0.5175,
+        "same_siren_at_1": 0.5625,
+        "xgb_candidate_coverage": 1.0,
+        "queries": 400
+      }
+    }
+  },
+  "dual_encoder": {
+    "tfidf": {
+      "tfidf_hit_at_1": 0.5925,
+      "tfidf_siren_at_1": 0.635,
+      "tfidf_hit_at_10": 0.9275,
+      "tfidf_siren_at_10": 0.9325,
+      "tfidf_hit_at_50": 0.9725,
+      "tfidf_siren_at_50": 0.975
+    },
+    "before": {
+      "queries": 400,
+      "candidate_pool_rows": 316250,
+      "gt_partition_coverage": 1.0,
+      "dense_hit_at_1": 0.65,
+      "dense_siren_at_1": 0.6925,
+      "dense_hit_at_10": 0.8625,
+      "dense_siren_at_10": 0.8775,
+      "dense_hit_at_50": 0.94,
+      "dense_siren_at_50": 0.9425,
+      "tfidf_hit_at_1": 0.5925,
+      "tfidf_siren_at_1": 0.635,
+      "tfidf_hit_at_10": 0.9275,
+      "tfidf_siren_at_10": 0.9325,
+      "tfidf_hit_at_50": 0.9725,
+      "tfidf_siren_at_50": 0.975
+    },
+    "after": {
+      "queries": 400,
+      "candidate_pool_rows": 316250,
+      "gt_partition_coverage": 1.0,
+      "dense_hit_at_1": 0.745,
+      "dense_siren_at_1": 0.7875,
+      "dense_hit_at_10": 0.9125,
+      "dense_siren_at_10": 0.9275,
+      "dense_hit_at_50": 0.96,
+      "dense_siren_at_50": 0.9625
+    },
+    "history": [
+      {
+        "epoch": 1,
+        "loss": 0.6903007215857506,
+        "seconds": 100.08391094207764
+      },
+      {
+        "epoch": 2,
+        "loss": 0.5760747666656971,
+        "seconds": 100.23913383483887
+      }
+    ],
+    "hybrid_union": {
+      "hit_at_1": 0.8,
+      "dense_rescues_at_1": 83,
+      "sparse_rescues_at_1": 22,
+      "candidate_budget_at_1": 2,
+      "hit_at_10": 0.965,
+      "dense_rescues_at_10": 15,
+      "sparse_rescues_at_10": 21,
+      "candidate_budget_at_10": 20,
+      "hit_at_50": 0.9925,
+      "dense_rescues_at_50": 8,
+      "sparse_rescues_at_50": 13,
+      "candidate_budget_at_50": 100
+    }
+  },
+  "limitations": [
+    "Positive-only ground truth: NO_MATCH is not evaluated.",
+    "Full-partition retrieval is restricted to INSEE blocks under the configured size cap.",
+    "The cross-encoder is pairwise at inference and listwise only through its training loss.",
+    "The spike fine-tunes only the last transformer layers.",
+    "Hybrid union recall uses up to twice the candidate budget of each individual top-k list."
+  ],
+  "tokenizer_audit": {
+    "declared_class": "BertTokenizer",
+    "spike_loader": "PreTrainedTokenizerFast",
+    "production_risk": "AutoTokenizer/SentenceTransformer currently honors the wrong BertTokenizer class hint and emits excessive <unk> tokens."
+  }
+}
