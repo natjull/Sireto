@@ -137,13 +137,19 @@ class PartitionEmbeddingStore:
             <partition_key>_faiss.index      (serialized FAISS)
     """
 
-    def __init__(self, store_dir: Path | None = None) -> None:
+    def __init__(
+        self,
+        store_dir: Path | None = None,
+        *,
+        expected_model_fingerprint: str | None = None,
+    ) -> None:
         self.store_dir = store_dir or Path(
             os.getenv("XGB_DENSE_STORE_DIR", "data/dense_index")
         )
         self._index_cache: OrderedDict[str, _RemoteDenseIndex] = OrderedDict()
         self._max_cache = 20
         self._faiss_client = None
+        self.expected_model_fingerprint = expected_model_fingerprint
 
     @staticmethod
     def _safe_key(partition_key: str) -> str:
@@ -256,10 +262,27 @@ class PartitionEmbeddingStore:
         observed_hash = hashlib.sha256(
             payload.encode("ascii", errors="ignore")
         ).hexdigest()
-        return (
+        aligned = (
             int(manifest.get("candidate_count", -1)) == len(candidates)
             and manifest.get("siret_order_sha256") == observed_hash
         )
+        if not aligned:
+            _logger.error(
+                "[DenseStore] Candidate order mismatch for %s",
+                partition_key,
+            )
+            return False
+        if (
+            self.expected_model_fingerprint is not None
+            and manifest.get("semantic_model_fingerprint")
+            != self.expected_model_fingerprint
+        ):
+            _logger.error(
+                "[DenseStore] Semantic model mismatch for %s",
+                partition_key,
+            )
+            return False
+        return True
 
     def _put_cache(self, key: str, idx: _RemoteDenseIndex) -> None:
         self._index_cache[key] = idx

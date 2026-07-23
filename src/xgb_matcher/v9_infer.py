@@ -20,7 +20,7 @@ from .partitioned_store import PartitionedCandidateStore
 from .retrieval import build_candidate_pool
 from .retrieval_config import RetrievalConfigV1
 from .siren_retrieval import SirenToGeoIndex
-from .semantic import set_semantic_client
+from .semantic import semantic_artifact_fingerprint, set_semantic_client
 from .semantic_process import SemanticProcessClient
 from .v9_acceptor import V9AcceptorBundle
 from .v9_dataset import V9DatasetManifest
@@ -84,7 +84,16 @@ class V9InferenceEngine:
         ranker = xgb.XGBRanker()
         ranker.load_model(ranker_dir / "ranker.json")
         dense_store = (
-            PartitionEmbeddingStore(dense_store_dir) if dense_store_dir else None
+            PartitionEmbeddingStore(
+                dense_store_dir,
+                expected_model_fingerprint=(
+                    semantic_artifact_fingerprint(semantic_model_path)
+                    if semantic_model_path is not None
+                    else None
+                ),
+            )
+            if dense_store_dir
+            else None
         )
         dense_siren_index = None
         siren_to_geo = None

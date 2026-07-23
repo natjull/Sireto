@@ -414,19 +414,29 @@ def main() -> None:
     dense_siren_index = None
     siren_to_geo = None
     semantic_client = None
+    semantic_model_fingerprint = None
     if needs_local_dense or needs_global_dense:
         os.environ["XGB_SEMANTIC_ENABLED"] = "1"
         os.environ["XGB_SEMANTIC_MODEL"] = str(args.semantic_model)
         os.environ["XGB_SEMANTIC_DEVICE"] = "cpu"
-        from src.xgb_matcher.semantic import set_semantic_client
+        from src.xgb_matcher.semantic import (
+            semantic_artifact_fingerprint,
+            set_semantic_client,
+        )
         from src.xgb_matcher.semantic_process import SemanticProcessClient
 
         semantic_client = SemanticProcessClient(args.semantic_model, device="cpu")
         set_semantic_client(semantic_client)
+        semantic_model_fingerprint = semantic_artifact_fingerprint(
+            args.semantic_model
+        )
     if needs_local_dense:
         from src.xgb_matcher.dense_retrieval import PartitionEmbeddingStore
 
-        dense_store = PartitionEmbeddingStore(args.dense_dir)
+        dense_store = PartitionEmbeddingStore(
+            args.dense_dir,
+            expected_model_fingerprint=semantic_model_fingerprint,
+        )
     if needs_global_dense:
         from src.xgb_matcher.dense_retrieval import GlobalDenseSirenIndex
         from src.xgb_matcher.siren_retrieval import SirenToGeoIndex
@@ -488,6 +498,7 @@ def main() -> None:
         "semantic_model": (
             str(args.semantic_model) if needs_local_dense or needs_global_dense else None
         ),
+        "semantic_model_fingerprint": semantic_model_fingerprint,
         "outputs": {
             "raw_results.parquet": file_sha256(raw_path),
             "summary.json": file_sha256(summary_path),

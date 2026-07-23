@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import os
 import re
+import hashlib
 from collections import OrderedDict
 from functools import lru_cache
 from pathlib import Path
@@ -40,6 +41,27 @@ _TOKENIZER_HEALTHCHECK_TEXTS: Tuple[str, ...] = (
     "12 rue de l'Église",
     "Société française de maintenance industrielle",
 )
+
+
+def semantic_artifact_fingerprint(model_path: str | Path) -> str:
+    """Hash every runtime model artifact behind a local pinned directory."""
+    root = Path(model_path)
+    if not root.is_dir():
+        raise ValueError(
+            "A local model directory is required for an immutable fingerprint: "
+            f"{model_path}"
+        )
+    digest = hashlib.sha256()
+    files = sorted(path for path in root.rglob("*") if path.is_file())
+    if not files:
+        raise ValueError(f"Semantic model directory is empty: {root}")
+    for path in files:
+        digest.update(path.relative_to(root).as_posix().encode("utf-8"))
+        digest.update(b"\0")
+        with path.open("rb") as handle:
+            while chunk := handle.read(1024 * 1024):
+                digest.update(chunk)
+    return digest.hexdigest()
 
 
 def _max_embedding_cache() -> int:
@@ -181,14 +203,22 @@ def _repair_exported_tokenizer(encoder: Any, model_name: str) -> None:
 
     declared_class = str(config.get("tokenizer_class") or "")
     tokenizer_type = str((tokenizer_payload.get("model") or {}).get("type") or "")
-    if declared_class not in {"BertTokenizer", "BertTokenizerFast"} or tokenizer_type != "Unigram":
+    if tokenizer_type != "Unigram":
+        return
+    current_unknown_fraction = tokenizer_unknown_fraction(
+        encoder.tokenizer,
+        _TOKENIZER_HEALTHCHECK_TEXTS,
+    )
+    if (
+        declared_class not in {"BertTokenizer", "BertTokenizerFast"}
+        and current_unknown_fraction <= 0.20
+    ):
         return
 
-    from transformers import PreTrainedTokenizerFast
+    from transformers import AddedToken, PreTrainedTokenizerFast
 
-    special_tokens = {
-        key: config.get(key)
-        for key in (
+    special_tokens = {}
+    for key in (
             "bos_token",
             "eos_token",
             "unk_token",
@@ -196,9 +226,18 @@ def _repair_exported_tokenizer(encoder: Any, model_name: str) -> None:
             "cls_token",
             "pad_token",
             "mask_token",
-        )
-        if config.get(key)
-    }
+    ):
+        value = config.get(key)
+        if isinstance(value, dict) and value.get("content"):
+            value = AddedToken(
+                value["content"],
+                single_word=bool(value.get("single_word", False)),
+                lstrip=bool(value.get("lstrip", False)),
+                rstrip=bool(value.get("rstrip", False)),
+                normalized=bool(value.get("normalized", True)),
+            )
+        if value:
+            special_tokens[key] = value
     encoder.tokenizer = PreTrainedTokenizerFast(
         tokenizer_file=str(tokenizer_json),
         model_max_length=int(config.get("model_max_length") or 128),
@@ -206,10 +245,11 @@ def _repair_exported_tokenizer(encoder: Any, model_name: str) -> None:
     )
     _logger.warning(
         "[Semantic] Repaired mismatched tokenizer export for %s "
-        "(declared=%s, serialized=%s).",
+        "(declared=%s, serialized=%s, unknown_before=%.1f%%).",
         model_name,
-        declared_class,
+        declared_class or "<unset>",
         tokenizer_type,
+        current_unknown_fraction * 100,
     )
 
 

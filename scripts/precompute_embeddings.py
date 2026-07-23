@@ -227,6 +227,11 @@ def main() -> None:
     parser.add_argument("--mega-threshold", type=int, default=100000, help="Row threshold to classify INSEE as mega for --mega-first")
     parser.add_argument("--min-rows", type=int, default=0, help="Filter INSEE partitions with row_count >= min-rows (manifest required)")
     parser.add_argument("--max-partitions", type=int, default=0, help="Limit number of partitions processed per partition type")
+    parser.add_argument(
+        "--partition-plan",
+        type=Path,
+        help="Frozen JSON plan with insee_codes/postcode_codes",
+    )
     parser.add_argument("--log-every", type=int, default=50, help="Progress logging interval (in partitions)")
     parser.add_argument("--dry-run", action="store_true", help="Print selected partitions and exit without encoding")
     args = parser.parse_args()
@@ -241,6 +246,17 @@ def main() -> None:
         else:
             model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
             _logger.info("Using default model: %s", model_name)
+
+    from src.xgb_matcher.semantic import semantic_artifact_fingerprint
+
+    model_fingerprint = semantic_artifact_fingerprint(model_name)
+    partition_plan = None
+    partition_plan_hash = None
+    if args.partition_plan is not None:
+        partition_plan = json.loads(args.partition_plan.read_text(encoding="utf-8"))
+        partition_plan_hash = hashlib.sha256(
+            args.partition_plan.read_bytes()
+        ).hexdigest()
 
     encoder = None
     if not args.dry_run:
@@ -258,6 +274,19 @@ def main() -> None:
 
     for ptype in partition_types:
         codes = _list_partition_codes(args.partitions_dir, ptype)
+        if partition_plan is not None:
+            planned = set(
+                str(code)
+                for code in partition_plan.get(f"{ptype}_codes", [])
+            )
+            available = set(codes)
+            missing_codes = sorted(planned - available)
+            if missing_codes:
+                raise ValueError(
+                    f"Partition plan references missing {ptype} codes: "
+                    f"{missing_codes[:20]}"
+                )
+            codes = [code for code in codes if code in planned]
         codes = _order_partition_codes(
             codes,
             ptype,
@@ -346,6 +375,8 @@ def main() -> None:
                         "drop_unnamed": args.drop_unnamed,
                         "include_closed": args.include_closed,
                         "model": str(model_name),
+                        "semantic_model_fingerprint": model_fingerprint,
+                        "partition_plan_sha256": partition_plan_hash,
                     },
                     indent=2,
                     sort_keys=True,
