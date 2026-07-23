@@ -8,6 +8,7 @@ Provides fast lookup of:
 
 from pathlib import Path
 from typing import Dict, List, Tuple
+import json
 import logging
 
 import joblib
@@ -139,6 +140,52 @@ class SirenToGeoIndex:
         path = Path(path)
         logger.info(f"Loading siren_to_geo index from {path}...")
 
+        self._sirens = None
+        self._insee = None
+        self._postcodes = None
+        self._counts = None
+        if path.is_dir():
+            manifest = json.loads(
+                (path / "manifest.json").read_text(encoding="utf-8")
+            )
+            if manifest.get("schema_version") != "v9-siren-geo-mmap-1":
+                raise ValueError("Unsupported SIREN geography mmap schema")
+            self._sirens = np.load(
+                path / "sirens.npy",
+                mmap_mode="r",
+                allow_pickle=False,
+            )
+            self._insee = np.load(
+                path / "insee.npy",
+                mmap_mode="r",
+                allow_pickle=False,
+            )
+            self._postcodes = np.load(
+                path / "postcodes.npy",
+                mmap_mode="r",
+                allow_pickle=False,
+            )
+            self._counts = np.load(
+                path / "siret_counts.npy",
+                mmap_mode="r",
+                allow_pickle=False,
+            )
+            sizes = {
+                len(self._sirens),
+                len(self._insee),
+                len(self._postcodes),
+                len(self._counts),
+                int(manifest.get("row_count", -1)),
+            }
+            if len(sizes) != 1:
+                raise ValueError("SIREN geography mmap cardinality mismatch")
+            self._index = None
+            logger.info(
+                "Loaded memory-mapped SIREN geography index with %d rows",
+                len(self._sirens),
+            )
+            return
+
         df = pd.read_parquet(path)  # siren, insee, postcode, siret_count
 
         # Build dict: siren → sorted list of (insee, postcode, siret_count)
@@ -154,6 +201,30 @@ class SirenToGeoIndex:
 
         logger.info(f"Loaded {len(self._index)} unique SIRENs with geo info")
 
+    @staticmethod
+    def _decode(value: object) -> str:
+        if isinstance(value, (bytes, np.bytes_)):
+            return bytes(value).decode("utf-8", errors="ignore")
+        return str(value)
+
+    def _mmap_locations(self, siren: str) -> List[Tuple[str, str, int]]:
+        if self._sirens is None:
+            return []
+        normalized = "".join(
+            char for char in str(siren or "") if char.isdigit()
+        ).zfill(9)
+        target = np.bytes_(normalized)
+        left = int(np.searchsorted(self._sirens, target, side="left"))
+        right = int(np.searchsorted(self._sirens, target, side="right"))
+        return [
+            (
+                self._decode(self._insee[index]),
+                self._decode(self._postcodes[index]),
+                int(self._counts[index]),
+            )
+            for index in range(left, right)
+        ]
+
     def get_locations(self, siren: str) -> List[Tuple[str, str]]:
         """Get all geographic locations (insee, postcode) for a SIREN.
 
@@ -165,7 +236,11 @@ class SirenToGeoIndex:
         Returns:
             List of (insee, postcode) tuples, or [] if SIREN not found.
         """
-        locations = self._index.get(siren, [])
+        locations = (
+            self._mmap_locations(siren)
+            if self._sirens is not None
+            else self._index.get(siren, [])
+        )
         return [(r[0], r[1]) for r in locations]
 
     def get_location_counts(self, siren: str) -> List[Tuple[str, str, int]]:
@@ -177,4 +252,6 @@ class SirenToGeoIndex:
         Returns:
             List of (insee, postcode, siret_count) tuples.
         """
+        if self._sirens is not None:
+            return self._mmap_locations(siren)
         return self._index.get(siren, [])
