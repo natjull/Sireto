@@ -14,6 +14,11 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Contrat dense global SIREN renforcé**: le builder publie désormais la
+  progression d'encodage, le fingerprint intégral du modèle et les hashes des
+  fichiers FAISS/IDs. Le benchmark et l'inférence V9 refusent un index construit
+  avec un autre modèle avant même de charger FAISS. Suite complète à 62 tests
+  passants. *(commit GitHub: `2d74b2b`)*
 - **Gate 2 dense local échouée sur dev**: sparse atteint 90,33 % Recall@50
   SIRET contre 88,50 % pour sparse+dense local et 70,29 % pour dense seul.
   L'hybride récupère 45 misses mais déplace 92 hits: delta apparié −1,83 point,
