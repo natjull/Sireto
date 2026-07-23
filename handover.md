@@ -14,6 +14,13 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Comparateur apparié Gate 2**: validation des hashes de l'expérience et de
+  l'alignement exact des requêtes, décompte des misses récupérés et hits
+  déplacés, IC95 bootstrap apparié, test exact de McNemar, deltas par segment,
+  ratio de latence p95 et refus explicite de toute violation du budget fixe.
+  Le rapport JSON/Markdown produit est immuable et lié au manifeste de
+  l'expérience; suite complète à 60 tests passants. *(commit GitHub:
+  `86dea2c`)*
 - **Dense local non contamine prepare**: fingerprint integral du modele
   semantique impose entre build et inference, revision generique MiniLM
   `86741b4e` copiee sans telechargement sur le SSD, reparation du tokenizer
