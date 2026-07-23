@@ -293,9 +293,9 @@ class SirenCandidateStore:
             ORDER BY siren, siret
             """,
             [normalized],
-        ).fetchdf()
+        ).fetch_arrow_table()
         output: Dict[str, List[dict]] = {}
-        for row in rows.to_dict("records"):
+        for row in rows.to_pylist():
             siren = str(row.get("siren") or "").zfill(9)
             row["siren"] = siren
             row["siret"] = str(row.get("siret") or "").zfill(14)
