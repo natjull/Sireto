@@ -14,6 +14,13 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Baseline sparse-50 V9 mesuree**: sur les 2 652 requetes test gelees,
+  Recall@50 SIRET 88,54 % (2 348 hits, IC95 87,27–89,69), Recall@50 SIREN
+  92,16 %, recall du pool geographique 98,00 %, zero violation de budget.
+  Les 304 erreurs comprennent 53 absences de partition et 251 prunings; 96
+  erreurs conservent le bon SIREN. Segments critiques: fermes 67,09 %,
+  megapoles 77,01 %. Artefacts bruts hashes sur le SSD et rapport dans
+  `reports/v9/retrieval_baseline_sparse50.md`. *(commit GitHub: `8adc5f3`)*
 - **Runner retrieval V9 immuable**: execution sparse, hybride local, dense-only
   et hybride global SIREN avec budget final strict, preuves par requete,
   Recall SIRET/SIREN et Wilson 95/99 %, segments, latences p50/p95/p99, cache
@@ -96,12 +103,11 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- **Gate 1 — baseline sparse-50**: le corpus, les snapshots, les splits et la
-  configuration sont geles. Mesurer maintenant le test de 2 652 requetes sans
-  tuning et conserver les sorties par requete, intervalles et latence p95.
-- **Gate 2 — conditionnelle**: ne construire que les partitions denses locales
-  utiles au benchmark gele, puis mesurer hybride local-50. Construire et
-  mesurer le dense global SIREN-50 ensuite, toujours sur CPU et SSD externe.
+- **Gate 2 — hybride local**: construire les partitions denses utiles au dev
+  avec le MiniLM multilingue generique epingle et non contamine, mesurer le
+  signal sur dev, puis seulement en cas de gain construire le complement test.
+- **Gate 2 — dense global conditionnel**: ne lancer le build complet SIREN que
+  si l'hybride local ou son analyse d'erreurs justifie encore cette experience.
 - **Gates suivantes**: aucune adjudication de 500 cas, aucun ranker/accepteur et
   aucun cross-encoder avant signal positif du retrieval.
 
