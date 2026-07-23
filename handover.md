@@ -14,11 +14,18 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Runner retrieval V9 immuable**: execution sparse, hybride local, dense-only
+  et hybride global SIREN avec budget final strict, preuves par requete,
+  Recall SIRET/SIREN et Wilson 95/99 %, segments, latences p50/p95/p99, cache
+  SSD borne en RAM et manifeste lie au commit. Le benchmark segmente v2
+  `c33b80855f560074` remplace le build v1 pour les experiences; le v1 reste
+  conserve. *(commit GitHub: `771beb6`)*
 - **Benchmark ferme V9 gele**: reconstruction exacte du split V7 historique
   par SIREN (seed 42), validation contre les scenes positives V7, ajout des 692
   requetes historiquement absentes des scenes afin de compter les misses
   end-to-end, hash integral des 4 119 fichiers de partitions et des snapshots
-  SIRENE. Build immuable `8967e72e07c9f4bf` sur le SSD externe: 11 837 train,
+  SIRENE. Build initial immuable `8967e72e07c9f4bf` puis revision segmentee
+  `c33b80855f560074` sur le SSD externe: 11 837 train,
   2 565 dev, 2 652 test, zero SIREN partage. Les labels restent des verites CRM
   historiques non reaudites et le modele dense fine-tune local est declare
   contamine pour toute revendication finale sur ce corpus. *(commit GitHub:
