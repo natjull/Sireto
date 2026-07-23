@@ -111,7 +111,12 @@ class V9InferenceEngine:
             ):
                 raise ValueError("Global dense SIREN retrieval requires both index paths")
             dense_siren_index = GlobalDenseSirenIndex(
-                Path(retrieval_config.global_dense_siren_index_path)
+                Path(retrieval_config.global_dense_siren_index_path),
+                expected_model_fingerprint=(
+                    semantic_artifact_fingerprint(semantic_model_path)
+                    if semantic_model_path is not None
+                    else None
+                ),
             )
             index_tokenizer = dense_siren_index.manifest.get("tokenizer_fingerprint")
             if (

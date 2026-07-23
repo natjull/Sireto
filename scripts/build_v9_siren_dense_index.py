@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import tempfile
+import time
 from pathlib import Path
 from typing import Iterable
 
@@ -84,6 +85,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--nlist", type=int, default=4096)
     parser.add_argument("--pq-subquantizers", type=int, default=48)
     parser.add_argument("--max-rows", type=int, default=0)
+    parser.add_argument("--log-every-rows", type=int, default=250_000)
     parser.add_argument("--dry-run", action="store_true")
     return parser.parse_args()
 
@@ -110,9 +112,11 @@ def main() -> None:
 
     from src.xgb_matcher.faiss_process import build_faiss_index_file_isolated
     from src.xgb_matcher.semantic_process import SemanticProcessClient
+    from src.xgb_matcher.semantic import semantic_artifact_fingerprint
     from src.xgb_matcher.v9_dataset import file_sha256, tokenizer_fingerprint
 
     encoder = SemanticProcessClient(args.model, device=args.device)
+    model_fingerprint = semantic_artifact_fingerprint(args.model)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     with tempfile.NamedTemporaryFile(
         dir=args.output_dir,
@@ -131,6 +135,8 @@ def main() -> None:
 
     total = 0
     dimension = 0
+    started = time.perf_counter()
+    next_log = max(args.log_every_rows, 1)
     try:
         with (
             ids_path.open("ab") as ids_handle,
@@ -155,6 +161,22 @@ def main() -> None:
                 vectors.tofile(vectors_handle)
                 np.asarray(sirens, dtype="S9").tofile(ids_handle)
                 total += len(sirens)
+                if total >= next_log:
+                    elapsed = time.perf_counter() - started
+                    print(
+                        json.dumps(
+                            {
+                                "stage": "encode",
+                                "entity_count": total,
+                                "elapsed_seconds": elapsed,
+                                "entities_per_second": total
+                                / max(elapsed, 1e-9),
+                            }
+                        ),
+                        flush=True,
+                    )
+                    while next_log <= total:
+                        next_log += max(args.log_every_rows, 1)
 
         if not total or not dimension:
             raise ValueError("No valid SIREN entity text found")
@@ -178,6 +200,7 @@ def main() -> None:
         "source": str(args.source),
         "source_sha256": file_sha256(args.source),
         "model": str(args.model),
+        "semantic_model_fingerprint": model_fingerprint,
         "tokenizer_fingerprint": tokenizer_fingerprint(args.model),
         "entity_count": total,
         "dimension": dimension,
@@ -186,6 +209,14 @@ def main() -> None:
         "nprobe": min(32, args.nlist),
         "pq_subquantizers": args.pq_subquantizers,
         "runtime": "isolated_semantic_and_faiss_subprocesses",
+        "outputs": {
+            "siren_faiss.index": file_sha256(
+                args.output_dir / "siren_faiss.index"
+            ),
+            "siren_ids.npy": file_sha256(
+                args.output_dir / "siren_ids.npy"
+            ),
+        },
     }
     (args.output_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2),

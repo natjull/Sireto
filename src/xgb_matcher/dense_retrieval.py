@@ -299,7 +299,12 @@ class PartitionEmbeddingStore:
 class GlobalDenseSirenIndex:
     """Read-only ANN index mapping a CRM name to global SIREN entities."""
 
-    def __init__(self, index_dir: Path) -> None:
+    def __init__(
+        self,
+        index_dir: Path,
+        *,
+        expected_model_fingerprint: str | None = None,
+    ) -> None:
         if not _faiss_available():
             raise ImportError("faiss-cpu required")
         self.index_dir = Path(index_dir)
@@ -309,6 +314,14 @@ class GlobalDenseSirenIndex:
             if manifest_path.exists()
             else {}
         )
+        if (
+            expected_model_fingerprint is not None
+            and self.manifest.get("semantic_model_fingerprint")
+            != expected_model_fingerprint
+        ):
+            raise ValueError(
+                "Global dense SIREN semantic model fingerprint mismatch"
+            )
         from .faiss_process import FaissSearchProcessClient
 
         self._faiss_client = FaissSearchProcessClient(max_cache=1)

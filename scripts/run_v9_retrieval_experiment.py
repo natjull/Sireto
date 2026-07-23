@@ -441,7 +441,10 @@ def main() -> None:
         from src.xgb_matcher.dense_retrieval import GlobalDenseSirenIndex
         from src.xgb_matcher.siren_retrieval import SirenToGeoIndex
 
-        dense_siren_index = GlobalDenseSirenIndex(args.global_siren_dense_dir)
+        dense_siren_index = GlobalDenseSirenIndex(
+            args.global_siren_dense_dir,
+            expected_model_fingerprint=semantic_model_fingerprint,
+        )
         siren_to_geo = SirenToGeoIndex(args.siren_geo_index)
 
     all_raw = []
