@@ -44,12 +44,12 @@ from .features import (
     make_features_from_preprocessed,
     normalize_text,
     preprocess_crm_row,
-    semantic_gate_allows,
+    inject_semantic_features_batch,
     set_global_name_idf_map,
 )
 from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
-from .semantic import top2_semantic_similarities_batch, is_semantic_available
+from .semantic import is_semantic_available
 from .calibration import load_calibrator
 
 
@@ -447,19 +447,11 @@ class XgbInferenceEngine:
             cand_list_n.append((siret, c))
         
         # Add semantic features
-        sem = top2_semantic_similarities_batch(crm_pre.get("crm_name_semantic", ""), semantic_pools)
-        for feat, (sem_max, sem_second, sem_gap) in zip(feats_n, sem, strict=True):
-            if semantic_gate_allows(
-                feat.get("name_jaro_max", 0.0),
-                feat.get("name_token_overlap_max", 0.0),
-            ):
-                feat["name_semantic_max"] = sem_max
-                feat["name_semantic_second"] = sem_second
-                feat["name_semantic_gap"] = sem_gap
-            else:
-                feat["name_semantic_max"] = 0.0
-                feat["name_semantic_second"] = 0.0
-                feat["name_semantic_gap"] = 0.0
+        inject_semantic_features_batch(
+            crm_pre.get("crm_name_semantic", ""),
+            feats_n,
+            semantic_pools,
+        )
         
         # Stage 2 scoring
         X_n = pd.DataFrame(feats_n)[self.feature_order]
@@ -804,19 +796,11 @@ class XgbInferenceEngine:
             cand_list_n.append((siret, c))
         
         # Add semantic features
-        sem = top2_semantic_similarities_batch(crm_pre.get("crm_name_semantic", ""), semantic_pools)
-        for feat, (sem_max, sem_second, sem_gap) in zip(feats_n, sem, strict=True):
-            if semantic_gate_allows(
-                feat.get("name_jaro_max", 0.0),
-                feat.get("name_token_overlap_max", 0.0),
-            ):
-                feat["name_semantic_max"] = sem_max
-                feat["name_semantic_second"] = sem_second
-                feat["name_semantic_gap"] = sem_gap
-            else:
-                feat["name_semantic_max"] = 0.0
-                feat["name_semantic_second"] = 0.0
-                feat["name_semantic_gap"] = 0.0
+        inject_semantic_features_batch(
+            crm_pre.get("crm_name_semantic", ""),
+            feats_n,
+            semantic_pools,
+        )
         
         # Stage 2 scoring
         X_n = pd.DataFrame(feats_n)[self.feature_order]

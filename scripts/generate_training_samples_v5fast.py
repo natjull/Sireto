@@ -47,6 +47,7 @@ from src.xgb_matcher.features import (
     FAST_RANKER_FEATURE_NAMES,
     build_address,
     build_semantic_name_pool,
+    inject_semantic_features_batch,
     make_features_from_preprocessed,
     normalize_text,
     preprocess_crm_row,
@@ -60,10 +61,7 @@ from src.xgb_matcher.dense_retrieval import PartitionEmbeddingStore
 from src.xgb_matcher.retrieval import build_candidate_pool
 from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.naming import primary_name, build_candidate_names
-from src.xgb_matcher.semantic import (
-    top2_semantic_similarities_batch,
-    clear_cache as clear_semantic_cache,
-)
+from src.xgb_matcher.semantic import clear_cache as clear_semantic_cache
 from src.xgb_matcher.siren_retrieval import SirenGlobalIndex, SirenToGeoIndex
 from src.xgb_matcher.tfidf_cache import TfidfPersistentCache
 from src.xgb_matcher.timing import PipelineTimer
@@ -272,9 +270,7 @@ def _inject_semantic_features_for_items(crm_pre: dict, items: List[Dict[str, Any
         pool = build_semantic_name_pool(build_candidate_names(cand), crm_city_norm=crm_pre.get("crm_city_norm", ""), cand_city_norm=normalize_text(cand.get("city")))
         if pool: name_lists.append(pool); targets.append(item)
     if not name_lists: return
-    sem_values = top2_semantic_similarities_batch(crm_name_sem, name_lists)
-    for item, sv in zip(targets, sem_values):
-        item["name_semantic_max"] = sv[0]; item["name_semantic_second"] = sv[1]; item["name_semantic_gap"] = sv[2]
+    inject_semantic_features_batch(crm_name_sem, targets, name_lists)
 
 def generate_samples_for_query(
     crm_row: pd.Series,
@@ -364,7 +360,7 @@ def generate_samples_for_query(
         key=lambda x: x.get("addr_jaro", 0.0), reverse=True
     )[:SAME_ADDR_NEG_MAX]
 
-    # Geographic homonyme negatives: good semantic but wrong city
+    # Geographic homonyme negatives are selected after semantic injection below.
     geo_homo_neg = sorted(
         [f for f in neg
          if float(f.get("name_semantic_max", 0.0)) > 0.85
@@ -380,6 +376,46 @@ def generate_samples_for_query(
             [f for f in neg
              if str(f.get("_siren", ""))[:9] == gt_siren],
             key=lambda x: x.get("_score", 0.0), reverse=True
+        )[:5]
+
+    if semantic_expected:
+        geo_homo_candidates = [
+            feature_row
+            for feature_row in neg
+            if float(feature_row.get("postcode_match", 0.0)) == 0.0
+            and float(feature_row.get("name_jaro_max", 0.0)) > 0.75
+        ]
+        semantic_items = []
+        for feature_row in geo_homo_candidates:
+            semantic_items.append(
+                {
+                    **{fn: feature_row.get(fn, 0.0) for fn in FEATURE_NAMES},
+                    "siret": feature_row["_siret"],
+                }
+            )
+        _inject_semantic_features_for_items(
+            crm_pre,
+            semantic_items,
+            candidates,
+            siret_key="siret",
+        )
+        semantic_by_siret = {item["siret"]: item for item in semantic_items}
+        for feature_row in geo_homo_candidates:
+            semantic_row = semantic_by_siret.get(feature_row["_siret"])
+            if semantic_row:
+                for feature_name in (
+                    "name_semantic_max",
+                    "name_semantic_second",
+                    "name_semantic_gap",
+                ):
+                    feature_row[feature_name] = semantic_row.get(feature_name, 0.0)
+
+        geo_homo_neg = sorted(
+            [f for f in neg
+             if float(f.get("name_semantic_max", 0.0)) > 0.85
+             and float(f.get("postcode_match", 0.0)) == 0.0
+             and float(f.get("name_jaro_max", 0.0)) > 0.75],
+            key=lambda x: x.get("name_semantic_max", 0.0), reverse=True
         )[:5]
 
     selected = []; seen = set()

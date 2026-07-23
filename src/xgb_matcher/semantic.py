@@ -13,12 +13,13 @@ from pathlib import Path
 from typing import Iterable, Optional, List, Tuple, Dict, Any
 
 import logging
+import json
 import numpy as np
 
-try:
-    from sentence_transformers import SentenceTransformer
-except Exception:  # pragma: no cover - optional dependency
-    SentenceTransformer = None
+# Imported lazily: importing torch/sentence-transformers at module import time
+# can conflict with the OpenMP runtime already loaded by numpy/XGBoost.
+SentenceTransformer = None
+_SENTENCE_TRANSFORMER_IMPORT_ATTEMPTED = False
 
 # Global flag to track if we've already warned about semantic unavailability
 _SEMANTIC_WARNED: bool = False
@@ -33,6 +34,12 @@ _ENCODERS: Dict[str, Any] = {}
 _MAX_EMBEDDING_CACHE_DEFAULT = 50_000  # ~75 MB for 384-dim float32 (reduced for memory safety)
 _EMBEDDING_CACHE: OrderedDict[str, np.ndarray] = OrderedDict()
 _SEMANTIC_CLIENT: Any | None = None
+
+_TOKENIZER_HEALTHCHECK_TEXTS: Tuple[str, ...] = (
+    "École Saint-Joseph",
+    "12 rue de l'Église",
+    "Société française de maintenance industrielle",
+)
 
 
 def _max_embedding_cache() -> int:
@@ -57,7 +64,7 @@ def is_semantic_available() -> bool:
     """
     if not _semantic_enabled():
         return False
-    if SentenceTransformer is None:
+    if _get_sentence_transformer_class() is None:
         return False
     # Try to get encoder (will cache on success)
     encoder = _get_encoder(_model_name())
@@ -113,7 +120,8 @@ def _batch_size() -> int:
 def _get_encoder(model_name: str) -> Optional[Any]:
     if not _semantic_enabled():
         return None
-    if SentenceTransformer is None:
+    sentence_transformer_class = _get_sentence_transformer_class()
+    if sentence_transformer_class is None:
         _warn_semantic_unavailable("sentence_transformers not installed")
         return None
     if model_name in _ENCODERS:
@@ -121,16 +129,120 @@ def _get_encoder(model_name: str) -> Optional[Any]:
     try:
         device = _device()
         if device:
-            encoder = SentenceTransformer(model_name, device=device)
+            encoder = sentence_transformer_class(model_name, device=device)
             print(f"[Semantic] Loaded model '{model_name}' on device: {device}")
         else:
-            encoder = SentenceTransformer(model_name)
+            encoder = sentence_transformer_class(model_name)
             print(f"[Semantic] Loaded model '{model_name}' on device: cpu")
+        _repair_exported_tokenizer(encoder, model_name)
+        assert_tokenizer_healthy(encoder.tokenizer)
         _ENCODERS[model_name] = encoder
         return encoder
     except Exception as e:
         print(f"[Semantic] Failed to load model: {e}")
         return None
+
+
+def _get_sentence_transformer_class() -> Any | None:
+    global SentenceTransformer, _SENTENCE_TRANSFORMER_IMPORT_ATTEMPTED
+    if _SENTENCE_TRANSFORMER_IMPORT_ATTEMPTED:
+        return SentenceTransformer
+    _SENTENCE_TRANSFORMER_IMPORT_ATTEMPTED = True
+    try:
+        from sentence_transformers import SentenceTransformer as cls
+    except Exception:  # pragma: no cover - optional dependency
+        cls = None
+    SentenceTransformer = cls
+    return SentenceTransformer
+
+
+def _repair_exported_tokenizer(encoder: Any, model_name: str) -> None:
+    """Repair the known SIRETO export mismatch without mutating model assets.
+
+    The local semantic export contains a SentencePiece/Unigram ``tokenizer.json``
+    but declares ``BertTokenizer`` in ``tokenizer_config.json``.  AutoTokenizer
+    consequently interprets ordinary French words as unknown tokens.  Loading
+    the serialized fast tokenizer directly preserves the trained vocabulary and
+    keeps the fix effective even when model artefacts are mounted read-only.
+    """
+    model_path = Path(model_name)
+    tokenizer_json = model_path / "tokenizer.json"
+    tokenizer_config = model_path / "tokenizer_config.json"
+    if not tokenizer_json.exists() or not tokenizer_config.exists():
+        return
+
+    try:
+        config = json.loads(tokenizer_config.read_text(encoding="utf-8"))
+        tokenizer_payload = json.loads(tokenizer_json.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return
+
+    declared_class = str(config.get("tokenizer_class") or "")
+    tokenizer_type = str((tokenizer_payload.get("model") or {}).get("type") or "")
+    if declared_class not in {"BertTokenizer", "BertTokenizerFast"} or tokenizer_type != "Unigram":
+        return
+
+    from transformers import PreTrainedTokenizerFast
+
+    special_tokens = {
+        key: config.get(key)
+        for key in (
+            "bos_token",
+            "eos_token",
+            "unk_token",
+            "sep_token",
+            "cls_token",
+            "pad_token",
+            "mask_token",
+        )
+        if config.get(key)
+    }
+    encoder.tokenizer = PreTrainedTokenizerFast(
+        tokenizer_file=str(tokenizer_json),
+        model_max_length=int(config.get("model_max_length") or 128),
+        **special_tokens,
+    )
+    _logger.warning(
+        "[Semantic] Repaired mismatched tokenizer export for %s "
+        "(declared=%s, serialized=%s).",
+        model_name,
+        declared_class,
+        tokenizer_type,
+    )
+
+
+def tokenizer_unknown_fraction(tokenizer: Any, texts: Iterable[str]) -> float:
+    """Return the share of non-special tokens mapped to the unknown token."""
+    unknown = 0
+    total = 0
+    unk_token = getattr(tokenizer, "unk_token", None)
+    special_tokens = set(getattr(tokenizer, "all_special_tokens", []) or [])
+    for text in texts:
+        tokens = tokenizer.tokenize(str(text))
+        for token in tokens:
+            if unk_token is not None and token == unk_token:
+                total += 1
+                unknown += 1
+                continue
+            if token in special_tokens:
+                continue
+            total += 1
+    return unknown / total if total else 1.0
+
+
+def assert_tokenizer_healthy(
+    tokenizer: Any,
+    texts: Iterable[str] = _TOKENIZER_HEALTHCHECK_TEXTS,
+    *,
+    max_unknown_fraction: float = 0.20,
+) -> None:
+    """Fail fast when a semantic model silently loads an unusable tokenizer."""
+    fraction = tokenizer_unknown_fraction(tokenizer, texts)
+    if fraction > max_unknown_fraction:
+        raise RuntimeError(
+            "Semantic tokenizer healthcheck failed: "
+            f"{fraction:.1%} unknown tokens (maximum {max_unknown_fraction:.1%})."
+        )
 
 
 def set_semantic_client(client) -> None:
@@ -179,7 +291,7 @@ def batch_encode_texts(texts: List[str]) -> Dict[str, np.ndarray]:
     if not _semantic_enabled():
         return {}
     
-    if SentenceTransformer is None:
+    if _get_sentence_transformer_class() is None:
         _warn_semantic_unavailable("sentence_transformers not installed")
         return {}
     
@@ -424,4 +536,6 @@ __all__ = [
     "clear_cache",
     "is_semantic_available",
     "set_semantic_client",
+    "tokenizer_unknown_fraction",
+    "assert_tokenizer_healthy",
 ]

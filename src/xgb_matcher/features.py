@@ -119,6 +119,38 @@ def semantic_gate_allows(name_jaro_max: float | None, name_token_overlap_max: fl
     return not (jaro < SEMANTIC_GATE_JARO_MIN and tok < SEMANTIC_GATE_TOKEN_MIN)
 
 
+def inject_semantic_features_batch(
+    crm_name: str,
+    feature_rows: List[Dict[str, Any]],
+    candidate_name_pools: List[List[str]],
+) -> None:
+    """Inject semantic features with the exact same gate for train and serve."""
+    if len(feature_rows) != len(candidate_name_pools):
+        raise ValueError("feature_rows and candidate_name_pools must have the same length")
+    if not feature_rows:
+        return
+
+    from .semantic import top2_semantic_similarities_batch
+
+    semantic_values = top2_semantic_similarities_batch(crm_name, candidate_name_pools)
+    for feature_row, (sem_max, sem_second, sem_gap) in zip(
+        feature_rows,
+        semantic_values,
+        strict=True,
+    ):
+        if semantic_gate_allows(
+            feature_row.get("name_jaro_max", 0.0),
+            feature_row.get("name_token_overlap_max", 0.0),
+        ):
+            feature_row["name_semantic_max"] = sem_max
+            feature_row["name_semantic_second"] = sem_second
+            feature_row["name_semantic_gap"] = sem_gap
+        else:
+            feature_row["name_semantic_max"] = 0.0
+            feature_row["name_semantic_second"] = 0.0
+            feature_row["name_semantic_gap"] = 0.0
+
+
 # Feature names in order (used for training and inference)
 FEATURE_NAMES: List[str] = [
     # Aggregated name similarities (bag of names)

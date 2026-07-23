@@ -2,7 +2,7 @@ import unittest
 
 import pandas as pd
 
-from scripts import calibrate_routing_thresholds as crt
+from src.xgb_matcher import selective
 
 
 class TestCalibrateRoutingThresholdsTop1(unittest.TestCase):
@@ -21,7 +21,7 @@ class TestCalibrateRoutingThresholdsTop1(unittest.TestCase):
             }
         )
 
-        top1 = crt._prepare_top1(infer)
+        top1 = selective.prepare_top1(infer)
 
         self.assertEqual(len(top1), 2)
         a_row = top1[top1["crm_id"] == "A"].iloc[0]
