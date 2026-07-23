@@ -14,6 +14,11 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Contrat d'execution V9 sans GPU**: directive active `GO/PIVOT/STOP`
+  placee en tete de `AGENTS.md`, ressources locales autorisees, ordre des
+  experiences, gates et regles d'arret formalises dans
+  `docs/v9_execution_contract.md`. Les descriptions V6/V7/V8 sont explicitement
+  historiques et ne pilotent plus les travaux. *(commit GitHub: `72d2749`)*
 - **Benchmark open-set, ablation cross-encoder et gates V9**: feuille
   d'adjudication stratifiee, validation humaine/evidence/snapshot obligatoire,
   gel adresse par hash, cross-encoder top-20 avec revision epinglee, gates
