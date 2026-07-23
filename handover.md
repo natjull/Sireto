@@ -14,6 +14,14 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Gate 0 V9 sans GPU franchie**: cles d'index dense alignees sur les vraies
+  partitions, refus des subsets mega-communes incompatibles, manifeste de
+  cardinalite et d'ordre SIRET, isolation stricte de PyTorch et FAISS dans
+  deux sous-processus persistants sans `KMP_DUPLICATE_LIB_OK`, builders local
+  et global SIREN corriges, mode dense-only repare et entrypoints V9
+  executables directement. Validation: 52 tests passants, smoke 512 lignes,
+  index local reel de 17 462 candidats et index global SIREN de 1 000 entites
+  construits/interroges avec succes sur CPU. *(commit GitHub: `88e97e0`)*
 - **Contrat d'execution V9 sans GPU**: directive active `GO/PIVOT/STOP`
   placee en tete de `AGENTS.md`, ressources locales autorisees, ordre des
   experiences, gates et regles d'arret formalises dans
@@ -72,12 +80,14 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- **Execution data V9**: produire le build canonique sur le snapshot SIRENE cible.
-- **Adjudication humaine**: remplir puis geler les 500 cas open-set.
-- **Ablation retrieval**: mesurer sparse-50, sparse+dense-local-50 et
-  sparse-local+dense-SIREN-global-50, plus l'ablation 100.
-- **Entrainement**: lancer ranker OOF puis accepteur sur le build retenu.
-- **Cross-encoder**: louer le GPU et lancer uniquement apres gel du benchmark.
+- **Gate 1 — baseline gelee**: identifier le corpus de requetes/labels
+  exploitable, geler snapshot, hashes, splits SIREN-disjoints et configuration,
+  puis mesurer sparse seul a exactement 50 candidats.
+- **Gate 2 — conditionnelle**: ne construire que les partitions denses locales
+  utiles au benchmark gele, puis mesurer hybride local-50. Construire et
+  mesurer le dense global SIREN-50 ensuite, toujours sur CPU et SSD externe.
+- **Gates suivantes**: aucune adjudication de 500 cas, aucun ranker/accepteur et
+  aucun cross-encoder avant signal positif du retrieval.
 
 ## Points d'attention
 - **Aucun resultat V9 final n'est encore mesure**: l'implementation et les tests
@@ -89,7 +99,8 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 - **NO_MATCH temporel**: toujours rattache au snapshot SIRENE et a la date de
   reference.
 - **Cross-encoder conditionnel**: aucune promotion sans +1 point de couverture
-  a precision cible et gates segments/latence.
+  a precision cible et gates segments/latence. Il reste hors chemin critique et
+  aucune location de GPU n'est autorisee.
 - **Certification**: avant environ 2 300 AUTO independants audites sans erreur,
   publier une estimation observee, jamais une garantie a 99,8 %.
 - **Governance docs**: garder `handover.md` comme journal de commits (regle AGENTS).
@@ -107,14 +118,14 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Executer `scripts/evaluate_v9_baseline.py` sur l'export V7 gele.
-2. Faire valider humainement les 500 requetes open-set, puis geler le jeu.
-3. Executer les trois variantes retrieval a 50 sur toutes les communes et
-   appliquer la gate recall/segments/latence.
-4. Construire le bundle canonique retenu, entrainer le ranker OOF puis
-   l'accepteur, et comparer a la baseline end-to-end.
-5. Lancer le cross-encoder top-20 comme ablation GPU seulement apres cette
-   baseline; promouvoir uniquement si toutes les gates passent.
+1. Auditer les exports CRM/GT locaux et choisir sans fuite le corpus de
+   benchmark ferme.
+2. Ecrire son manifeste immuable (snapshot, hashes, split, config et seed).
+3. Mesurer sparse-50 avant toute construction dense supplementaire.
+4. Construire sur `/Volumes/CATNAT_DATA/SIRETO_V9` les seules partitions denses
+   locales presentes dans le benchmark, puis mesurer hybride local-50.
+5. Ne lancer le build dense global SIREN et les gates suivantes que selon le
+   signal mesure, conformement au contrat `GO/PIVOT/STOP`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
