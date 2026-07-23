@@ -14,6 +14,15 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Benchmark ferme V9 gele**: reconstruction exacte du split V7 historique
+  par SIREN (seed 42), validation contre les scenes positives V7, ajout des 692
+  requetes historiquement absentes des scenes afin de compter les misses
+  end-to-end, hash integral des 4 119 fichiers de partitions et des snapshots
+  SIRENE. Build immuable `8967e72e07c9f4bf` sur le SSD externe: 11 837 train,
+  2 565 dev, 2 652 test, zero SIREN partage. Les labels restent des verites CRM
+  historiques non reaudites et le modele dense fine-tune local est declare
+  contamine pour toute revendication finale sur ce corpus. *(commit GitHub:
+  `b384509`)*
 - **Gate 0 V9 sans GPU franchie**: cles d'index dense alignees sur les vraies
   partitions, refus des subsets mega-communes incompatibles, manifeste de
   cardinalite et d'ordre SIRET, isolation stricte de PyTorch et FAISS dans
@@ -80,9 +89,9 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- **Gate 1 — baseline gelee**: identifier le corpus de requetes/labels
-  exploitable, geler snapshot, hashes, splits SIREN-disjoints et configuration,
-  puis mesurer sparse seul a exactement 50 candidats.
+- **Gate 1 — baseline sparse-50**: le corpus, les snapshots, les splits et la
+  configuration sont geles. Mesurer maintenant le test de 2 652 requetes sans
+  tuning et conserver les sorties par requete, intervalles et latence p95.
 - **Gate 2 — conditionnelle**: ne construire que les partitions denses locales
   utiles au benchmark gele, puis mesurer hybride local-50. Construire et
   mesurer le dense global SIREN-50 ensuite, toujours sur CPU et SSD externe.
