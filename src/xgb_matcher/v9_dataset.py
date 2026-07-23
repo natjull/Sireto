@@ -14,9 +14,16 @@ import pandas as pd
 from .contracts import GroundTruthKind
 from .features import V9_BASELINE_FEATURE_NAMES, normalize_text
 from .retrieval_config import RetrievalConfigV1
+from .v9_features import (
+    V9_RETRIEVAL_FEATURE_NAMES,
+    inject_retrieval_siren_features,
+)
 
 
 SCHEMA_VERSION = "v9.0"
+V9_CANDIDATE_FEATURE_NAMES = (
+    V9_BASELINE_FEATURE_NAMES + V9_RETRIEVAL_FEATURE_NAMES
+)
 QUERY_COLUMNS = [
     "query_id",
     "crm_name",
@@ -212,7 +219,7 @@ def canonicalize_candidates(
         "is_ground_truth",
     ]
     if source is None:
-        return pd.DataFrame(columns=base_columns + V9_BASELINE_FEATURE_NAMES)
+        return pd.DataFrame(columns=base_columns + V9_CANDIDATE_FEATURE_NAMES)
 
     candidates = source.copy()
     if "query_id" not in candidates.columns and "crm_id" in candidates.columns:
@@ -263,10 +270,35 @@ def canonicalize_candidates(
             "rrf_score",
             "retrieval_rank",
             "retrieval_source",
+            "retrieval_channel_count",
+            "retrieval_agreement",
+            "global_siren_rank",
+            "denomination",
+            "denomination_usuelle_ul",
+            "enseigne1",
+            "enseigne2",
+            "enseigne3",
+            "address",
+            "postcode",
+            "city",
+            "forme_juridique",
         )
         if column in candidates.columns
     ]
-    return candidates[base_columns + passthrough + V9_BASELINE_FEATURE_NAMES]
+    for feature in V9_RETRIEVAL_FEATURE_NAMES:
+        candidates[feature] = 0.0
+    for _query_id, query_rows in candidates.groupby("query_id", sort=False):
+        indices = query_rows.index.tolist()
+        feature_rows = candidates.loc[indices, V9_RETRIEVAL_FEATURE_NAMES].to_dict(
+            "records"
+        )
+        candidate_rows = candidates.loc[indices].to_dict("records")
+        inject_retrieval_siren_features(feature_rows, candidate_rows)
+        candidates.loc[indices, V9_RETRIEVAL_FEATURE_NAMES] = pd.DataFrame(
+            feature_rows,
+            index=indices,
+        )
+    return candidates[base_columns + passthrough + V9_CANDIDATE_FEATURE_NAMES]
 
 
 def assert_entity_disjoint(labels: pd.DataFrame) -> None:
@@ -300,7 +332,7 @@ class V9DatasetManifest:
         self,
         *,
         retrieval_config: RetrievalConfigV1 | None = None,
-        feature_order: Iterable[str] = V9_BASELINE_FEATURE_NAMES,
+        feature_order: Iterable[str] = V9_CANDIDATE_FEATURE_NAMES,
     ) -> None:
         if self.schema_version != SCHEMA_VERSION:
             raise ValueError(
@@ -377,7 +409,7 @@ def build_canonical_dataset(
         "retrieval_config": retrieval_config.to_dict(),
         "retrieval_signature": retrieval_config.signature().hash,
         "tokenizer_fingerprint": tokenizer_fingerprint(tokenizer_model_path),
-        "feature_order": V9_BASELINE_FEATURE_NAMES,
+        "feature_order": V9_CANDIDATE_FEATURE_NAMES,
         "row_counts": {
             "queries": len(queries),
             "labels": len(labels),
@@ -413,6 +445,7 @@ __all__ = [
     "SCHEMA_VERSION",
     "QUERY_COLUMNS",
     "LABEL_COLUMNS",
+    "V9_CANDIDATE_FEATURE_NAMES",
     "V9DatasetManifest",
     "normalize_siret",
     "stable_split",

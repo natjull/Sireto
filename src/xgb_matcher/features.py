@@ -1159,3 +1159,34 @@ def make_features(crm_row: pd.Series, cand: dict, skip_semantic: bool = False) -
     """Backward-compatible wrapper (builds CRM preprocessing on the fly)."""
     crm = preprocess_crm_row(crm_row)
     return make_features_from_preprocessed(crm, cand, skip_semantic=skip_semantic)
+
+
+def make_feature_rows_from_preprocessed(
+    crm_pre: Dict[str, Any],
+    candidates: List[dict],
+    *,
+    include_semantic: bool = True,
+) -> List[Dict[str, float]]:
+    """Canonical 54-feature computation shared by V9 train and serve."""
+    rows = [
+        make_features_from_preprocessed(crm_pre, candidate, skip_semantic=True)
+        for candidate in candidates
+    ]
+    if include_semantic and rows:
+        semantic_pools = [
+            build_semantic_name_pool(
+                build_candidate_names(candidate),
+                crm_city_norm=crm_pre.get("crm_city_norm", ""),
+                cand_city_norm=normalize_text(candidate.get("city")),
+            )
+            for candidate in candidates
+        ]
+        inject_semantic_features_batch(
+            crm_pre.get("crm_name_semantic", ""),
+            rows,
+            semantic_pools,
+        )
+    return [
+        {feature_name: float(row.get(feature_name, 0.0)) for feature_name in FEATURE_NAMES}
+        for row in rows
+    ]

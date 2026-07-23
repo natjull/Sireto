@@ -48,6 +48,7 @@ from src.xgb_matcher.features import (
     build_address,
     build_semantic_name_pool,
     inject_semantic_features_batch,
+    make_feature_rows_from_preprocessed,
     make_features_from_preprocessed,
     normalize_text,
     preprocess_crm_row,
@@ -331,8 +332,13 @@ def generate_samples_for_query(
         return samples
 
     all_feats = []
-    for cand in candidates:
-        f = make_features_from_preprocessed(crm_pre, cand, skip_semantic=True)
+    raw_feature_rows = make_feature_rows_from_preprocessed(
+        crm_pre,
+        candidates,
+        include_semantic=False,
+    )
+    for cand, raw_features in zip(candidates, raw_feature_rows, strict=True):
+        f = dict(raw_features)
         f.update({"_siret": cand["siret"], "_is_pos": (cand["siret"] == gt_siret), "_siren": cand.get("siren"), "_etat_admin": cand.get("etat_admin")})
         all_feats.append(f)
     if ranker:

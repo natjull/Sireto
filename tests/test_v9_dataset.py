@@ -8,9 +8,9 @@ from src.xgb_matcher.contracts import (
     ReviewReason,
     V9MatchResult,
 )
-from src.xgb_matcher.features import V9_BASELINE_FEATURE_NAMES
 from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.v9_dataset import (
+    V9_CANDIDATE_FEATURE_NAMES,
     V9DatasetManifest,
     assert_entity_disjoint,
     build_canonical_dataset,
@@ -78,7 +78,7 @@ def test_canonical_dataset_build_and_manifest_validation(tmp_path):
 
     manifest = V9DatasetManifest.load(output / "manifest.json")
     manifest.validate(retrieval_config=RetrievalConfigV1())
-    assert manifest.feature_order == V9_BASELINE_FEATURE_NAMES
+    assert manifest.feature_order == V9_CANDIDATE_FEATURE_NAMES
     assert manifest.row_counts == {"queries": 2, "labels": 2, "candidates": 3}
     built_labels = pd.read_parquet(output / "labels.parquet")
     built_candidates = pd.read_parquet(output / "candidates.parquet")
