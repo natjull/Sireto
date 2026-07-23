@@ -6,12 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import tempfile
 from pathlib import Path
 from typing import Iterable
 
 import numpy as np
 import pyarrow.dataset as ds
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 NAME_COLUMNS = [
@@ -105,53 +108,11 @@ def main() -> None:
     os.environ["XGB_SEMANTIC_MODEL"] = str(args.model)
     os.environ["XGB_SEMANTIC_DEVICE"] = args.device
 
-    import faiss
-    from src.xgb_matcher.semantic import _get_encoder
+    from src.xgb_matcher.faiss_process import build_faiss_index_file_isolated
+    from src.xgb_matcher.semantic_process import SemanticProcessClient
     from src.xgb_matcher.v9_dataset import file_sha256, tokenizer_fingerprint
 
-    encoder = _get_encoder(str(args.model))
-    if encoder is None:
-        raise RuntimeError("Unable to load the semantic encoder")
-
-    training_texts: list[str] = []
-    for _sirens, texts in iter_entity_batches(
-        args.source,
-        batch_size=args.read_batch_size,
-        max_rows=args.training_rows,
-    ):
-        training_texts.extend(texts)
-        if len(training_texts) >= args.training_rows:
-            training_texts = training_texts[: args.training_rows]
-            break
-    if not training_texts:
-        raise ValueError("No valid SIREN entity text found")
-
-    training_vectors = encoder.encode(
-        training_texts,
-        batch_size=args.encode_batch_size,
-        convert_to_numpy=True,
-        normalize_embeddings=True,
-        show_progress_bar=True,
-    ).astype(np.float32)
-    dimension = int(training_vectors.shape[1])
-    subquantizers = args.pq_subquantizers
-    if dimension % subquantizers != 0:
-        raise ValueError(
-            f"Embedding dimension {dimension} is not divisible by "
-            f"pq-subquantizers={subquantizers}"
-        )
-    quantizer = faiss.IndexFlatIP(dimension)
-    index = faiss.IndexIVFPQ(
-        quantizer,
-        dimension,
-        args.nlist,
-        subquantizers,
-        8,
-        faiss.METRIC_INNER_PRODUCT,
-    )
-    index.train(training_vectors)
-    index.nprobe = min(32, args.nlist)
-
+    encoder = SemanticProcessClient(args.model, device=args.device)
     args.output_dir.mkdir(parents=True, exist_ok=False)
     with tempfile.NamedTemporaryFile(
         dir=args.output_dir,
@@ -160,10 +121,21 @@ def main() -> None:
         delete=False,
     ) as ids_handle:
         ids_path = Path(ids_handle.name)
+    with tempfile.NamedTemporaryFile(
+        dir=args.output_dir,
+        prefix="siren_vectors_",
+        suffix=".f32",
+        delete=False,
+    ) as vectors_handle:
+        vectors_path = Path(vectors_handle.name)
 
     total = 0
+    dimension = 0
     try:
-        with ids_path.open("ab") as ids_handle:
+        with (
+            ids_path.open("ab") as ids_handle,
+            vectors_path.open("ab") as vectors_handle,
+        ):
             for sirens, texts in iter_entity_batches(
                 args.source,
                 batch_size=args.read_batch_size,
@@ -176,15 +148,30 @@ def main() -> None:
                     normalize_embeddings=True,
                     show_progress_bar=False,
                 ).astype(np.float32)
-                index.add(vectors)
+                if not dimension:
+                    dimension = int(vectors.shape[1])
+                elif int(vectors.shape[1]) != dimension:
+                    raise ValueError("Semantic embedding dimension changed mid-build")
+                vectors.tofile(vectors_handle)
                 np.asarray(sirens, dtype="S9").tofile(ids_handle)
                 total += len(sirens)
 
+        if not total or not dimension:
+            raise ValueError("No valid SIREN entity text found")
+        build_faiss_index_file_isolated(
+            vectors_path,
+            args.output_dir / "siren_faiss.index",
+            dimension=dimension,
+            nlist=args.nlist,
+            pq_subquantizers=args.pq_subquantizers,
+            training_rows=args.training_rows,
+        )
         raw_ids = np.memmap(ids_path, dtype="S9", mode="r", shape=(total,))
         np.save(args.output_dir / "siren_ids.npy", raw_ids)
-        faiss.write_index(index, str(args.output_dir / "siren_faiss.index"))
     finally:
         ids_path.unlink(missing_ok=True)
+        vectors_path.unlink(missing_ok=True)
+        encoder.close()
 
     manifest = {
         "schema_version": "v9-siren-dense-1",
@@ -196,8 +183,9 @@ def main() -> None:
         "dimension": dimension,
         "index_type": "IndexIVFPQ",
         "nlist": args.nlist,
-        "nprobe": index.nprobe,
-        "pq_subquantizers": subquantizers,
+        "nprobe": min(32, args.nlist),
+        "pq_subquantizers": args.pq_subquantizers,
+        "runtime": "isolated_semantic_and_faiss_subprocesses",
     }
     (args.output_dir / "manifest.json").write_text(
         json.dumps(manifest, indent=2),

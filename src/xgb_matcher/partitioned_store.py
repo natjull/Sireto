@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import pyarrow as pa
 import pyarrow.dataset as ds
@@ -190,6 +190,28 @@ class PartitionedCandidateStore:
         mega_insee_max_rows: int = 100_000,
         mega_insee_policy: str = "cp_filter_insee",
     ) -> List[dict]:
+        rows, _partition_key = self.load_by_insee_then_postcode_with_key(
+            insee,
+            postcode,
+            mega_insee_max_rows=mega_insee_max_rows,
+            mega_insee_policy=mega_insee_policy,
+        )
+        return rows
+
+    def load_by_insee_then_postcode_with_key(
+        self,
+        insee: Optional[str],
+        postcode: Optional[str],
+        *,
+        mega_insee_max_rows: int = 100_000,
+        mega_insee_policy: str = "cp_filter_insee",
+    ) -> Tuple[List[dict], Optional[str]]:
+        """Load candidates and return the exact compatible dense-index key.
+
+        A filtered CP+INSEE subset has no corresponding precomputed partition
+        index, so its key is intentionally ``None``. This prevents silently
+        applying FAISS indices whose row ordering belongs to a different pool.
+        """
         code_insee = normalize_code(insee)
         code_cp = normalize_code(postcode)
         if code_insee:
@@ -197,15 +219,18 @@ class PartitionedCandidateStore:
                 count = self._count_insee_rows(code_insee)
                 if count > mega_insee_max_rows:
                     if mega_insee_policy == "cp_filter_insee" and code_cp:
-                        return self.load_by_postcode_filtered_insee(code_cp, code_insee)
+                        return (
+                            self.load_by_postcode_filtered_insee(code_cp, code_insee),
+                            None,
+                        )
                     if mega_insee_policy == "full_insee":
-                        return self.load_by_insee(code_insee)
+                        return self.load_by_insee(code_insee), f"{code_insee}_"
             rows = self.load_by_insee(code_insee)
             if rows:
-                return rows
+                return rows, f"{code_insee}_"
         if code_cp:
-            return self.load_by_postcode(code_cp)
-        return []
+            return self.load_by_postcode(code_cp), f"_{code_cp}"
+        return [], None
 
     def load_by_department(self, insee: Optional[str], postcode: Optional[str]) -> List[dict]:
         raise RuntimeError("Department fallback is disabled under SSOT.")

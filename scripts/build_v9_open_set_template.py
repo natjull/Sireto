@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.v9_dataset import read_table
 

@@ -1,34 +1,17 @@
-"""XGBoost SIRET Matcher - Shared feature engineering module."""
+"""XGBoost SIRET Matcher public API.
 
-from .features import (
-    # Text normalization
-    normalize_text,
-    normalize_name,
-    # Similarity functions
-    jaro_sim,
-    levenshtein_norm,
-    # Address building
-    build_address,
-    extract_street_number,
-    # Matching functions
-    postal_match,
-    city_match,
-    street_number_diff,
-    # Token-based features
-    token_overlap,
-    first_word_match,
-    contains_check,
-    acronym_match,
-    numeric_token_match,
-    # Feature computation
-    make_features,
-    FEATURE_NAMES,
-    semantic_gate_allows,
-)
+The package deliberately avoids eager imports.  In particular, importing
+``features`` pulls in Pandas/PyArrow, whose OpenMP runtime must never leak
+into the isolated Torch semantic worker on macOS.
+"""
 
-from .naming import build_candidate_names, primary_name, NameSource, CandidateName
+from __future__ import annotations
 
-__all__ = [
+from importlib import import_module
+from typing import Any
+
+
+_FEATURE_EXPORTS = {
     "normalize_text",
     "normalize_name",
     "jaro_sim",
@@ -46,8 +29,20 @@ __all__ = [
     "make_features",
     "FEATURE_NAMES",
     "semantic_gate_allows",
+}
+_NAMING_EXPORTS = {
     "build_candidate_names",
     "primary_name",
     "NameSource",
     "CandidateName",
-]
+}
+
+__all__ = sorted(_FEATURE_EXPORTS | _NAMING_EXPORTS)
+
+
+def __getattr__(name: str) -> Any:
+    if name in _FEATURE_EXPORTS:
+        return getattr(import_module(".features", __name__), name)
+    if name in _NAMING_EXPORTS:
+        return getattr(import_module(".naming", __name__), name)
+    raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

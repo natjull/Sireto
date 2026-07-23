@@ -6,11 +6,14 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import xgboost as xgb
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.contracts import GroundTruthKind
 from src.xgb_matcher.v9_dataset import V9DatasetManifest

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Pre-compute dense embeddings per partition for hybrid FAISS retrieval.
 
-For each partition (insee or cp), encodes all candidate names using the
-semantic model (MiniLM or finetuned siret-bert) and stores:
-  - <store_dir>/<partition_key>_embeddings.npy  (N x dim, float32)
-  - <store_dir>/<partition_key>_faiss.index      (serialized FAISS)
+For each partition (insee or cp), encodes all canonical retrieval candidates
+using the semantic model (MiniLM or finetuned siret-bert) and stores:
+  - <store_dir>/<partition_key>_faiss.index   (serialized FAISS)
+  - <store_dir>/<partition_key>_manifest.json (row-order contract)
 
 Usage:
     python scripts/precompute_embeddings.py \
@@ -29,6 +29,8 @@ Requires: faiss-cpu, sentence-transformers, torch
 from __future__ import annotations
 
 import argparse
+import hashlib
+import json
 import logging
 import sys
 import time
@@ -41,7 +43,6 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.naming import candidate_tfidf_text
-from src.xgb_matcher.dense_retrieval import DenseIndex, PartitionEmbeddingStore
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
 _logger = logging.getLogger(__name__)
@@ -162,7 +163,13 @@ def encode_candidates(
     """
     from src.xgb_matcher.semantic import _normalize_for_embedding
 
-    texts = [_normalize_for_embedding(candidate_tfidf_text(c)) or " " for c in candidates]
+    # The semantic encoder truncates at its token limit. Capping before IPC
+    # avoids pathological 70k-character bags caused by aggregated director
+    # names, without removing information the model could consume.
+    texts = [
+        (_normalize_for_embedding(candidate_tfidf_text(c)) or " ")[:2048]
+        for c in candidates
+    ]
 
     embeddings = encoder.encode(
         texts,
@@ -174,6 +181,25 @@ def encode_candidates(
     return embeddings.astype(np.float32)
 
 
+def prepare_candidates_for_index(
+    candidates: List[dict],
+    *,
+    drop_unnamed: bool,
+    include_closed: bool,
+) -> List[dict]:
+    """Apply the exact canonical retrieval filtering and ordering contract."""
+    from src.xgb_matcher.blocking import dedupe_candidates
+    from src.xgb_matcher.retrieval import _apply_filters
+
+    filtered = _apply_filters(candidates, drop_unnamed, include_closed)
+    return list(dedupe_candidates(filtered).values())
+
+
+def _siret_order_sha256(candidates: List[dict]) -> str:
+    payload = "\n".join(str(candidate.get("siret") or "") for candidate in candidates)
+    return hashlib.sha256(payload.encode("ascii", errors="ignore")).hexdigest()
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Pre-compute dense embeddings per partition.")
     parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v7_all"))
@@ -182,7 +208,19 @@ def main() -> None:
     parser.add_argument("--model", type=str, default=None,
                         help="Sentence transformer model (default: auto-detect finetuned or paraphrase-multilingual-MiniLM)")
     parser.add_argument("--batch-size", type=int, default=256)
-    parser.add_argument("--device", type=str, default=None, help="torch device (auto: mps > cpu)")
+    parser.add_argument("--device", type=str, default=None, help="torch device (default: cpu)")
+    parser.add_argument(
+        "--drop-unnamed",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Mirror RetrievalConfigV1.drop_unnamed (default: true)",
+    )
+    parser.add_argument(
+        "--include-closed",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Mirror RetrievalConfigV1.include_closed (default: true)",
+    )
     parser.add_argument("--skip-existing", action="store_true", help="Skip partitions with existing embeddings")
     parser.add_argument("--sort-by-size", action="store_true", help="Sort INSEE partitions by descending row_count from manifest")
     parser.add_argument("--mega-first", action="store_true", help="Process INSEE mega-communes first using manifest row_count")
@@ -204,25 +242,18 @@ def main() -> None:
             model_name = "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2"
             _logger.info("Using default model: %s", model_name)
 
-    store = PartitionEmbeddingStore(args.output_dir)
-    insee_counts = _load_insee_manifest_counts(args.partitions_dir)
-
     encoder = None
     if not args.dry_run:
-        from sentence_transformers import SentenceTransformer
+        from src.xgb_matcher.semantic_process import SemanticProcessClient
 
-        device = args.device
-        if device is None:
-            try:
-                import torch
+        # V9's no-GPU contract deliberately defaults to CPU. Importing Torch
+        # in this FAISS parent process would defeat OpenMP isolation.
+        device = args.device or "cpu"
 
-                device = "mps" if torch.backends.mps.is_available() else "cpu"
-            except ImportError:
-                device = "cpu"
+        _logger.info("Starting isolated SentenceTransformer worker on device=%s", device)
+        encoder = SemanticProcessClient(model_name, device=device)
 
-        _logger.info("Loading SentenceTransformer once on device=%s", device)
-        encoder = SentenceTransformer(model_name, device=device)
-
+    insee_counts = _load_insee_manifest_counts(args.partitions_dir)
     partition_types = ["insee", "cp"] if args.partition_type == "both" else [args.partition_type]
 
     for ptype in partition_types:
@@ -262,12 +293,32 @@ def main() -> None:
 
         for i, code in enumerate(codes):
             partition_key = f"{code}_" if ptype == "insee" else f"_{code}"
+            safe_key = (
+                partition_key.replace("|", "_")
+                .replace("/", "_")
+                .replace("\\", "_")
+            )
+            index_path = args.output_dir / f"{safe_key}_faiss.index"
+            manifest_path = args.output_dir / f"{safe_key}_manifest.json"
 
-            if args.skip_existing and store.has_embeddings(partition_key):
+            if (
+                args.skip_existing
+                and index_path.exists()
+                and manifest_path.exists()
+            ):
                 skipped_existing += 1
                 continue
 
             candidates = _load_partition_candidates(args.partitions_dir, ptype, code)
+            if not candidates:
+                skipped_empty += 1
+                continue
+            raw_candidate_count = len(candidates)
+            candidates = prepare_candidates_for_index(
+                candidates,
+                drop_unnamed=args.drop_unnamed,
+                include_closed=args.include_closed,
+            )
             if not candidates:
                 skipped_empty += 1
                 continue
@@ -276,10 +327,31 @@ def main() -> None:
             embeddings = encode_candidates(candidates, encoder, args.batch_size)
             elapsed = time.perf_counter() - t0
 
-            store.store_dir.mkdir(parents=True, exist_ok=True)
-            # Build and save ONLY the FAISS index (PQ compressed if large)
-            idx = DenseIndex(embeddings)
-            idx.save(store._index_path(partition_key))
+            # Build and save only the FAISS index. FAISS runs in its own
+            # interpreter because executing FAISS and PyArrow kernels in the
+            # same macOS process aborts on duplicate libomp runtimes.
+            from src.xgb_matcher.faiss_process import build_faiss_index_isolated
+
+            build_faiss_index_isolated(embeddings, index_path)
+            manifest_path.write_text(
+                json.dumps(
+                    {
+                        "schema_version": "v9-partition-dense-1",
+                        "partition_key": partition_key,
+                        "partition_type": ptype,
+                        "partition_code": code,
+                        "raw_candidate_count": raw_candidate_count,
+                        "candidate_count": len(candidates),
+                        "siret_order_sha256": _siret_order_sha256(candidates),
+                        "drop_unnamed": args.drop_unnamed,
+                        "include_closed": args.include_closed,
+                        "model": str(model_name),
+                    },
+                    indent=2,
+                    sort_keys=True,
+                ),
+                encoding="utf-8",
+            )
 
             processed += 1
             total_vectors += len(candidates)
@@ -307,6 +379,8 @@ def main() -> None:
             skipped_empty,
             total_vectors,
         )
+    if encoder is not None:
+        encoder.close()
 
     if args.dry_run:
         _logger.info("Dry-run completed. No embeddings were generated.")

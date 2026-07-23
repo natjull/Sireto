@@ -4,7 +4,10 @@
 from __future__ import annotations
 
 import argparse
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.v9_adjudication import freeze_adjudications
 from src.xgb_matcher.v9_dataset import read_table

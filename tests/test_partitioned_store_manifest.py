@@ -60,3 +60,39 @@ def test_insee_count_falls_back_to_dataset_when_manifest_missing_code(tmp_path: 
     store = PartitionedCandidateStore(tmp_path)
 
     assert store._count_insee_rows("01002") == 2
+
+
+def test_loaded_pool_returns_exact_dense_partition_key(tmp_path: Path) -> None:
+    _build_minimal_partitions(tmp_path)
+    store = PartitionedCandidateStore(tmp_path)
+
+    insee_rows, insee_key = store.load_by_insee_then_postcode_with_key(
+        "01001",
+        "01000",
+        mega_insee_policy="full_insee",
+    )
+    cp_rows, cp_key = store.load_by_insee_then_postcode_with_key(
+        None,
+        "01000",
+    )
+
+    assert len(insee_rows) == 1
+    assert insee_key == "01001_"
+    assert len(cp_rows) == 1
+    assert cp_key == "_01000"
+
+
+def test_filtered_mega_pool_refuses_incompatible_dense_key(tmp_path: Path) -> None:
+    _build_minimal_partitions(tmp_path)
+    store = PartitionedCandidateStore(tmp_path)
+    store._manifest_insee_counts["01001"] = 200_000
+
+    rows, key = store.load_by_insee_then_postcode_with_key(
+        "01001",
+        "01000",
+        mega_insee_max_rows=100_000,
+        mega_insee_policy="cp_filter_insee",
+    )
+
+    assert rows
+    assert key is None

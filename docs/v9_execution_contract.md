@@ -33,6 +33,40 @@ Les artefacts volumineux V9 doivent être écrits sous un dossier dédié :
 - index dense et candidats chargés avec le même contrat de partition ;
 - smoke test prouvant que le canal dense retourne réellement des candidats.
 
+Le runtime de référence est `.venv/bin/python`. Le smoke test obligatoire est :
+
+```bash
+.venv/bin/python scripts/check_v9_runtime.py --rows 512
+```
+
+PyTorch et FAISS sont chacun isolés dans un sous-processus dédié. Le processus
+principal peut donc exécuter PyArrow/XGBoost sans charger leur runtime OpenMP.
+Le worker FAISS est persistant à l’inférence et met les index en cache :
+l’isolation n’ajoute pas un lancement de Python par requête.
+`KMP_DUPLICATE_LIB_OK` est interdit.
+
+Chaque index dense local doit avoir un manifeste voisin contenant au minimum
+le nombre de candidats et le hash de l’ordre des SIRET. Une différence de
+cardinalité ou d’ordre désactive ce canal : un indice FAISS ne peut jamais être
+appliqué silencieusement à une autre scène.
+
+Preuves Gate 0 obtenues le 23 juillet 2026 :
+
+- smoke synthétique 512 lignes : `PASS`, dimension 384, environ 2 024
+  encodages/s CPU ;
+- partition réelle INSEE `01053` : 17 462 vecteurs et index FAISS produits en
+  17 s environ ;
+- requête dense réelle : budget strict 50, vérité terrain retournée top-1 ;
+- index global SIREN limité à 1 000 entités : build et requête top-1 réussis.
+
+Ces chiffres prouvent l’exécutabilité locale, pas la qualité du retrieval.
+
+Le builder global écrit temporairement les vecteurs float32 sur le volume de
+destination, puis construit FAISS dans un processus propre et supprime le
+fichier intermédiaire. Prévoir jusqu’à environ 45 Go temporaires pour 29
+millions d’entités à 384 dimensions ; le build complet doit donc cibler le SSD
+externe, jamais le disque interne.
+
 ### Gate 1 — Baseline gelée
 
 - snapshot SIRENE, requêtes, labels et splits identifiés par hash ;

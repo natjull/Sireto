@@ -267,6 +267,12 @@ def _dense_retrieval_hits(
 
     if idx is None:
         return []
+    if not dense_store.validates_candidate_order(
+        partition_key,
+        candidates,
+        idx,
+    ):
+        return []
 
     scores, indices = idx.search(query_vec, top_k)
     # Filter out -1 padding indices from FAISS
@@ -333,7 +339,7 @@ def build_candidate_pool(
     postcode = crm_row.get("postcode") or crm_row.get("crm_cp")
     crm_name = crm_row.get("crm_name", "")
     crm_address = crm_pre.get("crm_addr", "")
-    partition_key = f"{insee or ''}_{postcode or ''}"
+    partition_key: Optional[str] = None
 
     gt_norm = str(gt_siret).zfill(14) if gt_siret else None
 
@@ -419,14 +425,14 @@ def build_candidate_pool(
     # Step 1: Load base candidates (strict insee_then_postcode + mega policy)
     if timer:
         with timer.stage("partition_load"):
-            base_candidates = store.load_by_insee_then_postcode(
+            base_candidates, partition_key = store.load_by_insee_then_postcode_with_key(
                 insee,
                 postcode,
                 mega_insee_max_rows=config.mega_insee_max_rows,
                 mega_insee_policy=config.mega_insee_policy,
             )
     else:
-        base_candidates = store.load_by_insee_then_postcode(
+        base_candidates, partition_key = store.load_by_insee_then_postcode_with_key(
             insee,
             postcode,
             mega_insee_max_rows=config.mega_insee_max_rows,
@@ -496,6 +502,7 @@ def build_candidate_pool(
 
         # 4a. Sparse retrieval (TF-IDF) — with persistent cache
         sparse_idx: List[int] = []
+        sparse_scores: Dict[int, float] = {}
         if config.sparse_retrieval_enabled:
             artifacts = _get_tfidf_artifacts(
                 candidates, config, tfidf_cache, cache_key,
@@ -506,7 +513,6 @@ def build_candidate_pool(
             name_vec, name_mat, names, char_vec, char_mat, addr_vec, addr_mat = artifacts
 
             name_idx: List[int] = []
-            sparse_scores: Dict[int, float] = {}
             if name_vec is not None and name_mat is not None:
                 if config.fusion_mode == "rrf":
                     name_hits = prefilter_candidates_tfidf_scored(
@@ -564,7 +570,11 @@ def build_candidate_pool(
         # 4b. Dense retrieval (FAISS) — if enabled and available
         dense_idx: List[int] = []
         dense_scores: Dict[int, float] = {}
-        if config.dense_retrieval_enabled and dense_store is not None:
+        if (
+            config.dense_retrieval_enabled
+            and dense_store is not None
+            and partition_key is not None
+        ):
             dense_hits = _dense_retrieval_hits(
                 crm_name, candidates, partition_key,
                 dense_store, config.dense_top_k, timer,

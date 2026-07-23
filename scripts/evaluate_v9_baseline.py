@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.contracts import GroundTruthKind
 from src.xgb_matcher.selective import certified_precision_lower, risk_coverage_curve

@@ -64,6 +64,7 @@ def run_benchmark(
     candidate_budget: int | None = None,
     global_siren_dense_dir: Path | None = None,
     siren_geo_index: Path | None = None,
+    semantic_model: Path = Path("models/semantic/siret-bert-deploy"),
 ) -> Dict[str, Dict[str, float]]:
     """Run retrieval in 3 modes and compute recall@K."""
     budget = candidate_budget or prefilter_k
@@ -117,6 +118,17 @@ def run_benchmark(
             dense_retrieval_enabled=False,
             global_dense_siren_enabled=True,
         )
+
+    semantic_client = None
+    if dense_store is not None or dense_siren_index is not None:
+        from src.xgb_matcher.semantic import set_semantic_client
+        from src.xgb_matcher.semantic_process import SemanticProcessClient
+
+        os.environ["XGB_SEMANTIC_ENABLED"] = "1"
+        os.environ["XGB_SEMANTIC_MODEL"] = str(semantic_model)
+        os.environ["XGB_SEMANTIC_DEVICE"] = "cpu"
+        semantic_client = SemanticProcessClient(semantic_model, device="cpu")
+        set_semantic_client(semantic_client)
 
     results: Dict[str, Dict[str, float]] = {}
 
@@ -210,6 +222,15 @@ def run_benchmark(
 
         timer.log_summary(prefix=mode_name)
 
+    if dense_store is not None:
+        dense_store.close()
+    if dense_siren_index is not None:
+        dense_siren_index.close()
+    if semantic_client is not None:
+        from src.xgb_matcher.semantic import set_semantic_client
+
+        semantic_client.close()
+        set_semantic_client(None)
     return results
 
 
@@ -220,6 +241,11 @@ def main() -> None:
     parser.add_argument("--dense-dir", type=Path, default=Path("data/dense_index"))
     parser.add_argument("--global-siren-dense-dir", type=Path)
     parser.add_argument("--siren-geo-index", type=Path)
+    parser.add_argument(
+        "--semantic-model",
+        type=Path,
+        default=Path("models/semantic/siret-bert-deploy"),
+    )
     parser.add_argument("--prefilter-k", type=int, default=500)
     parser.add_argument(
         "--candidate-budget",
@@ -246,6 +272,7 @@ def main() -> None:
         args.candidate_budget,
         args.global_siren_dense_dir,
         args.siren_geo_index,
+        args.semantic_model,
     )
 
     # Print summary table

@@ -20,6 +20,8 @@ from .partitioned_store import PartitionedCandidateStore
 from .retrieval import build_candidate_pool
 from .retrieval_config import RetrievalConfigV1
 from .siren_retrieval import SirenToGeoIndex
+from .semantic import set_semantic_client
+from .semantic_process import SemanticProcessClient
 from .v9_acceptor import V9AcceptorBundle
 from .v9_dataset import V9DatasetManifest
 from .v9_features import inject_retrieval_siren_features
@@ -38,6 +40,7 @@ class V9InferenceEngine:
         dense_store: PartitionEmbeddingStore | None = None,
         dense_siren_index: GlobalDenseSirenIndex | None = None,
         siren_to_geo: SirenToGeoIndex | None = None,
+        semantic_client: SemanticProcessClient | None = None,
     ) -> None:
         self.store = store
         self.retrieval_config = retrieval_config
@@ -47,6 +50,7 @@ class V9InferenceEngine:
         self.dense_store = dense_store
         self.dense_siren_index = dense_siren_index
         self.siren_to_geo = siren_to_geo
+        self.semantic_client = semantic_client
         self._tfidf_cache: dict = {}
 
     @classmethod
@@ -59,6 +63,9 @@ class V9InferenceEngine:
         partitions_dir: Path,
         retrieval_config: RetrievalConfigV1,
         dense_store_dir: Path | None = None,
+        semantic_model_path: Path | None = Path(
+            "models/semantic/siret-bert-deploy"
+        ),
     ) -> "V9InferenceEngine":
         manifest = V9DatasetManifest.load(dataset_dir / "manifest.json")
         manifest.validate(
@@ -81,6 +88,13 @@ class V9InferenceEngine:
         )
         dense_siren_index = None
         siren_to_geo = None
+        semantic_client = None
+        if semantic_model_path is not None:
+            semantic_client = SemanticProcessClient(
+                semantic_model_path,
+                device="cpu",
+            )
+            set_semantic_client(semantic_client)
         if retrieval_config.global_dense_siren_enabled:
             if (
                 not retrieval_config.global_dense_siren_index_path
@@ -109,7 +123,18 @@ class V9InferenceEngine:
             dense_store=dense_store,
             dense_siren_index=dense_siren_index,
             siren_to_geo=siren_to_geo,
+            semantic_client=semantic_client,
         )
+
+    def close(self) -> None:
+        if self.dense_store is not None:
+            self.dense_store.close()
+        if self.dense_siren_index is not None:
+            self.dense_siren_index.close()
+        if self.semantic_client is not None:
+            self.semantic_client.close()
+            self.semantic_client = None
+            set_semantic_client(None)
 
     def infer(self, crm_row: dict[str, Any]):
         query_id = str(crm_row.get("query_id") or crm_row.get("crm_id") or "")

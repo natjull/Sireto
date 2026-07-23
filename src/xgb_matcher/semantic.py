@@ -64,6 +64,8 @@ def is_semantic_available() -> bool:
     """
     if not _semantic_enabled():
         return False
+    if _SEMANTIC_CLIENT is not None:
+        return True
     if _get_sentence_transformer_class() is None:
         return False
     # Try to get encoder (will cache on success)
@@ -291,7 +293,7 @@ def batch_encode_texts(texts: List[str]) -> Dict[str, np.ndarray]:
     if not _semantic_enabled():
         return {}
     
-    if _get_sentence_transformer_class() is None:
+    if _SEMANTIC_CLIENT is None and _get_sentence_transformer_class() is None:
         _warn_semantic_unavailable("sentence_transformers not installed")
         return {}
     

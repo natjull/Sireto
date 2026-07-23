@@ -5,7 +5,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.v9_dataset import build_canonical_dataset

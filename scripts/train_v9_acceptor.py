@@ -5,9 +5,12 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.v9_acceptor import train_selective_acceptor
 from src.xgb_matcher.v9_dataset import V9DatasetManifest, read_table

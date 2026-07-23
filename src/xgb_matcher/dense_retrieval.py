@@ -11,22 +11,29 @@ from __future__ import annotations
 import logging
 import os
 import json
+import hashlib
+from importlib.util import find_spec
 from collections import OrderedDict
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple
 
 import numpy as np
 
 _logger = logging.getLogger(__name__)
+faiss = None
 
-try:
-    import faiss  # type: ignore[import-untyped]
-except ImportError:
-    faiss = None
+
+def _get_faiss():
+    global faiss
+    if faiss is None:
+        import faiss as faiss_module  # type: ignore[import-untyped]
+
+        faiss = faiss_module
+    return faiss
 
 
 def _faiss_available() -> bool:
-    return faiss is not None
+    return find_spec("faiss") is not None
 
 
 # ---------------------------------------------------------------------------
@@ -48,16 +55,17 @@ class DenseIndex:
                 "faiss-cpu required for dense retrieval. "
                 "Install with: pip install faiss-cpu"
             )
+        faiss_module = _get_faiss()
         if embeddings.dtype != np.float32:
             embeddings = embeddings.astype(np.float32)
 
         self.n, self.dim = embeddings.shape
 
         if self.n < 10_000:
-            self.index = faiss.IndexFlatIP(self.dim)
+            self.index = faiss_module.IndexFlatIP(self.dim)
         else:
             nlist = max(16, int(np.sqrt(self.n)))
-            quantizer = faiss.IndexFlatIP(self.dim)
+            quantizer = faiss_module.IndexFlatIP(self.dim)
             
             # Product Quantization for extreme RAM reduction (compression 32x)
             # 384 dimensions -> 48 blocks of 8 bits each
@@ -65,8 +73,13 @@ class DenseIndex:
             if self.dim % m != 0:
                 m = 8 # Safe fallback
                 
-            self.index = faiss.IndexIVFPQ(
-                quantizer, self.dim, nlist, m, 8, faiss.METRIC_INNER_PRODUCT
+            self.index = faiss_module.IndexIVFPQ(
+                quantizer,
+                self.dim,
+                nlist,
+                m,
+                8,
+                faiss_module.METRIC_INNER_PRODUCT,
             )
             self.index.nprobe = min(16, nlist)
             self.index.train(embeddings)
@@ -84,17 +97,30 @@ class DenseIndex:
         return scores[0], indices[0]
 
     def save(self, path: Path) -> None:
-        faiss.write_index(self.index, str(path))
+        _get_faiss().write_index(self.index, str(path))
 
     @classmethod
     def load(cls, path: Path) -> "DenseIndex":
         if not _faiss_available():
             raise ImportError("faiss-cpu required")
+        faiss_module = _get_faiss()
         obj = cls.__new__(cls)
-        obj.index = faiss.read_index(str(path))
+        obj.index = faiss_module.read_index(str(path))
         obj.n = obj.index.ntotal
         obj.dim = obj.index.d
         return obj
+
+
+class _RemoteDenseIndex:
+    """Thin index proxy backed by a clean persistent FAISS process."""
+
+    def __init__(self, path: Path, client: Any) -> None:
+        self.path = path
+        self._client = client
+        self.n, self.dim = client.describe(path)
+
+    def search(self, query: np.ndarray, k: int) -> Tuple[np.ndarray, np.ndarray]:
+        return self._client.search(self.path, query, min(k, self.n))
 
 
 # ---------------------------------------------------------------------------
@@ -115,8 +141,9 @@ class PartitionEmbeddingStore:
         self.store_dir = store_dir or Path(
             os.getenv("XGB_DENSE_STORE_DIR", "data/dense_index")
         )
-        self._index_cache: OrderedDict[str, DenseIndex] = OrderedDict()
+        self._index_cache: OrderedDict[str, _RemoteDenseIndex] = OrderedDict()
         self._max_cache = 20
+        self._faiss_client = None
 
     @staticmethod
     def _safe_key(partition_key: str) -> str:
@@ -127,6 +154,9 @@ class PartitionEmbeddingStore:
 
     def _index_path(self, partition_key: str) -> Path:
         return self.store_dir / f"{self._safe_key(partition_key)}_faiss.index"
+
+    def _manifest_path(self, partition_key: str) -> Path:
+        return self.store_dir / f"{self._safe_key(partition_key)}_manifest.json"
 
     # -- Read / Write embeddings --
 
@@ -145,7 +175,16 @@ class PartitionEmbeddingStore:
 
     # -- FAISS index management --
 
-    def get_index(self, partition_key: str) -> Optional[DenseIndex]:
+    def _client(self):
+        if self._faiss_client is None:
+            from .faiss_process import FaissSearchProcessClient
+
+            self._faiss_client = FaissSearchProcessClient(
+                max_cache=self._max_cache
+            )
+        return self._faiss_client
+
+    def get_index(self, partition_key: str) -> Optional[_RemoteDenseIndex]:
         """Load or build a FAISS index for the partition.
 
         Priority:
@@ -163,7 +202,7 @@ class PartitionEmbeddingStore:
         idx_path = self._index_path(partition_key)
         if idx_path.exists():
             try:
-                idx = DenseIndex.load(idx_path)
+                idx = _RemoteDenseIndex(idx_path, self._client())
                 self._put_cache(partition_key, idx)
                 return idx
             except Exception as exc:
@@ -173,15 +212,65 @@ class PartitionEmbeddingStore:
         if emb is None:
             return None
 
-        idx = DenseIndex(emb)
-        idx.save(idx_path)
+        from .faiss_process import build_faiss_index_isolated
+
+        build_faiss_index_isolated(emb, idx_path)
+        idx = _RemoteDenseIndex(idx_path, self._client())
         self._put_cache(partition_key, idx)
         return idx
 
-    def _put_cache(self, key: str, idx: DenseIndex) -> None:
+    def validates_candidate_order(
+        self,
+        partition_key: str,
+        candidates: List[dict],
+        index: _RemoteDenseIndex,
+    ) -> bool:
+        """Reject an ANN index whose row ids cannot map to this exact pool."""
+        if index.n != len(candidates):
+            _logger.error(
+                "[DenseStore] Cardinality mismatch for %s: index=%d pool=%d",
+                partition_key,
+                index.n,
+                len(candidates),
+            )
+            return False
+        manifest_path = self._manifest_path(partition_key)
+        if not manifest_path.exists():
+            _logger.warning(
+                "[DenseStore] Legacy index without order manifest: %s",
+                partition_key,
+            )
+            return True
+        try:
+            manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+        except (OSError, ValueError) as error:
+            _logger.error(
+                "[DenseStore] Invalid manifest for %s: %s",
+                partition_key,
+                error,
+            )
+            return False
+        payload = "\n".join(
+            str(candidate.get("siret") or "") for candidate in candidates
+        )
+        observed_hash = hashlib.sha256(
+            payload.encode("ascii", errors="ignore")
+        ).hexdigest()
+        return (
+            int(manifest.get("candidate_count", -1)) == len(candidates)
+            and manifest.get("siret_order_sha256") == observed_hash
+        )
+
+    def _put_cache(self, key: str, idx: _RemoteDenseIndex) -> None:
         self._index_cache[key] = idx
         while len(self._index_cache) > self._max_cache:
             self._index_cache.popitem(last=False)
+
+    def close(self) -> None:
+        if self._faiss_client is not None:
+            self._faiss_client.close()
+            self._faiss_client = None
+        self._index_cache.clear()
 
 
 class GlobalDenseSirenIndex:
@@ -197,13 +286,19 @@ class GlobalDenseSirenIndex:
             if manifest_path.exists()
             else {}
         )
-        self.index = faiss.read_index(str(self.index_dir / "siren_faiss.index"))
+        from .faiss_process import FaissSearchProcessClient
+
+        self._faiss_client = FaissSearchProcessClient(max_cache=1)
+        self._index_path = self.index_dir / "siren_faiss.index"
+        self.ntotal, self.dimension = self._faiss_client.describe(
+            self._index_path
+        )
         self.siren_ids = np.load(
             self.index_dir / "siren_ids.npy",
             mmap_mode="r",
             allow_pickle=False,
         )
-        if self.index.ntotal != len(self.siren_ids):
+        if self.ntotal != len(self.siren_ids):
             raise ValueError("Global dense SIREN index/id cardinality mismatch")
         manifest_count = self.manifest.get("entity_count")
         if manifest_count is not None and int(manifest_count) != len(self.siren_ids):
@@ -211,15 +306,16 @@ class GlobalDenseSirenIndex:
 
     def query(self, crm_name: str, top_k: int = 50) -> List[Tuple[str, float]]:
         query = encode_query(crm_name)
-        if query is None or self.index.ntotal == 0:
+        if query is None or self.ntotal == 0:
             return []
-        k = min(top_k, self.index.ntotal)
-        scores, indices = self.index.search(
-            query.astype(np.float32, copy=False).reshape(1, -1),
+        k = min(top_k, self.ntotal)
+        scores, indices = self._faiss_client.search(
+            self._index_path,
+            query.astype(np.float32, copy=False),
             k,
         )
         hits: List[Tuple[str, float]] = []
-        for index, score in zip(indices[0], scores[0], strict=True):
+        for index, score in zip(indices, scores, strict=True):
             if index < 0:
                 continue
             raw_siren = self.siren_ids[int(index)]
@@ -230,6 +326,9 @@ class GlobalDenseSirenIndex:
             )
             hits.append((siren.zfill(9), float(score)))
         return hits
+
+    def close(self) -> None:
+        self._faiss_client.close()
 
 
 # ---------------------------------------------------------------------------

@@ -6,10 +6,13 @@ from __future__ import annotations
 import argparse
 import gc
 import json
+import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.semantic import assert_tokenizer_healthy
 from src.xgb_matcher.v9_cross_encoder import serialize_cross_encoder_pair
