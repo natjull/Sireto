@@ -14,6 +14,13 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Index dense global SIREN construit sur Mac**: 28 982 797 unités légales
+  encodées en CPU avec le modèle générique épinglé, puis indexées en IVFPQ
+  4096/48; manifeste avec hash source, fingerprint modèle et hashes FAISS/IDs.
+  Un contrôle reproductible échantillonne les row groups du parquet, vérifie
+  l'intégrité des sorties et mesure self-recall@1/@50 et latence avant toute
+  évaluation métier. Suite complète à 63 tests passants. *(commits GitHub:
+  `2d74b2b`, `6718d8b`)*
 - **Contrat dense global SIREN renforcé**: le builder publie désormais la
   progression d'encodage, le fingerprint intégral du modèle et les hashes des
   fichiers FAISS/IDs. Le benchmark et l'inférence V9 refusent un index construit
