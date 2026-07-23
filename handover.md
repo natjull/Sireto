@@ -14,6 +14,12 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Expansion globale SIREN rendue exécutable**: le smoke historique rechargeait
+  jusqu'à des dizaines de partitions aléatoires par requête (p95 17,5 s sur
+  cinq cas, contre 0,67 s sparse). Ajout d'un store DuckDB read-only indexé par
+  SIREN qui récupère les 50 groupes de candidats en une requête, tout en
+  conservant la priorité géographique et la limite de 20 SIRET par SIREN.
+  Suite complète à 65 tests passants. *(commit GitHub: `13d66d2`)*
 - **Lookup géographique SIREN compatible 24 Go**: remplacement optionnel du
   chargement legacy de 37,8 M lignes dans pandas/dict par un artefact trié,
   quatre tableaux NumPy mmap et une recherche binaire SIREN. Le builder DuckDB
