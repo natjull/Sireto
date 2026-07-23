@@ -1,15 +1,36 @@
-# SIRETO Handover - 1 Mars 2026
+# SIRETO Handover - 23 Juillet 2026
 
 ## Etat des lieux
-Le pipeline cible n'est plus "Route B full SIREN-first" comme chemin principal.
-La trajectoire retenue est desormais **V8b = V7 + SIREN expansion post-prefilter**:
-- prefilter V7 SIRET local (INSEE/CP) conserve comme seed robuste
-- expansion SIREN ensuite (local + cross-partition) via `siren_to_geo.parquet`
-- Stage 1/2/3 inchanges structurellement, mais a reentrainer/recalibrer
+La cible active est **V9 = retrieval multicanal a budget fixe + ranker candidat
+unique + accepteur selectif query-level**:
+- sparse local SIRET reste la baseline;
+- dense local et dense global SIREN -> expansion SIRET sont des variantes
+  conditionnelles, fusionnees par RRF puis tronquees a 50;
+- le chemin principal reste un ranking direct SIRET;
+- le remplacement `ranker + decider + risk model` par `ranker + accepteur`
+  est interdit avant parite end-to-end;
+- `AUTO_NO_MATCH` est desactive.
 
-Route B (ranking SIREN global en phase 1) reste dans le code pour A/B tests, mais n'est plus la strategie par defaut.
+V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Benchmark open-set, ablation cross-encoder et gates V9**: feuille
+  d'adjudication stratifiee, validation humaine/evidence/snapshot obligatoire,
+  gel adresse par hash, cross-encoder top-20 avec revision epinglee, gates
+  retrieval/segments/latence/deploiement et guide d'execution. *(commit GitHub:
+  `c4cf99f`)*
+- **Ranker unique + accepteur selectif V9**: 54 features brutes partagees
+  train/serve puis sous-ensemble manifeste, features retrieval/SIREN, ranker
+  XGBoost avec predictions OOF, misses conserves, correction stricte SIRET,
+  calibration et selection de seuil sur deux moities dev distinctes, comparaison
+  logistique/XGBoost, moteur d'inference `AUTO_MATCH|REVIEW` compatible
+  `routing_status`. L'injection de positifs est autorisee uniquement dans le fit
+  ranker train et interdite dans les scenes/evaluations. *(commit GitHub:
+  `db4ab27`)*
+- **Retrieval hybride V9 a budget fixe**: RRF sparse/dense/rescue, vrais scores
+  TF-IDF ordonnes, provenance/rangs par canal, configurations 50 et ablation 100,
+  index dense global SIREN streaming avec manifeste/tokenizer, expansion limitee
+  SIRET et benchmark p50/p95. *(commit GitHub: `36404ae`)*
 - **Contrats et dataset canonique V9**: ajout du contrat public `AUTO_MATCH/REVIEW` avec mapping legacy, labels `MATCH_EXACT/NO_MATCH/AMBIGUOUS/UNRESOLVED`, split deterministe SIREN-disjoint, bundle parquet immuable adresse par hash, manifeste de provenance/config/tokenizer/features et registre explicite des artefacts legacy interdits aux entrypoints V9. *(commit GitHub: `afb0f3d`)*
 - **Socle V9 semantique + prediction selective**: chargement lazy de SentenceTransformer, reparation runtime du tokenizer Unigram exporte comme BertTokenizer, healthcheck anti-`<unk>`, injection semantique partagee train/serve, remise en service du mining d'homonymes geographiques et primitives testees de courbe risque-couverture/certification binomiale. Suite de tests retablie a 20 tests passants. *(commit GitHub: `fcfc33f`)*
 - **Spikes architecture neurale (cross-encoder + dual-encoder)**: benchmark reproductible sur un holdout SIREN-disjoint de 400 requetes. Le cross-encoder court ne remplace pas XGBoost (51,75% vs 85,25% Hit@1 sur les memes scenes). Le dual-encoder structure atteint 74,50% Recall@1 et 96,00% Recall@50; l'union TF-IDF top-50 + dense top-50 atteint 99,25% Recall@50 (8 des 11 misses TF-IDF recuperes). Le modele semantic exporte declare a tort `BertTokenizer`; le chargement actuel via SentenceTransformer produit excessivement des tokens `<unk>`, donc les anciens benchmarks semantiques doivent etre revalides apres correction. *(commit GitHub: `7640772`)*
@@ -28,47 +49,66 @@ Route B (ranking SIREN global en phase 1) reste dans le code pour A/B tests, mai
 - **Priorisation mega-communes embeddings**: orchestration dense amelioree pour runs longs. *(commit GitHub: `66b5b87`)*
 
 ## Fichiers modifies recemment
-- `src/xgb_matcher/features.py` *(commit GitHub: `35fb441`)*
-- `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`)*
+- `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
+- `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
 - `scripts/build_siren_global_index.py` *(commits GitHub: `3e090b7`, `c356923`)*
 - `src/xgb_matcher/siren_retrieval.py` *(commit GitHub: `3e090b7`)*
-- `src/xgb_matcher/infer.py` *(commits GitHub: `3e090b7`, `c356923`)*
-- `src/xgb_matcher/retrieval.py` *(commits GitHub: `1305012`, `9c0e806`, `f1fbbb8`)*
-- `src/xgb_matcher/retrieval_config.py` *(commits GitHub: `3e090b7`, `9c0e806`)*
+- `src/xgb_matcher/infer.py` *(commits GitHub: `3e090b7`, `c356923`, `36404ae`)*
+- `src/xgb_matcher/retrieval.py` *(commits GitHub: `1305012`, `9c0e806`, `f1fbbb8`, `36404ae`)*
+- `src/xgb_matcher/retrieval_config.py` *(commits GitHub: `3e090b7`, `9c0e806`, `36404ae`)*
 - `src/xgb_matcher/profile.py` *(commit GitHub: `3e090b7`)*
+- `src/xgb_matcher/v9_dataset.py` *(commits GitHub: `afb0f3d`, `db4ab27`)*
+- `src/xgb_matcher/v9_scene.py`, `v9_acceptor.py`, `v9_infer.py`
+  *(commit GitHub: `db4ab27`)*
+- `src/xgb_matcher/fusion.py`, `v9_features.py` *(commit GitHub: `36404ae`)*
+- `src/xgb_matcher/v9_adjudication.py`, `v9_cross_encoder.py`,
+  `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- **Regeneration samples V8b (expansion)**: regenerer ranker/decider avec `--enable-siren-expansion`.
-- **Retrain Stage 1 + Stage 2**: entrainer sur la nouvelle distribution de pool (prefilter + expansion).
-- **Recalibration Stage 3**: reestimer le seuil risk model (obligatoire apres shift de distribution).
-- **A/B de verification**: garder Route B disponible uniquement pour comparaison offline.
+- **Execution data V9**: produire le build canonique sur le snapshot SIRENE cible.
+- **Adjudication humaine**: remplir puis geler les 500 cas open-set.
+- **Ablation retrieval**: mesurer sparse-50, sparse+dense-local-50 et
+  sparse-local+dense-SIREN-global-50, plus l'ablation 100.
+- **Entrainement**: lancer ranker OOF puis accepteur sur le build retenu.
+- **Cross-encoder**: louer le GPU et lancer uniquement apres gel du benchmark.
 
 ## Points d'attention
-- **Clarification nomenclature**: "V8" dans les echanges = V8b (V7 + SIREN expansion), pas Route B full.
-- **Validation metrique manquante**: pas encore de benchmark consolide post-V8b.
-- **Latence expansion**: mesurer sur commune dense (impact des loads cross-partition via cache INSEE).
-- **Tokenizer semantic casse dans l'export**: `models/semantic/siret-bert-deploy/tokenizer_config.json` declare `BertTokenizer` alors que `tokenizer.json` contient le tokenizer SentencePiece multilingue. Ne pas interpreter les anciens scores semantiques avant correction du loader/export et rebenchmark.
-- **Decision architecture issue des spikes**: pas de remplacement immediat du coeur XGBoost par le cross-encoder teste. Priorite a un retrieval hybride sparse+dense appris avec embeddings candidats pre-calcules; conserver TF-IDF car le dense seul reste inferieur en Recall@50 (96,00% vs 97,25%).
+- **Aucun resultat V9 final n'est encore mesure**: l'implementation et les tests
+  sont termines, pas les huit semaines de collecte/validation/entrainement.
+- **Comparaison retrieval uniquement a budget constant**: un gain avec 100
+  candidats ne justifie pas la promotion de la variante 50.
+- **Precision strictement SIRET**: un bon SIREN mais mauvais etablissement est
+  une erreur pour l'accepteur.
+- **NO_MATCH temporel**: toujours rattache au snapshot SIRENE et a la date de
+  reference.
+- **Cross-encoder conditionnel**: aucune promotion sans +1 point de couverture
+  a precision cible et gates segments/latence.
+- **Certification**: avant environ 2 300 AUTO independants audites sans erreur,
+  publier une estimation observee, jamais une garantie a 99,8 %.
 - **Governance docs**: garder `handover.md` comme journal de commits (regle AGENTS).
 
-## Artefacts cibles (V8b)
+## Artefacts cibles (V9)
 | Artefact | Chemin |
 |----------|--------|
 | Partitions candidates | `data/candidates_v7_all/` |
-| Mapping geo SIREN (obligatoire V8b) | `data/siren_index/siren_to_geo.parquet` |
-| Index SIREN global (optionnel A/B Route B) | `data/siren_index/word_matrix.npz` + `char_matrix.npz` |
-| Samples decider V8b | `data/samples_v8b_decider.parquet` |
-| Ranker V8b | `models/v8b_ranker*.json` |
-| Decider V8b | `models/v8b_decider*.json` |
-| Meta two-stage | `models/xgb_two_stage_meta_*.json` |
+| Bundle canonique | `data/v9/<build_id>/{queries,labels,candidates}.parquet` |
+| Manifeste dataset | `data/v9/<build_id>/manifest.json` |
+| Mapping geo SIREN | `data/siren_index/siren_to_geo.parquet` |
+| Index dense SIREN | `data/v9_indices/siren_dense_<snapshot>/` |
+| Ranker + predictions OOF | `models/v9/ranker_<build_id>/` |
+| Accepteur + calibration | `models/v9/acceptor_<build_id>/` |
+| Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Corriger le tokenizer de l'export semantic et ajouter un test anti-`<unk>` avant tout nouveau benchmark dense.
-2. Pre-calculer un index dense avec le dual-encoder structure, puis mesurer l'union sparse+dense a budget fixe sur toutes les tailles de communes.
-3. Construire (au minimum) `siren_to_geo.parquet` (`--geo-only` possible).
-4. Regenerer les samples `ranker` et `decider` avec `--enable-siren-expansion` et le retrieval hybride corrige.
-5. Reentrainer Stage 1 puis Stage 2, refaire l'evaluation complete (coverage pool, Hit@1, latence, segments PRUNED/NIP), puis recalibrer Stage 3.
+1. Executer `scripts/evaluate_v9_baseline.py` sur l'export V7 gele.
+2. Faire valider humainement les 500 requetes open-set, puis geler le jeu.
+3. Executer les trois variantes retrieval a 50 sur toutes les communes et
+   appliquer la gate recall/segments/latence.
+4. Construire le bundle canonique retenu, entrainer le ranker OOF puis
+   l'accepteur, et comparer a la baseline end-to-end.
+5. Lancer le cross-encoder top-20 comme ablation GPU seulement apres cette
+   baseline; promouvoir uniquement si toutes les gates passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
