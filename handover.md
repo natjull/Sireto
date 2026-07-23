@@ -17,8 +17,9 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 - **Benchmark open-set, ablation cross-encoder et gates V9**: feuille
   d'adjudication stratifiee, validation humaine/evidence/snapshot obligatoire,
   gel adresse par hash, cross-encoder top-20 avec revision epinglee, gates
-  retrieval/segments/latence/deploiement et guide d'execution. *(commit GitHub:
-  `c4cf99f`)*
+  retrieval/segments/latence/deploiement et guide d'execution. Les trois
+  variantes cross-encoder produisent des predictions OOF compatibles avec le
+  meme accepteur. *(commits GitHub: `c4cf99f`, `b82271e`)*
 - **Ranker unique + accepteur selectif V9**: 54 features brutes partagees
   train/serve puis sous-ensemble manifeste, features retrieval/SIREN, ranker
   XGBoost avec predictions OOF, misses conserves, correction stricte SIRET,
