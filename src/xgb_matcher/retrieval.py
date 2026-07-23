@@ -88,6 +88,7 @@ def _expand_ranked_sirens(
     crm_insee: str,
     crm_postcode: str,
     config: RetrievalConfigV1,
+    siren_candidate_store: Any = None,
 ) -> tuple[List[dict], Dict[str, int]]:
     """Expand ranked SIRENs to filtered SIRETs, preserving SIREN rank."""
     candidates: List[dict] = []
@@ -100,6 +101,13 @@ def _expand_ranked_sirens(
             loaded_partitions[insee_code] = store.load_by_insee(insee_code)
         return loaded_partitions[insee_code]
 
+    direct_candidates = (
+        siren_candidate_store.get_candidates(
+            [siren for siren, _score in ranked_sirens]
+        )
+        if siren_candidate_store is not None
+        else None
+    )
     for siren_rank, (siren, _score) in enumerate(ranked_sirens, start=1):
         locations = siren_to_geo.get_locations(siren)
         locations = sorted(
@@ -110,6 +118,49 @@ def _expand_ranked_sirens(
             ),
         )
         selected_for_siren = 0
+        if direct_candidates is not None:
+            location_counts = dict(
+                (
+                    (str(insee), str(postcode)),
+                    int(count),
+                )
+                for insee, postcode, count
+                in siren_to_geo.get_location_counts(siren)
+            )
+            candidates_for_siren = sorted(
+                direct_candidates.get(str(siren), []),
+                key=lambda candidate: (
+                    str(candidate.get("insee") or "") != str(crm_insee),
+                    str(candidate.get("postcode") or "") != str(crm_postcode),
+                    -location_counts.get(
+                        (
+                            str(candidate.get("insee") or ""),
+                            str(candidate.get("postcode") or ""),
+                        ),
+                        0,
+                    ),
+                    str(candidate.get("siret") or ""),
+                ),
+            )
+            for candidate in candidates_for_siren:
+                siret = str(candidate.get("siret") or "")
+                if (
+                    not siret
+                    or siret in seen_sirets
+                    or not _apply_filters(
+                        [candidate],
+                        config.drop_unnamed,
+                        config.include_closed,
+                    )
+                ):
+                    continue
+                candidates.append(candidate)
+                siren_rank_by_siret[siret] = siren_rank
+                seen_sirets.add(siret)
+                selected_for_siren += 1
+                if selected_for_siren >= config.max_sirets_per_siren:
+                    break
+            continue
         for insee_code, _postcode in locations:
             if selected_for_siren >= config.max_sirets_per_siren:
                 break
@@ -323,6 +374,7 @@ def build_candidate_pool(
     siren_global_index: Optional[Any] = None,
     siren_to_geo: Optional[Any] = None,
     dense_siren_index: Optional[Any] = None,
+    siren_candidate_store: Optional[Any] = None,
 ) -> CandidatePoolResult:
     """Build candidate pool with unified code-path for train and inference.
 
@@ -699,6 +751,7 @@ def build_candidate_pool(
             crm_insee=str(insee or ""),
             crm_postcode=str(postcode or ""),
             config=config,
+            siren_candidate_store=siren_candidate_store,
         )
         candidate_by_siret = {
             str(candidate.get("siret") or ""): candidate

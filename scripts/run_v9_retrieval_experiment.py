@@ -160,6 +160,7 @@ def run_mode(
     dense_store: Any = None,
     dense_siren_index: Any = None,
     siren_to_geo: Any = None,
+    siren_candidate_store: Any = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     config = retrieval_config(mode, per_channel_k=per_channel_k, budget=budget)
     store = PartitionedCandidateStore(partitions_dir)
@@ -206,6 +207,11 @@ def run_mode(
             ),
             siren_to_geo=(
                 siren_to_geo if config.global_dense_siren_enabled else None
+            ),
+            siren_candidate_store=(
+                siren_candidate_store
+                if config.global_dense_siren_enabled
+                else None
             ),
             timer=timer,
         )
@@ -371,6 +377,7 @@ def main() -> None:
     parser.add_argument("--dense-dir", type=Path)
     parser.add_argument("--global-siren-dense-dir", type=Path)
     parser.add_argument("--siren-geo-index", type=Path)
+    parser.add_argument("--siren-candidate-store", type=Path)
     parser.add_argument(
         "--semantic-model",
         type=Path,
@@ -413,6 +420,7 @@ def main() -> None:
     dense_store = None
     dense_siren_index = None
     siren_to_geo = None
+    siren_candidate_store = None
     semantic_client = None
     semantic_model_fingerprint = None
     if needs_local_dense or needs_global_dense:
@@ -440,12 +448,17 @@ def main() -> None:
     if needs_global_dense:
         from src.xgb_matcher.dense_retrieval import GlobalDenseSirenIndex
         from src.xgb_matcher.siren_retrieval import SirenToGeoIndex
+        from src.xgb_matcher.siren_retrieval import SirenCandidateStore
 
         dense_siren_index = GlobalDenseSirenIndex(
             args.global_siren_dense_dir,
             expected_model_fingerprint=semantic_model_fingerprint,
         )
         siren_to_geo = SirenToGeoIndex(args.siren_geo_index)
+        if args.siren_candidate_store is not None:
+            siren_candidate_store = SirenCandidateStore(
+                args.siren_candidate_store
+            )
 
     all_raw = []
     summaries = {}
@@ -461,6 +474,7 @@ def main() -> None:
                 dense_store=dense_store,
                 dense_siren_index=dense_siren_index,
                 siren_to_geo=siren_to_geo,
+                siren_candidate_store=siren_candidate_store,
             )
             all_raw.append(raw)
             summaries[mode] = summary
@@ -474,6 +488,8 @@ def main() -> None:
 
             semantic_client.close()
             set_semantic_client(None)
+        if siren_candidate_store is not None:
+            siren_candidate_store.close()
 
     args.output_dir.mkdir(parents=True, exist_ok=False)
     raw_path = args.output_dir / "raw_results.parquet"

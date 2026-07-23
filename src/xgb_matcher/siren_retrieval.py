@@ -255,3 +255,52 @@ class SirenToGeoIndex:
         if self._sirens is not None:
             return self._mmap_locations(siren)
         return self._index.get(siren, [])
+
+
+class SirenCandidateStore:
+    """Read-only indexed lookup of full candidate rows by SIREN."""
+
+    def __init__(self, path: Path):
+        import duckdb
+
+        path = Path(path)
+        manifest = json.loads(
+            (path / "manifest.json").read_text(encoding="utf-8")
+        )
+        if manifest.get("schema_version") != "v9-siren-candidate-duckdb-1":
+            raise ValueError("Unsupported SIREN candidate store schema")
+        self.manifest = manifest
+        self._connection = duckdb.connect(
+            str(path / "siren_candidates.duckdb"),
+            read_only=True,
+        )
+
+    def get_candidates(self, sirens: List[str]) -> Dict[str, List[dict]]:
+        normalized = list(
+            dict.fromkeys(
+                "".join(char for char in str(siren) if char.isdigit()).zfill(9)
+                for siren in sirens
+                if siren
+            )
+        )
+        if not normalized:
+            return {}
+        rows = self._connection.execute(
+            """
+            SELECT *
+            FROM candidates
+            WHERE siren IN (SELECT unnest(?))
+            ORDER BY siren, siret
+            """,
+            [normalized],
+        ).fetchdf()
+        output: Dict[str, List[dict]] = {}
+        for row in rows.to_dict("records"):
+            siren = str(row.get("siren") or "").zfill(9)
+            row["siren"] = siren
+            row["siret"] = str(row.get("siret") or "").zfill(14)
+            output.setdefault(siren, []).append(row)
+        return output
+
+    def close(self) -> None:
+        self._connection.close()
