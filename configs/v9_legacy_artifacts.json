@@ -1,0 +1,13 @@
+{
+  "status": "legacy",
+  "training_forbidden": true,
+  "patterns": [
+    "data/samples_v4*",
+    "data/samples_v5*",
+    "data/samples_v6*",
+    "data/samples_v7*",
+    "data/samples_v8*",
+    "reports/old/*"
+  ],
+  "note": "Artefacts conservés pour reproductibilité historique, jamais acceptés par les entrypoints V9."
+}

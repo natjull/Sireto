@@ -214,6 +214,19 @@ FEATURE_NAMES: List[str] = [
     "name_city_suffix_match",      # ratio of CRM city tokens appearing in candidate enseigne
 ]
 
+V8_EXPERIMENTAL_FEATURE_NAMES: List[str] = [
+    "addr_unsupported_by_name",
+    "name_density_penalty",
+    "addr_jaro_per_density",
+    "postcode_match_without_addr",
+    "full_addr_match_score",
+    "name_jaro_vs_enseigne",
+    "name_city_suffix_match",
+]
+V9_BASELINE_FEATURE_NAMES: List[str] = [
+    name for name in FEATURE_NAMES if name not in V8_EXPERIMENTAL_FEATURE_NAMES
+]
+
 SEMANTIC_FEATURE_NAMES: List[str] = [
     name for name in FEATURE_NAMES if name.startswith("name_semantic_")
 ]
