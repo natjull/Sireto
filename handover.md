@@ -14,6 +14,14 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Gate 2 dense local échouée sur dev**: sparse atteint 90,33 % Recall@50
+  SIRET contre 88,50 % pour sparse+dense local et 70,29 % pour dense seul.
+  L'hybride récupère 45 misses mais déplace 92 hits: delta apparié −1,83 point,
+  IC95 [−2,73; −0,94], p exact 0,000073. Budget et latence passent, mais actifs
+  (−2,26), mégapoles (−3,03) et multi-sites (−2,28 points) violent le gate
+  segmentaire. Les 168 misses sparse au niveau SIREN et 25 récupérations SIREN
+  uniques par le dense justifient la dernière expérience globale SIREN, sans
+  tuning opportuniste de RRF. *(commit GitHub: `71c68ef`)*
 - **Store dense local dev complet**: les 871 partitions INSEE et 14 partitions
   CP du plan gelé ont été encodées sur CPU avec le MiniLM générique épinglé,
   soit 10 216 448 candidats dans 885 paires index/manifeste (3,0 Go sur SSD).
@@ -124,11 +132,10 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- **Gate 2 — hybride local**: construire les partitions denses utiles au dev
-  avec le MiniLM multilingue generique epingle et non contamine, mesurer le
-  signal sur dev, puis seulement en cas de gain construire le complement test.
-- **Gate 2 — dense global conditionnel**: ne lancer le build complet SIREN que
-  si l'hybride local ou son analyse d'erreurs justifie encore cette experience.
+- **Gate 2 — dense global SIREN**: le dense local n'est pas promu, mais son
+  oracle et les 168 misses sparse au niveau SIREN justifient l'expérience
+  globale pré-enregistrée. Construire l'index générique sans GPU puis mesurer
+  sparse + dense global SIREN → expansion SIRET sur dev.
 - **Gates suivantes**: aucune adjudication de 500 cas, aucun ranker/accepteur et
   aucun cross-encoder avant signal positif du retrieval.
 
