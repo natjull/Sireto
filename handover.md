@@ -14,6 +14,12 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Expansion globale SIREN bornee avant materialisation**: le store candidat
+  v2 calcule la densite par zone et applique dans DuckDB un top-K par SIREN,
+  ordonne par correspondance INSEE/CP puis densite locale, avant tout transfert
+  vers Python. Le cap SQL est 40 et le cap metier final reste 20 SIRET par
+  SIREN; le lecteur reste compatible avec les stores v1. Suite complete a
+  66 tests passants. *(commit GitHub: `43f2c64`)*
 - **Manifeste d'expérience dense fermé**: chaque run V9 référence désormais le
   hash du contrat de son store local, ANN global, géographie mmap et store
   candidat SIREN; les stores partitionnés sans manifeste racine sont liés par
