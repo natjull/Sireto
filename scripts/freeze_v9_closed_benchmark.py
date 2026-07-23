@@ -21,7 +21,7 @@ from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.v9_dataset import file_sha256
 
 
-SCHEMA_VERSION = "v9-closed-benchmark-1"
+SCHEMA_VERSION = "v9-closed-benchmark-2"
 
 
 def directory_tree_sha256(root: Path) -> dict:
@@ -233,6 +233,10 @@ def freeze_benchmark(
             "crm_city": frame["crm_commune"],
             "postcode": frame["crm_cp"],
             "insee": frame["crm_insee"],
+            "ground_truth_state": frame.get("sirene_etat"),
+            "ground_truth_insee": frame.get("sirene_insee"),
+            "ground_truth_postcode": frame.get("sirene_cp"),
+            "location_match_type": frame.get("loc_match_type"),
             "split": frame["split"],
             "date_reference": pd.Series([None] * len(frame), dtype="object"),
         }
