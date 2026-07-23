@@ -19,7 +19,9 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
   cinq cas, contre 0,67 s sparse). Ajout d'un store DuckDB read-only indexé par
   SIREN qui récupère les 50 groupes de candidats en une requête, tout en
   conservant la priorité géographique et la limite de 20 SIRET par SIREN.
-  Suite complète à 65 tests passants. *(commit GitHub: `13d66d2`)*
+  La lecture Arrow conserve les `None`/listes des partitions, sans conversion
+  pandas en `NaN`. Suite complète à 65 tests passants. *(commits GitHub:
+  `13d66d2`, `654413f`)*
 - **Lookup géographique SIREN compatible 24 Go**: remplacement optionnel du
   chargement legacy de 37,8 M lignes dans pandas/dict par un artefact trié,
   quatre tableaux NumPy mmap et une recherche binaire SIREN. Le builder DuckDB
