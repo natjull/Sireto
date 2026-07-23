@@ -151,6 +151,26 @@ def _order_partition_codes(
     return [code for code, _ in selected]
 
 
+def _planned_partition_codes(
+    partition_plan: dict[str, Any],
+    partition_type: str,
+) -> set[str]:
+    """Read codes from the canonical V9 plan schema."""
+    field_by_type = {
+        "insee": "insee_codes",
+        "cp": "postcode_codes",
+    }
+    try:
+        field = field_by_type[partition_type]
+    except KeyError as exc:
+        raise ValueError(f"Unsupported partition type: {partition_type}") from exc
+    return {
+        str(code).strip()
+        for code in partition_plan.get(field, [])
+        if str(code).strip()
+    }
+
+
 def encode_candidates(
     candidates: List[dict],
     encoder: Any,
@@ -275,10 +295,7 @@ def main() -> None:
     for ptype in partition_types:
         codes = _list_partition_codes(args.partitions_dir, ptype)
         if partition_plan is not None:
-            planned = set(
-                str(code)
-                for code in partition_plan.get(f"{ptype}_codes", [])
-            )
+            planned = _planned_partition_codes(partition_plan, ptype)
             available = set(codes)
             missing_codes = sorted(planned - available)
             if missing_codes:

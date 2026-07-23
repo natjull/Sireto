@@ -1,4 +1,7 @@
-from scripts.precompute_embeddings import _order_partition_codes
+from scripts.precompute_embeddings import (
+    _order_partition_codes,
+    _planned_partition_codes,
+)
 
 
 def test_order_partition_codes_sort_by_size() -> None:
@@ -66,3 +69,13 @@ def test_order_partition_codes_cp_always_lexical() -> None:
     )
 
     assert ordered == ["01000", "13001", "75015"]
+
+
+def test_partition_plan_uses_postcode_field_for_cp_partitions() -> None:
+    plan = {
+        "insee_codes": ["01053"],
+        "postcode_codes": ["06190", "75008"],
+    }
+
+    assert _planned_partition_codes(plan, "insee") == {"01053"}
+    assert _planned_partition_codes(plan, "cp") == {"06190", "75008"}
