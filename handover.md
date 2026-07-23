@@ -14,6 +14,12 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Dense local non contamine prepare**: fingerprint integral du modele
+  semantique impose entre build et inference, revision generique MiniLM
+  `86741b4e` copiee sans telechargement sur le SSD, reparation du tokenizer
+  Unigram et plan de partitions immuable. Le plan dev couvre 871 partitions
+  INSEE et 14 CP, environ 10,2 M de lignes physiques; aucune requete dev sans
+  partition planifiable. *(commit GitHub: `10dd990`)*
 - **Baseline sparse-50 V9 mesuree**: sur les 2 652 requetes test gelees,
   Recall@50 SIRET 88,54 % (2 348 hits, IC95 87,27–89,69), Recall@50 SIREN
   92,16 %, recall du pool geographique 98,00 %, zero violation de budget.
