@@ -14,6 +14,11 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Manifeste d'expérience dense fermé**: chaque run V9 référence désormais le
+  hash du contrat de son store local, ANN global, géographie mmap et store
+  candidat SIREN; les stores partitionnés sans manifeste racine sont liés par
+  un hash agrégé déterministe de leurs  manifestes. Suite complète à 66 tests
+  passants. *(commit GitHub: `fef3658`)*
 - **Expansion globale SIREN rendue exécutable**: le smoke historique rechargeait
   jusqu'à des dizaines de partitions aléatoires par requête (p95 17,5 s sur
   cinq cas, contre 0,67 s sparse). Ajout d'un store DuckDB read-only indexé par
