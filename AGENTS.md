@@ -1,4 +1,39 @@
-# Diagramme de référence Pipe V6
+# Directive active — Expérience GO / PIVOT / STOP V9
+
+La directive ci-dessous prévaut sur les descriptions historiques V6, V7 et V8
+conservées plus bas à titre de référence.
+
+Objectif actif : déterminer expérimentalement, sans GPU loué ni dépense
+externe, si V9 améliore réellement V7. Il ne s'agit pas de promouvoir V9 par
+défaut.
+
+Contrat détaillé : `docs/v9_execution_contract.md`.
+
+Ordre obligatoire :
+
+1. rendre l'environnement local et le retrieval dense exécutables ;
+2. geler données, splits, baseline et métriques ;
+3. mesurer sparse seul avec exactement 50 candidats ;
+4. comparer sparse+dense local et sparse+dense global SIREN au même budget ;
+5. appliquer les gates avant tout entraînement du ranker/accepteur V9 ;
+6. conclure explicitement `GO`, `PIVOT` ou `STOP`.
+
+Contraintes non négociables :
+
+- métrique principale : SIRET exact ;
+- une vérité absente du pool est une erreur end-to-end ;
+- aucun positif injecté dans une évaluation ou une scène accepteur ;
+- accepteur entraîné uniquement sur prédictions out-of-fold ;
+- `AUTO_NO_MATCH` désactivé ;
+- cross-encoder hors du chemin critique ;
+- aucun résultat présenté comme SOTA ou garanti sans preuve suffisante ;
+- Mac M4 Pro et `/Volumes/CATNAT_DATA` comme seules ressources de calcul ;
+- chaque milestone dans un commit isolé cité dans `handover.md`.
+
+Les architectures V6, V7, V8b et Route B ci-dessous sont des baselines ou des
+artefacts historiques. Elles ne définissent plus la trajectoire active.
+
+# Diagramme de référence Pipe V6 (historique)
 
 Voir `handover.md` pour le contexte le plus recent : actions terminees, travaux en cours, prochaines etapes.
 Regle : chaque modification de code ou metier doit citer le commit GitHub correspondant dans `handover.md`.
