@@ -4,6 +4,7 @@ import pandas as pd
 import pytest
 
 from scripts.run_v9_retrieval_experiment import (
+    _artifact_contract,
     retrieval_config,
     summarize_mode,
     wilson_interval,
@@ -27,6 +28,16 @@ def test_wilson_interval_contains_observed_rate() -> None:
     lower, upper = wilson_interval(90, 100, confidence=0.95)
     assert lower < 0.9 < upper
     assert wilson_interval(0, 0) == (0.0, 0.0)
+
+
+def test_artifact_contract_hashes_directory_manifest(tmp_path) -> None:
+    (tmp_path / "manifest.json").write_text("{}", encoding="utf-8")
+
+    contract = _artifact_contract(tmp_path)
+
+    assert contract["path"] == str(tmp_path)
+    assert contract["contract_type"] == "manifest_or_file"
+    assert len(contract["contract_sha256"]) == 64
 
 
 def test_summary_counts_misses_budget_and_segments() -> None:

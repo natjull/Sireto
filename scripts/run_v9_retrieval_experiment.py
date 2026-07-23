@@ -359,6 +359,34 @@ def _git_commit() -> str:
         return "unknown"
 
 
+def _artifact_contract(path: Path | None) -> dict[str, str] | None:
+    if path is None:
+        return None
+    manifest_path = path / "manifest.json" if path.is_dir() else path
+    if manifest_path.is_file():
+        digest = file_sha256(manifest_path)
+        contract_type = "manifest_or_file"
+    elif path.is_dir():
+        manifests = sorted(path.glob("*_manifest.json"))
+        if not manifests:
+            raise FileNotFoundError(
+                f"Artifact contract is missing: {manifest_path}"
+            )
+        hasher = hashlib.sha256()
+        for item in manifests:
+            hasher.update(item.name.encode("utf-8"))
+            hasher.update(item.read_bytes())
+        digest = hasher.hexdigest()
+        contract_type = "partition_manifests"
+    else:
+        raise FileNotFoundError(f"Artifact is missing: {path}")
+    return {
+        "path": str(path),
+        "contract_type": contract_type,
+        "contract_sha256": digest,
+    }
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--benchmark", type=Path, required=True)
@@ -518,6 +546,16 @@ def main() -> None:
             str(args.semantic_model) if needs_local_dense or needs_global_dense else None
         ),
         "semantic_model_fingerprint": semantic_model_fingerprint,
+        "dense_artifacts": {
+            "local": _artifact_contract(args.dense_dir),
+            "global_siren": _artifact_contract(
+                args.global_siren_dense_dir
+            ),
+            "siren_geo": _artifact_contract(args.siren_geo_index),
+            "siren_candidates": _artifact_contract(
+                args.siren_candidate_store
+            ),
+        },
         "outputs": {
             "raw_results.parquet": file_sha256(raw_path),
             "summary.json": file_sha256(summary_path),
