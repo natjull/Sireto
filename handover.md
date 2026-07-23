@@ -14,6 +14,12 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Lookup géographique SIREN compatible 24 Go**: remplacement optionnel du
+  chargement legacy de 37,8 M lignes dans pandas/dict par un artefact trié,
+  quatre tableaux NumPy mmap et une recherche binaire SIREN. Le builder DuckDB
+  travaille sur SSD avec limite mémoire, publie hashes et cardinalité; le
+  lecteur conserve la compatibilité avec le parquet historique. Suite complète
+  à 64 tests passants. *(commit GitHub: `7781d31`)*
 - **Index dense global SIREN construit sur Mac**: 28 982 797 unités légales
   encodées en CPU avec le modèle générique épinglé, puis indexées en IVFPQ
   4096/48; manifeste avec hash source, fingerprint modèle et hashes FAISS/IDs.
