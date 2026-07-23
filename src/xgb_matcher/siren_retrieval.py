@@ -267,15 +267,29 @@ class SirenCandidateStore:
         manifest = json.loads(
             (path / "manifest.json").read_text(encoding="utf-8")
         )
-        if manifest.get("schema_version") != "v9-siren-candidate-duckdb-1":
+        if manifest.get("schema_version") not in {
+            "v9-siren-candidate-duckdb-1",
+            "v9-siren-candidate-duckdb-2",
+        }:
             raise ValueError("Unsupported SIREN candidate store schema")
         self.manifest = manifest
+        self._has_geo_count = (
+            manifest.get("schema_version")
+            == "v9-siren-candidate-duckdb-2"
+        )
         self._connection = duckdb.connect(
             str(path / "siren_candidates.duckdb"),
             read_only=True,
         )
 
-    def get_candidates(self, sirens: List[str]) -> Dict[str, List[dict]]:
+    def get_candidates(
+        self,
+        sirens: List[str],
+        *,
+        crm_insee: str = "",
+        crm_postcode: str = "",
+        max_per_siren: int | None = None,
+    ) -> Dict[str, List[dict]]:
         normalized = list(
             dict.fromkeys(
                 "".join(char for char in str(siren) if char.isdigit()).zfill(9)
@@ -285,15 +299,44 @@ class SirenCandidateStore:
         )
         if not normalized:
             return {}
-        rows = self._connection.execute(
-            """
-            SELECT *
-            FROM candidates
-            WHERE siren IN (SELECT unnest(?))
-            ORDER BY siren, siret
-            """,
-            [normalized],
-        ).fetch_arrow_table()
+        if self._has_geo_count and max_per_siren is not None:
+            rows = self._connection.execute(
+                """
+                SELECT * EXCLUDE (candidate_rank)
+                FROM (
+                    SELECT
+                        *,
+                        row_number() OVER (
+                            PARTITION BY siren
+                            ORDER BY
+                                (insee = ?) DESC,
+                                (postcode = ?) DESC,
+                                siren_geo_count DESC,
+                                siret
+                        ) AS candidate_rank
+                    FROM candidates
+                    WHERE siren IN (SELECT unnest(?))
+                )
+                WHERE candidate_rank <= ?
+                ORDER BY siren, candidate_rank
+                """,
+                [
+                    str(crm_insee),
+                    str(crm_postcode),
+                    normalized,
+                    int(max_per_siren),
+                ],
+            ).fetch_arrow_table()
+        else:
+            rows = self._connection.execute(
+                """
+                SELECT *
+                FROM candidates
+                WHERE siren IN (SELECT unnest(?))
+                ORDER BY siren, siret
+                """,
+                [normalized],
+            ).fetch_arrow_table()
         output: Dict[str, List[dict]] = {}
         for row in rows.to_pylist():
             siren = str(row.get("siren") or "").zfill(9)

@@ -103,7 +103,10 @@ def _expand_ranked_sirens(
 
     direct_candidates = (
         siren_candidate_store.get_candidates(
-            [siren for siren, _score in ranked_sirens]
+            [siren for siren, _score in ranked_sirens],
+            crm_insee=str(crm_insee),
+            crm_postcode=str(crm_postcode),
+            max_per_siren=max(1, config.max_sirets_per_siren * 2),
         )
         if siren_candidate_store is not None
         else None

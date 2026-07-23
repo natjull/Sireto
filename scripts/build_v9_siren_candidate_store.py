@@ -56,11 +56,15 @@ def main() -> None:
         connection.execute(
             f"""
             CREATE TABLE candidates AS
-            SELECT *
+            SELECT
+                *,
+                count(*) OVER (
+                    PARTITION BY siren, insee, postcode
+                )::INTEGER AS siren_geo_count
             FROM read_parquet(
-                '{_sql_path(parquet_glob)}',
-                hive_partitioning = true
-            )
+                    '{_sql_path(parquet_glob)}',
+                    hive_partitioning = true
+                )
             ORDER BY siren, siret
             """
         )
@@ -83,7 +87,7 @@ def main() -> None:
     temp_dir.rmdir()
 
     manifest = {
-        "schema_version": "v9-siren-candidate-duckdb-1",
+        "schema_version": "v9-siren-candidate-duckdb-2",
         "partitions_dir": str(args.partitions_dir),
         "insee_parquet_sha256": parquet_tree_sha256(insee_dir),
         "row_count": row_count,
