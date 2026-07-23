@@ -65,15 +65,33 @@ class RetrievalConfigV1:
     sparse_retrieval_enabled: bool = True
     dense_retrieval_enabled: bool = False
     dense_top_k: int = 500
+    fusion_mode: str = "legacy_union"
+    retrieval_budget: Optional[int] = None
+    rrf_k: int = 60
 
     # Route B: SIREN-first global matching
     siren_global_index_path: Optional[str] = None
     siren_top_k: int = 50
     max_sirets_per_siren: int = 20
+    global_dense_siren_enabled: bool = False
+    global_dense_siren_index_path: Optional[str] = None
+    siren_geo_index_path: Optional[str] = None
 
     # SIREN expansion (V7 + local + cross-partition)
     siren_expansion_enabled: bool = False
     siren_expansion_pool_cap: int = 1500
+
+    def __post_init__(self) -> None:
+        if self.fusion_mode not in {"legacy_union", "rrf"}:
+            raise ValueError("fusion_mode must be 'legacy_union' or 'rrf'")
+        if self.retrieval_budget is not None and self.retrieval_budget <= 0:
+            raise ValueError("retrieval_budget must be positive")
+        if self.rrf_k < 0:
+            raise ValueError("rrf_k must be non-negative")
+        if self.global_dense_siren_enabled and self.siren_expansion_enabled:
+            raise ValueError(
+                "global_dense_siren_enabled and siren_expansion_enabled are mutually exclusive"
+            )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -112,9 +130,15 @@ class RetrievalConfigV1:
             "sparse_retrieval_enabled": self.sparse_retrieval_enabled,
             "dense_retrieval_enabled": self.dense_retrieval_enabled,
             "dense_top_k": self.dense_top_k,
+            "fusion_mode": self.fusion_mode,
+            "retrieval_budget": self.retrieval_budget,
+            "rrf_k": self.rrf_k,
             "siren_global_index_path": self.siren_global_index_path,
             "siren_top_k": self.siren_top_k,
             "max_sirets_per_siren": self.max_sirets_per_siren,
+            "global_dense_siren_enabled": self.global_dense_siren_enabled,
+            "global_dense_siren_index_path": self.global_dense_siren_index_path,
+            "siren_geo_index_path": self.siren_geo_index_path,
             "siren_expansion_enabled": self.siren_expansion_enabled,
             "siren_expansion_pool_cap": self.siren_expansion_pool_cap,
         }
@@ -162,9 +186,27 @@ class RetrievalConfigV1:
             sparse_retrieval_enabled=bool(data.get("sparse_retrieval_enabled", cls().sparse_retrieval_enabled)),
             dense_retrieval_enabled=bool(data.get("dense_retrieval_enabled", cls().dense_retrieval_enabled)),
             dense_top_k=int(data.get("dense_top_k", cls().dense_top_k)),
+            fusion_mode=str(data.get("fusion_mode", cls().fusion_mode)),
+            retrieval_budget=(
+                int(data["retrieval_budget"])
+                if data.get("retrieval_budget") is not None
+                else None
+            ),
+            rrf_k=int(data.get("rrf_k", cls().rrf_k)),
             siren_global_index_path=data.get("siren_global_index_path", cls().siren_global_index_path),
             siren_top_k=int(data.get("siren_top_k", cls().siren_top_k)),
             max_sirets_per_siren=int(data.get("max_sirets_per_siren", cls().max_sirets_per_siren)),
+            global_dense_siren_enabled=bool(
+                data.get("global_dense_siren_enabled", cls().global_dense_siren_enabled)
+            ),
+            global_dense_siren_index_path=data.get(
+                "global_dense_siren_index_path",
+                cls().global_dense_siren_index_path,
+            ),
+            siren_geo_index_path=data.get(
+                "siren_geo_index_path",
+                cls().siren_geo_index_path,
+            ),
             siren_expansion_enabled=bool(data.get("siren_expansion_enabled", cls().siren_expansion_enabled)),
             siren_expansion_pool_cap=int(data.get("siren_expansion_pool_cap", cls().siren_expansion_pool_cap)),
         )

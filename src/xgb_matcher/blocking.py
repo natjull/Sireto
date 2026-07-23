@@ -325,6 +325,35 @@ def prefilter_candidates_address_tfidf(
     return idx[order].tolist()
 
 
+def _rank_sparse_scores(row: Any, top_k: int) -> List[Tuple[int, float]]:
+    if row.nnz == 0:
+        return []
+    indices = row.indices
+    values = row.data
+    if len(indices) > top_k:
+        selected = np.argpartition(values, -top_k)[-top_k:]
+        indices = indices[selected]
+        values = values[selected]
+    order = np.argsort(values, kind="stable")[::-1]
+    return [(int(indices[i]), float(values[i])) for i in order]
+
+
+def prefilter_candidates_address_tfidf_scored(
+    crm_address: str,
+    vectorizer: TfidfVectorizer,
+    cand_matrix: Any,
+    top_k: int,
+) -> List[Tuple[int, float]]:
+    """Rank address candidates while preserving their actual cosine scores."""
+    crm_norm = normalize_text_for_tfidf(crm_address)
+    if not crm_norm or cand_matrix is None:
+        return []
+    return _rank_sparse_scores(
+        (vectorizer.transform([crm_norm]) @ cand_matrix.T).getrow(0),
+        top_k,
+    )
+
+
 
 def prefilter_candidates_tfidf(
     crm_name: str,
@@ -409,6 +438,35 @@ def prefilter_candidates_tfidf(
     else:
         # Only char matches available
         return list(char_indices)[:top_k]
+
+
+def prefilter_candidates_tfidf_scored(
+    crm_name: str,
+    vectorizer: TfidfVectorizer,
+    cand_matrix: Any,
+    top_k: int,
+    *,
+    char_vectorizer: TfidfVectorizer | None = None,
+    char_matrix: Any | None = None,
+) -> List[Tuple[int, float]]:
+    """Rank name candidates with stable word/char score fusion."""
+    crm_norm = normalize_text_for_tfidf(crm_name)
+    if not crm_norm or cand_matrix is None:
+        return []
+    scores: Dict[int, float] = dict(
+        _rank_sparse_scores(
+            (vectorizer.transform([crm_norm]) @ cand_matrix.T).getrow(0),
+            top_k,
+        )
+    )
+    if char_vectorizer is not None and char_matrix is not None:
+        char_hits = _rank_sparse_scores(
+            (char_vectorizer.transform([crm_norm]) @ char_matrix.T).getrow(0),
+            top_k,
+        )
+        for index, score in char_hits:
+            scores[index] = max(scores.get(index, 0.0), score)
+    return sorted(scores.items(), key=lambda item: (-item[1], item[0]))[:top_k]
 
 
 def build_char_tfidf_index(

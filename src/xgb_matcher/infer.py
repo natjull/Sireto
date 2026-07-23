@@ -50,6 +50,7 @@ from .features import (
 from .naming import build_candidate_names, primary_name
 from .partitioned_store import PartitionedCandidateStore
 from .semantic import is_semantic_available
+from .dense_retrieval import GlobalDenseSirenIndex
 from .calibration import load_calibrator
 
 
@@ -170,6 +171,7 @@ class XgbInferenceEngine:
         # Route B SIREN-first index (optional, for global SIREN matching)
         self.siren_global_index: SirenGlobalIndex | None = None
         self.siren_to_geo: SirenToGeoIndex | None = None
+        self.dense_siren_index: GlobalDenseSirenIndex | None = None
         self.siren_top_k = getattr(retrieval_config, 'siren_top_k', 50)
         self.max_sirets_per_siren = getattr(retrieval_config, 'max_sirets_per_siren', 20)
 
@@ -361,6 +363,17 @@ class XgbInferenceEngine:
                         f"Failed to load SIREN global index from {index_path}: {e}. "
                         "Falling back to standard retrieval."
                     )
+
+        if engine.retrieval_config.global_dense_siren_enabled:
+            dense_index_path = engine.retrieval_config.global_dense_siren_index_path
+            geo_index_path = engine.retrieval_config.siren_geo_index_path
+            if not dense_index_path or not geo_index_path:
+                raise RuntimeError(
+                    "V9 global dense SIREN retrieval requires both "
+                    "global_dense_siren_index_path and siren_geo_index_path"
+                )
+            engine.dense_siren_index = GlobalDenseSirenIndex(Path(dense_index_path))
+            engine.siren_to_geo = SirenToGeoIndex(Path(geo_index_path))
 
         return engine
     
@@ -1008,6 +1021,7 @@ class XgbInferenceEngine:
             tfidf_cache={},
             gt_siret=None,
             siren_to_geo=self.siren_to_geo,
+            dense_siren_index=self.dense_siren_index,
         )
         return result.candidates, result.idf_map, result.default_idf
 

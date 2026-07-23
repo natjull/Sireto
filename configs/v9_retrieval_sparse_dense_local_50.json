@@ -1,0 +1,16 @@
+{
+  "version": "v9-retrieval-1",
+  "pool_mode": "insee_then_postcode",
+  "include_closed": true,
+  "drop_unnamed": true,
+  "prefilter_k": 100,
+  "min_candidates": 50,
+  "stage1_top_n": 50,
+  "sparse_retrieval_enabled": true,
+  "dense_retrieval_enabled": true,
+  "dense_top_k": 100,
+  "fusion_mode": "rrf",
+  "retrieval_budget": 50,
+  "rrf_k": 60,
+  "mega_insee_policy": "full_insee"
+}

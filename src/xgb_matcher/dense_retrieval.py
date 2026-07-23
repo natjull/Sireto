@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import logging
 import os
+import json
 from collections import OrderedDict
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -183,6 +184,54 @@ class PartitionEmbeddingStore:
             self._index_cache.popitem(last=False)
 
 
+class GlobalDenseSirenIndex:
+    """Read-only ANN index mapping a CRM name to global SIREN entities."""
+
+    def __init__(self, index_dir: Path) -> None:
+        if not _faiss_available():
+            raise ImportError("faiss-cpu required")
+        self.index_dir = Path(index_dir)
+        manifest_path = self.index_dir / "manifest.json"
+        self.manifest = (
+            json.loads(manifest_path.read_text(encoding="utf-8"))
+            if manifest_path.exists()
+            else {}
+        )
+        self.index = faiss.read_index(str(self.index_dir / "siren_faiss.index"))
+        self.siren_ids = np.load(
+            self.index_dir / "siren_ids.npy",
+            mmap_mode="r",
+            allow_pickle=False,
+        )
+        if self.index.ntotal != len(self.siren_ids):
+            raise ValueError("Global dense SIREN index/id cardinality mismatch")
+        manifest_count = self.manifest.get("entity_count")
+        if manifest_count is not None and int(manifest_count) != len(self.siren_ids):
+            raise ValueError("Global dense SIREN manifest cardinality mismatch")
+
+    def query(self, crm_name: str, top_k: int = 50) -> List[Tuple[str, float]]:
+        query = encode_query(crm_name)
+        if query is None or self.index.ntotal == 0:
+            return []
+        k = min(top_k, self.index.ntotal)
+        scores, indices = self.index.search(
+            query.astype(np.float32, copy=False).reshape(1, -1),
+            k,
+        )
+        hits: List[Tuple[str, float]] = []
+        for index, score in zip(indices[0], scores[0], strict=True):
+            if index < 0:
+                continue
+            raw_siren = self.siren_ids[int(index)]
+            siren = (
+                raw_siren.decode("ascii")
+                if isinstance(raw_siren, bytes)
+                else str(raw_siren)
+            )
+            hits.append((siren.zfill(9), float(score)))
+        return hits
+
+
 # ---------------------------------------------------------------------------
 # Query-time embedding (thin wrapper around semantic.py)
 # ---------------------------------------------------------------------------
@@ -211,5 +260,6 @@ def encode_query(text: str) -> Optional[np.ndarray]:
 __all__ = [
     "DenseIndex",
     "PartitionEmbeddingStore",
+    "GlobalDenseSirenIndex",
     "encode_query",
 ]

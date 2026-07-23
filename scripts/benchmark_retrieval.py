@@ -61,16 +61,27 @@ def run_benchmark(
     partitions_dir: Path,
     dense_dir: Path | None,
     prefilter_k: int,
+    candidate_budget: int | None = None,
+    global_siren_dense_dir: Path | None = None,
+    siren_geo_index: Path | None = None,
 ) -> Dict[str, Dict[str, float]]:
     """Run retrieval in 3 modes and compute recall@K."""
+    budget = candidate_budget or prefilter_k
+    common = {
+        "prefilter_k": prefilter_k,
+        "fusion_mode": "rrf",
+        "retrieval_budget": budget,
+        "prefilter_union_cap": None,
+        "min_candidates": min(50, budget),
+    }
 
     modes = {
         "sparse_only": RetrievalConfigV1(
-            prefilter_k=prefilter_k,
+            **common,
             dense_retrieval_enabled=False,
         ),
         "hybrid": RetrievalConfigV1(
-            prefilter_k=prefilter_k,
+            **common,
             dense_retrieval_enabled=True,
             dense_top_k=prefilter_k,
         ),
@@ -78,7 +89,7 @@ def run_benchmark(
 
     # Dense-only: disable sparse branch entirely and keep only dense ANN retrieval.
     modes["dense_only"] = RetrievalConfigV1(
-        prefilter_k=prefilter_k,
+        **common,
         sparse_retrieval_enabled=False,
         dense_retrieval_enabled=True,
         dense_top_k=prefilter_k,
@@ -93,6 +104,20 @@ def run_benchmark(
         _logger.warning("No dense store at %s — running sparse_only only to avoid misleading dense metrics", dense_dir)
         modes = {"sparse_only": modes["sparse_only"]}
 
+    dense_siren_index = None
+    siren_to_geo = None
+    if global_siren_dense_dir and siren_geo_index:
+        from src.xgb_matcher.dense_retrieval import GlobalDenseSirenIndex
+        from src.xgb_matcher.siren_retrieval import SirenToGeoIndex
+
+        dense_siren_index = GlobalDenseSirenIndex(global_siren_dense_dir)
+        siren_to_geo = SirenToGeoIndex(siren_geo_index)
+        modes["sparse_local_dense_global_siren"] = RetrievalConfigV1(
+            **common,
+            dense_retrieval_enabled=False,
+            global_dense_siren_enabled=True,
+        )
+
     results: Dict[str, Dict[str, float]] = {}
 
     for mode_name, config in modes.items():
@@ -105,6 +130,7 @@ def run_benchmark(
         gt_in_pool = 0
         gt_in_base = 0
         loss_reasons: Counter = Counter()
+        query_latencies: List[float] = []
 
         t0 = time.perf_counter()
 
@@ -125,13 +151,21 @@ def run_benchmark(
             crm_pre = preprocess_crm_row(crm_row)
 
             tfidf_cache: Dict = {}
+            query_started = time.perf_counter()
             res = build_candidate_pool(
                 store, crm_row, crm_pre, config, tfidf_cache,
                 gt_siret=str(gt_siret),
                 persistent_cache=cache,
                 dense_store=dense_store if config.dense_retrieval_enabled else None,
+                dense_siren_index=(
+                    dense_siren_index if config.global_dense_siren_enabled else None
+                ),
+                siren_to_geo=(
+                    siren_to_geo if config.global_dense_siren_enabled else None
+                ),
                 timer=timer,
             )
+            query_latencies.append(time.perf_counter() - query_started)
 
             total += 1
             if res.gt_in_base_pool:
@@ -152,15 +186,23 @@ def run_benchmark(
             "gt_in_base": gt_in_base,
             "gt_in_prefilter": gt_in_pool,
             "recall@base_%": recall_base,
-            f"recall@{prefilter_k}_%": recall_prefilter,
-            f"recall@{prefilter_k}_given_base_%": recall_prefilter_given_base,
+            f"recall@{budget}_%": recall_prefilter,
+            f"recall@{budget}_given_base_%": recall_prefilter_given_base,
             "elapsed_s": elapsed,
             "queries_per_sec": total / max(elapsed, 0.001),
+            "latency_p50_ms": (
+                float(pd.Series(query_latencies).quantile(0.50) * 1000)
+                if query_latencies else 0.0
+            ),
+            "latency_p95_ms": (
+                float(pd.Series(query_latencies).quantile(0.95) * 1000)
+                if query_latencies else 0.0
+            ),
         }
 
         _logger.info(
             "[%s] recall@base=%.2f%%  recall@%d=%.2f%%  (given base: %.2f%%)  %.1fs (%.1f q/s)",
-            mode_name, recall_base, prefilter_k, recall_prefilter,
+            mode_name, recall_base, budget, recall_prefilter,
             recall_prefilter_given_base, elapsed, total / max(elapsed, 0.001),
         )
         for reason, count in loss_reasons.most_common():
@@ -176,7 +218,15 @@ def main() -> None:
     parser.add_argument("--crm-gt", type=Path, default=Path("data/crm_ok_gt.csv"))
     parser.add_argument("--partitions-dir", type=Path, default=Path("data/candidates_v7_all"))
     parser.add_argument("--dense-dir", type=Path, default=Path("data/dense_index"))
+    parser.add_argument("--global-siren-dense-dir", type=Path)
+    parser.add_argument("--siren-geo-index", type=Path)
     parser.add_argument("--prefilter-k", type=int, default=500)
+    parser.add_argument(
+        "--candidate-budget",
+        type=int,
+        default=50,
+        help="Exact post-fusion candidate budget (default: 50).",
+    )
     parser.add_argument("--output-csv", type=Path, default=None)
     parser.add_argument("--max-rows", type=int, default=0, help="Limit rows for quick test (0=all)")
     args = parser.parse_args()
@@ -188,7 +238,15 @@ def main() -> None:
         df = df.head(args.max_rows)
         _logger.info("Limited to %d rows", len(df))
 
-    results = run_benchmark(df, args.partitions_dir, args.dense_dir, args.prefilter_k)
+    results = run_benchmark(
+        df,
+        args.partitions_dir,
+        args.dense_dir,
+        args.prefilter_k,
+        args.candidate_budget,
+        args.global_siren_dense_dir,
+        args.siren_geo_index,
+    )
 
     # Print summary table
     print("\n" + "=" * 80)

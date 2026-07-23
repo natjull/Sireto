@@ -18,12 +18,15 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Set, Tuple
 from .partitioned_store import PartitionedCandidateStore
 from .retrieval_config import RetrievalConfigV1
 from .candidates import compute_name_idf_map
+from .fusion import annotate_fused_candidate, reciprocal_rank_fusion
 from .blocking import (
     build_tfidf_index,
     build_address_tfidf_index,
     build_char_tfidf_index,
     prefilter_candidates_tfidf,
+    prefilter_candidates_tfidf_scored,
     prefilter_candidates_address_tfidf,
+    prefilter_candidates_address_tfidf_scored,
     dedupe_candidates,
     address_hash,
     extract_numeric_tokens,
@@ -75,6 +78,62 @@ def _check_siret_in_list(candidates: List[dict], siret: str | None) -> bool:
 
 def _get_siret_set(candidates: List[dict]) -> Set[str]:
     return {str(c.get("siret", "")).zfill(14) for c in candidates if c.get("siret")}
+
+
+def _expand_ranked_sirens(
+    *,
+    ranked_sirens: List[Tuple[str, float]],
+    store: PartitionedCandidateStore,
+    siren_to_geo: Any,
+    crm_insee: str,
+    crm_postcode: str,
+    config: RetrievalConfigV1,
+) -> tuple[List[dict], Dict[str, int]]:
+    """Expand ranked SIRENs to filtered SIRETs, preserving SIREN rank."""
+    candidates: List[dict] = []
+    siren_rank_by_siret: Dict[str, int] = {}
+    seen_sirets: Set[str] = set()
+    loaded_partitions: Dict[str, List[dict]] = {}
+
+    def load_partition(insee_code: str) -> List[dict]:
+        if insee_code not in loaded_partitions:
+            loaded_partitions[insee_code] = store.load_by_insee(insee_code)
+        return loaded_partitions[insee_code]
+
+    for siren_rank, (siren, _score) in enumerate(ranked_sirens, start=1):
+        locations = siren_to_geo.get_locations(siren)
+        locations = sorted(
+            locations,
+            key=lambda location: (
+                str(location[0]) != str(crm_insee),
+                str(location[1]) != str(crm_postcode),
+            ),
+        )
+        selected_for_siren = 0
+        for insee_code, _postcode in locations:
+            if selected_for_siren >= config.max_sirets_per_siren:
+                break
+            for candidate in load_partition(str(insee_code)):
+                siret = str(candidate.get("siret") or "")
+                if (
+                    str(candidate.get("siren") or "") != str(siren)
+                    or not siret
+                    or siret in seen_sirets
+                ):
+                    continue
+                if not _apply_filters(
+                    [candidate],
+                    config.drop_unnamed,
+                    config.include_closed,
+                ):
+                    continue
+                candidates.append(candidate)
+                siren_rank_by_siret[siret] = siren_rank
+                seen_sirets.add(siret)
+                selected_for_siren += 1
+                if selected_for_siren >= config.max_sirets_per_siren:
+                    break
+    return candidates, siren_rank_by_siret
 
 
 def _apply_filters(
@@ -172,15 +231,15 @@ def _get_tfidf_artifacts(
 # Dense retrieval integration
 # ---------------------------------------------------------------------------
 
-def _dense_retrieval_indices(
+def _dense_retrieval_hits(
     crm_name: str,
     candidates: List[dict],
     partition_key: str,
     dense_store: Optional["PartitionEmbeddingStore"],
     top_k: int,
     timer: Optional["PipelineTimer"] = None,
-) -> List[int]:
-    """Return candidate indices from dense (FAISS) retrieval. Empty if unavailable."""
+) -> List[Tuple[int, float]]:
+    """Return ranked ``(candidate index, score)`` dense hits."""
     if dense_store is None:
         return []
     if not dense_store.has_embeddings(partition_key):
@@ -211,7 +270,33 @@ def _dense_retrieval_indices(
 
     scores, indices = idx.search(query_vec, top_k)
     # Filter out -1 padding indices from FAISS
-    return [int(i) for i in indices if i >= 0 and i < len(candidates)]
+    return [
+        (int(i), float(score))
+        for i, score in zip(indices, scores, strict=True)
+        if i >= 0 and i < len(candidates)
+    ]
+
+
+def _dense_retrieval_indices(
+    crm_name: str,
+    candidates: List[dict],
+    partition_key: str,
+    dense_store: Optional["PartitionEmbeddingStore"],
+    top_k: int,
+    timer: Optional["PipelineTimer"] = None,
+) -> List[int]:
+    """Backward-compatible index-only dense retrieval helper."""
+    return [
+        index
+        for index, _ in _dense_retrieval_hits(
+            crm_name,
+            candidates,
+            partition_key,
+            dense_store,
+            top_k,
+            timer,
+        )
+    ]
 
 
 # ---------------------------------------------------------------------------
@@ -231,6 +316,7 @@ def build_candidate_pool(
     timer: Optional["PipelineTimer"] = None,
     siren_global_index: Optional[Any] = None,
     siren_to_geo: Optional[Any] = None,
+    dense_siren_index: Optional[Any] = None,
 ) -> CandidatePoolResult:
     """Build candidate pool with unified code-path for train and inference.
 
@@ -400,7 +486,12 @@ def build_candidate_pool(
 
     # Step 4: Prefilter — hybrid sparse (TF-IDF) + dense (FAISS) + rescue
     candidates = pool_list
-    if config.prefilter_k and len(candidates) > config.prefilter_k:
+    prune_threshold = (
+        config.retrieval_budget
+        if config.fusion_mode == "rrf" and config.retrieval_budget is not None
+        else config.prefilter_k
+    )
+    if prune_threshold and len(candidates) > prune_threshold:
         cache_key = ("main", f"{insee}_{postcode}")
 
         # 4a. Sparse retrieval (TF-IDF) — with persistent cache
@@ -415,8 +506,20 @@ def build_candidate_pool(
             name_vec, name_mat, names, char_vec, char_mat, addr_vec, addr_mat = artifacts
 
             name_idx: List[int] = []
+            sparse_scores: Dict[int, float] = {}
             if name_vec is not None and name_mat is not None:
-                if timer:
+                if config.fusion_mode == "rrf":
+                    name_hits = prefilter_candidates_tfidf_scored(
+                        crm_name,
+                        name_vec,
+                        name_mat,
+                        config.prefilter_k,
+                        char_vectorizer=char_vec,
+                        char_matrix=char_mat,
+                    )
+                    name_idx = [index for index, _ in name_hits]
+                    sparse_scores.update(name_hits)
+                elif timer:
                     with timer.stage("tfidf_query"):
                         name_idx = prefilter_candidates_tfidf(
                             crm_name, name_vec, name_mat, config.prefilter_k,
@@ -432,37 +535,117 @@ def build_candidate_pool(
 
             addr_idx: List[int] = []
             if addr_vec is not None and addr_mat is not None:
-                addr_idx = prefilter_candidates_address_tfidf(
-                    crm_address, addr_vec, addr_mat, config.prefilter_k,
-                )
+                if config.fusion_mode == "rrf":
+                    addr_hits = prefilter_candidates_address_tfidf_scored(
+                        crm_address, addr_vec, addr_mat, config.prefilter_k,
+                    )
+                    addr_idx = [index for index, _ in addr_hits]
+                    for index, score in addr_hits:
+                        sparse_scores[index] = max(
+                            sparse_scores.get(index, 0.0),
+                            score,
+                        )
+                else:
+                    addr_idx = prefilter_candidates_address_tfidf(
+                        crm_address, addr_vec, addr_mat, config.prefilter_k,
+                    )
 
-            sparse_idx = list(dict.fromkeys(name_idx + addr_idx))
+            if config.fusion_mode == "rrf":
+                sparse_idx = [
+                    index
+                    for index, _ in sorted(
+                        sparse_scores.items(),
+                        key=lambda item: (-item[1], item[0]),
+                    )
+                ]
+            else:
+                sparse_idx = list(dict.fromkeys(name_idx + addr_idx))
 
         # 4b. Dense retrieval (FAISS) — if enabled and available
         dense_idx: List[int] = []
+        dense_scores: Dict[int, float] = {}
         if config.dense_retrieval_enabled and dense_store is not None:
-            dense_idx = _dense_retrieval_indices(
+            dense_hits = _dense_retrieval_hits(
                 crm_name, candidates, partition_key,
                 dense_store, config.dense_top_k, timer,
             )
+            dense_idx = [index for index, _ in dense_hits]
+            dense_scores = dict(dense_hits)
 
-        # 4c. Union: sparse + dense (deduped, order-preserved)
-        combined_idx = list(dict.fromkeys(sparse_idx + dense_idx))
-        if config.prefilter_union_cap:
-            combined_idx = combined_idx[: config.prefilter_union_cap]
+        if config.fusion_mode == "rrf":
+            index_by_siret = {
+                str(candidate.get("siret") or ""): index
+                for index, candidate in enumerate(candidates)
+                if candidate.get("siret")
+            }
+            rescue_idx = [
+                index_by_siret[siret]
+                for siret in sorted(whitelisted_sirets)
+                if siret in index_by_siret
+            ]
+            budget = config.retrieval_budget or config.prefilter_k
+            fused_hits = reciprocal_rank_fusion(
+                {
+                    "sparse": sparse_idx,
+                    "dense": dense_idx,
+                    "rescue": rescue_idx,
+                },
+                budget=budget,
+                rrf_k=config.rrf_k,
+            )
+            combined_idx = [int(hit.key) for hit in fused_hits]
+            if len(combined_idx) < min(budget, len(candidates)):
+                selected = set(combined_idx)
+                for index in range(len(candidates)):
+                    if index not in selected:
+                        combined_idx.append(index)
+                    if len(combined_idx) >= min(budget, len(candidates)):
+                        break
+            fused_by_index = {int(hit.key): hit for hit in fused_hits}
+        else:
+            # Legacy order-preserving union.
+            combined_idx = list(dict.fromkeys(sparse_idx + dense_idx))
+            if config.prefilter_union_cap:
+                combined_idx = combined_idx[: config.prefilter_union_cap]
+            fused_by_index = {}
 
         if combined_idx:
-            prefilter_cands = [candidates[i] for i in combined_idx if i < len(candidates)]
+            prefilter_cands = []
+            for retrieval_rank, index in enumerate(combined_idx, start=1):
+                if index >= len(candidates):
+                    continue
+                candidate = candidates[index]
+                hit = fused_by_index.get(index)
+                if hit is not None:
+                    candidate = annotate_fused_candidate(candidate, hit)
+                elif config.fusion_mode == "rrf":
+                    candidate = dict(candidate)
+                    candidate["rrf_score"] = 0.0
+                    candidate["retrieval_rank"] = retrieval_rank
+                    candidate["retrieval_source"] = "padding"
+                    candidate["retrieval_channel_count"] = 0
+                    candidate["retrieval_agreement"] = 0
+                if index in dense_scores:
+                    candidate = dict(candidate)
+                    candidate["dense_score"] = dense_scores[index]
+                if index in sparse_scores:
+                    candidate = dict(candidate)
+                    candidate["sparse_score"] = sparse_scores[index]
+                prefilter_cands.append(candidate)
             prefilter_sirets = {str(c.get("siret")) for c in prefilter_cands if c.get("siret")}
 
-            # Add rescue whitelist candidates not already in the pool
+            # Legacy mode appends rescue candidates. RRF already treats rescue as
+            # a channel and therefore preserves its exact candidate budget.
             final_cands = list(prefilter_cands)
-            for cand in pool.values():
-                siret = str(cand.get("siret") or "")
-                if siret in whitelisted_sirets and siret not in prefilter_sirets:
-                    final_cands.append(cand)
+            if config.fusion_mode != "rrf":
+                for cand in pool.values():
+                    siret = str(cand.get("siret") or "")
+                    if siret in whitelisted_sirets and siret not in prefilter_sirets:
+                        final_cands.append(cand)
 
-            if len(final_cands) >= config.min_candidates:
+            if config.fusion_mode == "rrf":
+                candidates = final_cands
+            elif len(final_cands) >= config.min_candidates:
                 candidates = final_cands
             else:
                 final_sirets = {str(c.get("siret") or "") for c in final_cands if c.get("siret")}
@@ -482,9 +665,96 @@ def build_candidate_pool(
     result.gt_in_tfidf_pool = _check_siret_in_list(candidates, gt_norm)
 
     if result.gt_in_filtered_pool and not result.gt_in_tfidf_pool and not result.loss_reason:
-        result.loss_reason = "PRUNED_BY_TFIDF" if config.sparse_retrieval_enabled else "PRUNED_BY_PREFILTER"
+        result.loss_reason = (
+            "PRUNED_BY_RRF"
+            if config.fusion_mode == "rrf"
+            else ("PRUNED_BY_TFIDF" if config.sparse_retrieval_enabled else "PRUNED_BY_PREFILTER")
+        )
 
-    if not result.gt_in_base_pool and not result.loss_reason:
+    # V9 global dense SIREN rescue. This is a second fixed-budget fusion,
+    # not Route B: local SIRET retrieval remains the primary channel.
+    if (
+        config.global_dense_siren_enabled
+        and dense_siren_index is not None
+        and siren_to_geo is not None
+    ):
+        ranked_sirens = dense_siren_index.query(
+            crm_pre.get("crm_name", "") or crm_name,
+            top_k=config.siren_top_k,
+        )
+        global_candidates, global_rank_by_siret = _expand_ranked_sirens(
+            ranked_sirens=ranked_sirens,
+            store=store,
+            siren_to_geo=siren_to_geo,
+            crm_insee=str(insee or ""),
+            crm_postcode=str(postcode or ""),
+            config=config,
+        )
+        candidate_by_siret = {
+            str(candidate.get("siret") or ""): candidate
+            for candidate in global_candidates
+            if candidate.get("siret")
+        }
+        candidate_by_siret.update(
+            {
+                str(candidate.get("siret") or ""): candidate
+                for candidate in candidates
+                if candidate.get("siret")
+            }
+        )
+        local_order = [
+            str(candidate.get("siret") or "")
+            for candidate in candidates
+            if candidate.get("siret")
+        ]
+        global_order = [
+            str(candidate.get("siret") or "")
+            for candidate in global_candidates
+            if candidate.get("siret")
+        ]
+        budget = config.retrieval_budget or config.prefilter_k
+        global_fused = reciprocal_rank_fusion(
+            {"local": local_order, "global_siren": global_order},
+            budget=budget,
+            rrf_k=config.rrf_k,
+        )
+        fused_candidates: List[dict] = []
+        for hit in global_fused:
+            siret = str(hit.key)
+            candidate = dict(candidate_by_siret[siret])
+            candidate["rrf_score"] = float(hit.rrf_score)
+            candidate["retrieval_rank"] = int(hit.rank)
+            candidate["global_siren_rank"] = global_rank_by_siret.get(siret)
+            previous_source = str(candidate.get("retrieval_source") or "")
+            sources = set(filter(None, previous_source.split("+")))
+            sources.update(hit.channel_ranks)
+            candidate["retrieval_source"] = "+".join(sorted(sources))
+            candidate["retrieval_channel_count"] = len(sources)
+            candidate["retrieval_agreement"] = int(
+                "sparse" in sources and "dense" in sources
+            )
+            fused_candidates.append(candidate)
+        candidates = fused_candidates
+        result.pool_sizes["global_siren_candidates"] = len(global_candidates)
+        result.pool_sizes["global_fused"] = len(candidates)
+        result.pool_sizes["prefilter"] = len(candidates)
+        result.pool_sizes["tfidf"] = len(candidates)
+        result.gt_in_tfidf_pool = _check_siret_in_list(candidates, gt_norm)
+        if result.gt_in_tfidf_pool:
+            result.loss_reason = ""
+        final_candidates = {
+            str(candidate.get("siret") or ""): candidate
+            for candidate in candidates
+            if candidate.get("siret")
+        }
+        if final_candidates:
+            result.idf_map, result.default_idf = compute_name_idf_map(final_candidates)
+
+    if (
+        not result.gt_in_base_pool
+        and not result.gt_in_tfidf_pool
+        and not result.loss_reason
+    ):
         result.loss_reason = "NOT_IN_PARTITION"
 
     # === Step 5: SIREN expansion (local + cross-partition) ===
