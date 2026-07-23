@@ -142,10 +142,12 @@ python scripts/run_v9_cross_encoder_ablation.py \
   --revision <commit_huggingface>
 ```
 
-Il est évalué sur le top 20. Son score doit ensuite être ajouté comme feature
-du ranker pour la variante « injectée ». Il n’est promu que si les gates
-mesurées passent : +1 point de couverture à précision cible, aucune régression
-segmentaire supérieure à 2 points et latence p95 inférieure à 2×.
+Il est évalué sur le top 20. Le script entraîne les folds cross-encoder et
+ranker injecté en OOF, puis produit les trois fichiers de prédictions appariés :
+sans cross-encoder, cross-encoder seul et score cross-encoder injecté dans
+XGBoost. Exécuter l’accepteur sur chacun. Le composant n’est promu que si les
+gates mesurées passent : +1 point de couverture à précision cible, aucune
+régression segmentaire supérieure à 2 points et latence p95 inférieure à 2×.
 
 ## 5. Promotion
 
