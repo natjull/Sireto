@@ -14,6 +14,14 @@ unique + accepteur selectif query-level**:
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 
 ## Actions terminees (fenetre recente)
+- **Store dense local dev complet**: les 871 partitions INSEE et 14 partitions
+  CP du plan gelé ont été encodées sur CPU avec le MiniLM générique épinglé,
+  soit 10 216 448 candidats dans 885 paires index/manifeste (3,0 Go sur SSD).
+  La vérification exhaustive confirme un unique fingerprint modèle, le hash
+  exact du plan, zéro fichier manquant/temporaire et 61 tests passants. Le
+  builder cherchait initialement `cp_codes` au lieu du champ canonique
+  `postcode_codes`; le défaut est corrigé et couvert par régression. *(commit
+  GitHub: `8ec1881`)*
 - **Comparateur apparié Gate 2**: validation des hashes de l'expérience et de
   l'alignement exact des requêtes, décompte des misses récupérés et hits
   déplacés, IC95 bootstrap apparié, test exact de McNemar, deltas par segment,
