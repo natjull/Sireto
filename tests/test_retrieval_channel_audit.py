@@ -7,6 +7,7 @@ import pandas as pd
 from scripts.audit_retrieval_channels import (
     ALL_CHANNELS,
     _current_sparse_indices,
+    _siren_sibling_channels,
     summarize_channel_audit,
 )
 
@@ -75,3 +76,22 @@ def test_channel_summary_counts_paired_recoveries() -> None:
         ]
         == 2
     )
+
+
+def test_siren_channels_prioritize_exact_address_then_head_office() -> None:
+    candidates = [
+        {"siret": "11111111100001", "siren": "111111111", "is_siege": True},
+        {"siret": "11111111100002", "siren": "111111111", "is_siege": False},
+        {"siret": "22222222200001", "siren": "222222222", "is_siege": True},
+    ]
+    heads, sites = _siren_sibling_channels(
+        candidates=candidates,
+        word_indices=[0, 2],
+        char_indices=[0, 2],
+        current_indices=[0, 2],
+        address_indices=[1],
+        address_exact_indices=[1],
+        max_output=10,
+    )
+    assert heads == [1, 2]
+    assert sites == [1, 2, 0]

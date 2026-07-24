@@ -51,7 +51,14 @@ from src.xgb_matcher.v9_dataset import file_sha256  # noqa: E402
 
 
 SCHEMA_VERSION = "sireto-retrieval-channel-audit-1"
-RANKED_CHANNELS = ("name_word", "name_char", "address_word", "current_sparse")
+RANKED_CHANNELS = (
+    "name_word",
+    "name_char",
+    "address_word",
+    "siren_head",
+    "siren_sites",
+    "current_sparse",
+)
 EXACT_CHANNELS = ("name_exact", "address_exact", "numeric_name")
 ALL_CHANNELS = RANKED_CHANNELS + EXACT_CHANNELS
 
@@ -187,6 +194,102 @@ def _ordered_union(index_groups: Iterable[Iterable[int]]) -> list[int]:
                 seen.add(index)
                 output.append(index)
     return output
+
+
+def _unique_sirens_from_indices(
+    candidates: list[dict],
+    indices: Iterable[int],
+) -> list[str]:
+    output: list[str] = []
+    seen: set[str] = set()
+    for index in indices:
+        if index < 0 or index >= len(candidates):
+            continue
+        siren = str(candidates[index].get("siren") or "")
+        if siren and siren not in seen:
+            seen.add(siren)
+            output.append(siren)
+    return output
+
+
+def _siren_sibling_channels(
+    *,
+    candidates: list[dict],
+    word_indices: list[int],
+    char_indices: list[int],
+    current_indices: list[int],
+    address_indices: list[int],
+    address_exact_indices: list[int],
+    max_output: int,
+    max_sites_per_siren: int = 20,
+) -> tuple[list[int], list[int]]:
+    """Transfer entity-name evidence to local SIRET siblings.
+
+    ``siren_head`` emits the best local site for each ranked SIREN. The
+    round-robin ``siren_sites`` list then exposes additional sites without
+    letting one large public entity consume the whole candidate budget.
+    """
+    siren_lists = {
+        "word": _unique_sirens_from_indices(candidates, word_indices),
+        "char": _unique_sirens_from_indices(candidates, char_indices),
+        "current": _unique_sirens_from_indices(candidates, current_indices),
+    }
+    ranked_sirens = [
+        str(hit.key)
+        for hit in reciprocal_rank_fusion(
+            siren_lists,
+            budget=min(max_output, len(candidates)),
+            rrf_k=60,
+        )
+    ]
+    if not ranked_sirens:
+        return [], []
+
+    siblings: dict[str, list[int]] = defaultdict(list)
+    ranked_siren_set = set(ranked_sirens)
+    for index, candidate in enumerate(candidates):
+        siren = str(candidate.get("siren") or "")
+        if siren in ranked_siren_set:
+            siblings[siren].append(index)
+
+    address_rank = {
+        index: rank
+        for rank, index in enumerate(address_indices, start=1)
+    }
+    current_rank = {
+        index: rank
+        for rank, index in enumerate(current_indices, start=1)
+    }
+    exact_rank = {
+        index: rank
+        for rank, index in enumerate(address_exact_indices, start=1)
+    }
+
+    def site_key(index: int) -> tuple[Any, ...]:
+        candidate = candidates[index]
+        return (
+            exact_rank.get(index, 10**9),
+            not bool(candidate.get("is_siege")),
+            address_rank.get(index, 10**9),
+            current_rank.get(index, 10**9),
+            candidate.get("etat_admin") == "F",
+            _normalize_siret(candidate),
+        )
+
+    ranked_sites: list[list[int]] = []
+    for siren in ranked_sirens:
+        ordered = sorted(siblings.get(siren, []), key=site_key)
+        if ordered:
+            ranked_sites.append(ordered[:max_sites_per_siren])
+    heads = [sites[0] for sites in ranked_sites[:max_output]]
+    round_robin: list[int] = []
+    for site_position in range(max_sites_per_siren):
+        for sites in ranked_sites:
+            if site_position < len(sites):
+                round_robin.append(sites[site_position])
+                if len(round_robin) >= max_output:
+                    return heads, round_robin
+    return heads, round_robin
 
 
 def _segment_masks(raw: pd.DataFrame) -> dict[str, pd.Series]:
@@ -602,15 +705,33 @@ def run_audit(
                 rrf_k=config.rrf_k,
                 prefilter_trigger_size=min(cutoffs),
             )
+            word_indices = [index for index, _score in word_hits]
+            char_indices = [index for index, _score in char_hits]
+            address_indices = [index for index, _score in address_hits]
+            siren_head_indices, siren_site_indices = _siren_sibling_channels(
+                candidates=candidates,
+                word_indices=word_indices,
+                char_indices=char_indices,
+                current_indices=current_indices,
+                address_indices=address_indices,
+                address_exact_indices=address_exact_indices,
+                max_output=max_k,
+            )
             channel_sirets = {
                 "name_word": _indices_to_sirets(
-                    candidates, (index for index, _score in word_hits)
+                    candidates, word_indices
                 ),
                 "name_char": _indices_to_sirets(
-                    candidates, (index for index, _score in char_hits)
+                    candidates, char_indices
                 ),
                 "address_word": _indices_to_sirets(
-                    candidates, (index for index, _score in address_hits)
+                    candidates, address_indices
+                ),
+                "siren_head": _indices_to_sirets(
+                    candidates, siren_head_indices
+                ),
+                "siren_sites": _indices_to_sirets(
+                    candidates, siren_site_indices
                 ),
                 "name_exact": _indices_to_sirets(
                     candidates, name_exact_indices
