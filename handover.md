@@ -14,6 +14,12 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Baseline sparse Recall@K dev publiée**: préfixe @50 identique sur les
+  2 565 requêtes à la baseline historique; Recall SIRET @50/@100/@200/@500 =
+  90,33/92,75/94,15/95,79 %. Le store V7 plafonne à 97,58 %: 62 SIRET, tous
+  fermés, sont absents des 14,3 M candidats mais présents dans le snapshot brut
+  StockEtablissement. Zéro perte filtre ou déduplication; 124 autres vérités
+  sont classées après 100. *(commit GitHub: `67f1a9c`)*
 - **Préfixes Recall@K stabilisés et cache mutualisé**: un passage max-K ne
   classait pas les partitions de taille comprise entre 51 et K, rendant son
   préfixe @50 différent de la baseline. Ajout d'un seuil de déclenchement du
