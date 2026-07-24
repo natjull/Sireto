@@ -14,6 +14,18 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Builder overlay des fermés legacy**: construction immuable et sans lecture
+  des labels d'un canal contenant uniquement les SIRET fermés exclus par le
+  filtre V7 `dateDebut >= 2016`. Le périmètre géographique est dérivé des seuls
+  champs INSEE/CP du benchmark, les snapshots et le benchmark sont contrôlés
+  par hash, le build est atomique, manifeste et compatible avec le store
+  partitionné. *(commit GitHub: `601eee5`)*
+- **Audit unitaire sparse publié**: sur dev, caractères et mots récupèrent
+  respectivement 65 et 59 misses du sparse@100; adresse TF-IDF 6, nom exact 15,
+  adresse exacte 2 et numérique 0. L'oracle des canaux à leur propre top-100
+  atteint 95,59 %, encore sous le plafond du store à 97,58 % et sous la cible.
+  Rapport et lecture architecturale dans
+  `reports/recall100/channel_audit_dev.md`. *(commit GitHub: `d070db8`)*
 - **Audit unitaire des canaux sparse instrumenté**: runner immuable séparant
   TF-IDF nom mots, TF-IDF nom caractères, TF-IDF adresse, nom normalisé exact,
   adresse exacte et rescue numérique. Il conserve les listes/rangs par requête,
@@ -228,10 +240,10 @@ Recall@100.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Exécuter sur les 2 565 requêtes dev l'audit individuel des canaux nom,
-  caractères, adresse, clés exactes, rescue, SIREN et géographie.
-- Croiser ses résultats avec les ablations denses déjà gelées, sans nouveau run
-  dense coûteux, avant de définir une union éligible à 100 candidats.
+- Construire sur le SSD l'overlay de tous les fermés exclus par V7 dans les
+  2 124 zones INSEE et 1 558 zones CP du benchmark, sans utiliser les labels.
+- Auditer ensuite ce canal séparément et définir une admission éligible à
+  100 candidats en conservant les rangs sparse V7.
 - Les artefacts et baselines sont conserves; aucun nettoyage massif du SSD
   n'a ete effectue.
 
@@ -270,10 +282,9 @@ Recall@100.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Produire l'artefact complet de l'audit unitaire sparse sur dev.
+1. Construire et valider l'overlay fermé legacy sur le SSD.
 2. Mesurer les unions/quota/RRF hors test sous plafond absolu 100.
-3. Réintégrer une source non biaisée pour les établissements fermés, puisque le
-   store V7 seul plafonne à 97,58 % avant ranking.
+3. Régler l'admission sur train puis appliquer le gate dev.
 4. Ne consulter la nouvelle variante sur test qu'apres franchissement du gate
    dev et gel de son manifeste.
 
