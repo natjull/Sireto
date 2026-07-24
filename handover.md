@@ -1,23 +1,24 @@
 # SIRETO Handover - 23 Juillet 2026
 
 ## Etat des lieux
-L'experience V9 sans GPU est **terminee avec une decision `PIVOT`**. Les pools
-denses multicanaux ne sont pas promus, mais leur gain Hit@1 justifie de tester
-le dense comme signal de scoring sur un pool sparse inchange. Le rapport est
-`reports/v9/v9_go_pivot_stop.md`. La cible evaluee etait:
-- sparse local SIRET reste la baseline;
-- dense local et dense global SIREN -> expansion SIRET sont des variantes
-  conditionnelles, fusionnees par RRF puis tronquees a 50;
-- le chemin principal reste un ranking direct SIRET;
-- le remplacement `ranker + decider + risk model` par `ranker + accepteur`
-  est interdit avant parite end-to-end;
-- `AUTO_NO_MATCH` est desactive.
+Le goal actif est **Retrieval SIRET Recall@100**: atteindre au moins 99,0 % de
+Recall candidat au SIRET exact avec un plafond absolu de 100 candidats. Le
+contrat est `docs/retrieval_recall100_contract.md`.
+
+L'experience V9 sans GPU precedente est terminee avec une decision `PIVOT`.
+Ses pools denses multicanaux ne sont pas promus. Le rapport reste
+`reports/v9/v9_go_pivot_stop.md`.
 
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
-Le `PIVOT` conserve le sparse/XGBoost historique comme point de depart et ferme
-la promotion des pools hybrides V9 testes.
+Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
+Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Contrat Recall@100 pre-enregistre**: cible SIRET exacte >=99,0 %, plafond
+  absolu 100, courbes diagnostiques @50/@100/@200/@500, attribution obligatoire
+  partition/filtre/deduplication/pruning, audit canal par canal, tuning
+  train/dev et unique evaluation de la variante gelee sur test. `AGENTS.md`
+  pointe desormais vers ce goal actif. *(commit GitHub: `8b77af3`)*
 - **Decision finale V9 = PIVOT**: sparse + dense local perd 1,83 point de
   Recall@50 SIRET et sparse + dense global SIREN perd 2,61 points. Les deux
   regressions sont statistiquement nettes et violent les gates segmentaires.
@@ -199,14 +200,20 @@ la promotion des pools hybrides V9 testes.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Aucun travail restant dans le goal V9 ferme.
+- Mesurer en un seul passage les courbes Recall@50/@100/@200/@500 sur dev et
+  attribuer chaque perte au premier stage responsable.
+- Auditer ensuite les canaux nom, caracteres, adresse, cles exactes, rescue,
+  SIREN et geographie avant toute nouvelle union.
 - Les artefacts et baselines sont conserves; aucun nettoyage massif du SSD
   n'a ete effectue.
-- Le pivot `pool sparse fixe + features denses` et l'audit complet du ranker
-  historique doivent etre ouverts comme une nouvelle experience, avec leur
-  propre contrat.
 
 ## Points d'attention
+- **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
+  constituent jamais une configuration eligible.
+- **Test**: sa baseline sparse historique est connue, mais aucune nouvelle
+  variante n'y sera executee avant gel complet sur train/dev.
+- **Modeles aval geles**: aucun changement ranker/decider/risk/accepteur avant
+  Recall@100 dev >=99,0 %.
 - **Decision PIVOT scopee**: elle invalide l'admission/fusion des candidats
   denses V9 testes, pas leur signal de scoring ni le pipeline sparse/XGBoost.
 - **Comparaison retrieval uniquement a budget constant**: un gain avec 100
@@ -235,11 +242,11 @@ la promotion des pools hybrides V9 testes.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Ne pas entrainer le ranker/accepteur V9 sur le retrieval dense rejete.
-2. Ne pas lancer les 500 validations humaines ni louer de GPU pour ce plan.
-3. Si un nouveau goal est autorise, geler le top-50 sparse, auditer les
-   features/scenes historiques puis tester les scores/rangs denses comme
-   features du ranker sans modifier ce pool.
+1. Instrumenter les stages partition, filtre, deduplication et ranking.
+2. Produire la courbe sparse dev @50/@100/@200/@500 avec hashes et erreurs.
+3. Mesurer chaque canal seul puis les unions cumulatives sous plafond 100.
+4. Ne consulter la nouvelle variante sur test qu'apres franchissement du gate
+   dev et gel de son manifeste.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
