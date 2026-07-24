@@ -53,11 +53,17 @@ def classify_site_label(
 
 
 def _candidate_hash(row: pd.Series) -> str | None:
+    def clean(value: Any) -> str | None:
+        if value is None or pd.isna(value):
+            return None
+        text = str(value).strip()
+        return text or None
+
     return candidate_address_hash(
         {
-            "numeroVoie": row.get("numeroVoie"),
-            "typeVoie": row.get("typeVoie"),
-            "libelleVoie": row.get("libelleVoie"),
+            "numeroVoie": clean(row.get("numeroVoie")),
+            "typeVoie": clean(row.get("typeVoie")),
+            "libelleVoie": clean(row.get("libelleVoie")),
         }
     )
 
