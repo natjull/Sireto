@@ -16,6 +16,16 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Audit des 63 vérités trouvées puis éliminées**: 13 ne sont présentes que
+  dans l'overlay fermé et ne reçoivent pas de score complet; parmi les 50
+  présentes dans V7, une seule reste dans le top-100 de la fusion, 17 sont
+  classées 101–200, 17 entre 201–500 et 15 après 500. L'examen métier sépare
+  12 preuves d'adresse, 8 preuves de nom, 13 choix du mauvais établissement
+  d'un bon SIREN, 12 équipements publics reliés à leur propriétaire
+  administratif et 18 relations historiques faibles ou opaques à valider
+  humainement. Les petites règles testées plafonnent à 97,35 %; scorer tout
+  l'overlay dégrade à 96,41 %. Rapport:
+  `reports/recall100/pruned_63_audit.md`. *(commit GitHub: `58d8b31`)*
 - **Décision Recall@100 = PIVOT**: sur les 2 565 requêtes dev, le sparse gelé
   atteint 2 379/2 565 = 92,75 %, la meilleure admission déterministe observée
   2 495/2 565 = 97,27 %, et l'oracle des canaux internes à K=5 000
