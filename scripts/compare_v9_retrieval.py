@@ -55,6 +55,19 @@ def _validate_experiment(
     return pd.read_parquet(raw_path), summary, manifest
 
 
+def _effective_budget_compliance(
+    frame: pd.DataFrame,
+    *,
+    budget: int,
+) -> pd.Series:
+    """Re-evaluate legacy rows where an extra channel filled a short local pool."""
+    if {"candidate_count", "expected_candidate_count"} <= set(frame.columns):
+        count = frame["candidate_count"].astype(int)
+        expected_minimum = frame["expected_candidate_count"].astype(int)
+        return count.le(budget) & count.ge(expected_minimum)
+    return frame["budget_compliant"].astype(bool)
+
+
 def compare_modes(
     raw: pd.DataFrame,
     summary: dict[str, Any],
@@ -136,11 +149,13 @@ def compare_modes(
         summary[baseline_mode]["latency_ms"]["p95"]
     )
     variant_p95 = float(summary[variant_mode]["latency_ms"]["p95"])
+    baseline_budget = int(summary[baseline_mode].get("candidate_budget", 0))
+    variant_budget = int(summary[variant_mode].get("candidate_budget", 0))
     baseline_budget_violations = int(
-        (~paired["budget_compliant_baseline"].astype(bool)).sum()
+        (~_effective_budget_compliance(baseline, budget=baseline_budget)).sum()
     )
     variant_budget_violations = int(
-        (~paired["budget_compliant_variant"].astype(bool)).sum()
+        (~_effective_budget_compliance(variant, budget=variant_budget)).sum()
     )
     gate = retrieval_promotion_gate(
         baseline_recall_at_50=overall["baseline_rate"],

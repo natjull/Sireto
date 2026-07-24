@@ -149,6 +149,16 @@ def _rank_of(values: list[str], target: str) -> int | None:
         return None
 
 
+def _budget_compliant(
+    candidate_count: int,
+    *,
+    expected_minimum: int,
+    budget: int,
+) -> bool:
+    """Enforce the cutoff without rejecting candidates added by a new channel."""
+    return expected_minimum <= candidate_count <= budget
+
+
 def run_mode(
     *,
     mode: str,
@@ -237,7 +247,11 @@ def run_mode(
             "ground_truth_rank": _rank_of(candidate_sirets, ground_truth_siret),
             "candidate_count": len(candidate_sirets),
             "expected_candidate_count": expected_count,
-            "budget_compliant": len(candidate_sirets) == expected_count,
+            "budget_compliant": _budget_compliant(
+                len(candidate_sirets),
+                expected_minimum=expected_count,
+                budget=budget,
+            ),
             "base_pool_size": int(result.pool_sizes.get("base", 0)),
             "filtered_pool_size": filtered_count,
             "ground_truth_in_base": bool(result.gt_in_base_pool),

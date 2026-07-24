@@ -5,6 +5,7 @@ import pytest
 
 from scripts.run_v9_retrieval_experiment import (
     _artifact_contract,
+    _budget_compliant,
     retrieval_config,
     summarize_mode,
     wilson_interval,
@@ -38,6 +39,13 @@ def test_artifact_contract_hashes_directory_manifest(tmp_path) -> None:
     assert contract["path"] == str(tmp_path)
     assert contract["contract_type"] == "manifest_or_file"
     assert len(contract["contract_sha256"]) == 64
+
+
+def test_budget_compliance_allows_a_new_channel_to_fill_short_local_pool() -> None:
+    assert _budget_compliant(50, expected_minimum=18, budget=50)
+    assert _budget_compliant(18, expected_minimum=18, budget=50)
+    assert not _budget_compliant(17, expected_minimum=18, budget=50)
+    assert not _budget_compliant(51, expected_minimum=18, budget=50)
 
 
 def test_summary_counts_misses_budget_and_segments() -> None:
