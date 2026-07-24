@@ -182,15 +182,152 @@ toujours d'autres qui étaient corrects.
 
 ## Orientation raisonnable
 
-Avant tout nouveau modèle :
+Le premier audit ne suffit pas à justifier un nouveau modèle. Un second passage
+a donc comparé chaque vérité aux autres établissements du même SIREN, appliqué
+le ranker historique gelé au grand pool interne et recherché des preuves
+externes sur les relations les plus opaques. Les conclusions corrigées sont
+présentées ci-dessous.
 
-1. valider humainement les 18 relations faibles ou opaques ;
-2. conserver la petite règle « adresse exacte de l'overlay » comme candidate,
-   mais ne pas la promouvoir sur le seul résultat dev ;
-3. séparer explicitement le cas métier « équipement public → collectivité » ;
-4. traiter le choix d'établissement seulement lorsque le bon SIREN est déjà
-   identifié.
+## Second passage : audit autonome approfondi
 
-Après ces vérifications, on saura si le déficit restant vient réellement de la
-sélection technique ou d'une vérité historique que les données disponibles ne
-permettent pas de retrouver.
+### De nombreux labels pointent vers le mauvais établissement
+
+Pour chaque requête, tous les établissements du SIREN historique ont été
+comparés à l'adresse CRM.
+
+- **28 cas sur 63** possèdent un autre établissement du même SIREN dont
+  l'adresse correspond sensiblement mieux que celle du label ;
+- dans **23 cas**, ce meilleur établissement alternatif est actif ;
+- **12 cas** possèdent un autre établissement à une adresse pratiquement
+  exacte, dont **11 actifs** ;
+- dans **10 de ces 12 cas**, cet établissement plus cohérent est déjà présent
+  dans les 100 candidats actuels.
+
+Exemples certains :
+
+| Requête | Label historique | Établissement du même SIREN plus cohérent |
+|---:|---|---|
+| 76 | mairie d'Albert, place Émile-Leturcq | école Alphonse-Daudet, rue des Capucines |
+| 3462 | établissement fermé, 30 avenue de la Gare | établissement actif, 3 allée Luchino-Visconti |
+| 4596 | ODONTOPOLE, 42 boulevard Carnot | ODONTOPOLE actif, 70 boulevard Faidherbe |
+| 5890 | office notarial, 19 place des Ramacles | même office actif, 62 avenue de la Margeride |
+| 7107 | SCM MEDIPOL, 9 rue Frédéric-Mistral | SCM MEDIPOL actif, 11 avenue de Pologne |
+| 7472 | ESGCV, 27 rue James-Watt | ESGCV Tours actif, 35 rue Jehan-Fouquet |
+| 9037 | SCE, 7 rue Arago | SINOTEC actif, 555 rue Gustave-Eiffel |
+| 11990 | OPPELIA, 97 rue Jules-Siegfried | OPPELIA actif, 6 place Jules-Ferry |
+| 12467 | Pharmacie Bodart, 220 rue des Postes | Pharmacie Bodart active, 3 place Barthélemy-Dorez |
+| 13185 | REALITES, 103 route de Vannes | REALITES actif, 1 impasse Claude-Nougaro |
+| 16090 | 4422 HOLDING, 11 rue de Villeneuve | 4422 HOLDING actif, 20 rue Saarinen |
+
+Ces requêtes n'ont aucune date de référence. Dans ce contexte, demander au
+système de retrouver l'ancien SIRET fermé plutôt que l'établissement actif à
+l'adresse CRM n'est pas une cible cohérente.
+
+### Le défaut dépasse largement les 63 erreurs
+
+Un runner reproductible a ensuite contrôlé les 2 565 requêtes dev, sans
+modifier aucun label :
+
+- **231** requêtes ont un autre SIRET du même SIREN à l'adresse exacte ;
+- **165** ont au moins un autre SIRET actif à cette adresse ;
+- **87** ont un label fermé et au moins un sibling actif à l'adresse exacte ;
+- **29** ont plusieurs siblings actifs possibles à la même adresse ;
+- seules 5 requêtes n'ont pas d'adresse CRM exploitable.
+
+Les 165 cas ne sont pas automatiquement 165 labels faux : plusieurs
+établissements peuvent partager une adresse. Ils démontrent en revanche que
+le SIRET exact n'est pas toujours identifiable à partir des champs CRM. Ce
+volume est supérieur de très loin aux 25 erreurs maximales autorisées par une
+cible à 99 %.
+
+Artefact immuable :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/site_label_audit_dev_c33b80855f560074_ac971e0`.
+
+### Certaines relations opaques sont néanmoins réelles
+
+Plusieurs noms apparemment différents correspondent bien à une enseigne, un
+ancien nom ou une société d'exploitation :
+
+- Intermarché Louvigny est bien exploité par LESCONI au SIRET historique
+  indiqué, ce que confirment un
+  [arrêté préfectoral](https://www.calvados.gouv.fr/contenu/telechargement/7627/87523/file/numero4-16fevrier20095ee8.pdf)
+  et la fiche du magasin ;
+- INFODESCA appartient à l'environnement Descours & Cabaud, comme l'indiquent
+  les [mentions légales du groupe](https://www.descours-cabaud.com/mentions-legales/) ;
+- Compagnie des Signaux a effectivement porté les noms Ansaldo STS puis
+  Hitachi Rail, relation confirmée par la
+  [présentation de l'entreprise](https://www.railopenlab.com/en/membres/compagnie-des-signaux) ;
+- Eurex Statuo Conseil est bien implanté au 149 avenue du Golf à Baillargues,
+  mais le SIREN actuel n'est plus le SIREN fermé utilisé par le label
+  historique.
+
+Ces cas demandent une information d'alias ou d'historique d'entreprise. Un
+score de ressemblance supplémentaire ne peut pas inventer cette relation.
+
+### Certains labels sont contredits par des sources directes
+
+- Le CRM « Hôtel Mercure place de Jaude » est à 1 avenue Julien selon le
+  [site officiel Accor](https://all.accor.com/hotel/9171/index.fr.shtml), alors
+  que le label pointe vers l'hôtel Oceania au 82 boulevard François-Mitterrand,
+  adresse confirmée par le
+  [site officiel Oceania](https://www.oceaniahotels.com/oceania-clermont-ferrand/acces-contact).
+- Le CRM GLOBECAST à Brétigny pointe vers KINEPOLIS PROSPECTION, alors que
+  l'établissement Kinepolis est explicitement un cinéma au 5 rue
+  Michèle-Morgan dans la
+  [fiche publique Acceslibre](https://acceslibre.beta.gouv.fr/app/91-bretigny-sur-orge/a/cinema/erp/kinepolis-prospection/).
+- Le SIRET DMS MIROITERIE est réellement une entreprise de vitrerie domiciliée
+  au « Foyer numérique » d'Arras, comme le montre
+  [l'Annuaire des Entreprises](https://annuaire-entreprises.data.gouv.fr/etablissement/49398278900031).
+  Le nom du bâtiment dans le CRM ne suffit donc pas à désigner cette entreprise
+  plutôt qu'un autre occupant.
+
+Ces labels doivent être classés `UNRESOLVED` ou corrigés dans une nouvelle
+version du benchmark. Ils ne doivent pas servir à apprendre des rapprochements
+arbitraires.
+
+### Le ranker historique ne résout pas le problème
+
+Le ranker rapide historique `xgbranker_fast_20260124_210313.json` a été appliqué
+sans modification ni entraînement à l'union interne complète des canaux.
+
+- il place **22 des 63** vérités éliminées dans ses 100 premiers ;
+- il en laisse **41** au-delà de 100, parfois au-delà du rang 5 000 ;
+- même en supposant irréalistement qu'il ne perde aucun des 2 495 succès
+  actuels, son plafond serait 2 517 / 2 565 = **98,13 %**.
+
+Un nouveau sélecteur ressemblant au ranker historique ne peut donc pas, à lui
+seul, franchir 99 % sur ces labels.
+
+## Décision technique
+
+La priorité n'est plus une nouvelle architecture de sélection. Il faut d'abord
+réparer le contrat de vérité :
+
+1. lorsqu'aucune date historique n'est fournie, la vérité doit désigner
+   l'établissement actif correspondant à l'adresse CRM ;
+2. si seule l'entreprise propriétaire est démontrable, mais pas un
+   établissement précis, le cas doit être `AMBIGUOUS_SITE` et non
+   `MATCH_EXACT` ;
+3. les anciens noms, enseignes et sociétés d'exploitation doivent être
+   conservés dans une table d'alias versionnée ;
+4. les équipements publics doivent être reliés d'abord à la collectivité au
+   niveau SIREN ; un SIRET exact ne doit être imposé que si le site est
+   identifiable ;
+5. le benchmark corrigé doit être versionné séparément. Le benchmark gelé
+   actuel reste intact pour conserver la traçabilité.
+
+Après cette correction, les seules modifications simples du retrieval à
+réévaluer sont :
+
+- protéger les correspondances d'adresse exactes ;
+- préférer l'établissement actif à l'adresse CRM lorsqu'un SIREN fiable est
+  déjà trouvé ;
+- injecter les alias historiques vérifiés dans la recherche par nom.
+
+Ce n'est qu'après cette nouvelle mesure qu'un modèle d'admission pourra être
+justifié ou définitivement écarté.
+
+En conséquence, **aucune modification du retrieval n'est promue à ce stade**.
+Optimiser les scores sur le benchmark actuel apprendrait en partie à choisir
+arbitrairement entre plusieurs SIRET indiscernables ou à reproduire un site
+fermé sans date historique.
