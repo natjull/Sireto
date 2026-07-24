@@ -16,6 +16,20 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Qualification V2 train/dev sans suppression ni relabel automatique**:
+  politique indépendante des résultats du retrieval, builder immuable et
+  double publication des métriques historique/V2. Sur dev, 2 400/2 565
+  restent `MATCH_EXACT`, 81 deviennent `AMBIGUOUS` et 84 `UNRESOLVED`.
+  L'admission passe seulement de 2 495/2 565 = 97,271 % à
+  2 343/2 400 = 97,625 % sur le périmètre exact: il manque encore 33 succès au
+  gate. L'oracle interne atteint 2 394/2 400 = 99,750 %, avec 6 vérités non
+  vues et 51 vues puis éliminées. Sur train, 10 995 labels restent exacts,
+  440 deviennent ambigus et 402 non résolus. Aucun SIRET alternatif n'est
+  promu; le benchmark original et le test restent inchangés. Artefacts:
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/qualification_v2/522351669d5313dc`
+  (dev) et `.../f8af7e1da18fa94a` (train). Rapport:
+  `reports/recall100/benchmark_v2_qualification.md`. Suite complète à 99 tests
+  passants. *(commits GitHub: `16e657e`, `a68f679`)*
 - **Audit global de non-unicité des labels exacts**: nouveau runner immuable
   comparant, pour chaque requête, le label aux autres SIRET du même SIREN via
   la clé d'adresse canonique. Sur les 2 565 requêtes dev, 231 ont un autre
@@ -306,8 +320,8 @@ Recall@100.
 ## Travail en cours
 - Aucun run Recall@100 n'est en cours.
 - Le test reste fermé: le gate dev n'a pas été franchi.
-- Une poursuite nécessite l'approbation d'un nouveau contrat autorisant une
-  tête d'admission apprise au niveau retrieval.
+- La qualification V2 a isolé le bruit structurel, mais l'admission actuelle
+  reste à 97,625 % sur les 2 400 labels exacts.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -344,10 +358,12 @@ Recall@100.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Décider d'autoriser ou non le pivot vers une admission apprise dédiée.
-2. Si autorisé, pré-enregistrer un nouveau contrat train/dev avant
-   entraînement; conserver le test fermé.
-3. Ne consulter le test qu'après Recall@100 dev >=99,0 %, gel du modèle et du
+1. Traiter séparément les 6 vérités V2 non vues: alias, source et
+   localisation.
+2. Pré-enregistrer sur le train V2 une admission dédiée aux 51 vérités vues
+   puis éliminées; ne l'ouvrir sur dev qu'après gel.
+3. Continuer de publier côte à côte la métrique historique et la métrique V2.
+4. Ne consulter le test qu'après Recall@100 dev >=99,0 %, gel du modèle et du
    manifeste.
 
 ---
