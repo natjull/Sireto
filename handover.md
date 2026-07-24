@@ -16,6 +16,29 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Audit global de non-unicité des labels exacts**: nouveau runner immuable
+  comparant, pour chaque requête, le label aux autres SIRET du même SIREN via
+  la clé d'adresse canonique. Sur les 2 565 requêtes dev, 231 ont un autre
+  sibling à l'adresse exacte, 165 au moins un sibling actif, 87 un label fermé
+  avec sibling actif exact et 29 plusieurs siblings actifs exacts. Ce volume
+  dépasse très largement les 25 erreurs tolérées à 99 % et prouve que le SIRET
+  exact n'est pas toujours identifiable avec les champs CRM. Artefact:
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/site_label_audit_dev_c33b80855f560074_ac971e0`.
+  Suite complète à 94 tests passants. *(commits GitHub: `638d093`,
+  `ac971e0`)*
+- **Second passage autonome sur les 63 prunings**: comparaison de tous les
+  établissements du SIREN historique, vérification de relations opaques par
+  sources publiques et application diagnostique du ranker historique gelé.
+  28/63 ont un sibling SIRET dont l'adresse correspond mieux au CRM, 23 ont un
+  meilleur sibling actif, et 11 un sibling actif à adresse pratiquement exacte.
+  Dix de ces alternatives cohérentes sont déjà dans le top-100 actuel. Le
+  ranker historique ne récupère que 22/63; même sans aucune nouvelle perte, son
+  plafond optimiste serait 98,13 %. Plusieurs labels sont confirmés comme alias
+  métier, tandis que Mercure/Oceania et Globecast/Kinepolis sont contredits par
+  les adresses et activités publiques. La recommandation devient la création
+  d'un benchmark versionné avec politique `actif à l'adresse`,
+  `AMBIGUOUS_SITE` et alias historiques avant tout nouveau modèle. Rapport:
+  `reports/recall100/pruned_63_audit.md`. *(commit GitHub: `f3bd0b1`)*
 - **Audit des 63 vérités trouvées puis éliminées**: 13 ne sont présentes que
   dans l'overlay fermé et ne reçoivent pas de score complet; parmi les 50
   présentes dans V7, une seule reste dans le top-100 de la fusion, 17 sont
