@@ -47,6 +47,21 @@ Comparaison appariée sparse → hybride :
 - 2 225 hits communs et 203 misses communs ;
 - ratio de latence p95 : **1,183×**.
 
+## Hit@1 du retrieval
+
+Le gate reste fondé sur le Recall@50, mais l’ordre brut des candidats contient
+un signal dense statistiquement net :
+
+| Niveau | Sparse | Sparse + dense local | Delta | IC95 apparié |
+|---|---:|---:|---:|---:|
+| SIRET | 929/2 565 = 36,22 % | 1 117/2 565 = 43,55 % | **+7,33 pts** | [+5,54 ; +9,12] |
+| SIREN | 1 075/2 565 = 41,91 % | 1 263/2 565 = 49,24 % | **+7,33 pts** | [+5,42 ; +9,24] |
+
+Ces chiffres décrivent le classement RRF avant le ranker XGBoost. Ils ne
+compensent pas la perte de rappel du pool, mais justifient d’étudier le score
+dense comme signal de classement sans lui permettre d’évincer des candidats
+sparse.
+
 ## Segments critiques
 
 | Segment | n | Delta hybride − sparse | Récupérés | Déplacés |
@@ -78,9 +93,9 @@ est trop bruitée pour une fusion RRF symétrique :
   et 168 manquent déjà au niveau SIREN ;
 - le dense local récupère 25 de ces 168 misses SIREN.
 
-Il existe donc un faible signal complémentaire, mais pas une amélioration
-exploitable par la fusion locale prévue. Aucun tuning opportuniste du poids RRF
-n’est autorisé après lecture de ces résultats.
+Il existe donc un signal de classement complémentaire, mais pas une
+amélioration exploitable du pool par la fusion locale prévue. Aucun tuning
+opportuniste du poids RRF n’est autorisé après lecture de ces résultats.
 
 ## Décision suivante
 
@@ -89,4 +104,3 @@ expansion SIRET** sur dev. Elle cible directement les 168 misses au niveau
 SIREN et peut retrouver des entités hors de la partition locale. Si elle
 échoue également, Gate 2 sera fermée et aucun ranker/accepteur V9 ne sera
 entraîné sur ce retrieval.
-

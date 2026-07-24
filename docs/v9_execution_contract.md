@@ -128,7 +128,7 @@ déplacé ou supprimé pour libérer de la place.
 
 ## Résultat de l’exécution
 
-Décision finale : **`STOP`** pour la promotion de l’architecture V9 dense.
+Décision finale : **`PIVOT`**.
 
 - Gate 0 : `PASS` ;
 - Gate 1 : `PASS` ;
@@ -136,6 +136,12 @@ Décision finale : **`STOP`** pour la promotion de l’architecture V9 dense.
 - Gate 2 dense global SIREN : `FAIL`, delta −2,61 points ;
 - Gate 3 et Gate 4 : non ouvertes conformément au présent contrat ;
 - aucune dépense GPU, API payante ou cloud.
+
+Le pivot est motivé par un signal distinct du gate de pool : le Hit@1 SIRET
+brut gagne 7,33 points avec le dense local et 11,31 points avec le dense global
+SIREN. La prochaine hypothèse éventuelle doit donc conserver les 50 candidats
+sparse inchangés et utiliser le dense uniquement comme score de classement.
+Elle nécessite un nouveau contrat et n’ouvre pas rétroactivement Gate 3.
 
 Le détail, les limites et les chemins d’artefacts sont publiés dans
 `reports/v9/v9_go_pivot_stop.md`.

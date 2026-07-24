@@ -56,6 +56,21 @@ Comparaison appariée sparse → hybride global :
 - 2 213 hits communs et 211 misses communs ;
 - ratio de latence p95 : **1,079×**.
 
+## Hit@1 du retrieval
+
+L’ordre brut RRF s’améliore fortement malgré la baisse du Recall@50 :
+
+| Niveau | Sparse | Sparse + dense global | Delta | IC95 apparié |
+|---|---:|---:|---:|---:|
+| SIRET | 929/2 565 = 36,22 % | 1 219/2 565 = 47,52 % | **+11,31 pts** | [+9,67 ; +12,98] |
+| SIREN | 1 075/2 565 = 41,91 % | 1 383/2 565 = 53,92 % | **+12,01 pts** | [+10,29 ; +13,72] |
+
+Le gain Hit@1 est statistiquement net (McNemar p < 1,5 × 10⁻⁴⁰). Il ne valide
+pas le pool hybride, puisqu’un ranker ne peut pas récupérer les 67 vérités
+terrain supplémentaires sorties du top-50. Il établit toutefois que le signal
+dense mérite une nouvelle ablation comme score de classement appliqué à un
+pool sparse inchangé.
+
 Deux lignes avaient initialement été signalées à tort comme violations de
 budget : la partition locale contenait 41 ou 18 candidats et le canal global
 avait complété la sortie jusqu’à 50. Les deux sorties respectaient bien le
@@ -92,7 +107,8 @@ est destructrice au cutoff 50 :
   sans modifier ce constat qualitatif.
 
 Le gate ne permet pas de transformer après coup ces résultats en justification
-d’un tuning de poids RRF, d’un ranker ou d’un accepteur. Une éventuelle
-expérience de rescue dense conditionnel constituerait une nouvelle hypothèse,
-avec un nouveau protocole pré-enregistré.
-
+d’un tuning de poids RRF, d’un ranker ou d’un accepteur sur le pool rejeté.
+Le Hit@1 constitue en revanche un signal précis pour un **PIVOT** : garder le
+pool sparse intact et tester séparément le dense comme score de classement.
+Cette ablation constituerait une nouvelle hypothèse, avec un nouveau protocole
+pré-enregistré.
