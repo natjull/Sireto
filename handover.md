@@ -14,6 +14,15 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Préfixes Recall@K stabilisés et cache mutualisé**: un passage max-K ne
+  classait pas les partitions de taille comprise entre 51 et K, rendant son
+  préfixe @50 différent de la baseline. Ajout d'un seuil de déclenchement du
+  ranking indépendant du budget final; le smoke reproduit désormais exactement
+  les dix préfixes @50 historiques. Les matrices TF-IDF utilisent un hash
+  d'artefact indépendant du cutoff avec fallback vers les 7,7 Go de cache
+  legacy. Le premier run `..._963160b` est conservé mais déclaré diagnostic
+  invalide pour les préfixes @50/@100/@200. Suite complète à 81 tests passants.
+  *(commit GitHub: `bdc7ad4`)*
 - **Instrumentation Recall@K et causes de perte**: séparation explicite des
   états avant filtre, après filtre et après déduplication dans le retrieval
   partagé; nouveau runner immuable calculant en un passage les préfixes
