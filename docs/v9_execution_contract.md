@@ -125,3 +125,17 @@ Chaque expérience conserve :
 
 `handover.md` est mis à jour à chaque milestone. Aucun ancien artefact n’est
 déplacé ou supprimé pour libérer de la place.
+
+## Résultat de l’exécution
+
+Décision finale : **`STOP`** pour la promotion de l’architecture V9 dense.
+
+- Gate 0 : `PASS` ;
+- Gate 1 : `PASS` ;
+- Gate 2 dense local : `FAIL`, delta Recall@50 SIRET −1,83 point ;
+- Gate 2 dense global SIREN : `FAIL`, delta −2,61 points ;
+- Gate 3 et Gate 4 : non ouvertes conformément au présent contrat ;
+- aucune dépense GPU, API payante ou cloud.
+
+Le détail, les limites et les chemins d’artefacts sont publiés dans
+`reports/v9/v9_go_pivot_stop.md`.
