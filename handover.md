@@ -14,6 +14,13 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Audit unitaire des canaux sparse instrumenté**: runner immuable séparant
+  TF-IDF nom mots, TF-IDF nom caractères, TF-IDF adresse, nom normalisé exact,
+  adresse exacte et rescue numérique. Il conserve les listes/rangs par requête,
+  mesure la complémentarité appariée, le SIREN et la géographie, et refuse le
+  run si `current_sparse` ne reproduit pas exactement l'artefact baseline gelé.
+  Smoke réel sans divergence; suite complète à 83 tests passants. *(commit
+  GitHub: `218c22c`)*
 - **Baseline sparse Recall@K dev publiée**: préfixe @50 identique sur les
   2 565 requêtes à la baseline historique; Recall SIRET @50/@100/@200/@500 =
   90,33/92,75/94,15/95,79 %. Le store V7 plafonne à 97,58 %: 62 SIRET, tous
@@ -221,10 +228,10 @@ Recall@100.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Mesurer en un seul passage les courbes Recall@50/@100/@200/@500 sur dev et
-  attribuer chaque perte au premier stage responsable.
-- Auditer ensuite les canaux nom, caracteres, adresse, cles exactes, rescue,
-  SIREN et geographie avant toute nouvelle union.
+- Exécuter sur les 2 565 requêtes dev l'audit individuel des canaux nom,
+  caractères, adresse, clés exactes, rescue, SIREN et géographie.
+- Croiser ses résultats avec les ablations denses déjà gelées, sans nouveau run
+  dense coûteux, avant de définir une union éligible à 100 candidats.
 - Les artefacts et baselines sont conserves; aucun nettoyage massif du SSD
   n'a ete effectue.
 
@@ -263,9 +270,10 @@ Recall@100.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Instrumenter les stages partition, filtre, deduplication et ranking.
-2. Produire la courbe sparse dev @50/@100/@200/@500 avec hashes et erreurs.
-3. Mesurer chaque canal seul puis les unions cumulatives sous plafond 100.
+1. Produire l'artefact complet de l'audit unitaire sparse sur dev.
+2. Mesurer les unions/quota/RRF hors test sous plafond absolu 100.
+3. Réintégrer une source non biaisée pour les établissements fermés, puisque le
+   store V7 seul plafonne à 97,58 % avant ranking.
 4. Ne consulter la nouvelle variante sur test qu'apres franchissement du gate
    dev et gel de son manifeste.
 
