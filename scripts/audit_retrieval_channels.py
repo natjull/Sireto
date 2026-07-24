@@ -305,8 +305,13 @@ def _markdown(summary: dict[str, Any], manifest: dict[str, Any]) -> str:
         f"- Benchmark : `{manifest['benchmark_build_id']}` / `{manifest['split']}`",
         f"- Requêtes : {manifest['query_count']}",
         f"- Commit : `{manifest['git_commit'][:12]}`",
-        "- Le canal `current_sparse` est vérifié candidat par candidat contre "
-        "l’artefact baseline gelé.",
+        (
+            "- Le canal `current_sparse` est vérifié candidat par candidat "
+            "contre l’artefact baseline gelé."
+            if manifest["verification"]["baseline_verified"]
+            else "- Audit autonome de la source : aucune baseline externe "
+            "n’était attendue."
+        ),
         "",
         "## Recall SIRET par canal",
         "",
@@ -385,7 +390,7 @@ def run_audit(
     benchmark: pd.DataFrame,
     partitions_dir: Path,
     cache_root: Path,
-    baseline_raw: Path,
+    baseline_raw: Path | None,
     per_channel_k: int,
     cutoffs: list[int],
 ) -> tuple[pd.DataFrame, dict[str, Any], dict[str, int]]:
@@ -412,23 +417,27 @@ def run_audit(
     store = PartitionedCandidateStore(partitions_dir)
     tfidf_memory: OrderedDict[tuple[str, str], tuple] = OrderedDict()
     exact_cache: OrderedDict[str, dict[str, Any]] = OrderedDict()
-    baseline = pd.read_parquet(
-        baseline_raw,
-        columns=["query_id", "candidate_sirets_json"],
-    )
-    benchmark_query_ids = set(benchmark["query_id"].astype(str))
-    baseline = baseline[
-        baseline["query_id"].astype(str).isin(benchmark_query_ids)
-    ].copy()
-    baseline_by_query = dict(
-        zip(
-            baseline["query_id"].astype(str),
-            baseline["candidate_sirets_json"].map(json.loads),
-            strict=True,
+    baseline_by_query: dict[str, list[str]] | None = None
+    if baseline_raw is not None:
+        baseline = pd.read_parquet(
+            baseline_raw,
+            columns=["query_id", "candidate_sirets_json"],
         )
-    )
-    if set(baseline_by_query) != benchmark_query_ids:
-        raise ValueError("Baseline and benchmark query IDs are not identical")
+        benchmark_query_ids = set(benchmark["query_id"].astype(str))
+        baseline = baseline[
+            baseline["query_id"].astype(str).isin(benchmark_query_ids)
+        ].copy()
+        baseline_by_query = dict(
+            zip(
+                baseline["query_id"].astype(str),
+                baseline["candidate_sirets_json"].map(json.loads),
+                strict=True,
+            )
+        )
+        if set(baseline_by_query) != benchmark_query_ids:
+            raise ValueError(
+                "Baseline and benchmark query IDs are not identical"
+            )
 
     siren_siret_counts = (
         benchmark.groupby("ground_truth_siren")["ground_truth_siret"]
@@ -617,16 +626,17 @@ def run_audit(
                 ),
             }
 
-        baseline_values = baseline_by_query[str(row["query_id"])]
-        if channel_sirets["current_sparse"] != baseline_values:
-            mismatches.append(str(row["query_id"]))
-            if len(mismatches) <= 3:
-                print(
-                    f"[mismatch] query={row['query_id']} "
-                    f"audit={channel_sirets['current_sparse'][:5]} "
-                    f"baseline={baseline_values[:5]}",
-                    flush=True,
-                )
+        if baseline_by_query is not None:
+            baseline_values = baseline_by_query[str(row["query_id"])]
+            if channel_sirets["current_sparse"] != baseline_values:
+                mismatches.append(str(row["query_id"]))
+                if len(mismatches) <= 3:
+                    print(
+                        f"[mismatch] query={row['query_id']} "
+                        f"audit={channel_sirets['current_sparse'][:5]} "
+                        f"baseline={baseline_values[:5]}",
+                        flush=True,
+                    )
 
         current_sirens = _unique_sirens(channel_sirets["current_sparse"])
         record: dict[str, Any] = {
@@ -688,7 +698,10 @@ def run_audit(
     summary = summarize_channel_audit(raw, cutoffs=cutoffs)
     summary["elapsed_seconds"] = time.perf_counter() - started
     summary["tfidf_cache"] = persistent_cache.stats()
-    return raw, summary, {"current_sparse_mismatches": len(mismatches)}
+    return raw, summary, {
+        "baseline_verified": baseline_by_query is not None,
+        "current_sparse_mismatches": len(mismatches),
+    }
 
 
 def main() -> None:
@@ -696,7 +709,12 @@ def main() -> None:
     parser.add_argument("--benchmark", type=Path, required=True)
     parser.add_argument("--benchmark-manifest", type=Path, required=True)
     parser.add_argument("--partitions-dir", type=Path, required=True)
-    parser.add_argument("--baseline-raw", type=Path, required=True)
+    parser.add_argument(
+        "--baseline-raw",
+        type=Path,
+        default=None,
+        help="Optional frozen raw result used for exact list reproduction.",
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--cache-dir", type=Path, required=True)
     parser.add_argument("--split", default="dev")
@@ -759,7 +777,11 @@ def main() -> None:
         "benchmark_manifest_sha256": file_sha256(args.benchmark_manifest),
         "benchmark_sha256": benchmark_hash,
         "partitions_sha256": benchmark_manifest["partitions_sha256"],
-        "baseline_raw_sha256": file_sha256(args.baseline_raw),
+        "baseline_raw_sha256": (
+            file_sha256(args.baseline_raw)
+            if args.baseline_raw is not None
+            else None
+        ),
         "split": args.split,
         "query_count": int(len(benchmark)),
         "cutoffs": cutoffs,
