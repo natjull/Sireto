@@ -68,6 +68,22 @@ def _effective_budget_compliance(
     return frame["budget_compliant"].astype(bool)
 
 
+def _add_hit_at_1(frame: pd.DataFrame) -> pd.DataFrame:
+    output = frame.copy()
+    if "hit_at_1_siret" not in output:
+        output["hit_at_1_siret"] = output["ground_truth_rank"].fillna(0).eq(1)
+    if "hit_at_1_siren" not in output:
+        output["hit_at_1_siren"] = [
+            bool(candidates)
+            and str(candidates[0])[:9] == str(ground_truth_siren)
+            for candidates, ground_truth_siren in zip(
+                output["candidate_sirets_json"].map(json.loads),
+                output["ground_truth_siren"],
+            )
+        ]
+    return output
+
+
 def compare_modes(
     raw: pd.DataFrame,
     summary: dict[str, Any],
@@ -81,6 +97,9 @@ def compare_modes(
         "mode",
         "query_id",
         "ground_truth_siret",
+        "ground_truth_siren",
+        "ground_truth_rank",
+        "candidate_sirets_json",
         "hit_at_budget_siret",
         "budget_compliant",
         "latency_ms",
@@ -96,8 +115,8 @@ def compare_modes(
     if baseline_mode not in summary or variant_mode not in summary:
         raise ValueError("Requested modes are absent from summary.json")
 
-    baseline = raw[raw["mode"].eq(baseline_mode)].copy()
-    variant = raw[raw["mode"].eq(variant_mode)].copy()
+    baseline = _add_hit_at_1(raw[raw["mode"].eq(baseline_mode)])
+    variant = _add_hit_at_1(raw[raw["mode"].eq(variant_mode)])
     for mode, frame in ((baseline_mode, baseline), (variant_mode, variant)):
         if frame.empty:
             raise ValueError(f"Mode has no raw rows: {mode}")
@@ -126,6 +145,15 @@ def compare_modes(
         bootstrap_samples=bootstrap_samples,
         seed=seed,
     )
+    hit_at_1 = {
+        level: paired_binary_comparison(
+            paired[f"hit_at_1_{level}_baseline"].to_numpy(),
+            paired[f"hit_at_1_{level}_variant"].to_numpy(),
+            bootstrap_samples=bootstrap_samples,
+            seed=seed,
+        )
+        for level in ("siret", "siren")
+    }
 
     baseline_for_segments = baseline.set_index("query_id").loc[
         paired["query_id"]
@@ -170,6 +198,7 @@ def compare_modes(
         "baseline_mode": baseline_mode,
         "variant_mode": variant_mode,
         "overall": overall,
+        "hit_at_1": hit_at_1,
         "segments": segments,
         "latency_ms": {
             "baseline_p95": baseline_p95,
@@ -182,6 +211,7 @@ def compare_modes(
 
 def _markdown(report: dict[str, Any], manifest: dict[str, Any]) -> str:
     overall = report["overall"]
+    hit_at_1 = report["hit_at_1"]
     gate = report["gate"]
     rows = [
         "# V9 — comparaison retrieval appariée",
@@ -206,6 +236,25 @@ def _markdown(report: dict[str, Any], manifest: dict[str, Any]) -> str:
         ),
         f"| p exact McNemar bilatéral | {overall['mcnemar_exact_two_sided_p']:.6g} |",
         f"| Ratio latence p95 | {gate['latency_ratio']:.3f}× |",
+        "",
+        "## Hit@1 du retrieval",
+        "",
+        "| Niveau | Baseline | Variante | Delta | IC95 apparié |",
+        "|---|---:|---:|---:|---:|",
+        (
+            f"| SIRET | {hit_at_1['siret']['baseline_rate']:.4%} | "
+            f"{hit_at_1['siret']['variant_rate']:.4%} | "
+            f"{hit_at_1['siret']['delta']:+.4%} | "
+            f"[{hit_at_1['siret']['paired_bootstrap_95'][0]:+.4%}, "
+            f"{hit_at_1['siret']['paired_bootstrap_95'][1]:+.4%}] |"
+        ),
+        (
+            f"| SIREN | {hit_at_1['siren']['baseline_rate']:.4%} | "
+            f"{hit_at_1['siren']['variant_rate']:.4%} | "
+            f"{hit_at_1['siren']['delta']:+.4%} | "
+            f"[{hit_at_1['siren']['paired_bootstrap_95'][0]:+.4%}, "
+            f"{hit_at_1['siren']['paired_bootstrap_95'][1]:+.4%}] |"
+        ),
         "",
         "## Gates pré-enregistrées",
         "",

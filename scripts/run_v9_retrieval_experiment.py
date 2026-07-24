@@ -234,6 +234,12 @@ def run_mode(
         candidate_sirens = [siret[:9] for siret in candidate_sirets]
         ground_truth_siret = str(row["ground_truth_siret"])
         ground_truth_siren = str(row["ground_truth_siren"])
+        hit_at_1_siret = bool(
+            candidate_sirets and candidate_sirets[0] == ground_truth_siret
+        )
+        hit_at_1_siren = bool(
+            candidate_sirens and candidate_sirens[0] == ground_truth_siren
+        )
         filtered_count = int(result.pool_sizes.get("filtered", 0))
         expected_count = min(budget, filtered_count)
         record = {
@@ -242,6 +248,8 @@ def run_mode(
             "crm_record_id": row.get("crm_record_id"),
             "ground_truth_siret": ground_truth_siret,
             "ground_truth_siren": ground_truth_siren,
+            "hit_at_1_siret": hit_at_1_siret,
+            "hit_at_1_siren": hit_at_1_siren,
             "hit_at_budget_siret": ground_truth_siret in candidate_sirets,
             "hit_at_budget_siren": ground_truth_siren in candidate_sirens,
             "ground_truth_rank": _rank_of(candidate_sirets, ground_truth_siret),
@@ -341,7 +349,7 @@ def _segment_summary(raw: pd.DataFrame) -> dict[str, Any]:
 
 
 def summarize_mode(raw: pd.DataFrame, *, budget: int) -> dict[str, Any]:
-    return {
+    summary = {
         "query_count": int(len(raw)),
         "candidate_budget": budget,
         "recall_at_budget_siret": _binary_metric(raw["hit_at_budget_siret"]),
@@ -360,6 +368,10 @@ def summarize_mode(raw: pd.DataFrame, *, budget: int) -> dict[str, Any]:
         },
         "segments": _segment_summary(raw),
     }
+    if {"hit_at_1_siret", "hit_at_1_siren"} <= set(raw.columns):
+        summary["hit_at_1_siret"] = _binary_metric(raw["hit_at_1_siret"])
+        summary["hit_at_1_siren"] = _binary_metric(raw["hit_at_1_siren"])
+    return summary
 
 
 def _git_commit() -> str:

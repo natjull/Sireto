@@ -53,6 +53,8 @@ def test_summary_counts_misses_budget_and_segments() -> None:
         {
             "hit_at_budget_siret": [True, False],
             "hit_at_budget_siren": [True, True],
+            "hit_at_1_siret": [True, False],
+            "hit_at_1_siren": [True, False],
             "ground_truth_in_base": [True, False],
             "budget_compliant": [True, False],
             "latency_ms": [10.0, 30.0],
@@ -69,6 +71,8 @@ def test_summary_counts_misses_budget_and_segments() -> None:
 
     assert summary["recall_at_budget_siret"]["rate"] == pytest.approx(0.5)
     assert summary["recall_at_budget_siren"]["rate"] == pytest.approx(1.0)
+    assert summary["hit_at_1_siret"]["rate"] == pytest.approx(0.5)
+    assert summary["hit_at_1_siren"]["rate"] == pytest.approx(0.5)
     assert summary["budget_violations"] == 1
     assert summary["loss_reasons"] == {"NOT_IN_PARTITION": 1, "": 1}
     assert summary["segments"]["gt_closed"]["recall_at_budget_siret"]["rate"] == 0.0

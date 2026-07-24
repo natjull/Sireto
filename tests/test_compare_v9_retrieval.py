@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 import pandas as pd
 
 from scripts.compare_v9_retrieval import compare_modes
@@ -8,6 +10,7 @@ from scripts.compare_v9_retrieval import compare_modes
 def test_compare_modes_applies_paired_fixed_budget_gate() -> None:
     common = {
         "ground_truth_siret": "12345678900001",
+        "ground_truth_siren": "123456789",
         "ground_truth_state": "A",
         "location_match_type": "insee",
         "missing_insee": False,
@@ -22,6 +25,8 @@ def test_compare_modes_applies_paired_fixed_budget_gate() -> None:
                 "mode": "sparse",
                 "query_id": "q1",
                 "hit_at_budget_siret": False,
+                "ground_truth_rank": None,
+                "candidate_sirets_json": json.dumps(["99999999900001"]),
                 "latency_ms": 10.0,
             },
             {
@@ -29,6 +34,8 @@ def test_compare_modes_applies_paired_fixed_budget_gate() -> None:
                 "mode": "sparse",
                 "query_id": "q2",
                 "hit_at_budget_siret": True,
+                "ground_truth_rank": 1,
+                "candidate_sirets_json": json.dumps(["12345678900001"]),
                 "latency_ms": 12.0,
             },
             {
@@ -36,6 +43,8 @@ def test_compare_modes_applies_paired_fixed_budget_gate() -> None:
                 "mode": "hybrid_local",
                 "query_id": "q1",
                 "hit_at_budget_siret": True,
+                "ground_truth_rank": 1,
+                "candidate_sirets_json": json.dumps(["12345678900001"]),
                 "latency_ms": 18.0,
             },
             {
@@ -43,6 +52,8 @@ def test_compare_modes_applies_paired_fixed_budget_gate() -> None:
                 "mode": "hybrid_local",
                 "query_id": "q2",
                 "hit_at_budget_siret": True,
+                "ground_truth_rank": 1,
+                "candidate_sirets_json": json.dumps(["12345678900001"]),
                 "latency_ms": 20.0,
             },
         ]
@@ -60,12 +71,15 @@ def test_compare_modes_applies_paired_fixed_budget_gate() -> None:
     )
     assert report["overall"]["recovered"] == 1
     assert report["overall"]["displaced"] == 0
+    assert report["hit_at_1"]["siret"]["recovered"] == 1
+    assert report["hit_at_1"]["siren"]["recovered"] == 1
     assert report["gate"]["promote"] is True
 
 
 def test_compare_modes_rechecks_legacy_budget_false_positive() -> None:
     common = {
         "ground_truth_siret": "12345678900001",
+        "ground_truth_siren": "123456789",
         "ground_truth_state": "A",
         "location_match_type": "insee",
         "missing_insee": False,
@@ -75,6 +89,8 @@ def test_compare_modes_rechecks_legacy_budget_false_positive() -> None:
         "expected_candidate_count": 18,
         "budget_compliant": False,
         "hit_at_budget_siret": True,
+        "ground_truth_rank": 1,
+        "candidate_sirets_json": json.dumps(["12345678900001"]),
         "latency_ms": 10.0,
     }
     raw = pd.DataFrame(
