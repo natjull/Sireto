@@ -1,8 +1,9 @@
 # SIRETO Handover - 23 Juillet 2026
 
 ## Etat des lieux
-L'experience V9 sans GPU est **terminee avec une decision `STOP` pour la
-promotion du retrieval dense multicanal**. Le rapport de decision est
+L'experience V9 sans GPU est **terminee avec une decision `PIVOT`**. Les pools
+denses multicanaux ne sont pas promus, mais leur gain Hit@1 justifie de tester
+le dense comme signal de scoring sur un pool sparse inchange. Le rapport est
 `reports/v9/v9_go_pivot_stop.md`. La cible evaluee etait:
 - sparse local SIRET reste la baseline;
 - dense local et dense global SIREN -> expansion SIRET sont des variantes
@@ -13,16 +14,24 @@ promotion du retrieval dense multicanal**. Le rapport de decision est
 - `AUTO_NO_MATCH` est desactive.
 
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
-Le `STOP` ne condamne pas SIRETO: il conserve le sparse/XGBoost historique
-comme point de depart et ferme uniquement la promotion dense V9 testee.
+Le `PIVOT` conserve le sparse/XGBoost historique comme point de depart et ferme
+la promotion des pools hybrides V9 testes.
 
 ## Actions terminees (fenetre recente)
-- **Decision finale V9 = STOP**: sparse + dense local perd 1,83 point de
+- **Decision finale V9 = PIVOT**: sparse + dense local perd 1,83 point de
   Recall@50 SIRET et sparse + dense global SIREN perd 2,61 points. Les deux
   regressions sont statistiquement nettes et violent les gates segmentaires.
-  Gate 3 ranker/accepteur, Gate 4 open-set et le cross-encoder ne sont donc pas
-  ouverts. Le Mac a execute l'ensemble sans GPU ni depense cloud; l'echec est
-  qualitatif, pas materiel. *(commit GitHub: `53ad3b3`)*
+  En revanche, leur Hit@1 SIRET brut gagne respectivement 7,33 et 11,31 points,
+  avec des IC95 strictement positifs. Gate 3 ranker/accepteur, Gate 4 open-set
+  et le cross-encoder ne sont pas ouverts sur le pool rejete. Le pivot propose
+  une nouvelle ablation: pool sparse fixe + dense comme feature de scoring.
+  Le Mac a execute l'ensemble sans GPU ni depense cloud. *(commit GitHub:
+  `59ec78c`; lecture STOP preliminaire supersedee: `53ad3b3`)*
+- **Hit@1 SIRET/SIREN publie par le runner**: les comparaisons appariées
+  incluent désormais les Hit@1, leurs recuperations/deplacements, IC95
+  bootstrap et tests de McNemar. Sur global, Hit@1 SIRET passe de 36,22 % a
+  47,52 % et Hit@1 SIREN de 41,91 % a 53,92 %. Suite complete a 68 tests
+  passants. *(commit GitHub: `de0079a`)*
 - **Gate 2 dense global SIREN echouee sur dev**: sparse atteint 2 317/2 565 =
   90,33 % contre 2 250/2 565 = 87,72 % pour l'hybride global. Delta apparie
   −2,61 points, IC95 [−3,51; −1,72], McNemar p=1,47e-8; 37 misses recuperes
@@ -190,15 +199,16 @@ comme point de depart et ferme uniquement la promotion dense V9 testee.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Aucun travail V9 restant dans le goal ferme.
+- Aucun travail restant dans le goal V9 ferme.
 - Les artefacts et baselines sont conserves; aucun nettoyage massif du SSD
   n'a ete effectue.
-- Tout nouveau cycle sparse-first ou audit complet du ranker historique doit
-  etre ouvert comme une nouvelle experience, avec son propre contrat.
+- Le pivot `pool sparse fixe + features denses` et l'audit complet du ranker
+  historique doivent etre ouverts comme une nouvelle experience, avec leur
+  propre contrat.
 
 ## Points d'attention
-- **Decision STOP scopee**: elle invalide les variantes denses V9 testees, pas
-  la viabilite du matching SIRETO ni le pipeline sparse/XGBoost historique.
+- **Decision PIVOT scopee**: elle invalide l'admission/fusion des candidats
+  denses V9 testes, pas leur signal de scoring ni le pipeline sparse/XGBoost.
 - **Comparaison retrieval uniquement a budget constant**: un gain avec 100
   candidats ne justifie pas la promotion de la variante 50.
 - **Precision strictement SIRET**: un bon SIREN mais mauvais etablissement est
@@ -227,9 +237,9 @@ comme point de depart et ferme uniquement la promotion dense V9 testee.
 ## Prochaines etapes
 1. Ne pas entrainer le ranker/accepteur V9 sur le retrieval dense rejete.
 2. Ne pas lancer les 500 validations humaines ni louer de GPU pour ce plan.
-3. Si un nouveau goal est autorise, repartir du sparse et pre-enregistrer une
-   seule hypothese: amelioration sparse, audit complet des features/scenes
-   historiques, ou rescue dense strictement conditionnel.
+3. Si un nouveau goal est autorise, geler le top-50 sparse, auditer les
+   features/scenes historiques puis tester les scores/rangs denses comme
+   features du ranker sans modifier ce pool.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
