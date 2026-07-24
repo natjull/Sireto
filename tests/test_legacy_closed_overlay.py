@@ -9,6 +9,7 @@ from scripts.build_legacy_closed_overlay import (
     FILTER_SQL,
     _candidate_select_sql,
     _partition_counts,
+    build_overlay,
 )
 
 
@@ -53,3 +54,21 @@ def test_partition_counts_sum_parquet_metadata(tmp_path: Path) -> None:
         {"insee": "01001", "row_count": 2},
         {"insee": "01002", "row_count": 1},
     ]
+
+
+def test_builder_rejects_non_positive_thread_count(tmp_path: Path) -> None:
+    try:
+        build_overlay(
+            benchmark_path=tmp_path / "benchmark.parquet",
+            benchmark_manifest_path=tmp_path / "manifest.json",
+            establishment_path=tmp_path / "etab.parquet",
+            legal_unit_path=tmp_path / "ul.parquet",
+            output_dir=tmp_path / "output",
+            memory_limit="1GB",
+            threads=0,
+            temp_root=tmp_path,
+        )
+    except ValueError as exc:
+        assert str(exc) == "threads must be positive"
+    else:
+        raise AssertionError("Expected ValueError")

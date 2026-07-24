@@ -195,9 +195,12 @@ def build_overlay(
     legal_unit_path: Path,
     output_dir: Path,
     memory_limit: str,
+    threads: int,
     temp_root: Path,
 ) -> dict[str, Any]:
     """Build the overlay without selecting or inspecting benchmark labels."""
+    if threads <= 0:
+        raise ValueError("threads must be positive")
     if output_dir.exists():
         raise FileExistsError(f"Immutable output already exists: {output_dir}")
     benchmark_manifest = json.loads(
@@ -234,6 +237,7 @@ def build_overlay(
         postcode_root.mkdir()
         connection = duckdb.connect()
         connection.execute(f"SET memory_limit = '{memory_limit}'")
+        connection.execute(f"SET threads = {threads}")
         connection.execute("SET preserve_insertion_order = false")
         connection.execute(
             f"SET temp_directory = '{_escape_sql_path(duckdb_temp)}'"
@@ -349,6 +353,7 @@ def build_overlay(
             },
             "data_inventory": inventory,
             "memory_limit": memory_limit,
+            "threads": threads,
             "command": [sys.executable, *sys.argv],
         }
         (build_root / "manifest.json").write_text(
@@ -381,7 +386,8 @@ def main() -> None:
         default=Path("data/StockUniteLegale_utf8.parquet"),
     )
     parser.add_argument("--output-dir", type=Path, required=True)
-    parser.add_argument("--memory-limit", default="12GB")
+    parser.add_argument("--memory-limit", default="16GB")
+    parser.add_argument("--threads", type=int, default=2)
     parser.add_argument(
         "--temp-root",
         type=Path,
@@ -396,6 +402,7 @@ def main() -> None:
         legal_unit_path=args.legal_unit_snapshot,
         output_dir=args.output_dir,
         memory_limit=args.memory_limit,
+        threads=args.threads,
         temp_root=args.temp_root,
     )
     print(json.dumps(manifest, indent=2, sort_keys=True))
