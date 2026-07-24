@@ -1,37 +1,39 @@
-# Directive active — Expérience GO / PIVOT / STOP V9
+# Directive active — Retrieval SIRET Recall@100
 
 La directive ci-dessous prévaut sur les descriptions historiques V6, V7 et V8
 conservées plus bas à titre de référence.
 
-Objectif actif : déterminer expérimentalement, sans GPU loué ni dépense
-externe, si V9 améliore réellement V7. Il ne s'agit pas de promouvoir V9 par
-défaut.
+Objectif actif : concevoir et valider, sans GPU loué ni dépense externe, un
+retrieval qui conserve le bon SIRET dans au moins 99,0 % des requêtes avec un
+plafond absolu de 100 candidats.
 
-Contrat détaillé : `docs/v9_execution_contract.md`.
+Contrat détaillé : `docs/retrieval_recall100_contract.md`.
 
 Ordre obligatoire :
 
-1. rendre l'environnement local et le retrieval dense exécutables ;
-2. geler données, splits, baseline et métriques ;
-3. mesurer sparse seul avec exactement 50 candidats ;
-4. comparer sparse+dense local et sparse+dense global SIREN au même budget ;
-5. appliquer les gates avant tout entraînement du ranker/accepteur V9 ;
+1. mesurer Recall@50/@100/@200/@500 et attribuer chaque perte ;
+2. auditer séparément chaque canal de génération ;
+3. construire une union haut-rappel sans éviction silencieuse ;
+4. tuner uniquement sur train/dev ;
+5. franchir Recall@100 SIRET >= 99,0 % avant toute lecture de la variante sur
+   test ;
 6. conclure explicitement `GO`, `PIVOT` ou `STOP`.
 
 Contraintes non négociables :
 
 - métrique principale : SIRET exact ;
 - une vérité absente du pool est une erreur end-to-end ;
-- aucun positif injecté dans une évaluation ou une scène accepteur ;
-- accepteur entraîné uniquement sur prédictions out-of-fold ;
-- `AUTO_NO_MATCH` désactivé ;
-- cross-encoder hors du chemin critique ;
+- 100 candidats est un plafond absolu, jamais une moyenne ;
+- aucun positif injecté dans une évaluation ;
+- ranker, decider, risk model et accepteur gelés jusqu'au gate retrieval ;
 - aucun résultat présenté comme SOTA ou garanti sans preuve suffisante ;
 - Mac M4 Pro et `/Volumes/CATNAT_DATA` comme seules ressources de calcul ;
 - chaque milestone dans un commit isolé cité dans `handover.md`.
 
-Les architectures V6, V7, V8b et Route B ci-dessous sont des baselines ou des
-artefacts historiques. Elles ne définissent plus la trajectoire active.
+L'expérience V9 dense est terminée par un `PIVOT` documenté dans
+`docs/v9_execution_contract.md`. Les architectures V6, V7, V8b et Route B
+ci-dessous sont des baselines ou des artefacts historiques. Elles ne définissent
+plus la trajectoire active.
 
 # Diagramme de référence Pipe V6 (historique)
 
