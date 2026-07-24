@@ -1,9 +1,11 @@
-# SIRETO Handover - 23 Juillet 2026
+# SIRETO Handover - 24 Juillet 2026
 
 ## Etat des lieux
-Le goal actif est **Retrieval SIRET Recall@100**: atteindre au moins 99,0 % de
-Recall candidat au SIRET exact avec un plafond absolu de 100 candidats. Le
-contrat est `docs/retrieval_recall100_contract.md`.
+Le goal **Retrieval SIRET Recall@100** est terminé avec une décision
+**`PIVOT`**. La cible d'au moins 99,0 % de Recall candidat au SIRET exact sous
+un plafond absolu de 100 candidats n'est pas atteinte par l'admission
+déterministe évaluée. Le contrat est `docs/retrieval_recall100_contract.md` et
+le rapport final `reports/recall100/final_go_pivot_stop.md`.
 
 L'experience V9 sans GPU precedente est terminee avec une decision `PIVOT`.
 Ses pools denses multicanaux ne sont pas promus. Le rapport reste
@@ -14,6 +16,35 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Décision Recall@100 = PIVOT**: sur les 2 565 requêtes dev, le sparse gelé
+  atteint 2 379/2 565 = 92,75 %, la meilleure admission déterministe observée
+  2 495/2 565 = 97,27 %, et l'oracle des canaux internes à K=5 000
+  2 558/2 565 = 99,73 %. Le plafond de sortie 100 est strictement respecté,
+  mais il manque 45 succès au gate; 7 vérités ne sont vues par aucun canal et
+  63 sont vues puis éliminées par l'admission. Aucune nouvelle variante n'a été
+  exécutée sur le test. Le pivot proposé est une tête d'admission apprise,
+  distincte du ranker aval, sous un nouveau contrat. Rapport:
+  `reports/recall100/final_go_pivot_stop.md`. *(commit GitHub: `ccb3689`)*
+- **Évaluateur d'admission reproductible**: validation des manifests et hashes,
+  RRF pondéré déterministe, quotas overlay, plafond strict, oracle interne,
+  attribution `unseen`/`pruned`, segments et latence de sélection. L'artefact
+  immuable dev est
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/admission_diagnostic_dev_c33b80855f560074_5a0e67f`.
+  Suite complète à 90 tests passants. *(commit GitHub: `5a0e67f`)*
+- **Audit profond des canaux à K=5 000**: le pool V7 et l'overlay fermé ont été
+  audités séparément sans positif injecté. Leur oracle combiné voit
+  2 558/2 565 SIRET exacts, contre 2 540 requis, établissant que le sourcing
+  peut théoriquement dépasser 99 % mais ne constitue pas une sortie éligible à
+  100. *(commit GitHub: `d4255de`)*
+- **Canaux SIREN locaux audités**: ajout de `siren_head` et `siren_sites` pour
+  regrouper les candidats par SIREN puis ordonner/étaler leurs établissements.
+  À K=100, `siren_head` récupère 47 misses du sparse courant; l'oracle V7 passe
+  à 96,18 %. *(commit GitHub: `d4255de`)*
+- **Overlay fermé construit et audité**: le builder limité en mémoire a publié
+  8 230 664 lignes physiques INSEE et 8 286 671 lignes CP sur 52 408 fichiers,
+  pour environ 872 Mo. Les 62 vérités absentes du store V7 sont toutes présentes
+  dans l'overlay; son sparse courant en récupère 52 à K=100 et son oracle 60 à
+  K=5 000. *(commits GitHub: `e39fddd`, `d71d3cb`)*
 - **Builder overlay des fermés legacy**: construction immuable et sans lecture
   des labels d'un canal contenant uniquement les SIRET fermés exclus par le
   filtre V7 `dateDebut >= 2016`. Le périmètre géographique est dérivé des seuls
@@ -240,12 +271,10 @@ Recall@100.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Construire sur le SSD l'overlay de tous les fermés exclus par V7 dans les
-  2 124 zones INSEE et 1 558 zones CP du benchmark, sans utiliser les labels.
-- Auditer ensuite ce canal séparément et définir une admission éligible à
-  100 candidats en conservant les rangs sparse V7.
-- Les artefacts et baselines sont conserves; aucun nettoyage massif du SSD
-  n'a ete effectue.
+- Aucun run Recall@100 n'est en cours.
+- Le test reste fermé: le gate dev n'a pas été franchi.
+- Une poursuite nécessite l'approbation d'un nouveau contrat autorisant une
+  tête d'admission apprise au niveau retrieval.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -282,11 +311,11 @@ Recall@100.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Construire et valider l'overlay fermé legacy sur le SSD.
-2. Mesurer les unions/quota/RRF hors test sous plafond absolu 100.
-3. Régler l'admission sur train puis appliquer le gate dev.
-4. Ne consulter la nouvelle variante sur test qu'apres franchissement du gate
-   dev et gel de son manifeste.
+1. Décider d'autoriser ou non le pivot vers une admission apprise dédiée.
+2. Si autorisé, pré-enregistrer un nouveau contrat train/dev avant
+   entraînement; conserver le test fermé.
+3. Ne consulter le test qu'après Recall@100 dev >=99,0 %, gel du modèle et du
+   manifeste.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
