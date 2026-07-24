@@ -354,6 +354,38 @@ def prefilter_candidates_address_tfidf_scored(
     )
 
 
+def prefilter_candidates_word_tfidf_scored(
+    crm_name: str,
+    vectorizer: TfidfVectorizer,
+    cand_matrix: Any,
+    top_k: int,
+) -> List[Tuple[int, float]]:
+    """Rank candidates using only the word name TF-IDF channel."""
+    crm_norm = normalize_text_for_tfidf(crm_name)
+    if not crm_norm or cand_matrix is None:
+        return []
+    return _rank_sparse_scores(
+        (vectorizer.transform([crm_norm]) @ cand_matrix.T).getrow(0),
+        top_k,
+    )
+
+
+def prefilter_candidates_char_tfidf_scored(
+    crm_name: str,
+    vectorizer: TfidfVectorizer,
+    cand_matrix: Any,
+    top_k: int,
+) -> List[Tuple[int, float]]:
+    """Rank candidates using only the character name TF-IDF channel."""
+    crm_norm = normalize_text_for_tfidf(crm_name)
+    if not crm_norm or cand_matrix is None:
+        return []
+    return _rank_sparse_scores(
+        (vectorizer.transform([crm_norm]) @ cand_matrix.T).getrow(0),
+        top_k,
+    )
+
+
 
 def prefilter_candidates_tfidf(
     crm_name: str,
