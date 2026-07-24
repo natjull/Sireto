@@ -14,6 +14,12 @@ Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
 Recall@100.
 
 ## Actions terminees (fenetre recente)
+- **Instrumentation Recall@K et causes de perte**: séparation explicite des
+  états avant filtre, après filtre et après déduplication dans le retrieval
+  partagé; nouveau runner immuable calculant en un passage les préfixes
+  @50/@100/@200/@500, intervalles, segments, latence, cardinalités et buckets
+  de perte mutuellement exclusifs. Smoke réel et suite complète à 78 tests
+  passants. *(commit GitHub: `5e3fd5f`)*
 - **Contrat Recall@100 pre-enregistre**: cible SIRET exacte >=99,0 %, plafond
   absolu 100, courbes diagnostiques @50/@100/@200/@500, attribution obligatoire
   partition/filtre/deduplication/pruning, audit canal par canal, tuning
