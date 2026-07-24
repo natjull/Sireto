@@ -54,6 +54,8 @@ class CandidatePoolResult:
 
     # GT tracking (for train/eval)
     gt_in_base_pool: bool = False
+    gt_in_filtered_pre_dedupe_pool: bool = False
+    gt_in_deduped_pool: bool = False
     gt_in_filtered_pool: bool = False
     gt_in_tfidf_pool: bool = False
     gt_was_injected: bool = False
@@ -464,6 +466,8 @@ def build_candidate_pool(
         idf_map, default_idf = compute_name_idf_map(candidates_dict)
 
         result.pool_sizes["base"] = len(candidates)
+        result.pool_sizes["filtered_pre_dedupe"] = len(candidates)
+        result.pool_sizes["deduped"] = len(candidates)
         result.pool_sizes["filtered"] = len(candidates)
         result.pool_sizes["prefilter"] = len(candidates)
         result.pool_sizes["tfidf"] = len(candidates)
@@ -471,6 +475,10 @@ def build_candidate_pool(
         result.idf_map = idf_map
         result.default_idf = float(default_idf)
         result.gt_in_base_pool = _check_siret_in_list(candidates, gt_norm)
+        result.gt_in_filtered_pre_dedupe_pool = _check_siret_in_list(
+            candidates, gt_norm
+        )
+        result.gt_in_deduped_pool = _check_siret_in_list(candidates, gt_norm)
         result.gt_in_filtered_pool = _check_siret_in_list(candidates, gt_norm)
         result.gt_in_tfidf_pool = _check_siret_in_list(candidates, gt_norm)
 
@@ -498,12 +506,26 @@ def build_candidate_pool(
     result.gt_in_base_pool = _check_siret_in_list(base_candidates, gt_norm)
 
     # Step 2: Apply filters + dedupe
-    filtered = _apply_filters(base_candidates, config.drop_unnamed, config.include_closed)
+    filtered = _apply_filters(
+        base_candidates,
+        config.drop_unnamed,
+        config.include_closed,
+    )
+    result.pool_sizes["filtered_pre_dedupe"] = len(filtered)
+    result.gt_in_filtered_pre_dedupe_pool = _check_siret_in_list(
+        filtered, gt_norm
+    )
     pool = dedupe_candidates(filtered)
     pool_list = list(pool.values())
 
+    result.pool_sizes["deduped"] = len(pool_list)
     result.pool_sizes["filtered"] = len(pool_list)
-    result.gt_in_filtered_pool = gt_norm in _get_siret_set(pool_list) if gt_norm else False
+    result.gt_in_deduped_pool = (
+        gt_norm in _get_siret_set(pool_list) if gt_norm else False
+    )
+    # Backward-compatible alias: historically "filtered" meant filtered and
+    # deduplicated.
+    result.gt_in_filtered_pool = result.gt_in_deduped_pool
 
     candidates_dict = {str(c.get("siret") or ""): c for c in pool_list if c.get("siret")}
     if candidates_dict:
@@ -511,13 +533,21 @@ def build_candidate_pool(
         result.idf_map = idf_map
         result.default_idf = float(default_idf)
 
-    if result.gt_in_base_pool and not result.gt_in_filtered_pool:
+    if (
+        result.gt_in_base_pool
+        and not result.gt_in_filtered_pre_dedupe_pool
+    ):
         if not config.include_closed:
             result.loss_reason = "FILTERED_CLOSED"
         elif config.drop_unnamed:
             result.loss_reason = "FILTERED_UNNAMED"
         else:
             result.loss_reason = "FILTERED_OTHER"
+    elif (
+        result.gt_in_filtered_pre_dedupe_pool
+        and not result.gt_in_deduped_pool
+    ):
+        result.loss_reason = "DEDUPE_MISS"
 
     # Step 3: Universal rescue whitelist (addr_hash + numeric tokens)
     whitelisted_sirets: set[str] = set()

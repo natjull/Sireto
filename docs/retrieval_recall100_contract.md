@@ -52,10 +52,10 @@ Chaque miss doit recevoir la première cause applicable :
 1. `PARTITION_MISS` : vérité absente de la partition géographique chargée ;
 2. `FILTER_MISS` : présente avant les filtres, absente après filtres métier ;
 3. `DEDUPE_MISS` : présente après filtres, absente après déduplication ;
-4. `PRUNED_AT_50` : présente après déduplication, rang final supérieur à 50 ;
-5. `PRUNED_AT_100` : rang final supérieur à 100 ;
-6. `PRUNED_AT_200` : rang final supérieur à 200 ;
-7. `PRUNED_AT_500` : rang final supérieur à 500 ;
+4. `PRUNED_AT_50_RECOVERED_BY_100` : rang 51 à 100 ;
+5. `PRUNED_AT_100_RECOVERED_BY_200` : rang 101 à 200 ;
+6. `PRUNED_AT_200_RECOVERED_BY_500` : rang 201 à 500 ;
+7. `PRUNED_AT_500` : absente des 500 premiers ;
 8. `UNEXPLAINED` : incohérence à traiter comme un défaut d'instrumentation.
 
 La déduplication doit être auditée avant et après sur le SIRET normalisé. Elle

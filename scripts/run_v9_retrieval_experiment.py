@@ -261,8 +261,18 @@ def run_mode(
                 budget=budget,
             ),
             "base_pool_size": int(result.pool_sizes.get("base", 0)),
+            "filtered_pre_dedupe_pool_size": int(
+                result.pool_sizes.get("filtered_pre_dedupe", 0)
+            ),
+            "deduped_pool_size": int(
+                result.pool_sizes.get("deduped", filtered_count)
+            ),
             "filtered_pool_size": filtered_count,
             "ground_truth_in_base": bool(result.gt_in_base_pool),
+            "ground_truth_in_filtered_pre_dedupe": bool(
+                result.gt_in_filtered_pre_dedupe_pool
+            ),
+            "ground_truth_in_deduped": bool(result.gt_in_deduped_pool),
             "ground_truth_in_filtered": bool(result.gt_in_filtered_pool),
             "loss_reason": result.loss_reason or "",
             "latency_ms": latency_ms,
