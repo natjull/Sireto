@@ -1,8 +1,9 @@
 # SIRETO Handover - 23 Juillet 2026
 
 ## Etat des lieux
-La cible active est **V9 = retrieval multicanal a budget fixe + ranker candidat
-unique + accepteur selectif query-level**:
+L'experience V9 sans GPU est **terminee avec une decision `STOP` pour la
+promotion du retrieval dense multicanal**. Le rapport de decision est
+`reports/v9/v9_go_pivot_stop.md`. La cible evaluee etait:
 - sparse local SIRET reste la baseline;
 - dense local et dense global SIREN -> expansion SIRET sont des variantes
   conditionnelles, fusionnees par RRF puis tronquees a 50;
@@ -12,8 +13,28 @@ unique + accepteur selectif query-level**:
 - `AUTO_NO_MATCH` est desactive.
 
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
+Le `STOP` ne condamne pas SIRETO: il conserve le sparse/XGBoost historique
+comme point de depart et ferme uniquement la promotion dense V9 testee.
 
 ## Actions terminees (fenetre recente)
+- **Decision finale V9 = STOP**: sparse + dense local perd 1,83 point de
+  Recall@50 SIRET et sparse + dense global SIREN perd 2,61 points. Les deux
+  regressions sont statistiquement nettes et violent les gates segmentaires.
+  Gate 3 ranker/accepteur, Gate 4 open-set et le cross-encoder ne sont donc pas
+  ouverts. Le Mac a execute l'ensemble sans GPU ni depense cloud; l'echec est
+  qualitatif, pas materiel. *(commit GitHub: `53ad3b3`)*
+- **Gate 2 dense global SIREN echouee sur dev**: sparse atteint 2 317/2 565 =
+  90,33 % contre 2 250/2 565 = 87,72 % pour l'hybride global. Delta apparie
+  −2,61 points, IC95 [−3,51; −1,72], McNemar p=1,47e-8; 37 misses recuperes
+  mais 104 hits deplaces. Actifs −3,27 points et multi-sites −2,28 points.
+  La latence p95 passe a 1,079x et le budget 50 est respecte. *(commit GitHub:
+  `53ad3b3`)*
+- **Audit de budget multicanal corrige**: deux sorties globales de 50 candidats
+  etaient faussement marquees non conformes car leur seul pool local contenait
+  41 ou 18 lignes. Le controle refuse maintenant les depassements de K et les
+  underfills locaux, sans rejeter les candidats qui completent un pool court
+  via un nouveau canal. Rapport global regenere avec zero violation; suite
+  complete a 68 tests passants. *(commit GitHub: `bc49918`)*
 - **Expansion globale SIREN bornee avant materialisation**: le store candidat
   v2 calcule la densite par zone et applique dans DuckDB un top-K par SIREN,
   ordonne par correspondance INSEE/CP puis densite locale, avant tout transfert
@@ -169,16 +190,15 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- **Gate 2 — dense global SIREN**: le dense local n'est pas promu, mais son
-  oracle et les 168 misses sparse au niveau SIREN justifient l'expérience
-  globale pré-enregistrée. Construire l'index générique sans GPU puis mesurer
-  sparse + dense global SIREN → expansion SIRET sur dev.
-- **Gates suivantes**: aucune adjudication de 500 cas, aucun ranker/accepteur et
-  aucun cross-encoder avant signal positif du retrieval.
+- Aucun travail V9 restant dans le goal ferme.
+- Les artefacts et baselines sont conserves; aucun nettoyage massif du SSD
+  n'a ete effectue.
+- Tout nouveau cycle sparse-first ou audit complet du ranker historique doit
+  etre ouvert comme une nouvelle experience, avec son propre contrat.
 
 ## Points d'attention
-- **Aucun resultat V9 final n'est encore mesure**: l'implementation et les tests
-  sont termines, pas les huit semaines de collecte/validation/entrainement.
+- **Decision STOP scopee**: elle invalide les variantes denses V9 testees, pas
+  la viabilite du matching SIRETO ni le pipeline sparse/XGBoost historique.
 - **Comparaison retrieval uniquement a budget constant**: un gain avec 100
   candidats ne justifie pas la promotion de la variante 50.
 - **Precision strictement SIRET**: un bon SIREN mais mauvais etablissement est
@@ -205,14 +225,11 @@ V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Auditer les exports CRM/GT locaux et choisir sans fuite le corpus de
-   benchmark ferme.
-2. Ecrire son manifeste immuable (snapshot, hashes, split, config et seed).
-3. Mesurer sparse-50 avant toute construction dense supplementaire.
-4. Construire sur `/Volumes/CATNAT_DATA/SIRETO_V9` les seules partitions denses
-   locales presentes dans le benchmark, puis mesurer hybride local-50.
-5. Ne lancer le build dense global SIREN et les gates suivantes que selon le
-   signal mesure, conformement au contrat `GO/PIVOT/STOP`.
+1. Ne pas entrainer le ranker/accepteur V9 sur le retrieval dense rejete.
+2. Ne pas lancer les 500 validations humaines ni louer de GPU pour ce plan.
+3. Si un nouveau goal est autorise, repartir du sparse et pre-enregistrer une
+   seule hypothese: amelioration sparse, audit complet des features/scenes
+   historiques, ou rescue dense strictement conditionnel.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
