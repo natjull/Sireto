@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from dataclasses import replace
 import hashlib
 import json
 import math
@@ -103,13 +104,20 @@ def load_benchmark(path: Path, split: str) -> pd.DataFrame:
     return frame.reset_index(drop=True)
 
 
-def retrieval_config(mode: str, *, per_channel_k: int, budget: int) -> RetrievalConfigV1:
+def retrieval_config(
+    mode: str,
+    *,
+    per_channel_k: int,
+    budget: int,
+    prefilter_trigger_size: int | None = None,
+) -> RetrievalConfigV1:
     common = {
         "prefilter_k": per_channel_k,
         "fusion_mode": "rrf",
         "retrieval_budget": budget,
         "prefilter_union_cap": None,
         "min_candidates": min(50, budget),
+        "prefilter_trigger_size": prefilter_trigger_size,
         "mega_insee_policy": "full_insee",
     }
     if mode == "sparse":
@@ -171,12 +179,32 @@ def run_mode(
     dense_siren_index: Any = None,
     siren_to_geo: Any = None,
     siren_candidate_store: Any = None,
+    prefilter_trigger_size: int | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
-    config = retrieval_config(mode, per_channel_k=per_channel_k, budget=budget)
+    config = retrieval_config(
+        mode,
+        per_channel_k=per_channel_k,
+        budget=budget,
+        prefilter_trigger_size=prefilter_trigger_size,
+    )
     store = PartitionedCandidateStore(partitions_dir)
+    legacy_signatures = [config.signature().hash]
+    legacy_signatures.append(config.legacy_signature_hash())
+    if config.prefilter_trigger_size is not None:
+        config_without_trigger = replace(
+            config,
+            prefilter_trigger_size=None,
+        )
+        legacy_signatures.extend(
+            [
+                config_without_trigger.signature().hash,
+                config_without_trigger.legacy_signature_hash(),
+            ]
+        )
     persistent_cache = TfidfPersistentCache(
-        config.signature().hash,
+        config.tfidf_artifact_hash(),
         cache_dir=cache_root,
+        fallback_config_hashes=legacy_signatures,
     )
     in_memory_tfidf: OrderedDict = OrderedDict()
     timer = PipelineTimer()

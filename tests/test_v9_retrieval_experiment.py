@@ -25,6 +25,28 @@ def test_retrieval_experiment_configs_keep_fixed_budget() -> None:
         assert config.prefilter_k == 500
 
 
+def test_tfidf_artifact_hash_ignores_budget_and_prefilter_trigger() -> None:
+    first = retrieval_config(
+        "sparse",
+        per_channel_k=500,
+        budget=50,
+    )
+    second = retrieval_config(
+        "sparse",
+        per_channel_k=500,
+        budget=500,
+        prefilter_trigger_size=50,
+    )
+
+    assert first.signature().hash != second.signature().hash
+    assert first.tfidf_artifact_hash() == second.tfidf_artifact_hash()
+    legacy_payload = second.to_dict()
+    legacy_payload.pop("prefilter_trigger_size")
+    assert second.legacy_signature_hash() == (
+        type(second.signature())._hash_payload(legacy_payload)
+    )
+
+
 def test_wilson_interval_contains_observed_rate() -> None:
     lower, upper = wilson_interval(90, 100, confidence=0.95)
     assert lower < 0.9 < upper

@@ -261,6 +261,7 @@ def main() -> None:
         cache_root=args.cache_dir,
         per_channel_k=args.per_channel_k,
         budget=cutoffs[-1],
+        prefilter_trigger_size=cutoffs[0],
     )
     stage_audit = build_stage_audit(raw, max_cutoff=cutoffs[-1])
     raw["loss_bucket"] = stage_audit.pop("loss_bucket_by_query")

@@ -582,7 +582,12 @@ def build_candidate_pool(
         if config.fusion_mode == "rrf" and config.retrieval_budget is not None
         else config.prefilter_k
     )
-    if prune_threshold and len(candidates) > prune_threshold:
+    prefilter_trigger = (
+        config.prefilter_trigger_size
+        if config.prefilter_trigger_size is not None
+        else prune_threshold
+    )
+    if prefilter_trigger and len(candidates) > prefilter_trigger:
         cache_key = ("main", f"{insee}_{postcode}")
 
         # 4a. Sparse retrieval (TF-IDF) — with persistent cache

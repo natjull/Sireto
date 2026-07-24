@@ -44,6 +44,7 @@ class RetrievalConfigV1:
     prefilter_k_mode: str = "per_channel"
     prefilter_union_cap: Optional[int] = None
     min_candidates: int = 100
+    prefilter_trigger_size: Optional[int] = None
 
     # Stage 1 pruning
     stage1_top_n: int = 50
@@ -86,6 +87,11 @@ class RetrievalConfigV1:
             raise ValueError("fusion_mode must be 'legacy_union' or 'rrf'")
         if self.retrieval_budget is not None and self.retrieval_budget <= 0:
             raise ValueError("retrieval_budget must be positive")
+        if (
+            self.prefilter_trigger_size is not None
+            and self.prefilter_trigger_size <= 0
+        ):
+            raise ValueError("prefilter_trigger_size must be positive")
         if self.rrf_k < 0:
             raise ValueError("rrf_k must be non-negative")
         if self.global_dense_siren_enabled and self.siren_expansion_enabled:
@@ -119,6 +125,7 @@ class RetrievalConfigV1:
             "prefilter_k_mode": self.prefilter_k_mode,
             "prefilter_union_cap": self.prefilter_union_cap,
             "min_candidates": self.min_candidates,
+            "prefilter_trigger_size": self.prefilter_trigger_size,
             "stage1_top_n": self.stage1_top_n,
             "siren_siblings": self.siren_siblings,
             "max_siren_siblings": self.max_siren_siblings,
@@ -175,6 +182,11 @@ class RetrievalConfigV1:
             prefilter_k_mode=data.get("prefilter_k_mode", cls().prefilter_k_mode),
             prefilter_union_cap=data.get("prefilter_union_cap", cls().prefilter_union_cap),
             min_candidates=int(data.get("min_candidates", cls().min_candidates)),
+            prefilter_trigger_size=(
+                int(data["prefilter_trigger_size"])
+                if data.get("prefilter_trigger_size") is not None
+                else None
+            ),
             stage1_top_n=int(data.get("stage1_top_n", cls().stage1_top_n)),
             siren_siblings=bool(data.get("siren_siblings", cls().siren_siblings)),
             max_siren_siblings=data.get("max_siren_siblings", cls().max_siren_siblings),
@@ -213,6 +225,42 @@ class RetrievalConfigV1:
 
     def signature(self) -> "RetrievalSignatureV1":
         return RetrievalSignatureV1.from_config(self)
+
+    def tfidf_artifact_hash(self) -> str:
+        """Hash only fields that change cached TF-IDF matrices or row order."""
+        payload = {
+            "version": self.version,
+            "pool_mode": self.pool_mode,
+            "include_closed": self.include_closed,
+            "drop_unnamed": self.drop_unnamed,
+            "tfidf_name_mode": self.tfidf_name_mode,
+            "tfidf_name_ngrams": list(self.tfidf_name_ngrams),
+            "tfidf_name_token_pattern": self.tfidf_name_token_pattern,
+            "tfidf_name_lowercase": self.tfidf_name_lowercase,
+            "tfidf_name_norm": self.tfidf_name_norm,
+            "tfidf_name_min_df": self.tfidf_name_min_df,
+            "tfidf_addr_ngrams": list(self.tfidf_addr_ngrams),
+            "tfidf_addr_token_pattern": self.tfidf_addr_token_pattern,
+            "tfidf_addr_lowercase": self.tfidf_addr_lowercase,
+            "tfidf_addr_norm": self.tfidf_addr_norm,
+            "tfidf_addr_min_df": self.tfidf_addr_min_df,
+            "tfidf_addr_max_df": self.tfidf_addr_max_df,
+            "char_ngrams": list(self.char_ngrams),
+            "char_analyzer": self.char_analyzer,
+            "char_min_df": self.char_min_df,
+            "siren_siblings": self.siren_siblings,
+            "max_siren_siblings": self.max_siren_siblings,
+            "max_names_per_candidate": self.max_names_per_candidate,
+            "mega_insee_max_rows": self.mega_insee_max_rows,
+            "mega_insee_policy": self.mega_insee_policy,
+        }
+        return RetrievalSignatureV1._hash_payload(payload)
+
+    def legacy_signature_hash(self) -> str:
+        """Hash compatible with manifests written before trigger separation."""
+        payload = self.to_dict()
+        payload.pop("prefilter_trigger_size", None)
+        return RetrievalSignatureV1._hash_payload(payload)
 
 
 @dataclass(frozen=True)

@@ -42,31 +42,56 @@ class TfidfPersistentCache:
             cache.put("insee_75056", artifacts)
     """
 
-    def __init__(self, config_hash: str, cache_dir: Path | None = None):
+    def __init__(
+        self,
+        config_hash: str,
+        cache_dir: Path | None = None,
+        *,
+        fallback_config_hashes: list[str] | None = None,
+    ):
         self.cache_dir = (cache_dir or _cache_root()) / config_hash
+        self.fallback_dirs = [
+            (cache_dir or _cache_root()) / item
+            for item in (fallback_config_hashes or [])
+            if item and item != config_hash
+        ]
         self._hits = 0
         self._misses = 0
 
+    @staticmethod
+    def _safe_key(partition_key: str) -> str:
+        return (
+            partition_key.replace("|", "_")
+            .replace("/", "_")
+            .replace("\\", "_")
+        )
+
     def _key_path(self, partition_key: str) -> Path:
-        safe = partition_key.replace("|", "_").replace("/", "_").replace("\\", "_")
-        return self.cache_dir / f"{safe}.pkl"
+        return self.cache_dir / f"{self._safe_key(partition_key)}.pkl"
 
     def get(self, partition_key: str) -> Optional[TfidfArtifacts]:
         """Load cached artifacts. Returns None on miss or corruption."""
-        path = self._key_path(partition_key)
-        if not path.exists():
-            self._misses += 1
-            return None
-        try:
-            with open(path, "rb") as f:
-                data = pickle.load(f)
-            self._hits += 1
-            return data
-        except Exception as exc:
-            _logger.warning("[TfidfCache] Corrupt cache for %s: %s", partition_key, exc)
-            path.unlink(missing_ok=True)
-            self._misses += 1
-            return None
+        paths = [self._key_path(partition_key)] + [
+            directory / f"{self._safe_key(partition_key)}.pkl"
+            for directory in self.fallback_dirs
+        ]
+        for path in paths:
+            if not path.exists():
+                continue
+            try:
+                with open(path, "rb") as f:
+                    data = pickle.load(f)
+                self._hits += 1
+                return data
+            except Exception as exc:
+                _logger.warning(
+                    "[TfidfCache] Corrupt cache for %s at %s: %s",
+                    partition_key,
+                    path,
+                    exc,
+                )
+        self._misses += 1
+        return None
 
     def put(self, partition_key: str, artifacts: TfidfArtifacts) -> None:
         """Persist artifacts to disk."""
