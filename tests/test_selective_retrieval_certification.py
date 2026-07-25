@@ -23,6 +23,7 @@ def _inputs(exact_count: int, *, over_budget: bool = False):
             "baseline_hit_at_100": [True] * total,
             "oracle_hit": [True] * total,
             "candidate_count": [101 if over_budget and index == 0 else 100 for index in range(total)],
+            "ground_truth_state": ["A"] * total,
             "mega_base_pool": [False] * total,
             "multi_site_siren": [False] * total,
             "location_match_type": ["insee"] * total,

@@ -80,6 +80,7 @@ def certify(
     if set(labels["query_id"]) != set(raw["query_id"]):
         raise ValueError("Qualification and admission query IDs differ")
 
+    raw = raw.drop(columns=["ground_truth_state"], errors="ignore")
     merged = raw.merge(
         labels[
             [
