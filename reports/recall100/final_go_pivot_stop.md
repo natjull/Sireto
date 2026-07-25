@@ -1,5 +1,12 @@
 # Retrieval SIRET Recall@100 — décision GO / PIVOT / STOP
 
+> **Rapport historique, supersédé.** Ce document porte sur les labels CRM
+> historiques du dev. La qualification V3 et l'évaluation finale sur test sont
+> publiées dans
+> [`selective_test_certification.md`](selective_test_certification.md). Il ne
+> faut plus utiliser le pivot vers une admission apprise proposé ci-dessous
+> comme trajectoire active.
+
 ## Décision
 
 **PIVOT.**
