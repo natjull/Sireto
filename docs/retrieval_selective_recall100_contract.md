@@ -26,8 +26,9 @@ ou score de modèle.
 - V3 preuve directe : `docs/benchmark_v3_evidence_policy.md` ;
 - politique V3 : commit `09b9d46`, SHA-256
   `f67d2aa5b9c691a41cc2e94751fda336f8d68e6202fda10c0921777bcbd3db44` ;
-- builder V3 : commit `cf7133c`, SHA-256
-  `0eee73460be78a4f3378a7e3b5d7ef6e1cee7e83b6b043a31821999310b6e0b6` ;
+- builder V3 : logique commitée dans `cf7133c`, ouverture technique du split
+  test dans `c6c8186`, SHA-256 final
+  `9ebf636101de6cd73e4079fbcc14b012e655fdd6ff08910e00127ee915718dcc` ;
 - snapshot établissement :
   `c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845` ;
 - snapshot unité légale :
