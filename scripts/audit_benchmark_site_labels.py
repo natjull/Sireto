@@ -197,7 +197,11 @@ def main() -> None:
     parser.add_argument("--benchmark", type=Path, required=True)
     parser.add_argument("--benchmark-manifest", type=Path, required=True)
     parser.add_argument("--establishment-snapshot", type=Path, required=True)
-    parser.add_argument("--split", choices=("train", "dev"), required=True)
+    parser.add_argument(
+        "--split",
+        choices=("train", "dev", "test"),
+        required=True,
+    )
     parser.add_argument("--output-dir", type=Path, required=True)
     args = parser.parse_args()
     if args.output_dir.exists():

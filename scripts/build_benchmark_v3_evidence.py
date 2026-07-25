@@ -526,7 +526,11 @@ def main() -> None:
     parser.add_argument("--establishment-snapshot", type=Path, required=True)
     parser.add_argument("--legal-unit-snapshot", type=Path, required=True)
     parser.add_argument("--policy-document", type=Path, required=True)
-    parser.add_argument("--split", choices=("train", "dev"), required=True)
+    parser.add_argument(
+        "--split",
+        choices=("train", "dev", "test"),
+        required=True,
+    )
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--retrieval-raw", type=Path)
     parser.add_argument("--retrieval-manifest", type=Path)
