@@ -1,30 +1,32 @@
-# Directive active — Retrieval SIRET Recall@100
+# Directive active — Retrieval sélectif SIRET Recall@100
 
 La directive ci-dessous prévaut sur les descriptions historiques V6, V7 et V8
 conservées plus bas à titre de référence.
 
 Objectif actif : concevoir et valider, sans GPU loué ni dépense externe, un
-retrieval qui conserve le bon SIRET dans au moins 99,0 % des requêtes avec un
-plafond absolu de 100 candidats.
+retrieval qui conserve le bon SIRET dans au moins 99,0 % des requêtes où le
+SIRET exact est identifiable, avec un plafond absolu de 100 candidats et une
+couverture identifiable d'au moins 80,0 %.
 
-Contrat détaillé : `docs/retrieval_recall100_contract.md`.
+Contrat détaillé : `docs/retrieval_selective_recall100_contract.md`.
 
 Ordre obligatoire :
 
-1. mesurer Recall@50/@100/@200/@500 et attribuer chaque perte ;
-2. auditer séparément chaque canal de génération ;
-3. construire une union haut-rappel sans éviction silencieuse ;
-4. tuner uniquement sur train/dev ;
-5. franchir Recall@100 SIRET >= 99,0 % avant toute lecture de la variante sur
-   test ;
+1. qualifier V2/V3 sans utiliser les résultats du retrieval ;
+2. mesurer séparément couverture et Recall@100 sur le périmètre exact ;
+3. geler politique, retrieval et admission sur train/dev ;
+4. franchir couverture >=80,0 % et Recall@100 SIRET >=99,0 % sur dev ;
+5. exécuter une seule évaluation finale sur test ;
 6. conclure explicitement `GO`, `PIVOT` ou `STOP`.
 
 Contraintes non négociables :
 
-- métrique principale : SIRET exact ;
+- métriques principales : couverture identifiable et Recall SIRET exact ;
 - une vérité absente du pool est une erreur end-to-end ;
 - 100 candidats est un plafond absolu, jamais une moyenne ;
 - aucun positif injecté dans une évaluation ;
+- aucune qualification ne peut utiliser un hit, un rang ou un score modèle ;
+- les métriques historique, V2 et V3 sont toujours publiées ensemble ;
 - ranker, decider, risk model et accepteur gelés jusqu'au gate retrieval ;
 - aucun résultat présenté comme SOTA ou garanti sans preuve suffisante ;
 - Mac M4 Pro et `/Volumes/CATNAT_DATA` comme seules ressources de calcul ;
