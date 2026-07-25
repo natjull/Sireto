@@ -20,6 +20,16 @@ Le ranker, le decider, le risk model et l'accepteur n'ont pas été modifiés
 pendant le gate retrieval.
 
 ## Actions terminees (fenetre recente)
+- **Audit de stabilité V3 limité à train/dev** : décomposition reproductible
+  des pertes entre contradictions structurelles V2 et absence de preuve V3,
+  avec refus explicite du split test. La couverture V3 vaut 79,632 % sur train
+  et 82,027 % sur dev. Pour les fermés, elle vaut déjà 65,055 % sur train et
+  69,405 % sur dev : la difficulté n'est pas créée par le test. Parmi les
+  V2 exacts écartés faute de preuve, le nom et l'adresse sont tous deux
+  éloignés dans 774/1 569 cas train et 131/296 cas dev; un simple assouplissement
+  des seuils ne traite donc pas la cause dominante. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/qualification_stability_train_dev_111b07c`.
+  Suite complète à 109 tests passants. *(commit GitHub : `111b07c`)*
 - **Certification finale selective sur test** : qualification V2/V3 produite
   avant tout retrieval, puis exécution unique de la configuration gelée.
   Couverture V3 2 128/2 652 = 80,241 %, Recall@100 V3
@@ -338,6 +348,8 @@ pendant le gate retrieval.
   `c6c8186`, `eb0e6a3`)*
 - `scripts/certify_selective_retrieval_test.py` *(commits GitHub : `d1c0fc9`,
   `6fab035`)*
+- `scripts/audit_v3_qualification_stability.py`,
+  `tests/test_v3_qualification_stability.py` *(commit GitHub : `111b07c`)*
 - `reports/recall100/selective_test_certification.md` *(commit GitHub :
   `41ff2e1`)*
 - `reports/recall100/final_go_pivot_stop.md` *(rapport dev historique marqué
@@ -362,8 +374,10 @@ pendant le gate retrieval.
 - Aucun run Recall@100 n'est en cours.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
-- Aucun travail aval ranker/decider/accepteur n'est engagé tant que
-  l'orientation post-`PIVOT` n'est pas décidée.
+- Le diagnostic train/dev post-certification est terminé. Il ne justifie ni
+  une nouvelle architecture de retrieval, ni un relâchement mécanique des
+  seuils de preuve.
+- Aucun travail aval ranker/decider/accepteur n'est engagé.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -404,10 +418,11 @@ pendant le gate retrieval.
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
-2. Auditer sur train/dev la stabilité des preuves directes des établissements
-   fermés et des mégapoles, sans apprendre de leurs résultats test.
-3. Décider si un registre sourcé et versionné d'alias, d'enseignes et
-   d'historique d'établissement est justifié.
+2. Définir le contrat d'un registre sourcé et versionné d'alias, d'enseignes,
+   d'exploitants et d'historique d'établissement; aucun alias ne doit être
+   appris du hit/miss retrieval.
+3. Construire sur train/dev un audit d'apport de ce registre, sans réouvrir
+   automatiquement les dossiers `UNRESOLVED`.
 4. Pré-enregistrer toute qualification V4 sur train/dev et constituer un
    nouveau holdout indépendant avant validation.
 5. Après stabilité de la couverture, ouvrir sous contrat séparé le ranker et
