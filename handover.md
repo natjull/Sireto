@@ -1,21 +1,51 @@
-# SIRETO Handover - 24 Juillet 2026
+# SIRETO Handover - 26 Juillet 2026
 
 ## Etat des lieux
-Le goal **Retrieval SIRET Recall@100** est terminé avec une décision
-**`PIVOT`**. La cible d'au moins 99,0 % de Recall candidat au SIRET exact sous
-un plafond absolu de 100 candidats n'est pas atteinte par l'admission
-déterministe évaluée. Le contrat est `docs/retrieval_recall100_contract.md` et
-le rapport final `reports/recall100/final_go_pivot_stop.md`.
+Le chantier **Retrieval sélectif SIRET Recall@100** est terminé avec une
+décision contractuelle **`PIVOT`**. Sur le test final gelé, la qualification
+V3 conserve 2 128/2 652 dossiers exacts, soit 80,241 % de couverture, et
+l'admission gelée place le bon SIRET dans 100 candidats pour 2 116/2 128,
+soit **99,436 % de Recall@100**. Tous les gates globaux passent. Le `PIVOT`
+vient uniquement de deux gates de stabilité de couverture : établissements
+fermés et mégapoles. Le test est désormais définitivement fermé à tout tuning.
+Contrat : `docs/retrieval_selective_recall100_contract.md`. Rapport :
+`reports/recall100/selective_test_certification.md`.
 
 L'experience V9 sans GPU precedente est terminee avec une decision `PIVOT`.
 Ses pools denses multicanaux ne sont pas promus. Le rapport reste
 `reports/v9/v9_go_pivot_stop.md`.
 
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
-Le ranker, le decider, le risk model et l'accepteur restent geles jusqu'au gate
-Recall@100.
+Le ranker, le decider, le risk model et l'accepteur n'ont pas été modifiés
+pendant le gate retrieval.
 
 ## Actions terminees (fenetre recente)
+- **Certification finale selective sur test** : qualification V2/V3 produite
+  avant tout retrieval, puis exécution unique de la configuration gelée.
+  Couverture V3 2 128/2 652 = 80,241 %, Recall@100 V3
+  2 116/2 128 = 99,436 %, oracle interne 2 128/2 128, maximum 100 candidats et
+  zéro dépassement. Les gates globaux passent. Les segments fermés
+  (62,633 % de couverture) et mégapoles (77,586 %) ratent uniquement leurs
+  planchers de stabilité; leurs recalls atteignent 98,305 % et 99,259 %.
+  Verdict pré-enregistré `PIVOT`; aucune nouvelle variante ne doit être testée
+  sur ce test. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/certification/selective_test_c33b80855f560074_6fab035`.
+  Suite complète à 105 tests passants. *(commits GitHub : `d1c0fc9`,
+  `6fab035`, rapport `41ff2e1`)*
+- **Contrat final pré-enregistré avant ouverture du test** : double gate
+  couverture V3 ≥80 % et Recall@100 exact ≥99 %, oracle sans vérité invisible,
+  plafond strict 100, publication historique/V2/V3 et stabilité segmentaire.
+  L'admission, les seuils, les hashes de snapshots et le runner de qualification
+  ont été gelés avant l'évaluation. *(commits GitHub : `4f6e317`,
+  `eb0e6a3`)*
+- **Qualification V3 par preuve directe** : politique indépendante du
+  retrieval séparant `NAME_AND_ADDRESS`, `NAME_ONLY`, `ADDRESS_ONLY` et
+  `NO_DIRECT_EVIDENCE`. Un label V2 exact sans preuve directe devient
+  `UNRESOLVED`, sans promotion automatique d'un autre SIRET. Dev :
+  2 104 exacts, 81 ambigus, 380 non résolus, couverture 82,027 % et
+  Recall@100 gelé 99,572 %. Test qualifié avant retrieval : 2 128 exacts,
+  105 ambigus, 419 non résolus et couverture 80,241 %. *(commits GitHub :
+  `09b9d46`, `cf7133c`, `c6c8186`)*
 - **Qualification V2 train/dev sans suppression ni relabel automatique**:
   politique indépendante des résultats du retrieval, builder immuable et
   double publication des métriques historique/V2. Sur dev, 2 400/2 565
@@ -301,6 +331,17 @@ Recall@100.
 - **Priorisation mega-communes embeddings**: orchestration dense amelioree pour runs longs. *(commit GitHub: `66b5b87`)*
 
 ## Fichiers modifies recemment
+- `docs/benchmark_v3_evidence_policy.md` *(commit GitHub : `09b9d46`)*
+- `docs/retrieval_selective_recall100_contract.md` *(commit GitHub :
+  `4f6e317`)*
+- `scripts/build_benchmark_v3_evidence.py` *(commits GitHub : `cf7133c`,
+  `c6c8186`, `eb0e6a3`)*
+- `scripts/certify_selective_retrieval_test.py` *(commits GitHub : `d1c0fc9`,
+  `6fab035`)*
+- `reports/recall100/selective_test_certification.md` *(commit GitHub :
+  `41ff2e1`)*
+- `reports/recall100/final_go_pivot_stop.md` *(rapport dev historique marqué
+  supersédé, commit GitHub : `50e804b`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -319,17 +360,21 @@ Recall@100.
 
 ## Travail en cours
 - Aucun run Recall@100 n'est en cours.
-- Le test reste fermé: le gate dev n'a pas été franchi.
-- La qualification V2 a isolé le bruit structurel, mais l'admission actuelle
-  reste à 97,625 % sur les 2 400 labels exacts.
+- Le test final a été lu une fois et est maintenant définitivement fermé à
+  toute nouvelle variante, règle ou seuil.
+- Aucun travail aval ranker/decider/accepteur n'est engagé tant que
+  l'orientation post-`PIVOT` n'est pas décidée.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
   constituent jamais une configuration eligible.
-- **Test**: sa baseline sparse historique est connue, mais aucune nouvelle
-  variante n'y sera executee avant gel complet sur train/dev.
+- **Test final consommé** : ne plus lancer de variante, analyser de miss pour
+  choisir une règle, changer de seuil ou modifier la qualification sur ce
+  split. Toute évolution nécessite un nouveau holdout indépendant.
+- **Portée du 99,436 %** : Recall candidat sur les 80,241 % de dossiers V3
+  exacts, pas précision `AUTO_MATCH` et pas taux d'automatisation global.
 - **Modeles aval geles**: aucun changement ranker/decider/risk/accepteur avant
-  Recall@100 dev >=99,0 %.
+  décision explicite d'ouvrir la phase aval sous un nouveau contrat.
 - **Decision PIVOT scopee**: elle invalide l'admission/fusion des candidats
   denses V9 testes, pas leur signal de scoring ni le pipeline sparse/XGBoost.
 - **Comparaison retrieval uniquement a budget constant**: un gain avec 100
@@ -358,13 +403,16 @@ Recall@100.
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
 
 ## Prochaines etapes
-1. Traiter séparément les 6 vérités V2 non vues: alias, source et
-   localisation.
-2. Pré-enregistrer sur le train V2 une admission dédiée aux 51 vérités vues
-   puis éliminées; ne l'ouvrir sur dev qu'après gel.
-3. Continuer de publier côte à côte la métrique historique et la métrique V2.
-4. Ne consulter le test qu'après Recall@100 dev >=99,0 %, gel du modèle et du
-   manifeste.
+1. Ne plus toucher au test final actuel.
+2. Auditer sur train/dev la stabilité des preuves directes des établissements
+   fermés et des mégapoles, sans apprendre de leurs résultats test.
+3. Décider si un registre sourcé et versionné d'alias, d'enseignes et
+   d'historique d'établissement est justifié.
+4. Pré-enregistrer toute qualification V4 sur train/dev et constituer un
+   nouveau holdout indépendant avant validation.
+5. Après stabilité de la couverture, ouvrir sous contrat séparé le ranker et
+   l'accepteur pour mesurer la couverture `AUTO_MATCH` à précision SIRET
+   contrôlée.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
