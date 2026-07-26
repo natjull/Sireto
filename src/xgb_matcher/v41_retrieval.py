@@ -384,6 +384,7 @@ class V41CandidateRetriever:
         config: V41RetrievalConfig,
         sparse_pool_builder: SparsePoolBuilder = build_candidate_pool,
         in_memory_tfidf_cache: dict[tuple[str, str], tuple] | None = None,
+        max_in_memory_tfidf_partitions: int = 20,
     ) -> None:
         self.partitioned_store = partitioned_store
         self.global_store = global_store
@@ -394,6 +395,14 @@ class V41CandidateRetriever:
             if in_memory_tfidf_cache is not None
             else {}
         )
+        if max_in_memory_tfidf_partitions <= 0:
+            raise ValueError("max_in_memory_tfidf_partitions must be positive")
+        self._max_in_memory_tfidf_partitions = max_in_memory_tfidf_partitions
+
+    def _trim_tfidf_cache(self) -> None:
+        while len(self._tfidf_cache) > self._max_in_memory_tfidf_partitions:
+            oldest = next(iter(self._tfidf_cache))
+            self._tfidf_cache.pop(oldest, None)
 
     def build(
         self,
@@ -401,6 +410,7 @@ class V41CandidateRetriever:
         crm_row: dict[str, Any],
         crm_pre: dict[str, Any],
         input_siret: object,
+        input_qualification: InputSiretQualification | None = None,
         gt_siret: str | None = None,
         persistent_cache: Any = None,
         timer: Any = None,
@@ -415,7 +425,9 @@ class V41CandidateRetriever:
             persistent_cache=persistent_cache,
             timer=timer,
         )
-        qualification = self.global_store.qualify_input_sirets([input_siret])[0]
+        qualification = input_qualification or self.global_store.qualify_input_sirets(
+            [input_siret]
+        )[0]
 
         candidate_by_siret: dict[str, dict[str, Any]] = {
             str(candidate.get("siret") or ""): dict(candidate)
@@ -543,15 +555,6 @@ class V41CandidateRetriever:
                     alias_address_candidates,
                 )
 
-        # Hydrate sparse/out-of-partition candidates from the global store.  The
-        # local row remains a safe fallback if a development fixture is partial.
-        details = self.global_store.get_candidate_details(
-            list(candidate_by_siret)
-        )
-        for siret, detail in details.items():
-            existing = candidate_by_siret.get(siret, {})
-            candidate_by_siret[siret] = {**existing, **detail}
-
         # Strict final safety boundary: every channel is reduced to candidates
         # proven active in the current global/local snapshot.
         active_sirets = {
@@ -599,6 +602,7 @@ class V41CandidateRetriever:
             raise AssertionError("V4.1 candidates must be unique")
         if any(not _is_active(candidate) for candidate in candidates):
             raise AssertionError("V4.1 final candidates must all be active")
+        self._trim_tfidf_cache()
 
         return V41CandidatePoolResult(
             candidates=candidates,

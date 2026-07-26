@@ -213,12 +213,12 @@ def test_variant_c_uses_closed_alias_but_outputs_only_unique_active_candidates(
     }
     assert all(candidate["etat_admin"] == "A" for candidate in result.candidates)
     assert len(result.candidates) <= 2
-    hydrated = next(
+    sparse_candidate = next(
         candidate
         for candidate in result.candidates
         if candidate["siret"] == "22222222200001"
     )
-    assert hydrated["denomination"] == "AUTRE ENTREPRISE"
+    assert sparse_candidate["denomination"] == "LOCAL STALE NAME"
 
 
 def test_variant_b_active_input_has_direct_and_siren_channels(
@@ -301,3 +301,32 @@ def test_variant_c_reruns_sparse_retrieval_with_closed_alias(
     assert any("RUE DU TEST" in address for _name, address in calls[1:])
     assert "22222222200001" in result.channels["closed_alias_name"]
     assert "22222222200001" in result.channels["closed_alias_address"]
+
+
+def test_retriever_bounds_the_in_memory_tfidf_cache(
+    global_database: Path,
+) -> None:
+    shared_cache = {
+        ("main", f"partition-{index}"): ("fixture",)
+        for index in range(5)
+    }
+
+    def sparse_builder(*_args, **_kwargs) -> CandidatePoolResult:
+        return CandidatePoolResult(candidates=[])
+
+    with V41GlobalCandidateStore(global_database) as store:
+        retriever = V41CandidateRetriever(
+            partitioned_store=object(),
+            global_store=store,
+            config=V41RetrievalConfig(),
+            sparse_pool_builder=sparse_builder,
+            in_memory_tfidf_cache=shared_cache,
+            max_in_memory_tfidf_partitions=2,
+        )
+        retriever.build(
+            crm_row={},
+            crm_pre={},
+            input_siret="invalid",
+        )
+
+    assert len(shared_cache) == 2

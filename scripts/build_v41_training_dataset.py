@@ -572,6 +572,10 @@ def build_dataset(
         benchmark,
         crm_source=crm_source,
     )
+    queries = queries.sort_values(
+        ["crm_insee", "crm_postcode", "query_id"],
+        kind="stable",
+    ).reset_index(drop=True)
     signature = retrieval_signature(
         retrieval_config,
         partitions_signature=partitions_signature,
@@ -605,6 +609,16 @@ def build_dataset(
 
     labels_by_query = labels.set_index("query_id")
     query_state: dict[str, tuple[str | None, str | None, str]] = {}
+    qualification_by_query: dict[str, Any] = {}
+    if hasattr(retriever, "global_store") and hasattr(
+        retriever.global_store, "qualify_input_sirets"
+    ):
+        qualifications = retriever.global_store.qualify_input_sirets(
+            queries["input_siret"].tolist()
+        )
+        qualification_by_query = dict(
+            zip(queries["query_id"].astype(str), qualifications, strict=True)
+        )
     candidate_writer = CandidateWriter(staging / "candidates.parquet")
     candidate_buffer: list[dict[str, Any]] = []
     retrieval_misses = 0
@@ -623,14 +637,19 @@ def build_dataset(
                 "postcode": query.crm_postcode,
                 "insee": query.crm_insee,
             }
-            result = retriever.build(
-                crm_row=crm_row,
-                crm_pre=preprocess_crm_row(crm_row),
-                input_siret=query.input_siret,
+            retrieval_kwargs = {
+                "crm_row": crm_row,
+                "crm_pre": preprocess_crm_row(crm_row),
+                "input_siret": query.input_siret,
                 # Ground truth is deliberately absent from the retrieval call.
-                gt_siret=None,
-                persistent_cache=persistent_cache,
-            )
+                "gt_siret": None,
+                "persistent_cache": persistent_cache,
+            }
+            if query_id in qualification_by_query:
+                retrieval_kwargs["input_qualification"] = (
+                    qualification_by_query[query_id]
+                )
+            result = retriever.build(**retrieval_kwargs)
             if result.sparse_result.gt_was_injected:
                 raise ValueError("Positive injection is forbidden in V4.1")
             candidates = list(result.candidates)
