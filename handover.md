@@ -16,10 +16,42 @@ Ses pools denses multicanaux ne sont pas promus. Le rapport reste
 `reports/v9/v9_go_pivot_stop.md`.
 
 V7/V8b et Route B restent physiquement disponibles comme baselines legacy.
-Le ranker, le decider, le risk model et l'accepteur n'ont pas été modifiés
-pendant le gate retrieval.
+Le gate retrieval n'a modifié aucun modèle aval. La phase aval est désormais
+ouverte sous le contrat séparé
+`docs/downstream_selective_matching_contract.md`, sans réutiliser le test
+sélectif consommé.
 
 ## Actions terminees (fenetre recente)
+- **Socle de l'expérience aval E1/E2** : builder train/dev alimenté par les
+  listes top-100 gelées, provenance alignée sur les sept canaux sparse
+  réellement certifiés, ranker déterministe par défaut, folds OOF groupés par
+  SIREN et courbes accepteur aux points 99,0/99,5/99,8 %. Le canal dense
+  abandonné n'est plus utilisé comme faux signal de provenance. Le canal
+  `current_sparse` audité peut servir directement de baseline train, sans
+  recalcul redondant. Suite complète à 120 tests passants. *(commits GitHub :
+  `0a75b73`, `dbd8906`, `2c24052`)*
+- **Contrats aval exact-SIRET renforcés** : déduplication obligatoire des SIRET
+  avant toute scène, plafond absolu 100, preuves top-1/top-2 et deltas
+  nom/adresse transportés jusqu'à l'accepteur, folds OOF par SIREN et
+  évaluation du holdout final désactivée par défaut. Une autorisation liée à
+  un nouveau dataset est obligatoire pour l'ouvrir; le test sélectif consommé
+  est explicitement refusé. Suite complète à 119 tests passants. *(commit
+  GitHub : `aeeaf0f`)*
+- **Contrat matching aval gelé** : trajectoire `top-100 gelé → ranker SIRET
+  unique → accepteur exact-SIRET`, première expérience sans sémantique ni GPU,
+  vraies scènes OOF, publication end-to-end et nouveau holdout indépendant
+  obligatoire. *(commit GitHub : `c18bf28`)*
+- **Audit reproductible de l'architecture aval** : la référence historique
+  contient 1 428/2 512 scènes avec le même SIRET en top-1 et top-2. Toutes sont
+  AUTO. Sur les scènes réellement distinctes, la couverture tombe à 40,959 %
+  et la précision brute à 98,649 %. Le fichier versionné donne 1 866/1 872 =
+  99,679 %, pas 99,84 %. Le decider garde toutefois un signal utile de +3,03 à
+  +4,66 points Hit@1 sur les mêmes scènes. Les risk models ciblent le SIREN et
+  1 539/16 621 lignes V7 ont le bon SIREN mais le mauvais SIRET. Verdict :
+  `PIVOT AVAL`, conserver les preuves dans `ranker final + accepteur
+  exact-SIRET`. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/downstream_architecture_audit_a59fb0f`.
+  *(commits GitHub : runner/tests `a59fb0f`, rapport `e186439`)*
 - **Audit de stabilité V3 limité à train/dev** : décomposition reproductible
   des pertes entre contradictions structurelles V2 et absence de preuve V3,
   avec refus explicite du split test. La couverture V3 vaut 79,632 % sur train
@@ -354,6 +386,19 @@ pendant le gate retrieval.
   `41ff2e1`)*
 - `reports/recall100/final_go_pivot_stop.md` *(rapport dev historique marqué
   supersédé, commit GitHub : `50e804b`)*
+- `scripts/audit_downstream_architecture.py`,
+  `tests/test_downstream_architecture_audit.py` *(commits GitHub :
+  `a59fb0f`, `aeeaf0f`)*
+- `reports/v9/downstream_architecture_audit.md` *(commit GitHub :
+  `e186439`)*
+- `docs/downstream_selective_matching_contract.md` *(commit GitHub :
+  `c18bf28`)*
+- `scripts/build_downstream_selective_dataset.py`,
+  `tests/test_downstream_selective_dataset.py` *(commit GitHub :
+  `0a75b73`)*
+- `scripts/train_v9_ranker.py`, `src/xgb_matcher/v9_scene.py`,
+  `scripts/train_v9_acceptor.py`, `src/xgb_matcher/v9_acceptor.py`
+  *(commits GitHub : `aeeaf0f`, `0a75b73`, `dbd8906`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -371,13 +416,17 @@ pendant le gate retrieval.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Aucun run Recall@100 n'est en cours.
+- Construction des entrées train E1 sur le Mac/SSD, sans test :
+  `channel_audit_k5000_train_c33b80855f560074_aeeaf0f` est en cours ;
+  `closed_overlay_channel_audit_k5000_train_c33b80855f560074_aeeaf0f`
+  est terminé.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
 - Le diagnostic train/dev post-certification est terminé. Il ne justifie ni
   une nouvelle architecture de retrieval, ni un relâchement mécanique des
   seuils de preuve.
-- Aucun travail aval ranker/decider/accepteur n'est engagé.
+- Aucun modèle E1/E2 n'est encore entraîné : le dataset top-100 train/dev doit
+  d'abord être publié sans perte de candidats.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -387,8 +436,9 @@ pendant le gate retrieval.
   split. Toute évolution nécessite un nouveau holdout indépendant.
 - **Portée du 99,436 %** : Recall candidat sur les 80,241 % de dossiers V3
   exacts, pas précision `AUTO_MATCH` et pas taux d'automatisation global.
-- **Modeles aval geles**: aucun changement ranker/decider/risk/accepteur avant
-  décision explicite d'ouvrir la phase aval sous un nouveau contrat.
+- **Modèles historiques gelés** : aucun modèle legacy n'est modifié. La phase
+  aval E1/E2 est ouverte sous
+  `docs/downstream_selective_matching_contract.md`.
 - **Decision PIVOT scopee**: elle invalide l'admission/fusion des candidats
   denses V9 testes, pas leur signal de scoring ni le pipeline sparse/XGBoost.
 - **Comparaison retrieval uniquement a budget constant**: un gain avec 100
@@ -418,16 +468,14 @@ pendant le gate retrieval.
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
-2. Définir le contrat d'un registre sourcé et versionné d'alias, d'enseignes,
-   d'exploitants et d'historique d'établissement; aucun alias ne doit être
-   appris du hit/miss retrieval.
-3. Construire sur train/dev un audit d'apport de ce registre, sans réouvrir
-   automatiquement les dossiers `UNRESOLVED`.
-4. Pré-enregistrer toute qualification V4 sur train/dev et constituer un
-   nouveau holdout indépendant avant validation.
-5. Après stabilité de la couverture, ouvrir sous contrat séparé le ranker et
-   l'accepteur pour mesurer la couverture `AUTO_MATCH` à précision SIRET
-   contrôlée.
+2. Terminer le canal train V7, appliquer une fois l'admission gelée et publier
+   le dataset E1 train/dev.
+3. Entraîner le ranker final sans sémantique, comparer sur dev ordre retrieval,
+   ancien ranker, ancien decider et nouveau ranker.
+4. Si E1 passe, construire les scènes OOF et comparer logistique/XGBoost pour
+   l'accepteur exact-SIRET aux points 99,0/99,5/99,8 % observés.
+5. Ne constituer un nouveau holdout indépendant qu'après gel du bundle et du
+   seuil E2.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
