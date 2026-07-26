@@ -239,6 +239,15 @@ def test_dry_evaluation_writes_hashed_artifacts_without_injection(
     assert summary["selection"]["selected_variant"] == "A"
     assert manifest["split"] == "dev"
     assert manifest["positive_injection"] is False
+    signatures = {
+        manifest["retrieval"][variant]["v41_signature"]
+        for variant in ("A", "B", "C")
+    }
+    assert len(signatures) == 3
+    assert {
+        manifest["retrieval"][variant]["v41_config"]["variant"]
+        for variant in ("A", "B", "C")
+    } == {"A", "B", "C"}
     assert manifest["outputs"]["raw_results.parquet"] == file_sha256(
         output / "raw_results.parquet"
     )

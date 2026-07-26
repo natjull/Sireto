@@ -69,13 +69,20 @@ def annotate_fused_candidate(candidate: dict, hit: FusedHit) -> dict:
     out["rrf_score"] = float(hit.rrf_score)
     out["retrieval_rank"] = int(hit.rank)
     out["retrieval_source"] = hit.source
-    out["sparse_rank"] = hit.channel_ranks.get("sparse")
+    sparse_ranks = [
+        rank
+        for channel, rank in hit.channel_ranks.items()
+        if channel == "sparse" or channel.startswith("sparse_")
+    ]
+    out["sparse_rank"] = min(sparse_ranks) if sparse_ranks else None
+    out["sparse_name_rank"] = hit.channel_ranks.get("sparse_name")
+    out["sparse_address_rank"] = hit.channel_ranks.get("sparse_address")
     out["dense_rank"] = hit.channel_ranks.get("dense")
     out["global_siren_rank"] = hit.channel_ranks.get("global_siren")
     out["rescue_rank"] = hit.channel_ranks.get("rescue")
     out["retrieval_channel_count"] = len(hit.channel_ranks)
     out["retrieval_agreement"] = int(
-        "sparse" in hit.channel_ranks and "dense" in hit.channel_ranks
+        bool(sparse_ranks) and "dense" in hit.channel_ranks
     )
     return out
 

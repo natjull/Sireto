@@ -14,6 +14,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import Enum
+import hashlib
+import json
 from pathlib import Path
 import re
 from typing import Any, Callable, Iterable, Mapping, Sequence
@@ -81,6 +83,7 @@ class V41RetrievalConfig:
             sparse_retrieval_enabled=True,
             dense_retrieval_enabled=False,
             fusion_mode="rrf",
+            sparse_channel_fusion_mode="separate_rrf",
             retrieval_budget=self.max_candidates,
             prefilter_k=self.sparse_per_channel_k,
             prefilter_union_cap=None,
@@ -90,6 +93,26 @@ class V41RetrievalConfig:
             mega_insee_policy="full_insee",
             rrf_k=self.rrf_k,
         )
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "schema_version": "v4.1-retrieval-config-1",
+            "variant": self.variant.value,
+            "max_candidates": self.max_candidates,
+            "sparse_per_channel_k": self.sparse_per_channel_k,
+            "input_siren_site_limit": self.input_siren_site_limit,
+            "rrf_k": self.rrf_k,
+            "sparse_config": self.sparse_config().to_dict(),
+        }
+
+    def signature(self) -> str:
+        payload = json.dumps(
+            self.to_dict(),
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=True,
+        )
+        return hashlib.sha256(payload.encode("utf-8")).hexdigest()
 
 
 @dataclass
@@ -206,6 +229,35 @@ class V41GlobalCandidateStore:
             row["siret"]: row
             for raw in table.to_pylist()
             if (row := self._coerce_row(raw)).get("siret")
+        }
+
+    def get_candidate_states(
+        self,
+        sirets: Sequence[str],
+    ) -> dict[str, str]:
+        """Return current administrative states with a narrow batch query."""
+
+        normalized = list(
+            dict.fromkeys(
+                siret
+                for value in sirets
+                if (siret := normalize_input_siret(value)) is not None
+            )
+        )
+        if not normalized:
+            return {}
+        rows = self._connection.execute(
+            """
+            SELECT siret, etat_admin
+            FROM candidates
+            WHERE siret IN (SELECT unnest(?))
+            ORDER BY siret
+            """,
+            [normalized],
+        ).fetchall()
+        return {
+            str(siret).zfill(14): str(state or "").strip().upper()
+            for siret, state in rows
         }
 
     def qualify_input_sirets(
@@ -557,10 +609,16 @@ class V41CandidateRetriever:
 
         # Strict final safety boundary: every channel is reduced to candidates
         # proven active in the current global/local snapshot.
+        current_states = self.global_store.get_candidate_states(
+            list(candidate_by_siret)
+        )
+        for siret, state in current_states.items():
+            if siret in candidate_by_siret:
+                candidate_by_siret[siret]["etat_admin"] = state
         active_sirets = {
             siret
-            for siret, candidate in candidate_by_siret.items()
-            if siret and _is_active(candidate)
+            for siret, state in current_states.items()
+            if state == "A" and siret in candidate_by_siret
         }
         filtered_channels = {
             channel: [

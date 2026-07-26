@@ -684,9 +684,17 @@ def build_candidate_pool(
                 if siret in index_by_siret
             ]
             budget = config.retrieval_budget or config.prefilter_k
+            sparse_channels = (
+                {
+                    "sparse_name": name_idx,
+                    "sparse_address": addr_idx,
+                }
+                if config.sparse_channel_fusion_mode == "separate_rrf"
+                else {"sparse": sparse_idx}
+            )
             fused_hits = reciprocal_rank_fusion(
                 {
-                    "sparse": sparse_idx,
+                    **sparse_channels,
                     "dense": dense_idx,
                     "rescue": rescue_idx,
                 },

@@ -142,3 +142,71 @@ def test_dense_only_rrf_has_defined_sparse_scores(monkeypatch) -> None:
         candidate["retrieval_source"] == "dense"
         for candidate in result.candidates
     )
+
+
+def test_separate_sparse_rrf_passes_name_and_address_as_distinct_channels(
+    monkeypatch,
+) -> None:
+    candidates = [
+        {
+            "siret": f"0100100000{index:04d}",
+            "siren": "010010000",
+            "denomination": f"ENTREPRISE {index}",
+            "etat_admin": "A",
+        }
+        for index in range(60)
+    ]
+    monkeypatch.setattr(
+        "src.xgb_matcher.retrieval._get_tfidf_artifacts",
+        lambda *_args, **_kwargs: (
+            object(),
+            object(),
+            [],
+            None,
+            None,
+            object(),
+            object(),
+        ),
+    )
+    monkeypatch.setattr(
+        "src.xgb_matcher.retrieval.prefilter_candidates_tfidf_scored",
+        lambda *_args, **_kwargs: [(0, 0.9), (1, 0.8)],
+    )
+    monkeypatch.setattr(
+        "src.xgb_matcher.retrieval.prefilter_candidates_address_tfidf_scored",
+        lambda *_args, **_kwargs: [(1, 90.0), (2, 80.0)],
+    )
+    config = RetrievalConfigV1(
+        fusion_mode="rrf",
+        sparse_channel_fusion_mode="separate_rrf",
+        retrieval_budget=10,
+        prefilter_k=50,
+        prefilter_trigger_size=1,
+        min_candidates=10,
+    )
+
+    result = build_candidate_pool(
+        _FakeCandidateStore(candidates),
+        {
+            "crm_name": "ENTREPRISE",
+            "insee": "01001",
+            "postcode": "01000",
+        },
+        {
+            "crm_addr": "1 RUE TEST",
+            "crm_street_num": "",
+            "crm_street_name": "",
+        },
+        config,
+        {},
+    )
+
+    agreed = next(
+        candidate
+        for candidate in result.candidates
+        if candidate["siret"] == candidates[1]["siret"]
+    )
+    assert agreed["retrieval_source"] == "sparse_address+sparse_name"
+    assert agreed["sparse_name_rank"] == 2
+    assert agreed["sparse_address_rank"] == 1
+    assert agreed["sparse_rank"] == 1

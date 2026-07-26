@@ -54,3 +54,64 @@ def test_rrf_config_roundtrip_and_validation():
     assert restored.signature().hash == config.signature().hash
     with pytest.raises(ValueError, match="fusion_mode"):
         RetrievalConfigV1(fusion_mode="unknown")
+
+
+def test_sparse_channel_fusion_mode_is_signed_but_does_not_rebuild_matrices():
+    legacy = RetrievalConfigV1(sparse_channel_fusion_mode="max_score")
+    separated = RetrievalConfigV1(sparse_channel_fusion_mode="separate_rrf")
+
+    assert RetrievalConfigV1.from_dict(separated.to_dict()) == separated
+    assert legacy.signature().hash != separated.signature().hash
+    assert legacy.tfidf_artifact_hash() == separated.tfidf_artifact_hash()
+    with pytest.raises(ValueError, match="sparse_channel_fusion_mode"):
+        RetrievalConfigV1(sparse_channel_fusion_mode="unknown")
+
+
+def test_separate_sparse_annotation_uses_best_sparse_rank_and_dense_agreement():
+    hit = reciprocal_rank_fusion(
+        {
+            "sparse_name": ["truth", "other"],
+            "sparse_address": ["other", "truth"],
+            "dense": ["truth"],
+        },
+        budget=2,
+    )[0]
+
+    annotated = annotate_fused_candidate({"siret": "truth"}, hit)
+
+    assert annotated["sparse_rank"] == 1
+    assert annotated["sparse_name_rank"] == 1
+    assert annotated["sparse_address_rank"] == 2
+    assert annotated["retrieval_agreement"] == 1
+
+
+def test_fr029212_synthetic_regression_separate_channels_recover_truth():
+    """Model the audited ranks without using or tuning against holdout data."""
+
+    truth = "truth"
+    common = [f"mall-{index:03d}" for index in range(200)]
+    name = [*common[:28], truth, *common[28:]]
+    address = [*common[:127], truth, *common[127:]]
+    rescue = [*common[:132], truth, *common[132:]]
+
+    legacy = reciprocal_rank_fusion(
+        {"sparse": address, "rescue": rescue},
+        budget=100,
+    )
+    separated = reciprocal_rank_fusion(
+        {
+            "sparse_name": name,
+            "sparse_address": address,
+            "rescue": rescue,
+        },
+        budget=100,
+    )
+
+    assert truth not in {hit.key for hit in legacy}
+    separated_truth = next(hit for hit in separated if hit.key == truth)
+    assert separated_truth.rank <= 100
+    assert separated_truth.channel_ranks == {
+        "sparse_name": 29,
+        "sparse_address": 128,
+        "rescue": 133,
+    }

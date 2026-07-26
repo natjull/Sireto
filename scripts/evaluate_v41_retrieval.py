@@ -577,8 +577,10 @@ def evaluate(
         "cache_dir": str(cache_dir),
         "retrieval": {
             variant: {
-                "config": config.to_dict(),
-                "signature": config.signature().hash,
+                "v41_config": config_by_variant[variant].to_dict(),
+                "v41_signature": config_by_variant[variant].signature(),
+                "sparse_config": config.to_dict(),
+                "sparse_signature": config.signature().hash,
                 "tfidf_artifact_hash": config.tfidf_artifact_hash(),
             }
             for variant, config in (

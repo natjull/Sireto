@@ -109,12 +109,19 @@ def global_database(tmp_path: Path) -> Path:
 
 
 def test_v41_config_is_active_only_isolated_and_capped() -> None:
-    config = V41RetrievalConfig(max_candidates=100).sparse_config()
+    v41_config = V41RetrievalConfig(max_candidates=100)
+    config = v41_config.sparse_config()
 
     assert config.include_closed is False
     assert config.retrieval_budget == 100
     assert config.prefilter_trigger_size == 1
+    assert config.sparse_channel_fusion_mode == "separate_rrf"
     assert config.version == "v4.1-active-only-1"
+    assert v41_config.to_dict()["variant"] == "A"
+    assert len(v41_config.signature()) == 64
+    assert v41_config.signature() != V41RetrievalConfig(
+        variant=V41RetrievalVariant.B_INPUT_EVIDENCE,
+    ).signature()
     assert config.signature().hash != RetrievalConfigV1(
         include_closed=False,
         retrieval_budget=100,
@@ -167,6 +174,49 @@ def test_active_siblings_are_filtered_before_limit(global_database: Path) -> Non
         "11111111100003"
     ]
     assert siblings["111111111"][0]["etat_admin"] == "A"
+
+
+def test_global_candidate_states_are_current_and_batch_only(
+    global_database: Path,
+) -> None:
+    with V41GlobalCandidateStore(global_database) as store:
+        states = store.get_candidate_states(
+            ["11111111100001", "11111111100003", "invalid"]
+        )
+
+    assert states == {
+        "11111111100001": "F",
+        "11111111100003": "A",
+    }
+
+
+def test_partition_stale_active_is_excluded_when_global_store_is_closed(
+    global_database: Path,
+) -> None:
+    stale_partition_candidate = _candidate(
+        "11111111100001",
+        state="A",
+        name="STALE ACTIVE PARTITION",
+    )
+
+    def sparse_builder(*_args, **_kwargs) -> CandidatePoolResult:
+        return CandidatePoolResult(candidates=[stale_partition_candidate])
+
+    with V41GlobalCandidateStore(global_database) as store:
+        retriever = V41CandidateRetriever(
+            partitioned_store=object(),
+            global_store=store,
+            config=V41RetrievalConfig(),
+            sparse_pool_builder=sparse_builder,
+        )
+        result = retriever.build(
+            crm_row={},
+            crm_pre={},
+            input_siret="invalid",
+        )
+
+    assert result.candidates == []
+    assert result.channels["sparse_active"] == []
 
 
 def test_variant_c_uses_closed_alias_but_outputs_only_unique_active_candidates(

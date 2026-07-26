@@ -67,6 +67,7 @@ class RetrievalConfigV1:
     dense_retrieval_enabled: bool = False
     dense_top_k: int = 500
     fusion_mode: str = "legacy_union"
+    sparse_channel_fusion_mode: str = "max_score"
     retrieval_budget: Optional[int] = None
     rrf_k: int = 60
 
@@ -85,6 +86,10 @@ class RetrievalConfigV1:
     def __post_init__(self) -> None:
         if self.fusion_mode not in {"legacy_union", "rrf"}:
             raise ValueError("fusion_mode must be 'legacy_union' or 'rrf'")
+        if self.sparse_channel_fusion_mode not in {"max_score", "separate_rrf"}:
+            raise ValueError(
+                "sparse_channel_fusion_mode must be 'max_score' or 'separate_rrf'"
+            )
         if self.retrieval_budget is not None and self.retrieval_budget <= 0:
             raise ValueError("retrieval_budget must be positive")
         if (
@@ -138,6 +143,7 @@ class RetrievalConfigV1:
             "dense_retrieval_enabled": self.dense_retrieval_enabled,
             "dense_top_k": self.dense_top_k,
             "fusion_mode": self.fusion_mode,
+            "sparse_channel_fusion_mode": self.sparse_channel_fusion_mode,
             "retrieval_budget": self.retrieval_budget,
             "rrf_k": self.rrf_k,
             "siren_global_index_path": self.siren_global_index_path,
@@ -199,6 +205,12 @@ class RetrievalConfigV1:
             dense_retrieval_enabled=bool(data.get("dense_retrieval_enabled", cls().dense_retrieval_enabled)),
             dense_top_k=int(data.get("dense_top_k", cls().dense_top_k)),
             fusion_mode=str(data.get("fusion_mode", cls().fusion_mode)),
+            sparse_channel_fusion_mode=str(
+                data.get(
+                    "sparse_channel_fusion_mode",
+                    cls().sparse_channel_fusion_mode,
+                )
+            ),
             retrieval_budget=(
                 int(data["retrieval_budget"])
                 if data.get("retrieval_budget") is not None
@@ -260,6 +272,7 @@ class RetrievalConfigV1:
         """Hash compatible with manifests written before trigger separation."""
         payload = self.to_dict()
         payload.pop("prefilter_trigger_size", None)
+        payload.pop("sparse_channel_fusion_mode", None)
         return RetrievalSignatureV1._hash_payload(payload)
 
 
