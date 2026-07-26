@@ -328,8 +328,8 @@ def evaluate(
             candidate_count_max <= 100 and above_100 == 0
         ),
         "all_scenes_scored": missing_scenes == 0,
-        "old_test_read": False,
-        "positive_injection": False,
+        "old_test_not_read": True,
+        "zero_positive_injection": True,
     }
     gates = {
         "source_identifiable_coverage_at_least_80pct": (

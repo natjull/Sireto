@@ -73,3 +73,11 @@ def test_final_verdict_separates_coverage_from_technical_result() -> None:
         source_coverage_pass=True,
         technical_pass=True,
     ) == ("STOP", "TECHNICAL_INVALID")
+
+
+def test_integrity_success_booleans_are_positive() -> None:
+    integrity = {
+        "old_test_not_read": True,
+        "zero_positive_injection": True,
+    }
+    assert all(integrity.values())
