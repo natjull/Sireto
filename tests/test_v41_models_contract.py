@@ -258,12 +258,14 @@ def test_release_manifest_allows_distinct_dataset_ids_but_checks_signatures(
         acceptor_dataset_manifest_id="acceptor-data",
         ranker_feature_order=ranker_features,
         acceptor_feature_order=["scene_signal"],
+        ranker_variant="R1",
     )
     ranker_metadata = {
         "model_bundle_id": "ranker-1",
         "dataset_manifest_id": "ranker-data",
         "retrieval_signature": "retrieval-A",
         "feature_order": ranker_features,
+        "ranker_variant": "R1",
     }
     acceptor_metadata = {
         "model_bundle_id": "acceptor-1",

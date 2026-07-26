@@ -105,7 +105,11 @@ def build_v41_candidate_features(
     }
 
 
-def validate_v41_model_feature_order(feature_order: list[str]) -> None:
+def validate_v41_model_feature_order(
+    feature_order: list[str],
+    *,
+    require_v41_features: bool = True,
+) -> None:
     """Fail closed if a raw SIRET/SIREN accidentally enters a model matrix."""
     explicitly_forbidden = {
         "input_siret",
@@ -129,9 +133,10 @@ def validate_v41_model_feature_order(feature_order: list[str]) -> None:
     )
     if leaked:
         raise ValueError(f"Raw identifiers are forbidden model features: {sorted(leaked)}")
-    missing = set(V41_CANDIDATE_FEATURE_NAMES) - set(feature_order)
-    if missing:
-        raise ValueError(f"Missing V4.1 candidate features: {sorted(missing)}")
+    if require_v41_features:
+        missing = set(V41_CANDIDATE_FEATURE_NAMES) - set(feature_order)
+        if missing:
+            raise ValueError(f"Missing V4.1 candidate features: {sorted(missing)}")
 
 
 __all__ = [

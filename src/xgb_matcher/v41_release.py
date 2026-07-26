@@ -22,6 +22,7 @@ class V41ReleaseManifest:
     acceptor_dataset_manifest_id: str
     ranker_feature_order: list[str]
     acceptor_feature_order: list[str]
+    ranker_variant: str
     schema_version: str = "v4.1-release-1"
     confidence_kind: str = V41_CONFIDENCE_KIND
 
@@ -36,8 +37,14 @@ class V41ReleaseManifest:
         acceptor_dataset_manifest_id: str,
         ranker_feature_order: list[str],
         acceptor_feature_order: list[str],
+        ranker_variant: str,
     ) -> "V41ReleaseManifest":
-        validate_v41_model_feature_order(ranker_feature_order)
+        if ranker_variant not in {"R0", "R1"}:
+            raise ValueError("ranker_variant must be R0 or R1")
+        validate_v41_model_feature_order(
+            ranker_feature_order,
+            require_v41_features=ranker_variant == "R1",
+        )
         identity = {
             "retrieval_signature": retrieval_signature,
             "ranker_bundle_id": ranker_bundle_id,
@@ -46,6 +53,7 @@ class V41ReleaseManifest:
             "acceptor_dataset_manifest_id": acceptor_dataset_manifest_id,
             "ranker_feature_order": ranker_feature_order,
             "acceptor_feature_order": acceptor_feature_order,
+            "ranker_variant": ranker_variant,
             "confidence_kind": V41_CONFIDENCE_KIND,
         }
         release_id = hashlib.sha256(
@@ -88,6 +96,10 @@ class V41ReleaseManifest:
             "ranker feature order": (
                 list(ranker_metadata.get("feature_order") or []),
                 self.ranker_feature_order,
+            ),
+            "ranker variant": (
+                ranker_metadata.get("ranker_variant"),
+                self.ranker_variant,
             ),
             "acceptor feature order": (
                 list(acceptor_metadata.get("feature_order") or []),
