@@ -42,6 +42,7 @@ def test_tfidf_artifact_hash_ignores_budget_and_prefilter_trigger() -> None:
     assert first.tfidf_artifact_hash() == second.tfidf_artifact_hash()
     legacy_payload = second.to_dict()
     legacy_payload.pop("prefilter_trigger_size")
+    legacy_payload.pop("sparse_channel_fusion_mode")
     assert second.legacy_signature_hash() == (
         type(second.signature())._hash_payload(legacy_payload)
     )

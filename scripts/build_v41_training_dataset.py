@@ -548,6 +548,76 @@ def _path_signature(path: Path) -> str:
     return digest.hexdigest()
 
 
+def validate_retrieval_gate(
+    *,
+    gate_manifest_path: Path,
+    retrieval_config: V41RetrievalConfig,
+    crm_source_sha256: str,
+    partitions_signature: str,
+    global_store_signature: str,
+) -> dict[str, Any]:
+    """Fail closed unless the exact dev-gated retrieval is being reused."""
+
+    gate_manifest_path = Path(gate_manifest_path)
+    gate = json.loads(gate_manifest_path.read_text(encoding="utf-8"))
+    if gate.get("schema_version") != "sireto-v4.1-retrieval-evaluation-1":
+        raise ValueError("Unsupported V4.1 retrieval gate manifest")
+    if gate.get("split") != "dev" or gate.get("positive_injection") is not False:
+        raise ValueError("Retrieval gate must be leak-safe and evaluated on dev")
+    outputs = gate.get("outputs") or {}
+    summary_path = gate_manifest_path.parent / "summary.json"
+    if (
+        not summary_path.is_file()
+        or outputs.get("summary.json") != file_sha256(summary_path)
+    ):
+        raise ValueError("Retrieval gate summary hash mismatch")
+    raw_path = gate_manifest_path.parent / "raw_results.parquet"
+    if (
+        not raw_path.is_file()
+        or outputs.get("raw_results.parquet") != file_sha256(raw_path)
+    ):
+        raise ValueError("Retrieval gate raw-results hash mismatch")
+    summary = json.loads(summary_path.read_text(encoding="utf-8"))
+    selection = summary.get("selection") or {}
+    variant = retrieval_config.variant.value
+    if selection.get("verdict") != "GO":
+        raise ValueError("Retrieval gate verdict is not GO")
+    if selection.get("selected_variant") != variant:
+        raise ValueError("Retrieval gate selected variant differs from --variant")
+    inputs = gate.get("inputs") or {}
+    if (inputs.get("crm_source") or {}).get("sha256") != crm_source_sha256:
+        raise ValueError("Retrieval gate CRM source hash mismatch")
+    if (inputs.get("partitions") or {}).get(
+        "runtime_signature"
+    ) != partitions_signature:
+        raise ValueError("Retrieval gate partitions signature mismatch")
+    if (inputs.get("global_store") or {}).get(
+        "runtime_signature"
+    ) != global_store_signature:
+        raise ValueError("Retrieval gate global-store signature mismatch")
+    variant_gate = (gate.get("retrieval") or {}).get(variant) or {}
+    if variant_gate.get("v41_signature") != retrieval_config.signature():
+        raise ValueError("Retrieval gate V4.1 config signature mismatch")
+    expected_full_signature = retrieval_signature(
+        retrieval_config,
+        partitions_signature=partitions_signature,
+        global_store_signature=global_store_signature,
+    )
+    if (
+        variant_gate.get("dataset_retrieval_signature")
+        != expected_full_signature
+    ):
+        raise ValueError("Retrieval gate full dataset signature mismatch")
+    return {
+        "manifest_path": str(gate_manifest_path),
+        "manifest_sha256": file_sha256(gate_manifest_path),
+        "summary_path": str(summary_path),
+        "summary_sha256": file_sha256(summary_path),
+        "selected_variant": variant,
+        "retrieval_signature": expected_full_signature,
+    }
+
+
 def build_dataset(
     *,
     benchmark_paths: Sequence[Path],
@@ -559,6 +629,7 @@ def build_dataset(
     output_root: Path,
     partitions_signature: str,
     global_store_signature: str,
+    retrieval_gate_manifest_path: Path,
 ) -> Path:
     """Build hash-addressed canonical artifacts using a frozen retriever."""
 
@@ -568,6 +639,14 @@ def build_dataset(
         denied_crm_ids=denied_ids,
     )
     crm_source = read_table(crm_source_path)
+    crm_source_sha256 = file_sha256(crm_source_path)
+    retrieval_gate = validate_retrieval_gate(
+        gate_manifest_path=retrieval_gate_manifest_path,
+        retrieval_config=retrieval_config,
+        crm_source_sha256=crm_source_sha256,
+        partitions_signature=partitions_signature,
+        global_store_signature=global_store_signature,
+    )
     queries, labels, diagnostics = canonicalize_benchmark(
         benchmark,
         crm_source=crm_source,
@@ -584,9 +663,10 @@ def build_dataset(
     input_hashes = {
         **benchmark_hashes,
         **deny_hashes,
-        "crm_source": file_sha256(crm_source_path),
+        "crm_source": crm_source_sha256,
         "partitions": partitions_signature,
         "global_store": global_store_signature,
+        "retrieval_gate_manifest": retrieval_gate["manifest_sha256"],
     }
     identity = {
         "schema_version": SCHEMA_VERSION,
@@ -785,6 +865,7 @@ def build_dataset(
                 **asdict(retrieval_config),
                 "variant": retrieval_config.variant.value,
             },
+            "retrieval_gate": retrieval_gate,
             "legacy_55_channel_projection": _LEGACY_CHANNEL_MAP,
             "row_counts": {
                 "queries": int(len(queries)),
@@ -845,6 +926,12 @@ def main() -> None:
         required=True,
     )
     parser.add_argument(
+        "--retrieval-gate-manifest",
+        type=Path,
+        required=True,
+        help="Frozen dev retrieval manifest whose selected variant is GO.",
+    )
+    parser.add_argument(
         "--cache-dir",
         type=Path,
         required=True,
@@ -880,6 +967,7 @@ def main() -> None:
             output_root=args.output_root,
             partitions_signature=partition_signature,
             global_store_signature=global_signature,
+            retrieval_gate_manifest_path=args.retrieval_gate_manifest,
         )
     print(target)
 

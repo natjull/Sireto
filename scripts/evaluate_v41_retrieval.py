@@ -33,6 +33,10 @@ from src.xgb_matcher.v41_retrieval import (  # noqa: E402
     normalize_input_siret,
 )
 from src.xgb_matcher.v9_dataset import file_sha256, read_table  # noqa: E402
+from scripts.build_v41_training_dataset import (  # noqa: E402
+    _path_signature,
+    retrieval_signature as training_retrieval_signature,
+)
 
 
 SCHEMA_VERSION = "sireto-v4.1-retrieval-evaluation-1"
@@ -539,6 +543,8 @@ def evaluate(
     summary_path = output_dir / "summary.json"
     raw.to_parquet(raw_path, index=False)
     _json_dump(summary_path, summary)
+    partitions_signature = _path_signature(partitions_dir)
+    global_store_signature = _path_signature(global_store_path)
     manifest = {
         "schema_version": SCHEMA_VERSION,
         "created_at": datetime.now(timezone.utc).isoformat(),
@@ -566,19 +572,28 @@ def evaluate(
             },
             "partitions": {
                 **_artifact_identity(partitions_dir),
+                "runtime_signature": partitions_signature,
                 "declared_sha256": (
                     benchmark_manifest.get("partitions_sha256")
                     if benchmark_manifest is not None
                     else None
                 ),
             },
-            "global_store": _artifact_identity(global_store_path),
+            "global_store": {
+                **_artifact_identity(global_store_path),
+                "runtime_signature": global_store_signature,
+            },
         },
         "cache_dir": str(cache_dir),
         "retrieval": {
             variant: {
                 "v41_config": config_by_variant[variant].to_dict(),
                 "v41_signature": config_by_variant[variant].signature(),
+                "dataset_retrieval_signature": training_retrieval_signature(
+                    config_by_variant[variant],
+                    partitions_signature=partitions_signature,
+                    global_store_signature=global_store_signature,
+                ),
                 "sparse_config": config.to_dict(),
                 "sparse_signature": config.signature().hash,
                 "tfidf_artifact_hash": config.tfidf_artifact_hash(),

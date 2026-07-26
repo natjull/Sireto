@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 
 import pandas as pd
 import pytest
@@ -12,6 +13,7 @@ from scripts.build_v41_training_dataset import (
     assert_authorized_benchmark,
     build_dataset,
     load_denylist_ids,
+    retrieval_signature,
 )
 from src.xgb_matcher.retrieval import CandidatePoolResult
 from src.xgb_matcher.v41_retrieval import (
@@ -21,6 +23,7 @@ from src.xgb_matcher.v41_retrieval import (
     V41RetrievalConfig,
     V41RetrievalVariant,
 )
+from src.xgb_matcher.v9_dataset import file_sha256
 
 
 def _candidate(siret: str, *, rank: int = 1) -> dict:
@@ -136,11 +139,79 @@ def _write_inputs(tmp_path: Path):
     return fit_path, dev_path, crm_path, deny_path
 
 
+def _write_gate(
+    tmp_path: Path,
+    *,
+    crm_path: Path,
+    config: V41RetrievalConfig,
+    partitions_signature: str,
+    global_store_signature: str,
+) -> Path:
+    gate_dir = tmp_path / "gate"
+    gate_dir.mkdir()
+    raw_path = gate_dir / "raw_results.parquet"
+    summary_path = gate_dir / "summary.json"
+    pd.DataFrame({"query_id": ["dev-1"]}).to_parquet(raw_path, index=False)
+    summary_path.write_text(
+        json.dumps(
+            {
+                "selection": {
+                    "verdict": "GO",
+                    "selected_variant": config.variant.value,
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+    manifest_path = gate_dir / "manifest.json"
+    manifest_path.write_text(
+        json.dumps(
+            {
+                "schema_version": "sireto-v4.1-retrieval-evaluation-1",
+                "split": "dev",
+                "positive_injection": False,
+                "inputs": {
+                    "crm_source": {"sha256": file_sha256(crm_path)},
+                    "partitions": {
+                        "runtime_signature": partitions_signature,
+                    },
+                    "global_store": {
+                        "runtime_signature": global_store_signature,
+                    },
+                },
+                "retrieval": {
+                    config.variant.value: {
+                        "v41_signature": config.signature(),
+                        "dataset_retrieval_signature": retrieval_signature(
+                            config,
+                            partitions_signature=partitions_signature,
+                            global_store_signature=global_store_signature,
+                        ),
+                    }
+                },
+                "outputs": {
+                    "raw_results.parquet": file_sha256(raw_path),
+                    "summary.json": file_sha256(summary_path),
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    return manifest_path
+
+
 def test_builder_keeps_misses_and_writes_canonical_hashes(tmp_path):
     fit, dev, crm, deny = _write_inputs(tmp_path)
     config = V41RetrievalConfig(
         variant=V41RetrievalVariant.B_INPUT_EVIDENCE,
         max_candidates=100,
+    )
+    gate = _write_gate(
+        tmp_path,
+        crm_path=crm,
+        config=config,
+        partitions_signature="partitions-fixture",
+        global_store_signature="global-fixture",
     )
     target = build_dataset(
         benchmark_paths=[fit, dev],
@@ -152,6 +223,7 @@ def test_builder_keeps_misses_and_writes_canonical_hashes(tmp_path):
         output_root=tmp_path / "out",
         partitions_signature="partitions-fixture",
         global_store_signature="global-fixture",
+        retrieval_gate_manifest_path=gate,
     )
     queries = pd.read_parquet(target / "queries.parquet")
     labels = pd.read_parquet(target / "labels.parquet")
@@ -175,6 +247,7 @@ def test_builder_keeps_misses_and_writes_canonical_hashes(tmp_path):
     assert manifest["diagnostics"]["match_exact_retrieval_miss_count"] == 1
     assert manifest["invariants"]["ground_truth_miss_preserved"] is True
     assert manifest["output_hashes"]["candidates.parquet"]
+    assert manifest["retrieval_gate"]["manifest_sha256"] == file_sha256(gate)
 
 
 def test_authorization_rejects_consumed_id_and_holdout_markers():
@@ -221,6 +294,33 @@ def test_full_historical_denylist_uses_only_consumed_test_rows(tmp_path):
     assert hashes
 
 
+def test_builder_rejects_gate_selected_for_another_variant(tmp_path):
+    fit, dev, crm, deny = _write_inputs(tmp_path)
+    config = V41RetrievalConfig(variant=V41RetrievalVariant.B_INPUT_EVIDENCE)
+    gate = _write_gate(
+        tmp_path,
+        crm_path=crm,
+        config=V41RetrievalConfig(
+            variant=V41RetrievalVariant.A_SPARSE_ACTIVE
+        ),
+        partitions_signature="partitions-fixture",
+        global_store_signature="global-fixture",
+    )
+    with pytest.raises(ValueError, match="selected variant"):
+        build_dataset(
+            benchmark_paths=[fit, dev],
+            crm_source_path=crm,
+            denylist_paths=[deny],
+            retriever=_FixtureRetriever(),
+            retrieval_config=config,
+            persistent_cache=None,
+            output_root=tmp_path / "out",
+            partitions_signature="partitions-fixture",
+            global_store_signature="global-fixture",
+            retrieval_gate_manifest_path=gate,
+        )
+
+
 def test_unresolved_rows_are_not_written_to_training_dataset(tmp_path):
     fit, _dev, crm, deny = _write_inputs(tmp_path)
     frame = pd.read_parquet(fit)
@@ -234,16 +334,25 @@ def test_unresolved_rows_are_not_written_to_training_dataset(tmp_path):
     crm_frame = pd.read_csv(crm, sep=";", dtype=str)
     crm_frame.loc[len(crm_frame)] = ["crm-unresolved", "12345678900012"]
     crm_frame.to_csv(crm, sep=";", index=False)
+    config = V41RetrievalConfig()
+    gate = _write_gate(
+        tmp_path,
+        crm_path=crm,
+        config=config,
+        partitions_signature="partitions-fixture",
+        global_store_signature="global-fixture",
+    )
     target = build_dataset(
         benchmark_paths=[fit],
         crm_source_path=crm,
         denylist_paths=[deny],
         retriever=_FixtureRetriever(),
-        retrieval_config=V41RetrievalConfig(),
+        retrieval_config=config,
         persistent_cache=None,
         output_root=tmp_path / "out",
         partitions_signature="partitions-fixture",
         global_store_signature="global-fixture",
+        retrieval_gate_manifest_path=gate,
     )
     labels = pd.read_parquet(target / "labels.parquet")
     assert set(labels["query_id"]) == {"q-exact"}
@@ -257,16 +366,25 @@ def test_missing_crm_ids_are_excluded_before_training(tmp_path):
         crm_record_id=None,
     )
     pd.concat([frame, missing], ignore_index=True).to_parquet(fit, index=False)
+    config = V41RetrievalConfig()
+    gate = _write_gate(
+        tmp_path,
+        crm_path=crm,
+        config=config,
+        partitions_signature="partitions-fixture",
+        global_store_signature="global-fixture",
+    )
     target = build_dataset(
         benchmark_paths=[fit],
         crm_source_path=crm,
         denylist_paths=[deny],
         retriever=_FixtureRetriever(),
-        retrieval_config=V41RetrievalConfig(),
+        retrieval_config=config,
         persistent_cache=None,
         output_root=tmp_path / "out",
         partitions_signature="partitions-fixture",
         global_store_signature="global-fixture",
+        retrieval_gate_manifest_path=gate,
     )
     manifest = __import__("json").loads((target / "manifest.json").read_text())
     assert manifest["diagnostics"]["excluded_missing_crm_record_id_count"] == 1
@@ -275,6 +393,14 @@ def test_missing_crm_ids_are_excluded_before_training(tmp_path):
 
 def test_builder_refuses_positive_injection(tmp_path):
     fit, _dev, crm, deny = _write_inputs(tmp_path)
+    config = V41RetrievalConfig()
+    gate = _write_gate(
+        tmp_path,
+        crm_path=crm,
+        config=config,
+        partitions_signature="partitions-fixture",
+        global_store_signature="global-fixture",
+    )
 
     class InjectingRetriever(_FixtureRetriever):
         def build(self, **kwargs):
@@ -288,9 +414,10 @@ def test_builder_refuses_positive_injection(tmp_path):
             crm_source_path=crm,
             denylist_paths=[deny],
             retriever=InjectingRetriever(),
-            retrieval_config=V41RetrievalConfig(),
+            retrieval_config=config,
             persistent_cache=None,
             output_root=tmp_path / "out",
             partitions_signature="partitions-fixture",
             global_store_signature="global-fixture",
+            retrieval_gate_manifest_path=gate,
         )
