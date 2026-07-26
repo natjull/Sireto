@@ -46,7 +46,25 @@ de phase : **`GO_RANKER_V4`**. Ce résultat autorise l'entraînement aval ; avec
 305 cas dev, il ne constitue pas une garantie statistique de 99 % en
 production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
 
+Le ranker V4 est également validé sur ce nouveau dev : **299/305 = 98,033 %**
+Hit@1 SIRET, contre 290/305 = 95,082 % pour l'ancien ranker compatible.
+Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
+**`GO_ACCEPTEUR_V4`**. Le holdout reste fermé. Rapport :
+`reports/v9/v4_ranker_e1_results.md`.
+
 ## Actions terminees (fenetre recente)
+- **Ranker V4 validé sur le nouveau dev** : dataset de 604 938 paires,
+  5 749 requêtes fit et 305 dev, 55 features déterministes, exactement un
+  positif réel par requête, aucune injection et aucun SIREN exact partagé.
+  Le nouveau XGBRanker atteint 299/305 = 98,033 % Hit@1 SIRET contre
+  290/305 = 95,082 % pour l'ancien ranker épinglé ; comparaison appariée :
+  dix erreurs corrigées, une créée. Verdict `GO_ACCEPTEUR_V4`. Artefacts :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/ranker_v4/1aebeada820d92a7`,
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/ranker_v4/ranker_1aebeada820d92a7_6236365`
+  et
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/ranker_v4_e1_250a05f`.
+  Suite complète à 140 tests passants. *(commits GitHub : contrat `0c90c25`,
+  builder `6236365`, évaluateur `250a05f`, rapport `13e3547`)*
 - **Gate retrieval V4 franchi sans GPU** : contrat gelé avant calcul, reprise
   des 4 932 anciennes listes et reconstruction des seuls 1 124 cas frais.
   Recall@100 : noyau historique 4 930/4 932 = 99,959 %, ajout fit
@@ -484,6 +502,7 @@ production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
 - `docs/v4_fresh_expansion_contract.md` *(commit GitHub : `1c2e84c`)*
 - `docs/v4_retrieval_reconstruction_contract.md` *(commit GitHub :
   `510868b`)*
+- `docs/v4_ranker_e1_contract.md` *(commit GitHub : `0c90c25`)*
 - `scripts/build_benchmark_v4_current_snapshot.py`,
   `tests/test_benchmark_v4_current_snapshot.py` *(commit GitHub :
   `799c32d`)*
@@ -492,6 +511,10 @@ production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
 - `scripts/prepare_v4_retrieval_inputs.py`,
   `scripts/finalize_v4_retrieval_gate.py`,
   `tests/test_v4_retrieval_gate.py` *(commit GitHub : `e566c25`)*
+- `scripts/build_v4_ranker_dataset.py`,
+  `tests/test_v4_ranker_dataset.py` *(commit GitHub : `6236365`)*
+- `scripts/evaluate_v4_ranker_e1.py`,
+  `tests/test_v4_ranker_e1.py` *(commit GitHub : `250a05f`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -505,6 +528,7 @@ production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
 - `reports/v9/v4_fresh_expansion_results.md` *(commit GitHub :
   `d8d36b9`)*
 - `reports/v9/v4_retrieval_gate_results.md` *(commit GitHub : `6948aa1`)*
+- `reports/v9/v4_ranker_e1_results.md` *(commit GitHub : `13e3547`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -527,12 +551,12 @@ production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
   sur le SSD.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
-- E1 est validé sur l'ancienne cible. E2b est refusé et aucun modèle produit
-  n'est déployé.
+- E1 historique est conservé comme baseline. Le nouveau ranker V4 est validé
+  sur `dev_new`, mais aucun modèle produit n'est déployé.
 - V4-Fresh a levé le manque d'exemples et la fuite SIREN ; le gate retrieval
-  V4 est franchi. Le prochain travail est de reconstruire le dataset candidat
-  complet pour le ranker V4, puis d'entraîner et mesurer le ranker sur
-  `dev_new`, sans ouvrir `holdout_sealed`.
+  V4 et le ranker E1 sont franchis. Le prochain travail est de reconstruire les
+  scènes `AMBIGUOUS` fit/dev, puis d'entraîner et calibrer l'accepteur
+  exact-SIRET, sans ouvrir `holdout_sealed`.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -591,19 +615,20 @@ production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
 | Qualification V4 refusée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/qualification_v4/0b333d33a56ed759/` |
 | Expansion V4-Fresh passée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/v4_fresh_expansion/14047b719ef90f6f/` |
 | Gate retrieval V4 passé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/retrieval_v4/ddefe3daaacdf5ef/` |
+| Dataset ranker V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/ranker_v4/1aebeada820d92a7/` |
+| Ranker V4 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/ranker_v4/ranker_1aebeada820d92a7_6236365/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
 2. Geler la politique V4 stricte et ne pas assouplir ses seuils sur le dev
    audité.
-3. Construire les features candidates du ranker V4 à partir des 5 749 scènes
-   fit exactes avec positif réellement présent ; exclure les deux misses au
-   lieu d'injecter leur positif.
-4. Reconstruire les scènes `AMBIGUOUS` fit pour l'accepteur, sans transformer
+3. Reconstruire les scènes `AMBIGUOUS` fit/dev pour l'accepteur, sans transformer
    `UNRESOLVED` en négatifs.
-5. Entraîner le ranker avec OOF groupé par SIREN et publier Hit@1 exact-SIRET
-   sur les 305 cas `dev_new` avant tout accepteur.
-6. Entraîner puis calibrer l'accepteur sur OOF, geler le bundle et le seuil,
+4. Produire les scènes exactes de l'accepteur à partir des prédictions OOF du
+   ranker V4 et des preuves top-1/top-2.
+5. Entraîner puis calibrer l'accepteur sur des parties disjointes du dev ;
+   publier la couverture à 99,0 %, 99,5 % et 99,8 % de précision observée.
+6. Geler le bundle et le seuil,
    puis seulement alors autoriser une ouverture unique de `holdout_sealed`.
 
 ---
