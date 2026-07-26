@@ -21,6 +21,7 @@ from src.xgb_matcher.v9_scene import (
 )
 
 E2B_CONTRACT_COMMIT = "cf91432"
+V4_E2_CONTRACT_COMMIT = "9a22fd8"
 
 
 def validate_final_holdout_authorization(
@@ -48,9 +49,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
         "--experiment",
-        choices=("e2", "e2b"),
+        choices=("e2", "e2b", "v4_e2"),
         default="e2",
-        help="E2 uses isotonic only; E2b runs the pre-registered score transforms.",
+        help=(
+            "E2 uses isotonic only; E2b and V4 E2 run the pre-registered "
+            "score transforms."
+        ),
     )
     parser.add_argument(
         "--evaluate-final-holdout",
@@ -67,7 +71,7 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    if args.experiment == "e2b":
+    if args.experiment in {"e2b", "v4_e2"}:
         expected = {
             "target_precision": (args.target_precision, 0.998),
             "min_auto_count": (args.min_auto_count, 25),
@@ -79,9 +83,14 @@ def main() -> None:
             if observed != frozen
         }
         if changed:
+            contract_commit = (
+                E2B_CONTRACT_COMMIT
+                if args.experiment == "e2b"
+                else V4_E2_CONTRACT_COMMIT
+            )
             raise ValueError(
-                "E2b parameters are frozen by contract "
-                f"{E2B_CONTRACT_COMMIT}: {changed}"
+                "Acceptor parameters are frozen by contract "
+                f"{contract_commit}: {changed}"
             )
     manifest = V9DatasetManifest.load(args.dataset / "manifest.json")
     manifest.validate(feature_order=manifest.feature_order)
@@ -118,16 +127,25 @@ def main() -> None:
         seed=args.seed,
         calibration_methods=(
             ("raw", "sigmoid", "isotonic")
-            if args.experiment == "e2b"
+            if args.experiment in {"e2b", "v4_e2"}
             else ("isotonic",)
         ),
         minimum_gate_coverage=0.25,
         evaluate_test=args.evaluate_final_holdout,
     )
     report["experiment"] = args.experiment
-    report["contract_commit"] = (
-        E2B_CONTRACT_COMMIT if args.experiment == "e2b" else None
-    )
+    report["contract_commit"] = {
+        "e2": None,
+        "e2b": E2B_CONTRACT_COMMIT,
+        "v4_e2": V4_E2_CONTRACT_COMMIT,
+    }[args.experiment]
+    if args.experiment == "v4_e2":
+        report["v9_internal_verdict"] = report["verdict"]
+        report["verdict"] = (
+            "GO_HOLDOUT_V4"
+            if report["v9_internal_verdict"] == "PASS_E2B"
+            else "PIVOT_ACCEPTEUR_V4"
+        )
     bundle.save(args.output_dir, {"training_report": report})
     scenes.to_parquet(args.output_dir / "scenes.parquet", index=False)
     (args.output_dir / "report.json").write_text(

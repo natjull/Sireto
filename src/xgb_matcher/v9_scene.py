@@ -261,13 +261,35 @@ def build_inference_scene(
 
 
 def assert_oof_training_scenes(scenes: pd.DataFrame) -> None:
-    """Reject train scenes that came from in-sample ranker predictions."""
+    """Reject train scenes that came from in-sample ranker predictions.
+
+    Exact labels require genuine OOF predictions. Ambiguous labels may use the
+    final ranker only when they were entirely excluded from ranker training.
+    """
     train = scenes[scenes["split"].eq("train")]
-    origins = set(train["prediction_origin"].dropna().astype(str))
-    if origins != {"oof"}:
+    exact = train[
+        train["label_kind"].eq(GroundTruthKind.MATCH_EXACT.value)
+    ]
+    exact_origins = set(exact["prediction_origin"].dropna().astype(str))
+    if exact_origins != {"oof"}:
         raise ValueError(
-            "All train scenes must be produced by out-of-fold ranker predictions "
-            f"(observed origins: {sorted(origins) or ['missing']})"
+            "All exact train scenes must be produced by out-of-fold ranker "
+            f"predictions (observed origins: "
+            f"{sorted(exact_origins) or ['missing']})"
+        )
+    non_exact = train[
+        ~train["label_kind"].eq(GroundTruthKind.MATCH_EXACT.value)
+    ]
+    non_exact_origins = set(
+        non_exact["prediction_origin"].dropna().astype(str)
+    )
+    allowed = {"oof", "out_of_sample_ambiguous"}
+    if not non_exact.empty and (
+        not non_exact_origins or not non_exact_origins.issubset(allowed)
+    ):
+        raise ValueError(
+            "Non-exact train scenes require OOF or ranker-unseen predictions "
+            f"(observed origins: {sorted(non_exact_origins) or ['missing']})"
         )
 
 

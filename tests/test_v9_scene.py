@@ -88,6 +88,17 @@ def test_training_scenes_must_be_oof():
     assert_oof_training_scenes(scenes)
 
 
+def test_training_scenes_allow_ranker_unseen_ambiguous():
+    scenes = pd.DataFrame(
+        {
+            "split": ["train", "train"],
+            "label_kind": ["MATCH_EXACT", "AMBIGUOUS"],
+            "prediction_origin": ["oof", "out_of_sample_ambiguous"],
+        }
+    )
+    assert_oof_training_scenes(scenes)
+
+
 def test_dev_roles_are_deterministic_and_disjoint():
     ids = pd.Series([f"q{i}" for i in range(30)])
     first = split_dev_roles(ids)
