@@ -21,19 +21,30 @@ ouverte sous le contrat séparé
 `docs/downstream_selective_matching_contract.md`, sans réutiliser le test
 sélectif consommé.
 
-L'expérience aval est arrivée à un verdict plus précis. Le ranker exact-SIRET
-passe E1 avec **83,365 % Hit@1**, soit **+2,804 points** sur l'ancien ranker.
-E2b montre que la calibration isotonic amputait la couverture : le meilleur
-score brut atteint 85/1 280 = **6,641 %** sans erreur observée, contre 2,578 %
-précédemment. Il reste sous le gate de 25 %, donc E2b conclut `STOP_E2B`.
-Mais les cinq erreurs formelles présentes dans les 320 premiers scores sont
-toutes des conflits entre le CRM, le SIRET actif du snapshot et le label
-historique ou `UNRESOLVED`. Les requêtes n'ont aucune date de référence. Le
-prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
-**`PIVOT_DATASET_AVAL`**. Aucun split test n'a été lu. Rapport :
-`reports/v9/downstream_e2b_results.md`.
+La qualification V4 « SIRET actif au snapshot » est maintenant exécutée sans
+score modèle et sans test. Elle corrige les cinq conflits bloquant E2b et
+publie 4 060 exacts train / 872 exacts dev, tous actifs et soutenus par une
+correspondance directe unique. Leur compatibilité avec le top-100 actuel est
+excellente : 4 058/4 060 = 99,951 % train et 872/872 = 100 % dev. Le ranker E1
+atteint 96,034 % / 94,954 % Hit@1 sur ce noyau. Mais V4 échoue à son gate
+pré-enregistré : couverture ~34 % au lieu de 50 %, moins de 5 000 exacts train
+et 14 SIREN actuels partagés entre les anciens splits. Verdict :
+**`STOP_V4`**, sans assouplissement post-hoc. Rapport :
+`reports/v9/benchmark_v4_current_snapshot_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Qualification V4 actuelle pré-enregistrée puis exécutée** : examen de
+  toutes les lignes actives de la partition géographique, sans top-k, rang,
+  score ni décision modèle. V4 produit 4 060/11 837 = 34,299 % exacts train et
+  872/2 565 = 33,996 % exacts dev ; 759 SIRET et 351 SIREN changent face à
+  l'historique, et les cinq conflits E2b sont corrigés. Chaque exact a une
+  preuve active unique. Gate `STOP_V4` : couverture <50 %, train <5 000 exacts
+  et 14 SIREN V4 traversent l'ancien split. Diagnostic post-qualification :
+  Recall@100 99,951 % train / 100 % dev et ranker E1 Hit@1 96,034 % /
+  94,954 %. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/qualification_v4/0b333d33a56ed759`.
+  Suite complète à 129 tests passants. *(commits GitHub : contrat `ce82b01`,
+  builder/tests `799c32d`, rapport `299bc8a`)*
 - **E2b pré-enregistré puis exécuté sans test** : comparaison fermée de la
   régression logistique standardisée et de XGBoost avec score brut, sigmoid ou
   isotonic. Le brut logistique gagne : 85/1 280 = 6,641 % AUTO à 100 % observé
@@ -433,6 +444,11 @@ prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
 - `docs/downstream_selective_matching_contract.md` *(commit GitHub :
   `c18bf28`)*
 - `docs/downstream_acceptor_e2b_contract.md` *(commit GitHub : `cf91432`)*
+- `docs/benchmark_v4_current_snapshot_policy.md` *(commit GitHub :
+  `ce82b01`)*
+- `scripts/build_benchmark_v4_current_snapshot.py`,
+  `tests/test_benchmark_v4_current_snapshot.py` *(commit GitHub :
+  `799c32d`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -441,6 +457,8 @@ prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
   *(commits GitHub : `aeeaf0f`, `0a75b73`, `dbd8906`)*
 - `reports/v9/downstream_e1_e2_results.md` *(commit GitHub : `9ab7f6a`)*
 - `reports/v9/downstream_e2b_results.md` *(commit GitHub : `ebb4bf2`)*
+- `reports/v9/benchmark_v4_current_snapshot_results.md` *(commit GitHub :
+  `299bc8a`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -459,14 +477,14 @@ prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
 
 ## Travail en cours
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
-  E1 et les accepteurs E2/E2b sont publiés sur le SSD.
+  E1, les accepteurs E2/E2b et la qualification V4 sont publiés sur le SSD.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
-- E1 est validé sur dev. E2b est arrêté avec `STOP_E2B` ; les modèles produits
-  restent expérimentaux et ne sont pas déployés.
-- Aucun nouveau tuning de l'accepteur n'est autorisé sur ce dev. Le prochain
-  chantier est une politique de vérité terrain temporelle indépendante des
-  scores, puis un nouveau jeu de validation.
+- E1 est validé sur l'ancienne cible. E2b et V4 sont arrêtés par leurs gates
+  respectifs ; aucun modèle produit n'est déployé.
+- Aucun assouplissement de V4 ni tuning accepteur n'est autorisé sur ce dev.
+  Le prochain contrat doit traiter la séparation SIREN V4 et le manque
+  d'exemples train, ou intégrer de nouvelles lignes CRM indépendantes.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -489,9 +507,12 @@ prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
   pendant l'apprentissage crée du bruit de cible. Il doit rester hors du fit
   tant qu'une validation indépendante ne lui attribue pas `NO_MATCH`,
   `AMBIGUOUS` ou `MATCH_EXACT`.
-- **Date de vérité absente** : les requêtes aval ont un champ
-  `reference_date` vide. Une politique « actif au snapshot » ou « historique à
-  la date CRM » doit être fixée avant toute correction de label.
+- **Date de vérité absente** : V4 fixe désormais explicitement la politique
+  « actif au snapshot ». Elle ne peut pas servir à reconstruire un exploitant
+  historique sans date CRM.
+- **Split historique invalidé par les nouvelles vérités** : 14 SIREN V4 exacts
+  sont partagés entre train et dev. Ils doivent être regroupés ou retirés du
+  fit avant tout nouvel apprentissage.
 - **NO_MATCH temporel**: toujours rattache au snapshot SIRENE et a la date de
   reference.
 - **Cross-encoder conditionnel**: aucune promotion sans +1 point de couverture
@@ -516,21 +537,21 @@ prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
 | Ranker E1 expérimental | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/ranker_3171ef5020c0f068_fc9cb1b/` |
 | Accepteur E2 refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_3171ef5020c0f068_fc9cb1b/` |
 | Accepteur E2b refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_e2b_3171ef5020c0f068_070c123/` |
+| Qualification V4 refusée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/qualification_v4/0b333d33a56ed759/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
-2. Geler le ranker E1 et arrêter les variantes de calibration sur le dev
-   actuel.
-3. Pré-enregistrer une politique de label temporelle indépendante du modèle.
-   Recommandation : « SIRET actif au snapshot correspondant directement au
-   nom et à l'adresse CRM » ; sans date et en cas de succession plausible,
-   classer `AMBIGUOUS`.
-4. Reconstruire les cibles d'apprentissage : exclure `UNRESOLVED` du fit,
-   conserver comme négatifs les mauvais choix face à un exact validé et les
-   vrais `NO_MATCH`/`AMBIGUOUS` validés.
-5. Constituer un nouveau holdout indépendant avec cette politique, geler les
-   preuves et seulement alors réentraîner/évaluer l'accepteur. L'ancien test
-   et le dev audité ne peuvent plus certifier une nouvelle variante.
+2. Geler la politique V4 stricte et ne pas assouplir ses seuils sur le dev
+   audité.
+3. Pré-enregistrer un contrat de données suivant : regrouper les requêtes par
+   SIREN V4 pour supprimer les 14 chevauchements, exclure `UNRESOLVED` du fit
+   et définir avant calcul le volume minimal réellement nécessaire.
+4. Option recommandée pour respecter le gate initial : apporter environ
+   2 800 nouvelles lignes CRM indépendantes, dont la règle V4 devrait qualifier
+   environ 950 exactes, afin de dépasser 5 000 exemples train sans recycler le
+   dev.
+5. Réentraîner ranker/accepteur seulement après ce nouveau gel. Le noyau V4
+   actuel peut servir de données train sûres, mais pas de validation finale.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
