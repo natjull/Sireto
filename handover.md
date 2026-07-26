@@ -21,15 +21,32 @@ ouverte sous le contrat séparé
 `docs/downstream_selective_matching_contract.md`, sans réutiliser le test
 sélectif consommé.
 
-L'expérience aval E1/E2 sur train/dev est terminée. Le ranker exact-SIRET
-passe son gate avec **83,365 % Hit@1**, contre 80,561 % pour l'ancien ranker,
-soit **+2,804 points sans régression critique**. L'accepteur échoue son gate :
-à 99,8 % de précision observée, il ne couvre que **33/1 280 = 2,578 %** de la
-moitié dev réservée au seuil, contre 25 % requis. Verdict :
-**E1 `PASS`, E2 `PIVOT_ACCEPTEUR`**. Aucun split test n'a été lu. Rapport :
-`reports/v9/downstream_e1_e2_results.md`.
+L'expérience aval est arrivée à un verdict plus précis. Le ranker exact-SIRET
+passe E1 avec **83,365 % Hit@1**, soit **+2,804 points** sur l'ancien ranker.
+E2b montre que la calibration isotonic amputait la couverture : le meilleur
+score brut atteint 85/1 280 = **6,641 %** sans erreur observée, contre 2,578 %
+précédemment. Il reste sous le gate de 25 %, donc E2b conclut `STOP_E2B`.
+Mais les cinq erreurs formelles présentes dans les 320 premiers scores sont
+toutes des conflits entre le CRM, le SIRET actif du snapshot et le label
+historique ou `UNRESOLVED`. Les requêtes n'ont aucune date de référence. Le
+prochain pivot porte donc sur la vérité terrain, pas sur un nouveau modèle :
+**`PIVOT_DATASET_AVAL`**. Aucun split test n'a été lu. Rapport :
+`reports/v9/downstream_e2b_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **E2b pré-enregistré puis exécuté sans test** : comparaison fermée de la
+  régression logistique standardisée et de XGBoost avec score brut, sigmoid ou
+  isotonic. Le brut logistique gagne : 85/1 280 = 6,641 % AUTO à 100 % observé
+  contre 33/1 280 = 2,578 % pour XGBoost isotonic, mais le gate de 25 % échoue.
+  Les 320 premiers scores ne comportent que cinq erreurs formelles ; les cinq
+  prédisent un SIRET dont le nom/adresse SIRENE correspondent directement au
+  CRM, tandis que le label désigne une autre entité, une ancienne entité ou
+  `UNRESOLVED`. Exemples : VISSELECT actif contre AVENIS fermé, PGDIS contre
+  OFFICE DEPOT, LMP SANTE actif contre LMP SANTE fermé. Verdict formel
+  `STOP_E2B`, lecture architecturale `PIVOT_DATASET_AVAL`. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_e2b_3171ef5020c0f068_070c123`.
+  Suite complète à 123 tests passants. *(commits GitHub : contrat `cf91432`,
+  code `070c123`, rapport `ebb4bf2`)*
 - **Expérience aval E1/E2 exécutée sur train/dev** : dataset immuable de
   1 438 845 paires, 100 candidats maximum, zéro doublon, zéro détail manquant
   et Recall@100 V3 de 99,162 % train / 99,572 % dev. Le ranker final atteint
@@ -415,6 +432,7 @@ moitié dev réservée au seuil, contre 25 % requis. Verdict :
   `e186439`)*
 - `docs/downstream_selective_matching_contract.md` *(commit GitHub :
   `c18bf28`)*
+- `docs/downstream_acceptor_e2b_contract.md` *(commit GitHub : `cf91432`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -422,6 +440,7 @@ moitié dev réservée au seuil, contre 25 % requis. Verdict :
   `scripts/train_v9_acceptor.py`, `src/xgb_matcher/v9_acceptor.py`
   *(commits GitHub : `aeeaf0f`, `0a75b73`, `dbd8906`)*
 - `reports/v9/downstream_e1_e2_results.md` *(commit GitHub : `9ab7f6a`)*
+- `reports/v9/downstream_e2b_results.md` *(commit GitHub : `ebb4bf2`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -440,13 +459,14 @@ moitié dev réservée au seuil, contre 25 % requis. Verdict :
 
 ## Travail en cours
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
-  E1 et l'accepteur E2 sont publiés sur le SSD.
+  E1 et les accepteurs E2/E2b sont publiés sur le SSD.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
-- E1 est validé sur dev. E2 est arrêté avec `PIVOT_ACCEPTEUR` ; les modèles
-  produits restent expérimentaux et ne sont pas déployés.
-- La prochaine expérience doit rester strictement limitée au score de
-  confiance de l'accepteur, sur le dataset et le ranker déjà gelés.
+- E1 est validé sur dev. E2b est arrêté avec `STOP_E2B` ; les modèles produits
+  restent expérimentaux et ne sont pas déployés.
+- Aucun nouveau tuning de l'accepteur n'est autorisé sur ce dev. Le prochain
+  chantier est une politique de vérité terrain temporelle indépendante des
+  scores, puis un nouveau jeu de validation.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -465,6 +485,13 @@ moitié dev réservée au seuil, contre 25 % requis. Verdict :
   candidats ne justifie pas la promotion de la variante 50.
 - **Precision strictement SIRET**: un bon SIREN mais mauvais etablissement est
   une erreur pour l'accepteur.
+- **UNRESOLVED n'est pas un négatif prouvé** : le traiter comme faux match
+  pendant l'apprentissage crée du bruit de cible. Il doit rester hors du fit
+  tant qu'une validation indépendante ne lui attribue pas `NO_MATCH`,
+  `AMBIGUOUS` ou `MATCH_EXACT`.
+- **Date de vérité absente** : les requêtes aval ont un champ
+  `reference_date` vide. Une politique « actif au snapshot » ou « historique à
+  la date CRM » doit être fixée avant toute correction de label.
 - **NO_MATCH temporel**: toujours rattache au snapshot SIRENE et a la date de
   reference.
 - **Cross-encoder conditionnel**: aucune promotion sans +1 point de couverture
@@ -488,18 +515,22 @@ moitié dev réservée au seuil, contre 25 % requis. Verdict :
 | Dataset aval E1/E2 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/downstream/3171ef5020c0f068/` |
 | Ranker E1 expérimental | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/ranker_3171ef5020c0f068_fc9cb1b/` |
 | Accepteur E2 refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_3171ef5020c0f068_fc9cb1b/` |
+| Accepteur E2b refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_e2b_3171ef5020c0f068_070c123/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
-2. Pré-enregistrer un mini-contrat `E2b` limité à l'accepteur : mêmes données,
-   mêmes prédictions OOF et même ranker ; standardiser les entrées de la
-   régression logistique et comparer score brut, sigmoid et isotonic.
-3. Retenir sur dev la méthode qui maximise la couverture sous les contraintes
-   de précision exact-SIRET et de stabilité segmentaire, ou conclure `STOP`
-   si aucune méthode ne fournit une couverture utile.
-4. Ne modifier ni le retrieval, ni le ranker E1, ni les labels durant E2b.
-5. Ne constituer un nouveau holdout indépendant qu'après gel définitif du
-   bundle et du seuil E2b ; l'ancien test reste interdit.
+2. Geler le ranker E1 et arrêter les variantes de calibration sur le dev
+   actuel.
+3. Pré-enregistrer une politique de label temporelle indépendante du modèle.
+   Recommandation : « SIRET actif au snapshot correspondant directement au
+   nom et à l'adresse CRM » ; sans date et en cas de succession plausible,
+   classer `AMBIGUOUS`.
+4. Reconstruire les cibles d'apprentissage : exclure `UNRESOLVED` du fit,
+   conserver comme négatifs les mauvais choix face à un exact validé et les
+   vrais `NO_MATCH`/`AMBIGUOUS` validés.
+5. Constituer un nouveau holdout indépendant avec cette politique, geler les
+   preuves et seulement alors réentraîner/évaluer l'accepteur. L'ancien test
+   et le dev audité ne peuvent plus certifier une nouvelle variante.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
