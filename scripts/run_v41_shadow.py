@@ -49,6 +49,8 @@ from src.xgb_matcher.v41_features import (  # noqa: E402
 )
 from src.xgb_matcher.v41_release import V41ReleaseManifest  # noqa: E402
 from src.xgb_matcher.v41_retrieval import (  # noqa: E402
+    InputSiretQualification,
+    InputSiretState,
     V41CandidateRetriever,
     V41GlobalCandidateStore,
     V41RetrievalConfig,
@@ -82,6 +84,52 @@ class V41RuntimeBundle:
     model_dir: Path | None = None
     dataset_dir: Path | None = None
     artifact_hashes: dict[str, str] | None = None
+
+
+def reconcile_inventory_qualification(
+    *,
+    inventory_row: Mapping[str, Any],
+    runtime: InputSiretQualification,
+) -> InputSiretQualification:
+    """Use the frozen full SIRENE inventory as state authority.
+
+    The global candidate store is optimized for retrieval and can legitimately
+    omit an old closed SIRET.  In that one case, preserve the inventory's
+    CLOSED state without inventing candidate details.  Any contradictory
+    current-state evidence remains a hard failure.
+    """
+
+    state_text = _first_text(
+        inventory_row.get("input_siret_state"),
+        InputSiretState.INVALID.value,
+    ).upper()
+    try:
+        inventory_state = InputSiretState(state_text)
+    except ValueError as exc:
+        raise ValueError(f"Unsupported inventory SIRET state: {state_text}") from exc
+    inventory_siret = _first_text(inventory_row.get("input_siret")) or None
+    inventory_siren = _first_text(inventory_row.get("input_siren")) or (
+        inventory_siret[:9] if inventory_siret else None
+    )
+    if inventory_siret != runtime.normalized_siret:
+        raise ValueError("Inventory/runtime normalized SIRET mismatch")
+    if inventory_state == runtime.state:
+        return runtime
+    if (
+        inventory_state == InputSiretState.CLOSED
+        and runtime.state == InputSiretState.NOT_FOUND
+    ):
+        return InputSiretQualification(
+            raw_value=runtime.raw_value,
+            normalized_siret=inventory_siret,
+            siren=inventory_siren,
+            state=InputSiretState.CLOSED,
+            candidate=None,
+        )
+    raise ValueError(
+        "Input SIRET state drift: "
+        f"inventory={inventory_state.value}, runtime={runtime.state.value}"
+    )
 
 
 def _read_json(path: Path) -> dict[str, Any]:
@@ -853,27 +901,33 @@ def run_shadow(
         if not completed <= set(eligible_ids):
             raise ValueError("Checkpoint contains excluded or unknown SERVICE IDs")
 
-        qualifications: dict[str, Any] = {}
-        if hasattr(retriever, "global_store") and hasattr(
-            retriever.global_store, "qualify_input_sirets"
-        ):
-            values = [
-                _first_text(row.get("SIRET"), row.get("input_siret"))
-                for row in scoreable.to_dict("records")
-            ]
-            qualifications = dict(
-                zip(
-                    eligible_ids,
-                    retriever.global_store.qualify_input_sirets(values),
-                    strict=True,
-                )
-            )
-
         inventory_by_id = (
             inventory.dropna(subset=["service_id"])
             .assign(service_id=lambda frame: frame["service_id"].astype(str))
             .set_index("service_id")
         )
+        qualifications: dict[str, Any] = {}
+        if hasattr(retriever, "global_store") and hasattr(
+            retriever.global_store, "qualify_input_sirets"
+        ):
+            scoreable_records = scoreable.to_dict("records")
+            runtime_qualifications = retriever.global_store.qualify_input_sirets(
+                [
+                    _first_text(row.get("SIRET"), row.get("input_siret"))
+                    for row in scoreable_records
+                ]
+            )
+            qualifications = {
+                service_id: reconcile_inventory_qualification(
+                    inventory_row=inventory_by_id.loc[service_id],
+                    runtime=runtime_qualification,
+                )
+                for service_id, runtime_qualification in zip(
+                    eligible_ids,
+                    runtime_qualifications,
+                    strict=True,
+                )
+            }
         for row in scoreable.to_dict("records"):
             service_id = str(row["service_id"])
             if service_id in completed:

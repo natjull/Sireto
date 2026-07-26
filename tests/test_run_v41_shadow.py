@@ -8,6 +8,7 @@ import pytest
 from scripts.build_v41_training_dataset import FEATURE_ORDER
 from scripts.run_v41_shadow import (
     V41RuntimeBundle,
+    reconcile_inventory_qualification,
     run_shadow,
     score_one_query,
     validate_inventory_chain,
@@ -324,6 +325,41 @@ def test_nan_crm_cells_are_empty_strings_not_literal_nan():
         for value in evidence["crm"].values()
         if isinstance(value, str)
     )
+
+
+def test_closed_inventory_state_survives_retrieval_store_omission():
+    reconciled = reconcile_inventory_qualification(
+        inventory_row={
+            "input_siret": "19541507000018",
+            "input_siren": "195415070",
+            "input_siret_state": "CLOSED",
+        },
+        runtime=InputSiretQualification(
+            raw_value="19541507000018",
+            normalized_siret="19541507000018",
+            siren="195415070",
+            state=InputSiretState.NOT_FOUND,
+        ),
+    )
+    assert reconciled.state == InputSiretState.CLOSED
+    assert reconciled.candidate is None
+
+
+def test_inventory_and_runtime_current_state_contradiction_fails_closed():
+    with pytest.raises(ValueError, match="state drift"):
+        reconcile_inventory_qualification(
+            inventory_row={
+                "input_siret": "19541507000018",
+                "input_siren": "195415070",
+                "input_siret_state": "CLOSED",
+            },
+            runtime=InputSiretQualification(
+                raw_value="19541507000018",
+                normalized_siret="19541507000018",
+                siren="195415070",
+                state=InputSiretState.ACTIVE,
+            ),
+        )
 
 
 def test_checkpoint_resume_rejects_model_identity_change(tmp_path):
