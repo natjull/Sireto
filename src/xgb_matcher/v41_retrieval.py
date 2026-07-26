@@ -383,12 +383,17 @@ class V41CandidateRetriever:
         global_store: V41GlobalCandidateStore,
         config: V41RetrievalConfig,
         sparse_pool_builder: SparsePoolBuilder = build_candidate_pool,
+        in_memory_tfidf_cache: dict[tuple[str, str], tuple] | None = None,
     ) -> None:
         self.partitioned_store = partitioned_store
         self.global_store = global_store
         self.config = config
         self._sparse_pool_builder = sparse_pool_builder
-        self._tfidf_cache: dict[tuple[str, str], tuple] = {}
+        self._tfidf_cache = (
+            in_memory_tfidf_cache
+            if in_memory_tfidf_cache is not None
+            else {}
+        )
 
     def build(
         self,
