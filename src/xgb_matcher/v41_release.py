@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import json
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -23,7 +23,8 @@ class V41ReleaseManifest:
     ranker_feature_order: list[str]
     acceptor_feature_order: list[str]
     ranker_variant: str
-    schema_version: str = "v4.1-release-1"
+    component_hashes: dict[str, str] = field(default_factory=dict)
+    schema_version: str = "v4.1-release-2"
     confidence_kind: str = V41_CONFIDENCE_KIND
 
     @classmethod
@@ -38,6 +39,7 @@ class V41ReleaseManifest:
         ranker_feature_order: list[str],
         acceptor_feature_order: list[str],
         ranker_variant: str,
+        component_hashes: Mapping[str, str] | None = None,
     ) -> "V41ReleaseManifest":
         if ranker_variant not in {"R0", "R1"}:
             raise ValueError("ranker_variant must be R0 or R1")
@@ -45,6 +47,30 @@ class V41ReleaseManifest:
             ranker_feature_order,
             require_v41_features=ranker_variant == "R1",
         )
+        normalized_hashes = {
+            str(name): str(value)
+            for name, value in sorted(dict(component_hashes or {}).items())
+        }
+        if normalized_hashes:
+            expected_components = {
+                "ranker/ranker.json",
+                "ranker/metadata.json",
+                "acceptor/acceptor_model.joblib",
+                "acceptor/metadata.json",
+            }
+            if set(normalized_hashes) != expected_components:
+                raise ValueError(
+                    "V4.1 release component hashes must cover exactly "
+                    f"{sorted(expected_components)}"
+                )
+            invalid = [
+                name
+                for name, value in normalized_hashes.items()
+                if len(value) != 64
+                or any(character not in "0123456789abcdef" for character in value)
+            ]
+            if invalid:
+                raise ValueError(f"Invalid SHA256 component hashes: {invalid}")
         identity = {
             "retrieval_signature": retrieval_signature,
             "ranker_bundle_id": ranker_bundle_id,
@@ -54,6 +80,7 @@ class V41ReleaseManifest:
             "ranker_feature_order": ranker_feature_order,
             "acceptor_feature_order": acceptor_feature_order,
             "ranker_variant": ranker_variant,
+            "component_hashes": normalized_hashes,
             "confidence_kind": V41_CONFIDENCE_KIND,
         }
         release_id = hashlib.sha256(
@@ -66,6 +93,7 @@ class V41ReleaseManifest:
         *,
         ranker_metadata: Mapping[str, Any],
         acceptor_metadata: Mapping[str, Any],
+        component_hashes: Mapping[str, str] | None = None,
     ) -> None:
         """Validate each component independently; dataset IDs need not match."""
         checks = {
@@ -117,6 +145,13 @@ class V41ReleaseManifest:
         mismatches = [
             name for name, (actual, expected) in checks.items() if actual != expected
         ]
+        if self.component_hashes:
+            observed_hashes = {
+                str(name): str(value)
+                for name, value in sorted(dict(component_hashes or {}).items())
+            }
+            if observed_hashes != self.component_hashes:
+                mismatches.append("component hashes")
         if mismatches:
             raise ValueError(f"Incompatible V4.1 release components: {mismatches}")
 
@@ -129,8 +164,9 @@ class V41ReleaseManifest:
     @classmethod
     def load(cls, path: Path) -> "V41ReleaseManifest":
         payload = json.loads(path.read_text(encoding="utf-8"))
+        payload.setdefault("component_hashes", {})
         manifest = cls(**payload)
-        if manifest.schema_version != "v4.1-release-1":
+        if manifest.schema_version not in {"v4.1-release-1", "v4.1-release-2"}:
             raise ValueError("Unsupported V4.1 release manifest")
         return manifest
 

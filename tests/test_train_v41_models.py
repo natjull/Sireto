@@ -238,3 +238,81 @@ def test_training_emits_component_safe_fit_dev_artifacts(
     assert acceptor_metadata["confidence_kind"] == V41_CONFIDENCE_KIND
     assert (output / "ranker" / "ranker.json").exists()
     assert (output / "ranker" / "metadata.json").exists()
+    model_manifest = json.loads((output / "model_manifest.json").read_text())
+    assert model_manifest["schema_version"] == "v4.1-model-bundle-manifest-1"
+    assert model_manifest["release_id"] == release.release_id
+    assert set(model_manifest["outputs"]) == {
+        "ranker/ranker.json",
+        "ranker/metadata.json",
+        "acceptor/acceptor_model.joblib",
+        "acceptor/metadata.json",
+        "ranker_predictions.parquet",
+        "acceptor_scenes.parquet",
+        "split_assignments.parquet",
+        "training_report.json",
+        "release_manifest.json",
+    }
+    assert all(
+        file_sha256(output / relative_path) == expected_hash
+        for relative_path, expected_hash in model_manifest["outputs"].items()
+    )
+
+
+def test_release_component_hashes_detect_model_tampering(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    dataset = _write_dataset(tmp_path / "dataset")
+
+    def fake_acceptor(
+        scenes,
+        *,
+        feature_order,
+        dataset_manifest_id,
+        retrieval_signature,
+        **_kwargs,
+    ):
+        return (
+            V41RawLogisticAcceptor(
+                model=_PickleableProbabilityModel(),
+                threshold=0.95,
+                feature_order=list(feature_order),
+                model_bundle_id="acceptor-synthetic",
+                dataset_manifest_id=dataset_manifest_id,
+                retrieval_signature=retrieval_signature,
+            ),
+            {"calibration_method": "raw", "final_test_evaluated": False},
+        )
+
+    monkeypatch.setattr(training, "fit_v41_raw_logistic_acceptor", fake_acceptor)
+    output = tmp_path / "output"
+    training.train_v41_models(
+        dataset_dir=dataset,
+        output_dir=output,
+        ranker_params={"n_estimators": 2, "max_depth": 2, "n_jobs": 1},
+    )
+    release = V41ReleaseManifest.load(output / "release_manifest.json")
+    ranker_metadata = json.loads((output / "ranker" / "metadata.json").read_text())
+    acceptor_metadata = json.loads(
+        (output / "acceptor" / "metadata.json").read_text()
+    )
+    observed_hashes = {
+        path: file_sha256(output / path) for path in release.component_hashes
+    }
+    release.validate_components(
+        ranker_metadata=ranker_metadata,
+        acceptor_metadata=acceptor_metadata,
+        component_hashes=observed_hashes,
+    )
+
+    ranker_path = output / "ranker" / "ranker.json"
+    ranker_path.write_bytes(ranker_path.read_bytes() + b"\n")
+    tampered_hashes = {
+        path: file_sha256(output / path) for path in release.component_hashes
+    }
+    with pytest.raises(ValueError, match="component hashes"):
+        release.validate_components(
+            ranker_metadata=ranker_metadata,
+            acceptor_metadata=acceptor_metadata,
+            component_hashes=tampered_hashes,
+        )

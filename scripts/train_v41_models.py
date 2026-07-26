@@ -6,7 +6,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
+import shutil
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Mapping, Sequence
 
@@ -59,6 +62,12 @@ DEFAULT_RANKER_PARAMS: dict[str, Any] = {
 
 def _read_manifest(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _frame_content_hash(frame: pd.DataFrame, *, sort_by: Sequence[str]) -> str:
+    ordered = frame.sort_values(list(sort_by), kind="stable").reset_index(drop=True)
+    values = pd.util.hash_pandas_object(ordered, index=False).to_numpy()
+    return hashlib.sha256(values.tobytes()).hexdigest()
 
 
 def _manifest_hash(manifest: Mapping[str, Any], filename: str) -> str | None:
@@ -667,100 +676,199 @@ def train_v41_models(
         seed=42,
     )
 
-    ranker_identity = {
-        "dataset_manifest_id": str(manifest["build_id"]),
-        "retrieval_signature": str(manifest["retrieval_signature"]),
-        "feature_order": selected_features,
-        "ranker_variant": selected_variant,
-        "seed": 42,
-    }
-    ranker_bundle_id = hashlib.sha256(
-        json.dumps(ranker_identity, sort_keys=True).encode("utf-8")
-    ).hexdigest()[:16]
-    ranker_metadata = {
-        "schema_version": "v4.1-ranker-1",
-        "model_bundle_id": ranker_bundle_id,
-        **ranker_identity,
-        "folds": 5,
-        "fold_group": "connected_component(input_siren,target_siren)",
-        "positive_injection": False,
-        "fit_scene_prediction_origin": "oof",
-        "dev_scene_prediction_origin": "out_of_sample_dev",
-        "comparison": comparison,
-    }
-    acceptor_metadata = {
-        "model_bundle_id": acceptor.model_bundle_id,
-        "dataset_manifest_id": acceptor.dataset_manifest_id,
-        "retrieval_signature": acceptor.retrieval_signature,
-        "feature_order": acceptor.feature_order,
-        "calibration_method": acceptor.calibration_method,
-        "confidence_kind": acceptor.confidence_kind,
-    }
-    release = V41ReleaseManifest.build(
-        retrieval_signature=str(manifest["retrieval_signature"]),
-        ranker_bundle_id=ranker_bundle_id,
-        acceptor_bundle_id=acceptor.model_bundle_id,
-        ranker_dataset_manifest_id=str(manifest["build_id"]),
-        acceptor_dataset_manifest_id=acceptor_dataset_manifest_id,
-        ranker_feature_order=selected_features,
-        acceptor_feature_order=acceptor.feature_order,
-        ranker_variant=selected_variant,
-    )
-    release.validate_components(
-        ranker_metadata=ranker_metadata,
-        acceptor_metadata=acceptor_metadata,
-    )
-
-    output_dir.mkdir(parents=True, exist_ok=False)
-    ranker_dir = output_dir / "ranker"
-    ranker_dir.mkdir()
-    selected_model.save_model(ranker_dir / "ranker.json")
-    (ranker_dir / "metadata.json").write_text(
-        json.dumps(ranker_metadata, indent=2, ensure_ascii=False),
-        encoding="utf-8",
-    )
-    acceptor.save(output_dir / "acceptor")
-    selected_predictions.to_parquet(
-        output_dir / "ranker_predictions.parquet",
-        index=False,
-    )
-    scenes.to_parquet(output_dir / "acceptor_scenes.parquet", index=False)
     assignments = queries[
         ["query_id", "siren_component_id", "split", "oof_fold"]
     ]
-    assignments.to_parquet(output_dir / "split_assignments.parquet", index=False)
-    release.save(output_dir / "release_manifest.json")
-    report = {
-        "schema_version": "v4.1-training-report-1",
-        "source_dataset_manifest_id": str(manifest["build_id"]),
-        "acceptor_dataset_manifest_id": acceptor_dataset_manifest_id,
-        "retrieval_signature": str(manifest["retrieval_signature"]),
-        "split": {
-            "strategy": "connected_component(input_siren,target_siren)",
-            "fit_count": int(queries["split"].eq("fit").sum()),
-            "dev_count": int(queries["split"].eq("dev").sum()),
-            "dev_fraction_target": 0.2,
-            "folds": 5,
-            "seed": 42,
-        },
-        "ranker_comparison": comparison,
-        "acceptor": acceptor_report,
-        "prechecks": {
-            "scene_count": int(len(scenes)),
-            "acceptor_eligible_count": int(len(acceptor_scenes)),
-            "review_reason_counts": scenes[
-                "precheck_review_reason"
-            ].value_counts(dropna=True).to_dict(),
-        },
-        "positive_injection": False,
-        "test_or_holdout_consumed": False,
-        "release_id": release.release_id,
+    effective_ranker_params = {
+        **DEFAULT_RANKER_PARAMS,
+        **dict(ranker_params or {}),
+        "random_state": 42,
     }
-    (output_dir / "training_report.json").write_text(
-        json.dumps(report, indent=2, ensure_ascii=False),
-        encoding="utf-8",
+    training_hashes = {
+        "dataset_outputs": {
+            str(name): str(value)
+            for name, value in sorted((manifest.get("outputs") or {}).items())
+        },
+        "split_assignments_content_sha256": _frame_content_hash(
+            assignments,
+            sort_by=("query_id",),
+        ),
+    }
+
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    staging = Path(
+        tempfile.mkdtemp(prefix=f".{output_dir.name}.tmp-", dir=output_dir.parent)
     )
-    return report
+    try:
+        ranker_dir = staging / "ranker"
+        ranker_dir.mkdir()
+        ranker_path = ranker_dir / "ranker.json"
+        selected_model.save_model(ranker_path)
+        ranker_model_sha256 = file_sha256(ranker_path)
+        ranker_identity = {
+            "dataset_manifest_id": str(manifest["build_id"]),
+            "retrieval_signature": str(manifest["retrieval_signature"]),
+            "feature_order": selected_features,
+            "ranker_variant": selected_variant,
+            "seed": 42,
+            "folds": 5,
+            "training_params": effective_ranker_params,
+            "training_hashes": training_hashes,
+            "ranker_model_sha256": ranker_model_sha256,
+            "xgboost_version": xgb.__version__,
+        }
+        ranker_bundle_id = hashlib.sha256(
+            json.dumps(
+                ranker_identity,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()[:16]
+        ranker_metadata = {
+            "schema_version": "v4.1-ranker-2",
+            "model_bundle_id": ranker_bundle_id,
+            **ranker_identity,
+            "fold_group": "connected_component(input_siren,target_siren)",
+            "positive_injection": False,
+            "fit_scene_prediction_origin": "oof",
+            "dev_scene_prediction_origin": "out_of_sample_dev",
+            "comparison": comparison,
+        }
+        ranker_metadata_path = ranker_dir / "metadata.json"
+        ranker_metadata_path.write_text(
+            json.dumps(
+                ranker_metadata,
+                indent=2,
+                ensure_ascii=False,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+
+        acceptor.save(staging / "acceptor")
+        selected_predictions.to_parquet(
+            staging / "ranker_predictions.parquet",
+            index=False,
+        )
+        scenes.to_parquet(staging / "acceptor_scenes.parquet", index=False)
+        assignments.to_parquet(
+            staging / "split_assignments.parquet",
+            index=False,
+        )
+        component_hashes = {
+            "ranker/ranker.json": ranker_model_sha256,
+            "ranker/metadata.json": file_sha256(ranker_metadata_path),
+            "acceptor/acceptor_model.joblib": file_sha256(
+                staging / "acceptor" / "acceptor_model.joblib"
+            ),
+            "acceptor/metadata.json": file_sha256(
+                staging / "acceptor" / "metadata.json"
+            ),
+        }
+        acceptor_metadata = {
+            "model_bundle_id": acceptor.model_bundle_id,
+            "dataset_manifest_id": acceptor.dataset_manifest_id,
+            "retrieval_signature": acceptor.retrieval_signature,
+            "feature_order": acceptor.feature_order,
+            "calibration_method": acceptor.calibration_method,
+            "confidence_kind": acceptor.confidence_kind,
+        }
+        release = V41ReleaseManifest.build(
+            retrieval_signature=str(manifest["retrieval_signature"]),
+            ranker_bundle_id=ranker_bundle_id,
+            acceptor_bundle_id=acceptor.model_bundle_id,
+            ranker_dataset_manifest_id=str(manifest["build_id"]),
+            acceptor_dataset_manifest_id=acceptor_dataset_manifest_id,
+            ranker_feature_order=selected_features,
+            acceptor_feature_order=acceptor.feature_order,
+            ranker_variant=selected_variant,
+            component_hashes=component_hashes,
+        )
+        release.validate_components(
+            ranker_metadata=ranker_metadata,
+            acceptor_metadata=acceptor_metadata,
+            component_hashes=component_hashes,
+        )
+        release_path = staging / "release_manifest.json"
+        release.save(release_path)
+
+        report = {
+            "schema_version": "v4.1-training-report-2",
+            "source_dataset_manifest_id": str(manifest["build_id"]),
+            "acceptor_dataset_manifest_id": acceptor_dataset_manifest_id,
+            "retrieval_signature": str(manifest["retrieval_signature"]),
+            "split": {
+                "strategy": "connected_component(input_siren,target_siren)",
+                "fit_count": int(queries["split"].eq("fit").sum()),
+                "dev_count": int(queries["split"].eq("dev").sum()),
+                "dev_fraction_target": 0.2,
+                "folds": 5,
+                "seed": 42,
+            },
+            "ranker_comparison": comparison,
+            "acceptor": acceptor_report,
+            "prechecks": {
+                "scene_count": int(len(scenes)),
+                "acceptor_eligible_count": int(len(acceptor_scenes)),
+                "review_reason_counts": scenes[
+                    "precheck_review_reason"
+                ].value_counts(dropna=True).to_dict(),
+            },
+            "ranker_training_params": effective_ranker_params,
+            "ranker_training_hashes": training_hashes,
+            "positive_injection": False,
+            "test_or_holdout_consumed": False,
+            "release_id": release.release_id,
+        }
+        report_path = staging / "training_report.json"
+        report_path.write_text(
+            json.dumps(report, indent=2, ensure_ascii=False, sort_keys=True),
+            encoding="utf-8",
+        )
+        artifact_names = (
+            "ranker/ranker.json",
+            "ranker/metadata.json",
+            "acceptor/acceptor_model.joblib",
+            "acceptor/metadata.json",
+            "ranker_predictions.parquet",
+            "acceptor_scenes.parquet",
+            "split_assignments.parquet",
+            "training_report.json",
+            "release_manifest.json",
+        )
+        output_hashes = {
+            name: file_sha256(staging / name) for name in artifact_names
+        }
+        model_manifest_core = {
+            "schema_version": "v4.1-model-bundle-manifest-1",
+            "release_id": release.release_id,
+            "ranker_bundle_id": ranker_bundle_id,
+            "acceptor_bundle_id": acceptor.model_bundle_id,
+            "source_dataset_manifest_id": str(manifest["build_id"]),
+            "acceptor_dataset_manifest_id": acceptor_dataset_manifest_id,
+            "outputs": output_hashes,
+        }
+        model_manifest_core["model_manifest_id"] = hashlib.sha256(
+            json.dumps(
+                model_manifest_core,
+                sort_keys=True,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        ).hexdigest()[:16]
+        (staging / "model_manifest.json").write_text(
+            json.dumps(
+                model_manifest_core,
+                indent=2,
+                ensure_ascii=False,
+                sort_keys=True,
+            ),
+            encoding="utf-8",
+        )
+        os.replace(staging, output_dir)
+        return report
+    except BaseException:
+        shutil.rmtree(staging, ignore_errors=True)
+        raise
 
 
 def parse_args() -> argparse.Namespace:
