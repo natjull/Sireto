@@ -38,7 +38,26 @@ Le fit combiné atteint **5 751 exacts**, avec zéro SIREN exact partagé entre
 fit/dev/holdout. Verdict : **`PASS_V4_FRESH`**. Le holdout n'a reçu aucune
 prédiction modèle. Rapport : `reports/v9/v4_fresh_expansion_results.md`.
 
+Le gate retrieval V4 est maintenant franchi : l'admission déterministe gelée
+conserve 5 749/5 751 = **99,965 %** des vérités du fit combiné et 305/305 =
+**100 % observé** sur le nouveau dev indépendant, toujours avec 100 candidats
+maximum. Les 1 124 cas frais ont tous leur vérité visible et conservée. Verdict
+de phase : **`GO_RANKER_V4`**. Ce résultat autorise l'entraînement aval ; avec
+305 cas dev, il ne constitue pas une garantie statistique de 99 % en
+production. Rapport : `reports/v9/v4_retrieval_gate_results.md`.
+
 ## Actions terminees (fenetre recente)
+- **Gate retrieval V4 franchi sans GPU** : contrat gelé avant calcul, reprise
+  des 4 932 anciennes listes et reconstruction des seuls 1 124 cas frais.
+  Recall@100 : noyau historique 4 930/4 932 = 99,959 %, ajout fit
+  819/819 = 100 %, fit combiné 5 749/5 751 = 99,965 %, nouveau dev
+  305/305 = 100 %. Zéro dépassement de 100, zéro positif injecté, zéro SIREN
+  exact partagé fit/dev, holdout et ancien test non lus. Les deux misses sont
+  des scènes fit historiques visibles dans les canaux mais éliminées par
+  l'ancienne admission. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/retrieval_v4/ddefe3daaacdf5ef`.
+  Suite complète à 136 tests passants. *(commits GitHub : contrat `510868b`,
+  builders/tests `e566c25`, rapport `6948aa1`)*
 - **Expansion V4-Fresh passée sans réutiliser le benchmark** : les 6 330
   `SERVICE ID` absents du benchmark ont fourni 1 426 SIRET actifs uniques,
   247 ambigus et 4 657 non résolus. Séparation gelée : `fit_addition`
@@ -463,11 +482,16 @@ prédiction modèle. Rapport : `reports/v9/v4_fresh_expansion_results.md`.
 - `docs/benchmark_v4_current_snapshot_policy.md` *(commit GitHub :
   `ce82b01`)*
 - `docs/v4_fresh_expansion_contract.md` *(commit GitHub : `1c2e84c`)*
+- `docs/v4_retrieval_reconstruction_contract.md` *(commit GitHub :
+  `510868b`)*
 - `scripts/build_benchmark_v4_current_snapshot.py`,
   `tests/test_benchmark_v4_current_snapshot.py` *(commit GitHub :
   `799c32d`)*
 - `scripts/build_v4_fresh_expansion.py`,
   `tests/test_v4_fresh_expansion.py` *(commit GitHub : `613cf7d`)*
+- `scripts/prepare_v4_retrieval_inputs.py`,
+  `scripts/finalize_v4_retrieval_gate.py`,
+  `tests/test_v4_retrieval_gate.py` *(commit GitHub : `e566c25`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -480,6 +504,7 @@ prédiction modèle. Rapport : `reports/v9/v4_fresh_expansion_results.md`.
   `299bc8a`)*
 - `reports/v9/v4_fresh_expansion_results.md` *(commit GitHub :
   `d8d36b9`)*
+- `reports/v9/v4_retrieval_gate_results.md` *(commit GitHub : `6948aa1`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -498,14 +523,16 @@ prédiction modèle. Rapport : `reports/v9/v4_fresh_expansion_results.md`.
 
 ## Travail en cours
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
-  E1, les accepteurs E2/E2b, V4 et V4-Fresh sont publiés sur le SSD.
+  E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
+  sur le SSD.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
 - E1 est validé sur l'ancienne cible. E2b est refusé et aucun modèle produit
   n'est déployé.
-- V4-Fresh a levé le manque d'exemples et la fuite SIREN. Le prochain travail
-  est de produire les pools candidats gelés pour le fit combiné et `dev_new`,
-  sans ouvrir `holdout_sealed`.
+- V4-Fresh a levé le manque d'exemples et la fuite SIREN ; le gate retrieval
+  V4 est franchi. Le prochain travail est de reconstruire le dataset candidat
+  complet pour le ranker V4, puis d'entraîner et mesurer le ranker sur
+  `dev_new`, sans ouvrir `holdout_sealed`.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -563,19 +590,21 @@ prédiction modèle. Rapport : `reports/v9/v4_fresh_expansion_results.md`.
 | Accepteur E2b refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_e2b_3171ef5020c0f068_070c123/` |
 | Qualification V4 refusée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/qualification_v4/0b333d33a56ed759/` |
 | Expansion V4-Fresh passée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/v4_fresh_expansion/14047b719ef90f6f/` |
+| Gate retrieval V4 passé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/retrieval_v4/ddefe3daaacdf5ef/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
 2. Geler la politique V4 stricte et ne pas assouplir ses seuils sur le dev
    audité.
-3. Construire le fit combiné à partir des 4 932 exacts du noyau V4 et des 819
-   exacts `fit_addition`; retirer les anciens chevauchements SIREN du découpage
-   de validation, pas des données de fit.
-4. Exécuter le retrieval gelé à 100 sur le fit combiné et `dev_new`, puis
-   publier séparément Recall@100 avant tout ranker.
-5. Si Recall@100 reste ≥99 %, entraîner ranker puis accepteur avec OOF SIREN,
-   en excluant `UNRESOLVED`. Geler le bundle et le seuil avant toute ouverture
-   de `holdout_sealed`.
+3. Construire les features candidates du ranker V4 à partir des 5 749 scènes
+   fit exactes avec positif réellement présent ; exclure les deux misses au
+   lieu d'injecter leur positif.
+4. Reconstruire les scènes `AMBIGUOUS` fit pour l'accepteur, sans transformer
+   `UNRESOLVED` en négatifs.
+5. Entraîner le ranker avec OOF groupé par SIREN et publier Hit@1 exact-SIRET
+   sur les 305 cas `dev_new` avant tout accepteur.
+6. Entraîner puis calibrer l'accepteur sur OOF, geler le bundle et le seuil,
+   puis seulement alors autoriser une ouverture unique de `holdout_sealed`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
