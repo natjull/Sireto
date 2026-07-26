@@ -60,7 +60,31 @@ incertains. Verdict : **`GO_HOLDOUT_V4`**. Les six variantes testées sont à
 d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
 `reports/v9/v4_acceptor_e2_results.md`.
 
+Le holdout V4-Fresh a ensuite été ouvert une seule fois après gel complet.
+Le retrieval atteint **302/302 = 100 % Recall@100 exact**, et le ranker
+**296/302 = 98,013 % Hit@1 exact**. L'accepteur automatise 282/354 scènes,
+mais commet deux erreurs : précision **280/282 = 99,291 %**, sous le gate de
+99,8 %. La qualification stricte ne couvre par ailleurs que 302/1 345 =
+22,454 % de la source. Verdict final : **`PIVOT`**, sous-verdict
+**`TECHNICAL_PIVOT`**. Le retrieval et le ranker sont validés ; la correction
+porte sur le routage des scènes ambiguës, l'état actif/fermé du top1 et la
+calibration saturante. Le holdout est désormais consommé. Rapport :
+`reports/v9/v4_final_holdout_results.md`.
+
 ## Actions terminees (fenetre recente)
+- **Évaluation finale V4 exécutée une seule fois** : autorisation gelée
+  `7dbd5527374ca0d4`, zéro chevauchement SIREN, zéro injection et 100 candidats
+  maximum. Résultats : Recall@100 302/302 = 100 %, Hit@1 exact 296/302 =
+  98,013 %, AUTO 282/354 = 79,661 %, précision AUTO 280/282 = 99,291 %.
+  Deux causes simples : un ancien SIRET PALAFIS fermé mais textuellement
+  parfait est automatisé à la place du SIRET actif ; une scène ELGEA déjà
+  qualifiée `AMBIGUOUS` avec 80 SIRET actifs est automatisée. La calibration
+  isotonic attribue exactement 1,0 aux 282 AUTO. Verdict `PIVOT` /
+  `TECHNICAL_PIVOT`. Le premier rapport `STOP` est conservé : il inversait
+  deux booléens d'intégrité. Sa correction n'a relu ni le holdout ni les
+  modèles. Suite complète à 148 tests passants. *(commits GitHub : contrat
+  `fb6a20c`, runner `8cc9bfa`, correction instrumentale `aead6f5`, rapport
+  `4aade83`)*
 - **Accepteur V4 validé avant holdout** : dataset de 7 215 scènes
   (6 054 exactes, 1 161 ambiguës), 721 007 paires et zéro `UNRESOLVED`.
   Les exactes train utilisent les prédictions OOF ; les ambiguës étaient
@@ -524,6 +548,7 @@ d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
   `510868b`)*
 - `docs/v4_ranker_e1_contract.md` *(commit GitHub : `0c90c25`)*
 - `docs/v4_acceptor_e2_contract.md` *(commit GitHub : `9a22fd8`)*
+- `docs/v4_final_holdout_contract.md` *(commit GitHub : `fb6a20c`)*
 - `scripts/build_benchmark_v4_current_snapshot.py`,
   `tests/test_benchmark_v4_current_snapshot.py` *(commit GitHub :
   `799c32d`)*
@@ -541,6 +566,12 @@ d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
 - `scripts/build_v4_acceptor_dataset.py`,
   `tests/test_v4_acceptor_dataset.py`, `scripts/train_v9_acceptor.py`,
   `src/xgb_matcher/v9_scene.py` *(commit GitHub : `9ec88c8`)*
+- `scripts/freeze_v4_final_holdout.py`,
+  `scripts/prepare_v4_final_holdout.py`,
+  `scripts/evaluate_v4_final_holdout.py`,
+  `tests/test_v4_final_holdout.py` *(commit GitHub : `8cc9bfa`)*
+- `scripts/repair_v4_final_verdict.py` et correction des booléens du runner
+  *(commit GitHub : `aead6f5`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -556,6 +587,7 @@ d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
 - `reports/v9/v4_retrieval_gate_results.md` *(commit GitHub : `6948aa1`)*
 - `reports/v9/v4_ranker_e1_results.md` *(commit GitHub : `13e3547`)*
 - `reports/v9/v4_acceptor_e2_results.md` *(commit GitHub : `ff1eea4`)*
+- `reports/v9/v4_final_holdout_results.md` *(commit GitHub : `4aade83`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -576,14 +608,14 @@ d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
   E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
   sur le SSD.
-- Le test final a été lu une fois et est maintenant définitivement fermé à
-  toute nouvelle variante, règle ou seuil.
+- Le test final historique et le holdout V4-Fresh ont chacun été lus une fois
+  et sont maintenant définitivement fermés à toute nouvelle variante, règle
+  ou seuil.
 - E1 historique est conservé comme baseline. Le nouveau ranker V4 est validé
   sur `dev_new`, mais aucun modèle produit n'est déployé.
-- V4-Fresh a levé le manque d'exemples et la fuite SIREN ; le gate retrieval
-  V4, le ranker E1 et l'accepteur E2 sont franchis. Le prochain travail est de
-  geler les hashes du bundle et le runner final, puis d'ouvrir une seule fois
-  `holdout_sealed`.
+- V4-Fresh a validé définitivement le retrieval V4 et le ranker. Le gate
+  accepteur final échoue avec deux erreurs AUTO. Le prochain travail doit être
+  préenregistré comme V4.1 et utiliser un nouveau holdout indépendant.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -614,7 +646,14 @@ d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
   nouvelle cible ; V4-Fresh fournit un nouveau dev et un holdout sans SIREN
   exact partagé avec le fit.
 - **Holdout Fresh scellé** : aucune génération de candidats, prédiction ou
-  mesure modèle ne doit lire `holdout_sealed` avant gel du bundle et du seuil.
+  mesure nouvelle ne doit désormais réutiliser `holdout_sealed`, consommé par
+  l'évaluation finale `7dbd5527374ca0d4`.
+- **Deux erreurs finales explicables** : `AMBIGUOUS` doit être routé `REVIEW`
+  avant l'accepteur ; un top1 fermé ne doit pas être automatisé dans la cible
+  V4 actif-courant. Ces règles sont des hypothèses post-holdout et exigent une
+  nouvelle validation indépendante.
+- **Calibration saturante** : l'isotonic retenu par tie-break donne 1,0 aux
+  282 AUTO finaux. Ne pas présenter ce score comme une probabilité fiable.
 - **NO_MATCH temporel**: toujours rattache au snapshot SIRENE et a la date de
   reference.
 - **Cross-encoder conditionnel**: aucune promotion sans +1 point de couverture
@@ -646,18 +685,22 @@ d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
 | Ranker V4 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/ranker_v4/ranker_1aebeada820d92a7_6236365/` |
 | Dataset accepteur V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/acceptor_v4/2b8a9c994e0944be/` |
 | Accepteur V4 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/acceptor_v4/acceptor_2b8a9c994e0944be_9ec88c8/` |
+| Autorisation finale V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/releases/v4_final/7dbd5527374ca0d4/authorization.json` |
+| Première évaluation finale V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4/` |
+| Verdict final V4 corrigé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4_verdict_repair/` |
 
 ## Prochaines etapes
-1. Ne plus toucher au test final actuel.
-2. Geler la politique V4 stricte et ne pas assouplir ses seuils sur le dev
-   audité.
-3. Publier les hashes du dataset, du ranker, de l'accepteur, du calibrateur et
-   du seuil retenu.
-4. Préenregistrer et tester le runner final sans lire le holdout.
-5. Vérifier la disjonction SIREN puis autoriser une ouverture unique de
-   `holdout_sealed`.
-6. Publier couverture, précision exacte, Hit@1, erreurs et intervalles, puis
-   conclure `GO`, `PIVOT` ou `STOP`.
+1. Ne plus réutiliser le test historique ni le holdout V4-Fresh consommés.
+2. Préenregistrer V4.1 sans modifier le retrieval V4 ni le ranker de base :
+   `AMBIGUOUS/UNRESOLVED → REVIEW` avant modèle et `top1 fermé → REVIEW`.
+3. Ajouter explicitement l'état administratif candidat aux preuves de scène
+   et supprimer la calibration isotonic saturante de la sélection automatique.
+4. Rejouer uniquement train/dev pour mesurer le coût de couverture de ces
+   verrous ; ne pas présenter le diagnostic final post-hoc comme validé.
+5. Construire un nouveau holdout indépendant et disjoint pour certifier V4.1.
+6. Ouvrir un chantier séparé de qualification/réparation CRM : la couverture
+   source 22,454 % reste très loin du gate de 80 % et ne se corrige pas par le
+   retrieval.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
