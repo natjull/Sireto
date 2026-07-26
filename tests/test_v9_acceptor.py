@@ -43,4 +43,16 @@ def test_acceptor_never_uses_test_for_selection():
         models={"score": ScoreModel()},
     )
     assert report["test_used_for_selection"] is False
+    assert report["final_holdout_evaluated"] is False
+    assert report["test"] is None
     assert bundle.model_family == "score"
+
+    _, evaluated = train_selective_acceptor(
+        pd.DataFrame(rows),
+        dataset_manifest_id="dataset",
+        target_precision=1.0,
+        models={"score": ScoreModel()},
+        evaluate_test=True,
+    )
+    assert evaluated["final_holdout_evaluated"] is True
+    assert evaluated["test"]["count"] == 6

@@ -14,6 +14,7 @@ from src.xgb_matcher.v9_dataset import (
     V9DatasetManifest,
     assert_entity_disjoint,
     build_canonical_dataset,
+    canonicalize_candidates,
     canonicalize_labels,
     stable_split,
 )
@@ -130,3 +131,58 @@ def test_match_exact_requires_siret():
             seed=42,
             default_source="test",
         )
+
+
+def test_candidates_are_deduplicated_before_scene_construction():
+    labels = canonicalize_labels(
+        pd.DataFrame(
+            {
+                "crm_id": ["q1"],
+                "ground_truth_siret": ["12345678900011"],
+            }
+        ),
+        snapshot_id="snapshot",
+        seed=42,
+        default_source="test",
+    )
+    candidates = canonicalize_candidates(
+        pd.DataFrame(
+            {
+                "crm_id": ["q1", "q1"],
+                "siret_candidate": [
+                    "12345678900011",
+                    "12345678900011",
+                ],
+                "rrf_score": [0.9, 0.8],
+            }
+        ),
+        labels,
+    )
+
+    assert len(candidates) == 1
+
+
+def test_candidate_budget_is_an_absolute_cap():
+    labels = canonicalize_labels(
+        pd.DataFrame(
+            {
+                "crm_id": ["q1"],
+                "ground_truth_siret": ["12345678900011"],
+            }
+        ),
+        snapshot_id="snapshot",
+        seed=42,
+        default_source="test",
+    )
+    source = pd.DataFrame(
+        {
+            "crm_id": ["q1"] * 101,
+            "siret_candidate": [
+                f"123456789{index:05d}"
+                for index in range(101)
+            ],
+        }
+    )
+
+    with pytest.raises(ValueError, match="100-SIRET budget"):
+        canonicalize_candidates(source, labels)

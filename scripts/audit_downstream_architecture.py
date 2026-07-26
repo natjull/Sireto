@@ -401,6 +401,9 @@ def render_report(summary: dict[str, Any]) -> str:
     decider_data = summary["candidate_datasets"]["decider"]
     routing_divergence = summary["routing_v7_label_divergence"]
     profile = summary["profile_inventory"]
+    scene_direct_evidence = summary["feature_contract"][
+        "direct_evidence_present_in_v9_scene"
+    ]
     lines = [
         "# Audit aval — ranker, decider et décision AUTO",
         "",
@@ -412,7 +415,6 @@ def render_report(summary: dict[str, Any]) -> str:
         "Le bon remplacement est un ranker candidat unique sur le top-100 "
         "gelé, suivi d'un accepteur query-level entraîné sur la correction "
         "SIRET exacte. L'accepteur doit combiner les preuves du top-1 et la "
-        "forme de la scène ; l'implémentation V9 actuelle ne contient que la "
         "forme de la scène.",
         "",
         "## Défaut principal de la référence 74,5 % AUTO",
@@ -513,8 +515,9 @@ def render_report(summary: dict[str, Any]) -> str:
             "entraînée avec l'ancien tokenizer non fiable.",
             "- Les sept features V8 sont dans le registre actif de 54 features "
             "mais absentes des datasets et modèles V7 de 47 features.",
-            "- L'accepteur V9 actuel ne reçoit aucune des sept preuves directes "
-            "nom/adresse auditées.",
+            f"- L'accepteur V9 courant transporte "
+            f"{len(scene_direct_evidence)}/{len(DIRECT_EVIDENCE_FEATURES)} "
+            "preuves directes nom/adresse auditées.",
             "",
             "## Architecture recommandée",
             "",
@@ -627,7 +630,9 @@ def main() -> None:
             "v9_scene_feature_count": len(V9_SCENE_FEATURE_NAMES),
             "direct_evidence_features": sorted(DIRECT_EVIDENCE_FEATURES),
             "direct_evidence_present_in_v9_scene": sorted(
-                DIRECT_EVIDENCE_FEATURES & set(V9_SCENE_FEATURE_NAMES)
+                feature
+                for feature in DIRECT_EVIDENCE_FEATURES
+                if f"top1_{feature}" in V9_SCENE_FEATURE_NAMES
             ),
         },
         "models": {

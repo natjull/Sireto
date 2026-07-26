@@ -44,6 +44,32 @@ def test_scene_correctness_is_strict_siret_and_keeps_misses():
     assert scenes.at["q3", "is_exact_siret_correct"] == 0
 
 
+def test_scene_keeps_top_candidate_evidence_and_removes_duplicate_sirets():
+    predictions = pd.DataFrame(
+        {
+            "query_id": ["q1", "q1", "q1"],
+            "candidate_siret": [
+                "12345678900011",
+                "12345678900011",
+                "99999999900099",
+            ],
+            "score": [0.9, 0.8, 0.7],
+            "rank": [1, 2, 3],
+            "prediction_origin": ["oof", "oof", "oof"],
+            "name_jaro_max": [0.95, 0.95, 0.40],
+            "addr_jaro": [0.80, 0.80, 0.20],
+        }
+    )
+
+    scene = build_query_scenes(predictions, _labels()).set_index("query_id").loc["q1"]
+
+    assert scene["candidate_count"] == 2.0
+    assert scene["top1_name_jaro_max"] == pytest.approx(0.95)
+    assert scene["top2_name_jaro_max"] == pytest.approx(0.40)
+    assert scene["delta_name_jaro_max"] == pytest.approx(0.55)
+    assert scene["top1_addr_jaro"] == pytest.approx(0.80)
+
+
 def test_training_scenes_must_be_oof():
     scenes = build_query_scenes(
         pd.DataFrame(

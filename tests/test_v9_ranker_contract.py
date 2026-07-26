@@ -4,6 +4,7 @@ import pytest
 
 from scripts.train_v9_ranker import (
     eligible_ranker_rows,
+    fold_for_entity,
     fold_for_query,
     validate_training_positive_rows,
 )
@@ -28,6 +29,12 @@ def test_ranker_training_excludes_queries_without_retrieved_positive():
 
 def test_fold_assignment_is_stable():
     assert fold_for_query("q1", 42, 5) == fold_for_query("q1", 42, 5)
+    assert fold_for_entity("q1", "123456789", 42, 5) == fold_for_entity(
+        "another-query",
+        "123456789",
+        42,
+        5,
+    )
 
 
 def test_positive_injection_is_train_only():

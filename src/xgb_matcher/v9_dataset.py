@@ -12,7 +12,11 @@ from typing import Any, Iterable, Mapping
 import pandas as pd
 
 from .contracts import GroundTruthKind
-from .features import V9_BASELINE_FEATURE_NAMES, normalize_text
+from .features import (
+    SEMANTIC_FEATURE_NAMES,
+    V9_BASELINE_FEATURE_NAMES,
+    normalize_text,
+)
 from .retrieval_config import RetrievalConfigV1
 from .v9_features import (
     V9_RETRIEVAL_FEATURE_NAMES,
@@ -23,6 +27,14 @@ from .v9_features import (
 SCHEMA_VERSION = "v9.0"
 V9_CANDIDATE_FEATURE_NAMES = (
     V9_BASELINE_FEATURE_NAMES + V9_RETRIEVAL_FEATURE_NAMES
+)
+V9_DETERMINISTIC_CANDIDATE_FEATURE_NAMES = (
+    [
+        feature
+        for feature in V9_BASELINE_FEATURE_NAMES
+        if feature not in SEMANTIC_FEATURE_NAMES
+    ]
+    + V9_RETRIEVAL_FEATURE_NAMES
 )
 QUERY_COLUMNS = [
     "query_id",
@@ -242,6 +254,17 @@ def canonicalize_candidates(
         )
     candidates["candidate_siret"] = candidates["candidate_siret"].map(normalize_siret)
     candidates = candidates[candidates["candidate_siret"].notna()].copy()
+    candidates = candidates.drop_duplicates(
+        ["query_id", "candidate_siret"],
+        keep="first",
+    )
+    candidate_counts = candidates.groupby("query_id").size()
+    over_budget = candidate_counts[candidate_counts > 100]
+    if not over_budget.empty:
+        raise ValueError(
+            "Canonical candidate pools exceed the absolute 100-SIRET budget "
+            f"for {len(over_budget)} queries"
+        )
     candidates["candidate_siren"] = candidates["candidate_siret"].str[:9]
     label_index = labels.set_index("query_id")
     candidates["split"] = candidates["query_id"].map(label_index["split"])
@@ -446,6 +469,7 @@ __all__ = [
     "QUERY_COLUMNS",
     "LABEL_COLUMNS",
     "V9_CANDIDATE_FEATURE_NAMES",
+    "V9_DETERMINISTIC_CANDIDATE_FEATURE_NAMES",
     "V9DatasetManifest",
     "normalize_siret",
     "stable_split",

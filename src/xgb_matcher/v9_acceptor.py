@@ -165,6 +165,7 @@ def train_selective_acceptor(
     min_auto_count: int = 1,
     seed: int = 42,
     models: Mapping[str, Any] | None = None,
+    evaluate_test: bool = False,
 ) -> tuple[V9AcceptorBundle, dict[str, Any]]:
     """Compare acceptors without consulting test for model or threshold choice."""
     required = set(V9_SCENE_FEATURE_NAMES) | {
@@ -184,8 +185,10 @@ def train_selective_acceptor(
         scenes["split"].eq("dev") & scenes["dev_role"].eq("threshold")
     ]
     test = scenes[scenes["split"].eq("test")]
-    if min(map(len, (train, calibration, threshold_set, test))) == 0:
-        raise ValueError("train, dev/calibration, dev/threshold and test must be non-empty")
+    if min(map(len, (train, calibration, threshold_set))) == 0:
+        raise ValueError("train, dev/calibration and dev/threshold must be non-empty")
+    if evaluate_test and test.empty:
+        raise ValueError("The explicitly authorized final holdout is empty")
 
     feature_order = list(V9_SCENE_FEATURE_NAMES)
     X_train = train[feature_order].astype(float).to_numpy()
@@ -239,14 +242,17 @@ def train_selective_acceptor(
         ),
     )
     model, calibrator, selected = fitted[winner]
-    test_confidence = np.asarray(
-        calibrator.predict(
-            model.predict_proba(test[feature_order].astype(float).to_numpy())[:, 1]
+    test_metrics = None
+    test_curve: list[dict[str, Any]] = []
+    if evaluate_test:
+        test_confidence = np.asarray(
+            calibrator.predict(
+                model.predict_proba(test[feature_order].astype(float).to_numpy())[:, 1]
+            )
         )
-    )
-    test_y = test["is_exact_siret_correct"].astype(int).to_numpy()
-    test_metrics = _metrics(test_confidence, test_y, selected.threshold)
-    test_curve = risk_coverage_curve(test_confidence, test_y).to_dict("records")
+        test_y = test["is_exact_siret_correct"].astype(int).to_numpy()
+        test_metrics = _metrics(test_confidence, test_y, selected.threshold)
+        test_curve = risk_coverage_curve(test_confidence, test_y).to_dict("records")
 
     identity = {
         "dataset_manifest_id": dataset_manifest_id,
@@ -277,6 +283,7 @@ def train_selective_acceptor(
         "test": test_metrics,
         "test_risk_coverage_curve": test_curve,
         "test_used_for_selection": False,
+        "final_holdout_evaluated": bool(evaluate_test),
     }
     return bundle, report
 

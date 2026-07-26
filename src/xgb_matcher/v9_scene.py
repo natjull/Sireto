@@ -11,7 +11,7 @@ import pandas as pd
 from .contracts import GroundTruthKind
 
 
-V9_SCENE_FEATURE_NAMES = [
+V9_CORE_SCENE_FEATURE_NAMES = [
     "has_candidate",
     "candidate_count",
     "score_top1",
@@ -34,6 +34,37 @@ V9_SCENE_FEATURE_NAMES = [
     "retrieval_miss",
 ]
 
+V9_ACCEPTOR_EVIDENCE_BASE_FEATURE_NAMES = [
+    "name_jaro_max",
+    "name_token_overlap_max",
+    "name_semantic_max",
+    "name_semantic_second",
+    "name_semantic_gap",
+    "addr_jaro",
+    "addr_token_overlap",
+    "street_number_diff",
+    "address_density",
+    "idf_name",
+    "name_length_max",
+    "numeric_token_match",
+    "name_sim_max_etab",
+    "name_sim_max_pm_dirigeant",
+    "name_crm_contains_cand_max",
+    "name_contains_crm_max",
+    "postcode_match",
+    "city_match",
+    "street_name_jaro",
+    "name_addr_consistency",
+]
+V9_ACCEPTOR_EVIDENCE_FEATURE_NAMES = [
+    name
+    for feature in V9_ACCEPTOR_EVIDENCE_BASE_FEATURE_NAMES
+    for name in (f"top1_{feature}", f"top2_{feature}", f"delta_{feature}")
+]
+V9_SCENE_FEATURE_NAMES = (
+    V9_CORE_SCENE_FEATURE_NAMES + V9_ACCEPTOR_EVIDENCE_FEATURE_NAMES
+)
+
 
 def _normalise_siret(value: Any) -> str | None:
     if value is None or pd.isna(value):
@@ -50,6 +81,15 @@ def _score_entropy(scores: np.ndarray) -> float:
     probabilities /= probabilities.sum()
     entropy = -float(np.sum(probabilities * np.log(probabilities + 1e-12)))
     return entropy / float(np.log(len(scores)))
+
+
+def _safe_float(value: Any) -> float:
+    try:
+        if value is None or pd.isna(value):
+            return 0.0
+        return float(value)
+    except (TypeError, ValueError):
+        return 0.0
 
 
 def _scene_for_candidates(rows: pd.DataFrame) -> tuple[dict[str, float], dict[str, Any]]:
@@ -83,6 +123,7 @@ def _scene_for_candidates(rows: pd.DataFrame) -> tuple[dict[str, float], dict[st
     )
     ranked["candidate_siret"] = ranked[candidate_column].map(_normalise_siret)
     ranked = ranked[ranked["candidate_siret"].notna()].copy()
+    ranked = ranked.drop_duplicates("candidate_siret", keep="first")
     if ranked.empty:
         features, prediction = _scene_for_candidates(ranked)
         prediction["prediction_origin"] = scene_origin
@@ -145,6 +186,13 @@ def _scene_for_candidates(rows: pd.DataFrame) -> tuple[dict[str, float], dict[st
         ),
         "retrieval_miss": 0.0,
     }
+    top2 = ranked.iloc[1] if len(ranked) > 1 else None
+    for feature in V9_ACCEPTOR_EVIDENCE_BASE_FEATURE_NAMES:
+        top1_value = _safe_float(top1.get(feature))
+        top2_value = _safe_float(top2.get(feature)) if top2 is not None else 0.0
+        features[f"top1_{feature}"] = top1_value
+        features[f"top2_{feature}"] = top2_value
+        features[f"delta_{feature}"] = top1_value - top2_value
     return features, {
         "predicted_siret": str(top1["candidate_siret"]),
         "predicted_siren": top1_siren,
@@ -235,6 +283,9 @@ def split_dev_roles(query_ids: pd.Series, seed: int = 42) -> pd.Series:
 
 
 __all__ = [
+    "V9_CORE_SCENE_FEATURE_NAMES",
+    "V9_ACCEPTOR_EVIDENCE_BASE_FEATURE_NAMES",
+    "V9_ACCEPTOR_EVIDENCE_FEATURE_NAMES",
     "V9_SCENE_FEATURE_NAMES",
     "build_query_scenes",
     "build_inference_scene",
