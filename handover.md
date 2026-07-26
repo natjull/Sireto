@@ -21,7 +21,29 @@ ouverte sous le contrat séparé
 `docs/downstream_selective_matching_contract.md`, sans réutiliser le test
 sélectif consommé.
 
+L'expérience aval E1/E2 sur train/dev est terminée. Le ranker exact-SIRET
+passe son gate avec **83,365 % Hit@1**, contre 80,561 % pour l'ancien ranker,
+soit **+2,804 points sans régression critique**. L'accepteur échoue son gate :
+à 99,8 % de précision observée, il ne couvre que **33/1 280 = 2,578 %** de la
+moitié dev réservée au seuil, contre 25 % requis. Verdict :
+**E1 `PASS`, E2 `PIVOT_ACCEPTEUR`**. Aucun split test n'a été lu. Rapport :
+`reports/v9/downstream_e1_e2_results.md`.
+
 ## Actions terminees (fenetre recente)
+- **Expérience aval E1/E2 exécutée sur train/dev** : dataset immuable de
+  1 438 845 paires, 100 candidats maximum, zéro doublon, zéro détail manquant
+  et Recall@100 V3 de 99,162 % train / 99,572 % dev. Le ranker final atteint
+  1 754/2 104 = 83,365 % Hit@1, soit +2,804 points sur l'ancien ranker, avec
+  gains actifs, fermés et multi-sites. L'accepteur XGBoost calibré ne couvre
+  que 33/1 280 = 2,578 % à 100 % observé ; le palier suivant tombe déjà à
+  98,507 %. Verdict `PIVOT_ACCEPTEUR`, sans retour au risk model historique,
+  sans dense, sans GPU et sans ouverture du test. Artefacts :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/downstream/3171ef5020c0f068`,
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/ranker_3171ef5020c0f068_fc9cb1b`
+  et
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_3171ef5020c0f068_fc9cb1b`.
+  Suite complète à 121 tests passants. *(commits GitHub : correction builder
+  `fc9cb1b`, rapport `9ab7f6a`)*
 - **Socle de l'expérience aval E1/E2** : builder train/dev alimenté par les
   listes top-100 gelées, provenance alignée sur les sept canaux sparse
   réellement certifiés, ranker déterministe par défaut, folds OOF groupés par
@@ -394,11 +416,12 @@ sélectif consommé.
 - `docs/downstream_selective_matching_contract.md` *(commit GitHub :
   `c18bf28`)*
 - `scripts/build_downstream_selective_dataset.py`,
-  `tests/test_downstream_selective_dataset.py` *(commit GitHub :
-  `0a75b73`)*
+  `tests/test_downstream_selective_dataset.py` *(commits GitHub :
+  `0a75b73`, correction des partitions overlay `fc9cb1b`)*
 - `scripts/train_v9_ranker.py`, `src/xgb_matcher/v9_scene.py`,
   `scripts/train_v9_acceptor.py`, `src/xgb_matcher/v9_acceptor.py`
   *(commits GitHub : `aeeaf0f`, `0a75b73`, `dbd8906`)*
+- `reports/v9/downstream_e1_e2_results.md` *(commit GitHub : `9ab7f6a`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -416,17 +439,14 @@ sélectif consommé.
   `v9_evaluation.py` *(commit GitHub: `c4cf99f`)*
 
 ## Travail en cours
-- Construction des entrées train E1 sur le Mac/SSD, sans test :
-  `channel_audit_k5000_train_c33b80855f560074_aeeaf0f` est en cours ;
-  `closed_overlay_channel_audit_k5000_train_c33b80855f560074_aeeaf0f`
-  est terminé.
+- Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
+  E1 et l'accepteur E2 sont publiés sur le SSD.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
-- Le diagnostic train/dev post-certification est terminé. Il ne justifie ni
-  une nouvelle architecture de retrieval, ni un relâchement mécanique des
-  seuils de preuve.
-- Aucun modèle E1/E2 n'est encore entraîné : le dataset top-100 train/dev doit
-  d'abord être publié sans perte de candidats.
+- E1 est validé sur dev. E2 est arrêté avec `PIVOT_ACCEPTEUR` ; les modèles
+  produits restent expérimentaux et ne sont pas déployés.
+- La prochaine expérience doit rester strictement limitée au score de
+  confiance de l'accepteur, sur le dataset et le ranker déjà gelés.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -465,17 +485,21 @@ sélectif consommé.
 | Ranker + predictions OOF | `models/v9/ranker_<build_id>/` |
 | Accepteur + calibration | `models/v9/acceptor_<build_id>/` |
 | Benchmark open-set gele | `data/v9_open_set/<benchmark_id>/` |
+| Dataset aval E1/E2 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/downstream/3171ef5020c0f068/` |
+| Ranker E1 expérimental | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/ranker_3171ef5020c0f068_fc9cb1b/` |
+| Accepteur E2 refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_3171ef5020c0f068_fc9cb1b/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
-2. Terminer le canal train V7, appliquer une fois l'admission gelée et publier
-   le dataset E1 train/dev.
-3. Entraîner le ranker final sans sémantique, comparer sur dev ordre retrieval,
-   ancien ranker, ancien decider et nouveau ranker.
-4. Si E1 passe, construire les scènes OOF et comparer logistique/XGBoost pour
-   l'accepteur exact-SIRET aux points 99,0/99,5/99,8 % observés.
-5. Ne constituer un nouveau holdout indépendant qu'après gel du bundle et du
-   seuil E2.
+2. Pré-enregistrer un mini-contrat `E2b` limité à l'accepteur : mêmes données,
+   mêmes prédictions OOF et même ranker ; standardiser les entrées de la
+   régression logistique et comparer score brut, sigmoid et isotonic.
+3. Retenir sur dev la méthode qui maximise la couverture sous les contraintes
+   de précision exact-SIRET et de stabilité segmentaire, ou conclure `STOP`
+   si aucune méthode ne fournit une couverture utile.
+4. Ne modifier ni le retrieval, ni le ranker E1, ni les labels durant E2b.
+5. Ne constituer un nouveau holdout indépendant qu'après gel définitif du
+   bundle et du seuil E2b ; l'ancien test reste interdit.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
