@@ -20,6 +20,8 @@ from src.xgb_matcher.v9_scene import (
     split_dev_roles,
 )
 
+E2B_CONTRACT_COMMIT = "cf91432"
+
 
 def validate_final_holdout_authorization(
     path: Path,
@@ -45,6 +47,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--min-auto-count", type=int, default=25)
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument(
+        "--experiment",
+        choices=("e2", "e2b"),
+        default="e2",
+        help="E2 uses isotonic only; E2b runs the pre-registered score transforms.",
+    )
+    parser.add_argument(
         "--evaluate-final-holdout",
         action="store_true",
         help="Evaluate split=test once, with an explicit new-holdout authorization.",
@@ -59,6 +67,22 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    if args.experiment == "e2b":
+        expected = {
+            "target_precision": (args.target_precision, 0.998),
+            "min_auto_count": (args.min_auto_count, 25),
+            "seed": (args.seed, 42),
+        }
+        changed = {
+            name: observed
+            for name, (observed, frozen) in expected.items()
+            if observed != frozen
+        }
+        if changed:
+            raise ValueError(
+                "E2b parameters are frozen by contract "
+                f"{E2B_CONTRACT_COMMIT}: {changed}"
+            )
     manifest = V9DatasetManifest.load(args.dataset / "manifest.json")
     manifest.validate(feature_order=manifest.feature_order)
     if args.evaluate_final_holdout:
@@ -92,7 +116,17 @@ def main() -> None:
         target_precision=args.target_precision,
         min_auto_count=args.min_auto_count,
         seed=args.seed,
+        calibration_methods=(
+            ("raw", "sigmoid", "isotonic")
+            if args.experiment == "e2b"
+            else ("isotonic",)
+        ),
+        minimum_gate_coverage=0.25,
         evaluate_test=args.evaluate_final_holdout,
+    )
+    report["experiment"] = args.experiment
+    report["contract_commit"] = (
+        E2B_CONTRACT_COMMIT if args.experiment == "e2b" else None
     )
     bundle.save(args.output_dir, {"training_report": report})
     scenes.to_parquet(args.output_dir / "scenes.parquet", index=False)
