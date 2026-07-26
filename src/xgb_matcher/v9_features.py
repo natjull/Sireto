@@ -20,6 +20,26 @@ V9_RETRIEVAL_FEATURE_NAMES = [
     "candidate_vs_siren_rrf_gap",
 ]
 
+SELECTIVE_RETRIEVAL_CHANNELS = [
+    "current_sparse",
+    "name_word",
+    "name_char",
+    "address_word",
+    "siren_head",
+    "name_exact",
+    "address_exact",
+]
+SELECTIVE_RETRIEVAL_FEATURE_NAMES = [
+    "admission_rank_recip",
+    "admission_fusion_score",
+    "admission_channel_count",
+    "admission_overlay_quota",
+    *[
+        f"admission_{channel}_rank_recip"
+        for channel in SELECTIVE_RETRIEVAL_CHANNELS
+    ],
+]
+
 
 def _rank_recip(value: Any) -> float:
     try:
@@ -79,4 +99,9 @@ def inject_retrieval_siren_features(
         )
 
 
-__all__ = ["V9_RETRIEVAL_FEATURE_NAMES", "inject_retrieval_siren_features"]
+__all__ = [
+    "V9_RETRIEVAL_FEATURE_NAMES",
+    "SELECTIVE_RETRIEVAL_CHANNELS",
+    "SELECTIVE_RETRIEVAL_FEATURE_NAMES",
+    "inject_retrieval_siren_features",
+]

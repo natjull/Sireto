@@ -16,10 +16,8 @@ import xgboost as xgb
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.contracts import GroundTruthKind
-from src.xgb_matcher.v9_dataset import (
-    V9_DETERMINISTIC_CANDIDATE_FEATURE_NAMES,
-    V9DatasetManifest,
-)
+from src.xgb_matcher.features import SEMANTIC_FEATURE_NAMES
+from src.xgb_matcher.v9_dataset import V9DatasetManifest
 from src.xgb_matcher.v9_scene import V9_ACCEPTOR_EVIDENCE_BASE_FEATURE_NAMES
 
 
@@ -223,13 +221,24 @@ def main() -> None:
     features = (
         list(manifest.feature_order)
         if args.include_semantic
-        else list(V9_DETERMINISTIC_CANDIDATE_FEATURE_NAMES)
+        else [
+            feature
+            for feature in manifest.feature_order
+            if feature not in SEMANTIC_FEATURE_NAMES
+        ]
     )
     missing_features = set(features) - set(manifest.feature_order)
     if missing_features:
         raise ValueError(
             f"Dataset manifest is missing ranker features: {sorted(missing_features)}"
         )
+    if args.include_semantic:
+        missing_semantic = set(SEMANTIC_FEATURE_NAMES) - set(features)
+        if missing_semantic:
+            raise ValueError(
+                "Semantic ablation requested but dataset manifest is missing "
+                f"features: {sorted(missing_semantic)}"
+            )
 
     train_labels = labels[labels["split"].eq("train")].copy()
     train_candidates = candidates[candidates["split"].eq("train")].copy()
