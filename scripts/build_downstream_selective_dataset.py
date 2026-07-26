@@ -260,12 +260,27 @@ def build_split_candidates(
     missing_details = 0
     duplicate_sirets = 0
     over_budget = 0
-    for position, (partition_key, partition_queries) in enumerate(
-        v7_channels.groupby("partition_key", sort=False, dropna=False),
+    partition_pairs = v7_channels[["query_id", "partition_key"]].merge(
+        overlay_channels[["query_id", "partition_key"]],
+        on="query_id",
+        how="inner",
+        validate="one_to_one",
+        suffixes=("_v7", "_overlay"),
+    )
+    for position, (partition_keys, partition_queries) in enumerate(
+        partition_pairs.groupby(
+            ["partition_key_v7", "partition_key_overlay"],
+            sort=False,
+            dropna=False,
+        ),
         start=1,
     ):
-        v7_pool = _partition_rows(v7_store, str(partition_key))
-        overlay_pool = _partition_rows(overlay_store, str(partition_key))
+        v7_partition_key, overlay_partition_key = partition_keys
+        v7_pool = _partition_rows(v7_store, str(v7_partition_key))
+        overlay_pool = _partition_rows(
+            overlay_store,
+            str(overlay_partition_key),
+        )
         attach_address_density(v7_pool)
         attach_address_density(overlay_pool)
         candidate_map = {
