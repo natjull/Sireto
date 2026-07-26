@@ -366,7 +366,6 @@ def load_runtime_bundle(
         ),
         partitions_signature=partitions_signature,
         global_store_signature=global_store_signature,
-        component_hashes=component_hashes,
     )
     declared_gate = dataset_manifest.get("retrieval_gate") or {}
     if gate_chain["manifest_sha256"] != declared_gate.get("manifest_sha256"):
@@ -383,6 +382,7 @@ def load_runtime_bundle(
         retrieval_config=retrieval_config,
         partitions_signature=partitions_signature,
         global_store_signature=global_store_signature,
+        component_hashes=component_hashes,
     )
     ranker = xgb.XGBRanker()
     ranker.load_model(model_dir / "ranker" / "ranker.json")
