@@ -88,6 +88,7 @@ CANDIDATE_METADATA_COLUMNS = [
     "query_id",
     "candidate_siret",
     "candidate_siren",
+    "candidate_state",
     "is_ground_truth",
     "retrieval_rank",
     "retrieval_source",
@@ -458,6 +459,7 @@ def _candidate_schema() -> pa.Schema:
         "query_id",
         "candidate_siret",
         "candidate_siren",
+        "candidate_state",
         "retrieval_source",
     }
     integer_columns = {
@@ -694,6 +696,9 @@ def build_dataset(
                     "candidate_siren": str(
                         candidate.get("siren") or siret[:9]
                     ),
+                    "candidate_state": str(
+                        candidate.get("etat_admin") or ""
+                    ).upper(),
                     "is_ground_truth": int(siret == truth),
                     "retrieval_rank": int(
                         candidate.get("retrieval_rank") or position
@@ -767,6 +772,7 @@ def build_dataset(
                 "labels": int(len(labels)),
                 "candidates": int(candidate_writer.count),
             },
+            "outputs": output_hashes,
             "diagnostics": diagnostics,
             "output_hashes": output_hashes,
             "invariants": {

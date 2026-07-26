@@ -28,6 +28,7 @@ from src.xgb_matcher.v41_features import (  # noqa: E402
     normalize_siret,
     validate_v41_model_feature_order,
 )
+from src.xgb_matcher.v41_decision import v41_precheck_reason  # noqa: E402
 from src.xgb_matcher.v41_release import V41ReleaseManifest  # noqa: E402
 from src.xgb_matcher.v41_split import (  # noqa: E402
     assign_connected_siren_splits,
@@ -548,6 +549,32 @@ def _append_missing_prediction_sentinels(
     return pd.concat([predictions, sentinels], ignore_index=True)
 
 
+def annotate_v41_prechecks(
+    scenes: pd.DataFrame,
+    predictions: pd.DataFrame,
+    queries: pd.DataFrame,
+) -> pd.DataFrame:
+    """Keep every scene, and mark those deterministically routed to REVIEW."""
+    query_by_id = queries.set_index("query_id")
+    prediction_groups = {
+        str(query_id): group.to_dict("records")
+        for query_id, group in predictions.groupby("query_id", sort=False)
+    }
+    reasons: list[str | None] = []
+    for query_id in scenes["query_id"].astype(str):
+        query = query_by_id.loc[query_id]
+        reason = v41_precheck_reason(
+            input_siret=query.get("input_siret"),
+            input_siret_state=str(query.get("input_siret_state") or "UNKNOWN"),
+            candidates=prediction_groups.get(query_id, []),
+        )
+        reasons.append(reason.value if reason is not None else None)
+    output = scenes.copy()
+    output["precheck_review_reason"] = reasons
+    output["acceptor_eligible"] = output["precheck_review_reason"].isna()
+    return output
+
+
 def train_v41_models(
     *,
     dataset_dir: Path,
@@ -611,19 +638,27 @@ def train_v41_models(
     scene_labels["split"] = scene_labels.pop("_split")
     scenes = build_query_scenes(selected_predictions, scene_labels)
     scenes["ranker_prediction_is_out_of_sample"] = True
+    scenes = annotate_v41_prechecks(
+        scenes,
+        selected_predictions,
+        queries,
+    )
+    acceptor_scenes = scenes[scenes["acceptor_eligible"]].copy()
+    if acceptor_scenes.empty:
+        raise ValueError("No scene remains eligible for the V4.1 acceptor")
     acceptor_dataset_identity = {
         "ranker_dataset_manifest_id": str(manifest["build_id"]),
         "retrieval_signature": str(manifest["retrieval_signature"]),
         "ranker_variant": selected_variant,
         "ranker_feature_order": selected_features,
         "scene_feature_order": V9_SCENE_FEATURE_NAMES,
-        "query_ids": sorted(scenes["query_id"].astype(str)),
+        "query_ids": sorted(acceptor_scenes["query_id"].astype(str)),
     }
     acceptor_dataset_manifest_id = hashlib.sha256(
         json.dumps(acceptor_dataset_identity, sort_keys=True).encode("utf-8")
     ).hexdigest()[:16]
     acceptor, acceptor_report = fit_v41_raw_logistic_acceptor(
-        scenes,
+        acceptor_scenes,
         feature_order=V9_SCENE_FEATURE_NAMES,
         dataset_manifest_id=acceptor_dataset_manifest_id,
         retrieval_signature=str(manifest["retrieval_signature"]),
@@ -710,6 +745,13 @@ def train_v41_models(
         },
         "ranker_comparison": comparison,
         "acceptor": acceptor_report,
+        "prechecks": {
+            "scene_count": int(len(scenes)),
+            "acceptor_eligible_count": int(len(acceptor_scenes)),
+            "review_reason_counts": scenes[
+                "precheck_review_reason"
+            ].value_counts(dropna=True).to_dict(),
+        },
         "positive_injection": False,
         "test_or_holdout_consumed": False,
         "release_id": release.release_id,

@@ -103,17 +103,13 @@ def _ranked(candidates: Sequence[Mapping[str, Any]]) -> list[Mapping[str, Any]]:
     return sorted(candidates, key=lambda candidate: -float(candidate.get("score") or 0.0))
 
 
-def decide_v41(
+def v41_precheck_reason(
     *,
-    query_id: str,
     input_siret: Any,
     input_siret_state: str,
     candidates: Sequence[Mapping[str, Any]],
-    scene: Mapping[str, Any],
-    acceptor: V41RawLogisticAcceptor,
-    shadow_run_id: str | None = None,
-) -> V41MatchResult:
-    """Apply prechecks in the frozen V4.1 order, then the raw acceptor."""
+) -> V41ReviewReason | None:
+    """Return the first deterministic review reason, without scoring a model."""
     ranked = _ranked(candidates)
     top1 = ranked[0] if ranked else None
     predicted = normalize_siret(
@@ -121,22 +117,16 @@ def decide_v41(
     )
     normalized_input = normalize_siret(input_siret)
     input_state = str(input_siret_state or "UNKNOWN").strip().upper()
-    evidence_tier = (
-        str(top1.get("evidence_tier")) if top1 and top1.get("evidence_tier") else None
-    )
-
     active_candidates = [candidate for candidate in ranked if _active(candidate)]
     direct_active_count = sum(_direct(candidate) for candidate in active_candidates)
 
-    reason: V41ReviewReason | None = None
-    # This order is part of the inference contract.
     if not active_candidates:
-        reason = V41ReviewReason.NO_ACTIVE_CANDIDATE
-    elif direct_active_count > 1:
-        reason = V41ReviewReason.AMBIGUOUS_DIRECT
-    elif top1 is not None and not _active(top1):
-        reason = V41ReviewReason.CLOSED_TOP1
-    elif (
+        return V41ReviewReason.NO_ACTIVE_CANDIDATE
+    if direct_active_count > 1:
+        return V41ReviewReason.AMBIGUOUS_DIRECT
+    if top1 is not None and not _active(top1):
+        return V41ReviewReason.CLOSED_TOP1
+    if (
         input_state in {"A", "ACTIF", "ACTIVE", "OUVERT"}
         and normalized_input is not None
         and predicted is not None
@@ -159,7 +149,37 @@ def decide_v41(
             and _direct_evidence(input_candidate)
             and _direct_evidence(top1)
         ):
-            reason = V41ReviewReason.INPUT_CONFLICT
+            return V41ReviewReason.INPUT_CONFLICT
+    return None
+
+
+def decide_v41(
+    *,
+    query_id: str,
+    input_siret: Any,
+    input_siret_state: str,
+    candidates: Sequence[Mapping[str, Any]],
+    scene: Mapping[str, Any],
+    acceptor: V41RawLogisticAcceptor,
+    shadow_run_id: str | None = None,
+) -> V41MatchResult:
+    """Apply prechecks in the frozen V4.1 order, then the raw acceptor."""
+    ranked = _ranked(candidates)
+    top1 = ranked[0] if ranked else None
+    predicted = normalize_siret(
+        (top1 or {}).get("candidate_siret") or (top1 or {}).get("siret")
+    )
+    normalized_input = normalize_siret(input_siret)
+    input_state = str(input_siret_state or "UNKNOWN").strip().upper()
+    evidence_tier = (
+        str(top1.get("evidence_tier")) if top1 and top1.get("evidence_tier") else None
+    )
+
+    reason = v41_precheck_reason(
+        input_siret=normalized_input,
+        input_siret_state=input_state,
+        candidates=ranked,
+    )
 
     confidence = 0.0 if reason is not None else acceptor.score(scene)
     if reason is None and (predicted is None or confidence < acceptor.threshold):
@@ -189,4 +209,5 @@ __all__ = [
     "V41MatchResult",
     "V41ReviewReason",
     "decide_v41",
+    "v41_precheck_reason",
 ]

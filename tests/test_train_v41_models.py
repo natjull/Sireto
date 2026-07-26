@@ -198,8 +198,8 @@ def test_training_emits_component_safe_fit_dev_artifacts(
     )
 
     assert calls == {
-        "scene_count": 100,
-        "miss_count": 20,
+        "scene_count": 80,
+        "miss_count": 0,
         "all_out_of_sample": True,
         "target_precision": 0.998,
         "min_auto_count": 100,
@@ -209,6 +209,11 @@ def test_training_emits_component_safe_fit_dev_artifacts(
     assert report["positive_injection"] is False
     assert report["ranker_comparison"]["r1_hit_at_1"] >= 0.96
     assert report["ranker_comparison"]["selected_variant"] == "R1"
+    assert report["prechecks"]["scene_count"] == 100
+    assert report["prechecks"]["acceptor_eligible_count"] == 80
+    assert report["prechecks"]["review_reason_counts"] == {
+        "REVIEW_NO_ACTIVE_CANDIDATE": 20
+    }
 
     assignments = pd.read_parquet(output / "split_assignments.parquet")
     assert set(assignments["split"]) == {"fit", "dev"}
@@ -221,6 +226,7 @@ def test_training_emits_component_safe_fit_dev_artifacts(
         "out_of_sample_dev",
     }
     assert int(scenes["retrieval_miss"].sum()) == 20
+    assert int((~scenes["acceptor_eligible"]).sum()) == 20
 
     release = V41ReleaseManifest.load(output / "release_manifest.json")
     assert release.ranker_dataset_manifest_id == "canonical-build-1"
