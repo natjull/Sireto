@@ -216,6 +216,17 @@ def train_selective_acceptor(
             )
         )
         threshold_y = threshold_set["is_exact_siret_correct"].astype(int).to_numpy()
+        operating_points = {}
+        for precision_target in (0.99, 0.995, 0.998):
+            point = select_threshold(
+                threshold_confidence,
+                threshold_y,
+                target_precision=precision_target,
+                min_auto_count=min_auto_count,
+            )
+            operating_points[f"{precision_target:.3f}"] = (
+                point.__dict__ if point is not None else None
+            )
         selected = select_threshold(
             threshold_confidence,
             threshold_y,
@@ -228,6 +239,11 @@ def train_selective_acceptor(
         results[name] = {
             "eligible": True,
             "threshold_selection": selected.__dict__,
+            "operating_points": operating_points,
+            "threshold_risk_coverage_curve": risk_coverage_curve(
+                threshold_confidence,
+                threshold_y,
+            ).to_dict("records"),
         }
         fitted[name] = (model, calibrator, selected)
 

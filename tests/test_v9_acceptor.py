@@ -45,6 +45,12 @@ def test_acceptor_never_uses_test_for_selection():
     assert report["test_used_for_selection"] is False
     assert report["final_holdout_evaluated"] is False
     assert report["test"] is None
+    assert set(report["models"]["score"]["operating_points"]) == {
+        "0.990",
+        "0.995",
+        "0.998",
+    }
+    assert report["models"]["score"]["threshold_risk_coverage_curve"]
     assert bundle.model_family == "score"
 
     _, evaluated = train_selective_acceptor(
