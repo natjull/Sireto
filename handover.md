@@ -52,7 +52,27 @@ Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
 **`GO_ACCEPTEUR_V4`**. Le holdout reste fermé. Rapport :
 `reports/v9/v4_ranker_e1_results.md`.
 
+L'accepteur V4 franchit ensuite son gate : sur les 189 scènes de la moitié
+`threshold`, il automatise **149/189 = 78,836 %** avec **149/149 correctes**.
+Il rejette les 31 ambiguës, les quatre erreurs du ranker et cinq bons cas
+incertains. Verdict : **`GO_HOLDOUT_V4`**. Les six variantes testées sont à
+égalité ; le winner logistique + isotonic vient du tie-break déterministe, pas
+d'une supériorité démontrée. Le holdout n'a toujours pas été lu. Rapport :
+`reports/v9/v4_acceptor_e2_results.md`.
+
 ## Actions terminees (fenetre recente)
+- **Accepteur V4 validé avant holdout** : dataset de 7 215 scènes
+  (6 054 exactes, 1 161 ambiguës), 721 007 paires et zéro `UNRESOLVED`.
+  Les exactes train utilisent les prédictions OOF ; les ambiguës étaient
+  entièrement absentes du fit ranker. Sur le demi-dev `threshold`, le bundle
+  retenu produit 149/189 AUTO = 78,836 %, zéro erreur observée, contre un gate
+  de 25 % à 99,8 %. Les six variantes arrivent au même point. Verdict
+  `GO_HOLDOUT_V4`, sans lecture du holdout. Artefacts :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/acceptor_v4/2b8a9c994e0944be`
+  et
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/acceptor_v4/acceptor_2b8a9c994e0944be_9ec88c8`.
+  Suite complète à 145 tests passants. *(commits GitHub : contrat `9a22fd8`,
+  préparation `af5ce0b`, builder/train `9ec88c8`, rapport `ff1eea4`)*
 - **Ranker V4 validé sur le nouveau dev** : dataset de 604 938 paires,
   5 749 requêtes fit et 305 dev, 55 features déterministes, exactement un
   positif réel par requête, aucune injection et aucun SIREN exact partagé.
@@ -503,6 +523,7 @@ Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
 - `docs/v4_retrieval_reconstruction_contract.md` *(commit GitHub :
   `510868b`)*
 - `docs/v4_ranker_e1_contract.md` *(commit GitHub : `0c90c25`)*
+- `docs/v4_acceptor_e2_contract.md` *(commit GitHub : `9a22fd8`)*
 - `scripts/build_benchmark_v4_current_snapshot.py`,
   `tests/test_benchmark_v4_current_snapshot.py` *(commit GitHub :
   `799c32d`)*
@@ -515,6 +536,11 @@ Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
   `tests/test_v4_ranker_dataset.py` *(commit GitHub : `6236365`)*
 - `scripts/evaluate_v4_ranker_e1.py`,
   `tests/test_v4_ranker_e1.py` *(commit GitHub : `250a05f`)*
+- `scripts/prepare_v4_ambiguous_retrieval.py`,
+  `tests/test_v4_ambiguous_retrieval.py` *(commit GitHub : `af5ce0b`)*
+- `scripts/build_v4_acceptor_dataset.py`,
+  `tests/test_v4_acceptor_dataset.py`, `scripts/train_v9_acceptor.py`,
+  `src/xgb_matcher/v9_scene.py` *(commit GitHub : `9ec88c8`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -529,6 +555,7 @@ Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
   `d8d36b9`)*
 - `reports/v9/v4_retrieval_gate_results.md` *(commit GitHub : `6948aa1`)*
 - `reports/v9/v4_ranker_e1_results.md` *(commit GitHub : `13e3547`)*
+- `reports/v9/v4_acceptor_e2_results.md` *(commit GitHub : `ff1eea4`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -554,9 +581,9 @@ Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
 - E1 historique est conservé comme baseline. Le nouveau ranker V4 est validé
   sur `dev_new`, mais aucun modèle produit n'est déployé.
 - V4-Fresh a levé le manque d'exemples et la fuite SIREN ; le gate retrieval
-  V4 et le ranker E1 sont franchis. Le prochain travail est de reconstruire les
-  scènes `AMBIGUOUS` fit/dev, puis d'entraîner et calibrer l'accepteur
-  exact-SIRET, sans ouvrir `holdout_sealed`.
+  V4, le ranker E1 et l'accepteur E2 sont franchis. Le prochain travail est de
+  geler les hashes du bundle et le runner final, puis d'ouvrir une seule fois
+  `holdout_sealed`.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -617,19 +644,20 @@ Il corrige dix erreurs et dégrade un ancien succès. Verdict de phase :
 | Gate retrieval V4 passé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/retrieval_v4/ddefe3daaacdf5ef/` |
 | Dataset ranker V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/ranker_v4/1aebeada820d92a7/` |
 | Ranker V4 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/ranker_v4/ranker_1aebeada820d92a7_6236365/` |
+| Dataset accepteur V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/acceptor_v4/2b8a9c994e0944be/` |
+| Accepteur V4 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/acceptor_v4/acceptor_2b8a9c994e0944be_9ec88c8/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
 2. Geler la politique V4 stricte et ne pas assouplir ses seuils sur le dev
    audité.
-3. Reconstruire les scènes `AMBIGUOUS` fit/dev pour l'accepteur, sans transformer
-   `UNRESOLVED` en négatifs.
-4. Produire les scènes exactes de l'accepteur à partir des prédictions OOF du
-   ranker V4 et des preuves top-1/top-2.
-5. Entraîner puis calibrer l'accepteur sur des parties disjointes du dev ;
-   publier la couverture à 99,0 %, 99,5 % et 99,8 % de précision observée.
-6. Geler le bundle et le seuil,
-   puis seulement alors autoriser une ouverture unique de `holdout_sealed`.
+3. Publier les hashes du dataset, du ranker, de l'accepteur, du calibrateur et
+   du seuil retenu.
+4. Préenregistrer et tester le runner final sans lire le holdout.
+5. Vérifier la disjonction SIREN puis autoriser une ouverture unique de
+   `holdout_sealed`.
+6. Publier couverture, précision exacte, Hit@1, erreurs et intervalles, puis
+   conclure `GO`, `PIVOT` ou `STOP`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
