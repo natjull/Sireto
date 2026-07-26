@@ -327,12 +327,13 @@ def test_nan_crm_cells_are_empty_strings_not_literal_nan():
     )
 
 
-def test_closed_inventory_state_survives_retrieval_store_omission():
+@pytest.mark.parametrize("inventory_state", ["ACTIVE", "CLOSED"])
+def test_inventory_state_survives_retrieval_store_omission(inventory_state):
     reconciled = reconcile_inventory_qualification(
         inventory_row={
             "input_siret": "19541507000018",
             "input_siren": "195415070",
-            "input_siret_state": "CLOSED",
+            "input_siret_state": inventory_state,
         },
         runtime=InputSiretQualification(
             raw_value="19541507000018",
@@ -341,7 +342,7 @@ def test_closed_inventory_state_survives_retrieval_store_omission():
             state=InputSiretState.NOT_FOUND,
         ),
     )
-    assert reconciled.state == InputSiretState.CLOSED
+    assert reconciled.state == InputSiretState(inventory_state)
     assert reconciled.candidate is None
 
 

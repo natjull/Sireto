@@ -93,10 +93,10 @@ def reconcile_inventory_qualification(
 ) -> InputSiretQualification:
     """Use the frozen full SIRENE inventory as state authority.
 
-    The global candidate store is optimized for retrieval and can legitimately
-    omit an old closed SIRET.  In that one case, preserve the inventory's
-    CLOSED state without inventing candidate details.  Any contradictory
-    current-state evidence remains a hard failure.
+    The global candidate store is optimized for retrieval and can omit a SIRET
+    that exists in the complete stock.  In that case, preserve the inventory's
+    ACTIVE or CLOSED state without inventing candidate details.  Any
+    contradictory current-state evidence remains a hard failure.
     """
 
     state_text = _first_text(
@@ -116,14 +116,14 @@ def reconcile_inventory_qualification(
     if inventory_state == runtime.state:
         return runtime
     if (
-        inventory_state == InputSiretState.CLOSED
+        inventory_state in {InputSiretState.ACTIVE, InputSiretState.CLOSED}
         and runtime.state == InputSiretState.NOT_FOUND
     ):
         return InputSiretQualification(
             raw_value=runtime.raw_value,
             normalized_siret=inventory_siret,
             siren=inventory_siren,
-            state=InputSiretState.CLOSED,
+            state=inventory_state,
             candidate=None,
         )
     raise ValueError(
