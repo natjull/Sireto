@@ -14,6 +14,7 @@ from typing import Any
 
 import numpy as np
 import pandas as pd
+import pyarrow.parquet as pq
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
@@ -54,6 +55,24 @@ def _load_and_validate(
     if expected != file_sha256(raw_path):
         raise ValueError(f"Raw artifact hash mismatch: {raw_path}")
     return pd.read_parquet(raw_path), manifest
+
+
+def load_frozen_baseline(path: Path) -> pd.DataFrame:
+    """Accept a recall-curve artifact or the audited current_sparse channel."""
+    columns = set(pq.ParquetFile(path).schema.names)
+    if "candidate_sirets_json" in columns:
+        return pd.read_parquet(
+            path,
+            columns=["query_id", "candidate_sirets_json"],
+        )
+    if "current_sparse_sirets_json" in columns:
+        return pd.read_parquet(
+            path,
+            columns=["query_id", "current_sparse_sirets_json"],
+        ).rename(
+            columns={"current_sparse_sirets_json": "candidate_sirets_json"}
+        )
+    raise ValueError("Frozen baseline has no supported candidate-list column")
 
 
 def select_candidates(
@@ -319,10 +338,7 @@ def main() -> None:
         or v7_manifest["split"] != overlay_manifest["split"]
     ):
         raise ValueError("Input benchmark contracts differ")
-    frozen_baseline = pd.read_parquet(
-        args.frozen_baseline_raw,
-        columns=["query_id", "candidate_sirets_json"],
-    )
+    frozen_baseline = load_frozen_baseline(args.frozen_baseline_raw)
     raw, summary = evaluate(
         v7_raw=v7_raw,
         overlay_raw=overlay_raw,

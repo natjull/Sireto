@@ -1,4 +1,9 @@
-from scripts.evaluate_retrieval_admission import select_candidates
+import pandas as pd
+
+from scripts.evaluate_retrieval_admission import (
+    load_frozen_baseline,
+    select_candidates,
+)
 
 
 def test_admission_preserves_overlay_quota_and_hard_budget() -> None:
@@ -42,3 +47,19 @@ def test_admission_tie_break_is_deterministic() -> None:
         internal_k=10,
     )
     assert selected == ["A", "B"]
+
+
+def test_audited_current_sparse_can_be_the_train_baseline(tmp_path) -> None:
+    path = tmp_path / "channels.parquet"
+    pd.DataFrame(
+        {
+            "query_id": ["q1"],
+            "current_sparse_sirets_json": ['["A","B"]'],
+        }
+    ).to_parquet(path, index=False)
+
+    baseline = load_frozen_baseline(path)
+
+    assert baseline.to_dict("records") == [
+        {"query_id": "q1", "candidate_sirets_json": '["A","B"]'}
+    ]
