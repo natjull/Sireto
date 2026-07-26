@@ -29,10 +29,26 @@ excellente : 4 058/4 060 = 99,951 % train et 872/872 = 100 % dev. Le ranker E1
 atteint 96,034 % / 94,954 % Hit@1 sur ce noyau. Mais V4 échoue à son gate
 pré-enregistré : couverture ~34 % au lieu de 50 %, moins de 5 000 exacts train
 et 14 SIREN actuels partagés entre les anciens splits. Verdict :
-**`STOP_V4`**, sans assouplissement post-hoc. Rapport :
-`reports/v9/benchmark_v4_current_snapshot_results.md`.
+`STOP_V4` sur ce corpus seul, sans assouplissement post-hoc.
+
+Ce blocage est désormais levé par **V4-Fresh** : 6 330 lignes CRM absentes du
+benchmark ont été qualifiées avec la même règle, puis séparées par hash SIREN.
+Elles ajoutent 819 exacts au fit, 305 au nouveau dev et 302 au holdout scellé.
+Le fit combiné atteint **5 751 exacts**, avec zéro SIREN exact partagé entre
+fit/dev/holdout. Verdict : **`PASS_V4_FRESH`**. Le holdout n'a reçu aucune
+prédiction modèle. Rapport : `reports/v9/v4_fresh_expansion_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Expansion V4-Fresh passée sans réutiliser le benchmark** : les 6 330
+  `SERVICE ID` absents du benchmark ont fourni 1 426 SIRET actifs uniques,
+  247 ambigus et 4 657 non résolus. Séparation gelée : `fit_addition`
+  819 exacts, `dev_new` 305, `holdout_sealed` 302. Le fit combiné avec le noyau
+  V4 contient 5 751 exacts. Zéro chevauchement de SIREN exact entre les trois
+  rôles, zéro identifiant déjà présent dans le benchmark, zéro SIRET fermé.
+  Le holdout est hashé mais non évalué. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/v4_fresh_expansion/14047b719ef90f6f`.
+  Suite complète à 132 tests passants. *(commits GitHub : contrat `1c2e84c`,
+  builder/tests `613cf7d`, rapport `d8d36b9`)*
 - **Qualification V4 actuelle pré-enregistrée puis exécutée** : examen de
   toutes les lignes actives de la partition géographique, sans top-k, rang,
   score ni décision modèle. V4 produit 4 060/11 837 = 34,299 % exacts train et
@@ -446,9 +462,12 @@ et 14 SIREN actuels partagés entre les anciens splits. Verdict :
 - `docs/downstream_acceptor_e2b_contract.md` *(commit GitHub : `cf91432`)*
 - `docs/benchmark_v4_current_snapshot_policy.md` *(commit GitHub :
   `ce82b01`)*
+- `docs/v4_fresh_expansion_contract.md` *(commit GitHub : `1c2e84c`)*
 - `scripts/build_benchmark_v4_current_snapshot.py`,
   `tests/test_benchmark_v4_current_snapshot.py` *(commit GitHub :
   `799c32d`)*
+- `scripts/build_v4_fresh_expansion.py`,
+  `tests/test_v4_fresh_expansion.py` *(commit GitHub : `613cf7d`)*
 - `scripts/build_downstream_selective_dataset.py`,
   `tests/test_downstream_selective_dataset.py` *(commits GitHub :
   `0a75b73`, correction des partitions overlay `fc9cb1b`)*
@@ -459,6 +478,8 @@ et 14 SIREN actuels partagés entre les anciens splits. Verdict :
 - `reports/v9/downstream_e2b_results.md` *(commit GitHub : `ebb4bf2`)*
 - `reports/v9/benchmark_v4_current_snapshot_results.md` *(commit GitHub :
   `299bc8a`)*
+- `reports/v9/v4_fresh_expansion_results.md` *(commit GitHub :
+  `d8d36b9`)*
 - `src/xgb_matcher/features.py` *(commits GitHub: `35fb441`, `fcfc33f`, `db4ab27`)*
 - `scripts/generate_training_samples_v5fast.py` *(commits GitHub: `35fb441`, `c356923`, `1305012`, `c961371`, `fcfc33f`, `db4ab27`)*
 - `scripts/train_xgb_decider.py` *(commit GitHub: `35fb441`)*
@@ -477,14 +498,14 @@ et 14 SIREN actuels partagés entre les anciens splits. Verdict :
 
 ## Travail en cours
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
-  E1, les accepteurs E2/E2b et la qualification V4 sont publiés sur le SSD.
+  E1, les accepteurs E2/E2b, V4 et V4-Fresh sont publiés sur le SSD.
 - Le test final a été lu une fois et est maintenant définitivement fermé à
   toute nouvelle variante, règle ou seuil.
-- E1 est validé sur l'ancienne cible. E2b et V4 sont arrêtés par leurs gates
-  respectifs ; aucun modèle produit n'est déployé.
-- Aucun assouplissement de V4 ni tuning accepteur n'est autorisé sur ce dev.
-  Le prochain contrat doit traiter la séparation SIREN V4 et le manque
-  d'exemples train, ou intégrer de nouvelles lignes CRM indépendantes.
+- E1 est validé sur l'ancienne cible. E2b est refusé et aucun modèle produit
+  n'est déployé.
+- V4-Fresh a levé le manque d'exemples et la fuite SIREN. Le prochain travail
+  est de produire les pools candidats gelés pour le fit combiné et `dev_new`,
+  sans ouvrir `holdout_sealed`.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -511,8 +532,11 @@ et 14 SIREN actuels partagés entre les anciens splits. Verdict :
   « actif au snapshot ». Elle ne peut pas servir à reconstruire un exploitant
   historique sans date CRM.
 - **Split historique invalidé par les nouvelles vérités** : 14 SIREN V4 exacts
-  sont partagés entre train et dev. Ils doivent être regroupés ou retirés du
-  fit avant tout nouvel apprentissage.
+  étaient partagés entre train et dev. L'ancien dev est abandonné pour la
+  nouvelle cible ; V4-Fresh fournit un nouveau dev et un holdout sans SIREN
+  exact partagé avec le fit.
+- **Holdout Fresh scellé** : aucune génération de candidats, prédiction ou
+  mesure modèle ne doit lire `holdout_sealed` avant gel du bundle et du seuil.
 - **NO_MATCH temporel**: toujours rattache au snapshot SIRENE et a la date de
   reference.
 - **Cross-encoder conditionnel**: aucune promotion sans +1 point de couverture
@@ -538,20 +562,20 @@ et 14 SIREN actuels partagés entre les anciens splits. Verdict :
 | Accepteur E2 refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_3171ef5020c0f068_fc9cb1b/` |
 | Accepteur E2b refusé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/downstream/acceptor_e2b_3171ef5020c0f068_070c123/` |
 | Qualification V4 refusée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/qualification_v4/0b333d33a56ed759/` |
+| Expansion V4-Fresh passée | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/benchmarks/v4_fresh_expansion/14047b719ef90f6f/` |
 
 ## Prochaines etapes
 1. Ne plus toucher au test final actuel.
 2. Geler la politique V4 stricte et ne pas assouplir ses seuils sur le dev
    audité.
-3. Pré-enregistrer un contrat de données suivant : regrouper les requêtes par
-   SIREN V4 pour supprimer les 14 chevauchements, exclure `UNRESOLVED` du fit
-   et définir avant calcul le volume minimal réellement nécessaire.
-4. Option recommandée pour respecter le gate initial : apporter environ
-   2 800 nouvelles lignes CRM indépendantes, dont la règle V4 devrait qualifier
-   environ 950 exactes, afin de dépasser 5 000 exemples train sans recycler le
-   dev.
-5. Réentraîner ranker/accepteur seulement après ce nouveau gel. Le noyau V4
-   actuel peut servir de données train sûres, mais pas de validation finale.
+3. Construire le fit combiné à partir des 4 932 exacts du noyau V4 et des 819
+   exacts `fit_addition`; retirer les anciens chevauchements SIREN du découpage
+   de validation, pas des données de fit.
+4. Exécuter le retrieval gelé à 100 sur le fit combiné et `dev_new`, puis
+   publier séparément Recall@100 avant tout ranker.
+5. Si Recall@100 reste ≥99 %, entraîner ranker puis accepteur avec OOF SIREN,
+   en excluant `UNRESOLVED`. Geler le bundle et le seuil avant toute ouverture
+   de `holdout_sealed`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
