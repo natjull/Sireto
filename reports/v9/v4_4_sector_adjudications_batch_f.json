@@ -1,0 +1,753 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-f-1",
+  "created_at": "2026-07-28T00:50:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Le BODACC est un producteur DILA distinct fondé sur les annonces légales; plusieurs annonces BODACC ne créent qu'un groupe indépendant.",
+    "identity_rule": "Une adresse ou un SIRET CRM identique au top1 ne suffit pas. Le libellé CRM doit désigner l'identité que SIRENE et le second producteur relient au candidat.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans preuve directe suffisante."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate RANDOM_POPULATION et top1 gelés"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "random_population_count": 12,
+    "auto_match_source_count": 12,
+    "top1_correct_evidence_validated": 10,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 2,
+    "validated_correct_siret_count": 10,
+    "training_eligible_count": 10
+  },
+  "cases": [
+    {
+      "audit_case_id": "00d8e46542558774",
+      "service_id": "FR040083",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BASIC FIT II",
+        "address": "193 avenue Charles de Gaulle, 62231 Coquelles",
+        "input_siret": "79823301101284",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "79823301101284",
+        "siren": "798233011"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "79823301101284",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE relie explicitement l'enseigne BASIC FIT II au SIRET top1 actif de BASIC-FIT FRANCE à Coquelles. Le BODACC relie indépendamment la dénomination Basic-Fit France au même SIREN. Le numéro de voie CRM diffère, mais la décision repose sur l'identité explicite et non sur l'adresse.",
+      "sources": [
+        {
+          "evidence_id": "00d8e46542558774-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_TRADE_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79823301101284&per_page=1",
+          "collected_at": "2026-07-27T22:47:51.900866+00:00",
+          "response_sha256": "86e3f6a3426b00f1f32e511bd9afb4ed54549ee6310d7db19cbd055fbc5720c8",
+          "archived_facts": [
+            "Le SIRET actif 79823301101284 appartient à BASIC-FIT FRANCE.",
+            "L'établissement de Coquelles porte explicitement l'enseigne BASIC FIT II."
+          ]
+        },
+        {
+          "evidence_id": "00d8e46542558774-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22798233011%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:52.086007+00:00",
+          "response_sha256": "10a78d1f065af6627766590cedc2c2e970cef879db4183d7fb9fb5ca085b78db",
+          "archived_facts": [
+            "Le BODACC publie Basic-Fit France sous l'identifiant 798233011.",
+            "Cette annonce légale confirme indépendamment la personne morale du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01f323395bc183af",
+      "service_id": "FR024398",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BODYCOTE - VILLAZ",
+        "address": "ZA Parc de la Filière, allée des Futais, 74370 Villaz",
+        "input_siret": "69678042800392",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "69678042800392",
+        "siren": "696780428"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "69678042800392",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE identifie le SIRET top1 actif comme l'établissement BODYCOTE du Parc de la Filière à Villaz. Le BODACC rattache indépendamment la dénomination BODYCOTE au même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "01f323395bc183af-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=69678042800392&per_page=1",
+          "collected_at": "2026-07-27T22:47:52.147534+00:00",
+          "response_sha256": "2c8bbca9a678e2e2e434d23c7aea89625f039cf4dab5c65bd7d8cfa412726ef8",
+          "archived_facts": [
+            "Le SIRET actif 69678042800392 appartient à BODYCOTE.",
+            "L'établissement est localisé ZA Parc de la Filière à Villaz."
+          ]
+        },
+        {
+          "evidence_id": "01f323395bc183af-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22696780428%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:52.376962+00:00",
+          "response_sha256": "6c4380e84c28100c5dda26274e90444b2498e6da850c855ffc2af6b572e92c0e",
+          "archived_facts": [
+            "Le BODACC publie BODYCOTE sous l'identifiant 696780428.",
+            "Cette annonce confirme indépendamment l'identité juridique du site top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01f5e83c02d98a45",
+      "service_id": "FR028487",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CNAF 921-ANT-MALABRYM2",
+        "address": "207 avenue de la Division Leclerc, 92290 Châtenay-Malabry",
+        "input_siret": "38105099600143",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "38105099600143",
+        "siren": "381050996"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY"
+      ],
+      "decision_reason": "SIRENE identifie le top1 comme un établissement actif de la CAF des Hauts-de-Seine à l'adresse CRM. Mais le libellé interne « CNAF 921-ANT-MALABRYM2 » n'est pas publié dans cette source et aucune seconde source primaire indépendante retrouvée ne relie explicitement ce code à ce SIRET. L'adresse et le SIRET d'entrée ne suffisent pas à valider la sémantique du code interne.",
+      "sources": [
+        {
+          "evidence_id": "01f5e83c02d98a45-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_EXPLICIT_BUT_CRM_CODE_UNPROVEN",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=38105099600143&per_page=1",
+          "collected_at": "2026-07-27T22:47:52.450879+00:00",
+          "response_sha256": "1481e22d2c87afbb66f421f522b5aa633c6109eed600ff709972d936879bcaaa",
+          "archived_facts": [
+            "Le SIRET 38105099600143 est un établissement actif de la CAF des Hauts-de-Seine.",
+            "L'établissement est situé 207 avenue de la Division Leclerc à Châtenay-Malabry.",
+            "La réponse ne publie pas le code interne CNAF 921-ANT-MALABRYM2."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun second producteur primaire ne relie explicitement le code CRM interne au top1.",
+        "Une concordance d'adresse ne constitue pas une preuve d'identité."
+      ]
+    },
+    {
+      "audit_case_id": "01a08d6ba4de11ad",
+      "service_id": "AC008225",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "EURO PEINTURES",
+        "address": "3 rue du Pappe Veld, 59180 Cappelle-la-Grande",
+        "input_siret": "44791304700026",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "44791304700026",
+        "siren": "447913047"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "44791304700026",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient indépendamment EURO PEINTURES sous le même SIREN; SIRENE relie en plus le SIRET exact top1 au site actif de Cappelle-la-Grande. Le numéro de voie CRM ancien ou erroné ne porte pas la décision.",
+      "sources": [
+        {
+          "evidence_id": "01a08d6ba4de11ad-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=44791304700026&per_page=1",
+          "collected_at": "2026-07-27T22:47:52.508282+00:00",
+          "response_sha256": "aae9182e4cba61a917f9c51bf918b8e318a7d56e8c33c5d01234da8df0610d3b",
+          "archived_facts": [
+            "Le SIRET actif 44791304700026 appartient à EURO PEINTURES.",
+            "Le site est situé rue du Pappe Veld à Cappelle-la-Grande."
+          ]
+        },
+        {
+          "evidence_id": "01a08d6ba4de11ad-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22447913047%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:52.730317+00:00",
+          "response_sha256": "a084cb9a651619c7185af06a4aa2f62f7fb565f1ebae860b76dc3ed7eb014e4d",
+          "archived_facts": [
+            "Le BODACC publie EURO PEINTURES sous l'identifiant 447913047.",
+            "L'annonce la plus récente situe également l'entité à Cappelle-la-Grande."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "02c8d07edec87e79",
+      "service_id": "AC001419",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "TOM DEPANNAGE",
+        "address": "33 rue de Copenhague, Parc Aquatechnique, 34200 Sète",
+        "input_siret": "48865798200010",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "48865798200010",
+        "siren": "488657982"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "48865798200010",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient explicitement TOM DEPANNAGE sous le même SIREN et à la même adresse; SIRENE relie le SIRET exact top1 à cet établissement actif.",
+      "sources": [
+        {
+          "evidence_id": "02c8d07edec87e79-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48865798200010&per_page=1",
+          "collected_at": "2026-07-27T22:47:52.788321+00:00",
+          "response_sha256": "32658cd7d436e0da46d7034e64b9eb9629692bd15d01c811e3fbdc58be6c1ccb",
+          "archived_facts": [
+            "Le SIRET actif 48865798200010 appartient à TOM DEPANNAGE.",
+            "Le site est au 33 rue de Copenhague, Parc Aquatechnique à Sète."
+          ]
+        },
+        {
+          "evidence_id": "02c8d07edec87e79-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22488657982%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:53.019975+00:00",
+          "response_sha256": "c54d42891b8c46b51a542ffe00f6eacd4225c814b10ade7ea4f1c481336a49c6",
+          "archived_facts": [
+            "Le BODACC publie TOM DEPANNAGE sous l'identifiant 488657982.",
+            "L'annonce la plus récente publie le 33 rue de Copenhague à Sète."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "03299a984493cedd",
+      "service_id": "AC002448",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "C CLOT",
+        "address": "200 rue des Terres Bourdin, 69140 Rillieux-la-Pape",
+        "input_siret": "49123704600017",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "49123704600017",
+        "siren": "491237046"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "49123704600017",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient la société C'CLOT, variante ponctuée du libellé CRM C CLOT, sous le même SIREN et à la même adresse. SIRENE relie le SIRET top1 exact à ce site actif.",
+      "sources": [
+        {
+          "evidence_id": "03299a984493cedd-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=49123704600017&per_page=1",
+          "collected_at": "2026-07-27T22:47:53.075783+00:00",
+          "response_sha256": "50d985cabc320a1d59bbc87421a17dc98210e34444d3cbc41999576343f9fd17",
+          "archived_facts": [
+            "Le SIRET actif 49123704600017 appartient à C'CLOT.",
+            "L'établissement est au 200 rue des Terres Bourdin."
+          ]
+        },
+        {
+          "evidence_id": "03299a984493cedd-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22491237046%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:53.649802+00:00",
+          "response_sha256": "4717f3c4cac23ba92526ec0a468367878946a7108d2b378b841bdd3538975f3b",
+          "archived_facts": [
+            "Le BODACC publie C'CLÔT sous l'identifiant 491237046.",
+            "L'annonce situe la société au 200 rue des Terres Bourdin à Rillieux-la-Pape."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01ba784e7e82072c",
+      "service_id": "AC017097",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ALL SUN",
+        "address": "51 S avenue de Bourgogne, 94550 Chevilly-Larue",
+        "input_siret": "72206029000011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "72206029000011",
+        "siren": "722060290"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient le top1 comme LEGUERINAIS PRIMEURS, non ALL SUN. Le SIRET d'entrée est identique au top1 mais aucune des deux sources ne publie ALL SUN comme dénomination, enseigne ou nom commercial de cet établissement. Sans preuve positive sur l'alias CRM, ni TOP1_CORRECT ni TOP1_WRONG n'est honnêtement établi.",
+      "sources": [
+        {
+          "evidence_id": "01ba784e7e82072c-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_EXPLICIT_BUT_CRM_ALIAS_UNPROVEN",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=72206029000011&per_page=1",
+          "collected_at": "2026-07-27T22:47:53.703745+00:00",
+          "response_sha256": "93a79c5762db80ba6cdebd643ac8ecbe0d569387224e5fdd5f686c15f8c0a746",
+          "archived_facts": [
+            "Le SIRET 72206029000011 appartient à LEGUERINAIS PRIMEURS et est actif.",
+            "La réponse ne publie ni enseigne ni nom commercial ALL SUN."
+          ]
+        },
+        {
+          "evidence_id": "01ba784e7e82072c-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_DIFFERENT_TOP1_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22722060290%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:53.891829+00:00",
+          "response_sha256": "0318f4982231c5df18a2b3db6c18f66126f299ee8fb13bfa805c7d0396c9127f",
+          "archived_facts": [
+            "Le BODACC publie LEGUERINAIS PRIMEURS sous l'identifiant 722060290.",
+            "Les annonces retournées ne prouvent pas le rattachement de l'alias ALL SUN."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "L'origine du libellé ALL SUN n'est pas documentée par une source primaire.",
+        "Le partage d'un SIRET CRM ne remplace pas la preuve sémantique de l'identité visée."
+      ]
+    },
+    {
+      "audit_case_id": "0000f1c5c43dd680",
+      "service_id": "AC005071",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GH HOLDING",
+        "address": "79 rue Stendhal, 76620 Le Havre",
+        "input_siret": "53210236500014",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "53210236500014",
+        "siren": "532102365"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "53210236500014",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient indépendamment G.H. HOLDING, variante ponctuée exacte de GH HOLDING, sous le même SIREN et à l'adresse CRM. SIRENE relie le SIRET top1 exact à ce site actif.",
+      "sources": [
+        {
+          "evidence_id": "0000f1c5c43dd680-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=53210236500014&per_page=1",
+          "collected_at": "2026-07-27T22:47:53.947240+00:00",
+          "response_sha256": "fc8bb791f752a698fba85e07dc6988e59a0db4d48ef52b1b9ede120fe511c0f3",
+          "archived_facts": [
+            "Le SIRET actif 53210236500014 appartient à G.H. HOLDING.",
+            "L'établissement est au 79 rue Stendhal au Havre."
+          ]
+        },
+        {
+          "evidence_id": "0000f1c5c43dd680-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22532102365%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:54.131337+00:00",
+          "response_sha256": "c8434ef34383a5fad3da51ed10cbd89af0a2a4579b131ef370d9430d7e145b7c",
+          "archived_facts": [
+            "Le BODACC publie G.H. HOLDING sous l'identifiant 532102365.",
+            "L'annonce situe la société au 79 rue Stendhal au Havre."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "0000b8e6a0a435f7",
+      "service_id": "AC009837",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MAITRE BEUZEBOC BERNARD",
+        "address": "1 rue des Mathurins, 14100 Lisieux",
+        "input_siret": "50225953400019",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "50225953400019",
+        "siren": "502259534"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "50225953400019",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient la SELARL Bernard Beuzeboc sous le même SIREN et à la même adresse. Le titre « Maître » et l'ordre nom-prénom du CRM décrivent la même identité professionnelle; SIRENE relie le SIRET exact au site actif.",
+      "sources": [
+        {
+          "evidence_id": "0000b8e6a0a435f7-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_PERSON",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=50225953400019&per_page=1",
+          "collected_at": "2026-07-27T22:47:54.181827+00:00",
+          "response_sha256": "37f0f8948f59daae3c843e61bb26b15296e48f2836175c1191703efa4f903c31",
+          "archived_facts": [
+            "Le SIRET actif 50225953400019 appartient à la SELARL Bernard Beuzeboc.",
+            "L'établissement est au 1 rue des Mathurins à Lisieux."
+          ]
+        },
+        {
+          "evidence_id": "0000b8e6a0a435f7-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_PERSON",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22502259534%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:54.411343+00:00",
+          "response_sha256": "4528ef74a274f999a982ba3beffa47497684aaa0fc5ab4e711ee2f9a15a704ac",
+          "archived_facts": [
+            "Le BODACC publie SELARL Bernard BEUZEBOC sous l'identifiant 502259534.",
+            "L'annonce publie le 1 rue des Mathurins à Lisieux."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "02b49354caa85841",
+      "service_id": "AC018112",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "A.O.F. DECOLLETAGE",
+        "address": "185 avenue des Bouleaux, 74300 Thyez",
+        "input_siret": "87811720900022",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "87811720900022",
+        "siren": "878117209"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "87811720900022",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC publient A.O.F. DECOLLETAGE sous le même SIREN et au 185 rue des Bouleaux à Thyez. SIRENE relie le SIRET top1 exact à cet établissement actif; la différence rue/avenue du CRM est sans effet sur l'identité.",
+      "sources": [
+        {
+          "evidence_id": "02b49354caa85841-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=87811720900022&per_page=1",
+          "collected_at": "2026-07-27T22:47:54.465985+00:00",
+          "response_sha256": "7580942eb3b170f57d664ff504793be94187248f4170e00c8195f182aa0211fe",
+          "archived_facts": [
+            "Le SIRET actif 87811720900022 appartient à A.O.F.DECOLLETAGE.",
+            "L'établissement est au 185 rue des Bouleaux à Thyez."
+          ]
+        },
+        {
+          "evidence_id": "02b49354caa85841-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22878117209%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:54.640182+00:00",
+          "response_sha256": "d159e23a0e69b3fe19941ee9ca8102476b4e2c474887eb7930922a72a621dd7c",
+          "archived_facts": [
+            "Le BODACC publie A.O.F. DECOLLETAGE sous l'identifiant 878117209.",
+            "L'annonce situe la société au 185 rue des Bouleaux à Thyez."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "00445bbbd46301a4",
+      "service_id": "FR011166",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "JNC",
+        "address": "1 impasse du Rhône, 69960 Corbas",
+        "input_siret": "79341104200013",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "79341104200013",
+        "siren": "793411042"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "79341104200013",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient J.N.C, variante ponctuée de JNC, sous le même SIREN et au 1 impasse du Rhône à Corbas. SIRENE relie le SIRET exact à ce site actif.",
+      "sources": [
+        {
+          "evidence_id": "00445bbbd46301a4-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79341104200013&per_page=1",
+          "collected_at": "2026-07-27T22:47:54.702572+00:00",
+          "response_sha256": "7a0f2fae0660e99322c3a47f6b462dd0cddc4cfa3ce639c3bd12df07feab5a4f",
+          "archived_facts": [
+            "Le SIRET actif 79341104200013 appartient à J.N.C.",
+            "L'établissement est au 1 impasse du Rhône à Corbas."
+          ]
+        },
+        {
+          "evidence_id": "00445bbbd46301a4-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22793411042%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:54.883860+00:00",
+          "response_sha256": "f5fe83027c2c52188fe63f892e1be1c4c026b6a67f6f7f514dafde8924a8feb9",
+          "archived_facts": [
+            "Le BODACC publie J.N.C sous l'identifiant 793411042.",
+            "L'annonce situe l'entité au 1 impasse du Rhône à Corbas."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "031236d3cafd3931",
+      "service_id": "AC015690",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "HERBETTE",
+        "address": "19 rue André Tempez, 80600 Doullens",
+        "input_siret": "44125473700022",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "44125473700022",
+        "siren": "441254737"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "44125473700022",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_BODACC"
+      ],
+      "decision_reason": "SIRENE et le BODACC identifient SVV Denis HERBETTE sous le même SIREN et à l'adresse CRM. Le libellé CRM abrège la raison sociale au patronyme distinctif; SIRENE relie le SIRET top1 exact au site actif.",
+      "sources": [
+        {
+          "evidence_id": "031236d3cafd3931-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_DISTINCTIVE_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=44125473700022&per_page=1",
+          "collected_at": "2026-07-27T22:47:54.949312+00:00",
+          "response_sha256": "c360254f62736e0ac6ac60297bd774a35dcceb6031089d5c3da2ced9acb0a970",
+          "archived_facts": [
+            "Le SIRET actif 44125473700022 appartient à SVV Denis HERBETTE.",
+            "L'établissement est au 19 rue André Tempez à Doullens."
+          ]
+        },
+        {
+          "evidence_id": "031236d3cafd3931-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_PERSON",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22441254737%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:47:55.175592+00:00",
+          "response_sha256": "2c36f957fd05d530ed6600e85b95d94694ae21bb1cd685085e0a1d6e2a0f315d",
+          "archived_facts": [
+            "Le BODACC publie SVV Denis HERBETTE sous l'identifiant 441254737.",
+            "L'annonce situe l'entité au 19 rue André Tempez à Doullens."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}

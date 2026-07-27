@@ -1,0 +1,822 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-1",
+  "created_at": "2026-07-28T00:51:28+02:00",
+  "policy": {
+    "name": "evidence-validated-identity-adjudication",
+    "minimum_independent_source_families": 2,
+    "same_producer_views_are_independent": false,
+    "address_alone_is_identity_proof": false,
+    "model_scores_used": false,
+    "positive_injection_used": false,
+    "scope": "decision=AUTO_MATCH uniquement, conformément au gate V4.4"
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, décisions AUTO_MATCH et top-1 gelés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "réponses complètes archivées de l'API Recherche d'entreprises"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "top1_correct_evidence_validated": 10,
+    "top1_wrong_evidence_validated": 2,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 10,
+    "training_eligible_count": 12
+  },
+  "cases": [
+    {
+      "audit_case_id": "0155cd4a487ad1b9",
+      "service_id": "FR037454",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GHU PARIS - PSYCHIATRIE ET NEUROSCIENCES",
+        "address": "23 Rue Broussais, PARIS",
+        "input_siret": "20008210500913",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "20008210500913",
+        "siren": "200082105"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "20008210500913",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "VILLE_DE_PARIS"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme le CSAPA Sainte-Anne du GHU Paris au 23 rue Broussais. La Ville de Paris publie indépendamment le centre hospitalier Sainte-Anne et son CSAPA Moreau-de-Tours à cette adresse. Le nom institutionnel et le site concordent avec le CRM.",
+      "sources": [
+        {
+          "evidence_id": "0155cd4a487ad1b9-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=20008210500913&per_page=1",
+          "collected_at": "2026-07-27T20:48:20.299474+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "0155cd4a487ad1b9",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 20008210500913 est actif.",
+            "L'établissement est le CSAPA Sainte-Anne du Groupe hospitalier universitaire Paris - Psychiatrie et Neurosciences.",
+            "L'adresse publiée est 23 rue Broussais, Paris 14e."
+          ]
+        },
+        {
+          "evidence_id": "0155cd4a487ad1b9-ville-paris",
+          "producer": "Ville de Paris",
+          "source_family": "LOCAL_GOVERNMENT_HEALTH_DIRECTORY",
+          "canonical_source_family": "VILLE_DE_PARIS",
+          "independence_group": "VILLE_DE_PARIS",
+          "proof_kind": "IDENTITY_PUBLIC_DIRECTORY_LINKS_CRM_TO_TOP1_SITE",
+          "counts_for_independence": true,
+          "document_type": "annuaire public municipal",
+          "url": "https://www.paris.fr/pages/alcool-drogues-tabac-addictions-73",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "La Ville de Paris référence le Centre hospitalier Sainte-Anne, service d'addictologie et CSAPA Moreau-de-Tours.",
+            "L'adresse publiée est 23 rue Broussais, avec le téléphone 01 45 65 80 64."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "02976cd17e6b1e81",
+      "service_id": "AC018829",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Maitre eeckhout",
+        "address": "1 Rue Jean-jaurés, ROISEL",
+        "input_siret": "89879338500011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "89879338500011",
+        "siren": "898793385"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "89879338500011",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "NOTAIRES_DE_FRANCE"
+      ],
+      "decision_reason": "SIRENE rattache le top-1 actif à Sophie Eeckhout, au 1 rue Jean-Jaurès à Roisel. L'annuaire national des Notaires de France identifie indépendamment Maître Sophie Eeckhout et son bureau principal à cette même adresse.",
+      "sources": [
+        {
+          "evidence_id": "02976cd17e6b1e81-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=89879338500011&per_page=1",
+          "collected_at": "2026-07-27T20:48:37.843437+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "02976cd17e6b1e81",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 89879338500011 est actif et appartient à Sophie Eeckhout.",
+            "L'adresse est 1 rue Jean-Jaurès à Roisel."
+          ]
+        },
+        {
+          "evidence_id": "02976cd17e6b1e81-notaires-france",
+          "producer": "Conseil supérieur du notariat",
+          "source_family": "PROFESSIONAL_ORDER_DIRECTORY",
+          "canonical_source_family": "NOTAIRES_DE_FRANCE",
+          "independence_group": "NOTAIRES_DE_FRANCE",
+          "proof_kind": "IDENTITY_PROFESSIONAL_DIRECTORY_LINKS_CRM_TO_TOP1",
+          "counts_for_independence": true,
+          "document_type": "annuaire professionnel national",
+          "url": "https://www.notaires.fr/fr/notaire/sophie-eeckhout",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "L'annuaire nomme Maître Sophie Eeckhout, notaire associée à Roisel.",
+            "Son bureau principal est publié au 1 rue Jean-Jaurès, 80240 Roisel."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "031fe55078252a82",
+      "service_id": "FR026302",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "RESIDENCE PARC HARMONIE",
+        "address": "28 Rue de l'Harmonie, LYON 3EME ARRONDISSEMENT",
+        "input_siret": "50378226000049",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "50378226000049",
+        "siren": "503782260"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "50378226000049",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "STUDILODGE_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie explicitement le top-1 actif comme STUDILODGE PARC HARMONIE à l'adresse CRM. Le gestionnaire Studilodge publie indépendamment la résidence Parc Harmonie à Lyon 3e; son accès public actuel est indiqué rue Feuillat, qui borde le même ensemble immobilier, sans contredire l'établissement SIRENE.",
+      "sources": [
+        {
+          "evidence_id": "031fe55078252a82-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=50378226000049&per_page=1",
+          "collected_at": "2026-07-27T20:48:43.927750+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "031fe55078252a82",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 50378226000049 est actif.",
+            "L'enseigne est STUDILODGE PARC HARMONIE.",
+            "L'adresse SIRENE est 28 rue de l'Harmonie à Lyon 3e."
+          ]
+        },
+        {
+          "evidence_id": "031fe55078252a82-studilodge",
+          "producer": "Studilodge",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "STUDILODGE_SELF_PUBLICATION",
+          "independence_group": "STUDILODGE_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_PUBLICATION_CONFIRMS_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "site officiel du gestionnaire",
+          "url": "https://studilodge.fr/ville/lyon",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Studilodge publie une résidence nommée Parc Harmonie à Lyon 3e.",
+            "Le point d'accès public actuel est indiqué 66 rue Feuillat."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "06cc91f1c07c361b",
+      "service_id": "FR040552",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DIRECTION GENERALE DES DOUANES ET D DR TOULOUSE",
+        "address": "7 Place Alfonse Jourdain, TOULOUSE",
+        "input_siret": "17310231000401",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "17310231000401",
+        "siren": "173102310"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "17310231000401",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_SERVICE_PUBLIC"
+      ],
+      "decision_reason": "SIRENE rattache le top-1 actif à la Direction régionale des douanes de Toulouse au 7 place Alfonse-Jourdain. L'annuaire officiel Service-Public confirme indépendamment le service, sa mission et cette adresse.",
+      "sources": [
+        {
+          "evidence_id": "06cc91f1c07c361b-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=17310231000401&per_page=1",
+          "collected_at": "2026-07-27T20:48:47.629245+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "06cc91f1c07c361b",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 17310231000401 est actif.",
+            "L'établissement est la Direction régionale des douanes de Toulouse, au 7 place Alfonse-Jourdain."
+          ]
+        },
+        {
+          "evidence_id": "06cc91f1c07c361b-service-public",
+          "producer": "Direction de l'information légale et administrative",
+          "source_family": "PUBLIC_SERVICE_DIRECTORY",
+          "canonical_source_family": "DILA_SERVICE_PUBLIC",
+          "independence_group": "DILA_SERVICE_PUBLIC",
+          "proof_kind": "IDENTITY_PUBLIC_DIRECTORY_LINKS_CRM_TO_TOP1",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel du service public",
+          "url": "https://lannuaire.service-public.gouv.fr/occitanie/haute-garonne/203684b0-7187-42ba-b92a-0f2d0a5c8cf2",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "L'annuaire officiel nomme la Direction régionale des douanes - Toulouse.",
+            "Le lieu publié est 7 place Alphonse-Jourdain, 31000 Toulouse."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "0cc15bd403d6585a",
+      "service_id": "FR036096",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SAINT HERBLAIN AUTOMOBILES",
+        "address": "20 Rue des Piliers de la Chauvinière, Saint-Herblain",
+        "input_siret": "30376606700068",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "30376606700068",
+        "siren": "303766067"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "30376606700068",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "SHA_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 actif comme Saint Herblain Automobiles à l'adresse CRM. Les mentions légales de l'entreprise publient indépendamment la même raison sociale, le même SIREN et l'adresse 20-24 rue des Piliers de la Chauvinière.",
+      "sources": [
+        {
+          "evidence_id": "0cc15bd403d6585a-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=30376606700068&per_page=1",
+          "collected_at": "2026-07-27T20:48:49.363849+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "0cc15bd403d6585a",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 30376606700068 est actif.",
+            "La raison sociale Saint Herblain Automobiles et l'adresse 20 rue des Piliers de la Chauvinière concordent avec le CRM."
+          ]
+        },
+        {
+          "evidence_id": "0cc15bd403d6585a-sha",
+          "producer": "Saint Herblain Automobiles",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "SHA_SELF_PUBLICATION",
+          "independence_group": "SHA_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_LEGAL_NOTICE_CONFIRMS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "mentions légales du site officiel",
+          "url": "https://www.sha.fr/page/mentions-legales",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Les mentions légales nomment Saint Herblain Automobiles.",
+            "Elles publient le SIREN 303766067 et l'adresse 20-24 rue des Piliers de la Chauvinière à Saint-Herblain."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "1342f4cd1e9b2c4d",
+      "service_id": "FR035548",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SPL GRAND NANCY CONGRES ET EVENEMENTS",
+        "address": "1 Place de la République, NANCY",
+        "input_siret": "75067119000031",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "75067119000031",
+        "siren": "750671190"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "75067119000031",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DESTINATION_NANCY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 actif comme Destination Nancy, héritier nominal de la SPL Grand Nancy Congrès et Événements, au 1 place de la République. Les mentions légales de Destination Nancy publient le même SIREN, la qualité de société publique locale et la même adresse.",
+      "sources": [
+        {
+          "evidence_id": "1342f4cd1e9b2c4d-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=75067119000031&per_page=1",
+          "collected_at": "2026-07-27T20:48:51.309659+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "1342f4cd1e9b2c4d",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 75067119000031 est actif et rattaché à Destination Nancy.",
+            "L'adresse est 1 place de la République à Nancy."
+          ]
+        },
+        {
+          "evidence_id": "1342f4cd1e9b2c4d-destination-nancy",
+          "producer": "Destination Nancy",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "DESTINATION_NANCY_SELF_PUBLICATION",
+          "independence_group": "DESTINATION_NANCY_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_LEGAL_NOTICE_CONFIRMS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "mentions légales du site officiel",
+          "url": "https://www.destination-nancy.com/mentions-legales/",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Destination Nancy se présente comme une société publique locale.",
+            "Le siège publié est 1 place de la République à Nancy et le RCS est 750671190."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "1d31ad137e7a9afc",
+      "service_id": "FR039606",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ASS DEPARTEMENTALE PUPILLE ENS PUBL CMPP SEVIGNE - ANTENNE DE ROUEN 5",
+        "address": "252 Boulevard Jean Jaurès, ROUEN",
+        "input_siret": "31147236900199",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "31147236900199",
+        "siren": "311472369"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "31147236900199",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "LES_PEP_76_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 actif comme le CMPP Sévigné de l'Association départementale des pupilles de l'enseignement public au 252 boulevard Jean-Jaurès. Les PEP 76 publient indépendamment le CMPP Sévigné Rouen à cette adresse.",
+      "sources": [
+        {
+          "evidence_id": "1d31ad137e7a9afc-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=31147236900199&per_page=1",
+          "collected_at": "2026-07-27T20:48:54.098419+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "1d31ad137e7a9afc",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 31147236900199 est actif.",
+            "L'établissement est le Centre médico-psycho-pédagogique Sévigné au 252 boulevard Jean-Jaurès à Rouen."
+          ]
+        },
+        {
+          "evidence_id": "1d31ad137e7a9afc-pep76",
+          "producer": "Les PEP 76",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "LES_PEP_76_SELF_PUBLICATION",
+          "independence_group": "LES_PEP_76_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_PUBLICATION_CONFIRMS_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel de l'organisme gestionnaire",
+          "url": "https://www.lespep76.fr/projets/cat/prevention-et-soins/",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Les PEP 76 publient le CMPP Sévigné Rouen.",
+            "L'adresse publiée est 252 boulevard Jean-Jaurès à Rouen."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "522558d6bf909910",
+      "service_id": "AC015159",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MUTUELLE MUTAC",
+        "address": "771 Avenue Alfred Sauvy, Pérols",
+        "input_siret": "33919893900029",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "49869895000025",
+        "siren": "498698950"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "MUTAC_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE distingue deux personnes morales actives à la même adresse : MUTAC, SIREN 339198939, et le top-1 Mutuelle Volontés Services, SIREN 498698950. MUTAC publie elle-même son nom, son SIREN et son siège au 771 avenue Alfred-Sauvy. Le partage d'adresse ne transforme pas Mutuelle Volontés Services en MUTAC. Le SIRET alternatif reste vide car la seconde source ne publie pas les quatorze chiffres.",
+      "sources": [
+        {
+          "evidence_id": "522558d6bf909910-registry-contrast",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_IS_DISTINCT_FROM_CRM_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponses API officielles archivées intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=49869895000025&per_page=1",
+          "collected_at": "2026-07-27T20:49:10.906450+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "522558d6bf909910",
+            "query_kinds": [
+              "TOP1_SIRET",
+              "INPUT_SIRET"
+            ]
+          },
+          "archived_facts": [
+            "Le top-1 49869895000025 appartient à Mutuelle Volontés Services, SIREN 498698950.",
+            "Le SIRET d'entrée actif 33919893900029 appartient à MUTAC, SIREN 339198939.",
+            "Les deux établissements partagent le 771 avenue Alfred-Sauvy mais sont des personnes morales distinctes."
+          ]
+        },
+        {
+          "evidence_id": "522558d6bf909910-mutac",
+          "producer": "MUTAC",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "MUTAC_SELF_PUBLICATION",
+          "independence_group": "MUTAC_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_LEGAL_NOTICE_CONTRADICTS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "mentions institutionnelles du site officiel",
+          "url": "https://www.mutac.com/lexique/agrement-mutac/",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "MUTAC se déclare enregistrée sous le SIREN 339198939.",
+            "MUTAC publie son siège au 771 avenue Alfred-Sauvy à Pérols.",
+            "Cette identité n'est pas celle du SIREN 498698950 du top-1."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucune seconde source indépendante consultée ne publie explicitement le SIRET complet 33919893900029; aucun SIRET alternatif n'est donc certifié."
+      ]
+    },
+    {
+      "audit_case_id": "6959f7f2759e181c",
+      "service_id": "AC015170",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LES PAPILLONS BLANCS RESIDENCE ARC EN CIEL LILLE",
+        "address": "6 Rue Guillaume Werniers, LILLE",
+        "input_siret": "77562042000767",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "77562042000767",
+        "siren": "775620420"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "77562042000767",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "LES_PAPILLONS_BLANCS_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 actif comme un établissement des Papillons Blancs de Lille au 6 rue Guillaume-Werniers. L'association publie indépendamment à cette adresse la Résidence Service et l'Accueil de Jour Arc-en-Ciel, qui correspond au libellé CRM.",
+      "sources": [
+        {
+          "evidence_id": "6959f7f2759e181c-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=77562042000767&per_page=1",
+          "collected_at": "2026-07-27T20:49:20.611309+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "6959f7f2759e181c",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 77562042000767 est actif et appartient aux Papillons Blancs de Lille.",
+            "L'adresse publiée est 6 rue Guillaume-Werniers à Lille."
+          ]
+        },
+        {
+          "evidence_id": "6959f7f2759e181c-papillons-blancs",
+          "producer": "Les Papillons Blancs de Lille",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "LES_PAPILLONS_BLANCS_SELF_PUBLICATION",
+          "independence_group": "LES_PAPILLONS_BLANCS_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_PUBLICATION_CONFIRMS_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel de l'association",
+          "url": "https://www.papillonsblancs-lille.org/nos-actions/coordonnees-des-etablissements-et-services/1504-foyers-de-vie-et-accueils-de-jour.html",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "L'association publie la Résidence Service et l'Accueil de Jour Arc-en-Ciel.",
+            "L'adresse est 6 rue Guillaume-Werniers, 59000 Lille."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "a4d74e89253d4681",
+      "service_id": "FR030903",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "PHOENIX PHARMA CRETEIL",
+        "address": "1 RUE DES BOUVETS, CRETEIL",
+        "input_siret": "58213743600074",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "43331092700028",
+        "siren": "433310927"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "PHOENIX_PHARMA_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE attribue le top-1 au SIREN distinct 433310927, alors que le CRM nomme PHOENIX PHARMA. PHOENIX Pharma publie elle-même son siège au 1 rue des Bouvets et son SIREN 582137436. Le top-1 partage l'adresse mais pas l'identité juridique. Le SIRET alternatif reste vide car la publication indépendante ne donne que le SIREN.",
+      "sources": [
+        {
+          "evidence_id": "a4d74e89253d4681-registry-contrast",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_IS_DISTINCT_FROM_CRM_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponses API officielles archivées intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=43331092700028&per_page=1",
+          "collected_at": "2026-07-27T20:49:31.993867+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "a4d74e89253d4681",
+            "query_kinds": [
+              "TOP1_SIRET",
+              "INPUT_SIRET"
+            ]
+          },
+          "archived_facts": [
+            "Le top-1 43331092700028 relève du SIREN 433310927 et n'est pas un établissement du SIREN PHOENIX Pharma.",
+            "Le SIRET d'entrée 58213743600074 est actif et relève du SIREN 582137436.",
+            "Les deux vues partagent l'adresse 1 rue des Bouvets mais proviennent du même registre et comptent comme une seule famille."
+          ]
+        },
+        {
+          "evidence_id": "a4d74e89253d4681-phoenix",
+          "producer": "PHOENIX Pharma",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "PHOENIX_PHARMA_SELF_PUBLICATION",
+          "independence_group": "PHOENIX_PHARMA_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_ENTITY_LEGAL_NOTICE_CONTRADICTS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "mentions légales du site officiel",
+          "url": "https://phoenixpharma.fr/mentions-legales",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "PHOENIX Pharma publie son siège ZA des Bouvets, 1 rue des Bouvets à Créteil.",
+            "La société publie son immatriculation sous le numéro 582137436.",
+            "Ce SIREN diffère du SIREN 433310927 du top-1."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "La publication PHOENIX Pharma ne donne pas le SIRET complet; aucun SIRET alternatif n'est certifié par deux producteurs."
+      ]
+    },
+    {
+      "audit_case_id": "c8fcb9671db7055b",
+      "service_id": "FR033400",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Principauté de Monaco",
+        "address": "9 rue des Arquebusiers, STRASBOURG",
+        "input_siret": "48031193500013",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "48031193500013",
+        "siren": "480311935"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "48031193500013",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "COUNCIL_OF_EUROPE"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 actif comme la représentation permanente de la Principauté de Monaco auprès du Conseil de l'Europe au 9 rue des Arquebusiers. Le Conseil de l'Europe publie indépendamment la même représentation et la même adresse.",
+      "sources": [
+        {
+          "evidence_id": "c8fcb9671db7055b-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48031193500013&per_page=1",
+          "collected_at": "2026-07-27T20:49:44.445237+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "c8fcb9671db7055b",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 48031193500013 est actif.",
+            "L'établissement est la représentation permanente de la Principauté de Monaco auprès du Conseil de l'Europe.",
+            "L'adresse est 9 rue des Arquebusiers à Strasbourg."
+          ]
+        },
+        {
+          "evidence_id": "c8fcb9671db7055b-council-europe",
+          "producer": "Conseil de l'Europe",
+          "source_family": "INTERNATIONAL_ORGANIZATION_DIRECTORY",
+          "canonical_source_family": "COUNCIL_OF_EUROPE",
+          "independence_group": "COUNCIL_OF_EUROPE",
+          "proof_kind": "IDENTITY_INSTITUTIONAL_DIRECTORY_LINKS_CRM_TO_TOP1",
+          "counts_for_independence": true,
+          "document_type": "annuaire institutionnel international",
+          "url": "https://www.coe.int/en/web/cultural-routes/monaco",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Le Conseil de l'Europe publie la Permanent Representation of Monaco to the Council of Europe.",
+            "L'adresse est 9 rue des Arquebusiers, 67000 Strasbourg."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "cb9631b7da0c09db",
+      "service_id": "FO009194",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LIAISON DIREST",
+        "address": "10 promenade des canaux, NANCY",
+        "input_siret": "13000153000331",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "13000153000331",
+        "siren": "130001530"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "13000153000331",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DILA_SERVICE_PUBLIC"
+      ],
+      "decision_reason": "SIRENE rattache le top-1 actif à la Direction interdépartementale des routes Est, au 10 promenade des Canaux. L'annuaire officiel Service-Public publie indépendamment la DIR Est, son adresse 10-16 promenade des Canaux et le même SIRET.",
+      "sources": [
+        {
+          "evidence_id": "cb9631b7da0c09db-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=13000153000331&per_page=1",
+          "collected_at": "2026-07-27T20:49:47.733680+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "cb9631b7da0c09db",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 13000153000331 est actif.",
+            "L'établissement est la Direction interdépartementale des routes Est au 10 promenade des Canaux à Nancy."
+          ]
+        },
+        {
+          "evidence_id": "cb9631b7da0c09db-service-public",
+          "producer": "Direction de l'information légale et administrative",
+          "source_family": "PUBLIC_SERVICE_DIRECTORY",
+          "canonical_source_family": "DILA_SERVICE_PUBLIC",
+          "independence_group": "DILA_SERVICE_PUBLIC",
+          "proof_kind": "IDENTITY_PUBLIC_DIRECTORY_LINKS_CRM_TO_TOP1_EXACT_SIRET",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel du service public",
+          "url": "https://lannuaire.service-public.gouv.fr/grand-est/meurthe-et-moselle/e92e8d86-1b5c-4d13-b1e2-e777006da444",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "L'annuaire nomme la Direction interdépartementale des routes Est.",
+            "L'adresse publiée est 10-16 promenade des Canaux à Nancy.",
+            "L'annuaire publie explicitement le SIRET 13000153000331."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
