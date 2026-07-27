@@ -11,6 +11,7 @@ from src.xgb_matcher.retrieval_config import RetrievalConfigV1
 from src.xgb_matcher.v41_retrieval import (
     InputSiretState,
     V41CandidateRetriever,
+    V41CurrentStateStore,
     V41GlobalCandidateStore,
     V41RetrievalConfig,
     V41RetrievalVariant,
@@ -108,6 +109,37 @@ def global_database(tmp_path: Path) -> Path:
     return path
 
 
+@pytest.fixture()
+def current_state_snapshot(tmp_path: Path) -> Path:
+    path = tmp_path / "current_states.parquet"
+    rows = [
+        {
+            "siret": "11111111100001",
+            "etatAdministratifEtablissement": "F",
+        },
+        {
+            "siret": "11111111100002",
+            "etatAdministratifEtablissement": "F",
+        },
+        {
+            "siret": "11111111100003",
+            "etatAdministratifEtablissement": "A",
+        },
+        {
+            "siret": "22222222200001",
+            "etatAdministratifEtablissement": "F",
+        },
+        {
+            "siret": "33333333300001",
+            "etatAdministratifEtablissement": "A",
+        },
+    ]
+    import pyarrow.parquet as pq
+
+    pq.write_table(pa.Table.from_pylist(rows), path)
+    return path
+
+
 def test_v41_config_is_active_only_isolated_and_capped() -> None:
     v41_config = V41RetrievalConfig(max_candidates=100)
     config = v41_config.sparse_config()
@@ -190,6 +222,20 @@ def test_global_candidate_states_are_current_and_batch_only(
     }
 
 
+def test_current_state_store_reads_complete_authoritative_snapshot(
+    current_state_snapshot: Path,
+) -> None:
+    with V41CurrentStateStore(current_state_snapshot) as store:
+        states = store.get_candidate_states(
+            ["11111111100003", "33333333300001", "99999999900009", "invalid"]
+        )
+
+    assert states == {
+        "11111111100003": "A",
+        "33333333300001": "A",
+    }
+
+
 def test_partition_stale_active_is_excluded_when_global_store_is_closed(
     global_database: Path,
 ) -> None:
@@ -217,6 +263,106 @@ def test_partition_stale_active_is_excluded_when_global_store_is_closed(
 
     assert result.candidates == []
     assert result.channels["sparse_active"] == []
+
+
+def test_complete_state_snapshot_keeps_active_candidate_missing_from_global_store(
+    global_database: Path,
+    current_state_snapshot: Path,
+) -> None:
+    missing_from_global = _candidate(
+        "33333333300001",
+        state="A",
+        name="ACTIVE ONLY IN COMPLETE SNAPSHOT",
+    )
+
+    def sparse_builder(*_args, **_kwargs) -> CandidatePoolResult:
+        return CandidatePoolResult(candidates=[missing_from_global])
+
+    with (
+        V41GlobalCandidateStore(global_database) as global_store,
+        V41CurrentStateStore(current_state_snapshot) as state_store,
+    ):
+        retriever = V41CandidateRetriever(
+            partitioned_store=object(),
+            global_store=global_store,
+            current_state_store=state_store,
+            config=V41RetrievalConfig(),
+            sparse_pool_builder=sparse_builder,
+        )
+        result = retriever.build(
+            crm_row={},
+            crm_pre={},
+            input_siret="invalid",
+        )
+
+    assert result.channels["sparse_active"] == ["33333333300001"]
+    assert [candidate["siret"] for candidate in result.candidates] == [
+        "33333333300001"
+    ]
+
+
+def test_complete_state_snapshot_overrides_stale_active_global_candidate(
+    global_database: Path,
+    current_state_snapshot: Path,
+) -> None:
+    stale_active = _candidate(
+        "22222222200001",
+        state="A",
+        name="STALE ACTIVE GLOBAL CANDIDATE",
+    )
+
+    def sparse_builder(*_args, **_kwargs) -> CandidatePoolResult:
+        return CandidatePoolResult(candidates=[stale_active])
+
+    with (
+        V41GlobalCandidateStore(global_database) as global_store,
+        V41CurrentStateStore(current_state_snapshot) as state_store,
+    ):
+        retriever = V41CandidateRetriever(
+            partitioned_store=object(),
+            global_store=global_store,
+            current_state_store=state_store,
+            config=V41RetrievalConfig(),
+            sparse_pool_builder=sparse_builder,
+        )
+        result = retriever.build(
+            crm_row={},
+            crm_pre={},
+            input_siret="invalid",
+        )
+
+    assert result.candidates == []
+    assert result.channels["sparse_active"] == []
+
+
+def test_complete_state_snapshot_overrides_input_qualification(
+    global_database: Path,
+    current_state_snapshot: Path,
+) -> None:
+    def sparse_builder(*_args, **_kwargs) -> CandidatePoolResult:
+        return CandidatePoolResult(candidates=[])
+
+    with (
+        V41GlobalCandidateStore(global_database) as global_store,
+        V41CurrentStateStore(current_state_snapshot) as state_store,
+    ):
+        retriever = V41CandidateRetriever(
+            partitioned_store=object(),
+            global_store=global_store,
+            current_state_store=state_store,
+            config=V41RetrievalConfig(
+                variant=V41RetrievalVariant.B_INPUT_EVIDENCE,
+            ),
+            sparse_pool_builder=sparse_builder,
+        )
+        result = retriever.build(
+            crm_row={},
+            crm_pre={},
+            input_siret="22222222200001",
+        )
+
+    assert result.input_siret.state == InputSiretState.CLOSED
+    assert result.candidates == []
 
 
 def test_variant_c_uses_closed_alias_but_outputs_only_unique_active_candidates(

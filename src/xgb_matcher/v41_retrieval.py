@@ -373,6 +373,100 @@ class V41GlobalCandidateStore:
         self.close()
 
 
+class V41CurrentStateStore:
+    """Read current SIRET states directly from the authoritative snapshot.
+
+    The enriched global candidate store is intentionally smaller than the
+    complete SIRENE establishment snapshot.  It remains useful for candidate
+    details and SIREN expansion, but it must not be the final authority for
+    administrative state.
+    """
+
+    def __init__(
+        self,
+        snapshot_path: Path,
+        *,
+        siret_column: str = "siret",
+        state_column: str = "etatAdministratifEtablissement",
+    ) -> None:
+        import duckdb
+
+        snapshot_path = Path(snapshot_path)
+        if not snapshot_path.is_file():
+            raise FileNotFoundError(snapshot_path)
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", siret_column):
+            raise ValueError("Invalid SIRET column name")
+        if not re.fullmatch(r"[A-Za-z_][A-Za-z0-9_]*", state_column):
+            raise ValueError("Invalid state column name")
+        self.snapshot_path = snapshot_path
+        self.siret_column = siret_column
+        self.state_column = state_column
+        self._connection = duckdb.connect(":memory:")
+        columns = {
+            str(row[0])
+            for row in self._connection.execute(
+                "DESCRIBE SELECT * FROM read_parquet(?)",
+                [str(snapshot_path)],
+            ).fetchall()
+        }
+        missing = {siret_column, state_column} - columns
+        if missing:
+            self._connection.close()
+            raise ValueError(
+                "SIRENE state snapshot is missing required columns: "
+                f"{sorted(missing)}"
+            )
+
+    def get_candidate_states(
+        self,
+        sirets: Sequence[str],
+    ) -> dict[str, str]:
+        """Return authoritative current states for normalized SIRETs."""
+
+        normalized = list(
+            dict.fromkeys(
+                siret
+                for value in sirets
+                if (siret := normalize_input_siret(value)) is not None
+            )
+        )
+        if not normalized:
+            return {}
+        rows = self._connection.execute(
+            f"""
+            SELECT
+                CAST({self.siret_column} AS VARCHAR) AS siret,
+                upper(trim(CAST({self.state_column} AS VARCHAR))) AS state
+            FROM read_parquet(?)
+            WHERE CAST({self.siret_column} AS VARCHAR)
+                  IN (SELECT unnest(?))
+            ORDER BY siret
+            """,
+            [str(self.snapshot_path), normalized],
+        ).fetchall()
+        output: dict[str, str] = {}
+        for raw_siret, raw_state in rows:
+            siret = str(raw_siret or "").zfill(14)
+            state = str(raw_state or "").strip().upper()
+            previous = output.get(siret)
+            if previous is not None and previous != state:
+                raise ValueError(
+                    f"Conflicting current states for SIRET {siret}: "
+                    f"{previous!r} and {state!r}"
+                )
+            output[siret] = state
+        return output
+
+    def close(self) -> None:
+        self._connection.close()
+
+    def __enter__(self) -> "V41CurrentStateStore":
+        return self
+
+    def __exit__(self, *_args: object) -> None:
+        self.close()
+
+
 def _token_similarity(left: str, right: str) -> float:
     left_tokens = set(normalize_text(left).split())
     right_tokens = set(normalize_text(right).split())
@@ -433,6 +527,7 @@ class V41CandidateRetriever:
         *,
         partitioned_store: Any,
         global_store: V41GlobalCandidateStore,
+        current_state_store: Any | None = None,
         config: V41RetrievalConfig,
         sparse_pool_builder: SparsePoolBuilder = build_candidate_pool,
         in_memory_tfidf_cache: dict[tuple[str, str], tuple] | None = None,
@@ -440,6 +535,7 @@ class V41CandidateRetriever:
     ) -> None:
         self.partitioned_store = partitioned_store
         self.global_store = global_store
+        self.current_state_store = current_state_store or global_store
         self.config = config
         self._sparse_pool_builder = sparse_pool_builder
         self._tfidf_cache = (
@@ -455,6 +551,33 @@ class V41CandidateRetriever:
         while len(self._tfidf_cache) > self._max_in_memory_tfidf_partitions:
             oldest = next(iter(self._tfidf_cache))
             self._tfidf_cache.pop(oldest, None)
+
+    def _apply_authoritative_input_state(
+        self,
+        qualification: InputSiretQualification,
+    ) -> InputSiretQualification:
+        siret = qualification.normalized_siret
+        if siret is None or self.current_state_store is self.global_store:
+            return qualification
+        state = self.current_state_store.get_candidate_states([siret]).get(siret)
+        if state == "A":
+            input_state = InputSiretState.ACTIVE
+        elif state == "F":
+            input_state = InputSiretState.CLOSED
+        else:
+            input_state = InputSiretState.NOT_FOUND
+        candidate = (
+            None
+            if qualification.candidate is None
+            else {**qualification.candidate, "etat_admin": state}
+        )
+        return InputSiretQualification(
+            raw_value=qualification.raw_value,
+            normalized_siret=siret,
+            siren=qualification.siren or siret[:9],
+            state=input_state,
+            candidate=candidate,
+        )
 
     def build(
         self,
@@ -480,6 +603,7 @@ class V41CandidateRetriever:
         qualification = input_qualification or self.global_store.qualify_input_sirets(
             [input_siret]
         )[0]
+        qualification = self._apply_authoritative_input_state(qualification)
 
         candidate_by_siret: dict[str, dict[str, Any]] = {
             str(candidate.get("siret") or ""): dict(candidate)
@@ -609,7 +733,7 @@ class V41CandidateRetriever:
 
         # Strict final safety boundary: every channel is reduced to candidates
         # proven active in the current global/local snapshot.
-        current_states = self.global_store.get_candidate_states(
+        current_states = self.current_state_store.get_candidate_states(
             list(candidate_by_siret)
         )
         for siret, state in current_states.items():
@@ -675,6 +799,7 @@ __all__ = [
     "InputSiretState",
     "V41CandidatePoolResult",
     "V41CandidateRetriever",
+    "V41CurrentStateStore",
     "V41GlobalCandidateStore",
     "V41RetrievalConfig",
     "V41RetrievalVariant",
