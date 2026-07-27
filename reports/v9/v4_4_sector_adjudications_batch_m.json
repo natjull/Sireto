@@ -1,0 +1,543 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-m-1",
+  "created_at": "2026-07-28T01:15:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Le BODACC, une publication d'autorité publique, un annuaire sectoriel officiel ou une auto-publication de l'entité constituent des groupes distincts.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Une continuité de fonds ou de personne morale n'est acceptée que lorsqu'elle est explicitement documentée.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves indépendantes et présence démontrée dans le top 10 gelé. TOP1_WRONG peut donc avoir validated_correct_siret=null."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate et top1 gelés"
+    }
+  ],
+  "summary": {
+    "case_count": 8,
+    "auto_match_source_count": 8,
+    "top1_correct_evidence_validated": 2,
+    "top1_wrong_evidence_validated": 6,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 2,
+    "training_eligible_count": 8
+  },
+  "cases": [
+    {
+      "audit_case_id": "c99b36db2a9e2256",
+      "service_id": "FR035736",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "EDF / ALSTOM TRANSPORT Ludres",
+        "address": "418 rue Denis Papin, 54710 Ludres",
+        "input_siret": "71204386801494",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "42489769200069",
+        "siren": "424897692"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "42489769200069",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "Le registre relie le SIRET top1 au site industriel du 418 rue Denis Papin à Ludres. L'historique BODACC du même SIREN le publie antérieurement sous la dénomination ALSTOM POWER CONVERSION, puis GE Steam Power Electronics France et Arabelle Electronics France. Le nom CRM est ancien et imprécis, mais il vise bien cette continuité juridique et ce site.",
+      "sources": [
+        {
+          "evidence_id": "c99b36db2a9e2256-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=42489769200069&per_page=1",
+          "collected_at": "2026-07-27T23:09:13.837131+00:00",
+          "response_sha256": "72264cf214126c7790f202525271345e6630a9f12b6db8756c14d4efc783edb3",
+          "archived_facts": [
+            "Le SIRET 42489769200069 appartient au SIREN 424897692, actuellement dénommé ARABELLE ELECTRONICS FRANCE.",
+            "L'établissement est situé zone industrielle, 418 rue Denis Papin à Ludres."
+          ]
+        },
+        {
+          "evidence_id": "c99b36db2a9e2256-bodacc-lineage",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NAME_HISTORY_CONFIRMS_ALSTOM_LINEAGE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales, historique intégral",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22424897692%22&order_by=dateparution+ASC&limit=100",
+          "collected_at": "2026-07-27T23:10:47.954756+00:00",
+          "response_sha256": "03c01862e737ad1d9664bc6216535565c65cca09ff30f5ad4b0c9fcf00b60e42",
+          "archived_facts": [
+            "Le BODACC publie le SIREN 424897692 sous la dénomination ALSTOM POWER CONVERSION de 2008 à 2020.",
+            "Les annonces ultérieures portent les dénominations GE Steam Power Electronics France puis Arabelle Electronics France sous le même SIREN."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "03782725145da7f3",
+      "service_id": "FR020901",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Euridis Business School",
+        "address": "56 rue Smith, 69002 Lyon",
+        "input_siret": "49217887600024",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "38935885400195",
+        "siren": "389358854"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": ["SIRENE_REGISTRY", "EURIDIS_SELF_PUBLICATION"],
+      "decision_reason": "Le registre identifie le top1 comme DORANCO ESPACE MULTIMEDIA, sous le nom commercial NEXA DIGITAL SCHOOL. EURIDIS publie séparément son campus de Lyon au 56 rue Smith et un autre SIRET. Le partage d'adresse entre écoles ne permet pas d'assimiler les deux organismes.",
+      "sources": [
+        {
+          "evidence_id": "03782725145da7f3-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_DIFFERENT_SCHOOL",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=38935885400195&per_page=1",
+          "collected_at": "2026-07-27T23:09:14.217111+00:00",
+          "response_sha256": "2526f30596358ad0382ea778de7ea3cfe63485254e6894d19206364b2f994a33",
+          "archived_facts": [
+            "Le SIRET actif 38935885400195 appartient à DORANCO ESPACE MULTIMEDIA.",
+            "Le site porte le nom commercial NEXA DIGITAL SCHOOL au 56 rue Smith à Lyon."
+          ]
+        },
+        {
+          "evidence_id": "03782725145da7f3-euridis-campus",
+          "producer": "EURIDIS BUSINESS SCHOOL",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "EURIDIS_SELF_PUBLICATION",
+          "independence_group": "EURIDIS_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CRM_ENTITY_SELF_IDENTIFIES_DISTINCT_SCHOOL_AT_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "registre public d'accessibilité PDF publié par l'entité",
+          "url": "https://www.euridis-ecole.com/Registres/REGISTRE%20ALL%20CAMPUS.pdf",
+          "collected_at": "2026-07-27T23:10:43.885025+00:00",
+          "response_sha256": "a748b9360025533012492d28a3f4db04be17773262c8dbae6dd14adb21740e84",
+          "archived_facts": [
+            "EURIDIS BUSINESS SCHOOL publie un campus Lyon Confluence au 56 rue Smith, 69002 Lyon.",
+            "Le document EURIDIS publie pour ce campus le SIRET 41014119600106, distinct du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET EURIDIS auto-publié n'est pas promu comme vérité d'entraînement faute de preuve de sa présence dans le top 10 gelé et d'une seconde validation indépendante."
+      ]
+    },
+    {
+      "audit_case_id": "86a1d4583ffe357b",
+      "service_id": "FR038497",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BAUDELET HOLDING - FIBOO",
+        "address": "969 avenue de la République, 59700 Marcq-en-Barœul",
+        "input_siret": "89879250200012",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "79104752500039",
+        "siren": "791047525"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": ["SIRENE_REGISTRY", "FIBOO_SELF_PUBLICATION"],
+      "decision_reason": "Le registre attribue le top1 à FRANCE FINANCE CONSEIL, enseigne MY HAPPY CREDIT. Les mentions légales de FIBOO l'identifient sous le SIREN 898792502 et confirment son appartenance au groupe Baudelet. L'adresse CRM partagée ou ancienne ne transforme pas la société de crédit en FIBOO.",
+      "sources": [
+        {
+          "evidence_id": "86a1d4583ffe357b-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_DIFFERENT_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79104752500039&per_page=1",
+          "collected_at": "2026-07-27T23:09:14.557096+00:00",
+          "response_sha256": "f61589661142e5c3284f75e6af99eaf74270ec978833316093c2ccf913231adc",
+          "archived_facts": [
+            "Le SIRET actif 79104752500039 appartient à FRANCE FINANCE CONSEIL.",
+            "L'établissement porte le nom commercial MY HAPPY CREDIT au 969 avenue de la République."
+          ]
+        },
+        {
+          "evidence_id": "86a1d4583ffe357b-fiboo-legal",
+          "producer": "FIBOO",
+          "source_family": "ENTITY_SELF_DECLARATION",
+          "canonical_source_family": "FIBOO_SELF_PUBLICATION",
+          "independence_group": "FIBOO_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CRM_ENTITY_SELF_IDENTIFIES_DISTINCT_LEGAL_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "mentions légales du site officiel de l'entité",
+          "url": "https://fiboo.fr/mentions-legales/",
+          "collected_at": "2026-07-27T23:10:43.977829+00:00",
+          "response_sha256": "85715e489416f0309c41e3479453e487fa2355aa7288b852112c1b3755967570",
+          "archived_facts": [
+            "FIBOO se déclare sous le SIREN 898792502.",
+            "FIBOO indique appartenir au groupe Baudelet et publie un siège au 19 avenue des Lilas à Mouvaux."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET alternatif n'est publié : le site officiel prouve l'identité distincte, pas la présence d'un établissement exact dans le top 10 gelé."
+      ]
+    },
+    {
+      "audit_case_id": "14704d3ad7eddf28",
+      "service_id": "FR012274",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GIE ALLIANCE GESTION LES TOURNELLES",
+        "address": "2 route des Tournelles, 77515 Hautefeuille",
+        "input_siret": "40482655400000",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "77567246200246",
+        "siren": "775672462"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": ["SIRENE_REGISTRY", "ANCOLS_PUBLICATION"],
+      "decision_reason": "Le registre identifie le top1 comme un établissement de l'ENTRAIDE UNION, avec l'enseigne IME. Le rapport public de l'ANCOLS distingue le GIE Alliance Gestion, chargé de la gestion d'associations du Groupe SOS, du château des Tournelles détenu par Alterna. La présence au même domaine ne suffit pas à assimiler le GIE, l'IME et son exploitant.",
+      "sources": [
+        {
+          "evidence_id": "14704d3ad7eddf28-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_IME_OPERATOR",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=77567246200246&per_page=1",
+          "collected_at": "2026-07-27T23:09:14.946995+00:00",
+          "response_sha256": "141549102bd83385ada41663b890f1f7b2cdc75ab150d67e4cad541cc862535e",
+          "archived_facts": [
+            "Le SIRET actif 77567246200246 appartient à ENTRAIDE UNION.",
+            "L'établissement est identifié comme IME au 2 route des Tournelles à Hautefeuille."
+          ]
+        },
+        {
+          "evidence_id": "14704d3ad7eddf28-ancols-report",
+          "producer": "Agence nationale de contrôle du logement social",
+          "source_family": "PUBLIC_AUTHORITY_CONTROL_REPORT",
+          "canonical_source_family": "ANCOLS_PUBLICATION",
+          "independence_group": "ANCOLS_PUBLICATION",
+          "proof_kind": "IDENTITY_PUBLIC_REPORT_DISTINGUISHES_GIE_FROM_SITE_OWNER_AND_OPERATOR",
+          "counts_for_independence": true,
+          "document_type": "rapport public de contrôle PDF collecté intégralement",
+          "url": "https://www.ancols.fr/assets/publication_control_report/2026/01/13/62e73ef7-0ec5-4b07-b375-0978f04647e9-rc-2015-159.pdf?s=320934d672b50e0e3632de6f4b349563",
+          "collected_at": "2026-07-27T23:10:55.000000+00:00",
+          "response_sha256": "1625db997c148c6828581a991a7e49f4ca933381e9b006ad3ba0066570094ad5",
+          "archived_facts": [
+            "Le rapport décrit le GIE Alliance Gestion comme prestataire quotidien de gestion des associations et sociétés du Groupe SOS.",
+            "Le même rapport attribue séparément la propriété du château des Tournelles à Hautefeuille à Alterna."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET exact actuel correspondant au libellé CRM n'est pas établi."
+      ]
+    },
+    {
+      "audit_case_id": "656e9a2ea77df7c0",
+      "service_id": "AC003290",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CANOPEE INVEST LILLE",
+        "address": "187 rue de Menin, 59520 Marquette-lez-Lille",
+        "input_siret": "82321952200013",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "79232933600012",
+        "siren": "792329336"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "Le registre distingue CANOPEE INVEST, SIREN 823219522, du top1 FAPE INVEST, SIREN 792329336. Le BODACC confirme indépendamment FAPE INVEST sous le SIREN du top1 à Marquette-lez-Lille. La seule adresse ancienne commune n'établit aucune continuité entre les deux personnes morales.",
+      "sources": [
+        {
+          "evidence_id": "656e9a2ea77df7c0-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_DIFFERENT_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79232933600012&per_page=1",
+          "collected_at": "2026-07-27T23:09:15.289016+00:00",
+          "response_sha256": "8ebc332cd6a00979267c2c90762bd7976924f179d41bd079b155167308093949",
+          "archived_facts": [
+            "Le SIRET actif 79232933600012 appartient à FAPE INVEST.",
+            "Le site top1 se trouve au 187 rue de Menin à Marquette-lez-Lille."
+          ]
+        },
+        {
+          "evidence_id": "656e9a2ea77df7c0-sirene-crm-entity",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_CRM_AS_DISTINCT_SIREN",
+          "counts_for_independence": false,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=82321952200013&per_page=1",
+          "collected_at": "2026-07-27T23:09:15.354975+00:00",
+          "response_sha256": "cdf05bf3b08d0a54526bc9a5574e906272c8123f8da3534e5021ee562309f236",
+          "archived_facts": [
+            "Le SIRET CRM fermé 82321952200013 appartient à CANOPEE INVEST, SIREN 823219522.",
+            "Le registre situe cet ancien établissement à Chassieu et non sous le SIREN du top1."
+          ],
+          "not_independent_reason": "Même cœur de registre SIRENE que la preuve top1."
+        },
+        {
+          "evidence_id": "656e9a2ea77df7c0-bodacc-top1",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_IS_FAPE_INVEST",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22792329336%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:10:48.403992+00:00",
+          "response_sha256": "b154cdf25e6d888f6cf145efa76ae70e7c8829ff51857f4ba80f5a3e998e78e5",
+          "archived_facts": [
+            "Le BODACC publie FAPE INVEST sous l'identifiant 792329336.",
+            "Les annonces rattachent cette personne morale à Marquette-lez-Lille."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET alternatif actuel de CANOPEE INVEST n'est établi."
+      ]
+    },
+    {
+      "audit_case_id": "b6d25a3a7b95447d",
+      "service_id": "FR007401",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "HMM Centre Dentaire Mercorent",
+        "address": "182 rue Augustin Jean Fresnel, 34500 Béziers",
+        "input_siret": "77558786800032",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "79806994400022",
+        "siren": "798069944"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": ["SIRENE_REGISTRY", "VYV3_SELF_PUBLICATION"],
+      "decision_reason": "Le registre identifie le top1 comme la société MERCORENT, sans activité ni dénomination dentaire. VYV 3 Sud-Est publie séparément son siège administratif au 182 rue Augustin Jean Fresnel et décrit son centre de santé dentaire à Béziers. Le nom du parc ou du bailleur ne constitue pas l'exploitant du centre dentaire.",
+      "sources": [
+        {
+          "evidence_id": "b6d25a3a7b95447d-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_PROPERTY_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79806994400022&per_page=1",
+          "collected_at": "2026-07-27T23:09:15.605048+00:00",
+          "response_sha256": "1f0500b50bee2bfd60b903d3ade8b487e8bf759120365d9aa3470bd0a7e9a51d",
+          "archived_facts": [
+            "Le SIRET actif 79806994400022 appartient à MERCORENT.",
+            "L'établissement est au 182 rue Augustin Jean Fresnel à Béziers."
+          ]
+        },
+        {
+          "evidence_id": "b6d25a3a7b95447d-vyv3-contact",
+          "producer": "VYV 3 Sud-Est",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "VYV3_SELF_PUBLICATION",
+          "independence_group": "VYV3_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_HEALTH_OPERATOR_SELF_IDENTIFIES_AT_CRM_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "page de contact du site officiel de l'opérateur",
+          "url": "https://www.sud-est.vyv3.fr/contact/",
+          "collected_at": "2026-07-27T23:10:46.135692+00:00",
+          "response_sha256": "a54f019e4ae6bac049aeebd4e9d70840a9ba2fdd12c41dc4a07e060004784d95",
+          "archived_facts": [
+            "VYV 3 Sud-Est publie son siège administratif au 182 rue Augustin Jean Fresnel à Béziers.",
+            "La page présente VYV 3 Sud-Est comme l'opérateur de l'offre de soins et d'accompagnement rattachée à cette adresse."
+          ]
+        },
+        {
+          "evidence_id": "b6d25a3a7b95447d-vyv3-health-operator",
+          "producer": "VYV 3 Sud-Est",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "VYV3_SELF_PUBLICATION",
+          "independence_group": "VYV3_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_HEALTH_OPERATOR_SELF_CONFIRMS_DENTAL_ACTIVITY_IN_BEZIERS",
+          "counts_for_independence": false,
+          "document_type": "page d'accueil du site officiel de l'opérateur",
+          "url": "https://www.sud-est.vyv3.fr/",
+          "collected_at": "2026-07-27T23:16:47.723909+00:00",
+          "response_sha256": "533c89a28472c53f71a11c8650d3758054e9845d41323b87472bffb3eb8da979",
+          "archived_facts": [
+            "VYV 3 Sud-Est se présente comme opérateur de soins dans le Sud-Est de la France.",
+            "La page officielle mentionne explicitement son centre de santé dentaire à Béziers."
+          ],
+          "not_independent_reason": "Même producteur VYV 3 Sud-Est que la page de contact."
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET exact de l'exploitant dentaire n'est pas doublement prouvé dans le top 10 gelé."
+      ]
+    },
+    {
+      "audit_case_id": "f2096fc2de12daf0",
+      "service_id": "FR032251",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "JOEL LEFEVRE / TRANSPORTS FEINT LEBOUCHER",
+        "address": "5 rue du Vernoy, 52250 Longeau-Percey",
+        "input_siret": "34391012100031",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "32139424900148",
+        "siren": "321394249"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "32139424900148",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le top1 actif à JOEL LEFEVRE, nom commercial LEFEVRE LANGRES, ZAE du Vernoy. Le BODACC documente l'achat en 2023 par JOEL LEFEVRE du fonds TRANSPORTS FEINT LEBOUCHER exploité à cette adresse. Le libellé CRM contient précisément les deux côtés de cette succession.",
+      "sources": [
+        {
+          "evidence_id": "f2096fc2de12daf0-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=32139424900148&per_page=1",
+          "collected_at": "2026-07-27T23:09:15.943626+00:00",
+          "response_sha256": "97e0482c94d81177324b06ee5950427c4644d73a5ccbe2d486da89fe3a06547e",
+          "archived_facts": [
+            "Le SIRET actif 32139424900148 appartient à JOEL LEFEVRE.",
+            "L'établissement porte le nom commercial LEFEVRE LANGRES dans la ZAE du Vernoy à Longeau-Percey."
+          ]
+        },
+        {
+          "evidence_id": "f2096fc2de12daf0-bodacc-acquisition",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_ACQUISITION_OF_CRM_BUSINESS",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales, historique intégral",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22321394249%22&order_by=dateparution+ASC&limit=100",
+          "collected_at": "2026-07-27T23:10:48.214591+00:00",
+          "response_sha256": "319922006775ae03c2af2b0bf070efc7d2371987445932fac1b175fa6c0e38dd",
+          "archived_facts": [
+            "Le BODACC publie l'acquisition par JOEL LEFEVRE du fonds TRANSPORTS FEINT LEBOUCHER.",
+            "L'établissement secondaire acquis est situé ZAE du Vernoy à Longeau-Percey, avec entrée en jouissance en octobre 2023."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "292819dcf7ceddcb",
+      "service_id": "FR026730",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SCP FOUCHER LEVEQUE LANFRANCHI",
+        "address": "28 rue Jules Lecesne, 76600 Le Havre",
+        "input_siret": "34200181500022",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "53017608000022",
+        "siren": "530176080"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": ["SIRENE_REGISTRY", "NOTAIRES_FRANCE_DIRECTORY"],
+      "decision_reason": "Le registre identifie le top1 comme l'entreprise individuelle XAVIER LEVEQUE. L'annuaire officiel des Notaires de France identifie à cette adresse l'office SCP NOTAIRES SEINE ESTUAIRE et présente Xavier Lévêque comme l'un de ses notaires associés, notamment aux côtés de Jean-Baptiste Lanfranchi. Un associé n'est pas l'office demandé par le CRM.",
+      "sources": [
+        {
+          "evidence_id": "292819dcf7ceddcb-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_IDENTIFIES_INDIVIDUAL_NOTARY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=53017608000022&per_page=1",
+          "collected_at": "2026-07-27T23:09:16.334247+00:00",
+          "response_sha256": "e855eef59699db59d2cd74b6174317afc88e27f39abcef138d585a12a88574d3",
+          "archived_facts": [
+            "Le SIRET actif 53017608000022 est celui de XAVIER LEVEQUE en nom propre.",
+            "L'établissement est au 28 rue Jules Lecesne au Havre."
+          ]
+        },
+        {
+          "evidence_id": "292819dcf7ceddcb-notaires-directory",
+          "producer": "Conseil supérieur du notariat — Notaires de France",
+          "source_family": "OFFICIAL_PROFESSIONAL_DIRECTORY",
+          "canonical_source_family": "NOTAIRES_FRANCE_DIRECTORY",
+          "independence_group": "NOTAIRES_FRANCE_DIRECTORY",
+          "proof_kind": "IDENTITY_SECTOR_DIRECTORY_DISTINGUISHES_OFFICE_FROM_MEMBER",
+          "counts_for_independence": true,
+          "document_type": "fiche de l'annuaire professionnel officiel",
+          "url": "https://www.notaires.fr/fr/office/scp-notaires-seine-estuaire-1",
+          "collected_at": "2026-07-27T23:10:47.568069+00:00",
+          "response_sha256": "7b601097cb0c249a96c8247994f124a68f73342cc18b5212a7891c2f2e0445e3",
+          "archived_facts": [
+            "L'annuaire identifie l'office SCP NOTAIRES SEINE ESTUAIRE au 28 rue Jules Lecesne au Havre.",
+            "Il liste notamment Xavier Lévêque et Jean-Baptiste Lanfranchi comme notaires associés distincts de l'office."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET exact actuel de l'office n'est pas doublement prouvé dans le top 10 gelé."
+      ]
+    }
+  ]
+}
