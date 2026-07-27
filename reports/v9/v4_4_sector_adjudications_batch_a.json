@@ -98,7 +98,7 @@
           "url": "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2-new/lines?size=100&qs=code_qualification%3A%2243SPVRGE%22+AND+siret%3A%2232802398100066%22",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/rge-b05458fcbfeaf4a8e317.json",
-          "artifact_sha256": "6546fef60ac5fa361e76c564d9af06f496c9ea8c286516341c87e8019e083122",
+          "artifact_sha256": "6546ffadbdd67db0f7f16b0a4f3f5775ef19a2fd8e4af8d30aab9d6834173122",
           "archived_facts": [
             "La qualification RGE 43SPVRGE est reliée explicitement au SIRET 32802398100066.",
             "Le titulaire est nommé EL 2D à l'adresse du Nouveau Bêle.",
@@ -165,7 +165,7 @@
           "url": "https://opendata.agencebio.org/api/gouv/operateurs/?numeroBio=19822",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/bio-4d2b7bb75847a702bcf9.json",
-          "artifact_sha256": "92815279b5e49dc58c5f9d2fb2d72dfd1bd44fb18172e1420022a119194505e8",
+          "artifact_sha256": "92815235d834e69025215ddef780f88d10d08d63e5022c2f1a34a419ac7105e8",
           "archived_facts": [
             "Le numéro Bio 19822 est relié explicitement au SIRET 79322192000036.",
             "L'opérateur engagé est nommé NATOORA EUROPE et ses lieux d'activité incluent le quai du Val de Loire."
@@ -231,7 +231,7 @@
           "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
-          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
           "archived_facts": [
             "L'identifiant FINESS 110002862 est relié explicitement au SIRET 77555569100275.",
             "La structure active est EANM Castelnaudary Les Hirondelles, AFDAIM, au 47 rue des Potiers."
@@ -290,14 +290,14 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse brute de l'annuaire officiel de l'éducation",
           "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220920530B%22&limit=10",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-2f2c9efb5101b488c9a3.json",
-          "artifact_sha256": "b5f18133ee8dcc03ee2d3e9c72154408304952a0f316c5b564b30125a23473e8",
+          "artifact_sha256": "b5f1f3cde29b016194dc4f6698b85291ceaee4a1e0c07fd44dec8d7f5a2873e8",
           "archived_facts": [
             "L'UAI 0920530B est relié explicitement au SIRET 21920071400075.",
             "La fiche ouverte désigne l'École maternelle publique Centre, 7 rue Marguerite Renaudin."
@@ -356,14 +356,14 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse brute de l'annuaire officiel de l'éducation",
           "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220771336J%22&limit=10",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-67829557b9d702edf5a0.json",
-          "artifact_sha256": "066b5fbc3e54e158ee20d850ad9664b5f737cd90cc1d2ace1cc0956f89275f1a",
+          "artifact_sha256": "066b049b2345d33eb615f6224d4a8660f46c99a28d293ff72afce8d444b9af1a",
           "archived_facts": [
             "L'UAI 0771336J est relié explicitement au SIRET 19771336500017.",
             "La fiche ouverte désigne le Lycée polyvalent Les Pannevelles, route de Chalautre-la-Petite."
@@ -429,7 +429,7 @@
           "url": "https://opendata.agencebio.org/api/gouv/operateurs/?numeroBio=170528",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/bio-71f8bfbdd955f25c6da3.json",
-          "artifact_sha256": "a9a1533582ce5b46711e4c40f74d6593b3f46296cbfe0ab1bf98da849c84041b",
+          "artifact_sha256": "a9a1531bd7fa49633a831475f1cecdf1d32e383e38397c726ab80a88e180041b",
           "archived_facts": [
             "Le numéro Bio 170528 est relié explicitement au SIRET 51485086600021.",
             "L'opérateur engagé est LEATWO, aussi libellé LEATWO-INTERMARCHE, avec un lieu d'activité rue des Moissons."
@@ -488,14 +488,14 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse brute de l'annuaire officiel de l'éducation",
           "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220890095V%22&limit=10",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-38be46f6987e5606203a.json",
-          "artifact_sha256": "06f2df34a0d11502bcac84bbe424bc58e4a4cd1fe784753687846eafc78453b1",
+          "artifact_sha256": "06f2d1cd2ec2a88f404b04f2cab68af9346158e12f35769daf889595a8c253b1",
           "archived_facts": [
             "L'UAI 0890095V est relié explicitement au SIRET 21890024900192.",
             "La fiche ouverte désigne l'École maternelle Renoir, 6 avenue Courbet."
@@ -562,7 +562,7 @@
           "url": "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2-new/lines?size=100&qs=code_qualification%3A%228611M10D109%22+AND+siret%3A%2248975854000038%22",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/rge-c682bbe3b167eb1ecee4.json",
-          "artifact_sha256": "c51f0e749ea6e8ee74d86393d8682d4fb31e88ec18486f0245dd91ee7045f372",
+          "artifact_sha256": "c51f9ee86abd78a15005126f9c29ed698cb78a75720c2b088cd1c8fcdb19f372",
           "archived_facts": [
             "La qualification RGE 8611M10D109 est reliée explicitement au SIRET 48975854000038.",
             "Le titulaire est I V F, au 27 rue du Saule Saint-Jacques.",
@@ -631,7 +631,7 @@
           "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
-          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
           "archived_facts": [
             "Les identifiants FINESS 440011997 et 440024677 sont tous deux reliés explicitement au SIRET 78601196500021.",
             "Ils désignent le CAMSP et le CMPP Henri Wallon à la même adresse.",
@@ -699,7 +699,7 @@
           "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
-          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
           "archived_facts": [
             "L'identifiant FINESS 440059772 est relié explicitement au SIRET 44271303800499.",
             "La structure active est le LBM BIOGROUP BRETAGNE CARQUEFOU.",
@@ -768,7 +768,7 @@
           "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
           "collected_at": "2026-07-27",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
-          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
           "archived_facts": [
             "L'identifiant FINESS 770014819 est relié explicitement au SIRET 78555894100312.",
             "La structure active est la MAS de Longueville, Maison d'accueil spécialisée, à l'adresse CRM."
@@ -828,7 +828,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_TWO_EXACT_SIRETS_PLAUSIBLE_FOR_BROAD_CRM_LABEL",
           "counts_for_independence": true,
           "document_type": "réponses brutes et fiches de l'annuaire officiel de l'éducation",
@@ -836,7 +836,7 @@
           "related_url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220441960S%22&limit=10",
           "collected_at": "2026-07-28",
           "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-328edecb90e93964f49a.json",
-          "artifact_sha256": "eee8d04a2b395753412e2e4d2ce39b46553596120393c343f353f489c87c6aa7",
+          "artifact_sha256": "eee8a3b5f994197c2cd632312e92c8b6e5e59c4a2f6bd0f20e4c49292d5f8aa7",
           "archived_facts": [
             "L'UAI 0441521P relie l'École élémentaire publique Soleil Levant au SIRET 21440162200086, à l'adresse CRM.",
             "L'UAI 0441960S relie l'École maternelle publique Soleil Levant au SIRET distinct 21440162200078, à la même adresse.",
@@ -847,7 +847,7 @@
           "evidence_id": "e44d5d05a040a8e4-commune-group-label",
           "producer": "Commune de Saint-Herblain",
           "source_family": "ENTITY_SELF_PUBLICATION",
-          "canonical_source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_COMMUNE_SAINT_HERBLAIN_PUBLICATION",
           "independence_group": "COMMUNE_SAINT_HERBLAIN",
           "proof_kind": "IDENTITY_CRM_LABEL_DESIGNATES_SCHOOL_GROUP",
           "counts_for_independence": true,

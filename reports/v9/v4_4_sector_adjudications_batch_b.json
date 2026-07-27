@@ -12,6 +12,7 @@
   "source_artifacts": [
     {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
       "role": "file figée contenant les assertions CRM et les top-1 jugés"
     },
     {
@@ -21,10 +22,12 @@
     },
     {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+      "sha256": "df7ecfe8e1df9731c0340e448aef4dacf473a3d2236e0f07da640c3aa38ee9ed",
       "role": "index des réponses brutes UAI, FINESS et BIO avec URL, date et hash"
     },
     {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884/producer_observation_facts.parquet",
+      "sha256": "503589c4e48c307e9c87ee689ecbf0f3f3940f91e5c8244c7fb22c32252398d1",
       "role": "faits producteur dérivés sans conclusion CRM"
     }
   ],
@@ -110,7 +113,7 @@
           "evidence_id": "008373b595622d22-afapei",
           "producer": "AFAPEI du Calaisis",
           "source_family": "ENTITY_SELF_PUBLICATION",
-          "canonical_source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_AFAPEI_SELF_PUBLICATION",
           "independence_group": "AFAPEI_SELF_PUBLICATION",
           "proof_kind": "IDENTITY_CRM_LABEL_DESIGNATES_FAM_MAS_COMPLEX",
           "counts_for_independence": true,
@@ -176,7 +179,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse API de l'annuaire officiel de l'éducation",
@@ -266,7 +269,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "deux réponses API du même annuaire officiel",
@@ -479,7 +482,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse API de l'annuaire officiel de l'éducation",
@@ -547,7 +550,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse API de l'annuaire officiel de l'éducation",
@@ -685,7 +688,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse API de l'annuaire officiel de l'éducation",
@@ -823,7 +826,7 @@
           "producer": "Ministère de l'Éducation nationale",
           "source_family": "SECTOR_REGISTRY_EDUCATION",
           "canonical_source_family": "EDUCATION_UAI",
-          "independence_group": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
           "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
           "counts_for_independence": true,
           "document_type": "réponse API de l'annuaire officiel de l'éducation",
@@ -872,7 +875,7 @@
           "source_family": "REGISTRY_CORE_SIRENE",
           "canonical_source_family": "SIRENE_REGISTRY",
           "independence_group": "SIRENE_REGISTRY",
-          "proof_kind": "IDENTITY_REGISTRY_SCENE",
+          "proof_kind": "IDENTITY_MULTIPLE_SIRETS_PLAUSIBLE_FOR_BROAD_CRM_LABEL",
           "counts_for_independence": true,
           "document_type": "réponse API officielle archivée intégralement",
           "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=ALSMT&per_page=10&code_commune=54304",
@@ -893,7 +896,7 @@
           "source_family": "SECTOR_REGISTRY_FINESS",
           "canonical_source_family": "ANS_FINESS",
           "independence_group": "ANS_FINESS",
-          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_NOT_CRM",
           "counts_for_independence": true,
           "document_type": "snapshot officiel FINESS-STR archivé intégralement",
           "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",

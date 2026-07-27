@@ -11,18 +11,22 @@
   "source_artifacts": [
     {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
       "role": "assertions CRM et top-1 gelés"
     },
     {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
       "role": "réponses complètes de l'API Recherche d'entreprises"
     },
     {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884/producer_observation_facts.parquet",
+      "sha256": "503589c4e48c307e9c87ee689ecbf0f3f3940f91e5c8244c7fb22c32252398d1",
       "role": "faits dérivés des réponses brutes des producteurs sectoriels"
     },
     {
-      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/manifest.json",
+      "sha256": "9fa3a899b86ce7f1c54913ee966f68d2b1eb4d9ebc3b087c60e25a88eb23c1c7",
       "role": "archive immuable des réponses producteur et de leurs hashes"
     }
   ],

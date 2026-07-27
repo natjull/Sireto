@@ -1,0 +1,494 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-d-1",
+  "created_at": "2026-07-27T22:31:55Z",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Plusieurs réponses, identifiants ou fiches du même producteur sectoriel ne créent pas plusieurs preuves indépendantes.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Une preuve sectorielle compte seulement si la réponse brute relie explicitement son identifiant métier au SIRET exact et si le libellé CRM désigne cette identité.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves indépendantes suffisantes. TOP1_WRONG peut donc avoir validated_correct_siret=null."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "file figée contenant les assertions CRM et les top-1 jugés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "archive locale des réponses complètes de l'API Recherche d'entreprises"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+      "sha256": "df7ecfe8e1df9731c0340e448aef4dacf473a3d2236e0f07da640c3aa38ee9ed",
+      "role": "archive locale des réponses brutes des producteurs sectoriels"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884/producer_observation_facts.parquet",
+      "sha256": "503589c4e48c307e9c87ee689ecbf0f3f3940f91e5c8244c7fb22c32252398d1",
+      "role": "faits sectoriels structurés utilisés pour l'adjudication"
+    }
+  ],
+  "summary": {
+    "case_count": 6,
+    "top1_correct_evidence_validated": 4,
+    "top1_wrong_evidence_validated": 1,
+    "ambiguous": 0,
+    "unresolved": 1,
+    "validated_correct_siret_count": 5,
+    "training_eligible_count": 5
+  },
+  "cases": [
+    {
+      "audit_case_id": "001efe61cf5d4c72",
+      "service_id": "SF000099",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "EHPAD Dervallières",
+        "address": "Rue Ernest Meissonnier, 44000 Nantes",
+        "input_siret": "78601200500017",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "26440039100753",
+        "siren": "264400391"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "26440039100753",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme l'EHPAD Renoir du CCAS, rue Ernest-Meissonnier. FINESS relie explicitement l'EHPAD Renoir au même SIRET et à cette adresse. La métropole de Nantes publie ce même établissement dans le quartier Dervallières-Zola, ce qui relie positivement le libellé CRM « EHPAD Dervallières » à l'identité Renoir. Le SIRET CRM désigne au contraire la maison de retraite Saint-Joseph, rue Gaston-Turpin.",
+      "sources": [
+        {
+          "evidence_id": "001efe61cf5d4c72-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=26440039100753&per_page=1",
+          "collected_at": "2026-07-27T20:48:05.707947+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "001efe61cf5d4c72",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 26440039100753 est l'EHPAD Renoir du CCAS de Nantes.",
+            "L'établissement est actif au 3 rue Ernest-Meissonnier à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "001efe61cf5d4c72-finess-top1",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
+          "row_selector": {
+            "identifier": "440028900",
+            "observed_siret": "26440039100753"
+          },
+          "archived_facts": [
+            "FINESS 440028900 publie explicitement le SIRET 26440039100753.",
+            "La structure est nommée EHPAD Résidence Renoir / EHPAD Renoir, au 3 rue Ernest-Meissonnier."
+          ]
+        },
+        {
+          "evidence_id": "001efe61cf5d4c72-nantes-dervallieres",
+          "producer": "Nantes Métropole",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_NANTES_METROPOLE_PUBLICATION",
+          "independence_group": "NANTES_METROPOLE",
+          "proof_kind": "IDENTITY_PUBLICATION_LINKS_CRM_LABEL_TO_TOP1",
+          "counts_for_independence": true,
+          "document_type": "fiche d'équipement publiée par la collectivité",
+          "url": "https://metropole.nantes.fr/lieu/ehpad-renoir",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Nantes Métropole publie une fiche « Ehpad Renoir » au 3 rue Ernest-Meissonnier.",
+            "La fiche situe l'établissement dans le quartier Dervallières-Zola, ce qui explique le libellé CRM « EHPAD Dervallières »."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01d50f2a608bb3bb",
+      "service_id": "FO007113",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Maternelle André Philip",
+        "address": "46 rue Dunoir, 69003 Lyon",
+        "input_siret": "21690123102249",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "21690123102223",
+        "siren": "216901231"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "21690123102223",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme l'école maternelle publique André-Philip au 46 rue Dunoir, exactement l'identité demandée. L'annuaire de l'Éducation nationale relie le SIRET CRM à l'école primaire André-Philip au 48 rue Dunoir : il confirme indépendamment qu'il s'agit d'un autre établissement scolaire et non de la maternelle demandée.",
+      "sources": [
+        {
+          "evidence_id": "01d50f2a608bb3bb-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21690123102223&per_page=1",
+          "collected_at": "2026-07-27T20:48:25.283206+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "01d50f2a608bb3bb",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21690123102223 est l'École maternelle publique André Philippe.",
+            "L'établissement est situé au 46 rue Dunoir à Lyon."
+          ]
+        },
+        {
+          "evidence_id": "01d50f2a608bb3bb-uai-input-distinct",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_CONFIRMS_INPUT_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220693148X%22&limit=10",
+          "collected_at": "2026-07-27T21:59:37.307020+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-37bfe5968f03067c08c2.json",
+          "artifact_sha256": "54d5c1b5060107b94e6705436af1ea8fd0cdce624e5dbe5c2e75bde597eb178a",
+          "archived_facts": [
+            "L'UAI 0693148X publie explicitement le SIRET CRM 21690123102249.",
+            "La fiche désigne l'École primaire André Philip au 48 rue Dunoir, distincte de la maternelle demandée au numéro 46."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "25dd4b0564f579a4",
+      "service_id": "FR023327",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LYCEE JEAN BART",
+        "address": "1 rue du Nouvel Arsenal, 59140 Dunkerque",
+        "input_siret": "19590071700016",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "49325329800019",
+        "siren": "493253298"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "19590071700016",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le CRM désigne explicitement le lycée Jean-Bart. SIRENE identifie le top-1 comme l'Amicale du lycée Jean-Bart, une autre personne morale partageant l'adresse. SIRENE et l'annuaire de l'Éducation nationale relient tous deux le lycée lui-même au SIRET 19590071700016; ce SIRET alternatif possède donc les deux preuves indépendantes exigées.",
+      "sources": [
+        {
+          "evidence_id": "25dd4b0564f579a4-registry-top1-and-alternative",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponses API officielles archivées intégralement",
+          "urls": [
+            "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=49325329800019&per_page=1",
+            "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=19590071700016&per_page=1"
+          ],
+          "collected_at": "2026-07-27T20:48:58.681886+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "25dd4b0564f579a4",
+            "query_kinds": [
+              "TOP1_SIRET",
+              "INPUT_SIRET"
+            ]
+          },
+          "archived_facts": [
+            "Le top-1 49325329800019 appartient à l'Amicale du lycée Jean Bart.",
+            "Le SIRET 19590071700016 appartient au Lycée général et technologique Jean Bart.",
+            "L'amicale et le lycée sont deux personnes morales distinctes malgré leur adresse commune."
+          ]
+        },
+        {
+          "evidence_id": "25dd4b0564f579a4-uai-alternative",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_ALTERNATIVE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220590071G%22&limit=10",
+          "collected_at": "2026-07-27T21:59:36.487374+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-a030bd6028d4ff390977.json",
+          "artifact_sha256": "4c79ee2f1147814a5346c8d05794d5013a1ee8444ca2e4b91e654394af5e5f48",
+          "archived_facts": [
+            "L'UAI 0590071G désigne le Lycée Jean Bart au 1 rue du Nouvel Arsenal.",
+            "La réponse publie explicitement le SIRET 19590071700016."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "44d777a0451b16b1",
+      "service_id": "AC019042",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ECOLE ELEMENTAIRE LA FONTAINE",
+        "address": "1456 avenue Raymond Pinchard, 54100 Nancy",
+        "input_siret": "21540395700537",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "21540395700537",
+        "siren": "215403957"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "21540395700537",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "SIRENE rattache le top-1 à l'École élémentaire La Fontaine de Nancy. L'annuaire de l'Éducation nationale relie indépendamment l'UAI 0542211K au même SIRET, au nom exact et à l'adresse CRM complète. Les autres écoles municipales présentes dans la scène ne sont pas utilisées comme preuves supplémentaires.",
+      "sources": [
+        {
+          "evidence_id": "44d777a0451b16b1-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21540395700537&per_page=1",
+          "collected_at": "2026-07-27T20:49:07.073041+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "44d777a0451b16b1",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21540395700537 est l'École élémentaire La Fontaine de la commune de Nancy.",
+            "Le registre publie l'UAI 0542211K pour cet établissement."
+          ]
+        },
+        {
+          "evidence_id": "44d777a0451b16b1-uai-top1",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_MINISTRY",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220542211K%22&limit=10",
+          "collected_at": "2026-07-27T21:59:36.077244+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-9b3e51abc2f563c058b9.json",
+          "artifact_sha256": "9da2a4aace6fa32518cedf602f978b7289a590dbd31dcad411b9f814d1fdf567",
+          "archived_facts": [
+            "L'UAI 0542211K désigne l'École élémentaire La Fontaine.",
+            "La réponse publie explicitement le SIRET 21540395700537 et l'adresse 1456 avenue Raymond-Pinchard."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "56877e49ab684bda",
+      "service_id": "FR023389",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ETDE (Bouygues Construction)",
+        "address": "3 rue du Vuache, 74270 Chêne-en-Semine",
+        "input_siret": "55204599900794",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "77566487303966",
+        "siren": "775664873"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "77566487303966",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme Bouygues Energies & Services au 3 rue du Vuache. Bouygues publie qu'ETDE est devenue Bouygues Energies & Services, ce qui fournit le lien d'identité positif entre l'ancien nom CRM et le top-1 actuel. Le SIRET CRM appartient au siège de Bouygues Construction à Guyancourt et ne désigne pas ce site.",
+      "sources": [
+        {
+          "evidence_id": "56877e49ab684bda-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=77566487303966&per_page=1",
+          "collected_at": "2026-07-27T20:49:12.292406+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "56877e49ab684bda",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 77566487303966 appartient à Bouygues Energies & Services.",
+            "L'établissement est actif au 3 rue du Vuache à Chêne-en-Semine."
+          ]
+        },
+        {
+          "evidence_id": "56877e49ab684bda-bouygues-etde-alias",
+          "producer": "Bouygues",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_BOUYGUES_GROUP_PUBLICATION",
+          "independence_group": "BOUYGUES_GROUP",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_LINKS_HISTORICAL_NAME_TO_TOP1",
+          "counts_for_independence": true,
+          "document_type": "rapport annuel publié par le groupe",
+          "url": "https://www.bouygues.com/wp-content/uploads/2013/04/Rapport-annuel_document-de-reference-exercice-2012.pdf",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Bouygues publie explicitement la formulation « ETDE (devenue Bouygues Energies & Services) ».",
+            "Cette publication relie l'ancien nom ETDE du CRM à l'identité Bouygues Energies & Services portée par le top-1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "d704ff34c34571bf",
+      "service_id": "FR010910",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Bio Partenaires",
+        "address": "33 rue Jean Cagne, 69200 Vénissieux",
+        "input_siret": "51348700900229",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "40839696800708",
+        "siren": "408396968"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE et la publication actuelle de Biogroup décrivent un laboratoire Biogroup Rhône-Alpes au 33 avenue Jean-Cagne. FINESS relie l'ancien SIRET CRM, désormais fermé, à un laboratoire Unilians Biogroup à cette même adresse. Aucune de ces sources ne relie toutefois positivement le nom CRM « Bio Partenaires » à l'une de ces deux identités. L'adresse commune et la succession apparente d'exploitants ne suffisent donc pas à valider le top-1 ni à le réfuter.",
+      "sources": [
+        {
+          "evidence_id": "d704ff34c34571bf-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_NOT_LINKED_TO_CRM_LABEL",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=40839696800708&per_page=1",
+          "collected_at": "2026-07-27T20:49:51.425659+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "d704ff34c34571bf",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 40839696800708 appartient à Biogroup Rhône-Alpes et porte l'enseigne Laboratoire Unilians Biogroup Vénissieux Minguette.",
+            "Le site est actif au 33 avenue Jean-Cagne; la réponse ne contient pas le nom Bio Partenaires."
+          ]
+        },
+        {
+          "evidence_id": "d704ff34c34571bf-finess-input-history",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_INPUT_NOT_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
+          "row_selector": {
+            "identifier": "690034913",
+            "observed_siret": "51348700900229"
+          },
+          "archived_facts": [
+            "FINESS 690034913 publie explicitement le SIRET CRM 51348700900229.",
+            "La structure est nommée LBM Unilians Biogroup Vénissieux Cagne (Minguettes), au 33 avenue Jean-Cagne.",
+            "La fiche ne contient pas le nom Bio Partenaires."
+          ]
+        },
+        {
+          "evidence_id": "d704ff34c34571bf-biogroup-current-site",
+          "producer": "Biogroup Rhône-Alpes",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_BIOGROUP_RHONE_ALPES_PUBLICATION",
+          "independence_group": "BIOGROUP_RHONE_ALPES",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_DESCRIBES_TOP1_SITE_NOT_CRM_LABEL",
+          "counts_for_independence": true,
+          "document_type": "fiche de laboratoire publiée par l'entité",
+          "url": "https://laboratoires.biogroup.fr/rhone/venissieux/33-avenue-jean-cagne",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "Biogroup publie le laboratoire Vénissieux Les Minguettes au 33 avenue Jean-Cagne.",
+            "La publication ne relie pas ce laboratoire au libellé Bio Partenaires."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucune preuve primaire indépendante ne relie le libellé CRM « Bio Partenaires » au top-1 ou au SIRET CRM historique.",
+        "L'adresse commune ne permet pas de déduire l'identité ni de trancher une éventuelle succession d'exploitants."
+      ]
+    }
+  ]
+}
