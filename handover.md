@@ -1,6 +1,20 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+La V4.5 a vérifié si les labels V4.4 pouvaient être transportés vers les
+scènes réellement produites par le retrieval V4.2-B et le ranker V4.1 gelé.
+Verdict : **`PIVOT_SCENE_DRIFT`** et `training_authorized=false`. Sur 172
+dossiers, 135 seulement conservent le même top-1 et 37 dérivent. Les gates
+échouent avec 46/53 labels aléatoires fiables compatibles, 2/6 négatifs
+aléatoires, 16/37 `TOP1_WRONG` ciblés et 1/5 `AMBIGUOUS` ciblé. Seul le
+minimum des `TOP1_CORRECT` ciblés passe avec 64/67. Aucun accepteur n'a été
+chargé, aucun seuil calculé, aucun modèle entraîné et le test final est resté
+fermé. Rapport : `reports/v9/v4_5_scene_compatibility_results.md`. Artefacts :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_5_hard_scenes/21f8c0b0b172b907`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/gates/v4_5_scene_compatibility/5c8b87fd8e226157`.
+*(commit GitHub : `5c1343e`; 296 tests passants)*
+
 La V4.4 d'adjudication autonome est terminée. Les lots A–R et les
 contradictions connues couvrent exactement les 172 `AUTO_MATCH` V4.3 : 162
 décisions sont validées par au moins deux groupes de preuves indépendants,
