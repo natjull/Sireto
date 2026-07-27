@@ -1,0 +1,513 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-n-1",
+  "created_at": "2026-07-28T10:40:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Le site officiel de l'organisation auditée constitue un producteur distinct uniquement lorsqu'il relie explicitement l'identité CRM au site.",
+    "identity_rule": "Une adresse commune ne prouve jamais seule l'identité. Le registre doit relier le top1 à l'identité ou à l'enseigne CRM et le site officiel doit confirmer cette identité et cette implantation.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves directes et sa présence dans le top 10 gelé."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate et top1 gelés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "réponses SIRENE officielles archivées"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+      "sha256": "b772a022ecf2de11d1ecccaa1727fed1683d9cc9578535cba968e46c59d63210",
+      "role": "top 10 gelé utilisé uniquement pour vérifier le candidat évalué"
+    }
+  ],
+  "summary": {
+    "case_count": 8,
+    "auto_match_source_count": 8,
+    "top1_correct_evidence_validated": 8,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 8,
+    "training_eligible_count": 8
+  },
+  "cases": [
+    {
+      "audit_case_id": "10510d0f976bb7b2",
+      "service_id": "AC012173",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "IN EXTENSO OPERATIONNEL IE1408NANTESERDRE",
+        "address": "6 rue Edouard Nignon, 44300 Nantes",
+        "input_siret": "48291927100023",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "35283940100119",
+        "siren": "352839401"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "35283940100119",
+      "independent_source_families": ["SIRENE_REGISTRY", "IN_EXTENSO_OFFICIAL"],
+      "decision_reason": "SIRENE relie le top1 actif à In Extenso Ouest Atlantique au 6 rue Edouard Nignon. La page officielle In Extenso confirme indépendamment l'agence Nantes Erdre, l'entité Ouest Atlantique et cette adresse. L'ancien SIRET CRM fermé appartient à une autre entité et ne contredit pas l'exploitation actuelle.",
+      "sources": [
+        {
+          "evidence_id": "10510d0f976bb7b2-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=35283940100119&per_page=1",
+          "collected_at": "2026-07-27T20:48:50.023505+00:00",
+          "response_sha256": "b185aed15d2f6890e65fc0c8f25f753651fa64b1f4e3271d3af3827da425acb1",
+          "archived_facts": [
+            "Le SIRET 35283940100119 est actif.",
+            "Le registre relie In Extenso Ouest Atlantique au 6 rue Edouard Nignon à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "10510d0f976bb7b2-inextenso-site",
+          "producer": "In Extenso",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "IN_EXTENSO_OFFICIAL",
+          "independence_group": "IN_EXTENSO_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/10510d0f976bb7b2-inextenso.txt",
+          "url": "https://www.inextenso.fr/agence/expert-comptable-nantes-erdre/",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "f9bfbfc51c7052be7cbf1d037e6f879f6e9e843c8744aa374bd0e8d70b8b1daf",
+          "archived_facts": [
+            "La page officielle identifie In Extenso Ouest Atlantique à Nantes Erdre.",
+            "Elle confirme le 6 rue Edouard Nignon."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "ab1f1ff062d3bb44",
+      "service_id": "AC009581",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "maison mag",
+        "address": "49 rue de la Ganne, 63170 Aubière",
+        "input_siret": "48035763100021",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "48483559000064",
+        "siren": "484835590"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "48483559000064",
+      "independent_source_families": ["SIRENE_REGISTRY", "MAISONS_MAG_OFFICIAL"],
+      "decision_reason": "SIRENE relie le top1 actif à MAISONS MAG au 49 rue de la Ganne. Le site officiel Maisons MAG confirme indépendamment son agence de Clermont-Ferrand à cette adresse à Aubière. Le SIRET CRM fermé correspond à Groupe Cascade et n'est pas le site demandé.",
+      "sources": [
+        {
+          "evidence_id": "ab1f1ff062d3bb44-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48483559000064&per_page=1",
+          "collected_at": "2026-07-27T20:49:33.496491+00:00",
+          "response_sha256": "206741a83f9187f10b4167eca784714d43e692cf798e427acfac83c475e73db5",
+          "archived_facts": [
+            "Le SIRET 48483559000064 est actif et appartient à MAISONS MAG.",
+            "L'établissement est au 49 rue de la Ganne à Aubière."
+          ]
+        },
+        {
+          "evidence_id": "ab1f1ff062d3bb44-maisonsmag-site",
+          "producer": "Maisons MAG",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "MAISONS_MAG_OFFICIAL",
+          "independence_group": "MAISONS_MAG_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/ab1f1ff062d3bb44-maisonsmag.txt",
+          "url": "https://www.maisonsmag.fr/",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "4e27b1b4e8c67969399a624c75dab4f66e733c8f76f88753c978ee9ef4bcfb3e",
+          "archived_facts": [
+            "Le site officiel identifie Maisons MAG.",
+            "Il confirme son agence au 49 rue de la Ganne à Aubière."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "ae5bfd5c92487432",
+      "service_id": "AC016606",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Hyper Buro",
+        "address": "77 rue Blatin, 63000 Clermont-Ferrand",
+        "input_siret": "79002202400034",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "33800716400068",
+        "siren": "338007164"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "33800716400068",
+      "independent_source_families": ["SIRENE_REGISTRY", "HYPERBURO_ZWILLER_OFFICIAL"],
+      "decision_reason": "SIRENE relie le top1 actif ZWILLER SA au 77 rue Blatin. Le site exploité par ZWILLER relie explicitement ZWILLER, Hyperburo et le magasin Hyperburo Blatin à cette adresse. Le SIRET CRM fermé de HYPERBURO NOUVELLE était situé à Aubière.",
+      "sources": [
+        {
+          "evidence_id": "ae5bfd5c92487432-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=33800716400068&per_page=1",
+          "collected_at": "2026-07-27T20:49:38.484886+00:00",
+          "response_sha256": "077c92bacf24af976963a0e3e22fcc4b2e526e73fb557362b6efdac0c71b9ab8",
+          "archived_facts": [
+            "Le SIRET 33800716400068 de ZWILLER SA est actif.",
+            "L'établissement est au 77 rue Blatin à Clermont-Ferrand."
+          ]
+        },
+        {
+          "evidence_id": "ae5bfd5c92487432-hyperburo-site",
+          "producer": "ZWILLER Service Print / Hyperburo",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "HYPERBURO_ZWILLER_OFFICIAL",
+          "independence_group": "HYPERBURO_ZWILLER_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_BRAND_OPERATOR_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page d'établissement archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/ae5bfd5c92487432-hyperburo.txt",
+          "url": "https://hyperburo.express-imprim.com/contactez-nous/",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "5dedb66a37f8f1aed619629cdcadab933c53fe6403e468b55d5bd46a85ded472",
+          "archived_facts": [
+            "Le site relie les noms ZWILLER et Hyperburo.",
+            "Il confirme le magasin Hyperburo au 77 rue Blatin."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "0273dd28967e2080",
+      "service_id": "AC018274",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Intelligence Bâtiment Services - IBS",
+        "address": "121 rue de l'Entrait, 16430 Champniers",
+        "input_siret": "53873814700023",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "41478049400145",
+        "siren": "414780494"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "41478049400145",
+      "independent_source_families": ["SIRENE_REGISTRY", "VINCI_ENERGIES_OFFICIAL"],
+      "decision_reason": "SIRENE relie explicitement le top1 actif CHARANTELEC au nom commercial IBS - Intelligence Bâtiment Services et au 121 rue de l'Entrait. VINCI Energies confirme indépendamment l'acquisition d'IBS, son développement exact et l'existence de son agence d'Angoulême intégrée à VINCI Energies Building Solutions Poitou-Charentes. Le site historique IBS à cette adresse a fermé lors de cette reprise.",
+      "sources": [
+        {
+          "evidence_id": "0273dd28967e2080-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_TRADE_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=41478049400145&per_page=1",
+          "collected_at": "2026-07-27T20:48:35.565975+00:00",
+          "response_sha256": "d90e0e93d4bbd9748ca2b73a4595cbb46e3da1594caa1966fe5ea15435474156",
+          "archived_facts": [
+            "Le SIRET 41478049400145 de CHARANTELEC est actif.",
+            "Le registre lui associe le nom commercial IBS - Intelligence Bâtiment Services au 121 rue de l'Entrait."
+          ]
+        },
+        {
+          "evidence_id": "0273dd28967e2080-vinci-site",
+          "producer": "VINCI Energies",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "VINCI_ENERGIES_OFFICIAL",
+          "independence_group": "VINCI_ENERGIES_OFFICIAL",
+        "proof_kind": "IDENTITY_ACQUIRER_SITE_CONFIRMS_IDENTITY_AND_REGIONAL_AGENCY",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de communiqué officiel archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/0273dd28967e2080-vinci.txt",
+          "url": "https://www.vinci-energies.com/actualites/acquisition-de-la-societe-ibs/",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "352daf9f5b9fea0fd67b12b99725f655de5515c8a0148b1793019859ae97ccf6",
+          "archived_facts": [
+            "VINCI Energies confirme l'acquisition d'IBS, Intelligence Bâtiment Services.",
+            "Le communiqué confirme son agence d'Angoulême et son intégration régionale."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "4cb723905d4fa964",
+      "service_id": "AC008134",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ACCROSPORT",
+        "address": "70 quai Frissard, 76600 Le Havre",
+        "input_siret": "49453587500012",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "40303733600050",
+        "siren": "403037336"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "40303733600050",
+      "independent_source_families": ["SIRENE_REGISTRY", "ACCROSPORT_OFFICIAL"],
+      "decision_reason": "SIRENE relie le top1 actif CORPS ACCORD à l'enseigne ACCRO SPORT aux Docks Vauban, quai Frissard. La page officielle Accrosport confirme indépendamment le club du Havre au 70 quai Frissard. Le SIRET CRM fermé appartient à une ancienne entité et une autre adresse.",
+      "sources": [
+        {
+          "evidence_id": "4cb723905d4fa964-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=40303733600050&per_page=1",
+          "collected_at": "2026-07-27T20:49:08.232508+00:00",
+          "response_sha256": "43e0bb6c679f09e1be8e7fa696e33464392acb2e56828107e8101ff6ae3c877b",
+          "archived_facts": [
+            "Le SIRET 40303733600050 de CORPS ACCORD est actif.",
+            "Le registre relie cet établissement à ACCRO SPORT au quai Frissard."
+          ]
+        },
+        {
+          "evidence_id": "4cb723905d4fa964-accrosport-site",
+          "producer": "Accrosport",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "ACCROSPORT_OFFICIAL",
+          "independence_group": "ACCROSPORT_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/4cb723905d4fa964-accrosport.txt",
+          "url": "https://accrosport.com/clubs/le-havre/",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "d55c97b861947cbe4cf6b19c4b3f71e251b6211fd6c10626f451b3f9938328f0",
+          "archived_facts": [
+            "La page officielle identifie Accrosport Le Havre aux Docks Vauban.",
+            "Elle confirme le 70 quai Frissard."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "435ae1aba095db1f",
+      "service_id": "FR029933",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DANTONS - ANTICIMEX",
+        "address": "2 rue de la Tête à Loup, 77440 Ocquerre",
+        "input_siret": "52820965300013",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "52820965300062",
+        "siren": "528209653"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "52820965300062",
+      "independent_source_families": ["SIRENE_REGISTRY", "ANTICIMEX_OFFICIAL"],
+      "decision_reason": "SIRENE relie le top1 actif ANTICIMEX FRANCE au nom commercial France Hygiène Service et à l'adresse CRM exacte. Le site officiel Anticimex confirme indépendamment France Hygiène Service - Anticimex Meaux au 2 rue de la Tête à Loup à Ocquerre. Le SIRET CRM est un ancien établissement fermé du même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "435ae1aba095db1f-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=52820965300062&per_page=1",
+          "collected_at": "2026-07-27T20:49:05.437670+00:00",
+          "response_sha256": "419f87e98577826bd0ae295a3ae3b249c25a85bcb24a7dcceac4b6ad298c5ef4",
+          "archived_facts": [
+            "Le SIRET 52820965300062 d'ANTICIMEX FRANCE est actif.",
+            "Le registre relie France Hygiène Service au 2 rue de la Tête à Loup à Ocquerre."
+          ]
+        },
+        {
+          "evidence_id": "435ae1aba095db1f-anticimex-site",
+          "producer": "Anticimex",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "ANTICIMEX_OFFICIAL",
+          "independence_group": "ANTICIMEX_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/435ae1aba095db1f-anticimex.txt",
+          "url": "https://www.anticimex.fr/nos-agences-en-france/meaux/",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "44b6ae2ad93444ddd4d57a5e94083119a55cd6f9e398801bd462c72d9d36149d",
+          "archived_facts": [
+            "La page officielle relie France Hygiène Service à Anticimex Meaux.",
+            "Elle confirme l'adresse exacte d'Ocquerre."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "4e6fc0d3d3d19204",
+      "service_id": "FR017862",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BNP AUBERVILLERS",
+        "address": "43 avenue Victor Hugo, 93300 Aubervilliers",
+        "input_siret": "32957085700808",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "32957085700808",
+        "siren": "329570857"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "32957085700808",
+      "independent_source_families": ["SIRENE_REGISTRY", "BNP_PARIBAS_REAL_ESTATE_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà présent dans le CRM. SIRENE l'identifie comme BNP Paribas Real Estate Advisory France au 45 avenue Victor Hugo. Le site officiel BNP Paribas Real Estate confirme indépendamment son implantation d'Aubervilliers à cette adresse. L'écart 43/45 est un décalage de numéro dans le CRM, sans contradiction d'identité.",
+      "sources": [
+        {
+          "evidence_id": "4e6fc0d3d3d19204-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=32957085700808&per_page=1",
+          "collected_at": "2026-07-27T20:49:08.855693+00:00",
+          "response_sha256": "84e644a08881fbf96bbb503f1e3890868f97fbb4665c794c4dd2c2bfd7ee9ab4",
+          "archived_facts": [
+            "Le SIRET CRM et top1 32957085700808 est actif.",
+            "Il appartient à BNP Paribas Real Estate Advisory France au 45 avenue Victor Hugo à Aubervilliers."
+          ]
+        },
+        {
+          "evidence_id": "4e6fc0d3d3d19204-bnppre-site",
+          "producer": "BNP Paribas Real Estate",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "BNP_PARIBAS_REAL_ESTATE_OFFICIAL",
+          "independence_group": "BNP_PARIBAS_REAL_ESTATE_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_IDENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/4e6fc0d3d3d19204-bnppre.txt",
+          "url": "https://www.bnppre.fr/commerces",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "7970f6c0e4234891eab246af70d67cf46df74e8f4ade451b19b6c648769dafdd",
+          "archived_facts": [
+            "Le site officiel identifie BNP Paribas Real Estate Aubervilliers.",
+            "Il confirme le 45 avenue Victor Hugo, bâtiment 264."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "7389652f40bd36d7",
+      "service_id": "FO006243",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "FON THALES : 4 CH MARAIS - 7 AV DES LOUVRESSES",
+        "address": "7 avenue des Louvresses, 92230 Gennevilliers",
+        "input_siret": "38347093700195",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "38347093700194",
+        "siren": "383470937"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "38347093700194",
+      "independent_source_families": ["SIRENE_REGISTRY", "THALES_OFFICIAL"],
+      "decision_reason": "Le SIRET CRM 38347093700195 n'existe pas et diffère d'un chiffre du top1. SIRENE identifie le top1 actif comme THALES SIX GTS FRANCE au 4 avenue des Louvresses. La notice légale officielle Thales confirme indépendamment le même SIREN, la même entité et cette adresse. Le libellé CRM contient lui-même « 4 » et « THALES » ; le 7 correspond à une imprécision d'extrémité de liaison, pas à un autre établissement prouvé.",
+      "sources": [
+        {
+          "evidence_id": "7389652f40bd36d7-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+        "source_family": "REGISTRY_CORE_SIRENE",
+        "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+        "proof_kind": "IDENTITY_REGISTRY_LINKS_CORRECTED_SIRET_TO_CRM_IDENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=38347093700194&per_page=1",
+          "collected_at": "2026-07-27T20:49:22.679974+00:00",
+          "response_sha256": "4bcbd51c6c9ebfd3acce25eeb6dfeba20b9e9c11f5c39ed77654f86b06d3ea9a",
+          "archived_facts": [
+            "Le SIRET 38347093700194 est actif et appartient à THALES SIX GTS FRANCE.",
+            "Son adresse est le 4 avenue des Louvresses à Gennevilliers."
+          ]
+        },
+        {
+          "evidence_id": "7389652f40bd36d7-thales-site",
+          "producer": "Thales",
+        "source_family": "ENTITY_SELF_PUBLICATION",
+        "canonical_source_family": "THALES_OFFICIAL",
+          "independence_group": "THALES_OFFICIAL",
+        "proof_kind": "IDENTITY_ORGANIZATION_LEGAL_NOTICE_CONFIRMS_ENTITY_SIREN_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de notice légale officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_n_20260728/7389652f40bd36d7-thales.txt",
+          "url": "https://cds.thalesgroup.com/fr/legal-notice",
+          "collected_at": "2026-07-28T10:30:00+02:00",
+          "response_sha256": "285a9ca912de231f8420021805b4cb34cb7d82a10a4880300fb01e52b914d679",
+          "archived_facts": [
+            "La notice légale identifie Thales Six GTS France sous le SIREN 383470937.",
+            "Elle confirme le siège au 4 avenue des Louvresses."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
