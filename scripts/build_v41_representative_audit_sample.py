@@ -7,10 +7,13 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
+import sys
 import tempfile
 from typing import Any
 
 import pandas as pd
+
+sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.v9_dataset import file_sha256
 
