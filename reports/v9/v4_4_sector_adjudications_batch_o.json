@@ -1,0 +1,575 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-o-1",
+  "created_at": "2026-07-27T23:21:34Z",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Plusieurs réponses, identifiants ou fiches du même producteur ne créent pas plusieurs preuves indépendantes.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. La source indépendante doit confirmer l'identité, une continuité juridique ou la distinction entre le CRM et le top-1.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Un SIRET alternatif n'est publié que s'il est présent dans le top-10 figé et relié à l'identité CRM par deux preuves indépendantes."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "file figée contenant les assertions CRM et les top-1 jugés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "archive locale des réponses complètes de l'API Recherche d'entreprises"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+      "sha256": "b772a022ecf2de11d1ecccaa1727fed1683d9cc9578535cba968e46c59d63210",
+      "role": "top-10 figé utilisé pour constater les concurrents exacts d'un top-1 ou contrôler l'admissibilité d'un SIRET alternatif"
+    }
+  ],
+  "summary": {
+    "case_count": 8,
+    "top1_correct_evidence_validated": 6,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 2,
+    "unresolved": 0,
+    "validated_correct_siret_count": 6,
+    "training_eligible_count": 8
+  },
+  "cases": [
+    {
+      "audit_case_id": "ad38e9018a7f9994",
+      "service_id": "AC011875",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SERVANET ISSOIRE",
+        "address": "18 rue des Frères Perret, 63500 Issoire",
+        "input_siret": "33807576500028",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "33807576500051",
+        "siren": "338075765"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "33807576500051",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "SERVANET_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à SOCIETE SERVANET au 18 rue des Frères Perret. Les mentions légales de Servanet publient elles-mêmes cette adresse et le SIRET exact 33807576500051 ; l'ancien SIRET CRM est fermé.",
+      "sources": [
+        {
+          "evidence_id": "ad38e9018a7f9994-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=33807576500051&per_page=1",
+          "collected_at": "2026-07-27T20:49:36.204500+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "ad38e9018a7f9994",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 33807576500051 est actif sous SOCIETE SERVANET.",
+            "L'établissement est situé 18 rue des Frères Perret à Issoire."
+          ]
+        },
+        {
+          "evidence_id": "ad38e9018a7f9994-servanet-legal",
+          "producer": "Servanet",
+          "source_family": "CORPORATE_SELF_PUBLICATION",
+          "canonical_source_family": "SERVANET_SELF_PUBLICATION",
+          "independence_group": "SERVANET_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CORPORATE_LEGAL_PAGE_PUBLISHES_EXACT_SIRET",
+          "counts_for_independence": true,
+          "document_type": "mentions légales rendues et archivées en texte",
+          "url": "https://www.servanet.fr/mentions-legales",
+          "archive_url": "https://r.jina.ai/http://www.servanet.fr/mentions-legales",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "ac322b6d9ada3c0860b69ef956170f89a93fbce4017f8ffb1ad7fe48588a748f",
+          "archived_facts": [
+            "Servanet publie sa raison sociale et l'adresse 18 rue des Frères Perret, 63500 Issoire.",
+            "La page publie le SIRET exact 33807576500051."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "204331ef65f7c8b9",
+      "service_id": "AC016319",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CL00026-LES-FOURNILS-DU-LAC-AMPHION",
+        "address": "420 rue des Vignes Rouges, 74500 Publier",
+        "input_siret": "40350526600011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "40350526600110",
+        "siren": "403505266"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "40350526600110",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ACCESLIBRE_STATE_DIRECTORY"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à l'enseigne LES FOURNILS DU LAC, rue des Vignes Rouges à Publier. Acceslibre, service public distinct, publie Les Fournils du Lac au numéro exact 420 ; le SIRET CRM actif correspond à un autre établissement du même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "204331ef65f7c8b9-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_TRADE_NAME_MATCHES_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=40350526600110&per_page=1",
+          "collected_at": "2026-07-27T20:48:54.988999+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "204331ef65f7c8b9",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 40350526600110 est actif sous LE FORNALI avec l'enseigne LES FOURNILS DU LAC.",
+            "L'établissement est situé rue des Vignes Rouges à Publier."
+          ]
+        },
+        {
+          "evidence_id": "204331ef65f7c8b9-acceslibre",
+          "producer": "Acceslibre, Direction interministérielle du numérique",
+          "source_family": "STATE_PUBLIC_DIRECTORY",
+          "canonical_source_family": "ACCESLIBRE_STATE_DIRECTORY",
+          "independence_group": "ACCESLIBRE_STATE_DIRECTORY",
+          "proof_kind": "IDENTITY_STATE_DIRECTORY_CONFIRMS_TRADE_NAME_AND_EXACT_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "fiche d'établissement publique rendue et archivée en texte",
+          "url": "https://acceslibre.beta.gouv.fr/app/74-publier/a/boulangerie-patisserie/erp/les-fournils-du-lac-2/",
+          "archive_url": "https://r.jina.ai/http://https://acceslibre.beta.gouv.fr/app/74-publier/a/boulangerie-patisserie/erp/les-fournils-du-lac-2/",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "ed7f66b0b1a33f6f315a41349cb0515fc1bb1b2fe9d2855af249926b053b72e2",
+          "archived_facts": [
+            "Acceslibre publie l'établissement Les Fournils du Lac à Publier.",
+            "L'adresse publiée est 420 rue des Vignes Rouges, 74500 Publier."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "f2a031d30107f2ce",
+      "service_id": "FR010738",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Dometude Caen OPERATION SAS (KLEY CAEN)",
+        "address": "49 avenue de la Côte de Nacre, 14000 Caen",
+        "input_siret": "80797897800029",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "80797897800037",
+        "siren": "807978978"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "80797897800037",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "KLEY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à KLEY CAEN OPERATIONS à l'adresse CRM exacte. Le site officiel KLEY publie la résidence KLEY Caen à cette même adresse ; l'ancien établissement CRM est fermé.",
+      "sources": [
+        {
+          "evidence_id": "f2a031d30107f2ce-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=80797897800037&per_page=1",
+          "collected_at": "2026-07-27T20:50:00.423298+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "f2a031d30107f2ce",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 80797897800037 est actif sous KLEY CAEN OPERATIONS.",
+            "L'établissement est situé 49 avenue de la Côte de Nacre à Caen."
+          ]
+        },
+        {
+          "evidence_id": "f2a031d30107f2ce-kley-residence",
+          "producer": "KLEY",
+          "source_family": "CORPORATE_SELF_PUBLICATION",
+          "canonical_source_family": "KLEY_SELF_PUBLICATION",
+          "independence_group": "KLEY_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CORPORATE_SITE_CONFIRMS_BRAND_AND_EXACT_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "page officielle de résidence rendue et archivée en texte",
+          "url": "https://www.kley.fr/residence-etudiante/caen/kley-caen/",
+          "archive_url": "https://r.jina.ai/http://www.kley.fr/residence-etudiante/caen/kley-caen/",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "d0c063f2b3a621dd3d8d1598cff03653a0d891ff770bc4465371a643f56c2b04",
+          "archived_facts": [
+            "KLEY publie la résidence KLEY Caen.",
+            "L'adresse publiée est 49 avenue de la Côte de Nacre, 14000 Caen."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "023adb133c1544da",
+      "service_id": "AC004683",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Cegelec Energie UF",
+        "address": "360 avenue Henri Schneider, 69330 Meyzieu",
+        "input_siret": "53791578700000",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "53791578700148",
+        "siren": "537915787"
+      },
+      "adjudication_label": "AMBIGUOUS",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "GLEIF"
+      ],
+      "decision_reason": "Le SIREN saisi est celui de CEGELEC ENERGIE CENTRE EST et l'adresse CRM est manifestement décalée de 360 à 245 avenue Henri Schneider. Toutefois, le pool figé contient deux établissements actifs de ce même SIREN à l'adresse 245 : le top-1 ACTEMIUM MAINTENANCE RHONE ALPES et le siège ACTEMIUM MAINTENANCE LYON METROPOLE. Le libellé générique « Cegelec Energie UF » ne permet pas de choisir un SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "023adb133c1544da-registry-pool",
+          "producer": "INSEE, via le snapshot SIRENE du retrieval V4.1",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_MULTIPLE_SAME_SIREN_ESTABLISHMENTS_AT_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "top-10 figé et réponse API officielle archivés",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=53791578700148&per_page=1",
+          "collected_at": "2026-07-27T20:48:32.161053+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+          "row_selector": {
+            "service_id": "AC004683",
+            "rank_range": "1-2"
+          },
+          "archived_facts": [
+            "Le rang 1 est le SIRET actif 53791578700148, ACTEMIUM MAINTENANCE RHONE ALPES, au 245 avenue Henri Schneider.",
+            "Le rang 2 est le SIRET actif 53791578700130, ACTEMIUM MAINTENANCE LYON METROPOLE, à la même adresse et sous le même SIREN."
+          ]
+        },
+        {
+          "evidence_id": "023adb133c1544da-gleif",
+          "producer": "Global Legal Entity Identifier Foundation",
+          "source_family": "INDEPENDENT_GLOBAL_LEGAL_REGISTRY",
+          "canonical_source_family": "GLEIF",
+          "independence_group": "GLEIF",
+          "proof_kind": "IDENTITY_LEGAL_ENTITY_AND_CURRENT_ADDRESS_CONFIRMED",
+          "counts_for_independence": true,
+          "document_type": "réponse JSON de l'API GLEIF",
+          "url": "https://api.gleif.org/api/v1/lei-records/213800K6CI7DWLNY8J36",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "d220ed893add916df1ecc8b5c1ede317faa2e9c96484b6b19226fdd2d27a67ac",
+          "archived_facts": [
+            "GLEIF rattache CEGELEC ENERGIE CENTRE EST au numéro de registre 537915787.",
+            "GLEIF publie l'adresse légale et de siège 245 avenue Henri Schneider, 69330 Meyzieu, sans distinguer les deux établissements SIRET du site."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Deux SIRET actifs du même SIREN occupent l'adresse corrigée.",
+        "Le libellé CRM ne contient ni l'enseigne ACTEMIUM ni l'activité permettant de distinguer les deux établissements."
+      ]
+    },
+    {
+      "audit_case_id": "2e640fcb7847fa78",
+      "service_id": "FR031962",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "IN EXTENSO OPERATIONNEL",
+        "address": "chemin des Pérouses, 74210 Faverges-Seythenex",
+        "input_siret": "38478036700064",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "38478036700072",
+        "siren": "384780367"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "38478036700072",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "IN_EXTENSO_OFFICIAL"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à IN EXTENSO PAYS DE SAVOIE au 4869 chemin des Pérouses à Faverges-Seythenex. Le site officiel In Extenso confirme son agence de Faverges, sous ce nom et dans la ZAC des Boucheroz ; le SIRET CRM actif correspond à l'agence d'Albertville.",
+      "sources": [
+        {
+          "evidence_id": "2e640fcb7847fa78-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=38478036700072&per_page=1",
+          "collected_at": "2026-07-27T20:49:01.909281+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "2e640fcb7847fa78",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 38478036700072 est actif sous IN EXTENSO PAYS DE SAVOIE.",
+            "L'établissement est situé ZAC des Boucheroz, 4869 chemin des Pérouses à Faverges-Seythenex."
+          ]
+        },
+        {
+          "evidence_id": "2e640fcb7847fa78-inextenso-agency",
+          "producer": "In Extenso",
+          "source_family": "CORPORATE_SELF_PUBLICATION",
+          "canonical_source_family": "IN_EXTENSO_OFFICIAL",
+          "independence_group": "IN_EXTENSO_OFFICIAL",
+          "proof_kind": "IDENTITY_CORPORATE_SITE_CONFIRMS_AGENCY_AND_LOCATION",
+          "counts_for_independence": true,
+          "document_type": "page officielle d'agence rendue et archivée en texte",
+          "url": "https://www.inextenso.fr/agence/expert-comptable-faverges/",
+          "archive_url": "https://r.jina.ai/http://www.inextenso.fr/agence/expert-comptable-faverges/",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "c698b6b822e0ad4fe361ed32d67e2f5085bf589d9672bd3d35d7f4fe4b18d915",
+          "archived_facts": [
+            "In Extenso publie l'agence In Extenso Pays de Savoie à Faverges.",
+            "La page situe l'agence dans la ZAC des Boucheroz, 74210 Faverges."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "d565f6aa7c324c0c",
+      "service_id": "FR019413",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GROUPE AGRICA",
+        "address": "1 rue de l'Origan, 62000 Arras",
+        "input_siret": "49487155100011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "41111799700238",
+        "siren": "411117997"
+      },
+      "adjudication_label": "AMBIGUOUS",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "AGRICA_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le site officiel AGRICA confirme que le 1 rue de l'Origan est bien son agence d'Arras. Mais le pool figé contient à cette adresse le top-1 ASS GESTION INSTITUT COMPLEMENT AGRICOLE, sigle AGRICA, et AGRICA GESTION au rang 4. Le nom CRM « GROUPE AGRICA » désigne le groupe et ne permet pas d'attribuer l'agence à une personne morale unique.",
+      "sources": [
+        {
+          "evidence_id": "d565f6aa7c324c0c-registry-pool",
+          "producer": "INSEE, via le snapshot SIRENE du retrieval V4.1",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_MULTIPLE_GROUP_ENTITIES_AT_EXACT_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "top-10 figé et réponse API officielle archivés",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=41111799700238&per_page=1",
+          "collected_at": "2026-07-27T20:49:49.772470+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+          "row_selector": {
+            "service_id": "FR019413",
+            "ranks": [
+              1,
+              4
+            ]
+          },
+          "archived_facts": [
+            "Le top-1 actif 41111799700238 est ASS GESTION INSTITUT COMPLEMENT AGRICOLE, sigle AGRICA, au 1 rue de l'Origan.",
+            "Le rang 4 actif 49337368200175 est AGRICA GESTION à la même adresse."
+          ]
+        },
+        {
+          "evidence_id": "d565f6aa7c324c0c-agrica-agency",
+          "producer": "Groupe AGRICA",
+          "source_family": "CORPORATE_SELF_PUBLICATION",
+          "canonical_source_family": "AGRICA_SELF_PUBLICATION",
+          "independence_group": "AGRICA_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CORPORATE_SITE_CONFIRMS_GROUP_AGENCY_NOT_LEGAL_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel d'agences rendu et archivé en texte",
+          "url": "https://www.groupagrica.com/contactez-nous/agences",
+          "archive_url": "https://r.jina.ai/http://www.groupagrica.com/contactez-nous/agences",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "5609dd584bd1c1f48b6833da7bd962eee03a226e4a60f8ed867486905048403a",
+          "archived_facts": [
+            "Groupe AGRICA publie une agence d'Arras.",
+            "L'adresse publiée est 1 rue de l'Origan, 62000 Arras, sans SIRET ni personne morale porteuse."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le CRM nomme le groupe et non une personne morale.",
+        "Deux entités AGRICA actives du pool occupent l'adresse exacte et la publication du groupe ne les départage pas."
+      ]
+    },
+    {
+      "audit_case_id": "25824a15450806a1",
+      "service_id": "AC016200",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MGEFFRAY IMMOBILIER - BRUNELLIERE",
+        "address": "10 rue Charles Brunellière, 44100 Nantes",
+        "input_siret": "50513701800022",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "50513701800048",
+        "siren": "505137018"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "50513701800048",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "MGEFFRAY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à MGEFFRAY IMMOBILIER au 10 rue Charles Brunellière. Le site officiel MG Immobilier publie son service comptabilité à cette adresse ; le SIRET CRM actif correspond au siège de la même société rue Racine.",
+      "sources": [
+        {
+          "evidence_id": "25824a15450806a1-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=50513701800048&per_page=1",
+          "collected_at": "2026-07-27T20:48:57.551587+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "25824a15450806a1",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 50513701800048 est actif sous MGEFFRAY IMMOBILIER.",
+            "L'établissement est situé 10 rue Charles Brunellière à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "25824a15450806a1-mgeffray-contact",
+          "producer": "MG Immobilier / Cabinet MGeffray",
+          "source_family": "CORPORATE_SELF_PUBLICATION",
+          "canonical_source_family": "MGEFFRAY_SELF_PUBLICATION",
+          "independence_group": "MGEFFRAY_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CORPORATE_SITE_CONFIRMS_EXACT_BRANCH_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "page officielle de contact rendue et archivée en texte",
+          "url": "https://www.mgimmobilier.fr/contact/",
+          "archive_url": "https://r.jina.ai/http://www.mgimmobilier.fr/contact/",
+          "collected_at": "2026-07-28",
+          "archived_response_sha256": "93f30cfd3dc0292f2a78989c50332eaf9aa9069bd8ef1bf0bd626d3ae375f449",
+          "archived_facts": [
+            "MG Immobilier publie deux implantations nantaises.",
+            "Le service comptabilité est publié au 10 rue Charles Brunellière, 44100 Nantes."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "9ea3e73261c016fe",
+      "service_id": "AC018528",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Kia Sodak",
+        "address": "695 avenue des Eaux Blanches, 34200 Sète",
+        "input_siret": "48972293400028",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "48972293400036",
+        "siren": "489722934"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "48972293400036",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "KIA_FRANCE_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à SODAK, enseigne KIA SETE SELLENS, au 695 avenue des Eaux Blanches. La liste officielle des réparateurs agréés Kia France publie SODAK à cette adresse ; le SIRET CRM actif correspond au site de Castelnau-le-Lez.",
+      "sources": [
+        {
+          "evidence_id": "9ea3e73261c016fe-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48972293400036&per_page=1",
+          "collected_at": "2026-07-27T20:49:29.526487+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "9ea3e73261c016fe",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 48972293400036 est actif sous SODAK avec l'enseigne KIA SETE SELLENS.",
+            "L'établissement est situé 695 avenue des Eaux Blanches à Sète."
+          ]
+        },
+        {
+          "evidence_id": "9ea3e73261c016fe-kia-network",
+          "producer": "Kia France",
+          "source_family": "CORPORATE_NETWORK_DIRECTORY",
+          "canonical_source_family": "KIA_FRANCE_SELF_PUBLICATION",
+          "independence_group": "KIA_FRANCE_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_BRAND_NETWORK_CONFIRMS_OPERATOR_AND_EXACT_ADDRESS",
+          "counts_for_independence": true,
+          "document_type": "liste officielle PDF des réparateurs agréés",
+          "url": "https://www.kia.com/content/dam/kwcms/kme/fr/fr/assets/contents/service/Maintenance/Kia-France-liste-reparateurs-agrees-participants-service-5-plus.pdf",
+          "collected_at": "2026-07-28",
+          "artifact_sha256": "49d6e4479fc5dcc37a0a8b381767273961043cb360a7e8ba222633c6190792a5",
+          "archived_facts": [
+            "Kia France publie SODAK dans son réseau agréé.",
+            "L'adresse publiée est 695 avenue des Eaux Blanches, 34200 Sète."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}

@@ -1,0 +1,379 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-p-1",
+  "created_at": "2026-07-28T01:22:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Le BODACC est un producteur DILA distinct.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Dans ce lot, le SIRET CRM et le top1 sont identiques; le nom et l'adresse doivent en plus être confirmés par deux producteurs.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves indépendantes et présence démontrée dans le top 10 gelé."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate et top1 gelés"
+    }
+  ],
+  "summary": {
+    "case_count": 6,
+    "auto_match_source_count": 6,
+    "top1_correct_evidence_validated": 6,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 6,
+    "training_eligible_count": 6
+  },
+  "cases": [
+    {
+      "audit_case_id": "bec22679ca6e3c27",
+      "service_id": "FR041189",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "XPO IT EUROPE- TK EXPRESS",
+        "address": "650 rue du Docteur Calmette, 83210 La Farlède",
+        "input_siret": "81098765100033",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "81098765100033",
+        "siren": "810987651"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "81098765100033",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "Le libellé CRM nomme explicitement TK EXPRESS après le donneur d'ordre XPO. SIRENE relie le SIRET CRM/top1 actif à TK EXPRESS au 650 rue du Docteur Calmette à La Farlède. Le BODACC confirme indépendamment TK EXPRESS sous le même SIREN à La Farlède.",
+      "sources": [
+        {
+          "evidence_id": "bec22679ca6e3c27-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NAMED_OPERATOR_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=81098765100033&per_page=1",
+          "collected_at": "2026-07-27T23:19:16.053019+00:00",
+          "response_sha256": "2bfca23dbdf62c9b11d71622ded73a388800edcc5a60a637ba1e9828d79fff21",
+          "archived_facts": [
+            "Le SIRET actif 81098765100033 appartient à TK EXPRESS.",
+            "L'établissement est au 650 rue du Docteur Calmette à La Farlède."
+          ]
+        },
+        {
+          "evidence_id": "bec22679ca6e3c27-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22810987651%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:19:16.322888+00:00",
+          "response_sha256": "222ae6132332399050166cb7739052cc8c4e4b9d6ca9090d0a2e9df6faaf4cff",
+          "archived_facts": [
+            "Le BODACC publie TK EXPRESS sous l'identifiant 810987651.",
+            "Les annonces rattachent la société à La Farlède."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "640b95b26bbf11a8",
+      "service_id": "AC009814",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Toudic by T-Connect (Chez Lorge Imprimeurs)",
+        "address": "6 rue Yves Toudic, 69200 Vénissieux",
+        "input_siret": "96650286600041",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "96650286600041",
+        "siren": "966502866"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "96650286600041",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "Le CRM indique explicitement « Chez Lorge Imprimeurs ». SIRENE identifie le SIRET CRM/top1 actif comme LORGE IMPRIMEURS au 6 rue Yves Toudic à Vénissieux. Le BODACC confirme indépendamment la même personne morale sous le même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "640b95b26bbf11a8-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_HOST_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=96650286600041&per_page=1",
+          "collected_at": "2026-07-27T23:19:16.653140+00:00",
+          "response_sha256": "c9cc4dd711f9d485e74077eed468a3ac640e40016739ca56f1470d5a63b5e9a9",
+          "archived_facts": [
+            "Le SIRET actif 96650286600041 appartient à LORGE IMPRIMEURS.",
+            "L'établissement est au 6 rue Yves Toudic à Vénissieux."
+          ]
+        },
+        {
+          "evidence_id": "640b95b26bbf11a8-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22966502866%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:19:16.879096+00:00",
+          "response_sha256": "60c35237504de878d17ff5076406940132e5a9aee831e568f29b76de9cb3d314",
+          "archived_facts": [
+            "Le BODACC publie LORGE IMPRIMEURS sous l'identifiant 966502866.",
+            "Les annonces rattachent l'entité à Vénissieux."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "c3b286b197e639c3",
+      "service_id": "FR040951",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LAFARGEHOLCIM FRANCE",
+        "address": "16 boulevard Garibaldi, 92130 Issy-les-Moulineaux",
+        "input_siret": "42228809200089",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "42228809200089",
+        "siren": "422288092"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "42228809200089",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET CRM/top1 actif à LAFARGE FRANCE au 14-16 boulevard Garibaldi à Issy-les-Moulineaux. Le BODACC confirme indépendamment LAFARGE FRANCE sous le même SIREN dans cette commune. La marque groupe LafargeHolcim et le numéro 16 du CRM sont compatibles avec l'identité et la plage d'adresse du registre.",
+      "sources": [
+        {
+          "evidence_id": "c3b286b197e639c3-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_GROUP_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=42228809200089&per_page=1",
+          "collected_at": "2026-07-27T23:19:16.947588+00:00",
+          "response_sha256": "acf053fd483c137d1e21a91d3ddef48954800ea7f0200fb7246e40ac5a2eca01",
+          "archived_facts": [
+            "Le SIRET actif 42228809200089 appartient à LAFARGE FRANCE.",
+            "L'établissement est déclaré au 14-16 boulevard Garibaldi à Issy-les-Moulineaux."
+          ]
+        },
+        {
+          "evidence_id": "c3b286b197e639c3-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_CITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22422288092%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:19:17.185178+00:00",
+          "response_sha256": "0b887706e380f72f9a3f142329837e67fbf72aef1b82edfe340008296bebf8b1",
+          "archived_facts": [
+            "Le BODACC publie LAFARGE FRANCE sous l'identifiant 422288092.",
+            "Les annonces récentes rattachent la société à Issy-les-Moulineaux."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "58ebb1440711b1ee",
+      "service_id": "FR037135",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "PHOENIX PHARMA - Clermont-Ferrand",
+        "address": "rue du Pré-Comtal, ZAC des Gravanches, 63100 Clermont-Ferrand",
+        "input_siret": "58213743600256",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "58213743600256",
+        "siren": "582137436"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "58213743600256",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET CRM/top1 actif à PHOENIX OCP rue du Pré-Comtal, ZAC des Gravanches à Clermont-Ferrand. Le BODACC confirme indépendamment PHOENIX OCP sous le même SIREN. Le libellé PHOENIX PHARMA du CRM est une variante de marque, sans contradiction de site ni de personne morale.",
+      "sources": [
+        {
+          "evidence_id": "58ebb1440711b1ee-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=58213743600256&per_page=1",
+          "collected_at": "2026-07-27T23:19:17.605510+00:00",
+          "response_sha256": "66f929d51aecf42c0ed8933d330907ed39a2c50e10dada4daff823901d01a7c3",
+          "archived_facts": [
+            "Le SIRET actif 58213743600256 appartient à PHOENIX OCP.",
+            "L'établissement est rue du Pré-Comtal, ZAC des Gravanches à Clermont-Ferrand."
+          ]
+        },
+        {
+          "evidence_id": "58ebb1440711b1ee-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22582137436%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:19:17.784718+00:00",
+          "response_sha256": "0918796dac67b92787c2da534e95abe941cd5130ae10744b7a0df94765df712e",
+          "archived_facts": [
+            "Le BODACC publie PHOENIX OCP sous l'identifiant 582137436.",
+            "Les annonces confirment la personne morale du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01b355036de773a3",
+      "service_id": "FR039323",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "AXALTA COATINGS SYSTEMS",
+        "address": "578 avenue Charles-de-Gaulle, 42153 Riorges",
+        "input_siret": "39164039800064",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "39164039800064",
+        "siren": "391640398"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "39164039800064",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET CRM/top1 actif à AXALTA AXCESS FRANCE au 578 avenue Charles-de-Gaulle à Riorges. Le BODACC confirme indépendamment AXALTA AXCESS FRANCE sous le même SIREN. La marque AXALTA COATINGS SYSTEMS est cohérente avec cette identité Axalta et l'adresse exacte.",
+      "sources": [
+        {
+          "evidence_id": "01b355036de773a3-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=39164039800064&per_page=1",
+          "collected_at": "2026-07-27T23:19:17.941158+00:00",
+          "response_sha256": "2b5964f2413888ae43a1bd9d78c34aa84bda468b605097c9396da240a7fc13bf",
+          "archived_facts": [
+            "Le SIRET actif 39164039800064 appartient à AXALTA AXCESS FRANCE.",
+            "L'établissement est au 578 avenue Charles-de-Gaulle à Riorges."
+          ]
+        },
+        {
+          "evidence_id": "01b355036de773a3-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22391640398%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:19:18.204696+00:00",
+          "response_sha256": "46ef4994d8246ba40cb1db464170efc4dfc08e684e751d6ec41d68bd06bb37c3",
+          "archived_facts": [
+            "Le BODACC publie AXALTA AXCESS FRANCE sous l'identifiant 391640398.",
+            "Les annonces confirment indépendamment l'identité juridique Axalta du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "027152854e69b963",
+      "service_id": "AC015495",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ARTMAN INTERIM",
+        "address": "7 rue Roland-Garros, 44700 Orvault",
+        "input_siret": "48184917200061",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "48184917200061",
+        "siren": "481849172"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "48184917200061",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET CRM/top1 actif à ABOUTIR EMPLOI ARTMAN au 7 rue Roland-Garros à Orvault. Le BODACC confirme indépendamment la même dénomination et le même SIREN. Le libellé abrégé ARTMAN INTERIM conserve le nom distinctif de l'entité.",
+      "sources": [
+        {
+          "evidence_id": "027152854e69b963-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_ABBREVIATED_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48184917200061&per_page=1",
+          "collected_at": "2026-07-27T23:19:18.373477+00:00",
+          "response_sha256": "11a42e0d39f55b46ffe26e6fe7db2f529177a7bc1c377f6c80e1af3e8faf3b77",
+          "archived_facts": [
+            "Le SIRET actif 48184917200061 appartient à ABOUTIR EMPLOI ARTMAN.",
+            "L'établissement est au 7 rue Roland-Garros à Orvault."
+          ]
+        },
+        {
+          "evidence_id": "027152854e69b963-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_CITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22481849172%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:19:18.949168+00:00",
+          "response_sha256": "56a5612f6779df124acbd8206799dad7f87d4ab88797defec63cd73770839809",
+          "archived_facts": [
+            "Le BODACC publie ABOUTIR EMPLOI ARTMAN sous l'identifiant 481849172.",
+            "Des annonces rattachent cette personne morale à Orvault."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
