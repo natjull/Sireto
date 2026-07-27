@@ -1,0 +1,374 @@
+{
+  "schema_version": "sireto-v4.4-known-contradictions-evidence-1",
+  "created_at": "2026-07-27T23:59:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux familles de preuves non issues du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Les vues de l'API Recherche d'entreprises et les avis de situation INSEE sont regroupés dans la famille REGISTRY_CORE_SIRENE. Plusieurs pages du même producteur ne créent pas plusieurs preuves indépendantes.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans preuve directe suffisante. TOP1_WRONG peut donc avoir validated_correct_siret=null."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "role": "file figée contenant les assertions CRM et les top-1 jugés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "archive locale des réponses complètes de l'API Recherche d'entreprises"
+    }
+  ],
+  "summary": {
+    "case_count": 5,
+    "top1_wrong_evidence_validated": 4,
+    "unresolved": 1,
+    "validated_correct_siret_count": 0,
+    "training_eligible_count": 4
+  },
+  "cases": [
+    {
+      "audit_case_id": "0107123ac3ab0732",
+      "service_id": "FR034856",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "WELCOOP LOGISTIQUE - GONDREVILLE",
+        "address": "Lieu Dit aux Loups, 54840 Gondreville",
+        "input_siret": "76780011300015",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "35203184300100",
+        "siren": "352031843"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "REGISTRY_CORE_SIRENE",
+        "ENTITY_SELF_DECLARATION"
+      ],
+      "decision_reason": "Le registre identifie le top-1 comme un établissement ECLATEC. Le site officiel de WELCOOP identifie séparément son site de Gondreville au même lieu-dit et publie un autre SIRET. La concordance d'adresse explique le faux rapprochement mais ne rend pas les deux personnes morales identiques.",
+      "sources": [
+        {
+          "evidence_id": "0107123ac3ab0732-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=35203184300100&per_page=1",
+          "collected_at": "2026-07-27T20:48:18.237095+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "0107123ac3ab0732",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 35203184300100 appartient au SIREN 352031843, dénommé L'ECLAIRAGE TECHNIQUE ECLATEC SA.",
+            "L'établissement porte le nom commercial ECLATEC LOGISTIQUE et se situe au lieu-dit Aux Loups à Gondreville.",
+            "L'établissement est déclaré actif."
+          ]
+        },
+        {
+          "evidence_id": "0107123ac3ab0732-welcoop-legal",
+          "producer": "WELCOOP LOGISTIQUE",
+          "source_family": "ENTITY_SELF_DECLARATION",
+          "counts_for_independence": true,
+          "document_type": "mentions légales du site officiel de l'entité",
+          "url": "https://www.welcoop-logistique.com/mentions-legales.html",
+          "collected_at": "2026-07-27",
+          "archived_facts": [
+            "WELCOOP LOGISTIQUE déclare son site de Gondreville dans la ZA Internationale Gondreville-Fontenoy, lieu-dit Aux Loups.",
+            "La société publie pour ce site le SIRET 76780011300031.",
+            "Le nom et le SIRET auto-déclarés diffèrent de ceux du top-1 ECLATEC."
+          ]
+        },
+        {
+          "evidence_id": "0107123ac3ab0732-insee-welcoop",
+          "producer": "INSEE",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "counts_for_independence": false,
+          "document_type": "avis de situation SIRENE",
+          "url": "https://api-avis-situation-sirene.insee.fr/identification/pdf/76780011300031",
+          "collected_at": "2026-07-27",
+          "document_date": "2026-01-08",
+          "archived_facts": [
+            "L'avis identifie WELCOOP LOGISTIQUE sous le SIRET 76780011300031.",
+            "Il indique un établissement actif à Gondreville-Fontenoy, lieu-dit Aux Loups."
+          ],
+          "not_independent_reason": "Même cœur de registre SIRENE que la réponse API utilisée pour identifier le top-1."
+        }
+      ],
+      "unresolved_constraints": [
+        "Le présent dossier réfute le top-1 mais ne transforme pas automatiquement le SIRET auto-déclaré par WELCOOP en nouvelle vérité d'entraînement ranker."
+      ]
+    },
+    {
+      "audit_case_id": "00ebcafaaa0a8bf5",
+      "service_id": "AC011617",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "COMMUNE DE MERVILLE FRANCEVILLE PLAGE MAIRIE",
+        "address": "4 avenue Alexandre de Lavergne, 14810 Merville-Franceville-Plage",
+        "input_siret": "21140409000022",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "21140409000030",
+        "siren": "211404090"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "REGISTRY_CORE_SIRENE",
+        "SECTOR_REGISTRY_EDUCATION",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le CRM désigne explicitement la mairie. Le registre et l'annuaire du ministère identifient le top-1 comme l'école primaire, tandis que le site de la commune identifie séparément la mairie avenue de Lavergne. Le partage du SIREN communal et la proximité des adresses ne font pas de l'école l'établissement mairie.",
+      "sources": [
+        {
+          "evidence_id": "00ebcafaaa0a8bf5-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21140409000030&per_page=1",
+          "collected_at": "2026-07-27T20:48:16.989174+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "00ebcafaaa0a8bf5",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21140409000030 est un établissement de la commune de Merville-Franceville-Plage.",
+            "Son enseigne est ECOLE DE MERVILLE-FRANCEVILLE et son activité principale est l'enseignement primaire.",
+            "L'établissement est situé 4 B avenue Alexandre de Lavergne et porte l'identifiant UAI 0141396S."
+          ]
+        },
+        {
+          "evidence_id": "00ebcafaaa0a8bf5-education-school",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "counts_for_independence": true,
+          "document_type": "fiche de l'annuaire officiel de l'éducation",
+          "url": "https://www.education.gouv.fr/annuaire/14810/merville-franceville-plage/ecole/0141396s/ecole-primaire.html",
+          "collected_at": "2026-07-27",
+          "archived_facts": [
+            "L'annuaire identifie à cette adresse une école primaire publique.",
+            "L'école est située 4 B avenue Alexandre de Lavergne à Merville-Franceville-Plage.",
+            "Cette fiche sectorielle confirme la fonction scolaire du top-1, distincte de la fonction mairie demandée par le CRM."
+          ]
+        },
+        {
+          "evidence_id": "00ebcafaaa0a8bf5-commune-mairie",
+          "producer": "Commune de Merville-Franceville-Plage",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "counts_for_independence": true,
+          "document_type": "page pratique du site officiel de la commune",
+          "url": "https://merville-franceville.fr/infos-pratiques/",
+          "collected_at": "2026-07-27",
+          "archived_facts": [
+            "La commune publie une rubrique distincte intitulée La mairie.",
+            "Elle donne pour la mairie l'adresse 4 avenue de Lavergne à Merville-Franceville-Plage et le contact accueil@merville-franceville.fr.",
+            "Cette auto-publication confirme que la demande CRM vise la mairie, non l'école primaire voisine."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET exact actuel de la fonction mairie n'est pas démontré par deux sources indépendantes dans ce dossier."
+      ]
+    },
+    {
+      "audit_case_id": "007d8c6b8f26962b",
+      "service_id": "AC009725",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ECITON",
+        "address": "3 avenue de Flandre, 94550 Chevilly-Larue",
+        "input_siret": "85226348200014",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "49944932000047",
+        "siren": "499449320"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "REGISTRY_CORE_SIRENE"
+      ],
+      "decision_reason": "Le registre prouve que le top-1 appartient à TERRAGAIA au 3 avenue de Flandre, mais aucune deuxième source primaire indépendante retrouvée ne relie ECITON à ce site et à la période visée par le CRM. La différence de nom et un ancien SIRET fermé sont des signaux, pas deux preuves suffisantes pour réfuter formellement le top-1 selon V4.4.",
+      "sources": [
+        {
+          "evidence_id": "007d8c6b8f26962b-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=49944932000047&per_page=1",
+          "collected_at": "2026-07-27T20:48:09.422768+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "007d8c6b8f26962b",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 49944932000047 appartient au SIREN 499449320 dénommé TERRAGAIA.",
+            "L'établissement est déclaré actif au 3 avenue de Flandre à Chevilly-Larue.",
+            "L'activité principale déclarée est le commerce de gros de fruits et légumes."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucune source primaire indépendante ne relie explicitement ECITON au 3 avenue de Flandre à la date de référence CRM.",
+        "La date de référence du CRM n'est pas disponible.",
+        "Les rééditions privées de données de registre et les snippets de moteur de recherche ont été exclus."
+      ]
+    },
+    {
+      "audit_case_id": "003c6fdad046a903",
+      "service_id": "AC005276",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "RILLIEUX - COLLEGE SAINT CHARLES",
+        "address": "26 rue Victor Hugo, 69140 Rillieux-la-Pape",
+        "input_siret": "77980369100021",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "75022340600018",
+        "siren": "750223406"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "REGISTRY_CORE_SIRENE",
+        "SECTOR_REGISTRY_EDUCATION",
+        "ENTITY_SELF_DECLARATION"
+      ],
+      "decision_reason": "L'Onisep et le site officiel du centre scolaire identifient le collège Saint-Charles au 26 avenue Victor-Hugo. Le registre identifie le top-1 comme l'association APEL de parents d'élèves. L'association partage l'adresse du centre scolaire mais n'est pas le collège désigné par le CRM.",
+      "sources": [
+        {
+          "evidence_id": "003c6fdad046a903-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=75022340600018&per_page=1",
+          "collected_at": "2026-07-27T20:48:06.737775+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "003c6fdad046a903",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 75022340600018 appartient à l'Association des parents d'élèves de l'enseignement libre du centre scolaire Saint Charles, dite APEL Saint Charles.",
+            "Cette association est déclarée au 26 avenue Victor Hugo à Rillieux-la-Pape.",
+            "Le registre ne présente pas cette personne morale comme le collège."
+          ]
+        },
+        {
+          "evidence_id": "003c6fdad046a903-onisep-college",
+          "producer": "Office national d'information sur les enseignements et les professions",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "counts_for_independence": true,
+          "document_type": "fiche officielle d'établissement d'enseignement",
+          "url": "https://www.onisep.fr/ressources/structures-enseignement/auvergne-rhone-alpes/rhone/college-saint-charles",
+          "collected_at": "2026-07-27",
+          "archived_facts": [
+            "L'Onisep identifie le Collège Saint-Charles au 26 avenue Victor Hugo, 69140 Rillieux-la-Pape.",
+            "La fiche attribue au collège le code UAI 0691651V.",
+            "Elle classe la structure comme établissement privé sous contrat."
+          ]
+        },
+        {
+          "evidence_id": "003c6fdad046a903-school-legal",
+          "producer": "Centre Scolaire Saint Charles",
+          "source_family": "ENTITY_SELF_DECLARATION",
+          "counts_for_independence": true,
+          "document_type": "mentions légales du site officiel de l'établissement",
+          "url": "https://st-charles.eu/mentions-legales/",
+          "collected_at": "2026-07-27",
+          "archived_facts": [
+            "Le site se déclare édité par le Centre Scolaire Saint Charles au 26 avenue Victor Hugo à Rillieux-la-Pape.",
+            "Le site présente le collège comme une composante du centre scolaire et distingue un lien APEL.",
+            "Cette auto-publication distingue le centre scolaire et son collège de l'association de parents portée par le top-1."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET exact de l'exploitant du collège n'est pas démontré par deux sources indépendantes dans ce dossier."
+      ]
+    },
+    {
+      "audit_case_id": "026ff9f27001bebd",
+      "service_id": "AC018736",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GPS - MEDIATHEQUE JACQUES PREVERT",
+        "address": "9 place du Miroir d'Eau, 77176 Savigny-le-Temple",
+        "input_siret": "21770445100210",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "78983652500020",
+        "siren": "789836525"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "REGISTRY_CORE_SIRENE",
+        "PUBLIC_SERVICE_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Grand Paris Sud identifie le service CRM comme la médiathèque Jacques Prévert au 4 place du Miroir d'Eau. Le registre identifie le top-1 au numéro 9 comme un établissement de coiffure sous l'enseigne Angeline Beauté. La différence de numéro révèle une imprécision CRM, mais les noms et fonctions incompatibles suffisent à réfuter le top-1 sans inventer le SIRET de la médiathèque.",
+      "sources": [
+        {
+          "evidence_id": "026ff9f27001bebd-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=78983652500020&per_page=1",
+          "collected_at": "2026-07-27T20:48:34.521221+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "026ff9f27001bebd",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 78983652500020 appartient à la société LES REFLETS DU MIROIR.",
+            "L'établissement porte l'enseigne ANGELINE BEAUTE et exerce une activité de coiffure.",
+            "Il est déclaré actif au centre commercial du Miroir d'Eau, 9 place du Miroir d'Eau à Savigny-le-Temple."
+          ]
+        },
+        {
+          "evidence_id": "026ff9f27001bebd-gps-library",
+          "producer": "Communauté d'agglomération Grand Paris Sud",
+          "source_family": "PUBLIC_SERVICE_SELF_PUBLICATION",
+          "counts_for_independence": true,
+          "document_type": "fiche officielle du réseau des médiathèques",
+          "url": "https://reseaumediatheques.grandparissud.fr/iguana/www.main.cls?surl=mediatheque-prevert",
+          "collected_at": "2026-07-27",
+          "archived_facts": [
+            "Grand Paris Sud identifie la Médiathèque Jacques Prévert à Savigny-le-Temple.",
+            "La fiche officielle situe la médiathèque au 4 place Miroir d'Eau, et non au numéro 9 du CRM.",
+            "La fiche décrit un service de médiathèque doté de collections et d'espaces publics, incompatible avec l'activité de coiffure du top-1."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "L'adresse CRM comporte le numéro 9 alors que le producteur du service publie le numéro 4.",
+        "Le SIRET exact de la médiathèque n'est pas démontré par deux sources indépendantes dans ce dossier."
+      ]
+    }
+  ]
+}
