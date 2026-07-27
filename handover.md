@@ -2,29 +2,29 @@
 
 ## Etat des lieux
 La V4.4 d'adjudication autonome est ouverte : l'utilisateur n'est pas le
-validateur et aucune revue ligne par ligne ne lui sera déléguée. Les 440
-réponses officielles ont été transformées en 172 fiches de faits conservatrices.
-Elles confirment l'existence administrative de 172/172 top-1 et la présence du
-top-1 dans 52 recherches nom + géographie, mais toutes proviennent de la même
-famille SIRENE/API. Elles ne constituent donc jamais deux preuves
-indépendantes : `correctness_conclusion=NOT_DERIVED` pour 172/172 et
-`training_eligible=0`. La collecte gratuite auprès des producteurs sectoriels
-couvre désormais 52 dossiers : 115/117 identifiants sont retrouvés et reliés
-explicitement au SIRET observé par UAI, FINESS, Agence Bio ou ADEME. Ces faits
-ne deviennent pas automatiquement des labels. Les cinq contradictions connues
-ont été reprises sur pièces : quatre `TOP1_WRONG` sont maintenant validés et
-éligibles pour l'accepteur, un cas reste `UNRESOLVED`, et aucun SIRET
-alternatif n'a été inventé. Le gate partiel est
-**`PIVOT_MORE_EVIDENCE`** : 0/75 corrects, 4/50 incorrects et 4/30 random
-validés. Aucun modèle n'est modifié. Artefacts :
+validateur et aucune revue ligne par ligne ne lui sera déléguée. Les cinq lots
+sectoriels A–E et les contradictions connues forment désormais un corpus
+canonique dédupliqué de 53 dossiers : 47 décisions sont validées par au moins
+deux groupes de preuves indépendants, dont 35 `TOP1_CORRECT`, 11
+`TOP1_WRONG` et une `AMBIGUOUS`; six restent `UNRESOLVED`. Dix-neuf décisions
+validées appartiennent au tirage aléatoire. Le gate reste
+**`PIVOT_MORE_EVIDENCE`** : il manque encore 40 corrects, 39 incorrects et 11
+random. Aucun modèle n'est modifié. L'adaptateur recalcule les pools top-10
+figés, refuse les hashes de preuve inexacts, interdit l'injection d'un positif
+et reproduit les tables canoniques à partir des JSON revus. Les lots ont été
+corrigés contre les archives réelles, notamment leurs hashes et les groupes
+d'indépendance. Artefacts :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`
 et
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_evidence_facts/7ec4f63e1a22b082`,
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f`,
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884`,
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/320fe62322e14d25`
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/320fe62322e14d25`,
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/70c65679dfb2c82d`
 et
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/454d4120ee8ce7a8`.
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/6f5972fbdcf10043`.
+*(commits GitHub : lots vérifiés `f2aeec0`, adaptateur canonique `c6cb686`;
+282 tests passants)*
 
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
 complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
@@ -163,6 +163,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Lots V4.4 A–E rendus canoniques et gate recalculé** : 48 dossiers
+  sectoriels ont été reliés à la queue V4.3 et aux vrais pools top-10 du shadow,
+  puis combinés aux cinq contradictions déjà canoniques. Les erreurs de hashes
+  et de taxonomie de sources ont été détectées par recomputation puis corrigées
+  contre les archives. Corpus final à ce stade : 53 cas, 47 validés, 35
+  `TOP1_CORRECT`, 11 `TOP1_WRONG`, une `AMBIGUOUS`, six `UNRESOLVED` et 19
+  random validés. Verdict `PIVOT_MORE_EVIDENCE`; aucun réentraînement.
+  *(commits GitHub : données `f2aeec0`, adaptateur `c6cb686`; 282 tests
+  passants)*
 - **Premier gate V4.4 canonique publié** : les cinq contradictions ont été
   reliées aux pools top-10 réellement archivés dans le shadow, au bundle et à
   la signature retrieval gelés, puis validées par recomputation. Résultat :
