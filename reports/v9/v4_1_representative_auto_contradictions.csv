@@ -1,0 +1,6 @@
+audit_case_id,service_id,predicted_siret,contradiction_code,crm_entity,predicted_entity,evidence_summary,review_status
+003c6fdad046a903,AC005276,75022340600018,WRONG_ENTITY_TYPE,RILLIEUX - COLLEGE SAINT CHARLES,APEL SAINT CHARLES,"Le CRM désigne le collège ; le SIRET proposé est l'association de parents d'élèves, malgré une adresse commune.",AI_PROVISIONAL
+007d8c6b8f26962b,AC009725,49944932000047,WRONG_ENTITY_NAME,ECITON,KINOBE / TERRAGAIA,"Aucun nom du candidat proposé ne correspond à ECITON ; seule l'adresse 3 avenue de Flandre est commune.",AI_PROVISIONAL
+00ebcafaaa0a8bf5,AC011617,21140409000030,WRONG_ESTABLISHMENT,MAIRIE DE MERVILLE-FRANCEVILLE-PLAGE,ECOLE DE MERVILLE FRANCEVILLE,"Le CRM désigne la mairie ; le SIRET proposé est celui de l'école municipale située à la même adresse.",AI_PROVISIONAL
+0107123ac3ab0732,FR034856,35203184300100,WRONG_ENTITY_NAME,WELCOOP LOGISTIQUE,ECLATEC LOGISTIQUE,"Le candidat proposé appartient à ECLATEC et non à WELCOOP ; seul le lieu-dit Aux Loups est commun.",AI_PROVISIONAL
+026ff9f27001bebd,AC018736,78983652500020,WRONG_ENTITY_TYPE,MEDIATHEQUE JACQUES PREVERT,ANGELINE BEAUTE / LES REFLETS DU MIROIR,"Le CRM désigne une médiathèque ; le SIRET proposé est un institut de beauté à la même adresse.",AI_PROVISIONAL
