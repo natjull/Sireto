@@ -1,6 +1,23 @@
-# SIRETO Handover - 26 Juillet 2026
+# SIRETO Handover - 27 Juillet 2026
 
 ## Etat des lieux
+La V4.1 actif-courant est maintenant implémentée et exécutée entièrement en
+local. Le gate retrieval dev retient la variante A avec 305/305 bons SIRET à
+Top-100, zéro candidat fermé et 872,6 ms de latence p95. Le dataset canonique
+contient 7 003 requêtes et 698 428 paires, sans positif injecté et sans aucun
+ID des tests consommés. Le ranker R1 atteint 99,918 % Hit@1 exact sur le dev ;
+l'accepteur brut atteint 99,832 % de précision observée et 81,593 % de
+couverture sur ce même dev.
+
+Le shadow complet a ensuite scoré exactement 19 025 lignes autorisées et
+produit 10 292 `AUTO_MATCH` = 54,097 % et 8 733 `REVIEW`, sans modifier le
+CRM. Sa latence p95 est de 982,0 ms. Comme ce corpus n'est pas un test
+indépendant et ne porte pas de nouveaux labels, aucune précision shadow n'est
+publiée. Verdict de phase : **`PIVOT_CERTIFICATION`**. L'architecture est
+techniquement validée, mais un `GO` production exige un prochain snapshot CRM
+réellement nouveau et audité sans retuning. Rapport :
+`reports/v9/v4_1_shadow_results.md`.
+
 Le chantier **Retrieval sélectif SIRET Recall@100** est terminé avec une
 décision contractuelle **`PIVOT`**. Sur le test final gelé, la qualification
 V3 conserve 2 128/2 652 dossiers exacts, soit 80,241 % de couverture, et
@@ -72,6 +89,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **V4.1 actif-courant exécutée en shadow local** : gate retrieval A à 305/305
+  sur dev avec 100 candidats maximum et zéro fermé ; dataset de 7 003 requêtes
+  et 698 428 paires ; ranker R1 à 99,918 % Hit@1 dev ; accepteur brut à
+  99,832 % de précision observée et 81,593 % de couverture dev. Le shadow
+  atomique contient 19 025 décisions, 10 292 AUTO et 8 733 REVIEW, zéro exclu
+  scoré, zéro écriture CRM et aucune revendication de précision. Artefacts :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/retrieval_v41_dev_feede27`,
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_1/f938abf6b8a87155`,
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_1/f938abf6b8a87155`
+  et
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3`.
+  Verdict `PIVOT_CERTIFICATION`; 206 tests passants. *(commits GitHub :
+  contrat `eea75f2`, retrieval `a599e4a`/`85f7674`/`993e088`, modèles
+  `f158da2`/`942a443`/`c4ffb2a`/`d86f6f6`, inventaire et dataset
+  `af18779`/`ab13fb4`/`9fd30d8`/`feede27`, runner
+  `41cbc0e`/`8e96961`/`cc5dec1`/`9a322bc`)*
 - **Évaluation finale V4 exécutée une seule fois** : autorisation gelée
   `7dbd5527374ca0d4`, zéro chevauchement SIREN, zéro injection et 100 candidats
   maximum. Résultats : Recall@100 302/302 = 100 %, Hit@1 exact 296/302 =
