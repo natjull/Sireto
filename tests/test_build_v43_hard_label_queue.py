@@ -32,6 +32,8 @@ def test_readable_matching_signals_detect_address_only_entity_conflict() -> None
 
 def test_name_and_address_scores_are_plain_and_bounded() -> None:
     assert token_overlap("GH HOLDING", "G.H. HOLDING") == 1.0
+    assert token_overlap("A.H.A.M", "AHAM | ASSOCIATION HAVRAISE") == 1.0
+    assert token_overlap("Hyper Buro", "HYPERBURO | ZWILLER") == 1.0
     assert token_overlap("MAIRIE DE TEST", "ECOLE DE TEST") == 0.5
     assert address_overlap("1 rue de Paris", "1 RUE DE PARIS 75001") == 1.0
 

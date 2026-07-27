@@ -58,11 +58,14 @@ ENTITY_TYPES = {
         "region",
     },
     "EDUCATION": {
+        "ecol",
         "ecole",
         "college",
         "lycee",
         "universite",
         "creche",
+        "mate",
+        "maternelle",
         "scolaire",
     },
     "CULTURE": {
@@ -121,6 +124,18 @@ def informative_tokens(value: Any) -> set[str]:
 
 
 def token_overlap(left: Any, right: Any) -> float:
+    left_compact = {
+        "".join(normalize_words(variant))
+        for variant in _text(left).split("|")
+        if normalize_words(variant)
+    }
+    right_compact = {
+        "".join(normalize_words(variant))
+        for variant in _text(right).split("|")
+        if normalize_words(variant)
+    }
+    if left_compact & right_compact:
+        return 1.0
     left_tokens = informative_tokens(left)
     right_tokens = informative_tokens(right)
     if not left_tokens or not right_tokens:
@@ -476,7 +491,7 @@ def freeze_queue(
     identity = {
         "schema_version": SCHEMA_VERSION,
         "input_hashes": input_hashes,
-        "policy": "hard-label-priority-v1",
+        "policy": "hard-label-priority-v2",
     }
     build_id = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
