@@ -1,6 +1,17 @@
 # SIRETO Handover - 27 Juillet 2026
 
 ## Etat des lieux
+La V4.4 d'adjudication autonome est ouverte : l'utilisateur n'est pas le
+validateur et aucune revue ligne par ligne ne lui sera déléguée. Le protocole
+exige deux preuves non issues du modèle pour retenir un label. La première
+collecte officielle couvre les 172 AUTO difficiles : 440 requêtes réussies sur
+440, dont 172 recherches du top-1, 96 SIRET d'entrée distincts et 172
+recherches nom + géographie. Les 172 top-1 sont retrouvés par l'API officielle ;
+68 recherches CRM nom + géographie et 85 recherches de l'input produisent une
+preuve. L'adjudication est en cours ; aucun label ni modèle n'a encore été
+modifié. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`.
+
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
 complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
 erreurs AUTO documentées restent `AI_PROVISIONAL`; 35 autres AUTO sont
@@ -137,6 +148,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Preuves officielles V4.4 collectées pour les 172 AUTO difficiles** :
+  politique autonome gelée, sans validation demandée à l'utilisateur. API
+  Recherche d'entreprises interrogée à débit limité : 440/440 réponses HTTP
+  200, 325 requêtes avec résultat. Les réponses brutes, URLs et dates sont
+  conservées sur le SSD ; elles ne valent pas encore adjudication et aucun
+  entraînement n'est ouvert. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`.
+  *(commits GitHub : contrat `ede441b`, collecteur `341acf2` ; 223 tests
+  passants)*
 - **File de labels difficiles V4.3 construite** : population figée de 542
   `UNRESOLVED`, sans suppression ; 172 AUTO, 370 REVIEW, 144 random. Priorités :
   cinq contradictions connues, 35 AUTO adresse-seule, 28 AUTO en désaccord
