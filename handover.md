@@ -3,13 +3,13 @@
 ## Etat des lieux
 La V4.4 d'adjudication autonome est ouverte : l'utilisateur n'est pas le
 validateur et aucune revue ligne par ligne ne lui sera déléguée. Les cinq lots
-sectoriels A–E et les contradictions connues forment désormais un corpus
-canonique dédupliqué de 53 dossiers : 47 décisions sont validées par au moins
-deux groupes de preuves indépendants, dont 35 `TOP1_CORRECT`, 11
-`TOP1_WRONG` et une `AMBIGUOUS`; six restent `UNRESOLVED`. Dix-neuf décisions
-validées appartiennent au tirage aléatoire. Le gate reste
-**`PIVOT_MORE_EVIDENCE`** : il manque encore 40 corrects, 39 incorrects et 11
-random. Aucun modèle n'est modifié. L'adaptateur recalcule les pools top-10
+sectoriels A–H et les contradictions connues forment désormais un corpus
+canonique dédupliqué de 89 dossiers : 81 décisions sont validées par au moins
+deux groupes de preuves indépendants, dont 55 `TOP1_CORRECT`, 25
+`TOP1_WRONG` et une `AMBIGUOUS`; huit restent `UNRESOLVED`. Trente-deux
+décisions validées appartiennent au tirage aléatoire : ce sous-gate est
+franchi. Le gate global reste **`PIVOT_MORE_EVIDENCE`** : il manque encore 20
+corrects et 25 incorrects. Aucun modèle n'est modifié. L'adaptateur recalcule les pools top-10
 figés, refuse les hashes de preuve inexacts, interdit l'injection d'un positif
 et reproduit les tables canoniques à partir des JSON revus. Les lots ont été
 corrigés contre les archives réelles, notamment leurs hashes et les groupes
@@ -25,9 +25,12 @@ et
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/320fe62322e14d25`,
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/70c65679dfb2c82d`
 et
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/6f5972fbdcf10043`.
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/1e2c68337408c453`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/d2e628cc0764a557`.
 *(commits GitHub : lots vérifiés `f2aeec0`, adaptateur canonique `c6cb686`,
-rapport `a66499e`, garde AUTO `4930521`; 282 tests passants)*
+rapport `a66499e`, garde AUTO `4930521`, invariance `12a088b`, lots F/H
+`d644e54`, lot G `1509841`; 282 tests passants)*
 
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
 complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
@@ -166,6 +169,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Sous-gate random V4.4 franchi avec les lots F–H** : les 36 nouveaux cas
+  sont tous des `AUTO_MATCH` V4.3 et ne chevauchent aucun dossier antérieur.
+  Ils ajoutent 20 `TOP1_CORRECT`, 14 `TOP1_WRONG`, 13 random validés et deux
+  `UNRESOLVED`. Le corpus atteint 89 cas, dont 81 validés : 55 corrects, 25
+  incorrects et 32 random. Le gate reste `PIVOT_MORE_EVIDENCE`, avec déficits
+  réduits à 20 corrects et 25 incorrects. Aucun SIRET alternatif non doublement
+  prouvé n'a été créé. *(commits GitHub : F/H `d644e54`, G `1509841`,
+  invariance des lots `12a088b`; 282 tests passants)*
 - **Lots V4.4 A–E rendus canoniques et gate recalculé** : 48 dossiers
   sectoriels ont été reliés à la queue V4.3 et aux vrais pools top-10 du shadow,
   puis combinés aux cinq contradictions déjà canoniques. Les erreurs de hashes

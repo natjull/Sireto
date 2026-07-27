@@ -5,21 +5,21 @@ Verdict : **`PIVOT_MORE_EVIDENCE`**
 
 ## Résultat
 
-Les cinq lots sectoriels A–E ont été reliés à la file V4.3, aux décisions du
+Les huit lots sectoriels A–H ont été reliés à la file V4.3, aux décisions du
 shadow V4.1 et à leurs vrais pools top-10. Ils ont ensuite été combinés aux
 cinq contradictions déjà canoniques.
 
 | Mesure | Observé | Gate | Manque |
 |---|---:|---:|---:|
-| `TOP1_CORRECT` validés | 35 | 75 | 40 |
-| `TOP1_WRONG` validés | 11 | 50 | 39 |
-| Cas random validés | 19 | 30 | 11 |
+| `TOP1_CORRECT` validés | 55 | 75 | 20 |
+| `TOP1_WRONG` validés | 25 | 50 | 25 |
+| Cas random validés | 32 | 30 | 0 |
 | Décisions fondées sur une preuve interdite | 0 | 0 | 0 |
 
-Le corpus dédupliqué contient 53 cas : 47 décisions validées par au moins deux
-groupes de preuves indépendants, une décision `AMBIGUOUS` validée et six
-`UNRESOLVED`. Il fournit 47 scènes éligibles à l'accepteur et 37 scènes
-éligibles au ranker selon les règles gelées.
+Le corpus dédupliqué contient 89 cas : 81 décisions validées par au moins deux
+groupes de preuves indépendants et huit `UNRESOLVED`. Il fournit 81 scènes
+éligibles à l'accepteur et 57 scènes éligibles au ranker selon les règles
+gelées. Le sous-gate représentatif est franchi avec 32 cas random validés.
 
 ## Contrôles effectués
 
@@ -49,10 +49,14 @@ création de cible d'entraînement.
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudication_batch_inputs/f95806c367721ae5`
 - Adjudications A–E :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/70c65679dfb2c82d`
+- Entrées canoniques F–H :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudication_batch_inputs/45791184d9219680`
+- Adjudications F–H :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/1e2c68337408c453`
 - Contradictions connues :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/320fe62322e14d25`
 - Gate consolidé :
-  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/6f5972fbdcf10043`
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/d2e628cc0764a557`
 
 ## Décision
 
@@ -60,10 +64,9 @@ Le corpus est encore trop petit et trop pauvre en erreurs prouvées pour
 réentraîner honnêtement l'accepteur ou le ranker. Les modèles, le seuil et le
 retrieval restent gelés. La collecte gratuite continue en priorité sur :
 
-1. onze dossiers aléatoires supplémentaires ;
-2. trente-neuf vrais `TOP1_WRONG`, avec un SIRET alternatif seulement lorsqu'il
+1. vingt-cinq vrais `TOP1_WRONG`, avec un SIRET alternatif seulement lorsqu'il
    est dans le pool figé et doublement prouvé ;
-3. quarante `TOP1_CORRECT` supplémentaires pour préserver l'équilibre du
+2. vingt `TOP1_CORRECT` supplémentaires pour préserver l'équilibre du
    corpus.
 
 Le test final reste fermé.
