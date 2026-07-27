@@ -1,0 +1,514 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-q-1",
+  "created_at": "2026-07-28T11:25:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Un site officiel d'organisation, un registre ministériel distinct ou un document d'une autorité publique distincte constitue un groupe séparé.",
+    "identity_rule": "Une adresse commune ne prouve jamais seule l'identité. Chaque preuve retenue doit porter un proof_kind préfixé IDENTITY_ et relier explicitement le nom CRM, le top1 ou l'implantation auditée.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves directes et sa présence dans le top 10 gelé."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate et top1 gelés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "réponses SIRENE officielles archivées"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+      "sha256": "b772a022ecf2de11d1ecccaa1727fed1683d9cc9578535cba968e46c59d63210",
+      "role": "top 10 gelé utilisé uniquement pour vérifier le candidat évalué"
+    }
+  ],
+  "summary": {
+    "case_count": 8,
+    "auto_match_source_count": 8,
+    "top1_correct_evidence_validated": 8,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 8,
+    "training_eligible_count": 8,
+    "selection_exhaustion": "Après exclusion du jeu known, des lots A à P et des réservations O/P, aucun profil TOP1_WRONG plausible ne subsistait : tous les cas disponibles avaient top1 égal au SIRET CRM actif."
+  },
+  "cases": [
+    {
+      "audit_case_id": "0b89d6fb00ee3add",
+      "service_id": "FR032111",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DP DHL ETO BAILLARGUES",
+        "address": "270 avenue de la Biste, 34670 Baillargues",
+        "input_siret": "49495677400801",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "49495677400801",
+        "siren": "494956774"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "49495677400801",
+      "independent_source_families": ["SIRENE_REGISTRY", "DHL_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE l'identifie comme DHL International Express France, enseigne DHL Express, au 270 avenue de la Biste. Le certificat officiel DHL Express confirme indépendamment le centre de services de Baillargues à cette adresse.",
+      "sources": [
+        {
+          "evidence_id": "0b89d6fb00ee3add-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=49495677400801&per_page=1",
+          "collected_at": "2026-07-27T20:48:48.661256+00:00",
+          "response_sha256": "98b9094b56a3ee754b6e9cfb68b78d6a2369dece529305ca351ac7ff91c8c6c4",
+          "archived_facts": [
+            "Le SIRET 49495677400801 est actif et appartient à DHL International Express France.",
+            "L'établissement DHL Express est au 270 avenue de la Biste à Baillargues."
+          ]
+        },
+        {
+          "evidence_id": "0b89d6fb00ee3add-dhl-certificate",
+          "producer": "DHL Express / DNV",
+          "source_family": "ORGANIZATION_CERTIFICATION_DHL",
+          "canonical_source_family": "DHL_OFFICIAL",
+          "independence_group": "DHL_OFFICIAL",
+          "proof_kind": "IDENTITY_ORGANIZATION_CERTIFICATE_CONFIRMS_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant d'un certificat publié par DHL archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/0b89d6fb00ee3add-dhl.txt",
+          "url": "https://www.dhl.com/content/dam/dhl/global/core/documents/pdf/iso-certificate-europe-50001.pdf",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "ffb2ce14452b0efc5f105ca0ee380092fbd16af76a9437cb285b068463f1497b",
+          "archived_facts": [
+            "Le certificat identifie DHL International Express France.",
+            "Il confirme le centre de services du 270 avenue de la Biste."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "ad330a2c160cd73a",
+      "service_id": "AC018140",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LEVEL site Compans LUX LAVERIE 77",
+        "address": "12 rue Marc Seguin, 77290 Compans",
+        "input_siret": "83218894000023",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "83218894000023",
+        "siren": "832188940"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "83218894000023",
+      "independent_source_families": ["SIRENE_REGISTRY", "LUX_LAVERIE_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE identifie LEVEL au 14 rue Marc Seguin. La page officielle Lux Laverie, marque explicitement citée dans le libellé CRM, confirme son service administratif au 12-14 rue Marc Seguin. L'écart 12/14 est donc une plage d'adresse, pas une identité concurrente.",
+      "sources": [
+        {
+          "evidence_id": "ad330a2c160cd73a-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=83218894000023&per_page=1",
+          "collected_at": "2026-07-27T20:49:35.796147+00:00",
+          "response_sha256": "d147ef278571a81b2caac3c85d250049ac538aece5b6328d02752f66d7bce377",
+          "archived_facts": [
+            "Le SIRET CRM et top1 83218894000023 de LEVEL est actif.",
+            "Le registre situe LEVEL au 14 rue Marc Seguin à Compans."
+          ]
+        },
+        {
+          "evidence_id": "ad330a2c160cd73a-lux-laverie-site",
+          "producer": "Lux Laverie",
+          "source_family": "ORGANIZATION_SITE_LUX_LAVERIE",
+          "canonical_source_family": "LUX_LAVERIE_OFFICIAL",
+          "independence_group": "LUX_LAVERIE_OFFICIAL",
+          "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_CRM_BRAND_AND_ADDRESS_RANGE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page de contact officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/ad330a2c160cd73a-luxlaverie.txt",
+          "url": "https://laverie.fr/contact.html",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "0892a0408c27d80b194ec93c3dfd1e92781661a53128488f2ab9a9bf1a1d51a8",
+          "archived_facts": [
+            "La page officielle confirme Lux Laverie à Compans.",
+            "Elle publie l'adresse 12-14 rue Marc Seguin."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "58ce13feb999578c",
+      "service_id": "FR029450",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CENTRE DENTAIRE ET SANTE LA CASCADE",
+        "address": "2 rue de la Mortagne, 54520 Laxou",
+        "input_siret": "85226182500016",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "85226182500016",
+        "siren": "852261825"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "85226182500016",
+      "independent_source_families": ["SIRENE_REGISTRY", "MININT_RNA"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE identifie exactement le Centre Dentaire & Santé La Cascade au 7 rue de la Moselle. Le Répertoire national des associations confirme indépendamment la même association, son SIREN, son SIRET et ce siège. L'adresse CRM est obsolète mais l'identité et le SIRET ne changent pas.",
+      "sources": [
+        {
+          "evidence_id": "58ce13feb999578c-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=85226182500016&per_page=1",
+          "collected_at": "2026-07-27T20:49:13.445707+00:00",
+          "response_sha256": "0066dce5e2032132ba7e9081b6ff8c259beb9243022e0519a9284d1766725aac",
+          "archived_facts": [
+            "Le SIRET 85226182500016 du Centre Dentaire & Santé La Cascade est actif.",
+            "Le registre situe le siège au 7 rue de la Moselle à Laxou."
+          ]
+        },
+        {
+          "evidence_id": "58ce13feb999578c-rna",
+          "producer": "Ministère de l'Intérieur / DILA, diffusé par la DINUM",
+          "source_family": "REGISTRY_ASSOCIATIONS_RNA",
+          "canonical_source_family": "MININT_RNA",
+          "independence_group": "MININT_RNA",
+          "proof_kind": "IDENTITY_ASSOCIATION_REGISTRY_CONFIRMS_NAME_IDENTIFIERS_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de la fiche publique RNA archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/58ce13feb999578c-rna.txt",
+          "url": "https://annuaire-entreprises.data.gouv.fr/entreprise/centre-dentaire-sante-la-cascade-852261825",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "b448d437e72092ffd23d0f08ec6df3f44ff3e60e207e282dc0b447ace45d4345",
+          "archived_facts": [
+            "Le RNA confirme l'identité de l'association et le SIREN 852261825.",
+            "Il confirme le siège au 7 rue de la Moselle."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "69779bd18f4a1cc6",
+      "service_id": "FR032092",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CIREME",
+        "address": "74 avenue du 8 Mai 1945, 69120 Vaulx-en-Velin",
+        "input_siret": "39802013100049",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "39802013100049",
+        "siren": "398020131"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "39802013100049",
+      "independent_source_families": ["SIRENE_REGISTRY", "CIREME_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE identifie CIREME au 80 avenue du 8 Mai 1945. Les mentions légales officielles CIREME confirment indépendamment le même SIREN et cette adresse. Le numéro 74 du CRM est obsolète, sans contradiction d'identité.",
+      "sources": [
+        {
+          "evidence_id": "69779bd18f4a1cc6-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=39802013100049&per_page=1",
+          "collected_at": "2026-07-27T20:49:21.025557+00:00",
+          "response_sha256": "d88a5e50ffd68fbc383426b8556183a2563eec17151ba0bf65c8d3b20afe965e",
+          "archived_facts": [
+            "Le SIRET CRM et top1 39802013100049 de CIREME est actif.",
+            "Le registre situe CIREME au 80 avenue du 8 Mai 1945."
+          ]
+        },
+        {
+          "evidence_id": "69779bd18f4a1cc6-cireme-site",
+          "producer": "CIREME",
+          "source_family": "ORGANIZATION_LEGAL_NOTICE_CIREME",
+          "canonical_source_family": "CIREME_OFFICIAL",
+          "independence_group": "CIREME_OFFICIAL",
+          "proof_kind": "IDENTITY_ORGANIZATION_LEGAL_NOTICE_CONFIRMS_SIREN_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de mentions légales officielles archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/69779bd18f4a1cc6-cireme.txt",
+          "url": "https://www.cireme.com/mentions-legales/",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "2dcc31606756c1160a86c6bf7f95b6e8ad95a5cd2e2afbb92ed0fe36719d21a2",
+          "archived_facts": [
+            "Les mentions légales identifient CIREME sous le SIREN 398020131.",
+            "Elles confirment l'adresse du 80 avenue du 8 Mai 1945."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "6839d7f184a8fdbc",
+      "service_id": "AC004470",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DIMP NORD POMPES",
+        "address": "9009 avenue du Cateau, 59400 Awoingt",
+        "input_siret": "79205135100015",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "79205135100015",
+        "siren": "792051351"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "79205135100015",
+      "independent_source_families": ["SIRENE_REGISTRY", "DIMP_NORD_POMPES_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE relie DIMP et le nom commercial Nord Pompes au 9009 route du Cateau. La page officielle DIMP Nord-Pompes confirme indépendamment ce nom et cette adresse. Avenue/route est une variation de libellé de voie.",
+      "sources": [
+        {
+          "evidence_id": "6839d7f184a8fdbc-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79205135100015&per_page=1",
+          "collected_at": "2026-07-27T20:49:20.202777+00:00",
+          "response_sha256": "58b8c91b5aa1e3293b78f97ef49e40b53a8931f63a6285af8f6badde680566dd",
+          "archived_facts": [
+            "Le SIRET 79205135100015 de DIMP est actif.",
+            "Le registre relie Nord Pompes au 9009 route du Cateau à Awoingt."
+          ]
+        },
+        {
+          "evidence_id": "6839d7f184a8fdbc-dimp-site",
+          "producer": "DIMP Nord-Pompes",
+          "source_family": "ORGANIZATION_SITE_DIMP_NORD_POMPES",
+          "canonical_source_family": "DIMP_NORD_POMPES_OFFICIAL",
+          "independence_group": "DIMP_NORD_POMPES_OFFICIAL",
+          "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page de contact officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/6839d7f184a8fdbc-dimp.txt",
+          "url": "https://nord-pompes.fr/contact/",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "d08054eec548f5d79e1578a7f52404f47844d5d9438f4ef83a8d5b3df354bcdf",
+          "archived_facts": [
+            "La page officielle identifie DIMP Nord-Pompes.",
+            "Elle confirme le 9009 route du Cateau à Awoingt."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "c832536f0cf4d8e8",
+      "service_id": "AC019204",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LFM CONTROLE",
+        "address": "8 rue de Tanger, 76000 Rouen",
+        "input_siret": "44168052700021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "44168052700021",
+        "siren": "441680527"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "44168052700021",
+      "independent_source_families": ["SIRENE_REGISTRY", "PREFECTURE_SEINE_MARITIME"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE identifie LFM CONTROLE, enseigne AUTO SECURITE, au 6-8 rue de Tanger. La liste préfectorale des centres agréés confirme indépendamment LFM CONTRÔLE au 6/8 de cette rue. Le numéro 8 du CRM appartient bien à la plage officielle.",
+      "sources": [
+        {
+          "evidence_id": "c832536f0cf4d8e8-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=44168052700021&per_page=1",
+          "collected_at": "2026-07-27T20:49:43.924862+00:00",
+          "response_sha256": "1ef9baf8cca4ab1b154872ca1b76b812a81349062d2321d12f66a1691840021e",
+          "archived_facts": [
+            "Le SIRET 44168052700021 de LFM CONTROLE est actif.",
+            "Le registre relie AUTO SECURITE à l'adresse 6-8 rue de Tanger à Rouen."
+          ]
+        },
+        {
+          "evidence_id": "c832536f0cf4d8e8-prefecture",
+          "producer": "Préfecture de la Seine-Maritime",
+          "source_family": "PUBLIC_AUTHORITY_APPROVED_CENTRES",
+          "canonical_source_family": "PREFECTURE_SEINE_MARITIME",
+          "independence_group": "PREFECTURE_SEINE_MARITIME",
+          "proof_kind": "IDENTITY_PUBLIC_AUTHORITY_LIST_CONFIRMS_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de liste préfectorale archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/c832536f0cf4d8e8-prefecture.txt",
+          "url": "https://www.seine-maritime.gouv.fr/contenu/telechargement/60961/429321/file/T%C3%A9l%C3%A9charger%20liste%20des%20centres%20agr%C3%A9%C3%A9s%20en%20Seine-Maritime%20pour%20le%20contr%C3%B4le%20technique%20d%27un%20v%C3%A9hicule%20de%20cat%C3%A9gorie%20L.pdf",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "e921769e49f00b9fbeebf804cf038debdc6a6f3120b3bd4b9afaed7993887426",
+          "archived_facts": [
+            "La liste préfectorale identifie LFM CONTRÔLE.",
+            "Elle confirme le centre au 6/8 rue de Tanger à Rouen."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01b6501d546cff47",
+      "service_id": "FR028358",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "fdi ici",
+        "address": "avenue Pierre Racine, 34280 La Grande-Motte",
+        "input_siret": "32259221300050",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "32259221300050",
+        "siren": "322592213"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "32259221300050",
+      "independent_source_families": ["SIRENE_REGISTRY", "FDI_SERVICES_IMMOBILIERS_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE identifie FDI Services Immobiliers au 7 avenue Pierre Racine. La page officielle FDI confirme indépendamment son agence de La Grande-Motte, Résidence Le Club, à cette adresse. « fdi ici » est un ancien habillage de marque, sans contradiction d'entité.",
+      "sources": [
+        {
+          "evidence_id": "01b6501d546cff47-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=32259221300050&per_page=1",
+          "collected_at": "2026-07-27T20:48:24.008716+00:00",
+          "response_sha256": "3770b20747d4d995713ab8c0c5d98eeb0c6968a85290e0bbc336a9934608518e",
+          "archived_facts": [
+            "Le SIRET CRM et top1 32259221300050 de FDI Services Immobiliers est actif.",
+            "Le registre situe l'établissement au 7 avenue Pierre Racine."
+          ]
+        },
+        {
+          "evidence_id": "01b6501d546cff47-fdi-site",
+          "producer": "FDI Services Immobiliers",
+          "source_family": "ORGANIZATION_SITE_FDI",
+          "canonical_source_family": "FDI_SERVICES_IMMOBILIERS_OFFICIAL",
+          "independence_group": "FDI_SERVICES_IMMOBILIERS_OFFICIAL",
+          "proof_kind": "IDENTITY_ORGANIZATION_SITE_CONFIRMS_BRAND_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de page d'agence officielle archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/01b6501d546cff47-fdi.txt",
+          "url": "https://www.fdi-servicesimmobiliers.fr/agences/agence-grande-motte/",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "f2d8ec645452833fb9ad11198073dfa294c0fb46087a05a03584f46555c1280d",
+          "archived_facts": [
+            "La page officielle identifie l'agence FDI Services Immobiliers de La Grande-Motte.",
+            "Elle confirme le 7 avenue Pierre Racine."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "438a4fce535fee77",
+      "service_id": "AC007415",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DWL ARCHITECTES",
+        "address": "10 rue Marmontel, 44000 Nantes",
+        "input_siret": "42111837300040",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "42111837300040",
+        "siren": "421118373"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "42111837300040",
+      "independent_source_families": ["SIRENE_REGISTRY", "DLW_ARCHITECTES_OFFICIAL"],
+      "decision_reason": "Le top1 est le SIRET actif déjà porté par le CRM. SIRENE identifie DLW Architectes Associés au 10 rue Marmontel. Les mentions légales officielles DLW confirment indépendamment la raison sociale, le SIREN et cette adresse. « DWL » dans le CRM est une simple inversion de lettres.",
+      "sources": [
+        {
+          "evidence_id": "438a4fce535fee77-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_CONFIRMS_ACTIVE_INPUT_EQUALS_TOP1",
+          "counts_for_independence": true,
+          "document_type": "ligne TOP1_SIRET d'une réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=42111837300040&per_page=1",
+          "collected_at": "2026-07-27T20:49:06.058663+00:00",
+          "response_sha256": "4b74a85c644027bbec60972504f8d03dd071136261983ce6316b439e3fa12cb1",
+          "archived_facts": [
+            "Le SIRET 42111837300040 de DLW Architectes Associés est actif.",
+            "Le registre situe l'établissement au 10 rue Marmontel à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "438a4fce535fee77-dlw-site",
+          "producer": "DLW Architectes Associés",
+          "source_family": "ORGANIZATION_LEGAL_NOTICE_DLW",
+          "canonical_source_family": "DLW_ARCHITECTES_OFFICIAL",
+          "independence_group": "DLW_ARCHITECTES_OFFICIAL",
+          "proof_kind": "IDENTITY_ORGANIZATION_LEGAL_NOTICE_CONFIRMS_SIREN_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "extrait probant de mentions légales officielles archivé",
+          "archive_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_q_20260728/438a4fce535fee77-dlw.txt",
+          "url": "https://www.dlw-architectes.fr/mentions-legales/",
+          "collected_at": "2026-07-28T11:15:00+02:00",
+          "response_sha256": "f2a7ebe7cf8865228887d8fde9318ae09f56e5fadc8ef8cab1390fd3d584f1e9",
+          "archived_facts": [
+            "Les mentions légales identifient DLW Architectes Associés sous le SIREN 421118373.",
+            "Elles confirment le 10 rue Marmontel à Nantes."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}

@@ -1,0 +1,98 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-r-1",
+  "created_at": "2026-07-28T01:25:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. DORA est un service public distinct de recensement de l'offre d'insertion.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Le nom, l'adresse et le SIRET exact doivent converger.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves indépendantes et présence démontrée dans le top 10 gelé."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate et top1 gelés"
+    }
+  ],
+  "summary": {
+    "requested_case_count": 8,
+    "case_count": 1,
+    "unfilled_case_count": 7,
+    "auto_match_source_count": 1,
+    "top1_correct_evidence_validated": 1,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 1,
+    "training_eligible_count": 1,
+    "population_auto_match_total": 172,
+    "population_auto_match_accounted_after_q_r": 172,
+    "population_exhausted": true,
+    "exhaustion_reason": "Après union des lots A à P, des cinq contradictions connues, des huit réservations inédites du lot Q et du présent cas R, les 172 décisions AUTO_MATCH de la file V4.3 sont toutes comptabilisées. Aucun identifiant inédit ne peut remplir les sept places restantes."
+  },
+  "cases": [
+    {
+      "audit_case_id": "a89c47579dc7ef4c",
+      "service_id": "AC008330",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "A.H.A.M",
+        "address": "17 rue Anfray, 76600 Le Havre",
+        "input_siret": "78106587500028",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "78106587500028",
+        "siren": "781065875"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "78106587500028",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DORA_PUBLIC_SERVICE"
+      ],
+      "decision_reason": "SIRENE développe le sigle AHAM en ASS HAVRAISE ACCUEIL MEDIATION INSERTION et relie le SIRET CRM/top1 actif au 17 rue Anfray au Havre. DORA, service public distinct consacré à l'insertion, publie la même identité, la même adresse et le même SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "a89c47579dc7ef4c-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_EXPANDS_CRM_ACRONYM_AND_CONFIRMS_EXACT_SIRET",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=78106587500028&per_page=1",
+          "collected_at": "2026-07-27T23:22:47.210519+00:00",
+          "response_sha256": "14444470f2a457433ee58a8c2e174e2f1a57c33d5c0476f0dc94757522927af7",
+          "archived_facts": [
+            "Le SIRET actif 78106587500028 appartient à ASS HAVRAISE ACCUEIL MEDIATION INSERTION, sigle AHAM.",
+            "L'établissement est au 17 rue Anfray, 76600 Le Havre."
+          ]
+        },
+        {
+          "evidence_id": "a89c47579dc7ef4c-dora-structure",
+          "producer": "DORA — service public numérique de l'insertion",
+          "source_family": "STATE_PUBLIC_DIRECTORY",
+          "canonical_source_family": "DORA_PUBLIC_SERVICE",
+          "independence_group": "DORA_PUBLIC_SERVICE",
+          "proof_kind": "IDENTITY_STATE_DIRECTORY_CONFIRMS_NAME_ADDRESS_AND_EXACT_SIRET",
+          "counts_for_independence": true,
+          "document_type": "réponse JSON de l'API publique DORA collectée intégralement",
+          "url": "https://api.dora.inclusion.gouv.fr/structures/ass-havraise-accueil/",
+          "collected_at": "2026-07-27T23:24:14.687548+00:00",
+          "response_sha256": "2dc61be1f195458ddfbaa831832a7905c54425e5863199e2831ebaba8a877b69",
+          "archived_facts": [
+            "DORA publie ASS HAVRAISE ACCUEIL MEDIATION INSERTION au 17 rue Anfray, 76600 Le Havre.",
+            "La fiche publique contient le SIRET exact 78106587500028 et décrit ses services d'accès aux droits, de formation et d'insertion."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
