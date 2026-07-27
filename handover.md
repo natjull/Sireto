@@ -1,6 +1,24 @@
 # SIRETO Handover - 27 Juillet 2026
 
 ## Etat des lieux
+L'audit représentatif V4.1 invalide désormais l'extrapolation des scores dev
+au CRM réel. Sur 250 lignes tirées aléatoirement, la preuve déterministe ne
+conclut que 106 cas = 42,4 % (91 exacts, 15 ambigus, 144 non résolus), alors
+que V4.1 automatise 147 cas. Cinq contradictions AUTO manifestes ont été
+documentées ; même en supposant tous les autres AUTO corrects, elles bornent
+provisoirement la précision à 142/147 = 96,60 %. Ce n'est pas une estimation
+certifiée : labels et contradictions restent `AI_PROVISIONAL`.
+
+Le retrieval A ne conserve que 237/242 = 97,934 % des vérités exactes
+provisoires de l'audit. B et C remontent à 240/242 = 99,174 % sans dépasser
+100 candidats : elles récupèrent trois lignes grâce au SIRET/SIREN d'entrée.
+Les deux pertes restantes sont trouvées par le sparse puis supprimées par le
+magasin global d'état incomplet. Décision contractuelle **`PIVOT_LABELS`**,
+décision opérationnelle **`STOP_DEPLOYMENT`**. Prochaine action : index
+SIRET→état complet depuis le snapshot autoritaire, retrieval B, puis vrais
+labels sur les cas difficiles avant tout réentraînement. Rapport :
+`reports/v9/v4_1_representative_audit_results.md`.
+
 La V4.1 actif-courant est maintenant implémentée et exécutée entièrement en
 local. Le gate retrieval dev retient la variante A avec 305/305 bons SIRET à
 Top-100, zéro candidat fermé et 872,6 ms de latence p95. Le dataset canonique
@@ -89,6 +107,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Audit représentatif V4.1 exécuté en aveugle** : échantillon figé de 800
+  lignes dont 250 aléatoires ; preuves construites sans décision, score,
+  prédiction ni rang modèle ; 242 `MATCH_EXACT`, 16 `AMBIGUOUS` et 542
+  `UNRESOLVED` provisoires. Le random n'est mécaniquement conclusif qu'à
+  42,4 %. Retrieval A : 237/242 ; B/C : 240/242. Deux pertes restantes
+  viennent du magasin d'état incomplet. Cinq contradictions AUTO nettes
+  réfutent la sécurité extrapolée depuis le dev. Verdict `PIVOT_LABELS` /
+  `STOP_DEPLOYMENT`; aucun modèle ni seuil modifié. Artefacts :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_1_representative/e06cf0d79849aad4`,
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_1_representative_evidence/e696f22d68c0210f`
+  et
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_1_representative_summary/2d18ef172f32aefc`.
+  *(commits GitHub : contrat/échantillon `015d718`/`5f8ea00`, preuves
+  `361c138`/`edf0858`, synthèse `771be6b`, rapport `17465cd` ; 211 tests
+  passants)*
 - **V4.1 actif-courant exécutée en shadow local** : gate retrieval A à 305/305
   sur dev avec 100 candidats maximum et zéro fermé ; dataset de 7 003 requêtes
   et 698 428 paires ; ranker R1 à 99,918 % Hit@1 dev ; accepteur brut à
