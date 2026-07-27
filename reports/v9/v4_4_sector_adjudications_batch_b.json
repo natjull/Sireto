@@ -1,0 +1,919 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-b-1",
+  "created_at": "2026-07-28T00:00:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux familles de preuves non issues du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues issues de SIRENE sont regroupées dans SIRENE_REGISTRY. UAI, FINESS et BIO sont indépendants de SIRENE uniquement lorsque leur réponse brute relie l'identifiant sectoriel au SIRET exact. Plusieurs identifiants ou pages d'un même producteur ne créent pas plusieurs preuves indépendantes.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Une preuve sectorielle compte seulement si la réponse brute relie explicitement son identifiant métier au SIRET exact et si le libellé CRM désigne cette identité.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "TOP1_CORRECT n'est validé que si le CRM désigne explicitement l'identité reliée au top-1. Une adresse seule, un SIREN partagé ou un nom d'organisation générique ne suffisent pas."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "role": "file figée contenant les assertions CRM et les top-1 jugés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "archive locale des réponses complètes de l'API Recherche d'entreprises"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+      "role": "index des réponses brutes UAI, FINESS et BIO avec URL, date et hash"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884/producer_observation_facts.parquet",
+      "role": "faits producteur dérivés sans conclusion CRM"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "top1_correct_evidence_validated": 11,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 1,
+    "validated_correct_siret_count": 11,
+    "training_eligible_count": 11
+  },
+  "cases": [
+    {
+      "audit_case_id": "008373b595622d22",
+      "service_id": "FR041627",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "AFAPEI DU CALAISIS 15 FAM MAS",
+        "address": "131 avenue des Longues Pièces, 62231 Coquelles",
+        "input_siret": "77563119500150",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "77563119500283",
+        "siren": "775631195"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "77563119500283",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le CRM désigne explicitement le complexe AFAPEI FAM/MAS de Coquelles. SIRENE donne le top-1 comme MAS Domaine Arc-en-Ciel, FINESS relie cette MAS au SIRET exact, et l'AFAPEI documente le complexe FAM/MAS ainsi que son déménagement en octobre 2024 au 251 avenue des Longues Pièces. L'ancien numéro de voie du CRM n'est pas utilisé seul comme preuve.",
+      "sources": [
+        {
+          "evidence_id": "008373b595622d22-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=77563119500283&per_page=1",
+          "collected_at": "2026-07-27T20:48:10.828715+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "008373b595622d22",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 77563119500283 est actif depuis le 1er octobre 2024 et porte l'enseigne MAISON D'ACCUEIL SPECIALISEE - DOMAINE ARC EN CIEL.",
+            "Le SIRET d'entrée 77563119500150, Foyer double tarification Arc-en-Ciel, est fermé depuis le 1er octobre 2024."
+          ]
+        },
+        {
+          "evidence_id": "008373b595622d22-finess",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "row_selector": {
+            "identifier": "620035477",
+            "observed_siret": "77563119500283"
+          },
+          "archived_facts": [
+            "FINESS 620035477 renvoie explicitement le SIRET 77563119500283.",
+            "Le nom producteur est MAS DOMAINE ARC-EN-CIEL, au 251 avenue des Longues Pièces."
+          ]
+        },
+        {
+          "evidence_id": "008373b595622d22-afapei",
+          "producer": "AFAPEI du Calaisis",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "ENTITY_SELF_PUBLICATION",
+          "independence_group": "AFAPEI_SELF_PUBLICATION",
+          "proof_kind": "IDENTITY_CRM_LABEL_DESIGNATES_FAM_MAS_COMPLEX",
+          "counts_for_independence": true,
+          "document_type": "page établissement du site officiel de l'entité",
+          "url": "https://www.afapei.org/etablissement/domaine-arc-en-ciel-fam-mas-mutualises/",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "L'AFAPEI présente le Domaine Arc-en-Ciel comme un complexe FAM/MAS mutualisé à Coquelles.",
+            "Elle documente son emménagement en octobre 2024 et l'adresse 251 avenue des Longues Pièces."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01b068135ccbcfaa",
+      "service_id": "FR007415",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LYCEE LOUIS PASTEUR (EPLEFPA)",
+        "address": "Marmilhat, 63370 Lempdes",
+        "input_siret": "19630984300015",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "19630984300015",
+        "siren": "196309843"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "19630984300015",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI",
+        "AGENCE_BIO"
+      ],
+      "decision_reason": "Le CRM nomme explicitement le lycée Louis Pasteur et l'EPLEFPA. SIRENE, l'annuaire UAI et l'Agence Bio relient indépendamment cette identité au même SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "01b068135ccbcfaa-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=19630984300015&per_page=1",
+          "collected_at": "2026-07-27T20:48:22.776733+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "01b068135ccbcfaa",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET est actif et porte l'enseigne LEGTPA LOUIS PASTEUR.",
+            "L'unité légale est l'EPLEFPA de Marmilhat."
+          ]
+        },
+        {
+          "evidence_id": "01b068135ccbcfaa-uai",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220630984C%22&limit=10",
+          "collected_at": "2026-07-27T21:59:36.897374+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-d4d4e73e33f60e139130.json",
+          "row_selector": {
+            "identifier": "0630984C",
+            "observed_siret": "19630984300015"
+          },
+          "archived_facts": [
+            "L'UAI 0630984C correspond au LEGTA Louis Pasteur.",
+            "La réponse donne explicitement le SIRET 19630984300015 et le site de Marmilhat."
+          ]
+        },
+        {
+          "evidence_id": "01b068135ccbcfaa-bio",
+          "producer": "Agence Bio",
+          "source_family": "SECTOR_REGISTRY_BIO",
+          "canonical_source_family": "AGENCE_BIO",
+          "independence_group": "AGENCE_BIO",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle Agence Bio",
+          "url": "https://opendata.agencebio.org/api/gouv/operateurs/?numeroBio=143879",
+          "collected_at": "2026-07-27T21:59:22.958897+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/bio-2b020e55d89bf31c9aaa.json",
+          "row_selector": {
+            "identifier": "143879",
+            "observed_siret": "19630984300015"
+          },
+          "archived_facts": [
+            "Le numéro BIO 143879 renvoie explicitement le SIRET 19630984300015.",
+            "Le nom producteur est l'EPLEFPA de Marmilhat."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "022c61a52ff1939a",
+      "service_id": "FR007605",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Lycée Clément Ader",
+        "address": "76 rue Georges Clémenceau, 77220 Tournan-en-Brie",
+        "input_siret": "19772342200014",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "19772342200014",
+        "siren": "197723422"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "19772342200014",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le CRM nomme explicitement le lycée Clément Ader. SIRENE retourne ce SIRET au rang 1 de la requête nom-commune et les UAI du lycée et de sa section professionnelle renvoient le même SIRET exact. Ces deux UAI restent une seule famille producteur.",
+      "sources": [
+        {
+          "evidence_id": "022c61a52ff1939a-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=19772342200014&per_page=1",
+          "collected_at": "2026-07-27T20:48:31.105583+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "022c61a52ff1939a",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET actif porte le nom LYCEE POLYVALENT CLEMENT ADER.",
+            "La requête nom-commune retourne ce SIRET exact au rang 1."
+          ]
+        },
+        {
+          "evidence_id": "022c61a52ff1939a-uai",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "deux réponses API du même annuaire officiel",
+          "urls": [
+            "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220771617P%22&limit=10",
+            "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220772342C%22&limit=10"
+          ],
+          "collected_at": "2026-07-27T21:59:38.957329+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+          "row_selector": {
+            "identifiers": [
+              "0771617P",
+              "0772342C"
+            ],
+            "observed_siret": "19772342200014"
+          },
+          "archived_facts": [
+            "Les deux UAI correspondent au lycée Clément Ader et à sa section professionnelle.",
+            "Les deux réponses donnent explicitement le SIRET 19772342200014."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "02b2d84b888f893d",
+      "service_id": "AC002700",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "STEF TRP PARIS DISTRIBUTION",
+        "address": "47 avenue du Lyonnais, 94550 Chevilly-Larue",
+        "input_siret": "81540013000010",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "81540013000028",
+        "siren": "815400130"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "81540013000028",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "AGENCE_BIO"
+      ],
+      "decision_reason": "Le libellé CRM désigne explicitement STEF Transport Paris Distribution. SIRENE donne le top-1 comme établissement actif de cette entité et l'Agence Bio relie le numéro BIO 47034 au même SIRET et au même nom. Le SIRET d'entrée est l'ancien siège parisien fermé.",
+      "sources": [
+        {
+          "evidence_id": "02b2d84b888f893d-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=81540013000028&per_page=1",
+          "collected_at": "2026-07-27T20:48:38.713906+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "02b2d84b888f893d",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 est actif sous le nom STEF TRANSPORT PARIS DISTRIBUTION à Chevilly-Larue.",
+            "Le SIRET d'entrée est fermé et localisé à Paris."
+          ]
+        },
+        {
+          "evidence_id": "02b2d84b888f893d-bio",
+          "producer": "Agence Bio",
+          "source_family": "SECTOR_REGISTRY_BIO",
+          "canonical_source_family": "AGENCE_BIO",
+          "independence_group": "AGENCE_BIO",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle Agence Bio",
+          "url": "https://opendata.agencebio.org/api/gouv/operateurs/?numeroBio=47034",
+          "collected_at": "2026-07-27T21:59:23.811015+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+          "row_selector": {
+            "identifier": "47034",
+            "observed_siret": "81540013000028"
+          },
+          "archived_facts": [
+            "Le numéro BIO 47034 renvoie explicitement le SIRET 81540013000028.",
+            "Le nom producteur est STEF TRANSPORT PARIS DISTRIBUTION."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "089503f4aef465f9",
+      "service_id": "AC012566",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "INSTITUT ANDREE DUTREIX SELAS CWDM",
+        "address": "891 avenue de Rosendael Jacques Collache, 59140 Dunkerque",
+        "input_siret": "84397130000010",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "79236460600014",
+        "siren": "792364606"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "79236460600014",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le CRM contient explicitement l'identité CWDM. SIRENE relie CWDM au top-1 actif et FINESS relie ce même SIRET à la SCM des docteurs Chossière et Wagner à l'Institut André Dutreix. Le SIRET d'entrée correspond à une autre personne morale fermée à cette adresse.",
+      "sources": [
+        {
+          "evidence_id": "089503f4aef465f9-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79236460600014&per_page=1",
+          "collected_at": "2026-07-27T20:48:48.043270+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "089503f4aef465f9",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 79236460600014 est actif sous le nom CWDM.",
+            "Le SIRET d'entrée appartient à SANTE INTEGRATIVE COTE D'OPALE FLANDRES et son établissement de cette adresse est fermé."
+          ]
+        },
+        {
+          "evidence_id": "089503f4aef465f9-finess",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "row_selector": {
+            "identifier": "590055570",
+            "observed_siret": "79236460600014"
+          },
+          "archived_facts": [
+            "FINESS 590055570 renvoie explicitement le SIRET 79236460600014.",
+            "Le nom FINESS est SCM DES DOCTEURS CHOSSIERE ET WAGNER, à l'adresse du CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "167f1e39dc6e6304",
+      "service_id": "FR006997",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Lycée Henri Moissan",
+        "address": "20 cours de Verdun, 77100 Meaux",
+        "input_siret": "19770930600025",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "19770930600025",
+        "siren": "197709306"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "19770930600025",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le CRM nomme explicitement le lycée Henri Moissan. SIRENE et l'annuaire UAI 0770930T relient indépendamment cette identité au SIRET exact 19770930600025.",
+      "sources": [
+        {
+          "evidence_id": "167f1e39dc6e6304-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=19770930600025&per_page=1",
+          "collected_at": "2026-07-27T20:48:52.838820+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "167f1e39dc6e6304",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET exact est actif sous le nom LYCEE GENERAL TECHNOLOGIQUE H MOISSAN."
+          ]
+        },
+        {
+          "evidence_id": "167f1e39dc6e6304-uai",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220770930T%22&limit=10",
+          "collected_at": "2026-07-27T21:59:37.966807+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+          "row_selector": {
+            "identifier": "0770930T",
+            "observed_siret": "19770930600025"
+          },
+          "archived_facts": [
+            "L'UAI correspond au Lycée Henri Moissan.",
+            "La réponse donne explicitement le SIRET 19770930600025."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "262a6f7716ab4576",
+      "service_id": "FR002824",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "COLLEGE NICOLAS TRONCHON - ST SOUPPLETS",
+        "address": "Rue de la Chevée, 77165 Saint-Soupplets",
+        "input_siret": "19772433900019",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "19772433900019",
+        "siren": "197724339"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "19772433900019",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le CRM désigne explicitement le collège Nicolas Tronchon. SIRENE et l'UAI 0772483F renvoient tous deux cette identité et le SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "262a6f7716ab4576-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=19772433900019&per_page=1",
+          "collected_at": "2026-07-27T20:48:59.803393+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "262a6f7716ab4576",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET exact est actif sous le nom COLLEGE NICOLAS TRONCHON."
+          ]
+        },
+        {
+          "evidence_id": "262a6f7716ab4576-uai",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220772483F%22&limit=10",
+          "collected_at": "2026-07-27T21:59:39.203455+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+          "row_selector": {
+            "identifier": "0772483F",
+            "observed_siret": "19772433900019"
+          },
+          "archived_facts": [
+            "L'UAI correspond au Collège Nicolas Tronchon.",
+            "La réponse donne explicitement le SIRET 19772433900019."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "4f195a2deaf99370",
+      "service_id": "FR035282",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Clinique Val Pyrène - MI",
+        "address": "51 boulevard François Arago, 66120 Font-Romeu-Odeillo-Via",
+        "input_siret": "39886165800027",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "39886165800027",
+        "siren": "398861658"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "39886165800027",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le CRM nomme explicitement la Clinique Val Pyrène. SIRENE donne le SIRET actif VAL PYRENE et FINESS 660780842 relie exactement la CLINIQUE VAL PYRENE au même SIRET.",
+      "sources": [
+        {
+          "evidence_id": "4f195a2deaf99370-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=39886165800027&per_page=1",
+          "collected_at": "2026-07-27T20:49:09.816805+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "4f195a2deaf99370",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET exact est actif sous le nom VAL PYRENE."
+          ]
+        },
+        {
+          "evidence_id": "4f195a2deaf99370-finess",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "row_selector": {
+            "identifier": "660780842",
+            "observed_siret": "39886165800027"
+          },
+          "archived_facts": [
+            "FINESS renvoie explicitement le SIRET 39886165800027.",
+            "Le nom producteur est CLINIQUE VAL PYRENE."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "5a9a404f509cb3fe",
+      "service_id": "FO008315",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GS CURIE",
+        "address": "2 chemin du Moulin Basset, 93200 Saint-Denis",
+        "input_siret": "21930066200083",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "92993941100351",
+        "siren": "929939411"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "92993941100351",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le CRM désigne explicitement le groupe scolaire Curie à son adresse. SIRENE donne le top-1 comme école élémentaire Joliot-Curie et l'UAI 0930165Z relie cette école au SIRET exact. L'ancien SIRET communal d'entrée est fermé.",
+      "sources": [
+        {
+          "evidence_id": "5a9a404f509cb3fe-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=92993941100351&per_page=1",
+          "collected_at": "2026-07-27T20:49:15.777627+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "5a9a404f509cb3fe",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 est actif et porte l'enseigne ECOLE ELEMENTAIRE JOLIOT-CURIE.",
+            "Le SIRET d'entrée est fermé."
+          ]
+        },
+        {
+          "evidence_id": "5a9a404f509cb3fe-uai",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220930165Z%22&limit=10",
+          "collected_at": "2026-07-27T21:59:39.969018+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+          "row_selector": {
+            "identifier": "0930165Z",
+            "observed_siret": "92993941100351"
+          },
+          "archived_facts": [
+            "L'UAI correspond à l'Ecole élémentaire Irène et Frédéric Joliot-Curie.",
+            "La réponse donne explicitement le SIRET 92993941100351."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "9c26258fe80216ac",
+      "service_id": "AC019215",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DIRECTION INTERREGIONALE DE LA PROT-UEAJ DUNKERQUE",
+        "address": "32 rue Louis Vanraet, 59240 Dunkerque",
+        "input_siret": "13000741200021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "17590131300379",
+        "siren": "175901313"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "17590131300379",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le CRM contient explicitement UEAJ Dunkerque. SIRENE associe cette enseigne au top-1 et FINESS relie exactement l'Unité éducative d'activités de jour au même SIRET. Le SIRET d'entrée désigne la direction interrégionale à Lille, non l'UEAJ.",
+      "sources": [
+        {
+          "evidence_id": "9c26258fe80216ac-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=17590131300379&per_page=1",
+          "collected_at": "2026-07-27T20:49:28.906885+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "9c26258fe80216ac",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 actif porte l'enseigne UEAJ DE DUNKERQUE.",
+            "Le SIRET d'entrée correspond à la direction interrégionale PJJ Grand Nord localisée à Lille."
+          ]
+        },
+        {
+          "evidence_id": "9c26258fe80216ac-finess",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "row_selector": {
+            "identifier": "590072310",
+            "observed_siret": "17590131300379"
+          },
+          "archived_facts": [
+            "FINESS renvoie explicitement le SIRET 17590131300379.",
+            "Le nom producteur est UNITE EDUCATIVE D'ACTIVITES DE JOUR / UEAJ DE DUNKERQUE."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "c746f3dd84e3dbc5",
+      "service_id": "AC017416",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "IEN VILLEURBANNE 2",
+        "address": "61 cours de la République, 69100 Villeurbanne",
+        "input_siret": "17690431600070",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "17690431600070",
+        "siren": "176904316"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "17690431600070",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le CRM nomme explicitement IEN Villeurbanne 2. Malgré la variante SIRENE Villeurbanne Sud, l'UAI donne le nom exact Circonscription d'inspection du 1er degré de Villeurbanne 2 et le même SIRET.",
+      "sources": [
+        {
+          "evidence_id": "c746f3dd84e3dbc5-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=17690431600070&per_page=1",
+          "collected_at": "2026-07-27T20:49:43.166469+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "c746f3dd84e3dbc5",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 actif porte l'enseigne CIRCONSCRIPTION 1ER DEGRE IEN VILLEURBANNE SUD."
+          ]
+        },
+        {
+          "evidence_id": "c746f3dd84e3dbc5-uai",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220690205Y%22&limit=10",
+          "collected_at": "2026-07-27T21:59:37.106576+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+          "row_selector": {
+            "identifier": "0690205Y",
+            "observed_siret": "17690431600070"
+          },
+          "archived_facts": [
+            "L'UAI donne le nom Circonscription d'inspection du 1er degré de Villeurbanne 2.",
+            "La réponse donne explicitement le SIRET 17690431600070."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "f23d546e4b47fd66",
+      "service_id": "FR022560",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ALSMT",
+        "address": "16 avenue de la Résistance, 54520 Laxou",
+        "input_siret": "77561555200000",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "77561555200210",
+        "siren": "775615552"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "SIRENE et FINESS relient le top-1 au SPST ALSMT, mais le CRM ne désigne que l'association ALSMT avec une ancienne adresse et non ce service précis. La recherche SIRENE retourne plusieurs établissements ALSMT à Laxou. Deux producteurs décrivent donc bien le top-1, mais ils ne relient pas explicitement l'assertion CRM générique à cet établissement et ne constituent pas deux preuves positives indépendantes d'une ambiguïté déterminée : le cas reste UNRESOLVED et evidence_validated reste faux.",
+      "sources": [
+        {
+          "evidence_id": "f23d546e4b47fd66-sirene-scene",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_SCENE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=ALSMT&per_page=10&code_commune=54304",
+          "collected_at": "2026-07-27T20:49:59.346223+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "f23d546e4b47fd66",
+            "query_kind": "CRM_NAME_GEO"
+          },
+          "archived_facts": [
+            "La requête ALSMT à Laxou retourne le top-1 mais aussi plusieurs autres établissements du même SIREN.",
+            "Un établissement fermé était situé 20 avenue de la Résistance et plusieurs établissements sont enregistrés au 6 bis rue de la Saône."
+          ]
+        },
+        {
+          "evidence_id": "f23d546e4b47fd66-finess",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "row_selector": {
+            "identifier": "540027380",
+            "observed_siret": "77561555200210"
+          },
+          "archived_facts": [
+            "FINESS renvoie explicitement le SIRET 77561555200210.",
+            "Le nom producteur est SERVICE DE PREVENTION SANTE AU TRAVAIL ALSMT, identité précise absente du libellé CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le libellé CRM ne distingue pas le SPST FINESS des autres établissements ALSMT à Laxou.",
+        "L'adresse CRM est ancienne et ne peut pas être utilisée seule pour choisir un établissement actuel."
+      ]
+    }
+  ]
+}

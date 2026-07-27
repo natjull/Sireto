@@ -1,0 +1,868 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-a-1",
+  "created_at": "2026-07-27T22:15:32Z",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Plusieurs réponses, identifiants ou fiches du même producteur sectoriel ne créent pas plusieurs preuves indépendantes.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Une preuve sectorielle compte seulement si la réponse brute relie explicitement son identifiant métier au SIRET exact et si le libellé CRM désigne cette identité.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans preuve directe suffisante. TOP1_WRONG peut donc avoir validated_correct_siret=null."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "file figée contenant les assertions CRM et les top-1 jugés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "archive locale des réponses complètes de l'API Recherche d'entreprises"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+      "sha256": "df7ecfe8e1df9731c0340e448aef4dacf473a3d2236e0f07da640c3aa38ee9ed",
+      "role": "archive locale des réponses brutes des producteurs sectoriels"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884/producer_observation_facts.parquet",
+      "sha256": "503589c4e48c307e9c87ee689ecbf0f3f3940f91e5c8244c7fb22c32252398d1",
+      "role": "faits sectoriels structurés utilisés pour l'adjudication"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "top1_correct_evidence_validated": 9,
+    "top1_wrong_evidence_validated": 2,
+    "ambiguous": 1,
+    "unresolved": 0,
+    "validated_correct_siret_count": 9,
+    "training_eligible_count": 12
+  },
+  "cases": [
+    {
+      "audit_case_id": "006b2a6c2590037d",
+      "service_id": "FR034265",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "EL2D",
+        "address": "8 ter rue du Nouveau Bêle, Carquefou",
+        "input_siret": "32802398100041",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "32802398100066",
+        "siren": "328023981"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "32802398100066",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ADEME_RGE"
+      ],
+      "decision_reason": "Le registre rattache le top-1 actif à EL2D. Le registre RGE de l'ADEME relie explicitement plusieurs qualifications de l'entreprise EL 2D au même SIRET. L'identité, et pas seulement la rue, concorde avec le CRM.",
+      "sources": [
+        {
+          "evidence_id": "006b2a6c2590037d-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=32802398100066&per_page=1",
+          "collected_at": "2026-07-27T20:48:08.209917+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "006b2a6c2590037d",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 32802398100066 appartient à EL2D et l'établissement est actif.",
+            "Le nom d'établissement EL 2D et la localisation rue du Nouveau Bêle concordent avec l'identité CRM."
+          ]
+        },
+        {
+          "evidence_id": "006b2a6c2590037d-rge-top1",
+          "producer": "ADEME",
+          "source_family": "SECTOR_REGISTRY_RGE",
+          "canonical_source_family": "ADEME_RGE",
+          "independence_group": "ADEME_RGE",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute du registre officiel des entreprises RGE",
+          "url": "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2-new/lines?size=100&qs=code_qualification%3A%2243SPVRGE%22+AND+siret%3A%2232802398100066%22",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/rge-b05458fcbfeaf4a8e317.json",
+          "artifact_sha256": "6546fef60ac5fa361e76c564d9af06f496c9ea8c286516341c87e8019e083122",
+          "archived_facts": [
+            "La qualification RGE 43SPVRGE est reliée explicitement au SIRET 32802398100066.",
+            "Le titulaire est nommé EL 2D à l'adresse du Nouveau Bêle.",
+            "Deux autres qualifications RGE du même producteur relient également EL 2D au même SIRET; elles ne sont pas comptées comme preuves indépendantes."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "0168f027f9cf6c64",
+      "service_id": "AC008691",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "NATOORA EUROPE",
+        "address": "1 quai du Val de Loire, Chevilly-Larue",
+        "input_siret": "79322192000028",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "79322192000036",
+        "siren": "793221920"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "79322192000036",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "AGENCE_BIO"
+      ],
+      "decision_reason": "Le registre identifie le top-1 actif comme NATOORA EUROPE. L'Agence Bio relie explicitement l'opérateur NATOORA EUROPE au même SIRET et à son site du quai du Val de Loire.",
+      "sources": [
+        {
+          "evidence_id": "0168f027f9cf6c64-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79322192000036&per_page=1",
+          "collected_at": "2026-07-27T20:48:21.611050+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "0168f027f9cf6c64",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 79322192000036 appartient à NATOORA EUROPE et l'établissement est actif.",
+            "L'établissement est implanté quai du Val de Loire à Chevilly-Larue."
+          ]
+        },
+        {
+          "evidence_id": "0168f027f9cf6c64-bio-top1",
+          "producer": "Agence Bio",
+          "source_family": "SECTOR_REGISTRY_BIO",
+          "canonical_source_family": "AGENCE_BIO",
+          "independence_group": "AGENCE_BIO",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel des opérateurs bio",
+          "url": "https://opendata.agencebio.org/api/gouv/operateurs/?numeroBio=19822",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/bio-4d2b7bb75847a702bcf9.json",
+          "artifact_sha256": "92815279b5e49dc58c5f9d2fb2d72dfd1bd44fb18172e1420022a119194505e8",
+          "archived_facts": [
+            "Le numéro Bio 19822 est relié explicitement au SIRET 79322192000036.",
+            "L'opérateur engagé est nommé NATOORA EUROPE et ses lieux d'activité incluent le quai du Val de Loire."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01fafd4cce69aed0",
+      "service_id": "FR034079",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ASS FAMILIALE AIDE AUX INFIRMES MENTAU CASTELNAUDARY",
+        "address": "47 rue des Potiers, Castelnaudary",
+        "input_siret": "77555569100275",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "77555569100275",
+        "siren": "775555691"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "77555569100275",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le registre rattache le top-1 à l'association AFDAIM ADAPEI 11 et à l'établissement de Castelnaudary. FINESS relie explicitement l'EANM Les Hirondelles, géré par l'AFDAIM, au même SIRET et à la même adresse.",
+      "sources": [
+        {
+          "evidence_id": "01fafd4cce69aed0-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=77555569100275&per_page=1",
+          "collected_at": "2026-07-27T20:48:29.802945+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "01fafd4cce69aed0",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 77555569100275 appartient à l'Association familiale départementale d'aide aux personnes handicapées mentales.",
+            "Le site est l'EANM Castelnaudary Les Hirondelles."
+          ]
+        },
+        {
+          "evidence_id": "01fafd4cce69aed0-finess-top1",
+          "producer": "Agence du numérique en santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS Structures",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "archived_facts": [
+            "L'identifiant FINESS 110002862 est relié explicitement au SIRET 77555569100275.",
+            "La structure active est EANM Castelnaudary Les Hirondelles, AFDAIM, au 47 rue des Potiers."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "02993d9ceb076b19",
+      "service_id": "FR019434",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SIP-SCEAUX-ECOLE MATERNELLE DU CENTRE",
+        "address": "7 rue Marguerite Renaudin, Sceaux",
+        "input_siret": "21920071400075",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "21920071400075",
+        "siren": "219200714"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "21920071400075",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le registre identifie le top-1 comme l'école maternelle publique Centre de Sceaux. L'annuaire de l'Éducation nationale relie explicitement cette école, son UAI et son adresse au même SIRET.",
+      "sources": [
+        {
+          "evidence_id": "02993d9ceb076b19-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21920071400075&per_page=1",
+          "collected_at": "2026-07-27T20:48:38.303100+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "02993d9ceb076b19",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21920071400075 est un établissement de la commune de Sceaux.",
+            "L'établissement est l'École maternelle publique Centre."
+          ]
+        },
+        {
+          "evidence_id": "02993d9ceb076b19-uai-top1",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220920530B%22&limit=10",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-2f2c9efb5101b488c9a3.json",
+          "artifact_sha256": "b5f18133ee8dcc03ee2d3e9c72154408304952a0f316c5b564b30125a23473e8",
+          "archived_facts": [
+            "L'UAI 0920530B est relié explicitement au SIRET 21920071400075.",
+            "La fiche ouverte désigne l'École maternelle publique Centre, 7 rue Marguerite Renaudin."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "0318f1d5ad2ed81d",
+      "service_id": "FR007995",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LYCEE LES PANNEVELLES",
+        "address": "Route de Chalautres, Provins",
+        "input_siret": "19771336500017",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "19771336500017",
+        "siren": "197713365"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "19771336500017",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le registre identifie le top-1 comme le lycée polyvalent Les Pannevelles. L'annuaire de l'Éducation nationale relie explicitement l'UAI du lycée au même SIRET et à son implantation de Provins.",
+      "sources": [
+        {
+          "evidence_id": "0318f1d5ad2ed81d-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=19771336500017&per_page=1",
+          "collected_at": "2026-07-27T20:48:43.525358+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "0318f1d5ad2ed81d",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 19771336500017 appartient au Lycée polyvalent Les Pannevelles.",
+            "L'établissement est actif à Provins."
+          ]
+        },
+        {
+          "evidence_id": "0318f1d5ad2ed81d-uai-top1",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220771336J%22&limit=10",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-67829557b9d702edf5a0.json",
+          "artifact_sha256": "066b5fbc3e54e158ee20d850ad9664b5f737cd90cc1d2ace1cc0956f89275f1a",
+          "archived_facts": [
+            "L'UAI 0771336J est relié explicitement au SIRET 19771336500017.",
+            "La fiche ouverte désigne le Lycée polyvalent Les Pannevelles, route de Chalautre-la-Petite."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "1524176739b7eba4",
+      "service_id": "AC011579",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LEATWO",
+        "address": "Rue des Moissons, Marquette-lez-Lille",
+        "input_siret": "51485086600021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "51485086600021",
+        "siren": "514850866"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "51485086600021",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "AGENCE_BIO"
+      ],
+      "decision_reason": "Le registre identifie le top-1 comme LEATWO, établissement Intermarché. L'Agence Bio relie explicitement l'opérateur LEATWO-INTERMARCHE et son activité rue des Moissons au même SIRET.",
+      "sources": [
+        {
+          "evidence_id": "1524176739b7eba4-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=51485086600021&per_page=1",
+          "collected_at": "2026-07-27T20:48:52.345822+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "1524176739b7eba4",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 51485086600021 appartient à LEATWO.",
+            "L'établissement actif porte l'enseigne INTERMARCHE."
+          ]
+        },
+        {
+          "evidence_id": "1524176739b7eba4-bio-top1",
+          "producer": "Agence Bio",
+          "source_family": "SECTOR_REGISTRY_BIO",
+          "canonical_source_family": "AGENCE_BIO",
+          "independence_group": "AGENCE_BIO",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel des opérateurs bio",
+          "url": "https://opendata.agencebio.org/api/gouv/operateurs/?numeroBio=170528",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/bio-71f8bfbdd955f25c6da3.json",
+          "artifact_sha256": "a9a1533582ce5b46711e4c40f74d6593b3f46296cbfe0ab1bf98da849c84041b",
+          "archived_facts": [
+            "Le numéro Bio 170528 est relié explicitement au SIRET 51485086600021.",
+            "L'opérateur engagé est LEATWO, aussi libellé LEATWO-INTERMARCHE, avec un lieu d'activité rue des Moissons."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "23a7514d279b57d7",
+      "service_id": "SF000477",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ECOLE MATERNELLE RENOIR",
+        "address": "6 avenue Courbet, Auxerre",
+        "input_siret": "21890024900192",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "21890024900192",
+        "siren": "218900249"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "21890024900192",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI"
+      ],
+      "decision_reason": "Le registre identifie le top-1 comme l'école maternelle Renoir de la commune d'Auxerre. L'annuaire de l'Éducation nationale relie explicitement l'UAI de cette école au même SIRET et à l'adresse CRM.",
+      "sources": [
+        {
+          "evidence_id": "23a7514d279b57d7-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21890024900192&per_page=1",
+          "collected_at": "2026-07-27T20:48:56.634531+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "23a7514d279b57d7",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21890024900192 est un établissement de la commune d'Auxerre.",
+            "L'établissement est l'École maternelle Renoir."
+          ]
+        },
+        {
+          "evidence_id": "23a7514d279b57d7-uai-top1",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse brute de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220890095V%22&limit=10",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-38be46f6987e5606203a.json",
+          "artifact_sha256": "06f2df34a0d11502bcac84bbe424bc58e4a4cd1fe784753687846eafc78453b1",
+          "archived_facts": [
+            "L'UAI 0890095V est relié explicitement au SIRET 21890024900192.",
+            "La fiche ouverte désigne l'École maternelle Renoir, 6 avenue Courbet."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "2ca7a2885e621adf",
+      "service_id": "AC015679",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "AAC GLOBE EXPRESS",
+        "address": "27 rue du Saule Saint-Jacques, Ormoy",
+        "input_siret": "34270642100217",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "48975854000038",
+        "siren": "489758540"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ADEME_RGE"
+      ],
+      "decision_reason": "Le CRM désigne explicitement AAC GLOBE EXPRESS. Le registre et l'ADEME identifient tous deux le top-1 comme I V F, personne morale distincte présente à la même adresse. La concordance d'adresse a produit un faux rapprochement d'identité.",
+      "sources": [
+        {
+          "evidence_id": "2ca7a2885e621adf-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48975854000038&per_page=1",
+          "collected_at": "2026-07-27T20:49:01.287580+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "2ca7a2885e621adf",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 48975854000038 appartient à I V F et l'établissement est actif.",
+            "AAC GLOBE EXPRESS n'est ni la dénomination ni un nom d'établissement du top-1.",
+            "Le registre identifie séparément le SIRET CRM sous l'identité Association autonome de camionnage Globe Express."
+          ]
+        },
+        {
+          "evidence_id": "2ca7a2885e621adf-rge-top1",
+          "producer": "ADEME",
+          "source_family": "SECTOR_REGISTRY_RGE",
+          "canonical_source_family": "ADEME_RGE",
+          "independence_group": "ADEME_RGE",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_CONFIRMS_TOP1_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "réponse brute du registre officiel des entreprises RGE",
+          "url": "https://data.ademe.fr/data-fair/api/v1/datasets/liste-des-entreprises-rge-2-new/lines?size=100&qs=code_qualification%3A%228611M10D109%22+AND+siret%3A%2248975854000038%22",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/rge-c682bbe3b167eb1ecee4.json",
+          "artifact_sha256": "c51f0e749ea6e8ee74d86393d8682d4fb31e88ec18486f0245dd91ee7045f372",
+          "archived_facts": [
+            "La qualification RGE 8611M10D109 est reliée explicitement au SIRET 48975854000038.",
+            "Le titulaire est I V F, au 27 rue du Saule Saint-Jacques.",
+            "Cette preuve sectorielle confirme que l'occupant top-1 de l'adresse n'est pas l'identité AAC GLOBE EXPRESS demandée."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le dossier réfute le top-1 mais ne publie pas automatiquement le SIRET CRM comme nouvelle vérité d'entraînement."
+      ]
+    },
+    {
+      "audit_case_id": "5a83da9830895289",
+      "service_id": "FR032103",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CENTRE HENRI WALLON",
+        "address": "63 rue de la Marzelle de Grillaud, Nantes",
+        "input_siret": "78601196500021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "78601196500021",
+        "siren": "786011965"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "78601196500021",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le registre identifie le top-1 comme le Centre psycho-pédagogique Henri Wallon. FINESS relie explicitement les structures CAMSP et CMPP Henri Wallon au même SIRET; la pluralité de structures ne crée donc aucune ambiguïté au niveau du SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "5a83da9830895289-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=78601196500021&per_page=1",
+          "collected_at": "2026-07-27T20:49:14.903257+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "5a83da9830895289",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 78601196500021 appartient au Centre psycho-pédagogique Henri Wallon.",
+            "L'établissement est situé rue de la Marzelle de Grillaud à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "5a83da9830895289-finess-top1",
+          "producer": "Agence du numérique en santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIERS_LINK_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS Structures",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "archived_facts": [
+            "Les identifiants FINESS 440011997 et 440024677 sont tous deux reliés explicitement au SIRET 78601196500021.",
+            "Ils désignent le CAMSP et le CMPP Henri Wallon à la même adresse.",
+            "Ces deux vues du même producteur comptent comme une seule preuve indépendante."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "927a99a1f61e2e0c",
+      "service_id": "FR026851",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "RESEAU BIO",
+        "address": "4 impasse des Ajoncs, Carquefou",
+        "input_siret": "48973711400012",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "44271303800499",
+        "siren": "442713038"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le CRM désigne explicitement RESEAU BIO. Le registre et FINESS identifient tous deux le top-1 comme un laboratoire BIOGROUP BRETAGNE, personne morale distincte à la même adresse. L'adresse commune ne suffit pas à établir l'identité.",
+      "sources": [
+        {
+          "evidence_id": "927a99a1f61e2e0c-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=44271303800499&per_page=1",
+          "collected_at": "2026-07-27T20:49:28.300808+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "927a99a1f61e2e0c",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 44271303800499 appartient à BIOGROUP BRETAGNE et l'établissement est actif.",
+            "Le registre identifie séparément le SIRET CRM fermé sous l'identité RESEAU-BIO.",
+            "Les deux identités partagent l'impasse des Ajoncs mais pas le même SIREN."
+          ]
+        },
+        {
+          "evidence_id": "927a99a1f61e2e0c-finess-top1",
+          "producer": "Agence du numérique en santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_CONFIRMS_TOP1_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS Structures",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "archived_facts": [
+            "L'identifiant FINESS 440059772 est relié explicitement au SIRET 44271303800499.",
+            "La structure active est le LBM BIOGROUP BRETAGNE CARQUEFOU.",
+            "La preuve sectorielle confirme que le top-1 est BIOGROUP, non RESEAU BIO."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le dossier réfute le top-1 mais ne démontre pas un SIRET actuel de remplacement pour RESEAU BIO."
+      ]
+    },
+    {
+      "audit_case_id": "c09bac8ec0a8c773",
+      "service_id": "FR008221",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MAS LONGUEVILLE",
+        "address": "12 rue des Murs, Longueville",
+        "input_siret": "44722009600021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "78555894100312",
+        "siren": "785558941"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "78555894100312",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "Le registre rattache le top-1 à l'AFASER et à la MAS de Longueville. FINESS relie explicitement la Maison d'accueil spécialisée de Longueville au même SIRET et à l'adresse CRM. L'ancien SIRET CRM appartient à une autre identité.",
+      "sources": [
+        {
+          "evidence_id": "c09bac8ec0a8c773-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_MATCHES_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=78555894100312&per_page=1",
+          "collected_at": "2026-07-27T20:49:42.108001+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "c09bac8ec0a8c773",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 78555894100312 appartient à l'AFASER.",
+            "L'établissement est la MAS de Longueville, 12 rue des Murs."
+          ]
+        },
+        {
+          "evidence_id": "c09bac8ec0a8c773-finess-top1",
+          "producer": "Agence du numérique en santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_IDENTIFIER_LINKS_TOP1_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS Structures",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c88c2ee0a0a978bd6f148f50611681ebf31ba5cadfe744447544e635354",
+          "archived_facts": [
+            "L'identifiant FINESS 770014819 est relié explicitement au SIRET 78555894100312.",
+            "La structure active est la MAS de Longueville, Maison d'accueil spécialisée, à l'adresse CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "e44d5d05a040a8e4",
+      "service_id": "FO003485",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "GROUPE SCOLAIRE DU SOLEIL-LEVANT",
+        "address": "38 rue de la Blanche, Saint-Herblain",
+        "input_siret": "21440162200086",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "21440162200086",
+        "siren": "214401622"
+      },
+      "adjudication_label": "AMBIGUOUS",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "EDUCATION_UAI",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "Le libellé CRM désigne le groupe scolaire, pas une école élémentaire ou maternelle précise. À la même adresse, l'Éducation nationale relie l'école élémentaire au top-1 21440162200086 et l'école maternelle à un autre SIRET 21440162200078. La commune emploie elle-même le libellé global « groupe scolaire du Soleil Levant ». Les preuves imposent donc l'ambiguïté au niveau SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "e44d5d05a040a8e4-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_IS_ELEMENTARY_SUBENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21440162200086&per_page=1",
+          "collected_at": "2026-07-27T20:49:54.619621+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "e44d5d05a040a8e4",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21440162200086 est l'École élémentaire publique Soleil Levant.",
+            "Le registre ne décrit pas ce SIRET comme l'ensemble du groupe scolaire."
+          ]
+        },
+        {
+          "evidence_id": "e44d5d05a040a8e4-uai-two-schools",
+          "producer": "Ministère de l'Éducation nationale",
+          "source_family": "SECTOR_REGISTRY_EDUCATION",
+          "canonical_source_family": "EDUCATION_UAI",
+          "independence_group": "EDUCATION_UAI",
+          "proof_kind": "IDENTITY_TWO_EXACT_SIRETS_PLAUSIBLE_FOR_BROAD_CRM_LABEL",
+          "counts_for_independence": true,
+          "document_type": "réponses brutes et fiches de l'annuaire officiel de l'éducation",
+          "url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220441521P%22&limit=10",
+          "related_url": "https://data.education.gouv.fr/api/explore/v2.1/catalog/datasets/fr-en-annuaire-education/records?where=identifiant_de_l_etablissement%3D%220441960S%22&limit=10",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/uai-328edecb90e93964f49a.json",
+          "artifact_sha256": "eee8d04a2b395753412e2e4d2ce39b46553596120393c343f353f489c87c6aa7",
+          "archived_facts": [
+            "L'UAI 0441521P relie l'École élémentaire publique Soleil Levant au SIRET 21440162200086, à l'adresse CRM.",
+            "L'UAI 0441960S relie l'École maternelle publique Soleil Levant au SIRET distinct 21440162200078, à la même adresse.",
+            "Les deux établissements sont ouverts; les deux fiches du même ministère comptent comme une seule famille indépendante."
+          ]
+        },
+        {
+          "evidence_id": "e44d5d05a040a8e4-commune-group-label",
+          "producer": "Commune de Saint-Herblain",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "ENTITY_SELF_PUBLICATION",
+          "independence_group": "COMMUNE_SAINT_HERBLAIN",
+          "proof_kind": "IDENTITY_CRM_LABEL_DESIGNATES_SCHOOL_GROUP",
+          "counts_for_independence": true,
+          "document_type": "acte réglementaire publié par la commune",
+          "url": "https://www.saint-herblain.fr/actes-reglementaires/arrete-dpr-2025-1331-prorogation-de-larrete-dpr-2025-0915-reglementation-en-matiere-de-circulation-et-de-stationnement-regulation-acces-au-groupe-scolaire-du-soleil-levant-du-1er-janvi/",
+          "collected_at": "2026-07-28",
+          "archived_facts": [
+            "La commune emploie officiellement le libellé groupe scolaire du Soleil Levant.",
+            "Ce libellé global concorde avec le CRM mais ne choisit pas l'un des deux SIRET scolaires distincts."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le CRM ne précise ni élémentaire ni maternelle; aucun SIRET exact unique ne peut être validé sans information supplémentaire."
+      ]
+    }
+  ]
+}
