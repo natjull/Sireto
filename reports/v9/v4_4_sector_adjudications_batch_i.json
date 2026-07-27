@@ -1,0 +1,728 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-i-1",
+  "created_at": "2026-07-28T01:00:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Le BODACC est un producteur DILA distinct; plusieurs annonces du même producteur ne créent qu'un groupe. Le site officiel de l'entité constitue un groupe séparé.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Un changement de SIRET au sein du même SIREN n'est accepté que lorsque le registre relie explicitement le top1 actif à l'identité CRM et qu'un second producteur confirme cette identité.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans preuve directe suffisante."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate RANDOM_POPULATION et top1 gelés"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "random_population_count": 12,
+    "auto_match_source_count": 12,
+    "top1_correct_evidence_validated": 12,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 12,
+    "training_eligible_count": 12
+  },
+  "cases": [
+    {
+      "audit_case_id": "0122d31a8662181a",
+      "service_id": "AC002986",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "AEDIFICE FOSSEY CONSTRUCTION",
+        "address": "12 avenue de la Grande Plaine, 14760 Bretteville-sur-Odon",
+        "input_siret": "44149212100021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "44149212100021",
+        "siren": "441492121"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "44149212100021",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à AEDIFICE FOSSEY CONSTRUCTIONS dans la zone de la Grande Plaine. Le BODACC confirme indépendamment la même dénomination, le même SIREN et la même implantation communale. La variation singulier/pluriel n'affecte pas l'identité.",
+      "sources": [
+        {
+          "evidence_id": "0122d31a8662181a-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=44149212100021&per_page=1",
+          "collected_at": "2026-07-27T22:55:41.238760+00:00",
+          "response_sha256": "d40e963160db17e470d70212b1d859e5ca14d8a39ea4ca1d09480581ea0009d8",
+          "archived_facts": [
+            "Le SIRET actif 44149212100021 appartient à AEDIFICE FOSSEY CONSTRUCTIONS.",
+            "L'établissement est implanté ZI La Grande Plaine à Bretteville-sur-Odon."
+          ]
+        },
+        {
+          "evidence_id": "0122d31a8662181a-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22441492121%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:41.479424+00:00",
+          "response_sha256": "736f7e1e94c95a2e857272ebfcadcc80af966c34bde947f3e0c3999e86db4ab4",
+          "archived_facts": [
+            "Le BODACC publie AEDIFICE FOSSEY CONSTRUCTIONS sous l'identifiant 441492121.",
+            "L'annonce situe l'entité dans la zone industrielle de la Grande Plaine à Bretteville-sur-Odon."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "003e461d2431cac4",
+      "service_id": "FR031169",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "LOGISTA LE HAVRE",
+        "address": "3 rue Paul Verlaine, 76700 Harfleur",
+        "input_siret": "39462912500656",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "39462912500656",
+        "siren": "394629125"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "39462912500656",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE identifie le top1 actif comme le site LOGISTA de Harfleur. Le BODACC confirme indépendamment LOGISTA sous le même SIREN. Le numéro de voie CRM diffère du registre, mais l'identité et le SIRET exact sont explicites.",
+      "sources": [
+        {
+          "evidence_id": "003e461d2431cac4-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=39462912500656&per_page=1",
+          "collected_at": "2026-07-27T22:55:41.575485+00:00",
+          "response_sha256": "17cf805572747079bb3c0c45a676416b0085ab261cf4dd758ba806186e5c6d45",
+          "archived_facts": [
+            "Le SIRET actif 39462912500656 appartient à LOGISTA.",
+            "L'établissement est situé rue Paul Verlaine à Harfleur."
+          ]
+        },
+        {
+          "evidence_id": "003e461d2431cac4-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22394629125%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:41.789673+00:00",
+          "response_sha256": "39742b83ae71a68b749f4564969f74493ce17807a5a4bc2d69a499acbfbb2b7e",
+          "archived_facts": [
+            "Le BODACC publie LOGISTA sous l'identifiant 394629125.",
+            "Cette annonce confirme indépendamment la personne morale du site top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "00c854ba2da0af5d",
+      "service_id": "AC011821",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "EVEREST ECHAFFAUDAGE - CHALON",
+        "address": "10 rue Victor Grignard, 71100 Chalon-sur-Saône",
+        "input_siret": "49309588900041",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "49309588900041",
+        "siren": "493095889"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "49309588900041",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à EVEREST ECHAFAUDAGES au 10 rue Victor Grignard à Chalon-sur-Saône. Le BODACC confirme indépendamment la même dénomination et le même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "00c854ba2da0af5d-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=49309588900041&per_page=1",
+          "collected_at": "2026-07-27T22:55:41.920445+00:00",
+          "response_sha256": "af0e0d6936388cca4041f1ab240d0cb4ad1a123c15dc1fc6740340d200f7f512",
+          "archived_facts": [
+            "Le SIRET actif 49309588900041 appartient à EVEREST ECHAFAUDAGES.",
+            "L'établissement est au 10 rue Victor Grignard à Chalon-sur-Saône."
+          ]
+        },
+        {
+          "evidence_id": "00c854ba2da0af5d-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22493095889%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:42.142886+00:00",
+          "response_sha256": "811e154e7fbb1e0586775a45ceeb2fde2ae47f188375c4c09d624d0d1e0937f4",
+          "archived_facts": [
+            "Le BODACC publie EVEREST ECHAFAUDAGES sous l'identifiant 493095889.",
+            "L'annonce légale confirme indépendamment l'identité juridique."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01f9bb98da0a0d4b",
+      "service_id": "AC010332",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "E.G.C. GALOPIN",
+        "address": "1 rue Irène Joliot-Curie, 77700 Bailly-Romainvilliers",
+        "input_siret": "41824114700036",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "41824114700077",
+        "siren": "418241147"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "41824114700077",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "Le CRM et le top1 appartiennent au même SIREN. SIRENE relie le SIRET top1 actif à E.G.C. GALOPIN au 3 rue Irène Joliot-Curie; le BODACC confirme indépendamment EGC GALOPIN sous ce SIREN. Le changement de numéro dans la même rue ne constitue pas un changement d'identité.",
+      "sources": [
+        {
+          "evidence_id": "01f9bb98da0a0d4b-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=41824114700077&per_page=1",
+          "collected_at": "2026-07-27T22:55:42.214604+00:00",
+          "response_sha256": "8228fa0b7c21743622ba495aefce48e0d77aa040fb09a8ee99d05dbdb65681de",
+          "archived_facts": [
+            "Le SIRET actif 41824114700077 appartient à E.G.C. GALOPIN.",
+            "L'établissement est au 3 rue Irène Joliot-Curie à Bailly-Romainvilliers."
+          ]
+        },
+        {
+          "evidence_id": "01f9bb98da0a0d4b-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22418241147%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:42.400459+00:00",
+          "response_sha256": "bd380ce1c78fb6527bd6186c3034cc8b72a22adfce045f8e18ff7ec0a14a5efc",
+          "archived_facts": [
+            "Le BODACC publie EGC GALOPIN sous l'identifiant 418241147.",
+            "Cette annonce confirme indépendamment la personne morale du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "008003d460707663",
+      "service_id": "AC018527",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "FOURNIAL - VBM",
+        "address": "7 B rue Élisée Reclus, 63000 Clermont-Ferrand",
+        "input_siret": "30943171600039",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "30943171600047",
+        "siren": "309431716"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "30943171600047",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à FOURNIAL VBM au 17 bis rue Élisée Reclus. Le BODACC confirme indépendamment la même dénomination, le même SIREN et cette adresse. Le SIRET CRM fermé est un ancien établissement de la même identité.",
+      "sources": [
+        {
+          "evidence_id": "008003d460707663-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=30943171600047&per_page=1",
+          "collected_at": "2026-07-27T22:55:42.468295+00:00",
+          "response_sha256": "b4d3da61ac5d85c86ad2a935ebf5a361053cfb0f0c34da0e4e15e05837c89bce",
+          "archived_facts": [
+            "Le SIRET actif 30943171600047 appartient à FOURNIAL VBM.",
+            "L'établissement est au 17 bis rue Élisée Reclus à Clermont-Ferrand."
+          ]
+        },
+        {
+          "evidence_id": "008003d460707663-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_SUCCESSOR_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22309431716%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:42.706360+00:00",
+          "response_sha256": "da742ac8fe5de8be1a50b741d0afd0ff456b99699cf7a0c3bdf2cae50b54add0",
+          "archived_facts": [
+            "Le BODACC publie FOURNIAL VBM sous l'identifiant 309431716.",
+            "L'annonce situe la société au 17 bis rue Élisée Reclus."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "030299c9639c79c8",
+      "service_id": "AC012681",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MDS",
+        "address": "rue du Pecloz, 74150 Rumilly",
+        "input_siret": "75311251500014",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "75311251500022",
+        "siren": "753112515"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "75311251500022",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à SARL MDS au 9 rue du Pecloz. Le BODACC confirme indépendamment la même société, le même SIREN et cette adresse. Le SIRET CRM fermé est remplacé par un établissement de la même identité.",
+      "sources": [
+        {
+          "evidence_id": "030299c9639c79c8-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=75311251500022&per_page=1",
+          "collected_at": "2026-07-27T22:55:42.982114+00:00",
+          "response_sha256": "d551a54f1e118d52b69bb18082d081563da49e811eae9bfb7be829d4775319fb",
+          "archived_facts": [
+            "Le SIRET actif 75311251500022 appartient à SARL MDS.",
+            "L'établissement est au 9 rue du Pecloz à Rumilly."
+          ]
+        },
+        {
+          "evidence_id": "030299c9639c79c8-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_SUCCESSOR_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22753112515%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:43.215441+00:00",
+          "response_sha256": "91b08081605131e13d6fc38344f087c29200d7f66e8ce35ad3f3a9e47c74b655",
+          "archived_facts": [
+            "Le BODACC publie SARL MDS sous l'identifiant 753112515.",
+            "L'annonce situe la société au 9 rue du Pecloz à Rumilly."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01066030185ee853",
+      "service_id": "FR022412",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BE ATEX",
+        "address": "181 rue du Canal du Midi, 31750 Escalquens",
+        "input_siret": "50776655800021",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "50776655800039",
+        "siren": "507766558"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "50776655800039",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à BE-ATEX au 250 rue du Canal du Midi. Le BODACC confirme indépendamment la même dénomination, le même SIREN et cette nouvelle adresse. Le SIRET CRM fermé désigne l'ancien site de la même identité.",
+      "sources": [
+        {
+          "evidence_id": "01066030185ee853-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=50776655800039&per_page=1",
+          "collected_at": "2026-07-27T22:55:43.346929+00:00",
+          "response_sha256": "8e3b748ef5a4f3715f21fdae6e00f60d352bbb3cb0dbde5aa577ac8b939bc7fd",
+          "archived_facts": [
+            "Le SIRET actif 50776655800039 appartient à BE-ATEX.",
+            "L'établissement est au 250 rue du Canal du Midi à Escalquens."
+          ]
+        },
+        {
+          "evidence_id": "01066030185ee853-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_SUCCESSOR_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22507766558%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:43.539881+00:00",
+          "response_sha256": "d1cfac680d43805cdcb70b859d4d077f7d9ac053a2025d570269037a5a27d436",
+          "archived_facts": [
+            "Le BODACC publie BE-ATEX sous l'identifiant 507766558.",
+            "L'annonce situe la société au 250 rue du Canal du Midi."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01594ec3727d4639",
+      "service_id": "AC017976",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "AUSSITAUXPRET-BOIS BRIAND",
+        "address": "13 rue du Bois Briand, 44000 Nantes",
+        "input_siret": "51859147400029",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "51859147400037",
+        "siren": "518591474"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "51859147400037",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE et le BODACC relient AUSSITAUXPRET au même SIREN et au 13 rue du Bois Briand. Le SIRET top1 est actif à cette adresse, tandis que le SIRET CRM est fermé; le suffixe CRM décrit le site et non une autre personne morale.",
+      "sources": [
+        {
+          "evidence_id": "01594ec3727d4639-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=51859147400037&per_page=1",
+          "collected_at": "2026-07-27T22:55:43.722305+00:00",
+          "response_sha256": "97f4eeb053f8ec04dda07a79492a7294027cc874841470d5b55824cb53bca8d1",
+          "archived_facts": [
+            "Le SIRET actif 51859147400037 appartient à AUSSITAUXPRET.",
+            "L'établissement est au 13 rue du Bois Briand à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "01594ec3727d4639-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_SUCCESSOR_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22518591474%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:43.978671+00:00",
+          "response_sha256": "bce5815d02e58e4c9e7f36f713131e6201559eacf87db3d17e53ad098e3845fa",
+          "archived_facts": [
+            "Le BODACC publie AUSSITAUXPRET sous l'identifiant 518591474.",
+            "L'annonce situe la société au 13 rue du Bois Briand à Nantes."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "009c68198695aa3e",
+      "service_id": "FR032221",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "REPARTIM - MERIGNAC",
+        "address": "2 allée de Kaolack, 33700 Mérignac",
+        "input_siret": "51953183400322",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "51953183400629",
+        "siren": "519531834"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "51953183400629",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à REPARTIM à Mérignac. Le BODACC confirme indépendamment REPARTIM sous le même SIREN. Le SIRET CRM fermé et le top1 appartiennent à la même personne morale; le changement d'allée est un déplacement de site.",
+      "sources": [
+        {
+          "evidence_id": "009c68198695aa3e-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=51953183400629&per_page=1",
+          "collected_at": "2026-07-27T22:55:44.058907+00:00",
+          "response_sha256": "24792002e699245bcea1b21796fc3efe66228b738b1ce7f9b53319bceade0285",
+          "archived_facts": [
+            "Le SIRET actif 51953183400629 appartient à REPARTIM.",
+            "L'établissement est au 16 allée des Acacias à Mérignac."
+          ]
+        },
+        {
+          "evidence_id": "009c68198695aa3e-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22519531834%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:44.269200+00:00",
+          "response_sha256": "5d06591b070bb4f1aa8607b8dc1be5aec32edc644625edff7da2ea6386916216",
+          "archived_facts": [
+            "Le BODACC publie REPARTIM sous l'identifiant 519531834.",
+            "Cette annonce confirme indépendamment la personne morale du site top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "02951f634fcf95b4",
+      "service_id": "AC015404",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ABRIFETE 75 94",
+        "address": "40 rue de Lamirault, 77090 Collégien",
+        "input_siret": "50839019200021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "50839019200039",
+        "siren": "508390192"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "50839019200039",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE identifie le top1 actif comme ABRIFETE - ILE DE FRANCE au 40 rue de Lamirault. Le BODACC confirme indépendamment cette dénomination sous le même SIREN. Le libellé CRM 75 94 est une abréviation géographique de la même identité.",
+      "sources": [
+        {
+          "evidence_id": "02951f634fcf95b4-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_TRADE_NAME",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=50839019200039&per_page=1",
+          "collected_at": "2026-07-27T22:55:44.358811+00:00",
+          "response_sha256": "1534c2a2be4efc6bc5c18c9d0a74f962a3047be66a11135d5d5a482824a37114",
+          "archived_facts": [
+            "Le SIRET actif 50839019200039 appartient à ABRIFETE - ILE DE FRANCE.",
+            "L'établissement est au 40 rue de Lamirault à Collégien."
+          ]
+        },
+        {
+          "evidence_id": "02951f634fcf95b4-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22508390192%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:44.550430+00:00",
+          "response_sha256": "5829e4d19b6f29e423e94e4c69395f03530f968d01746a8013a9814a00facac7",
+          "archived_facts": [
+            "Le BODACC publie ABRIFETE - Ile de France sous l'identifiant 508390192.",
+            "Cette annonce confirme indépendamment la personne morale du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "00e2f65465b5e7c0",
+      "service_id": "FR020872",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MINIMAX_SITE NANCY",
+        "address": "12-14 allée des Bonnetons, 54425 Pulnoy",
+        "input_siret": "48249197400000",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "48249197400150",
+        "siren": "482491974"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "48249197400150",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à MINIMAX FRANCE SAS, allée des Bonnetons à Pulnoy. Le BODACC confirme indépendamment MINIMAX FRANCE SAS sous le même SIREN. Le suffixe SITE NANCY décrit l'implantation locale et l'input non trouvé n'est pas utilisé comme vérité.",
+      "sources": [
+        {
+          "evidence_id": "00e2f65465b5e7c0-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48249197400150&per_page=1",
+          "collected_at": "2026-07-27T22:55:44.650105+00:00",
+          "response_sha256": "58066bb5c314dee2f57e9201658b781ce7f4970137e558c151fef57f7d302d1b",
+          "archived_facts": [
+            "Le SIRET actif 48249197400150 appartient à MINIMAX FRANCE SAS.",
+            "L'établissement est au 16 allée des Bonnetons à Pulnoy."
+          ]
+        },
+        {
+          "evidence_id": "00e2f65465b5e7c0-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22482491974%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T22:55:44.892500+00:00",
+          "response_sha256": "442323ea117352c6613f8de417a565631b3f49d44feaa7efa827352d2ddb4ffa",
+          "archived_facts": [
+            "Le BODACC publie MINIMAX FRANCE SAS sous l'identifiant 482491974.",
+            "Cette annonce confirme indépendamment la personne morale du top1."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "01e739f29fbaaef3",
+      "service_id": "FR024182",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CIAMT SANTE AU TRAVAIL",
+        "address": "2 allée de la Mixité, 77127 Lieusaint",
+        "input_siret": "78434698300371",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "78434698300496",
+        "siren": "784346983"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "78434698300496",
+      "independent_source_families": ["SIRENE_REGISTRY", "ENTITY_SELF_PUBLICATION"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif au Centre inter médecine travail, à l'adresse CRM. Le site officiel CIAMT identifie indépendamment son centre de santé au travail de Lieusaint au 2 allée de la Mixité. Le SIRET CRM fermé et le top1 appartiennent au même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "01e739f29fbaaef3-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_SUCCESSOR_SITE_TO_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=78434698300496&per_page=1",
+          "collected_at": "2026-07-27T22:55:44.964587+00:00",
+          "response_sha256": "2d255db5e9ce6796c9d8cb32b267cfea8c279d308e4388c3355c62563fa186a8",
+          "archived_facts": [
+            "Le SIRET actif 78434698300496 appartient au Centre inter médecine travail.",
+            "L'établissement est au 2 allée de la Mixité à Lieusaint."
+          ]
+        },
+        {
+          "evidence_id": "01e739f29fbaaef3-ciamt-site",
+          "producer": "CIAMT",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "ENTITY_SELF_PUBLICATION",
+          "independence_group": "CIAMT_OFFICIAL",
+          "proof_kind": "IDENTITY_ENTITY_SITE_CONFIRMS_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "annexe officielle d'information au public du CIAMT",
+          "url": "https://www.ciamt.org/files/2025/03/Annexe-RAA-CIAMT-infos-au-public.pdf",
+          "collected_at": "2026-07-27T23:00:30.892780+00:00",
+          "response_sha256": "fc5af3fb716ea4a3f3af32643a663ef9ceb4046d62ed8dcc9a3de345684d40bf",
+          "archived_facts": [
+            "Le CIAMT publie un centre de médecine du travail à Lieusaint.",
+            "La page officielle donne l'adresse Immeuble La Croix du Sud, 2 allée de la Mixité, 77127 Lieusaint."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
