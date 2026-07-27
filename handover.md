@@ -8,19 +8,31 @@ Elles confirment l'existence administrative de 172/172 top-1 et la présence du
 top-1 dans 52 recherches nom + géographie, mais toutes proviennent de la même
 famille SIRENE/API. Elles ne constituent donc jamais deux preuves
 indépendantes : `correctness_conclusion=NOT_DERIVED` pour 172/172 et
-`training_eligible=0`. La collecte gratuite se poursuit maintenant auprès des
-registres producteurs sectoriels et de documents publics indépendants ; aucun
-modèle n'est modifié. Artefacts :
+`training_eligible=0`. La collecte gratuite auprès des producteurs sectoriels
+couvre désormais 52 dossiers : 115/117 identifiants sont retrouvés et reliés
+explicitement au SIRET observé par UAI, FINESS, Agence Bio ou ADEME. Ces faits
+ne deviennent pas automatiquement des labels. Les cinq contradictions connues
+ont été reprises sur pièces : quatre `TOP1_WRONG` sont maintenant validés et
+éligibles pour l'accepteur, un cas reste `UNRESOLVED`, et aucun SIRET
+alternatif n'a été inventé. Le gate partiel est
+**`PIVOT_MORE_EVIDENCE`** : 0/75 corrects, 4/50 incorrects et 4/30 random
+validés. Aucun modèle n'est modifié. Artefacts :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`
 et
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_evidence_facts/7ec4f63e1a22b082`.
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_evidence_facts/7ec4f63e1a22b082`,
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f`,
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884`,
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/320fe62322e14d25`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/454d4120ee8ce7a8`.
 
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
 complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
-erreurs AUTO documentées restent `AI_PROVISIONAL`; 35 autres AUTO sont
-prioritaires parce que l'adresse porte presque seule la décision, et 28
-diffèrent d'un SIRET d'entrée encore actif. Aucun de ces signaux n'a été
-converti artificiellement en vérité : `training_eligible=0`.
+erreurs AUTO alors `AI_PROVISIONAL` ont depuis été reprises par V4.4 : quatre
+sont validées `TOP1_WRONG`, une reste `UNRESOLVED`. Les 35 autres AUTO où
+l'adresse porte presque seule la décision et les 28 désaccords avec un SIRET
+d'entrée encore actif restent prioritaires. Aucun signal seul n'est converti
+artificiellement en vérité.
 
 Le « gold standard » historique ne résout pas le problème. Il a été construit
 en gardant le SIRET CRM si sa commune ou son CP correspondait à SIRENE, sans
@@ -151,6 +163,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Premier gate V4.4 canonique publié** : les cinq contradictions ont été
+  reliées aux pools top-10 réellement archivés dans le shadow, au bundle et à
+  la signature retrieval gelés, puis validées par recomputation. Résultat :
+  quatre `TOP1_WRONG` éligibles accepteur, zéro cible ranker et un
+  `UNRESOLVED`. Les cinq appartiennent au tirage aléatoire V4.3 ; une première
+  perte de cette provenance a été détectée, corrigée et les artefacts ont été
+  reconstruits. Verdict partiel `PIVOT_MORE_EVIDENCE`, avec déficits 75
+  corrects, 46 incorrects et 26 random. *(commits GitHub : dossiers
+  `7c1a6fd`, validateur `edbfbfe`, adaptateur `ef2df25`, correction provenance
+  `3a74b8a`, gate `17bf904` ; 271 tests passants)*
+- **Preuves sectorielles V4.4 collectées sans dépense** : 117 observations sur
+  52 dossiers, auprès des producteurs UAI, FINESS, Agence Bio et ADEME.
+  UAI retrouve 27/29 identifiants, FINESS 33/33, Bio 10/10 et RGE 45/45
+  couples qualification/SIRET. Les 115 réponses positives portent toutes le
+  même SIRET explicite que l'observation ; les deux UAI absents restent sans
+  interprétation. La file de priorité contient 14 dossiers avec signal
+  sectoriel non attaché au top-1, 37 attachés au top-1, un identifiant non
+  résolu et 120 sans signal sectoriel. Zéro label créé automatiquement.
+  *(commits GitHub : collecte `332094d`, faits `428942b`)*
 - **Faits V4.4 dérivés sans faux consensus** : les 440 vues de l'API
   officielle ont été ramenées à une seule famille de source. Les 172 dossiers
   AUTO portent désormais 53 faits auditables, mais zéro conclusion de
