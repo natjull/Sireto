@@ -123,8 +123,8 @@ def load_relevant_lineage(
     query = """
         WITH relevant_establishments AS (
             SELECT
-                CAST(e.siren AS VARCHAR) AS siren,
-                CAST(e.siret AS VARCHAR) AS siret,
+                e.siren AS siren,
+                e.siret AS siret,
                 e.etatAdministratifEtablissement AS etat_admin,
                 e.denominationUsuelleEtablissement AS denomination,
                 e.enseigne1Etablissement AS enseigne1,
@@ -140,11 +140,11 @@ def load_relevant_lineage(
                 e.etablissementSiege AS is_siege
             FROM read_parquet(?) e
             JOIN audit_sirens s
-              ON CAST(e.siren AS VARCHAR) = s.siren
+              ON e.siren = s.siren
         ),
         relevant_legal_units AS (
             SELECT
-                CAST(u.siren AS VARCHAR) AS siren,
+                u.siren AS siren,
                 u.denominationUniteLegale AS denomination_ul,
                 u.denominationUsuelle1UniteLegale AS denomination_usuelle_ul,
                 u.sigleUniteLegale AS sigle_ul,
@@ -152,7 +152,7 @@ def load_relevant_lineage(
                 u.prenomUsuelUniteLegale AS prenom_usuel_ul
             FROM read_parquet(?) u
             JOIN audit_sirens s
-              ON CAST(u.siren AS VARCHAR) = s.siren
+              ON u.siren = s.siren
         )
         SELECT e.*, u.* EXCLUDE (siren)
         FROM relevant_establishments e
@@ -277,6 +277,7 @@ def build_evidence(
     establishment_snapshot: Path,
     legal_unit_snapshot: Path,
     temp_dir: Path,
+    sirene_snapshot_id: str,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     store = PartitionedCandidateStore(partitions_dir)
     cases = blind_cases.copy()
@@ -370,9 +371,7 @@ def build_evidence(
             sorted(evidence_by_siret),
             separators=(",", ":"),
         )
-        adjudication["sirene_snapshot_id"] = file_sha256(
-            establishment_snapshot
-        )[:16]
+        adjudication["sirene_snapshot_id"] = sirene_snapshot_id
         adjudication["reference_date"] = datetime.now(timezone.utc).date().isoformat()
         adjudications.append(adjudication)
         case_rows.append(
@@ -436,12 +435,15 @@ def freeze_evidence(
     if forbidden & set(blind):
         raise ValueError("Blind evidence input leaks model outputs")
 
+    establishment_snapshot_sha256 = file_sha256(establishment_snapshot)
+    legal_unit_snapshot_sha256 = file_sha256(legal_unit_snapshot)
     cases, candidates, adjudications = build_evidence(
         blind_cases=blind,
         partitions_dir=partitions_dir,
         establishment_snapshot=establishment_snapshot,
         legal_unit_snapshot=legal_unit_snapshot,
         temp_dir=temp_dir,
+        sirene_snapshot_id=establishment_snapshot_sha256[:16],
     )
     identity = {
         "schema_version": SCHEMA_VERSION,
@@ -452,8 +454,8 @@ def freeze_evidence(
             name: file_sha256(Path(partitions_dir) / "manifest" / name)
             for name in ("insee_counts.parquet", "postcode_counts.parquet")
         },
-        "establishment_snapshot_sha256": file_sha256(establishment_snapshot),
-        "legal_unit_snapshot_sha256": file_sha256(legal_unit_snapshot),
+        "establishment_snapshot_sha256": establishment_snapshot_sha256,
+        "legal_unit_snapshot_sha256": legal_unit_snapshot_sha256,
     }
     build_id = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
