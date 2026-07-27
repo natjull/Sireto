@@ -93,6 +93,19 @@ def _shadow(source: dict) -> tuple[dict, dict]:
     return manifest, records
 
 
+def _queue_cases(source: dict) -> dict:
+    return {
+        case["audit_case_id"]: {
+            "audit_case_id": case["audit_case_id"],
+            "service_id": case["service_id"],
+            "top1_siret": case["frozen_top1"]["siret"],
+            "sampling_stratum": "RANDOM_POPULATION",
+            "priority_reason": "P0_KNOWN_PROVISIONAL_CONTRADICTION",
+        }
+        for case in source["cases"]
+    }
+
+
 def test_adapter_uses_only_archived_order_and_frozen_manifest_identifiers():
     source = _source_artifact()
     manifest, shadow_cases = _shadow(source)
@@ -100,6 +113,7 @@ def test_adapter_uses_only_archived_order_and_frozen_manifest_identifiers():
         evidence_artifact=source,
         shadow_manifest=manifest,
         shadow_cases=shadow_cases,
+        queue_cases=_queue_cases(source),
         shadow_evidence_path=Path("/archive/evidence.jsonl"),
     )
 
@@ -109,6 +123,7 @@ def test_adapter_uses_only_archived_order_and_frozen_manifest_identifiers():
     assert facts["frozen_ranker_bundle_id"].eq("ranker-exact").all()
     assert facts["frozen_acceptor_bundle_id"].eq("acceptor-exact").all()
     assert facts["frozen_retrieval_signature"].eq("retrieval-exact").all()
+    assert facts["sampling_stratum"].eq("RANDOM_POPULATION").all()
     for row in facts.to_dict("records"):
         pool = json.loads(row["frozen_candidate_sirets_json"])
         assert pool[0] == row["frozen_top1_siret"]
@@ -131,6 +146,7 @@ def test_date_only_collection_is_encoded_with_explicit_day_precision():
         evidence_artifact=source,
         shadow_manifest=manifest,
         shadow_cases=shadow_cases,
+        queue_cases=_queue_cases(source),
         shadow_evidence_path=Path("/archive/evidence.jsonl"),
     )
     day_rows = proofs[proofs["collected_at_precision"].eq("DAY_EUROPE_PARIS")]
@@ -151,6 +167,7 @@ def test_adapter_refuses_candidate_or_decision_drift():
             evidence_artifact=source,
             shadow_manifest=manifest,
             shadow_cases=shadow_cases,
+            queue_cases=_queue_cases(source),
             shadow_evidence_path=Path("/archive/evidence.jsonl"),
         )
 
@@ -165,12 +182,28 @@ def test_adapter_refuses_unmapped_proof_instead_of_inventing_mapping():
             evidence_artifact=source,
             shadow_manifest=manifest,
             shadow_cases=shadow_cases,
+            queue_cases=_queue_cases(source),
             shadow_evidence_path=Path("/archive/evidence.jsonl"),
         )
 
 
 def test_input_artifact_is_immutable_and_recomputable(tmp_path: Path):
     source = _source_artifact()
+    queue_dir = tmp_path / "queue"
+    queue_dir.mkdir()
+    queue_path = queue_dir / "hard_label_queue.parquet"
+    pd.DataFrame(list(_queue_cases(source).values())).to_parquet(
+        queue_path, index=False
+    )
+    (queue_dir / "manifest.json").write_text(
+        json.dumps(
+            {"outputs": {queue_path.name: file_sha256(queue_path)}}
+        ),
+        encoding="utf-8",
+    )
+    source["source_artifacts"] = [
+        {"path": str(queue_path), "role": "frozen hard-label queue"}
+    ]
     evidence_json = tmp_path / "evidence.json"
     evidence_json.write_text(json.dumps(source), encoding="utf-8")
     shadow_dir = tmp_path / "shadow"

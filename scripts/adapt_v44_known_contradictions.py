@@ -154,11 +154,42 @@ def _load_shadow_cases(
     return found
 
 
+def _load_frozen_queue_cases(
+    evidence_artifact: Mapping[str, Any],
+) -> tuple[Path, dict[str, dict[str, Any]]]:
+    candidates = [
+        Path(str(item.get("path") or ""))
+        for item in evidence_artifact.get("source_artifacts") or []
+        if "hard_label_queue" in str(item.get("path") or "")
+    ]
+    if len(candidates) != 1:
+        raise ValueError("Evidence artifact must reference one frozen hard-label queue")
+    queue_path = candidates[0]
+    manifest_path = queue_path.parent / "manifest.json"
+    manifest = _read_json(manifest_path)
+    expected_hash = (manifest.get("outputs") or {}).get(queue_path.name)
+    if not expected_hash or file_sha256(queue_path) != expected_hash:
+        raise ValueError("Frozen hard-label queue hash mismatch")
+    queue = pd.read_parquet(queue_path)
+    selected = queue.loc[
+        queue["audit_case_id"].astype(str).isin(EXPECTED_CASE_IDS)
+    ].copy()
+    if len(selected) != len(EXPECTED_CASE_IDS):
+        raise ValueError("Frozen hard-label queue does not cover the five cases")
+    if selected["audit_case_id"].astype(str).duplicated().any():
+        raise ValueError("Frozen hard-label queue contains duplicate cases")
+    return queue_path, {
+        str(row["audit_case_id"]): row
+        for row in selected.to_dict("records")
+    }
+
+
 def adapt_inputs(
     *,
     evidence_artifact: Mapping[str, Any],
     shadow_manifest: Mapping[str, Any],
     shadow_cases: Mapping[str, Mapping[str, Any]],
+    queue_cases: Mapping[str, Mapping[str, Any]],
     shadow_evidence_path: Path,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     cases = evidence_artifact.get("cases")
@@ -180,6 +211,11 @@ def adapt_inputs(
         shadow = shadow_cases.get(service_id)
         if shadow is None:
             raise ValueError(f"Missing shadow case for service_id={service_id}")
+        queue_case = queue_cases.get(case_id)
+        if queue_case is None:
+            raise ValueError(f"Missing frozen queue case for audit_case_id={case_id}")
+        if str(queue_case.get("service_id") or "") != service_id:
+            raise ValueError(f"{case_id}: frozen queue service_id mismatch")
         candidates = shadow.get("top_candidates")
         if not isinstance(candidates, list) or not 1 <= len(candidates) <= 10:
             raise ValueError(f"{case_id}: shadow top_candidates must contain 1 to 10 rows")
@@ -198,6 +234,8 @@ def adapt_inputs(
             raise ValueError(f"{case_id}: audited top1 differs from shadow candidate rank 1")
         if str(shadow_decision.get("predicted_siret") or "") != frozen_top1:
             raise ValueError(f"{case_id}: audited top1 differs from shadow decision")
+        if str(queue_case.get("top1_siret") or "") != frozen_top1:
+            raise ValueError(f"{case_id}: audited top1 differs from frozen queue")
 
         facts.append(
             {
@@ -217,8 +255,10 @@ def adapt_inputs(
                 "frozen_candidate_source_path": str(shadow_evidence_path),
                 "frozen_candidate_source_line": int(shadow["_line_number"]),
                 "positive_injection_by_adapter": False,
-                "sampling_stratum": "",
-                "priority_reason": "P0_KNOWN_PROVISIONAL_CONTRADICTION",
+                "sampling_stratum": str(
+                    queue_case.get("sampling_stratum") or ""
+                ),
+                "priority_reason": str(queue_case.get("priority_reason") or ""),
             }
         )
 
@@ -308,6 +348,7 @@ def build_input_artifact(
     shadow_evidence_path = shadow_dir / "evidence.jsonl"
     shadow_manifest = _validate_shadow_manifest(shadow_dir)
     evidence_artifact = _read_json(evidence_json)
+    queue_path, queue_cases = _load_frozen_queue_cases(evidence_artifact)
     service_ids = {
         str(case.get("service_id") or "")
         for case in evidence_artifact.get("cases") or []
@@ -322,6 +363,7 @@ def build_input_artifact(
         evidence_artifact=evidence_artifact,
         shadow_manifest=shadow_manifest,
         shadow_cases=shadow_cases,
+        queue_cases=queue_cases,
         shadow_evidence_path=shadow_evidence_path,
     )
 
@@ -330,6 +372,7 @@ def build_input_artifact(
         "evidence_json_sha256": file_sha256(evidence_json),
         "shadow_manifest_sha256": file_sha256(shadow_manifest_path),
         "shadow_evidence_sha256": file_sha256(shadow_evidence_path),
+        "hard_label_queue_sha256": file_sha256(queue_path),
     }
     build_id = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
@@ -362,6 +405,10 @@ def build_input_artifact(
                 "shadow_evidence": {
                     "path": str(shadow_evidence_path),
                     "sha256": identity["shadow_evidence_sha256"],
+                },
+                "hard_label_queue": {
+                    "path": str(queue_path),
+                    "sha256": identity["hard_label_queue_sha256"],
                 },
             },
             "frozen_identifiers": {
@@ -416,6 +463,7 @@ def validate_input_artifact(path: Path) -> None:
     evidence_artifact = _read_json(
         Path(manifest["inputs"]["evidence_json"]["path"])
     )
+    _, queue_cases = _load_frozen_queue_cases(evidence_artifact)
     service_ids = {
         str(case["service_id"]) for case in evidence_artifact["cases"]
     }
@@ -427,6 +475,7 @@ def validate_input_artifact(path: Path) -> None:
             shadow_evidence_path,
             service_ids=service_ids,
         ),
+        queue_cases=queue_cases,
         shadow_evidence_path=shadow_evidence_path,
     )
     for name, frame in zip(("facts", "proofs", "judgments"), expected):
