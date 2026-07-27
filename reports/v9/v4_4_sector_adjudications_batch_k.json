@@ -1,0 +1,855 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-1",
+  "created_at": "2026-07-28T01:15:00+02:00",
+  "policy": {
+    "scope": "Douze décisions AUTO_MATCH de la file V4.3, hors contradictions connues et lots A à J.",
+    "selection_order": [
+      "P1_AUTO_ACTIVE_INPUT_DISAGREEMENT",
+      "P0_AUTO_ADDRESS_ONLY"
+    ],
+    "evidence_rule": "Deux groupes de producteurs indépendants au minimum pour valider TOP1_CORRECT, TOP1_WRONG ou AMBIGUOUS.",
+    "alternative_siret_rule": "Un SIRET alternatif n'est publié que s'il est naturellement présent dans le top 10 figé et confirmé exactement par deux groupes indépendants.",
+    "conservative_rule": "UNRESOLVED lorsque l'absence de date de référence ou une succession d'exploitants empêche une décision exacte."
+  },
+  "source_artifacts": [
+    {
+      "role": "V4.3 hard-label queue",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc"
+    },
+    {
+      "role": "Archived official SIRENE evidence",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3"
+    },
+    {
+      "role": "Frozen V4.1 top-10 candidates",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+      "sha256": "b772a022ecf2de11d1ecccaa1727fed1683d9cc9578535cba968e46c59d63210"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "top1_correct_evidence_validated": 3,
+    "top1_wrong_evidence_validated": 4,
+    "ambiguous": 3,
+    "unresolved": 2,
+    "validated_correct_siret_count": 3,
+    "training_eligible_count": 10
+  },
+  "cases": [
+    {
+      "audit_case_id": "ca7c134e749b3383",
+      "service_id": "FR023490",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "COMPLEXE SPORTIF DE LA GARE ET VIDEOSURV",
+        "address": "Cours de la République, 76600 Le Havre",
+        "input_siret": "38368967600021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "39125560100042",
+        "siren": "391255601"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "LOCAL_PUBLIC_AUTHORITY"
+      ],
+      "decision_reason": "Le top-1 est la quincaillerie Cosson au 35 cours de la République. La Ville du Havre identifie séparément le Complexe multisport de la Gare au 2 rue André-Siegfried. Le mot « gare » et la proximité géographique ont rapproché deux identités différentes.",
+      "sources": [
+        {
+          "evidence_id": "ca7c134e749b3383-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=39125560100042&per_page=1",
+          "collected_at": "2026-07-27T20:49:46.234295+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "ca7c134e749b3383",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 39125560100042 appartient à SARL COSSON-QUINCAILLERIE DE LA GARE.",
+            "Son établissement est au 35 cours de la République au Havre."
+          ]
+        },
+        {
+          "evidence_id": "ca7c134e749b3383-lehavre-equipment",
+          "producer": "Ville du Havre",
+          "source_family": "LOCAL_PUBLIC_AUTHORITY",
+          "canonical_source_family": "OFFICIAL_VILLE_LE_HAVRE_PUBLICATION",
+          "independence_group": "VILLE_LE_HAVRE",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_PUBLIC_EQUIPMENT_AND_ADDRESS",
+          "document_type": "annuaire municipal archivé",
+          "url": "https://lehavre.fr/annuaire-equipements/gymnases",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/ca7c134e749b3383-lehavre-gymnases.html",
+          "artifact_sha256": "b62761c26a737c4adf56c9e937e7d6f755c848c15d56d914aebbd18cd92f52ee",
+          "archived_facts": [
+            "La Ville recense le Complexe multisport de la Gare.",
+            "L'adresse publiée est 2 rue André-Siegfried, 76600 Le Havre."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "8187c25d35882baf",
+      "service_id": "FR030337",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "OSP HOLDING (FRANCE) PARKING MARTINI",
+        "address": "Rue Jean-Baptiste Martini, 83500 La Seyne-sur-Mer",
+        "input_siret": "24830054300217",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "21830126500243",
+        "siren": "218301265"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "LOCAL_PUBLIC_AUTHORITY"
+      ],
+      "decision_reason": "Le top-1 est l'école primaire Jean-Baptiste-Martini. La Métropole décrit à la même rue un autre équipement, le parking public Martini. La rue commune ne suffit pas à confondre l'école et le parking.",
+      "sources": [
+        {
+          "evidence_id": "8187c25d35882baf-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=21830126500243&per_page=1",
+          "collected_at": "2026-07-27T20:49:25.590416+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "8187c25d35882baf",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 21830126500243 appartient à la Commune de La Seyne-sur-Mer.",
+            "L'enseigne enregistrée est École primaire Jean-Baptiste-Martini."
+          ]
+        },
+        {
+          "evidence_id": "8187c25d35882baf-tpm-parking",
+          "producer": "Métropole Toulon Provence Méditerranée",
+          "source_family": "LOCAL_PUBLIC_AUTHORITY",
+          "canonical_source_family": "OFFICIAL_METROPOLE_TPM_PUBLICATION",
+          "independence_group": "METROPOLE_TPM",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_PUBLIC_EQUIPMENT_AND_ADDRESS",
+          "document_type": "fiche officielle d'équipement archivée",
+          "url": "https://metropoletpm.fr/parking-martini-la-seyne-sur-mer",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/8187c25d35882baf-tpm-parking-martini.html",
+          "artifact_sha256": "10c5516ae552e65bdcc09d020ca2023c34f7899de4e0e7e0480e158ffe1e2ffa",
+          "archived_facts": [
+            "Le Parking Martini est présenté comme un parking public.",
+            "Son accès est rue Jean-Baptiste-Martini à La Seyne-sur-Mer."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "d8cd1b7b60ebf807",
+      "service_id": "FR034546",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "K2 COLLECTIONS",
+        "address": "646 route du Couardet, 74210 Doussard",
+        "input_siret": "53748765400015",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "91810116300023",
+        "siren": "918101163"
+      },
+      "adjudication_label": "AMBIGUOUS",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "CORPORATE_PRIMARY_SOURCE"
+      ],
+      "decision_reason": "Le K2 Collections confirme un siège de groupe à Doussard, tandis que le pool figé contient plusieurs sociétés liées à HOLDING K au 646 route du Couardet. Aucune preuve publique ne désigne BASE CAMP K2 comme l'unique porteur SIRET de la marque générique « K2 Collections ».",
+      "sources": [
+        {
+          "evidence_id": "d8cd1b7b60ebf807-registry-pool",
+          "producer": "INSEE, via le snapshot SIRENE du retrieval V4.1",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_MULTIPLE_RELATED_ENTITIES_AT_ADDRESS",
+          "document_type": "top 10 figé archivé",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=91810116300023&per_page=1",
+          "collected_at": "2026-07-27T20:49:52.050651+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+          "row_selector": {
+            "service_id": "FR034546",
+            "rank_range": "1-10"
+          },
+          "archived_facts": [
+            "Le top-1 figé est BASE CAMP K2, SIRET 91810116300023.",
+            "K2 HOTEL MANAGEMENT et plusieurs autres sociétés dirigées par HOLDING K apparaissent aussi dans le top 10 au 646 route du Couardet."
+          ]
+        },
+        {
+          "evidence_id": "d8cd1b7b60ebf807-k2-careers",
+          "producer": "Le K2 Collections",
+          "source_family": "CORPORATE_PRIMARY_SOURCE",
+          "canonical_source_family": "OFFICIAL_K2_COLLECTIONS_PUBLICATION",
+          "independence_group": "K2_COLLECTIONS",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_GENERIC_GROUP_AT_CITY",
+          "document_type": "site carrières officiel archivé",
+          "url": "https://carrieres.lek2collections.com/fr",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/d8cd1b7b60ebf807-k2-careers.html",
+          "artifact_sha256": "55f1af615f12474b84fb99abc554446ae4cf2d4147340c4c2c7d0b65f9d17906",
+          "archived_facts": [
+            "Le site se présente comme Le K2 Collections.",
+            "Il décrit son nouveau siège et ses équipes support à Doussard sans publier un SIRET porteur unique."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le libellé CRM désigne un groupe ou une marque, pas une personne morale unique.",
+        "Plusieurs entités liées occupent l'adresse et aucun document primaire n'attribue exactement la marque au top-1."
+      ]
+    },
+    {
+      "audit_case_id": "025647bf91cc6122",
+      "service_id": "FR031353",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "FAURIE AXESS SUD OUEST SITE AGEN",
+        "address": "9 allée Larroumet et Lagarde, 47550 Boé",
+        "input_siret": "85259804400026",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "85242768100063",
+        "siren": "852427681"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "BRAND_NETWORK_PRIMARY_SOURCE"
+      ],
+      "decision_reason": "Volkswagen publie FAURIE AXESS SUD-OUEST au numéro 9, conforme au CRM. Le top-1 est une autre personne morale, FAURIE PREMIUM SUD-OUEST, au numéro 19. Le rattachement au même groupe automobile ne suffit pas pour un SIRET exact.",
+      "sources": [
+        {
+          "evidence_id": "025647bf91cc6122-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=85242768100063&per_page=1",
+          "collected_at": "2026-07-27T20:48:33.384294+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "025647bf91cc6122",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 85242768100063 appartient à FAURIE PREMIUM SUD-OUEST.",
+            "L'établissement correspondant est au 19 allée Larroumet et Lagarde à Boé."
+          ]
+        },
+        {
+          "evidence_id": "025647bf91cc6122-volkswagen",
+          "producer": "Volkswagen France et distributeur FAURIE AXESS SUD-OUEST",
+          "source_family": "BRAND_NETWORK_PRIMARY_SOURCE",
+          "canonical_source_family": "BRAND_NETWORK_PRIMARY_SOURCE",
+          "independence_group": "VOLKSWAGEN_NETWORK",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_CRM_ENTITY_NAME_AND_ADDRESS",
+          "document_type": "fiche distributeur officielle archivée",
+          "url": "https://www.volkswagen.fr/fr/partenaire/faurie-agen.html",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/025647bf91cc6122-vw-faurie-agen.html",
+          "artifact_sha256": "099f472cdc5eb6124eeefdc6ac8573684e18aa0024cf82c684b50f9a4a07f5e8",
+          "archived_facts": [
+            "La fiche est intitulée FAURIE AXESS SUD-OUEST.",
+            "L'adresse de l'activité publiée est 9 allée Larroumet et Lagarde, 47550 Boé."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET alternatif exact du top 10 n'est confirmé par deux producteurs indépendants."
+      ]
+    },
+    {
+      "audit_case_id": "013ef156b53b706d",
+      "service_id": "FR032867",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SIDONIE (Groupe SOTHOFERM)",
+        "address": "4 rue des Artisans, 85270 Saint-Hilaire-de-Riez",
+        "input_siret": "34772148200011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "33060649200016",
+        "siren": "330606492"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "33060649200016",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "CORPORATE_PRIMARY_SOURCE"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme SIDONIE à la rue des Artisans. Le groupe Sothogam confirme que SIDONIE est sa filiale de Saint-Hilaire-de-Riez. La mention parenthétique « Groupe SOTHOFERM » décrit l'appartenance au groupe, pas le SIRET du siège SOTHOFERM à Thouars.",
+      "sources": [
+        {
+          "evidence_id": "013ef156b53b706d-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_EXACT_TOP1",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=33060649200016&per_page=1",
+          "collected_at": "2026-07-27T20:48:19.678216+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "013ef156b53b706d",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 33060649200016 appartient à SIDONIE.",
+            "L'établissement actif est rue des Artisans à Saint-Hilaire-de-Riez."
+          ]
+        },
+        {
+          "evidence_id": "013ef156b53b706d-sothogam",
+          "producer": "Groupe Sothogam",
+          "source_family": "CORPORATE_PRIMARY_SOURCE",
+          "canonical_source_family": "OFFICIAL_SOTHOGAM_PUBLICATION",
+          "independence_group": "SOTHOGAM",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_GROUP_SUBSIDIARY_AND_GEO",
+          "document_type": "fiche filiale officielle archivée",
+          "url": "https://groupe-sothogam.fr/nos-filiales/sidonie",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/013ef156b53b706d-sothogam-sidonie.html",
+          "artifact_sha256": "1b0236809290b600403d19826e45c38a37fed1be508e93f85c443496c11f2a7a",
+          "archived_facts": [
+            "SIDONIE est présentée comme une filiale fabricante de fermetures.",
+            "La filiale est basée à Saint-Hilaire-de-Riez."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "bb7dfb55e86ee38b",
+      "service_id": "FR029091",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ALL SUITE RUNGIS - GESTORLY",
+        "address": "16 rue du Pont des Halles, 94150 Rungis",
+        "input_siret": "53318756300028",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "92890263400015",
+        "siren": "928902634"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "STATE_PUBLICATION"
+      ],
+      "decision_reason": "La préfecture attribuait explicitement l'hôtel All Suites de Rungis à GESTORLY en 2022. Le snapshot SIRENE courant attribue maintenant l'enseigne ALL SUITES RUNGIS à une autre personne morale au même endroit. Sans date de référence CRM ni preuve du changement d'exploitant, l'exactitude temporelle du top-1 ne peut pas être tranchée.",
+      "sources": [
+        {
+          "evidence_id": "bb7dfb55e86ee38b-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_CURRENT_OPERATOR_CANDIDATE",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=92890263400015&per_page=1",
+          "collected_at": "2026-07-27T20:49:41.085086+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "bb7dfb55e86ee38b",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 actif est CHRISTIANE MARC (JASPART), nom commercial ALL SUITES RUNGIS.",
+            "L'adresse est 16 rue du Pont des Halles à Rungis."
+          ]
+        },
+        {
+          "evidence_id": "bb7dfb55e86ee38b-prefecture-2022",
+          "producer": "Préfecture du Val-de-Marne",
+          "source_family": "STATE_PUBLICATION",
+          "canonical_source_family": "STATE_PUBLICATION",
+          "independence_group": "PREFECTURE_VAL_DE_MARNE",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_HISTORICAL_OPERATOR_AT_SITE",
+          "document_type": "recueil des actes administratifs archivé",
+          "url": "https://www.val-de-marne.gouv.fr/contenu/telechargement/23034/178892/file/RAA%20N%C2%B034%20du%2031%20octobre%20au%204%20novembre%202022.pdf",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/bb7dfb55e86ee38b-prefecture-gestorly.pdf",
+          "artifact_sha256": "0f54290e97f3ced3f16a6e80eec195aaddd524532f2be606b493626a0d657add",
+          "archived_facts": [
+            "Un arrêté de 2022 nomme « Gestorly - ALL SUITES à Rungis ».",
+            "GESTORLY y est le demandeur pour l'hôtel situé 16 rue du Pont des Halles."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "La date de référence du CRM est absente.",
+        "Le changement éventuel d'exploitant entre GESTORLY et le top-1 courant n'est pas documenté."
+      ]
+    },
+    {
+      "audit_case_id": "6daa1cc5921e8379",
+      "service_id": "FR041884",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SOFRAT DEPAUL",
+        "address": "Lieu-dit La Fontaine Rouge, 77410 Annet-sur-Marne",
+        "input_siret": "87943116100022",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "33222608300092",
+        "siren": "332226083"
+      },
+      "adjudication_label": "AMBIGUOUS",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "CORPORATE_PRIMARY_SOURCE"
+      ],
+      "decision_reason": "SIRENE distingue SOFRAT et DEPAUL, deux personnes morales actives à La Fontaine Rouge. DEPAUL présente elle-même SOFRAT comme son partenaire transport. Le libellé CRM concatène donc deux identités légitimes et ne permet pas de choisir un SIRET exact unique.",
+      "sources": [
+        {
+          "evidence_id": "6daa1cc5921e8379-registry-pair",
+          "producer": "INSEE, via le snapshot SIRENE du retrieval V4.1",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_TWO_ACTIVE_ENTITIES_AT_SITE",
+          "document_type": "top 10 figé archivé",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=33222608300092&per_page=1",
+          "collected_at": "2026-07-27T20:49:21.614097+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+          "row_selector": {
+            "service_id": "FR041884",
+            "rank_range": "1-2"
+          },
+          "archived_facts": [
+            "SOFRAT 33222608300092 est au rang 1.",
+            "DEPAUL 87943116100022 est au rang 2 à la même plateforme."
+          ]
+        },
+        {
+          "evidence_id": "6daa1cc5921e8379-depaul-site",
+          "producer": "DEPAUL",
+          "source_family": "CORPORATE_PRIMARY_SOURCE",
+          "canonical_source_family": "OFFICIAL_DEPAUL_PUBLICATION",
+          "independence_group": "DEPAUL",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_PARTNERSHIP_EXPLAINS_COMPOUND_NAME",
+          "document_type": "site officiel archivé",
+          "url": "https://www.depaul.ac/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/6daa1cc5921e8379-depaul.html",
+          "artifact_sha256": "d4dbc9796b842433ed9b0e989989f3cbca6ab3e47dc2972a52652d50094545eb",
+          "archived_facts": [
+            "DEPAUL présente sa plateforme de La Fontaine Rouge.",
+            "DEPAUL cite SOFRAT comme partenaire pour le chargement et le transport."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le libellé CRM ne dit pas si la ligne vise l'exploitant DEPAUL ou son partenaire transport SOFRAT."
+      ]
+    },
+    {
+      "audit_case_id": "5e1a8a424e479e16",
+      "service_id": "AC012817",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "EUROPE SERVICE GROUPE",
+        "address": "1 rue Martin-Luther-King, 91170 Viry-Châtillon",
+        "input_siret": "45371190500084",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "42388893200088",
+        "siren": "423888932"
+      },
+      "adjudication_label": "AMBIGUOUS",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "PUBLIC_BUSINESS_DIRECTORY"
+      ],
+      "decision_reason": "Le nom générique Europe Services Groupe est bien associé à l'adresse, mais SIRENE y recense au moins EUROPE SERVICES PROPRETÉ et EUROPE SERVICES DÉCHETS comme sociétés distinctes. Le CRM ne précise pas la filiale visée.",
+      "sources": [
+        {
+          "evidence_id": "5e1a8a424e479e16-registry-pair",
+          "producer": "INSEE, via le snapshot SIRENE du retrieval V4.1",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_TWO_ACTIVE_GROUP_ENTITIES_AT_SITE",
+          "document_type": "top 10 figé archivé",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=42388893200088&per_page=1",
+          "collected_at": "2026-07-27T20:49:17.824148+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/shadow/v4_1/runs/v41_shadow_f1058826_20260727_v3/candidates_top10.parquet",
+          "row_selector": {
+            "service_id": "AC012817",
+            "rank_range": "1-2"
+          },
+          "archived_facts": [
+            "EUROPE SERVICES PROPRETÉ 42388893200088 est au rang 1.",
+            "EUROPE SERVICES DÉCHETS 45371190500084 est au rang 2 à la même adresse."
+          ]
+        },
+        {
+          "evidence_id": "5e1a8a424e479e16-public-directory",
+          "producer": "AllBiz, données publiques d'établissement",
+          "source_family": "PUBLIC_BUSINESS_DIRECTORY",
+          "canonical_source_family": "PUBLIC_BUSINESS_DIRECTORY",
+          "independence_group": "ALLBIZ_DIRECTORY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_GENERIC_GROUP_NAME_AT_ADDRESS",
+          "document_type": "capture textuelle publique archivée via Jina Reader",
+          "url": "https://www.allbiz.fr/europe-services-groupe_3q-01-69-54-17-17",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/5e1a8a424e479e16-allbiz-europe-services-reader.txt",
+          "artifact_sha256": "43ae702922938ac4c4dc71493723703caa38b95fc46f5a6739f39d0b2c1896a6",
+          "archived_facts": [
+            "L'annuaire associe Europe Services Groupe au 1 rue Martin-Luther-King.",
+            "La fiche ne publie pas de SIRET permettant de choisir une filiale."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le libellé de groupe ne distingue pas Propreté de Déchets.",
+        "L'adresse est partagée par plusieurs sociétés liées."
+      ]
+    },
+    {
+      "audit_case_id": "ade7ac46e14440f0",
+      "service_id": "FR021353",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BP FRANCE PERONNE",
+        "address": "38 rue de l'Industrie, 80200 Péronne",
+        "input_siret": "54203432712979",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "90537179500022",
+        "siren": "905371795"
+      },
+      "adjudication_label": "UNRESOLVED",
+      "evidence_validated": false,
+      "training_eligible": false,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "STATE_ENVIRONMENTAL_REGISTRY"
+      ],
+      "decision_reason": "Le CRM conserve l'ancien exploitant BP FRANCE, désormais fermé, tandis que le registre environnemental et SIRENE identifient CASTROL FRANCE au même site. Sans date de référence CRM ni acte établissant la date de transfert, il est impossible de juger le top-1 pour la période de la ligne CRM.",
+      "sources": [
+        {
+          "evidence_id": "ade7ac46e14440f0-registry-current",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_CURRENT_ENTITY_AND_CLOSED_INPUT",
+          "document_type": "réponses API officielles archivées",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=90537179500022&per_page=1",
+          "collected_at": "2026-07-27T20:49:37.696066+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "ade7ac46e14440f0",
+            "query_kinds": [
+              "TOP1_SIRET",
+              "INPUT_SIRET"
+            ]
+          },
+          "archived_facts": [
+            "CASTROL FRANCE 90537179500022 est actif au 38 rue de l'Industrie.",
+            "BP FRANCE 54203432712979 est fermé à cette adresse."
+          ]
+        },
+        {
+          "evidence_id": "ade7ac46e14440f0-georisques",
+          "producer": "Géorisques, ministère de la Transition écologique",
+          "source_family": "STATE_ENVIRONMENTAL_REGISTRY",
+          "canonical_source_family": "STATE_ENVIRONMENTAL_REGISTRY",
+          "independence_group": "GEORISQUES_INSTALLATIONS",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_CURRENT_SITE_OPERATOR",
+          "document_type": "fiche d'installation classée archivée",
+          "url": "https://www.georisques.gouv.fr/risques/installations/donnees/details/0005102438",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/ade7ac46e14440f0-georisques-castrol.html",
+          "artifact_sha256": "efba1625e87b305190f1798960c6657b256cd1898dd4091a103f5a65301e050c",
+          "archived_facts": [
+            "L'installation en exploitation est publiée sous CASTROL FRANCE.",
+            "Le SIRET affiché est 90537179500022 au 38 rue de l'Industrie à Péronne."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "La date de référence du CRM est absente.",
+        "La date et la nature juridique du passage de BP FRANCE à CASTROL FRANCE ne sont pas établies par les preuves collectées."
+      ]
+    },
+    {
+      "audit_case_id": "d06d480197c1893d",
+      "service_id": "FR016888",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Parcours",
+        "address": "25 route de la Salle, 74960 Cran-Gevrier",
+        "input_siret": "39939948400000",
+        "input_siret_state": "NOT_FOUND"
+      },
+      "frozen_top1": {
+        "siret": "35186769201068",
+        "siren": "351867692"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "CORPORATE_PRIMARY_SOURCE"
+      ],
+      "decision_reason": "Le top-1 appartient à TEMSYS, alors que le site officiel Ayvens distingue explicitement TEMSYS et PARCOURS comme deux sociétés avec deux SIREN. Le CRM nomme PARCOURS : la marque ombrelle Ayvens et l'adresse partagée ne rendent pas le SIRET TEMSYS exact.",
+      "sources": [
+        {
+          "evidence_id": "d06d480197c1893d-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=35186769201068&per_page=1",
+          "collected_at": "2026-07-27T20:49:48.148329+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "d06d480197c1893d",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 35186769201068 appartient à TEMSYS, nom commercial AYVENS FRANCE.",
+            "L'établissement est au 25 route de la Salle."
+          ]
+        },
+        {
+          "evidence_id": "d06d480197c1893d-ayvens-entities",
+          "producer": "Ayvens France",
+          "source_family": "CORPORATE_PRIMARY_SOURCE",
+          "canonical_source_family": "OFFICIAL_AYVENS_FRANCE_PUBLICATION",
+          "independence_group": "AYVENS_FRANCE",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_DISTINCT_LEGAL_ENTITIES",
+          "document_type": "page officielle fournisseurs archivée",
+          "url": "https://www.ayvens.com/fr-fr/facturation-dematerisalisee-partenaire-sept26/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/d06d480197c1893d-ayvens-parcours-siren.html",
+          "artifact_sha256": "830319c72a4b2cbb493d87a1b1138b6ae65f471336868bf841af3667cf28cc18",
+          "archived_facts": [
+            "Ayvens publie TEMSYS avec le SIREN 351867692.",
+            "Ayvens publie séparément PARCOURS avec le SIREN 399399484."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET exact de PARCOURS à cette adresse n'est pas présent dans le top 10 figé ; aucun alternatif ne peut être publié."
+      ]
+    },
+    {
+      "audit_case_id": "606f2c3ac74100c6",
+      "service_id": "FR020722",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "NAZ Dominique Notaire",
+        "address": "88 rue du Centre, 74140 Douvaine",
+        "input_siret": "34235946000025",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "40382366900029",
+        "siren": "403823669"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "40382366900029",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "PROFESSIONAL_AUTHORITY_DIRECTORY"
+      ],
+      "decision_reason": "Le CRM nomme une personne précise, Dominique Naz. SIRENE attribue le top-1 à cette personne au 88 rue du Centre, et l'annuaire officiel des Notaires de France confirme Maître Dominique Naz à cette adresse.",
+      "sources": [
+        {
+          "evidence_id": "606f2c3ac74100c6-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_EXACT_PERSON_AND_ADDRESS",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=40382366900029&per_page=1",
+          "collected_at": "2026-07-27T20:49:18.446167+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "606f2c3ac74100c6",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 40382366900029 appartient à DOMINIQUE NAZ.",
+            "L'établissement actif est au 88 rue du Centre à Douvaine."
+          ]
+        },
+        {
+          "evidence_id": "606f2c3ac74100c6-notaires-fr",
+          "producer": "Conseil supérieur du notariat, Notaires de France",
+          "source_family": "PROFESSIONAL_AUTHORITY_DIRECTORY",
+          "canonical_source_family": "PROFESSIONAL_AUTHORITY_DIRECTORY",
+          "independence_group": "NOTAIRES_DE_FRANCE",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_PERSON_ROLE_AND_ADDRESS",
+          "document_type": "fiche d'annuaire professionnel officielle archivée",
+          "url": "https://www.notaires.fr/fr/notaire/dominique-naz",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/606f2c3ac74100c6-notaires-fr.html",
+          "artifact_sha256": "249e5edd04238177d12811f4ee3182fa99056dee2b65cdf15795951445e6fe65",
+          "archived_facts": [
+            "La fiche nomme Maître Dominique Naz, notaire à Douvaine.",
+            "Le bureau principal est au 88 rue du Centre."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "e8306364c72f6be0",
+      "service_id": "FR017684",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "CABINET HEMON CAMUS",
+        "address": "1 place George Washington, 44300 Nantes",
+        "input_siret": "41177707100019",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "41177707100092",
+        "siren": "411777071"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "41177707100092",
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "CORPORATE_PRIMARY_SOURCE"
+      ],
+      "decision_reason": "Le top-1 est l'établissement HEMON-CAMUS situé exactement 1 place George-Washington. L'annuaire officiel du cabinet publie à cette adresse son agence HÉMON CAMUS Immobilier - Nantes Capitole.",
+      "sources": [
+        {
+          "evidence_id": "e8306364c72f6be0-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "SIRENE_REGISTRY",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_EXACT_TOP1_AND_ADDRESS",
+          "document_type": "réponse API officielle archivée",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=41177707100092&per_page=1",
+          "collected_at": "2026-07-27T20:49:56.313930+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "e8306364c72f6be0",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 41177707100092 appartient à HEMON-CAMUS.",
+            "L'établissement actif est au 1 place George-Washington à Nantes."
+          ]
+        },
+        {
+          "evidence_id": "e8306364c72f6be0-hemon-agencies",
+          "producer": "HÉMON CAMUS Immobilier",
+          "source_family": "CORPORATE_PRIMARY_SOURCE",
+          "canonical_source_family": "OFFICIAL_HEMON_CAMUS_PUBLICATION",
+          "independence_group": "HEMON_CAMUS",
+          "counts_for_independence": true,
+          "proof_kind": "IDENTITY_OFFICIAL_AGENCY_NAME_AND_ADDRESS",
+          "document_type": "capture textuelle du site officiel archivée via Jina Reader",
+          "url": "https://www.cabinet-hemon.com/catalog/agences.php",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_k_20260728/e8306364c72f6be0-hemon-agencies-reader.txt",
+          "artifact_sha256": "afc75f3e0b238227bf6b17838e06ff318d9462c81e61b86ba42224403af3ce1a",
+          "archived_facts": [
+            "Le cabinet publie l'agence HÉMON CAMUS Immobilier - Nantes Capitole.",
+            "L'adresse publiée est 1 place George-Washington, 44300 Nantes."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
