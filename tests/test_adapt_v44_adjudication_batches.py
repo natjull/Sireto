@@ -89,6 +89,7 @@ def _queue(case: dict | None = None) -> pd.DataFrame:
                 "audit_case_id": case["audit_case_id"],
                 "service_id": case["service_id"],
                 "top1_siret": case["frozen_top1"]["siret"],
+                "decision": "AUTO_MATCH",
                 "sampling_stratum": "RANDOM_POPULATION",
                 "priority_reason": "P1_OTHER_AUTO_UNRESOLVED",
             }
@@ -271,6 +272,18 @@ def test_adapter_refuses_queue_shadow_and_pool_drift() -> None:
     queue = _queue(case)
     queue.loc[0, "top1_siret"] = SECOND
     with pytest.raises(ValueError, match="top1 mismatch with V4.3 queue"):
+        adapt_batches(
+            batches=[batch],
+            queue=queue,
+            top10=top10,
+            decisions=decisions,
+            shadow_manifest=manifest,
+            top10_path=Path("/frozen/top10.parquet"),
+        )
+
+    queue = _queue(case)
+    queue.loc[0, "decision"] = "REVIEW"
+    with pytest.raises(ValueError, match="accepts only frozen AUTO_MATCH"):
         adapt_batches(
             batches=[batch],
             queue=queue,

@@ -378,6 +378,10 @@ def adapt_batches(
             sampling = _text(queue_row.get("sampling_stratum"))
             if not sampling:
                 raise ValueError(f"{case_id}: frozen sampling_stratum is empty")
+            if _text(queue_row.get("decision")).upper() != "AUTO_MATCH":
+                raise ValueError(
+                    f"{case_id}: V4.4 first pass accepts only frozen AUTO_MATCH cases"
+                )
             pool = pools.get(service_id)
             if pool is None:
                 raise ValueError(f"{case_id}: service absent from V4.1 top10")
