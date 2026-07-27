@@ -227,6 +227,11 @@ cinquième. Chaque requête fit reçoit exactement une prédiction OOF. Un modè
 final apprend ensuite sur tout le `fit` et score le `dev`, qui reste
 strictement hors échantillon.
 
+Une requête `MATCH_EXACT` dont la vérité est absente du pool ne contient
+aucune paire positive exploitable : elle est exclue du fit ranker, sans
+réinjection, mais demeure obligatoirement dans toutes les métriques
+end-to-end. Les nombres exclus sont publiés par split et par fold.
+
 ## 7. Comparaison équitable
 
 La sélection entre A et B utilise exclusivement les 1 217 labels
@@ -273,6 +278,21 @@ Publier pour A et B :
 - résultats par segment historique disponible ;
 - listes hashées des corrections et régressions ;
 - latences de scoring p50/p95 et temps d'entraînement sur le Mac.
+
+Les segments préenregistrés sont exactement `input_siret_state` et
+`source_segment`, avec une ligne par valeur observée et une ligne globale.
+Aucun autre découpage n'entre dans un gate.
+
+L'intervalle bootstrap rééchantillonne avec remise les 1 217 indices
+appariés, calcule à chaque réplication la moyenne de `hit_B - hit_A`, utilise
+`numpy.random.default_rng(42)`, 10 000 réplications et les percentiles 2,5 %
+et 97,5 %. Le test de McNemar est le test binomial exact bilatéral sur les
+seules paires discordantes, avec probabilité nulle `0,5`.
+
+La latence est mesurée requête par requête sur le dev complet : un warm-up
+hors mesure, puis trois passages dans le même ordre de requêtes pour chaque
+modèle. Les p50 et p95 portent sur les 4 368 durées individuelles par
+variante, hors chargement du modèle et lecture parquet.
 
 ## 8. Gates de promotion
 
