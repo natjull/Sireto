@@ -1,25 +1,27 @@
 # V4.4 — gate d'adjudication autonome
 
-Date d'évaluation : 27 juillet 2026  
-Verdict : **`PIVOT_MORE_EVIDENCE`**
+Date d'évaluation : 28 juillet 2026
+Verdict : **`STOP_AUTONOMOUS_LABELING`**
 
 ## Résultat
 
-Les huit lots sectoriels A–H ont été reliés à la file V4.3, aux décisions du
-shadow V4.1 et à leurs vrais pools top-10. Ils ont ensuite été combinés aux
-cinq contradictions déjà canoniques.
+Les lots A–R et les contradictions connues couvrent désormais exactement les
+172 décisions `AUTO_MATCH` de la file V4.3. Chaque lot a été relié aux
+décisions du shadow V4.1 et à ses vrais pools top-10.
 
 | Mesure | Observé | Gate | Manque |
 |---|---:|---:|---:|
-| `TOP1_CORRECT` validés | 55 | 75 | 20 |
-| `TOP1_WRONG` validés | 25 | 50 | 25 |
-| Cas random validés | 32 | 30 | 0 |
+| `TOP1_CORRECT` validés | 114 | 75 | 0 |
+| `TOP1_WRONG` validés | 42 | 50 | 8 |
+| Cas random validés | 53 | 30 | 0 |
 | Décisions fondées sur une preuve interdite | 0 | 0 | 0 |
 
-Le corpus dédupliqué contient 89 cas : 81 décisions validées par au moins deux
-groupes de preuves indépendants et huit `UNRESOLVED`. Il fournit 81 scènes
-éligibles à l'accepteur et 57 scènes éligibles au ranker selon les règles
-gelées. Le sous-gate représentatif est franchi avec 32 cas random validés.
+Le corpus dédupliqué contient les 172 cas prévus : 162 décisions validées par
+au moins deux groupes de preuves indépendants, dont 114 `TOP1_CORRECT`, 42
+`TOP1_WRONG` et six `AMBIGUOUS`; dix restent `UNRESOLVED`. Il fournit 162
+scènes éligibles à l'accepteur et 117 scènes éligibles au ranker selon les
+règles gelées. Le sous-gate représentatif est franchi avec 53 cas random
+validés.
 
 ## Contrôles effectués
 
@@ -53,20 +55,28 @@ création de cible d'entraînement.
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudication_batch_inputs/45791184d9219680`
 - Adjudications F–H :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/1e2c68337408c453`
+- Entrées canoniques I–L :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudication_batch_inputs/5bc212009bfa4514`
+- Adjudications I–L :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/925ef3f8ef3f3a4a`
+- Entrées canoniques M–R :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudication_batch_inputs/96478ee1e71de525`
+- Adjudications M–R :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/2bfdc46480e52784`
 - Contradictions connues :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/320fe62322e14d25`
 - Gate consolidé :
-  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/d2e628cc0764a557`
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/9fb43b4f7bb0919a`
 
 ## Décision
 
-Le corpus est encore trop petit et trop pauvre en erreurs prouvées pour
-réentraîner honnêtement l'accepteur ou le ranker. Les modèles, le seuil et le
-retrieval restent gelés. La collecte gratuite continue en priorité sur :
+La collecte autonome V4.4 s'arrête. Le minimum de 50 erreurs était un seuil de
+taille d'échantillon, pas un quota à fabriquer. Or la population entière ne
+contient que 42 `TOP1_WRONG` prouvés. Il est donc impossible de franchir ce
+gate sans ouvrir les `REVIEW`, abaisser le seuil après observation ou créer de
+faux labels.
 
-1. vingt-cinq vrais `TOP1_WRONG`, avec un SIRET alternatif seulement lorsqu'il
-   est dans le pool figé et doublement prouvé ;
-2. vingt `TOP1_CORRECT` supplémentaires pour préserver l'équilibre du
-   corpus.
-
-Le test final reste fermé.
+Ce `STOP_AUTONOMOUS_LABELING` ferme la collecte V4.4 et n'autorise aucun
+réentraînement sous ce contrat. Les 162 labels fiables restent disponibles
+pour définir un pivot expérimental séparé et préenregistré. Retrieval, modèles
+et test final restent gelés entre-temps.

@@ -1,15 +1,17 @@
-# SIRETO Handover - 27 Juillet 2026
+# SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
-La V4.4 d'adjudication autonome est ouverte : l'utilisateur n'est pas le
-validateur et aucune revue ligne par ligne ne lui sera déléguée. Les cinq lots
-sectoriels A–H et les contradictions connues forment désormais un corpus
-canonique dédupliqué de 89 dossiers : 81 décisions sont validées par au moins
-deux groupes de preuves indépendants, dont 55 `TOP1_CORRECT`, 25
-`TOP1_WRONG` et une `AMBIGUOUS`; huit restent `UNRESOLVED`. Trente-deux
-décisions validées appartiennent au tirage aléatoire : ce sous-gate est
-franchi. Le gate global reste **`PIVOT_MORE_EVIDENCE`** : il manque encore 20
-corrects et 25 incorrects. Aucun modèle n'est modifié. L'adaptateur recalcule les pools top-10
+La V4.4 d'adjudication autonome est terminée. Les lots A–R et les
+contradictions connues couvrent exactement les 172 `AUTO_MATCH` V4.3 : 162
+décisions sont validées par au moins deux groupes de preuves indépendants,
+dont 114 `TOP1_CORRECT`, 42 `TOP1_WRONG` et six `AMBIGUOUS`; dix restent
+`UNRESOLVED`. Cinquante-trois décisions validées appartiennent au tirage
+aléatoire. Verdict contractuel : **`STOP_AUTONOMOUS_LABELING`**. Les seuils
+correct et random sont franchis, mais la population entière ne contient que 42
+erreurs prouvées pour un minimum préenregistré de 50. Il est impossible de
+combler les huit manquantes sans fabriquer des erreurs, abaisser le seuil
+après observation ou ouvrir prématurément les `REVIEW`. Aucun modèle n'est
+modifié. L'adaptateur recalcule les pools top-10
 figés, refuse les hashes de preuve inexacts, interdit l'injection d'un positif
 et reproduit les tables canoniques à partir des JSON revus. Les lots ont été
 corrigés contre les archives réelles, notamment leurs hashes et les groupes
@@ -27,18 +29,20 @@ et
 et
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/1e2c68337408c453`
 et
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/d2e628cc0764a557`.
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/925ef3f8ef3f3a4a`,
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/2bfdc46480e52784`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/9fb43b4f7bb0919a`.
 *(commits GitHub : lots vérifiés `f2aeec0`, adaptateur canonique `c6cb686`,
 rapport `a66499e`, garde AUTO `4930521`, invariance `12a088b`, lots F/H
-`d644e54`, lot G `1509841`; 282 tests passants)*
+`d644e54`, G `1509841`, I `0e04eb3`, L `617c73c`, J/K `62669ac`, M
+`d72c7d8`, N `30617b5`, O/P `65feba0`, Q/R `22f8ba2`; 283 tests passants)*
 
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
-complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
-erreurs AUTO alors `AI_PROVISIONAL` ont depuis été reprises par V4.4 : quatre
-sont validées `TOP1_WRONG`, une reste `UNRESOLVED`. Les 35 autres AUTO où
-l'adresse porte presque seule la décision et les 28 désaccords avec un SIRET
-d'entrée encore actif restent prioritaires. Aucun signal seul n'est converti
-artificiellement en vérité.
+complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. La
+première population AUTO est maintenant entièrement consommée par V4.4. Les
+370 `REVIEW` restent fermés : ils ne peuvent pas être utilisés pour contourner
+le gate AUTO. Aucun signal seul n'est converti artificiellement en vérité.
 
 Le « gold standard » historique ne résout pas le problème. Il a été construit
 en gardant le SIRET CRM si sa commune ou son CP correspondait à SIRENE, sans
@@ -169,6 +173,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Population AUTO V4.4 épuisée sans quota fabriqué** : les 172/172
+  `AUTO_MATCH` ont été audités. Bilan : 114 `TOP1_CORRECT`, 42
+  `TOP1_WRONG`, six `AMBIGUOUS`, dix `UNRESOLVED`, 162 labels acceptor et 53
+  cas random validés. Les minima correct/random passent, mais le minimum de 50
+  erreurs est impossible puisque la population entière n'en contient que 42
+  prouvées. Verdict `STOP_AUTONOMOUS_LABELING`; aucun réentraînement sous le
+  contrat V4.4 et aucun `REVIEW` ouvert. Le contrat expérimental V4.5 a été
+  préenregistré avant entraînement et reste bloqué tant qu'un pivot explicite
+  n'est pas adopté. Rapport :
+  `reports/v9/v4_4_adjudication_gate_results.md`. *(commits GitHub : I
+  `0e04eb3`, L `617c73c`, J/K `62669ac`, M `d72c7d8`, N `30617b5`, O/P
+  `65feba0`, Q/R `22f8ba2`, contrat V4.5 `70cf70f`; 283 tests passants)*
 - **Sous-gate random V4.4 franchi avec les lots F–H** : les 36 nouveaux cas
   sont tous des `AUTO_MATCH` V4.3 et ne chevauchent aucun dossier antérieur.
   Ils ajoutent 20 `TOP1_CORRECT`, 14 `TOP1_WRONG`, 13 random validés et deux
