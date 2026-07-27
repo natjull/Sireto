@@ -1,0 +1,866 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-g-1",
+  "created_at": "2026-07-27T22:50:04Z",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Plusieurs réponses du même producteur ne créent pas plusieurs preuves indépendantes.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. TOP1_WRONG exige une preuve positive que le CRM désigne une identité et que le top-1 en désigne une autre.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans deux preuves indépendantes suffisantes et sans présence naturelle dans le top-10 figé."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "file figée contenant les assertions CRM et les top-1 jugés"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+      "sha256": "ed1b3eb6bc063bf9393534abb1d73c063c9c1fc387e3dc9c805cd9abd645a0e3",
+      "role": "archive locale des réponses complètes de l'API Recherche d'entreprises"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/producer_responses.parquet",
+      "sha256": "df7ecfe8e1df9731c0340e448aef4dacf473a3d2236e0f07da640c3aa38ee9ed",
+      "role": "archive locale des réponses brutes des producteurs sectoriels"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_facts/6a08bff403154884/producer_observation_facts.parquet",
+      "sha256": "503589c4e48c307e9c87ee689ecbf0f3f3940f91e5c8244c7fb22c32252398d1",
+      "role": "faits sectoriels structurés utilisés pour l'adjudication"
+    }
+  ],
+  "summary": {
+    "case_count": 12,
+    "top1_correct_evidence_validated": 0,
+    "top1_wrong_evidence_validated": 12,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 0,
+    "training_eligible_count": 12
+  },
+  "cases": [
+    {
+      "audit_case_id": "e72728b0458c6cc1",
+      "service_id": "AC008925",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SITIV - Pole Enfance",
+        "address": "9 avenue du 19 Mars 1962, 69520 Grigny",
+        "input_siret": "21690096900017",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "57210217627758",
+        "siren": "572102176"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "PUBLIC_AUTHORITY_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme un établissement de restauration SOGERES. Un acte public de la commune de Grigny décrit au contraire le pôle enfance Robert-Malfroy comme un complexe éducatif communal. Le fournisseur de restauration n'est pas l'équipement public explicitement demandé par le CRM.",
+      "sources": [
+        {
+          "evidence_id": "e72728b0458c6cc1-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=57210217627758&per_page=1",
+          "collected_at": "2026-07-27T20:49:55.660933+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "e72728b0458c6cc1",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 57210217627758 appartient à SOGERES.",
+            "L'établissement de restauration est localisé 9 avenue du 19 Mars 1962 à Grigny."
+          ]
+        },
+        {
+          "evidence_id": "e72728b0458c6cc1-grigny-pole-enfance",
+          "producer": "Commune de Grigny-sur-Rhône, acte diffusé par le SITIV",
+          "source_family": "PUBLIC_AUTHORITY_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_COMMUNE_GRIGNY_PUBLICATION",
+          "independence_group": "COMMUNE_GRIGNY",
+          "proof_kind": "IDENTITY_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "délibération communale archivée",
+          "url": "https://actes.sitiv.fr/actes/WEBDELIB_AUTOMATE_GR/99_AU-069-216900969-20181116-DEL_18_113-DE-1-1_2__6308ad159f666.pdf",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/e72728b0458c6cc1-sitiv-pole-enfance.pdf",
+          "artifact_sha256": "4c34d30ebeb7df70338c622f5e5c19ca489b6f2442b236728b6d93becf09aaaa",
+          "archived_facts": [
+            "La commune décrit la création du pôle enfance Robert-Malfroy.",
+            "Le document définit un complexe éducatif communal regroupant restauration, accueil de loisirs, crèche et services aux familles."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET alternatif exact n'est doublement prouvé dans le top-10 figé."
+      ]
+    },
+    {
+      "audit_case_id": "51275cc5a4ae94a0",
+      "service_id": "FO004013",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DDSP77",
+        "address": "51 avenue du Général-de-Gaulle, 77000 Melun",
+        "input_siret": "13001283400011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "42150939900018",
+        "siren": "421509399"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "MINISTRY_INTERIOR_PUBLICATION"
+      ],
+      "decision_reason": "Le CRM désigne la direction départementale de la sécurité publique de Seine-et-Marne. SIRENE attribue le top-1 à l'Association départementale d'action sociale des policiers, personne morale distincte. Le ministère de l'Intérieur publie séparément l'adresse de la DDSP 77 au 51 avenue du Général-de-Gaulle.",
+      "sources": [
+        {
+          "evidence_id": "51275cc5a4ae94a0-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=42150939900018&per_page=1",
+          "collected_at": "2026-07-27T20:49:10.277043+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "51275cc5a4ae94a0",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 appartient à l'Association départementale d'action sociale des policiers, ADASP 77.",
+            "Une association d'action sociale n'est pas la direction départementale de la sécurité publique demandée."
+          ]
+        },
+        {
+          "evidence_id": "51275cc5a4ae94a0-interieur-ddsp77",
+          "producer": "Ministère de l'Intérieur",
+          "source_family": "MINISTRY_INTERIOR_PUBLICATION",
+          "canonical_source_family": "MINISTRY_INTERIOR_PUBLICATION",
+          "independence_group": "MINISTRY_INTERIOR",
+          "proof_kind": "IDENTITY_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel des DDSP",
+          "url": "https://www.signalement-igpn.fsi.interieur.gouv.fr/assets/data/pdf/adresses-DDSP.pdf",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/51275cc5a4ae94a0-ddsp-addresses.pdf",
+          "artifact_sha256": "2f64d0ee52def0e1ecd5b12e79b5f509854301ef3b8cb215414c9abb31e0ea4f",
+          "archived_facts": [
+            "Le ministère publie pour la DDSP 77 l'adresse 51 avenue du Général-de-Gaulle à Melun.",
+            "Le document confirme l'identité administrative explicitement portée par le CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET alternatif exact n'est doublement prouvé dans le top-10 figé."
+      ]
+    },
+    {
+      "audit_case_id": "acefd5fbf567707e",
+      "service_id": "FR029759",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ENTERPRISE HOLDINGS FRANCE",
+        "address": "Aéroport Nîmes Arles Camargue, 30128 Garons",
+        "input_siret": "31877199501218",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "35450022500488",
+        "siren": "354500225"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "AIRPORT_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme Ziegler France, entreprise de transport distincte. Le site officiel de l'aéroport confirme qu'Enterprise est un loueur présent dans l'aérogare. Le CRM désigne donc Enterprise, pas Ziegler.",
+      "sources": [
+        {
+          "evidence_id": "acefd5fbf567707e-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=35450022500488&per_page=1",
+          "collected_at": "2026-07-27T20:49:34.998917+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "acefd5fbf567707e",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 35450022500488 appartient à Ziegler France SA.",
+            "Ziegler France est une identité distincte d'Enterprise Holdings France."
+          ]
+        },
+        {
+          "evidence_id": "acefd5fbf567707e-airport-enterprise",
+          "producer": "EDEIS Aéroport Nîmes",
+          "source_family": "AIRPORT_SELF_PUBLICATION",
+          "canonical_source_family": "AIRPORT_SELF_PUBLICATION",
+          "independence_group": "NIMES_AIRPORT",
+          "proof_kind": "IDENTITY_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel des services de l'aéroport",
+          "url": "https://nimes.aeroport.fr/solutions/location-de-voitures/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/acefd5fbf567707e-nimes-airport-rentals.html",
+          "artifact_sha256": "2d772be37ccc6c19c3514190ce27b5ee6b19c7c0e6c9440ab53f6598c442a80a",
+          "archived_facts": [
+            "L'aéroport de Nîmes liste Enterprise parmi ses loueurs présents dans l'aérogare.",
+            "La publication relie positivement l'identité Enterprise au site aéroportuaire du CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET Enterprise fourni par le CRM n'est pas naturellement retrouvé dans le top-10 figé; aucun alternatif n'est publié."
+      ]
+    },
+    {
+      "audit_case_id": "3314d39b2884699e",
+      "service_id": "FR027844",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SICOVAL",
+        "address": "45 chemin du Canal, 31320 Auzeville-Tolosane",
+        "input_siret": "24310063300391",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "48131831900029",
+        "siren": "481318319"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ANS_FINESS"
+      ],
+      "decision_reason": "SIRENE attribue le top-1 à Measurix France. Le snapshot FINESS identifie indépendamment le SICOVAL comme une personne morale publique, SIREN 243100633, gestionnaire de services sociaux et médico-sociaux. Measurix France n'est donc pas l'intercommunalité explicitement demandée.",
+      "sources": [
+        {
+          "evidence_id": "3314d39b2884699e-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=48131831900029&per_page=1",
+          "collected_at": "2026-07-27T20:49:03.153655+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "3314d39b2884699e",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le SIRET 48131831900029 appartient à Measurix France.",
+            "Measurix France est une personne morale distincte du SICOVAL."
+          ]
+        },
+        {
+          "evidence_id": "3314d39b2884699e-finess-sicoval",
+          "producer": "Agence du Numérique en Santé",
+          "source_family": "SECTOR_REGISTRY_FINESS",
+          "canonical_source_family": "ANS_FINESS",
+          "independence_group": "ANS_FINESS",
+          "proof_kind": "IDENTITY_SECTOR_REGISTRY_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "snapshot officiel FINESS-STR archivé intégralement",
+          "url": "https://static.data.gouv.fr/resources/finess-structures-1/20260727-021458/finess-structures-journalier-20260727.json.gz",
+          "collected_at": "2026-07-27T21:59:41.461985+00:00",
+          "document_date": "2026-07-27T02:06:47.532824138Z",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_sector_evidence/3149124f69dd7b1f/raw/finess-structures-snapshot.json.gz",
+          "artifact_sha256": "99b24c7c440bb95c00ab770207dc4a8534d3a6b3217bdb253300e7a566815354",
+          "row_selector": {
+            "identifier": "310026067",
+            "siren": "243100633"
+          },
+          "archived_facts": [
+            "FINESS 310026067 désigne SICOVAL et publie explicitement le SIREN 243100633.",
+            "Le producteur rattache au SICOVAL des services sociaux et médico-sociaux publics, identité incompatible avec Measurix France."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET exact du site du 45 chemin du Canal n'est doublement prouvé dans le top-10 figé."
+      ]
+    },
+    {
+      "audit_case_id": "89e316136abdbd13",
+      "service_id": "FR029976",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "COMMUNAUTE URBAINE DU GRAND REIMS SYVOM DE WARMERIVILE",
+        "address": "52 rue de Boult, 51110 Isles-sur-Suippe",
+        "input_siret": "20006721300021",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "32466604900014",
+        "siren": "324666049"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "DGCL_BANATIC"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme le GAEC du Tiare. La base nationale du ministère de l'Intérieur identifie le Grand Reims comme une communauté urbaine, SIREN 200067213. L'exploitation agricole top-1 n'est pas la collectivité explicitement désignée par le CRM.",
+      "sources": [
+        {
+          "evidence_id": "89e316136abdbd13-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=32466604900014&per_page=1",
+          "collected_at": "2026-07-27T20:49:27.259381+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "89e316136abdbd13",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 32466604900014 appartient au GAEC du Tiare.",
+            "Le GAEC est une identité agricole distincte de la communauté urbaine du Grand Reims."
+          ]
+        },
+        {
+          "evidence_id": "89e316136abdbd13-banatic-grand-reims",
+          "producer": "Direction générale des collectivités locales",
+          "source_family": "LOCAL_AUTHORITIES_REGISTRY",
+          "canonical_source_family": "DGCL_BANATIC",
+          "independence_group": "DGCL_BANATIC",
+          "proof_kind": "IDENTITY_PUBLIC_REGISTRY_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "fiche de la Base nationale sur l'intercommunalité",
+          "url": "https://www.banatic.interieur.gouv.fr/intercommunalite/200067213",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/89e316136abdbd13-banatic-grand-reims.html",
+          "artifact_sha256": "dfbaa947a0538f688edd02a251ce1a3167fb6ff80838e0994be90c1b19f1e836",
+          "archived_facts": [
+            "BANATIC identifie la CU du Grand Reims comme une communauté urbaine.",
+            "La fiche publie le SIREN 200067213 et confirme l'identité administrative demandée."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET exact du site SYVOM n'est doublement prouvé dans le top-10 figé."
+      ]
+    },
+    {
+      "audit_case_id": "d572303809a76ec2",
+      "service_id": "FR019146",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ABL EUROPE",
+        "address": "317 avenue Jean-Jaurès, 69007 Lyon",
+        "input_siret": "81352692800011",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "31754058100111",
+        "siren": "317540581"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "PUBLIC_AUTHORITY_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE attribue le top-1 à Transgene. La Métropole de Lyon publie qu'ABL Europe exploite la plateforme située au 317 avenue Jean-Jaurès. Les deux sociétés, bien que liées historiquement au même groupe, sont des identités juridiques distinctes.",
+      "sources": [
+        {
+          "evidence_id": "d572303809a76ec2-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=31754058100111&per_page=1",
+          "collected_at": "2026-07-27T20:49:50.797254+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "d572303809a76ec2",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 31754058100111 appartient à Transgene.",
+            "La recherche CRM archivée retrouve séparément ABL Europe au 317 avenue Jean-Jaurès."
+          ]
+        },
+        {
+          "evidence_id": "d572303809a76ec2-grandlyon-abl",
+          "producer": "Métropole de Lyon",
+          "source_family": "PUBLIC_AUTHORITY_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_METROPOLE_LYON_PUBLICATION",
+          "independence_group": "METROPOLE_LYON",
+          "proof_kind": "IDENTITY_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "publication économique de la collectivité",
+          "url": "https://www.grandlyon.com/actualite/maat-pharma-a-lyon-therapies-microbiote-contre-le-cancer-novembre-2022-portrait-entreprise-metropole-de-lyon",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/d572303809a76ec2-grandlyon-abl.html",
+          "artifact_sha256": "76227dd277c0a90e449501622c5fffdac84a4fd02e47e0543aa220606d04566c",
+          "archived_facts": [
+            "La Métropole situe explicitement la plateforme ABL Europe au 317 avenue Jean-Jaurès à Lyon.",
+            "La publication confirme l'identité ABL Europe demandée, distincte de Transgene."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET ABL Europe naturellement retrouvé dans le top-10 n'est pas publié comme alternatif faute de seconde preuve indépendante portant le SIRET exact."
+      ]
+    },
+    {
+      "audit_case_id": "5a1671789669272e",
+      "service_id": "FR039852",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "AXIOM SERVICES",
+        "address": "376 chemin de Bassaquet, 83140 Six-Fours-les-Plages",
+        "input_siret": "49956865700047",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "88910529200011",
+        "siren": "889105292"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme l'Association Caprice. Axiom Group publie son identité de groupe logistique, son siège brestois et son agence opérationnelle de Six-Fours. Une association de loisirs n'est pas Axiom Services, même si l'adresse CRM aboutit chez elle.",
+      "sources": [
+        {
+          "evidence_id": "5a1671789669272e-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=88910529200011&per_page=1",
+          "collected_at": "2026-07-27T20:49:14.271794+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "5a1671789669272e",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 88910529200011 est l'Association Caprice.",
+            "L'association est une identité distincte d'Axiom Services."
+          ]
+        },
+        {
+          "evidence_id": "5a1671789669272e-axiom-publication",
+          "producer": "Axiom Group",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_AXIOM_GROUP_PUBLICATION",
+          "independence_group": "AXIOM_GROUP",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "site officiel du groupe",
+          "url": "https://www.axiomgroup.fr/nos-services/transport/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/5a1671789669272e-axiom-group.html",
+          "artifact_sha256": "11ab73a824c73c1a2288d81acdb48d08db9c6e6a97834deaee4dc5f5df1b3adc",
+          "archived_facts": [
+            "Axiom Group se présente comme un groupe de logistique industrielle dont le siège est à Brest.",
+            "Le groupe publie une implantation opérationnelle à Six-Fours, identité sans rapport avec l'Association Caprice."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "L'adresse CRM semble obsolète ou erronée; aucun SIRET Axiom exact n'est naturellement retrouvé dans le top-10 figé."
+      ]
+    },
+    {
+      "audit_case_id": "b717d65790149c05",
+      "service_id": "AC002622",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "BUFFARD LOGISTIQUE ROGERVILLE",
+        "address": "4931 Parc Logistique du Pont de Normandie, 76700 Rogerville",
+        "input_siret": "30154541400023",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "37913416600832",
+        "siren": "379134166"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme Volvo Trucks France. Buffard publie ses propres implantations logistiques PLPN à Rogerville. Le CRM désigne explicitement Buffard Logistique et non Volvo Trucks.",
+      "sources": [
+        {
+          "evidence_id": "b717d65790149c05-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=37913416600832&per_page=1",
+          "collected_at": "2026-07-27T20:49:40.023942+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "b717d65790149c05",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 appartient à Volvo Trucks France.",
+            "Volvo Trucks France est distincte de Buffard Logistique."
+          ]
+        },
+        {
+          "evidence_id": "b717d65790149c05-buffard-contact",
+          "producer": "Buffard Logistique",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_BUFFARD_LOGISTIQUE_PUBLICATION",
+          "independence_group": "BUFFARD_LOGISTIQUE",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "page de contact officielle",
+          "url": "https://buffard.eu/index.php/contact/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/b717d65790149c05-buffard-contact.html",
+          "artifact_sha256": "e77271ebf767b502268279053abde55af4c0617908db219bc448d8d3491f786c",
+          "archived_facts": [
+            "Buffard publie deux implantations PLPN au Parc Logistique du Pont de Normandie à Rogerville.",
+            "Cette publication confirme l'identité Buffard demandée, distincte de Volvo Trucks."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET Buffard retrouvé naturellement dans le top-10 n'est pas publié comme alternatif faute de seconde preuve indépendante portant le SIRET exact."
+      ]
+    },
+    {
+      "audit_case_id": "faed1f1726cd89a1",
+      "service_id": "AC003432",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "Expertises Galtier",
+        "address": "9 rue Newton, 44240 La Chapelle-sur-Erdre",
+        "input_siret": "33157796500105",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "30854937700056",
+        "siren": "308549377"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme SA Starcolor et retrouve séparément Expertises Galtier à l'adresse CRM. Le site officiel d'Expertises Galtier confirme l'existence et le métier du groupe demandé. Starcolor est une autre personne morale partageant l'ancienne adresse.",
+      "sources": [
+        {
+          "evidence_id": "faed1f1726cd89a1-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=30854937700056&per_page=1",
+          "collected_at": "2026-07-27T20:50:02.408547+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "faed1f1726cd89a1",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 appartient à SA Starcolor.",
+            "La recherche CRM SIRENE retrouve séparément Expertises Galtier au 9 rue Newton."
+          ]
+        },
+        {
+          "evidence_id": "faed1f1726cd89a1-galtier-publication",
+          "producer": "Expertises Galtier",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_EXPERTISES_GALTIER_PUBLICATION",
+          "independence_group": "EXPERTISES_GALTIER",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "site officiel de l'entité",
+          "url": "https://www.expertises-galtier.fr/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/faed1f1726cd89a1-galtier-home.html",
+          "artifact_sha256": "83a553e557f327a2f380db5faf93d8831c1b5f9c38f3ad5c0544077ad2a602a3",
+          "archived_facts": [
+            "Le site officiel se présente comme celui du groupe Expertises Galtier.",
+            "Le groupe exerce les métiers de l'expertise de sinistre, de l'évaluation et de l'immobilier, identité distincte de Starcolor."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET Galtier retrouvé naturellement dans le top-10 n'est pas publié comme alternatif faute de seconde preuve indépendante portant le SIRET exact."
+      ]
+    },
+    {
+      "audit_case_id": "db12fe66cc2b5cfe",
+      "service_id": "AC007770",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "SPI SOFTWARE",
+        "address": "1 avenue de l'Europe, 34830 Clapiers",
+        "input_siret": "52153008900023",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "80312299300055",
+        "siren": "803122993"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE attribue le top-1 à l'entrepreneuse individuelle Marie Portales et retrouve séparément SPI Software à Clapiers. Un contrat de licence publié par SPI Software confirme son identité d'éditeur, son SIREN et ses produits logiciels. Le top-1 est une autre identité.",
+      "sources": [
+        {
+          "evidence_id": "db12fe66cc2b5cfe-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=80312299300055&per_page=1",
+          "collected_at": "2026-07-27T20:49:53.357475+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "db12fe66cc2b5cfe",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 80312299300055 appartient à Marie Portales.",
+            "La recherche CRM SIRENE retrouve séparément SPI Software à Clapiers."
+          ]
+        },
+        {
+          "evidence_id": "db12fe66cc2b5cfe-spi-contract",
+          "producer": "SPI Software, document hébergé par Dassault Systèmes",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_SPI_SOFTWARE_PUBLICATION",
+          "independence_group": "SPI_SOFTWARE",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "contrat de licence de l'éditeur",
+          "url": "https://www.3ds.com/assets/invest/2022-11/Contrat-de-licence-SPI-Software-2021-FR.pdf",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/db12fe66cc2b5cfe-spi-license.pdf",
+          "artifact_sha256": "ee0921869f5a0fe7185e388be34928966f5751d27a87eebd52012fd8acaefbe0",
+          "archived_facts": [
+            "Le contrat nomme SPI Software comme éditeur et propriétaire de ses logiciels.",
+            "Le document publie le RCS/SIREN 521530089, distinct de l'identité du top-1."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Le SIRET SPI Software retrouvé naturellement dans le top-10 n'est pas publié comme alternatif faute de seconde preuve indépendante portant le SIRET exact."
+      ]
+    },
+    {
+      "audit_case_id": "ace815a7ee736ec9",
+      "service_id": "FR026299",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ELLIPSE Automobiles - Kremlin Bicetre",
+        "address": "145 avenue de Fontainebleau, 94270 Le Kremlin-Bicêtre",
+        "input_siret": "61203477700021",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "38806021200015",
+        "siren": "388060212"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "MANUFACTURER_NETWORK"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme la SCI Présence. Hyundai publie Ellipse Automobiles comme distributeur/réparateur au 145 avenue de Fontainebleau. Le CRM désigne le concessionnaire exploitant, pas la société immobilière présente à la même adresse.",
+      "sources": [
+        {
+          "evidence_id": "ace815a7ee736ec9-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=38806021200015&per_page=1",
+          "collected_at": "2026-07-27T20:49:34.380227+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "ace815a7ee736ec9",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 38806021200015 appartient à la SCI Présence.",
+            "La SCI est une identité distincte du concessionnaire Ellipse Automobiles demandé."
+          ]
+        },
+        {
+          "evidence_id": "ace815a7ee736ec9-hyundai-ellipse",
+          "producer": "Hyundai Motor France",
+          "source_family": "MANUFACTURER_NETWORK",
+          "canonical_source_family": "MANUFACTURER_NETWORK",
+          "independence_group": "HYUNDAI_MOTOR_FRANCE",
+          "proof_kind": "IDENTITY_NETWORK_DIRECTORY_CONFIRMS_CRM_ENTITY_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "liste officielle des distributeurs et réparateurs",
+          "url": "https://www.hyundai.com/eu/dam/sites/fr/pages-contenu/services/offres-entretien/2024/06-juin/Liste_Hyundai_Distributeur_Reparateur_Campagne_Entretien_2024.pdf",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/ace815a7ee736ec9-hyundai-network.pdf",
+          "artifact_sha256": "1df90bcd0cc1e4caa7433e05f9dba25ca6ea8553d20a708511d6b3163a9c8625",
+          "archived_facts": [
+            "Hyundai liste Ellipse Automobiles au 145 avenue de Fontainebleau, Le Kremlin-Bicêtre.",
+            "Le réseau constructeur confirme l'identité commerciale explicitement demandée par le CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET Ellipse exact n'est naturellement retrouvé et doublement prouvé dans le top-10 figé."
+      ]
+    },
+    {
+      "audit_case_id": "fb3e0d2fd4ae72af",
+      "service_id": "FR020117",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "IPSICOM",
+        "address": "1681 rue des Saules, 59262 Sainghin-en-Mélantois",
+        "input_siret": "52891211600027",
+        "input_siret_state": "CLOSED"
+      },
+      "frozen_top1": {
+        "siret": "30048451600038",
+        "siren": "300484516"
+      },
+      "adjudication_label": "TOP1_WRONG",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": null,
+      "independent_source_families": [
+        "SIRENE_REGISTRY",
+        "ENTITY_SELF_PUBLICATION"
+      ],
+      "decision_reason": "SIRENE identifie le top-1 comme ETIX Everywhere Nord. ETIX publie elle-même son centre de données Lille #2 au 1681 rue des Saules. Le CRM désigne explicitement IPSICOM, autre personne morale; l'adresse du centre de données ne transforme pas son exploitant ETIX en IPSICOM.",
+      "sources": [
+        {
+          "evidence_id": "fb3e0d2fd4ae72af-registry-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_TOP1_DISTINCT_FROM_CRM",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle archivée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=30048451600038&per_page=1",
+          "collected_at": "2026-07-27T20:50:03.290895+00:00",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284/official_evidence.parquet",
+          "row_selector": {
+            "audit_case_id": "fb3e0d2fd4ae72af",
+            "query_kind": "TOP1_SIRET"
+          },
+          "archived_facts": [
+            "Le top-1 30048451600038 appartient à ETIX Everywhere Nord.",
+            "ETIX Everywhere Nord est une personne morale distincte d'IPSICOM."
+          ]
+        },
+        {
+          "evidence_id": "fb3e0d2fd4ae72af-etix-site",
+          "producer": "ETIX Everywhere",
+          "source_family": "ENTITY_SELF_PUBLICATION",
+          "canonical_source_family": "OFFICIAL_ETIX_EVERYWHERE_PUBLICATION",
+          "independence_group": "ETIX_EVERYWHERE",
+          "proof_kind": "IDENTITY_SELF_PUBLICATION_CONFIRMS_TOP1_DISTINCT",
+          "counts_for_independence": true,
+          "document_type": "annuaire officiel des centres de données",
+          "url": "https://www.etixeverywhere.com/fr/centres-de-donnees-a-lille/",
+          "collected_at": "2026-07-28",
+          "artifact_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_web_evidence/batch_g_20260728/fb3e0d2fd4ae72af-etix-lille.html",
+          "artifact_sha256": "58f4f5c98ce5096368d18a3153a2a65d0d978c87e39def1e833baf7ff00eb2e1",
+          "archived_facts": [
+            "ETIX publie son centre Lille #2 au 1681 rue des Saules.",
+            "La publication confirme que le site correspond à l'identité ETIX du top-1, pas à IPSICOM."
+          ]
+        }
+      ],
+      "unresolved_constraints": [
+        "Aucun SIRET IPSICOM exact n'est naturellement retrouvé et doublement prouvé dans le top-10 figé."
+      ]
+    }
+  ]
+}
