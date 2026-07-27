@@ -1,0 +1,495 @@
+{
+  "schema_version": "sireto-v4.4-sector-adjudications-batch-l-1",
+  "created_at": "2026-07-28T01:05:00+02:00",
+  "policy": {
+    "path": "docs/v4_4_autonomous_adjudication_contract.md",
+    "rule": "Une décision validée exige au moins deux producteurs indépendants non issus du modèle, une cohérence explicite sur l'identité et aucune contradiction non résolue.",
+    "independence_rule": "Toutes les vues SIRENE sont regroupées dans SIRENE_REGISTRY. Le BODACC est un producteur DILA distinct. Un document d'une autorité publique distincte constitue un groupe séparé.",
+    "identity_rule": "Une adresse commune ne prouve jamais l'identité. Le registre doit relier explicitement le top1 à l'identité CRM et un second producteur doit confirmer cette identité.",
+    "negative_evidence_rule": "Une absence de résultat public ne constitue pas une preuve négative.",
+    "alternative_label_rule": "Aucun SIRET alternatif n'est publié sans preuve directe suffisante."
+  },
+  "source_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267/hard_label_queue.parquet",
+      "sha256": "47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc",
+      "role": "assertions CRM, statut AUTO_MATCH, strate et top1 gelés"
+    }
+  ],
+  "summary": {
+    "case_count": 8,
+    "auto_match_source_count": 8,
+    "top1_correct_evidence_validated": 8,
+    "top1_wrong_evidence_validated": 0,
+    "ambiguous": 0,
+    "unresolved": 0,
+    "validated_correct_siret_count": 8,
+    "training_eligible_count": 8
+  },
+  "cases": [
+    {
+      "audit_case_id": "e38ff60a45e36b70",
+      "service_id": "AC012097",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "COSTE PEINTURES SA",
+        "address": "462 rue de Saint-Hilaire, 34070 Montpellier",
+        "input_siret": "45980047000013",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "45980047000013",
+        "siren": "459800470"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "45980047000013",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le top1 actif à COSTE-PEINTURES rue de Saint-Hilaire à Montpellier. Le BODACC confirme indépendamment COSTE PEINTURES SA sous le même SIREN et au 561 de cette rue. Le numéro 462 du CRM est obsolète, sans contradiction d'identité.",
+      "sources": [
+        {
+          "evidence_id": "e38ff60a45e36b70-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=45980047000013&per_page=1",
+          "collected_at": "2026-07-27T23:02:26.154164+00:00",
+          "response_sha256": "d5db51e1433fc615228bf3f1d85d0de22b39d66e079ae701f4f6a71e2401aeee",
+          "archived_facts": [
+            "Le SIRET actif 45980047000013 appartient à COSTE-PEINTURES.",
+            "L'établissement est au 561 rue de Saint-Hilaire à Montpellier."
+          ]
+        },
+        {
+          "evidence_id": "e38ff60a45e36b70-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22459800470%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:26.420702+00:00",
+          "response_sha256": "31fa416b8cffb934b34120fa8b1cff78972d654a18e4cb469adadad31aa45ce1",
+          "archived_facts": [
+            "Le BODACC publie COSTE PEINTURES SA sous l'identifiant 459800470.",
+            "Une annonce récente situe l'entité au 561 rue Saint-Hilaire à Montpellier."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "b74ee35443556bc8",
+      "service_id": "AC013335",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "NANTES SUD AUTOMOBILES",
+        "address": "1 rue de Bruxelles, 44300 Nantes",
+        "input_siret": "81754896900028",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "81754896900028",
+        "siren": "817548969"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "81754896900028",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE identifie explicitement NANTES SUD AUTOMOBILES au 1 rue de Bruxelles à Nantes sous le SIRET top1 actif. Le BODACC confirme indépendamment la même identité, le même SIREN et la même adresse.",
+      "sources": [
+        {
+          "evidence_id": "b74ee35443556bc8-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=81754896900028&per_page=1",
+          "collected_at": "2026-07-27T23:02:26.501032+00:00",
+          "response_sha256": "44535b043ecafa843128b9170e46562b5ec4e12ffb9e7cd29ec87554c19f542a",
+          "archived_facts": [
+            "Le SIRET actif 81754896900028 appartient à NANTES SUD AUTOMOBILES.",
+            "Le nom commercial, l'enseigne et l'adresse CRM sont présents dans le registre."
+          ]
+        },
+        {
+          "evidence_id": "b74ee35443556bc8-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22817548969%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:26.739415+00:00",
+          "response_sha256": "6e2649aec04a3deb3edfb374635106887e67870cb61f0c09da427412ef761286",
+          "archived_facts": [
+            "Le BODACC publie NANTES SUD AUTOMOBILES sous l'identifiant 817548969.",
+            "L'annonce confirme le 1 rue de Bruxelles à Nantes."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "8976ee724ff22746",
+      "service_id": "AC010553",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ACE SOFEC",
+        "address": "102 rue de Canteleu, 59000 Lille",
+        "input_siret": "95038221800028",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "95038221800028",
+        "siren": "950382218"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "95038221800028",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à A.C.E - S.O.F.E.C au 102 rue de Canteleu à Lille. Le BODACC confirme indépendamment A.C.E. - S.O.F.E.C. sous le même SIREN et à la même adresse. Les variations de ponctuation sont sans portée.",
+      "sources": [
+        {
+          "evidence_id": "8976ee724ff22746-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=95038221800028&per_page=1",
+          "collected_at": "2026-07-27T23:02:26.814561+00:00",
+          "response_sha256": "441a840d0ea2d8652da991ecef95ebb90c886c83e5533429167de96b1d87f60f",
+          "archived_facts": [
+            "Le SIRET actif 95038221800028 appartient à A.C.E - S.O.F.E.C.",
+            "L'établissement est au 102 rue de Canteleu à Lille."
+          ]
+        },
+        {
+          "evidence_id": "8976ee724ff22746-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22950382218%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:27.052783+00:00",
+          "response_sha256": "f5e5c0a10b0e33ebdb15bc136b49ce08601566e8870a04c2cf947b96082eedda",
+          "archived_facts": [
+            "Le BODACC publie A.C.E. - S.O.F.E.C. sous l'identifiant 950382218.",
+            "L'annonce confirme l'adresse lilloise du CRM."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "f906379281632813",
+      "service_id": "FR028582",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "YOOZ AIMARGUES",
+        "address": "Parc d'Andron, Le Séquoia, parcelle 3000, 30470 Aimargues",
+        "input_siret": "80838614800015",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "80838614800015",
+        "siren": "808386148"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "80838614800015",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le top1 actif à YOOZ, Le Séquoia, Parc d'Andron à Aimargues. Le BODACC confirme indépendamment YOOZ sous le même SIREN à cette adresse. Le suffixe communal du CRM désigne sans ambiguïté ce site.",
+      "sources": [
+        {
+          "evidence_id": "f906379281632813-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=80838614800015&per_page=1",
+          "collected_at": "2026-07-27T23:02:27.140699+00:00",
+          "response_sha256": "6e816fc728699eb67d8d4f2f3efe665b36e90c599c9b5c7e1275004ddfbfa6e9",
+          "archived_facts": [
+            "Le SIRET actif 80838614800015 appartient à YOOZ.",
+            "L'établissement est situé Le Séquoia, Parc d'Andron à Aimargues."
+          ]
+        },
+        {
+          "evidence_id": "f906379281632813-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22808386148%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:27.327499+00:00",
+          "response_sha256": "5106243be608093234535aa823284bc3962b3771a20447a0ce46fd80fd8368c4",
+          "archived_facts": [
+            "Le BODACC publie YOOZ sous l'identifiant 808386148.",
+            "L'annonce confirme Le Séquoia, Parc d'Andron à Aimargues."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "8ab3a5b7bb67cd87",
+      "service_id": "AC018939",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "DAZZA ET CIE",
+        "address": "rue du Pont de Dranse, 74500 Publier",
+        "input_siret": "79578024600026",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "79578024600026",
+        "siren": "795780246"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "79578024600026",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à DAZZA, au 120 rue du Pont de Dranse à Publier. Le BODACC confirme indépendamment DAZZA sous le même SIREN à Pont de Dranse. Le suffixe historique « ET CIE » ne crée pas de contradiction.",
+      "sources": [
+        {
+          "evidence_id": "8ab3a5b7bb67cd87-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=79578024600026&per_page=1",
+          "collected_at": "2026-07-27T23:02:27.404436+00:00",
+          "response_sha256": "6037c5eb8bb7fba9853416d4d89422115ba4170dc7dd856175683997361709ed",
+          "archived_facts": [
+            "Le SIRET actif 79578024600026 appartient à DAZZA.",
+            "L'établissement est au 120 rue du Pont de Dranse à Publier."
+          ]
+        },
+        {
+          "evidence_id": "8ab3a5b7bb67cd87-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22795780246%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:27.626673+00:00",
+          "response_sha256": "0ce6cdf7c4b8149dbdcc3033a55ac3bdb5523fc06a421a1d406de9536535c224",
+          "archived_facts": [
+            "Le BODACC publie DAZZA sous l'identifiant 795780246.",
+            "L'annonce situe l'entité rue du Pont de Dranse à Publier."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "f097831ee12501c9",
+      "service_id": "AC013104",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "MANOIR DE MATHAN",
+        "address": "Clos Garden, 14 route de Creuilly, 14480 Crépon",
+        "input_siret": "39103832000019",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "39103832000019",
+        "siren": "391038320"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "39103832000019",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE identifie le top1 actif comme LE MANOIR DE MATHAN route de Bayeux à Crépon. Le BODACC confirme indépendamment la même identité sous le même SIREN à Crépon. La formulation différente de la route dans le CRM ne contredit pas l'identité explicite.",
+      "sources": [
+        {
+          "evidence_id": "f097831ee12501c9-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_NORMALIZED_NAME_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=39103832000019&per_page=1",
+          "collected_at": "2026-07-27T23:02:27.729303+00:00",
+          "response_sha256": "da45fab851ae58055cf97acc8151ad73becc7eb1ac14455195188372dfddb190",
+          "archived_facts": [
+            "Le SIRET actif 39103832000019 appartient à LE MANOIR DE MATHAN.",
+            "L'établissement est route de Bayeux à Crépon."
+          ]
+        },
+        {
+          "evidence_id": "f097831ee12501c9-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22391038320%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:27.939305+00:00",
+          "response_sha256": "5fbf5458e258f18708071dc7fe3a79e83f508653a62b4a2ab6161279674e1f3f",
+          "archived_facts": [
+            "Le BODACC publie LE MANOIR DE MATHAN sous l'identifiant 391038320.",
+            "L'annonce confirme indépendamment l'identité implantée à Crépon."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "fa3074896546026f",
+      "service_id": "FR008419",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "ALLIANCE EUROPE",
+        "address": "voie des Barges Rousse, 76430 Sandouville",
+        "input_siret": "45123072600023",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "45123072600023",
+        "siren": "451230726"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "45123072600023",
+      "independent_source_families": ["SIRENE_REGISTRY", "PREFECTURE_SPM"],
+      "decision_reason": "SIRENE relie le SIRET top1 actif à ALLIANCE EUROPE au Parc des Alizés à Sandouville. Un document officiel distinct publié par les services de l'État à Saint-Pierre-et-Miquelon donne l'adresse de l'agence du Havre d'ALLIANCE EUROPE SA au Parc des Alizés, rue des Barges Rousses, 76430 Sandouville. Les deux producteurs convergent sur l'identité et le site.",
+      "sources": [
+        {
+          "evidence_id": "fa3074896546026f-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=45123072600023&per_page=1",
+          "collected_at": "2026-07-27T23:02:28.020748+00:00",
+          "response_sha256": "c13105456632a867a5a1cbac08e086be2350ccd73672f6f085f3891e61421f65",
+          "archived_facts": [
+            "Le SIRET actif 45123072600023 appartient à ALLIANCE EUROPE.",
+            "L'établissement porte l'enseigne ALLIANCE EUROPE et est au Parc des Alizés à Sandouville."
+          ]
+        },
+        {
+          "evidence_id": "fa3074896546026f-prefecture-document",
+          "producer": "Services de l'État à Saint-Pierre-et-Miquelon",
+          "source_family": "PUBLIC_AUTHORITY_PUBLICATION",
+          "canonical_source_family": "PREFECTURE_SPM",
+          "independence_group": "PREFECTURE_SPM",
+          "proof_kind": "IDENTITY_PUBLIC_AUTHORITY_DOCUMENT_CONFIRMS_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "document PDF officiel collecté intégralement",
+          "url": "https://www.saint-pierre-et-miquelon.gouv.fr/content/download/4037/24368/file/Annexes%20guide%20mutation%202016.pdf",
+          "collected_at": "2026-07-27T23:03:47.000000+00:00",
+          "response_sha256": "872f6bf0197992dcfcd72d9407bb3ad8037e678902c2aea949ae97ea0b40b039",
+          "archived_facts": [
+            "Le document officiel nomme ALLIANCE EUROPE SA.",
+            "Il donne pour son agence du Havre l'adresse Parc des Alizés, rue des Barges Rousses, 76430 Sandouville."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    },
+    {
+      "audit_case_id": "72f4b1dd436b88f9",
+      "service_id": "FR027080",
+      "prior_status": "AI_PROVISIONAL",
+      "crm_assertion": {
+        "name": "VALIKA BAILLARGUES",
+        "address": "ZA Green Park, 149 avenue du Golf, 34670 Baillargues",
+        "input_siret": "33940071500043",
+        "input_siret_state": "ACTIVE"
+      },
+      "frozen_top1": {
+        "siret": "33940071500043",
+        "siren": "339400715"
+      },
+      "adjudication_label": "TOP1_CORRECT",
+      "evidence_validated": true,
+      "training_eligible": true,
+      "validated_correct_siret": "33940071500043",
+      "independent_source_families": ["SIRENE_REGISTRY", "DILA_BODACC"],
+      "decision_reason": "SIRENE relie le top1 actif à VALIKA, bâtiment A, 149 avenue du Golf à Baillargues. Le BODACC confirme indépendamment VALIKA sous le même SIREN à cette adresse. Le suffixe communal du CRM désigne ce site parmi les établissements du même SIREN.",
+      "sources": [
+        {
+          "evidence_id": "72f4b1dd436b88f9-sirene-top1",
+          "producer": "INSEE, diffusé par la Direction interministérielle du numérique",
+          "source_family": "REGISTRY_CORE_SIRENE",
+          "canonical_source_family": "SIRENE_REGISTRY",
+          "independence_group": "SIRENE_REGISTRY",
+          "proof_kind": "IDENTITY_REGISTRY_LINKS_TOP1_TO_CRM_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle collectée intégralement",
+          "url": "https://recherche-entreprises.api.gouv.fr/search?minimal=true&include=matching_etablissements%2Cscore&limite_matching_etablissements=10&q=33940071500043&per_page=1",
+          "collected_at": "2026-07-27T23:02:28.358456+00:00",
+          "response_sha256": "7d79d8187254c6e894c3e4b9a9dcb255332866854ff2b87c9ae29020c272533e",
+          "archived_facts": [
+            "Le SIRET actif 33940071500043 appartient à VALIKA.",
+            "L'établissement est bâtiment A, 149 avenue du Golf à Baillargues."
+          ]
+        },
+        {
+          "evidence_id": "72f4b1dd436b88f9-bodacc-entity",
+          "producer": "Direction de l'information légale et administrative — BODACC",
+          "source_family": "OFFICIAL_LEGAL_NOTICES_BODACC",
+          "canonical_source_family": "DILA_BODACC",
+          "independence_group": "DILA_BODACC",
+          "proof_kind": "IDENTITY_LEGAL_NOTICE_CONFIRMS_TOP1_ENTITY_AND_SITE",
+          "counts_for_independence": true,
+          "document_type": "réponse API officielle des annonces commerciales",
+          "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records?where=registre%3D%22339400715%22&order_by=dateparution+DESC&limit=5",
+          "collected_at": "2026-07-27T23:02:28.564071+00:00",
+          "response_sha256": "e9774f6956829183a5ddf1ea6a431dd5974894794ffbacdce88f35b954a0d632",
+          "archived_facts": [
+            "Le BODACC publie VALIKA sous l'identifiant 339400715.",
+            "L'annonce confirme le 149 avenue du Golf à Baillargues."
+          ]
+        }
+      ],
+      "unresolved_constraints": []
+    }
+  ]
+}
