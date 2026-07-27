@@ -2,15 +2,18 @@
 
 ## Etat des lieux
 La V4.4 d'adjudication autonome est ouverte : l'utilisateur n'est pas le
-validateur et aucune revue ligne par ligne ne lui sera déléguée. Le protocole
-exige deux preuves non issues du modèle pour retenir un label. La première
-collecte officielle couvre les 172 AUTO difficiles : 440 requêtes réussies sur
-440, dont 172 recherches du top-1, 96 SIRET d'entrée distincts et 172
-recherches nom + géographie. Les 172 top-1 sont retrouvés par l'API officielle ;
-68 recherches CRM nom + géographie et 85 recherches de l'input produisent une
-preuve. L'adjudication est en cours ; aucun label ni modèle n'a encore été
-modifié. Artefact :
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`.
+validateur et aucune revue ligne par ligne ne lui sera déléguée. Les 440
+réponses officielles ont été transformées en 172 fiches de faits conservatrices.
+Elles confirment l'existence administrative de 172/172 top-1 et la présence du
+top-1 dans 52 recherches nom + géographie, mais toutes proviennent de la même
+famille SIRENE/API. Elles ne constituent donc jamais deux preuves
+indépendantes : `correctness_conclusion=NOT_DERIVED` pour 172/172 et
+`training_eligible=0`. La collecte gratuite se poursuit maintenant auprès des
+registres producteurs sectoriels et de documents publics indépendants ; aucun
+modèle n'est modifié. Artefacts :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_evidence_facts/7ec4f63e1a22b082`.
 
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
 complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
@@ -148,6 +151,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Faits V4.4 dérivés sans faux consensus** : les 440 vues de l'API
+  officielle ont été ramenées à une seule famille de source. Les 172 dossiers
+  AUTO portent désormais 53 faits auditables, mais zéro conclusion de
+  correction et zéro label entraînable. Un accord SIRET direct, une recherche
+  nom + géographie, le score ou l'adresse ne peuvent pas créer une vérité.
+  L'ordre de réentraînement est également figé : accepteur logistique d'abord,
+  avec retrieval et ranker gelés ; ranker ensuite uniquement pour les erreurs
+  ayant un SIRET alternatif exact prouvé et naturellement présent dans le
+  pool. Rapport :
+  `reports/v9/v4_4_evidence_validated_retraining_design.md`. *(commits GitHub :
+  faits `9274399`, design `1d4d0f1` ; 6 tests ciblés passants)*
 - **Preuves officielles V4.4 collectées pour les 172 AUTO difficiles** :
   politique autonome gelée, sans validation demandée à l'utilisateur. API
   Recherche d'entreprises interrogée à débit limité : 440/440 réponses HTTP
