@@ -1,0 +1,6 @@
+service_id,ground_truth_siret,variant_a_hit_at_100,variant_b_hit_at_100,variant_b_rank,variant_c_hit_at_100,variant_c_rank,sparse_before_final_filter,global_state_store_contains_truth,root_cause
+AC004970,35404764900018,False,True,1,True,1,False,True,VARIANT_A_IGNORES_INPUT_SIRET_EVIDENCE
+FR035590,42094822600097,False,False,,False,,True,False,INCOMPLETE_GLOBAL_STATE_STORE_DROPS_ACTIVE_CANDIDATE
+FR036649,92271723600017,False,False,,False,,True,False,INCOMPLETE_GLOBAL_STATE_STORE_DROPS_ACTIVE_CANDIDATE
+AC012610,39771088000022,False,True,3,True,3,False,True,VARIANT_A_IGNORES_INPUT_SIRET_EVIDENCE
+AC017507,81535085500012,False,True,1,True,1,False,True,VARIANT_A_IGNORES_INPUT_SIRET_EVIDENCE
