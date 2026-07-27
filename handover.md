@@ -1,6 +1,21 @@
 # SIRETO Handover - 27 Juillet 2026
 
 ## Etat des lieux
+La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
+complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
+erreurs AUTO documentées restent `AI_PROVISIONAL`; 35 autres AUTO sont
+prioritaires parce que l'adresse porte presque seule la décision, et 28
+diffèrent d'un SIRET d'entrée encore actif. Aucun de ces signaux n'a été
+converti artificiellement en vérité : `training_eligible=0`.
+
+Le « gold standard » historique ne résout pas le problème. Il a été construit
+en gardant le SIRET CRM si sa commune ou son CP correspondait à SIRENE, sans
+validation humaine. Il recouvre 313/542 cas difficiles. Sur les 172 AUTO,
+116 y figurent et 40 top-1 contredisent ce SIRET historique. Verdict
+**`PIVOT_VALIDATION`**, statuts **`NO_RETRAIN`** et **`STOP_DEPLOYMENT`**.
+Un premier lot de 250 dossiers avec preuves complètes est prêt dans l'artefact
+V4.3. Rapport : `reports/v9/v4_3_hard_labels_results.md`.
+
 Le correctif retrieval V4.2 franchit le gate représentatif :
 **242/242 = 100 % Recall@100** sur les `MATCH_EXACT` provisoires figés, dont
 91/91 dans le tirage aléatoire. Aucun pool ne dépasse 100, aucun candidat fermé
@@ -122,6 +137,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **File de labels difficiles V4.3 construite** : population figée de 542
+  `UNRESOLVED`, sans suppression ; 172 AUTO, 370 REVIEW, 144 random. Priorités :
+  cinq contradictions connues, 35 AUTO adresse-seule, 28 AUTO en désaccord
+  avec un input actif, 104 autres AUTO, puis les REVIEW. Un lot opérationnel
+  de 250 dossiers réunit CRM, top-1 et preuves SIRENE. Zéro nouveau label
+  entraînable : verdict `PIVOT_VALIDATION`, aucun réentraînement autorisé.
+  Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_3_hard_labels/0f832305ab199267`.
+  Le disque interne étant saturé, seuls les caches Python/pytest régénérables
+  ont été supprimés ; aucun artefact métier n'a été touché. *(commits GitHub :
+  contrat `a2232bf`, builder `c3c5944`, correction normalisation `3388649`,
+  lot 250 `b16ce8b`, rapport `c420c26` ; 221 tests passants)*
 - **Intégrité retrieval V4.2 validée sans GPU** : contrat figé avant le
   correctif ; variante B et état autoritaire lu dans le snapshot complet.
   Résultat 242/242 = 100 % Recall@100, random exact 91/91, zéro fermé, zéro
