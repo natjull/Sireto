@@ -25,6 +25,8 @@ groupes de preuves indépendants, une décision `AMBIGUOUS` validée et six
 
 - Aucun SIRET positif n'est ajouté aux pools : les candidats viennent
   exclusivement de `candidates_top10.parquet` du shadow V4.1.
+- La première passe refuse tout dossier dont la décision V4.3 figée n'est pas
+  `AUTO_MATCH`; les `REVIEW` restent fermés jusqu'au verdict du gate AUTO.
 - Le top-1 de chaque dossier est identique dans la file V4.3, le pool et la
   décision shadow.
 - Chaque fichier de preuve cité est relu et son SHA-256 est vérifié.

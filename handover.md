@@ -13,7 +13,10 @@ random. Aucun modèle n'est modifié. L'adaptateur recalcule les pools top-10
 figés, refuse les hashes de preuve inexacts, interdit l'injection d'un positif
 et reproduit les tables canoniques à partir des JSON revus. Les lots ont été
 corrigés contre les archives réelles, notamment leurs hashes et les groupes
-d'indépendance. Artefacts :
+d'indépendance. La première passe est maintenant bloquée en code aux seuls
+`AUTO_MATCH` V4.3 ; une tentative de sélectionner prématurément des `REVIEW`
+est refusée. Rapport :
+`reports/v9/v4_4_adjudication_gate_results.md`. Artefacts :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_official_evidence/87983e83c11f5284`
 et
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_evidence_facts/7ec4f63e1a22b082`,
@@ -23,8 +26,8 @@ et
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_adjudications/70c65679dfb2c82d`
 et
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_4_gate/6f5972fbdcf10043`.
-*(commits GitHub : lots vérifiés `f2aeec0`, adaptateur canonique `c6cb686`;
-282 tests passants)*
+*(commits GitHub : lots vérifiés `f2aeec0`, adaptateur canonique `c6cb686`,
+rapport `a66499e`, garde AUTO `4930521`; 282 tests passants)*
 
 La V4.3 a transformé les 542 cas non résolus en une file d'adjudication
 complète : 172 AUTO et 370 REVIEW, dont 144 cas du tirage aléatoire. Les cinq
@@ -170,8 +173,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   contre les archives. Corpus final à ce stade : 53 cas, 47 validés, 35
   `TOP1_CORRECT`, 11 `TOP1_WRONG`, une `AMBIGUOUS`, six `UNRESOLVED` et 19
   random validés. Verdict `PIVOT_MORE_EVIDENCE`; aucun réentraînement.
-  *(commits GitHub : données `f2aeec0`, adaptateur `c6cb686`; 282 tests
-  passants)*
+  La passe initiale refuse désormais en code toute ligne V4.3 `REVIEW`.
+  Rapport : `reports/v9/v4_4_adjudication_gate_results.md`.
+  *(commits GitHub : données `f2aeec0`, adaptateur `c6cb686`, rapport
+  `a66499e`, garde AUTO `4930521`; 282 tests passants)*
 - **Premier gate V4.4 canonique publié** : les cinq contradictions ont été
   reliées aux pools top-10 réellement archivés dans le shadow, au bundle et à
   la signature retrieval gelés, puis validées par recomputation. Résultat :
