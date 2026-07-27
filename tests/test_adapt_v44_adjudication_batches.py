@@ -382,6 +382,67 @@ def test_input_artifact_is_immutable_recomputable_and_hash_bound(
         validate_input_artifact(artifact)
 
 
+def test_input_artifact_is_independent_of_batch_argument_order(
+    tmp_path: Path,
+) -> None:
+    batch_a, queue_dir, shadow_dir = _write_source_artifacts(tmp_path)
+    case_b = _case(case_id="case-b", service_id="service-b")
+    case_b["sources"][0]["evidence_id"] = "case-b-registry"
+    case_b["sources"][1]["evidence_id"] = "case-b-sector"
+    batch_b = tmp_path / "batch-b.json"
+    batch_b.write_text(json.dumps(_batch(case_b)), encoding="utf-8")
+
+    queue_path = queue_dir / "hard_label_queue.parquet"
+    pd.concat(
+        [pd.read_parquet(queue_path), _queue(case_b)],
+        ignore_index=True,
+    ).to_parquet(queue_path, index=False)
+    _, top10_b, decisions_b = _shadow(case_b)
+    top10_path = shadow_dir / "candidates_top10.parquet"
+    decisions_path = shadow_dir / "decisions.parquet"
+    pd.concat(
+        [pd.read_parquet(top10_path), top10_b],
+        ignore_index=True,
+    ).to_parquet(top10_path, index=False)
+    pd.concat(
+        [pd.read_parquet(decisions_path), decisions_b],
+        ignore_index=True,
+    ).to_parquet(decisions_path, index=False)
+
+    shadow_manifest_path = shadow_dir / "manifest.json"
+    shadow_manifest = json.loads(shadow_manifest_path.read_text())
+    shadow_manifest["outputs"] = {
+        top10_path.name: file_sha256(top10_path),
+        decisions_path.name: file_sha256(decisions_path),
+    }
+    shadow_manifest_path.write_text(json.dumps(shadow_manifest), encoding="utf-8")
+    queue_manifest_path = queue_dir / "manifest.json"
+    queue_manifest = json.loads(queue_manifest_path.read_text())
+    queue_manifest["inputs"]["top10"]["sha256"] = file_sha256(top10_path)
+    queue_manifest["outputs"][queue_path.name] = file_sha256(queue_path)
+    queue_manifest_path.write_text(json.dumps(queue_manifest), encoding="utf-8")
+
+    forward = build_input_artifact(
+        batch_jsons=[batch_a, batch_b],
+        queue_dir=queue_dir,
+        shadow_dir=shadow_dir,
+        output_root=tmp_path / "forward",
+    )
+    reverse = build_input_artifact(
+        batch_jsons=[batch_b, batch_a],
+        queue_dir=queue_dir,
+        shadow_dir=shadow_dir,
+        output_root=tmp_path / "reverse",
+    )
+
+    assert forward.name == reverse.name
+    forward_manifest = json.loads((forward / "manifest.json").read_text())
+    reverse_manifest = json.loads((reverse / "manifest.json").read_text())
+    assert forward_manifest["outputs"] == reverse_manifest["outputs"]
+    validate_input_artifact(forward)
+    validate_input_artifact(reverse)
+
+
 def test_builder_refuses_queue_shadow_top10_hash_conflict(tmp_path: Path) -> None:
     batch_path, queue_dir, shadow_dir = _write_source_artifacts(tmp_path)
     queue_manifest_path = queue_dir / "manifest.json"
