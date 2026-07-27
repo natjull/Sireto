@@ -491,7 +491,7 @@ def freeze_queue(
     identity = {
         "schema_version": SCHEMA_VERSION,
         "input_hashes": input_hashes,
-        "policy": "hard-label-priority-v2",
+        "policy": "hard-label-priority-v3",
     }
     build_id = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
@@ -507,6 +507,7 @@ def freeze_queue(
         queue_path = staging / "hard_label_queue.parquet"
         auto_path = staging / "auto_priority.csv"
         template_path = staging / "human_adjudication_template.csv"
+        batch250_path = staging / "human_adjudication_batch250.csv"
         queue.to_parquet(queue_path, index=False)
         auto_columns = [
             "audit_case_id",
@@ -539,15 +540,22 @@ def freeze_queue(
             "priority_reason",
             "SITE",
             "SITE_CLI_ADRESSE",
+            "CODE_POSTAL",
+            "COMMUNE",
+            "input_siret",
+            "input_siret_state",
             "top1_siret",
             "predicted_candidate_name",
             "top1_address",
+            "risk_signals_json",
+            "sirene_evidence_json",
             "human_label",
             "human_ground_truth_siret",
             "human_validator",
             "human_evidence_refs",
         ]
         queue[template_columns].to_csv(template_path, index=False)
+        queue.head(250)[template_columns].to_csv(batch250_path, index=False)
         priority_counts = {
             str(key): int(value)
             for key, value in queue["priority_reason"]
@@ -583,7 +591,13 @@ def freeze_queue(
             + "\n",
             encoding="utf-8",
         )
-        outputs = [queue_path, auto_path, template_path, summary_path]
+        outputs = [
+            queue_path,
+            auto_path,
+            template_path,
+            batch250_path,
+            summary_path,
+        ]
         manifest = {
             **identity,
             "build_id": build_id,
