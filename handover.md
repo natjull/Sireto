@@ -1,6 +1,21 @@
 # SIRETO Handover - 27 Juillet 2026
 
 ## Etat des lieux
+Le correctif retrieval V4.2 franchit le gate représentatif :
+**242/242 = 100 % Recall@100** sur les `MATCH_EXACT` provisoires figés, dont
+91/91 dans le tirage aléatoire. Aucun pool ne dépasse 100, aucun candidat fermé
+n'est produit, aucune vérité n'est injectée et aucun des 237 anciens succès ne
+régrèsse. Les cinq pertes V4.1 sont récupérées aux rangs 1, 2, 1, 3 et 1.
+
+Le correctif ne change ni TF-IDF, ni RRF, ni ranker, ni accepteur. La variante
+B exploite le SIRET/SIREN d'entrée comme indice et la barrière finale prend
+désormais l'état administratif dans le snapshot SIRENE complet de 42 322 035
+établissements, au lieu du magasin rapide incomplet de 14 378 332 candidats.
+Verdict **`GO_HARD_LABELS`** : le prochain travail est la constitution de
+vrais cas difficiles représentatifs avant tout réentraînement. Le statut
+production reste **`STOP_DEPLOYMENT`**. Rapport :
+`reports/v9/v4_2_retrieval_integrity_results.md`.
+
 L'audit représentatif V4.1 invalide désormais l'extrapolation des scores dev
 au CRM réel. Sur 250 lignes tirées aléatoirement, la preuve déterministe ne
 conclut que 106 cas = 42,4 % (91 exacts, 15 ambigus, 144 non résolus), alors
@@ -107,6 +122,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Intégrité retrieval V4.2 validée sans GPU** : contrat figé avant le
+  correctif ; variante B et état autoritaire lu dans le snapshot complet.
+  Résultat 242/242 = 100 % Recall@100, random exact 91/91, zéro fermé, zéro
+  injection, zéro vérité absente du snapshot et zéro régression sur les 237
+  anciens succès. Les cinq misses sont tous récupérés. Latence p50 455,1 ms,
+  p95 2 878,6 ms sur cet échantillon difficile. Verdict `GO_HARD_LABELS`,
+  sans autorisation de réentraînement ou de déploiement. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_2_retrieval_integrity_7c4b957`.
+  *(commits GitHub : contrat `c33d3e0`, source d'état `48ed90b`, évaluateur
+  `7c4b957`, rapport `2d7070e` ; 218 tests passants)*
 - **Audit représentatif V4.1 exécuté en aveugle** : échantillon figé de 800
   lignes dont 250 aléatoires ; preuves construites sans décision, score,
   prédiction ni rang modèle ; 242 `MATCH_EXACT`, 16 `AMBIGUOUS` et 542
