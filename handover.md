@@ -219,6 +219,17 @@ passent. Aucun résultat dev, worker ou parité n'a été produit ; oracle,
 historique et modèles sont restés fermés. Rapport :
 `reports/v9/v4_12_unit_retrieval_launch_failure.md`. Une relance exige un
 nouveau verrou doublement audité. *(commit GitHub : correctif `58fabf3`)*
+Le verrou de remplacement, hash
+`097b65ea73578f2993ffedb133878a7708138a1ab7fa3acc16dfc7b102861359`,
+épingle le commit corrigé `58fabf3b42540d1862d1ef3d12cf7cd2f22a2fd4`
+et franchit **`GO_LOCK_IMPORT_1`** et **`GO_LOCK_IMPORT_2`**. Les audits
+confirment 13 sources, 16 entrées, les exécutables et le runtime exacts. Le
+second audit, sans importer le runner, a rehashé les 1 945 fichiers Gate A
+(6,73 Gio) et les a rapprochés des 1 954 lignes du ledger. Les projections
+worker restent sans oracle, historique, dataset ou modèle. Ce verrou autorise
+une nouvelle tentative end-to-end worker puis parité ; il n'autorise toujours
+pas l'ouverture de l'oracle, le calcul du Recall ou le dégel des modèles.
+*(commit GitHub : `a1c1db8`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
