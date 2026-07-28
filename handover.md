@@ -243,6 +243,16 @@ manifeste worker ou résultat de parité n'a été produit. Rapport d'incident
 mis à jour : `reports/v9/v4_12_unit_retrieval_launch_failure.md`. Une
 nouvelle relance exige encore un nouveau verrou doublement audité. *(commit
 GitHub : correctif `a0a0e37`)*
+Le verrou runtime corrigé, hash
+`778946fae29fb427318c29eee4fba71dea60f1b1d6ea67906caab872441d1def`,
+épingle `a0a0e3795948d92c5c41e65cfd3998d8e21781ab` et franchit
+**`GO_LOCK_RUNTIME_1`** et **`GO_LOCK_RUNTIME_2`**. Les 13 sources, 16
+entrées, quatre exécutables et le runtime sont exacts. L'audit indépendant
+sans import du runner a de nouveau rehashé les 1 945 fichiers Gate A contre
+les 1 954 lignes du ledger. Aucun chemin oracle, historique, dataset ou
+modèle n'est exposé au worker. Une nouvelle tentative worker puis parité est
+autorisée ; l'oracle et les modèles restent fermés. *(commit GitHub :
+`662d555`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
