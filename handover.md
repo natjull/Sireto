@@ -1,6 +1,15 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+L'audit statistique pré-fit a invalidé l'ordre structuré V4.10 avant tout
+entraînement. Il contenait 58 copies sémantiques et 16 signaux résiduels
+capables de distinguer l'instrumentation retrieval V4.1 de V4.2-B. La
+politique V4.10b, préenregistrée sans utiliser les labels ni les splits,
+conserve `CURRENT80` bit à bit, ramène l'ordre structuré de 715 à 641
+features, standardise aussi les compteurs pour la logistique et précise les
+gates en arithmétique entière. Le build `0d6b87fd50fb550c` et son ancien plan
+sont `superseded`; aucun fit ne les a consommés. *(commit GitHub : `eb85597`)*
+
 Le plan d'entraînement V4.10 est gelé avant le premier fit dans
 `config/v4_10_training_plan.json`. Il autorise exactement `BASE_FROZEN` et
 neuf variantes appariées (`CURRENT80`, `STRUCTURED_LOGIT`,
