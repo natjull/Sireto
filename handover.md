@@ -96,6 +96,20 @@ contrat, le calcul de scène et l'accepteur. Le contrôle indépendant a trouvé
 puis fait fermer cinq manques de gouvernance avant tout fit ; la suite
 complète passe 428 tests. *(commit GitHub : `2a9f51f`)*
 
+Le dataset de scènes de l'accepteur V4.11 franchit maintenant
+**`GO_FREEZE_PLAN`**. Il contient 5 547 scènes fit produites par prédictions
+OOF et 1 456 scènes dev hors échantillon, soit 7 003 requêtes, 80 features et
+5 877 cibles positives. Les cinq erreurs fit, l'erreur dev et les 1 120 cas
+`AMBIGUOUS` restent explicitement négatifs ; aucun cas n'a été retiré. Un
+premier manifeste a été supersédé avant tout fit car il n'épinglait pas le
+code transitive de fonction de site. Le build corrigé verrouille retrieval,
+ranker, prédictions, contrat, taxonomie, calcul de scène et fonction de site.
+Son parquet est bit à bit identique au premier et le contre-audit conclut
+`GO_FREEZE_PLAN`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff`.
+Rapport : `reports/v9/v4_11_acceptor_scene_dataset_results.md`.
+*(commits GitHub : correctif `c462a21`, résultats `19f1169`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
@@ -1254,6 +1268,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Verdict final V4 corrigé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4_verdict_repair/` |
 | Dataset V4.11 input-blind | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/` |
 | Ranker C V4.11 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_ranker_c/e13eb3ac7498256e/` |
+| Scènes accepteur V4.11 validées | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff/` |
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
@@ -1274,10 +1289,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    pas par le retrieval.
 7. Préenregistrer V4.11 sur le stack homogène V4.2-B + ranker B OOF, construire
    un accepteur compact, puis le geler avant tout accès aux 225 lignes
-   restantes. **Gates retrieval et ranker C franchis ; prochaine étape :
-   construire les scènes accepteur, geler le plan et comparer les deux
-   accepteurs préenregistrés.** Pour une décision finale, obtenir un nouvel
-   export CRM.
+   restantes. **Gates retrieval, ranker C et scènes accepteur franchis ;
+   prochaine étape : geler le plan et le verrou d'exécution, puis comparer
+   les deux accepteurs préenregistrés.** Pour une décision finale, obtenir un
+   nouvel export CRM.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
