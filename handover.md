@@ -51,6 +51,10 @@ restaurées, ledger incomplet puis ledger réordonné. Les trois PoC finaux sont
 désormais bloqués ; 23 tests ciblés et 670 tests complets passent. Aucun
 build réel n'avait encore été lancé. *(commits GitHub : builder `7eafad8`,
 audit `02e954b`)*
+Le verrou d'exécution oracle est contre-audité `GO_LOCK_ORACLE` avec 4 434
+assertions : cinq sources Git, quatre inputs, six fichiers runtime sûrs,
+populations, ordre, payloads, runtime et racines sont exacts. Hash du verrou :
+`4d598cf1...f6d4c8b1`. *(commit GitHub : `04a22db`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
