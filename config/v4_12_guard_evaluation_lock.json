@@ -1,6 +1,6 @@
 {
   "audit_verdict": "GO_EVALUATE_V412_GUARD",
-  "git_commit": "018224871b4a56796cda8912e745f6a79c60d2a1",
+  "git_commit": "7d7024963f120124498ab80b8ae7686e22b1e27f",
   "input_hashes": {
     "acceptor_manifest": "a7fc765fe439392baec61fa8a35a941bb1f778281ccdbb54b55c699e9f0c11d9",
     "acceptor_metadata": "e4b99676e695d19748b71a7657ff5a1f5c7dfa2879754dd2e1b15c8906a61d6b",
@@ -59,7 +59,7 @@
     "src/xgb_matcher/v411_acceptor.py": "a85833a78ab98121d3ccf4bc9e93b63cbd33c2e727b980bc456bff64424740b4",
     "src/xgb_matcher/v411_scene.py": "ce90f6a9402cd062e5afb1f5248085df551a87f2ac0b40657e7c57b8236086a1",
     "src/xgb_matcher/v412_direct_evidence.py": "bb63553cc96463f95a1784ec3c67feb5a7136a5baae711ae8d656872ff4b626b",
-    "src/xgb_matcher/v412_evaluation.py": "8d00fc224bc986253beb7ca0b1c1a99c0b88283b471d871764ff0d6d0b54767a",
+    "src/xgb_matcher/v412_evaluation.py": "789acad22c09bfbe4256e431d5e1d15a5b48365a8dd363d804e20a38f1a5cccb",
     "src/xgb_matcher/v49_site_function.py": "8463086d2ce404e5c83140df8ea7351cfb363793edfa7e74db95fe202d9c54e2"
   },
   "threshold": 0.8720916706888049
