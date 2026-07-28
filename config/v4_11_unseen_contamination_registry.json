@@ -1,0 +1,19 @@
+{
+  "schema_version": "sireto-v4.11-unseen-contamination-registry-1",
+  "challenge_id": "DESCRIPTIVE_UNSEEN_225",
+  "incident_recorded_at": "2026-07-28T08:17:00Z",
+  "incident_context": "ROOT_ORCHESTRATOR_REGISTRY_INSPECTION",
+  "reason": "INPUT_SIRET_EXPOSED_TO_ROOT_CONTEXT",
+  "policy": {
+    "keep_in_single_operational_run": true,
+    "exclude_from_primary_blind_metrics": true,
+    "publish_as_separate_cohort": "EXPOSED_3",
+    "primary_blind_cohort": "DESCRIPTIVE_UNSEEN_BLIND_222"
+  },
+  "source_row_numbers": [
+    1102,
+    1169,
+    1314
+  ],
+  "exposed_identifiers_copied": false
+}
