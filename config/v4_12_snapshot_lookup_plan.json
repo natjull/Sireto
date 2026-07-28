@@ -1,0 +1,107 @@
+{
+  "build": {
+    "database_filename": "candidate_details.duckdb",
+    "disk_free_min_bytes": 53687091200,
+    "duckdb": {
+      "checkpoint_before_close": true,
+      "memory_limit": "6GB",
+      "reject_wal": true,
+      "temp_directory": "<staging>/duckdb_tmp",
+      "threads": 4,
+      "unique_index_name": "candidate_details_siret_uidx",
+      "unique_index_sql": "CREATE UNIQUE INDEX candidate_details_siret_uidx ON candidate_details(siret)",
+      "version": "1.4.3"
+    },
+    "max_rss_bytes": 8589934592,
+    "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup",
+    "publication": "FSYNC_AND_ATOMIC_RENAME",
+    "table": "candidate_details"
+  },
+  "columns": [
+    {
+      "lookup": "siret",
+      "snapshot": "siret",
+      "sql": "CAST(siret AS VARCHAR)"
+    },
+    {
+      "lookup": "candidate_state",
+      "snapshot": "etatAdministratifEtablissement",
+      "sql": "upper(trim(CAST(etatAdministratifEtablissement AS VARCHAR)))"
+    },
+    {
+      "lookup": "enseigne1",
+      "snapshot": "enseigne1Etablissement",
+      "sql": "CAST(enseigne1Etablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "enseigne2",
+      "snapshot": "enseigne2Etablissement",
+      "sql": "CAST(enseigne2Etablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "enseigne3",
+      "snapshot": "enseigne3Etablissement",
+      "sql": "CAST(enseigne3Etablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "denomination_usuelle",
+      "snapshot": "denominationUsuelleEtablissement",
+      "sql": "CAST(denominationUsuelleEtablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "activity_code",
+      "snapshot": "activitePrincipaleEtablissement",
+      "sql": "CAST(activitePrincipaleEtablissement AS VARCHAR)"
+    }
+  ],
+  "future_latency_gate": {
+    "complete_v412_p95_lt_2x_v411": true,
+    "evidence_guard_p95_lte_retrieval_v411_p95": true,
+    "p95_method": "NEAREST_RANK",
+    "population": "threshold_dev_plus_comparison_dev",
+    "query_count": 1456,
+    "serve_unit": "ONE_QUERY_IN_PERSISTENT_WORKER",
+    "split": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/split_assignments.parquet",
+      "population_rule": "split == dev; threshold iff first SHA256 byte of v411-threshold:<siren_component_id> < 128",
+      "projection": [
+        "query_id",
+        "siren_component_id",
+        "split",
+        "oof_fold"
+      ],
+      "sha256": "33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193"
+    }
+  },
+  "inference_lookup": {
+    "max_sirets_per_call": 100,
+    "read_only": true,
+    "returns_only_requested_sirets": true
+  },
+  "parity": {
+    "candidate_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/candidates_sparse_top100.parquet",
+    "candidate_projection": [
+      "candidate_siret"
+    ],
+    "candidate_row_count": 698892,
+    "candidate_sha256": "78b2f78ddeac863ac39ca64301d42312c7fb766ac51e2b5d19dde5c5910aedac",
+    "candidate_unique_siret_count": 508081,
+    "reference_snapshot_scan_count": 1,
+    "snapshot_sample_count": 10000,
+    "snapshot_sample_namespace": "v412-lookup-parity:",
+    "snapshot_sample_ordered_newline_sha256": "58c9700d2a1ed2bb433e4f7a25a845ba236d63cfe633dcd64f9156469777f945"
+  },
+  "schema_version": "sireto-v4.12-snapshot-lookup-plan-1",
+  "snapshot": {
+    "invalid_siret_count": 0,
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/StockEtablissement_utf8.parquet",
+    "row_count": 42322035,
+    "sha256": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845",
+    "unique_siret_count": 42322035
+  },
+  "verdicts": [
+    "GO_V412_SNAPSHOT_LOOKUP",
+    "STOP_V412_LOOKUP_BUILD",
+    "STOP_V412_LOOKUP_PARITY"
+  ]
+}
