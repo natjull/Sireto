@@ -17,6 +17,11 @@ suivre le commit audité sans rendre l'exécution impossible, tandis que chaque
 source reste identique au worktree, au verrou et au blob du commit audité.
 Le contre-audit rend `GO_LOCK_SEQUENCING`; 29 tests ciblés et 647 tests
 complets passent. *(commit GitHub : `c97c737`)*
+Le verrou d'exécution des entrées sûres est contre-audité `GO_LOCK`. Il
+épingle le commit audité, les cinq sources, queries/split, les deux
+inventaires complets, le runtime et les trois racines SSD. Son hash avant
+commit est `e794c60f...e9def315`; aucun build n'avait encore été lancé lors
+du gel. *(commit GitHub : `7c31051`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
