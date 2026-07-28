@@ -178,6 +178,22 @@ avec cinq contrôles exacts. Le prochain acte autorisé est l'unique exécution
 descriptive sous ce verrou. *(commits GitHub : runner `cd1cab5`, verrou
 `da6924a`)*
 
+L'unique challenge descriptif V4.11 est terminé avec une intégrité
+contre-auditée, et conclut **`PIVOT_ACCEPTOR_EVIDENCE_GATE`**. Sur les 222
+lignes aveugles, le retrieval et le ranker réussissent les 73/73 cas exacts,
+mais l'accepteur automatise un cas `AMBIGUOUS` : 73/74 décisions AUTO
+évaluables sont correctes, soit 98,649 %. Les 72 autres AUTO aveugles sont
+`UNRESOLVED` et restent invérifiables. L'erreur contient deux candidats forts
+de deux SIREN différents, tous deux dans le top 2 ; la scène ne compte pas
+explicitement les identités fortes inter-SIREN. La prochaine variante doit
+donc tester une garde déterministe « plusieurs SIREN forts → REVIEW » et les
+features correspondantes sur les anciennes populations, puis être gelée
+avant un nouvel export. Il est interdit de régler le seuil sur ce challenge
+consommé. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_execution/ddb7336e8c2e042d`.
+Rapport : `reports/v9/v4_11_unseen_execution_results.md`.
+*(commit GitHub : `62e9741`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
@@ -1358,12 +1374,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 6. Conserver séparément le chantier qualification/réparation CRM : la
    couverture source 22,454 % reste très loin du gate de 80 % et ne se corrige
    pas par le retrieval.
-7. Préenregistrer V4.11 sur le stack homogène V4.2-B + ranker B OOF, construire
-   un accepteur compact, puis le geler avant tout accès aux 225 lignes
-   restantes. **Candidat V4.11 gelé ; prochaine étape : qualifier puis
-   exécuter une seule fois le challenge descriptif des 225 lignes, sans en
-   faire une preuve produit.** Pour une décision finale, obtenir un nouvel
-   export CRM.
+7. Le challenge descriptif V4.11 est consommé et conclut
+   `PIVOT_ACCEPTOR_EVIDENCE_GATE`. Préenregistrer V4.12 sur les anciennes
+   populations uniquement : garde multi-SIREN forte, nouvelles features
+   d'unicité, comparaison garde seule puis accepteur. Geler le candidat avant
+   tout nouvel export CRM indépendant, indispensable à une décision produit.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
