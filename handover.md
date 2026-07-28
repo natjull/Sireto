@@ -1,6 +1,23 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+La V4.7 a réadjudiqué les 37 top-1 ayant dérivé entre V4.4 et le stack
+courant V4.2-B + ranker A, sans transporter l'ancien verdict. Chaque preuve
+publique a été téléchargée, archivée et contrôlée par des faits
+préenregistrés ; une décision fiable exige toujours au moins deux groupes
+indépendants, dont le registre officiel. Vingt-trois nouveaux verdicts sont
+fiables (huit `TOP1_CORRECT`, quatorze `TOP1_WRONG`, une `AMBIGUOUS`) et
+quatorze restent `UNRESOLVED`. Le corpus courant atteint exactement 150/172
+labels fiables, dont 52/57 aléatoires, 28 négatifs ciblés et six négatifs
+aléatoires. Tous les gates préenregistrés passent. Verdict :
+**`GO_ACCEPTOR_FEASIBILITY`**. Il autorise une expérience V4.8 hors test, pas
+un déploiement ni une revendication à 99,8 %. Aucun modèle n'a été entraîné et
+le test final est resté fermé. Rapport :
+`reports/v9/v4_7_current_top1_adjudication_results.md`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_7_current_adjudications/4cc5420fb5da0683`.
+*(commits GitHub : contrat `25b881b`, docket `6af0e45`, registre `b85daf7`,
+adjudication `bdfbadc`; 324 tests passants)*
+
 La V4.6 a reconstruit deux fois, avec caches séparés, les pools V4.2-B des
 7 003 requêtes historiques puis comparé le ranker A gelé à un ranker B
 réentraîné sur ces pools. Les deux datasets contiennent exactement 698 991
@@ -207,6 +224,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Gate V4.7 franchi sur les scènes courantes** : 37/37 top-1 dérivés ont
+  été traités ; 23 portent désormais un label fiable et 14 restent
+  `UNRESOLVED`. Le corpus agrégé atteint 150/172 labels fiables, 52/57
+  aléatoires, 28 négatifs ciblés et six négatifs aléatoires. Zéro ancien
+  verdict a été transporté vers un autre SIRET. Verdict
+  `GO_ACCEPTOR_FEASIBILITY`; V4.8 doit être préenregistrée avant tout
+  entraînement et le test final reste fermé. Rapport :
+  `reports/v9/v4_7_current_top1_adjudication_results.md`. *(commit GitHub :
+  `bdfbadc`; 324 tests passants)*
 - **Population AUTO V4.4 épuisée sans quota fabriqué** : les 172/172
   `AUTO_MATCH` ont été audités. Bilan : 114 `TOP1_CORRECT`, 42
   `TOP1_WRONG`, six `AMBIGUOUS`, dix `UNRESOLVED`, 162 labels acceptor et 53
