@@ -100,6 +100,14 @@ plan/code/lock, était tronqué à 63 caractères face au fichier réel. Le hash
 `GO_CODE_PATCH`, 41 tests ciblés, le smoke réel et 711 tests complets
 confirment le correctif. Aucun build n'a été lancé avec le verrou fautif.
 *(commit GitHub : `c22d05a`)*
+Le verrou corrigé, hash
+`31aab729f33db26350da37e8d1fbf427d19a8153112d353973088df83e620b9f`,
+franchit `GO_LOCK_V412_STRICT_STORES` et `GO_LOCK_2`. Les deux
+contre-audits ont validé respectivement 7 901 et 342 contrôles, dont les
+1 945 fichiers physiques (7 224 974 001 octets), les blobs Git, le runtime
+réel, le routage, les subsets et l'absence d'inputs interdits. Le prochain
+geste autorisé est désormais l'unique build Gate A sous sandbox, toujours
+sans accès à l'oracle. *(commit GitHub : `775c3bb`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
