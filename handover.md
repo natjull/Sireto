@@ -258,6 +258,18 @@ le gel du bundle, la parité batch/inférence et la latence appariée, puis un
 nouvel export indépendant. *(commits GitHub : correctifs `7d70249`,
 `e8b052f`, reverrouillages `9452d0f`, `3e3dabc`, résultat `94414af`)*
 
+Le préalable d'inférence V4.12 est préenregistré et contre-audité
+**`GO_CONTRACT_LOOKUP`**. V4.11 hydrate aujourd'hui le snapshot SIRENE en
+bulk ; aucune p95 par requête honnête n'est donc encore mesurable. La brique
+suivante est un DuckDB local en lecture seule contenant exactement les sept
+colonnes utilisées par l'hydratation historique, indexées par SIRET. Le
+contrat fixe le snapshot de 42 322 035 SIRET uniques, les 698 892 candidats
+historiques (508 081 SIRET uniques), un contrôle indépendant de 10 000 SIRET,
+les limites Mac/SSD et l'API fail-closed. Aucun lookup n'a encore été
+construit. Après parité exacte seulement, un moteur persistant pourra mesurer
+la p95 appariée sur les 1 456 requêtes dev.
+*(commit GitHub : `00ce1c3`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
