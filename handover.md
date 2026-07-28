@@ -238,10 +238,25 @@ publie les gates entiers et segmentaires. Sa publication est fermée par Git,
 hashes, TOCTOU, RSS, fsync et validation sémantique ligne à ligne. Les 23
 tests ciblés et les 535 tests complets passent. Le verrou externe audité fixe
 11 sources, 13 entrées, le seal V4.12, le modèle, le seuil et le runtime.
-L'évaluation réelle n'a pas encore été lancée à ce stade. Un éventuel
-`GO_V412_HISTORICAL_GATE` ne certifiera ni la latence ni la production.
 *(commits GitHub : évaluateur `37f1476`, fermeture source `0182248`, verrou
 `a99dd31`)*
+
+Le gate historique V4.12-G est exécuté, validé et contre-audité
+**`GO_V412_HISTORICAL_GATE`**. Sur `comparison_dev`, V4.11 et V4.12-G
+conservent 614/746 AUTO, tous exacts, sans ambiguïté automatisée et sans perte
+sur aucun des onze segments publiés. Hors gate, la garde retire trois erreurs
+`AMBIGUOUS` du fit et une du threshold dev, toutes dues à deux preuves fortes
+inter-SIREN, sans retirer d'AUTO exact. Deux préflights se sont arrêtés avant
+scoring et sans artefact sur des conventions valides du fit/dev ; les
+correctifs et reverrouillages ont été audités avant l'exécution publiée.
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/evaluations/v4_12_guard_historical/fedcd1d512bfd269`.
+Rapport : `reports/v9/v4_12_guard_historical_results.md`. Ce GO reste un
+contrôle de cohérence sur des labels circulaires :
+`latency_gate_evaluated=false` et `production_certified=false`. La suite est
+le gel du bundle, la parité batch/inférence et la latence appariée, puis un
+nouvel export indépendant. *(commits GitHub : correctifs `7d70249`,
+`e8b052f`, reverrouillages `9452d0f`, `3e3dabc`, résultat `94414af`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
