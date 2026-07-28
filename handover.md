@@ -144,6 +144,16 @@ avant toute inférence, puis les prédictions seront scellées avant ouverture
 des labels. Le challenge reste descriptif et ne constitue aucun gate produit.
 *(commit GitHub : `30fa0b8`)*
 
+Les builders du challenge V4.11 sont implémentés et audités avant ouverture :
+projection CRM physique, mapping scellé, qualification mécanique V4, preuves
+et labels immuables avec validateurs fail-closed. La suite passe 451 tests.
+Le docket assaini est maintenant construit avec 225 lignes et exactement
+sept colonnes CRM ; aucun SIRET/SIREN, fingerprint, label, candidat ou score
+n'est présent. Les cohortes contiennent 222 lignes aveugles et trois lignes
+exposées. Le contre-audit conclut `GO_QUALIFY`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_sanitized/1c994c852c10acaf`.
+*(commit GitHub : `1fc058f`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
@@ -1304,6 +1314,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Ranker C V4.11 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_ranker_c/e13eb3ac7498256e/` |
 | Scènes accepteur V4.11 validées | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff/` |
 | Candidat accepteur V4.11 gelé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_acceptor/9d23bf3deb6b63de/` |
+| CRM challenge V4.11 assaini | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_sanitized/1c994c852c10acaf/` |
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
