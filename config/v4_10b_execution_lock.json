@@ -1,0 +1,8 @@
+{
+  "schema_version": "sireto-v4.10b-execution-lock-1",
+  "training_plan_sha256": "ab197ba0017b847d8f7d4c00721abaed5dd04fbcfb269ff9fadfb0d0afffd145",
+  "runner_sha256": "35d0d5c209a4a777d9f7c175f6960c53484ac5f1817e16b7179237d329ad1d91",
+  "runner_commit": "6ae4cf7431314c5f59f50c96a811aa27e36f514e",
+  "dataset_manifest_sha256": "4c62f1bd3e1fc77cda806946d3751d397ee1723095d3fc73b34e8dd782006614",
+  "feature_catalog_sha256": "be41a019a24e0d9a24a1be17baa408c06515a0b17b90d8e184c1f5a09f718d92"
+}
