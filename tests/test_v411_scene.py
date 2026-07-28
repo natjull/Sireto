@@ -40,6 +40,11 @@ def _candidate(
         "candidate_siren": siret[:9],
         "ranker_score": score,
         "retrieval_rank": retrieval_rank,
+        "enseigne1": None,
+        "enseigne2": None,
+        "enseigne3": None,
+        "denomination_usuelle": None,
+        "activity_code": None,
         **values,
     }
 
@@ -66,10 +71,10 @@ def test_feature_contract_is_exact_unique_and_partitioned() -> None:
     validate_v411_feature_order(V411_ACCEPTOR_FEATURE_NAMES)
 
 
-def test_ranker_tie_break_is_score_then_retrieval_rank_then_siret() -> None:
+def test_ranker_tie_break_is_score_then_retrieval_rank() -> None:
     candidates = pd.DataFrame(
         [
-            _candidate("22222222200002", score=0.8, retrieval_rank=2),
+            _candidate("22222222200002", score=0.8, retrieval_rank=4),
             _candidate("33333333300003", score=0.9, retrieval_rank=3),
             _candidate("11111111100001", score=0.8, retrieval_rank=2),
             _candidate("44444444400004", score=0.8, retrieval_rank=1),
@@ -146,7 +151,7 @@ def test_single_candidate_and_no_candidate_are_defined_without_fake_top2() -> No
             _candidate(
                 "11111111100001",
                 score=-3.0,
-                retrieval_rank=4,
+                retrieval_rank=1,
                 name_jaro_max=0.7,
                 postcode_match=1,
             )
@@ -159,7 +164,7 @@ def test_single_candidate_and_no_candidate_are_defined_without_fake_top2() -> No
     assert single["same_siren_best_sibling_gap_fraction"] == 1
     assert single["ranker_score_std_fraction"] == 0
     assert single["ranker_score_entropy"] == 0
-    assert single["retrieval_rank_gap_recip"] == 0.25
+    assert single["retrieval_rank_gap_recip"] == 1.0
     assert single["top1_name_jaro_max"] == pytest.approx(0.7)
     assert single["delta_name_jaro_max"] == pytest.approx(0.7)
     assert single["role_top1_top2_conflict"] == 0
@@ -195,6 +200,7 @@ def test_equal_scores_force_all_normalised_score_gaps_to_zero() -> None:
     assert scene["siren_gap_fraction"] == 0
     assert scene["same_siren_best_sibling_gap_fraction"] == 0
     assert scene["ranker_score_entropy"] == 1
+    assert scene["naf_top1_top2_division_equal"] == 0
 
 
 def test_compact_role_features_use_top1_top2_and_same_siren_constellation() -> None:
@@ -241,12 +247,12 @@ def test_prediction_metadata_uses_the_same_tie_break_as_features() -> None:
     candidates = pd.DataFrame(
         [
             _candidate("22222222200002", score=0.8, retrieval_rank=1),
-            _candidate("11111111100001", score=0.8, retrieval_rank=1),
+            _candidate("11111111100001", score=0.8, retrieval_rank=2),
         ]
     )
     output = build_v411_compact_scene(_query(), candidates, TAXONOMY)
-    assert output["predicted_siret"] == "11111111100001"
-    assert output["predicted_siren"] == "111111111"
+    assert output["predicted_siret"] == "22222222200002"
+    assert output["predicted_siren"] == "222222222"
     assert output["candidate_count"] == 2
 
 
@@ -278,6 +284,34 @@ def test_integrity_guards_fail_closed() -> None:
     )
     with pytest.raises(ValueError, match="candidate feature addr_jaro"):
         build_v411_compact_scene_features(_query(), invalid_feature, TAXONOMY)
+
+    missing_role_sources = pd.DataFrame(
+        [
+            {
+                "candidate_siret": "11111111100001",
+                "candidate_siren": "111111111",
+                "ranker_score": 0.9,
+                "retrieval_rank": 1,
+            }
+        ]
+    )
+    with pytest.raises(ValueError, match="missing candidate scene columns"):
+        rank_v411_candidates(missing_role_sources)
+
+    non_contiguous = pd.DataFrame(
+        [
+            _candidate("11111111100001", score=0.9, retrieval_rank=1),
+            _candidate("22222222200002", score=0.8, retrieval_rank=3),
+        ]
+    )
+    with pytest.raises(ValueError, match="unique and contiguous"):
+        rank_v411_candidates(non_contiguous)
+
+    malformed_siret = pd.DataFrame(
+        [_candidate("111 111 111 00001", score=0.9, retrieval_rank=1)]
+    )
+    with pytest.raises(ValueError, match="invalid candidate SIRET"):
+        rank_v411_candidates(malformed_siret)
 
     with pytest.raises(ValueError, match="feature order drift"):
         validate_v411_feature_order(V411_ACCEPTOR_FEATURE_NAMES[::-1])

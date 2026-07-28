@@ -83,6 +83,14 @@ V411_ROLE_FEATURE_NAMES = [
     "naf_top1_top2_division_equal",
 ]
 
+V411_ROLE_SOURCE_COLUMNS = [
+    "enseigne1",
+    "enseigne2",
+    "enseigne3",
+    "denomination_usuelle",
+    "activity_code",
+]
+
 V411_ACCEPTOR_FEATURE_NAMES = (
     V411_SCENE_FEATURE_NAMES
     + V411_EVIDENCE_FEATURE_NAMES
@@ -254,20 +262,20 @@ def _required_finite(value: Any, *, name: str) -> float:
 def _normalise_siret(value: Any) -> str:
     if _missing(value):
         raise ValueError("STOP_DATASET_INTEGRITY: candidate SIRET is missing")
-    digits = "".join(character for character in str(value) if character.isdigit())
-    if not digits or len(digits) > 14:
+    digits = str(value).strip()
+    if len(digits) != 14 or not digits.isdigit():
         raise ValueError("STOP_DATASET_INTEGRITY: invalid candidate SIRET")
-    output = digits.zfill(14)
-    if len(output) != 14:
-        raise ValueError("STOP_DATASET_INTEGRITY: invalid candidate SIRET")
-    return output
+    return digits
 
 
 def _normalise_siren(value: Any, *, siret: str) -> str:
     if _missing(value) or not str(value).strip():
         return siret[:9]
-    digits = "".join(character for character in str(value) if character.isdigit())
-    output = digits.zfill(9)
+    output = str(value).strip()
+    if len(output) != 9 or not output.isdigit():
+        raise ValueError(
+            "STOP_DATASET_INTEGRITY: candidate SIREN/SIRET incoherence"
+        )
     if len(output) != 9 or output != siret[:9]:
         raise ValueError(
             "STOP_DATASET_INTEGRITY: candidate SIREN/SIRET incoherence"
@@ -289,6 +297,7 @@ def rank_v411_candidates(
         "candidate_siret",
         score_column,
         retrieval_rank_column,
+        *V411_ROLE_SOURCE_COLUMNS,
     }
     missing = required - set(candidates.columns)
     if missing:
@@ -329,6 +338,16 @@ def rank_v411_candidates(
     if ranked["candidate_siret"].duplicated().any():
         raise ValueError(
             "STOP_DATASET_INTEGRITY: duplicate SIRET in a V4.11 candidate pool"
+        )
+    if len(ranked) > 100:
+        raise ValueError(
+            "STOP_DATASET_INTEGRITY: V4.11 candidate pool exceeds 100"
+        )
+    observed_ranks = sorted(ranked["_v411_retrieval_rank"].astype(int).tolist())
+    expected_ranks = list(range(1, len(ranked) + 1))
+    if observed_ranks != expected_ranks:
+        raise ValueError(
+            "STOP_DATASET_INTEGRITY: retrieval ranks must be unique and contiguous"
         )
     return ranked.sort_values(
         ["_v411_ranker_score", "_v411_retrieval_rank", "candidate_siret"],
@@ -521,6 +540,8 @@ def _role_features(
         "same_siren_role_plurality": float(len(sibling_roles) > 1),
         "naf_top1_top2_division_equal": float(
             len(records) > 1
+            and _naf_division(_activity_code(records[0])) != "UNKNOWN"
+            and _naf_division(_activity_code(records[1])) != "UNKNOWN"
             and _naf_division(_activity_code(records[0]))
             == _naf_division(_activity_code(records[1]))
         ),
@@ -707,6 +728,7 @@ __all__ = [
     "V411_EVIDENCE_FEATURE_NAMES",
     "V411_MONOTONIC_CONSTRAINTS",
     "V411_ROLE_FEATURE_NAMES",
+    "V411_ROLE_SOURCE_COLUMNS",
     "V411_SCALED_FEATURE_NAMES",
     "V411_SCENE_FEATURE_NAMES",
     "assert_v411_train_serve_parity",
