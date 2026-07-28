@@ -1,0 +1,40 @@
+{
+  "audit_verdict": "GO_AUDIT_V412_SNAPSHOT_LOOKUP",
+  "git_commit": "3de02dce3142f7a024c2440ca544973cb68ee093",
+  "input_hashes": {
+    "artifact_manifest": "04e098952ee4cc7957155623599d3ba35b95f9126932e5a5d420ec02b110b15e",
+    "official_validator": "607f89602fda17b734dde736b32e690d9a54482ef873ee73a0abbfde3332e8d8",
+    "plan": "079ada656822fe850126663b7982d3b7910ccee5b9e64faead228f0198f2dd9f",
+    "snapshot": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845"
+  },
+  "input_paths": {
+    "artifact": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb",
+    "official_validator": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/build_v412_snapshot_lookup.py",
+    "plan": "/Users/nathanjullia/Documents/Projets/SIRETO/config/v4_12_snapshot_lookup_independent_audit_plan.json",
+    "snapshot": "/Users/nathanjullia/Documents/Projets/SIRETO/data/StockEtablissement_utf8.parquet"
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_snapshot_lookup",
+  "purpose": "AUDIT_V412_SNAPSHOT_LOOKUP",
+  "runtime": {
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.3"
+  },
+  "schema_version": "sireto-v4.12-lookup-independent-audit-lock-1",
+  "source_hashes": {
+    "config/v4_12_forbidden_artifacts.json": "19d6cb585a8fb33ddc1d6e485b15b3a811bcf78a540b4e9178eddcfd4bb49d9d",
+    "config/v4_12_snapshot_lookup_execution_lock.json": "a75db01dff045be627816780574bce7c906afbc9e357c17c024404582bcd26c9",
+    "config/v4_12_snapshot_lookup_independent_audit_plan.json": "079ada656822fe850126663b7982d3b7910ccee5b9e64faead228f0198f2dd9f",
+    "config/v4_12_snapshot_lookup_plan.json": "6ad0fc9d82187a7ba045a3bb2a3301fce449465443af5e25358259fad2031568",
+    "docs/v4_12_snapshot_lookup_contract.md": "c96f7601f9758a00e0c17f8861372a1f4ed4a3719ea8fe18091d06429e1d06a6",
+    "docs/v4_12_snapshot_lookup_independent_audit_contract.md": "2f88c94ba5931a9dee79962ef0f57d79c412ac0adcb18f5b5adac98761c0bd42",
+    "scripts/__init__.py": "86cc02ebddce9b2c5b019a6494f96646aa1e187e744968e9c11373b6674e31a3",
+    "scripts/audit_v412_snapshot_lookup.py": "0c69c6c9f12248850f4a71177cd6f7fba6ab8a57cf76a356ab7f7b887f373043",
+    "scripts/build_v412_snapshot_lookup.py": "607f89602fda17b734dde736b32e690d9a54482ef873ee73a0abbfde3332e8d8",
+    "src/xgb_matcher/__init__.py": "805f06b227a55a59483ac5d4a07b24ef13341dee006bc20cafbd3cb21523530f",
+    "src/xgb_matcher/v412_snapshot_lookup.py": "5b02faedf4746e8adfa447e9f24a6f35b88e1ee7ffee5169a765bcb852763cf9",
+    "tests/test_audit_v412_snapshot_lookup.py": "ec9348211b9607fcd465011e41fad8d934526a6a5258ac6375253b3abe352eb2"
+  },
+  "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_snapshot_lookup_independent_audit"
+}
