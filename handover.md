@@ -12,6 +12,11 @@ inventaires réels partitions/cache et la signature historique ont été
 recalculés exactement. Ce GO autorise seulement le verrou puis le build des
 entrées physiquement aveugles ; il n'autorise ni oracle, ni worker, ni
 benchmark. *(commits GitHub : builder `18eb76e`, audit `46868db`)*
+Le séquencement du verrou a ensuite été fermé : le commit du verrou peut
+suivre le commit audité sans rendre l'exécution impossible, tandis que chaque
+source reste identique au worktree, au verrou et au blob du commit audité.
+Le contre-audit rend `GO_LOCK_SEQUENCING`; 29 tests ciblés et 647 tests
+complets passent. *(commit GitHub : `c97c737`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient

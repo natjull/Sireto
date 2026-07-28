@@ -61,3 +61,15 @@ des quatre Parquet et du ledger, ainsi que la publication audit-first.
 Ce verdict autorise la création et le contre-audit du verrou d'exécution. Il
 ne vaut ni `GO_V412_UNIT_INPUTS`, ni autorisation du store, du worker ou du
 benchmark.
+
+## Correctif de séquencement du verrou
+
+Avant la création du verrou, une dernière revue a constaté qu'exiger
+`HEAD == git_commit` rendait impossible le commit ultérieur du verrou. Le
+correctif `c97c737` autorise un commit audité antérieur tout en maintenant,
+pour chaque source, l'égalité stricte entre le fichier de travail, son hash
+dans le verrou et le blob binaire du commit audité.
+
+Le contre-audit rend `GO_LOCK_SEQUENCING`. Les tests ciblés passent désormais
+à **29/29** et la suite complète à **647/647**. Une source modifiée,
+non suivie ou absente du commit audité reste refusée.
