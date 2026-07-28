@@ -296,6 +296,17 @@ Rapport :
 `reports/v9/v4_12_snapshot_lookup_results.md`.
 *(commits GitHub : faux STOP conservé `880e57c`, correction `00d71c4`)*
 
+Le contre-validateur indépendant du lookup est préenregistré
+**`GO_CONTRACT_INDEPENDENT_AUDIT`** avant son implémentation. Il refait la
+sélection SIRET depuis le snapshot sans importer le builder, construit le
+payload avec `byte 0x0A`, vérifie explicitement le contre-exemple `5C 6E`,
+rejoint séparément les six valeurs métier et compare le store par lots de
+100. Schéma, cardinalité, index, quatre fichiers, ressources, sources
+transitives et publication sont gelés. Un test devra modifier puis resceller
+une valeur DuckDB : le validateur historique peut l'accepter, le nouveau doit
+la refuser. Aucun audit formel n'a encore été exécuté.
+*(commit GitHub : `5234084`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
