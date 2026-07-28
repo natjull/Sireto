@@ -67,6 +67,8 @@ promotion :
 | candidats V4.2-B | même répertoire, `candidates_v42b.parquet` | `0b7fc90e045da10033f0ae4b598963505d76c16710e2efc9dbe728a93a6536dc` |
 | splits/folds | même répertoire, `split_assignments.parquet` | `33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193` |
 | prédictions ranker B diagnostiques | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_6_aligned_ranker/421f2cd0cc436af7/predictions_b_oof_dev.parquet` | `f708a51aed9842e236ff9bd6c752079d0ccd127ccabc86d975beaa921c3853db` |
+| modèle ranker B diagnostique | même répertoire, `ranker_b/ranker.json` | `ffa0014e1650f679651da91b4b52ef53636eb4fee804666afb8f7756a90c50d7` |
+| métadonnées ranker B | même répertoire, `ranker_b/metadata.json` | `39eb014b8c833c79cd50027db110b63144ad482e7466c7f97f8fcdd98b519f11` |
 | registre consommé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/registries/v4_11_consumed_population/fd25d1922040d585/manifest.json` | `77711f91fda8dffec3210c49b3df8404e46ff540f30f9597fc7fe7722f2d6962` |
 | manifeste retrieval V4.2 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_2_retrieval_integrity_7c4b957/manifest.json` | `63b52c3a1466070410881b0ea61b833ff5d413262239920abbc6b04e3f153f54` |
 | snapshot SIRENE établissement | `data/StockEtablissement_utf8.parquet` | `c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845` |
@@ -209,7 +211,14 @@ colsample_bytree=0.85
 reg_lambda=5.0
 random_state=42
 n_jobs=-1
+tree_method=hist
+early_stopping=disabled
 ```
+
+Chaque modèle reçoit toutes les lignes candidat des requêtes exactes
+éligibles, positives et négatives. Il y a cinq modèles OOF et un modèle
+complet entraîné sur les exacts du fit. Aucun `eval_set` ne déclenche d'arrêt
+anticipé.
 
 Le modèle et toutes les prédictions sont entraînés deux fois. Scores et rangs
 doivent être bit à bit identiques.
@@ -222,6 +231,15 @@ Gate ranker de développement :
 - métriques end-to-end, donc misses retrieval inclus.
 
 Sinon verdict `PIVOT_INPUT_BLIND_RANKER`.
+
+Le comparateur « ranker B masqué » est le modèle épinglé ci-dessus, appliqué
+aux mêmes pools V4.11. Ses cinq features interdites
+`input_siret_exact_match`, `input_siren_exact_match`,
+`candidate_from_input_siret`, `candidate_from_input_siren` et
+`candidate_from_closed_alias` valent zéro. Les features `admission_*` qui
+n'existent plus dans V4.11 sont reconstruites uniquement lorsqu'elles
+correspondent à un canal sparse présent ; toutes les autres valent zéro. Ce
+comparateur reste diagnostique et ne peut être promu.
 
 ## 6. Accepteur compact
 
@@ -379,11 +397,14 @@ crm_is_school
 Comparer exactement :
 
 1. `COMPACT_LOGIT` : régression logistique L2, `C=0.1`,
-   `class_weight=None`, `max_iter=5000`, seed 42 ; standardisation des
-   continues/comptages sur le train uniquement, binaires inchangées ;
+   `solver=lbfgs`, `tol=1e-4`, `class_weight=None`, `max_iter=5000`,
+   seed 42 ; standardisation des continues/comptages sur le train uniquement,
+   binaires inchangées ;
 2. `MONOTONIC_XGB` : `n_estimators=400`, `learning_rate=0.03`,
    `max_depth=2`, `min_child_weight=20`, `subsample=0.85`,
-   `colsample_bytree=0.85`, `reg_lambda=10`, `reg_alpha=1`, seed 42.
+   `colsample_bytree=0.85`, `reg_lambda=10`, `reg_alpha=1`,
+   `objective=binary:logistic`, `eval_metric=logloss`, `tree_method=hist`,
+   `n_jobs=8`, sans early stopping, seed 42.
 
 Les contraintes monotones XGBoost sont préenregistrées dans le plan
 d'entraînement : positives uniquement pour les scores/similarités où une
@@ -398,7 +419,8 @@ Le plan d'entraînement, commité et hashé avant le premier fit, doit publier
 le vecteur de 80 contraintes. Les contraintes non nulles sont figées par
 famille :
 
-- `+1` pour les trois gaps ranker/SIREN/frère, les deux preuves de rang
+- `+1` pour `ranker_gap_fraction`, `siren_gap_fraction`,
+  `same_siren_best_sibling_gap_fraction`, les deux preuves de rang
   retrieval et les `top1_`/`delta_` des similarités ou accords explicites
   (`jaro`, `overlap`, `match`, `contains`, `acronym`, `consistency`) ;
 - `-1` pour `ranker_score_entropy`,
@@ -407,12 +429,38 @@ famille :
   `same_siren_role_plurality` ;
 - `0` pour toutes les autres.
 
-Le plan publie également les listes continues/comptages et binaires. Tous les
-13 champs de scène sont continus/comptages sauf `same_siren_top2` et
-`crm_is_school`. Parmi les preuves, les bases à valeurs binaires conservent
-`top1_` et `delta_` non standardisés ; toutes les autres sont standardisées.
-Les sept champs de fonction sont standardisés lorsqu'ils sont des comptes et
-laissés bruts lorsqu'ils sont binaires.
+`ranker_top3_gap_fraction` a explicitement une contrainte nulle.
+
+Les features binaires, non standardisées pour le logit, sont exactement :
+
+```text
+same_siren_top2
+crm_is_school
+top1_<base> et delta_<base> pour :
+  name_first_word_match_max
+  name_contains_crm_max
+  name_crm_contains_cand_max
+  acronym_match_max
+  is_ul_name_max
+  is_sigle_max
+  name_is_city_like_max
+  postcode_match
+  city_match
+  geo_exact_match
+  name_norm_exact
+  street_number_match
+  is_siege
+  is_association
+role_crm_top1_conflict
+role_top1_top2_conflict
+same_siren_role_plurality
+naf_top1_top2_division_equal
+```
+
+Les compteurs de rôle `role_crm_count`, `role_top1_count` et
+`same_siren_distinct_role_count`, ainsi que toutes les autres features, sont
+standardisés sur le train propre au modèle. `numeric_token_match` est
+continue.
 
 ## 8. Développement, seuil et sélection
 
@@ -432,15 +480,25 @@ pour les 7 003 lignes, y compris `AMBIGUOUS`, et ne peut être recalculé à
 partir du label. Une même composante ne peut apparaître des deux côtés ; cette
 disjonction est un invariant bloquant.
 
-Le seuil de chaque accepteur est choisi uniquement sur `threshold_dev` :
-couverture maximale avec précision SIRET exacte observée ≥99,8 %, puis seuil
-le plus haut en cas d'égalité.
+Les volumes attendus, calculés avant tout score accepteur, sont :
+
+| Sous-ensemble | Total | `MATCH_EXACT` | `AMBIGUOUS` | Composantes |
+|---|---:|---:|---:|---:|
+| `threshold_dev` | 710 | 583 | 127 | 637 |
+| `comparison_dev` | 746 | 634 | 112 | 652 |
+
+Le seuil de chaque accepteur est choisi uniquement sur `threshold_dev`.
+Les seuils candidats sont les scores distincts observés plus
+`nextafter(max_score, +inf)`. La décision est `AUTO` si `score >= seuil`.
+Un seuil est sûr si `1000 * correct_auto >= 998 * auto_count`; le seuil sans
+AUTO n'est pas éligible. Maximiser `auto_count`, puis retenir le seuil le plus
+haut. Si aucun seuil n'est sûr, la variante est inéligible.
 
 La sélection entre les deux familles utilise uniquement `comparison_dev`.
 Un candidat est éligible si :
 
 - précision SIRET exacte observée ≥99,8 % ;
-- couverture AUTO ≥80,0 % de toutes les requêtes ;
+- couverture AUTO ≥80,0 % des requêtes `MATCH_EXACT + AMBIGUOUS` ;
 - zéro `AMBIGUOUS` automatisé ;
 - aucune famille critique d'au moins 100 lignes ne régresse de plus de deux
   points absolus face à la baseline reproductible ;
@@ -461,6 +519,11 @@ Les familles critiques préenregistrées sont :
 Pour une famille d'au moins 100 lignes, la précision ne peut pas être
 inférieure à celle de la baseline et la couverture ne peut pas perdre plus de
 deux points absolus. Les familles plus petites sont publiées sans gate.
+
+`input_siret_state` et `source_segment` sont conservés uniquement comme
+métadonnées d'audit dans le dataset ; ils ne figurent jamais dans les 45 ou
+80 features. Les lignes `UNRESOLVED`, lorsqu'elles existent, sont forcées en
+`REVIEW` et exclues du dénominateur de couverture principal.
 
 Parmi les éligibles : plus grande couverture, puis moins d'erreurs, puis
 `COMPACT_LOGIT`.
