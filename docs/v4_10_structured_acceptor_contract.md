@@ -79,6 +79,21 @@ Sources historiques épinglées au moment du build :
 - file CRM V4.3 ;
 - snapshot SIRENE autoritaire.
 
+Gel des entrées du premier build :
+
+| Entrée | SHA-256 |
+|---|---|
+| scènes accepteur V4.1 | `8f3bc4633ada9eb6347e47a1029f0e69fa8946b1c3c1df38c72232f572088dc9` |
+| prédictions candidat V4.1 | `eea22c58378d8adc232a7f2723c0a84323963db9633a7bb9af2e2485cd6329d2` |
+| requêtes V4.1 | `6a12f1c4ca9ec33636ebcf7748c208595c6168d7cdb8c068e1434af3fe22abb0` |
+| candidats V4.6 alignés | `0b7fc90e045da10033f0ae4b598963505d76c16710e2efc9dbe728a93a6536dc` |
+| candidats difficiles V4.5 | `9f48a558bc77bf9db835e7689963989ba99d2914fb1add32be4988ec3cab3242` |
+| scènes difficiles V4.5 | `72540dcdba6f33da0eb1875ef4bcdc8c44a2cd10083589b5e1683098cd954a08` |
+| labels courants V4.7 | `e5e592d4dcd540273378dada7128f957b1d335df63fbc88f4c1377c0f9337bd2` |
+| file CRM V4.3 | `47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc` |
+| snapshot SIRENE | `c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845` |
+| taxonomie V4.9 | `48bbb7e1795a0731f1f12df41aeb971667c10d03c879bf06d5ba15b65f8b121d` |
+
 Le manifeste contient les hashes, versions, ordre des features, volumes,
 taux de jointure, valeurs manquantes et invariants de non-ouverture.
 
