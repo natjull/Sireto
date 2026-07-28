@@ -65,6 +65,19 @@ modèle, challenge ou test final n'a participé à la vérité. Artefact :
 Rapport : `reports/v9/v4_12_unit_oracle_results.md`. *(commit GitHub :
 `9d2c68e`)*
 
+Le contrat Gate A des stores stricts et de la sandbox V4.12 est
+préenregistré `GO_CODE_V412_STRICT_STORES`. Trois audits indépendants ont
+fermé le routage, les 648 partitions, les 648 caches et le lookup snapshot,
+ainsi que la liste blanche réelle de `sandbox-exec`. Une erreur de conception
+a été interceptée avant code : les caches portent sur 4 764 472 rows
+filtrées/dédupliquées et non sur les 8 030 285 rows physiques. La sandbox
+épingle ses trois exécutables, refuse oracle/audit, réseau, fork et écritures
+hors espaces privés, et expose exactement 1 945 fichiers à l'enfant. Le
+ledger parent attendu en couvre 1 954. Ce GO autorise seulement
+l'implémentation puis son audit, pas encore le build réel ni les modèles.
+Rapport : `reports/v9/v4_12_strict_stores_contract_audit.md`. *(commit
+GitHub : `0173d6b`)*
+
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
 une étiquette cachée et ne peut plus alimenter le retrieval, le ranker ou
