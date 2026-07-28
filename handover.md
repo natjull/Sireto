@@ -14,6 +14,13 @@ Rapport : `reports/v9/v4_10b_structured_dataset_results.md`.
 *(commits GitHub : politique `eb85597`, clarification `d500fe2`, builder
 `f78a9ba`)*
 
+Le plan d'entraînement V4.10b est désormais gelé avant tout fit. Il conserve
+trois variantes `CURRENT80` comme contrôles non promouvables et compare six
+variantes structurées. Les facteurs de classe, seuils par pli, gates entiers,
+54 fits logiques rejoués deux fois, lectures filtrées et bundles multiples
+sont préenregistrés. Un verrou externe devra encore épingler le runner
+commité avant le premier entraînement. *(commit GitHub : `5ed1ba3`)*
+
 L'audit statistique pré-fit a invalidé l'ordre structuré V4.10 avant tout
 entraînement. Il contenait 58 copies sémantiques et 16 signaux résiduels
 capables de distinguer l'instrumentation retrieval V4.1 de V4.2-B. La
