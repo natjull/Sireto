@@ -1,0 +1,779 @@
+{
+  "schema_version": "sireto-v4.12-unit-retrieval-evaluator-plan-1",
+  "purpose": "V4.12_UNIT_RETRIEVAL_ORACLE_EVALUATION",
+  "prerequisite": {
+    "verdict": "GO_V412_UNIT_RETRIEVAL_PARITY",
+    "worker_build_id": "d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a",
+    "worker_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_unit_retrieval/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a",
+    "worker_audit_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_worker/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a",
+    "parity_build_id": "d587937b60f3b4c8f43003bc384d4e61b5933999cba7cf557debebfef02205f5",
+    "parity_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_parity/d587937b60f3b4c8f43003bc384d4e61b5933999cba7cf557debebfef02205f5"
+  },
+  "oracle": {
+    "verdict": "GO_V412_UNIT_ORACLE",
+    "build_id": "c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70",
+    "audit_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70",
+    "truth_logical_sha256": "9b25bf45b7ff074a1db8e6ca166569eec9754e34b29f032aebae63925d71ff42",
+    "query_id_payload_sha256": "37016d9dc480194b52b545fffb3272847d485c5f209025d064d313b425c03bf4",
+    "population": {
+      "global": {
+        "total": 1456,
+        "MATCH_EXACT": 1217,
+        "AMBIGUOUS": 239
+      },
+      "threshold_dev": {
+        "total": 710,
+        "MATCH_EXACT": 583,
+        "AMBIGUOUS": 127
+      },
+      "comparison_dev": {
+        "total": 746,
+        "MATCH_EXACT": 634,
+        "AMBIGUOUS": 112
+      }
+    }
+  },
+  "input_paths": {
+    "worker_candidates_top100": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_unit_retrieval/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a/candidates_top100.parquet",
+    "worker_query_status": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_unit_retrieval/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a/query_status.parquet",
+    "worker_integrity": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_unit_retrieval/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a/integrity.json",
+    "worker_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_unit_retrieval/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a/manifest.json",
+    "worker_audit_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_worker/d2915fe7747b9b219e7a0dce400052847c913417bd240c7d94df6fb8bafedd1a/manifest.json",
+    "parity_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_parity/d587937b60f3b4c8f43003bc384d4e61b5933999cba7cf557debebfef02205f5/manifest.json",
+    "parity_result": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_parity/d587937b60f3b4c8f43003bc384d4e61b5933999cba7cf557debebfef02205f5/parity.json",
+    "parity_provenance": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_parity/d587937b60f3b4c8f43003bc384d4e61b5933999cba7cf557debebfef02205f5/provenance.json",
+    "oracle_dev": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/oracle_dev.parquet",
+    "oracle_integrity": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/integrity.json",
+    "oracle_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "oracle_audit_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "sandbox_executable": "/usr/bin/sandbox-exec",
+    "python_framework_app": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "python_framework_library": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Python",
+    "git_executable": "/usr/bin/git"
+  },
+  "input_hashes": {
+    "worker_candidates_top100": "7332453ffc7281972678d7e7c29973d5eeb55ce7dd3dbcaa009b416d59d4d783",
+    "worker_query_status": "38e6ef0cc56ffe8f10d3fc63c062dbe32bc0da90e7ebb2d7dfad9a44ccfd2f82",
+    "worker_integrity": "6aa4e1bb0f6e14578dd1ba65707bbfdc6353abbb24368dcf7f9ef59c009a42c0",
+    "worker_manifest": "c660d5b55c1812323790b8031c0fc7c8451d42136dead2bce30b7eeb892f236f",
+    "worker_audit_manifest": "870a4db2d9dec394595dc3fc794e9fcdfbbfa52847a9e4df9c0ec14916b8911a",
+    "parity_manifest": "1234d5ed1913a52fed7d5dd9f9867fb69bae1227864dce7f6212bb067292ebef",
+    "parity_result": "f60d8eae2ee61c9e7853cc51654a6ec941009c7218dc0fd766b3b56a9f55808f",
+    "parity_provenance": "448dfc70326cfdcba5d0c3ee4eb56fed38b28468134fcacfbdc98f71093bc343",
+    "oracle_dev": "e0f8c66756aec95e9f54cfe180b59609869a927985f51853b676f93bbe409d6d",
+    "oracle_integrity": "54b1a8c624e06e03d306a26ec2ad2532b5c1490160731f180810e2907a8ad497",
+    "oracle_manifest": "e201a407e968566e5f75c2072c0d441581c9a6d1314698804fb916bd3c36fd25",
+    "oracle_audit_manifest": "a10fd6e4054a8d6e067c75e7f4c853c3ec795c0715ca705b9692992667a705b7",
+    "sandbox_executable": "8290e4be7387a0df83cd1559e86afd880464f269450573d012795761fe298f16",
+    "python_framework_app": "7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211",
+    "python_framework_library": "e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0a",
+    "git_executable": "179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818"
+  },
+  "evaluation_spec": {
+    "schema_version": "sireto-v4.12-unit-retrieval-evaluation-spec-1",
+    "population_order": [
+      "global",
+      "threshold_dev",
+      "comparison_dev"
+    ],
+    "population_counts": {
+      "global": {
+        "total": 1456,
+        "MATCH_EXACT": 1217,
+        "AMBIGUOUS": 239
+      },
+      "threshold_dev": {
+        "total": 710,
+        "MATCH_EXACT": 583,
+        "AMBIGUOUS": 127
+      },
+      "comparison_dev": {
+        "total": 746,
+        "MATCH_EXACT": 634,
+        "AMBIGUOUS": 112
+      }
+    },
+    "reference_order": [
+      "historical_all",
+      "v2_exact",
+      "v3_exact_identifiable"
+    ],
+    "frozen_references": {
+      "build_id": "ab8343817551c0a5",
+      "source": "docs/retrieval_selective_recall100_contract.md",
+      "comparison_policy": "PUBLISH_TOGETHER_NO_PAIRED_DELTA",
+      "rows": [
+        {
+          "name": "historical_all",
+          "reference_type": "FROZEN_REFERENCE",
+          "coverage_success": 2565,
+          "coverage_denominator": 2565,
+          "recall_at_100_success": 2495,
+          "recall_at_100_denominator": 2565
+        },
+        {
+          "name": "v2_exact",
+          "reference_type": "FROZEN_REFERENCE",
+          "coverage_success": 2400,
+          "coverage_denominator": 2565,
+          "recall_at_100_success": 2343,
+          "recall_at_100_denominator": 2400
+        },
+        {
+          "name": "v3_exact_identifiable",
+          "reference_type": "FROZEN_REFERENCE",
+          "coverage_success": 2104,
+          "coverage_denominator": 2565,
+          "recall_at_100_success": 2095,
+          "recall_at_100_denominator": 2104
+        }
+      ]
+    },
+    "join": {
+      "key": "query_id",
+      "truth_match": "candidate_siret == ground_truth_siret",
+      "normalization_allowed": false,
+      "candidate_ceiling": 100,
+      "truth_absent_policy": "MISS_AT_ALL_K",
+      "ambiguous_policy": "KEEP_EXCLUDE_FROM_RECALL",
+      "expected_query_count": 1456,
+      "expected_candidate_count": 145236,
+      "expected_minimum_pool_size": 46,
+      "expected_maximum_pool_size": 100,
+      "expected_under_ceiling_query_count": 13,
+      "expected_empty_query_count": 0
+    },
+    "recall_k": [
+      1,
+      10,
+      50,
+      100
+    ],
+    "coverage_definition": "MATCH_EXACT/(MATCH_EXACT+AMBIGUOUS)",
+    "recall_definition": "MATCH_EXACT_WITH_EXACT_RANK_LE_K/MATCH_EXACT",
+    "proportion_output_keyset": [
+      "success_count",
+      "denominator_count",
+      "rate",
+      "wilson_95_low",
+      "wilson_95_high",
+      "wilson_99_low",
+      "wilson_99_high"
+    ],
+    "confidence_interval": {
+      "method": "WILSON_SCORE_TWO_SIDED",
+      "levels": [
+        0.95,
+        0.99
+      ],
+      "z": {
+        "0.95": 1.959963984540054,
+        "0.99": 2.5758293035489004
+      }
+    },
+    "gate": {
+      "gate_statistic": "OBSERVED_RATE_FROM_RAW_COUNTS",
+      "population": "global",
+      "coverage_minimum": 0.8,
+      "recall_at_100_minimum": 0.99
+    },
+    "latency": {
+      "source_role": "worker_integrity",
+      "source_kind": "WORKER_INTEGRITY_AGGREGATE",
+      "durations_ns": {
+        "retrieval": 620340646980,
+        "lookup": 398384905282,
+        "serialization": 117570208,
+        "total": 1030157672584
+      },
+      "query_count": 1456,
+      "publish_seconds": true,
+      "publish_mean_from_aggregate": true,
+      "per_query_timing_available": false,
+      "p95_available": false,
+      "latency_gate_evaluated": false
+    },
+    "tuning": {
+      "tuning_allowed": false,
+      "second_variant_allowed": false,
+      "gate_or_policy_mutation_after_receipt_allowed": false
+    }
+  },
+  "identity_projections": {
+    "build_identity_schema_version": "sireto-v4.12-unit-retrieval-evaluator-build-identity-1",
+    "build_identity_keys": [
+      "schema_version",
+      "plan_sha256",
+      "lock_sha256",
+      "source_hashes",
+      "input_hashes",
+      "worker_build_id",
+      "oracle_build_id",
+      "parity_build_id",
+      "evaluation_spec",
+      "runtime"
+    ],
+    "evaluation_spec_keys": [
+      "schema_version",
+      "population_order",
+      "population_counts",
+      "reference_order",
+      "frozen_references",
+      "join",
+      "recall_k",
+      "coverage_definition",
+      "recall_definition",
+      "proportion_output_keyset",
+      "confidence_interval",
+      "gate",
+      "latency",
+      "tuning"
+    ],
+    "evaluation_spec_projection": "EXACT_OBJECT_REBUILT_IN_LISTED_KEY_ORDER_THEN_CANONICAL_JSON",
+    "canonical_json": "UTF8_SORT_KEYS_COMPACT_ALLOW_NAN_FALSE_LF"
+  },
+  "outputs": {
+    "evaluation_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/evaluations/v4_12_unit_retrieval",
+    "audit_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_evaluator",
+    "attempt_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_evaluator_attempts",
+    "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_unit_retrieval_evaluator",
+    "runtime_files": [
+      "query_outcomes.parquet",
+      "metrics.json",
+      "integrity.json",
+      "manifest.json"
+    ],
+    "audit_files": [
+      "open_ledger.parquet",
+      "provenance.json",
+      "manifest.json"
+    ]
+  },
+  "artifact_contract": {
+    "schema_versions": {
+      "query_outcomes": "sireto-v4.12-unit-retrieval-evaluator-outcomes-1",
+      "metrics": "sireto-v4.12-unit-retrieval-evaluator-metrics-1",
+      "integrity": "sireto-v4.12-unit-retrieval-evaluator-integrity-1",
+      "evaluation_manifest": "sireto-v4.12-unit-retrieval-evaluator-manifest-1",
+      "ledger": "sireto-v4.12-unit-retrieval-evaluator-ledger-1",
+      "provenance": "sireto-v4.12-unit-retrieval-evaluator-provenance-1",
+      "audit_manifest": "sireto-v4.12-unit-retrieval-evaluator-audit-manifest-1"
+    },
+    "population_order": [
+      "global",
+      "threshold_dev",
+      "comparison_dev"
+    ],
+    "reference_order": [
+      "historical_all",
+      "v2_exact",
+      "v3_exact_identifiable"
+    ],
+    "query_outcomes_schema": [
+      {
+        "name": "query_id",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "dev_partition",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "label_kind",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "candidate_count",
+        "type": "uint8",
+        "nullable": false
+      },
+      {
+        "name": "exact_rank",
+        "type": "uint8",
+        "nullable": true
+      },
+      {
+        "name": "hit_at_1",
+        "type": "bool",
+        "nullable": true
+      },
+      {
+        "name": "hit_at_10",
+        "type": "bool",
+        "nullable": true
+      },
+      {
+        "name": "hit_at_50",
+        "type": "bool",
+        "nullable": true
+      },
+      {
+        "name": "hit_at_100",
+        "type": "bool",
+        "nullable": true
+      }
+    ],
+    "query_outcomes_logical_payload": {
+      "row_order": "EXACT_ORACLE_DEV_PHYSICAL_ROW_ORDER",
+      "column_order": [
+        "query_id",
+        "dev_partition",
+        "label_kind",
+        "candidate_count",
+        "exact_rank",
+        "hit_at_1",
+        "hit_at_10",
+        "hit_at_50",
+        "hit_at_100"
+      ],
+      "string_encoding": "UTF-8",
+      "enum_encoding": "ASCII",
+      "integer_encoding": "ASCII_BASE10_NO_SIGN_NO_ZERO_PADDING",
+      "boolean_encoding": {
+        "true": "1",
+        "false": "0"
+      },
+      "null_token": "\\N",
+      "field_separator_hex": "00",
+      "row_terminator_hex": "0a",
+      "field_separator_after_last_column": false,
+      "concatenation": "ROWS_WITHOUT_HEADER_OR_BOM",
+      "missing_truth_count_formula": "COUNT(label_kind == \"MATCH_EXACT\" AND exact_rank IS NULL)",
+      "missing_truth_count_equivalence": "1217 - v412_measurements[\"global\"].recall_at[\"100\"].success_count"
+    },
+    "json_keysets": {
+      "metrics": [
+        "schema_version",
+        "evaluator_build_id",
+        "attempt_id",
+        "worker_build_id",
+        "oracle_build_id",
+        "parity_build_id",
+        "population_order",
+        "reference_order",
+        "v412_measurements",
+        "frozen_references",
+        "latency",
+        "gates",
+        "verdict",
+        "declarations"
+      ],
+      "measurement_record": [
+        "population",
+        "measurement_type",
+        "total_query_count",
+        "match_exact_count",
+        "ambiguous_count",
+        "coverage",
+        "recall_at"
+      ],
+      "reference_record": [
+        "name",
+        "reference_type",
+        "source_build_id",
+        "source_population_count",
+        "coverage",
+        "recall_at_100"
+      ],
+      "proportion_record": [
+        "success_count",
+        "denominator_count",
+        "rate",
+        "wilson_95_low",
+        "wilson_95_high",
+        "wilson_99_low",
+        "wilson_99_high"
+      ],
+      "recall_at": [
+        "1",
+        "10",
+        "50",
+        "100"
+      ],
+      "duration_record": [
+        "retrieval",
+        "lookup",
+        "serialization",
+        "total"
+      ],
+      "latency": [
+        "latency_source",
+        "durations_ns",
+        "durations_seconds",
+        "query_count",
+        "mean_wall_seconds_per_query_from_aggregate",
+        "per_query_timing_available",
+        "p95_available",
+        "latency_gate_evaluated"
+      ],
+      "gates": [
+        "gate_statistic",
+        "population",
+        "coverage_minimum",
+        "recall_at_100_minimum",
+        "coverage_observed",
+        "recall_at_100_observed",
+        "coverage_pass",
+        "recall_at_100_pass",
+        "all_pass"
+      ],
+      "integrity": [
+        "schema_version",
+        "evaluator_build_id",
+        "attempt_id",
+        "worker_build_id",
+        "oracle_build_id",
+        "parity_build_id",
+        "query_count",
+        "match_exact_count",
+        "ambiguous_count",
+        "candidate_count",
+        "minimum_pool_size",
+        "maximum_pool_size",
+        "under_ceiling_query_count",
+        "empty_query_count",
+        "missing_truth_count",
+        "query_outcomes_payload_bytes",
+        "query_outcomes_payload_sha256",
+        "metrics_sha256",
+        "input_snapshot_count",
+        "opened_input_count",
+        "gate_statistic",
+        "declarations",
+        "verdict"
+      ],
+      "evaluation_manifest": [
+        "schema_version",
+        "evaluator_build_id",
+        "attempt_id",
+        "worker_build_id",
+        "oracle_build_id",
+        "parity_build_id",
+        "files",
+        "runtime",
+        "declarations",
+        "verdict"
+      ],
+      "provenance": [
+        "schema_version",
+        "evaluator_build_id",
+        "attempt_id",
+        "git_commit",
+        "source_hashes",
+        "plan_sha256",
+        "lock_sha256",
+        "input_hashes",
+        "evaluation_spec_sha256",
+        "runtime",
+        "data_input_count",
+        "evaluation_manifest_sha256",
+        "declarations"
+      ],
+      "audit_manifest": [
+        "schema_version",
+        "evaluator_build_id",
+        "attempt_id",
+        "files"
+      ],
+      "parquet_file_record": [
+        "path",
+        "size_bytes",
+        "sha256",
+        "row_count",
+        "schema",
+        "metadata"
+      ],
+      "json_file_record": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "audit_file_record": [
+        "path",
+        "size_bytes",
+        "sha256"
+      ],
+      "declarations": [
+        "historical_development_only",
+        "independent_measurement",
+        "production_certified",
+        "models_opened",
+        "historical_sources_opened",
+        "challenge_or_final_opened",
+        "tuning_performed"
+      ]
+    },
+    "file_sets": {
+      "evaluation_manifest": [
+        "query_outcomes.parquet",
+        "metrics.json",
+        "integrity.json"
+      ],
+      "audit_manifest": [
+        "open_ledger.parquet",
+        "provenance.json"
+      ]
+    },
+    "ledger_schema": [
+      {
+        "name": "role",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "absolute_path",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "projection",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "size_bytes_before",
+        "type": "uint64",
+        "nullable": false
+      },
+      {
+        "name": "sha256_before",
+        "type": "string",
+        "nullable": false
+      },
+      {
+        "name": "size_bytes_after",
+        "type": "uint64",
+        "nullable": false
+      },
+      {
+        "name": "sha256_after",
+        "type": "string",
+        "nullable": false
+      }
+    ],
+    "ledger_role_order": [
+      "oracle_audit_manifest",
+      "oracle_dev",
+      "oracle_integrity",
+      "oracle_manifest",
+      "parity_manifest",
+      "parity_provenance",
+      "parity_result",
+      "worker_audit_manifest",
+      "worker_candidates_top100",
+      "worker_integrity",
+      "worker_manifest",
+      "worker_query_status"
+    ],
+    "data_input_count": 12
+  },
+  "attempt_protocol": {
+    "schema_versions": {
+      "measurement_slot_identity": "sireto-v4.12-unit-retrieval-evaluator-measurement-slot-1",
+      "attempt_identity": "sireto-v4.12-unit-retrieval-evaluator-attempt-identity-1",
+      "receipt": "sireto-v4.12-unit-retrieval-evaluator-receipt-1",
+      "state": "sireto-v4.12-unit-retrieval-evaluator-attempt-state-1",
+      "event": "sireto-v4.12-unit-retrieval-evaluator-attempt-event-1"
+    },
+    "measurement_slot_identity_keyset": [
+      "schema_version",
+      "purpose",
+      "worker_build_id",
+      "oracle_build_id",
+      "parity_build_id"
+    ],
+    "measurement_slot_id": "SHA256_CANONICAL_JSON_OF_EXACT_MEASUREMENT_SLOT_IDENTITY",
+    "attempt_identity_keyset": [
+      "schema_version",
+      "plan_sha256",
+      "lock_sha256",
+      "input_hashes",
+      "evaluation_spec_sha256",
+      "worker_build_id",
+      "oracle_build_id",
+      "parity_build_id"
+    ],
+    "attempt_id": "SHA256_CANONICAL_JSON_OF_EXACT_ATTEMPT_IDENTITY",
+    "receipt_keyset": [
+      "schema_version",
+      "measurement_slot_id",
+      "attempt_id",
+      "created_at_utc",
+      "plan_sha256",
+      "lock_sha256",
+      "input_hashes",
+      "evaluation_spec_sha256",
+      "worker_build_id",
+      "oracle_build_id",
+      "parity_build_id",
+      "policy_immutable"
+    ],
+    "state_keyset": [
+      "schema_version",
+      "measurement_slot_id",
+      "attempt_id",
+      "sequence",
+      "state",
+      "phase",
+      "oracle_open_committed",
+      "evaluator_build_id",
+      "reason_code",
+      "updated_at_utc"
+    ],
+    "event_keyset": [
+      "schema_version",
+      "measurement_slot_id",
+      "attempt_id",
+      "sequence",
+      "state",
+      "phase",
+      "oracle_open_committed",
+      "evaluator_build_id",
+      "reason_code",
+      "timestamp_utc",
+      "previous_event_sha256"
+    ],
+    "states": [
+      "STARTED",
+      "RECOVERABLE",
+      "FINAL",
+      "STOPPED"
+    ],
+    "phases": [
+      "RECEIPT_DURABLE",
+      "ORACLE_OPEN_COMMITTED",
+      "COMPUTED_STAGING_VALID",
+      "PENDING_BOTH_VALID",
+      "AUDIT_FINAL",
+      "EVALUATION_FINAL",
+      "TERMINAL"
+    ],
+    "pre_oracle_revalidation_roles": [
+      "git_executable",
+      "parity_manifest",
+      "parity_provenance",
+      "parity_result",
+      "python_framework_app",
+      "python_framework_library",
+      "sandbox_executable",
+      "worker_audit_manifest",
+      "worker_candidates_top100",
+      "worker_integrity",
+      "worker_manifest",
+      "worker_query_status"
+    ],
+    "oracle_roles_opened_only_after_commit": [
+      "oracle_manifest",
+      "oracle_integrity",
+      "oracle_audit_manifest",
+      "oracle_dev"
+    ],
+    "oracle_open_protocol": [
+      "REVALIDATE_CANONICAL_PLAN_AND_EXTERNAL_LOCK",
+      "REVALIDATE_12_NON_ORACLE_INPUTS_FROM_SAME_FDS",
+      "RESNAPSHOT_PLAN_LOCK_AND_12_NON_ORACLE_INPUTS_UNCHANGED",
+      "APPEND_AND_FSYNC_ORACLE_OPEN_COMMITTED_EVENT",
+      "REBUILD_AND_FSYNC_DERIVED_STATE_CACHE",
+      "OPEN_NOFOLLOW_AND_HASH_4_ORACLE_INPUTS",
+      "CONSUME_4_ORACLE_INPUTS_FROM_THE_SAME_FDS",
+      "REHASH_4_ORACLE_INPUTS_FROM_THE_SAME_FDS"
+    ],
+    "oracle_protocol_applies_to_recovery": true,
+    "oracle_reopen_after_committed_event_allowed": false,
+    "receipt_before_oracle_open": true,
+    "receipt_parent_only": true,
+    "fsync_file_and_parent_directories": true,
+    "append_only_event_chain": true,
+    "event_log_authoritative": true,
+    "state_json_is_derived_cache": true,
+    "state_cache_missing_policy": "REBUILD_ATOMICALLY_FROM_VALID_EVENT_CHAIN",
+    "state_cache_stale_policy": "REBUILD_ONLY_IF_CACHE_MATCHES_AN_EARLIER_CHAIN_EVENT",
+    "state_cache_conflict_policy": "STOP",
+    "event_chain_invalid_policy": "STOP",
+    "oracle_open_committed_monotonic": true,
+    "silent_delete_allowed": false,
+    "policy_or_lock_change_allowed": false
+  },
+  "publication": {
+    "staging_evaluation": "<temp_root>/<attempt_id>/evaluation.stage",
+    "staging_audit": "<temp_root>/<attempt_id>/audit.stage",
+    "pending_evaluation": "<evaluation_root>/.pending-<evaluator_build_id>-<attempt_id>",
+    "pending_audit": "<audit_root>/.pending-<evaluator_build_id>-<attempt_id>",
+    "final_evaluation": "<evaluation_root>/<evaluator_build_id>",
+    "final_audit": "<audit_root>/<evaluator_build_id>",
+    "promotion_order": [
+      "VALIDATE_STAGING_BOTH",
+      "PROMOTE_PENDING_AUDIT",
+      "PROMOTE_PENDING_EVALUATION",
+      "VALIDATE_PENDING_BOTH",
+      "PROMOTE_FINAL_AUDIT",
+      "VALIDATE_FINAL_AUDIT",
+      "PROMOTE_FINAL_EVALUATION",
+      "VALIDATE_FINAL_BOTH",
+      "MARK_FINAL"
+    ],
+    "non_clobber": true,
+    "atomic_rename_same_filesystem": true,
+    "fsync_after_every_transition": true,
+    "recovery_is_validation_and_promotion_only": true,
+    "final_evaluation_without_final_audit": "STOPPED_RETAIN_ORPHAN_NO_RECOMPUTE",
+    "final_audit_without_final_evaluation": "RECOVERABLE_PROMOTE_VALID_PENDING_EVALUATION_ONLY",
+    "both_final_and_valid": "FINAL",
+    "crash_after_oracle_open_without_complete_valid_staging": "STOPPED_NO_RERUN"
+  },
+  "security": {
+    "network_allowed": false,
+    "fork_allowed": false,
+    "write_scope": "PRIVATE_EVALUATOR_STAGING_ONLY",
+    "exact_file_allowlist_only": true,
+    "nofollow_required": true,
+    "same_fd_hash_and_consume": true,
+    "forbidden_roots": [
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models",
+      "/Users/nathanjullia/Documents/Projets/SIRETO/models",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/final"
+    ],
+    "models_opened": false,
+    "historical_sources_opened": false,
+    "challenge_or_final_opened": false
+  },
+  "verdicts": {
+    "go": "GO_V412_UNIT_RETRIEVAL_EVALUATION",
+    "pivot": "PIVOT_V412_UNIT_RETRIEVAL_EVALUATION",
+    "stop": "STOP_V412_UNIT_RETRIEVAL_EVALUATION"
+  },
+  "external_lock": {
+    "path": "config/v4_12_unit_retrieval_evaluator_execution_lock.json",
+    "created_after_code_audit": true,
+    "pins_git_sources_inputs_runtime_sandbox_outputs": true,
+    "bypass_allowed": false
+  },
+  "runtime": {
+    "python": "3.14.3",
+    "numpy": "2.4.2",
+    "pandas": "2.3.3",
+    "pyarrow": "23.0.1",
+    "scikit_learn": "1.8.0",
+    "scipy": "1.16.3",
+    "joblib": "1.5.3",
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+  },
+  "max_rss_bytes": 8589934592,
+  "future_sources": [
+    "docs/v4_12_unit_retrieval_evaluator_contract.md",
+    "config/v4_12_unit_retrieval_evaluator_plan.json",
+    "config/v4_12_unit_retrieval_evaluator.sb",
+    "scripts/evaluate_v412_unit_retrieval.py",
+    "tests/test_evaluate_v412_unit_retrieval.py",
+    "scripts/independent_audit_v412_unit_retrieval_evaluation.py",
+    "tests/test_independent_audit_v412_unit_retrieval_evaluation.py"
+  ]
+}
