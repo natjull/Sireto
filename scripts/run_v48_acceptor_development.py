@@ -321,7 +321,6 @@ def _load_development_frames(
     development_ids = sorted(development_assignments["query_id"].astype(str))
     current_columns = [
         "query_id",
-        "sampling_stratum",
         "current_label_origin",
         *feature_order,
     ]
@@ -334,9 +333,7 @@ def _load_development_frames(
     _assert_columns(current, current_columns, "current development scenes")
     if set(current["query_id"]) != set(development_ids):
         raise ValueError("Filtered V4.8 current-scene read is incomplete")
-    if set(current["query_id"]) & random_ids or current[
-        "sampling_stratum"
-    ].eq("RANDOM_POPULATION").any():
+    if set(current["query_id"]) & random_ids:
         raise ValueError("Filtered V4.8 current-scene read opened a random row")
     development = development_assignments.merge(
         current[current_columns],
