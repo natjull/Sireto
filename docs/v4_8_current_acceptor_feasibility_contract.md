@@ -80,9 +80,12 @@ source V4.1, lui aussi épinglé :
 | `queries.parquet` | `6a12f1c4ca9ec33636ebcf7748c208595c6168d7cdb8c068e1434af3fe22abb0` |
 | `labels.parquet` | `69032b745817959422ef26e4c0c1228686260c1daa272ca5d6aba1d7be087b04` |
 
-Le socle contient exactement 5 547 scènes `fit` et 1 456 scènes `dev`. Toutes
-les prédictions ranker sont hors échantillon. L'ordre des 80 features est
-celui de `metadata.json`, sans ajout, retrait ni réordonnancement.
+Le fichier contient exactement 5 547 scènes `fit` et 1 456 scènes `dev`.
+Deux scènes fit portent `acceptor_eligible=False` et avaient été exclues de
+l'apprentissage V4.1. Le socle effectif de tout réentraînement V4.8 contient
+donc exactement 5 545 scènes fit et 1 456 scènes dev. Toutes les prédictions
+ranker sont hors échantillon. L'ordre des 80 features est celui de
+`metadata.json`, sans ajout, retrait ni réordonnancement.
 
 L'accepteur gelé est une pipeline `StandardScaler` puis
 `LogisticRegression(C=1, class_weight="balanced", max_iter=3000,
@@ -109,20 +112,44 @@ apprend seulement des accepteurs logistiques sur les scènes déjà figées.
 La construction des partitions est une étape indépendante. Elle publie un
 artefact immuable avant tout score V4.8.
 
-Les 7 003 scènes historiques conservent leur `siren_component_id`, leur split
-fit/dev et leur fold V4.1. Pour les dossiers V4.7, une composante relie :
+Chaque `siren_component_id` historique reste un atome indivisible. Ses membres
+SIREN sont reconstruits exclusivement avec `input_siren`/`input_siret` de
+`queries.parquet` et `ground_truth_siren`/`ground_truth_siret` de
+`labels.parquet`, exactement comme le split V4.1. Le SIREN prédit historique
+ne crée pas d'arête supplémentaire.
+
+Pour les dossiers V4.7, une composante relie exactement :
 
 - le SIREN dérivé de `input_siret`, lorsqu'il existe ;
-- le SIREN du top-1 courant ;
+- le SIREN dérivé de `current_top1_siret` ;
 - un éventuel SIREN exact explicitement validé dans l'adjudication.
 
 Les SIREN simplement présents parmi les 100 candidats ne créent pas d'arête :
 leur présence comme alternative locale ne transmet aucun label et les inclure
 fusionnerait artificiellement des milliers d'entreprises d'une même commune.
 
-Les composantes V4.7 sont ensuite reliées aux composantes historiques lorsque
-leurs SIREN impliqués sont identiques. Les identifiants bruts ne deviennent
-jamais des features.
+Un SIREN est normalisé en conservant exactement neuf chiffres ; un SIRET
+valide fournit ses neuf premiers chiffres. Une ligne sans aucun identifiant
+valide reçoit un nœud de repli propre à sa provenance et à son `query_id`.
+Les composantes V4.7 sont ensuite reliées aux atomes historiques lorsque ces
+SIREN exacts sont identiques. L'identifiant global est constitué des nœuds de
+la composante triés, joints par `|`, puis tronqué aux 16 premiers caractères
+du SHA-256. Les identifiants bruts ne deviennent jamais des features.
+
+Avant partitionnement, chacun des 98 ciblés et chacun des 52 random dits
+fiables doit satisfaire simultanément :
+
+- `current_training_eligible=True` et
+  `current_evidence_validated=True` ;
+- `current_acceptor_target` présent et égal à `1` pour `TOP1_CORRECT`, à
+  `0` pour `TOP1_WRONG` ou `AMBIGUOUS` ;
+- `current_top1_siret == replayed_top1_siret` ;
+- les 80 features de `metadata.json` présentes, dans cet ordre lors de toute
+  extraction, numériques et finies.
+
+Il est interdit de substituer `scene_acceptor_target`, le top-1 gelé V4.4 ou
+une ancienne adjudication à ces champs courants. Un échec donne
+`STOP_INPUT_INTEGRITY`.
 
 Priorité d'affectation :
 
@@ -161,7 +188,7 @@ alors appris.
 
 ## 5. Variantes autorisées
 
-| Code | Fit | Poids additionnel des cas ciblés |
+| Code | Fit | Poids total des cas ciblés |
 |---|---|---:|
 | `BASE_FROZEN` | modèle V4.1 non réentraîné | sans objet |
 | `BASE_REFIT` | fit historique effectif | 0 |
@@ -170,13 +197,26 @@ alors appris.
 | `HARD_W4` | fit historique + cas ciblés OOF | 4 |
 
 Toutes les variantes réentraînées utilisent exactement la pipeline et les
-paramètres V4.1. Les poids ci-dessus sont des `sample_weight`; ils ne
-changent ni les cibles ni `class_weight="balanced"`.
+paramètres V4.1. Toute scène historique a un poids total de `1`. Une scène
+difficile a un poids total exactement égal à `1`, `2` ou `4` selon la
+variante, transmis à `model__sample_weight`; il ne s'agit pas d'un poids
+additionnel. Ces poids ne changent ni les cibles ni
+`class_weight="balanced"`.
 
-Pour une variante `HARD`, chaque cas `hard_oof` est scoré par le modèle du
-fold qui ne l'a jamais vu. Les `hard_dev_locked` sont scorés par un modèle
-entraîné uniquement sur les composantes disjointes autorisées. Chaque cas
-ciblé de développement reçoit exactement une prédiction hors échantillon.
+Pour chaque poids `HARD`, un modèle complet est appris sur le fit historique
+effectif et tous les `hard_oof`. Il score le dev historique et choisit son
+seuil. Ce modèle déjà évalué devient le modèle gelé si la variante gagne :
+aucun refit post-sélection n'est autorisé.
+
+En parallèle, cinq modèles OOF sont appris sur le fit historique autorisé et
+quatre folds difficiles. Chacun score le fold difficile laissé dehors. Chaque
+modèle OOF choisit son propre seuil sur le dev historique avec exactement ses
+propres scores ; le seuil du modèle complet ne peut pas être appliqué aux
+scores d'un autre modèle.
+
+Les `hard_dev_locked` sont publiés descriptivement. Ils sont exclus de tous
+les critères ciblés, de toute sélection de variante et de tout gate, car leur
+composante participe au dev qui choisit le seuil.
 
 Deux exécutions de `BASE_REFIT` doivent donner les mêmes scores à `1e-12`
 près et les mêmes décisions. Sinon : `STOP_REPRODUCTION`.
@@ -186,19 +226,24 @@ d'hyperparamètres, réécriture du CRM et ajout de labels.
 
 ## 6. Seuils sans réserve aléatoire ni test
 
-Pour chaque variante réentraînée, les seuils candidats sont les scores
-distincts du dev historique effectif, plus les deux extrêmes. Le seuil
+La règle de décision est `AUTO` si et seulement si `score >= seuil`. Pour
+chaque variante réentraînée, les seuils candidats sont les scores distincts
+du dev historique effectif, plus
+`nextafter(max(score), +inf)` et `nextafter(min(score), -inf)`. Le seuil
 maximise le nombre d'AUTO sous les contraintes :
 
 - au moins 100 AUTO ;
-- précision SIRET exacte observée ≥ 99,8 % ;
+- précision SIRET exacte observée ≥ 99,8 %, testée sans arrondi par
+  `1000 * correct_auto >= 998 * auto_count` ;
 - pas plus d'`AMBIGUOUS` historiques automatisés que `BASE_FROZEN` sur les
   mêmes lignes.
 
 Égalités : meilleure précision, puis seuil le plus élevé.
 
 `BASE_FROZEN` conserve son seuil historique. Aucun score ciblé, random ou test
-ne choisit un seuil.
+ne choisit un seuil. Le seuil et les métriques sont choisis et mesurés sur le
+même dev historique : ce gate est explicitement une étude de faisabilité
+interne, pas une estimation hors échantillon de la sécurité.
 
 ## 7. Gate de développement et choix unique
 
@@ -209,12 +254,12 @@ variante `HARD` est admissible si elle respecte simultanément :
    `BASE_FROZEN` ;
 2. couverture dev historique ≥ couverture de `BASE_FROZEN` moins
    2 points ;
-3. au moins quatre `TOP1_WRONG` ciblés supplémentaires rejetés hors
-   échantillon par rapport à `BASE_REFIT` ;
-4. taux d'acceptation des `TOP1_CORRECT` ciblés au plus 5 points sous
-   `BASE_REFIT` ;
+3. sur les seuls `hard_oof`, au moins quatre `TOP1_WRONG` ciblés
+   supplémentaires rejetés hors échantillon par rapport à `BASE_REFIT` ;
+4. sur les seuls `hard_oof`, taux d'acceptation des `TOP1_CORRECT` ciblés
+   supérieur ou égal au taux `BASE_REFIT` moins 5 points ;
 5. aucun `AMBIGUOUS` ciblé supplémentaire automatisé par rapport à
-   `BASE_REFIT`.
+   `BASE_REFIT`, toujours sur les seuls `hard_oof`.
 
 Sélection parmi les variantes admissibles :
 
@@ -226,6 +271,9 @@ Sélection parmi les variantes admissibles :
 Les nombres bruts, intervalles de Wilson à 95 %, courbes
 risque-couverture et bascules appariées sont publiés. Le winner, son seuil,
 ses scores de développement, son modèle et ses hashes sont ensuite gelés.
+Les résultats sont aussi séparés par strate V4.7 et origine du label. Les
+coefficients, l'intercept, les versions `numpy`/`scikit-learn` et le hash des
+scores sont publiés.
 
 Si aucune variante n'est admissible :
 
