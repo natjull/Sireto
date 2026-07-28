@@ -93,6 +93,13 @@ les 41 tests ciblés et les 711 tests du dépôt passent. Aucun build Gate A,
 verrou, oracle ou modèle n'a été ouvert par cette implémentation. Le prochain
 geste autorisé est la création puis le contre-audit du verrou d'exécution.
 *(commit GitHub : `e059148`)*
+Le premier verrou candidat a été révoqué avant exécution : le contrôle
+indépendant a détecté que le hash de la bibliothèque Python, cohérent entre
+plan/code/lock, était tronqué à 63 caractères face au fichier réel. Le hash
+64 caractères a été corrigé dans le contrat, le plan et le certificateur ;
+`GO_CODE_PATCH`, 41 tests ciblés, le smoke réel et 711 tests complets
+confirment le correctif. Aucun build n'a été lancé avec le verrou fautif.
+*(commit GitHub : `c22d05a`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
