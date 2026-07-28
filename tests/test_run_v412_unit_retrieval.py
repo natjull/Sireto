@@ -307,6 +307,7 @@ def test_profile_is_closed_and_has_explicit_denies(tmp_path: Path) -> None:
     assert f"(subpath {json.dumps(str(forbidden))})" in profile
     assert "(deny network*)" in profile
     assert "(deny process-fork)" in profile
+    assert '(subpath (param "PRIVATE_PACKAGE_ROOT"))' in profile
 
 
 def test_profile_refuses_a_missing_marker() -> None:
@@ -379,6 +380,29 @@ def test_worker_output_rejects_extra_file(tmp_path: Path) -> None:
         subject._validate_outputs(
             tmp_path, "b" * 64, query_ids, 8 * 1024**3
         )
+
+
+def test_worker_failure_removes_only_registered_private_staging(
+    tmp_path: Path,
+) -> None:
+    run_root = tmp_path / ".run-worker-failure"
+    preexisting_orphan = tmp_path / ".run-preexisting-orphan"
+    run_root.mkdir(mode=0o700)
+    preexisting_orphan.mkdir(mode=0o700)
+    (run_root / "partial").write_text("not published")
+    (preexisting_orphan / "keep").write_text("untouched")
+    subject._register_private(run_root)
+    result = subprocess.CompletedProcess(
+        ["worker"],
+        1,
+        stdout="",
+        stderr="ModuleNotFoundError: xgb_matcher",
+    )
+    with pytest.raises(subject.RetrievalRunStopped, match="worker failed rc=1"):
+        subject._require_worker_success(run_root, result)
+    assert not run_root.exists()
+    assert run_root not in subject._ACTIVE_PRIVATE_ROOTS
+    assert (preexisting_orphan / "keep").read_text() == "untouched"
 
 
 def test_routes_use_insee_then_postcode_and_match_payload() -> None:
@@ -1297,6 +1321,8 @@ def test_native_sandbox_runs_private_python_and_enforces_boundaries(
         "-D",
         f"ENGINE_SOURCE={probe_fd_path}",
         "-D",
+        f"PRIVATE_PACKAGE_ROOT={run_root}",
+        "-D",
         f"RUN_OUTPUT={output}",
         "-D",
         f"RUN_TMP={scratch}",
@@ -1320,6 +1346,7 @@ def test_native_sandbox_runs_private_python_and_enforces_boundaries(
             cwd=run_root,
             env={
                 "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONNOUSERSITE": "1",
                 "JOBLIB_MULTIPROCESSING": "0",
                 "TMPDIR": str(scratch),
                 "DYLD_FRAMEWORK_PATH": str(framework_root),
@@ -1334,3 +1361,109 @@ def test_native_sandbox_runs_private_python_and_enforces_boundaries(
     assert result.returncode == 0, result.stderr
     assert marker.read_text() == "SANDBOX_OK"
     assert not blocked_write.exists()
+
+
+@pytest.mark.skipif(
+    platform.system() != "Darwin" or not Path("/usr/bin/sandbox-exec").exists(),
+    reason="native Seatbelt integration is macOS-only",
+)
+def test_native_worker_profile_imports_sealed_private_package(
+    tmp_path: Path,
+) -> None:
+    run_root = tmp_path / "run"
+    output = run_root / "output"
+    scratch = run_root / "tmp"
+    package = run_root / "xgb_matcher"
+    forbidden = tmp_path / "forbidden"
+    for path in (run_root, output, scratch, package, forbidden):
+        path.mkdir()
+    for name in ("v412_strict_stores.py", "v412_unit_retrieval.py"):
+        source = ROOT / "src/xgb_matcher" / name
+        destination = package / name
+        destination.write_bytes(source.read_bytes())
+        os.chmod(destination, 0o444)
+    (package / "__init__.py").write_bytes(b"")
+    os.chmod(package / "__init__.py", 0o444)
+    os.chmod(package, 0o555)
+
+    app = Path(
+        "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/"
+        "Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python"
+    )
+    library = Path(
+        "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/"
+        "Python.framework/Versions/3.14/Python"
+    )
+    if not app.exists() or not library.exists():
+        pytest.skip("frozen private Python runtime is unavailable")
+    sandbox = {
+        "python_framework_app": str(app),
+        "python_framework_app_sha256": _sha(app),
+        "python_framework_library": str(library),
+        "python_framework_library_sha256": _sha(library),
+    }
+    private_python, framework_root = subject._copy_private_python(
+        run_root,
+        sandbox,
+        8 * 1024**3,
+    )
+    template = (ROOT / "config/v4_12_unit_retrieval.sb").read_text()
+    profile = subject.render_profile(
+        template,
+        allowed_files=[],
+        forbidden_roots=[forbidden],
+        system_roots=[Path("/System"), Path("/usr"), Path("/opt/homebrew")],
+        devices=[Path("/dev/null"), Path("/dev/urandom"), Path("/dev/fd")],
+        metadata_extra=[run_root, output, scratch, package],
+    )
+    command = [
+        "/usr/bin/sandbox-exec",
+        "-D",
+        f"RUN_ROOT={run_root}",
+        "-D",
+        "RUN_SPEC=/dev/null",
+        "-D",
+        "LOOKUP_DESCRIPTOR=/dev/null",
+        "-D",
+        "QUERIES=/dev/null",
+        "-D",
+        f"STRICT_SOURCE={package / 'v412_strict_stores.py'}",
+        "-D",
+        f"ENGINE_SOURCE={package / 'v412_unit_retrieval.py'}",
+        "-D",
+        f"PRIVATE_PACKAGE_ROOT={package}",
+        "-D",
+        f"RUN_OUTPUT={output}",
+        "-D",
+        f"RUN_TMP={scratch}",
+        "-D",
+        f"PYTHON_EXECUTABLE={private_python}",
+        "-D",
+        f"PYTHON_FRAMEWORK_ROOT={framework_root}",
+        "-p",
+        profile,
+        str(private_python),
+        "-B",
+        "-m",
+        "xgb_matcher.v412_unit_retrieval",
+        "--help",
+    ]
+    result = subprocess.run(
+        command,
+        cwd=run_root,
+        env={
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+            "PYTHONSAFEPATH": "1",
+            "PYTHONPATH": str(run_root),
+            "JOBLIB_MULTIPROCESSING": "0",
+            "TMPDIR": str(scratch),
+            "DYLD_FRAMEWORK_PATH": str(framework_root),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stderr
+    assert "Run the V4.12 unit retrieval worker" in result.stdout
+    assert "--run-spec" in result.stdout

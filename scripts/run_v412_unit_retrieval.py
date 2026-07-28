@@ -2089,6 +2089,17 @@ def _validate_worker_stdout(payload: str, worker_build_id: str) -> dict[str, Any
     return status
 
 
+def _require_worker_success(
+    run_root: Path,
+    result: subprocess.CompletedProcess[str],
+) -> None:
+    if result.returncode == 0:
+        return
+    message = f"worker failed rc={result.returncode}: {result.stderr[-1000:]}"
+    _remove_private(run_root)
+    _stop(message)
+
+
 def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
     repo = Path(__file__).resolve().parents[1]
     if plan_path.absolute() != (repo / PLAN_PATH).absolute():
@@ -2272,6 +2283,8 @@ def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
             "-D",
             f"ENGINE_SOURCE={private_engine}",
             "-D",
+            f"PRIVATE_PACKAGE_ROOT={package}",
+            "-D",
             f"RUN_OUTPUT={output}",
             "-D",
             f"RUN_TMP={tmp}",
@@ -2309,6 +2322,9 @@ def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
             cwd=run_root,
             env={
                 "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONNOUSERSITE": "1",
+                "PYTHONSAFEPATH": "1",
+                "PYTHONPATH": str(run_root),
                 "JOBLIB_MULTIPROCESSING": "0",
                 "TMPDIR": str(tmp),
                 "DYLD_FRAMEWORK_PATH": str(framework_root),
@@ -2333,6 +2349,7 @@ def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
                     anchored_error = anchored_error or exc
         if anchored_error is not None:
             raise anchored_error
+    _require_worker_success(run_root, result)
     ledger_rows = []
     for path, (role, projection, before) in ledger_before.items():
         after = _snapshot(path, limit)
@@ -2352,8 +2369,6 @@ def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
     ledger_rows.sort(
         key=lambda row: (row["role"].encode(), row["absolute_path"].encode())
     )
-    if result.returncode != 0:
-        _stop(f"worker failed rc={result.returncode}: {result.stderr[-1000:]}")
     status = _validate_worker_stdout(result.stdout, worker_build_id)
 
     integrity = _validate_outputs(
