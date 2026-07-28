@@ -47,6 +47,15 @@ reconstruit correctement le canal sparse unique (`channel_count=1`) et son
 score RRF à partir du rang. Le runner ne sera lancé que si le build
 input-blind franchit d'abord le gate Recall@100. *(commit GitHub :
 `b6a2332`)*
+Le dataset et le runner de l'accepteur compact sont aussi implémentés, mais
+restent inactifs jusqu'aux gates précédents. Ils imposent le rattachement à
+un artefact ranker C `GO` réellement OOF, l'étanchéité des composantes
+train/dev, les 5 547 scènes fit et les volumes dev préenregistrés. Les
+`UNRESOLVED` sont exclus du fit et matérialisés en `REVIEW`; un éventuel
+bundle `GO` épinglera par hash le retrieval, le ranker C, la taxonomie, le
+contrat, le calcul de scène et l'accepteur. Le contrôle indépendant a trouvé
+puis fait fermer cinq manques de gouvernance avant tout fit ; la suite
+complète passe 428 tests. *(commit GitHub : `2a9f51f`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
