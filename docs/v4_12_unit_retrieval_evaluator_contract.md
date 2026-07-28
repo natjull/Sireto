@@ -704,8 +704,10 @@ sireto-v4.12-unit-retrieval-evaluator-measurement-slot-1
 attempt_identity =
 sireto-v4.12-unit-retrieval-evaluator-attempt-identity-1
 receipt = sireto-v4.12-unit-retrieval-evaluator-receipt-1
-state = sireto-v4.12-unit-retrieval-evaluator-attempt-state-1
-event = sireto-v4.12-unit-retrieval-evaluator-attempt-event-1
+computed_attestation =
+sireto-v4.12-unit-retrieval-evaluator-computed-attestation-1
+state = sireto-v4.12-unit-retrieval-evaluator-attempt-state-2
+event = sireto-v4.12-unit-retrieval-evaluator-attempt-event-2
 ```
 
 `measurement_slot_id` est le SHA-256 du JSON canonique possédant exactement :
@@ -739,13 +741,127 @@ Racine parent-only :
 v4_12_unit_retrieval_evaluator_attempts/<measurement_slot_id>/
 ```
 
-Arborescence exacte :
+Arborescence exacte avant calcul validé :
 
 ```text
 receipt.json
 state.json
 events.jsonl
 ```
+
+Après validation complète des deux arbres staging, et seulement à partir de
+ce point, l'arborescence exacte possède un quatrième fichier :
+
+```text
+receipt.json
+state.json
+events.jsonl
+computed_attestation.json
+```
+
+Aucun autre fichier n'est permis dans le slot. `computed_attestation.json`
+est créé exclusivement par le parent, sans clobber, après validation complète
+des deux arbres staging et avant l'événement `COMPUTED_STAGING_VALID`. Il est
+canonique, immuable, `fsync`, et son répertoire est `fsync` avant
+l'append de cet événement.
+
+`computed_attestation.json` possède exactement :
+
+```text
+schema_version
+measurement_slot_id
+attempt_id
+evaluator_build_id
+plan_sha256
+lock_sha256
+input_snapshots
+evaluation_manifest_sha256
+audit_manifest_sha256
+evaluation_tree_sha256
+audit_tree_sha256
+```
+
+`schema_version` vaut
+`sireto-v4.12-unit-retrieval-evaluator-computed-attestation-1`.
+`input_snapshots` est un objet dont les clés sont exactement les seize rôles
+du plan, sans rôle supplémentaire ni manquant, et chaque valeur possède
+exactement :
+
+```text
+absolute_path
+projection
+size_bytes_before
+sha256_before
+size_bytes_after
+sha256_after
+```
+
+Les rôles, dans l'ordre de projection contractuel, sont :
+
+```text
+git_executable
+oracle_audit_manifest
+oracle_dev
+oracle_integrity
+oracle_manifest
+parity_manifest
+parity_provenance
+parity_result
+python_framework_app
+python_framework_library
+sandbox_executable
+worker_audit_manifest
+worker_candidates_top100
+worker_integrity
+worker_manifest
+worker_query_status
+```
+
+Pour les douze rôles du ledger, `absolute_path`, `projection`, tailles et
+hashes sont identiques aux lignes correspondantes du ledger. Pour les quatre
+exécutables/runtime absents du ledger, la projection est `FULL_FILE_BYTES`.
+Les trois projections Parquet restent exactement celles préenregistrées :
+
+```text
+worker_candidates_top100 =
+  query_id,candidate_rank,candidate_siret
+worker_query_status =
+  query_id,candidate_count
+oracle_dev =
+  query_id,dev_partition,label_kind,ground_truth_siret,ground_truth_siren
+```
+
+Tous les autres fichiers JSON utilisent `FULL_JSON_EXACT_KEYSET`.
+Les douze rôles data du ledger sont ouverts, consommés puis resnapshottés
+depuis les mêmes FDs détenus par le parent ; leurs six champs d'attestation
+sont identiques aux lignes du ledger. Les quatre rôles runtime
+`git_executable`, `python_framework_app`, `python_framework_library` et
+`sandbox_executable` ne sont ni des inputs data ni des lignes du ledger. Le
+parent les vérifie et les resnapshotte selon le protocole d'exécution scellée :
+le Git verrouillé est contrôlé administrativement, Python et sa bibliothèque
+sont les sources vérifiées de la copie runtime privée, et le binaire Seatbelt
+est vérifié contre son chemin verrouillé avant lancement. Le contrat ne
+prétend pas que ces quatre fichiers sont consommés par le worker depuis leurs
+FDs originaux. Pour les seize rôles, tailles et SHA-256 avant/après doivent
+néanmoins être identiques et égaux aux chemins et hashes du plan et du
+verrou.
+
+`evaluation_manifest_sha256` et `audit_manifest_sha256` sont les SHA-256 des
+octets exacts des deux `manifest.json` staging. Le tree évaluation possède
+exactement les chemins de `outputs.runtime_files`; le tree audit possède
+exactement les chemins de `outputs.audit_files`. Ces deux listes incluent
+chacune `manifest.json`. Dans chaque manifeste, l'objet `files` scelle
+exactement la liste correspondante moins `manifest.json`, puisque le manifeste
+ne peut pas publier son propre hash. Cette exception d'auto-référence est la
+seule différence entre le file set du tree et le keyset `manifest.files`.
+Aucun fichier extérieur aux deux listes `outputs` n'est admis.
+
+Chaque hash d'arbre est le SHA-256 du JSON canonique, LF final inclus,
+associant chaque chemin relatif du tree exact, manifeste inclus, à un objet
+possédant exactement `size_bytes,sha256`. Tout fichier manquant ou
+additionnel par rapport à la liste `outputs` correspondante, non régulier ou
+symlink est refusé. L'algorithme littéral du plan est
+`SHA256_CANONICAL_JSON_RELATIVE_PATH_TO_SIZE_BYTES_AND_SHA256`.
 
 `receipt.json` est immuable et possède exactement :
 
@@ -817,8 +933,12 @@ Aucun fichier oracle ne peut servir à la revalidation pré-commit.
 La même séquence s'applique à toute reprise qui atteint pour la première fois
 la frontière oracle. Si la chaîne contient déjà
 `ORACLE_OPEN_COMMITTED=true`, aucune réouverture ou recomputation oracle
-n'est autorisée : la reprise est exclusivement une validation/promotion
-d'octets complets déjà produits.
+n'est autorisée. La reprise est possible uniquement si la chaîne contient
+déjà `COMPUTED_STAGING_VALID` avec le hash exact de
+`computed_attestation.json`; elle valide exclusivement cette attestation, les
+manifests et les arbres staging/pending/final locaux, puis promeut les octets
+déjà produits. Avant cet événement, ou si l'attestation est absente ou
+divergente, la tentative devient `STOPPED`.
 
 Si le slot existe déjà, son reçu doit épingler exactement le même
 `attempt_id`, plan, verrou, inputs et spécification. Une identité différente
@@ -836,6 +956,7 @@ state
 phase
 oracle_open_committed
 evaluator_build_id
+computed_attestation_sha256
 reason_code
 updated_at_utc
 ```
@@ -851,10 +972,22 @@ state
 phase
 oracle_open_committed
 evaluator_build_id
+computed_attestation_sha256
 reason_code
 timestamp_utc
 previous_event_sha256
 ```
+
+Les schema versions de `state.json` et des événements deviennent
+respectivement
+`sireto-v4.12-unit-retrieval-evaluator-attempt-state-2` et
+`sireto-v4.12-unit-retrieval-evaluator-attempt-event-2`.
+`computed_attestation_sha256` est nul avant
+`COMPUTED_STAGING_VALID`. Dans l'événement `COMPUTED_STAGING_VALID`, il vaut
+exactement le SHA-256 des octets canoniques immuables de
+`computed_attestation.json`; tous les événements ultérieurs, y compris
+`STOPPED`, conservent strictement cette même valeur. Il ne peut jamais
+redevenir nul ni changer.
 
 Les séquences commencent à zéro, sont contiguës et chaque événement chaîne
 le SHA-256 des octets de la ligne précédente, LF inclus ; la première valeur
@@ -873,17 +1006,67 @@ annuler une transition.
 2. lit toute la chaîne d'événements jusqu'au LF final ;
 3. vérifie keyset, schema version, identité, séquences contiguës, hash
    précédent, transitions permises et monotonie de
-   `oracle_open_committed` ;
+   `oracle_open_committed` et de `computed_attestation_sha256` ;
 4. dérive l'état depuis le dernier événement ;
 5. compare `state.json` à cette projection.
 
-Si `state.json` est absent, il est reconstruit depuis la chaîne valide par
-écriture d'un fichier temporaire exclusif, `fsync`, renommage atomique sans
-suivre de symlink vers `state.json`, puis `fsync` du répertoire. S'il est
-périmé, il n'est
-reconstruit que si son identité et son contenu correspondent exactement à la
-projection d'un événement antérieur de la même chaîne. Dans les deux cas,
-`events.jsonl` n'est jamais réécrit.
+Si `state.json` est absent, il est reconstruit depuis la chaîne valide. Le
+fichier temporaire exclusif n'est jamais créé dans le slot exact : il est
+créé directement sous `attempt_root` avec le chemin :
+
+```text
+<attempt_root>/.state-cache-<attempt_id>-<launch_nonce>.tmp
+```
+
+`launch_nonce` est un hexadécimal aléatoire OS unique pour chaque tentative
+de reconstruction et n'est jamais réutilisé. L'arborescence transitoire
+autorisée du parent est donc :
+
+```text
+<attempt_root>/
+  .slot-<measurement_slot_id>.lock
+  <measurement_slot_id>/
+    receipt.json
+    state.json
+    events.jsonl
+    computed_attestation.json  # seulement après sa création
+  .state-cache-<attempt_id>-<launch_nonce>.tmp
+```
+
+`.slot-<measurement_slot_id>.lock` est le seul pattern de fichier durable
+autorisé directement sous `attempt_root`.
+`.state-cache-<attempt_id>-<launch_nonce>.tmp` est le seul pattern
+transitoire autorisé directement sous cette racine. Le verrou n'est jamais
+classé comme temporaire ou orphelin.
+
+Le parent résout `attempt_root` et le verrou composant par composant avec
+`openat` et `O_NOFOLLOW`. Le verrou est un fichier régulier possédé par l'UID
+effectif du parent, de mode exact `0600`. Le parent acquiert un
+`flock(LOCK_EX|LOCK_NB)` et conserve le FD pendant toute l'opération sur la
+tentative. À chaque frontière protocolaire — reçu, READY pré-oracle, commit
+oracle, attestation calculée, chaque promotion et état terminal — il compare
+le device/inode du FD détenu à une réouverture du chemin canonique ancré.
+Toute substitution, disparition, changement d'ownership/mode ou divergence
+path/inode est un `STOP`.
+
+Le verrou est une réservation durable du namespace du
+`measurement_slot_id`. Il n'est jamais supprimé, renommé ni remplacé, y
+compris après `FINAL` ou `STOPPED`. À l'inverse, un temporaire de state cache
+peut devenir orphelin après crash ; il reste conservé et ignoré conformément
+à la règle ci-dessous, sans modifier l'identité ni le cycle de vie du verrou.
+
+Après écriture et `fsync` du temporaire, le parent le renomme atomiquement,
+sans suivre de symlink, vers le `state.json` du slot puis `fsync` les
+répertoires concernés. Si le processus s'arrête avant ce renommage, le
+temporaire reste un orphelin conservé sous `attempt_root`. Il est ignoré par
+la recovery du slot, n'est jamais supprimé ni réutilisé, et la reconstruction
+suivante emploie un nouveau nonce. Le slot reste donc strictement limité à
+ses trois ou quatre fichiers contractuels.
+
+Si `state.json` est périmé, il n'est reconstruit que si son identité et son
+contenu correspondent exactement à la projection d'un événement antérieur de
+la même chaîne, avec le même protocole temporaire hors slot. Dans tous les
+cas, `events.jsonl` n'est jamais réécrit.
 
 Un cache en avance sur la chaîne, une identité divergente, une ligne partielle
 ou sans LF, un hash ou une transition invalide, ou un cache affirmant
@@ -891,6 +1074,14 @@ ou sans LF, un hash ou une transition invalide, ou un cache affirmant
 Cette règle interdit qu'un événement `ORACLE_OPEN_COMMITTED` durable soit
 perdu, masqué ou ramené à `false`. Dès sa première valeur `true`, tous les
 événements suivants doivent conserver `true`.
+
+Une attestation présente alors que le dernier événement précède
+`COMPUTED_STAGING_VALID`, une attestation absente à partir de cet événement,
+un hash différent du journal, une identité différente, un snapshot divergent,
+ou un hash de manifeste/tree divergent est un `STOP`. L'attestation ne peut
+jamais, à elle seule, faire avancer le journal : si le processus s'arrête
+après son `fsync` mais avant le `fsync` de l'événement
+`COMPUTED_STAGING_VALID`, la tentative est terminalement arrêtée.
 
 Avant de rendre l'oracle accessible, le parent append et `fsync` l'événement
 de phase `ORACLE_OPEN_COMMITTED` avec `oracle_open_committed=true`. Dès cet
@@ -902,15 +1093,17 @@ Les seuls états sont :
 | État | Définition exacte |
 |---|---|
 | `STARTED` | reçu durable ; exécution pas encore publiable. Avant `ORACLE_OPEN_COMMITTED`, la même tentative peut reprendre après revalidation intégrale. Après ce commit, un crash n'est pas rejouable. |
-| `RECOVERABLE` | les deux arbres staging ou pending sont complets, liés au même build et validés, ou l'audit final est valide avec l'évaluation pending valide. Seules validation et promotion sont permises ; aucun calcul, aucune réouverture oracle. |
-| `FINAL` | audit final puis évaluation finale existent, sont immuables, liés au même attempt/build et passent la postvalidation commune. |
-| `STOPPED` | état terminal après divergence, conflit, violation, ou crash post-ouverture sans deux arbres complets et valides. Aucun rerun ni effacement. |
+| `RECOVERABLE` | l'événement `COMPUTED_STAGING_VALID` chaîne le hash exact d'une attestation valide et les deux arbres staging ou pending correspondent à ses hashes, ou l'audit final et l'évaluation pending y correspondent. Seules validation et promotion sont permises ; aucun calcul, aucune réouverture oracle. |
+| `FINAL` | audit final puis évaluation finale existent, sont immuables, liés au même attempt/build, correspondent à l'attestation chaînée et passent la postvalidation commune. |
+| `STOPPED` | état terminal après divergence, conflit, violation, crash post-ouverture antérieur à l'événement attesté, ou absence d'arbres complets conformes à l'attestation chaînée. Aucun rerun ni effacement. |
 
 Les seules phases sont `RECEIPT_DURABLE`, `ORACLE_OPEN_COMMITTED`,
 `COMPUTED_STAGING_VALID`, `PENDING_BOTH_VALID`, `AUDIT_FINAL`,
 `EVALUATION_FINAL`, `TERMINAL`. `evaluator_build_id` et `reason_code` sont
-nuls tant qu'ils ne sont pas définis par la phase. Toute autre combinaison
-état/phase est un `STOP`.
+nuls tant qu'ils ne sont pas définis par la phase.
+`computed_attestation_sha256` est nul jusqu'à
+`ORACLE_OPEN_COMMITTED` inclus, puis non nul à partir de
+`COMPUTED_STAGING_VALID`. Toute autre combinaison état/phase est un `STOP`.
 
 Un verdict métrique `GO` ou `PIVOT` peut finir avec l'état protocolaire
 `FINAL`. Le verdict métrique et l'état de publication ne sont jamais
@@ -942,15 +1135,23 @@ et enfin :
 Ordre exact :
 
 1. valider complètement les deux arbres staging ;
-2. journaliser `COMPUTED_STAGING_VALID` ;
-3. promouvoir l'audit pending, `fsync` ;
-4. promouvoir l'évaluation pending, `fsync` ;
-5. valider les deux pending et journaliser `PENDING_BOTH_VALID` ;
-6. promouvoir l'audit final, le rendre immuable, le revalider et journaliser
+2. construire `computed_attestation.json` depuis les douze snapshots data
+   same-FD, les quatre snapshots runtime du protocole parent scellé, les deux
+   manifests et les deux arbres exacts dérivés des listes `outputs` ;
+3. créer ce fichier avec exclusivité, puis `fsync` le fichier et le
+   répertoire du slot ;
+4. journaliser `COMPUTED_STAGING_VALID` avec
+   `computed_attestation_sha256`, puis `fsync` le journal et reconstruire le
+   cache d'état ;
+5. promouvoir l'audit pending, `fsync` ;
+6. promouvoir l'évaluation pending, `fsync` ;
+7. valider les deux pending contre l'attestation et journaliser
+   `PENDING_BOTH_VALID` avec le même hash d'attestation ;
+8. promouvoir l'audit final, le rendre immuable, le revalider et journaliser
    `AUDIT_FINAL` ;
-7. promouvoir l'évaluation finale, la rendre immuable, revalider les deux
+9. promouvoir l'évaluation finale, la rendre immuable, revalider les deux
    racines et journaliser `EVALUATION_FINAL` ;
-8. journaliser `FINAL/TERMINAL`.
+10. journaliser `FINAL/TERMINAL`.
 
 Chaque promotion est un renommage atomique sur le même filesystem, avec
 création exclusive de la destination. Aucun fichier ou répertoire existant
@@ -963,17 +1164,21 @@ Règles de crash et de reprise :
 | État disque observé | Décision |
 |---|---|
 | reçu durable, oracle non committé | reprendre la même tentative ; revalider plan, verrou et les 12 rôles non-oracle, puis append+fsync du commit avant les 4 ouvertures oracle |
-| oracle committé, arbres incomplets ou invalides | `STOPPED`, conservation intégrale, aucun recalcul |
-| deux staging ou deux pending complets et valides | `RECOVERABLE`, promotion seulement |
-| audit final valide, évaluation pending valide | `RECOVERABLE`, promotion de cette évaluation seulement |
-| audit final valide, aucune évaluation complète | `STOPPED` sauf si une évaluation staging/pending complète et déjà validée existe |
+| oracle committé, attestation absente/incomplète, ou dernier événement antérieur à `COMPUTED_STAGING_VALID` | `STOPPED`, conservation intégrale, aucun recalcul ni réouverture oracle |
+| attestation durable mais événement `COMPUTED_STAGING_VALID` absent | `STOPPED`, attestation orpheline conservée, aucune promotion |
+| événement `COMPUTED_STAGING_VALID` présent mais attestation absente, hash/identité divergents ou arbres divergents | `STOPPED`, aucune promotion ni réouverture oracle |
+| deux staging ou deux pending complets et conformes aux hashes d'attestation | `RECOVERABLE`, validation locale et promotion seulement |
+| audit final conforme, évaluation pending conforme | `RECOVERABLE`, promotion de cette évaluation seulement |
+| audit final conforme, aucune évaluation complète conforme à l'attestation | `STOPPED` |
 | évaluation finale présente sans audit final | `STOPPED`, évaluation orpheline conservée et déclarée invalide ; aucune publication réparatrice |
-| deux finaux présents mais ordre ou chaîne d'événements invalide | `STOPPED`, aucune réécriture |
-| deux finaux valides et chaîne valide | `FINAL` idempotent |
+| deux finaux présents mais attestation, ordre ou chaîne d'événements invalide | `STOPPED`, aucune réécriture |
+| deux finaux conformes à l'attestation et chaîne valide | `FINAL` idempotent |
 
 Une évaluation finale sans audit final ne peut donc jamais être considérée
 comme `RECOVERABLE` par recalcul. La seule reprise admise après ouverture
-oracle promeut des octets complets déjà validés. Tout état non listé est
+oracle valide l'attestation chaînée, les deux manifests et les arbres locaux,
+puis promeut ces octets déjà validés. Elle n'ouvre, ne `stat`, ne hash et ne
+recalcule aucun des quatre fichiers oracle. Tout état non listé est
 `STOPPED`.
 
 ## 12. Aucun tuning et ordre d'autorisation
@@ -988,6 +1193,24 @@ Ordre obligatoire :
 6. exécuter une fois l'évaluation officielle ;
 7. publier les artefacts, puis effectuer un audit indépendant ;
 8. publier les métriques et conclure `GO`, `PIVOT` ou `STOP`.
+
+L'audit indépendant final n'est autorisé qu'après validation de la chaîne
+finale et du hash de `computed_attestation.json`. Il ouvre en lecture seule le
+plan et le verrou canoniques, vérifie que le hash brut du verrou est celui du
+reçu, puis ouvre par `openat/O_NOFOLLOW`, `fstat` et hash les seize chemins
+exacts du plan. Il confirme :
+
+- les seize snapshots de l'attestation contre le plan, le verrou et les
+  fichiers effectivement relus ;
+- les douze snapshots data contre les douze lignes du ledger ;
+- les hashes des deux manifests et des deux arbres contre les artefacts
+  finaux ;
+- `measurement_slot_id`, `attempt_id`, `evaluator_build_id`,
+  `plan_sha256`, `lock_sha256` et le hash d'attestation contre la chaîne
+  d'événements.
+
+Cette relecture sensible appartient au contre-auditeur final, pas au chemin
+de recovery de l'évaluateur. Elle n'ajoute aucun rôle au ledger data.
 
 Il est interdit entre les étapes 1 et 8 de modifier :
 
@@ -1026,7 +1249,38 @@ il ne remplace pas l'évaluation finale unique exigée par la directive active.
 - reçu et événement `fsync` avant sentinelle réelle d'ouverture oracle ;
 - aucun des quatre rôles oracle ouvert avant l'événement durable ;
 - recovery pré-oracle répétant les douze revalidations non-oracle ;
-- `state.json` absent/périmé reconstruit depuis la chaîne autoritaire valide ;
+- slot possédant exactement trois fichiers avant création de l'attestation et
+  exactement quatre après cette création, y compris dans la fenêtre orpheline
+  précédant `COMPUTED_STAGING_VALID` ;
+- attestation canonique à keyset exact, seize rôles exacts, snapshots
+  before/after, manifests et hashes d'arbres recomputés ;
+- trees exacts dérivés des deux listes `outputs`, `manifest.json` inclus, et
+  `manifest.files` égal exactement à la liste correspondante moins ce
+  manifeste ;
+- douze rôles data prouvés same-FD et quatre rôles runtime prouvés par le
+  protocole parent d'exécution scellée, sans fausse assertion de consommation
+  worker ;
+- hash d'attestation nul avant `COMPUTED_STAGING_VALID`, exact et monotone
+  ensuite dans chaque événement et dans `state.json` ;
+- crash après validation staging mais avant attestation, puis après
+  attestation mais avant événement, tous deux `STOPPED` sans promotion ;
+- recovery post-oracle validant attestation, manifests et arbres sans ouvrir,
+  `stat` ou hasher aucun rôle oracle ;
+- attestation absente, substituée, tronquée, liée à un autre slot/attempt ou
+  divergente du ledger systématiquement refusée ;
+- audit indépendant ouvrant le verrou canonique et les seize fichiers exacts,
+  et rejetant tailles ou hashes ledger/attestation falsifiés ensemble ;
+- `state.json` absent/périmé reconstruit depuis la chaîne autoritaire valide
+  avec temporaire unique sous `attempt_root`, jamais dans le slot ;
+- crash laissant un `.state-cache-<attempt_id>-<launch_nonce>.tmp` orphelin :
+  fichier conservé et ignoré, slot inchangé, nouvelle reconstruction avec un
+  autre nonce et aucune suppression ;
+- verrou durable `.slot-<measurement_slot_id>.lock` créé/ouvert par
+  `openat/O_NOFOLLOW`, fichier régulier owner parent mode `0600`, avec
+  exclusion interprocessus non bloquante ;
+- substitution du chemin du verrou, inode divergent, ownership/mode divergent
+  ou second processus concurrent refusés à chaque frontière ; verrou jamais
+  supprimé, renommé, remplacé ni confondu avec un temporaire orphelin ;
 - cache en avance, chaîne partielle et régression du commit oracle refusés ;
 - tentative concurrente, autre verrou et autre politique refusés par le slot ;
 - transitions `STARTED/RECOVERABLE/FINAL/STOPPED` et crash à chaque promotion ;

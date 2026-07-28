@@ -576,8 +576,9 @@
       "measurement_slot_identity": "sireto-v4.12-unit-retrieval-evaluator-measurement-slot-1",
       "attempt_identity": "sireto-v4.12-unit-retrieval-evaluator-attempt-identity-1",
       "receipt": "sireto-v4.12-unit-retrieval-evaluator-receipt-1",
-      "state": "sireto-v4.12-unit-retrieval-evaluator-attempt-state-1",
-      "event": "sireto-v4.12-unit-retrieval-evaluator-attempt-event-1"
+      "computed_attestation": "sireto-v4.12-unit-retrieval-evaluator-computed-attestation-1",
+      "state": "sireto-v4.12-unit-retrieval-evaluator-attempt-state-2",
+      "event": "sireto-v4.12-unit-retrieval-evaluator-attempt-event-2"
     },
     "measurement_slot_identity_keyset": [
       "schema_version",
@@ -621,6 +622,7 @@
       "phase",
       "oracle_open_committed",
       "evaluator_build_id",
+      "computed_attestation_sha256",
       "reason_code",
       "updated_at_utc"
     ],
@@ -633,9 +635,129 @@
       "phase",
       "oracle_open_committed",
       "evaluator_build_id",
+      "computed_attestation_sha256",
       "reason_code",
       "timestamp_utc",
       "previous_event_sha256"
+    ],
+    "computed_attestation_filename": "computed_attestation.json",
+    "attempt_tree_before_computed_attestation": [
+      "receipt.json",
+      "state.json",
+      "events.jsonl"
+    ],
+    "attempt_tree_with_computed_attestation": [
+      "receipt.json",
+      "state.json",
+      "events.jsonl",
+      "computed_attestation.json"
+    ],
+    "computed_attestation_keyset": [
+      "schema_version",
+      "measurement_slot_id",
+      "attempt_id",
+      "evaluator_build_id",
+      "plan_sha256",
+      "lock_sha256",
+      "input_snapshots",
+      "evaluation_manifest_sha256",
+      "audit_manifest_sha256",
+      "evaluation_tree_sha256",
+      "audit_tree_sha256"
+    ],
+    "computed_input_snapshot_keyset": [
+      "absolute_path",
+      "projection",
+      "size_bytes_before",
+      "sha256_before",
+      "size_bytes_after",
+      "sha256_after"
+    ],
+    "computed_input_role_order": [
+      "git_executable",
+      "oracle_audit_manifest",
+      "oracle_dev",
+      "oracle_integrity",
+      "oracle_manifest",
+      "parity_manifest",
+      "parity_provenance",
+      "parity_result",
+      "python_framework_app",
+      "python_framework_library",
+      "sandbox_executable",
+      "worker_audit_manifest",
+      "worker_candidates_top100",
+      "worker_integrity",
+      "worker_manifest",
+      "worker_query_status"
+    ],
+    "computed_input_projections": {
+      "git_executable": "FULL_FILE_BYTES",
+      "oracle_audit_manifest": "FULL_JSON_EXACT_KEYSET",
+      "oracle_dev": "query_id,dev_partition,label_kind,ground_truth_siret,ground_truth_siren",
+      "oracle_integrity": "FULL_JSON_EXACT_KEYSET",
+      "oracle_manifest": "FULL_JSON_EXACT_KEYSET",
+      "parity_manifest": "FULL_JSON_EXACT_KEYSET",
+      "parity_provenance": "FULL_JSON_EXACT_KEYSET",
+      "parity_result": "FULL_JSON_EXACT_KEYSET",
+      "python_framework_app": "FULL_FILE_BYTES",
+      "python_framework_library": "FULL_FILE_BYTES",
+      "sandbox_executable": "FULL_FILE_BYTES",
+      "worker_audit_manifest": "FULL_JSON_EXACT_KEYSET",
+      "worker_candidates_top100": "query_id,candidate_rank,candidate_siret",
+      "worker_integrity": "FULL_JSON_EXACT_KEYSET",
+      "worker_manifest": "FULL_JSON_EXACT_KEYSET",
+      "worker_query_status": "query_id,candidate_count"
+    },
+    "computed_data_role_order": [
+      "oracle_audit_manifest",
+      "oracle_dev",
+      "oracle_integrity",
+      "oracle_manifest",
+      "parity_manifest",
+      "parity_provenance",
+      "parity_result",
+      "worker_audit_manifest",
+      "worker_candidates_top100",
+      "worker_integrity",
+      "worker_manifest",
+      "worker_query_status"
+    ],
+    "computed_runtime_role_order": [
+      "git_executable",
+      "python_framework_app",
+      "python_framework_library",
+      "sandbox_executable"
+    ],
+    "computed_data_snapshot_semantics": "12_DATA_ROLES_CONSUMED_AND_RESNAPSHOTTED_FROM_SAME_FDS",
+    "computed_runtime_snapshot_semantics": "4_RUNTIME_ROLES_VERIFIED_AND_RESNAPSHOTTED_BY_PARENT_SEALED_EXECUTION_PROTOCOL_NOT_DATA_CONSUMPTION",
+    "computed_tree_hash_algorithm": "SHA256_CANONICAL_JSON_RELATIVE_PATH_TO_SIZE_BYTES_AND_SHA256",
+    "computed_tree_record_keyset": [
+      "size_bytes",
+      "sha256"
+    ],
+    "computed_tree_file_sets": {
+      "evaluation": "outputs.runtime_files",
+      "audit": "outputs.audit_files"
+    },
+    "computed_tree_manifest_rule": "TREE_INCLUDES_MANIFEST_JSON_AND_MANIFEST_FILES_SEALS_EXACT_TREE_SET_MINUS_MANIFEST_JSON",
+    "computed_attestation_creation_protocol": [
+      "VALIDATE_BOTH_STAGING_TREES_COMPLETELY",
+      "RESNAPSHOT_12_DATA_INPUTS_FROM_SAME_PARENT_HELD_FDS",
+      "VERIFY_AND_RESNAPSHOT_4_RUNTIME_INPUTS_BY_PARENT_SEALED_EXECUTION_PROTOCOL",
+      "BUILD_EXACT_CANONICAL_COMPUTED_ATTESTATION",
+      "CREATE_EXCLUSIVE_PARENT_ONLY_COMPUTED_ATTESTATION",
+      "FSYNC_COMPUTED_ATTESTATION_AND_ATTEMPT_DIRECTORY",
+      "APPEND_COMPUTED_EVENT_WITH_ATTESTATION_SHA256",
+      "FSYNC_EVENT_AND_REBUILD_STATE_CACHE"
+    ],
+    "independent_final_audit_protocol": [
+      "VALIDATE_FINAL_EVENT_CHAIN_AND_COMPUTED_ATTESTATION_HASH",
+      "OPEN_AND_VALIDATE_CANONICAL_EXECUTION_LOCK",
+      "OPEN_NOFOLLOW_STAT_AND_HASH_16_EXACT_PLAN_INPUTS",
+      "CONFIRM_COMPUTED_INPUT_SNAPSHOTS_AGAINST_PLAN_LOCK_AND_LIVE_INPUTS",
+      "CONFIRM_12_DATA_SNAPSHOTS_AGAINST_OPEN_LEDGER",
+      "CONFIRM_MANIFEST_AND_TREE_HASHES_AGAINST_FINAL_ARTIFACTS"
     ],
     "states": [
       "STARTED",
@@ -693,8 +815,36 @@
     "state_cache_missing_policy": "REBUILD_ATOMICALLY_FROM_VALID_EVENT_CHAIN",
     "state_cache_stale_policy": "REBUILD_ONLY_IF_CACHE_MATCHES_AN_EARLIER_CHAIN_EVENT",
     "state_cache_conflict_policy": "STOP",
+    "state_cache_temporary_root": "<attempt_root>",
+    "state_cache_temporary_pattern": ".state-cache-<attempt_id>-<launch_nonce>.tmp",
+    "attempt_parent_transient_file_patterns": [
+      ".state-cache-<attempt_id>-<launch_nonce>.tmp"
+    ],
+    "attempt_parent_durable_file_patterns": [
+      ".slot-<measurement_slot_id>.lock"
+    ],
+    "slot_lock_pattern": ".slot-<measurement_slot_id>.lock",
+    "slot_lock_owner": "EFFECTIVE_PARENT_UID",
+    "slot_lock_mode": "0600",
+    "slot_lock_protocol": [
+      "OPEN_PARENT_WITH_OPENAT_AND_O_NOFOLLOW",
+      "CREATE_OR_OPEN_REGULAR_SLOT_LOCK_WITH_OPENAT_AND_O_NOFOLLOW",
+      "VERIFY_EFFECTIVE_PARENT_UID_AND_MODE_0600",
+      "ACQUIRE_FLOCK_EXCLUSIVE_NONBLOCKING",
+      "RETAIN_LOCK_FD_FOR_ENTIRE_ATTEMPT_OPERATION",
+      "REATTEST_HELD_FD_INODE_AND_CANONICAL_PATH_AT_EVERY_PROTOCOL_BOUNDARY",
+      "NEVER_DELETE_RENAME_OR_REPLACE_SLOT_LOCK"
+    ],
+    "slot_lock_lifecycle": "DURABLE_NAMESPACE_RESERVATION_NOT_TRANSIENT_NOT_ORPHAN_CLEANUP",
+    "state_cache_launch_nonce": "UNIQUE_OS_RANDOM_HEX_PER_RECONSTRUCTION",
+    "state_cache_temporary_outside_slot": true,
+    "state_cache_temporary_crash_policy": "RETAIN_ORPHAN_IGNORE_FOR_SLOT_RECOVERY_NEVER_REUSE_NEVER_DELETE",
     "event_chain_invalid_policy": "STOP",
     "oracle_open_committed_monotonic": true,
+    "computed_attestation_sha256_policy": "NULL_BEFORE_COMPUTED_EXACT_SHA256_FROM_COMPUTED_AND_MONOTONE",
+    "computed_attestation_required_for_post_oracle_recovery": true,
+    "computed_attestation_parent_only": true,
+    "computed_attestation_immutable": true,
     "silent_delete_allowed": false,
     "policy_or_lock_change_allowed": false
   },
@@ -707,6 +857,8 @@
     "final_audit": "<audit_root>/<evaluator_build_id>",
     "promotion_order": [
       "VALIDATE_STAGING_BOTH",
+      "WRITE_AND_FSYNC_COMPUTED_ATTESTATION",
+      "MARK_COMPUTED_STAGING_VALID",
       "PROMOTE_PENDING_AUDIT",
       "PROMOTE_PENDING_EVALUATION",
       "VALIDATE_PENDING_BOTH",
@@ -720,6 +872,10 @@
     "atomic_rename_same_filesystem": true,
     "fsync_after_every_transition": true,
     "recovery_is_validation_and_promotion_only": true,
+    "recovery_validation_source": "COMPUTED_ATTESTATION_BOUND_TO_EVENT_AND_EXACT_STAGE_PENDING_FINAL_TREES",
+    "post_oracle_recovery_reopens_oracle": false,
+    "crash_after_oracle_open_before_computed_attestation": "STOPPED_NO_RERUN",
+    "crash_after_computed_attestation_before_computed_event": "STOPPED_RETAIN_ATTESTATION_NO_PROMOTION",
     "final_evaluation_without_final_audit": "STOPPED_RETAIN_ORPHAN_NO_RECOMPUTE",
     "final_audit_without_final_evaluation": "RECOVERABLE_PROMOTE_VALID_PENDING_EVALUATION_ONLY",
     "both_final_and_valid": "FINAL",
