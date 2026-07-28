@@ -120,6 +120,7 @@ INPUT_PATHS = {
     "evidence_candidate": ROOTS["evidence"] / "candidate_evidence.parquet",
 }
 SOURCE_PATHS = [
+    "scripts/__init__.py",
     "scripts/evaluate_v412_guard.py",
     "src/xgb_matcher/v412_evaluation.py",
     "src/xgb_matcher/v412_direct_evidence.py",
