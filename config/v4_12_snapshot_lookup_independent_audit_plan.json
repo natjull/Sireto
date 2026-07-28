@@ -1,0 +1,137 @@
+{
+  "artifact": {
+    "files": {
+      "candidate_details.duckdb": {
+        "sha256": "5da123bb0dde06d55886dfbc5c36e142c9d528ffec1b6899022e5c7c63bee894",
+        "size_bytes": 2732863488
+      },
+      "integrity.json": {
+        "sha256": "048901e99bc6f6f33aeb34434d0662af8e94b6667e056f83f1689b72c8314b2a",
+        "size_bytes": 806
+      },
+      "manifest.json": {
+        "sha256": "04e098952ee4cc7957155623599d3ba35b95f9126932e5a5d420ec02b110b15e",
+        "size_bytes": 2731
+      },
+      "timing.json": {
+        "sha256": "c266db1075c2f777b8942cea7bc7e446f3a09707a07a3b9952b71a73d4cc6e9b",
+        "size_bytes": 154
+      }
+    },
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb"
+  },
+  "audit_sources": [
+    "docs/v4_12_snapshot_lookup_independent_audit_contract.md",
+    "config/v4_12_snapshot_lookup_independent_audit_plan.json",
+    "scripts/audit_v412_snapshot_lookup.py",
+    "tests/test_audit_v412_snapshot_lookup.py",
+    "src/xgb_matcher/v412_snapshot_lookup.py",
+    "src/xgb_matcher/__init__.py",
+    "scripts/build_v412_snapshot_lookup.py",
+    "scripts/__init__.py",
+    "docs/v4_12_snapshot_lookup_contract.md",
+    "config/v4_12_snapshot_lookup_plan.json",
+    "config/v4_12_forbidden_artifacts.json",
+    "config/v4_12_snapshot_lookup_execution_lock.json"
+  ],
+  "duckdb": {
+    "memory_limit": "6GB",
+    "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_snapshot_lookup_independent_audit",
+    "threads": 1,
+    "version": "1.4.3"
+  },
+  "evidence_projection": [
+    {
+      "lookup": "siret",
+      "snapshot": "siret",
+      "sql": "CAST(siret AS VARCHAR)"
+    },
+    {
+      "lookup": "candidate_state",
+      "snapshot": "etatAdministratifEtablissement",
+      "sql": "upper(trim(CAST(etatAdministratifEtablissement AS VARCHAR)))"
+    },
+    {
+      "lookup": "enseigne1",
+      "snapshot": "enseigne1Etablissement",
+      "sql": "CAST(enseigne1Etablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "enseigne2",
+      "snapshot": "enseigne2Etablissement",
+      "sql": "CAST(enseigne2Etablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "enseigne3",
+      "snapshot": "enseigne3Etablissement",
+      "sql": "CAST(enseigne3Etablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "denomination_usuelle",
+      "snapshot": "denominationUsuelleEtablissement",
+      "sql": "CAST(denominationUsuelleEtablissement AS VARCHAR)"
+    },
+    {
+      "lookup": "activity_code",
+      "snapshot": "activitePrincipaleEtablissement",
+      "sql": "CAST(activitePrincipaleEtablissement AS VARCHAR)"
+    }
+  ],
+  "execution_lock_path": "config/v4_12_snapshot_lookup_independent_audit_execution_lock.json",
+  "expected": {
+    "batch_max": 100,
+    "counterexample_bytes": 160000,
+    "counterexample_encoding": "ASCII_SIRET14_PLUS_BYTES_5C_6E",
+    "counterexample_sha256": "72f43460bb0e5047186fb4226147f1bf3022ceb8692164e5a8c57d9432a54960",
+    "first_sirets": [
+      "94410569100017",
+      "92883024900019",
+      "53539062900017"
+    ],
+    "last_sirets": [
+      "44801807700025",
+      "75288994900018",
+      "41494554300034"
+    ],
+    "lf_payload_bytes": 150000,
+    "lf_payload_encoding": "ASCII_SIRET14_PLUS_BYTE_0A",
+    "lf_payload_sha256": "58c9700d2a1ed2bb433e4f7a25a845ba236d63cfe633dcd64f9156469777f945",
+    "mismatch_count": 0,
+    "sample_count": 10000
+  },
+  "lookup_schema": {
+    "columns": [
+      "siret",
+      "candidate_state",
+      "enseigne1",
+      "enseigne2",
+      "enseigne3",
+      "denomination_usuelle",
+      "activity_code"
+    ],
+    "column_type": "VARCHAR",
+    "index_expressions": "[siret]",
+    "index_name": "candidate_details_siret_uidx",
+    "index_unique": true,
+    "invalid_siret_count": 0,
+    "row_count": 42322035,
+    "table_name": "candidate_details",
+    "unique_siret_count": 42322035
+  },
+  "max_rss_bytes": 8589934592,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_snapshot_lookup",
+  "schema_version": "sireto-v4.12-lookup-independent-audit-plan-1",
+  "selection": {
+    "canonical_regex": "[0-9]{14}",
+    "namespace": "v412-lookup-parity:",
+    "order": [
+      "sha256(namespace || siret) ASC",
+      "siret ASC"
+    ],
+    "siret_sql": "CAST(siret AS VARCHAR)"
+  },
+  "snapshot": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/StockEtablissement_utf8.parquet",
+    "sha256": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845"
+  }
+}
