@@ -117,6 +117,11 @@ compare désormais l'identité `st_dev/st_ino` de `.` et `RUN_ROOT`, sans
 ciblés, le smoke réel et 714 tests complets sont verts. Le lock `775c3bb`
 est révoqué ; un nouveau verrou est requis avant relance. *(commit GitHub :
 `158014e`)*
+Le verrou post-correctif, hash
+`f9e5738eef35c9a4b9c636cf810a87ed8eb412077f7ac6bcb48c90ae02f8d189`,
+franchit `GO_LOCK_CWD_PATCH` et `GO_LOCK_CWD_2` avec 7 900 et 325
+contrôles indépendants. Il autorise la seconde tentative complète du même
+Gate A, toujours sous sandbox et sans oracle. *(commit GitHub : `e759492`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
