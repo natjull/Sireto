@@ -1,0 +1,290 @@
+{
+  "schema_version": "sireto-v4.10b-structured-acceptor-training-plan-1",
+  "experiment_id": "V410B_STRUCTURED_ACCEPTOR_DEVELOPMENT",
+  "status": "preregistered_before_first_fit",
+  "supersedes_plan": {
+    "path": "config/v4_10_training_plan.json",
+    "reason": "PREFIT_STATISTICAL_AUDIT_INVALIDATED_STRUCTURED_ORDER"
+  },
+  "contracts": {
+    "base": {
+      "path": "docs/v4_10_structured_acceptor_contract.md",
+      "commit": "b19abed55f76861e5fe5b78c59143ee01f584402",
+      "sha256": "91527a57271e5a9410dc6555b6264c817dd2c20d3ce4af1a1903abb6b1f878c4"
+    },
+    "amendment": {
+      "path": "docs/v4_10b_structured_feature_policy.md",
+      "commit": "d500fe2c3bdcbcd5bda7df9a7427defc6ad5b3c7",
+      "sha256": "8a320783060269b718e0f8e5898a9c0d0d9428680753eb633a940f2e29cea4a5"
+    }
+  },
+  "dataset": {
+    "build_id": "3ad8e97ce0118e8c",
+    "supersedes_build_id": "0d6b87fd50fb550c",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_10b_structured_acceptor/3ad8e97ce0118e8c",
+    "manifest": {
+      "filename": "manifest.json",
+      "sha256": "4c62f1bd3e1fc77cda806946d3751d397ee1723095d3fc73b34e8dd782006614"
+    },
+    "allowed_inputs": {
+      "historical_scenes.parquet": "23016e2e47df2b06f57f66a7b4ba518689eb22a03ce3c1968d14f58738ecc260",
+      "consumed_hard_scenes.parquet": "88d364a0c496515d5e2e57d8e13bb5976e0212c7bff21b076aeaa041fd4b2536",
+      "descriptive_locked_scenes.parquet": "203b57ba2d352cea50791f14b6f8a805d4c00da06a598afae922da84d99439e9",
+      "feature_catalog.json": "be41a019a24e0d9a24a1be17baa408c06515a0b17b90d8e184c1f5a09f718d92"
+    },
+    "expected_rows": {
+      "historical_scenes": 7003,
+      "development_consumed": 94,
+      "descriptive_locked": 4
+    },
+    "expected_historical_roles": {
+      "historical_fit": 5483,
+      "historical_dev": 1452,
+      "historical_random_excluded": 48,
+      "historical_hard_support": 20
+    },
+    "expected_hard_folds": {
+      "0": 26,
+      "1": 14,
+      "2": 25,
+      "3": 12,
+      "4": 17
+    },
+    "expected_hard_labels": {
+      "TOP1_CORRECT": 68,
+      "TOP1_WRONG": 25,
+      "AMBIGUOUS": 1
+    },
+    "feature_orders": {
+      "current80_count": 80,
+      "current80_sha256": "e50086608ca3e60071e2575fbd8a0ca7c8ba99fe87251894ee04bf9b1b57cfe5",
+      "structured_count": 641,
+      "structured_sha256": "4ff0eb4e8cc33850742bf4d9c0ddb599cc9abb500d6b60bb3e5dc6a80b9cd13b",
+      "structured_scaled_count": 157,
+      "structured_scaled_sha256": "c1769136cb80f9f2273406a1045f223f99a088f4270b4dc8ef9097e8234d61ed",
+      "structured_unscaled_count": 484,
+      "structured_unscaled_sha256": "7f0a1c01d8ed402c577b128cfe1aeb05b342772af0b132b597a432cce8409e89",
+      "semantic_alias_count": 58,
+      "retrieval_audit_only_count": 16,
+      "legacy_audit_only_count": 75
+    }
+  },
+  "frozen_baseline": {
+    "model_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_1/f938abf6b8a87155/acceptor/acceptor_model.joblib",
+    "model_sha256": "16283b8aba5ed135846a74e9040c79e9f863f7e2bd658ca642ad444174b9a3fa",
+    "metadata_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_1/f938abf6b8a87155/acceptor/metadata.json",
+    "metadata_sha256": "73199451b2de6ae383c9c0c58b10ab9c7393994a4efdec45f9c8e1e9f150691c",
+    "threshold": 0.46313316267954524,
+    "original_dev_expected": {
+      "row_count": 1456,
+      "auto_count": 1188,
+      "correct_auto": 1186,
+      "error_auto": 2
+    },
+    "effective_dev_expected": {
+      "row_count": 1452,
+      "auto_count": 1184,
+      "correct_auto": 1182,
+      "error_auto": 2
+    }
+  },
+  "variants": [
+    {"id": "BASE_FROZEN", "family": "frozen", "feature_order": "current80", "hard_weight": 0, "role": "comparator"},
+    {"id": "CURRENT80_W1", "family": "current80_logit", "feature_order": "current80", "hard_weight": 1, "role": "control"},
+    {"id": "CURRENT80_W2", "family": "current80_logit", "feature_order": "current80", "hard_weight": 2, "role": "control"},
+    {"id": "CURRENT80_W4", "family": "current80_logit", "feature_order": "current80", "hard_weight": 4, "role": "control"},
+    {"id": "STRUCTURED_LOGIT_W1", "family": "structured_logit", "feature_order": "structured", "hard_weight": 1, "role": "promotion_candidate"},
+    {"id": "STRUCTURED_LOGIT_W2", "family": "structured_logit", "feature_order": "structured", "hard_weight": 2, "role": "promotion_candidate"},
+    {"id": "STRUCTURED_LOGIT_W4", "family": "structured_logit", "feature_order": "structured", "hard_weight": 4, "role": "promotion_candidate"},
+    {"id": "STRUCTURED_XGB_W1", "family": "structured_xgb", "feature_order": "structured", "hard_weight": 1, "role": "promotion_candidate"},
+    {"id": "STRUCTURED_XGB_W2", "family": "structured_xgb", "feature_order": "structured", "hard_weight": 2, "role": "promotion_candidate"},
+    {"id": "STRUCTURED_XGB_W4", "family": "structured_xgb", "feature_order": "structured", "hard_weight": 4, "role": "promotion_candidate"}
+  ],
+  "models": {
+    "current80_logit": {
+      "preprocessing": "StandardScaler fitted on all 80 columns of each fold training set, matching V4.8",
+      "class_weight": "balanced",
+      "C": 1.0,
+      "max_iter": 3000,
+      "solver": "lbfgs",
+      "random_state": 42
+    },
+    "structured_logit": {
+      "preprocessing": "Order-preserving selective StandardScaler: copy the 641-column matrix, fit/transform exactly the catalog's 157 continuous-or-count column indices in place, leave 484 binary columns unchanged, and assert the model input order/hash remains the master structured order",
+      "scaled_kinds": ["continuous", "count"],
+      "unscaled_kinds": ["binary"],
+      "class_weight": "balanced",
+      "C": 1.0,
+      "max_iter": 3000,
+      "solver": "lbfgs",
+      "random_state": 42
+    },
+    "structured_xgb": {
+      "tree_method": "hist",
+      "n_estimators": 300,
+      "max_depth": 3,
+      "learning_rate": 0.03,
+      "min_child_weight": 10,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 10.0,
+      "reg_alpha": 0.0,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "random_state": 42,
+      "n_jobs": 8,
+      "early_stopping": false,
+      "class_balance": "n_model_train/(2*n_class_model_train), recomputed independently from the exact rows of every fold fit and the full fit, then multiplied by source historical_weight or hard_weight"
+    }
+  },
+  "cross_validation": {
+    "fold_column": "hard_fold",
+    "folds": [0, 1, 2, 3, 4],
+    "hard_predictions": "exactly one group-OOF prediction per query and variant",
+    "historical_support_exclusion": "exclude historical_hard_support rows whose hard_fold equals the held-out fold",
+    "fold_model_threshold_data": "the same 1452 effective historical-dev rows scored by that fold model",
+    "hard_decision_threshold": "the threshold selected for the exact fold model that scored the hard row",
+    "full_model_train": "5501 eligible historical-fit rows plus all 94 consumed hard rows",
+    "full_model_threshold_data": "1452 effective historical-dev rows",
+    "historical_gate_source": "the full model scored on the 1452 effective historical-dev rows using its own full-model threshold; fold metrics are never averaged or pooled for this gate",
+    "expected_fold_train_rows": {"0": 5567, "1": 5579, "2": 5565, "3": 5574, "4": 5576},
+    "preprocessing_fit_scope": "training rows of the exact full or fold model only",
+    "xgb_class_balance_scope": "recomputed independently on each exact full or fold training set"
+  },
+  "sample_weighting": {
+    "historical_weight": 1.0,
+    "hard_weights": [1.0, 2.0, 4.0],
+    "logit": "source historical_weight or hard_weight; sklearn class_weight balanced remains enabled",
+    "xgb": "fold-train class factor multiplied by source historical_weight or hard_weight"
+  },
+  "threshold_selection": {
+    "decision_rule": "AUTO iff score >= threshold",
+    "candidate_thresholds": "all distinct historical-dev scores plus nextafter(max,+inf) and nextafter(min,-inf)",
+    "minimum_auto_count": 100,
+    "precision_constraint_integer": "1000 * correct_auto >= 998 * auto_count",
+    "optimization_order": ["auto_count_desc", "precision_desc", "threshold_desc"],
+    "hard_labels_used_for_threshold": false,
+    "variant_without_safe_fold_or_full_threshold": "DISQUALIFIED_NO_SAFE_THRESHOLD"
+  },
+  "development_gate": {
+    "baseline_reproduction_exact": true,
+    "minimum_wrong_hard_rejected": 24,
+    "wrong_hard_total": 25,
+    "maximum_ambiguous_hard_auto": 0,
+    "ambiguous_hard_total": 1,
+    "minimum_correct_hard_auto": 58,
+    "correct_hard_total": 68,
+    "minimum_historical_precision_integer": "1000 * correct_auto >= 998 * auto_count",
+    "historical_precision_noninferior_integer": "correct_auto * 1184 >= auto_count * 1182",
+    "historical_coverage_loss_integer": "1184 - auto_count <= 29"
+  },
+  "selection": {
+    "fresh_dev_candidate_roles": ["promotion_candidate"],
+    "controls_never_promoted": ["BASE_FROZEN", "CURRENT80_W1", "CURRENT80_W2", "CURRENT80_W4"],
+    "all_passing_promotion_candidates_frozen": true,
+    "provisional_order_only": true,
+    "tie_break_order": [
+      "wrong_hard_rejected_desc",
+      "correct_hard_auto_desc",
+      "historical_auto_count_desc",
+      "family_simplicity_asc",
+      "hard_weight_asc"
+    ],
+    "family_simplicity": {"structured_logit": 1, "structured_xgb": 2},
+    "success_verdict": "GO_FRESH_DEV_V410B",
+    "failure_verdict_rules": {
+      "STOP_STRUCTURED_ACCEPTOR": "dataset, hash, invariant or baseline reproduction failure, or none of the nine trained variants can produce all five fold thresholds plus its full-model threshold under the historical safety constraint",
+      "PIVOT_STRUCTURED_FEATURES": "integrity and baseline pass, but no promotion_candidate passes every hard and historical gate; a control passing alone remains PIVOT"
+    }
+  },
+  "determinism": {
+    "seed": 42,
+    "repeat_fit_check": true,
+    "repeat_fit_scope": "every full and fold model for all nine trained variants (54 distinct fits, each fitted twice)",
+    "repeat_fit_comparisons": "for each fold compare all 1452 dev scores, held-out hard scores, selected threshold and AUTO decisions; for each full model compare all 1452 dev scores, selected threshold and AUTO decisions",
+    "repeat_fit_score_absolute_tolerance": 1e-12,
+    "repeat_fit_decisions_identical": true,
+    "row_sort": ["query_id"],
+    "feature_order_source": "feature_catalog.json only"
+  },
+  "forbidden_inputs_and_actions": {
+    "random_v48_rows_read_or_scored": 0,
+    "historical_random_excluded_fit_rows_materialized_or_scored": 0,
+    "historical_random_excluded_dev_rows": "exactly four rows may be predicate-read with current80 columns and scored only once by BASE_FROZEN to reproduce the original 1456 baseline; they are forbidden to every trained model, threshold, gate and selection",
+    "historical_parquet_read_policy": "predicate-read 5501 eligible fit rows for training, 1452 historical_dev rows for threshold/gate, and four excluded dev rows current80-only for frozen reproduction; never materialize the other 44 historical_random_excluded rows",
+    "descriptive_locked_file_hash_checked_before_fit": true,
+    "descriptive_locked_parquet_semantically_loaded_or_scored": false,
+    "descriptive_locked_rows_used_for_fit_threshold_gate_or_selection": 0,
+    "fresh_rows_read_or_scored": 0,
+    "test_rows_read_or_scored": 0,
+    "positive_injection": false,
+    "retrieval_modified": false,
+    "ranker_modified": false,
+    "extra_variants_or_grid_search": false,
+    "paid_api_or_rented_gpu": false
+  },
+  "baseline_hard_diagnostic": {
+    "score_94_consumed_hard_rows": true,
+    "threshold": "frozen baseline threshold only",
+    "prediction_origin": "frozen_model_out_of_sample_not_group_oof",
+    "used_for_gate_or_selection": false
+  },
+  "outputs": {
+    "required_files": [
+      "dev_predictions.parquet",
+      "hard_oof_predictions.parquet",
+      "threshold_curves.parquet",
+      "variant_results.json",
+      "model_diagnostics.json",
+      "development_report.json",
+      "manifest.json"
+    ],
+    "fresh_eligible_bundle_layout": "bundles/<variant_id>/acceptor_model.joblib and metadata.json for every passing promotion_candidate; no control bundle",
+    "fold_models_serialized": false,
+    "all_passing_structured_variants_serialized": true,
+    "manifest_required_fields": [
+      "build_id",
+      "plan_sha256",
+      "execution_lock_sha256",
+      "runner_sha256",
+      "input_hashes",
+      "runtime_versions",
+      "variant_results",
+      "fresh_dev_eligible_variants",
+      "provisional_order",
+      "verdict",
+      "output_hashes",
+      "population_usage",
+      "determinism"
+    ],
+    "atomicity": "stage under output_root, hash every output, write final manifest, atomic rename, refuse overwrite"
+  },
+  "runtime": {
+    "required_versions": {
+      "numpy": "2.4.2",
+      "pandas": "2.3.3",
+      "pyarrow": "23.0.1",
+      "scikit-learn": "1.8.0",
+      "xgboost": "3.1.2",
+      "joblib": "1.5.3"
+    },
+    "execution_lock": {
+      "required_before_fit": true,
+      "path": "config/v4_10b_execution_lock.json",
+      "schema_version": "sireto-v4.10b-execution-lock-1",
+      "creation": "created externally with apply_patch after the training-plan and runner commits, then committed before the first run",
+      "exact_fields": [
+        "schema_version",
+        "training_plan_sha256",
+        "runner_sha256",
+        "runner_commit",
+        "dataset_manifest_sha256",
+        "feature_catalog_sha256"
+      ],
+      "runner_interface": "require --execution-lock (canonical default path), hash and validate its raw bytes and every exact field before loading model data, never create or modify it",
+      "output_manifest": "publish execution_lock_sha256 computed from the validated raw bytes"
+    }
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_10b_structured_acceptor_development",
+  "promotion_scope": "GO freezes every passing structured candidate for one future fresh-dev comparison; it does not authorize deployment or final-test opening."
+}
