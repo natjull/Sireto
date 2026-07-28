@@ -1,0 +1,36 @@
+{
+  "audit_output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_inputs",
+  "audit_verdict": "GO_CODE_V412_UNIT_INPUTS",
+  "git_commit": "c97c737d7d49482ea034217310eee710067b4d55",
+  "input_hashes": {
+    "queries": "3a47aef768cee1436ad77a6e114defe50e685b7495f0e75137e9fd06dfe9fc68",
+    "split_assignments": "33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193"
+  },
+  "input_paths": {
+    "cache": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/v46_aligned_b/v411_verified/296c7891107249a073c00d93c7310c55a652243de4bcfa7165d09dbfc3349a82",
+    "partitions": "/Users/nathanjullia/Documents/Projets/SIRETO/data/candidates_v7_all",
+    "queries": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/queries.parquet",
+    "split_assignments": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/split_assignments.parquet"
+  },
+  "max_rss_bytes": 8589934592,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine",
+  "partition_inventory_sha256": "680f1884879bfa5b8cf2c335a0658604010e3d4c546ed6eaeb2e2ef34c954463",
+  "purpose": "V4.12_UNIT_INPUTS",
+  "runtime": {
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "pyarrow": "23.0.1",
+    "python": "3.14.3"
+  },
+  "schema_version": "sireto-v4.12-unit-input-execution-lock-1",
+  "source_hashes": {
+    "config/v4_12_unit_input_plan.json": "1884d3f240c44cb14b7556b160a6ef8e5ed25b0d729d0cc9e351963b1b6fd7d5",
+    "docs/v4_12_unit_input_contract.md": "6bb7c2d0e02b7bdc9e9ea2f498116930fe0c4dba8cd9d8671b67e480520b3956",
+    "scripts/__init__.py": "86cc02ebddce9b2c5b019a6494f96646aa1e187e744968e9c11373b6674e31a3",
+    "scripts/build_v412_unit_inputs.py": "1e9b59eee317144528ad7a34973105e4308e601110eebdda5c7c6786f759a5d0",
+    "tests/test_build_v412_unit_inputs.py": "e517941bf8bca39fb2220a5d4d8eca985da1f88599c1d099c55e933231b8198e"
+  },
+  "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_unit_inputs",
+  "tfidf_inventory_sha256": "589360b10fa65d190bae9a2521e05d8e60e71c2cbd1fc0c5843c044332a183ce"
+}
