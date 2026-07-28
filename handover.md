@@ -280,6 +280,17 @@ keysets, schémas et états sont déterministes. Aucun oracle, historique,
 modèle ou test final n'a été ouvert pendant ce jalon. Ce GO autorise
 uniquement l'implémentation et l'audit de l'évaluateur, pas encore la mesure.
 *(commit GitHub : `fe266bd`)*
+L'audit de code a ensuite montré qu'une vraie reprise après ouverture oracle
+était impossible avec une preuve conservée seulement en mémoire. Le contrat
+et le plan sont amendés et doublement reçus
+`GO_EVALUATOR_CONTRACT_AMEND_1` / `GO_EVALUATOR_CONTRACT_AMEND_2` :
+`computed_attestation.json` scelle désormais les 16 entrées et les deux
+arbres validés, puis son hash devient monotone dans le journal v2. Une
+reprise post-oracle peut ainsi valider et promouvoir les octets déjà calculés
+sans rouvrir la vérité. Les arbres, manifests, rôles 12 data + 4 runtime,
+temporaires d'état hors slot et verrou parent durable sont définis
+exactement. Aucun oracle ni résultat réel n'a été ouvert pendant
+l'amendement. *(commit GitHub : `9e25ebf`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
