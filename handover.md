@@ -39,6 +39,20 @@ les splits V4.6 attribuent un numéro de pli aux lignes dev aussi. Le
 garde-fou a été corrigé pour valider les cinq plis gelés et l'unicité du pli
 par composante sur les 7 003 lignes ; 403 tests passent. Aucun pool, label ou
 résultat n'a été produit par cette tentative. *(commit GitHub : `734dc24`)*
+Le lancement suivant a été interrompu proprement avant toute ouverture des
+labels lorsque le RSS a dépassé 7,6 Go : le builder rescannait le snapshot
+SIRENE à chaque requête et gardait un cache TF-IDF non borné. Le chemin
+corrigé écrit d'abord les pools bruts aveugles, borne le cache RAM à 20,
+hydrate état et rôles par une jointure bulk unique, puis recalcule les 45
+features avant de fermer le top-100 final. Les identifiants CRM sont exclus
+dès la projection Parquet ; les caches disque sont liés aux partitions et
+vérifiés par SHA-256 avant désérialisation ; labels et baseline ne sont
+hashés/lus qu'après fermeture du pool. Un oracle indépendant confirme la
+parité exacte avec l'algorithme précédent, y compris IDF par défaut, fermés,
+tie-break et enseignes divergentes. Deux audits ont conclu `GO`, un smoke
+réel produit 100 candidats/59 colonnes avec un seul scan, et 437 tests
+passent. Aucun résultat retrieval n'a encore été produit. *(commit GitHub :
+`fc8c848`)*
 Le runner du ranker C est maintenant implémenté, sans l'avoir encore
 exécuté : cinq modèles OOF scorent les scènes fit, un modèle complet score le
 dev, les misses retrieval restent des erreurs end-to-end et chaque fit est
