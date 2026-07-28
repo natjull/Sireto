@@ -270,6 +270,16 @@ construit. Après parité exacte seulement, un moteur persistant pourra mesurer
 la p95 appariée sur les 1 456 requêtes dev.
 *(commit GitHub : `00ce1c3`)*
 
+Le builder et le store lookup V4.12 sont implémentés et contre-audités
+**`GO_COMMIT_LOOKUP_BUILDER_FINAL`**. Une mini-publication exerce réellement
+DuckDB, l'index, la référence/parité, RSS/disque, WAL, fsync, renommage
+atomique et revalidation ; les tests de falsification ferment verrou Git,
+provenance, TOCTOU et schémas imbriqués. Les 60 tests ciblés et 595 tests
+complets passent. Le verrou réel audité fixe sept sources, quatre entrées,
+DuckDB 1.4.3 et la racine SSD ; environ 1 049 Gio sont libres et la cible est
+absente. Le build réel de 42 322 035 lignes n'a pas encore été lancé.
+*(commits GitHub : builder/store `a06cf00`, verrou `591f339`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
