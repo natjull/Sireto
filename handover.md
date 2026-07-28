@@ -22,6 +22,16 @@ Le verrou d'exécution des entrées sûres est contre-audité `GO_LOCK`. Il
 inventaires complets, le runtime et les trois racines SSD. Son hash avant
 commit est `e794c60f...e9def315`; aucun build n'avait encore été lancé lors
 du gel. *(commit GitHub : `7c31051`)*
+Le build réel des entrées sûres franchit **`GO_V412_UNIT_INPUTS`**, confirmé
+indépendamment par `GO_V412_UNIT_INPUTS_AUDIT` et 21 161 assertions sans
+import du builder. Les 7 003 requêtes, dont 1 456 dev, ne contiennent que les
+six champs CRM autorisés ; les inventaires scellent 4 119 partitions et
+1 454 paires TF-IDF. Le ledger séparé couvre exactement 7 029 fichiers.
+Aucun label, oracle, modèle, résultat candidat ou chemin sensible n'est
+présent dans le paquet runtime. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e`.
+Rapport : `reports/v9/v4_12_unit_input_results.md`. Ce GO autorise seulement
+le préenregistrement de l'oracle séparé. *(commit GitHub : `e5d01a9`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
