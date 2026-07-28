@@ -194,6 +194,20 @@ consommé. Artefact :
 Rapport : `reports/v9/v4_11_unseen_execution_results.md`.
 *(commit GitHub : `62e9741`)*
 
+Le contrat V4.12-G est préenregistré avant tout nouveau build. Retrieval,
+Ranker C, accepteur V4.11 et seuil restent gelés ; une garde déterministe
+n'autorise AUTO que si l'univers géographique actif contient exactement un
+candidat direct fort, égal au top-1 déjà accepté. La garde est un veto pur et
+ne peut ni choisir ni injecter un candidat. Une allowlist par chemin, hash,
+phase et projection limite le développement aux artefacts historiques ; les
+trois racines du challenge consommé et tous leurs outputs sont interdits par
+hash. Avant le seal des preuves, seules les queries et partitions sont
+ouvrables. Le contrat distingue les gates retrieval (couverture exacte et
+Recall@100) des gates de décision (couverture AUTO et précision), documente
+la circularité des labels mécaniques et exige un nouvel export indépendant.
+Deux audits concluent `GO_CONTRACT`. Aucun build V4.12 n'a encore été lancé.
+*(commit GitHub : `66e7b9c`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
