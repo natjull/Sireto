@@ -108,6 +108,15 @@ contre-audits ont validé respectivement 7 901 et 342 contrôles, dont les
 réel, le routage, les subsets et l'absence d'inputs interdits. Le prochain
 geste autorisé est désormais l'unique build Gate A sous sandbox, toujours
 sans accès à l'oracle. *(commit GitHub : `775c3bb`)*
+Le premier lancement Gate A s'est arrêté sans publication : `Path.cwd()`
+recevait `EPERM` sous la politique metadata-only de `RUN_ROOT`, un chemin que
+le smoke initial n'exerçait pas. Deux PoC ont isolé cette cause ; les refus
+joblib `SemLock` et `mach-lookup` étaient du bruit non fatal. Le worker
+compare désormais l'identité `st_dev/st_ino` de `.` et `RUN_ROOT`, sans
+élargir aucun droit, et force joblib en série. `GO_CODE_CWD_PATCH`, 44 tests
+ciblés, le smoke réel et 714 tests complets sont verts. Le lock `775c3bb`
+est révoqué ; un nouveau verrou est requis avant relance. *(commit GitHub :
+`158014e`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
