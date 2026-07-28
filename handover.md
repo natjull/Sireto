@@ -122,6 +122,15 @@ Le verrou post-correctif, hash
 franchit `GO_LOCK_CWD_PATCH` et `GO_LOCK_CWD_2` avec 7 900 et 325
 contrôles indépendants. Il autorise la seconde tentative complète du même
 Gate A, toujours sous sandbox et sans oracle. *(commit GitHub : `e759492`)*
+La seconde tentative a terminé le worker complet puis s'est arrêtée avant
+publication : APFS `noowners` refuse le renommage d'une racine déjà en
+`0555`. Le PoC SSD reproduit l'écart. La promotion conserve maintenant
+uniquement la racine en `0700` pendant `rename`, via un FD ancré, puis la
+repasse en `0555` dans un `finally`, vérifie l'inode et synchronise les deux
+parents. La recovery gèle les états transitoires avant validation.
+`GO_CODE_APFS_PATCH`, 58 tests ciblés, 728 tests complets et le smoke réel
+sont verts. Le lock `e759492` est révoqué ; aucun artefact incomplet n'a été
+publié. *(commit GitHub : `809bb7e`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
