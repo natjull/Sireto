@@ -152,6 +152,19 @@ Rapport : `reports/v9/v4_12_strict_stores_results.md`. Ce GO certifie les
 stores et l'isolement, pas encore le Recall@100 ni la latence par requête.
 Il autorise uniquement le contrat du moteur unitaire et de sa parité ; les
 modèles et le test final restent fermés. *(commit GitHub : `614efc2`)*
+Le contrat du moteur unitaire retrieval et de sa parité est maintenant
+préenregistré et reçu **`GO_CONTRACT_FINAL`**, `GO_CONTRACT_SECURITY` et
+`GO_CONTRACT_INDEPENDENT`. Le worker aveugle reproduira localement le sparse
+V4.11 exact — nom, adresse, rescues simples, RRF et padding — puis publiera
+uniquement `query_id`, rang et SIRET, avec un plafond strict de 100. Il ne
+peut ouvrir ni oracle, historique, modèle ou réseau. Après sa terminaison, un
+contrôleur séparé, lui-même sans accès au Parquet historique contenant la
+vérité, comparera les deux payloads canoniques aux hashes préenregistrés :
+145 236 candidats, pools 46–100, hash candidat `1689a2...ab00` et statut
+`65e662...5518`. Les blobs du commit reproduisent exactement le contrat
+`007ada2f...fe33` et le plan `7eff59a9...180d`. Ce GO autorise uniquement
+l'implémentation et son audit de code, pas encore le run, le Recall, les
+modèles ou l'oracle. *(commit GitHub : `370a3aa`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
