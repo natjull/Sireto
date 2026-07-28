@@ -1178,13 +1178,12 @@ def _counts(frame: pd.DataFrame, column: str) -> dict[str, int]:
 
 
 def _stable_rows_sha256(frame: pd.DataFrame, columns: Sequence[str]) -> str:
-    rows = (
-        frame[list(columns)]
-        .fillna("")
-        .astype(str)
-        .sort_values(list(columns), kind="mergesort")
-        .itertuples(index=False, name=None)
+    canonical = frame[list(columns)].astype(object)
+    canonical = canonical.where(pd.notna(canonical), "")
+    canonical = canonical.astype(str).sort_values(
+        list(columns), kind="mergesort"
     )
+    rows = canonical.itertuples(index=False, name=None)
     digest = hashlib.sha256()
     for row in rows:
         digest.update(("\x1f".join(row) + "\n").encode("utf-8"))

@@ -487,3 +487,18 @@ def test_population_audit_rejects_component_crossing_folds() -> None:
     consumed.loc[1, "hard_fold"] = (int(consumed.loc[0, "hard_fold"]) + 1) % 5
     with pytest.raises(ValueError, match="crosses OOF folds"):
         subject.dataset_population_audit(historical, consumed, locked)
+
+
+def test_stable_rows_hash_supports_nullable_integer_columns() -> None:
+    frame = pd.DataFrame(
+        {
+            "query_id": ["a", "b"],
+            "hard_fold": pd.Series([1, pd.NA], dtype="Int64"),
+        }
+    )
+    first = subject._stable_rows_sha256(frame, ["query_id", "hard_fold"])
+    second = subject._stable_rows_sha256(
+        frame.iloc[::-1], ["query_id", "hard_fold"]
+    )
+    assert first == second
+    assert len(first) == 64
