@@ -45,6 +45,12 @@ ouverts par le builder oracle : six fichiers du paquet runtime sûr plus
 labels/split. Les inventaires sont ouverts uniquement pour contrôler
 l'intégrité du paquet, jamais comme résultats de retrieval ni pour former la
 vérité. *(commit GitHub : `bbf31b9`)*
+Le builder d'oracle et ses tests franchissent `GO_CODE_ORACLE` après quatre
+refus d'audit : rescellation complète, sibling modifié à taille/mtime
+restaurées, ledger incomplet puis ledger réordonné. Les trois PoC finaux sont
+désormais bloqués ; 23 tests ciblés et 670 tests complets passent. Aucun
+build réel n'avait encore été lancé. *(commits GitHub : builder `7eafad8`,
+audit `02e954b`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
