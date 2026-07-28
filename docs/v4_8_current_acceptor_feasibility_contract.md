@@ -95,6 +95,26 @@ Sur les 1 456 scènes dev originales, il doit reproduire exactement 1 188
 AUTO, 1 186 corrects et deux erreurs. Tout écart donne
 `STOP_REPRODUCTION`.
 
+### 2.3 Partitions V4.8 gelées
+
+Répertoire :
+
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_8_acceptor_partitions/1c78764d5263afca`
+
+| Artefact | SHA-256 |
+|---|---|
+| `manifest.json` | `f0e255b891dfb6b24d57f3b7423dd64a227908dbf68559b2da4572ea37791d33` |
+| `partition_assignments.parquet` | `f828249172c36ce33a3279d294dfc5030e6d8eeb58baee9cf9e08130f13593b9` |
+| `component_edges.parquet` | `fb949f64996659e4109fa3e28999e1411f74312e7576b2ed590a97293e5049cc` |
+| `summary.json` | `a9178bcd14993a91cf22108bf53de62d500be938eddda93408b3341a23256e3a` |
+
+Les seuls cas ciblés participant au gate sont les 94 `hard_oof` : 68
+`TOP1_CORRECT`, 25 `TOP1_WRONG` et un `AMBIGUOUS`. Les quatre ciblés fiables
+`hard_dev_locked` restent descriptifs. Les 57 random sont scellés et leurs
+cibles sont absentes des affectations. Après exclusion des composantes
+random, le fit historique éligible contient 5 501 scènes et le dev historique
+effectif 1 452 scènes.
+
 ## 3. Composants définitivement gelés
 
 - retrieval V4.2-B, 100 candidats au maximum et aucun positif injecté ;
