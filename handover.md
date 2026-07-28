@@ -131,6 +131,12 @@ parents. La recovery gèle les états transitoires avant validation.
 `GO_CODE_APFS_PATCH`, 58 tests ciblés, 728 tests complets et le smoke réel
 sont verts. Le lock `e759492` est révoqué ; aucun artefact incomplet n'a été
 publié. *(commit GitHub : `809bb7e`)*
+Le verrou APFS corrigé, hash
+`265bc418d95a1de1902773b7f5548b5607a2b1360722192658dbddb544a0630d`,
+franchit `GO_LOCK_APFS_PATCH` et `GO_LOCK_APFS_2` avec 7 900 et 325
+contrôles indépendants. Il autorise la troisième tentative complète du Gate
+A, sans changement du worker de matching ni accès à l'oracle. *(commit
+GitHub : `7443ef4`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
