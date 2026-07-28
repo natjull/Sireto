@@ -1,0 +1,245 @@
+{
+  "schema_version": "sireto-v4.10-structured-acceptor-training-plan-1",
+  "experiment_id": "V410_STRUCTURED_ACCEPTOR_DEVELOPMENT",
+  "status": "preregistered_before_first_fit",
+  "contract": {
+    "path": "docs/v4_10_structured_acceptor_contract.md",
+    "commit": "b19abed55f76861e5fe5b78c59143ee01f584402",
+    "sha256": "91527a57271e5a9410dc6555b6264c817dd2c20d3ce4af1a1903abb6b1f878c4"
+  },
+  "dataset": {
+    "build_id": "0d6b87fd50fb550c",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_10_structured_acceptor/0d6b87fd50fb550c",
+    "manifest": {
+      "filename": "manifest.json",
+      "sha256": "33bdeeec661e7bd8625db8da4d79a8a4dbf155c5a431e3b87a82b6439306c018"
+    },
+    "allowed_inputs": {
+      "historical_scenes.parquet": "23016e2e47df2b06f57f66a7b4ba518689eb22a03ce3c1968d14f58738ecc260",
+      "consumed_hard_scenes.parquet": "88d364a0c496515d5e2e57d8e13bb5976e0212c7bff21b076aeaa041fd4b2536",
+      "descriptive_locked_scenes.parquet": "203b57ba2d352cea50791f14b6f8a805d4c00da06a598afae922da84d99439e9",
+      "feature_catalog.json": "280ee7a7b3d0abc50b8776949ab6ec196122ce9acfd47a34b228f18d03686698"
+    },
+    "expected_rows": {
+      "historical_scenes": 7003,
+      "development_consumed": 94,
+      "descriptive_locked": 4
+    },
+    "expected_hard_folds": {
+      "0": 26,
+      "1": 14,
+      "2": 25,
+      "3": 12,
+      "4": 17
+    },
+    "expected_hard_labels": {
+      "TOP1_CORRECT": 68,
+      "TOP1_WRONG": 25,
+      "AMBIGUOUS": 1
+    },
+    "feature_orders": {
+      "current80_count": 80,
+      "current80_sha256": "e50086608ca3e60071e2575fbd8a0ca7c8ba99fe87251894ee04bf9b1b57cfe5",
+      "structured_count": 715,
+      "structured_sha256": "8c2c8286d33f29d20d5bc6781bbb7287ff7d6218f67b16f6e648a677019351ea"
+    }
+  },
+  "frozen_baseline": {
+    "model_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_1/f938abf6b8a87155/acceptor/acceptor_model.joblib",
+    "model_sha256": "16283b8aba5ed135846a74e9040c79e9f863f7e2bd658ca642ad444174b9a3fa",
+    "metadata_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_1/f938abf6b8a87155/acceptor/metadata.json",
+    "metadata_sha256": "73199451b2de6ae383c9c0f58b10ab9c7393994a4efdec45f9c8e1e9f150691c",
+    "threshold": 0.46313316267954524,
+    "original_dev_expected": {
+      "row_count": 1456,
+      "auto_count": 1188,
+      "correct_auto": 1186,
+      "error_auto": 2
+    },
+    "effective_dev_expected": {
+      "row_count": 1452,
+      "auto_count": 1184,
+      "correct_auto": 1182,
+      "error_auto": 2
+    }
+  },
+  "variants": [
+    {
+      "id": "BASE_FROZEN",
+      "family": "frozen",
+      "feature_order": "current80",
+      "hard_weight": 0
+    },
+    {
+      "id": "CURRENT80_W1",
+      "family": "current80_logit",
+      "feature_order": "current80",
+      "hard_weight": 1
+    },
+    {
+      "id": "CURRENT80_W2",
+      "family": "current80_logit",
+      "feature_order": "current80",
+      "hard_weight": 2
+    },
+    {
+      "id": "CURRENT80_W4",
+      "family": "current80_logit",
+      "feature_order": "current80",
+      "hard_weight": 4
+    },
+    {
+      "id": "STRUCTURED_LOGIT_W1",
+      "family": "structured_logit",
+      "feature_order": "structured",
+      "hard_weight": 1
+    },
+    {
+      "id": "STRUCTURED_LOGIT_W2",
+      "family": "structured_logit",
+      "feature_order": "structured",
+      "hard_weight": 2
+    },
+    {
+      "id": "STRUCTURED_LOGIT_W4",
+      "family": "structured_logit",
+      "feature_order": "structured",
+      "hard_weight": 4
+    },
+    {
+      "id": "STRUCTURED_XGB_W1",
+      "family": "structured_xgb",
+      "feature_order": "structured",
+      "hard_weight": 1
+    },
+    {
+      "id": "STRUCTURED_XGB_W2",
+      "family": "structured_xgb",
+      "feature_order": "structured",
+      "hard_weight": 2
+    },
+    {
+      "id": "STRUCTURED_XGB_W4",
+      "family": "structured_xgb",
+      "feature_order": "structured",
+      "hard_weight": 4
+    }
+  ],
+  "models": {
+    "current80_logit": {
+      "preprocessing": "StandardScaler fitted on all 80 columns of each fold training set, matching V4.8",
+      "class_weight": "balanced",
+      "C": 1.0,
+      "max_iter": 3000,
+      "solver": "lbfgs",
+      "random_state": 42
+    },
+    "structured_logit": {
+      "preprocessing": "StandardScaler fitted on continuous features of each fold training set only; binary, count and one-hot features unchanged",
+      "continuous_kind": "continuous",
+      "class_weight": "balanced",
+      "C": 1.0,
+      "max_iter": 3000,
+      "solver": "lbfgs",
+      "random_state": 42
+    },
+    "structured_xgb": {
+      "tree_method": "hist",
+      "n_estimators": 300,
+      "max_depth": 3,
+      "learning_rate": 0.03,
+      "min_child_weight": 10,
+      "subsample": 0.8,
+      "colsample_bytree": 0.8,
+      "reg_lambda": 10.0,
+      "reg_alpha": 0.0,
+      "objective": "binary:logistic",
+      "eval_metric": "logloss",
+      "random_state": 42,
+      "n_jobs": 8,
+      "early_stopping": false,
+      "class_balance": "fold-train inverse-frequency factors normalized to mean one, multiplied by hard_weight"
+    }
+  },
+  "cross_validation": {
+    "fold_column": "hard_fold",
+    "folds": [0, 1, 2, 3, 4],
+    "hard_predictions": "group_oof_only",
+    "historical_support_exclusion": "exclude historical_hard_support rows whose hard_fold equals the held-out fold",
+    "fold_model_threshold_data": "effective historical dev scored by that fold model",
+    "full_model_train": "eligible historical fit plus all 94 consumed hard rows",
+    "full_model_threshold_data": "effective historical dev",
+    "preprocessing_fit_scope": "fold training rows only"
+  },
+  "sample_weighting": {
+    "historical_weight": 1.0,
+    "hard_weights": [1.0, 2.0, 4.0],
+    "logit": "historical_weight or hard_weight only; sklearn class_weight balanced remains enabled",
+    "xgb": "fold-train class factor multiplied by historical_weight or hard_weight"
+  },
+  "threshold_selection": {
+    "decision_rule": "AUTO iff score >= threshold",
+    "candidate_thresholds": "all distinct historical-dev scores plus nextafter(max,+inf) and nextafter(min,-inf)",
+    "minimum_auto_count": 100,
+    "precision_constraint": "1000 * correct_auto >= 998 * auto_count",
+    "optimization_order": [
+      "auto_count_desc",
+      "precision_desc",
+      "threshold_desc"
+    ],
+    "hard_labels_used_for_threshold": false,
+    "variant_without_safe_threshold": "DISQUALIFIED_NO_SAFE_THRESHOLD"
+  },
+  "development_gate": {
+    "baseline_reproduction_exact": true,
+    "minimum_wrong_hard_rejected": 24,
+    "wrong_hard_total": 25,
+    "maximum_ambiguous_hard_auto": 0,
+    "ambiguous_hard_total": 1,
+    "minimum_correct_hard_auto": 58,
+    "correct_hard_total": 68,
+    "minimum_historical_precision": 0.998,
+    "historical_precision_noninferior_to_frozen": true,
+    "maximum_historical_coverage_loss_absolute": 0.02
+  },
+  "winner_selection": {
+    "eligible_variants_only": true,
+    "tie_break_order": [
+      "wrong_hard_rejected_desc",
+      "correct_hard_auto_desc",
+      "historical_coverage_desc",
+      "family_simplicity_asc",
+      "hard_weight_asc"
+    ],
+    "family_simplicity": {
+      "current80_logit": 1,
+      "structured_logit": 2,
+      "structured_xgb": 3
+    },
+    "success_verdict": "GO_FRESH_DEV_V410",
+    "failure_verdicts": [
+      "PIVOT_STRUCTURED_FEATURES",
+      "STOP_STRUCTURED_ACCEPTOR"
+    ]
+  },
+  "determinism": {
+    "seed": 42,
+    "repeat_fit_check": true,
+    "repeat_fit_score_absolute_tolerance": 1e-12,
+    "row_sort": ["query_id"],
+    "feature_order_source": "feature_catalog.json only"
+  },
+  "forbidden_inputs_and_actions": {
+    "random_v48_rows_read_or_scored": 0,
+    "descriptive_locked_rows_used_for_fit_threshold_gate_or_selection": 0,
+    "fresh_rows_read_or_scored": 0,
+    "test_rows_read_or_scored": 0,
+    "positive_injection": false,
+    "retrieval_modified": false,
+    "ranker_modified": false,
+    "extra_variants_or_grid_search": false,
+    "paid_api_or_rented_gpu": false
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_10_structured_acceptor_development",
+  "promotion_scope": "A winner authorizes only construction of a fresh development cohort; it does not authorize deployment or final-test opening."
+}
