@@ -181,8 +181,8 @@ Racine de preuve séparée :
 
 Fichiers exacts :
 
-- `data_inputs.parquet`, ledger des quatre fichiers ouverts : IDs sûrs,
-  manifeste sûr, labels et split ;
+- `data_inputs.parquet`, ledger exhaustif des huit fichiers ouverts : les six
+  fichiers du paquet runtime sûr, labels et split ;
 - `provenance.json` ;
 - `manifest.json`.
 
@@ -208,9 +208,15 @@ size_bytes_after: uint64
 sha256_after: string
 ```
 
-Les quatre rôles uniques sont `safe_queries_dev`, `safe_runtime_manifest`,
-`labels` et `split`. Les lignes sont triées par octets UTF-8 de
-`role,absolute_path`.
+Les huit rôles uniques sont `safe_integrity`,
+`safe_partition_inventory`, `safe_queries_all`, `safe_queries_dev`,
+`safe_runtime_manifest`, `safe_tfidf_inventory`, `labels` et `split`. Les
+lignes sont triées par octets UTF-8 de `role,absolute_path`.
+
+Les deux inventaires et `queries_all.parquet` sont ouverts uniquement pour
+vérifier l'intégrité du paquet runtime déjà construit. Ils ne servent jamais
+à sélectionner, qualifier ou ordonner une vérité oracle. Leur ouverture ne
+constitue pas l'exécution ou la lecture de résultats du retrieval.
 
 `integrity.json` possède exactement :
 
@@ -278,7 +284,8 @@ production_certified = false
 Déclarations obligatoires :
 
 ```text
-retrieval_opened = false
+safe_runtime_files_opened_for_integrity = true
+retrieval_results_opened = false
 candidate_results_opened = false
 direct_evidence_opened = false
 guard_decisions_opened = false
@@ -357,7 +364,7 @@ Tests minimaux :
 - refus de toute source de candidat, preuve, décision, modèle ou challenge ;
 - mutation/restauration pendant lecture détectée ;
 - lock, Git, RSS, staging, atomicité et immutabilité ;
-- ledger exhaustif de quatre entrées ;
+- ledger exhaustif de huit entrées ;
 - oracle absent du paquet runtime ;
 - profil `sandbox-exec` futur refusant les racines oracle/audit, avec test
   sentinelle d'ouverture réellement refusée.
