@@ -44,7 +44,7 @@ EXPECTED_HASHES = {
     "winner_metadata": "41b84f05fe846db9362b1eff5f362b075bec08aee3af1bd1c5ee553d5d56abfc",
     "winner_freeze": "5d7344b2e4b2fa256f05e75420a5c16edaf52a530f6e9486000aeaec74c8bcbc",
     "frozen_model": "16283b8aba5ed135846a74e9040c79e9f863f7e2bd658ca642ad444174b9a3fa",
-    "frozen_metadata": "73199451b2de6ae383c9c58b10ab9c7393994a4efdec45f9c8e1e9f150691c",
+    "frozen_metadata": "73199451b2de6ae383c9c0c58b10ab9c7393994a4efdec45f9c8e1e9f150691c",
     "development_runner": "1fac5f3426a53fb450c6d7b2a532563634aadd9378561676bfa5ac932537b1f1",
 }
 
