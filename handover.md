@@ -39,6 +39,14 @@ les splits V4.6 attribuent un numéro de pli aux lignes dev aussi. Le
 garde-fou a été corrigé pour valider les cinq plis gelés et l'unicité du pli
 par composante sur les 7 003 lignes ; 403 tests passent. Aucun pool, label ou
 résultat n'a été produit par cette tentative. *(commit GitHub : `734dc24`)*
+Le runner du ranker C est maintenant implémenté, sans l'avoir encore
+exécuté : cinq modèles OOF scorent les scènes fit, un modèle complet score le
+dev, les misses retrieval restent des erreurs end-to-end et chaque fit est
+rejoué deux fois avec égalité exacte exigée. Le diagnostic ranker B masqué
+reconstruit correctement le canal sparse unique (`channel_count=1`) et son
+score RRF à partir du rang. Le runner ne sera lancé que si le build
+input-blind franchit d'abord le gate Recall@100. *(commit GitHub :
+`b6a2332`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
