@@ -5,6 +5,24 @@ de feature V4.9, toute mesure rétrospective et toute sélection fraîche.
 
 Identifiant : `V49_SITE_FUNCTION_GUARD`.
 
+Gel de l'étape A :
+
+- commit taxonomie/code/tests :
+  `a3113069c2f0eac94f0218a540c3a1d67a3fd05e` ;
+- `config/v4_9_site_function_taxonomy.json` :
+  `48bbb7e1795a0731f1f12df41aeb971667c10d03c879bf06d5ba15b65f8b121d` ;
+- `src/xgb_matcher/v49_site_function.py` :
+  `8463086d2ce404e5c83140df8ea7351cfb363793edfa7e74db95fe202d9c54e2` ;
+- `tests/test_v49_site_function.py` :
+  `0cbeff943a8db46726df635730a2177087ebadbcad9f7cd433b020f343b39035`.
+
+Entrées rétrospectives épinglées :
+
+- labels V4.7 courants :
+  `e5e592d4dcd540273378dada7128f957b1d335df63fbc88f4c1377c0f9337bd2` ;
+- file V4.3 contenant les champs CRM :
+  `47af4887769a2edb11f1e629c38077edccd035dd96cb3a6d39620714361fdecc`.
+
 ## 1. Question
 
 Un contrôle déterministe de la fonction exacte du site peut-il refuser les
