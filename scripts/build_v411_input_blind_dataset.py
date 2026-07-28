@@ -340,16 +340,16 @@ def validate_assignments(
         raise ValueError("Split assignments differ from the query population")
     if not set(assignments["split"].astype(str)).issubset({"fit", "dev"}):
         raise ValueError("V4.11 assignments contain an unauthorized split")
-    dev_folds = assignments.loc[assignments["split"].eq("dev"), "oof_fold"]
-    if dev_folds.notna().any():
-        raise ValueError("Dev assignments must not carry an OOF fold")
-    fit_folds = set(
-        assignments.loc[assignments["split"].eq("fit"), "oof_fold"]
-        .dropna()
-        .astype(int)
-    )
-    if fit_folds != {0, 1, 2, 3, 4}:
-        raise ValueError(f"V4.11 requires five fit folds, got {sorted(fit_folds)}")
+    if assignments["oof_fold"].isna().any():
+        raise ValueError("Every frozen V4.11 assignment must carry an OOF fold")
+    folds = set(assignments["oof_fold"].astype(int))
+    if folds != {0, 1, 2, 3, 4}:
+        raise ValueError(f"V4.11 requires five frozen folds, got {sorted(folds)}")
+    component_fold_counts = assignments.groupby("siren_component_id")[
+        "oof_fold"
+    ].nunique()
+    if not component_fold_counts.eq(1).all():
+        raise ValueError("A SIREN component spans multiple frozen OOF folds")
 
 
 def _finite_float(value: Any) -> float:

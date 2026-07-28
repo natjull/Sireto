@@ -139,7 +139,7 @@ def _population():
                 "query_id": "q2",
                 "siren_component_id": "component-2",
                 "split": "dev",
-                "oof_fold": None,
+                "oof_fold": 1,
             },
         ]
     )
@@ -158,6 +158,45 @@ def test_ranker_c_contract_is_exact_and_contains_no_identifier_feature():
         subject.input_blind_retrieval_config().sparse_config().include_closed
         is False
     )
+
+
+def test_frozen_folds_cover_fit_and_dev_without_splitting_components():
+    queries = pd.DataFrame([_query(f"q{index}") for index in range(5)])
+    assignments = pd.DataFrame(
+        [
+            {
+                "query_id": f"q{index}",
+                "siren_component_id": f"component-{index}",
+                "split": "dev" if index == 1 else "fit",
+                "oof_fold": index,
+            }
+            for index in range(5)
+        ]
+    )
+    subject.validate_assignments(queries, assignments)
+
+    broken = pd.concat(
+        [
+            assignments,
+            pd.DataFrame(
+                [
+                    {
+                        "query_id": "q5",
+                        "siren_component_id": "component-0",
+                        "split": "fit",
+                        "oof_fold": 2,
+                    }
+                ]
+            ),
+        ],
+        ignore_index=True,
+    )
+    expanded_queries = pd.concat(
+        [queries, pd.DataFrame([_query("q5")])],
+        ignore_index=True,
+    )
+    with pytest.raises(ValueError, match="component spans multiple"):
+        subject.validate_assignments(expanded_queries, broken)
 
 
 def test_retrieval_interface_passes_no_identifier_or_truth_and_ties_by_siret():
