@@ -194,6 +194,18 @@ TOCTOU sont bloqués. `GO_EXECUTION_PATH`, 151 tests ciblés et 821 tests
 complets valident le raccord, sans dev réel. Le lock candidat antérieur est
 révoqué et doit être régénéré sur ce commit avant toute exécution. *(commit
 GitHub : `f4a5309`)*
+Le verrou d'exécution final, hash
+`0852ee260af4dd66976adaea9831204c1ad968dbdbca6241f07e5f2964b27caf`,
+franchit **`GO_LOCK_1`** et **`GO_LOCK_2`**. Il épingle le commit code
+`f4a53096338ec5bf2cb3237b5361c6e0e513eedf`, 13 sources, 16 entrées,
+les exécutables, le runtime, les quatre racines et les deux projections
+worker. Le premier audit a exécuté 15 104 contrôles et rehashé physiquement
+7 225 618 142 octets ; le second a recalculé sans importer le runner les
+1 945 entrées Gate A contre le ledger de 1 954 lignes. Aucun chemin oracle,
+historique ou modèle n'entre dans le worker. Ce GO autorise désormais
+l'unique exécution end-to-end worker puis parité ; il n'autorise toujours ni
+l'ouverture de l'oracle, ni le Recall, ni les modèles. *(commit GitHub :
+`bf82e74`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
