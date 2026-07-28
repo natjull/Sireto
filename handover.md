@@ -53,6 +53,18 @@ tie-break et enseignes divergentes. Deux audits ont conclu `GO`, un smoke
 réel produit 100 candidats/59 colonnes avec un seul scan, et 437 tests
 passent. Aucun résultat retrieval n'a encore été produit. *(commit GitHub :
 `fc8c848`)*
+Le build complet V4.11 franchit désormais
+**`GO_TRAIN_INPUT_BLIND_RANKER`**. Sur le dev historique, le bon SIRET est
+présent dans 1 217/1 217 pools à 100 ; sur le fit, dans 4 665/4 666
+(99,9786 %), avec l'unique miss `6818`. Les 7 003 requêtes ont toutes un
+pool, le plafond maximal est exactement 100 et les 698 892 candidats sont
+actifs, uniques et sans injection. Une recomputation indépendante confirme
+les hashes, les rangs, les cibles, l'absence des identifiants CRM et le blob
+Git du builder. Le dev reste un jeu de développement consommé ; ce `GO`
+autorise le ranker C, pas la preuve produit finale. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d`.
+Rapport : `reports/v9/v4_11_input_blind_retrieval_results.md`.
+*(commit GitHub : `db5d233`)*
 Le runner du ranker C est maintenant implémenté, sans l'avoir encore
 exécuté : cinq modèles OOF scorent les scènes fit, un modèle complet score le
 dev, les misses retrieval restent des erreurs end-to-end et chaque fit est
@@ -1227,6 +1239,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Autorisation finale V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/releases/v4_final/7dbd5527374ca0d4/authorization.json` |
 | Première évaluation finale V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4/` |
 | Verdict final V4 corrigé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4_verdict_repair/` |
+| Dataset V4.11 input-blind | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/` |
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
@@ -1247,7 +1260,8 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    pas par le retrieval.
 7. Préenregistrer V4.11 sur le stack homogène V4.2-B + ranker B OOF, construire
    un accepteur compact, puis le geler avant tout accès aux 225 lignes
-   restantes. Pour une décision finale, obtenir un nouvel export CRM.
+   restantes. **Gate retrieval franchi ; prochaine étape : exécuter et auditer
+   le ranker C.** Pour une décision finale, obtenir un nouvel export CRM.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
