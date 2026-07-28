@@ -323,6 +323,17 @@ autorise désormais le contrat du moteur requête par requête, pas la
 production. *(commits GitHub : runner `3de02dc`, verrou `dd696de`, résultat
 `1653175`)*
 
+Le premier jalon du moteur unitaire est préenregistré
+**`GO_CONTRACT_INPUTS`** après refus d'un contrat monolithique insuffisamment
+séparé. Ce jalon ne calcule aucun match : il doit publier, dans une racine
+runtime sans chemin sensible, les six champs CRM sûrs pour 7 003 requêtes et
+les 1 456 dev, plus les inventaires cryptographiques des 4 119 partitions et
+1 454 paires cache TF-IDF. Les hashes de contenu attendus sont gelés à
+`680f1884...5463` et `589360b1...83ce`. Une racine d'audit distincte scellera
+les 7 029 fichiers ouverts ; elle ne sera jamais transmise au worker. Ce GO
+autorise seulement le builder/tests des inputs, pas l'oracle, le store, le
+worker ou le benchmark. *(commit GitHub : `5ebd9de`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
