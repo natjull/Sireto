@@ -44,7 +44,9 @@ def _scenes(split: pd.DataFrame) -> pd.DataFrame:
             {
                 "query_id": row["query_id"],
                 "split": row["split"],
-                "dev_partition": row["population"],
+                "dev_partition": (
+                    "" if row["split"] == "fit" else row["population"]
+                ),
                 "oof_fold": row["oof_fold"],
                 "siren_component_id": row["siren_component_id"],
                 "label_kind": "MATCH_EXACT",

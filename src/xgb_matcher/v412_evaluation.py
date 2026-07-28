@@ -163,9 +163,10 @@ def validate_population_parity(
     )
     if not fold_equal.all():
         raise ValueError("STOP_V412_EVAL: scene OOF fold differs")
+    dev_rows = _string_column(joined, "split_split").eq("dev")
     if (
-        _string_column(joined, "population")
-        != _string_column(joined, "dev_partition")
+        _string_column(joined.loc[dev_rows], "population")
+        != _string_column(joined.loc[dev_rows], "dev_partition")
     ).any():
         raise ValueError("STOP_V412_EVAL: dev partition was not reproduced")
     populations = populations[["query_id", "population"]]
@@ -175,18 +176,23 @@ def validate_population_parity(
                 populations["population"].eq(population), "query_id"
             ].astype(str)
         )
-        observed = set(
-            scenes.loc[
-                scenes["dev_partition"].eq(population), "query_id"
-            ].astype(str)
+        observed_mask = (
+            scenes["split"].eq("fit")
+            if population == "fit"
+            else scenes["dev_partition"].eq(population)
         )
+        observed = set(scenes.loc[observed_mask, "query_id"].astype(str))
         if expected != observed:
             raise ValueError(
                 f"STOP_V412_EVAL: {population} query set differs"
             )
     if enforce_canonical:
         for population, expected_count in CANONICAL_COUNTS.items():
-            subset = scenes[scenes["dev_partition"].eq(population)]
+            subset = scenes[
+                scenes["split"].eq("fit")
+                if population == "fit"
+                else scenes["dev_partition"].eq(population)
+            ]
             if len(subset) != expected_count:
                 raise ValueError(
                     f"STOP_V412_EVAL: canonical {population} count changed"
