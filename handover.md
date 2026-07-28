@@ -231,6 +231,18 @@ Rapport : `reports/v9/v4_12_direct_evidence_build_results.md`. La prochaine
 `comparison_dev`; aucune promotion n'est encore autorisée.
 *(commit GitHub : `3aff8d9`)*
 
+Le runner post-seal V4.12-G est implémenté et contre-audité
+**`GO_COMMIT_EVALUATOR`**. Il recalcule les trois populations, reproduit la
+baseline V4.11 `614 AUTO / 0 erreur / 0 ambiguïté`, applique un veto pur et
+publie les gates entiers et segmentaires. Sa publication est fermée par Git,
+hashes, TOCTOU, RSS, fsync et validation sémantique ligne à ligne. Les 23
+tests ciblés et les 535 tests complets passent. Le verrou externe audité fixe
+11 sources, 13 entrées, le seal V4.12, le modèle, le seuil et le runtime.
+L'évaluation réelle n'a pas encore été lancée à ce stade. Un éventuel
+`GO_V412_HISTORICAL_GATE` ne certifiera ni la latence ni la production.
+*(commits GitHub : évaluateur `37f1476`, fermeture source `0182248`, verrou
+`a99dd31`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
