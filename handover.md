@@ -1,6 +1,18 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+La V4.9 se termine avec **`STOP_SITE_FUNCTION_GUARD`**. La taxonomie
+déterministe, gelée avant mesure, refuse les trois erreurs random V4.8
+mairie/école, maternelle/primaire et FAM/MAS, sans refuser aucun des 116
+top-1 corrects. Elle ne couvre cependant que 3 des 34 top-1 faux ou ambigus
+fiables, sous le minimum préenregistré de cinq. Aucune cohorte fraîche n'est
+donc ouverte et la taxonomie ne sera pas enrichie après observation. Aucun
+modèle ni seuil n'a changé et le test final reste fermé. Rapport :
+`reports/v9/v4_9_site_function_guard_results.md`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_9_site_function_retrospective/30e22eae11620538`.
+*(commits GitHub : contrat `169d9cf`; taxonomie `a311306`; entrées épinglées
+`49832e4`; évaluateur `67b2cb5`)*
+
 La V4.8 se termine avec le verdict final **`STOP_RETRAIN`**. L'ouverture
 random unique invalide `HARD_W1` : 47/52 AUTO, mais seulement 44 corrects,
 soit trois erreurs et 93,617 % de précision observée. Le baseline gelé fait
@@ -956,14 +968,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
   E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
   sur le SSD.
+- Le garde-fou V4.9 de fonction de site est clos par
+  `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
+  consommés.
 - Le test final historique et le holdout V4-Fresh ont chacun été lus une fois
   et sont maintenant définitivement fermés à toute nouvelle variante, règle
   ou seuil.
 - E1 historique est conservé comme baseline. Le nouveau ranker V4 est validé
   sur `dev_new`, mais aucun modèle produit n'est déployé.
-- V4-Fresh a validé définitivement le retrieval V4 et le ranker. Le gate
-  accepteur final échoue avec deux erreurs AUTO. Le prochain travail doit être
-  préenregistré comme V4.1 et utiliser un nouveau holdout indépendant.
+- V4-Fresh a validé définitivement le retrieval V4 et le ranker. V4.8 a
+  invalidé le nouvel accepteur sur le random et V4.9 a invalidé le garde-fou
+  lexical comme piste assez large. La prochaine étape est un diagnostic
+  structuré des 31 erreurs/ambiguïtés non interceptées, sans tuning.
 
 ## Points d'attention
 - **Plafond absolu 100**: les mesures @200/@500 sont diagnostiques et ne
@@ -1038,17 +1054,20 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Verdict final V4 corrigé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4_verdict_repair/` |
 
 ## Prochaines etapes
-1. Ne plus réutiliser le test historique ni le holdout V4-Fresh consommés.
-2. Préenregistrer V4.1 sans modifier le retrieval V4 ni le ranker de base :
-   `AMBIGUOUS/UNRESOLVED → REVIEW` avant modèle et `top1 fermé → REVIEW`.
-3. Ajouter explicitement l'état administratif candidat aux preuves de scène
-   et supprimer la calibration isotonic saturante de la sélection automatique.
-4. Rejouer uniquement train/dev pour mesurer le coût de couverture de ces
-   verrous ; ne pas présenter le diagnostic final post-hoc comme validé.
-5. Construire un nouveau holdout indépendant et disjoint pour certifier V4.1.
-6. Ouvrir un chantier séparé de qualification/réparation CRM : la couverture
-   source 22,454 % reste très loin du gate de 80 % et ne se corrige pas par le
-   retrieval.
+1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
+   ni les 172 cas V4.9 pour sélectionner ou valider une variante.
+2. Produire une taxonomie descriptive, sans règle de décision, des 31 erreurs
+   ou ambiguïtés fiables que V4.9 ne refuse pas.
+3. Relier chaque famille aux informations absentes ou perdues entre le ranker
+   candidat et l'accepteur : identité du site, relation entrée/candidat,
+   activité, état, concurrence au sein du même SIREN et qualité CRM.
+4. Ne préenregistrer une nouvelle expérience que si une famille générale
+   couvre un volume utile et peut être calculée sans fuite à l'inférence.
+5. Toute nouvelle décision de promotion exigera une population fraîche,
+   indépendante et disjointe ; le test final reste fermé.
+6. Conserver séparément le chantier qualification/réparation CRM : la
+   couverture source 22,454 % reste très loin du gate de 80 % et ne se corrige
+   pas par le retrieval.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
