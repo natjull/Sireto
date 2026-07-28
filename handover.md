@@ -110,6 +110,15 @@ Son parquet est bit à bit identique au premier et le contre-audit conclut
 Rapport : `reports/v9/v4_11_acceptor_scene_dataset_results.md`.
 *(commits GitHub : correctif `c462a21`, résultats `19f1169`)*
 
+Le plan d'entraînement de l'accepteur V4.11 est gelé avant tout fit. Il
+autorise exactement une logistique compacte et un XGBoost monotone peu
+profond, avec leurs hyperparamètres fixes, les 80 features dans leur ordre,
+les trois populations étanches et la sélection à 99,8 % de précision,
+80 % de couverture et zéro `AMBIGUOUS` automatisé. Le verrou d'exécution lie
+ce plan au runner et aux sources commités ; préflight et contre-audit
+concluent `GO`. Aucun challenge, holdout, unseen ou test final n'a été ouvert.
+*(commits GitHub : plan `8033934`, verrou `fd70a64`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
