@@ -1,6 +1,19 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le dataset corrigé V4.10b est construit et franchit
+**`GO_FREEZE_TRAINING_PLAN_V410B`**. Le nouveau catalogue autorise 641
+features structurées : 157 continues/comptages à standardiser et 484
+binaires non standardisées. Les 58 alias sont vérifiés ligne par ligne, les
+16 signaux d'instrumentation retrieval et les 75 signaux de provenance sont
+hors modèle. Les trois parquets restent identiques au build V4.10 et
+`CURRENT80` est bit à bit inchangé. Aucun fit ni seuil n'a été produit.
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_10b_structured_acceptor/3ad8e97ce0118e8c`.
+Rapport : `reports/v9/v4_10b_structured_dataset_results.md`.
+*(commits GitHub : politique `eb85597`, clarification `d500fe2`, builder
+`f78a9ba`)*
+
 L'audit statistique pré-fit a invalidé l'ordre structuré V4.10 avant tout
 entraînement. Il contenait 58 copies sémantiques et 16 signaux résiduels
 capables de distinguer l'instrumentation retrieval V4.1 de V4.2-B. La
@@ -1016,10 +1029,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
   E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
   sur le SSD.
-- Le dataset et le plan d'entraînement V4.10 sont prêts. Le prochain run
-  autorisé est le développement des dix variantes d'accepteur
-  préenregistrées ; ni random, ni cas descriptifs verrouillés, ni test final
-  ne font partie du fit, du seuil ou du gate.
+- Le dataset V4.10b est prêt. Le prochain travail autorisé est de geler un
+  nouveau plan V4.10b puis de finaliser son runner ; aucun entraînement n'est
+  autorisé tant que leurs hashes ne sont pas épinglés. Ni random, ni cas
+  descriptifs verrouillés, ni test final ne feront partie du fit, du seuil
+  ou du gate.
 - Le garde-fou V4.9 de fonction de site est clos par
   `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
   consommés.
