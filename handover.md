@@ -71,12 +71,28 @@ fermé le routage, les 648 partitions, les 648 caches et le lookup snapshot,
 ainsi que la liste blanche réelle de `sandbox-exec`. Une erreur de conception
 a été interceptée avant code : les caches portent sur 4 764 472 rows
 filtrées/dédupliquées et non sur les 8 030 285 rows physiques. La sandbox
-épingle ses trois exécutables, refuse oracle/audit, réseau, fork et écritures
-hors espaces privés, et expose exactement 1 945 fichiers à l'enfant. Le
+épingle `sandbox-exec`, Git, `Python.app` et la bibliothèque framework,
+refuse oracle/audit, réseau, fork et écritures hors espaces privés, et expose
+exactement 1 945 fichiers à l'enfant. Le
 ledger parent attendu en couvre 1 954. Ce GO autorise seulement
 l'implémentation puis son audit, pas encore le build réel ni les modèles.
 Rapport : `reports/v9/v4_12_strict_stores_contract_audit.md`. *(commit
 GitHub : `0173d6b`)*
+
+Le contrat Gate A a été durci après dix-sept refus successifs : contrôles
+consommés par descripteurs ancrés, profil transmis en mémoire, Git absolu,
+runtime Python privé, publication atomique et reprise rattachée aux entrées
+courantes. La frontière de confiance est maintenant explicite : le runtime
+local `/System`, `/usr` et `/opt/homebrew` est enregistré mais n'est pas
+présenté comme un système intégralement scellé. *(commit GitHub : `d23c287`)*
+Les trois stores stricts et leur certificateur sandbox sont implémentés et
+contre-audités **`GO_CODE_V412_STRICT_STORES`**. Les contrôles couvrent
+partitions, caches TF-IDF, lookup DuckDB via FD, refus sandbox, rescellation,
+publication/recovery et nettoyage des espaces privés. Le smoke macOS réel,
+les 41 tests ciblés et les 711 tests du dépôt passent. Aucun build Gate A,
+verrou, oracle ou modèle n'a été ouvert par cette implémentation. Le prochain
+geste autorisé est la création puis le contre-audit du verrou d'exécution.
+*(commit GitHub : `e059148`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
