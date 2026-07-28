@@ -1,0 +1,66 @@
+(version 1)
+(deny default)
+
+(deny network*)
+(deny process-fork)
+
+(allow process-exec
+  (literal (param "PYTHON_EXECUTABLE"))
+)
+
+(allow file-read*
+  (literal "/")
+  (literal "/System")
+  (subpath "/System")
+  (literal "/usr")
+  (subpath "/usr")
+  (literal "/opt")
+  (literal "/opt/homebrew")
+  (subpath "/opt/homebrew")
+  (literal "/dev")
+  (literal "/dev/null")
+  (literal "/dev/urandom")
+  (literal "/dev/fd")
+  (subpath "/dev/fd")
+  (literal (param "RUN_ROOT"))
+  (literal (param "RUN_OUTPUT"))
+  (subpath (param "RUN_OUTPUT"))
+  (literal (param "RUN_TMP"))
+  (subpath (param "RUN_TMP"))
+)
+
+(allow file-read-metadata
+  (literal (param "RUN_ROOT"))
+  (literal (param "RUN_OUTPUT"))
+  (subpath (param "RUN_OUTPUT"))
+  (literal (param "RUN_TMP"))
+  (subpath (param "RUN_TMP"))
+)
+
+(allow file-write*
+  (literal (param "RUN_OUTPUT"))
+  (subpath (param "RUN_OUTPUT"))
+  (literal (param "RUN_TMP"))
+  (subpath (param "RUN_TMP"))
+)
+
+(allow sysctl-read)
+
+(deny file-read* file-write*
+  (literal (param "FORBIDDEN_ORACLE"))
+)
+(deny file-read* file-write*
+  (literal (param "FORBIDDEN_ORACLE_AUDIT"))
+)
+(deny file-read* file-write*
+  (literal (param "FORBIDDEN_HISTORICAL"))
+)
+(deny file-read* file-write*
+  (literal (param "FORBIDDEN_MODEL"))
+)
+(deny file-read* file-write*
+  (literal (param "FORBIDDEN_STORE"))
+)
+(deny file-read* file-write*
+  (literal (param "WRITE_SENTINEL"))
+)
