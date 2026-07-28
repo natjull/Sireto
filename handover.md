@@ -11,6 +11,11 @@ un ranker C de 45 features sur ces pools, puis comparera exactement deux
 accepteurs sur une scène compacte de 80 features. Le dev historique reste
 développement uniquement ; les 225 lignes inédites restent fermées jusqu'au
 gel du candidat. *(commit GitHub : `ca83603`)*
+L'audit indépendant pré-fit a ensuite fermé les ambiguïtés restantes :
+`UNRESOLVED` est exclu des cibles, les 80 formules/types/contraintes sont
+définis sans score absolu inter-fold, les deux moitiés dev ont des volumes
+attendus, les baselines sont épinglées et les seuils utilisent une règle
+entière déterministe. *(commit GitHub : `399252f`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
