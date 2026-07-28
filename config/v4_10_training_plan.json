@@ -1,7 +1,9 @@
 {
   "schema_version": "sireto-v4.10-structured-acceptor-training-plan-1",
   "experiment_id": "V410_STRUCTURED_ACCEPTOR_DEVELOPMENT",
-  "status": "preregistered_before_first_fit",
+  "status": "superseded_before_first_fit",
+  "superseded_by": "V410B_STRUCTURED_FEATURE_POLICY",
+  "supersession_reason": "PREFIT_STATISTICAL_AUDIT_INVALIDATED_STRUCTURED_ORDER",
   "amendment": {
     "reason": "Close runner-governance ambiguities found by the independent pre-fit audit; no model had been fitted.",
     "baseline_is_comparator_only": true,
