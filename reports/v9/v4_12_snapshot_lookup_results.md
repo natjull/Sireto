@@ -2,17 +2,16 @@
 
 ## Verdict
 
-`STOP_V412_LOOKUP_PARITY`
+`GO_V412_SNAPSHOT_LOOKUP`
 
 Le snapshot SIRENE complet a bien été construit sous forme d'un index local,
 interrogeable en lecture seule par lots strictement plafonnés à 100 SIRET.
-Cependant, un contre-audit indépendant ne reproduit pas le hash contractuel
-de l'échantillon déterministe de 10 000 SIRET. Le contrat impose un arrêt au
-premier écart.
+L'intégrité, la parité sur les candidats et l'échantillon indépendant sont
+conformes. Ce verdict autorise la construction du moteur requête par requête
+et son benchmark apparié V4.11/V4.12-G.
 
-L'artefact déclare `GO_V412_SNAPSHOT_LOOKUP`, mais cette déclaration est
-invalidée. Il n'autorise ni la construction du moteur requête par requête, ni
-le benchmark de latence, ni la production.
+Il ne certifie ni la latence d'inférence, ni la parité batch/service du pipe
+complet, ni la production.
 
 ## Artefact
 
@@ -49,12 +48,14 @@ d'activité.
   après la construction ;
 - la référence bulk contient `517 963` lignes ;
 - zéro écart de présence, valeur, type ou nullité ;
+- l'échantillon indépendant de `10 000` SIRET reproduit le hash gelé
+  `58c9700d2a1ed2bb433e4f7a25a845ba236d63cfe633dcd64f9156469777f945` ;
 - le snapshot source n'a été scanné qu'une fois pour la référence.
 
 Le contre-audit confirme également zéro écart de valeur sur son nouvel
 échantillon indépendant de 10 000 SIRET.
 
-## Écart bloquant
+## Incident de contre-audit corrigé
 
 Le contrat demande de prendre les 10 000 premiers SIRET après tri par :
 
@@ -62,30 +63,37 @@ Le contrat demande de prendre les 10 000 premiers SIRET après tri par :
 (sha256("v412-lookup-parity:" + siret), siret)
 ```
 
-puis de hasher les SIRET dans cet ordre, chacun suivi de `\n`.
+puis de hasher les SIRET dans cet ordre, chacun suivi d'un véritable octet
+LF.
 
-Trois recalculs indépendants, dont une reproduction exacte du CTE SQL du
-builder, donnent :
+Un premier contre-audit a conclu à tort
+`STOP_V412_LOOKUP_PARITY` avec la valeur :
 
 ```text
 72f43460bb0e5047186fb4226147f1bf3022ceb8692164e5a8c57d9432a54960
 ```
 
-Le contrat, le plan, le builder et l'artefact déclarent :
+Ses trois commandes utilisaient toutes les deux caractères littéraux
+antislash et `n`, soit un payload de `160 000` octets. Elles répétaient donc
+la même erreur d'échappement et n'étaient pas indépendantes sur ce point.
+
+La reproduction corrigée utilise un vrai LF après chacun des 10 000 SIRET,
+soit exactement `150 000` octets. Elle donne :
 
 ```text
 58c9700d2a1ed2bb433e4f7a25a845ba236d63cfe633dcd64f9156469777f945
 ```
 
-Le même ensemble retrié lexicalement produit encore une troisième valeur,
-`399ff013f99f21cfe4bbd29b51c011a6c8cae5a6e2df65a49e9f801bbf7b163b`.
-Il ne s'agit donc pas d'une simple confusion entre ordre aléatoire gelé et
-ordre lexical.
+Elle reproduit exactement le contrat, le plan, le code du builder et
+l'artefact. Les trois premiers SIRET sont aussi identiques :
+`94410569100017`, `92883024900019`, `53539062900017`.
 
-Le validateur officiel passe à tort parce qu'il vérifie que le JSON contient
-la valeur gelée, sans la recalculer depuis le snapshot. La cause exacte de la
-valeur `58c970...` et la raison pour laquelle le builder l'a acceptée restent
-à établir avant toute correction.
+Le `STOP` publié dans le commit `880e57c` est donc annulé par le présent
+correctif. L'incident reste documenté. Il révèle néanmoins une faiblesse
+réelle : le validateur officiel relit actuellement la déclaration du sample
+sans refaire la sélection depuis le snapshot. Un contre-validateur
+indépendant devra être ajouté avec un test distinguant explicitement le vrai
+LF du texte littéral `\n`.
 
 ## Ressources
 
@@ -100,16 +108,16 @@ seule, avec un worker persistant.
 
 ## Portée exacte
 
-La base DuckDB paraît matériellement correcte, mais elle reste un artefact
-refusé. Elle ne peut pas être recyclée silencieusement comme artefact gelé.
+Le lookup retire le principal obstacle technique au calcul V4.12-G en
+requête unitaire : il n'est plus nécessaire de rescanner les 42,3 millions
+d'établissements pour hydrater jusqu'à 100 candidats.
 
-La prochaine étape obligatoire est :
+La prochaine preuve reste à produire sur les `1 456` requêtes dev :
 
-1. expliquer et tester l'écart `58c970...` / `72f434...` ;
-2. corriger le contrat, le calcul et le validateur avant un nouveau build ;
-3. faire contre-auditer le correctif et produire un nouveau verrou ;
-4. reconstruire et revalider sous un nouvel identifiant immuable ;
-5. seulement après un vrai `GO`, ouvrir le chantier parité/latence sur les
-   `1 456` requêtes dev.
+1. mêmes candidats, rangs, features, top-1, scène et décision entre batch et
+   moteur requête par requête ;
+2. mêmes preuves directes et même veto V4.12-G ;
+3. latence p95 appariée V4.11/V4.12-G avec worker persistant ;
+4. aucun cache manquant et aucune lecture de label.
 
 Le test final reste fermé.
