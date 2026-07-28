@@ -1467,3 +1467,36 @@ def test_native_worker_profile_imports_sealed_private_package(
     assert result.returncode == 0, result.stderr
     assert "Run the V4.12 unit retrieval worker" in result.stdout
     assert "--run-spec" in result.stdout
+
+    runtime_command = command[:-5] + [
+        str(private_python),
+        "-B",
+        "-c",
+        (
+            "import json;"
+            "from xgb_matcher.v412_unit_retrieval import _runtime_values;"
+            "print(json.dumps(_runtime_values(),sort_keys=True))"
+        ),
+    ]
+    runtime_result = subprocess.run(
+        runtime_command,
+        cwd=run_root,
+        env={
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "PYTHONNOUSERSITE": "1",
+            "PYTHONSAFEPATH": "1",
+            "PYTHONPATH": str(run_root),
+            "JOBLIB_MULTIPROCESSING": "0",
+            "TMPDIR": str(scratch),
+            "DYLD_FRAMEWORK_PATH": str(framework_root),
+        },
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert runtime_result.returncode == 0, runtime_result.stderr
+    observed_runtime = json.loads(runtime_result.stdout)
+    expected_runtime = json.loads(
+        (ROOT / "config/v4_12_unit_retrieval_engine_plan.json").read_text()
+    )["runtime"]
+    assert observed_runtime == expected_runtime

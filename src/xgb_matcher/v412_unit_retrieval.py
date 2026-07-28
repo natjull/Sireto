@@ -20,6 +20,7 @@ import platform
 import re
 import resource
 import socket
+import struct
 import sys
 import time
 from typing import Any, BinaryIO, Iterable, Mapping, Sequence
@@ -774,6 +775,16 @@ def _runtime_values() -> dict[str, str]:
     import scipy
     import sklearn
 
+    if platform.system() == "Darwin":
+        machine = platform.machine()
+        processor = "arm" if machine == "arm64" else machine
+        platform_value = (
+            f"macOS-{platform.mac_ver()[0]}-{machine}-"
+            f"{processor}-{struct.calcsize('P') * 8}bit-Mach-O"
+        )
+    else:
+        platform_value = platform.platform()
+
     return {
         "python": platform.python_version(),
         "numpy": np.__version__,
@@ -784,7 +795,7 @@ def _runtime_values() -> dict[str, str]:
         "joblib": version("joblib"),
         "duckdb": duckdb.__version__,
         "machine": platform.machine(),
-        "platform": platform.platform(),
+        "platform": platform_value,
     }
 
 
