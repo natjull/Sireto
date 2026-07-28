@@ -74,6 +74,17 @@ Chaque ligne est une requête. Les features candidat sont calculées à partir
 des candidats réellement retrouvés et classés. Aucun positif n'est injecté.
 Une vérité absente du pool reste une erreur.
 
+Les trois parquets conservent deux ordres distincts et hashés :
+
+- `current80_feature_order` : les 80 colonnes exactes de scène V4.1, avec
+  leurs noms et valeurs d'origine, afin de reproduire `BASE_FROZEN` et
+  `CURRENT80_*` ;
+- `structured_feature_order` : les 71 colonnes non sémantiques plus les
+  blocs structurés V4.10 autorisés au modèle.
+
+Les neuf sémantiques nulles restent donc présentes uniquement dans le bloc
+baseline/audit. Elles sont exclues de l'ordre structuré.
+
 Sources historiques épinglées au moment du build :
 
 - scènes accepteur V4.1 ;
@@ -105,6 +116,19 @@ Gel des entrées du premier build :
 
 Le manifeste contient les hashes, versions, ordre des features, volumes,
 taux de jointure, valeurs manquantes et invariants de non-ouverture.
+
+La preuve hors échantillon du ranker est obligatoire :
+
+- les 7 003 scènes historiques portent
+  `ranker_prediction_is_out_of_sample=true` ;
+- `prediction_origin` vaut seulement `oof` ou `out_of_sample_dev` ;
+- les folds OOF historiques sont conservés comme métadonnées, jamais comme
+  features ;
+- les scènes difficiles, absentes du fit historique du ranker A, portent la
+  même preuve OOS.
+
+Toute requête absente de la table CRM provoque un `STOP_DATASET_INTEGRITY` ;
+aucune feature CRM ne peut être silencieusement remplacée par zéro.
 
 Les 698 428 paires candidat-prédiction V4.1 doivent se joindre exactement par
 `(query_id, candidate_siret)` ; deux sentinelles sans candidat sont conservées.
@@ -196,7 +220,8 @@ top-2 et candidats du même SIREN :
 La taxonomie V4.9 reste gelée. Elle devient un signal, pas un garde. Aucun
 libellé complet ni identifiant de dossier ne peut entrer dans une règle.
 Le snapshot est joint par SIRET normalisé sur 14 chiffres, avec unicité
-obligatoire et couverture top-1/top-2 à 100 %. En l'absence d'activité CRM,
+obligatoire, cohérence SIREN et couverture à 100 % du top-1, top-2 et de tous
+les candidats du même SIREN que le top-1. En l'absence d'activité CRM,
 un conflit de fonction signifie uniquement rôle lexical CRM contre rôle
 SIRENE candidat ; le code NAF CRM ne peut pas être inventé.
 
@@ -214,6 +239,9 @@ Sur les candidats du même SIREN que le top-1 :
 
 Ces features utilisent tous les candidats du pool, jamais un établissement
 réinjecté depuis la vérité.
+
+Les nombres de fonctions et divisions décrivent toute la constellation,
+top-1 inclus. Les écarts « meilleur frère » excluent le top-1.
 
 Un frère est un autre candidat réellement présent dans le pool et portant le
 même SIREN. Les égalités sont départagées par score ranker décroissant, rang
@@ -256,6 +284,12 @@ manque explicite produit par le builder. Les catégories NAF et métier ont un
 vocabulaire épinglé et `UNKNOWN`; elles ne sont jamais ordinales ni apprises
 sur dev. Aucun `SimpleImputer(add_indicator=True)` à largeur variable n'est
 autorisé.
+
+Le catalogue déclare explicitement, feature par feature, type, source,
+formule, politique de manque et autorisation modèle. Un type ne peut pas être
+inféré heuristiquement par le trainer. Toute valeur infinie provoque un
+`STOP_DATASET_INTEGRITY` ; elle ne peut pas être changée silencieusement en
+zéro.
 
 Les 94 cas difficiles évaluables conservent leurs folds par composante SIREN.
 Toute prédiction difficile doit être group-OOF. Les poids testés restent
