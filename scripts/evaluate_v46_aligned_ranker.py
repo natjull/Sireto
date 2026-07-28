@@ -608,14 +608,20 @@ def build_artifact(
     ) = load_aligned_dataset(dataset_dir, replica_dataset_dir)
     baseline, baseline_identity = load_frozen_ranker(baseline_model_dir)
     dev_candidates = candidates[candidates["split"].eq("dev")].copy()
+    baseline_scoring_started = time.perf_counter()
     baseline_predictions = score_rows(
         baseline, dev_candidates, origin="v46_a_dev", fold=None
     )
+    baseline_scoring_seconds = time.perf_counter() - baseline_scoring_started
 
+    aligned_training_started = time.perf_counter()
     aligned, aligned_predictions, training = train_aligned_ranker(candidates, labels)
+    aligned_training_seconds = time.perf_counter() - aligned_training_started
+    repeated_training_started = time.perf_counter()
     repeated, repeated_predictions, repeated_training = train_aligned_ranker(
         candidates, labels
     )
+    repeated_training_seconds = time.perf_counter() - repeated_training_started
     deterministic = validate_repeat_predictions(
         aligned_predictions, repeated_predictions
     )
@@ -637,8 +643,12 @@ def build_artifact(
     dev_query_ids = assignments.loc[
         assignments["split"].eq("dev"), "query_id"
     ].sort_values(kind="stable")
+    latency_a_started = time.perf_counter()
     latency_a = query_latency(baseline, dev_candidates, dev_query_ids)
+    latency_a_wall_seconds = time.perf_counter() - latency_a_started
+    latency_b_started = time.perf_counter()
     latency_b = query_latency(aligned, dev_candidates, dev_query_ids)
+    latency_b_wall_seconds = time.perf_counter() - latency_b_started
     elapsed_before_gate = time.perf_counter() - started
     dataset_seconds = float(
         (dataset_manifest.get("timing") or {}).get("total_seconds") or math.inf
@@ -738,6 +748,15 @@ def build_artifact(
                 "latency_b": latency_b,
                 "timing": {
                     "dataset_primary_seconds": dataset_seconds,
+                    "baseline_batch_scoring_seconds": baseline_scoring_seconds,
+                    "aligned_training_oof_and_final_seconds": (
+                        aligned_training_seconds
+                    ),
+                    "determinism_repeat_training_seconds": (
+                        repeated_training_seconds
+                    ),
+                    "latency_a_wall_seconds": latency_a_wall_seconds,
+                    "latency_b_wall_seconds": latency_b_wall_seconds,
                     "evaluation_seconds": elapsed_before_gate,
                     "gate_total_seconds": total_seconds,
                 },
