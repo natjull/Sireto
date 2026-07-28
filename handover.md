@@ -214,8 +214,22 @@ refuse tout artefact non autorisé et scelle ses sorties de façon atomique.
 Les 50 tests V4.12 ciblés et les 512 tests complets passent. Son exécution est
 gelée par un verrou audité `GO_COMMIT_LOCK`, qui fixe le commit, les 53
 sources, les entrées et le runtime. Le calcul sur les 7 003 requêtes n'a
-toujours pas été lancé à ce stade. *(commits GitHub : contrat `66e7b9c`,
+été autorisé qu'après ce gel. *(commits GitHub : contrat `66e7b9c`,
 clarification `31f2721`, constructeur `e822136`, verrou `11c5de9`)*
+
+Le build label-free V4.12 est désormais scellé et contre-audité
+**`GO_SEALED_EVIDENCE`**. Sur 7 003 requêtes, 5 883 (84,007 %) ont exactement
+un candidat direct actif et 1 120 (15,993 %) en ont plusieurs : 977 collisions
+inter-SIREN et 143 cas multisites intra-SIREN. Il n'existe aucun cas sans
+preuve directe. Les 10 275 preuves candidates sont actives, uniques par
+requête/SIRET et reliées bijectivement aux agrégats. Le pic RSS est de
+2,99 Go. Aucun label, challenge, pool ranker, scène ou modèle n'a été ouvert
+avant le seal. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_direct_evidence/10f16403795ccee6`.
+Rapport : `reports/v9/v4_12_direct_evidence_build_results.md`. La prochaine
+étape est le runner post-seal audité, puis l'unique gate historique
+`comparison_dev`; aucune promotion n'est encore autorisée.
+*(commit GitHub : `3aff8d9`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
