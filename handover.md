@@ -253,6 +253,19 @@ les 1 954 lignes du ledger. Aucun chemin oracle, historique, dataset ou
 modèle n'est exposé au worker. Une nouvelle tentative worker puis parité est
 autorisée ; l'oracle et les modèles restent fermés. *(commit GitHub :
 `662d555`)*
+La troisième tentative termine en 1 030,16 secondes et franchit
+**`GO_V412_UNIT_RETRIEVAL_PARITY`**, confirmé indépendamment par
+`GO_ARTIFACTS_1` et `GO_ARTIFACTS_2`. Les 1 456 requêtes produisent 145 236
+candidats, avec des pools de 46 à 100, 13 pools sous le plafond, aucun pool
+vide et aucun lookup manquant. Les payloads candidats
+`1689a2f3...ab00` et statuts `65e662c0...5518` égalent exactement les
+valeurs préenregistrées. Le ledger couvre 1 980 entrées inchangées ; oracle,
+labels, historique, modèles et réseau sont restés fermés. Pic mémoire :
+3,39 Gio. Artefacts worker `d2915fe7...dd1a` et parité
+`d587937b...05f5`. Rapport :
+`reports/v9/v4_12_unit_retrieval_parity_results.md`. Ce GO autorise seulement
+le contrat puis l'audit d'un évaluateur oracle séparé ; il ne republie pas
+encore le Recall et ne dégèle aucun modèle.
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
