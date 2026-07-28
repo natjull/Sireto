@@ -26,6 +26,14 @@ les cinq champs SIRENE nécessaires aux rôles/NAF sont maintenant obligatoires,
 un NAF inconnu n'est plus un faux accord, et plafond/rangs/SIRET sont validés
 strictement. La suite passe 402 tests avec le builder retrieval en cours.
 *(commit GitHub : `58c70f4`)*
+Le contrat transporte désormais explicitement les cinq champs SIRENE bruts
+nécessaires aux rôles/NAF *(commit GitHub : `f1bdcdd`)*. Le builder V4.11
+input-blind est implémenté et audité `GO build` : vraie requête sparse sans
+argument SIRET/SIREN/vérité, top-100 actif, vérité jointe seulement après
+fermeture de tous les pools, 45 features ranker et cinq champs de rôle issus
+du snapshot. Un smoke réel produit 100 candidats et un NAF réel sans colonne
+interdite ; 402 tests passent. Aucun fit n'a encore eu lieu.
+*(commit GitHub : `3149d04`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
