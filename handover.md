@@ -21,6 +21,11 @@ exact de 80 features, 34 binaires et 46 standardisées, vecteur monotone
 `49/+`, `6/-`, `25/0`, normalisation des scores par requête, tie-break et cas
 0/1 candidat. La suite complète passe 395 tests. Aucun modèle n'a été
 entraîné. *(commit GitHub : `c7075ac`)*
+L'audit d'intégration des scènes a fermé un échec silencieux avant tout fit :
+les cinq champs SIRENE nécessaires aux rôles/NAF sont maintenant obligatoires,
+un NAF inconnu n'est plus un faux accord, et plafond/rangs/SIRET sont validés
+strictement. La suite passe 402 tests avec le builder retrieval en cours.
+*(commit GitHub : `58c70f4`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
