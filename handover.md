@@ -1,6 +1,20 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+La V4.8 se termine avec le verdict final **`STOP_RETRAIN`**. L'ouverture
+random unique invalide `HARD_W1` : 47/52 AUTO, mais seulement 44 corrects,
+soit trois erreurs et 93,617 % de précision observée. Le baseline gelé fait
+43/45 = 95,556 % avec deux erreurs. Le winner automatise deux
+`TOP1_WRONG` et l'unique `AMBIGUOUS`; les deux gates de sécurité échouent.
+Les trois faux AUTO ont des scores de 0,980 à 0,999 et confondent la fonction
+exacte de sites très proches : mairie/école, maternelle/primaire et FAM/MAS.
+Ce n'est donc pas un simple problème de seuil. Le registre global empêche
+toute réouverture du random ; le test final reste fermé et aucun modèle n'est
+promu. Rapport : `reports/v9/v4_8_random_holdout_results.md`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_8_random_holdout/f1ac35f4f7450b6a`.
+*(commits GitHub : contrat `b738ec5`; ouvreur `685ebae`; préflight
+`ba4377f`)*
+
 Le développement V4.8 retient **`HARD_W1`** et autorise l'ouverture unique
 du random avec le statut **`GO_RANDOM_OPEN_V48`**. Sur 94 cas difficiles hors
 pli, il rejette 23/25 mauvais top-1 contre 13/25 pour `BASE_REFIT`, soit dix
@@ -252,6 +266,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **V4.8 arrêtée par le random unique** : `HARD_W1` commet trois erreurs sur
+  47 AUTO, contre deux sur 45 pour le baseline. Verdict `STOP_RETRAIN`; aucun
+  shadow ni déploiement. Les erreurs sont des confusions de fonction de site
+  malgré des scores 0,98–0,999. Le random est définitivement consommé et le
+  test final est resté fermé. Rapport :
+  `reports/v9/v4_8_random_holdout_results.md`. *(commits GitHub :
+  `685ebae`, `ba4377f`)*
 - **Winner accepteur V4.8 gelé avant random** : `HARD_W1` rejette 23/25
   erreurs difficiles hors pli contre 13/25 pour le refit de base, en perdant
   trois bons AUTO. Le dev historique reste à deux erreurs et gagne deux bons
