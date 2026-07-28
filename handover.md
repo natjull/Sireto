@@ -165,6 +165,23 @@ vérité, comparera les deux payloads canoniques aux hashes préenregistrés :
 `007ada2f...fe33` et le plan `7eff59a9...180d`. Ce GO autorise uniquement
 l'implémentation et son audit de code, pas encore le run, le Recall, les
 modèles ou l'oracle. *(commit GitHub : `370a3aa`)*
+Le moteur unitaire, son orchestrateur sandbox, le contrôleur de parité et
+leur contre-audit indépendant sont implémentés et reçus
+**`GO_V412_UNIT_RETRIEVAL_INDEPENDENT_AUDIT`**. Le cœur reproduit le sparse
+historique gelé sans importer son pipeline ; le worker ne publie que les
+statuts et les listes ordonnées de 100 SIRET au plus. Les deux profils
+Seatbelt ont été exécutés réellement sur le Mac avec un Python privé. Les
+lectures sensibles descendent par `openat` et `O_NOFOLLOW` sur chaque
+composant, les mêmes FDs sont recontrôlés avant/après, et les promotions
+utilisent un renommage atomique sans remplacement. Les tests adversariaux
+rejettent faux exécutables, rapport de recovery mensonger, substitution du
+pending et collision de destination. L'audit final vérifie 13 sources, 12
+contrôles statiques et 13 contrôles synthétiques ; 133 tests ciblés et les
+803 tests du dépôt passent. Aucun dev réel, store réel, oracle, historique
+ou modèle n'a été ouvert par ce jalon. Le prochain geste autorisé est la
+création puis les deux contre-audits du verrou d'exécution ; le run worker,
+la parité, le Recall et les modèles restent interdits jusque-là. *(commit
+GitHub : `6726a95`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
