@@ -32,6 +32,14 @@ présent dans le paquet runtime. Artefact :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e`.
 Rapport : `reports/v9/v4_12_unit_input_results.md`. Ce GO autorise seulement
 le préenregistrement de l'oracle séparé. *(commit GitHub : `e5d01a9`)*
+Le contrat de l'oracle dev V4.12 est préenregistré `GO_CONTRACT_ORACLE`.
+L'oracle sera truth-only : 1 456 IDs, 1 217 `MATCH_EXACT` et 239
+`AMBIGUOUS`, sans candidat, rang, score, preuve ou décision historique. Une
+première revue a refusé la simple séparation de dossiers sur le même SSD ;
+le contrat corrigé exige que le futur worker tourne sous `sandbox-exec`, avec
+les racines oracle/audit interdites et une sentinelle d'ouverture réellement
+refusée. L'oracle reste historique, non indépendant et non certifiant.
+*(commit GitHub : `1dd7428`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
