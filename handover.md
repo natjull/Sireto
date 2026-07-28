@@ -134,6 +134,16 @@ donc ni d'une certification 99,8 % ni d'une promotion produit. Artefact :
 Rapport : `reports/v9/v4_11_acceptor_development_results.md`.
 *(commit GitHub : `f99c1d1`)*
 
+Le challenge descriptif V4.11 est préenregistré avant qualification et
+inférence. Une inspection du registre a exposé à l'orchestrateur le SIRET CRM
+de trois lignes ; elles restent dans l'unique run mais sont exclues de la
+métrique aveugle principale, qui portera sur 222 lignes, et publiées dans une
+cohorte `EXPOSED_3`. Le CRM sera projeté physiquement sans identifiant, les
+labels seront produits mécaniquement par la politique V4 gelée et hashés
+avant toute inférence, puis les prédictions seront scellées avant ouverture
+des labels. Le challenge reste descriptif et ne constitue aucun gate produit.
+*(commit GitHub : `30fa0b8`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
