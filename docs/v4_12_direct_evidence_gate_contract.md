@@ -336,6 +336,12 @@ automatiquement un nouvel accepteur.
 - pic RSS inférieur ou égal à 8 Gio ;
 - suite complète verte.
 
+Le build offline publie uniquement un coût batch amorti par requête, nommé
+`amortized_batch_per_query_ms`; il est explicitement inéligible au gate de
+latence serve. Les deux gates p95 sont mesurés plus tard par le runner
+d'inférence apparié V4.11/V4.12-G. Le build de preuve s'arrête immédiatement
+si son pic RSS dépasse 8 Gio.
+
 Le builder ne peut être exécuté qu'après :
 
 1. commit du contrat, de l'allowlist et de la denylist ;
