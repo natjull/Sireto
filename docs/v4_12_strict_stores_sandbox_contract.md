@@ -580,7 +580,7 @@ Versions/3.14/Resources/Python.app/Contents/MacOS/Python
   7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211
 /opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/
 Versions/3.14/Python
-  e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0
+  e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0a
 /usr/bin/git
   179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818
 ```

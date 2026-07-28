@@ -11,13 +11,13 @@ modèles, ni l'ouverture de l'oracle par le worker.
 Versions auditées :
 
 - contrat :
-  `0e1ddeef23e2cfedf7ea2b8983d7ba5e332ef249503168fc62bd660f1660afbe` ;
+  `53f29ede6487cbebb56666347219843f517149bae3e467422491404e3fdd2a5a` ;
 - plan :
-  `9f64bcbed98cc02bd5829f46342c89431e3f2c470151ce845d60f538f591cdcb` ;
+  `4d449f70c2b5b7eba7bd56322c7248ff4b52930eca1a8c87250f4fb3f51a1f5f` ;
 - profil sandbox :
   `d9195c35e78f11eadafd883acbd53996ab531dbc2e998d1efb21179f2556be77` ;
 - certificateur :
-  `72d84c60bf1a765edee8c5bad2faf7609f2da06a53c4eb8a4b93569823387a34` ;
+  `6662d25827cd3c221a34790559f9e42688f677d75c5b7043f8e7aa1ee5ea1e29` ;
 - stores :
   `92e768e16e3d14b77dd6cb35f94171618b235b6cbf209966b13a381426673df4` ;
 - tests :
@@ -46,7 +46,15 @@ Les revues ont refusé les versions qui :
 14. rouvraient le code, le run-spec et le descripteur lookup par pathname ;
 15. acceptaient des IDF infinies ou des indices sparse hors bornes ;
 16. ne pouvaient pas nettoyer un runtime privé rendu non modifiable ;
-17. présentaient à tort tout le runtime Homebrew comme scellé.
+17. présentaient à tort tout le runtime Homebrew comme scellé ;
+18. épinglaient un hash Python framework tronqué à 63 caractères.
+
+Le premier verrou dérivé, de hash
+`76f00570941920dead5bc4ac966c6d6a23ec317a35ecf25172fc04bdc17ba5e3`,
+a été révoqué avant exécution : 96 des 97 assertions indépendantes passaient,
+mais le contrôle du fichier runtime réel a détecté le caractère manquant.
+Le lock a été supprimé, les trois références ont été corrigées, puis un
+contre-audit dédié `GO_CODE_PATCH` a validé 20 assertions sur 20.
 
 ## Preuves factuelles
 

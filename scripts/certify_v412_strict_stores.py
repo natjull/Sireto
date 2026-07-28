@@ -56,7 +56,7 @@ PYTHON_FRAMEWORK_LIBRARY = Path(
     "Python.framework/Versions/3.14/Python"
 )
 PYTHON_FRAMEWORK_LIBRARY_SHA256 = (
-    "e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0"
+    "e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0a"
 )
 DECLARATIONS = {
     "labels_opened": False,
