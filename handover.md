@@ -16,6 +16,11 @@ L'audit indépendant pré-fit a ensuite fermé les ambiguïtés restantes :
 définis sans score absolu inter-fold, les deux moitiés dev ont des volumes
 attendus, les baselines sont épinglées et les seuils utilisent une règle
 entière déterministe. *(commit GitHub : `399252f`)*
+Le calcul de scène V4.11 partagé train/serve est implémenté et testé : ordre
+exact de 80 features, 34 binaires et 46 standardisées, vecteur monotone
+`49/+`, `6/-`, `25/0`, normalisation des scores par requête, tie-break et cas
+0/1 candidat. La suite complète passe 395 tests. Aucun modèle n'a été
+entraîné. *(commit GitHub : `c7075ac`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
