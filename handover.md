@@ -206,6 +206,19 @@ historique ou modèle n'entre dans le worker. Ce GO autorise désormais
 l'unique exécution end-to-end worker puis parité ; il n'autorise toujours ni
 l'ouverture de l'oracle, ni le Recall, ni les modèles. *(commit GitHub :
 `bf82e74`)*
+La première tentative sous ce verrou s'est arrêtée en environ cinq secondes,
+avant le démarrage du module, toute requête et toute publication :
+`ModuleNotFoundError: No module named 'xgb_matcher'`. Le paquet privé était
+présent, mais Seatbelt empêchait Python d'en découvrir le répertoire. Le
+verrou `bf82e74` est donc révoqué. Le correctif limite la nouvelle lecture au
+seul paquet privé scellé, fixe `PYTHONPATH` sur le staging, désactive les
+chemins Python implicites et nettoie uniquement le staging courant sur échec
+du worker. Deux audits rendent `GO_IMPORT_PATCH` et `GO_IMPORT_PATCH_2`; 153
+tests ciblés, deux intégrations macOS natives et les 823 tests du dépôt
+passent. Aucun résultat dev, worker ou parité n'a été produit ; oracle,
+historique et modèles sont restés fermés. Rapport :
+`reports/v9/v4_12_unit_retrieval_launch_failure.md`. Une relance exige un
+nouveau verrou doublement audité. *(commit GitHub : correctif `58fabf3`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
