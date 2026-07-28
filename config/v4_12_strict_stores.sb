@@ -1,0 +1,41 @@
+(version 1)
+(deny default)
+
+(deny network*)
+(deny process-fork)
+
+(allow process-exec
+  (literal (param "PYTHON_EXECUTABLE"))
+)
+
+(allow file-read*
+@@SYSTEM_READ_RULES@@
+@@DEVICE_READ_LITERALS@@
+@@CODE_DATA_READ_LITERALS@@
+  (literal (param "RUN_SPEC"))
+  (literal (param "LOOKUP_DESCRIPTOR"))
+  (literal (param "PROBE_SOURCE"))
+  (literal (param "PYTHON_EXECUTABLE"))
+  (literal (param "PYTHON_FRAMEWORK_ROOT"))
+  (subpath (param "PYTHON_FRAMEWORK_ROOT"))
+  (literal (param "RUN_OUTPUT"))
+  (subpath (param "RUN_OUTPUT"))
+  (literal (param "RUN_TMP"))
+  (subpath (param "RUN_TMP"))
+)
+
+(allow file-read-metadata
+  (literal (param "RUN_ROOT"))
+@@ANCESTOR_METADATA_LITERALS@@
+)
+
+(allow file-write*
+  (literal (param "RUN_OUTPUT"))
+  (subpath (param "RUN_OUTPUT"))
+  (literal (param "RUN_TMP"))
+  (subpath (param "RUN_TMP"))
+)
+
+(allow sysctl-read)
+
+@@EXPLICIT_DENY_RULES@@
