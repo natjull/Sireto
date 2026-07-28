@@ -1,6 +1,20 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le développement V4.8 retient **`HARD_W1`** et autorise l'ouverture unique
+du random avec le statut **`GO_RANDOM_OPEN_V48`**. Sur 94 cas difficiles hors
+pli, il rejette 23/25 mauvais top-1 contre 13/25 pour `BASE_REFIT`, soit dix
+erreurs supplémentaires, tout en gardant 58/68 bons AUTO contre 61/68
+(-4,412 points, limite -5). Sur le dev historique effectif, il produit
+1 184/1 186 AUTO corrects = 99,831 % observés et 81,680 % de couverture,
+sans erreur supplémentaire. Le modèle complet et son seuil
+`0.3617231974526733` sont gelés. Aucun random n'a été lu ou scoré et le test
+final est resté fermé. Rapport :
+`reports/v9/v4_8_acceptor_development_results.md`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_8_acceptor_development/f2ea5be7c1a40647`.
+*(commits GitHub : contrat/partitions `a15dd07`; runner `3f4671b`;
+correctif de lecture `dab961d`)*
+
 La V4.8 a préenregistré puis gelé ses partitions avant tout score accepteur.
 Sur 98 labels ciblés fiables, 94 restent évaluables hors pli : 68 top-1
 corrects, 25 mauvais et un ambigu. Quatre autres cas fiables sont
@@ -238,6 +252,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Winner accepteur V4.8 gelé avant random** : `HARD_W1` rejette 23/25
+  erreurs difficiles hors pli contre 13/25 pour le refit de base, en perdant
+  trois bons AUTO. Le dev historique reste à deux erreurs et gagne deux bons
+  AUTO. Statut `GO_RANDOM_OPEN_V48`; seuil gelé
+  `0.3617231974526733`. Le random et le test final restent fermés. Rapport :
+  `reports/v9/v4_8_acceptor_development_results.md`. *(commits GitHub :
+  `3f4671b`, `dab961d`)*
 - **Partitions V4.8 gelées avant modélisation** : 94 ciblés fiables sont
   disponibles en cinq folds groupés, avec exactement 25 erreurs et une
   ambiguïté. Les 57 random sont scellés sans cible exposée ; 48 scènes
