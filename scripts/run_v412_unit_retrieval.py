@@ -38,6 +38,18 @@ import sklearn
 
 STOP = "STOP_V412_UNIT_RETRIEVAL"
 SEALED = "SEALED_V412_UNIT_RETRIEVAL"
+PARITY_GO = "GO_V412_UNIT_RETRIEVAL_PARITY"
+PARITY_RUN_SPEC_SCHEMA = "sireto-v4.12-unit-retrieval-parity-run-spec-1"
+PARITY_BUILD_SCHEMA = "sireto-v4.12-unit-retrieval-parity-build-1"
+PARITY_SOURCE_PATH = Path("scripts/audit_v412_unit_retrieval_parity.py")
+PARITY_PROFILE_PATH = Path("config/v4_12_unit_retrieval_parity.sb")
+PRIVATE_PYTHON_RELATIVE = Path(
+    "runtime/Python.framework/Versions/3.14/"
+    "Resources/Python.app/Contents/MacOS/Python"
+)
+PRIVATE_LIBRARY_RELATIVE = Path(
+    "runtime/Python.framework/Versions/3.14/Python"
+)
 PLAN_PATH = Path("config/v4_12_unit_retrieval_engine_plan.json")
 LOCK_PATH = Path("config/v4_12_unit_retrieval_execution_lock.json")
 PLAN_SCHEMA = "sireto-v4.12-unit-retrieval-engine-plan-1"
@@ -205,7 +217,34 @@ PROVENANCE_KEYS = {
     "runtime_manifest_sha256",
     "declarations",
 }
-_ACTIVE_PRIVATE_ROOTS: set[Path] = set()
+PARITY_WORKER_FILES = {
+    "query_status.parquet",
+    "candidates_top100.parquet",
+    "integrity.json",
+}
+PARITY_EXPECTED_KEYS = {
+    "query_count",
+    "candidate_count",
+    "minimum_pool_size",
+    "maximum_pool_size",
+    "under_ceiling_query_count",
+    "empty_query_count",
+    "candidate_payload_bytes",
+    "candidate_payload_sha256",
+    "status_payload_bytes",
+    "status_payload_sha256",
+}
+PARITY_DECLARATIONS = {
+    "oracle_opened": False,
+    "oracle_audit_opened": False,
+    "historical_candidates_opened": False,
+    "models_opened": False,
+    "stores_opened": False,
+    "network_used": False,
+    "writes_outside_staging": False,
+}
+PARITY_RESULT_KEYS = {"verdict", "parity_build_id", "audit"}
+_ACTIVE_PRIVATE_ROOTS: dict[Path, tuple[int, int]] = {}
 
 
 class RetrievalRunStopped(RuntimeError):
@@ -945,9 +984,10 @@ def render_profile(
 
 
 def _copy_private_python(run_root: Path, sandbox: Mapping[str, Any], limit: int) -> tuple[Path, Path]:
-    framework = run_root / "runtime/Python.framework/Versions/3.14"
-    executable = framework / "Resources/Python.app/Contents/MacOS/Python"
-    library = framework / "Python"
+    runtime_root = run_root / "runtime"
+    framework = runtime_root / "Python.framework/Versions/3.14"
+    executable = run_root / PRIVATE_PYTHON_RELATIVE
+    library = run_root / PRIVATE_LIBRARY_RELATIVE
     executable.parent.mkdir(parents=True, mode=0o700)
     app_source = _canonical_file(Path(sandbox["python_framework_app"]))
     lib_source = _canonical_file(Path(sandbox["python_framework_library"]))
@@ -959,13 +999,26 @@ def _copy_private_python(run_root: Path, sandbox: Mapping[str, Any], limit: int)
         if hashlib.sha256(payload).hexdigest() != expected:
             _stop("private Python source hash mismatch")
         _write_exclusive(destination, payload, mode)
+    directories = [runtime_root, *(
+        item for item in runtime_root.rglob("*") if item.is_dir()
+    )]
     for path in sorted(
-        (item for item in (run_root / "runtime").rglob("*") if item.is_dir()),
+        directories,
         key=lambda item: len(item.parts),
         reverse=True,
     ):
         os.chmod(path, 0o555)
-    return executable, framework.parents[2]
+    if (
+        stat.S_IMODE(os.lstat(executable).st_mode) != 0o555
+        or stat.S_IMODE(os.lstat(library).st_mode) != 0o444
+        or any(
+            stat.S_ISLNK(os.lstat(path).st_mode)
+            or stat.S_IMODE(os.lstat(path).st_mode) != 0o555
+            for path in directories
+        )
+    ):
+        _stop("private Python boundary sealing failed")
+    return executable, runtime_root
 
 
 def _record(path: Path, limit: int) -> dict[str, Any]:
@@ -1314,26 +1367,569 @@ def _validate_published(
         _stop("published worker provenance mismatch")
 
 
-def _remove_private(path: Path) -> None:
-    if path not in _ACTIVE_PRIVATE_ROOTS and not path.name.startswith(".run-"):
-        _stop("refusing private cleanup")
-    if not os.path.lexists(path):
-        return
-    for child in path.rglob("*"):
-        if child.is_symlink():
-            _stop("symlink in private cleanup")
-    for child in path.rglob("*"):
-        if child.is_file():
-            os.chmod(child, 0o600)
-    for child in sorted(
-        (item for item in path.rglob("*") if item.is_dir()),
-        key=lambda item: len(item.parts),
-        reverse=True,
+def _path_commitment(path: Path) -> str:
+    absolute = path.absolute()
+    if not absolute.is_absolute() or ".." in absolute.parts:
+        _stop("unsafe committed path")
+    return hashlib.sha256((str(absolute) + "\n").encode("utf-8")).hexdigest()
+
+
+def _parity_build_id(
+    spec: Mapping[str, Any],
+    run_spec_sha256: str,
+) -> str:
+    payload = {
+        "schema_version": PARITY_BUILD_SCHEMA,
+        "worker_build_id": spec["worker_build_id"],
+        "worker_manifest_sha256": spec["worker_manifest_sha256"],
+        "worker_file_hashes": spec["worker_file_hashes"],
+        "parity_run_spec_sha256": run_spec_sha256,
+        "parity_source_hashes": spec["parity_source_hashes"],
+        "parity_profile_sha256": spec["parity_profile_sha256"],
+        "lock_sha256": spec["lock_sha256"],
+        "runtime": spec["runtime"],
+    }
+    encoded = (
+        json.dumps(
+            payload,
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+        + b"\n"
+    )
+    return hashlib.sha256(encoded).hexdigest()
+
+
+def _build_parity_run_spec(
+    *,
+    repo: Path,
+    plan: Mapping[str, Any],
+    lock: Mapping[str, Any],
+    runtime: Path,
+    lock_sha256: str,
+    limit: int,
+) -> dict[str, Any]:
+    """Build the controller's sanitized input from sealed parent commitments."""
+    build_id = runtime.name
+    manifest_path = runtime / "manifest.json"
+    manifest = _validate_runtime_publication(runtime, build_id, plan, limit)
+    manifest_snapshot = _snapshot(manifest_path, limit)
+    file_paths = {
+        name: str((runtime / name).absolute())
+        for name in sorted(PARITY_WORKER_FILES)
+    }
+    file_hashes = {
+        name: manifest["files"][name]["sha256"]
+        for name in sorted(PARITY_WORKER_FILES)
+    }
+    historical = plan["historical_parity"]
+    expected = {key: historical[key] for key in PARITY_EXPECTED_KEYS}
+    safe_queries_path = Path(lock["input_paths"]["safe_queries_dev"]).absolute()
+    safe_manifest_path = Path(
+        lock["input_paths"]["safe_runtime_manifest"]
+    ).absolute()
+    parity_source = str(PARITY_SOURCE_PATH)
+    parity_profile = str(PARITY_PROFILE_PATH)
+    if (
+        plan["parity_sources"] != [parity_source]
+        or parity_source not in lock["source_hashes"]
+        or parity_profile not in lock["source_hashes"]
     ):
-        os.chmod(child, 0o700)
-    os.chmod(path, 0o700)
-    shutil.rmtree(path)
-    _ACTIVE_PRIVATE_ROOTS.discard(path)
+        _stop("parity source/profile closure mismatch")
+    sandbox = lock["sandbox"]
+    spec = {
+        "schema_version": PARITY_RUN_SPEC_SCHEMA,
+        "worker_build_id": build_id,
+        "worker_manifest_path": str(manifest_path.absolute()),
+        "worker_manifest_sha256": manifest_snapshot["sha256"],
+        "worker_file_paths": file_paths,
+        "worker_file_hashes": file_hashes,
+        "safe_input_build_id": plan["safe_input"]["build_id"],
+        "safe_queries_path": str(safe_queries_path),
+        "safe_queries_sha256": lock["input_hashes"]["safe_queries_dev"],
+        "safe_manifest_path": str(safe_manifest_path),
+        "safe_manifest_sha256": lock["input_hashes"]["safe_runtime_manifest"],
+        "safe_query_id_payload_sha256": plan["safe_input"][
+            "query_id_payload_sha256"
+        ],
+        "expected": expected,
+        "git_commit": lock["git_commit"],
+        "lock_sha256": lock_sha256,
+        "parity_source_hashes": {
+            parity_source: lock["source_hashes"][parity_source]
+        },
+        "parity_profile_sha256": lock["source_hashes"][parity_profile],
+        "sandbox_executable_path": sandbox["executable"],
+        "sandbox_executable_sha256": sandbox["executable_sha256"],
+        "python_executable_path": sandbox["python_framework_app"],
+        "python_executable_sha256": sandbox["python_framework_app_sha256"],
+        "audit_root_path_sha256": _path_commitment(
+            Path(plan["outputs"]["parity_audit_root"])
+        ),
+        "runtime": plan["runtime"],
+        "temp_root": str(Path(plan["outputs"]["temp_root"]).absolute()),
+        "max_rss_bytes": limit,
+        "declarations": dict(PARITY_DECLARATIONS),
+    }
+    if (
+        set(expected) != PARITY_EXPECTED_KEYS
+        or set(file_paths) != PARITY_WORKER_FILES
+        or set(file_hashes) != PARITY_WORKER_FILES
+    ):
+        _stop("parity run-spec closure mismatch")
+    if any(
+        _snapshot(Path(file_paths[name]), limit)["sha256"] != file_hashes[name]
+        for name in PARITY_WORKER_FILES
+    ):
+        _stop("worker file changed while building parity run-spec")
+    if _snapshot(manifest_path, limit) != manifest_snapshot:
+        _stop("worker manifest changed while building parity run-spec")
+    return spec
+
+
+def _parity_sentinels(
+    plan: Mapping[str, Any],
+    gate_spec: Mapping[str, Any],
+    worker_build_id: str,
+) -> dict[str, str]:
+    sentinels = _forbidden_sentinels(
+        plan["parity_controller"]["forbidden_files"]
+    )
+    stores = [
+        row["absolute_path"]
+        for row in gate_spec["allowed_read_files"]
+        if type(row) is dict and row.get("role") == "lookup_database"
+    ]
+    if len(stores) != 1:
+        _stop("strict store sentinel is not unique")
+    sentinels["store"] = stores[0]
+    sentinels["write"] = str(
+        (
+            Path(plan["outputs"]["temp_root"])
+            / f".parity-write-denied-{worker_build_id}"
+        ).absolute()
+    )
+    if (
+        set(sentinels)
+        != {"oracle", "oracle_audit", "historical", "model", "store", "write"}
+        or len(set(sentinels.values())) != len(sentinels)
+        or any(
+            not Path(value).is_absolute() or ".." in Path(value).parts
+            for value in sentinels.values()
+        )
+    ):
+        _stop("invalid parity sentinel closure")
+    if os.path.lexists(sentinels["write"]):
+        _stop("parity write sentinel already exists")
+    return sentinels
+
+
+_ANCHORED_SOURCE_WRAPPER = (
+    "import os,sys;"
+    "source=sys.argv[1];fd=int(sys.argv[2]);"
+    "payload=os.fdopen(os.dup(fd),'rb').read();"
+    "sys.argv=[source,*sys.argv[3:]];"
+    "scope={'__name__':'__main__','__file__':source,"
+    "'__package__':None,'__cached__':None};"
+    "exec(compile(payload,source,'exec'),scope,scope)"
+)
+
+
+def _anchor_private_runtime_directories(
+    *,
+    staging_root: Path,
+    python_path: Path,
+    library_path: Path,
+    framework_root: Path,
+) -> dict[Path, tuple[int, tuple[int, int, int]]]:
+    expected_python = (staging_root / PRIVATE_PYTHON_RELATIVE).absolute()
+    expected_library = (staging_root / PRIVATE_LIBRARY_RELATIVE).absolute()
+    expected_runtime = (staging_root / "runtime").absolute()
+    if (
+        python_path != expected_python
+        or library_path.absolute() != expected_library
+        or framework_root.absolute() != expected_runtime
+    ):
+        _stop("private Python runtime layout mismatch")
+    # macOS cannot execute this Mach-O launcher through /dev/fd.  The explicit
+    # exec boundary is therefore the registered staging inode plus this fully
+    # sealed 0555 ancestor chain; every inode remains open until child return.
+    directories: list[Path] = [staging_root]
+    cursor = expected_python.parent
+    while True:
+        directories.append(cursor)
+        if cursor == expected_runtime:
+            break
+        if expected_runtime not in cursor.parents:
+            _stop("private Python ancestor escaped runtime root")
+        cursor = cursor.parent
+    directories = list(dict.fromkeys(directories))
+    anchors: dict[Path, tuple[int, tuple[int, int, int]]] = {}
+    try:
+        for path in reversed(directories):
+            info = os.lstat(path)
+            if (
+                stat.S_ISLNK(info.st_mode)
+                or not stat.S_ISDIR(info.st_mode)
+                or stat.S_IMODE(info.st_mode) != 0o555
+            ):
+                _stop("private Python ancestor is mutable or invalid")
+            canonical, descriptor = _openat_anchored(path, directory=True)
+            anchored = os.fstat(descriptor)
+            identity = (
+                anchored.st_dev,
+                anchored.st_ino,
+                stat.S_IMODE(anchored.st_mode),
+            )
+            if (
+                canonical != path
+                or identity
+                != (info.st_dev, info.st_ino, 0o555)
+            ):
+                os.close(descriptor)
+                _stop("private Python ancestor identity mismatch")
+            anchors[path] = (descriptor, identity)
+        return anchors
+    except BaseException:
+        for descriptor, _ in anchors.values():
+            os.close(descriptor)
+        raise
+
+
+def _verify_private_runtime_directories(
+    anchors: Mapping[Path, tuple[int, tuple[int, int, int]]],
+) -> None:
+    for path, (descriptor, expected) in anchors.items():
+        anchored = os.fstat(descriptor)
+        if (
+            anchored.st_dev,
+            anchored.st_ino,
+            stat.S_IMODE(anchored.st_mode),
+        ) != expected:
+            _stop("anchored private Python ancestor changed")
+        info = os.lstat(path)
+        if (
+            stat.S_ISLNK(info.st_mode)
+            or not stat.S_ISDIR(info.st_mode)
+            or (info.st_dev, info.st_ino, stat.S_IMODE(info.st_mode))
+            != expected
+        ):
+            _stop("private Python ancestor path was substituted")
+
+
+def _invoke_parity_controller(
+    *,
+    repo: Path,
+    plan: Mapping[str, Any],
+    lock: Mapping[str, Any],
+    spec: Mapping[str, Any],
+    run_spec_path: Path,
+    sentinels: Mapping[str, str],
+    source_snapshot: Mapping[str, Any],
+    python_framework_root: Path,
+    python_library_path: Path,
+    limit: int,
+) -> tuple[Path, dict[str, Any]]:
+    """Execute the pinned controller bytes and verify its published identity."""
+    source_path = (repo / PARITY_SOURCE_PATH).absolute()
+    source_fd = _open_anchored(source_path, source_snapshot, limit)
+    anchored_before = _snapshot_fd(source_fd, limit)
+    expected_run_spec = canonical_json(spec)
+    run_spec_snapshot = _snapshot(run_spec_path, limit)
+    run_spec_fd = _open_anchored(run_spec_path, run_spec_snapshot, limit)
+    actual_run_spec = os.pread(
+        run_spec_fd,
+        run_spec_snapshot["size"],
+        0,
+    )
+    if (
+        actual_run_spec != expected_run_spec
+        or run_spec_snapshot["sha256"]
+        != hashlib.sha256(expected_run_spec).hexdigest()
+    ):
+        os.close(source_fd)
+        os.close(run_spec_fd)
+        _stop("sealed parity run-spec differs from canonical parent spec")
+    expected_parity_id = _parity_build_id(
+        spec,
+        run_spec_snapshot["sha256"],
+    )
+    python_path = Path(spec["python_executable_path"]).absolute()
+    python_snapshot = _snapshot(python_path, limit)
+    library_snapshot = _snapshot(python_library_path, limit)
+    directory_anchors = _anchor_private_runtime_directories(
+        staging_root=run_spec_path.parent.absolute(),
+        python_path=python_path,
+        library_path=python_library_path,
+        framework_root=python_framework_root,
+    )
+    if (
+        python_snapshot["sha256"]
+        != lock["sandbox"]["python_framework_app_sha256"]
+        or library_snapshot["sha256"]
+        != lock["sandbox"]["python_framework_library_sha256"]
+        or python_snapshot["mode"] != 0o555
+        or library_snapshot["mode"] != 0o444
+    ):
+        for descriptor, _ in directory_anchors.values():
+            os.close(descriptor)
+        os.close(source_fd)
+        os.close(run_spec_fd)
+        _stop("private Python runtime differs from locked originals")
+    python_fd = _open_anchored(python_path, python_snapshot, limit)
+    library_fd = _open_anchored(
+        python_library_path,
+        library_snapshot,
+        limit,
+    )
+    command = [
+        str(python_path),
+        "-B",
+        "-c",
+        _ANCHORED_SOURCE_WRAPPER,
+        str(source_path),
+        str(source_fd),
+        "--run-spec",
+        f"/dev/fd/{run_spec_fd}",
+        "--profile",
+        str((repo / PARITY_PROFILE_PATH).absolute()),
+        "--audit-root",
+        str(Path(plan["outputs"]["parity_audit_root"]).absolute()),
+        "--forbidden-oracle",
+        sentinels["oracle"],
+        "--forbidden-oracle-audit",
+        sentinels["oracle_audit"],
+        "--forbidden-historical",
+        sentinels["historical"],
+        "--forbidden-model",
+        sentinels["model"],
+        "--forbidden-store",
+        sentinels["store"],
+        "--write-sentinel",
+        sentinels["write"],
+        "--sandbox-executable",
+        lock["sandbox"]["executable"],
+        "--python-executable",
+        str(python_path),
+    ]
+    try:
+        result = subprocess.run(
+            command,
+            cwd=run_spec_path.parent,
+            env={
+                "PYTHONDONTWRITEBYTECODE": "1",
+                "PYTHONNOUSERSITE": "1",
+                "JOBLIB_MULTIPROCESSING": "0",
+                "TMPDIR": str(run_spec_path.parent),
+                "DYLD_FRAMEWORK_PATH": str(python_framework_root),
+            },
+            pass_fds=(source_fd, run_spec_fd),
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        if _snapshot_fd(source_fd, limit) != anchored_before:
+            _stop("anchored parity controller changed during execution")
+        if _snapshot_fd(run_spec_fd, limit) != run_spec_snapshot:
+            _stop("anchored parity run-spec changed during execution")
+        if os.pread(run_spec_fd, run_spec_snapshot["size"], 0) != expected_run_spec:
+            _stop("anchored parity run-spec bytes changed during execution")
+        if _snapshot_fd(python_fd, limit) != python_snapshot:
+            _stop("private Python launcher changed during execution")
+        if _snapshot_fd(library_fd, limit) != library_snapshot:
+            _stop("private Python library changed during execution")
+        if (
+            _snapshot(python_path, limit) != python_snapshot
+            or _snapshot(python_library_path, limit) != library_snapshot
+        ):
+            _stop("private Python runtime path was substituted")
+        _verify_private_runtime_directories(directory_anchors)
+        validator_source_payload = os.pread(
+            source_fd,
+            anchored_before["size"],
+            0,
+        )
+        if (
+            len(validator_source_payload) != anchored_before["size"]
+            or hashlib.sha256(validator_source_payload).hexdigest()
+            != anchored_before["sha256"]
+        ):
+            _stop("anchored parity validator bytes mismatch")
+    finally:
+        for descriptor in (source_fd, run_spec_fd, python_fd, library_fd):
+            os.close(descriptor)
+        for descriptor, _ in directory_anchors.values():
+            os.close(descriptor)
+    if result.returncode != 0:
+        _stop(
+            f"parity controller failed rc={result.returncode}: "
+            f"{result.stderr[-1000:]}"
+        )
+    if result.stderr:
+        _stop("parity controller emitted unexpected stderr")
+    response = _parse_json(result.stdout.encode("utf-8"), "parity controller result")
+    if (
+        set(response) != PARITY_RESULT_KEYS
+        or response.get("verdict") != PARITY_GO
+        or response.get("parity_build_id") != expected_parity_id
+    ):
+        _stop("parity controller returned a non-GO or malformed verdict")
+    parity_root = (
+        Path(plan["outputs"]["parity_audit_root"])
+        / response["parity_build_id"]
+    ).absolute()
+    if Path(response["audit"]).absolute() != parity_root:
+        _stop("parity controller audit identity mismatch")
+    try:
+        namespace: dict[str, Any] = {
+            "__name__": "_v412_anchored_parity_validator",
+            "__file__": str(source_path),
+            "__package__": None,
+            "__cached__": None,
+        }
+        exec(
+            compile(validator_source_payload, str(source_path), "exec"),
+            namespace,
+            namespace,
+        )
+        parsed_spec = namespace["parse_json"](
+            expected_run_spec,
+            "parent parity run-spec",
+        )
+        if parsed_spec != spec:
+            _stop("parent parity run-spec value mismatch")
+        namespace["validate_run_spec"](
+            parsed_spec,
+            active_python_path=python_path,
+        )
+        report = namespace["validate_published_audit"](
+            parity_root,
+            parity_id=expected_parity_id,
+            spec=parsed_spec,
+            run_spec_sha256=run_spec_snapshot["sha256"],
+            limit=limit,
+        )
+    except RetrievalRunStopped:
+        raise
+    except BaseException as exc:
+        _stop(f"parent parity publication validation failed: {exc}")
+    if (
+        report.get("parity_build_id") != response["parity_build_id"]
+        or report.get("worker_build_id") != spec["worker_build_id"]
+        or report.get("verdict") != PARITY_GO
+    ):
+        _stop("fully validated parity report identity mismatch")
+    if stat.S_IMODE(os.lstat(parity_root).st_mode) != 0o555:
+        _stop("published parity root is not immutable")
+    return parity_root, report
+
+
+def _register_private(path: Path) -> None:
+    if path in _ACTIVE_PRIVATE_ROOTS:
+        _stop("private staging already registered")
+    info = os.lstat(path)
+    if stat.S_ISLNK(info.st_mode) or not stat.S_ISDIR(info.st_mode):
+        _stop("private staging must be a real directory")
+    descriptor_path, descriptor = _openat_anchored(path, directory=True)
+    try:
+        anchored = os.fstat(descriptor)
+        if descriptor_path != path.absolute() or (
+            anchored.st_dev,
+            anchored.st_ino,
+        ) != (info.st_dev, info.st_ino):
+            _stop("private staging identity mismatch")
+        _ACTIVE_PRIVATE_ROOTS[path] = (anchored.st_dev, anchored.st_ino)
+    finally:
+        os.close(descriptor)
+
+
+def _clear_private_directory(descriptor: int) -> None:
+    os.fchmod(descriptor, 0o700)
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    for name in os.listdir(descriptor):
+        info = os.stat(name, dir_fd=descriptor, follow_symlinks=False)
+        if stat.S_ISLNK(info.st_mode):
+            _stop("symlink in private cleanup")
+        if stat.S_ISDIR(info.st_mode):
+            child_fd = os.open(name, flags, dir_fd=descriptor)
+            try:
+                child = os.fstat(child_fd)
+                if (child.st_dev, child.st_ino) != (info.st_dev, info.st_ino):
+                    _stop("private cleanup child identity mismatch")
+                _clear_private_directory(child_fd)
+                os.fchmod(child_fd, 0o700)
+            finally:
+                os.close(child_fd)
+            os.rmdir(name, dir_fd=descriptor)
+        elif stat.S_ISREG(info.st_mode):
+            child_fd = os.open(
+                name,
+                os.O_RDONLY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0),
+                dir_fd=descriptor,
+            )
+            try:
+                child = os.fstat(child_fd)
+                if (child.st_dev, child.st_ino) != (info.st_dev, info.st_ino):
+                    _stop("private cleanup file identity mismatch")
+                os.fchmod(child_fd, 0o600)
+            finally:
+                os.close(child_fd)
+            os.unlink(name, dir_fd=descriptor)
+        else:
+            _stop("unsupported entry in private cleanup")
+
+
+def _remove_private(path: Path) -> None:
+    expected = _ACTIVE_PRIVATE_ROOTS.get(path)
+    if expected is None:
+        _stop("refusing private cleanup")
+    try:
+        info = os.lstat(path)
+    except FileNotFoundError:
+        _stop("registered private staging disappeared")
+    if (
+        stat.S_ISLNK(info.st_mode)
+        or not stat.S_ISDIR(info.st_mode)
+        or (info.st_dev, info.st_ino) != expected
+    ):
+        _stop("registered private staging was substituted")
+    parent_path, parent_fd = _openat_anchored(path.parent, directory=True)
+    descriptor_path, descriptor = _openat_anchored(path, directory=True)
+    try:
+        anchored = os.fstat(descriptor)
+        if (
+            parent_path != path.parent.absolute()
+            or descriptor_path != path.absolute()
+            or (anchored.st_dev, anchored.st_ino) != expected
+        ):
+            _stop("anchored private staging identity mismatch")
+        _clear_private_directory(descriptor)
+        os.fchmod(descriptor, 0o700)
+        current = os.stat(
+            path.name,
+            dir_fd=parent_fd,
+            follow_symlinks=False,
+        )
+        if (
+            not stat.S_ISDIR(current.st_mode)
+            or (current.st_dev, current.st_ino) != expected
+        ):
+            _stop("private staging changed before removal")
+        os.rmdir(path.name, dir_fd=parent_fd)
+        os.fsync(parent_fd)
+    finally:
+        os.close(descriptor)
+        os.close(parent_fd)
+    del _ACTIVE_PRIVATE_ROOTS[path]
 
 
 def _recover(
@@ -1537,7 +2133,7 @@ def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
 
     run_root = (temp_root / f".run-{uuid.uuid4().hex}").absolute()
     run_root.mkdir(mode=0o700)
-    _ACTIVE_PRIVATE_ROOTS.add(run_root)
+    _register_private(run_root)
     output = run_root / "output"
     tmp = run_root / "tmp"
     package = run_root / "xgb_matcher"
@@ -1839,6 +2435,129 @@ def run(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
     return final_runtime, final_audit
 
 
+def run_end_to_end(
+    plan_path: Path,
+    lock_path: Path,
+) -> tuple[Path, Path, Path, dict[str, Any]]:
+    """Run/recover the worker, then require sealed aggregate parity."""
+    repo = Path(__file__).resolve().parents[1]
+    if plan_path.absolute() != (repo / PLAN_PATH).absolute():
+        _stop("only canonical plan may execute")
+    if lock_path.absolute() != (repo / LOCK_PATH).absolute():
+        _stop("only canonical lock may execute")
+    plan_snapshot = _snapshot(plan_path, 8 * 1024**3)
+    lock_snapshot = _snapshot(lock_path, 8 * 1024**3)
+    plan_bytes = _read(plan_path, 8 * 1024**3)
+    lock_bytes = _read(lock_path, 8 * 1024**3)
+    plan = _parse_json(plan_bytes, "plan")
+    lock = _parse_json(lock_bytes, "lock")
+    validate_plan(plan)
+    limit = plan["max_rss_bytes"]
+    source_snapshots = validate_lock(
+        plan,
+        lock,
+        repo,
+        hashlib.sha256(plan_bytes).hexdigest(),
+        limit,
+    )
+    runtime, worker_audit = run(plan_path, lock_path)
+    if (
+        _snapshot(plan_path, limit) != plan_snapshot
+        or _snapshot(lock_path, limit) != lock_snapshot
+    ):
+        _stop("plan or lock changed during worker execution")
+    build_id = runtime.name
+    expected_build_id, _ = _worker_identity(
+        plan,
+        lock,
+        plan["safe_input"]["runtime_manifest_sha256"],
+    )
+    if build_id != expected_build_id:
+        _stop("worker returned an unexpected build identity")
+    plan_sha = hashlib.sha256(plan_bytes).hexdigest()
+    lock_sha = hashlib.sha256(lock_bytes).hexdigest()
+    _validate_published(
+        runtime,
+        worker_audit,
+        build_id,
+        plan,
+        lock,
+        plan_sha,
+        lock_sha,
+        limit,
+    )
+    gate_spec, _ = _verify_gate_a(plan, limit)
+    staging_parent = Path(plan["outputs"]["temp_root"])
+    _ensure_dir(staging_parent)
+    staging = Path(
+        tempfile.mkdtemp(prefix=".run-parity-parent-", dir=staging_parent)
+    ).absolute()
+    _register_private(staging)
+    os.chmod(staging, 0o700)
+    try:
+        private_python, framework_root = _copy_private_python(
+            staging,
+            lock["sandbox"],
+            limit,
+        )
+        private_library = (
+            staging
+            / "runtime/Python.framework/Versions/3.14/Python"
+        )
+        spec = _build_parity_run_spec(
+            repo=repo,
+            plan=plan,
+            lock=lock,
+            runtime=runtime,
+            lock_sha256=lock_sha,
+            limit=limit,
+        )
+        spec["python_executable_path"] = str(private_python.absolute())
+        run_spec_path = staging / "parity_run_spec.json"
+        _write_json(run_spec_path, spec)
+        _fsync_dir(staging)
+        os.chmod(staging, 0o555)
+        _fsync_dir(staging.parent)
+        sentinels = _parity_sentinels(plan, gate_spec, build_id)
+        parity_source = (repo / PARITY_SOURCE_PATH).absolute()
+        expected_source = source_snapshots.get(parity_source)
+        if expected_source is None:
+            _stop("locked parity controller snapshot missing")
+        parity_audit, report = _invoke_parity_controller(
+            repo=repo,
+            plan=plan,
+            lock=lock,
+            spec=spec,
+            run_spec_path=run_spec_path,
+            sentinels=sentinels,
+            source_snapshot=expected_source,
+            python_framework_root=framework_root,
+            python_library_path=private_library,
+            limit=limit,
+        )
+        _validate_published(
+            runtime,
+            worker_audit,
+            build_id,
+            plan,
+            lock,
+            plan_sha,
+            lock_sha,
+            limit,
+        )
+        if (
+            _snapshot(plan_path, limit) != plan_snapshot
+            or _snapshot(lock_path, limit) != lock_snapshot
+        ):
+            _stop("plan or lock changed during parity execution")
+        for path, before in source_snapshots.items():
+            if _snapshot(path, limit) != before:
+                _stop(f"locked source/input changed during parity: {path}")
+        return runtime, worker_audit, parity_audit, report
+    finally:
+        _remove_private(staging)
+
+
 def smoke() -> None:
     """Synthetic-only smoke: profile closure and immutable publication."""
     repo = Path(__file__).resolve().parents[1]
@@ -1883,14 +2602,19 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 0
         if args.plan is None or args.lock is None:
             _stop("--plan and --lock are required")
-        runtime, audit = run(args.plan, args.lock)
+        runtime, audit, parity_audit, parity_report = run_end_to_end(
+            args.plan,
+            args.lock,
+        )
         print(
             json.dumps(
                 {
-                    "verdict": SEALED,
+                    "verdict": PARITY_GO,
                     "worker_build_id": runtime.name,
                     "runtime": str(runtime),
-                    "audit": str(audit),
+                    "worker_audit": str(audit),
+                    "parity_build_id": parity_report["parity_build_id"],
+                    "parity_audit": str(parity_audit),
                 },
                 sort_keys=True,
             )

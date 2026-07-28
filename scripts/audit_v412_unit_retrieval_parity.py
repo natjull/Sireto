@@ -44,6 +44,11 @@ WORKER_VERDICT = "SEALED_V412_UNIT_RETRIEVAL"
 SOURCE_RELATIVE_PATH = "scripts/audit_v412_unit_retrieval_parity.py"
 PROFILE_RELATIVE_PATH = "config/v4_12_unit_retrieval_parity.sb"
 SANDBOX_EXECUTABLE_PATH = Path("/usr/bin/sandbox-exec")
+PRIVATE_PARENT_PREFIX = ".run-parity-parent-"
+PRIVATE_PYTHON_RELATIVE = Path(
+    "runtime/Python.framework/Versions/3.14/"
+    "Resources/Python.app/Contents/MacOS/Python"
+)
 HASH_RE = re.compile(r"[0-9a-f]{64}")
 COMMIT_RE = re.compile(r"[0-9a-f]{40}")
 SIRET_RE = re.compile(r"[0-9]{14}")
@@ -365,7 +370,25 @@ def _scan_strings(value: Any) -> list[str]:
     return []
 
 
-def validate_run_spec(spec: Mapping[str, Any]) -> None:
+def _is_private_parent_python(path: Path, temp_root: Path) -> bool:
+    try:
+        relative = path.relative_to(temp_root)
+    except ValueError:
+        return False
+    parts = relative.parts
+    suffix = PRIVATE_PYTHON_RELATIVE.parts
+    return (
+        len(parts) == len(suffix) + 1
+        and parts[0].startswith(PRIVATE_PARENT_PREFIX)
+        and tuple(parts[1:]) == suffix
+    )
+
+
+def validate_run_spec(
+    spec: Mapping[str, Any],
+    *,
+    active_python_path: Path | None = None,
+) -> None:
     if set(spec) != RUN_SPEC_KEYS:
         _stop("parity run-spec keyset mismatch")
     if spec["schema_version"] != RUN_SPEC_SCHEMA:
@@ -401,8 +424,25 @@ def validate_run_spec(spec: Mapping[str, Any]) -> None:
         _absolute_path(spec[key], key)
     if Path(spec["sandbox_executable_path"]) != SANDBOX_EXECUTABLE_PATH:
         _stop("sandbox executable path is not the contractual executable")
-    if Path(spec["python_executable_path"]) != _default_python_executable():
+    configured_python = Path(spec["python_executable_path"])
+    active_python = _absolute_path(
+        str(active_python_path or _default_python_executable()),
+        "active python executable",
+    )
+    temp_root = _absolute_path(spec["temp_root"], "temp_root")
+    if configured_python != active_python:
         _stop("python executable path differs from the active frozen runtime")
+    if active_python_path is not None and not _is_private_parent_python(
+        active_python,
+        temp_root,
+    ):
+        _stop("parent python override is outside the private runtime boundary")
+    if (
+        active_python_path is None
+        and active_python.is_relative_to(temp_root)
+        and not _is_private_parent_python(active_python, temp_root)
+    ):
+        _stop("active private python has a non-contractual layout")
     file_paths = spec["worker_file_paths"]
     file_hashes = spec["worker_file_hashes"]
     if (

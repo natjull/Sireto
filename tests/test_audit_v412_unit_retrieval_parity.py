@@ -530,6 +530,33 @@ def test_run_spec_keyset_and_duplicate_json_keys_are_strict(
         parity.parse_json(b'{"a":1,"a":2}\n', "duplicate")
 
 
+def test_parent_python_override_rejects_non_private_or_fake_paths(
+    tmp_path: Path,
+) -> None:
+    fixture = _make_fixture(tmp_path)
+    spec = json.loads(fixture["run_spec"].read_text())
+    with pytest.raises(
+        parity.ParityStopped,
+        match="outside the private runtime boundary",
+    ):
+        parity.validate_run_spec(
+            spec,
+            active_python_path=Path(spec["python_executable_path"]),
+        )
+
+    fake = (
+        Path(spec["temp_root"])
+        / ".run-parity-parent-fake"
+        / "runtime/not-python"
+    )
+    spec["python_executable_path"] = str(fake)
+    with pytest.raises(
+        parity.ParityStopped,
+        match="outside the private runtime boundary",
+    ):
+        parity.validate_run_spec(spec, active_python_path=fake)
+
+
 @pytest.mark.parametrize(
     "target",
     ["sandbox", "python", "sandbox_hash", "audit_root"],
