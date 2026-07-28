@@ -182,6 +182,18 @@ ou modèle n'a été ouvert par ce jalon. Le prochain geste autorisé est la
 création puis les deux contre-audits du verrou d'exécution ; le run worker,
 la parité, le Recall et les modèles restent interdits jusque-là. *(commit
 GitHub : `6726a95`)*
+Un audit d'exécutabilité post-commit a ensuite refusé le passage au verrou :
+le worker publié n'avait aucun producteur de run-spec de parité en production.
+Le runner enchaîne désormais obligatoirement worker, revalidation, construction
+canonique du run-spec, contrôleur Seatbelt et validation complète du `GO`.
+La source contrôleur et le run-spec sont consommés depuis des FDs ancrés ; le
+Python parent est copié depuis les octets verrouillés dans un runtime privé
+scellé ; plan, lock, sources et inputs sont recontrôlés après la parité. Les
+PoC faux `GO`, spec mutée, publication substituée, binaire remplacé et cleanup
+TOCTOU sont bloqués. `GO_EXECUTION_PATH`, 151 tests ciblés et 821 tests
+complets valident le raccord, sans dev réel. Le lock candidat antérieur est
+révoqué et doit être régénéré sur ce commit avant toute exécution. *(commit
+GitHub : `f4a5309`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
