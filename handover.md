@@ -1,6 +1,18 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le registre V4.11-A des populations consommées est construit et franchit
+**`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
+source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
+consommé 23 384 des 23 609 lignes de `data/entrainements.csv`. Les 225 lignes
+restantes ont toutes un `SERVICE ID` absent et ne peuvent pas constituer une
+validation représentative. Elles sont réservées à un challenge descriptif
+après gel de V4.11 ; une preuve finale exige un nouvel export CRM indépendant.
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/registries/v4_11_consumed_population/fd25d1922040d585`.
+Rapport : `reports/v9/v4_11_consumed_population_registry_results.md`.
+*(commits GitHub : contrat `d0eb5f3`, builder `0aa8ad2`)*
+
 Le développement V4.10b se termine par
 **`PIVOT_STRUCTURED_FEATURES`**. Aucune des six variantes structurées ne
 franchit le gate. Les logits refusent seulement 16 à 18 des 25 mauvais cas et
@@ -1055,6 +1067,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   difficiles V4.10b sont consommés et ne peuvent plus valider cette
   architecture. Ni random V4.8, ni locked, ni test final ne doivent être
   rouverts.
+- Le registre V4.11-A est gelé. Les 225 lignes `UNSEEN` ne doivent pas être
+  ouvertes avant gel du candidat V4.11 et ne peuvent servir qu'à un challenge
+  descriptif, pas à une preuve représentative.
 - Le garde-fou V4.9 de fonction de site est clos par
   `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
   consommés.
@@ -1157,6 +1172,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 6. Conserver séparément le chantier qualification/réparation CRM : la
    couverture source 22,454 % reste très loin du gate de 80 % et ne se corrige
    pas par le retrieval.
+7. Préenregistrer V4.11 sur le stack homogène V4.2-B + ranker B OOF, construire
+   un accepteur compact, puis le geler avant tout accès aux 225 lignes
+   restantes. Pour une décision finale, obtenir un nouvel export CRM.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
