@@ -1,0 +1,80 @@
+{
+  "schema_version": "sireto-v4.9-site-function-taxonomy-1",
+  "normalization": "nfkd_ascii_lower_alnum_spaces",
+  "roles": [
+    {
+      "role": "ADMIN_MAIRIE",
+      "patterns": ["\\bmairie\\b", "\\bhotel de ville\\b"]
+    },
+    {
+      "role": "EDU_MATERNELLE",
+      "patterns": ["\\bmaternelle\\b", "\\bpre ?primaire\\b"],
+      "activity_codes": ["85.10Z"]
+    },
+    {
+      "role": "EDU_PRIMAIRE",
+      "patterns": [
+        "\\becole primaire\\b",
+        "\\becole elementaire\\b",
+        "\\benseignement primaire\\b"
+      ],
+      "activity_codes": ["85.20Z"]
+    },
+    {
+      "role": "EDU_COLLEGE",
+      "patterns": ["\\bcollege\\b"]
+    },
+    {
+      "role": "EDU_LYCEE",
+      "patterns": ["\\blycee\\b"]
+    },
+    {
+      "role": "CHILDCARE_CRECHE",
+      "patterns": ["\\bcreche\\b", "\\bmicro creche\\b"]
+    },
+    {
+      "role": "MED_FAM",
+      "patterns": ["\\bfam\\b", "\\bfoyer d accueil medicalise\\b"]
+    },
+    {
+      "role": "MED_MAS",
+      "patterns": ["\\bmas\\b", "\\bmaison d accueil specialisee\\b"]
+    },
+    {
+      "role": "MED_EAM",
+      "patterns": ["\\beam\\b", "\\betablissement d accueil medicalise\\b"]
+    },
+    {
+      "role": "MED_IME",
+      "patterns": ["\\bime\\b", "\\binstitut medico educatif\\b"]
+    },
+    {
+      "role": "MED_EHPAD",
+      "patterns": ["\\behpad\\b", "\\betablissement d hebergement pour personnes agees dependantes\\b"]
+    },
+    {
+      "role": "MED_FOYER",
+      "patterns": ["\\bfoyer\\b"]
+    },
+    {
+      "role": "HEALTH_HOSPITAL",
+      "patterns": ["\\bhopital\\b", "\\bcentre hospitalier\\b"]
+    },
+    {
+      "role": "HEALTH_CLINIC",
+      "patterns": ["\\bclinique\\b"]
+    },
+    {
+      "role": "HEALTH_PHARMACY",
+      "patterns": ["\\bpharmacie\\b", "\\bofficine\\b"],
+      "activity_codes": ["47.73Z"]
+    }
+  ],
+  "incompatible_families": [
+    ["ADMIN_MAIRIE", "EDU_MATERNELLE", "EDU_PRIMAIRE", "EDU_COLLEGE", "EDU_LYCEE", "CHILDCARE_CRECHE"],
+    ["EDU_MATERNELLE", "EDU_PRIMAIRE", "EDU_COLLEGE", "EDU_LYCEE"],
+    ["MED_FAM", "MED_MAS", "MED_EAM", "MED_IME", "MED_EHPAD"],
+    ["HEALTH_HOSPITAL", "HEALTH_CLINIC", "HEALTH_PHARMACY"]
+  ],
+  "generic_roles": ["MED_FOYER"]
+}
