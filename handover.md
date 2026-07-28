@@ -1,6 +1,26 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+La V4.6 a reconstruit deux fois, avec caches séparés, les pools V4.2-B des
+7 003 requêtes historiques puis comparé le ranker A gelé à un ranker B
+réentraîné sur ces pools. Les deux datasets contiennent exactement 698 991
+candidats et partagent le même hash de contenu ; Recall@100 vaut 100 % sur fit
+(4 666/4 666) et dev (1 217/1 217), sans doublon, candidat fermé, pool >100 ou
+positif injecté. B atteint 1 216/1 217 = 99,918 % Hit@1 SIRET, contre
+1 213/1 217 = 99,671 % pour A : trois corrections, zéro régression. Le gain
+n'atteint toutefois ni les quatre corrections minimales, ni une borne
+bootstrap strictement positive, ni McNemar `p<0,05` (`p=0,25`). Verdict
+contractuel : **`KEEP_RANKER_A`**. B n'est pas promu. Aucun accepteur, seuil,
+label V4.4/random ou test final n'a été utilisé. Rapport :
+`reports/v9/v4_6_aligned_ranker_results.md`. Artefacts :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_6_aligned_a/301b24f47820f992`,
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_6_aligned_b/301b24f47820f992`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_6_aligned_ranker/421f2cd0cc436af7`.
+*(commits GitHub : contrat `acfd4d2` et `70df9c9`, builder `a9439ed`,
+correctif instrumentation `458dd97`, évaluateur `f2b6b9c`, `c94d100` et
+`8b835aa`, rapport `67e9e76`; 316 tests passants)*
+
 La V4.5 a vérifié si les labels V4.4 pouvaient être transportés vers les
 scènes réellement produites par le retrieval V4.2-B et le ranker V4.1 gelé.
 Verdict : **`PIVOT_SCENE_DRIFT`** et `training_authorized=false`. Sur 172
