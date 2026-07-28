@@ -1,6 +1,17 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
+Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
+une étiquette cachée et ne peut plus alimenter le retrieval, le ranker ou
+l'accepteur. Un diagnostic de sensibilité montre que 5 882/5 883 exacts
+restent dans le sparse et au top-1 après masquage des signaux directs. V4.11
+reconstruira donc un vrai top-100 sparse sans branche identifiant, entraînera
+un ranker C de 45 features sur ces pools, puis comparera exactement deux
+accepteurs sur une scène compacte de 80 features. Le dev historique reste
+développement uniquement ; les 225 lignes inédites restent fermées jusqu'au
+gel du candidat. *(commit GitHub : `ca83603`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
@@ -1070,6 +1081,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le registre V4.11-A est gelé. Les 225 lignes `UNSEEN` ne doivent pas être
   ouvertes avant gel du candidat V4.11 et ne peuvent servir qu'à un challenge
   descriptif, pas à une preuve représentative.
+- Le contrat V4.11-B est gelé. Toute implémentation doit rester aveugle au
+  SIRET/SIREN CRM, reconstruire le retrieval avant les labels et respecter
+  les ordres ranker 45 / accepteur 80.
 - Le garde-fou V4.9 de fonction de site est clos par
   `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
   consommés.
