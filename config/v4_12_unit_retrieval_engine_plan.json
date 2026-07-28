@@ -1,0 +1,228 @@
+{
+  "schema_version": "sireto-v4.12-unit-retrieval-engine-plan-1",
+  "purpose": "V4.12_UNIT_RETRIEVAL_PARITY",
+  "prerequisite": {
+    "verdict": "GO_V412_STRICT_STORES_SANDBOX",
+    "build_id": "9a99cd246d6d1a118dea064ab1458afe7c3bcb8a9bb28a1da6009d6bc42b4ee4",
+    "certification_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/certifications/v4_12_strict_stores/9a99cd246d6d1a118dea064ab1458afe7c3bcb8a9bb28a1da6009d6bc42b4ee4",
+    "certification_manifest_sha256": "6854b115f06eb1b1d0dacc8dfc44e2d7d6d470427d80628253ca09a79a443d2d",
+    "run_spec_sha256": "c53d08dafb0d0c32a60de51737199191b5aad5d2b39a1649a4a76d58508138bc",
+    "lookup_descriptor_sha256": "3e58872c94b17b5e19dee762e3c33f2bcf7407f948c902aa398b74705d34ce6c",
+    "store_probe_sha256": "c8e10c19e54769678c5fd85b2d88cc5abae44386091bbfc1e1908e2dd37d7a69",
+    "audit_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_strict_stores/9a99cd246d6d1a118dea064ab1458afe7c3bcb8a9bb28a1da6009d6bc42b4ee4",
+    "audit_manifest_sha256": "3b29779079ed37e6975338e590893185df197bed3be9508d96a8be6eaee177a7",
+    "data_ledger_sha256": "73489853e5e343bcf3072dd311615dd4201e8cc89510b130c6118eda184fed51"
+  },
+  "safe_input": {
+    "build_id": "ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e",
+    "runtime_manifest_sha256": "34e7a8d1c97c962b7f2295a99cd45b68c37afa9c866a5eb22e302330cb9010c4",
+    "queries_dev_sha256": "b1fef6ba72e4a557175a60c7e21e658f8fbb739b1d6607b77e5f70da873a031f",
+    "query_count": 1456,
+    "query_id_payload_sha256": "37016d9dc480194b52b545fffb3272847d485c5f209025d064d313b425c03bf4",
+    "columns": [
+      "query_id",
+      "crm_name",
+      "crm_address",
+      "crm_postcode",
+      "crm_city",
+      "crm_insee"
+    ]
+  },
+  "retrieval": {
+    "candidate_ceiling": 100,
+    "include_closed": false,
+    "drop_unnamed": true,
+    "tfidf_name_mode": "bag",
+    "sparse_retrieval_enabled": true,
+    "dense_retrieval_enabled": false,
+    "prefilter_k": 500,
+    "word_top_k": 500,
+    "char_top_k_effective": 500,
+    "address_top_k": 500,
+    "name_fusion": "WORD_TOP500_CHAR_TOP500_MAX_THEN_SCORE_DESC_ROW_INDEX_ASC",
+    "address_order": "RANK_SPARSE_SCORES_STABLE_ARGSORT_REVERSED",
+    "prefilter_trigger_size": 1,
+    "retrieval_budget": 100,
+    "min_candidates": 50,
+    "fusion_mode": "rrf",
+    "sparse_channel_fusion_mode": "separate_rrf",
+    "rrf_k": 60,
+    "rescue_addr_hash": true,
+    "rescue_numeric_tokens": true,
+    "mega_insee_policy": "full_insee",
+    "siren_siblings": false,
+    "nonfinite_policy": "STOP",
+    "lookup_missing_policy": "OMIT_AND_COUNT",
+    "zero_or_one_pool_policy": "UNCHANGED_SCORE_ZERO_THEN_SIRET_ASC",
+    "channels": [
+      "sparse_name",
+      "sparse_address",
+      "rescue"
+    ],
+    "intermediate_tie_break": [
+      "rrf_score_desc",
+      "best_channel_rank_asc",
+      "str_row_index_asc"
+    ],
+    "final_tie_break": [
+      "rrf_score_desc",
+      "candidate_siret_asc"
+    ]
+  },
+  "tfidf_cache": {
+    "namespace": "296c7891107249a073c00d93c7310c55a652243de4bcfa7165d09dbfc3349a82",
+    "tfidf_config_artifact_hash": "92b68d1f7aa386f181edbede280e58df72f8583d7663419d77da88300d241c61",
+    "sparse_config_hash": "aeaa671959fc00dcec2e8a5393976d1e68da9dfa5ae48ef4d836e9dbdc3c564e",
+    "tuple_fields": [
+      "name_vectorizer",
+      "name_matrix",
+      "names",
+      "char_vectorizer",
+      "char_matrix",
+      "address_vectorizer",
+      "address_matrix"
+    ],
+    "miss_policy": "STOP",
+    "rebuild_allowed": false,
+    "write_allowed": false
+  },
+  "expected_routing": {
+    "query_count": 1456,
+    "insee_query_count": 1449,
+    "cp_query_count": 7,
+    "distinct_key_count": 648,
+    "missing_key_count": 0,
+    "payload_bytes": 20491,
+    "payload_sha256": "41477bbcc9dea2cee8d49922679064995c46e49f60db1560e5d8a0033adc79bf"
+  },
+  "historical_parity": {
+    "parent_only_provenance_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/candidates_sparse_top100.parquet",
+    "parent_only_provenance_sha256": "78b2f78ddeac863ac39ca64301d42312c7fb766ac51e2b5d19dde5c5910aedac",
+    "preregistered_projection": [
+      "query_id",
+      "retrieval_rank",
+      "candidate_siret"
+    ],
+    "controller_opens_reference": false,
+    "query_count": 1456,
+    "candidate_count": 145236,
+    "minimum_pool_size": 46,
+    "maximum_pool_size": 100,
+    "under_ceiling_query_count": 13,
+    "empty_query_count": 0,
+    "candidate_payload_bytes": 3629947,
+    "candidate_payload_sha256": "1689a2f363cac7385dcfec10606c32e89d3f904e3990cda00989c13feb87ab00",
+    "status_payload_bytes": 16110,
+    "status_payload_sha256": "65e662c0df3df6bd022da55cde1e2d6b13254e16314c71dad5cc063dde6d5518"
+  },
+  "forbidden_worker_roots": [
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/final",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/evaluations",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models",
+    "/Users/nathanjullia/Documents/Projets/SIRETO/models"
+  ],
+  "forbidden_worker_files": [
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/candidates_sparse_top100.parquet",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "/Users/nathanjullia/Documents/Projets/SIRETO/models/routing_risk_model.pkl"
+  ],
+  "parity_controller": {
+    "allowed_input_roles": [
+      "safe_queries_dev",
+      "safe_runtime_manifest",
+      "worker_candidates_top100",
+      "worker_query_status",
+      "worker_integrity",
+      "worker_manifest",
+      "parity_run_spec"
+    ],
+    "opens_historical_reference": false,
+    "opens_oracle": false,
+    "forbidden_roots": [
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/final",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/evaluations",
+      "/Users/nathanjullia/Documents/Projets/SIRETO/models"
+    ],
+    "forbidden_files": [
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/candidates_sparse_top100.parquet",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+      "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+      "/Users/nathanjullia/Documents/Projets/SIRETO/models/routing_risk_model.pkl"
+    ],
+    "network_allowed": false,
+    "fork_allowed": false,
+    "write_scope": "PRIVATE_PARITY_STAGING_ONLY"
+  },
+  "outputs": {
+    "runtime_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_unit_retrieval",
+    "worker_audit_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_worker",
+    "parity_audit_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_retrieval_parity",
+    "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_unit_retrieval"
+  },
+  "identity_projections": {
+    "worker_policy_keys": [
+      "prerequisite",
+      "safe_input",
+      "retrieval",
+      "tfidf_cache",
+      "expected_routing",
+      "outputs",
+      "runtime",
+      "max_rss_bytes"
+    ],
+    "worker_lock_excludes": [
+      "historical_parity",
+      "parity_controller",
+      "parity_sources"
+    ],
+    "worker_receives_full_plan": false,
+    "worker_receives_full_lock": false
+  },
+  "runtime": {
+    "python": "3.14.3",
+    "numpy": "2.4.2",
+    "pandas": "2.3.3",
+    "pyarrow": "23.0.1",
+    "scikit_learn": "1.8.0",
+    "scipy": "1.16.3",
+    "joblib": "1.5.3",
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O"
+  },
+  "max_rss_bytes": 8589934592,
+  "parent_sources": [
+    "docs/v4_12_unit_retrieval_engine_contract.md",
+    "config/v4_12_unit_retrieval_engine_plan.json",
+    "config/v4_12_unit_retrieval.sb",
+    "config/v4_12_unit_retrieval_parity.sb",
+    "scripts/run_v412_unit_retrieval.py"
+  ],
+  "worker_sources": [
+    "src/xgb_matcher/v412_strict_stores.py",
+    "src/xgb_matcher/v412_unit_retrieval.py"
+  ],
+  "parity_sources": [
+    "scripts/audit_v412_unit_retrieval_parity.py"
+  ],
+  "test_sources": [
+    "tests/test_v412_unit_retrieval.py",
+    "tests/test_run_v412_unit_retrieval.py",
+    "tests/test_audit_v412_unit_retrieval_parity.py"
+  ],
+  "independent_audit_sources": [
+    "scripts/independent_audit_v412_unit_retrieval.py",
+    "tests/test_independent_audit_v412_unit_retrieval.py"
+  ]
+}
