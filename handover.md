@@ -73,6 +73,19 @@ reconstruit correctement le canal sparse unique (`channel_count=1`) et son
 score RRF à partir du rang. Le runner ne sera lancé que si le build
 input-blind franchit d'abord le gate Recall@100. *(commit GitHub :
 `b6a2332`)*
+Le ranker C franchit maintenant **`GO_RANKER_C`** : 4 661/4 666
+(99,8928 %) au top-1 SIRET OOF fit et 1 216/1 217 (99,9178 %) sur le dev,
+avec modèles, scores et rangs reproduits bit à bit. L'unique vérité absente
+du pool, `6818`, reste une erreur end-to-end ; l'unique erreur dev est
+`13958`. Un premier artefact correct sur les scores a été superseded avant
+promotion parce que son compteur `retrieval_miss` désignait les pools vides
+et que la description du canal sparse ne correspondait pas à la matrice. Le
+runner corrigé distingue pool vide et vérité absente, puis documente
+`channel_count=1`; l'audit indépendant conclut `GO` vers l'accepteur.
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_ranker_c/e13eb3ac7498256e`.
+Rapport : `reports/v9/v4_11_ranker_c_results.md`.
+*(commits GitHub : correctif `d2a6f5b`, résultats `c9f16c4`)*
 Le dataset et le runner de l'accepteur compact sont aussi implémentés, mais
 restent inactifs jusqu'aux gates précédents. Ils imposent le rattachement à
 un artefact ranker C `GO` réellement OOF, l'étanchéité des composantes
@@ -1240,6 +1253,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Première évaluation finale V4 | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4/` |
 | Verdict final V4 corrigé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/final_evaluations/v4/7dbd5527374ca0d4_verdict_repair/` |
 | Dataset V4.11 input-blind | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/` |
+| Ranker C V4.11 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_ranker_c/e13eb3ac7498256e/` |
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
@@ -1260,8 +1274,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    pas par le retrieval.
 7. Préenregistrer V4.11 sur le stack homogène V4.2-B + ranker B OOF, construire
    un accepteur compact, puis le geler avant tout accès aux 225 lignes
-   restantes. **Gate retrieval franchi ; prochaine étape : exécuter et auditer
-   le ranker C.** Pour une décision finale, obtenir un nouvel export CRM.
+   restantes. **Gates retrieval et ranker C franchis ; prochaine étape :
+   construire les scènes accepteur, geler le plan et comparer les deux
+   accepteurs préenregistrés.** Pour une décision finale, obtenir un nouvel
+   export CRM.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
