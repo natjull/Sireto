@@ -1,6 +1,19 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le développement V4.10b se termine par
+**`PIVOT_STRUCTURED_FEATURES`**. Aucune des six variantes structurées ne
+franchit le gate. Les logits refusent seulement 16 à 18 des 25 mauvais cas et
+automatisent l'unique ambigu ; les XGBoost en refusent 20 à 21, mais perdent
+des bons cas ou la non-infériorité historique. `CURRENT80_W1` reste le plus
+proche avec 23/25 mauvais refusés, sous le minimum de 24. Les 54 fits logiques
+ont été répétés sans aucun écart, les deux audits indépendants confirment
+hashes, seuils, gates et populations. Aucun bundle ni fresh dev n'est
+autorisé. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_10b_structured_acceptor_development/71e067f75536180b`.
+Rapport : `reports/v9/v4_10b_acceptor_development_results.md`.
+*(commits GitHub : plan `5ed1ba3`, runner `6ae4cf7`, verrou `fb33c76`)*
+
 Le dataset corrigé V4.10b est construit et franchit
 **`GO_FREEZE_TRAINING_PLAN_V410B`**. Le nouveau catalogue autorise 641
 features structurées : 157 continues/comptages à standardiser et 484
@@ -1036,11 +1049,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
   E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
   sur le SSD.
-- Le dataset V4.10b est prêt. Le prochain travail autorisé est de geler un
-  nouveau plan V4.10b puis de finaliser son runner ; aucun entraînement n'est
-  autorisé tant que leurs hashes ne sont pas épinglés. Ni random, ni cas
-  descriptifs verrouillés, ni test final ne feront partie du fit, du seuil
-  ou du gate.
+- V4.10b est close sans modèle promu. Le prochain travail autorisé est un
+  nouveau contrat d'architecture alignant de façon homogène retrieval,
+  prédictions ranker hors échantillon et scènes accepteur. Les 94 cas
+  difficiles V4.10b sont consommés et ne peuvent plus valider cette
+  architecture. Ni random V4.8, ni locked, ni test final ne doivent être
+  rouverts.
 - Le garde-fou V4.9 de fonction de site est clos par
   `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
   consommés.
@@ -1137,8 +1151,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    intra-SIREN complète. **Terminé : `GO_TRAIN_V410`.**
 4. Comparer une régression logistique et un XGBoost peu profond sans modifier
    le retrieval V4.2-B ni le ranker A, avec OOF par composante et reproduction
-   exacte du baseline. Les cas consommés ne peuvent fournir qu'un diagnostic
-   de développement.
+   exacte du baseline. **Terminé : `PIVOT_STRUCTURED_FEATURES`.**
 5. Toute décision de promotion exigera une population fraîche,
    indépendante et disjointe ; le test final reste fermé.
 6. Conserver séparément le chantier qualification/réparation CRM : la
