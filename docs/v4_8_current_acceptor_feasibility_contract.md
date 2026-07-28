@@ -69,6 +69,17 @@ Répertoire :
 | `acceptor/acceptor_model.joblib` | `16283b8aba5ed135846a74e9040c79e9f863f7e2bd658ca642ad444174b9a3fa` |
 | `acceptor/metadata.json` | `73199451b2de6ae383c9c0c58b10ab9c7393994a4efdec45f9c8e1e9f150691c` |
 
+Les identités SIREN nécessaires uniquement au graphe proviennent du dataset
+source V4.1, lui aussi épinglé :
+
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_1/f938abf6b8a87155`
+
+| Artefact | SHA-256 |
+|---|---|
+| `manifest.json` | `4023ad37156a8bdfbc1471bad4221885a151fcbb76c89d061b29601605893376` |
+| `queries.parquet` | `6a12f1c4ca9ec33636ebcf7748c208595c6168d7cdb8c068e1434af3fe22abb0` |
+| `labels.parquet` | `69032b745817959422ef26e4c0c1228686260c1daa272ca5d6aba1d7be087b04` |
+
 Le socle contient exactement 5 547 scènes `fit` et 1 456 scènes `dev`. Toutes
 les prédictions ranker sont hors échantillon. L'ordre des 80 features est
 celui de `metadata.json`, sans ajout, retrait ni réordonnancement.
