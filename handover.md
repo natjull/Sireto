@@ -165,6 +165,19 @@ n'est identifiable qu'à 32,889 % et reste descriptive. Artefact :
 Rapport : `reports/v9/v4_11_unseen_qualification_results.md`.
 *(commit GitHub : `6b84597`)*
 
+Le runner du challenge descriptif unique est maintenant commité et verrouillé,
+sans avoir ouvert ni scoré les 225 cas. Il impose un ledger global indépendant
+du répertoire de sortie, scelle et re-hashe les 225 prédictions avant toute
+désérialisation des labels, contrôle exactement les populations 222/3 et
+sépare erreurs confirmées, AUTO invérifiables et couverture des seuls
+`MATCH_EXACT`. Les cinq scripts d'orchestration, tous les modules
+`src/xgb_matcher`, les modèles, données et versions runtime sont épinglés par
+hash et commit. Deux audits concluent `GO_COMMIT_RUNNER`; 462 tests passent et
+la parité historique est bit-exacte sur 1 456 requêtes et 145 236 candidats,
+avec cinq contrôles exacts. Le prochain acte autorisé est l'unique exécution
+descriptive sous ce verrou. *(commits GitHub : runner `cd1cab5`, verrou
+`da6924a`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
