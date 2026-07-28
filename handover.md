@@ -1,6 +1,20 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+La V4.8 a préenregistré puis gelé ses partitions avant tout score accepteur.
+Sur 98 labels ciblés fiables, 94 restent évaluables hors pli : 68 top-1
+corrects, 25 mauvais et un ambigu. Quatre autres cas fiables sont
+`hard_dev_locked` et seront seulement descriptifs. Les 57 cas random sont
+tous scellés, leurs cibles sont absentes de l'artefact de partition et 48
+scènes historiques reliées ont été exclues. Le fit V4.1 réellement éligible
+est bien de 5 545 scènes, pas 5 547 ; le dev effectif futur en contient
+1 452 après isolement random. Aucun modèle n'a été chargé, scoré ou entraîné
+et le test final est resté fermé. Rapport :
+`reports/v9/v4_8_acceptor_partition_results.md`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_8_acceptor_partitions/1c78764d5263afca`.
+*(commits GitHub : contrats `f56472b`, `1ca9648`, `b63f383`; constructeur
+`6bb8518`; correctifs de préflight `08018f9`, `eedac96`)*
+
 La V4.7 a réadjudiqué les 37 top-1 ayant dérivé entre V4.4 et le stack
 courant V4.2-B + ranker A, sans transporter l'ancien verdict. Chaque preuve
 publique a été téléchargée, archivée et contrôlée par des faits
@@ -224,6 +238,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 `reports/v9/v4_final_holdout_results.md`.
 
 ## Actions terminees (fenetre recente)
+- **Partitions V4.8 gelées avant modélisation** : 94 ciblés fiables sont
+  disponibles en cinq folds groupés, avec exactement 25 erreurs et une
+  ambiguïté. Les 57 random sont scellés sans cible exposée ; 48 scènes
+  historiques reliées sont exclues. Le prochain gate compare uniquement des
+  accepteurs logistiques à 80 features, avec seuil propre à chaque modèle
+  OOF. Aucun score random ni test final n'a été consulté. Rapport :
+  `reports/v9/v4_8_acceptor_partition_results.md`. *(commits GitHub :
+  `b63f383`, `6bb8518`, `08018f9`, `eedac96`)*
 - **Gate V4.7 franchi sur les scènes courantes** : 37/37 top-1 dérivés ont
   été traités ; 23 portent désormais un label fiable et 14 restent
   `UNRESOLVED`. Le corpus agrégé atteint 150/172 labels fiables, 52/57
