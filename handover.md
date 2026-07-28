@@ -55,6 +55,15 @@ Le verrou d'exécution oracle est contre-audité `GO_LOCK_ORACLE` avec 4 434
 assertions : cinq sources Git, quatre inputs, six fichiers runtime sûrs,
 populations, ordre, payloads, runtime et racines sont exacts. Hash du verrou :
 `4d598cf1...f6d4c8b1`. *(commit GitHub : `04a22db`)*
+L'oracle séparé franchit **`GO_V412_UNIT_ORACLE`**, confirmé par
+`GO_V412_UNIT_ORACLE_AUDIT` et 4 430 contrôles sans import du builder. Il
+contient 1 456 lignes : 1 217 `MATCH_EXACT` et 239 `AMBIGUOUS`, uniquement
+issues des labels/split historiques. Le ledger ordonné couvre les huit
+fichiers réellement ouverts. Aucun résultat retrieval, score, décision,
+modèle, challenge ou test final n'a participé à la vérité. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70`.
+Rapport : `reports/v9/v4_12_unit_oracle_results.md`. *(commit GitHub :
+`9d2c68e`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
