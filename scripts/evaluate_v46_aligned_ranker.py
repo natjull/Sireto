@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import platform
 import shutil
+import subprocess
 import sys
 import tempfile
 import time
@@ -94,6 +95,38 @@ def _dependency_versions() -> dict[str, str]:
     return output
 
 
+def _mac_hardware() -> dict[str, Any]:
+    """Return stable Mac hardware facts without making them a model feature."""
+
+    output: dict[str, Any] = {
+        "platform_machine": platform.machine(),
+        "processor": platform.processor(),
+    }
+    try:
+        completed = subprocess.run(
+            ["system_profiler", "-json", "SPHardwareDataType"],
+            check=True,
+            capture_output=True,
+            text=True,
+            timeout=30,
+        )
+        payload = json.loads(completed.stdout)
+        records = payload.get("SPHardwareDataType") or []
+        if records:
+            record = records[0]
+            output.update(
+                {
+                    "model_name": record.get("machine_name"),
+                    "model_identifier": record.get("machine_model"),
+                    "chip": record.get("chip_type"),
+                    "memory": record.get("physical_memory"),
+                }
+            )
+    except (FileNotFoundError, subprocess.SubprocessError, json.JSONDecodeError):
+        output["system_profiler_status"] = "UNAVAILABLE"
+    return output
+
+
 def load_aligned_dataset(
     dataset_dir: Path,
     replica_dir: Path,
@@ -109,10 +142,18 @@ def load_aligned_dataset(
 
     dataset_dir = Path(dataset_dir).resolve()
     replica_dir = Path(replica_dir).resolve()
+    if dataset_dir == replica_dir:
+        raise ValueError("V4.6 primary and replica dataset paths must be distinct")
     validate_dataset_artifact(dataset_dir)
     validate_dataset_artifact(replica_dir)
-    manifest = json.loads((dataset_dir / "manifest.json").read_text("utf-8"))
-    replica = json.loads((replica_dir / "manifest.json").read_text("utf-8"))
+    primary_manifest_path = dataset_dir / "manifest.json"
+    replica_manifest_path = replica_dir / "manifest.json"
+    primary_manifest_sha256 = file_sha256(primary_manifest_path)
+    replica_manifest_sha256 = file_sha256(replica_manifest_path)
+    if primary_manifest_sha256 == replica_manifest_sha256:
+        raise ValueError("V4.6 independent manifests must be distinct")
+    manifest = json.loads(primary_manifest_path.read_text("utf-8"))
+    replica = json.loads(replica_manifest_path.read_text("utf-8"))
     for item in (manifest, replica):
         if item.get("experiment_id") != EXPERIMENT_ID:
             raise ValueError("Unexpected V4.6 dataset experiment")
@@ -192,9 +233,17 @@ def load_aligned_dataset(
         validate="many_to_one",
     )
     replica_check = {
-        "primary_manifest_sha256": file_sha256(dataset_dir / "manifest.json"),
-        "replica_manifest_sha256": file_sha256(replica_dir / "manifest.json"),
+        "primary_manifest_sha256": primary_manifest_sha256,
+        "replica_manifest_sha256": replica_manifest_sha256,
+        "primary_path": str(dataset_dir),
+        "replica_path": str(replica_dir),
         "candidate_content_sha256": primary_hash,
+        "primary_build_seconds": float(
+            (manifest.get("timing") or {}).get("total_seconds") or math.inf
+        ),
+        "replica_build_seconds": float(
+            (replica.get("timing") or {}).get("total_seconds") or math.inf
+        ),
         "independent_builds_match": True,
     }
     return manifest, queries, labels, candidates, assignments, replica_check
@@ -310,6 +359,47 @@ def score_rows(
     return rank_scored_rows(rows, scores, origin=origin, fold=fold)
 
 
+def append_missing_prediction_sentinels(
+    predictions: pd.DataFrame,
+    assignments: pd.DataFrame,
+    *,
+    include_splits: set[str],
+    origin_by_split: Mapping[str, str],
+) -> pd.DataFrame:
+    """Represent zero-candidate queries without inventing a SIRET."""
+
+    expected = assignments[assignments["split"].isin(include_splits)].copy()
+    expected["query_id"] = expected["query_id"].astype(str)
+    observed = set(predictions["query_id"].astype(str))
+    missing = expected[~expected["query_id"].isin(observed)]
+    sentinel_rows = [
+        {
+            "query_id": str(row.query_id),
+            "candidate_siret": None,
+            "candidate_siren": None,
+            "retrieval_rank": 0,
+            "is_ground_truth": 0,
+            "score": -math.inf,
+            "prediction_origin": origin_by_split[str(row.split)],
+            "fold": int(row.oof_fold) if str(row.split) == "fit" else None,
+            "rank": 1,
+        }
+        for row in missing.itertuples(index=False)
+    ]
+    output = (
+        pd.concat([predictions, pd.DataFrame(sentinel_rows)], ignore_index=True)
+        if sentinel_rows
+        else predictions.copy()
+    )
+    top1 = output[output["rank"].eq(1)]
+    top1_counts = top1.groupby("query_id").size()
+    if len(top1_counts) != len(expected) or int(top1_counts.max()) != 1:
+        raise ValueError("V4.6 predictions do not contain exactly one top-1 per query")
+    if set(top1_counts.index.astype(str)) != set(expected["query_id"]):
+        raise ValueError("V4.6 top-1 prediction coverage differs from assignments")
+    return output
+
+
 def train_aligned_ranker(
     candidates: pd.DataFrame,
     labels: pd.DataFrame,
@@ -353,6 +443,12 @@ def train_aligned_ranker(
         )
     )
     predictions = pd.concat(prediction_parts, ignore_index=True)
+    predictions = append_missing_prediction_sentinels(
+        predictions,
+        labels[["query_id", "split", "oof_fold"]].drop_duplicates("query_id"),
+        include_splits={"fit", "dev"},
+        origin_by_split={"fit": "v46_b_oof", "dev": "v46_b_dev"},
+    )
     return final_model, predictions, {
         "exact_queries_excluded_missing_positive": exclusion_counts,
         "fit_candidate_rows": int(len(final_rows)),
@@ -453,6 +549,18 @@ def segment_metrics(
     result: dict[str, Any] = {}
     large_ok = True
     family_ok = True
+    global_count = int(len(rows))
+    global_a = int(rows["a_hit"].sum())
+    global_b = int(rows["b_hit"].sum())
+    result["GLOBAL"] = {
+        "count": global_count,
+        "a_successes": global_a,
+        "b_successes": global_b,
+        "a_hit_at_1": global_a / global_count,
+        "b_hit_at_1": global_b / global_count,
+        "delta": (global_b - global_a) / global_count,
+        "net_loss": global_a - global_b,
+    }
     for column in SEGMENT_COLUMNS:
         for value, group in rows.groupby(column, dropna=False):
             count = int(len(group))
@@ -612,6 +720,12 @@ def build_artifact(
     baseline_predictions = score_rows(
         baseline, dev_candidates, origin="v46_a_dev", fold=None
     )
+    baseline_predictions = append_missing_prediction_sentinels(
+        baseline_predictions,
+        assignments,
+        include_splits={"dev"},
+        origin_by_split={"dev": "v46_a_dev"},
+    )
     baseline_scoring_seconds = time.perf_counter() - baseline_scoring_started
 
     aligned_training_started = time.perf_counter()
@@ -650,10 +764,9 @@ def build_artifact(
     latency_b = query_latency(aligned, dev_candidates, dev_query_ids)
     latency_b_wall_seconds = time.perf_counter() - latency_b_started
     elapsed_before_gate = time.perf_counter() - started
-    dataset_seconds = float(
-        (dataset_manifest.get("timing") or {}).get("total_seconds") or math.inf
-    )
-    total_seconds = dataset_seconds + elapsed_before_gate
+    dataset_seconds = float(replica_check["primary_build_seconds"])
+    replica_dataset_seconds = float(replica_check["replica_build_seconds"])
+    total_seconds = dataset_seconds + replica_dataset_seconds + elapsed_before_gate
     checks, verdict = evaluate_gates(
         a=a_hits,
         b=b_hits,
@@ -698,6 +811,8 @@ def build_artifact(
         baseline_path = staging / "predictions_a_dev.parquet"
         aligned_path = staging / "predictions_b_oof_dev.parquet"
         paired_path = staging / "paired_dev.parquet"
+        corrections_path = staging / "corrections_a_to_b.parquet"
+        regressions_path = staging / "regressions_a_to_b.parquet"
         baseline_predictions.to_parquet(baseline_path, index=False)
         aligned_predictions.to_parquet(aligned_path, index=False)
         paired_rows = a_hits[
@@ -722,6 +837,14 @@ def build_artifact(
             validate="one_to_one",
         )
         paired_rows.to_parquet(paired_path, index=False)
+        paired_rows[
+            ~paired_rows["a_siret_hit"].astype(bool)
+            & paired_rows["b_siret_hit"].astype(bool)
+        ].to_parquet(corrections_path, index=False)
+        paired_rows[
+            paired_rows["a_siret_hit"].astype(bool)
+            & ~paired_rows["b_siret_hit"].astype(bool)
+        ].to_parquet(regressions_path, index=False)
         report = {
             "schema_version": SCHEMA_VERSION,
             "build_id": build_id,
@@ -748,6 +871,7 @@ def build_artifact(
                 "latency_b": latency_b,
                 "timing": {
                     "dataset_primary_seconds": dataset_seconds,
+                    "dataset_replica_seconds": replica_dataset_seconds,
                     "baseline_batch_scoring_seconds": baseline_scoring_seconds,
                     "aligned_training_oof_and_final_seconds": (
                         aligned_training_seconds
@@ -765,6 +889,22 @@ def build_artifact(
             "determinism": deterministic,
             "training": training,
             "replica_check": replica_check,
+            "paired_case_lists": {
+                "corrections_filename": corrections_path.name,
+                "correction_count": int(
+                    (
+                        ~paired_rows["a_siret_hit"].astype(bool)
+                        & paired_rows["b_siret_hit"].astype(bool)
+                    ).sum()
+                ),
+                "regressions_filename": regressions_path.name,
+                "regression_count": int(
+                    (
+                        paired_rows["a_siret_hit"].astype(bool)
+                        & ~paired_rows["b_siret_hit"].astype(bool)
+                    ).sum()
+                ),
+            },
             "limitations": [
                 "The historical dev was previously used to select ranker A.",
                 "This paired gate is not an independent production validation.",
@@ -779,6 +919,10 @@ def build_artifact(
             "model_sha256": file_sha256(model_path),
             "verdict": verdict,
             "promoted": verdict == "GO_ALIGN_RANKER",
+            "retrieval_signature": EXPECTED_V42_CONFIG_SIGNATURE,
+            "feature_order": list(FEATURE_ORDER),
+            "dependencies": _dependency_versions(),
+            "hardware": _mac_hardware(),
             "training": training,
         }
         metadata_path = model_dir / "metadata.json"
@@ -794,6 +938,8 @@ def build_artifact(
                 baseline_path,
                 aligned_path,
                 paired_path,
+                corrections_path,
+                regressions_path,
                 report_path,
             )
         }
@@ -817,6 +963,7 @@ def build_artifact(
                 "machine": platform.machine(),
                 "logical_cpu_count": os.cpu_count(),
                 "dependencies": _dependency_versions(),
+                "hardware": _mac_hardware(),
             },
             "invariants": {
                 "acceptor_loaded_or_trained": False,

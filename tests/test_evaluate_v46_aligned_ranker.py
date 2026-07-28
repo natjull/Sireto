@@ -156,6 +156,34 @@ def test_validate_repeat_predictions_detects_score_and_top1_drift():
     assert result["scores_within_1e_12"] is False
 
 
+def test_missing_prediction_sentinel_preserves_zero_candidate_query():
+    predictions = subject.rank_scored_rows(
+        _candidate_rows(),
+        [0.8, 0.7, 0.6],
+        origin="v46_b_oof",
+        fold=0,
+    )
+    assignments = pd.DataFrame(
+        [
+            {"query_id": "q1", "split": "fit", "oof_fold": 0},
+            {"query_id": "q2", "split": "fit", "oof_fold": 1},
+        ]
+    )
+
+    result = subject.append_missing_prediction_sentinels(
+        predictions,
+        assignments,
+        include_splits={"fit"},
+        origin_by_split={"fit": "v46_b_oof"},
+    )
+
+    sentinel = result[result["query_id"].eq("q2")].iloc[0]
+    assert pd.isna(sentinel["candidate_siret"])
+    assert sentinel["rank"] == 1
+    assert sentinel["score"] == -np.inf
+    assert result[result["rank"].eq(1)]["query_id"].nunique() == 2
+
+
 def test_segment_metrics_enforces_large_and_small_family_gates():
     count = 101
     queries = pd.DataFrame(
@@ -177,6 +205,8 @@ def test_segment_metrics_enforces_large_and_small_family_gates():
 
     metrics, large_ok, family_ok = subject.segment_metrics(queries, a, b)
 
+    assert metrics["GLOBAL"]["count"] == count
+    assert metrics["GLOBAL"]["net_loss"] == 3
     assert metrics["input_siret_state=ACTIVE"]["net_loss"] == 3
     assert large_ok is False
     assert family_ok is False
@@ -244,3 +274,8 @@ def test_gate_is_mechanical():
 def test_writable_output_must_be_external():
     with pytest.raises(ValueError, match="must be located"):
         subject._external_path(Path("/tmp/v46-evaluation"), name="output_root")
+
+
+def test_primary_and_replica_paths_must_be_distinct(tmp_path):
+    with pytest.raises(ValueError, match="must be distinct"):
+        subject.load_aligned_dataset(tmp_path, tmp_path)
