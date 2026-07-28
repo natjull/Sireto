@@ -1,6 +1,18 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+L'audit V4.10 distingue désormais les 31 labels négatifs non détectés par le
+garde lexical des véritables faux AUTO `HARD_W1` : sur 26 cas hors pli,
+`HARD_W1` n'en automatise que deux ; les trois cas random de ce sous-ensemble
+sont tous refusés. Les 31 se répartissent en 14 mauvais sites au sein du même
+SIREN, 14 autres personnes morales à la même adresse, deux acteurs affiliés
+ou support et un CRM composite. Le flux explique ces erreurs : l'accepteur
+perd 47 des 64 features candidat du ranker, ne voit pas l'activité SIRENE et
+réduit les frères d'un même SIREN à quelques agrégats. La prochaine
+architecture sera donc un accepteur query-level unique enrichi, sans nouveau
+veto ni modification retrieval/ranker. Rapport :
+`reports/v9/v4_10_error_and_feature_flow_audit.md`.
+
 La V4.9 se termine avec **`STOP_SITE_FUNCTION_GUARD`**. La taxonomie
 déterministe, gelée avant mesure, refuse les trois erreurs random V4.8
 mairie/école, maternelle/primaire et FAM/MAS, sans refuser aucun des 116
@@ -1057,13 +1069,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
    ni les 172 cas V4.9 pour sélectionner ou valider une variante.
 2. Produire une taxonomie descriptive, sans règle de décision, des 31 erreurs
-   ou ambiguïtés fiables que V4.9 ne refuse pas.
-3. Relier chaque famille aux informations absentes ou perdues entre le ranker
-   candidat et l'accepteur : identité du site, relation entrée/candidat,
-   activité, état, concurrence au sein du même SIREN et qualité CRM.
-4. Ne préenregistrer une nouvelle expérience que si une famille générale
-   couvre un volume utile et peut être calculée sans fuite à l'inférence.
-5. Toute nouvelle décision de promotion exigera une population fraîche,
+   ou ambiguïtés fiables que V4.9 ne refuse pas. **Terminé en V4.10.**
+3. Préenregistrer puis construire une matrice accepteur unique qui conserve
+   les relations entrée/candidat, l'état, la provenance, la forme juridique,
+   l'activité/fonction, les interactions nom/adresse et la concurrence
+   intra-SIREN complète.
+4. Comparer une régression logistique et un XGBoost peu profond sans modifier
+   le retrieval V4.2-B ni le ranker A. Les 172 cas consommés ne peuvent
+   fournir qu'un diagnostic de développement.
+5. Toute décision de promotion exigera une population fraîche,
    indépendante et disjointe ; le test final reste fermé.
 6. Conserver séparément le chantier qualification/réparation CRM : la
    couverture source 22,454 % reste très loin du gate de 80 % et ne se corrige
