@@ -39,15 +39,37 @@ from src.xgb_matcher.v9_dataset import file_sha256  # noqa: E402
 from src.xgb_matcher.v9_scene import V9_SCENE_FEATURE_NAMES  # noqa: E402
 
 
-SCHEMA_VERSION = "sireto-v4.10-structured-acceptor-dataset-1"
-EXPERIMENT_ID = "V410_STRUCTURED_ACCEPTOR"
-FEATURE_POLICY_VERSION = "v4.10-structured-features-1"
+SCHEMA_VERSION = "sireto-v4.10b-structured-acceptor-dataset-1"
+EXPERIMENT_ID = "V410B_STRUCTURED_ACCEPTOR"
+FEATURE_POLICY_VERSION = "v4.10b-structured-features-1"
 SEED = 42
 MAX_CANDIDATES = 100
 EXPECTED_CONTRACT_SHA256 = (
     "91527a57271e5a9410dc6555b6264c817dd2c20d3ce4af1a1903abb6b1f878c4"
 )
 EXPECTED_CONTRACT_COMMIT = "b19abed55f76861e5fe5b78c59143ee01f584402"
+EXPECTED_AMENDMENT_SHA256 = (
+    "8a320783060269b718e0f8e5898a9c0d0d9428680753eb633a940f2e29cea4a5"
+)
+EXPECTED_AMENDMENT_COMMIT = "d500fe2c3bdcbcd5bda7df9a7427defc6ad5b3c7"
+EXPECTED_CURRENT80_FEATURE_COUNT = 80
+EXPECTED_CURRENT80_FEATURE_ORDER_SHA256 = (
+    "e50086608ca3e60071e2575fbd8a0ca7c8ba99fe87251894ee04bf9b1b57cfe5"
+)
+EXPECTED_STRUCTURED_FEATURE_COUNT = 641
+EXPECTED_STRUCTURED_FEATURE_ORDER_SHA256 = (
+    "4ff0eb4e8cc33850742bf4d9c0ddb599cc9abb500d6b60bb3e5dc6a80b9cd13b"
+)
+EXPECTED_STRUCTURED_SCALED_FEATURE_COUNT = 157
+EXPECTED_STRUCTURED_SCALED_FEATURE_ORDER_SHA256 = (
+    "c1769136cb80f9f2273406a1045f223f99a088f4270b4dc8ef9097e8234d61ed"
+)
+EXPECTED_STRUCTURED_UNSCALED_FEATURE_COUNT = 484
+EXPECTED_STRUCTURED_UNSCALED_FEATURE_ORDER_SHA256 = (
+    "7f0a1c01d8ed402c577b128cfe1aeb05b342772af0b132b597a432cce8409e89"
+)
+SUPERSEDES_BUILD_ID = "0d6b87fd50fb550c"
+SUPERSESSION_REASON = "PREFIT_STATISTICAL_AUDIT_INVALIDATED_STRUCTURED_ORDER"
 EXPECTED_INPUT_HASHES = {
     "historical_scenes": "8f3bc4633ada9eb6347e47a1029f0e69fa8946b1c3c1df38c72232f572088dc9",
     "historical_predictions": "eea22c58378d8adc232a7f2723c0a84323963db9633a7bb9af2e2485cd6329d2",
@@ -66,6 +88,11 @@ DEFAULT_CONTRACT = (
     Path(__file__).resolve().parent.parent
     / "docs"
     / "v4_10_structured_acceptor_contract.md"
+)
+DEFAULT_AMENDMENT = (
+    Path(__file__).resolve().parent.parent
+    / "docs"
+    / "v4_10b_structured_feature_policy.md"
 )
 SEMANTIC_SCENE_FEATURES = tuple(
     name
@@ -137,6 +164,84 @@ DRIFT_AUDIT_ONLY_BASE_FEATURES = {
     "candidate_from_input_siren",
     "candidate_from_closed_alias",
 }
+SEMANTIC_ALIAS_BASE_FEATURES = (
+    "name_jaro_max",
+    "name_token_overlap_max",
+    "idf_name",
+    "numeric_token_match",
+    "name_contains_crm_max",
+    "name_crm_contains_cand_max",
+    "name_sim_max_etab",
+    "name_sim_max_pm_dirigeant",
+    "name_length_max",
+    "addr_jaro",
+    "postcode_match",
+    "city_match",
+    "street_number_diff",
+    "addr_token_overlap",
+    "address_density",
+    "street_name_jaro",
+    "name_addr_consistency",
+)
+SEMANTIC_ALIAS_MAP = {
+    **{
+        f"candidate_{position}_{base}": {
+            "kind": "column",
+            "operands": [f"scene_{position}_{base}"],
+        }
+        for base in SEMANTIC_ALIAS_BASE_FEATURES
+        for position in ("top1", "top2", "delta")
+    },
+    "same_siren_candidate_count": {
+        "kind": "column",
+        "operands": ["scene_top1_siren_candidate_count"],
+    },
+    "same_siren_best_ranker_score": {
+        "kind": "column",
+        "operands": ["scene_score_top1"],
+    },
+    "same_siren_best_sibling_ranker_score": {
+        "kind": "column",
+        "operands": ["same_siren_second_ranker_score"],
+    },
+    "top1_is_same_siren_best_ranker_score": {
+        "kind": "literal",
+        "operands": [1.0],
+    },
+    "candidate_top1_is_sigle_max": {
+        "kind": "column",
+        "operands": ["candidate_top1_type_of_max_name__5"],
+    },
+    "candidate_top2_is_sigle_max": {
+        "kind": "column",
+        "operands": ["candidate_top2_type_of_max_name__5"],
+    },
+    "candidate_delta_is_sigle_max": {
+        "kind": "subtract",
+        "operands": [
+            "candidate_top1_type_of_max_name__5",
+            "candidate_top2_type_of_max_name__5",
+        ],
+    },
+}
+RETRIEVAL_AUDIT_ONLY_FEATURES = (
+    "scene_top1_retrieval_channel_count",
+    "scene_top1_retrieval_agreement",
+    "scene_top1_rrf_score",
+    "scene_sparse_dense_top1_agreement",
+    "scene_retrieval_disagreement",
+    "scene_retrieval_miss",
+    "candidate_top1_retrieval_channel_count",
+    "candidate_top2_retrieval_channel_count",
+    "candidate_delta_retrieval_channel_count",
+    "candidate_top1_retrieval_agreement",
+    "candidate_top2_retrieval_agreement",
+    "candidate_delta_retrieval_agreement",
+    "candidate_top1_retrieval_channel_count_missing",
+    "candidate_top2_retrieval_channel_count_missing",
+    "candidate_top1_retrieval_agreement_missing",
+    "candidate_top2_retrieval_agreement_missing",
+)
 BOOLEAN_CANDIDATE_BASE_FEATURES = {
     "has_any_name",
     "numeric_token_match",
@@ -263,11 +368,17 @@ def _assert_authorized_path(path: Path, *, name: str) -> Path:
     return resolved
 
 
-def validate_frozen_inputs(paths: Mapping[str, Path], contract_path: Path) -> dict[str, Any]:
+def validate_frozen_inputs(
+    paths: Mapping[str, Path],
+    contract_path: Path,
+    amendment_path: Path = DEFAULT_AMENDMENT,
+) -> dict[str, Any]:
     """Hash every authorised source before any population is materialised."""
 
     if file_sha256(contract_path) != EXPECTED_CONTRACT_SHA256:
         raise ValueError("V4.10 contract hash mismatch")
+    if file_sha256(amendment_path) != EXPECTED_AMENDMENT_SHA256:
+        raise ValueError("V4.10b amendment hash mismatch")
     if set(paths) != set(EXPECTED_INPUT_HASHES):
         raise ValueError("V4.10 source set differs from the preregistered contract")
     records: dict[str, Any] = {}
@@ -588,6 +699,50 @@ def _encode_category_pair(
     output[f"candidate_{feature}_top1_top2_equal"] = float(first == second)
 
 
+def _semantic_alias_value(
+    row: Mapping[str, Any],
+    representation: Mapping[str, Any],
+) -> float:
+    kind = representation.get("kind")
+    operands = representation.get("operands")
+    if not isinstance(operands, list):
+        raise AssertionError("V4.10b alias operands must be a list")
+    if kind == "literal" and len(operands) == 1:
+        return _strict_finite(operands[0], name="semantic_alias.literal")
+    if kind == "column" and len(operands) == 1:
+        return _strict_finite(
+            row.get(operands[0]),
+            name=f"semantic_alias.{operands[0]}",
+        )
+    if kind == "subtract" and len(operands) == 2:
+        return _strict_finite(
+            row.get(operands[0]),
+            name=f"semantic_alias.{operands[0]}",
+        ) - _strict_finite(
+            row.get(operands[1]),
+            name=f"semantic_alias.{operands[1]}",
+        )
+    raise AssertionError(f"Unsupported V4.10b alias representation: {representation}")
+
+
+def assert_semantic_aliases(row: Mapping[str, Any], *, query_id: str) -> None:
+    """Verify the 58 preregistered definition-level aliases without labels."""
+
+    if len(SEMANTIC_ALIAS_MAP) != 58:
+        raise AssertionError("V4.10b semantic alias policy must contain 58 entries")
+    for alias, representation in SEMANTIC_ALIAS_MAP.items():
+        observed = _strict_finite(
+            row.get(alias),
+            name=f"{query_id}.semantic_alias.{alias}",
+        )
+        expected = _semantic_alias_value(row, representation)
+        if observed != expected:
+            raise ValueError(
+                "STOP_DATASET_INTEGRITY: semantic alias divergence for "
+                f"{query_id}.{alias}; alias_of={representation}"
+            )
+
+
 def _v8_interactions(row: Mapping[str, Any], query: Mapping[str, Any]) -> dict[str, float]:
     addr = _finite(row.get("addr_jaro"))
     name = _finite(row.get("name_jaro_max"))
@@ -892,6 +1047,7 @@ def build_structured_scenes(
             _finite(top1.get("input_siret_exact_match")) >= 1.0
             and function_conflict
         )
+        assert_semantic_aliases(row, query_id=query_id)
         output_rows.append(row)
     output = pd.DataFrame(output_rows)
     if output["query_id"].duplicated().any():
@@ -930,6 +1086,15 @@ def make_feature_catalog(feature_order: Sequence[str]) -> dict[str, Any]:
             "Feature catalog requires the exact current80 block: "
             f"{missing_current80}"
         )
+    missing_aliases = sorted(set(SEMANTIC_ALIAS_MAP) - set(all_features))
+    missing_retrieval_audit = sorted(
+        set(RETRIEVAL_AUDIT_ONLY_FEATURES) - set(all_features)
+    )
+    if missing_aliases or missing_retrieval_audit:
+        raise ValueError(
+            "STOP_DATASET_INTEGRITY: incomplete V4.10b policy columns; "
+            f"aliases={missing_aliases}, retrieval={missing_retrieval_audit}"
+        )
 
     def is_drift_feature(name: str) -> bool:
         return any(
@@ -939,11 +1104,27 @@ def make_feature_catalog(feature_order: Sequence[str]) -> dict[str, Any]:
             for base in DRIFT_AUDIT_ONLY_BASE_FEATURES
         )
 
-    audit_only = [name for name in all_features if is_drift_feature(name)]
+    legacy_audit_only = [name for name in all_features if is_drift_feature(name)]
+    if len(legacy_audit_only) != 75:
+        raise ValueError(
+            "STOP_DATASET_INTEGRITY: V4.10 legacy audit-only block "
+            f"contains {len(legacy_audit_only)} features instead of 75"
+        )
+    retrieval_audit_only = [
+        name for name in all_features if name in RETRIEVAL_AUDIT_ONLY_FEATURES
+    ]
+    semantic_aliases = [
+        name for name in all_features if name in SEMANTIC_ALIAS_MAP
+    ]
+    excluded_from_structured = {
+        *legacy_audit_only,
+        *retrieval_audit_only,
+        *semantic_aliases,
+    }
     structured_order = [
         name
         for name in all_features
-        if name not in CURRENT80_FEATURES and name not in audit_only
+        if name not in CURRENT80_FEATURES and name not in excluded_from_structured
     ]
     binary_exact = {
         "interaction_strong_address_weak_name",
@@ -992,7 +1173,15 @@ def make_feature_catalog(feature_order: Sequence[str]) -> dict[str, Any]:
         ),
     }
 
-    def explicit_spec(name: str, *, order: str, model_allowed: bool) -> dict[str, Any]:
+    def explicit_spec(
+        name: str,
+        *,
+        order: str,
+        current80_allowed: bool,
+        structured_allowed: bool,
+        structured_exclusion_reason: str | None,
+        alias_of: Mapping[str, Any] | None,
+    ) -> dict[str, Any]:
         is_one_hot = "__" in name
         is_missing = name.endswith("_missing")
         baseline_name = name.removeprefix("scene_")
@@ -1090,44 +1279,180 @@ def make_feature_catalog(feature_order: Sequence[str]) -> dict[str, Any]:
             "formula_version": FEATURE_POLICY_VERSION,
             "nullable": False,
             "missing_policy": missing_policy,
-            "model_allowed": model_allowed,
+            "model_allowed": current80_allowed or structured_allowed,
+            "current80_allowed": current80_allowed,
+            "structured_allowed": structured_allowed,
+            "structured_exclusion_reason": structured_exclusion_reason,
+            "alias_of": alias_of,
             "order": order,
             "leakage_class": (
-                "retrieval_population_drift" if not model_allowed else "none"
+                "retrieval_population_drift"
+                if name in legacy_audit_only or name in retrieval_audit_only
+                else "none"
             ),
         }
 
-    entries = [
-        *[
-            explicit_spec(name, order="current80", model_allowed=True)
-            for name in CURRENT80_FEATURES
-        ],
-        *[
-            explicit_spec(name, order="structured", model_allowed=True)
-            for name in structured_order
-        ],
-        *[
-            explicit_spec(name, order="audit_only", model_allowed=False)
-            for name in audit_only
-        ],
-    ]
+    entries = []
+    for name in all_features:
+        if name in CURRENT80_FEATURES:
+            entries.append(
+                explicit_spec(
+                    name,
+                    order="current80",
+                    current80_allowed=True,
+                    structured_allowed=False,
+                    structured_exclusion_reason="current80_control_only",
+                    alias_of=None,
+                )
+            )
+        elif name in semantic_aliases:
+            entries.append(
+                explicit_spec(
+                    name,
+                    order="semantic_alias",
+                    current80_allowed=False,
+                    structured_allowed=False,
+                    structured_exclusion_reason="semantic_duplicate",
+                    alias_of=SEMANTIC_ALIAS_MAP[name],
+                )
+            )
+        elif name in retrieval_audit_only:
+            entries.append(
+                explicit_spec(
+                    name,
+                    order="audit_only",
+                    current80_allowed=False,
+                    structured_allowed=False,
+                    structured_exclusion_reason=(
+                        "retrieval_population_instrumentation"
+                    ),
+                    alias_of=None,
+                )
+            )
+        elif name in legacy_audit_only:
+            entries.append(
+                explicit_spec(
+                    name,
+                    order="audit_only",
+                    current80_allowed=False,
+                    structured_allowed=False,
+                    structured_exclusion_reason=(
+                        "retrieval_v41_v42b_distribution_drift"
+                    ),
+                    alias_of=None,
+                )
+            )
+        else:
+            entries.append(
+                explicit_spec(
+                    name,
+                    order="structured",
+                    current80_allowed=False,
+                    structured_allowed=True,
+                    structured_exclusion_reason=None,
+                    alias_of=None,
+                )
+            )
     current80_hash = hashlib.sha256(
         "\n".join(CURRENT80_FEATURES).encode("utf-8")
     ).hexdigest()
     structured_hash = hashlib.sha256(
         "\n".join(structured_order).encode("utf-8")
     ).hexdigest()
+    if (
+        len(CURRENT80_FEATURES) != EXPECTED_CURRENT80_FEATURE_COUNT
+        or current80_hash != EXPECTED_CURRENT80_FEATURE_ORDER_SHA256
+    ):
+        raise ValueError("STOP_DATASET_INTEGRITY: CURRENT80 order changed")
+    if (
+        len(semantic_aliases) != 58
+        or len(retrieval_audit_only) != 16
+        or len(structured_order) != EXPECTED_STRUCTURED_FEATURE_COUNT
+        or structured_hash != EXPECTED_STRUCTURED_FEATURE_ORDER_SHA256
+    ):
+        raise ValueError("STOP_DATASET_INTEGRITY: V4.10b structured order changed")
+    entry_by_name = {entry["name"]: entry for entry in entries}
+    scaled_order = [
+        name
+        for name in structured_order
+        if entry_by_name[name]["kind"] in {"continuous", "count"}
+    ]
+    unscaled_order = [
+        name
+        for name in structured_order
+        if entry_by_name[name]["kind"] == "binary"
+    ]
+    scaled_members = set(scaled_order)
+    unscaled_members = set(unscaled_order)
+    reconstructed_order = [
+        name
+        for name in structured_order
+        if name in scaled_members or name in unscaled_members
+    ]
+    if (
+        scaled_members & unscaled_members
+        or reconstructed_order != structured_order
+    ):
+        raise ValueError("STOP_DATASET_INTEGRITY: invalid structured scaler partition")
+    scaled_hash = hashlib.sha256(
+        "\n".join(scaled_order).encode("utf-8")
+    ).hexdigest()
+    unscaled_hash = hashlib.sha256(
+        "\n".join(unscaled_order).encode("utf-8")
+    ).hexdigest()
+    if (
+        len(scaled_order) != EXPECTED_STRUCTURED_SCALED_FEATURE_COUNT
+        or scaled_hash != EXPECTED_STRUCTURED_SCALED_FEATURE_ORDER_SHA256
+        or len(unscaled_order) != EXPECTED_STRUCTURED_UNSCALED_FEATURE_COUNT
+        or unscaled_hash != EXPECTED_STRUCTURED_UNSCALED_FEATURE_ORDER_SHA256
+    ):
+        raise ValueError("STOP_DATASET_INTEGRITY: V4.10b scaler orders changed")
+    alias_order = list(SEMANTIC_ALIAS_MAP)
+    retrieval_order = list(RETRIEVAL_AUDIT_ONLY_FEATURES)
+    audit_only = [
+        name
+        for name in all_features
+        if name in legacy_audit_only or name in retrieval_audit_only
+    ]
     return {
-        "schema_version": "sireto-v4.10-feature-catalog-1",
+        "schema_version": "sireto-v4.10b-feature-catalog-1",
         "experiment_id": EXPERIMENT_ID,
         "feature_policy_version": FEATURE_POLICY_VERSION,
         "current80_feature_order": list(CURRENT80_FEATURES),
+        "current80_feature_count": len(CURRENT80_FEATURES),
         "current80_feature_order_sha256": current80_hash,
         "structured_feature_order": structured_order,
+        "structured_feature_count": len(structured_order),
         "structured_feature_order_sha256": structured_hash,
         "feature_order": structured_order,
         "feature_order_sha256": structured_hash,
         "feature_count": len(structured_order),
+        "semantic_alias_features": alias_order,
+        "semantic_alias_feature_count": len(alias_order),
+        "semantic_alias_features_sha256": hashlib.sha256(
+            "\n".join(alias_order).encode("utf-8")
+        ).hexdigest(),
+        "semantic_alias_map": dict(SEMANTIC_ALIAS_MAP),
+        "semantic_alias_map_sha256": hashlib.sha256(
+            _json_bytes(SEMANTIC_ALIAS_MAP)
+        ).hexdigest(),
+        "retrieval_audit_only_features": retrieval_order,
+        "retrieval_audit_only_feature_count": len(retrieval_order),
+        "retrieval_audit_only_features_sha256": hashlib.sha256(
+            "\n".join(retrieval_order).encode("utf-8")
+        ).hexdigest(),
+        "legacy_audit_only_feature_count": len(legacy_audit_only),
+        "legacy_audit_only_features_sha256": hashlib.sha256(
+            "\n".join(legacy_audit_only).encode("utf-8")
+        ).hexdigest(),
+        "structured_scaled_kinds": ["continuous", "count"],
+        "structured_scaled_feature_order": scaled_order,
+        "structured_scaled_feature_count": len(scaled_order),
+        "structured_scaled_feature_order_sha256": scaled_hash,
+        "structured_unscaled_kinds": ["binary"],
+        "structured_unscaled_feature_order": unscaled_order,
+        "structured_unscaled_feature_count": len(unscaled_order),
+        "structured_unscaled_feature_order_sha256": unscaled_hash,
         "output_feature_order": all_features,
         "output_feature_count": len(all_features),
         "features": entries,
@@ -1136,12 +1461,14 @@ def make_feature_catalog(feature_order: Sequence[str]) -> dict[str, Any]:
             {
                 "name": name,
                 "model_allowed": False,
-                "reason": "retrieval_v41_v42b_distribution_drift",
+                "reason": entry_by_name[name]["structured_exclusion_reason"],
             }
             for name in audit_only
         ],
         "excluded_features": {
             "semantic_scene_features": list(SEMANTIC_SCENE_FEATURES),
+            "semantic_aliases": alias_order,
+            "retrieval_instrumentation": retrieval_order,
             "raw_identifiers": ["query_id", "top1_siret", "top1_siren"],
         },
         "categorical_encodings": {
@@ -1298,6 +1625,7 @@ def runtime_provenance() -> dict[str, Any]:
     }
     return {
         "contract_commit": EXPECTED_CONTRACT_COMMIT,
+        "amendment_commit": EXPECTED_AMENDMENT_COMMIT,
         "source_hashes": {
             name: {
                 "path": str(path),
@@ -1324,7 +1652,11 @@ def build(args: argparse.Namespace) -> Path:
         "sirene_snapshot": args.sirene_snapshot,
         "taxonomy": args.taxonomy,
     }
-    input_records = validate_frozen_inputs(source_paths, args.contract)
+    input_records = validate_frozen_inputs(
+        source_paths,
+        args.contract,
+        args.amendment,
+    )
     runtime = runtime_provenance()
     historical_scene_columns = [
         "query_id",
@@ -1693,6 +2025,8 @@ def build(args: argparse.Namespace) -> Path:
             "experiment_id": EXPERIMENT_ID,
             "contract_sha256": EXPECTED_CONTRACT_SHA256,
             "contract_commit": EXPECTED_CONTRACT_COMMIT,
+            "amendment_sha256": EXPECTED_AMENDMENT_SHA256,
+            "amendment_commit": EXPECTED_AMENDMENT_COMMIT,
             "input_hashes": EXPECTED_INPUT_HASHES,
             "runtime_provenance": runtime,
             "feature_catalog_sha256": hashlib.sha256(catalog_bytes).hexdigest(),
@@ -1712,6 +2046,8 @@ def build(args: argparse.Namespace) -> Path:
         manifest = {
             **build_payload,
             "build_id": build_id,
+            "supersedes_build_id": SUPERSEDES_BUILD_ID,
+            "supersession_reason": SUPERSESSION_REASON,
             "created_at": datetime.now(timezone.utc).isoformat(),
             "inputs": input_records,
             "outputs": {
@@ -1747,12 +2083,51 @@ def build(args: argparse.Namespace) -> Path:
             "model_feature_order": catalog["feature_order"],
             "model_feature_order_sha256": catalog["feature_order_sha256"],
             "current80_feature_order": catalog["current80_feature_order"],
+            "current80_feature_count": catalog["current80_feature_count"],
             "current80_feature_order_sha256": catalog[
                 "current80_feature_order_sha256"
             ],
             "structured_feature_order": catalog["structured_feature_order"],
+            "structured_feature_count": catalog["structured_feature_count"],
             "structured_feature_order_sha256": catalog[
                 "structured_feature_order_sha256"
+            ],
+            "semantic_alias_feature_count": catalog[
+                "semantic_alias_feature_count"
+            ],
+            "semantic_alias_features_sha256": catalog[
+                "semantic_alias_features_sha256"
+            ],
+            "semantic_alias_map_sha256": catalog["semantic_alias_map_sha256"],
+            "retrieval_audit_only_feature_count": catalog[
+                "retrieval_audit_only_feature_count"
+            ],
+            "retrieval_audit_only_features_sha256": catalog[
+                "retrieval_audit_only_features_sha256"
+            ],
+            "legacy_audit_only_feature_count": catalog[
+                "legacy_audit_only_feature_count"
+            ],
+            "legacy_audit_only_features_sha256": catalog[
+                "legacy_audit_only_features_sha256"
+            ],
+            "structured_scaled_feature_order": catalog[
+                "structured_scaled_feature_order"
+            ],
+            "structured_scaled_feature_count": catalog[
+                "structured_scaled_feature_count"
+            ],
+            "structured_scaled_feature_order_sha256": catalog[
+                "structured_scaled_feature_order_sha256"
+            ],
+            "structured_unscaled_feature_order": catalog[
+                "structured_unscaled_feature_order"
+            ],
+            "structured_unscaled_feature_count": catalog[
+                "structured_unscaled_feature_count"
+            ],
+            "structured_unscaled_feature_order_sha256": catalog[
+                "structured_unscaled_feature_order_sha256"
             ],
             "population_audit": population_audit,
             "encoding_audit": {
@@ -1777,7 +2152,9 @@ def build(args: argparse.Namespace) -> Path:
                 "hard_retrieval": "v4.2-b_frozen",
                 "mixed_retrieval_feasibility_only": True,
                 "model_trained": False,
+                "model_fit_count": 0,
                 "threshold_selected": False,
+                "threshold_selection_count": 0,
                 "random_v48_rows_read_or_scored": 0,
                 "test_rows_read_or_scored": 0,
                 "fresh_rows_read_or_scored": 0,
@@ -1785,6 +2162,10 @@ def build(args: argparse.Namespace) -> Path:
                 "raw_identifiers_are_model_features": False,
                 "is_ground_truth_loaded_or_used": False,
                 "semantic_scene_feature_count_excluded": len(SEMANTIC_SCENE_FEATURES),
+                "semantic_alias_equality_asserted": True,
+                "semantic_alias_selection_used_labels": False,
+                "structured_logit_scaled_kinds": ["continuous", "count"],
+                "structured_xgb_scaler": False,
             },
         }
         _json_dump(stage / "manifest.json", manifest)
@@ -1801,6 +2182,7 @@ def parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     base = Path("/Volumes/CATNAT_DATA/SIRETO_RECALL100")
     parser.add_argument("--contract", type=Path, default=DEFAULT_CONTRACT)
+    parser.add_argument("--amendment", type=Path, default=DEFAULT_AMENDMENT)
     parser.add_argument(
         "--historical-scenes",
         type=Path,

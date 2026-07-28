@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pandas as pd
@@ -69,7 +70,7 @@ def _registry(*sirets: str) -> pd.DataFrame:
 
 
 def _scene(query_id: str = "q1", predicted: str | None = "11111111100011") -> dict:
-    return {
+    row = {
         "query_id": query_id,
         "predicted_siret": predicted,
         "ranker_prediction_is_out_of_sample": True,
@@ -77,6 +78,17 @@ def _scene(query_id: str = "q1", predicted: str | None = "11111111100011") -> di
         "ranker_oof_fold": 0,
         **{name: 0.0 for name in subject.CURRENT80_FEATURES},
     }
+    top1 = _candidate(query_id=query_id)
+    if predicted is not None:
+        for base in subject.SEMANTIC_ALIAS_BASE_FEATURES:
+            row[f"top1_{base}"] = float(top1[base])
+            row[f"top2_{base}"] = 0.0
+            row[f"delta_{base}"] = float(top1[base])
+        row["score_top1"] = float(top1["ranker_score"])
+        row["score_top2"] = 0.0
+        row["score_gap"] = float(top1["ranker_score"])
+        row["top1_siren_candidate_count"] = 1.0
+    return row
 
 
 def _query(query_id: str = "q1") -> dict:
@@ -88,6 +100,32 @@ def _query(query_id: str = "q1") -> dict:
         "input_siret": "11111111100011",
         "input_siren": "111111111",
     }
+
+
+def _scene_for_candidates(candidates: pd.DataFrame) -> dict:
+    ordered = candidates.sort_values(["rank", "ranker_score"], ascending=[True, False])
+    top1 = ordered.iloc[0]
+    top2 = ordered.iloc[1] if len(ordered) > 1 else None
+    scene = _scene(predicted=str(top1["candidate_siret"]))
+    for base in subject.SEMANTIC_ALIAS_BASE_FEATURES:
+        first = pd.to_numeric(top1[base], errors="coerce")
+        first = 0.0 if pd.isna(first) else float(first)
+        second = 0.0
+        if top2 is not None:
+            second_value = pd.to_numeric(top2[base], errors="coerce")
+            second = 0.0 if pd.isna(second_value) else float(second_value)
+        scene[f"top1_{base}"] = first
+        scene[f"top2_{base}"] = second
+        scene[f"delta_{base}"] = first - second
+    first_score = float(top1["ranker_score"])
+    second_score = 0.0 if top2 is None else float(top2["ranker_score"])
+    scene["score_top1"] = first_score
+    scene["score_top2"] = second_score
+    scene["score_gap"] = first_score - second_score
+    scene["top1_siren_candidate_count"] = float(
+        ordered["candidate_siren"].astype(str).eq(str(top1["candidate_siren"])).sum()
+    )
+    return scene
 
 
 def test_scene_contract_keeps_71_and_excludes_nine_semantic_features() -> None:
@@ -203,7 +241,7 @@ def test_current80_is_preserved_exactly_and_oos_proof_is_metadata() -> None:
     scene["top1_name_semantic_max"] = 0.0
     output = subject.build_structured_scenes(
         pd.DataFrame([scene]),
-        pd.DataFrame([_candidate()]),
+        pd.DataFrame([_candidate(score=0.731)]),
         pd.DataFrame([_query()]),
         _registry("11111111100011"),
         SiteFunctionTaxonomy.load(TAXONOMY),
@@ -295,7 +333,7 @@ def test_constellation_ties_use_score_rank_then_lexical_siret() -> None:
     candidates["name_jaro_max"] = [0.8, 0.9, 0.7]
     candidates["addr_jaro"] = [0.7, 0.6, 0.9]
     output = subject.build_structured_scenes(
-        pd.DataFrame([_scene(predicted="11111111100022")]),
+        pd.DataFrame([_scene_for_candidates(candidates)]),
         candidates,
         pd.DataFrame([_query()]),
         _registry("11111111100022", "11111111100011", "11111111100033"),
@@ -306,33 +344,105 @@ def test_constellation_ties_use_score_rank_then_lexical_siret() -> None:
 
 
 def test_catalog_marks_retrieval_drift_features_audit_only() -> None:
-    names = [
-        *subject.CURRENT80_FEATURES,
-        "candidate_top1_admission_fusion_score",
-        "candidate_top1_admission_fusion_score_missing",
-        "candidate_delta_candidate_from_sparse",
-        "candidate_top1_name_jaro_max",
-    ]
+    output = subject.build_structured_scenes(
+        pd.DataFrame([_scene()]),
+        pd.DataFrame([_candidate()]),
+        pd.DataFrame([_query()]),
+        _registry("11111111100011"),
+        SiteFunctionTaxonomy.load(TAXONOMY),
+        population="historical_v41",
+    )
+    names = list(output.columns)
     catalog = subject.make_feature_catalog(names)
     audit = {item["name"] for item in catalog["audit_only_features"]}
-    assert audit == {
+    assert {
         "candidate_top1_admission_fusion_score",
         "candidate_top1_admission_fusion_score_missing",
         "candidate_delta_candidate_from_sparse",
-    }
-    assert "candidate_top1_name_jaro_max" in catalog["feature_order"]
+    }.issubset(audit)
+    assert len(audit) == 91
+    assert "candidate_top1_name_jaro_max" not in catalog["feature_order"]
     assert catalog["current80_feature_order"] == list(subject.CURRENT80_FEATURES)
-    assert len(catalog["features"]) == len(names)
+    assert len(catalog["features"]) == catalog["output_feature_count"]
 
     with pytest.raises(ValueError, match="no explicit specification"):
         subject.make_feature_catalog(
-            [*subject.CURRENT80_FEATURES, "unrelated_feature"]
+            [*names, "unrelated_feature"]
         )
-    assert len(catalog["features"]) == len(names)
+    assert len(catalog["features"]) == catalog["output_feature_count"]
     by_name = {item["name"]: item for item in catalog["features"]}
     assert by_name["candidate_top1_admission_fusion_score"]["model_allowed"] is False
     assert by_name["candidate_top1_name_jaro_max"]["source_block"] == "candidate_ranker"
+    assert by_name["candidate_top1_name_jaro_max"]["structured_allowed"] is False
+    assert by_name["candidate_top1_name_jaro_max"]["alias_of"] == {
+        "kind": "column",
+        "operands": ["scene_top1_name_jaro_max"],
+    }
     assert len(catalog["feature_order_sha256"]) == 64
+
+
+def test_v410b_catalog_has_exact_orders_aliases_and_scaler_partition() -> None:
+    previous_catalog = Path(
+        "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/"
+        "v4_10_structured_acceptor/0d6b87fd50fb550c/feature_catalog.json"
+    )
+    if not previous_catalog.exists():
+        pytest.skip("Canonical V4.10 catalog is not mounted")
+    names = json.loads(previous_catalog.read_text())["output_feature_order"]
+    catalog = subject.make_feature_catalog(names)
+
+    assert catalog["current80_feature_order"] == list(subject.CURRENT80_FEATURES)
+    assert catalog["current80_feature_order_sha256"] == (
+        subject.EXPECTED_CURRENT80_FEATURE_ORDER_SHA256
+    )
+    assert catalog["feature_count"] == 641
+    assert catalog["structured_feature_order_sha256"] == (
+        subject.EXPECTED_STRUCTURED_FEATURE_ORDER_SHA256
+    )
+    assert catalog["semantic_alias_feature_count"] == 58
+    assert catalog["retrieval_audit_only_feature_count"] == 16
+    assert catalog["legacy_audit_only_feature_count"] == 75
+    assert catalog["structured_scaled_feature_count"] == 157
+    assert catalog["structured_scaled_feature_order_sha256"] == (
+        subject.EXPECTED_STRUCTURED_SCALED_FEATURE_ORDER_SHA256
+    )
+    assert catalog["structured_unscaled_feature_count"] == 484
+    assert catalog["structured_unscaled_feature_order_sha256"] == (
+        subject.EXPECTED_STRUCTURED_UNSCALED_FEATURE_ORDER_SHA256
+    )
+    scaled = set(catalog["structured_scaled_feature_order"])
+    unscaled = set(catalog["structured_unscaled_feature_order"])
+    assert scaled.isdisjoint(unscaled)
+    reconstructed = [
+        name
+        for name in catalog["structured_feature_order"]
+        if name in scaled or name in unscaled
+    ]
+    assert reconstructed == catalog["structured_feature_order"]
+
+
+def test_v410b_alias_schema_is_typed_and_divergence_stops() -> None:
+    assert len(subject.SEMANTIC_ALIAS_MAP) == 58
+    kinds = [
+        representation["kind"]
+        for representation in subject.SEMANTIC_ALIAS_MAP.values()
+    ]
+    assert kinds.count("column") == 56
+    assert kinds.count("subtract") == 1
+    assert kinds.count("literal") == 1
+
+    output = subject.build_structured_scenes(
+        pd.DataFrame([_scene()]),
+        pd.DataFrame([_candidate()]),
+        pd.DataFrame([_query()]),
+        _registry("11111111100011"),
+        SiteFunctionTaxonomy.load(TAXONOMY),
+        population="historical_v41",
+    )
+    row = output.iloc[0].to_dict()
+    row["candidate_top1_name_jaro_max"] += 0.01
+    with pytest.raises(ValueError, match="semantic alias divergence"):
+        subject.assert_semantic_aliases(row, query_id="q1")
 
 
 def test_feature_matrix_must_be_numeric_finite_and_non_nullable() -> None:
@@ -359,7 +469,7 @@ def test_candidate_nonfinite_uses_explicit_missing_but_scene_nonfinite_stops() -
     candidate = _candidate()
     candidate["name_jaro_max"] = float("nan")
     output = subject.build_structured_scenes(
-        pd.DataFrame([_scene()]),
+        pd.DataFrame([_scene_for_candidates(pd.DataFrame([candidate]))]),
         pd.DataFrame([candidate]),
         pd.DataFrame([_query()]),
         _registry("11111111100011"),
