@@ -137,10 +137,16 @@ def _directory_record(
 
 
 def _physical_parquet_row_count(path: Path) -> int:
+    root = Path(path)
+    physical_partitions = [
+        item
+        for item in root.rglob("*.parquet")
+        if "manifest" not in item.relative_to(root).parts
+    ]
     return int(
         sum(
             pq.ParquetFile(item).metadata.num_rows
-            for item in Path(path).rglob("*.parquet")
+            for item in physical_partitions
         )
     )
 

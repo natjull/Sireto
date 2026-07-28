@@ -273,3 +273,17 @@ def test_all_writable_paths_must_be_external():
             Path("/tmp/sireto-v46-forbidden-write"),
             name="work_dir",
         )
+
+
+def test_physical_partition_count_ignores_manifest_parquet(tmp_path):
+    partition = tmp_path / "insee" / "insee=75056"
+    partition.mkdir(parents=True)
+    pd.DataFrame({"siret": ["11111111100011", "11111111100022"]}).to_parquet(
+        partition / "part.parquet",
+        index=False,
+    )
+    manifest = tmp_path / "manifest"
+    manifest.mkdir()
+    (manifest / "postcode_counts.parquet").write_bytes(b"")
+
+    assert subject._physical_parquet_row_count(tmp_path) == 2
