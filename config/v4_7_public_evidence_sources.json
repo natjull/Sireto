@@ -1,0 +1,345 @@
+{
+  "schema_version": "sireto-v4.7-public-evidence-spec-1",
+  "policy_version": "two-independent-identity-proofs-v1",
+  "sources": [
+    {
+      "audit_case_id": "008373b595622d22",
+      "siret_to_adjudicate": "77563119500267",
+      "source_url": "https://www.has-sante.fr/jcms/16651_FicheESSMS/fr/mas-domaine-arc-en-ciel",
+      "producer": "HAUTE_AUTORITE_DE_SANTE",
+      "source_family": "OFFICIAL_HEALTH_FACILITY_DIRECTORY",
+      "independence_group": "HAS_FACILITY_REGISTRY",
+      "relationship": "AMBIGUOUS_CURRENT_TOP1",
+      "required_terms": [
+        "mas domaine arc en ciel",
+        "251 avenue des longues pieces",
+        "coquelles"
+      ],
+      "fact_summary": "Le CRM confond FAM et MAS; la HAS décrit une MAS au même site alors que le SIRET courant est enregistré comme foyer/EAM, ce qui ne permet pas de choisir un établissement exact unique."
+    },
+    {
+      "audit_case_id": "0107123ac3ab0732",
+      "siret_to_adjudicate": "76780011300031",
+      "source_url": "https://www.welcoop-logistique.com/presentation.html",
+      "producer": "WELCOOP_LOGISTIQUE",
+      "source_family": "ENTITY_OFFICIAL_SITE",
+      "independence_group": "WELCOOP_ENTITY",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "welcoop logistique",
+        "gondreville",
+        "lieu dit aux loups"
+      ],
+      "fact_summary": "Le site officiel relie explicitement Welcoop Logistique au site de Gondreville, lieu-dit Aux Loups; le SIRET courant appartient à cette même entité et implantation."
+    },
+    {
+      "audit_case_id": "01d50f2a608bb3bb",
+      "siret_to_adjudicate": "21690123102249",
+      "source_url": "https://www.lyon.fr/lieu/ecoles-maternelles-publiques/ecole-maternelle-andre-philip",
+      "producer": "VILLE_DE_LYON",
+      "source_family": "PUBLIC_ENTITY_OFFICIAL_SITE",
+      "independence_group": "VILLE_LYON_DIRECTORY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "ecole maternelle andre philip",
+        "46 rue dunoir"
+      ],
+      "fact_summary": "La Ville situe l'école maternelle André Philip au 46 rue Dunoir; le SIRET courant désigne l'école primaire au 48 rue Dunoir."
+    },
+    {
+      "audit_case_id": "025647bf91cc6122",
+      "siret_to_adjudicate": "85259804400059",
+      "source_url": "https://www.volkswagen.fr/fr/partenaire/faurie-agen.html",
+      "producer": "VOLKSWAGEN_FRANCE",
+      "source_family": "OFFICIAL_DEALER_NETWORK",
+      "independence_group": "VOLKSWAGEN_NETWORK",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "faurie axess sud ouest",
+        "9 allee larroumet et lagarde",
+        "47550 boe"
+      ],
+      "fact_summary": "Le réseau officiel Volkswagen identifie Faurie Axess Sud-Ouest à l'adresse de la concession d'Agen/Boé; le SIRET courant est l'établissement de cette entité sur ce même site dans le snapshot gelé."
+    },
+    {
+      "audit_case_id": "026ff9f27001bebd",
+      "siret_to_adjudicate": "21770445100210",
+      "source_url": "https://www.savigny-le-temple.fr/14-2078/e-magazine/agenda/fiche/salon-des-bruits-des-villes-africaines.htm",
+      "producer": "VILLE_DE_SAVIGNY_LE_TEMPLE",
+      "source_family": "PUBLIC_ENTITY_OFFICIAL_SITE",
+      "independence_group": "VILLE_SAVIGNY_DIRECTORY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "espace prevert",
+        "9 place du miroir d eau"
+      ],
+      "fact_summary": "La Ville situe l'Espace Prévert au 9 place du Miroir d'Eau; le SIRET courant est celui de la mairie au 1 place François-Mitterrand."
+    },
+    {
+      "audit_case_id": "027152854e69b963",
+      "siret_to_adjudicate": "48184917200087",
+      "source_url": "https://lesentreprises-sengagent.gouv.fr/les-entreprises-engagees/aboutir-emploi-artman-8440064",
+      "producer": "LES_ENTREPRISES_S_ENGAGENT",
+      "source_family": "GOVERNMENT_COMMITMENT_DIRECTORY",
+      "independence_group": "GOVERNMENT_COMMITMENT_DIRECTORY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "aboutir emploi artman",
+        "7 rue roland garros",
+        "orvault"
+      ],
+      "fact_summary": "L'annuaire public relie Aboutir Emploi/Artman au 7 rue Roland-Garros à Orvault; le SIRET courant désigne l'établissement Artman de Quimper."
+    },
+    {
+      "audit_case_id": "14704d3ad7eddf28",
+      "siret_to_adjudicate": "40482655400135",
+      "source_url": "https://www.groupe-sos.org/mentions-legales/",
+      "producer": "GROUPE_SOS",
+      "source_family": "ENTITY_OFFICIAL_SITE",
+      "independence_group": "GROUPE_SOS_ENTITY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "gie alliance gestion",
+        "102 c rue amelot",
+        "75011 paris"
+      ],
+      "fact_summary": "Le site officiel place GIE Alliance Gestion au 102 C rue Amelot à Paris; le CRM vise le site Les Tournelles à Hautefeuille."
+    },
+    {
+      "audit_case_id": "3314d39b2884699e",
+      "siret_to_adjudicate": "24310063300391",
+      "source_url": "https://www.sicoval.fr/app/uploads/2022/02/Plaquette_Aide-accompagnement.pdf",
+      "producer": "SICOVAL",
+      "source_family": "PUBLIC_ENTITY_OFFICIAL_DOCUMENT",
+      "independence_group": "SICOVAL_ENTITY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "45 chemin du canal",
+        "auzeville tolosane"
+      ],
+      "fact_summary": "Le document officiel situe le service visé au 45 chemin du Canal à Auzeville-Tolosane; le SIRET courant est l'établissement du 110 rue Marco-Polo à Labège."
+    },
+    {
+      "audit_case_id": "3410708de02f25ea",
+      "siret_to_adjudicate": "21770186100015",
+      "source_url": "https://fsm.eu/wp-content/uploads/2017/12/Res-etudiante-Armade.pdf",
+      "producer": "FSM_HABITAT",
+      "source_family": "ENTITY_OFFICIAL_DOCUMENT",
+      "independence_group": "FSM_ENTITY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "residence etudiants marcel lods",
+        "marcel lods",
+        "6 8 rue des etats unis"
+      ],
+      "fact_summary": "Le bailleur officiel situe la résidence Marcel Lods au 6-8 rue des États-Unis; le SIRET courant est celui de la mairie au 40 rue Grande."
+    },
+    {
+      "audit_case_id": "5577b67d7d06d138",
+      "siret_to_adjudicate": "49395011700033",
+      "source_url": "https://www.vitaclim.com/mentions-legales/",
+      "producer": "VITACLIM",
+      "source_family": "ENTITY_OFFICIAL_SITE",
+      "independence_group": "VITACLIM_ENTITY",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "493950117",
+        "271 rue jean baptiste calvignac",
+        "baillargues"
+      ],
+      "fact_summary": "Les mentions légales de Vitaclim donnent le même SIREN et l'adresse de Baillargues portée par le SIRET courant."
+    },
+    {
+      "audit_case_id": "5e1a8a424e479e16",
+      "siret_to_adjudicate": "45371190500084",
+      "source_url": "https://op.europa.eu/en/web/public-procurement/procurement-details/-/procurement/e1f6d415-77fc-3eb2-bb85-1bcc82bd42ef",
+      "producer": "EU_PUBLICATIONS_OFFICE",
+      "source_family": "OFFICIAL_PROCUREMENT_NOTICE",
+      "independence_group": "EU_PROCUREMENT",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "europe service proprete",
+        "1 rue martin luther king",
+        "viry chatillon"
+      ],
+      "fact_summary": "L'avis européen relie Europe Service à l'adresse exacte de Viry-Châtillon portée par le SIRET courant."
+    },
+    {
+      "audit_case_id": "80abb07da0393476",
+      "siret_to_adjudicate": "80765010600014",
+      "source_url": "https://www.maitredata.com/app/accords-entreprise/eurofins-ndsc-expertises-france/72566",
+      "producer": "PUBLIC_LABOUR_AGREEMENT_ARCHIVE",
+      "source_family": "DATED_PUBLIC_LABOUR_AGREEMENT",
+      "independence_group": "LABOUR_AGREEMENT_ARCHIVE",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "eurofins ndsc expertises france",
+        "208 210 avenue jean jaures",
+        "lyon"
+      ],
+      "fact_summary": "L'accord public identifie Eurofins NDSC à Lyon, 208-210 avenue Jean-Jaurès; le SIRET courant appartient à une autre entité Eurofins à Nantes."
+    },
+    {
+      "audit_case_id": "a4d74e89253d4681",
+      "siret_to_adjudicate": "58213743600074",
+      "source_url": "https://www.phoenixpharma.fr/images/actualites/Reglement_Jeu_Rencontre_Officine2016.pdf",
+      "producer": "PHOENIX_PHARMA",
+      "source_family": "ENTITY_OFFICIAL_DOCUMENT",
+      "independence_group": "PHOENIX_ENTITY",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "phoenix pharma",
+        "1 rue des bouvets",
+        "creteil"
+      ],
+      "fact_summary": "Le document Phoenix Pharma relie l'entité au 1 rue des Bouvets à Créteil, adresse exacte du SIRET courant."
+    },
+    {
+      "audit_case_id": "acefd5fbf567707e",
+      "siret_to_adjudicate": "31877199501218",
+      "source_url": "https://nimes.aeroport.fr/solutions/location-de-voitures/",
+      "producer": "AEROPORT_DE_NIMES",
+      "source_family": "OFFICIAL_AIRPORT_DIRECTORY",
+      "independence_group": "NIMES_AIRPORT_DIRECTORY",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "enterprise",
+        "aeroport de nimes",
+        "30800 saint gilles"
+      ],
+      "fact_summary": "L'aéroport officiel confirme la présence d'Enterprise dans l'aérogare de Nîmes/Saint-Gilles; le SIRET courant est l'établissement Enterprise de cet aéroport."
+    },
+    {
+      "audit_case_id": "ad38e9018a7f9994",
+      "siret_to_adjudicate": "33807576500044",
+      "source_url": "https://www.servanet.fr/mentions-legales",
+      "producer": "SERVANET",
+      "source_family": "ENTITY_OFFICIAL_SITE",
+      "independence_group": "SERVANET_ENTITY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "338 075 765 00051",
+        "18 rue des freres perret",
+        "issoire"
+      ],
+      "fact_summary": "Les mentions légales donnent pour le site Servanet d'Issoire le SIRET 33807576500051; le SIRET courant est l'établissement de Gerzat."
+    },
+    {
+      "audit_case_id": "ade7ac46e14440f0",
+      "siret_to_adjudicate": "54203432701410",
+      "source_url": "https://www.georisques.gouv.fr/risques/installations/donnees/details/0005102438",
+      "producer": "GEORISQUES",
+      "source_family": "GOVERNMENT_INDUSTRIAL_SITE_DIRECTORY",
+      "independence_group": "GEORISQUES_INSTALLATIONS",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "castrol france",
+        "38 rue de l industrie",
+        "peronne"
+      ],
+      "fact_summary": "Géorisques identifie le site industriel de Péronne au 38 rue de l'Industrie sous Castrol France; le SIRET courant est un établissement BP à Rennes."
+    },
+    {
+      "audit_case_id": "ca7c134e749b3383",
+      "siret_to_adjudicate": "38368967600021",
+      "source_url": "https://lehavre.fr/annuaire-equipements/piscine-du-cours-de-la-republique",
+      "producer": "VILLE_DU_HAVRE",
+      "source_family": "PUBLIC_ENTITY_OFFICIAL_SITE",
+      "independence_group": "VILLE_HAVRE_DIRECTORY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "piscine du cours de la republique",
+        "37 cours de la republique"
+      ],
+      "fact_summary": "La Ville situe l'équipement sportif au cours de la République; le SIRET courant désigne une entité sportive rue André-Siegfried."
+    },
+    {
+      "audit_case_id": "d06d480197c1893d",
+      "siret_to_adjudicate": "39939948400282",
+      "source_url": "https://used-cars.ayvens.com/fr-fr/agencies/ann",
+      "producer": "AYVENS",
+      "source_family": "ENTITY_OFFICIAL_SITE",
+      "independence_group": "AYVENS_ENTITY",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "25 route de la salle",
+        "cran gevrier"
+      ],
+      "fact_summary": "Le site officiel Ayvens situe l'agence Parcours au 25 route de la Salle à Cran-Gevrier, adresse portée par le SIRET courant."
+    },
+    {
+      "audit_case_id": "d49973806dd725c6",
+      "siret_to_adjudicate": "31514374300021",
+      "source_url": "https://assets.ctfassets.net/b85ozb2q358o/16IhxnWiNaJxOPPJo8K9hn/b711ea68aabe94abb5a7f84dc28ff879/mpn_a_l_honneur_magasins_participants.pdf",
+      "producer": "GAMM_VERT",
+      "source_family": "ENTITY_OFFICIAL_CAMPAIGN_DOCUMENT",
+      "independence_group": "GAMM_VERT_NETWORK",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "montdidier",
+        "gamm vert de montdidier"
+      ],
+      "fact_summary": "Le document réseau Gamm Vert identifie un magasin distinct à Montdidier; le SIRET courant est le siège SICAP/Gamm Vert de Boves."
+    },
+    {
+      "audit_case_id": "d572303809a76ec2",
+      "siret_to_adjudicate": "81352692800011",
+      "source_url": "https://www.leem.org/annuaire-des-entreprises-adherentes?activite=All&ordre=All&page=0&recherche=",
+      "producer": "LEEM",
+      "source_family": "OFFICIAL_PHARMA_SECTOR_DIRECTORY",
+      "independence_group": "LEEM_DIRECTORY",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "abl europe",
+        "317 avenue jean jaures",
+        "69007",
+        "lyon"
+      ],
+      "fact_summary": "L'annuaire sectoriel du médicament identifie un établissement ABL Europe au 317 avenue Jean-Jaurès à Lyon; le SIRET courant est le siège d'Illkirch."
+    },
+    {
+      "audit_case_id": "d8cd1b7b60ebf807",
+      "siret_to_adjudicate": "53748765400015",
+      "source_url": "https://www.capezzonearchitecture.com/fr/projets/le-k2-palace-extension/",
+      "producer": "CAPEZZONE_ARCHITECTURE",
+      "source_family": "ENTITY_PROJECT_OFFICIAL_SITE",
+      "independence_group": "CAPEZZONE_PROJECT_ARCHIVE",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "k2 collections",
+        "646 route du couardet",
+        "doussard"
+      ],
+      "fact_summary": "La page projet relie K2 Collections au 646 route du Couardet à Doussard; le SIRET courant est l'établissement de Poligny."
+    },
+    {
+      "audit_case_id": "e44d5d05a040a8e4",
+      "siret_to_adjudicate": "21440162200458",
+      "source_url": "https://www.saint-herblain.fr/app/uploads/2024/12/2024-1217.pdf",
+      "producer": "VILLE_DE_SAINT_HERBLAIN",
+      "source_family": "PUBLIC_ENTITY_OFFICIAL_DOCUMENT",
+      "independence_group": "VILLE_SAINT_HERBLAIN",
+      "relationship": "CONTRADICTS_CURRENT_TOP1",
+      "required_terms": [
+        "groupe scolaire du soleil levant",
+        "38 rue de la blanche"
+      ],
+      "fact_summary": "Le document municipal identifie le groupe scolaire Soleil-Levant au 38 rue de la Blanche; le SIRET courant désigne la halte-garderie Soleil-Levant."
+    },
+    {
+      "audit_case_id": "f2096fc2de12daf0",
+      "siret_to_adjudicate": "34391012100049",
+      "source_url": "https://entreprises.lefigaro.fr/transports-feint-leboucher-tfl-52/entreprise-343910121",
+      "producer": "LE_FIGARO_ANNONCES_LEGALES",
+      "source_family": "DATED_PUBLIC_LEGAL_NOTICE",
+      "independence_group": "LEGAL_NOTICE_ARCHIVE",
+      "relationship": "SUPPORTS_CURRENT_TOP1",
+      "required_terms": [
+        "transports feint leboucher",
+        "14 rue de lorraine",
+        "longeau percey"
+      ],
+      "fact_summary": "L'annonce légale documente le transfert de Transports Feint-Leboucher au 14 rue de Lorraine à Longeau-Percey, adresse du SIRET courant."
+    }
+  ]
+}
