@@ -245,7 +245,9 @@ top-1 inclus. Les écarts « meilleur frère » excluent le top-1.
 
 Un frère est un autre candidat réellement présent dans le pool et portant le
 même SIREN. Les égalités sont départagées par score ranker décroissant, rang
-retrieval croissant, puis SIRET lexical croissant. Aucun SIRET, SIREN, rang
+de classement ranker gelé croissant, puis SIRET lexical croissant. Le rang
+retrieval n'est pas disponible de façon symétrique dans V4.5 et ne peut donc
+pas servir au départage V4.10. Aucun SIRET, SIREN, rang
 identifiant ou texte brut n'entre dans l'ordre modèle. Les cas sans candidat,
 avec un seul site et avec 100 candidats possèdent des tests train/serve.
 
