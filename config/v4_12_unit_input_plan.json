@@ -1,0 +1,124 @@
+{
+  "cache": {
+    "expected_file_count": 2908,
+    "expected_inventory_sha256": "589360b10fa65d190bae9a2521e05d8e60e71c2cbd1fc0c5843c044332a183ce",
+    "expected_key_count": 1454,
+    "expected_pickle_count": 1454,
+    "expected_sidecar_count": 1454,
+    "expected_size_bytes": 6730554690,
+    "safe_key_regex": "^(?:[0-9]{5}_|_[0-9]{5})$",
+    "tfidf_config_artifact_hash": "92b68d1f7aa386f181edbede280e58df72f8583d7663419d77da88300d241c61",
+    "namespace": "296c7891107249a073c00d93c7310c55a652243de4bcfa7165d09dbfc3349a82",
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/v46_aligned_b/v411_verified/296c7891107249a073c00d93c7310c55a652243de4bcfa7165d09dbfc3349a82",
+    "sidecar_schema_version": "sireto-tfidf-cache-integrity-1",
+    "sparse_config_hash": "aeaa671959fc00dcec2e8a5393976d1e68da9dfa5ae48ef4d836e9dbdc3c564e"
+  },
+  "max_rss_bytes": 8589934592,
+  "audit_output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_inputs",
+  "execution_lock_path": "config/v4_12_unit_input_execution_lock.json",
+  "orders": {
+    "all": {
+      "first_query_ids": [
+        "7417",
+        "788",
+        "103",
+        "fresh:AC019060",
+        "4526"
+      ],
+      "last_query_ids": [
+        "13075",
+        "2196",
+        "9089",
+        "10240",
+        "13883"
+      ],
+      "namespace": "v412-unit-evidence:",
+      "payload_lf_bytes": 50396,
+      "payload_lf_sha256": "8dc263fb5da7d609b0ec43d238b6f28283b3aec6694cf79c774536103faef762",
+      "query_count": 7003
+    },
+    "dev": {
+      "first_query_ids": [
+        "1394",
+        "16308",
+        "2454",
+        "8914",
+        "9265"
+      ],
+      "last_query_ids": [
+        "13579",
+        "1174",
+        "9760",
+        "4986",
+        "9307"
+      ],
+      "namespace": "v412-unit-engine:",
+      "payload_lf_bytes": 10299,
+      "payload_lf_sha256": "37016d9dc480194b52b545fffb3272847d485c5f209025d064d313b425c03bf4",
+      "query_count": 1456
+    }
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine",
+  "partitions": {
+    "expected_file_count": 4119,
+    "expected_inventory_sha256": "680f1884879bfa5b8cf2c335a0658604010e3d4c546ed6eaeb2e2ef34c954463",
+    "expected_row_count": 27594915,
+    "expected_runtime_signature": "2f6668f60da8bc9fe52b683b32ef35641803679c01f8c8fd124e2e86a41e2b82",
+    "expected_size_bytes": 1969745065,
+    "insee_manifest": {
+      "relative_path": "manifest/insee_counts.parquet",
+      "sha256": "a07bf9cd084f2f8e4842c30b545a913a93da7096a5d9c9a81d3f48c8b866ab0a",
+      "size_bytes": 175506
+    },
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/candidates_v7_all",
+    "postcode_manifest": {
+      "relative_path": "manifest/postcode_counts.parquet",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "size_bytes": 0
+    }
+  },
+  "queries": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/queries.parquet",
+    "projection": [
+      "query_id",
+      "crm_name",
+      "crm_address",
+      "crm_postcode",
+      "crm_city",
+      "crm_insee"
+    ],
+    "row_count": 7003,
+    "sha256": "3a47aef768cee1436ad77a6e114defe50e685b7495f0e75137e9fd06dfe9fc68",
+    "size_bytes": 608507
+  },
+  "runtime": {
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "pyarrow": "23.0.1",
+    "python": "3.14.3"
+  },
+  "schema_version": "sireto-v4.12-unit-input-plan-1",
+  "sources": [
+    "scripts/__init__.py",
+    "docs/v4_12_unit_input_contract.md",
+    "config/v4_12_unit_input_plan.json",
+    "scripts/build_v412_unit_inputs.py",
+    "tests/test_build_v412_unit_inputs.py"
+  ],
+  "split_assignments": {
+    "counts": {
+      "dev": 1456,
+      "fit": 5547
+    },
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/split_assignments.parquet",
+    "projection": [
+      "query_id",
+      "split"
+    ],
+    "row_count": 7003,
+    "sha256": "33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193",
+    "size_bytes": 170201
+  },
+  "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_unit_inputs"
+}
