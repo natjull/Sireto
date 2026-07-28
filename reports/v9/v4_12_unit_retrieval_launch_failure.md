@@ -60,3 +60,38 @@ worker sous sandbox. La suite ciblée passe 153 tests et la suite complète
 
 La relance reste interdite jusqu'à la création et au double contre-audit d'un
 nouveau verrou d'exécution.
+
+## Deuxième arrêt de lancement
+
+Le verrou corrigé `a1c1db8` a autorisé une deuxième tentative. L'import du
+paquet privé a cette fois réussi, puis le worker s'est arrêté avant toute
+requête avec :
+
+```text
+runtime differs from worker run-spec
+```
+
+La cause ne concernait aucune bibliothèque scientifique. Sous Seatbelt avec
+le fork interdit, `platform.platform()` omettait le processeur et le format
+binaire :
+
+```text
+macOS-26.5.2-arm64-64bit
+```
+
+Hors sandbox, le plan avait correctement enregistré :
+
+```text
+macOS-26.5.2-arm64-arm-64bit-Mach-O
+```
+
+Le commit `a0a0e37` reconstruit cette valeur Darwin à partir d'informations
+locales stables, sans sous-processus. Les versions Python, NumPy, pandas,
+PyArrow, scikit-learn, SciPy, joblib et DuckDB, ainsi que l'architecture,
+restent comparées exactement. Le test natif vérifie désormais le dictionnaire
+runtime complet sous la vraie sandbox.
+
+Deux audits indépendants concluent `GO_RUNTIME_PATCH_1` et
+`GO_RUNTIME_PATCH_2`. La suite ciblée passe 153 tests et la suite complète
+823 tests. Le verrou `a1c1db8` est révoqué ; aucun candidat, manifeste worker
+ou résultat de parité n'a été produit.

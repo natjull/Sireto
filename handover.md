@@ -230,6 +230,19 @@ worker restent sans oracle, historique, dataset ou modèle. Ce verrou autorise
 une nouvelle tentative end-to-end worker puis parité ; il n'autorise toujours
 pas l'ouverture de l'oracle, le calcul du Recall ou le dégel des modèles.
 *(commit GitHub : `a1c1db8`)*
+La tentative autorisée par `a1c1db8` a franchi l'import puis s'est arrêtée
+avant toute requête : sous Seatbelt, `platform.platform()` omettait le
+processeur et `Mach-O`, ce qui faisait diverger le nom de plateforme du plan
+alors que Python et les huit bibliothèques étaient identiques. La valeur
+Darwin est désormais reconstruite sans sous-processus à partir de la version
+macOS, de la machine et de la taille de pointeur. Le test natif compare le
+dictionnaire runtime complet sous la sandbox réelle. Deux audits rendent
+`GO_RUNTIME_PATCH_1` et `GO_RUNTIME_PATCH_2`; 153 tests ciblés et les 823
+tests du dépôt passent. Le verrou `a1c1db8` est révoqué. Aucun candidat,
+manifeste worker ou résultat de parité n'a été produit. Rapport d'incident
+mis à jour : `reports/v9/v4_12_unit_retrieval_launch_failure.md`. Une
+nouvelle relance exige encore un nouveau verrou doublement audité. *(commit
+GitHub : correctif `a0a0e37`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
