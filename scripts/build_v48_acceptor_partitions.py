@@ -229,8 +229,15 @@ def _load_inputs(
     if not np.isfinite(feature_matrix.to_numpy(dtype=float)).all():
         raise ValueError("A reliable current scene contains a non-finite feature")
 
+    assignment_join = assignments.rename(
+        columns={
+            "siren_component_id": "assigned_component_id",
+            "split": "assigned_split",
+            "oof_fold": "assigned_oof_fold",
+        }
+    )
     historical = (
-        scenes.merge(assignments, on="query_id", validate="one_to_one")
+        scenes.merge(assignment_join, on="query_id", validate="one_to_one")
         .merge(
             queries[["query_id", "input_siret", "input_siren"]],
             on="query_id",
@@ -243,6 +250,27 @@ def _load_inputs(
             suffixes=("", "_label"),
         )
     )
+    if "split" in historical:
+        if not historical["split"].astype(str).eq(
+            historical["assigned_split"].astype(str)
+        ).all():
+            raise ValueError("Historical scene and assignment split disagree")
+    else:
+        historical["split"] = historical["assigned_split"]
+    if "oof_fold" in historical:
+        if not historical["oof_fold"].astype(int).eq(
+            historical["assigned_oof_fold"].astype(int)
+        ).all():
+            raise ValueError("Historical scene and assignment OOF fold disagree")
+    else:
+        historical["oof_fold"] = historical["assigned_oof_fold"]
+    if "siren_component_id" in historical:
+        if not historical["siren_component_id"].astype(str).eq(
+            historical["assigned_component_id"].astype(str)
+        ).all():
+            raise ValueError("Historical scene and assignment component disagree")
+    else:
+        historical["siren_component_id"] = historical["assigned_component_id"]
     if "ground_truth_siren_label" in historical:
         left = historical["ground_truth_siren"].map(_siren)
         right = historical["ground_truth_siren_label"].map(_siren)
