@@ -8,9 +8,17 @@ Le dataset compact de l'accepteur est construit à partir des prédictions OOF
 du ranker C sur le fit et de son modèle complet sur le dev. Aucun accepteur,
 score de confiance ou seuil n'a encore été entraîné ou choisi.
 
-Artefact :
+Artefact initial, désormais supersédé :
 
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/e9570f621216f3fd`
+
+Artefact corrigé et retenu :
+
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff`
+
+L'ancien build `e9570f621216f3fd` est supersédé : ses scènes sont valides,
+mais son manifeste n'épinglait pas l'implémentation transitive
+`v49_site_function.py`.
 
 ## Volumes
 
@@ -52,8 +60,13 @@ ou transformée.
 - toutes les prédictions ranker sont hors-échantillon pour la scène
   concernée ;
 - le manifeste épingle exactement le retrieval `ec4326ec57e4411d`, le ranker
-  `e13eb3ac7498256e`, ses 698 892 prédictions, le contrat et la taxonomie ;
+  `e13eb3ac7498256e`, ses 698 892 prédictions, le contrat, la taxonomie,
+  `v411_scene.py` et `v49_site_function.py` ;
+- hash du manifeste corrigé :
+  `8faaf2761bb280f1ba559ea3f2c579fd5d91531a202b6b54dff79e38f0d2757e` ;
+- le parquet corrigé est bit-à-bit identique au parquet supersédé ;
 - le validateur officiel de l'artefact passe ;
+- le contre-audit indépendant conclut `GO_FREEZE_PLAN` ;
 - aucun jeu random, holdout, test final ou challenge inédit n'a été ouvert.
 
 ## Prochaine étape autorisée
@@ -69,4 +82,3 @@ Geler dans Git un plan d'entraînement contenant :
 
 Un verrou d'exécution externe devra ensuite lier ce plan au commit exact du
 runner avant le premier fit.
-
