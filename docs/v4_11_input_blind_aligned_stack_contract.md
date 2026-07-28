@@ -326,6 +326,23 @@ Le détecteur de rôles et sa taxonomie sont épinglés avant le build. Ils sont
 des features, jamais un veto. Aucune catégorie NAF ou rôle n'est développée
 en centaines de colonnes.
 
+Le parquet candidat transporte, comme colonnes de contexte non consommées
+directement par le ranker C, exactement :
+
+```text
+enseigne1
+enseigne2
+enseigne3
+denomination_usuelle
+activity_code
+```
+
+Elles sont lues dans le snapshot SIRENE épinglé au même moment que l'état
+administratif. Leur absence du schéma provoque `STOP_DATASET_INTEGRITY` ;
+elles ne peuvent pas être remplacées silencieusement par des zéros. Pour
+`naf_top1_top2_division_equal`, une division inconnue d'un côté ou de l'autre
+donne zéro, jamais un faux accord `UNKNOWN == UNKNOWN`.
+
 L'ordre contient donc exactement 80 features : 13 de scène, 60 preuves et
 sept informations de fonction.
 
