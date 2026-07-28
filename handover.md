@@ -154,6 +154,17 @@ exposées. Le contre-audit conclut `GO_QUALIFY`. Artefact :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_sanitized/1c994c852c10acaf`.
 *(commit GitHub : `1fc058f`)*
 
+La qualification mécanique du challenge est gelée avant toute prédiction :
+74 `MATCH_EXACT`, 17 `AMBIGUOUS` et 134 `UNRESOLVED`. La cohorte aveugle
+principale contient 73 exacts sur 222 lignes ; la cohorte exposée un exact
+sur trois. Les 138 preuves actives, leurs cardinalités et les identifiants
+exacts sont cohérents ; aucun `NO_MATCH`, secours web, modèle ou score n'a
+été utilisé. Le contre-audit conclut `GO_FREEZE_LABELS`. Cette population
+n'est identifiable qu'à 32,889 % et reste descriptive. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_qualification/4f9ef46516b89ab8`.
+Rapport : `reports/v9/v4_11_unseen_qualification_results.md`.
+*(commit GitHub : `6b84597`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
@@ -1315,6 +1326,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Scènes accepteur V4.11 validées | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff/` |
 | Candidat accepteur V4.11 gelé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_acceptor/9d23bf3deb6b63de/` |
 | CRM challenge V4.11 assaini | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_sanitized/1c994c852c10acaf/` |
+| Labels challenge V4.11 gelés | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_qualification/4f9ef46516b89ab8/` |
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
