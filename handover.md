@@ -119,6 +119,21 @@ ce plan au runner et aux sources commités ; préflight et contre-audit
 concluent `GO`. Aucun challenge, holdout, unseen ou test final n'a été ouvert.
 *(commits GitHub : plan `8033934`, verrou `fd70a64`)*
 
+Le développement de l'accepteur V4.11 conclut
+**`GO_FREEZE_V411_CANDIDATE`**. La logistique compacte gagne au seuil
+`0.8720916706888049` : 614/746 AUTO, 614 corrects, zéro ambigu automatisé,
+soit 82,306 % de couverture et 100 % de précision observée sur
+`comparison_dev`. Le XGBoost monotone obtient 612/746 sans erreur. La
+baseline obtient 618/746 avec une erreur. Deux audits recomputent à
+l'identique modèles, seuils, métriques, familles et bundle. Ce GO autorise
+uniquement le gel et le challenge descriptif des 225 cas : le ranker était
+déjà exact sur les 634 labels exacts de comparaison, la borne basse Wilson
+95 % du 614/614 n'est que 99,378 %, et le dev est historique. Il ne s'agit
+donc ni d'une certification 99,8 % ni d'une promotion produit. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_acceptor/9d23bf3deb6b63de`.
+Rapport : `reports/v9/v4_11_acceptor_development_results.md`.
+*(commit GitHub : `f99c1d1`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
@@ -1278,6 +1293,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Dataset V4.11 input-blind | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/` |
 | Ranker C V4.11 validé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_ranker_c/e13eb3ac7498256e/` |
 | Scènes accepteur V4.11 validées | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff/` |
+| Candidat accepteur V4.11 gelé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_acceptor/9d23bf3deb6b63de/` |
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
@@ -1298,10 +1314,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    pas par le retrieval.
 7. Préenregistrer V4.11 sur le stack homogène V4.2-B + ranker B OOF, construire
    un accepteur compact, puis le geler avant tout accès aux 225 lignes
-   restantes. **Gates retrieval, ranker C et scènes accepteur franchis ;
-   prochaine étape : geler le plan et le verrou d'exécution, puis comparer
-   les deux accepteurs préenregistrés.** Pour une décision finale, obtenir un
-   nouvel export CRM.
+   restantes. **Candidat V4.11 gelé ; prochaine étape : qualifier puis
+   exécuter une seule fois le challenge descriptif des 225 lignes, sans en
+   faire une preuve produit.** Pour une décision finale, obtenir un nouvel
+   export CRM.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
