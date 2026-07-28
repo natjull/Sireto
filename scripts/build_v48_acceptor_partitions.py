@@ -141,7 +141,6 @@ def _load_inputs(
             "sampling_stratum",
             "input_siret",
             "current_top1_siret",
-            "current_top1_siren",
             "current_adjudication_label",
             "current_evidence_validated",
             "current_acceptor_target",
@@ -306,7 +305,6 @@ def _row_sirens(row: pd.Series, *, historical: bool) -> list[str]:
     else:
         values = [
             row.get("input_siret"),
-            row.get("current_top1_siren"),
             row.get("current_top1_siret"),
             row.get("validated_correct_siret"),
         ]
