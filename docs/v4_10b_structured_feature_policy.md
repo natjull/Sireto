@@ -78,8 +78,17 @@ candidate_top2_is_sigle_max
 candidate_delta_is_sigle_max
 ```
 
-Le catalogue contient une `alias_of` explicite pour les 58 colonnes et le
-builder vérifie leur égalité définitionnelle avec leur représentation
+Le catalogue contient une `alias_of` typée pour les 58 colonnes :
+
+- 56 entrées `{kind: "column", operands: ["nom_canonique"]}` ;
+- `candidate_delta_is_sigle_max` :
+  `{kind: "subtract", operands:
+  ["candidate_top1_type_of_max_name__5",
+  "candidate_top2_type_of_max_name__5"]}` ;
+- `top1_is_same_siren_best_ranker_score` :
+  `{kind: "literal", operands: [1.0]}`.
+
+Le builder vérifie leur égalité définitionnelle avec cette représentation
 canonique sur chaque ligne. Toute divergence provoque
 `STOP_DATASET_INTEGRITY`.
 
@@ -131,7 +140,9 @@ Le nouveau catalogue publie pour chaque colonne :
 - `alias_of`.
 
 Il publie aussi les listes et hashes des alias, exclusions retrieval,
-features structurées standardisées et non standardisées.
+features structurées standardisées et non standardisées. Tous les hashes
+d'ordre utilisent exactement les octets UTF-8 de `"\n".join(order)`, sans
+retour à la ligne final.
 
 Pour `STRUCTURED_LOGIT`, le scaler est appris uniquement sur le train propre
 au modèle ou au pli :
@@ -139,8 +150,14 @@ au modèle ou au pli :
 - standardiser les kinds `continuous` et `count` ;
 - laisser les kinds `binary` inchangés.
 
-Les deux ordres doivent être disjoints et leur union ordonnée doit reproduire
-exactement les 641 features. `STRUCTURED_XGB` ne reçoit aucun scaler.
+Les deux ordres doivent être disjoints et leur union doit reproduire
+exactement les 641 features. La reconstruction se fait en parcourant l'ordre
+maître et en testant l'appartenance, jamais en concaténant l'ordre scaled puis
+l'ordre unscaled. Les 157 features `continuous|count` ont le SHA-256
+`c1769136cb80f9f2273406a1045f223f99a088f4270b4dc8ef9097e8234d61ed` ;
+les 484 `binary` ont le SHA-256
+`7f0a1c01d8ed402c577b128cfe1aeb05b342772af0b132b597a432cce8409e89`.
+`STRUCTURED_XGB` ne reçoit aucun scaler.
 
 ## 6. Précisions du gate et de la sélection
 
@@ -156,11 +173,13 @@ Les gates historiques utilisent des entiers :
 - perte de couverture maximale :
   `1184 - auto_count <= 29`.
 
-Toutes les variantes franchissant le gate sont gelées comme
-`fresh_dev_eligible`. Le tie-break produit seulement un ordre provisoire ;
-il n'élimine aucune autre variante éligible. Le futur dev frais choisira
-entre ces variantes préenregistrées. `BASE_FROZEN` reste comparateur
-seulement.
+Toutes les variantes `STRUCTURED_LOGIT_*` et `STRUCTURED_XGB_*` franchissant
+le gate sont gelées comme `fresh_dev_eligible`. Le tie-break produit seulement
+un ordre provisoire ; il n'élimine aucune autre variante structurée éligible.
+Le futur dev frais choisira entre ces variantes préenregistrées.
+`BASE_FROZEN` et `CURRENT80_W*` restent des contrôles non promouvables. Si
+seul un `CURRENT80_W*` franchit les critères numériques, le verdict est
+`PIVOT_STRUCTURED_FEATURES`, jamais `GO_FRESH_DEV_V410`.
 
 ## 7. Artefact V4.10b
 
