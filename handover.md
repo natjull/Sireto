@@ -34,6 +34,11 @@ fermeture de tous les pools, 45 features ranker et cinq champs de rôle issus
 du snapshot. Un smoke réel produit 100 candidats et un NAF réel sans colonne
 interdite ; 402 tests passent. Aucun fit n'a encore eu lieu.
 *(commit GitHub : `3149d04`)*
+Le premier lancement complet s'est arrêté en préflight avant toute requête :
+les splits V4.6 attribuent un numéro de pli aux lignes dev aussi. Le
+garde-fou a été corrigé pour valider les cinq plis gelés et l'unicité du pli
+par composante sur les 7 003 lignes ; 403 tests passent. Aucun pool, label ou
+résultat n'a été produit par cette tentative. *(commit GitHub : `734dc24`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
