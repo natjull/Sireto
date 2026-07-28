@@ -1,0 +1,9 @@
+{
+  "schema_version": "sireto-v4.11-compact-acceptor-execution-lock-1",
+  "training_plan_sha256": "49299bd98f350abb90f159915a5991d88af25a307ab73b951826beb49cc571b4",
+  "runner_sha256": "e32355605debb131380daee0b432ebac096c0f577abe5498bf9efd81a1a67353",
+  "acceptor_source_sha256": "a85833a78ab98121d3ccf4bc9e93b63cbd33c2e727b980bc456bff64424740b4",
+  "scene_source_sha256": "ce90f6a9402cd062e5afb1f5248085df551a87f2ac0b40657e7c57b8236086a1",
+  "scene_manifest_sha256": "8faaf2761bb280f1ba559ea3f2c579fd5d91531a202b6b54dff79e38f0d2757e",
+  "runner_commit": "80339348999be913cc76de4123f2b8ee1e46cf99"
+}
