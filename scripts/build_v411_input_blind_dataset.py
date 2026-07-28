@@ -52,6 +52,7 @@ from src.xgb_matcher.v9_dataset import file_sha256  # noqa: E402
 SCHEMA_VERSION = "sireto-v4.11-input-blind-ranker-dataset-1"
 EXPERIMENT_ID = "V411_INPUT_BLIND_ALIGNED_STACK"
 RETRIEVAL_POLICY_VERSION = "v4.11-input-blind-sparse-v42-1"
+TFIDF_CACHE_POLICY_VERSION = "v4.11-verified-partition-cache-1"
 SEED = 42
 CANDIDATE_CEILING = 100
 EXPECTED_QUERY_COUNT = 7_003
@@ -88,6 +89,14 @@ QUERY_AUDIT_COLUMNS = [
     "query_id",
     "input_siret_state",
     "source_segment",
+]
+SOURCE_QUERY_READ_COLUMNS = [
+    *INPUT_BLIND_QUERY_COLUMNS,
+    *[
+        column
+        for column in QUERY_AUDIT_COLUMNS
+        if column not in INPUT_BLIND_QUERY_COLUMNS
+    ],
 ]
 LABEL_COLUMNS = [
     "query_id",
@@ -165,6 +174,51 @@ CANDIDATE_COLUMNS = (
     + CANDIDATE_ROLE_SOURCE_COLUMNS
     + RANKER_C_FEATURE_ORDER
 )
+RAW_CANDIDATE_SOURCE_COLUMNS = [
+    "denomination",
+    "enseigne1",
+    "enseigne2",
+    "enseigne3",
+    "etablissementSiege",
+    "is_siege",
+    "numeroVoie",
+    "typeVoie",
+    "libelleVoie",
+    "complementAdresse",
+    "postcode",
+    "city",
+    "insee",
+    "cj_ul",
+    "etat_admin",
+    "sigle_ul",
+    "denomination_ul",
+    "denomination_usuelle_ul",
+    "nom_ul",
+    "prenom_usuel_ul",
+    "pm_dirigeant_names",
+    "_xgb_addr_density_insee",
+    "_xgb_addr_density_cp",
+]
+RAW_CANDIDATE_COLUMNS = [
+    "query_id",
+    "candidate_siret",
+    "candidate_siren",
+    "rrf_score",
+    "retrieval_source",
+    "retrieval_channel_count",
+    "idf_payload",
+    "idf_default",
+    *RAW_CANDIDATE_SOURCE_COLUMNS,
+]
+HYDRATED_SNAPSHOT_COLUMNS = [
+    "snapshot_candidate_state",
+    "snapshot_enseigne1",
+    "snapshot_enseigne2",
+    "snapshot_enseigne3",
+    "snapshot_denomination_usuelle",
+    "snapshot_activity_code",
+]
+MAX_IN_MEMORY_TFIDF_PARTITIONS = 20
 FORBIDDEN_PREDICTION_COLUMNS = {
     "input_siret",
     "input_siren",
@@ -200,6 +254,61 @@ def feature_order_sha256(features: Sequence[str]) -> str:
             separators=(",", ":"),
         ).encode()
     ).hexdigest()
+
+
+def read_projected_source_queries(
+    path: Path,
+    *,
+    reader: Any = pd.read_parquet,
+) -> pd.DataFrame:
+    """Physically read only prediction-safe and audit-only query columns."""
+
+    return reader(path, columns=SOURCE_QUERY_READ_COLUMNS)
+
+
+def read_sha256_pinned_parquet(
+    path: Path,
+    *,
+    expected_sha256: str,
+    reader: Any = pd.read_parquet,
+) -> pd.DataFrame:
+    """Refuse an immutable Parquet input before invoking its deserializer."""
+
+    observed_sha256 = file_sha256(Path(path))
+    if observed_sha256 != expected_sha256:
+        raise ValueError(
+            f"Pinned Parquet hash mismatch: {Path(path).name}"
+        )
+    return reader(path)
+
+
+def tfidf_cache_namespace(
+    *,
+    sparse_config_hash: str,
+    tfidf_artifact_hash: str,
+    partitions_signature: str,
+) -> str:
+    payload = {
+        "policy_version": TFIDF_CACHE_POLICY_VERSION,
+        "sparse_config_hash": sparse_config_hash,
+        "tfidf_artifact_hash": tfidf_artifact_hash,
+        "partitions_signature": partitions_signature,
+    }
+    return hashlib.sha256(
+        json.dumps(payload, sort_keys=True, separators=(",", ":")).encode()
+    ).hexdigest()
+
+
+def verified_tfidf_cache_dir(
+    *,
+    cache_root: Path,
+    namespace: str,
+) -> Path:
+    root = Path(cache_root).resolve()
+    directory = (root / "v411_verified" / namespace).resolve()
+    if not directory.is_relative_to(root):
+        raise ValueError("V4.11 TF-IDF cache escaped its controlled root")
+    return directory
 
 
 def input_blind_retrieval_config() -> V41RetrievalConfig:
@@ -281,6 +390,55 @@ class CandidateWriter:
         self._writer.close()
 
 
+def _raw_candidate_schema() -> pa.Schema:
+    bool_columns = {"etablissementSiege", "is_siege"}
+    float_columns = {
+        "rrf_score",
+        "idf_default",
+        "_xgb_addr_density_insee",
+        "_xgb_addr_density_cp",
+    }
+    integer_columns = {"retrieval_channel_count"}
+    return pa.schema(
+        [
+            pa.field(
+                column,
+                (
+                    pa.bool_()
+                    if column in bool_columns
+                    else (
+                        pa.float64()
+                        if column in float_columns
+                        else pa.int32() if column in integer_columns else pa.string()
+                    )
+                ),
+            )
+            for column in RAW_CANDIDATE_COLUMNS
+        ]
+    )
+
+
+class RawCandidateWriter:
+    """Stream the label-free sparse result before authoritative hydration."""
+
+    def __init__(self, path: Path) -> None:
+        self.schema = _raw_candidate_schema()
+        self._writer = pq.ParquetWriter(path, self.schema)
+        self.count = 0
+
+    def write(self, rows: Sequence[Mapping[str, Any]]) -> None:
+        if not rows:
+            return
+        frame = pd.DataFrame(rows, columns=RAW_CANDIDATE_COLUMNS)
+        self._writer.write_table(
+            pa.Table.from_pandas(frame, schema=self.schema, preserve_index=False)
+        )
+        self.count += len(frame)
+
+    def close(self) -> None:
+        self._writer.close()
+
+
 def load_source_population(
     source_dataset_dir: Path,
 ) -> tuple[dict[str, Any], pd.DataFrame, pd.DataFrame]:
@@ -304,10 +462,17 @@ def load_source_population(
         path = source_dataset_dir / filename
         expected = EXPECTED_INPUT_HASHES[filename]
         declared = ((manifest.get("outputs") or {}).get(filename) or {}).get("sha256")
-        if declared != expected or file_sha256(path) != expected:
+        if declared != expected:
             raise ValueError(f"V4.6 source hash mismatch: {filename}")
+        # Labels and comparison candidates remain physically unopened until
+        # the final label-free V4.11 pools have been closed.
+        if filename in {"queries.parquet", "split_assignments.parquet"}:
+            if file_sha256(path) != expected:
+                raise ValueError(f"V4.6 source hash mismatch: {filename}")
 
-    raw_queries = pd.read_parquet(source_dataset_dir / "queries.parquet")
+    raw_queries = read_projected_source_queries(
+        source_dataset_dir / "queries.parquet"
+    )
     assert_authorized_canonical_table(raw_queries, name="source_queries")
     required = set(INPUT_BLIND_QUERY_COLUMNS + QUERY_AUDIT_COLUMNS)
     missing = required - set(raw_queries.columns)
@@ -360,76 +525,49 @@ def _finite_float(value: Any) -> float:
     return output if np.isfinite(output) else 0.0
 
 
-def _candidate_snapshot_details(
-    current_state_store: Any,
-    sirets: Sequence[str],
-) -> dict[str, dict[str, Any]]:
-    """Read state and compact role evidence in one authoritative query."""
+def _trim_tfidf_cache(
+    cache: dict[tuple[str, str], tuple],
+    *,
+    ceiling: int = MAX_IN_MEMORY_TFIDF_PARTITIONS,
+) -> None:
+    """Apply the same deterministic FIFO ceiling as V4.1."""
 
-    custom = getattr(current_state_store, "get_candidate_scene_details", None)
-    if callable(custom):
-        return custom(sirets)
-    connection = getattr(current_state_store, "_connection", None)
-    snapshot_path = getattr(current_state_store, "snapshot_path", None)
-    if connection is None or snapshot_path is None:
-        raise TypeError(
-            "current state store must expose authoritative scene details"
-        )
-    normalized = list(dict.fromkeys(str(value).strip() for value in sirets))
-    if not normalized:
-        return {}
-    rows = connection.execute(
-        """
-        SELECT
-            CAST(siret AS VARCHAR) AS siret,
-            upper(trim(CAST(etatAdministratifEtablissement AS VARCHAR)))
-                AS candidate_state,
-            CAST(enseigne1Etablissement AS VARCHAR) AS enseigne1,
-            CAST(enseigne2Etablissement AS VARCHAR) AS enseigne2,
-            CAST(enseigne3Etablissement AS VARCHAR) AS enseigne3,
-            CAST(denominationUsuelleEtablissement AS VARCHAR)
-                AS denomination_usuelle,
-            CAST(activitePrincipaleEtablissement AS VARCHAR) AS activity_code
-        FROM read_parquet(?)
-        WHERE CAST(siret AS VARCHAR) IN (SELECT unnest(?))
-        ORDER BY siret
-        """,
-        [str(snapshot_path), normalized],
-    ).fetchall()
-    output: dict[str, dict[str, Any]] = {}
-    for row in rows:
-        siret = str(row[0] or "").zfill(14)
-        details = {
-            "candidate_state": str(row[1] or "").strip().upper(),
-            **{
-                column: value
-                for column, value in zip(
-                    CANDIDATE_ROLE_SOURCE_COLUMNS,
-                    row[2:],
-                    strict=True,
-                )
-            },
-        }
-        previous = output.get(siret)
-        if previous is not None and previous != details:
-            raise ValueError(
-                f"STOP_DATASET_INTEGRITY: conflicting snapshot details for {siret}"
-            )
-        output[siret] = details
-    return output
+    if ceiling <= 0:
+        raise ValueError("TF-IDF cache ceiling must be positive")
+    while len(cache) > ceiling:
+        cache.pop(next(iter(cache)), None)
 
 
-def retrieve_input_blind_query(
+def _idf_payload(
+    crm_pre: Mapping[str, Any],
+    idf_map: Mapping[str, float],
+    default_idf: float,
+) -> str:
+    """Persist only IDFs that can participate in an overlap with this CRM."""
+
+    tokens = sorted(set(str(crm_pre.get("crm_name") or "").split()))
+    payload = {
+        token: float(idf_map.get(token, default_idf))
+        for token in tokens
+    }
+    return json.dumps(
+        payload,
+        sort_keys=True,
+        separators=(",", ":"),
+        ensure_ascii=True,
+    )
+
+
+def retrieve_raw_input_blind_query(
     *,
     query: Mapping[str, Any],
     partitioned_store: Any,
-    current_state_store: Any,
     config: V41RetrievalConfig,
     tfidf_cache: dict[tuple[str, str], tuple],
     persistent_cache: Any,
     sparse_pool_builder: Any = build_candidate_pool,
 ) -> tuple[list[dict[str, Any]], dict[str, Any]]:
-    """Retrieve one query with an interface that cannot receive an identifier truth."""
+    """Retrieve a label-free raw pool; no snapshot or truth is accepted."""
 
     unexpected = FORBIDDEN_PREDICTION_COLUMNS & set(query)
     if unexpected:
@@ -465,19 +603,88 @@ def retrieve_input_blind_query(
         siret = str(candidate.get("siret") or "")
         if siret:
             candidate_by_siret.setdefault(siret, candidate)
-    snapshot_details = _candidate_snapshot_details(
-        current_state_store,
-        list(candidate_by_siret),
+    if len(candidate_by_siret) > CANDIDATE_CEILING:
+        raise ValueError("Raw V4.11 sparse pool exceeded 100 unique SIRETs")
+    idf_payload = _idf_payload(
+        crm_pre,
+        result.idf_map,
+        result.default_idf,
     )
-    active_candidates: list[dict[str, Any]] = []
+    rows = []
     for siret, candidate in candidate_by_siret.items():
-        details = snapshot_details.get(siret, {})
-        state = str(details.get("candidate_state") or "").upper()
+        rows.append(
+            {
+                "query_id": query_id,
+                "candidate_siret": siret,
+                "candidate_siren": str(candidate.get("siren") or siret[:9]),
+                "rrf_score": _finite_float(candidate.get("rrf_score")),
+                "retrieval_source": str(
+                    candidate.get("retrieval_source") or "v4.11-sparse"
+                ),
+                "retrieval_channel_count": int(
+                    candidate.get("retrieval_channel_count") or 0
+                ),
+                "idf_payload": idf_payload,
+                "idf_default": _finite_float(result.default_idf),
+                **{
+                    column: candidate.get(column)
+                    for column in RAW_CANDIDATE_SOURCE_COLUMNS
+                },
+            }
+        )
+    _trim_tfidf_cache(tfidf_cache)
+    return rows, {
+        "query_id": query_id,
+        "raw_sparse_count": len(result.candidates),
+    }
+
+
+def _finalize_query_candidates(
+    *,
+    query: Mapping[str, Any],
+    hydrated_rows: Sequence[Mapping[str, Any]],
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Build the exact final pool after authoritative bulk hydration."""
+
+    query_id = str(query["query_id"])
+    crm_row = {
+        "query_id": query_id,
+        "crm_id": query_id,
+        "crm_name": str(query.get("crm_name") or ""),
+        "crm_address": str(query.get("crm_address") or ""),
+        "crm_city": str(query.get("crm_city") or ""),
+        "postcode": str(query.get("crm_postcode") or ""),
+        "insee": str(query.get("crm_insee") or ""),
+    }
+    crm_pre = preprocess_crm_row(crm_row)
+    active_candidates: list[dict[str, Any]] = []
+    for raw_row in hydrated_rows:
+        siret = str(raw_row.get("candidate_siret") or "")
+        state = str(raw_row.get("snapshot_candidate_state") or "").upper()
         if state != "A":
             continue
+        candidate = {
+            column: raw_row.get(column)
+            for column in RAW_CANDIDATE_SOURCE_COLUMNS
+            if raw_row.get(column) is not None
+        }
+        candidate["siret"] = siret
+        candidate["siren"] = str(raw_row.get("candidate_siren") or siret[:9])
+        candidate["rrf_score"] = _finite_float(raw_row.get("rrf_score"))
+        candidate["retrieval_source"] = str(
+            raw_row.get("retrieval_source") or "v4.11-sparse"
+        )
+        candidate["retrieval_channel_count"] = int(
+            raw_row.get("retrieval_channel_count") or 0
+        )
         candidate["etat_admin"] = "A"
-        for column in CANDIDATE_ROLE_SOURCE_COLUMNS:
-            candidate[column] = details.get(column)
+        candidate["enseigne1"] = raw_row.get("snapshot_enseigne1")
+        candidate["enseigne2"] = raw_row.get("snapshot_enseigne2")
+        candidate["enseigne3"] = raw_row.get("snapshot_enseigne3")
+        candidate["denomination_usuelle"] = raw_row.get(
+            "snapshot_denomination_usuelle"
+        )
+        candidate["activity_code"] = raw_row.get("snapshot_activity_code")
         active_candidates.append(candidate)
 
     active_candidates.sort(
@@ -487,7 +694,10 @@ def retrieve_input_blind_query(
         )
     )
     active_candidates = active_candidates[:CANDIDATE_CEILING]
-    set_global_name_idf_map(result.idf_map, result.default_idf)
+    first = hydrated_rows[0] if hydrated_rows else {}
+    idf_payload = json.loads(str(first.get("idf_payload") or "{}"))
+    idf_default = _finite_float(first.get("idf_default"))
+    set_global_name_idf_map(idf_payload, idf_default)
     legacy_rows = make_feature_rows_from_preprocessed(
         crm_pre,
         active_candidates,
@@ -530,9 +740,238 @@ def retrieve_input_blind_query(
     return rows, {
         "query_id": query_id,
         "candidate_count": len(rows),
-        "raw_sparse_count": len(result.candidates),
-        "authoritative_non_active_removed": len(result.candidates) - len(rows),
+        "raw_sparse_count": len(hydrated_rows),
+        "authoritative_non_active_removed": len(hydrated_rows) - len(rows),
     }
+
+
+def _bulk_snapshot_details_for_testing(
+    current_state_store: Any,
+    sirets: Sequence[str],
+) -> dict[str, dict[str, Any]]:
+    """Narrow fixture adapter; production uses ``bulk_hydrate_snapshot`` only."""
+
+    custom = getattr(current_state_store, "get_candidate_scene_details", None)
+    if not callable(custom):
+        raise TypeError(
+            "Per-query snapshot access is disabled; use bulk_hydrate_snapshot"
+        )
+    return custom(sirets)
+
+
+def retrieve_input_blind_query(
+    *,
+    query: Mapping[str, Any],
+    partitioned_store: Any,
+    current_state_store: Any,
+    config: V41RetrievalConfig,
+    tfidf_cache: dict[tuple[str, str], tuple],
+    persistent_cache: Any,
+    sparse_pool_builder: Any = build_candidate_pool,
+) -> tuple[list[dict[str, Any]], dict[str, Any]]:
+    """Fixture-compatible paired path using already indexed in-memory details."""
+
+    raw_rows, raw_diagnostic = retrieve_raw_input_blind_query(
+        query=query,
+        partitioned_store=partitioned_store,
+        config=config,
+        tfidf_cache=tfidf_cache,
+        persistent_cache=persistent_cache,
+        sparse_pool_builder=sparse_pool_builder,
+    )
+    details = _bulk_snapshot_details_for_testing(
+        current_state_store,
+        [str(row["candidate_siret"]) for row in raw_rows],
+    )
+    hydrated_rows = []
+    for row in raw_rows:
+        detail = details.get(str(row["candidate_siret"]), {})
+        hydrated_rows.append(
+            {
+                **row,
+                "snapshot_candidate_state": detail.get("candidate_state"),
+                "snapshot_enseigne1": detail.get("enseigne1"),
+                "snapshot_enseigne2": detail.get("enseigne2"),
+                "snapshot_enseigne3": detail.get("enseigne3"),
+                "snapshot_denomination_usuelle": detail.get(
+                    "denomination_usuelle"
+                ),
+                "snapshot_activity_code": detail.get("activity_code"),
+            }
+        )
+    rows, diagnostic = _finalize_query_candidates(
+        query=query,
+        hydrated_rows=hydrated_rows,
+    )
+    diagnostic["raw_sparse_count"] = raw_diagnostic["raw_sparse_count"]
+    return rows, diagnostic
+
+
+def _sql_path(path: Path) -> str:
+    return str(Path(path).resolve()).replace("'", "''")
+
+
+def bulk_hydrate_snapshot(
+    *,
+    connection: Any,
+    raw_candidates_path: Path,
+    state_snapshot_path: Path,
+    output_path: Path,
+) -> dict[str, int]:
+    """Scan the SIRENE snapshot once and materialize only requested SIRETs."""
+
+    raw_sql = _sql_path(raw_candidates_path)
+    snapshot_sql = _sql_path(state_snapshot_path)
+    output_sql = _sql_path(output_path)
+    connection.execute(
+        f"""
+        CREATE OR REPLACE TEMP TABLE v411_requested_sirets AS
+        SELECT DISTINCT candidate_siret AS siret
+        FROM read_parquet('{raw_sql}')
+        """
+    )
+    requested_count = int(
+        connection.execute(
+            "SELECT count(*) FROM v411_requested_sirets"
+        ).fetchone()[0]
+    )
+    # This is the single complete snapshot scan in the V4.11 builder.
+    connection.execute(
+        f"""
+        CREATE OR REPLACE TEMP TABLE v411_snapshot_details AS
+        SELECT DISTINCT
+            CAST(snapshot.siret AS VARCHAR) AS siret,
+            upper(trim(CAST(
+                snapshot.etatAdministratifEtablissement AS VARCHAR
+            ))) AS snapshot_candidate_state,
+            CAST(snapshot.enseigne1Etablissement AS VARCHAR)
+                AS snapshot_enseigne1,
+            CAST(snapshot.enseigne2Etablissement AS VARCHAR)
+                AS snapshot_enseigne2,
+            CAST(snapshot.enseigne3Etablissement AS VARCHAR)
+                AS snapshot_enseigne3,
+            CAST(snapshot.denominationUsuelleEtablissement AS VARCHAR)
+                AS snapshot_denomination_usuelle,
+            CAST(snapshot.activitePrincipaleEtablissement AS VARCHAR)
+                AS snapshot_activity_code
+        FROM read_parquet('{snapshot_sql}') AS snapshot
+        INNER JOIN v411_requested_sirets AS requested
+            ON CAST(snapshot.siret AS VARCHAR) = requested.siret
+        """
+    )
+    conflicts = connection.execute(
+        """
+        SELECT siret
+        FROM v411_snapshot_details
+        GROUP BY siret
+        HAVING count(*) > 1
+        ORDER BY siret
+        LIMIT 10
+        """
+    ).fetchall()
+    if conflicts:
+        raise ValueError(
+            "STOP_DATASET_INTEGRITY: conflicting snapshot details for "
+            f"{[row[0] for row in conflicts]}"
+        )
+    matched_count = int(
+        connection.execute(
+            "SELECT count(*) FROM v411_snapshot_details"
+        ).fetchone()[0]
+    )
+    connection.execute(
+        f"""
+        COPY (
+            SELECT
+                raw.*,
+                details.snapshot_candidate_state,
+                details.snapshot_enseigne1,
+                details.snapshot_enseigne2,
+                details.snapshot_enseigne3,
+                details.snapshot_denomination_usuelle,
+                details.snapshot_activity_code
+            FROM read_parquet('{raw_sql}') AS raw
+            LEFT JOIN v411_snapshot_details AS details
+                ON raw.candidate_siret = details.siret
+            ORDER BY raw.query_id, raw.candidate_siret
+        ) TO '{output_sql}' (FORMAT PARQUET, COMPRESSION ZSTD)
+        """
+    )
+    return {
+        "requested_unique_siret_count": requested_count,
+        "snapshot_matched_unique_siret_count": matched_count,
+        "snapshot_full_scan_count": 1,
+    }
+
+
+def finalize_hydrated_pools(
+    *,
+    hydrated_path: Path,
+    output_path: Path,
+    queries: pd.DataFrame,
+) -> tuple[int, list[dict[str, Any]]]:
+    """Stream hydrated rows query-by-query into final label-free candidate pools."""
+
+    query_by_id = {
+        str(row["query_id"]): row
+        for row in queries.to_dict("records")
+    }
+    writer = CandidateWriter(output_path)
+    count = 0
+    diagnostics: list[dict[str, Any]] = []
+    current_query_id: str | None = None
+    current_rows: list[dict[str, Any]] = []
+
+    def flush() -> None:
+        nonlocal count, current_rows
+        if current_query_id is None:
+            return
+        query = query_by_id.get(current_query_id)
+        if query is None:
+            raise ValueError(
+                f"Hydrated candidates contain unknown query {current_query_id}"
+            )
+        rows, diagnostic = _finalize_query_candidates(
+            query=query,
+            hydrated_rows=current_rows,
+        )
+        writer.write(rows)
+        count += len(rows)
+        diagnostics.append(diagnostic)
+        current_rows = []
+
+    try:
+        parquet = pq.ParquetFile(hydrated_path)
+        for batch in parquet.iter_batches(batch_size=25_000):
+            for row in batch.to_pylist():
+                query_id = str(row["query_id"])
+                if current_query_id is not None and query_id != current_query_id:
+                    flush()
+                current_query_id = query_id
+                current_rows.append(row)
+        flush()
+    finally:
+        writer.close()
+    return count, diagnostics
+
+
+def load_labels_after_final_pool_closed(
+    *,
+    final_unlabelled_path: Path,
+    labels_path: Path,
+    expected_sha256: str,
+    loader: Any = pd.read_parquet,
+) -> pd.DataFrame:
+    """Enforce the physical phase boundary before any label is opened."""
+
+    parquet = pq.ParquetFile(final_unlabelled_path)
+    if parquet.metadata is None:
+        raise ValueError("Final label-free candidate pool is not closed")
+    return read_sha256_pinned_parquet(
+        labels_path,
+        expected_sha256=expected_sha256,
+        reader=loader,
+    )
 
 
 def label_closed_candidate_file(
@@ -881,6 +1320,17 @@ def build_artifact(
     config = input_blind_retrieval_config()
     if config.sparse_config().to_dict() != source_config.sparse_config().to_dict():
         raise ValueError("V4.11 sparse configuration drifted from V4.2")
+    sparse_config_hash = config.sparse_config().signature().hash
+    tfidf_artifact_hash = config.sparse_config().tfidf_artifact_hash()
+    cache_namespace = tfidf_cache_namespace(
+        sparse_config_hash=sparse_config_hash,
+        tfidf_artifact_hash=tfidf_artifact_hash,
+        partitions_signature=runtime["partitions_signature"],
+    )
+    cache_namespace_dir = verified_tfidf_cache_dir(
+        cache_root=cache_dir,
+        namespace=cache_namespace,
+    )
 
     script_path = Path(__file__).resolve()
     identity = {
@@ -904,6 +1354,10 @@ def build_artifact(
         "v42_source_config_signature": source_config.signature(),
         "input_blind_retrieval_signature": input_blind_retrieval_signature(config),
         "partitions_signature": runtime["partitions_signature"],
+        "tfidf_cache_policy_version": TFIDF_CACHE_POLICY_VERSION,
+        "tfidf_cache_namespace": cache_namespace,
+        "tfidf_sparse_config_hash": sparse_config_hash,
+        "tfidf_artifact_hash": tfidf_artifact_hash,
         "state_snapshot_sha256": runtime["state_snapshot_sha256"],
         "ranker_c_feature_order": RANKER_C_FEATURE_ORDER,
         "ranker_c_feature_order_sha256": feature_order_sha256(
@@ -919,16 +1373,30 @@ def build_artifact(
     if target.exists():
         raise FileExistsError(f"Immutable V4.11 dataset exists: {target}")
     staging = Path(tempfile.mkdtemp(prefix=f".{build_id}.tmp-", dir=output_root))
+    raw_candidates_path = staging / ".raw_sparse_candidates.parquet"
+    hydrated_path = staging / ".hydrated_sparse_candidates.parquet"
     unlabelled_path = staging / ".candidates_unlabelled.parquet"
-    writer: CandidateWriter | None = CandidateWriter(unlabelled_path)
-    diagnostics: list[dict[str, Any]] = []
+    raw_writer: RawCandidateWriter | None = RawCandidateWriter(
+        raw_candidates_path
+    )
+    raw_diagnostics: list[dict[str, Any]] = []
+    final_diagnostics: list[dict[str, Any]] = []
+    hydration_diagnostics: dict[str, int] = {}
+    persistent_cache_stats: dict[str, int] = {
+        "hits": 0,
+        "misses": 0,
+        "verification_rejections": 0,
+    }
     duckdb_temp = work_dir / f"duckdb-{build_id}"
     started = time.perf_counter()
     try:
         persistent_cache = TfidfPersistentCache(
-            config_hash=config.sparse_config().tfidf_artifact_hash(),
-            cache_dir=cache_dir,
+            config_hash=cache_namespace,
+            cache_dir=cache_dir / "v411_verified",
+            require_verified=True,
         )
+        if persistent_cache.cache_dir.resolve() != cache_namespace_dir:
+            raise ValueError("V4.11 TF-IDF cache namespace path mismatch")
         partitioned_store = PartitionedCandidateStore(partitions_dir)
         with V41CurrentStateStore(state_snapshot_path) as state_store:
             duckdb_temp.mkdir(exist_ok=False)
@@ -940,26 +1408,50 @@ def build_artifact(
             for query in queries.sort_values("query_id", kind="stable").to_dict(
                 "records"
             ):
-                rows, diagnostic = retrieve_input_blind_query(
+                rows, diagnostic = retrieve_raw_input_blind_query(
                     query=query,
                     partitioned_store=partitioned_store,
-                    current_state_store=state_store,
                     config=config,
                     tfidf_cache=in_memory_cache,
                     persistent_cache=persistent_cache,
                 )
                 buffer.extend(rows)
-                diagnostics.append(diagnostic)
+                raw_diagnostics.append(diagnostic)
                 if len(buffer) >= 10_000:
-                    writer.write(buffer)
+                    raw_writer.write(buffer)
                     buffer.clear()
-            writer.write(buffer)
-            writer.close()
-            writer = None
+            raw_writer.write(buffer)
+            raw_writer.close()
+            raw_writer = None
+            if len(in_memory_cache) > MAX_IN_MEMORY_TFIDF_PARTITIONS:
+                raise ValueError("V4.11 TF-IDF cache ceiling was not enforced")
+            persistent_cache_stats = persistent_cache.stats()
 
-        # Labels and V4.2-B diagnostics are opened only after all pools are closed.
+            hydration_diagnostics = bulk_hydrate_snapshot(
+                connection=state_store._connection,  # noqa: SLF001
+                raw_candidates_path=raw_candidates_path,
+                state_snapshot_path=state_snapshot_path,
+                output_path=hydrated_path,
+            )
+            unlabelled_count, final_diagnostics = finalize_hydrated_pools(
+                hydrated_path=hydrated_path,
+                output_path=unlabelled_path,
+                queries=queries,
+            )
+            if unlabelled_count > sum(
+                item["raw_sparse_count"] for item in raw_diagnostics
+            ):
+                raise ValueError("Bulk hydration increased candidate cardinality")
+        raw_candidates_path.unlink()
+        hydrated_path.unlink()
+
+        # Labels open only after the hydrated, filtered and ranked pools are closed.
         labels_path = Path(source_dataset_dir) / "labels.parquet"
-        labels = pd.read_parquet(labels_path)
+        labels = load_labels_after_final_pool_closed(
+            final_unlabelled_path=unlabelled_path,
+            labels_path=labels_path,
+            expected_sha256=EXPECTED_INPUT_HASHES["labels.parquet"],
+        )
         if list(labels.columns) != LABEL_COLUMNS:
             raise ValueError("Frozen label schema changed")
         if labels["query_id"].astype(str).duplicated().any():
@@ -985,7 +1477,12 @@ def build_artifact(
             candidates=candidates,
         )
         v42b_candidates_path = Path(source_dataset_dir) / "candidates_v42b.parquet"
-        v42b_candidates = pd.read_parquet(v42b_candidates_path)
+        v42b_candidates = read_sha256_pinned_parquet(
+            v42b_candidates_path,
+            expected_sha256=EXPECTED_INPUT_HASHES[
+                "candidates_v42b.parquet"
+            ],
+        )
         comparisons = _comparison_metrics(
             labels=labels,
             assignments=assignments,
@@ -1005,14 +1502,22 @@ def build_artifact(
             "comparison_context": comparisons,
             "retrieval_diagnostics": {
                 "raw_sparse_candidate_count": int(
-                    sum(item["raw_sparse_count"] for item in diagnostics)
+                    sum(item["raw_sparse_count"] for item in raw_diagnostics)
                 ),
                 "authoritative_non_active_removed": int(
-                    sum(
-                        item["authoritative_non_active_removed"]
-                        for item in diagnostics
-                    )
+                    sum(item["raw_sparse_count"] for item in raw_diagnostics)
+                    - unlabelled_count
                 ),
+                "max_in_memory_tfidf_partitions": (
+                    MAX_IN_MEMORY_TFIDF_PARTITIONS
+                ),
+                "persistent_tfidf_cache": {
+                    "policy_version": TFIDF_CACHE_POLICY_VERSION,
+                    "namespace": cache_namespace,
+                    "directory": str(cache_namespace_dir),
+                    **persistent_cache_stats,
+                },
+                **hydration_diagnostics,
             },
             "total_seconds": total_seconds,
         }
@@ -1096,6 +1601,18 @@ def build_artifact(
                 ],
                 "candidate_ceiling": CANDIDATE_CEILING,
                 "tie_break": ["rrf_score_desc", "candidate_siret_asc"],
+                "tfidf_cache": {
+                    "policy_version": TFIDF_CACHE_POLICY_VERSION,
+                    "namespace": cache_namespace,
+                    "directory": str(cache_namespace_dir),
+                    "sparse_config_hash": sparse_config_hash,
+                    "tfidf_artifact_hash": tfidf_artifact_hash,
+                    "partitions_signature": runtime[
+                        "partitions_signature"
+                    ],
+                    "verified_sidecar_required_before_pickle_load": True,
+                    "stats": persistent_cache_stats,
+                },
             },
             "ranker_c": {
                 "feature_order": RANKER_C_FEATURE_ORDER,
@@ -1128,13 +1645,20 @@ def build_artifact(
                 "training_performed": False,
                 "candidate_ceiling": CANDIDATE_CEILING,
                 "active_candidates_only": True,
+                "snapshot_full_scan_count": 1,
+                "snapshot_hydration_completed_before_labels_opened": True,
+                "max_in_memory_tfidf_partitions": (
+                    MAX_IN_MEMORY_TFIDF_PARTITIONS
+                ),
+                "tfidf_disk_cache_namespace_verified": True,
+                "tfidf_pickle_requires_verified_hash_sidecar": True,
             },
         }
         _json_dump(staging / "manifest.json", manifest)
         os.replace(staging, target)
     except BaseException:
-        if writer is not None:
-            writer.close()
+        if raw_writer is not None:
+            raw_writer.close()
         shutil.rmtree(staging, ignore_errors=True)
         raise
     finally:
@@ -1159,6 +1683,17 @@ def validate_artifact(artifact_dir: Path) -> None:
         raise ValueError("V4.11 content-addressed build identity mismatch")
     if artifact_dir.name != expected_build_id:
         raise ValueError("V4.11 artifact directory is not its build ID")
+    expected_cache_namespace = tfidf_cache_namespace(
+        sparse_config_hash=str(identity.get("tfidf_sparse_config_hash") or ""),
+        tfidf_artifact_hash=str(identity.get("tfidf_artifact_hash") or ""),
+        partitions_signature=str(identity.get("partitions_signature") or ""),
+    )
+    if identity.get("tfidf_cache_namespace") != expected_cache_namespace:
+        raise ValueError("V4.11 TF-IDF cache namespace identity mismatch")
+    if identity.get("tfidf_cache_policy_version") != (
+        TFIDF_CACHE_POLICY_VERSION
+    ):
+        raise ValueError("V4.11 TF-IDF cache policy changed")
     for filename, record in (manifest.get("outputs") or {}).items():
         path = artifact_dir / filename
         if file_sha256(path) != record.get("sha256"):
@@ -1194,6 +1729,20 @@ def validate_artifact(artifact_dir: Path) -> None:
     ):
         if invariants.get(key) is not False:
             raise ValueError(f"V4.11 invariant changed: {key}")
+    if invariants.get("snapshot_full_scan_count") != 1:
+        raise ValueError("V4.11 snapshot was not hydrated in one bulk scan")
+    if invariants.get("snapshot_hydration_completed_before_labels_opened") is not True:
+        raise ValueError("V4.11 label phase boundary changed")
+    if invariants.get("max_in_memory_tfidf_partitions") != (
+        MAX_IN_MEMORY_TFIDF_PARTITIONS
+    ):
+        raise ValueError("V4.11 TF-IDF cache ceiling changed")
+    for key in (
+        "tfidf_disk_cache_namespace_verified",
+        "tfidf_pickle_requires_verified_hash_sidecar",
+    ):
+        if invariants.get(key) is not True:
+            raise ValueError(f"V4.11 verified cache invariant changed: {key}")
 
 
 def parse_args() -> argparse.Namespace:
