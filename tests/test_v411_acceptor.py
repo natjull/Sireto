@@ -199,6 +199,10 @@ def test_stack_dependencies_rejects_non_promotable_ranker(
     taxonomy.write_text("{}", encoding="utf-8")
     contract = tmp_path / "contract.md"
     contract.write_text("contract", encoding="utf-8")
+    scene_source = tmp_path / "v411_scene.py"
+    scene_source.write_text("scene", encoding="utf-8")
+    site_function_source = tmp_path / "v49_site_function.py"
+    site_function_source.write_text("site-function", encoding="utf-8")
 
     def record(path: Path) -> dict[str, str]:
         return {"path": str(path), "sha256": file_sha256(path)}
@@ -210,11 +214,17 @@ def test_stack_dependencies_rejects_non_promotable_ranker(
             "ranker_artifact_manifest": record(ranker_manifest),
             "taxonomy": record(taxonomy),
             "contract": record(contract),
+            "scene_source": record(scene_source),
+            "site_function_source": record(site_function_source),
         }
     }
     scene_manifest.write_text(json.dumps(payload), encoding="utf-8")
     dependencies = _stack_dependencies({"scene_manifest": scene_manifest})
     assert dependencies["ranker_c"]["model_sha256"] == file_sha256(ranker_model)
+    assert dependencies["scene"]["source_sha256"] == file_sha256(scene_source)
+    assert dependencies["scene"]["site_function_source_sha256"] == file_sha256(
+        site_function_source
+    )
     payload["inputs"]["ranker_artifact_manifest"]["sha256"] = ""
     ranker_payload = json.loads(ranker_manifest.read_text(encoding="utf-8"))
     ranker_payload["verdict"] = "PIVOT_INPUT_BLIND_RANKER"

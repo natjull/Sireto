@@ -448,6 +448,10 @@ def _stack_dependencies(paths: Mapping[str, Path]) -> dict[str, Any]:
     )
     taxonomy_path, taxonomy_sha = pinned_input("taxonomy")
     contract_path, contract_sha = pinned_input("contract")
+    scene_source_path, scene_source_sha = pinned_input("scene_source")
+    site_function_source_path, site_function_source_sha = pinned_input(
+        "site_function_source"
+    )
     ranker_manifest = json.loads(
         ranker_manifest_path.read_text(encoding="utf-8")
     )
@@ -485,10 +489,10 @@ def _stack_dependencies(paths: Mapping[str, Path]) -> dict[str, Any]:
         "scene": {
             "manifest_path": str(paths["scene_manifest"]),
             "manifest_sha256": file_sha256(paths["scene_manifest"]),
-            "source_path": str(SCENE_SOURCE),
-            "source_sha256": file_sha256(
-                Path(__file__).resolve().parent.parent / SCENE_SOURCE
-            ),
+            "source_path": str(scene_source_path),
+            "source_sha256": scene_source_sha,
+            "site_function_source_path": str(site_function_source_path),
+            "site_function_source_sha256": site_function_source_sha,
             "taxonomy_path": str(taxonomy_path),
             "taxonomy_sha256": taxonomy_sha,
         },

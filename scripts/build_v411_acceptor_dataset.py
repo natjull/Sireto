@@ -33,8 +33,11 @@ from src.xgb_matcher.v9_dataset import file_sha256  # noqa: E402
 
 SCHEMA_VERSION = "sireto-v4.11-compact-acceptor-dataset-1"
 EXPERIMENT_ID = "V411_COMPACT_ACCEPTOR_DATASET"
+REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_CONTRACT = Path("docs/v4_11_input_blind_aligned_stack_contract.md")
 DEFAULT_TAXONOMY = Path("config/v4_9_site_function_taxonomy.json")
+SCENE_SOURCE = Path("src/xgb_matcher/v411_scene.py")
+SITE_FUNCTION_SOURCE = Path("src/xgb_matcher/v49_site_function.py")
 PREDICTIONS_FILENAME = "predictions_ranker_c_oof_dev.parquet"
 RANKER_PREDICTION_COLUMNS = [
     "query_id",
@@ -96,6 +99,42 @@ def _declared_output_path(
     if file_sha256(path) != str(record.get("sha256")):
         raise ValueError(f"STOP_INPUT_INTEGRITY: hash mismatch: {filename}")
     return path
+
+
+def _validate_scene_implementation_inputs(manifest: Mapping[str, Any]) -> None:
+    """Verify that every implementation used to derive scene features is pinned."""
+
+    identity = manifest.get("build_identity") or {}
+    inputs = manifest.get("inputs") or {}
+    required = {
+        "scene_source": ("scene_source_sha256", SCENE_SOURCE),
+        "site_function_source": (
+            "site_function_source_sha256",
+            SITE_FUNCTION_SOURCE,
+        ),
+    }
+    for input_name, (identity_name, relative_path) in required.items():
+        record = inputs.get(input_name)
+        if not isinstance(record, Mapping):
+            raise ValueError(
+                f"STOP_INPUT_INTEGRITY: scene implementation missing: {input_name}"
+            )
+        recorded_path = Path(str(record.get("path"))).resolve()
+        expected_path = (REPO_ROOT / relative_path).resolve()
+        expected_sha = str(record.get("sha256"))
+        if recorded_path != expected_path:
+            raise ValueError(
+                f"STOP_INPUT_INTEGRITY: scene implementation path mismatch: "
+                f"{input_name}"
+            )
+        if (
+            not expected_sha
+            or file_sha256(recorded_path) != expected_sha
+            or str(identity.get(identity_name)) != expected_sha
+        ):
+            raise ValueError(
+                f"STOP_INPUT_INTEGRITY: scene implementation drift: {input_name}"
+            )
 
 
 def _validate_ranker_artifact_link(
@@ -486,6 +525,7 @@ def validate_scene_artifact(
     ).hexdigest()[:16]
     if manifest.get("build_id") != expected_id or artifact_dir.name != expected_id:
         raise ValueError("STOP_INPUT_INTEGRITY: scene build identity mismatch")
+    _validate_scene_implementation_inputs(manifest)
     scenes_path = _declared_output_path(
         artifact_dir, manifest, "acceptor_scenes.parquet"
     )
@@ -552,9 +592,9 @@ def build_dataset(
         "taxonomy_sha256": file_sha256(taxonomy_path),
         "contract_sha256": file_sha256(contract_path),
         "builder_sha256": file_sha256(Path(__file__).resolve()),
-        "scene_source_sha256": file_sha256(
-            Path(__file__).resolve().parent.parent
-            / "src/xgb_matcher/v411_scene.py"
+        "scene_source_sha256": file_sha256(REPO_ROOT / SCENE_SOURCE),
+        "site_function_source_sha256": file_sha256(
+            REPO_ROOT / SITE_FUNCTION_SOURCE
         ),
         "feature_order": V411_ACCEPTOR_FEATURE_NAMES,
         "scaled_features": V411_SCALED_FEATURE_NAMES,
@@ -598,6 +638,10 @@ def build_dataset(
                 "taxonomy": _input_record(taxonomy_path),
                 "contract": _input_record(contract_path),
                 "builder_source": _input_record(Path(__file__).resolve()),
+                "scene_source": _input_record(REPO_ROOT / SCENE_SOURCE),
+                "site_function_source": _input_record(
+                    REPO_ROOT / SITE_FUNCTION_SOURCE
+                ),
             },
             "upstream": {
                 "retrieval_build_id": dataset_manifest.get("build_id"),

@@ -12,6 +12,7 @@ from scripts.build_v411_acceptor_dataset import (
     RANKER_REQUIRED_INVARIANTS,
     _dev_partition,
     _join_ranker_scores,
+    _validate_scene_implementation_inputs,
     _validate_ranker_artifact_link,
     _validate_population,
     build_scene_frame,
@@ -96,6 +97,34 @@ def _candidate(query_id: str, siret: str, rank: int = 1) -> dict[str, object]:
 def test_dev_partition_is_component_deterministic() -> None:
     assert _dev_partition("same") == _dev_partition("same")
     assert _dev_partition("same") in {"threshold_dev", "comparison_dev"}
+
+
+def test_scene_implementation_dependencies_are_explicit_and_drift_checked() -> None:
+    repo_root = Path(__file__).resolve().parent.parent
+    scene_source = repo_root / "src/xgb_matcher/v411_scene.py"
+    site_function_source = repo_root / "src/xgb_matcher/v49_site_function.py"
+    scene_sha = file_sha256(scene_source)
+    site_function_sha = file_sha256(site_function_source)
+    manifest = {
+        "build_identity": {
+            "scene_source_sha256": scene_sha,
+            "site_function_source_sha256": site_function_sha,
+        },
+        "inputs": {
+            "scene_source": {
+                "path": str(scene_source),
+                "sha256": scene_sha,
+            },
+            "site_function_source": {
+                "path": str(site_function_source),
+                "sha256": site_function_sha,
+            },
+        },
+    }
+    _validate_scene_implementation_inputs(manifest)
+    del manifest["inputs"]["site_function_source"]
+    with pytest.raises(ValueError, match="implementation missing"):
+        _validate_scene_implementation_inputs(manifest)
 
 
 def test_population_validation_excludes_unresolved_from_targets_later() -> None:
