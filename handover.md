@@ -40,6 +40,11 @@ le contrat corrigé exige que le futur worker tourne sous `sandbox-exec`, avec
 les racines oracle/audit interdites et une sentinelle d'ouverture réellement
 refusée. L'oracle reste historique, non indépendant et non certifiant.
 *(commit GitHub : `1dd7428`)*
+Le contrat précise désormais le ledger exhaustif des huit fichiers réellement
+ouverts par le builder oracle : six fichiers du paquet runtime sûr plus
+labels/split. Les inventaires sont ouverts uniquement pour contrôler
+l'intégrité du paquet, jamais comme résultats de retrieval ni pour former la
+vérité. *(commit GitHub : `bbf31b9`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
