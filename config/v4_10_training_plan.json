@@ -2,6 +2,11 @@
   "schema_version": "sireto-v4.10-structured-acceptor-training-plan-1",
   "experiment_id": "V410_STRUCTURED_ACCEPTOR_DEVELOPMENT",
   "status": "preregistered_before_first_fit",
+  "amendment": {
+    "reason": "Close runner-governance ambiguities found by the independent pre-fit audit; no model had been fitted.",
+    "baseline_is_comparator_only": true,
+    "descriptive_locked_semantic_read": false
+  },
   "contract": {
     "path": "docs/v4_10_structured_acceptor_contract.md",
     "commit": "b19abed55f76861e5fe5b78c59143ee01f584402",
@@ -204,6 +209,18 @@
   },
   "winner_selection": {
     "eligible_variants_only": true,
+    "candidate_variant_ids": [
+      "CURRENT80_W1",
+      "CURRENT80_W2",
+      "CURRENT80_W4",
+      "STRUCTURED_LOGIT_W1",
+      "STRUCTURED_LOGIT_W2",
+      "STRUCTURED_LOGIT_W4",
+      "STRUCTURED_XGB_W1",
+      "STRUCTURED_XGB_W2",
+      "STRUCTURED_XGB_W4"
+    ],
+    "base_frozen_is_comparator_only": true,
     "tie_break_order": [
       "wrong_hard_rejected_desc",
       "correct_hard_auto_desc",
@@ -217,20 +234,25 @@
       "structured_xgb": 3
     },
     "success_verdict": "GO_FRESH_DEV_V410",
-    "failure_verdicts": [
-      "PIVOT_STRUCTURED_FEATURES",
-      "STOP_STRUCTURED_ACCEPTOR"
-    ]
+    "current80_winner_interpretation": "GO_FRESH_DEV_V410_CONTROL_ONLY_NO_STRUCTURED_FEATURE_GAIN",
+    "failure_verdict_rules": {
+      "STOP_STRUCTURED_ACCEPTOR": "dataset, hash, invariant or baseline reproduction failure, or no variant can satisfy historical safety threshold constraints",
+      "PIVOT_STRUCTURED_FEATURES": "all integrity and baseline checks pass and at least one variant has a safe historical threshold, but no variant passes every hard and historical development gate"
+    }
   },
   "determinism": {
     "seed": 42,
     "repeat_fit_check": true,
+    "repeat_fit_scope": "every full and fold model for all nine trained variants",
     "repeat_fit_score_absolute_tolerance": 1e-12,
+    "repeat_fit_decisions_identical": true,
     "row_sort": ["query_id"],
     "feature_order_source": "feature_catalog.json only"
   },
   "forbidden_inputs_and_actions": {
     "random_v48_rows_read_or_scored": 0,
+    "descriptive_locked_file_hash_checked_before_fit": true,
+    "descriptive_locked_parquet_semantically_loaded_or_scored": false,
     "descriptive_locked_rows_used_for_fit_threshold_gate_or_selection": 0,
     "fresh_rows_read_or_scored": 0,
     "test_rows_read_or_scored": 0,
