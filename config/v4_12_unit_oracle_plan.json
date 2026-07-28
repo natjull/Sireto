@@ -1,0 +1,105 @@
+{
+  "audit_output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle",
+  "execution_lock_path": "config/v4_12_unit_oracle_execution_lock.json",
+  "expected": {
+    "comparison_dev": {
+      "AMBIGUOUS": 112,
+      "MATCH_EXACT": 634,
+      "total": 746
+    },
+    "first_query_ids": [
+      "1394",
+      "16308",
+      "2454",
+      "8914",
+      "9265"
+    ],
+    "last_query_ids": [
+      "13579",
+      "1174",
+      "9760",
+      "4986",
+      "9307"
+    ],
+    "logical_payload_bytes": 80282,
+    "logical_payload_sha256": "9b25bf45b7ff074a1db8e6ca166569eec9754e34b29f032aebae63925d71ff42",
+    "query_id_payload_bytes": 10299,
+    "query_id_payload_sha256": "37016d9dc480194b52b545fffb3272847d485c5f209025d064d313b425c03bf4",
+    "query_count": 1456,
+    "threshold_dev": {
+      "AMBIGUOUS": 127,
+      "MATCH_EXACT": 583,
+      "total": 710
+    }
+  },
+  "labels": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/labels.parquet",
+    "projection": [
+      "query_id",
+      "label_kind",
+      "ground_truth_siret",
+      "ground_truth_siren"
+    ],
+    "row_count": 7003,
+    "sha256": "69032b745817959422ef26e4c0c1228686260c1daa272ca5d6aba1d7be087b04",
+    "size_bytes": 178217
+  },
+  "forbidden_artifacts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/candidates_sparse_top100.parquet",
+      "sha256": "78b2f78ddeac863ac39ca64301d42312c7fb766ac51e2b5d19dde5c5910aedac"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/query_audit.parquet",
+      "sha256": "dd3b2fdf412831cb1a26e2e6be95148715f808cd5ab3f676b2e3c92999ad59c3"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_direct_evidence/10f16403795ccee6/query_evidence.parquet",
+      "sha256": "6fd7d441a9f6aaac99555c1083b90a61e52e02a291d6cffccc07d061f60242ed"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/evaluations/v4_12_guard_historical/fedcd1d512bfd269/decisions.parquet",
+      "sha256": "c5b79d95503a7d10a1ca7a1a2e2c82aeb76f835347b0af8866c438809bfd944a"
+    }
+  ],
+  "max_rss_bytes": 8589934592,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine",
+  "runtime": {
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "pyarrow": "23.0.1",
+    "python": "3.14.3"
+  },
+  "safe_input": {
+    "build_id": "ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e",
+    "manifest_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/runtime_manifest.json",
+    "manifest_sha256": "34e7a8d1c97c962b7f2295a99cd45b68c37afa9c866a5eb22e302330cb9010c4",
+    "queries_dev_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/queries_dev.parquet",
+    "queries_dev_projection": [
+      "query_id"
+    ],
+    "queries_dev_sha256": "b1fef6ba72e4a557175a60c7e21e658f8fbb739b1d6607b77e5f70da873a031f",
+    "queries_dev_size_bytes": 62365
+  },
+  "schema_version": "sireto-v4.12-unit-oracle-plan-1",
+  "sources": [
+    "scripts/__init__.py",
+    "docs/v4_12_unit_oracle_contract.md",
+    "config/v4_12_unit_oracle_plan.json",
+    "scripts/build_v412_unit_oracle.py",
+    "tests/test_build_v412_unit_oracle.py"
+  ],
+  "split_assignments": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/split_assignments.parquet",
+    "projection": [
+      "query_id",
+      "siren_component_id",
+      "split"
+    ],
+    "row_count": 7003,
+    "sha256": "33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193",
+    "size_bytes": 170201
+  },
+  "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_unit_oracle"
+}
