@@ -1,6 +1,18 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le builder des entrées sûres du moteur unitaire V4.12 est implémenté et
+contre-audité, sans build réel. Une première revue a rendu `STOP_CODE` malgré
+18 tests verts et a exposé une mauvaise empreinte TF-IDF, un contournement du
+plan interne, des sorties Parquet non revérifiées, une signature seulement
+recopiée et une fenêtre TOCTOU CRM. Les défauts ont été reproduits puis
+corrigés. Deux contre-audits indépendants rendent désormais `GO_CODE` et
+`GO_CODE_2`; 27 tests ciblés et les 645 tests du dépôt passent. Les
+inventaires réels partitions/cache et la signature historique ont été
+recalculés exactement. Ce GO autorise seulement le verrou puis le build des
+entrées physiquement aveugles ; il n'autorise ni oracle, ni worker, ni
+benchmark. *(commits GitHub : builder `18eb76e`, audit `46868db`)*
+
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
 une étiquette cachée et ne peut plus alimenter le retrieval, le ranker ou
