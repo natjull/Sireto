@@ -280,6 +280,21 @@ DuckDB 1.4.3 et la racine SSD ; environ 1 049 Gio sont libres et la cible est
 absente. Le build réel de 42 322 035 lignes n'a pas encore été lancé.
 *(commits GitHub : builder/store `a06cf00`, verrou `591f339`)*
 
+Le build réel du lookup a été publié puis refusé par le contre-audit
+**`STOP_V412_LOOKUP_PARITY`**. La base est matériellement saine :
+42 322 035 SIRET uniques, zéro invalide, index et lecture seule conformes,
+zéro écart sur les 508 081 candidats V4.11, pic RSS de 7,8004 Gio. En
+revanche, trois recalculs du top-10 000 déterministe donnent
+`72f43460...`, contre `58c970...` gelé et déclaré par l'artefact. Le
+validateur officiel ne recalcule pas ce sample et a donc laissé passer une
+déclaration contradictoire. L'artefact
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb`
+est refusé ; il n'autorise pas le moteur d'inférence. Il faut expliquer
+l'écart, corriger calcul et validation, reverrouiller puis reconstruire sous
+un nouvel identifiant. Rapport :
+`reports/v9/v4_12_snapshot_lookup_results.md`.
+*(commit GitHub : `880e57c`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
