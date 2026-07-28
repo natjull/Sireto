@@ -1,0 +1,106 @@
+{
+  "audit_output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_strict_stores",
+  "cache": {
+    "expected_full_inventory_sha256": "589360b10fa65d190bae9a2521e05d8e60e71c2cbd1fc0c5843c044332a183ce",
+    "expected_subset_file_count": 1296,
+    "expected_subset_key_count": 648,
+    "expected_subset_logical_sha256": "de14bc981ea4e4354d857b9a63a2b94fcf5c7fbcbd96fa07d7d0d843a897fcf8",
+    "expected_subset_size_bytes": 4042655632,
+    "expected_aligned_row_count": 4764472,
+    "namespace": "296c7891107249a073c00d93c7310c55a652243de4bcfa7165d09dbfc3349a82",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/v46_aligned_b/v411_verified/296c7891107249a073c00d93c7310c55a652243de4bcfa7165d09dbfc3349a82",
+    "sidecar_schema_version": "sireto-tfidf-cache-integrity-1"
+  },
+  "execution_lock_path": "config/v4_12_strict_stores_execution_lock.json",
+  "lookup": {
+    "database_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb/candidate_details.duckdb",
+    "database_sha256": "5da123bb0dde06d55886dfbc5c36e142c9d528ffec1b6899022e5c7c63bee894",
+    "database_size_bytes": 2732863488,
+    "integrity_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb/integrity.json",
+    "integrity_sha256": "048901e99bc6f6f33aeb34434d0662af8e94b6667e056f83f1689b72c8314b2a",
+    "manifest_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb/manifest.json",
+    "manifest_sha256": "04e098952ee4cc7957155623599d3ba35b95f9126932e5a5d420ec02b110b15e",
+    "sample_max_sirets": 10000,
+    "timing_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup/ff0f33ad10803cfb/timing.json",
+    "timing_sha256": "c266db1075c2f777b8942cea7bc7e446f3a09707a07a3b9952b71a73d4cc6e9b"
+  },
+  "max_rss_bytes": 8589934592,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/certifications/v4_12_strict_stores",
+  "partitions": {
+    "expected_full_inventory_sha256": "680f1884879bfa5b8cf2c335a0658604010e3d4c546ed6eaeb2e2ef34c954463",
+    "expected_subset_file_count": 648,
+    "expected_subset_logical_sha256": "f772a7d75d92b0e0655d1815f924283f16c27b0d3761c80a9f8b3b6d7075d977",
+    "expected_subset_row_count": 8030285,
+    "expected_subset_size_bytes": 449454881,
+    "root": "/Users/nathanjullia/Documents/Projets/SIRETO/data/candidates_v7_all"
+  },
+  "routing": {
+    "cp_query_count": 7,
+    "distinct_key_count": 648,
+    "insee_query_count": 1449,
+    "missing_key_count": 0,
+    "payload_bytes": 20491,
+    "payload_sha256": "41477bbcc9dea2cee8d49922679064995c46e49f60db1560e5d8a0033adc79bf",
+    "query_count": 1456
+  },
+  "runtime": {
+    "duckdb": "1.4.3",
+    "joblib": "1.5.3",
+    "machine": "arm64",
+    "numpy": "2.4.2",
+    "pandas": "2.3.3",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "pyarrow": "23.0.1",
+    "python": "3.14.3",
+    "scikit_learn": "1.8.0",
+    "scipy": "1.16.3"
+  },
+  "safe_input": {
+    "build_id": "ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e",
+    "integrity_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/integrity.json",
+    "integrity_sha256": "195083c8fdc26a72db47b7deaebe106004a625afb904de4bcdebaffd15932aa1",
+    "partition_inventory_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/partition_inventory.parquet",
+    "partition_inventory_sha256": "d17621743fad9c9c18ab46d2ba137521e4f0cfb1ccb44de8d08fca243c925bfe",
+    "queries_all_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/queries_all.parquet",
+    "queries_all_sha256": "2f84eea594ed209042eed7b758f1c2390089cbb32cbe5dd832eff7dd80272fb9",
+    "queries_dev_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/queries_dev.parquet",
+    "queries_dev_sha256": "b1fef6ba72e4a557175a60c7e21e658f8fbb739b1d6607b77e5f70da873a031f",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e",
+    "runtime_manifest_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/runtime_manifest.json",
+    "runtime_manifest_sha256": "34e7a8d1c97c962b7f2295a99cd45b68c37afa9c866a5eb22e302330cb9010c4",
+    "tfidf_inventory_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/tfidf_inventory.parquet",
+    "tfidf_inventory_sha256": "845e332df405b3e9d631923ccf17661c5420be8b9518fe68583766b7b4f6881d"
+  },
+  "sandbox": {
+    "device_read_literals": [
+      "/dev/null",
+      "/dev/urandom"
+    ],
+    "executable": "/usr/bin/sandbox-exec",
+    "executable_sha256": "8290e4be7387a0df83cd1559e86afd880464f269450573d012795761fe298f16",
+    "forbidden_audit_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "forbidden_oracle_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "network_allowed": false,
+    "profile_path": "config/v4_12_strict_stores.sb",
+    "python_framework_app": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
+    "python_framework_app_sha256": "7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211",
+    "python_framework_bin": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
+    "python_framework_bin_sha256": "cbf84109626aa1013bbe408fbb9590bd0f1c1548f038b2221c6b8b87de26ca43",
+    "system_read_roots": [
+      "/System",
+      "/usr",
+      "/opt/homebrew"
+    ]
+  },
+  "schema_version": "sireto-v4.12-strict-stores-plan-1",
+  "sources": [
+    "scripts/__init__.py",
+    "docs/v4_12_strict_stores_sandbox_contract.md",
+    "config/v4_12_strict_stores_plan.json",
+    "config/v4_12_strict_stores.sb",
+    "src/xgb_matcher/v412_strict_stores.py",
+    "scripts/certify_v412_strict_stores.py",
+    "tests/test_v412_strict_stores.py"
+  ],
+  "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_strict_stores"
+}
