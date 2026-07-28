@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import ast
 import copy
+import errno
 import hashlib
 import json
 import os
@@ -11,6 +12,7 @@ import shutil
 import stat
 import subprocess
 import sys
+import tempfile
 from typing import Any, Mapping
 
 import duckdb
@@ -236,6 +238,39 @@ def _reseal_cache(
         _allowed("cache_pickle", str(record["partition_key"]), pickle_path),
         _allowed("cache_sidecar", str(record["partition_key"]), sidecar_path),
     ]
+
+
+def _write_transfer_tree(root: Path) -> tuple[Path, Path]:
+    child = root / "nested"
+    child.mkdir(parents=True)
+    artifact = child / "artifact.json"
+    artifact.write_text('{"synthetic":true}\n', encoding="utf-8")
+    return child, artifact
+
+
+def _make_tree_removable(root: Path) -> None:
+    if not os.path.lexists(root):
+        return
+    if root.is_symlink():
+        root.unlink()
+        return
+    for path in root.rglob("*"):
+        if path.is_symlink():
+            path.unlink()
+        elif path.is_file():
+            os.chmod(path, 0o600)
+    for path in sorted(
+        (path for path in root.rglob("*") if path.is_dir()),
+        key=lambda path: len(path.parts),
+        reverse=True,
+    ):
+        os.chmod(path, 0o700)
+    os.chmod(root, 0o700)
+
+
+def _seal_immutable(root: Path) -> None:
+    cert._seal_transfer_tree(root)
+    cert._freeze_published_root(root)
 
 
 def _synthetic_run_spec() -> dict[str, object]:
@@ -1204,12 +1239,190 @@ def test_plan_requires_absolute_pinned_git_executable() -> None:
         cert.validate_plan(plan)
 
 
+def test_apfs_transfer_seals_children_keeps_root_0700_then_freezes(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "stage"
+    destination = tmp_path / "published"
+    child, artifact = _write_transfer_tree(source)
+    source_inode = (source.stat().st_dev, source.stat().st_ino)
+    cert._seal_transfer_tree(source)
+    assert stat.S_IMODE(source.stat().st_mode) == 0o700
+    assert stat.S_IMODE(child.stat().st_mode) == 0o555
+    assert stat.S_IMODE(artifact.stat().st_mode) == 0o444
+    cert._promote(source, destination)
+    assert not source.exists()
+    assert (destination.stat().st_dev, destination.stat().st_ino) == source_inode
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o555
+    assert stat.S_IMODE((destination / "nested").stat().st_mode) == 0o555
+    assert stat.S_IMODE(
+        (destination / "nested/artifact.json").stat().st_mode
+    ) == 0o444
+
+
+@pytest.mark.skipif(
+    not Path("/Volumes/CATNAT_DATA").is_dir(),
+    reason="CATNAT volume is not mounted",
+)
+def test_catnat_apfs_rejects_0555_rename_but_helper_succeeds() -> None:
+    volume = Path("/Volumes/CATNAT_DATA")
+    base = Path(tempfile.mkdtemp(prefix="v412-apfs-poc-", dir=volume))
+    try:
+        raw_parent = base / "raw-parent"
+        raw_destination_parent = base / "raw-destination-parent"
+        raw_parent.mkdir()
+        raw_destination_parent.mkdir()
+        raw = raw_parent / "raw-0555"
+        raw.mkdir()
+        (raw / "artifact").write_bytes(b"raw")
+        os.chmod(raw, 0o555)
+        with pytest.raises(OSError) as denied:
+            os.rename(raw, raw_destination_parent / "raw-destination")
+        assert denied.value.errno == errno.EACCES
+        os.chmod(raw, 0o700)
+        shutil.rmtree(raw)
+
+        helper_source_parent = base / "helper-source-parent"
+        helper_destination_parent = base / "helper-destination-parent"
+        helper_source_parent.mkdir()
+        helper_destination_parent.mkdir()
+        source = helper_source_parent / "helper-stage"
+        destination = helper_destination_parent / "helper-final"
+        child, artifact = _write_transfer_tree(source)
+        source_inode = (source.stat().st_dev, source.stat().st_ino)
+        cert._promote(source, destination)
+        assert (destination.stat().st_dev, destination.stat().st_ino) == source_inode
+        assert stat.S_IMODE(destination.stat().st_mode) == 0o555
+        assert stat.S_IMODE((destination / child.name).stat().st_mode) == 0o555
+        assert stat.S_IMODE(
+            (destination / child.name / artifact.name).stat().st_mode
+        ) == 0o444
+    finally:
+        _make_tree_removable(base)
+        shutil.rmtree(base)
+
+
+def test_promote_fault_before_rename_leaves_recoverable_source(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "stage"
+    destination = tmp_path / "final"
+    child, artifact = _write_transfer_tree(source)
+
+    def deny_rename(*_: object) -> None:
+        raise PermissionError(errno.EACCES, "synthetic pre-rename failure")
+
+    monkeypatch.setattr(cert.os, "rename", deny_rename)
+    with pytest.raises(cert.CertificationStopped, match="rename failed"):
+        cert._promote(source, destination)
+    assert source.is_dir()
+    assert not destination.exists()
+    assert stat.S_IMODE(source.stat().st_mode) == 0o555
+    assert stat.S_IMODE(child.stat().st_mode) == 0o555
+    assert stat.S_IMODE(artifact.stat().st_mode) == 0o444
+
+
+def test_promote_fault_after_rename_before_fchmod_leaves_final_0700(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "stage"
+    destination = tmp_path / "final"
+    _write_transfer_tree(source)
+    source_inode = (source.stat().st_dev, source.stat().st_ino)
+    original_rename = cert.os.rename
+    original_lstat = cert.os.lstat
+    renamed = False
+
+    def tracking_rename(old: Path, new: Path) -> None:
+        nonlocal renamed
+        original_rename(old, new)
+        renamed = True
+
+    def fail_destination_lstat(path: Path) -> os.stat_result:
+        if renamed and Path(path) == destination:
+            raise OSError(errno.EIO, "synthetic post-rename failure")
+        return original_lstat(path)
+
+    monkeypatch.setattr(cert.os, "rename", tracking_rename)
+    monkeypatch.setattr(cert.os, "lstat", fail_destination_lstat)
+    with pytest.raises(cert.CertificationStopped, match="renamed publication"):
+        cert._promote(source, destination)
+    assert not source.exists()
+    assert destination.is_dir()
+    assert (destination.stat().st_dev, destination.stat().st_ino) == source_inode
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o555
+
+
+def test_promote_fault_after_fchmod_before_root_fsync_leaves_final_0555(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "stage"
+    destination = tmp_path / "final"
+    _write_transfer_tree(source)
+    original_rename = cert.os.rename
+    original_fsync = cert.os.fsync
+    renamed = False
+
+    def tracking_rename(old: Path, new: Path) -> None:
+        nonlocal renamed
+        original_rename(old, new)
+        renamed = True
+
+    def fail_root_fsync(descriptor: int) -> None:
+        info = os.fstat(descriptor)
+        if (
+            renamed
+            and stat.S_ISDIR(info.st_mode)
+            and stat.S_IMODE(info.st_mode) == 0o555
+        ):
+            raise OSError(errno.EIO, "synthetic post-fchmod failure")
+        original_fsync(descriptor)
+
+    monkeypatch.setattr(cert.os, "rename", tracking_rename)
+    monkeypatch.setattr(cert.os, "fsync", fail_root_fsync)
+    with pytest.raises(cert.CertificationStopped, match="cleanup/fsync failed"):
+        cert._promote(source, destination)
+    assert not source.exists()
+    assert destination.is_dir()
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o555
+
+
+def test_promote_preserves_inode_and_fsyncs_both_parents(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source_parent = tmp_path / "source-parent"
+    destination_parent = tmp_path / "destination-parent"
+    source_parent.mkdir()
+    destination_parent.mkdir()
+    source = source_parent / "stage"
+    destination = destination_parent / "final"
+    _write_transfer_tree(source)
+    identity = (source.stat().st_dev, source.stat().st_ino)
+    synced: list[Path] = []
+    original_fsync_dir = cert._fsync_dir
+
+    def recording_fsync_dir(path: Path) -> None:
+        synced.append(path)
+        original_fsync_dir(path)
+
+    monkeypatch.setattr(cert, "_fsync_dir", recording_fsync_dir)
+    cert._promote(source, destination)
+    assert (destination.stat().st_dev, destination.stat().st_ino) == identity
+    assert stat.S_IMODE(destination.stat().st_mode) == 0o555
+    assert source_parent in synced
+    assert destination_parent in synced
+
+
 def test_publication_manifests_ledger_and_permissions(tmp_path: Path) -> None:
     output_root, audit_root, build_id, current, cert_path, audit_path = (
         _publication_fixture(tmp_path)
     )
-    cert._chmod_tree(cert_path)
-    cert._chmod_tree(audit_path)
+    _seal_immutable(cert_path)
+    _seal_immutable(audit_path)
     cert._validate_publication(cert_path, audit_path, build_id)
     assert stat.S_IMODE(cert_path.stat().st_mode) == 0o555
     assert stat.S_IMODE((cert_path / "manifest.json").stat().st_mode) == 0o444
@@ -1223,12 +1436,39 @@ def test_publication_manifests_ledger_and_permissions(tmp_path: Path) -> None:
     assert recovered == (cert_path, audit_path)
 
 
+def test_publication_recovery_freezes_complete_transient_roots(
+    tmp_path: Path,
+) -> None:
+    output_root, audit_root, build_id, current, cert_path, audit_path = (
+        _publication_fixture(tmp_path)
+    )
+    cert._seal_transfer_tree(cert_path)
+    cert._seal_transfer_tree(audit_path)
+    assert stat.S_IMODE(cert_path.stat().st_mode) == 0o700
+    assert stat.S_IMODE(audit_path.stat().st_mode) == 0o700
+    recovered = cert._publication_recovery(
+        output_root,
+        audit_root,
+        build_id,
+        current=current,
+    )
+    assert recovered == (cert_path, audit_path)
+    assert stat.S_IMODE(cert_path.stat().st_mode) == 0o555
+    assert stat.S_IMODE(audit_path.stat().st_mode) == 0o555
+    assert all(
+        stat.S_IMODE(path.stat().st_mode) == 0o444
+        for path in [*cert_path.iterdir(), *audit_path.iterdir()]
+    )
+
+
 def test_publication_recovery_promotes_pending_with_audit(tmp_path: Path) -> None:
     output_root, audit_root, build_id, current, pending, audit_path = (
         _publication_fixture(tmp_path, pending=True)
     )
-    cert._chmod_tree(pending)
-    cert._chmod_tree(audit_path)
+    cert._seal_transfer_tree(pending)
+    cert._seal_transfer_tree(audit_path)
+    assert stat.S_IMODE(pending.stat().st_mode) == 0o700
+    assert stat.S_IMODE(audit_path.stat().st_mode) == 0o700
     recovered = cert._publication_recovery(
         output_root,
         audit_root,
@@ -1239,6 +1479,8 @@ def test_publication_recovery_promotes_pending_with_audit(tmp_path: Path) -> Non
     assert recovered == (final, audit_path)
     assert final.is_dir()
     assert not pending.exists()
+    assert stat.S_IMODE(final.stat().st_mode) == 0o555
+    assert stat.S_IMODE(audit_path.stat().st_mode) == 0o555
 
 
 def test_publication_recovery_removes_pending_without_audit(tmp_path: Path) -> None:
@@ -1246,7 +1488,8 @@ def test_publication_recovery_removes_pending_without_audit(tmp_path: Path) -> N
         _publication_fixture(tmp_path, pending=True)
     )
     shutil.rmtree(audit_path)
-    cert._chmod_tree(pending)
+    cert._seal_transfer_tree(pending)
+    assert stat.S_IMODE(pending.stat().st_mode) == 0o700
     assert (
         cert._publication_recovery(
             output_root,
@@ -1274,11 +1517,11 @@ def test_publication_recovery_rejects_incoherent_states(
     else:
         pending = output_root / f".pending-{build_id}"
         shutil.copytree(final, pending)
-        cert._chmod_tree(pending)
+        cert._seal_transfer_tree(pending)
     if final.exists():
-        cert._chmod_tree(final)
+        cert._seal_transfer_tree(final)
     if audit_path.exists():
-        cert._chmod_tree(audit_path)
+        cert._seal_transfer_tree(audit_path)
     with pytest.raises(cert.CertificationStopped, match="inconsistent durable"):
         cert._publication_recovery(
             output_root,
@@ -1294,8 +1537,8 @@ def test_publication_recovery_rejects_bad_modes_and_broken_seals(
     output_root, audit_root, build_id, current, cert_path, audit_path = (
         _publication_fixture(tmp_path)
     )
-    cert._chmod_tree(cert_path)
-    cert._chmod_tree(audit_path)
+    _seal_immutable(cert_path)
+    _seal_immutable(audit_path)
     os.chmod(cert_path / "manifest.json", 0o644)
     with pytest.raises(cert.CertificationStopped, match="mode mismatch"):
         cert._publication_recovery(
@@ -1324,8 +1567,8 @@ def test_publication_recovery_rejects_resealed_input_mutation(
     output_root, audit_root, build_id, current, cert_path, audit_path = (
         _publication_fixture(tmp_path)
     )
-    cert._chmod_tree(cert_path)
-    cert._chmod_tree(audit_path)
+    _seal_immutable(cert_path)
+    _seal_immutable(audit_path)
     source = current["ledger_sources"][0][1]  # type: ignore[index]
     source.write_bytes(b"mutated-after-seal")
     with pytest.raises(
@@ -1338,6 +1581,57 @@ def test_publication_recovery_rejects_resealed_input_mutation(
             build_id,
             current=current,
         )
+
+
+@pytest.mark.parametrize("tamper", ["file_mode", "symlink", "root_mode"])
+def test_publication_recovery_stops_on_apfs_tree_tamper(
+    tmp_path: Path,
+    tamper: str,
+) -> None:
+    output_root, audit_root, build_id, current, cert_path, audit_path = (
+        _publication_fixture(tmp_path)
+    )
+    cert._seal_transfer_tree(cert_path)
+    cert._seal_transfer_tree(audit_path)
+    if tamper == "file_mode":
+        os.chmod(cert_path / "manifest.json", 0o644)
+    elif tamper == "symlink":
+        (cert_path / "unexpected-link").symlink_to(
+            cert_path / "manifest.json"
+        )
+    else:
+        os.chmod(cert_path, 0o755)
+    with pytest.raises(
+        cert.CertificationStopped,
+        match="mode|symlink|immutable|recoverable",
+    ):
+        cert._publication_recovery(
+            output_root,
+            audit_root,
+            build_id,
+            current=current,
+        )
+
+
+@pytest.mark.parametrize("mode", [0o500, 0o755, 0o777])
+def test_freeze_published_root_accepts_only_0700_or_0555(
+    tmp_path: Path,
+    mode: int,
+) -> None:
+    root = tmp_path / "published"
+    _write_transfer_tree(root)
+    os.chmod(root, mode)
+    with pytest.raises(cert.CertificationStopped, match="not recoverable"):
+        cert._freeze_published_root(root)
+
+
+def test_freeze_published_root_rejects_symlink(tmp_path: Path) -> None:
+    target = tmp_path / "target"
+    target.mkdir()
+    link = tmp_path / "published"
+    link.symlink_to(target, target_is_directory=True)
+    with pytest.raises(cert.CertificationStopped, match="real directory"):
+        cert._freeze_published_root(link)
 
 
 def test_child_cwd_check_uses_lstat_identity_without_getcwd() -> None:

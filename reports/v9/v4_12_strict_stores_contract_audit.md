@@ -11,17 +11,17 @@ modèles, ni l'ouverture de l'oracle par le worker.
 Versions auditées :
 
 - contrat :
-  `d33d66ac50bf21be62f999d25b5ce0b8af7f5735a9b67f5838728d8b5882739e` ;
+  `153b420909ea183e42e8d2c45845cf60795d5875d6ffc0c2dbab91f5cf417bf1` ;
 - plan :
   `4d449f70c2b5b7eba7bd56322c7248ff4b52930eca1a8c87250f4fb3f51a1f5f` ;
 - profil sandbox :
   `d9195c35e78f11eadafd883acbd53996ab531dbc2e998d1efb21179f2556be77` ;
 - certificateur :
-  `dbcc653b99f1ffc63b46f2d3b65eb74f87103f6b72e00256bcfe4302b48f1918` ;
+  `7c0c5eb1930a46070aec429e3a99e127302d295dbe2be79f7ef858259d2236c1` ;
 - stores :
   `6d6064b4b76df141b961be3ae8ff5512e8def08a33790194456d5c6b1132294b` ;
 - tests :
-  `b89e38a73b7b12d97cff2181d8316e581f1922c2543ea8a7d04c86ddd63d7093`.
+  `e0f773e496efaf651fd32a24e059f6ae6dbfaee735bc437605df6e66f0600e4a`.
 
 ## Refus successifs
 
@@ -49,7 +49,9 @@ Les revues ont refusé les versions qui :
 17. présentaient à tort tout le runtime Homebrew comme scellé ;
 18. épinglaient un hash Python framework tronqué à 63 caractères ;
 19. utilisaient `Path.cwd()` sous une politique n'autorisant que les
-    métadonnées de `RUN_ROOT`.
+    métadonnées de `RUN_ROOT` ;
+20. tentaient de renommer une racine déjà en `0555` sur un volume APFS
+    `noowners`, ce que macOS refuse avec `EACCES`.
 
 Le premier verrou dérivé, de hash
 `76f00570941920dead5bc4ac966c6d6a23ec317a35ecf25172fc04bdc17ba5e3`,
@@ -65,6 +67,15 @@ du cwd. Deux PoC sandboxés ont établi que `getcwd()` est interdit, tandis que
 `st_dev/st_ino`. Le verrou a de nouveau été révoqué. Le patch
 `GO_CODE_CWD_PATCH` conserve la preuve du cwd par identité de répertoire,
 fixe `JOBLIB_MULTIPROCESSING=0` et n'ajoute aucun droit sandbox.
+
+Le second lancement complet a terminé le worker — 648 partitions, 648 caches
+et lookup — puis s'est arrêté avant publication lors du premier renommage
+atomique. Un PoC sur le SSD a reproduit exactement `0555 → EACCES`. Le lock a
+été révoqué. Le patch `GO_CODE_APFS_PATCH` garde uniquement la racine privée
+en `0700` pendant `rename`, l'ancre par FD, la repasse en `0555` dans un
+`finally`, vérifie son inode et synchronise les deux parents. La reprise
+accepte uniquement une racine transitoire `0700` ou finale `0555`, la gèle
+avant toute validation et refuse tout écart.
 
 ## Preuves factuelles
 
@@ -112,9 +123,9 @@ et correspondent au plan.
 
 ## Tests finaux
 
-- `44 passed` sur `tests/test_v412_strict_stores.py` ;
+- `58 passed` sur `tests/test_v412_strict_stores.py` ;
 - smoke sandbox macOS réel : `SMOKE_OK` ;
-- `714 passed` sur la suite complète du dépôt ;
+- `728 passed` sur la suite complète du dépôt ;
 - AST Python valide et `git diff --check` propre.
 
 ## Frontière de confiance

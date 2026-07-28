@@ -316,6 +316,23 @@ les deux reste reprenable. Au redémarrage :
   avant reconstruction ;
 - audit seul, final seul, conflit ou hash divergent : `STOP`.
 
+Sur le volume APFS `noowners`, renommer une racine `0555` renvoie `EACCES`.
+La promotion ancre donc la racine source par un FD
+`O_DIRECTORY|O_NOFOLLOW`, scelle les fichiers en `0444` et tous les
+sous-répertoires en `0555`, puis place uniquement la racine transférée en
+`0700` pendant l'appel `rename`. Le même FD est immédiatement repassé en
+`0555`, resynchronisé, et son identité `st_dev/st_ino` doit être celle de la
+destination ; les deux répertoires parents sont `fsync`. Aucun fichier ou
+sous-répertoire ne redevient modifiable.
+
+Un crash peut laisser une racine publiée en mode transitoire `0700`. La
+reprise n'accepte que `0555` ou exactement `0700`, refuse les symlinks,
+repasse d'abord la racine `0700` en `0555` par FD, puis revérifie modes,
+manifeste, hashes et concordance avec toutes les entrées courantes avant de
+reprendre ou supprimer l'état. Tout autre mode ou contenu provoque `STOP`.
+Cette courte fenêtre parent-only respecte la frontière de confiance locale
+déclarée plus bas ; elle n'élargit aucun droit du worker sandboxé.
+
 Artefacts finaux immuables et concordance par même build ID. Aucun résultat
 par requête ou candidat n'est publié.
 

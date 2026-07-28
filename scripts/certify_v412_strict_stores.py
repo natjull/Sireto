@@ -1220,30 +1220,149 @@ def _table(rows: Sequence[Sequence[Any]]) -> pa.Table:
     )
 
 
-def _chmod_tree(root: Path) -> None:
-    for path in root.rglob("*"):
-        mode = os.lstat(path).st_mode
-        if stat.S_ISLNK(mode):
-            _stop(f"symlink forbidden in publication staging: {path}")
-        if stat.S_ISREG(mode):
-            os.chmod(path, 0o444)
-            _fsync_file(path)
-    for path in sorted((path for path in root.rglob("*") if path.is_dir()), reverse=True):
-        os.chmod(path, 0o555)
-        _fsync_dir(path)
-    os.chmod(root, 0o555)
+def _open_directory_fd(path: Path) -> tuple[int, tuple[int, int]]:
+    before = _directory(path)
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as exc:
+        _stop(f"cannot anchor publication directory {path}: {exc}")
+    opened = os.fstat(descriptor)
+    if (
+        not stat.S_ISDIR(opened.st_mode)
+        or (opened.st_dev, opened.st_ino) != (before.st_dev, before.st_ino)
+    ):
+        os.close(descriptor)
+        _stop(f"publication directory identity changed: {path}")
+    return descriptor, (opened.st_dev, opened.st_ino)
+
+
+def _seal_transfer_tree(root: Path) -> None:
+    _directory(root)
+    directories: list[Path] = []
+    for current, child_directories, files in os.walk(
+        root, topdown=True, followlinks=False
+    ):
+        current_path = Path(current)
+        current_mode = os.lstat(current_path).st_mode
+        if stat.S_ISLNK(current_mode) or not stat.S_ISDIR(current_mode):
+            _stop(f"invalid directory in publication staging: {current_path}")
+        if current_path != root:
+            directories.append(current_path)
+        for name in child_directories:
+            child = current_path / name
+            mode = os.lstat(child).st_mode
+            if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
+                _stop(f"invalid directory in publication staging: {child}")
+        for name in files:
+            child = current_path / name
+            mode = os.lstat(child).st_mode
+            if stat.S_ISLNK(mode) or not stat.S_ISREG(mode):
+                _stop(f"invalid file in publication staging: {child}")
+            os.chmod(child, 0o444)
+            _fsync_file(child)
+    for directory in sorted(
+        directories, key=lambda path: len(path.parts), reverse=True
+    ):
+        os.chmod(directory, 0o555)
+        _fsync_dir(directory)
+    # APFS volumes mounted with noowners reject rename of a 0555 directory.
+    # Only the transferred root remains private 0700; descendants are sealed.
+    os.chmod(root, 0o700)
     _fsync_dir(root)
+
+
+def _freeze_published_root(root: Path) -> None:
+    mode = os.lstat(root).st_mode
+    if stat.S_ISLNK(mode) or not stat.S_ISDIR(mode):
+        _stop(f"published root is not a real directory: {root}")
+    permissions = stat.S_IMODE(mode)
+    if permissions not in {0o555, 0o700}:
+        _stop(f"published root mode is not recoverable: {root}")
+    descriptor, identity = _open_directory_fd(root)
+    try:
+        if permissions == 0o700:
+            os.fchmod(descriptor, 0o555)
+            os.fsync(descriptor)
+    finally:
+        os.close(descriptor)
+    after = os.lstat(root)
+    if (
+        stat.S_ISLNK(after.st_mode)
+        or not stat.S_ISDIR(after.st_mode)
+        or (after.st_dev, after.st_ino) != identity
+        or stat.S_IMODE(after.st_mode) != 0o555
+    ):
+        _stop(f"published root could not be frozen safely: {root}")
+    _fsync_dir(root.parent)
 
 
 def _promote(source: Path, destination: Path) -> None:
     if os.path.lexists(destination):
         _stop(f"immutable destination exists: {destination}")
-    if os.lstat(source).st_dev != os.lstat(destination.parent).st_dev:
+    source_parent = source.parent
+    destination_parent = destination.parent
+    source_parent_stat = _directory(source_parent)
+    destination_parent_stat = _directory(destination_parent)
+    if source_parent_stat.st_dev != destination_parent_stat.st_dev:
         _stop("staging and publication filesystems differ")
-    _chmod_tree(source)
-    _fsync_dir(source)
-    os.rename(source, destination)
-    _fsync_dir(destination.parent)
+    _seal_transfer_tree(source)
+    descriptor, identity = _open_directory_fd(source)
+    renamed = False
+    primary_error: BaseException | None = None
+    try:
+        try:
+            os.rename(source, destination)
+        except OSError as exc:
+            _stop(f"publication rename failed: {exc}")
+        renamed = True
+        try:
+            after = os.lstat(destination)
+        except OSError as exc:
+            _stop(f"cannot inspect renamed publication: {exc}")
+        if (
+            stat.S_ISLNK(after.st_mode)
+            or not stat.S_ISDIR(after.st_mode)
+            or (after.st_dev, after.st_ino) != identity
+        ):
+            _stop("renamed publication directory identity mismatch")
+    except BaseException as exc:
+        primary_error = exc
+    finally:
+        cleanup_error: BaseException | None = None
+        for operation in (
+            lambda: os.fchmod(descriptor, 0o555),
+            lambda: os.fsync(descriptor),
+            lambda: os.close(descriptor),
+        ):
+            try:
+                operation()
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        for parent in dict.fromkeys((source_parent, destination_parent)):
+            try:
+                _fsync_dir(parent)
+            except BaseException as exc:
+                if cleanup_error is None:
+                    cleanup_error = exc
+        if primary_error is not None:
+            if cleanup_error is not None:
+                primary_error.add_note(
+                    f"secondary publication cleanup failure: {cleanup_error}"
+                )
+        elif cleanup_error is not None:
+            _stop(f"publication cleanup/fsync failed: {cleanup_error}")
+    if primary_error is not None:
+        raise primary_error
+    if not renamed or os.path.lexists(source):
+        _stop("publication rename did not complete atomically")
+    _freeze_published_root(destination)
 
 
 def _validate_immutable_modes(root: Path) -> None:
@@ -1530,17 +1649,31 @@ def _publication_recovery(
     cert_exists = os.path.lexists(final_cert)
     pending_exists = os.path.lexists(pending)
     audit_exists = os.path.lexists(final_audit)
-    if cert_exists or pending_exists or audit_exists:
-        for _, path, _, snapshot in current["ledger_sources"]:
-            _unchanged(path, snapshot, current["plan"]["max_rss_bytes"])
     if cert_exists and audit_exists and not pending_exists:
+        _freeze_published_root(final_cert)
+        _freeze_published_root(final_audit)
+        state = "complete"
+    elif pending_exists and audit_exists and not cert_exists:
+        _freeze_published_root(pending)
+        _freeze_published_root(final_audit)
+        state = "pending_with_audit"
+    elif pending_exists and not audit_exists and not cert_exists:
+        _freeze_published_root(pending)
+        state = "pending_only"
+    elif cert_exists or pending_exists or audit_exists:
+        _stop("inconsistent durable publication state")
+    else:
+        return None
+    for _, path, _, snapshot in current["ledger_sources"]:
+        _unchanged(path, snapshot, current["plan"]["max_rss_bytes"])
+    if state == "complete":
         _validate_immutable_modes(final_cert)
         _validate_immutable_modes(final_audit)
         _validate_against_current_inputs(
             final_cert, final_audit, build_id, **current
         )
         return final_cert, final_audit
-    if pending_exists and audit_exists and not cert_exists:
+    if state == "pending_with_audit":
         _validate_immutable_modes(pending)
         _validate_immutable_modes(final_audit)
         _validate_against_current_inputs(
@@ -1551,14 +1684,12 @@ def _publication_recovery(
             final_cert, final_audit, build_id, **current
         )
         return final_cert, final_audit
-    if pending_exists and not audit_exists and not cert_exists:
+    if state == "pending_only":
         _validate_immutable_modes(pending)
         _validate_certification_only(pending, build_id)
         _remove_validated_pending(pending)
         return None
-    if cert_exists or pending_exists or audit_exists:
-        _stop("inconsistent durable publication state")
-    return None
+    _stop("unreachable publication recovery state")
 
 
 def _build_identity(
