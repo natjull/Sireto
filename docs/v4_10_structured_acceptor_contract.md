@@ -139,6 +139,16 @@ Propager les features ranker aujourd'hui perdues, notamment :
 - source du meilleur nom ;
 - rangs et scores détaillés des canaux.
 
+Exception anti-fuite : le fit historique provient du retrieval sparse V4.1
+alors que les cas difficiles proviennent de V4.2-B. Les onze champs
+`admission_*` et `candidate_from_sparse`, `candidate_from_input_siret`,
+`candidate_from_input_siren`, `candidate_from_closed_alias` sont donc
+catalogués pour audit mais portent `model_allowed=false` en V4.10. Sinon ils
+identifieraient la population plutôt que la justesse. Ils ne pourront entrer
+dans un modèle qu'après reconstruction homogène hors pli du retrieval B.
+`input_siret_exact_match`, `input_siren_exact_match` et l'état candidat
+restent autorisés car leur sémantique est identique dans les deux populations.
+
 Une feature numérique produit `top1`, `top2`, `delta` et indicateur manquant.
 Une feature catégorielle produit des catégories épinglées, une catégorie
 `UNKNOWN` et une égalité top-1/top-2. Aucun encodage ne peut être appris sur
