@@ -115,6 +115,30 @@ cibles sont absentes des affectations. Après exclusion des composantes
 random, le fit historique éligible contient 5 501 scènes et le dev historique
 effectif 1 452 scènes.
 
+### 2.4 Winner de développement gelé
+
+Répertoire :
+
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_8_acceptor_development/f2ea5be7c1a40647`
+
+| Artefact | SHA-256 |
+|---|---|
+| `manifest.json` | `a232ff17fd708321a3129f9411626cdfea5c5d46f8c69a9776ace474f23888d4` |
+| `development_report.json` | `e8848c7f4c8ecbdb532194519d8c90eba39011813c139a09c9266f70c568b2e2` |
+| `hard_oof_predictions.parquet` | `e29e7a8bc1a86de0d6511fb31fbe19108e9e2f5f20ab0328d2423fbdca0785aa` |
+| `winner/acceptor_model.joblib` | `2423033ef5e003112481fb58926611dbfbaf71b8562aea848545c5ab098e487c` |
+| `winner/metadata.json` | `41b84f05fe846db9362b1eff5f362b075bec08aee3af1bd1c5ee553d5d56abfc` |
+| `winner_freeze.json` | `5d7344b2e4b2fa256f05e75420a5c16edaf52a530f6e9486000aeaec74c8bcbc` |
+
+Le verdict de développement est `GO_RANDOM_OPEN_V48`. Le winner est
+`HARD_W1`, poids total difficile `1`, au seuil complet figé
+`0.3617231974526733`. Il rejette 23/25 mauvais `hard_oof`, contre 13/25 pour
+`BASE_REFIT`, et accepte 58/68 corrects contre 61/68. Sur le dev historique
+effectif, il automatise 1 186 scènes, dont 1 184 correctes et deux erreurs.
+
+Ces résultats autorisent uniquement l'ouverture random définie en section 8.
+Ils ne permettent aucune modification du winner, de son seuil ou des gates.
+
 ## 3. Composants définitivement gelés
 
 - retrieval V4.2-B, 100 candidats au maximum et aucun positif injecté ;
