@@ -137,6 +137,21 @@ franchit `GO_LOCK_APFS_PATCH` et `GO_LOCK_APFS_2` avec 7 900 et 325
 contrôles indépendants. Il autorise la troisième tentative complète du Gate
 A, sans changement du worker de matching ni accès à l'oracle. *(commit
 GitHub : `7443ef4`)*
+La troisième tentative franchit **`GO_V412_STRICT_STORES_SANDBOX`**. Les
+648 partitions et 648 caches nécessaires aux 1 456 requêtes dev sont
+accessibles sous sandbox, sans cache manquant ou reconstruit ; le lookup
+retourne exactement les 10 000 SIRET contrôlés. Le worker n'a ouvert ni
+oracle, label, modèle ou résultat historique, et les refus oracle/audit,
+écriture, réseau et fork sont effectifs. Son pic RSS est de 1,9568 Go.
+Deux audits indépendants rendent également `GO`, avec 20 848 et 11 898
+contrôles réussis et le rehash complet des 1 954 entrées du ledger. Artefacts :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/certifications/v4_12_strict_stores/9a99cd246d6d1a118dea064ab1458afe7c3bcb8a9bb28a1da6009d6bc42b4ee4`
+et
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_strict_stores/9a99cd246d6d1a118dea064ab1458afe7c3bcb8a9bb28a1da6009d6bc42b4ee4`.
+Rapport : `reports/v9/v4_12_strict_stores_results.md`. Ce GO certifie les
+stores et l'isolement, pas encore le Recall@100 ni la latence par requête.
+Il autorise uniquement le contrat du moteur unitaire et de sa parité ; les
+modèles et le test final restent fermés. *(commit GitHub : `614efc2`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
