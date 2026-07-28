@@ -1,0 +1,52 @@
+{
+  "audit_output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle",
+  "audit_verdict": "GO_CODE_V412_UNIT_ORACLE",
+  "expected_id_payload_sha256": "37016d9dc480194b52b545fffb3272847d485c5f209025d064d313b425c03bf4",
+  "expected_population": {
+    "comparison_dev": {
+      "AMBIGUOUS": 112,
+      "MATCH_EXACT": 634,
+      "total": 746
+    },
+    "query_count": 1456,
+    "threshold_dev": {
+      "AMBIGUOUS": 127,
+      "MATCH_EXACT": 583,
+      "total": 710
+    }
+  },
+  "expected_truth_logical_sha256": "9b25bf45b7ff074a1db8e6ca166569eec9754e34b29f032aebae63925d71ff42",
+  "git_commit": "7eafad839b33f59b561b522052c090f13000e83e",
+  "input_hashes": {
+    "labels": "69032b745817959422ef26e4c0c1228686260c1daa272ca5d6aba1d7be087b04",
+    "safe_queries_dev": "b1fef6ba72e4a557175a60c7e21e658f8fbb739b1d6607b77e5f70da873a031f",
+    "safe_runtime_manifest": "34e7a8d1c97c962b7f2295a99cd45b68c37afa9c866a5eb22e302330cb9010c4",
+    "split": "33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193"
+  },
+  "input_paths": {
+    "labels": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/labels.parquet",
+    "safe_queries_dev": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/queries_dev.parquet",
+    "safe_runtime_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/inputs/v4_12_unit_engine/ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e/runtime_manifest.json",
+    "split": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/split_assignments.parquet"
+  },
+  "max_rss_bytes": 8589934592,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine",
+  "purpose": "V4.12_UNIT_ORACLE",
+  "runtime": {
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "pyarrow": "23.0.1",
+    "python": "3.14.3"
+  },
+  "safe_input_build_id": "ca0b22e79cd2e92a32c009266e6d967b4ea48654de8736bca2b0ea7fdc9f8d6e",
+  "schema_version": "sireto-v4.12-unit-oracle-execution-lock-1",
+  "source_hashes": {
+    "config/v4_12_unit_oracle_plan.json": "ede4192ae36b8df625b5c447273b43c947a0b9b6bc182e4ed4107119eac6b897",
+    "docs/v4_12_unit_oracle_contract.md": "ca2c857d526a92529677c5ee20804a29bd4cef4610de00d36dbcb089e5a6a0d1",
+    "scripts/__init__.py": "86cc02ebddce9b2c5b019a6494f96646aa1e187e744968e9c11373b6674e31a3",
+    "scripts/build_v412_unit_oracle.py": "8c64d857a81acccc0737ef6cf1aa809b7b83582bab299d68b5b9642c435d4d30",
+    "tests/test_build_v412_unit_oracle.py": "3b07bf453cdbe5de46de3a806d5cf0f59b40ccd6ed0e4696b351394e3df4fc33"
+  },
+  "temp_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/v4_12_unit_oracle"
+}
