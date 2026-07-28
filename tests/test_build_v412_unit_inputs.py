@@ -426,8 +426,6 @@ def test_git_blob_must_match_tracked_worktree_and_lock(
     expected = _sha(source)
 
     def fake_git(args):
-        if "rev-parse" in args:
-            return "f" * 40
         return "tracked.py"
 
     monkeypatch.setattr(unit, "_git", fake_git)
@@ -435,6 +433,51 @@ def test_git_blob_must_match_tracked_worktree_and_lock(
     with pytest.raises(unit.BuildStopped, match="committed Git blob"):
         unit._verify_git_sources(
             repo, ["tracked.py"], {"tracked.py": expected}, "f" * 40, 1024**3
+        )
+
+
+def test_audited_parent_commit_remains_valid_after_unrelated_later_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "tracked.py"
+    source.write_bytes(b"unchanged audited source\n")
+    expected = _sha(source)
+    git_calls = []
+
+    def fake_git(args):
+        git_calls.append(args)
+        assert "rev-parse" not in args
+        return "tracked.py"
+
+    monkeypatch.setattr(unit, "_git", fake_git)
+    monkeypatch.setattr(unit, "_git_bytes", lambda _args: source.read_bytes())
+    snapshots = unit._verify_git_sources(
+        tmp_path,
+        ["tracked.py"],
+        {"tracked.py": expected},
+        "a" * 40,
+        1024**3,
+    )
+    assert list(snapshots) == [source]
+    assert len(git_calls) == 1
+
+
+def test_modified_tracked_source_remains_stop(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    source = tmp_path / "tracked.py"
+    committed = b"audited source\n"
+    source.write_bytes(b"modified source\n")
+    expected = hashlib.sha256(committed).hexdigest()
+    monkeypatch.setattr(unit, "_git", lambda _args: "tracked.py")
+    monkeypatch.setattr(unit, "_git_bytes", lambda _args: committed)
+    with pytest.raises(unit.BuildStopped, match="source hash mismatch"):
+        unit._verify_git_sources(
+            tmp_path,
+            ["tracked.py"],
+            {"tracked.py": expected},
+            "a" * 40,
+            1024**3,
         )
 
 

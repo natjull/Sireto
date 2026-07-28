@@ -559,8 +559,6 @@ def _git_bytes(args: Sequence[str]) -> bytes:
 def _verify_git_sources(
     repo: Path, sources: Sequence[str], expected: Mapping[str, str], commit: str, max_rss: int
 ) -> dict[Path, dict[str, Any]]:
-    if _git(["-C", str(repo), "rev-parse", "HEAD"]) != commit:
-        _stop("Git HEAD differs from execution lock")
     if set(expected) != set(sources):
         _stop("source_hashes key set mismatch")
     snapshots: dict[Path, dict[str, Any]] = {}
