@@ -409,6 +409,14 @@ def build_top1(
 ) -> pd.DataFrame:
     """Produce one explicit top-1 row per query, including retrieval misses."""
 
+    pool_state = (
+        predictions.groupby("query_id", sort=False)
+        .agg(
+            pool_candidate_count=("candidate_siret", "size"),
+            truth_present_in_pool=("is_ground_truth", "max"),
+        )
+        .reset_index()
+    )
     top1 = predictions[predictions["ranker_rank"].eq(1)].copy()
     top1 = assignments[
         ["query_id", "split", "oof_fold"]
@@ -419,7 +427,20 @@ def build_top1(
         validate="one_to_one",
         suffixes=("_assignment", ""),
     )
-    top1["retrieval_miss"] = top1["candidate_siret"].isna()
+    top1 = top1.merge(
+        pool_state,
+        on="query_id",
+        how="left",
+        validate="one_to_one",
+    )
+    top1["pool_candidate_count"] = (
+        top1["pool_candidate_count"].fillna(0).astype(int)
+    )
+    top1["empty_pool"] = top1["pool_candidate_count"].eq(0)
+    top1["truth_present_in_pool"] = (
+        top1["truth_present_in_pool"].fillna(0).astype(bool)
+    )
+    top1["truth_absent_from_pool"] = ~top1["truth_present_in_pool"]
     if len(top1) != len(assignments) or top1["query_id"].duplicated().any():
         raise ValueError("Ranker C top-1 does not contain one row per query")
     return top1
@@ -436,7 +457,15 @@ def exact_metrics(
         & labels["label_kind"].astype(str).eq("MATCH_EXACT")
     ][["query_id", "ground_truth_siret", "ground_truth_siren"]].copy()
     evaluated = exact.merge(
-        top1[["query_id", "candidate_siret", "candidate_siren", "retrieval_miss"]],
+        top1[
+            [
+                "query_id",
+                "candidate_siret",
+                "candidate_siren",
+                "empty_pool",
+                "truth_absent_from_pool",
+            ]
+        ],
         on="query_id",
         how="left",
         validate="one_to_one",
@@ -462,7 +491,13 @@ def exact_metrics(
         "siren_hit_at_1": (
             float(evaluated["siren_hit"].mean()) if count else 0.0
         ),
-        "retrieval_miss_count": int(evaluated["retrieval_miss"].fillna(True).sum()),
+        "empty_pool_count": int(evaluated["empty_pool"].fillna(True).sum()),
+        "truth_absent_from_pool_count": int(
+            evaluated["truth_absent_from_pool"].fillna(True).sum()
+        ),
+        "retrieval_miss_count": int(
+            evaluated["truth_absent_from_pool"].fillna(True).sum()
+        ),
     }
 
 
@@ -526,6 +561,21 @@ def masked_ranker_b_matrix(
     return projected[list(feature_order)].to_numpy(dtype=np.float32)
 
 
+def masked_ranker_b_projection_metadata() -> dict[str, Any]:
+    """Describe the exact diagnostic projection applied to ranker B."""
+
+    return {
+        "shared_candidate_features": RANKER_C_FEATURE_ORDER[:-1],
+        "admission_rank_recip": "1/retrieval_rank",
+        "admission_current_sparse_rank_recip": "1/retrieval_rank",
+        "admission_fusion_score": "1/(60+retrieval_rank)",
+        "admission_channel_count": 1.0,
+        "candidate_is_active": 1.0,
+        "candidate_from_sparse": 1.0,
+        "all_other_ranker_b_only_features": 0.0,
+    }
+
+
 def score_masked_ranker_b(
     candidates: pd.DataFrame,
     *,
@@ -562,15 +612,7 @@ def score_masked_ranker_b(
     ).astype(np.int16)
     return output[PREDICTION_COLUMNS], {
         **identity,
-        "projection": {
-            "shared_candidate_features": RANKER_C_FEATURE_ORDER[:-1],
-            "admission_rank_recip": "1/retrieval_rank",
-            "admission_current_sparse_rank_recip": "1/retrieval_rank",
-            "admission_channel_count": "retrieval_channel_count",
-            "candidate_is_active": 1.0,
-            "candidate_from_sparse": 1.0,
-            "all_other_ranker_b_only_features": 0.0,
-        },
+        "projection": masked_ranker_b_projection_metadata(),
     }
 
 

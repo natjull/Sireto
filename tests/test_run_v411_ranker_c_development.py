@@ -203,6 +203,12 @@ def test_masked_ranker_b_projection_never_exposes_identifier_evidence():
     assert projected["admission_channel_count"] == 1
     assert projected["candidate_is_active"] == 1
     assert projected["candidate_from_sparse"] == 1
+    assert subject.masked_ranker_b_projection_metadata()[
+        "admission_channel_count"
+    ] == 1.0
+    assert subject.masked_ranker_b_projection_metadata()[
+        "admission_fusion_score"
+    ] == "1/(60+retrieval_rank)"
     for name in (
         "input_siret_exact_match",
         "input_siren_exact_match",
@@ -215,8 +221,18 @@ def test_masked_ranker_b_projection_never_exposes_identifier_evidence():
 
 def test_top1_keeps_zero_candidate_queries_and_exact_metric_counts_miss():
     predictions = subject.score_rows(
-        _Scorer([0.7]),
-        pd.DataFrame([_candidate("q1", "11111111100011", rank=1)]),
+        _Scorer([0.7, 0.6]),
+        pd.DataFrame(
+            [
+                _candidate(
+                    "q1",
+                    "11111111100011",
+                    rank=1,
+                    truth=1,
+                ),
+                _candidate("q3", "33333333300033", rank=1),
+            ]
+        ),
         origin="ranker_c_oof",
         fold=0,
     )
@@ -224,6 +240,7 @@ def test_top1_keeps_zero_candidate_queries_and_exact_metric_counts_miss():
         [
             {"query_id": "q1", "split": "fit", "oof_fold": 0},
             {"query_id": "q2", "split": "fit", "oof_fold": 1},
+            {"query_id": "q3", "split": "fit", "oof_fold": 0},
         ]
     )
     labels = pd.DataFrame(
@@ -242,14 +259,23 @@ def test_top1_keeps_zero_candidate_queries_and_exact_metric_counts_miss():
                 "ground_truth_siret": "22222222200022",
                 "ground_truth_siren": "222222222",
             },
+            {
+                "query_id": "q3",
+                "split": "fit",
+                "label_kind": "MATCH_EXACT",
+                "ground_truth_siret": "44444444400044",
+                "ground_truth_siren": "444444444",
+            },
         ]
     )
     top1 = subject.build_top1(predictions, assignments)
     evaluated, metrics = subject.exact_metrics(top1, labels, split="fit")
-    assert len(top1) == 2
-    assert evaluated["siret_hit"].tolist() == [True, False]
-    assert metrics["siret_hit_at_1"] == 0.5
-    assert metrics["retrieval_miss_count"] == 1
+    assert len(top1) == 3
+    assert evaluated["siret_hit"].tolist() == [True, False, False]
+    assert metrics["siret_hit_at_1"] == pytest.approx(1.0 / 3.0)
+    assert metrics["empty_pool_count"] == 1
+    assert metrics["truth_absent_from_pool_count"] == 2
+    assert metrics["retrieval_miss_count"] == 2
 
 
 def test_segment_gate_only_applies_at_one_hundred_cases():
