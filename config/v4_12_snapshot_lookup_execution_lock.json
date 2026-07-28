@@ -1,0 +1,34 @@
+{
+  "audit_verdict": "GO_BUILD_V412_SNAPSHOT_LOOKUP",
+  "git_commit": "a06cf000d704c708e2831848e3e5bf98570ff423",
+  "input_hashes": {
+    "candidates": "78b2f78ddeac863ac39ca64301d42312c7fb766ac51e2b5d19dde5c5910aedac",
+    "denylist": "19d6cb585a8fb33ddc1d6e485b15b3a811bcf78a540b4e9178eddcfd4bb49d9d",
+    "plan": "6ad0fc9d82187a7ba045a3bb2a3301fce449465443af5e25358259fad2031568",
+    "snapshot": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845"
+  },
+  "input_paths": {
+    "candidates": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d/candidates_sparse_top100.parquet",
+    "denylist": "/Users/nathanjullia/Documents/Projets/SIRETO/config/v4_12_forbidden_artifacts.json",
+    "plan": "/Users/nathanjullia/Documents/Projets/SIRETO/config/v4_12_snapshot_lookup_plan.json",
+    "snapshot": "/Users/nathanjullia/Documents/Projets/SIRETO/data/StockEtablissement_utf8.parquet"
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/v4_12_snapshot_lookup",
+  "purpose": "BUILD_V412_SNAPSHOT_LOOKUP",
+  "runtime": {
+    "duckdb": "1.4.3",
+    "machine": "arm64",
+    "platform": "macOS-26.5.2-arm64-arm-64bit-Mach-O",
+    "python": "3.14.3"
+  },
+  "schema_version": "sireto-v4.12-snapshot-lookup-execution-lock-1",
+  "source_hashes": {
+    "config/v4_12_forbidden_artifacts.json": "19d6cb585a8fb33ddc1d6e485b15b3a811bcf78a540b4e9178eddcfd4bb49d9d",
+    "config/v4_12_snapshot_lookup_plan.json": "6ad0fc9d82187a7ba045a3bb2a3301fce449465443af5e25358259fad2031568",
+    "docs/v4_12_snapshot_lookup_contract.md": "c96f7601f9758a00e0c17f8861372a1f4ed4a3719ea8fe18091d06429e1d06a6",
+    "scripts/__init__.py": "86cc02ebddce9b2c5b019a6494f96646aa1e187e744968e9c11373b6674e31a3",
+    "scripts/build_v412_snapshot_lookup.py": "607f89602fda17b734dde736b32e690d9a54482ef873ee73a0abbfde3332e8d8",
+    "src/xgb_matcher/__init__.py": "805f06b227a55a59483ac5d4a07b24ef13341dee006bc20cafbd3cb21523530f",
+    "src/xgb_matcher/v412_snapshot_lookup.py": "5b02faedf4746e8adfa447e9f24a6f35b88e1ee7ffee5169a765bcb852763cf9"
+  }
+}
