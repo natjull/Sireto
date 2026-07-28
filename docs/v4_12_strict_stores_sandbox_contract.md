@@ -692,7 +692,14 @@ publie le SHA-256 du profil effectivement lu par `sandbox-exec`. Le profil :
   `mach-lookup` et `mach-register` restent interdits ;
 - interdiction explicite des racines `oracles`, `audits`, `final`,
   `challenges` et des jeux test/holdout ;
-- `python -B`, `PYTHONDONTWRITEBYTECODE=1`.
+- `python -B`, `PYTHONDONTWRITEBYTECODE=1` et
+  `JOBLIB_MULTIPROCESSING=0` : aucun sémaphore ou worker joblib n'est tenté.
+
+Le worker ne résout pas son répertoire courant avec `getcwd()`, opération
+qui exige sur macOS une lecture de répertoire plus large que les seules
+métadonnées accordées à `RUN_ROOT`. Il vérifie néanmoins de façon fail-closed
+que son cwd est exactement `RUN_ROOT` en comparant `st_dev` et `st_ino`
+obtenus par `lstat(".")` et `lstat(RUN_ROOT)`, et exige deux répertoires.
 
 La déclaration `writes_outside_staging=false` signifie exactement : aucune
 écriture hors des deux racines privées autorisées `RUN_OUTPUT` et `RUN_TMP`.

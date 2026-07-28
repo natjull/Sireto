@@ -11,17 +11,17 @@ modèles, ni l'ouverture de l'oracle par le worker.
 Versions auditées :
 
 - contrat :
-  `53f29ede6487cbebb56666347219843f517149bae3e467422491404e3fdd2a5a` ;
+  `d33d66ac50bf21be62f999d25b5ce0b8af7f5735a9b67f5838728d8b5882739e` ;
 - plan :
   `4d449f70c2b5b7eba7bd56322c7248ff4b52930eca1a8c87250f4fb3f51a1f5f` ;
 - profil sandbox :
   `d9195c35e78f11eadafd883acbd53996ab531dbc2e998d1efb21179f2556be77` ;
 - certificateur :
-  `6662d25827cd3c221a34790559f9e42688f677d75c5b7043f8e7aa1ee5ea1e29` ;
+  `dbcc653b99f1ffc63b46f2d3b65eb74f87103f6b72e00256bcfe4302b48f1918` ;
 - stores :
-  `92e768e16e3d14b77dd6cb35f94171618b235b6cbf209966b13a381426673df4` ;
+  `6d6064b4b76df141b961be3ae8ff5512e8def08a33790194456d5c6b1132294b` ;
 - tests :
-  `f6ef8a15cb2ef1e2b915144637efa581fc837b758549badad3af0955a6e471bf`.
+  `b89e38a73b7b12d97cff2181d8316e581f1922c2543ea8a7d04c86ddd63d7093`.
 
 ## Refus successifs
 
@@ -47,7 +47,9 @@ Les revues ont refusé les versions qui :
 15. acceptaient des IDF infinies ou des indices sparse hors bornes ;
 16. ne pouvaient pas nettoyer un runtime privé rendu non modifiable ;
 17. présentaient à tort tout le runtime Homebrew comme scellé ;
-18. épinglaient un hash Python framework tronqué à 63 caractères.
+18. épinglaient un hash Python framework tronqué à 63 caractères ;
+19. utilisaient `Path.cwd()` sous une politique n'autorisant que les
+    métadonnées de `RUN_ROOT`.
 
 Le premier verrou dérivé, de hash
 `76f00570941920dead5bc4ac966c6d6a23ec317a35ecf25172fc04bdc17ba5e3`,
@@ -55,6 +57,14 @@ a été révoqué avant exécution : 96 des 97 assertions indépendantes passaie
 mais le contrôle du fichier runtime réel a détecté le caractère manquant.
 Le lock a été supprimé, les trois références ont été corrigées, puis un
 contre-audit dédié `GO_CODE_PATCH` a validé 20 assertions sur 20.
+
+Le premier lancement complet autorisé s'est ensuite arrêté avant
+publication avec `EPERM`. Le smoke initial ne reproduisait pas la résolution
+du cwd. Deux PoC sandboxés ont établi que `getcwd()` est interdit, tandis que
+`lstat(".")` et `lstat(RUN_ROOT)` réussissent et désignent le même
+`st_dev/st_ino`. Le verrou a de nouveau été révoqué. Le patch
+`GO_CODE_CWD_PATCH` conserve la preuve du cwd par identité de répertoire,
+fixe `JOBLIB_MULTIPROCESSING=0` et n'ajoute aucun droit sandbox.
 
 ## Preuves factuelles
 
@@ -102,9 +112,9 @@ et correspondent au plan.
 
 ## Tests finaux
 
-- `41 passed` sur `tests/test_v412_strict_stores.py` ;
+- `44 passed` sur `tests/test_v412_strict_stores.py` ;
 - smoke sandbox macOS réel : `SMOKE_OK` ;
-- `711 passed` sur la suite complète du dépôt ;
+- `714 passed` sur la suite complète du dépôt ;
 - AST Python valide et `git diff --check` propre.
 
 ## Frontière de confiance

@@ -1340,9 +1340,229 @@ def test_publication_recovery_rejects_resealed_input_mutation(
         )
 
 
+def test_child_cwd_check_uses_lstat_identity_without_getcwd() -> None:
+    source = Path(stores.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    probe = next(
+        node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+        and node.name == "run_child_probe"
+    )
+    calls = [
+        node for node in ast.walk(probe)
+        if isinstance(node, ast.Call)
+    ]
+    assert not any(
+        isinstance(call.func, ast.Attribute)
+        and call.func.attr in {"cwd", "getcwd"}
+        for call in calls
+    )
+    lstat_arguments = {
+        ast.unparse(call.args[0])
+        for call in calls
+        if isinstance(call.func, ast.Attribute)
+        and isinstance(call.func.value, ast.Name)
+        and call.func.value.id == "os"
+        and call.func.attr == "lstat"
+        and call.args
+    }
+    assert {"'.'", "run_root"} <= lstat_arguments
+    attributes = {
+        node.attr
+        for node in ast.walk(probe)
+        if isinstance(node, ast.Attribute)
+    }
+    assert {"st_dev", "st_ino"} <= attributes
+    assert "Path.cwd" not in source
+    assert "os.getcwd" not in source
+
+
+def test_child_and_smoke_disable_joblib_multiprocessing() -> None:
+    source = Path(cert.__file__).read_text(encoding="utf-8")
+    tree = ast.parse(source)
+    functions = {
+        node.name: node
+        for node in tree.body
+        if isinstance(node, ast.FunctionDef)
+    }
+    certify_function = functions["certify"]
+    environment = next(
+        node.value
+        for node in ast.walk(certify_function)
+        if isinstance(node, ast.Assign)
+        and any(
+            isinstance(target, ast.Name) and target.id == "environment"
+            for target in node.targets
+        )
+        and isinstance(node.value, ast.Dict)
+    )
+    child_environment = {
+        key.value: value.value
+        for key, value in zip(
+            environment.keys,
+            environment.values,
+            strict=True,
+        )
+        if isinstance(key, ast.Constant)
+        and isinstance(value, ast.Constant)
+    }
+    assert child_environment["JOBLIB_MULTIPROCESSING"] == "0"
+
+    smoke_function = functions["smoke"]
+    smoke_runs = [
+        node
+        for node in ast.walk(smoke_function)
+        if isinstance(node, ast.Call)
+        and isinstance(node.func, ast.Attribute)
+        and isinstance(node.func.value, ast.Name)
+        and node.func.value.id == "subprocess"
+        and node.func.attr == "run"
+    ]
+    assert smoke_runs
+    smoke_envs = [
+        keyword.value
+        for run in smoke_runs
+        for keyword in run.keywords
+        if keyword.arg == "env" and isinstance(keyword.value, ast.Dict)
+    ]
+    assert any(
+        any(
+            isinstance(key, ast.Constant)
+            and key.value == "JOBLIB_MULTIPROCESSING"
+            and isinstance(value, ast.Constant)
+            and value.value == "0"
+            for key, value in zip(env.keys, env.values, strict=True)
+        )
+        for env in smoke_envs
+    )
+    assert "os.environ['JOBLIB_MULTIPROCESSING'] == '0'" in source
+
+
 @pytest.mark.skipif(not Path("/usr/bin/sandbox-exec").exists(), reason="macOS only")
 def test_real_sandbox_smoke() -> None:
     cert.smoke()
+
+
+@pytest.mark.skipif(not Path("/usr/bin/sandbox-exec").exists(), reason="macOS only")
+def test_metadata_only_sandbox_denies_getcwd_but_lstat_identity_passes(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "metadata-sandbox"
+    work = root / "work"
+    temp_root = work / "temp"
+    output = work / "output"
+    for directory in (temp_root, output):
+        directory.mkdir(parents=True, exist_ok=True)
+    allowed = root / "allowed.bin"
+    lookup = work / "lookup.duckdb"
+    run_spec = work / "run_spec.json"
+    descriptor = work / "lookup_descriptor.json"
+    for path in (allowed, lookup, run_spec, descriptor):
+        path.write_bytes(b"synthetic")
+    probe = work / "metadata_probe.py"
+    probe.write_text(
+        """
+import errno
+import os
+from pathlib import Path
+import sys
+
+run_root = sys.argv[1]
+for operation in (os.getcwd, Path.cwd):
+    try:
+        operation()
+    except OSError as exc:
+        assert exc.errno == errno.EPERM, exc.errno
+    else:
+        raise AssertionError("getcwd unexpectedly allowed")
+cwd_stat = os.lstat(".")
+root_stat = os.lstat(run_root)
+assert (cwd_stat.st_dev, cwd_stat.st_ino) == (
+    root_stat.st_dev,
+    root_stat.st_ino,
+)
+assert os.environ["JOBLIB_MULTIPROCESSING"] == "0"
+Path(os.environ["TMPDIR"], "metadata-ok").write_bytes(b"ok")
+""".lstrip(),
+        encoding="utf-8",
+    )
+    python_bin = Path(sys.executable).resolve(strict=True)
+    python_app = (
+        python_bin.parent.parent
+        / "Resources/Python.app/Contents/MacOS/Python"
+    )
+    if not python_app.exists():
+        python_app = python_bin
+    system_roots = [
+        path
+        for path in map(Path, ("/System", "/usr", "/opt/homebrew"))
+        if path.exists()
+    ]
+    plan = {
+        "temp_root": str(temp_root),
+        "lookup": {"database_path": str(lookup)},
+        "sandbox": {
+            "python_framework_bin": str(python_bin),
+            "python_framework_app": str(python_app),
+            "system_read_roots": [str(path) for path in system_roots],
+            "device_read_literals": [
+                path
+                for path in ("/dev/null", "/dev/urandom")
+                if Path(path).exists()
+            ],
+            "device_read_subpaths": (
+                ["/dev/fd"] if Path("/dev/fd").exists() else []
+            ),
+            "forbidden_oracle_manifest": str(root / "oracles/never.json"),
+            "forbidden_audit_manifest": str(root / "audits/never.json"),
+        },
+    }
+    effective = cert.render_profile(
+        Path("config/v4_12_strict_stores.sb").read_text(encoding="utf-8"),
+        plan,
+        [allowed, lookup, run_spec, descriptor],
+        [probe],
+    )
+    completed = subprocess.run(
+        [
+            "/usr/bin/sandbox-exec",
+            "-D",
+            f"RUN_ROOT={work}",
+            "-D",
+            f"RUN_SPEC={run_spec}",
+            "-D",
+            f"LOOKUP_DESCRIPTOR={descriptor}",
+            "-D",
+            f"RUN_OUTPUT={output}",
+            "-D",
+            f"RUN_TMP={temp_root}",
+            "-D",
+            f"PROBE_SOURCE={probe}",
+            "-D",
+            f"PYTHON_EXECUTABLE={python_app}",
+            "-D",
+            "PYTHON_FRAMEWORK_ROOT=/opt/homebrew",
+            "-p",
+            effective,
+            str(python_app),
+            "-B",
+            str(probe),
+            str(work),
+        ],
+        cwd=work,
+        env={
+            "PYTHONDONTWRITEBYTECODE": "1",
+            "JOBLIB_MULTIPROCESSING": "0",
+            "TMPDIR": str(temp_root),
+        },
+        capture_output=True,
+        text=True,
+        timeout=30,
+        check=False,
+    )
+    assert completed.returncode == 0, completed.stderr
+    assert (temp_root / "metadata-ok").read_bytes() == b"ok"
 
 
 @pytest.mark.skipif(not Path("/usr/bin/sandbox-exec").exists(), reason="macOS only")
@@ -1487,6 +1707,7 @@ else:
         cwd=work,
         env={
             "PYTHONDONTWRITEBYTECODE": "1",
+            "JOBLIB_MULTIPROCESSING": "0",
             "TMPDIR": str(temp_root),
         },
         capture_output=True,

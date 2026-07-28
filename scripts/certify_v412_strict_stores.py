@@ -1891,6 +1891,7 @@ def certify(plan_path: Path, lock_path: Path) -> tuple[Path, Path]:
     probe_source_canonical = _canonical_existing_file(probe_source_path)
     environment = {
         "PYTHONDONTWRITEBYTECODE": "1",
+        "JOBLIB_MULTIPROCESSING": "0",
         "TMPDIR": str(tmp_canonical),
         "DYLD_FRAMEWORK_PATH": str(private_framework_root),
     }
@@ -2161,6 +2162,10 @@ def smoke() -> None:
             "    except OSError as exc: assert exc.errno == errno.EPERM; return\n"
             "    raise AssertionError('operation unexpectedly allowed')\n"
             "assert pathlib.Path(sys.argv[1]).read_bytes() == b'data'\n"
+            "cwd_stat = os.lstat('.')\n"
+            "root_stat = os.lstat(sys.argv[4])\n"
+            "assert (cwd_stat.st_dev, cwd_stat.st_ino) == (root_stat.st_dev, root_stat.st_ino)\n"
+            "assert os.environ['JOBLIB_MULTIPROCESSING'] == '0'\n"
             "pathlib.Path(os.environ['TMPDIR'], 'ok').write_text('ok')\n"
             "denied(lambda: open(sys.argv[2], 'rb'))\n"
             "denied(lambda: open(sys.argv[3], 'rb'))\n"
@@ -2246,9 +2251,10 @@ def smoke() -> None:
                 "-D", f"PYTHON_FRAMEWORK_ROOT={smoke_framework_root}",
                 "-p", rendered,
                 str(smoke_python), "-B", smoke_fd_paths["source"],
-                str(data), str(oracle), str(audit),
+                str(data), str(oracle), str(audit), str(root),
             ], cwd=root, env={
                 "PYTHONDONTWRITEBYTECODE": "1", "TMPDIR": str(tmp),
+                "JOBLIB_MULTIPROCESSING": "0",
                 "DYLD_FRAMEWORK_PATH": str(smoke_framework_root),
             }, pass_fds=tuple(
                 smoke_fds[name] for name in ("source", "spec", "descriptor")

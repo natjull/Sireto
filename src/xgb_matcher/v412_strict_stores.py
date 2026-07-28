@@ -2043,7 +2043,21 @@ def run_child_probe(
         code=STOP_PROBE,
         final_kind="directory",
     )
-    if Path.cwd() != run_root:
+    try:
+        cwd_stat = os.lstat(".")
+        root_stat = os.lstat(run_root)
+    except OSError as exc:
+        _fail(
+            StrictProbeError,
+            STOP_PROBE,
+            f"probe cwd identity inspection failed: errno={exc.errno}",
+        )
+    if (
+        not stat.S_ISDIR(cwd_stat.st_mode)
+        or not stat.S_ISDIR(root_stat.st_mode)
+        or (int(cwd_stat.st_dev), int(cwd_stat.st_ino))
+        != (int(root_stat.st_dev), int(root_stat.st_ino))
+    ):
         _fail(StrictProbeError, STOP_PROBE, "probe cwd is not RUN_ROOT")
     output_dir = _ensure_private_directory(
         run_root,
