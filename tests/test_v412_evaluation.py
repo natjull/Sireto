@@ -29,8 +29,8 @@ def _split() -> pd.DataFrame:
         [
             ("fit-1", "fit-component", "fit", 0),
             ("fit-2", "fit-component-2", "fit", 1),
-            ("threshold-1", _component("t", threshold=True), "dev", None),
-            ("comparison-1", _component("c", threshold=False), "dev", None),
+            ("threshold-1", _component("t", threshold=True), "dev", 2),
+            ("comparison-1", _component("c", threshold=False), "dev", 3),
         ],
         columns=subject.SPLIT_COLUMNS,
     )

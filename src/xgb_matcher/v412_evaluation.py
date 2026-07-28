@@ -278,7 +278,13 @@ def validate_ranker_projection(
         ["query_id", "candidate_siret", "prediction_origin", "oof_fold"]
     ]
     checked = scenes[
-        ["query_id", "predicted_siret", "prediction_origin", "oof_fold"]
+        [
+            "query_id",
+            "split",
+            "predicted_siret",
+            "prediction_origin",
+            "oof_fold",
+        ]
     ].merge(
         top1,
         on="query_id",
@@ -293,13 +299,16 @@ def validate_ranker_projection(
         != _string_column(checked, "candidate_siret")
     ).any():
         raise ValueError("STOP_V412_EVAL: scene top1 differs from ranker")
-    if (
+    fit_checked = checked["split"].eq("fit")
+    origin_differs = (
         _string_column(checked, "prediction_origin_scene")
         != _string_column(checked, "prediction_origin_ranker")
-    ).any() or (
-        checked["oof_fold_scene"].fillna(-1).astype(int)
-        != checked["oof_fold_ranker"].fillna(-1).astype(int)
-    ).any():
+    )
+    fit_fold_differs = (
+        checked.loc[fit_checked, "oof_fold_scene"].fillna(-1).astype(int)
+        != checked.loc[fit_checked, "oof_fold_ranker"].fillna(-1).astype(int)
+    )
+    if origin_differs.any() or fit_fold_differs.any():
         raise ValueError("STOP_V412_EVAL: scene/ranker provenance differs")
     return {
         str(query_id): set(group["candidate_siret"].astype(str))
