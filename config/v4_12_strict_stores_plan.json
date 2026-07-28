@@ -76,16 +76,21 @@
       "/dev/null",
       "/dev/urandom"
     ],
+    "device_read_subpaths": [
+      "/dev/fd"
+    ],
     "executable": "/usr/bin/sandbox-exec",
     "executable_sha256": "8290e4be7387a0df83cd1559e86afd880464f269450573d012795761fe298f16",
     "forbidden_audit_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_unit_oracle/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
     "forbidden_oracle_manifest": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/oracles/v4_12_unit_engine/c4045da8ad1e0b9af35f3d7552176dec76ee2ba36fa759ee2dc0664c93d2fa70/manifest.json",
+    "git_executable": "/usr/bin/git",
+    "git_executable_sha256": "179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818",
     "network_allowed": false,
     "profile_path": "config/v4_12_strict_stores.sb",
     "python_framework_app": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python",
     "python_framework_app_sha256": "7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211",
-    "python_framework_bin": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/bin/python3.14",
-    "python_framework_bin_sha256": "cbf84109626aa1013bbe408fbb9590bd0f1c1548f038b2221c6b8b87de26ca43",
+    "python_framework_library": "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Python",
+    "python_framework_library_sha256": "e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0",
     "system_read_roots": [
       "/System",
       "/usr",

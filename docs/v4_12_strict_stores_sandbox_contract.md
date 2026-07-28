@@ -225,8 +225,14 @@ Ancres :
 - timing :
   `c266db1075c2f777b8942cea7bc7e446f3a09707a07a3b9952b71a73d4cc6e9b`.
 
-La base est rehashée avant ouverture, sans WAL, puis ouverte avec
-`read_only=True`. Le schéma, la table et l'index unique sont exacts.
+La base est ouverte une seule fois avec `O_RDONLY|O_NOFOLLOW`, rehashée sur
+ce descripteur, puis DuckDB la rouvre en `read_only=True` via
+`/dev/fd/<fd>` pendant que le descripteur original reste ouvert. Après toutes
+les requêtes, le même descripteur est rehashé et `fstat` avant fermeture,
+puis la chaîne du chemin original est rescellée. Une substitution/restauration
+du pathname ne peut donc pas changer l'inode réellement lu par DuckDB.
+Les chemins siblings `<database>.wal` et `<database>.tmp` doivent être
+absents. Le schéma, la table et l'index unique sont exacts.
 L'API accepte 0 à 100 SIRET canoniques, déduplique en ordre de première
 apparition, utilise une requête paramétrée et refuse 101 entrées.
 
@@ -297,9 +303,21 @@ Le ledger contient exactement les six fichiers runtime sûrs, les 648
 partitions, 648 pickles, 648 sidecars et les quatre fichiers lookup, avec
 chemin, rôle, taille et hash avant/après : 1 954 lignes.
 
-Publication staging SSD, `fsync`, audit d'abord, certification en dernier,
-artefacts immuables et concordance par même build ID. Aucun résultat par
-requête ou candidat n'est publié.
+Publication staging SSD et `fsync`. Le paquet certification complet est
+d'abord promu sous `output_root/.pending-<build_id>` et validé, sans être
+visible comme certification finale. L'audit est ensuite promu sous son chemin
+final, puis le pending est renommé atomiquement vers la certification finale.
+Ainsi l'audit est toujours public avant la certification, mais un crash entre
+les deux reste reprenable. Au redémarrage :
+
+- certification finale + audit valides : retour idempotent ;
+- pending + audit valides : renommage du pending vers le final ;
+- pending seul : validation puis suppression de cet artefact temporaire privé
+  avant reconstruction ;
+- audit seul, final seul, conflit ou hash divergent : `STOP`.
+
+Artefacts finaux immuables et concordance par même build ID. Aucun résultat
+par requête ou candidat n'est publié.
 
 `run_spec.json` possède exactement :
 
@@ -514,8 +532,8 @@ plan, sans ajout. `input_paths` possède exactement :
 safe_input_root,safe_runtime_manifest,safe_queries_all,safe_queries_dev,
 safe_partition_inventory,safe_tfidf_inventory,safe_input_integrity,
 partition_root,cache_root,lookup_database,lookup_manifest,lookup_integrity,
-lookup_timing,sandbox_executable,python_framework_bin,python_framework_app,
-system_read_roots,device_read_literals
+lookup_timing,sandbox_executable,python_framework_app,python_framework_library,
+git_executable,system_read_roots,device_read_literals,device_read_subpaths
 ```
 
 `input_hashes` possède exactement :
@@ -525,7 +543,8 @@ safe_runtime_manifest,safe_queries_all,safe_queries_dev,
 safe_partition_inventory,safe_tfidf_inventory,safe_input_integrity,
 partition_full_inventory_logical,tfidf_full_inventory_logical,
 lookup_database,lookup_manifest,lookup_integrity,lookup_timing,
-sandbox_executable,python_framework_bin,python_framework_app
+sandbox_executable,python_framework_app,python_framework_library,
+git_executable
 ```
 
 Chaque chemin est la copie canonique du plan ou, pour les six fichiers
@@ -551,62 +570,107 @@ gelées. Le texte contient les 1 945 fichiers data externes comme règles
 `literal`, et les seules racines système/runtime explicitement admises.
 Il ne contient aucun chemin de vérité, de résultat historique ou de modèle.
 
-Les exécutables sont rehashés avant le lancement :
+Les composants exécutables sont rehashés avant le lancement :
 
 ```text
 /usr/bin/sandbox-exec
   8290e4be7387a0df83cd1559e86afd880464f269450573d012795761fe298f16
 /opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/
-Versions/3.14/bin/python3.14
-  cbf84109626aa1013bbe408fbb9590bd0f1c1548f038b2221c6b8b87de26ca43
-/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/
 Versions/3.14/Resources/Python.app/Contents/MacOS/Python
   7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211
+/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/
+Versions/3.14/Python
+  e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0
+/usr/bin/git
+  179301dcb41ea78accc3fa0048a7e6f6710d891945a751a34addd622020c1818
 ```
 
 Les seules racines runtime lues par `subpath` sont `/System`, `/usr` et
 `/opt/homebrew`; les seuls devices ajoutés en `literal` sont `/dev/null` et
-`/dev/urandom`. Elles permettent les bibliothèques du runtime, jamais les
-données du projet situées dans `/Users` et `/Volumes`.
+`/dev/urandom`. `/dev/fd` est le seul sous-chemin device lisible : il permet
+à DuckDB de rouvrir le descripteur `O_NOFOLLOW` déjà vérifié, jamais un chemin
+data mutable. Ces permissions permettent les bibliothèques du runtime, jamais
+les données du projet situées dans `/Users` et `/Volumes`.
 
 La racine privée aléatoire n'est pas sérialisée : le profil utilise
 `(param "RUN_ROOT")`, `(param "RUN_SPEC")`,
 `(param "LOOKUP_DESCRIPTOR")`, `(param "RUN_OUTPUT")` et
-`(param "RUN_TMP")`. Le fichier identique
+`(param "RUN_TMP")`, `(param "PROBE_SOURCE")`,
+`(param "PYTHON_EXECUTABLE")` et `(param "PYTHON_FRAMEWORK_ROOT")`.
+Le fichier identique
 `sandbox_profile_effective.sb` est hashé avant exécution, inclus dans le
 build ID et publié dans la certification. Il est exécuté exactement ainsi :
 
 ```text
 /usr/bin/sandbox-exec \
   -D RUN_ROOT=<racine_privée_absolue> \
-  -D RUN_SPEC=<racine_privée_absolue>/run_spec.json \
-  -D LOOKUP_DESCRIPTOR=<racine_privée_absolue>/lookup_descriptor.json \
+  -D RUN_SPEC=/dev/fd/<fd_run_spec> \
+  -D LOOKUP_DESCRIPTOR=/dev/fd/<fd_lookup_descriptor> \
   -D RUN_OUTPUT=<racine_privée_absolue>/output \
   -D RUN_TMP=<racine_privée_absolue>/tmp \
-  -f <racine_privée_absolue>/sandbox_profile_effective.sb \
-  /opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/bin/python3.14 \
-  -B /Users/nathanjullia/Documents/Projets/SIRETO/src/xgb_matcher/v412_strict_stores.py \
-  --run-spec <racine_privée_absolue>/run_spec.json \
+  -D PROBE_SOURCE=/dev/fd/<fd_probe_source> \
+  -D PYTHON_EXECUTABLE=<racine_privée_absolue>/runtime/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python \
+  -D PYTHON_FRAMEWORK_ROOT=<racine_privée_absolue>/runtime \
+  -p <octets_du_profil_effectif> \
+  <racine_privée_absolue>/runtime/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python \
+  -B /dev/fd/<fd_probe_source> \
+  --run-spec /dev/fd/<fd_run_spec> \
+  --lookup-descriptor /dev/fd/<fd_lookup_descriptor> \
+  --run-root <racine_privée_absolue> \
   --forbidden-oracle <manifeste_oracle_existant> \
-  --forbidden-audit <manifeste_audit_oracle_existant>
+  --forbidden-audit <manifeste_audit_oracle_existant> \
+  --build-id <build_id>
 ```
 
 `v412_strict_stores.py` est à la fois le module des trois adapters et le CLI
-enfant du probe. Le binaire
-`bin/python3.14` est le launcher explicite ; le binaire
-`Resources/Python.app/Contents/MacOS/Python` est uniquement le second
-`process-exec` interne réalisé par ce launcher sur macOS.
+enfant du probe. La source, le run-spec et le descripteur lookup sont ouverts
+avec `O_NOFOLLOW`, vérifiés puis transmis par des descripteurs hérités.
+L'enfant ne les rouvre donc pas par leur pathname mutable. Le profil est
+fourni directement à `sandbox-exec -p` depuis les octets effectifs gardés en
+mémoire ; le fichier publié portant ce profil est ancré et vérifié
+séparément. L'option `-f /dev/fd/N` n'est pas utilisée car `sandbox-exec`
+ne sait pas rouvrir ce descripteur sur le macOS cible.
 
-La commande réelle, le SHA-256 du profil lu par `sandbox-exec` et la valeur
-de `RUN_ROOT` sont conservés parent-only dans la provenance d'exécution
-interne ; seule la valeur non sensible du hash est publiée. Le profil :
+Le fichier privé `v412_strict_stores.py` est créé par le parent avec
+`O_EXCL`, mode `0444` et `fsync`, à partir des octets lus sur le même
+descripteur `O_NOFOLLOW` que le blob source vérifié. Son hash doit égaler le
+`source_hashes` du verrou. Le profil le lit via le paramètre
+`PROBE_SOURCE`, de sorte que le chemin aléatoire n'entre pas dans le texte du
+profil ni dans le build ID. L'enfant n'exécute jamais directement la copie
+mutable du worktree.
+
+Le parent crée de la même manière deux copies privées : l'exécutable
+`Python.app` et la bibliothèque framework `Python`. Elles sont rehashées,
+placées en lecture/exécution seule avant lancement et rehashées après.
+L'environnement
+`DYLD_FRAMEWORK_PATH=<PYTHON_FRAMEWORK_ROOT>` force dyld à charger la
+bibliothèque privée ; le profil autorise `process-exec` uniquement sur
+`PYTHON_EXECUTABLE` et la lecture uniquement sous
+`PYTHON_FRAMEWORK_ROOT`.
+
+La frontière de confiance est volontairement bornée. Le code, les fichiers
+de contrôle et les données expérimentales sont protégés contre une
+réouverture par pathname entre leur vérification et leur consommation. Le
+runtime local installé (`/System`, `/usr`, `/opt/homebrew`) reste une
+dépendance de confiance : les modules Python et bibliothèques natives
+importés depuis `/opt/homebrew` ne sont pas copiés fichier par fichier. Le
+plan enregistre leurs versions et épingle les exécutables structurants. Le
+contrat protège contre les erreurs, mutations accidentelles et accès hors
+périmètre du probe ; il ne prétend pas résister à un attaquant concurrent
+disposant du même compte macOS ou des privilèges administrateur. Sceller
+l'intégralité du système Python serait sans rapport proportionné avec le
+risque scientifique évalué ici.
+
+La commande réelle n'est pas publiée, car elle contient les chemins opaques
+des sentinelles oracle/audit et la racine privée aléatoire. La certification
+publie le SHA-256 du profil effectivement lu par `sandbox-exec`. Le profil :
 
 - `deny default`, `deny network*` ;
 - lecture seulement des runtimes système/Python nécessaires et de la liste
   blanche de code/données ;
 - `file-read-metadata` seulement sur `RUN_ROOT`, lecture de contenu littérale
-  seulement sur `RUN_SPEC` et `LOOKUP_DESCRIPTOR`, aucune lecture du reste de
-  la racine privée ;
+  seulement sur `RUN_SPEC`, `LOOKUP_DESCRIPTOR` et `PROBE_SOURCE`, aucune
+  lecture du reste de la racine privée ;
 - `file-read-metadata` littéral sur chacun des ancêtres canoniques fixes de
   `RUN_ROOT` (`/`, `/Volumes`, le volume, puis chaque composant de
   `temp_root`) uniquement pour la traversée ; aucune règle `subpath` sur ces
@@ -616,12 +680,16 @@ interne ; seule la valeur non sensible du hash est publiée. Le profil :
   code autorisée ; aucune lecture de contenu ni règle `subpath` n'en découle.
   Le probe exécute réellement `lstat` sur chaque composant et exige la
   concordance exacte avec cette fermeture d'ancêtres ;
+- `file-read-metadata` littéral sur les seuls chemins siblings attendus
+  `<lookup_database>.wal` et `<lookup_database>.tmp`, afin de prouver leur
+  absence sans autoriser leur lecture ni leur création ;
 - lecture/écriture seulement sous `RUN_OUTPUT` et `RUN_TMP` pour les deux
   espaces de travail privés ; aucune écriture sur le reste de `RUN_ROOT` ;
 - `deny process-fork` et aucun sous-processus après démarrage ;
-- `process-exec` seulement pour les deux exécutables Python Framework réels
-  nécessaires au lancement (`bin/python3.14` et
-  `Resources/Python.app/Contents/MacOS/Python`) ;
+- `process-exec` seulement pour la copie privée de
+  `Resources/Python.app/Contents/MacOS/Python` ;
+- `sysctl-read` seul est autorisé pour le runtime NumPy (`os.uname`) ;
+  `mach-lookup` et `mach-register` restent interdits ;
 - interdiction explicite des racines `oracles`, `audits`, `final`,
   `challenges` et des jeux test/holdout ;
 - `python -B`, `PYTHONDONTWRITEBYTECODE=1`.
