@@ -266,6 +266,20 @@ labels, historique, modèles et réseau sont restés fermés. Pic mémoire :
 `reports/v9/v4_12_unit_retrieval_parity_results.md`. Ce GO autorise seulement
 le contrat puis l'audit d'un évaluateur oracle séparé ; il ne republie pas
 encore le Recall et ne dégèle aucun modèle.
+Le contrat de l'évaluateur oracle séparé est préenregistré et doublement
+audité **`GO_EVALUATOR_CONTRACT_1`** et
+**`GO_EVALUATOR_CONTRACT_2`**. Il gèle la jointure worker
+`d2915fe7...dd1a` / oracle `c4045da8...fa70`, les 1 456 requêtes dont
+1 217 `MATCH_EXACT`, Recall@1/10/50/100, les Wilson 95/99 et les gates
+observés couverture ≥ 80 % / Recall@100 ≥ 99 %. Les références historique,
+V2 et V3 seront republiées ensemble mais distinguées de la mesure V4.12.
+Un reçu et un journal parent-only sont synchronisés avant toute ouverture
+oracle ; la publication audit puis évaluation est non-clobber et sa reprise
+est limitée à la promotion d'arbres déjà complets. Tous les payloads,
+keysets, schémas et états sont déterministes. Aucun oracle, historique,
+modèle ou test final n'a été ouvert pendant ce jalon. Ce GO autorise
+uniquement l'implémentation et l'audit de l'évaluateur, pas encore la mesure.
+*(commit GitHub : `fe266bd`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
