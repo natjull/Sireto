@@ -1,6 +1,20 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le dataset V4.10 de l'accepteur structuré est construit et franchit
+**`GO_TRAIN_V410`**. Il contient 7 003 scènes historiques, 94 cas difficiles
+`hard_oof` et quatre cas descriptifs verrouillés. Les 80 features baseline
+sont identiques bit à bit aux sources ; 715 features structurées sont
+autorisées au modèle et 75 features de provenance restent audit-only. Les
+698 428 paires prédiction/candidat V4.1 se joignent exactement, les jointures
+CRM et SIRENE utiles sont à 100 %, les 20 supports de composantes sont
+préservés et aucun ID random V4.8 n'entre dans les sorties. Aucun modèle ni
+seuil n'a encore été entraîné. Rapport :
+`reports/v9/v4_10_structured_dataset_results.md`. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_10_structured_acceptor/0d6b87fd50fb550c`.
+*(commits GitHub : contrat `bc2384c`, `8ab9b01`, `1401269`, `99b2438`,
+`2d86b5c`, `b19abed`; builder `2966d2b`; correctif `e10e9af`)*
+
 L'audit V4.10 distingue désormais les 31 labels négatifs non détectés par le
 garde lexical des véritables faux AUTO `HARD_W1` : sur 26 cas hors pli,
 `HARD_W1` n'en automatise que deux ; les trois cas random de ce sous-ensemble
@@ -980,6 +994,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
   E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
   sur le SSD.
+- Le dataset V4.10 est prêt. Le prochain run autorisé est le développement
+  des dix variantes d'accepteur préenregistrées ; ni random ni test final ne
+  font partie de ses entrées.
 - Le garde-fou V4.9 de fonction de site est clos par
   `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
   consommés.
@@ -1073,10 +1090,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 3. Préenregistrer puis construire une matrice accepteur unique qui conserve
    les relations entrée/candidat, l'état, la provenance, la forme juridique,
    l'activité/fonction, les interactions nom/adresse et la concurrence
-   intra-SIREN complète.
+   intra-SIREN complète. **Terminé : `GO_TRAIN_V410`.**
 4. Comparer une régression logistique et un XGBoost peu profond sans modifier
-   le retrieval V4.2-B ni le ranker A. Les 172 cas consommés ne peuvent
-   fournir qu'un diagnostic de développement.
+   le retrieval V4.2-B ni le ranker A, avec OOF par composante et reproduction
+   exacte du baseline. Les cas consommés ne peuvent fournir qu'un diagnostic
+   de développement.
 5. Toute décision de promotion exigera une population fraîche,
    indépendante et disjointe ; le test final reste fermé.
 6. Conserver séparément le chantier qualification/réparation CRM : la
