@@ -307,6 +307,22 @@ une valeur DuckDB : le validateur historique peut l'accepter, le nouveau doit
 la refuser. Aucun audit formel n'a encore été exécuté.
 *(commit GitHub : `5234084`)*
 
+Le contre-audit formel franchit
+**`GO_V412_LOOKUP_INDEPENDENT_AUDIT`**. Le runner, ses 23 tests ciblés et la
+suite complète de 618 tests ont été contre-audités avant verrouillage. Le
+run `4055be6e7a11b003` recalcule 10 000 SIRET depuis le snapshot :
+vrai LF `150 000` octets/hash `58c970...`, contre-exemple `5C 6E`
+`160 000` octets/hash `72f434...`. La comparaison fraîche donne zéro absent
+et zéro écart de valeur/nullité ; le pic RSS est de 4 365 549 568 octets.
+Le test hostile confirme qu'une valeur métier modifiée puis rescellée,
+acceptée par le validateur historique, est refusée par le nouveau. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_snapshot_lookup/4055be6e7a11b003`.
+Rapport :
+`reports/v9/v4_12_snapshot_lookup_independent_audit_results.md`. Le lookup
+autorise désormais le contrat du moteur requête par requête, pas la
+production. *(commits GitHub : runner `3de02dc`, verrou `dd696de`, résultat
+`1653175`)*
+
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
 source et le pool V4-Fresh 6 330, sans recouvrement : leur union a déjà
