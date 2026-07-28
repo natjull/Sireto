@@ -206,7 +206,16 @@ ouvrables. Le contrat distingue les gates retrieval (couverture exacte et
 Recall@100) des gates de décision (couverture AUTO et précision), documente
 la circularité des labels mécaniques et exige un nouvel export indépendant.
 Deux audits concluent `GO_CONTRACT`. Aucun build V4.12 n'a encore été lancé.
-*(commit GitHub : `66e7b9c`)*
+Le gate de performance hors-ligne est clarifié : le temps moyen par requête
+sur un batch n'est pas assimilé à une latence de service. Le constructeur
+label-free est désormais implémenté et contre-audité : il parcourt l'univers
+géographique actif complet, produit une preuve par requête et par candidat,
+refuse tout artefact non autorisé et scelle ses sorties de façon atomique.
+Les 50 tests V4.12 ciblés et les 512 tests complets passent. Son exécution est
+gelée par un verrou audité `GO_COMMIT_LOCK`, qui fixe le commit, les 53
+sources, les entrées et le runtime. Le calcul sur les 7 003 requêtes n'a
+toujours pas été lancé à ce stade. *(commits GitHub : contrat `66e7b9c`,
+clarification `31f2721`, constructeur `e822136`, verrou `11c5de9`)*
 
 Le registre V4.11-A des populations consommées est construit et franchit
 **`PASS_REGISTRY`**. Le benchmark fermé historique couvre 17 054 lignes
