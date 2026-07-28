@@ -7,7 +7,12 @@ neuf variantes appariées (`CURRENT80`, `STRUCTURED_LOGIT`,
 `STRUCTURED_XGB`, poids difficiles 1/2/4), cinq plis difficiles group-OOF et
 une sélection de seuil uniquement sur les 1 452 scènes du dev historique
 effectif. Les cas random, frais, descriptifs verrouillés et le test final
-restent interdits au fit, au seuil et au gate. *(commit GitHub : `47ff289`)*
+restent interdits au fit, au seuil et au gate. Un audit indépendant pré-fit a
+ensuite fermé les ambiguïtés de sélection et de reproductibilité sans ouvrir
+ni scorer aucune donnée : `BASE_FROZEN` est seulement comparateur, le parquet
+verrouillé est hashé mais jamais chargé sémantiquement, et chaque modèle
+complet ou de pli doit être reproduit. *(commits GitHub : `47ff289`,
+amendement pré-fit `dd0e3c8`)*
 
 Le dataset V4.10 de l'accepteur structuré est construit et franchit
 **`GO_TRAIN_V410`**. Il contient 7 003 scènes historiques, 94 cas difficiles
