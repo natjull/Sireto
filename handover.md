@@ -1,6 +1,14 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le plan d'entraînement V4.10 est gelé avant le premier fit dans
+`config/v4_10_training_plan.json`. Il autorise exactement `BASE_FROZEN` et
+neuf variantes appariées (`CURRENT80`, `STRUCTURED_LOGIT`,
+`STRUCTURED_XGB`, poids difficiles 1/2/4), cinq plis difficiles group-OOF et
+une sélection de seuil uniquement sur les 1 452 scènes du dev historique
+effectif. Les cas random, frais, descriptifs verrouillés et le test final
+restent interdits au fit, au seuil et au gate. *(commit GitHub : `47ff289`)*
+
 Le dataset V4.10 de l'accepteur structuré est construit et franchit
 **`GO_TRAIN_V410`**. Il contient 7 003 scènes historiques, 94 cas difficiles
 `hard_oof` et quatre cas descriptifs verrouillés. Les 80 features baseline
@@ -994,9 +1002,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun run long n'est en cours. Les canaux train, le dataset aval, le ranker
   E1, les accepteurs E2/E2b, V4, V4-Fresh et le gate retrieval V4 sont publiés
   sur le SSD.
-- Le dataset V4.10 est prêt. Le prochain run autorisé est le développement
-  des dix variantes d'accepteur préenregistrées ; ni random ni test final ne
-  font partie de ses entrées.
+- Le dataset et le plan d'entraînement V4.10 sont prêts. Le prochain run
+  autorisé est le développement des dix variantes d'accepteur
+  préenregistrées ; ni random, ni cas descriptifs verrouillés, ni test final
+  ne font partie du fit, du seuil ou du gate.
 - Le garde-fou V4.9 de fonction de site est clos par
   `STOP_SITE_FUNCTION_GUARD`. Il ne doit pas être retouché sur les 172 cas
   consommés.
