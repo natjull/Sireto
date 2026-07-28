@@ -1,0 +1,75 @@
+{
+  "artifacts": [
+    {
+      "files": {
+        "queries.parquet": "3a47aef768cee1436ad77a6e114defe50e685b7495f0e75137e9fd06dfe9fc68",
+        "split_assignments.parquet": "33fa52af7a740124235c151efb5b9a8834ffd1c83c65d1af56c75b2eff271193"
+      },
+      "phases": {
+        "queries.parquet": "PRE_EVIDENCE_SEAL",
+        "split_assignments.parquet": "POST_EVIDENCE_SEAL"
+      },
+      "manifest_sha256": "445bf15d0a8f950c213764a104c05f8263bcfba7b7391c9df247d0e5873e6280",
+      "role": "V411_INPUT_BLIND_DATASET",
+      "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_input_blind/ec4326ec57e4411d"
+    },
+    {
+      "files": {
+        "predictions_ranker_c_oof_dev.parquet": "f14828aafa146dc4ad0399697c9477e57930ba618a5b2d7d0a903e52c2d879c0",
+        "ranker_c/full_fit.json": "f4b71b49ed4f879b88e05e4fb84229d0306c5e8ca96958ac20ad97fcc04349c0"
+      },
+      "projection": {
+        "predictions_ranker_c_oof_dev.parquet": [
+          "query_id",
+          "candidate_siret",
+          "candidate_siren",
+          "retrieval_rank",
+          "ranker_score",
+          "prediction_origin",
+          "oof_fold",
+          "ranker_rank"
+        ]
+      },
+      "phases": {
+        "predictions_ranker_c_oof_dev.parquet": "POST_EVIDENCE_SEAL",
+        "ranker_c/full_fit.json": "POST_EVIDENCE_SEAL"
+      },
+      "manifest_sha256": "1552ab2623580f1ae68e31ec1497be8a93a1bb1f2d33114dd34cfea07a864053",
+      "role": "V411_RANKER_C",
+      "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_ranker_c/e13eb3ac7498256e"
+    },
+    {
+      "files": {
+        "acceptor_scenes.parquet": "c0f3d670e50cb43cdd6fed3b976c95e51d70f0313ae07ed0e1e2ed01eca5bed3"
+      },
+      "phases": {
+        "acceptor_scenes.parquet": "POST_EVIDENCE_SEAL"
+      },
+      "manifest_sha256": "8faaf2761bb280f1ba559ea3f2c579fd5d91531a202b6b54dff79e38f0d2757e",
+      "role": "V411_ACCEPTOR_SCENES",
+      "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_11_acceptor/52ea3faba9a56aff"
+    },
+    {
+      "files": {
+        "bundle/acceptor_model.joblib": "a804feb64f28c417adda4418724f53df50b20d3d308b3e7c778c7189d368e3cf",
+        "bundle/metadata.json": "e4b99676e695d19748b71a7657ff5a1f5c7dfa2879754dd2e1b15c8906a61d6b",
+        "bundle/stack_manifest.json": "81279978f47e1e2b1b4a1ea85d595b8dedd8ee8a073e34a19b3ffd340c945d5a"
+      },
+      "phases": {
+        "bundle/acceptor_model.joblib": "POST_EVIDENCE_SEAL",
+        "bundle/metadata.json": "POST_EVIDENCE_SEAL",
+        "bundle/stack_manifest.json": "POST_EVIDENCE_SEAL"
+      },
+      "manifest_sha256": "a7fc765fe439392baec61fa8a35a941bb1f778281ccdbb54b55c699e9f0c11d9",
+      "role": "V411_ACCEPTOR_BUNDLE",
+      "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_acceptor/9d23bf3deb6b63de"
+    }
+  ],
+  "policy": {
+    "partitions_path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/candidates_v7_all",
+    "partitions_signature": "2f6668f60da8bc9fe52b683b32ef35641803679c01f8c8fd124e2e86a41e2b82",
+    "snapshot_path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/StockEtablissement_utf8.parquet",
+    "snapshot_sha256": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845"
+  },
+  "schema_version": "sireto-v4.12-development-inputs-1"
+}

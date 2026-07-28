@@ -1,0 +1,41 @@
+{
+  "artifacts": [
+    {
+      "build_id": "1c994c852c10acaf",
+      "files": {
+        "queries_sanitized.parquet": "68b9a9c59bfc91f42f1242510137b43c903bcf3687933020867a5c4bd59f0074",
+        "sealed_mapping.parquet": "3710a48aa522e69d6687bdea4ab8df25b8bb14e739219b0968ea166c2f21a540"
+      },
+      "manifest_sha256": "449bed70276f31728357c173a5d17a3f646c3975306a2488dabd95083cc7dae3",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_sanitized/1c994c852c10acaf",
+      "reason": "V4.11 challenge input consumed; excluded from V4.12 development"
+    },
+    {
+      "build_id": "4f9ef46516b89ab8",
+      "files": {
+        "evidence.parquet": "5180c3b88339149bf8141defc7c9540322dbcd70fab7c6b515caaa7b4c71477b",
+        "labels_frozen.parquet": "747426ea3ce2a9188c6f35591ca1186c87f9534844707882b56cafd09b1c9b15"
+      },
+      "manifest_sha256": "17c7915725cea978278f1699832e5c17405dbab8cd21ef407f6d96916a5c89e7",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_qualification/4f9ef46516b89ab8",
+      "reason": "V4.11 challenge labels consumed; excluded from V4.12 development"
+    },
+    {
+      "build_id": "ddb7336e8c2e042d",
+      "files": {
+        "errors.parquet": "87dd3171c99e2c9438249ee16695e70c132246f684dd9e52bbb6111b9212c986",
+        "evaluated_predictions.parquet": "286c4ef4028d252bd9561b7a89da27636e6c3d93164acae0796a0bd95d8bf9be",
+        "evaluation.json": "509c64d12e27b3efefb12cf5aaebe2a4446ec8a062d2adf2d85200bd9a4bce9e",
+        "label_overlay.parquet": "88940328714bbb39592ee4dee5198387123e411e6875bfbcefc6114a5ac873b5",
+        "predictions_blind.parquet": "ac4e9d2ee8cb112039f4242d51bb10c7eee95b771f8ef1d2a358bb8d8fa1b392",
+        "ranked_candidates.parquet": "ee8690fc27162157a2907f584371b84a892fafbe73a55b2aa602620d4c439c6f",
+        "retrieval_candidates.parquet": "9b3cacc50f92178d376fbc241a88b0f26cc786d61e1467ec238a6e38864dc438",
+        "scenes_blind.parquet": "b4e8bca02485793849b73f8fa1eee70dcc14b578f970680b8f64f8d04b7140e7"
+      },
+      "manifest_sha256": "37f4957052493b3aa1e8b2e3ba5f156816cb33121aa5915f88c9b581306c71e6",
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_execution/ddb7336e8c2e042d",
+      "reason": "V4.11 descriptive challenge consumed; diagnostic citation only"
+    }
+  ],
+  "schema_version": "sireto-v4.12-forbidden-artifacts-1"
+}
