@@ -127,6 +127,15 @@ Le sealer doit maintenant être audité avant toute matérialisation du lock ;
 lock, autorisation, claim et root réel restent absents.
 *(commit GitHub : sealer du lock producteur `8ca9c39`)*.
 
+Le premier audit du sealer rend `NO_GO` car la preuve commit→blobs vivait
+seulement dans pytest. Le sealer exécute maintenant lui-même, avant écriture,
+`/usr/bin/git` dans un environnement fermé : commit existant, ancêtre de
+HEAD, puis lecture `cat-file blob commit:path` et comparaison byte-for-byte
+aux fichiers vivants. Les tests ferment blob modifié, commit absent et commit
+non ancêtre. Ses 6 tests et la suite locale `1216 passed` sont verts ; le lock
+réel reste absent en attente du nouveau double audit.
+*(commit GitHub : provenance Git dans le sealer `7249239`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
