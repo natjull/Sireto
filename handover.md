@@ -94,6 +94,21 @@ autorise uniquement la construction de la fixture puis du lock, suivie de leur
 audit avant autorisation et lancement.
 *(commit GitHub : `42d9027`)*.
 
+Le premier lock autoritatif S0
+`feeef92c7df4c24473d3850f0b074aa5e5f904ac79c507f674606d4b6057a598`
+a été révoqué **avant autorisation et avant lancement** : son audit matériel
+était intégralement vert (1 722 contrôles), mais un contre-audit de cohérence a
+détecté que le launcher exigeait à tort une identité de fichier non nullable
+pour le canari `EXISTING_DIRECTORY`, alors que le sealer et le schéma
+autoritatif imposent trois valeurs nulles. Le launcher valide maintenant ce
+répertoire par ouverture ancrée, sans lien symbolique, puis contrôle son
+propriétaire, son volume et ses permissions. Deux audits indépendants rendent
+`GO_PATCH`; les 110 tests S0 passent et le vrai manifeste de canaris est
+accepté. L'ancien lock ne doit jamais être autorisé : il doit être archivé de
+façon récupérable, puis la fixture et un nouveau lock doivent être reconstruits
+sur le commit corrigé.
+*(commit GitHub : `61a52c5`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
