@@ -256,6 +256,22 @@ Préenregistrement : commits GitHub `7bf1ea4`, correctif `a483107`.
 Rapport :
 `reports/v9/v4_12_fresh_s0_r3_preregistration_audits.md`.
 
+Le bundle S0-R3 franchit désormais deux contre-audits indépendants
+**`GO_R3_CODE_BUNDLE`**. Le commit d'implémentation `8d8e0a3` relie le builder
+R3, le sealer, le launcher receipt-3 et le worker à l'identité littérale
+préenregistrée. Le gate Seatbelt jetable
+`diag-r3-successor-gate.sfzj9buk` atteint `INGESTED`, refuse 11/11 canaris,
+conserve les mêmes FD pendant `60.010024083` secondes, publie trois
+générations de journal et rejette une identité R1 sans mutation. Son résultat
+canonique a pour SHA-256
+`556558d4372b003d23190b86ff8163e021e0a937b83539b0fcc1e4828b53185b`.
+Les deux audits ont rehashé les 1 525 fichiers du runtime, les seals et le
+journal. La suite donne 1 078 succès et 62 skips, zéro échec, sur le SSD. La
+racine autoritative R3 reste absente ; le prochain geste autorisé est sa
+construction unique, puis le lock et son audit, jamais le CRM réel.
+Rapport :
+`reports/v9/v4_12_fresh_s0_r3_code_gate_results.md`.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
