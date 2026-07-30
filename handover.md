@@ -82,6 +82,18 @@ Ce GO autorise seulement l'implémentation du launcher, du worker, du sealer et
 du profil ; aucun run, fixture nouvelle ou CRM réel n'a été ouvert.
 *(commits GitHub : contrat initial `46b1958`, amendement `7a3353f`)*.
 
+Le bundle autoritatif S0 est implémenté et deux audits indépendants rendent
+**`GO_CODE_BUNDLE`**, sans fixture autoritative ni run. Le sealer construit un
+runtime privé de 1 528 fichiers et un lock sans suivre les liens ; le launcher
+sans argument ferme lease, claim, reprise, receipts, TOCTOU, canaris et arbres
+de sortie ; le worker n'accepte que les FDs, attend réellement 60 secondes et
+réutilise le core immuable. Les 109 tests S0 passent. La suite complète donne
+1 071 succès et le seul échec historique connu, causé par un test qui interdit
+tout `/Volumes/CATNAT_DATA` alors que le `TMPDIR` obligatoire y réside. Ce GO
+autorise uniquement la construction de la fixture puis du lock, suivie de leur
+audit avant autorisation et lancement.
+*(commit GitHub : `42d9027`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
