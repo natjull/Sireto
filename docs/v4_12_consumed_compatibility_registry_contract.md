@@ -229,7 +229,9 @@ ainsi que les hashes attendus. Les tests doivent au minimum démontrer :
 - chaîne vide et valeur absente ;
 - chiffres Unicode de catégorie `Nd` acceptés par `str.isdigit()` ;
 - caractère Unicode tel que `²`, accepté par `str.isdigit()` mais refusé par
-  `str.isdecimal()`, afin de pinner sans ambiguïté le comportement V4.11.
+  `str.isdecimal()` sur l'entrée, puis transformé en chiffre ASCII par le NFKC
+  de `canonical_v411` avant calcul du HMAC, afin de pinner sans ambiguïté le
+  comportement V4.11.
 
 Le payload logique des golden vectors et le fichier de tests sont épinglés dans
 le lock d’exécution. Un seul écart donne
@@ -277,7 +279,11 @@ HMAC-SHA256(K, "SIRETO-V412-INPUT-SIRET-LINEAGE\0" + input_siret_norm UTF-8)
 Un SHA-256 simple est interdit car les espaces de `SERVICE ID` et SIRET sont
 énumérables. `K` est une clé aléatoire privée d'au moins 256 bits, conservée
 dans le Keychain macOS et fournie au builder puis au sandbox intake par un
-descripteur `O_RDONLY|O_NOFOLLOW|O_CLOEXEC` déjà ouvert. Le plan fixe un
+descripteur déjà ouvert par le launcher avec
+`O_RDONLY|O_NOFOLLOW|O_CLOEXEC`. Le builder vérifie sur ce FD `O_RDONLY`,
+`O_CLOEXEC`, le type régulier, le mode, l'UID, le link count et la stabilité
+des métadonnées ; `O_NOFOLLOW`, qui n'est pas observable via `F_GETFL` après
+`open(2)` sur macOS, reste une obligation vérifiée côté launcher. Le plan fixe un
 `hmac_key_id`; le futur lock fixe le SHA-256 des octets de `K`. La clé n'est
 jamais présente dans Git, un argument CLI, une variable d'environnement, un log,
 un manifest ou une sortie. Le builder et l'intake vérifient `key_id`, hash de
@@ -303,7 +309,7 @@ de champ, ordre, type, nullabilité ou métadonnée de schéma produit
 
 Le plan fixe également la taille exacte de chaque entrée, le nombre de row
 groups et les schémas Arrow complets des sorties. Le builder utilise
-exclusivement Python `3.14.3` et PyArrow `23.0.0`, sans pandas pour sérialiser.
+exclusivement Python `3.14.3` et PyArrow `23.0.1`, sans pandas pour sérialiser.
 Les parquets sont écrits avec :
 
 ```text
@@ -322,7 +328,11 @@ plan, rechunkées en un chunk par colonne et castées vers le schéma exact.
 Les JSON suivent la sérialisation canonique du plan. La reproductibilité
 byte-for-byte n'est revendiquée que sous le runtime, la plateforme, les options
 writer et l'ordre épinglés. Deux builds indépendants avec les mêmes entrées et
-la même clé doivent produire les neuf fichiers payload byte-for-byte identiques.
+la même clé doivent produire les neuf fichiers payload, leur manifest et leur
+seal byte-for-byte identiques. Le runner réalise effectivement ces deux
+écritures dans deux arbres `O_EXCL`, compare chaque fichier, ferme un événement
+`BYTE_REPRODUCIBILITY_VALIDATED`, puis promeut seulement l'arbre primaire.
+L'arbre de reproduction complet reste un orphan d'audit conservé.
 
 ## 8. Manifest et seal sans autoréférence
 
@@ -362,10 +372,26 @@ canoniques sont ensuite créés individuellement avec `O_EXCL` et chaînés par
 `events_manifests/<generation>-<sha256>.json` ferment chaque préfixe valide.
 Le receipt reste statique ; l'état courant appartient uniquement à cette chaîne.
 
+L'autorisation d'exécution est portée par un unique JSON canonique de schéma
+`sireto-v4.12-consumed-compatibility-execution-lock-1`, lui-même appelé par
+chemin et SHA-256. Il contient sans exception le chemin et le hash du plan, le
+commit et le hash du builder, le chemin et le hash des tests, l'identifiant et
+le hash de la clé HMAC, l'identifiant d'attempt, ainsi que les pins UID, device
+et UUID de volume de chaque fichier lu et de la racine de sortie. Ces valeurs
+ne peuvent pas être remplacées individuellement sur la ligne de commande ; le
+seul autre descripteur accepté est le FD déjà ouvert de la clé privée.
+
 Chaque fichier temporaire est créé `O_EXCL` dans la racine cible sur le même
 volume. L'ordre durable est : écriture complète, `fsync`, `F_FULLFSYNC`,
 validation, puis promotion de l'arbre complet par
 `renameatx_np(..., RENAME_EXCL)`, `fsync` et `F_FULLFSYNC` du parent.
+
+Le FD de la racine de sortie est ouvert et validé une seule fois, puis conservé
+jusqu'à la fin de l'exécution. La création des deux arbres, toutes les
+écritures, relectures, validations, comparaisons et la promotion sont effectuées
+uniquement avec des noms relatifs à ce FD (`mkdirat`, `openat`,
+`renameatx_np`). Une substitution ultérieure du chemin texte de la racine ne
+peut donc ni détourner une écriture ni changer la cible promue.
 
 Après crash, le runner valide le receipt, la dernière génération complète et
 un éventuel arbre temporaire complet. Il peut uniquement promouvoir cet arbre
@@ -373,6 +399,25 @@ déjà validé ; il ne relit pas partiellement les sources, ne rejoue pas un eff
 et ne complète pas un payload. Un événement ou temporaire non référencé reste
 un orphan conservé. Une chaîne conflictuelle, un arbre partiel ou un hash faux
 produit `STOP`.
+
+La validation de l'arbre recalcule aussi la provenance depuis le plan et le
+lock, le `build_id` depuis la spécification de build et tous les volumes,
+bornes, multiplicités et invariants du plan. Un arbre de test réduit ne peut
+donc jamais être scellé avec le plan de production. Le device et l'inode de la
+racine validée sont transmis à la promotion et revérifiés sur le FD retenu
+juste avant `renameatx_np`, ce qui ferme la substitution de la racine entre
+validation et renommage. Seul le dernier préfixe fermé par un manifest
+générationnel fait autorité ; tout événement postérieur non fermé reste un
+orphan conservé et n'est jamais appliqué.
+
+Au démarrage, après validation des seuls artefacts de contrôle (lock, plan,
+contrat, builder, tests et commit), le runner recherche le receipt exact de
+l'attempt avant de charger la clé ou une source historique. Si ce receipt
+existe, il valide sa chaîne, son dernier préfixe fermé et l'arbre temporaire ou
+déjà promu correspondant. Il promeut exclusivement un arbre complet lié à
+`TREE_VALIDATED`, ou retourne l'arbre déjà promu ; il ne recrée pas le receipt,
+ne relit aucune source et ne relance aucun build. Un état antérieur non
+récupérable produit `STOP`.
 
 ## 10. Rejets et échec fermé
 
@@ -409,6 +454,11 @@ Le build promu exige :
   multiplicité strictement positive ;
 - somme des multiplicités de chaque keyset égale au nombre de lignes portant
   la clé correspondante ;
+- chaque keyset est exactement égal au `Counter` recalculé depuis les colonnes
+  de `compatibility_rows.parquet` pour service, SIRET d'entrée et masked, ou
+  depuis `fuzzy_historical_observations.parquet` pour fuzzy ; une clé remplacée
+  avec multiplicité inchangée reste donc un `STOP`, même après recalcul du
+  manifest et du seal ;
 - somme des multiplicités fuzzy égale au nombre d'observations fuzzy, et chaque
   ligne possède exactement une observation par ville normalisée distincte ;
 - clé HMAC reçue uniquement par FD, `hmac_key_id` et hash conformes au lock,
