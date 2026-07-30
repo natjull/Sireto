@@ -1,6 +1,26 @@
 # SIRETO Handover - 28 Juillet 2026
 
 ## Etat des lieux
+Le pivot V4.12 vers un holdout CRM réellement frais est désormais
+préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
+nouveau CRM. Trois frontières séparées sont gelées :
+
+- le registre de compatibilité ferme les 23 609 anciennes lignes avec des
+  empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
+  *(commit GitHub : `96be59e`)* ;
+- le registre `consumed_sirens` ferme uniquement les identités autoritatives
+  déjà consommées, en excluant candidats, prédictions et sondes techniques
+  *(commit GitHub : `0b47b4c`)* ;
+- l'intake impose une frame exhaustive sans arrêt opportuniste, une couverture
+  `MATCH_EXACT / toutes lignes source` >= 80 %, au moins 657 exacts, des
+  preuves oracle-side séparées, un scoring retrieval one-shot à 100 candidats
+  maximum et une certification AUTO 99,8 % distincte
+  *(commit GitHub : `9c7eccd`)*.
+
+Les builders, leurs locks et les deux registres réels restent à implémenter et
+à sceller avant toute lecture d'un futur export CRM. Le ranker, le decider, le
+risk model et l'accepteur restent gelés.
+
 Le builder des entrées sûres du moteur unitaire V4.12 est implémenté et
 contre-audité, sans build réel. Une première revue a rendu `STOP_CODE` malgré
 18 tests verts et a exposé une mauvaise empreinte TF-IDF, un contournement du
