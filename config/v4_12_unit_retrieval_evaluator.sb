@@ -1,0 +1,29 @@
+(version 1)
+(deny default)
+
+(deny network*)
+(deny process-fork)
+(allow process-info-setcontrol (target self))
+(allow process-info-rusage (target self))
+
+(allow process-exec
+  (literal (param "PYTHON_EXECUTABLE")))
+
+(allow file-read*
+  (literal "/")
+@@SYSTEM_READ_RULES@@
+@@DEVICE_READ_RULES@@
+@@ALLOWED_INPUT_RULES@@
+)
+
+(allow file-read-metadata
+@@ANCESTOR_METADATA_RULES@@
+)
+
+(allow file-read* file-write*
+  (literal (param "STAGING_ROOT"))
+  (subpath (param "STAGING_ROOT")))
+
+(allow sysctl-read)
+
+@@EXPLICIT_DENY_RULES@@
