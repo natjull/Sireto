@@ -79,6 +79,18 @@ l'implémentation et les tests mockés du backend Data Protection ; un test
 multiprocessus reste obligatoire avant tout run réel.
 *(commit GitHub : concurrence, temps logique et crashs `3b38fe0`)*.
 
+Le backend macOS Data Protection est maintenant implémenté en processus via
+Security.framework et CoreFoundation, sans commande `security`, UI, argument,
+environnement ou fichier temporaire. Il construit séparément les
+dictionnaires exacts `SecItemCopyMatching` et `SecItemAdd`, vérifie uniquement
+la projection persistée autorisée, copie la graine dans un buffer mutable et
+libère tous les objets CF. Les 43 tests du provisioner utilisent des APIs
+factices ; `main` prouve qu'il s'arrête sur l'absence du lock avant même de
+construire le backend natif. La suite locale donne `1202 passed`. Aucun appel
+Keychain réel ni création sous `/Volumes` n'a eu lieu ; le commit reste soumis
+à deux audits et à un pré-vol lecture seule avant toute autorisation.
+*(commit GitHub : backend Data Protection natif `7d40c85`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
