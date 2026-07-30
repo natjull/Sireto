@@ -6,9 +6,11 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import platform
 import stat
 import sys
 
+import importlib.metadata
 import pytest
 from cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PublicKey
 
@@ -51,19 +53,23 @@ def _bundle(tmp_path: Path) -> subject.ControlBundle:
             SUBJECT_PATH.read_bytes()
         ).hexdigest(),
         "tests_path": "tests/test_provision_v412_fresh_s1_local_producer.py",
-        "tests_sha256": "b" * 64,
+        "tests_sha256": hashlib.sha256(
+            Path(__file__).read_bytes()
+        ).hexdigest(),
         "plan_path": "config/v4_12_fresh_s1_local_producer_authority_plan.json",
         "plan_sha256": hashlib.sha256(plan_raw).hexdigest(),
         "contract_path": plan["authorities"]["contract"]["path"],
         "contract_sha256": plan["authorities"]["contract"]["sha256"],
     }
     runtime = {
-        "platform": "Darwin",
-        "machine": "arm64",
-        "python_version": "3.14.3",
-        "python_executable_path": "/usr/local/bin/python3",
-        "python_executable_sha256": "c" * 64,
-        "cryptography_version": "46.0.3",
+        "platform": platform.system(),
+        "machine": platform.machine(),
+        "python_version": platform.python_version(),
+        "python_executable_path": str(Path(sys.executable).resolve()),
+        "python_executable_sha256": hashlib.sha256(
+            Path(sys.executable).resolve().read_bytes()
+        ).hexdigest(),
+        "cryptography_version": importlib.metadata.version("cryptography"),
         "security_framework_path": (
             "/System/Library/Frameworks/Security.framework/Security"
         ),
@@ -71,7 +77,7 @@ def _bundle(tmp_path: Path) -> subject.ControlBundle:
             "/System/Library/Frameworks/CoreFoundation.framework/"
             "CoreFoundation"
         ),
-        "os_build": "synthetic",
+        "os_build": platform.release(),
     }
     keychain_policy = {
         "item_class": "GENERIC_PASSWORD",
@@ -98,12 +104,17 @@ def _bundle(tmp_path: Path) -> subject.ControlBundle:
         "runtime": runtime,
         "keychain_policy": keychain_policy,
         "expected_uid": os.getuid(),
-        "volume_device": 1,
-        "volume_uuid": "00000000-0000-0000-0000-000000000001",
+        "volume_device": tmp_path.stat().st_dev,
+        "volume_uuid": "",
         "output_root": plan["paths"]["root"],
         "logical_time_utc": plan["identity"]["logical_time_utc"],
         "authorization_path": plan["paths"]["authorization"],
     }
+    parent_fd = os.open(tmp_path, os.O_RDONLY | os.O_DIRECTORY)
+    try:
+        lock["volume_uuid"] = subject.volume_uuid_for_fd(parent_fd)
+    finally:
+        os.close(parent_fd)
     lock_raw = _canonical(lock)
     authorization = {
         "schema_version": plan["schemas"]["authorization"]["schema_version"],
@@ -141,6 +152,18 @@ def _run(
         checkpoint=checkpoint,
     )
     return receipt, keychain, bundle
+
+
+def _write_claim(
+    tmp_path: Path, bundle: subject.ControlBundle, raw: bytes
+) -> None:
+    store = subject.AnchoredStore(
+        tmp_path, Path(bundle.plan["paths"]["root"])
+    )
+    try:
+        store.create_claim(raw)
+    finally:
+        store.close()
 
 
 def test_rfc8032_vector_one() -> None:
@@ -236,13 +259,9 @@ def test_new_claim_never_adopts_existing_item(tmp_path: Path) -> None:
 def test_existing_claim_with_missing_item_creates_key(tmp_path: Path) -> None:
     bundle = _bundle(tmp_path)
     root = Path(bundle.plan["paths"]["root"])
-    subject.ensure_private_tree(tmp_path, root / "claims")
-    subject.ensure_private_tree(tmp_path, root / "authorities")
     nonce = b"n" * 32
     claim = subject._claim_value(bundle, nonce)
-    subject.write_exclusive_durable(
-        root / "claims/provision.claim.json", _canonical(claim)
-    )
+    _write_claim(tmp_path, bundle, _canonical(claim))
     keychain = subject.MemoryKeychain()
     receipt = subject.provision(
         bundle,
@@ -258,12 +277,8 @@ def test_existing_claim_with_missing_item_creates_key(tmp_path: Path) -> None:
 def test_existing_claim_only_accepts_exact_binding(tmp_path: Path) -> None:
     bundle = _bundle(tmp_path)
     root = Path(bundle.plan["paths"]["root"])
-    subject.ensure_private_tree(tmp_path, root / "claims")
-    subject.ensure_private_tree(tmp_path, root / "authorities")
     claim_raw = _canonical(subject._claim_value(bundle, b"n" * 32))
-    subject.write_exclusive_durable(
-        root / "claims/provision.claim.json", claim_raw
-    )
+    _write_claim(tmp_path, bundle, claim_raw)
     wrong = subject.MemoryKeychain(
         subject.KeychainRecord(bytearray(b"s" * 32), b"x" * 32)
     )
@@ -400,6 +415,14 @@ def test_keychain_operation_contracts_are_exact(tmp_path: Path) -> None:
 def test_control_mutations_stop_before_keychain(tmp_path: Path) -> None:
     bundle = _bundle(tmp_path)
     bundle.authorization["execution_lock_sha256"] = "0" * 64
+    bundle = subject.ControlBundle(
+        bundle.plan,
+        bundle.plan_raw,
+        bundle.lock,
+        bundle.lock_raw,
+        bundle.authorization,
+        _canonical(bundle.authorization),
+    )
     backend = subject.MemoryKeychain()
     with pytest.raises(subject.ProvisionError, match="AUTH_LOCK_HASH"):
         subject.provision(
@@ -411,14 +434,177 @@ def test_control_mutations_stop_before_keychain(tmp_path: Path) -> None:
     assert backend.read_calls == backend.add_calls == 0
 
 
+@pytest.mark.parametrize(
+    ("mutate", "reason"),
+    [
+        (
+            lambda bundle: bundle.lock.__setitem__("purpose", "WRONG"),
+            "execution_lock_purpose_TYPE",
+        ),
+        (
+            lambda bundle: bundle.lock["runtime"].__setitem__(
+                "python_version", "0"
+            ),
+            "LOCK_RUNTIME",
+        ),
+        (
+            lambda bundle: bundle.lock["keychain_policy"].__setitem__(
+                "data_protection_keychain", False
+            ),
+            "execution_lock_keychain_policy_TYPE",
+        ),
+        (
+            lambda bundle: bundle.lock["implementation"].__setitem__(
+                "provisioner_sha256", "0" * 64
+            ),
+            "IMPLEMENTATION_SOURCE_HASH",
+        ),
+        (
+            lambda bundle: bundle.lock.__setitem__(
+                "output_root", "/private/wrong"
+            ),
+            "LOCK_OUTPUT_ROOT",
+        ),
+        (
+            lambda bundle: bundle.lock.__setitem__(
+                "volume_device", bundle.lock["volume_device"] + 1
+            ),
+            "LOCK_VOLUME_DEVICE",
+        ),
+        (
+            lambda bundle: bundle.lock.__setitem__(
+                "volume_uuid", "00000000-0000-0000-0000-000000000001"
+            ),
+            "LOCK_VOLUME_UUID",
+        ),
+    ],
+)
+def test_all_control_families_are_enforced_before_keychain(
+    tmp_path: Path, mutate, reason: str
+) -> None:
+    bundle = _bundle(tmp_path)
+    mutate(bundle)
+    lock_raw = _canonical(bundle.lock)
+    bundle.authorization["execution_lock_sha256"] = hashlib.sha256(
+        lock_raw
+    ).hexdigest()
+    bundle = subject.ControlBundle(
+        bundle.plan,
+        bundle.plan_raw,
+        bundle.lock,
+        lock_raw,
+        bundle.authorization,
+        _canonical(bundle.authorization),
+    )
+    backend = subject.MemoryKeychain()
+    with pytest.raises(subject.ProvisionError, match=reason):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == backend.add_calls == 0
+
+
+def test_self_consistent_payload_rewrite_is_rejected_without_keychain(
+    tmp_path: Path,
+) -> None:
+    _receipt, backend, bundle = _run(tmp_path)
+    authority = next(
+        (Path(bundle.plan["paths"]["root"]) / "authorities").iterdir()
+    )
+    payload_path = authority / "producer_authority_payload.json"
+    seal_path = authority / "producer_authority_seal.json"
+    receipt_path = authority / "provision_receipt.json"
+    payload = json.loads(payload_path.read_bytes())
+    payload["producer"]["source_system"] = "ATTACKER"
+    payload_raw = _canonical(payload)
+    payload_path.write_bytes(payload_raw)
+    seal = json.loads(seal_path.read_bytes())
+    seal["payload_size_bytes"] = len(payload_raw)
+    seal["payload_sha256"] = hashlib.sha256(payload_raw).hexdigest()
+    seal_raw = _canonical(seal)
+    seal_path.write_bytes(seal_raw)
+    receipt = json.loads(receipt_path.read_bytes())
+    receipt["payload_sha256"] = hashlib.sha256(payload_raw).hexdigest()
+    receipt["seal_sha256"] = hashlib.sha256(seal_raw).hexdigest()
+    receipt_path.write_bytes(_canonical(receipt))
+    reads = backend.read_calls
+    with pytest.raises(
+        subject.ProvisionError, match="PAYLOAD_CONTROL_DIVERGENCE"
+    ):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == reads
+
+
+def test_symlinked_root_is_rejected_before_keychain(tmp_path: Path) -> None:
+    bundle = _bundle(tmp_path)
+    target = tmp_path / "redirect"
+    target.mkdir(mode=0o700)
+    Path(bundle.plan["paths"]["root"]).symlink_to(target, target_is_directory=True)
+    backend = subject.MemoryKeychain()
+    with pytest.raises(subject.ProvisionError, match="PRIVATE_DIRECTORY_OPEN"):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == backend.add_calls == 0
+
+
+def test_private_mode_drift_stops_idempotent_read_before_keychain(
+    tmp_path: Path,
+) -> None:
+    _receipt, backend, bundle = _run(tmp_path)
+    authority = next(
+        (Path(bundle.plan["paths"]["root"]) / "authorities").iterdir()
+    )
+    (authority / "producer_authority_payload.json").chmod(0o640)
+    reads = backend.read_calls
+    with pytest.raises(subject.ProvisionError, match="PAYLOAD_IDENTITY"):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == reads
+
+
+def test_hardlinked_artifact_stops_idempotent_read_before_keychain(
+    tmp_path: Path,
+) -> None:
+    _receipt, backend, bundle = _run(tmp_path)
+    authority = next(
+        (Path(bundle.plan["paths"]["root"]) / "authorities").iterdir()
+    )
+    os.link(
+        authority / "producer_authority_payload.json",
+        tmp_path / "external-hardlink",
+    )
+    reads = backend.read_calls
+    with pytest.raises(subject.ProvisionError, match="PAYLOAD_IDENTITY"):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == reads
+
+
 def test_partial_or_noncanonical_claim_is_never_rewritten(tmp_path: Path) -> None:
     bundle = _bundle(tmp_path)
     root = Path(bundle.plan["paths"]["root"])
-    subject.ensure_private_tree(tmp_path, root / "claims")
-    subject.ensure_private_tree(tmp_path, root / "authorities")
+    _write_claim(tmp_path, bundle, b"{")
     claim = root / "claims/provision.claim.json"
-    claim.write_bytes(b"{")
-    claim.chmod(0o600)
     with pytest.raises(subject.ProvisionError, match="CLAIM_INVALID_JSON"):
         subject.provision(
             bundle,
