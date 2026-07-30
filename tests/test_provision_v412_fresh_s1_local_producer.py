@@ -9,6 +9,8 @@ from pathlib import Path
 import platform
 import stat
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 
 import importlib.metadata
 import pytest
@@ -313,6 +315,9 @@ def test_duplicate_add_stops_without_success_receipt(tmp_path: Path) -> None:
 @pytest.mark.parametrize(
     "checkpoint",
     [
+        "CLAIM_DURABLE",
+        "KEYCHAIN_QUERIED",
+        "SEED_GENERATED",
         "KEYCHAIN_ADDED",
         "ledger_genesis.json_DURABLE",
         "producer_authority_payload.json_DURABLE",
@@ -345,7 +350,7 @@ def test_crash_recovery_converges_to_one_authority(
         backend,
         trusted_parent=tmp_path,
         root=Path(bundle.plan["paths"]["root"]),
-        random32=lambda: pytest.fail("new randomness forbidden"),
+        random32=lambda: b"r" * 32,
     )
     assert result["terminal_state"] == "PROVISIONED"
     authorities = list(
@@ -353,6 +358,118 @@ def test_crash_recovery_converges_to_one_authority(
     )
     assert len(authorities) == 1
     assert backend.add_calls == 1
+
+
+def test_two_concurrent_launchers_converge_to_one_authority(
+    tmp_path: Path,
+) -> None:
+    bundle = _bundle(tmp_path)
+
+    class AtomicMemoryKeychain(subject.MemoryKeychain):
+        def __init__(self) -> None:
+            super().__init__()
+            self.lock = threading.Lock()
+
+        def copy_item(self):
+            with self.lock:
+                return super().copy_item()
+
+        def add_item(self, *, seed, claim_sha256_raw):
+            with self.lock:
+                return super().add_item(
+                    seed=seed, claim_sha256_raw=claim_sha256_raw
+                )
+
+    backend = AtomicMemoryKeychain()
+    barrier = threading.Barrier(2)
+
+    def launch(fill: int):
+        calls = 0
+
+        def random32() -> bytes:
+            nonlocal calls
+            calls += 1
+            if calls == 1:
+                barrier.wait(timeout=5)
+            return bytes([fill + calls]) * 32
+
+        try:
+            return subject.provision(
+                bundle,
+                backend,
+                trusted_parent=tmp_path,
+                root=Path(bundle.plan["paths"]["root"]),
+                random32=random32,
+            )
+        except subject.ProvisionError as exc:
+            return exc
+
+    original_umask = os.umask(0o022)
+    os.umask(original_umask)
+    try:
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            outcomes = list(executor.map(launch, (10, 20)))
+    finally:
+        os.umask(original_umask)
+    successes = [
+        value for value in outcomes if isinstance(value, dict)
+    ]
+    assert len(successes) == 1
+    assert len(outcomes) - len(successes) == 1
+    root = Path(bundle.plan["paths"]["root"])
+    assert len(list((root / "authorities").iterdir())) == 1
+    assert len(list((root / "claims").iterdir())) == 1
+    assert backend.add_calls == 1
+    assert backend.item is not None
+    authority = next((root / "authorities").iterdir())
+    assert (authority / "provision_receipt.json").exists()
+
+
+def test_claim_logical_time_must_equal_plan_before_keychain(
+    tmp_path: Path,
+) -> None:
+    bundle = _bundle(tmp_path)
+    claim = subject._claim_value(bundle, b"n" * 32)
+    claim["logical_time_utc"] = "2026-07-30T00:00:00Z"
+    _write_claim(tmp_path, bundle, _canonical(claim))
+    backend = subject.MemoryKeychain()
+    with pytest.raises(subject.ProvisionError, match="CLAIM_LOGICAL_TIME"):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == backend.add_calls == 0
+
+
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [
+        ("terminal_state", "REVIEW"),
+        ("reason_code", "NOT_OK"),
+    ],
+)
+def test_receipt_terminal_contract_is_checked_before_keychain(
+    tmp_path: Path, field: str, value: str
+) -> None:
+    _receipt, backend, bundle = _run(tmp_path)
+    authority = next(
+        (Path(bundle.plan["paths"]["root"]) / "authorities").iterdir()
+    )
+    receipt_path = authority / "provision_receipt.json"
+    receipt = json.loads(receipt_path.read_bytes())
+    receipt[field] = value
+    receipt_path.write_bytes(_canonical(receipt))
+    reads = backend.read_calls
+    with pytest.raises(subject.ProvisionError):
+        subject.provision(
+            bundle,
+            backend,
+            trusted_parent=tmp_path,
+            root=Path(bundle.plan["paths"]["root"]),
+        )
+    assert backend.read_calls == reads
 
 
 @pytest.mark.parametrize(

@@ -889,6 +889,8 @@ def _validate_claim(claim: dict[str, Any], bundle: ControlBundle) -> None:
         _stop("CLAIM_LOCK")
     if claim["authorization_sha256"] != bundle.authorization_sha256:
         _stop("CLAIM_AUTHORIZATION")
+    if claim["logical_time_utc"] != bundle.plan["identity"]["logical_time_utc"]:
+        _stop("CLAIM_LOGICAL_TIME")
     try:
         nonce = base64.b64decode(
             claim["attempt_binding_nonce_base64"], validate=True
