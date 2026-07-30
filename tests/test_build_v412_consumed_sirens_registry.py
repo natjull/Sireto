@@ -41,8 +41,11 @@ def _git_commit(root: Path = ROOT) -> str:
 def _audited_builder(tmp_path: Path) -> tuple[Path, str]:
     repository = tmp_path / "builder-repository"
     script = repository / "scripts" / SCRIPT.name
+    tests = repository / "tests" / Path(__file__).name
     script.parent.mkdir(parents=True)
+    tests.parent.mkdir(parents=True)
     script.write_bytes(SCRIPT.read_bytes())
+    tests.write_bytes(Path(__file__).read_bytes())
     subprocess.run(["git", "init", "-q"], cwd=repository, check=True)
     subprocess.run(
         ["git", "config", "user.email", "tests@sireto.invalid"],
@@ -54,7 +57,9 @@ def _audited_builder(tmp_path: Path) -> tuple[Path, str]:
         cwd=repository,
         check=True,
     )
-    subprocess.run(["git", "add", "scripts"], cwd=repository, check=True)
+    subprocess.run(
+        ["git", "add", "scripts", "tests"], cwd=repository, check=True
+    )
     subprocess.run(
         ["git", "commit", "-q", "-m", "audit builder"],
         cwd=repository,
@@ -191,6 +196,12 @@ def _fixture(
                 "source_path": "scripts/build_v412_consumed_sirens_registry.py",
                 "source_sha256": file_sha256(builder_script),
                 "status": "PINNED",
+                "tests_path": "tests/test_build_v412_consumed_sirens_registry.py",
+                "tests_sha256": file_sha256(
+                    builder_script.parent.parent
+                    / "tests"
+                    / "test_build_v412_consumed_sirens_registry.py"
+                ),
             },
         },
         "canonical_json": "UTF8_SORT_KEYS_COMPACT_ALLOW_NAN_FALSE_SINGLE_LF",
@@ -249,6 +260,7 @@ def _fixture(
                     "build_id",
                     "builder_git_commit",
                     "builder_source_sha256",
+                    "builder_tests_sha256",
                     "contract_sha256",
                     "plan_sha256",
                     "input_source_hashes",
@@ -464,6 +476,28 @@ def test_builder_pin_rejects_worktree_matching_plan_but_not_audited_blob(
         )
 
 
+def test_tests_pin_rejects_worktree_matching_plan_but_not_audited_blob(
+    tmp_path: Path,
+) -> None:
+    plan_path, contract, _source, builder_script = _fixture(tmp_path)
+    tests_path = (
+        builder_script.parent.parent
+        / "tests"
+        / "test_build_v412_consumed_sirens_registry.py"
+    )
+    tests_path.write_bytes(tests_path.read_bytes() + b"\n# tests drift\n")
+    plan = json.loads(plan_path.read_bytes())
+    plan["build"]["builder"]["tests_sha256"] = file_sha256(tests_path)
+    _write_canonical(plan_path, plan)
+    with pytest.raises(
+        RegistryStop,
+        match="builder worktree/blob/ancestry/path/status pin is invalid",
+    ):
+        validate_plan(
+            plan_path, contract, builder_script, require_builder_pin=True
+        )
+
+
 def test_audited_builder_commit_may_be_ancestor_of_later_head(
     tmp_path: Path,
 ) -> None:
@@ -564,6 +598,8 @@ def test_annotated_tag_object_is_not_an_audited_commit(tmp_path: Path) -> None:
         ("git_commit", "HEAD^{commit}:scripts/build_v412_consumed_sirens_registry.py"),
         ("source_path", "scripts/../scripts/build_v412_consumed_sirens_registry.py"),
         ("source_path", "--upload-pack=malicious"),
+        ("tests_path", "tests/../tests/test_build_v412_consumed_sirens_registry.py"),
+        ("tests_path", "--config-env=malicious"),
         ("status", "READY"),
     ],
 )

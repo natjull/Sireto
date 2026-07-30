@@ -54,6 +54,9 @@ FORBIDDEN_IDENTITY_TOKENS = (
     "decision",
 )
 BUILDER_REPOSITORY_PATH = "scripts/build_v412_consumed_sirens_registry.py"
+BUILDER_TESTS_REPOSITORY_PATH = (
+    "tests/test_build_v412_consumed_sirens_registry.py"
+)
 GIT_BINARY = "/usr/bin/git"
 
 
@@ -190,6 +193,7 @@ def _builder_pin_is_valid(
     if (
         builder.get("status") != "PINNED"
         or builder.get("source_path") != BUILDER_REPOSITORY_PATH
+        or builder.get("tests_path") != BUILDER_TESTS_REPOSITORY_PATH
         or not isinstance(audited_commit, str)
         or not re.fullmatch(r"[0-9a-f]{40}", audited_commit)
     ):
@@ -199,15 +203,28 @@ def _builder_pin_is_valid(
     worktree_hash = file_sha256(script_path)
     if builder.get("source_sha256") != worktree_hash:
         return False
+    tests_path = repository_root / BUILDER_TESTS_REPOSITORY_PATH
+    if not tests_path.is_file():
+        return False
+    worktree_tests_hash = file_sha256(tests_path)
+    if builder.get("tests_sha256") != worktree_tests_hash:
+        return False
     head = _git_commit(repository_root)
     try:
         blob_hash = _git_blob_sha256(
             repository_root, audited_commit, BUILDER_REPOSITORY_PATH
         )
+        tests_blob_hash = _git_blob_sha256(
+            repository_root,
+            audited_commit,
+            BUILDER_TESTS_REPOSITORY_PATH,
+        )
     except subprocess.CalledProcessError:
         return False
-    return blob_hash == worktree_hash and _is_ancestor(
-        repository_root, audited_commit, head
+    return (
+        blob_hash == worktree_hash
+        and tests_blob_hash == worktree_tests_hash
+        and _is_ancestor(repository_root, audited_commit, head)
     )
 
 
@@ -1070,6 +1087,7 @@ def _validate_complete_stage(
         "build_id": build_id,
         "builder_git_commit": commit,
         "builder_source_sha256": script_hash,
+        "builder_tests_sha256": plan["build"]["builder"]["tests_sha256"],
         "contract_sha256": contract_hash,
         "plan_sha256": plan_hash,
         "input_source_hashes": expected_identity_hashes,
@@ -1282,6 +1300,7 @@ def _build_id(
         "contract_sha256": contract_hash,
         "plan_sha256": plan_hash,
         "builder_source_sha256": script_hash,
+        "builder_tests_sha256": plan["build"]["builder"]["tests_sha256"],
         "builder_git_commit": commit,
     }
     return canonical_hash(projection)[: int(plan["build"]["build_id_length"])]
@@ -1371,6 +1390,9 @@ def _build_registry_impl(
                 "build_id": build_id,
                 "builder_git_commit": commit,
                 "builder_source_sha256": script_hash,
+                "builder_tests_sha256": plan["build"]["builder"][
+                    "tests_sha256"
+                ],
                 "contract_sha256": contract_hash,
                 "plan_sha256": plan_hash,
                 "input_source_hashes": {
