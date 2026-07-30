@@ -30,7 +30,7 @@ except ModuleNotFoundError:
 
 
 ALLOWED_ROOT = Path(
-    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r2"
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r3"
 )
 CORE_PLAN_SHA256 = (
     "e8a55a999035183363c0bf7711280b09553a305434173286e41c696ea3e4772f"
@@ -62,6 +62,42 @@ SUCCESSOR_ATTEMPT_PROJECTION = (
     "fixture_control_manifest_sha256",
     "logical_time_utc",
 )
+EXPECTED_EXECUTION_IDENTITY = {
+    "schema_version": SUCCESSOR_IDENTITY_SCHEMA,
+    "algorithm": SUCCESSOR_IDENTITY_ALGORITHM,
+    "run": {
+        "domain": "SIRETO-V412-FRESH-SYNTHETIC-S0-R3-RUN-ID\0",
+        "projection": list(SUCCESSOR_RUN_PROJECTION),
+        "values": {
+            "fixture_spec_sha256": (
+                "6f917f98b7a8b42e34af390b21e63ef4cb33051aa5a0bf7154f5351c4337d33e"
+            ),
+            "core_plan_sha256": CORE_PLAN_SHA256,
+            "predecessor_receipt_sha256": (
+                "6d9fb590bab4d205ce9004454954d47406de5e0d2ec74ad9390f01f6948f839e"
+            ),
+        },
+        "result": (
+            "kbfkbicacgcgabcddiiacogfkndicooigeebcdaghpdgklgebocfhkinnniladkl"
+        ),
+    },
+    "attempt": {
+        "domain": "SIRETO-V412-FRESH-SYNTHETIC-ATTEMPT-ID\0",
+        "projection": list(SUCCESSOR_ATTEMPT_PROJECTION),
+        "values": {
+            "synthetic_run_id": (
+                "kbfkbicacgcgabcddiiacogfkndicooigeebcdaghpdgklgebocfhkinnniladkl"
+            ),
+            "fixture_control_manifest_sha256": (
+                "bae57c4f207f2637574a2872169a311a9199f3fc6ba89c2694ddd123b245ac18"
+            ),
+            "logical_time_utc": "2026-07-30T00:00:00Z",
+        },
+        "result": (
+            "afjgbfncbfdbcakcjiclhmlnmgmemcjmllkhdfgogjjncompjojcnbkelopdklgp"
+        ),
+    },
+}
 MAX_SPEC_BYTES = 1024 * 1024
 MAX_FRAME_BYTES = 65536
 PAYLOAD_ROLES = (
@@ -973,6 +1009,17 @@ def _validate_successor_identity(
                 "EXECUTION_IDENTITY_SCHEMA_INVALID",
             )
 
+    if run != EXPECTED_EXECUTION_IDENTITY["run"]:
+        _identity_stop(
+            "successor run differs from the registered R3 identity",
+            "RUN_DERIVATION_MISMATCH",
+        )
+    if attempt != EXPECTED_EXECUTION_IDENTITY["attempt"]:
+        _identity_stop(
+            "successor attempt differs from the registered R3 identity",
+            "ATTEMPT_DERIVATION_MISMATCH",
+        )
+
     if (
         run["projection"] != list(SUCCESSOR_RUN_PROJECTION)
         or set(run["values"]) != set(SUCCESSOR_RUN_PROJECTION)
@@ -1046,17 +1093,19 @@ def _process(
     allowed_root: Path = ALLOWED_ROOT,
 ) -> tuple[str, dict[str, Any]]:
     plan, plan_raw = _load_core_plan()
-    control = _decode_control(payload_bytes["CONTROL_MANIFEST"], plan)
+    control_raw = payload_bytes["CONTROL_MANIFEST"]
+    control = _strict_json_object(control_raw, "fixture control manifest")
     plan_hash = hashlib.sha256(plan_raw).hexdigest()
-    control_hash = hashlib.sha256(payload_bytes["CONTROL_MANIFEST"]).hexdigest()
+    control_hash = hashlib.sha256(control_raw).hexdigest()
     expected_run, expected_attempt = _validate_successor_identity(
         execution_identity,
         plan=plan,
         plan_raw=plan_raw,
         control=control,
-        control_raw=payload_bytes["CONTROL_MANIFEST"],
+        control_raw=control_raw,
         spec=spec,
     )
+    control = _decode_control(control_raw, plan)
     source_payloads = {
         PAYLOAD_NAMES[role]: payload_bytes[role] for role in SOURCE_PAYLOAD_ROLES
     }
@@ -1321,6 +1370,19 @@ def main(argv: Sequence[str] | None = None) -> int:
         first_payloads, first_identities = _payload_snapshot(spec)
         _send_frame(control, _ready_message(spec))
         ready_sent = True
+        core_plan, core_plan_raw = _load_core_plan()
+        control_raw = first_payloads["CONTROL_MANIFEST"]
+        control_value = _strict_json_object(
+            control_raw, "fixture control manifest"
+        )
+        _validate_successor_identity(
+            spec["execution_identity"],
+            plan=core_plan,
+            plan_raw=core_plan_raw,
+            control=control_value,
+            control_raw=control_raw,
+            spec=spec,
+        )
         canaries = _run_canaries(spec["synthetic_run_id"])
         _write_canary_report(spec, canaries)
         interval_started = time.monotonic()

@@ -28,6 +28,7 @@ import sys
 import time
 import uuid
 import zlib
+from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Mapping, Sequence
@@ -35,11 +36,17 @@ from typing import Any, Mapping, Sequence
 
 REPOSITORY_ROOT = Path(__file__).resolve().parents[1]
 AUTHORIZATION_RELATIVE_PATH = Path(
-    "config/v4_12_fresh_s0_launch_authorization.json"
+    "config/v4_12_fresh_s0_r3_launch_authorization.json"
 )
 AUTHORIZATION_PATH = REPOSITORY_ROOT / AUTHORIZATION_RELATIVE_PATH
-PLAN_RELATIVE_PATH = Path("config/v4_12_fresh_s0_authoritative_run_plan.json")
+PLAN_RELATIVE_PATH = Path("config/v4_12_fresh_s0_r3_plan.json")
 PLAN_PATH = REPOSITORY_ROOT / PLAN_RELATIVE_PATH
+EXPECTED_R3_PLAN_SHA256 = (
+    "ce7f8ed4a9d6236e61cffca72b92a1043d414afc69571ae79c94f191e6def1e2"
+)
+EXPECTED_R3_CONTRACT_SHA256 = (
+    "247b41f60a39211f85431d141625bf0d8321ae88c701d17ffd380a04ef7a9353"
+)
 SANDBOX_EXEC_PATH = Path("/usr/bin/sandbox-exec")
 
 HEX64 = re.compile(r"^[0-9a-f]{64}$")
@@ -67,11 +74,12 @@ LOCK_FIELDS = (
     "implementation_blobs",
     "core",
     "runtime",
-    "r2_smoke",
+    "runtime_smoke",
     "read_fds",
     "paths",
     "sandbox",
     "policy",
+    "execution_identity",
     "synthetic_run_id",
     "attempt_id",
     "logical_time_utc",
@@ -683,21 +691,105 @@ def observe(authority: OpenAuthority, resolver: VolumeUUIDResolver) -> dict[str,
     }
 
 
+def _resolve_dotted(value: Mapping[str, Any], dotted_path: str) -> Any:
+    current: Any = value
+    for component in dotted_path.split("."):
+        if type(current) is not dict or component not in current:
+            _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", f"overlay source {dotted_path}")
+        current = current[component]
+    return current
+
+
+def _overlay_parent(value: dict[str, Any], dotted_path: str) -> tuple[dict[str, Any], str]:
+    components = dotted_path.split(".")
+    if not components or any(not component for component in components):
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "overlay path")
+    current = value
+    for component in components[:-1]:
+        if type(current) is not dict or component not in current:
+            _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", f"overlay parent {dotted_path}")
+        current = current[component]
+    if type(current) is not dict:
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", f"overlay parent {dotted_path}")
+    return current, components[-1]
+
+
+def _materialize_r3_plan(overlay: Mapping[str, Any]) -> dict[str, Any]:
+    inheritance = overlay.get("inheritance")
+    if type(inheritance) is not dict:
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "overlay inheritance")
+    authority = overlay["base_authorities"][inheritance["base_plan_role"]]
+    base_relative = Path(authority["path"])
+    base_raw = _read_anchored_path(
+        REPOSITORY_ROOT / base_relative, "pinned R2 plan"
+    )
+    if sha256_bytes(base_raw) != authority["sha256"]:
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "pinned R2 plan hash")
+    effective = deepcopy(decode_canonical_json(base_raw, "pinned R2 plan"))
+    removals = inheritance["removals"]
+    if type(removals) is not list or len(removals) != len(set(removals)):
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "overlay removals")
+    for target in removals:
+        parent, leaf = _overlay_parent(effective, target)
+        if leaf not in parent:
+            _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", f"overlay removal {target}")
+        del parent[leaf]
+    overrides = inheritance["overrides"]
+    targets = [record.get("target") for record in overrides]
+    if len(targets) != len(set(targets)):
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "overlay targets")
+    for record in overrides:
+        if type(record) is not dict or set(record) != {"source", "target"}:
+            _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "overlay record")
+        source = deepcopy(_resolve_dotted(overlay, record["source"]))
+        components = record["target"].split(".")
+        if len(components) == 1:
+            parent, leaf = effective, components[0]
+        else:
+            parent, leaf = _overlay_parent(effective, record["target"])
+        if leaf in parent and type(parent[leaf]) is not type(source):
+            _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", f"overlay type {record['target']}")
+        parent[leaf] = source
+    return effective
+
+
 def _load_plan() -> tuple[dict[str, Any], bytes]:
     raw = _git_blob("HEAD", PLAN_RELATIVE_PATH)
     disk = _read_anchored_path(PLAN_PATH, "authoritative plan")
     if raw != disk:
         _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "plan differs from HEAD")
-    plan = decode_canonical_json(raw, "authoritative plan")
+    if sha256_bytes(raw) != EXPECTED_R3_PLAN_SHA256:
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "R3 plan hash")
+    overlay = decode_canonical_json(raw, "authoritative plan")
     if (
-        plan.get("status")
-        != "PREREGISTERED_R2B_DO_NOT_IMPLEMENT_UNTIL_TWO_INDEPENDENT_AUDITS"
+        overlay.get("status")
+        != "PREREGISTERED_R3_DO_NOT_IMPLEMENT_UNTIL_TWO_INDEPENDENT_AUDITS"
     ):
         _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "unexpected plan status")
+    contract_record = overlay.get("contract")
+    if (
+        type(contract_record) is not dict
+        or contract_record.get("sha256") != EXPECTED_R3_CONTRACT_SHA256
+    ):
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "R3 contract pin")
+    contract_path = REPOSITORY_ROOT / contract_record["path"]
+    if sha256_bytes(
+        _read_anchored_path(contract_path, "authoritative R3 contract")
+    ) != EXPECTED_R3_CONTRACT_SHA256:
+        _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "R3 contract hash")
+    plan = _materialize_r3_plan(overlay)
     return plan, raw
 
 
 def _load_authorization(plan: Mapping[str, Any]) -> tuple[dict[str, Any], bytes]:
+    if plan["authorization"]["fixed_path"] != (
+        AUTHORIZATION_RELATIVE_PATH.as_posix()
+    ):
+        _stop(
+            "AUTHORIZATION",
+            "IMPLEMENTATION_INVALID",
+            "authorization path differs from R3 plan",
+        )
     fd = _open_anchored(AUTHORIZATION_PATH)
     try:
         raw, _ = _read_regular_fd(fd, "authorization manifest")
@@ -751,12 +843,19 @@ def _load_lock(
     if (
         lock["schema_version"] != plan["execution_lock"]["schema_version"]
         or lock["purpose"]
-        != "SIRETO_V412_FRESH_SYNTHETIC_S0_R2_AUTHORITATIVE_RUN"
+        != "SIRETO_V412_FRESH_SYNTHETIC_S0_R3_AUTHORITATIVE_RUN"
         or lock["status"] != "SEALED_AUTHORITY_READY_TO_AUTHORIZE"
         or lock["implementation_commit"] != authorization["implementation_commit"]
         or lock["synthetic_run_id"] != authorization["synthetic_run_id"]
         or lock["attempt_id"] != authorization["attempt_id"]
         or lock["core"] != plan["core"]
+        or lock["execution_identity"] != plan["execution_identity"]
+        or lock["synthetic_run_id"]
+        != plan["execution_identity"]["run"]["result"]
+        or lock["attempt_id"]
+        != plan["execution_identity"]["attempt"]["result"]
+        or lock["logical_time_utc"]
+        != plan["execution_identity"]["attempt"]["values"]["logical_time_utc"]
     ):
         os.close(fd)
         _stop("AUTHORIZATION", "LOCK_INVALID", "execution lock constants mismatch")
@@ -1611,7 +1710,7 @@ def _validate_existing_receipt(
     if (
         set(value) != set(RECEIPT_FIELDS)
         or value["schema_version"]
-        != "sireto-v4.12-fresh-s0-authoritative-launch-receipt-2"
+        != "sireto-v4.12-fresh-s0-authoritative-launch-receipt-3"
         or value["authorization_manifest_sha256"] != sha256_bytes(auth_raw)
         or value["execution_lock_path"] != execution_lock_path
         or value["execution_lock_sha256"] != sha256_bytes(lock_raw)
@@ -2258,16 +2357,16 @@ def _private_import_assertion(
     )
 
 
-def _validate_r2_smoke(
+def _validate_runtime_smoke(
     lock: Mapping[str, Any],
     plan: Mapping[str, Any],
     profile_authority: OpenAuthority,
 ) -> None:
-    smoke = lock["r2_smoke"]
-    schema = plan["schema_definitions"]["r2_smoke_attestation"]
+    smoke = lock["runtime_smoke"]
+    schema = plan["schema_definitions"]["runtime_smoke_attestation"]
     fields = schema["exact_fields"]
     if type(smoke) is not dict or set(smoke) != set(fields):
-        _stop("PRESPAWN", "LOCK_INVALID", "R2-B smoke schema")
+        _stop("PRESPAWN", "LOCK_INVALID", "R3 smoke schema")
     profile_text = _verified_profile_text(profile_authority)
     python_record = _private_record(lock, "PYTHON_EXECUTABLE")
     python_path = _private_python_path(lock, plan)
@@ -2280,9 +2379,19 @@ def _validate_r2_smoke(
         "-c",
         _private_import_assertion(lock, plan),
     ]
-    required = plan["r2_successor"]["smoke_attestation"]["required_result"]
+    empty_sha256 = hashlib.sha256(b"").hexdigest()
+    required = {
+        "exit_code": 0,
+        "signal": None,
+        "stdout_size_bytes": 0,
+        "stdout_sha256": empty_sha256,
+        "stderr_size_bytes": 0,
+        "stderr_sha256": empty_sha256,
+        "five_output_directories_empty_before": True,
+        "five_output_directories_empty_after": True,
+    }
     expected = {
-        "schema_version": "sireto-v4.12-fresh-s0-r2-smoke-attestation-2",
+        "schema_version": schema["schema_version"],
         "implementation_commit": lock["implementation_commit"],
         "synthetic_run_id": lock["synthetic_run_id"],
         "attempt_id": lock["attempt_id"],
@@ -2307,12 +2416,12 @@ def _validate_r2_smoke(
         ],
     }
     if any(smoke.get(key) != value for key, value in expected.items()):
-        _stop("PRESPAWN", "LOCK_INVALID", "R2-B smoke authority mismatch")
+        _stop("PRESPAWN", "LOCK_INVALID", "R3 smoke authority mismatch")
     projection = {key: smoke[key] for key in fields if key != "smoke_sha256"}
     if smoke["smoke_sha256"] != sha256_bytes(
         canonical_json(projection, final_lf=False)
     ):
-        _stop("PRESPAWN", "LOCK_INVALID", "R2-B smoke hash")
+        _stop("PRESPAWN", "LOCK_INVALID", "R3 smoke hash")
 
 
 def _validate_canaries(
@@ -2960,7 +3069,7 @@ def run_authoritative_launch() -> dict[str, Any]:
         profile_authority = next(
             item for item in authorities if item.role == "SANDBOX_PROFILE"
         )
-        _validate_r2_smoke(lock, plan, profile_authority)
+        _validate_runtime_smoke(lock, plan, profile_authority)
         worker_spec_value = _worker_spec(lock, lock_raw, payloads, write_fds, resolver)
         claim_raw = _write_exclusive(
             claim_path, _claim_value(lock, auth_raw, lock_raw), mode=0o400
@@ -3064,7 +3173,7 @@ def run_authoritative_launch() -> dict[str, Any]:
             "control_result": result,
         }
         receipt = {
-            "schema_version": "sireto-v4.12-fresh-s0-authoritative-launch-receipt-2",
+            "schema_version": "sireto-v4.12-fresh-s0-authoritative-launch-receipt-3",
             "phase": "RECEIPT",
             "reason_code": reason,
             "authorization_manifest_sha256": sha256_bytes(auth_raw),
@@ -3151,7 +3260,7 @@ def run_authoritative_launch() -> dict[str, Any]:
                 else {key: None for key in OUTPUT_AUTHORITY_FIELDS}
             )
             stop_receipt = {
-                "schema_version": "sireto-v4.12-fresh-s0-authoritative-launch-receipt-2",
+                "schema_version": "sireto-v4.12-fresh-s0-authoritative-launch-receipt-3",
                 "phase": failure.phase,
                 "reason_code": failure.reason_code,
                 "authorization_manifest_sha256": sha256_bytes(auth_raw),

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Run the disposable V4.12 successor identity gate on the external SSD.
 
-This is not an authoritative S0 run.  It uses a distinct GATE domain and a
-fresh temporary root, never reads real CRM data, and cannot authorize R3.
+This is not an authoritative S0 run.  It uses the registered R3 identity over
+a fresh temporary root, never reads real CRM data, and cannot authorize R3.
 Its only purpose is to exercise the real worker ``_process`` under the same
-private Python and deny-default Seatbelt boundary before R3 is preregistered.
+private Python and deny-default Seatbelt boundary before the R3 build.
 """
 
 from __future__ import annotations
@@ -16,6 +16,7 @@ import socket
 import subprocess
 import sys
 import tempfile
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Mapping
 
@@ -35,10 +36,6 @@ except ModuleNotFoundError:
 
 GATE_PARENT = Path("/Volumes/CATNAT_DATA/SIRETO_RECALL100")
 GATE_PREFIX = "diag-r3-successor-gate."
-GATE_RUN_DOMAIN = "SIRETO-V412-FRESH-SYNTHETIC-S0-GATE-RUN-ID\0"
-GATE_PREDECESSOR_SHA256 = hashlib.sha256(
-    b"SIRETO V4.12 DISPOSABLE SUCCESSOR GATE"
-).hexdigest()
 EMPTY_SHA256 = hashlib.sha256(b"").hexdigest()
 
 
@@ -86,14 +83,16 @@ def _write(path: Path, payload: bytes, mode: int) -> None:
 def _gate_inputs(
     plan: Mapping[str, Any], plan_raw: bytes
 ) -> tuple[str, str, dict[str, Any], dict[str, bytes]]:
-    run_values = {
-        "fixture_spec_sha256": plan["control_manifest"][
-            "fixture_spec_sha256"
-        ],
-        "core_plan_sha256": hashlib.sha256(plan_raw).hexdigest(),
-        "predecessor_receipt_sha256": GATE_PREDECESSOR_SHA256,
-    }
-    run_id = worker.core.opaque_digest(GATE_RUN_DOMAIN, run_values)
+    identity = deepcopy(worker.EXPECTED_EXECUTION_IDENTITY)
+    run_values = identity["run"]["values"]
+    if (
+        run_values["fixture_spec_sha256"]
+        != plan["control_manifest"]["fixture_spec_sha256"]
+        or run_values["core_plan_sha256"]
+        != hashlib.sha256(plan_raw).hexdigest()
+    ):
+        _stop("registered R3 identity does not bind the core")
+    run_id = identity["run"]["result"]
     csv_bytes = plan["fixture"]["csv"]["exact_utf8_text"].encode("utf-8")
     evidence_bytes = core_builder._empty_evidence_parquet(plan)
     source_payloads = core_builder._manifest_objects(
@@ -134,24 +133,9 @@ def _gate_inputs(
         ).hexdigest(),
         "logical_time_utc": control["logical_time_utc"],
     }
-    attempt_domain = plan["ids"]["attempt"]["domain"]
-    attempt_id = worker.core.opaque_digest(attempt_domain, attempt_values)
-    identity = {
-        "schema_version": worker.SUCCESSOR_IDENTITY_SCHEMA,
-        "algorithm": worker.SUCCESSOR_IDENTITY_ALGORITHM,
-        "run": {
-            "domain": GATE_RUN_DOMAIN,
-            "projection": list(worker.SUCCESSOR_RUN_PROJECTION),
-            "values": run_values,
-            "result": run_id,
-        },
-        "attempt": {
-            "domain": attempt_domain,
-            "projection": list(worker.SUCCESSOR_ATTEMPT_PROJECTION),
-            "values": attempt_values,
-            "result": attempt_id,
-        },
-    }
+    attempt_id = identity["attempt"]["result"]
+    if attempt_values != identity["attempt"]["values"]:
+        _stop("registered R3 attempt does not bind the control")
     return (
         run_id,
         attempt_id,
@@ -673,7 +657,7 @@ def run_gate() -> dict[str, Any]:
                 ),
                 "status": "STOP",
                 "worker_phase": "IDENTITY",
-                "worker_reason_code": "EXECUTION_IDENTITY_SCHEMA_INVALID",
+                "worker_reason_code": "RUN_DERIVATION_MISMATCH",
             }
             or _tree_snapshot(write_paths) != before_negative
         ):

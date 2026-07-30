@@ -157,7 +157,7 @@ def test_public_main_rejects_every_argument_without_launching(monkeypatch, capsy
 
 def test_public_main_has_fixed_authorization_path() -> None:
     assert launcher.AUTHORIZATION_RELATIVE_PATH.as_posix() == (
-        "config/v4_12_fresh_s0_launch_authorization.json"
+        "config/v4_12_fresh_s0_r3_launch_authorization.json"
     )
 
 
@@ -167,7 +167,7 @@ def test_git_head_and_plan_blob_are_read_without_child_process() -> None:
     raw = launcher._git_blob(head, launcher.PLAN_RELATIVE_PATH)
     value = json.loads(raw)
     assert value["status"] == (
-        "PREREGISTERED_R2B_DO_NOT_IMPLEMENT_UNTIL_TWO_INDEPENDENT_AUDITS"
+        "PREREGISTERED_R3_DO_NOT_IMPLEMENT_UNTIL_TWO_INDEPENDENT_AUDITS"
     )
     assert launcher._git_is_ancestor(
         "46b1958b21c2741d9922d252da9f4e81175c385c", head

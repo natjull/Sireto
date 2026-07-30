@@ -27,6 +27,7 @@ import sysconfig
 import time
 import uuid
 import zlib
+from copy import deepcopy
 from pathlib import Path
 from typing import Any, Iterable, Mapping, Sequence
 
@@ -34,19 +35,19 @@ import pyarrow as pa
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
-PLAN_PATH = REPOSITORY / "config/v4_12_fresh_s0_authoritative_run_plan.json"
+PLAN_PATH = REPOSITORY / "config/v4_12_fresh_s0_r3_plan.json"
 CORE_PLAN_PATH = (
     REPOSITORY
     / "config/v4_12_fresh_intake_synthetic_scanner_sealer_plan.json"
 )
 EXPECTED_PLAN_SHA256 = (
-    "2ab9a1d5954588c01de22c54e21c721aa0e9da9a9e7f140d9f93950cb8b1abf4"
+    "ce7f8ed4a9d6236e61cffca72b92a1043d414afc69571ae79c94f191e6def1e2"
 )
 EXPECTED_CONTRACT_SHA256 = (
-    "66418a23ae6b166f253f7ef4bc220e3a47ce0655c2ee96c7e8a9db51e0519a42"
+    "247b41f60a39211f85431d141625bf0d8321ae88c701d17ffd380a04ef7a9353"
 )
 ALLOWED_ROOT = Path(
-    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r2"
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r3"
 )
 SANDBOX_EXEC = Path("/usr/bin/sandbox-exec")
 OTOOL = Path("/usr/bin/otool")
@@ -74,17 +75,18 @@ IMPLEMENTATION_ROLE_PATHS = {
     "LOCK_SEALER": "scripts/seal_v412_fresh_intake_synthetic_execution_lock.py",
     "LAUNCHER": "scripts/launch_v412_fresh_intake_synthetic_scanner_sealer.py",
     "WORKER": "scripts/run_v412_fresh_s0_worker.py",
-    "R2_FIXTURE_BUILDER": "scripts/build_v412_fresh_s0_r2_fixture.py",
+    "R3_FIXTURE_BUILDER": "scripts/build_v412_fresh_s0_r3_fixture.py",
     "SANDBOX_PROFILE": (
         "config/v4_12_fresh_intake_synthetic_scanner_sealer.sb"
     ),
     "IMPLEMENTATION_TESTS": "tests/test_v412_fresh_s0_authoritative_run.py",
-    "R2_FIXTURE_TESTS": "tests/test_v412_fresh_s0_r2_fixture.py",
+    "R3_FIXTURE_TESTS": "tests/test_v412_fresh_s0_r3_fixture.py",
+    "R3_PLAN_TESTS": "tests/test_v412_fresh_s0_r3_plan.py",
     "AUTHORITATIVE_PLAN": (
-        "config/v4_12_fresh_s0_authoritative_run_plan.json"
+        "config/v4_12_fresh_s0_r3_plan.json"
     ),
     "AUTHORITATIVE_CONTRACT": (
-        "docs/v4_12_fresh_s0_authoritative_run_contract.md"
+        "docs/v4_12_fresh_s0_r3_contract.md"
     ),
 }
 PAYLOAD_ROLE_NAMES = {
@@ -463,16 +465,75 @@ def fd_identity(path: Path, info: os.stat_result | None = None) -> dict[str, Any
     }
 
 
+def _resolve_dotted(value: Mapping[str, Any], dotted_path: str) -> Any:
+    current: Any = value
+    for component in dotted_path.split("."):
+        if type(current) is not dict or component not in current:
+            _stop(f"R3 overlay path absent: {dotted_path}")
+        current = current[component]
+    return current
+
+
+def _overlay_parent(value: dict[str, Any], dotted_path: str) -> tuple[dict[str, Any], str]:
+    components = dotted_path.split(".")
+    if not components or any(not component for component in components):
+        _stop(f"R3 overlay path invalid: {dotted_path}")
+    current = value
+    for component in components[:-1]:
+        if type(current) is not dict or component not in current:
+            _stop(f"R3 overlay parent absent: {dotted_path}")
+        current = current[component]
+    if type(current) is not dict:
+        _stop(f"R3 overlay parent invalid: {dotted_path}")
+    return current, components[-1]
+
+
+def _materialize_r3_plan(overlay: Mapping[str, Any]) -> dict[str, Any]:
+    authority = overlay["base_authorities"][overlay["inheritance"]["base_plan_role"]]
+    base_path = REPOSITORY / authority["path"]
+    base_raw, _ = _read_regular(base_path)
+    if sha256_bytes(base_raw) != authority["sha256"]:
+        _stop("pinned R2 plan hash mismatch")
+    effective = deepcopy(parse_canonical_json(base_raw, "pinned R2 plan"))
+    removals = overlay["inheritance"]["removals"]
+    if type(removals) is not list or len(removals) != len(set(removals)):
+        _stop("R3 overlay removals invalid")
+    for target in removals:
+        parent, leaf = _overlay_parent(effective, target)
+        if leaf not in parent:
+            _stop(f"R3 overlay removal absent: {target}")
+        del parent[leaf]
+    overrides = overlay["inheritance"]["overrides"]
+    targets = [record.get("target") for record in overrides]
+    if len(targets) != len(set(targets)):
+        _stop("R3 overlay target duplicated")
+    for record in overrides:
+        if type(record) is not dict or set(record) != {"source", "target"}:
+            _stop("R3 overlay record invalid")
+        source = deepcopy(_resolve_dotted(overlay, record["source"]))
+        target = record["target"]
+        components = target.split(".")
+        if len(components) == 1:
+            parent, leaf = effective, components[0]
+        else:
+            parent, leaf = _overlay_parent(effective, target)
+        if leaf in parent and type(parent[leaf]) is not type(source):
+            _stop(f"R3 overlay type collision: {target}")
+        parent[leaf] = source
+    return effective
+
+
 def _load_plans() -> tuple[dict[str, Any], dict[str, Any]]:
-    plan_bytes, _ = _read_regular(PLAN_PATH)
-    if sha256_bytes(plan_bytes) != EXPECTED_PLAN_SHA256:
+    overlay_bytes, _ = _read_regular(PLAN_PATH)
+    if sha256_bytes(overlay_bytes) != EXPECTED_PLAN_SHA256:
         _stop("authoritative plan hash mismatch")
-    plan = parse_canonical_json(plan_bytes, "authoritative plan")
-    contract = REPOSITORY / plan["contract"]["path"]
+    overlay = parse_canonical_json(overlay_bytes, "authoritative R3 overlay")
+    plan = _materialize_r3_plan(overlay)
+    contract = REPOSITORY / overlay["contract"]["path"]
     contract_bytes, _ = _read_regular(contract)
     if (
         sha256_bytes(contract_bytes) != EXPECTED_CONTRACT_SHA256
-        or plan["contract"]["sha256"] != EXPECTED_CONTRACT_SHA256
+        or overlay["contract"]["sha256"] != EXPECTED_CONTRACT_SHA256
     ):
         _stop("authoritative contract hash mismatch")
     core_bytes, _ = _read_regular(CORE_PLAN_PATH)
@@ -593,25 +654,28 @@ def _validate_fixture(
     plan: Mapping[str, Any], core_plan: Mapping[str, Any], root: Path
 ) -> tuple[str, str, str, list[tuple[str, Path, bytes, os.stat_result]]]:
     core_plan_bytes, _ = _read_regular(CORE_PLAN_PATH)
-    r2 = plan["r2_successor"]
-    run_derivation = r2["run_derivation"]
+    execution_identity = plan["execution_identity"]
+    run_derivation = execution_identity["run"]
     run_values = {
         "fixture_spec_sha256": core_plan["control_manifest"][
             "fixture_spec_sha256"
         ],
         "core_plan_sha256": sha256_bytes(core_plan_bytes),
-        "predecessor_receipt_sha256": r2["predecessor_receipt_sha256"],
+        "predecessor_receipt_sha256": plan["predecessor"]["receipt_sha256"],
     }
     if (
         list(run_values) != run_derivation["projection"]
         or run_values != run_derivation["values"]
     ):
-        _stop("R2 run derivation authority mismatch")
+        _stop("R3 run derivation authority mismatch")
     run_id = opaque_digest(run_derivation["domain"], run_values)
-    if not OPAQUE_ID.fullmatch(run_id):
+    if (
+        not OPAQUE_ID.fullmatch(run_id)
+        or run_id != run_derivation["result"]
+    ):
         _stop("derived synthetic run id invalid")
-    if run_id == r2["predecessor_run_id"]:
-        _stop("R2 synthetic run id equals R1")
+    if run_id == plan["predecessor"]["run_id"]:
+        _stop("R3 synthetic run id equals R2")
     package = root / "inbox" / run_id / "package"
     control_path = (
         root / "control" / run_id / "fixture_control_manifest.json"
@@ -692,18 +756,25 @@ def _validate_fixture(
                 _stop(f"fixture payload run mismatch: {role}")
         payloads.append((role, path, raw, info))
     control_sha = sha256_bytes(control_bytes)
-    attempt_id = opaque_digest(
-        core_plan["ids"]["attempt"]["domain"],
-        {
-            "synthetic_run_id": run_id,
-            "fixture_control_manifest_sha256": control_sha,
-            "logical_time_utc": control["logical_time_utc"],
-        },
-    )
-    if not OPAQUE_ID.fullmatch(attempt_id):
+    attempt_derivation = execution_identity["attempt"]
+    attempt_values = {
+        "synthetic_run_id": run_id,
+        "fixture_control_manifest_sha256": control_sha,
+        "logical_time_utc": control["logical_time_utc"],
+    }
+    if (
+        list(attempt_values) != attempt_derivation["projection"]
+        or attempt_values != attempt_derivation["values"]
+    ):
+        _stop("R3 attempt derivation authority mismatch")
+    attempt_id = opaque_digest(attempt_derivation["domain"], attempt_values)
+    if (
+        not OPAQUE_ID.fullmatch(attempt_id)
+        or attempt_id != attempt_derivation["result"]
+    ):
         _stop("derived attempt id invalid")
-    if attempt_id == plan["r2_successor"]["predecessor_attempt_id"]:
-        _stop("R2 attempt id equals R1")
+    if attempt_id == plan["predecessor"]["attempt_id"]:
+        _stop("R3 attempt id equals R2")
     return run_id, attempt_id, control["logical_time_utc"], payloads
 
 
@@ -1391,7 +1462,7 @@ def _run_bounded_child(
     return return_code, bytes(buffers["stdout"]), bytes(buffers["stderr"])
 
 
-def _run_r2_smoke(
+def _run_runtime_smoke(
     plan: Mapping[str, Any],
     implementation_commit: str,
     root: Path,
@@ -1481,9 +1552,9 @@ def _run_r2_smoke(
     if python_record_sha != expected_python_sha:
         _stop("R2-B private Python hash changed before smoke")
     projection = {
-        "schema_version": (
-            "sireto-v4.12-fresh-s0-r2-smoke-attestation-2"
-        ),
+        "schema_version": plan["schema_definitions"][
+            "runtime_smoke_attestation"
+        ]["schema_version"],
         "implementation_commit": implementation_commit,
         "synthetic_run_id": run_id,
         "attempt_id": attempt_id,
@@ -1505,7 +1576,7 @@ def _run_r2_smoke(
         "five_output_directories_empty_before": empty_before,
         "five_output_directories_empty_after": empty_after,
     }
-    exact_fields = plan["schema_definitions"]["r2_smoke_attestation"][
+    exact_fields = plan["schema_definitions"]["runtime_smoke_attestation"][
         "exact_fields"
     ]
     if list(projection) != exact_fields[:-1]:
@@ -1630,7 +1701,7 @@ def seal_execution_lock(implementation_commit: str) -> dict[str, Any]:
             root,
             run_id,
         )
-        r2_smoke = _run_r2_smoke(
+        runtime_smoke = _run_runtime_smoke(
             plan,
             implementation_commit,
             root,
@@ -1677,7 +1748,7 @@ def seal_execution_lock(implementation_commit: str) -> dict[str, Any]:
             _stop("sandbox derivation token remained in execution lock")
         lock = {
             "schema_version": plan["execution_lock"]["schema_version"],
-            "purpose": "SIRETO_V412_FRESH_SYNTHETIC_S0_R2_AUTHORITATIVE_RUN",
+            "purpose": "SIRETO_V412_FRESH_SYNTHETIC_S0_R3_AUTHORITATIVE_RUN",
             "status": plan["execution_lock"]["status"],
             "implementation_commit": implementation_commit,
             "implementation_blobs": implementation,
@@ -1689,13 +1760,14 @@ def seal_execution_lock(implementation_commit: str) -> dict[str, Any]:
                 "sandbox_exec": sandbox_exec_record,
                 "private_runtime_manifest": private_manifest,
             },
-            "r2_smoke": r2_smoke,
+            "runtime_smoke": runtime_smoke,
             "read_fds": read_inputs,
             "paths": _substitute_lock_paths(
                 plan, root, run_id, attempt_id
             ),
             "sandbox": sandbox,
             "policy": plan["lock_values"]["policy"],
+            "execution_identity": plan["execution_identity"],
             "synthetic_run_id": run_id,
             "attempt_id": attempt_id,
             "logical_time_utc": logical_time,

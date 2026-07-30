@@ -23,10 +23,10 @@ sealer = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = sealer
 SPEC.loader.exec_module(sealer)
 BUILDER_SOURCE = (
-    REPOSITORY / "scripts/build_v412_fresh_s0_r2_fixture.py"
+    REPOSITORY / "scripts/build_v412_fresh_s0_r3_fixture.py"
 )
 BUILDER_SPEC = importlib.util.spec_from_file_location(
-    "v412_s0_r2_fixture_builder_for_lock_test", BUILDER_SOURCE
+    "v412_s0_r3_fixture_builder_for_lock_test", BUILDER_SOURCE
 )
 assert BUILDER_SPEC is not None and BUILDER_SPEC.loader is not None
 builder = importlib.util.module_from_spec(BUILDER_SPEC)
@@ -138,12 +138,19 @@ def test_fixture_validation_binds_control_and_all_five_payloads(
 ) -> None:
     root = tmp_path / "fixture"
     plan, core = sealer._load_plans()
-    test_plan = json.loads(json.dumps(plan))
-    test_plan["r2_successor"]["root"] = str(root)
-    test_plan_path = tmp_path / "r2-plan.json"
+    test_plan = json.loads(
+        (REPOSITORY / "config/v4_12_fresh_s0_r3_plan.json").read_bytes()
+    )
+    predecessor_source = Path(test_plan["predecessor"]["receipt_path"])
+    predecessor_copy = tmp_path / "r2-receipt.json"
+    predecessor_copy.write_bytes(predecessor_source.read_bytes())
+    test_plan["predecessor"]["receipt_path"] = str(predecessor_copy)
+    test_plan["paths"]["allowed_root"] = str(root)
+    test_plan["r3_successor"]["root"] = str(root)
+    test_plan_path = tmp_path / "r3-plan.json"
     test_plan_path.write_bytes(builder.canonical_json_bytes(test_plan))
     built = builder.build_fixture(
-        root=root, authoritative_plan_path=test_plan_path
+        root=root, plan_path=test_plan_path
     )
     run_id, attempt_id, logical_time, inputs = sealer._validate_fixture(
         plan, core, root
@@ -209,7 +216,7 @@ def test_sealer_has_no_authoritative_worker_launch() -> None:
     assert "subprocess.Popen(" in inspect.getsource(
         sealer._run_bounded_child
     )
-    smoke_source = inspect.getsource(sealer._run_r2_smoke)
+    smoke_source = inspect.getsource(sealer._run_runtime_smoke)
     assert "private_python" in smoke_source
     assert "_run_bounded_child(" in smoke_source
 

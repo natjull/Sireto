@@ -8,12 +8,13 @@ import re
 import socket
 import stat
 import struct
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
 
 from scripts import run_v412_fresh_s0_worker as worker
-from scripts import run_v412_fresh_s0_successor_gate as successor_gate
+from scripts import build_v412_fresh_intake_synthetic_fixture as core_builder
 
 
 RUN_ID = "a" * 64
@@ -32,6 +33,54 @@ def _canonical(value: object) -> bytes:
         ).encode("utf-8")
         + b"\n"
     )
+
+
+def _registered_r3_inputs() -> tuple[str, str, dict, dict[str, bytes]]:
+    plan, _plan_raw = worker._load_core_plan()
+    identity = deepcopy(worker.EXPECTED_EXECUTION_IDENTITY)
+    run_id = identity["run"]["result"]
+    csv_bytes = plan["fixture"]["csv"]["exact_utf8_text"].encode("utf-8")
+    evidence_bytes = core_builder._empty_evidence_parquet(plan)
+    source_payloads = core_builder._manifest_objects(
+        plan, run_id, csv_bytes, evidence_bytes
+    )
+    control = {
+        "schema_version": plan["control_manifest"]["schema"],
+        "synthetic_fixture": True,
+        "fixture_spec_sha256": plan["control_manifest"]["fixture_spec_sha256"],
+        "synthetic_run_id": run_id,
+        "logical_time_utc": plan["fixture"]["logical_time_utc"],
+        "batch_count": 1,
+        "expected_source_row_count": 6,
+        "producer_exclusions": [],
+        "collection_source_manifest_sha256": hashlib.sha256(
+            source_payloads["collection_source_manifest.json"]
+        ).hexdigest(),
+        "source_manifest_sha256": hashlib.sha256(
+            source_payloads["source_manifest.json"]
+        ).hexdigest(),
+        "crm_safe_csv_sha256": hashlib.sha256(
+            source_payloads["crm_safe.csv"]
+        ).hexdigest(),
+        "evidence_source_manifest_sha256": hashlib.sha256(
+            source_payloads["evidence_source_manifest.json"]
+        ).hexdigest(),
+        "evidence_source_parquet_sha256": hashlib.sha256(
+            source_payloads["evidence_source.parquet"]
+        ).hexdigest(),
+    }
+    control_raw = _canonical(control)
+    assert hashlib.sha256(control_raw).hexdigest() == (
+        identity["attempt"]["values"]["fixture_control_manifest_sha256"]
+    )
+    payloads = {
+        "CONTROL_MANIFEST": control_raw,
+        **{
+            role: source_payloads[name]
+            for role, name in worker.PAYLOAD_NAMES.items()
+        },
+    }
+    return run_id, identity["attempt"]["result"], identity, payloads
 
 
 def _identity(fd: int) -> dict[str, object]:
@@ -254,9 +303,8 @@ def test_worker_process_reuses_core_over_only_payload_and_directory_fds(
 ) -> None:
     root = tmp_path / "synthetic-root"
     root.mkdir(mode=0o700)
-    plan, plan_raw = worker._load_core_plan()
     run_id, attempt_id, execution_identity, payload_bytes = (
-        successor_gate._gate_inputs(plan, plan_raw)
+        _registered_r3_inputs()
     )
     control = json.loads(payload_bytes["CONTROL_MANIFEST"])
     locations = {
@@ -319,6 +367,7 @@ def test_main_propagates_closed_identity_failure(
         },
     }
     payloads = {role: role.encode() for role in worker.PAYLOAD_ROLES}
+    payloads["CONTROL_MANIFEST"] = b"{}\n"
     identities = {
         role: (1, 2, 3, 4, 5, 6, 1, 0o400)
         for role in worker.SOURCE_PAYLOAD_ROLES
@@ -340,6 +389,11 @@ def test_main_propagates_closed_identity_failure(
         lambda _spec: (payloads, identities),
     )
     monkeypatch.setattr(worker, "_run_canaries", lambda _run_id: [])
+    monkeypatch.setattr(
+        worker,
+        "_validate_successor_identity",
+        lambda *_args, **_kwargs: (RUN_ID, ATTEMPT_ID),
+    )
     monkeypatch.setattr(
         worker, "_write_canary_report", lambda _spec, _canaries: None
     )
@@ -388,6 +442,92 @@ def test_main_propagates_closed_identity_failure(
         "schema_version": "sireto-v4.12-fresh-s0-worker-failure-1",
         "worker_phase": "IDENTITY",
         "worker_reason_code": "SPEC_CONTROL_IDENTITY_MISMATCH",
+    }
+
+
+def test_main_rejects_nonplan_identity_before_canaries_or_output(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent, child = socket.socketpair()
+    run_id, attempt_id, identity, payloads = _registered_r3_inputs()
+    identity["run"]["domain"] = (
+        "SIRETO-V412-FRESH-SYNTHETIC-S0-NONPLAN-RUN-ID\0"
+    )
+    spec = {
+        "synthetic_run_id": run_id,
+        "attempt_id": attempt_id,
+        "logical_time_utc": "2026-07-30T00:00:00Z",
+        "execution_identity": identity,
+        "payload_fds": [
+            {"role": role, "fd_number": 20 + index}
+            for index, role in enumerate(worker.PAYLOAD_ROLES)
+        ],
+        "write_directory_fds": {
+            role: 40 + index
+            for index, role in enumerate(worker.WRITE_ROLES)
+        },
+    }
+    identities = {
+        role: (1, 2, 3, 4, 5, 6, 1, 0o400)
+        for role in worker.SOURCE_PAYLOAD_ROLES
+    }
+    forbidden: list[str] = []
+    monkeypatch.setattr(
+        worker, "_parse_cli", lambda _argv: (7, child.fileno())
+    )
+    monkeypatch.setattr(
+        worker,
+        "_read_regular_fd",
+        lambda _fd, maximum=None: _canonical(spec),
+    )
+    monkeypatch.setattr(worker, "_validate_spec", lambda *_args: None)
+    monkeypatch.setattr(worker.fcntl, "fcntl", lambda *_args: 0)
+    monkeypatch.setattr(
+        worker,
+        "_payload_snapshot",
+        lambda _spec: (payloads, identities),
+    )
+    monkeypatch.setattr(
+        worker,
+        "_run_canaries",
+        lambda _run_id: forbidden.append("canaries"),
+    )
+    monkeypatch.setattr(
+        worker,
+        "_write_canary_report",
+        lambda *_args: forbidden.append("canary_report"),
+    )
+    monkeypatch.setattr(
+        worker,
+        "_process",
+        lambda *_args, **_kwargs: forbidden.append("process"),
+    )
+    ticks = iter((0.0, 0.1))
+    monkeypatch.setattr(worker.time, "monotonic", lambda: next(ticks))
+    try:
+        assert worker.main(["worker"]) == 2
+        child.close()
+        buffer = bytearray()
+        while True:
+            chunk = parent.recv(65_536)
+            if not chunk:
+                break
+            buffer.extend(chunk)
+    finally:
+        parent.close()
+        if child.fileno() >= 0:
+            child.close()
+    frames = []
+    while buffer:
+        size = struct.unpack(">I", buffer[:4])[0]
+        frames.append(json.loads(bytes(buffer[4 : 4 + size])))
+        del buffer[: 4 + size]
+    assert forbidden == []
+    assert [frame["message_type"] for frame in frames] == ["READY", "STOP"]
+    assert frames[1]["worker_failure"] == {
+        "schema_version": worker.WORKER_FAILURE_SCHEMA,
+        "worker_phase": "IDENTITY",
+        "worker_reason_code": "RUN_DERIVATION_MISMATCH",
     }
 
 

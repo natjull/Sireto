@@ -8,6 +8,7 @@ import os
 import socket
 import stat
 import sys
+from copy import deepcopy
 from pathlib import Path
 
 import pytest
@@ -16,6 +17,8 @@ import pytest
 REPOSITORY = Path(__file__).resolve().parents[1]
 PLAN_PATH = REPOSITORY / "config/v4_12_fresh_s0_authoritative_run_plan.json"
 CONTRACT_PATH = REPOSITORY / "docs/v4_12_fresh_s0_authoritative_run_contract.md"
+R3_PLAN_PATH = REPOSITORY / "config/v4_12_fresh_s0_r3_plan.json"
+R3_CONTRACT_PATH = REPOSITORY / "docs/v4_12_fresh_s0_r3_contract.md"
 SEALER_PATH = (
     REPOSITORY
     / "scripts/seal_v412_fresh_intake_synthetic_execution_lock.py"
@@ -77,10 +80,11 @@ class _FixedResolver:
 
 
 def test_authoritative_plan_contract_and_source_roles_are_cross_pinned() -> None:
-    plan = json.loads(PLAN_PATH.read_text(encoding="utf-8"))
-    assert _sha(PLAN_PATH) == sealer.EXPECTED_PLAN_SHA256
-    assert _sha(CONTRACT_PATH) == sealer.EXPECTED_CONTRACT_SHA256
-    assert plan["contract"]["sha256"] == _sha(CONTRACT_PATH)
+    overlay = json.loads(R3_PLAN_PATH.read_text(encoding="utf-8"))
+    plan, _core = sealer._load_plans()
+    assert _sha(R3_PLAN_PATH) == sealer.EXPECTED_PLAN_SHA256
+    assert _sha(R3_CONTRACT_PATH) == sealer.EXPECTED_CONTRACT_SHA256
+    assert overlay["contract"]["sha256"] == _sha(R3_CONTRACT_PATH)
     assert tuple(sealer.IMPLEMENTATION_ROLE_PATHS) == tuple(
         plan["execution_lock"]["implementation_blob_roles"]
     )
@@ -131,8 +135,9 @@ def test_profile_real_template_renders_with_no_residual_placeholder(
 
 
 def test_launcher_worker_spec_is_accepted_by_worker(tmp_path: Path) -> None:
-    run_id = "a" * 64
-    attempt_id = "b" * 64
+    plan, _core = sealer._load_plans()
+    run_id = plan["execution_identity"]["run"]["result"]
+    attempt_id = plan["execution_identity"]["attempt"]["result"]
     volume_uuid = "00000000-0000-0000-0000-000000000001"
     payloads = []
     opened: list[int] = []
@@ -167,7 +172,7 @@ def test_launcher_worker_spec_is_accepted_by_worker(tmp_path: Path) -> None:
             "synthetic_run_id": run_id,
             "attempt_id": attempt_id,
             "logical_time_utc": "2026-07-30T00:00:00Z",
-            "execution_identity": {},
+            "execution_identity": plan["execution_identity"],
         }
         value = launcher._worker_spec(
             lock,
@@ -181,6 +186,8 @@ def test_launcher_worker_spec_is_accepted_by_worker(tmp_path: Path) -> None:
         spec_fd = os.open(spec_path, os.O_RDONLY)
         opened.append(spec_fd)
         worker._validate_spec(value, spec_fd, child.fileno())
+        assert value["execution_identity"] == plan["execution_identity"]
+        assert value["execution_identity"] == worker.EXPECTED_EXECUTION_IDENTITY
     finally:
         parent.close()
         child.close()
@@ -225,18 +232,10 @@ def test_worker_control_messages_are_accepted_by_launcher() -> None:
 
 def _successor_gate_case(root: Path) -> tuple[dict, dict, dict[str, bytes]]:
     plan, plan_raw = worker._load_core_plan()
-    predecessor_sha = hashlib.sha256(
-        b"SIRETO V4.12 DISPOSABLE SUCCESSOR GATE"
-    ).hexdigest()
-    run_values = {
-        "fixture_spec_sha256": plan["control_manifest"][
-            "fixture_spec_sha256"
-        ],
-        "core_plan_sha256": hashlib.sha256(plan_raw).hexdigest(),
-        "predecessor_receipt_sha256": predecessor_sha,
-    }
-    run_domain = "SIRETO-V412-FRESH-SYNTHETIC-S0-GATE-RUN-ID\0"
-    run_id = worker.core.opaque_digest(run_domain, run_values)
+    expected_identity = deepcopy(worker.EXPECTED_EXECUTION_IDENTITY)
+    run_values = expected_identity["run"]["values"]
+    run_domain = expected_identity["run"]["domain"]
+    run_id = expected_identity["run"]["result"]
     csv_bytes = plan["fixture"]["csv"]["exact_utf8_text"].encode("utf-8")
     evidence_bytes = core_builder._empty_evidence_parquet(plan)
     source_payloads = core_builder._manifest_objects(
@@ -277,7 +276,7 @@ def _successor_gate_case(root: Path) -> tuple[dict, dict, dict[str, bytes]]:
         ).hexdigest(),
         "logical_time_utc": control["logical_time_utc"],
     }
-    attempt_domain = plan["ids"]["attempt"]["domain"]
+    attempt_domain = expected_identity["attempt"]["domain"]
     attempt_id = worker.core.opaque_digest(attempt_domain, attempt_values)
     identity = {
         "schema_version": worker.SUCCESSOR_IDENTITY_SCHEMA,
@@ -295,6 +294,7 @@ def _successor_gate_case(root: Path) -> tuple[dict, dict, dict[str, bytes]]:
             "result": attempt_id,
         },
     }
+    assert identity == expected_identity
     spec = {
         "synthetic_run_id": run_id,
         "attempt_id": attempt_id,
@@ -408,7 +408,7 @@ def test_successor_identity_drives_real_process_and_rejects_r1(
             os.close(fd)
     assert caught.value.worker_phase == "IDENTITY"
     assert caught.value.worker_reason_code == (
-        "EXECUTION_IDENTITY_SCHEMA_INVALID"
+        "RUN_DERIVATION_MISMATCH"
     )
     for role in ("sealed", "scan", "quarantine", "tmp"):
         assert list(
@@ -424,6 +424,8 @@ def test_successor_identity_mutations_stop_before_output(
         ("RUN_RESULT", "RUN_DERIVATION_MISMATCH"),
         ("ATTEMPT_RESULT", "ATTEMPT_DERIVATION_MISMATCH"),
         ("ATTEMPT_CONTROL_HASH", "ATTEMPT_DERIVATION_MISMATCH"),
+        ("CONTROL_RUN", "ATTEMPT_DERIVATION_MISMATCH"),
+        ("CONTROL_TIME", "ATTEMPT_DERIVATION_MISMATCH"),
         ("SPEC_RUN", "SPEC_CONTROL_IDENTITY_MISMATCH"),
     )
     for index, (mutation, expected_reason) in enumerate(cases):
@@ -440,11 +442,18 @@ def test_successor_identity_mutations_stop_before_output(
             identity["attempt"]["values"][
                 "fixture_control_manifest_sha256"
             ] = "a" * 64
+        elif mutation in {"CONTROL_RUN", "CONTROL_TIME"}:
+            control = json.loads(payloads["CONTROL_MANIFEST"])
+            if mutation == "CONTROL_RUN":
+                control["synthetic_run_id"] = "a" * 64
+            else:
+                control["logical_time_utc"] = "2026-07-31T00:00:00Z"
+            payloads["CONTROL_MANIFEST"] = worker._canonical_json(
+                control, final_lf=True
+            )
         elif mutation == "SPEC_RUN":
             spec["synthetic_run_id"] = "a" * 64
-        original_run = json.loads(
-            payloads["CONTROL_MANIFEST"]
-        )["synthetic_run_id"]
+        original_run = worker.EXPECTED_EXECUTION_IDENTITY["run"]["result"]
         write_fds, opened = _gate_write_fds(root, original_run)
         spec["write_directory_fds"] = write_fds
         try:
@@ -458,8 +467,12 @@ def test_successor_identity_mutations_stop_before_output(
         finally:
             for fd in reversed(opened):
                 os.close(fd)
-        assert caught.value.worker_phase == "IDENTITY"
-        assert caught.value.worker_reason_code == expected_reason
+        assert caught.value.worker_phase == "IDENTITY", (
+            mutation,
+            str(caught.value),
+            caught.value.worker_reason_code,
+        )
+        assert caught.value.worker_reason_code == expected_reason, mutation
         for role in ("sealed", "scan", "quarantine", "tmp"):
             assert list((root / role / original_run).iterdir()) == []
 
@@ -604,16 +617,17 @@ def test_r2b_profile_transport_is_p_text_and_never_passes_profile_fd() -> None:
     assert '"-p",' in source
     assert 'f"/dev/fd/{profile_authority.fd}"' not in source
     assert "pass_fds.append(profile_authority.fd)" not in source
-    assert "SIRETO_V412_FRESH_SYNTHETIC_S0_R2_AUTHORITATIVE_RUN" in (
+    assert "SIRETO_V412_FRESH_SYNTHETIC_S0_R3_AUTHORITATIVE_RUN" in (
         lock_source
     )
-    assert launcher.LOCK_FIELDS[7] == "r2_smoke"
+    assert launcher.LOCK_FIELDS[7] == "runtime_smoke"
+    assert "execution_identity" in launcher.LOCK_FIELDS
 
 
 def test_r2b_smoke_attestation_is_fully_reconstructed_and_fail_closed(
     tmp_path: Path,
 ) -> None:
-    plan = json.loads(PLAN_PATH.read_text(encoding="utf-8"))
+    plan, _core = sealer._load_plans()
     lock = _minimal_r2b_lock(plan)
     lock.pop("_runtime_root_for_test")
     profile_raw = b"(version 1)\n(deny default)\n"
@@ -639,13 +653,21 @@ def test_r2b_smoke_attestation_is_fully_reconstructed_and_fail_closed(
             "-c",
             launcher._private_import_assertion(lock, plan),
         ]
-        required = plan["r2_successor"]["smoke_attestation"][
-            "required_result"
-        ]
+        empty_sha = hashlib.sha256(b"").hexdigest()
+        required = {
+            "exit_code": 0,
+            "signal": None,
+            "stdout_size_bytes": 0,
+            "stdout_sha256": empty_sha,
+            "stderr_size_bytes": 0,
+            "stderr_sha256": empty_sha,
+            "five_output_directories_empty_before": True,
+            "five_output_directories_empty_after": True,
+        }
         smoke = {
-            "schema_version": (
-                "sireto-v4.12-fresh-s0-r2-smoke-attestation-2"
-            ),
+            "schema_version": plan["schema_definitions"][
+                "runtime_smoke_attestation"
+            ]["schema_version"],
             "implementation_commit": lock["implementation_commit"],
             "synthetic_run_id": lock["synthetic_run_id"],
             "attempt_id": lock["attempt_id"],
@@ -662,19 +684,19 @@ def test_r2b_smoke_attestation_is_fully_reconstructed_and_fail_closed(
             "pass_fds": [],
             **required,
         }
-        fields = plan["schema_definitions"]["r2_smoke_attestation"][
+        fields = plan["schema_definitions"]["runtime_smoke_attestation"][
             "exact_fields"
         ]
         projection = {key: smoke[key] for key in fields if key != "smoke_sha256"}
         smoke["smoke_sha256"] = hashlib.sha256(
             launcher.canonical_json(projection, final_lf=False)
         ).hexdigest()
-        lock["r2_smoke"] = smoke
-        launcher._validate_r2_smoke(lock, plan, authority)
+        lock["runtime_smoke"] = smoke
+        launcher._validate_runtime_smoke(lock, plan, authority)
 
-        lock["r2_smoke"]["pass_fds"] = [profile_fd]
+        lock["runtime_smoke"]["pass_fds"] = [profile_fd]
         with pytest.raises(launcher.LauncherStop, match="smoke authority"):
-            launcher._validate_r2_smoke(lock, plan, authority)
+            launcher._validate_runtime_smoke(lock, plan, authority)
     finally:
         os.close(profile_fd)
 

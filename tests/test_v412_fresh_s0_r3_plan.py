@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import subprocess
 from copy import deepcopy
 from pathlib import Path
 
@@ -216,7 +217,17 @@ def test_r3_schema_chain_is_closed_and_root_is_absent() -> None:
 def test_r3_baseline_blobs_match_the_gate_commit_state() -> None:
     plan = _plan()
     for record in plan["implementation_baseline"]["artifacts"].values():
-        assert _sha(REPOSITORY / record["path"]) == record["sha256"]
+        result = subprocess.run(
+            [
+                "git",
+                "show",
+                f"{plan['implementation_baseline']['commit']}:{record['path']}",
+            ],
+            cwd=REPOSITORY,
+            check=True,
+            capture_output=True,
+        )
+        assert hashlib.sha256(result.stdout).hexdigest() == record["sha256"]
     assert plan["implementation_baseline"]["full_suite_passed"] == 1095
     audit = plan["required_implementation_gate"]["audit_binding"]
     assert audit["independent_audits_required"] == 2
