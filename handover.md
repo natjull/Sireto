@@ -117,6 +117,16 @@ suite locale complète donne `1210 passed` (le warning `fork` observé lors du
 premier essai a été supprimé par le passage à `spawn`). Aucun Keychain réel.
 *(commit GitHub : convergence multiprocessus `ad74b4e`)*.
 
+Le sealer du lock d'exécution est implémenté mais n'a pas encore été lancé.
+Il épingle le commit `ad74b4e` contenant à la fois le provisioner certifié et
+la preuve multiprocessus, vérifie les blobs de ce commit, les hashes
+plan/contrat/code/tests, le runtime exact, la politique Keychain, l'UID, le
+device et l'UUID du volume. L'écriture future est privée, exclusive, durable
+et non-clobbering. Ses 4 tests et la suite locale `1214 passed` sont verts.
+Le sealer doit maintenant être audité avant toute matérialisation du lock ;
+lock, autorisation, claim et root réel restent absents.
+*(commit GitHub : sealer du lock producteur `8ca9c39`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
