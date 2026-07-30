@@ -91,6 +91,17 @@ Keychain réel ni création sous `/Volumes` n'a eu lieu ; le commit reste soumis
 à deux audits et à un pré-vol lecture seule avant toute autorisation.
 *(commit GitHub : backend Data Protection natif `7d40c85`)*.
 
+Le premier audit du backend rend `NO_GO` uniquement parce que les tests
+simulaient l'API après le pont ctypes. Deux faux frameworks CF/Security
+exercent maintenant le pont complet : ABI, résolution fermée des constantes,
+neuf clés exactes de chaque dictionnaire, conversions booléen/chaîne/data/
+symbole, projection du CFDictionary et libérations sur succès, not-found,
+erreur, champ manquant et add en erreur. La graine intermédiaire est mutable
+et remise à zéro sur les sorties d'erreur et après add. Les 50 tests du
+provisioner et la suite locale `1209 passed` sont verts, sans appel Keychain
+réel. Nouveau double audit requis avant lock.
+*(commit GitHub : tests complets du pont CoreFoundation `2ed1ba8`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
