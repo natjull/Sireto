@@ -55,6 +55,17 @@ aucun CRM réel ni run autoritaire ne peut être ouvert avant le sandbox, le
 launcher, le verrou et le control manifest pinnés.
 *(commit GitHub : `50333d3`)*.
 
+Le cœur S0 est désormais implémenté et contre-audité
+**`GO_CORE_PRELOCK`**. Le producteur déterministe et le scanner test-only
+ferment la stabilité sur FDs, les arbres et receipts scellés, les
+quarantaines, le journal et sa reprise, les bindings de provenance et les
+sorties Parquet. La matrice défensive compte 62/62 tests verts sur le SSD ;
+elle couvre aussi les métadonnées applicatives, liens, ancêtres de chemins,
+reçus partiels ou concurrents et dates impossibles. Toute invocation hors du
+répertoire pytest dédié reste refusée : le prochain geste est exclusivement
+la matérialisation puis l'audit du sandbox, du launcher et du verrou.
+*(commit GitHub : `38287c1`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
