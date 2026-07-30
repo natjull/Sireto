@@ -66,6 +66,19 @@ répertoire pytest dédié reste refusée : le prochain geste est exclusivement
 la matérialisation puis l'audit du sandbox, du launcher et du verrou.
 *(commit GitHub : `38287c1`)*.
 
+Le contrat autoritatif du lancement S0 franchit désormais
+**`GO_IMPLEMENTATION`** après trois cycles de contre-audit. Il ferme un worker
+FD-only distinct du core, le runtime Python/PyArrow privé, la sandbox
+`deny default`, les autorités parent/worker disjointes, le protocole de
+contrôle, l'automate lease puis claim anti-rejeu, les canaris synthétiques et
+la cohérence complète résultat/exit/receipt. Le plan canonique a pour hash
+`64a52729d28618ee71c6741448c7e6946bc63435a3d5e81d73691c3e903775a4`
+et épingle le contrat
+`88a79caf6019f73e68260451e4b1d894f0f658ac90d12ded18f57f5cce28d5f5`.
+Ce GO autorise seulement l'implémentation du launcher, du worker, du sealer et
+du profil ; aucun run, fixture nouvelle ou CRM réel n'a été ouvert.
+*(commit GitHub : `46b1958`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
