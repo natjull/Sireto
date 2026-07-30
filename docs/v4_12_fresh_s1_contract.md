@@ -78,16 +78,29 @@ Le verrou statique S1 épingle byte-for-byte :
 Il est interdit de résoudre un chemin `latest`. Toute dérive de hash, de
 schéma, de type, de nullabilité, de rôle FD ou d’identité produit `STOP`.
 
-Le catalogue source ferme les producteurs et clés de signature autorisés, les
-couples `source_system/portfolio_id`, les schémas exacts, les versions, la
-sémantique `source_record_id`, la preuve de lignée et la règle
+Chaque catalogue est composé de deux fichiers distincts. Le payload canonique
+contient les règles, les chemins et hashes des configurations/snapshots, mais
+jamais son propre hash. Un seal canonique séparé contient exactement
+`schema_version`, `catalog_id`, `payload_size_bytes` et le SHA-256 des octets
+exacts du payload. Cette convention non autoréférentielle est obligatoire.
+
+Le payload du catalogue source ferme les producteurs et clés de signature
+autorisés, les couples `source_system/portfolio_id`, les schémas exacts, les
+versions, la sémantique `source_record_id`, la preuve de lignée et la règle
 `FIRST_COMPLETE_ADMISSIBLE_COLLECTION`.
 
-Le catalogue de preuves ferme les types de preuve, codes de provenance,
-priorités, temporalité, snapshots et hashes, schémas d’entrée/oracle,
-builder, tests, runtime et configuration. Les snapshots fixes peuvent être
-vides ; dans ce cas seul le paquet de preuve producteur signé peut créer une
-vérité.
+Le payload du catalogue de preuves ferme les types de preuve, codes de
+provenance, priorités, temporalité, snapshots et hashes, schémas
+d’entrée/oracle, builder, tests, runtime et configuration. Les snapshots fixes
+peuvent être vides ; dans ce cas seul le paquet de preuve producteur signé
+peut créer une vérité.
+
+Les manifests collection, source et evidence contiennent `producer_key_id` et
+sont signés en Ed25519 par l’unique clé active correspondant au couple
+producteur/clé dans le catalogue source. La signature est le
+Base64 RFC 4648 canonique des octets canoniques du manifeste dont seul
+`producer_signature` est exclu. Une clé inconnue, révoquée ou une signature
+invalide produit `STOP`.
 
 ## 5. Verrous, identité et one-shot
 
@@ -105,24 +118,49 @@ catalogue source et de la séquence d’arrivée exclusive. `attempt_id` est
 dérivé du verrou statique, du verrou de collection et du temps logique
 annoncé. Les domaines et projections sont fermés par le plan.
 
+La séquence d’arrivée est allouée sous mutex sur le répertoire ancré et
+produit un enregistrement monotone `O_EXCL` qui ferme chemins et hashes de
+tous les manifests. Le mutex est conservé jusqu’au `F_FULLFSYNC` du claim :
+la plus petite séquence durable gagne sans course entre allocation et claim.
+Cet enregistrement constitue l’autorité de reprise avant payload sans
+reparcourir une inbox non receipted. Claim, receipt, lock dynamique, marqueur,
+checkpoints, événements, manifests d’événements, seals et receipts terminaux
+suivent tous : octets canoniques dans un fichier `O_EXCL`, `fsync`,
+`F_FULLFSYNC`, synchronisation du répertoire parent, vérification par FD
+ancré, puis seulement transition suivante. Un marqueur exclusif
+`PAYLOAD_OPEN_POSSIBLE` est écrit avant le premier FD de payload. Le lock
+dynamique exclut son propre hash et `attempt_id` de sa projection ; son temps
+logique vient du manifeste collection signé.
+
 Un claim sans receipt après ouverture potentielle produit
 `STOP_NO_RERUN`. Avec receipts et checkpoints valides, la reprise conserve le
 même attempt et repart uniquement des arbres scellés, jamais de l’inbox. Un
 receipt terminal rend tout lancement ultérieur idempotent et interdit un
 nouveau worker.
 
+L’automate exact est :
+`UNCLAIMED → MANIFESTS_CLAIMED → ARRIVAL_RECEIPTED →
+COLLECTION_LOCKED → PAYLOAD_OPEN_POSSIBLE → QUERY_SEALED →
+EVIDENCE_QUALIFIED → FINALIZED → READY|PIVOT`, avec `STOP` depuis tout état
+non terminal. La reprise suit receipts, dernier manifeste d’événements
+complet, puis checkpoints.
+
 ## 6. Schémas et diagnostics
 
 Les manifests collection, source et evidence utilisent des ensembles exacts
-de champs, types et nullabilités définis par le plan ; aucun champ
-supplémentaire n’est admis. `v411_service_id_equivalence_attested` est un
-booléen exact. Une valeur vraie exige une référence de lignée non vide et
-vérifiable ; une valeur fausse termine `STOP_UNPROVABLE_LINEAGE`.
+de champs, types et nullabilités définis par le plan : chaque champ possède
+exactement un type et aucun champ supplémentaire n’est admis. Les contraintes
+croisées définissent aussi le paquet evidence absent. Le champ
+`v411_service_id_equivalence_attested` est un booléen exact. Une valeur vraie
+exige une référence de lignée non vide et vérifiable ; une valeur fausse
+termine `STOP_UNPROVABLE_LINEAGE`.
 
 Les diagnostics publics sont limités à `phase` et `reason_code` dans des
-énumérations fermées. stdout et stderr des workers sont vides sur succès et
-bornés sur échec. Aucun nom, adresse, SIRET, SIREN, `source_record_id`, chemin
-privé, traceback ou représentation d’exception ne peut être journalisé.
+énumérations fermées. Sur échec, un seul JSON canonique de 512 octets maximum
+est admis ; exit code, signal et présence du diagnostic suivent la matrice
+fermée du plan. stdout et stderr sont vides sur succès. Aucun nom, adresse,
+SIRET, SIREN, `source_record_id`, chemin privé, traceback ou représentation
+d’exception ne peut être journalisé.
 
 Tous les outputs privés sont `0700/0600` sous `umask 0077`. Les requêtes
 scorer ne contiennent que les IDs opaques, la date et les champs CRM utiles ;
@@ -153,8 +191,12 @@ doit couvrir :
   E ;
 - arbres séparés queries/evidence/oracle/audit, permissions et diagnostics.
 
-La suite complète doit être verte et deux audits indépendants doivent rendre
-`GO_S1_IMPLEMENTATION` sur le même commit et les mêmes hashes.
+Deux gates sont distincts. Deux audits du présent préenregistrement rendent
+`GO_S1_IMPLEMENTATION` et n’autorisent que les catalogues et l’implémentation
+synthétique. Après la suite complète et le gate multi-batch, deux nouveaux
+audits doivent rendre `GO_S1_REAL_CRM_OPEN` sur les mêmes code, catalogues,
+runtimes, profils et hashes. Seul ce second verdict autorise le verrou puis
+l’autorisation one-shot réels.
 
 ## 8. Gates métier
 
@@ -175,6 +217,22 @@ plafond absolu de 100 candidats. La vérité absente du pool compte comme miss.
 Les métriques historique, V2, V3 et holdout frais sont publiées ensemble.
 Recall SIRET exact observé à 100 doit atteindre 99,0 % pour `GO`; le ranker et
 l’accepteur restent gelés jusqu’à ce gate.
+
+Avant toute ouverture des requêtes, un scoring freeze scelle build, commit,
+sources, plan, lock, runtime, inputs et politique du retrieval, ainsi que les
+références historique/V2/V3. Le scorer crée `OPENING.json` avec `O_EXCL`, puis
+un événement `SCORING_OPEN_COMMITTED`, avant le premier FD query. Il ne reçoit
+ni oracle, ni evidence, ni bridge, ni ranker/decider/risk/accepteur. Résultats
+et candidats sont scellés avant `ORACLE_OPEN_COMMITTED`; l’évaluateur seul
+ouvre ensuite l’oracle. Une reprise rattache des résultats scellés et
+n’exécute jamais un second scoring.
+
+Les événements d’évaluation sont des JSON canoniques `O_EXCL`, nommés par leur
+SHA-256, chaînés par `previous_event_sha256` et durablement synchronisés. Un
+receipt terminal ferme opening, manifeste d’événements, seals résultats,
+candidats et métriques. Un crash avant le scellement des résultats produit
+`STOP_NO_RESCORING`; après scellement, seuls les résultats peuvent être
+rattachés et les métriques recalculées.
 
 ## 9. Séquence autorisée
 

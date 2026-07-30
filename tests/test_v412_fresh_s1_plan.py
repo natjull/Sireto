@@ -117,20 +117,34 @@ def test_s1_worker_boundaries_keep_query_and_truth_physically_separate() -> None
 
 def test_s1_catalogs_are_required_before_any_real_crm_open() -> None:
     plan = _plan()
-    required_catalog_fields = {
+    required_payload_fields = {
         "schema_version",
         "catalog_id",
         "builder_commit",
         "tests_sha256",
         "runtime",
+        "config_path",
         "config_sha256",
-        "manifest_sha256",
     }
     for catalog in plan["catalogs"].values():
         assert catalog["status"] == (
             "MUST_BE_BUILT_SEALED_AND_PINNED_BEFORE_REAL_CRM_OPEN"
         )
-        assert required_catalog_fields <= set(catalog["exact_fields"])
+        assert required_payload_fields <= set(catalog["payload_exact_fields"])
+        assert catalog["seal_exact_fields"] == [
+            "schema_version",
+            "catalog_id",
+            "payload_size_bytes",
+            "payload_sha256",
+        ]
+        assert catalog["seal_projection"] == (
+            "SHA256_OF_EXACT_CANONICAL_PAYLOAD_BYTES_NO_SELF_REFERENCE"
+        )
+        assert catalog["future_payload_path"] != catalog["future_seal_path"]
+        assert catalog["future_config_path"] not in {
+            catalog["future_payload_path"],
+            catalog["future_seal_path"],
+        }
     evidence = plan["catalogs"]["evidence"]
     assert evidence["similarity_can_create_truth"] is False
     assert evidence["truth_creators"] == [
@@ -147,12 +161,15 @@ def test_s1_manifests_have_closed_fields_types_and_nullability() -> None:
         if not isinstance(schema, dict):
             continue
         assert set(schema["nullable"]) <= set(schema["fields"])
-        assert set(schema["types"]) <= set(schema["fields"])
+        assert set(schema["types"]) == set(schema["fields"])
     source = schemas["source_manifest"]
     assert source["types"]["v411_service_id_equivalence_attested"] == (
         "boolean_exact"
     )
     assert source["types"]["lineage_attestation_reference"] == "string_nonempty"
+    for name in ("collection_manifest", "source_manifest", "evidence_manifest"):
+        assert "producer_key_id" in schemas[name]["fields"]
+        assert schemas[name]["types"]["producer_key_id"] == "string_nonempty"
 
 
 def test_s1_admission_claims_before_payload_and_is_one_shot() -> None:
@@ -169,12 +186,80 @@ def test_s1_admission_claims_before_payload_and_is_one_shot() -> None:
     assert one_shot["claim_without_receipt_after_possible_open"] == (
         "STOP_NO_RERUN"
     )
-    assert one_shot["recovery_source"] == "SEALED_TREES_ONLY_NEVER_INBOX"
+    assert one_shot["recovery_source"] == (
+        "ARRIVAL_SEQUENCE_MANIFEST_RECEIPT_THEN_SEALED_TREES_NEVER_UNRECEIPTED_INBOX"
+    )
     assert one_shot["second_collection_allowed"] is False
+    signature = plan["signature_protocol"]
+    assert signature["algorithm"] == "ED25519"
+    assert signature["signed_projection"].endswith(
+        "EXCLUDING_ONLY_PRODUCER_SIGNATURE"
+    )
+    protocol = plan["admission_protocol"]
+    assert protocol["global_claim"]["create"] == "O_EXCL"
+    assert protocol["payload_open_marker"]["create"] == (
+        "O_EXCL_IMMEDIATELY_BEFORE_FIRST_PAYLOAD_FD"
+    )
+    assert protocol["dynamic_collection_lock"]["identity_projection_excludes"] == [
+        "dynamic_collection_lock_sha256",
+        "attempt_id",
+    ]
+    assert protocol["terminal_receipt"]["existing_valid_receipt"] == (
+        "RETURN_IDEMPOTENTLY_WITHOUT_SPAWN_OR_OPEN"
+    )
+    assert protocol["state_machine"]["second_spawn_or_payload_open_after_terminal"] == (
+        "STOP"
+    )
+    for schema_name in (
+        "global_claim",
+        "arrival_receipt",
+        "dynamic_collection_lock",
+        "payload_open_marker",
+        "terminal_receipt",
+    ):
+        schema = protocol[schema_name]
+        assert set(schema["types"]) == set(schema["exact_fields"])
+        assert set(schema["nullable"]) <= set(schema["exact_fields"])
+    arrival = plan["arrival_authority"]
+    assert set(arrival["record_types"]) == set(arrival["record_exact_fields"])
+    assert set(arrival["record_nullable"]) <= set(arrival["record_exact_fields"])
+    assert "collection_manifest_path" in arrival["record_exact_fields"]
+    assert {
+        "ordered_source_manifest_paths",
+        "ordered_source_manifest_hashes",
+        "ordered_evidence_manifest_paths",
+        "ordered_evidence_manifest_hashes",
+    } <= set(arrival["record_exact_fields"])
+    assert protocol["durable_order"][-1] == "OPEN_FIRST_PAYLOAD_FD"
+    for name in (
+        "global_claim",
+        "arrival_receipt",
+        "dynamic_collection_lock",
+        "payload_open_marker",
+        "terminal_receipt",
+    ):
+        assert "FSYNC" in protocol[name]["durability"]
+    durability = plan["durability_protocol"]
+    assert durability["transition_before_completion"] is False
+    assert durability["write_order"][-1] == (
+        "ONLY_THEN_NEXT_STATE_OR_PAYLOAD_OPEN"
+    )
+    assert {
+        "PAYLOAD_OPEN_MARKER",
+        "CHECKPOINT",
+        "EVENT_MANIFEST",
+        "TERMINAL_RECEIPT",
+        "EVALUATION_OPENING",
+    } <= set(durability["applies_to"])
 
 
 def test_s1_gate_is_synthetic_exhaustive_and_blocks_real_crm() -> None:
-    gate = _plan()["required_gate"]
+    plan = _plan()
+    prereg = plan["preregistration_gate"]
+    assert prereg["required_verdict"] == "GO_S1_IMPLEMENTATION"
+    assert prereg["authorizes"] == "CATALOG_AND_SYNTHETIC_IMPLEMENTATION_ONLY"
+    assert prereg["real_crm_open"] is False
+    gate = plan["real_open_gate"]
     assert gate["fixture"]["batch_count_minimum"] >= 3
     assert gate["fixture"]["portfolio_count_minimum"] >= 2
     assert gate["fixture"]["rows_minimum"] > gate["fixture"]["late_error_after_row"]
@@ -188,7 +273,9 @@ def test_s1_gate_is_synthetic_exhaustive_and_blocks_real_crm() -> None:
         "READY_AND_ONE_SHOT",
     ]
     assert gate["independent_audits_required"] == 2
-    assert gate["required_verdict"] == "GO_S1_IMPLEMENTATION"
+    assert gate["required_verdict"] == "GO_S1_REAL_CRM_OPEN"
+    assert gate["no_second_open_or_spawn_proof"] is True
+    assert "AFTER_TERMINAL_RECEIPT" in gate["crash_points"]
     assert gate["real_crm_open_before_gate"] is False
 
 
@@ -210,6 +297,66 @@ def test_s1_north_star_and_model_freeze_are_preserved() -> None:
         | set(plan["boundaries"]["worker_e"]["forbidden"])
     )
     assert {"RETRIEVAL", "MODEL"} <= forbidden
+    assert _plan()["scoring_freeze"][
+        "model_components_frozen_until_retrieval_gate"
+    ] == ["RANKER", "DECIDER", "RISK_MODEL", "ACCEPTEUR"]
+
+
+def test_s1_retrieval_evaluation_is_frozen_and_one_shot() -> None:
+    plan = _plan()
+    evaluation = plan["evaluation_one_shot"]
+    assert evaluation["opening"]["create"] == "O_EXCL_BEFORE_ANY_QUERY_OPEN"
+    assert evaluation["opening"]["second_create"] == "STOP_NO_RESCORING"
+    assert evaluation["events"] == [
+        "SCORING_OPEN_COMMITTED_BEFORE_QUERY_FD",
+        "RESULTS_SEALED_BEFORE_ORACLE_EVENT",
+        "ORACLE_OPEN_COMMITTED_BEFORE_ORACLE_FD",
+        "EVALUATION_RECEIPTED",
+    ]
+    assert evaluation["recovery"] == (
+        "REATTACH_SEALED_RESULTS_ONLY_NEVER_RESCORING"
+    )
+    assert evaluation["candidate_maximum_absolute"] == 100
+    assert {
+        "RANKER",
+        "DECIDER",
+        "RISK_MODEL",
+        "ACCEPTEUR",
+    } <= set(evaluation["scorer_forbidden"])
+    for name in ("event_protocol", "evaluation_receipt"):
+        schema = evaluation[name]
+        assert set(schema["types"]) == set(schema["exact_fields"])
+        assert set(schema["nullable"]) <= set(schema["exact_fields"])
+    assert evaluation["event_protocol"][
+        "filename_hash_must_equal_exact_bytes"
+    ] is True
+    assert evaluation["crash_matrix"][
+        "AFTER_OPENING_BEFORE_SCORING_EVENT"
+    ] == "STOP_NO_RESCORING"
+    freeze = plan["scoring_freeze"]
+    assert freeze["created_and_sealed_before_ready"] is True
+    assert {
+        "retrieval_git_commit",
+        "retrieval_plan_sha256",
+        "retrieval_static_lock_sha256",
+        "retrieval_runtime_closure_sha256",
+        "retrieval_input_hashes",
+        "retrieval_policy_sha256",
+    } <= set(freeze["required_pins"])
+
+
+def test_s1_diagnostics_are_closed_and_bounded() -> None:
+    diagnostics = _plan()["diagnostics"]
+    assert diagnostics["maximum_bytes"] == 512
+    assert diagnostics["public_fields"] == ["phase", "reason_code"]
+    assert diagnostics["phases"]
+    assert diagnostics["reason_codes"]
+    assert diagnostics["exit_matrix"]["SUCCESS"] == {
+        "exit_code": 0,
+        "signal": None,
+        "diagnostic": None,
+    }
+    assert diagnostics["exit_matrix"]["CONTROLLED_STOP"]["exit_code"] == 2
 
 
 def test_s1_real_roots_remain_unopened_at_preregistration() -> None:
