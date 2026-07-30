@@ -1327,6 +1327,7 @@ def _run_bounded_child(
     *,
     timeout_seconds: float,
     capture_limit_bytes_each: int,
+    pass_fds: Sequence[int] = (),
 ) -> tuple[int, bytes, bytes]:
     process = subprocess.Popen(
         list(argv),
@@ -1334,6 +1335,7 @@ def _run_bounded_child(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         close_fds=True,
+        pass_fds=tuple(pass_fds),
         env=dict(environment),
     )
     if process.stdout is None or process.stderr is None:

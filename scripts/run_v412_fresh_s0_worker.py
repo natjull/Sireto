@@ -41,11 +41,27 @@ CORE_CONTRACT_SHA256 = (
 CORE_TESTS_SHA256 = (
     "b43309bbccbc37fced14c1b731956bad372c35c09d243b23df1d8efb9a6f72e1"
 )
-WORKER_SPEC_SCHEMA = "sireto-v4.12-fresh-s0-worker-spec-1"
+WORKER_SPEC_SCHEMA = "sireto-v4.12-fresh-s0-worker-spec-2"
 CONTROL_READY_SCHEMA = "sireto-v4.12-fresh-s0-control-ready-1"
-CONTROL_RESULT_SCHEMA = "sireto-v4.12-fresh-s0-control-result-1"
+CONTROL_RESULT_SCHEMA = "sireto-v4.12-fresh-s0-control-result-2"
+WORKER_FAILURE_SCHEMA = "sireto-v4.12-fresh-s0-worker-failure-1"
 CANARY_REPORT_SCHEMA = "sireto-v4.12-fresh-s0-canary-proof-1"
 CONTROL_PROTOCOL = "CANONICAL_LENGTH_PREFIXED_JSON_V1"
+SUCCESSOR_IDENTITY_SCHEMA = "sireto-v4.12-fresh-s0-successor-identity-1"
+SUCCESSOR_IDENTITY_ALGORITHM = (
+    "SHA256_DOMAIN_UTF8_CONCAT_CANONICAL_JSON_SORT_KEYS_COMPACT_UTF8_NO_LF_"
+    "THEN_MAP_HEX_NIBBLES_0_TO_F_TO_ASCII_A_TO_P"
+)
+SUCCESSOR_RUN_PROJECTION = (
+    "fixture_spec_sha256",
+    "core_plan_sha256",
+    "predecessor_receipt_sha256",
+)
+SUCCESSOR_ATTEMPT_PROJECTION = (
+    "synthetic_run_id",
+    "fixture_control_manifest_sha256",
+    "logical_time_utc",
+)
 MAX_SPEC_BYTES = 1024 * 1024
 MAX_FRAME_BYTES = 65536
 PAYLOAD_ROLES = (
@@ -84,13 +100,32 @@ OPAQUE_SPEC = {
     }
 }
 
-
 class WorkerStop(RuntimeError):
     """Controlled, fail-closed worker termination."""
 
+    def __init__(
+        self,
+        message: str,
+        *,
+        worker_phase: str = "WORKER_RUNTIME",
+        worker_reason_code: str = "INTERNAL_ERROR",
+    ):
+        super().__init__(message)
+        self.worker_phase = worker_phase
+        self.worker_reason_code = worker_reason_code
 
-def _stop(message: str) -> None:
-    raise WorkerStop(message)
+
+def _stop(
+    message: str,
+    *,
+    worker_phase: str = "WORKER_RUNTIME",
+    worker_reason_code: str = "INTERNAL_ERROR",
+) -> None:
+    raise WorkerStop(
+        message,
+        worker_phase=worker_phase,
+        worker_reason_code=worker_reason_code,
+    )
 
 
 def _canonical_json(value: Any, *, final_lf: bool = False) -> bytes:
@@ -206,6 +241,7 @@ def _validate_spec(spec: Mapping[str, Any], spec_fd: int, control_fd: int) -> No
         "attempt_id",
         "logical_time_utc",
         "minimum_stability_seconds",
+        "execution_identity",
         "payload_fds",
         "write_directory_fds",
         "control_protocol",
@@ -225,6 +261,7 @@ def _validate_spec(spec: Mapping[str, Any], spec_fd: int, control_fd: int) -> No
         or not core._is_strict_rfc3339_utc_seconds(spec["logical_time_utc"])
         or type(spec["minimum_stability_seconds"]) is not int
         or spec["minimum_stability_seconds"] != 60
+        or type(spec["execution_identity"]) is not dict
         or spec["control_protocol"] != CONTROL_PROTOCOL
     ):
         _stop("worker spec constants or scalar types mismatch")
@@ -395,6 +432,7 @@ def _terminal_message(
     terminal_result: str,
     stability: Mapping[str, Any],
     output_authority: Mapping[str, Any],
+    worker_failure: Mapping[str, Any] | None,
 ) -> dict[str, Any]:
     return _message_with_hash(
         {
@@ -407,6 +445,9 @@ def _terminal_message(
             "terminal_result": terminal_result,
             "stability": dict(stability),
             "output_authority": dict(output_authority),
+            "worker_failure": (
+                None if worker_failure is None else dict(worker_failure)
+            ),
         }
     )
 
@@ -868,36 +909,154 @@ def _journal_authority(
     return 3, generation_hash, event_hashes[-1]
 
 
-def _process(
+def _identity_stop(message: str, reason_code: str) -> None:
+    _stop(
+        message,
+        worker_phase="IDENTITY",
+        worker_reason_code=reason_code,
+    )
+
+
+def _validate_successor_identity(
+    value: Any,
+    *,
+    plan: Mapping[str, Any],
+    plan_raw: bytes,
+    control: Mapping[str, Any],
+    control_raw: bytes,
     spec: Mapping[str, Any],
-    payload_bytes: Mapping[str, bytes],
-) -> tuple[str, dict[str, Any]]:
-    plan, plan_raw = _load_core_plan()
-    control = _decode_control(payload_bytes["CONTROL_MANIFEST"], plan)
-    plan_hash = hashlib.sha256(plan_raw).hexdigest()
-    expected_run = core.opaque_digest(
-        plan["ids"]["run"]["domain"],
-        {
-            "fixture_spec_sha256": plan["control_manifest"]["fixture_spec_sha256"],
-            "plan_sha256": plan_hash,
-        },
-    )
-    control_hash = hashlib.sha256(payload_bytes["CONTROL_MANIFEST"]).hexdigest()
+) -> tuple[str, str]:
+    """Validate one closed successor identity independently of core R1 IDs."""
+
+    if type(value) is not dict or set(value) != {
+        "schema_version",
+        "algorithm",
+        "run",
+        "attempt",
+    }:
+        _identity_stop(
+            "successor identity fields mismatch",
+            "EXECUTION_IDENTITY_SCHEMA_INVALID",
+        )
+    if (
+        value["schema_version"] != SUCCESSOR_IDENTITY_SCHEMA
+        or value["algorithm"] != SUCCESSOR_IDENTITY_ALGORITHM
+    ):
+        _identity_stop(
+            "successor identity constants mismatch",
+            "EXECUTION_IDENTITY_SCHEMA_INVALID",
+        )
+
+    run = value["run"]
+    attempt = value["attempt"]
+    for label, derivation in (("run", run), ("attempt", attempt)):
+        if type(derivation) is not dict or set(derivation) != {
+            "domain",
+            "projection",
+            "values",
+            "result",
+        }:
+            _identity_stop(
+                f"successor {label} derivation fields mismatch",
+                "EXECUTION_IDENTITY_SCHEMA_INVALID",
+            )
+        if (
+            type(derivation["domain"]) is not str
+            or not derivation["domain"].endswith("\0")
+            or type(derivation["projection"]) is not list
+            or type(derivation["values"]) is not dict
+            or type(derivation["result"]) is not str
+            or ID_RE.fullmatch(derivation["result"]) is None
+        ):
+            _identity_stop(
+                f"successor {label} derivation types mismatch",
+                "EXECUTION_IDENTITY_SCHEMA_INVALID",
+            )
+
+    if (
+        run["projection"] != list(SUCCESSOR_RUN_PROJECTION)
+        or set(run["values"]) != set(SUCCESSOR_RUN_PROJECTION)
+        or any(
+            type(run["values"][key]) is not str
+            or HEX_RE.fullmatch(run["values"][key]) is None
+            for key in SUCCESSOR_RUN_PROJECTION
+        )
+    ):
+        _identity_stop(
+            "successor run projection mismatch",
+            "EXECUTION_IDENTITY_SCHEMA_INVALID",
+        )
+    if (
+        run["values"]["fixture_spec_sha256"]
+        != plan["control_manifest"]["fixture_spec_sha256"]
+        or run["values"]["core_plan_sha256"]
+        != hashlib.sha256(plan_raw).hexdigest()
+    ):
+        _identity_stop(
+            "successor run authority does not bind the core",
+            "RUN_DERIVATION_MISMATCH",
+        )
+    expected_run = core.opaque_digest(run["domain"], run["values"])
+    if run["result"] != expected_run:
+        _identity_stop(
+            "successor run result mismatch",
+            "RUN_DERIVATION_MISMATCH",
+        )
+
+    if (
+        attempt["domain"] != plan["ids"]["attempt"]["domain"]
+        or attempt["projection"] != list(SUCCESSOR_ATTEMPT_PROJECTION)
+        or set(attempt["values"]) != set(SUCCESSOR_ATTEMPT_PROJECTION)
+        or attempt["values"]["synthetic_run_id"] != expected_run
+        or attempt["values"]["fixture_control_manifest_sha256"]
+        != hashlib.sha256(control_raw).hexdigest()
+        or attempt["values"]["logical_time_utc"]
+        != control["logical_time_utc"]
+    ):
+        _identity_stop(
+            "successor attempt authority mismatch",
+            "ATTEMPT_DERIVATION_MISMATCH",
+        )
     expected_attempt = core.opaque_digest(
-        plan["ids"]["attempt"]["domain"],
-        {
-            "synthetic_run_id": expected_run,
-            "fixture_control_manifest_sha256": control_hash,
-            "logical_time_utc": control["logical_time_utc"],
-        },
+        attempt["domain"], attempt["values"]
     )
+    if attempt["result"] != expected_attempt:
+        _identity_stop(
+            "successor attempt result mismatch",
+            "ATTEMPT_DERIVATION_MISMATCH",
+        )
     if (
         spec["synthetic_run_id"] != expected_run
         or control["synthetic_run_id"] != expected_run
         or spec["attempt_id"] != expected_attempt
         or spec["logical_time_utc"] != control["logical_time_utc"]
     ):
-        _stop("worker spec/control deterministic identity mismatch")
+        _identity_stop(
+            "worker spec/control successor identity mismatch",
+            "SPEC_CONTROL_IDENTITY_MISMATCH",
+        )
+    return expected_run, expected_attempt
+
+
+def _process(
+    spec: Mapping[str, Any],
+    payload_bytes: Mapping[str, bytes],
+    *,
+    execution_identity: Mapping[str, Any],
+    allowed_root: Path = ALLOWED_ROOT,
+) -> tuple[str, dict[str, Any]]:
+    plan, plan_raw = _load_core_plan()
+    control = _decode_control(payload_bytes["CONTROL_MANIFEST"], plan)
+    plan_hash = hashlib.sha256(plan_raw).hexdigest()
+    control_hash = hashlib.sha256(payload_bytes["CONTROL_MANIFEST"]).hexdigest()
+    expected_run, expected_attempt = _validate_successor_identity(
+        execution_identity,
+        plan=plan,
+        plan_raw=plan_raw,
+        control=control,
+        control_raw=payload_bytes["CONTROL_MANIFEST"],
+        spec=spec,
+    )
     source_payloads = {
         PAYLOAD_NAMES[role]: payload_bytes[role] for role in SOURCE_PAYLOAD_ROLES
     }
@@ -943,7 +1102,7 @@ def _process(
         core._create_receipts(
             plan=plan,
             authority=authority,
-            root=ALLOWED_ROOT,
+            root=allowed_root,
             run_id=expected_run,
             sealed_path=sealed_path,
             sealed=sealed,
@@ -1176,7 +1335,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         same_process = os.getpid() == started_pid
         if elapsed + 1e-9 < 60.0 or not same_fds or not same_process:
             _stop("60-second same-process same-FD stability invariant failed")
-        terminal_result, output_authority = _process(spec, second_payloads)
+        terminal_result, output_authority = _process(
+            spec,
+            second_payloads,
+            execution_identity=spec["execution_identity"],
+        )
         stability = _stability(
             same_process=same_process, same_fds=same_fds, elapsed=elapsed
         )
@@ -1189,11 +1352,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 terminal_result=terminal_result,
                 stability=stability,
                 output_authority=output_authority,
+                worker_failure=None,
             ),
         )
         control.shutdown(socket.SHUT_WR)
         return 0
-    except Exception:
+    except Exception as caught:
         if spec is not None and control is not None and ready_sent:
             try:
                 same_process = os.getpid() == started_pid
@@ -1212,6 +1376,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                     if elapsed is not None
                     else max(0.0, time.monotonic() - started)
                 )
+                if isinstance(caught, WorkerStop):
+                    failure_phase = caught.worker_phase
+                    failure_reason = caught.worker_reason_code
+                else:
+                    failure_phase = "WORKER_RUNTIME"
+                    failure_reason = "INTERNAL_ERROR"
                 _send_frame(
                     control,
                     _terminal_message(
@@ -1225,6 +1395,11 @@ def main(argv: Sequence[str] | None = None) -> int:
                             elapsed=observed,
                         ),
                         output_authority=_empty_authority(),
+                        worker_failure={
+                            "schema_version": WORKER_FAILURE_SCHEMA,
+                            "worker_phase": failure_phase,
+                            "worker_reason_code": failure_reason,
+                        },
                     ),
                 )
                 control.shutdown(socket.SHUT_WR)

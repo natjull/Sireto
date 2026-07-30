@@ -25,6 +25,9 @@ LAUNCHER_PATH = (
     / "scripts/launch_v412_fresh_intake_synthetic_scanner_sealer.py"
 )
 WORKER_PATH = REPOSITORY / "scripts/run_v412_fresh_s0_worker.py"
+CORE_BUILDER_PATH = (
+    REPOSITORY / "scripts/build_v412_fresh_intake_synthetic_fixture.py"
+)
 PROFILE_PATH = (
     REPOSITORY
     / "config/v4_12_fresh_intake_synthetic_scanner_sealer.sb"
@@ -43,6 +46,7 @@ def _load(name: str, path: Path):
 sealer = _load("v412_s0_sealer_integration", SEALER_PATH)
 launcher = _load("v412_s0_launcher_integration", LAUNCHER_PATH)
 worker = _load("v412_s0_worker_integration", WORKER_PATH)
+core_builder = _load("v412_s0_core_builder_integration", CORE_BUILDER_PATH)
 
 
 def _sha(path: Path) -> str:
@@ -163,6 +167,7 @@ def test_launcher_worker_spec_is_accepted_by_worker(tmp_path: Path) -> None:
             "synthetic_run_id": run_id,
             "attempt_id": attempt_id,
             "logical_time_utc": "2026-07-30T00:00:00Z",
+            "execution_identity": {},
         }
         value = launcher._worker_spec(
             lock,
@@ -213,8 +218,250 @@ def test_worker_control_messages_are_accepted_by_launcher() -> None:
             "journal_generation_manifest_sha256": "5" * 64,
             "journal_head_event_sha256": "6" * 64,
         },
+        worker_failure=None,
     )
     launcher._validate_terminal(terminal, lock)
+
+
+def _successor_gate_case(root: Path) -> tuple[dict, dict, dict[str, bytes]]:
+    plan, plan_raw = worker._load_core_plan()
+    predecessor_sha = hashlib.sha256(
+        b"SIRETO V4.12 DISPOSABLE SUCCESSOR GATE"
+    ).hexdigest()
+    run_values = {
+        "fixture_spec_sha256": plan["control_manifest"][
+            "fixture_spec_sha256"
+        ],
+        "core_plan_sha256": hashlib.sha256(plan_raw).hexdigest(),
+        "predecessor_receipt_sha256": predecessor_sha,
+    }
+    run_domain = "SIRETO-V412-FRESH-SYNTHETIC-S0-GATE-RUN-ID\0"
+    run_id = worker.core.opaque_digest(run_domain, run_values)
+    csv_bytes = plan["fixture"]["csv"]["exact_utf8_text"].encode("utf-8")
+    evidence_bytes = core_builder._empty_evidence_parquet(plan)
+    source_payloads = core_builder._manifest_objects(
+        plan, run_id, csv_bytes, evidence_bytes
+    )
+    control = {
+        "schema_version": plan["control_manifest"]["schema"],
+        "synthetic_fixture": True,
+        "fixture_spec_sha256": plan["control_manifest"][
+            "fixture_spec_sha256"
+        ],
+        "synthetic_run_id": run_id,
+        "logical_time_utc": plan["fixture"]["logical_time_utc"],
+        "batch_count": 1,
+        "expected_source_row_count": 6,
+        "producer_exclusions": [],
+        "collection_source_manifest_sha256": hashlib.sha256(
+            source_payloads["collection_source_manifest.json"]
+        ).hexdigest(),
+        "source_manifest_sha256": hashlib.sha256(
+            source_payloads["source_manifest.json"]
+        ).hexdigest(),
+        "crm_safe_csv_sha256": hashlib.sha256(
+            source_payloads["crm_safe.csv"]
+        ).hexdigest(),
+        "evidence_source_manifest_sha256": hashlib.sha256(
+            source_payloads["evidence_source_manifest.json"]
+        ).hexdigest(),
+        "evidence_source_parquet_sha256": hashlib.sha256(
+            source_payloads["evidence_source.parquet"]
+        ).hexdigest(),
+    }
+    control_raw = worker._canonical_json(control, final_lf=True)
+    attempt_values = {
+        "synthetic_run_id": run_id,
+        "fixture_control_manifest_sha256": hashlib.sha256(
+            control_raw
+        ).hexdigest(),
+        "logical_time_utc": control["logical_time_utc"],
+    }
+    attempt_domain = plan["ids"]["attempt"]["domain"]
+    attempt_id = worker.core.opaque_digest(attempt_domain, attempt_values)
+    identity = {
+        "schema_version": worker.SUCCESSOR_IDENTITY_SCHEMA,
+        "algorithm": worker.SUCCESSOR_IDENTITY_ALGORITHM,
+        "run": {
+            "domain": run_domain,
+            "projection": list(worker.SUCCESSOR_RUN_PROJECTION),
+            "values": run_values,
+            "result": run_id,
+        },
+        "attempt": {
+            "domain": attempt_domain,
+            "projection": list(worker.SUCCESSOR_ATTEMPT_PROJECTION),
+            "values": attempt_values,
+            "result": attempt_id,
+        },
+    }
+    spec = {
+        "synthetic_run_id": run_id,
+        "attempt_id": attempt_id,
+        "logical_time_utc": control["logical_time_utc"],
+    }
+    payloads = {
+        "CONTROL_MANIFEST": control_raw,
+        **{
+            role: source_payloads[name]
+            for role, name in worker.PAYLOAD_NAMES.items()
+        },
+    }
+    for path in (
+        root / "sealed" / run_id,
+        root / "scan" / run_id,
+        root / "quarantine" / run_id,
+        root / "audit" / run_id / "worker",
+        root / "tmp" / run_id,
+    ):
+        path.mkdir(parents=True, mode=0o700)
+        path.chmod(0o700)
+    return spec, identity, payloads
+
+
+def _gate_write_fds(root: Path, run_id: str) -> tuple[dict[str, int], list[int]]:
+    paths = {
+        "SEALED": root / "sealed" / run_id,
+        "SCAN": root / "scan" / run_id,
+        "QUARANTINE": root / "quarantine" / run_id,
+        "AUDIT": root / "audit" / run_id / "worker",
+        "TMP": root / "tmp" / run_id,
+    }
+    opened: list[int] = []
+    result: dict[str, int] = {}
+    for role, path in paths.items():
+        fd = os.open(
+            path,
+            os.O_RDONLY
+            | getattr(os, "O_DIRECTORY", 0)
+            | getattr(os, "O_NOFOLLOW", 0),
+        )
+        opened.append(fd)
+        result[role] = fd
+    return result, opened
+
+
+def test_successor_identity_drives_real_process_and_rejects_r1(
+    tmp_path: Path,
+) -> None:
+    root = tmp_path / "successor-gate"
+    root.mkdir(mode=0o700)
+    spec, identity, payloads = _successor_gate_case(root)
+    write_fds, opened = _gate_write_fds(root, spec["synthetic_run_id"])
+    spec["write_directory_fds"] = write_fds
+    try:
+        terminal, authority = worker._process(
+            spec,
+            payloads,
+            execution_identity=identity,
+            allowed_root=root,
+        )
+    finally:
+        for fd in reversed(opened):
+            os.close(fd)
+    assert terminal == "INGESTED_SYNTHETIC_SCANNER_SEALER_V412"
+    assert authority["terminal_tree_kind"] == "SCAN_OUTPUT"
+    assert authority["journal_generation"] == 3
+    assert all(value is not None for value in authority.values())
+    run_id = spec["synthetic_run_id"]
+    assert (root / "sealed" / run_id / "input" / "seal.json").is_file()
+    assert (root / "scan" / run_id / "output" / "seal.json").is_file()
+    generations = list(
+        (root / "audit" / run_id / "worker" / "events_manifests").iterdir()
+    )
+    assert len(generations) == 3
+
+    rejected_root = tmp_path / "reject-r1"
+    rejected_root.mkdir(mode=0o700)
+    rejected_spec, rejected_identity, rejected_payloads = (
+        _successor_gate_case(rejected_root)
+    )
+    plan, plan_raw = worker._load_core_plan()
+    r1_values = {
+        "fixture_spec_sha256": plan["control_manifest"][
+            "fixture_spec_sha256"
+        ],
+        "plan_sha256": hashlib.sha256(plan_raw).hexdigest(),
+    }
+    rejected_identity["run"] = {
+        "domain": plan["ids"]["run"]["domain"],
+        "projection": ["fixture_spec_sha256", "plan_sha256"],
+        "values": r1_values,
+        "result": worker.core.opaque_digest(
+            plan["ids"]["run"]["domain"], r1_values
+        ),
+    }
+    rejected_fds, rejected_opened = _gate_write_fds(
+        rejected_root, rejected_spec["synthetic_run_id"]
+    )
+    rejected_spec["write_directory_fds"] = rejected_fds
+    try:
+        with pytest.raises(worker.WorkerStop) as caught:
+            worker._process(
+                rejected_spec,
+                rejected_payloads,
+                execution_identity=rejected_identity,
+                allowed_root=rejected_root,
+            )
+    finally:
+        for fd in reversed(rejected_opened):
+            os.close(fd)
+    assert caught.value.worker_phase == "IDENTITY"
+    assert caught.value.worker_reason_code == (
+        "EXECUTION_IDENTITY_SCHEMA_INVALID"
+    )
+    for role in ("sealed", "scan", "quarantine", "tmp"):
+        assert list(
+            (rejected_root / role / rejected_spec["synthetic_run_id"]).iterdir()
+        ) == []
+
+
+def test_successor_identity_mutations_stop_before_output(
+    tmp_path: Path,
+) -> None:
+    cases = (
+        ("SCHEMA", "EXECUTION_IDENTITY_SCHEMA_INVALID"),
+        ("RUN_RESULT", "RUN_DERIVATION_MISMATCH"),
+        ("ATTEMPT_RESULT", "ATTEMPT_DERIVATION_MISMATCH"),
+        ("ATTEMPT_CONTROL_HASH", "ATTEMPT_DERIVATION_MISMATCH"),
+        ("SPEC_RUN", "SPEC_CONTROL_IDENTITY_MISMATCH"),
+    )
+    for index, (mutation, expected_reason) in enumerate(cases):
+        root = tmp_path / f"mutation-{index}"
+        root.mkdir(mode=0o700)
+        spec, identity, payloads = _successor_gate_case(root)
+        if mutation == "SCHEMA":
+            identity["schema_version"] = "invalid"
+        elif mutation == "RUN_RESULT":
+            identity["run"]["result"] = "a" * 64
+        elif mutation == "ATTEMPT_RESULT":
+            identity["attempt"]["result"] = "a" * 64
+        elif mutation == "ATTEMPT_CONTROL_HASH":
+            identity["attempt"]["values"][
+                "fixture_control_manifest_sha256"
+            ] = "a" * 64
+        elif mutation == "SPEC_RUN":
+            spec["synthetic_run_id"] = "a" * 64
+        original_run = json.loads(
+            payloads["CONTROL_MANIFEST"]
+        )["synthetic_run_id"]
+        write_fds, opened = _gate_write_fds(root, original_run)
+        spec["write_directory_fds"] = write_fds
+        try:
+            with pytest.raises(worker.WorkerStop) as caught:
+                worker._process(
+                    spec,
+                    payloads,
+                    execution_identity=identity,
+                    allowed_root=root,
+                )
+        finally:
+            for fd in reversed(opened):
+                os.close(fd)
+        assert caught.value.worker_phase == "IDENTITY"
+        assert caught.value.worker_reason_code == expected_reason
+        for role in ("sealed", "scan", "quarantine", "tmp"):
+            assert list((root / role / original_run).iterdir()) == []
 
 
 def test_canary_proof_schema_and_empty_stop_policy_are_aligned() -> None:

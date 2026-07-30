@@ -1879,13 +1879,14 @@ def _worker_spec(
             }
         )
     return {
-        "schema_version": "sireto-v4.12-fresh-s0-worker-spec-1",
+        "schema_version": "sireto-v4.12-fresh-s0-worker-spec-2",
         "implementation_commit": lock["implementation_commit"],
         "execution_lock_sha256": sha256_bytes(lock_raw),
         "synthetic_run_id": lock["synthetic_run_id"],
         "attempt_id": lock["attempt_id"],
         "logical_time_utc": lock["logical_time_utc"],
         "minimum_stability_seconds": 60,
+        "execution_identity": lock["execution_identity"],
         "payload_fds": records,
         "write_directory_fds": {role: write_fds[role] for role in WRITE_DIRECTORY_ROLES},
         "control_protocol": "CANONICAL_LENGTH_PREFIXED_JSON_V1",
@@ -1957,12 +1958,12 @@ def _validate_terminal(value: Mapping[str, Any], lock: Mapping[str, Any]) -> Non
     fields = {
         "schema_version", "message_type", "synthetic_run_id", "attempt_id",
         "phase", "reason_code", "terminal_result", "stability",
-        "output_authority", "message_sha256",
+        "output_authority", "worker_failure", "message_sha256",
     }
     if (
         type(value) is not dict
         or set(value) != fields
-        or value.get("schema_version") != "sireto-v4.12-fresh-s0-control-result-1"
+        or value.get("schema_version") != "sireto-v4.12-fresh-s0-control-result-2"
         or value.get("message_type") not in {"RESULT", "STOP"}
         or value.get("synthetic_run_id") != lock["synthetic_run_id"]
         or value.get("attempt_id") != lock["attempt_id"]
@@ -1977,13 +1978,43 @@ def _validate_terminal(value: Mapping[str, Any], lock: Mapping[str, Any]) -> Non
         "QUARANTINED_SYNTHETIC_SCANNER_SEALER_V412",
     }
     if success:
-        if value["reason_code"] != "OK" or value["terminal_result"] not in expected_results:
+        if (
+            value["reason_code"] != "OK"
+            or value["terminal_result"] not in expected_results
+            or value["worker_failure"] is not None
+        ):
             _stop("WORKER", "WORKER_CONTROL_INVALID", "inconsistent RESULT")
     elif (
         value["reason_code"] != "WORKER_CONTROLLED_STOP"
         or value["terminal_result"] != "STOP_SYNTHETIC_SCANNER_SEALER_V412"
     ):
         _stop("WORKER", "WORKER_CONTROL_INVALID", "inconsistent STOP")
+    if not success:
+        failure = value["worker_failure"]
+        matrix = {
+            "IDENTITY": {
+                "EXECUTION_IDENTITY_SCHEMA_INVALID",
+                "RUN_DERIVATION_MISMATCH",
+                "ATTEMPT_DERIVATION_MISMATCH",
+                "SPEC_CONTROL_IDENTITY_MISMATCH",
+            },
+            "WORKER_RUNTIME": {"INTERNAL_ERROR"},
+        }
+        if (
+            type(failure) is not dict
+            or set(failure)
+            != {"schema_version", "worker_phase", "worker_reason_code"}
+            or failure.get("schema_version")
+            != "sireto-v4.12-fresh-s0-worker-failure-1"
+            or failure.get("worker_phase") not in matrix
+            or failure.get("worker_reason_code")
+            not in matrix[failure["worker_phase"]]
+        ):
+            _stop(
+                "WORKER",
+                "WORKER_CONTROL_INVALID",
+                "invalid closed worker failure",
+            )
     _validate_output_authority(value["output_authority"], allow_null=not success)
 
 

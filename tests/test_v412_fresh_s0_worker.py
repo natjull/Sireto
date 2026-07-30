@@ -7,15 +7,13 @@ import os
 import re
 import socket
 import stat
+import struct
 from pathlib import Path
 
 import pytest
 
 from scripts import run_v412_fresh_s0_worker as worker
-from scripts.build_v412_fresh_intake_synthetic_fixture import (
-    build_fixture,
-    opaque_digest,
-)
+from scripts import run_v412_fresh_s0_successor_gate as successor_gate
 
 
 RUN_ID = "a" * 64
@@ -93,6 +91,7 @@ def _open_fixture(tmp_path: Path) -> tuple[dict[str, object], list[int], socket.
         "attempt_id": ATTEMPT_ID,
         "logical_time_utc": "2026-07-30T00:00:00Z",
         "minimum_stability_seconds": 60,
+        "execution_identity": {},
         "payload_fds": records,
         "write_directory_fds": directories,
         "control_protocol": worker.CONTROL_PROTOCOL,
@@ -254,39 +253,12 @@ def test_worker_process_reuses_core_over_only_payload_and_directory_fds(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "synthetic-root"
-    fixture = build_fixture(
-        Path("config/v4_12_fresh_intake_synthetic_scanner_sealer_plan.json"),
-        root,
+    root.mkdir(mode=0o700)
+    plan, plan_raw = worker._load_core_plan()
+    run_id, attempt_id, execution_identity, payload_bytes = (
+        successor_gate._gate_inputs(plan, plan_raw)
     )
-    run_id = fixture["synthetic_run_id"]
-    control_path = Path(fixture["control_manifest_path"])
-    control_raw = control_path.read_bytes()
-    control = json.loads(control_raw)
-    attempt_id = opaque_digest(
-        "SIRETO-V412-FRESH-SYNTHETIC-ATTEMPT-ID\x00",
-        {
-            "synthetic_run_id": run_id,
-            "fixture_control_manifest_sha256": hashlib.sha256(
-                control_raw
-            ).hexdigest(),
-            "logical_time_utc": control["logical_time_utc"],
-        },
-    )
-    package = Path(fixture["package_path"])
-    payload_bytes = {
-        "CONTROL_MANIFEST": control_raw,
-        "COLLECTION_MANIFEST": (
-            package / "collection_source_manifest.json"
-        ).read_bytes(),
-        "SOURCE_MANIFEST": (package / "source_manifest.json").read_bytes(),
-        "CRM_SAFE_CSV": (package / "crm_safe.csv").read_bytes(),
-        "EVIDENCE_MANIFEST": (
-            package / "evidence_source_manifest.json"
-        ).read_bytes(),
-        "EVIDENCE_PARQUET": (
-            package / "evidence_source.parquet"
-        ).read_bytes(),
-    }
+    control = json.loads(payload_bytes["CONTROL_MANIFEST"])
     locations = {
         "SEALED": root / "sealed" / run_id,
         "SCAN": root / "scan" / run_id,
@@ -307,7 +279,12 @@ def test_worker_process_reuses_core_over_only_payload_and_directory_fds(
             "logical_time_utc": control["logical_time_utc"],
             "write_directory_fds": role_fds,
         }
-        terminal, authority = worker._process(spec, payload_bytes)
+        terminal, authority = worker._process(
+            spec,
+            payload_bytes,
+            execution_identity=execution_identity,
+            allowed_root=root,
+        )
         assert terminal == "INGESTED_SYNTHETIC_SCANNER_SEALER_V412"
         assert authority["terminal_tree_kind"] == "SCAN_OUTPUT"
         assert authority["journal_generation"] == 3
@@ -320,6 +297,98 @@ def test_worker_process_reuses_core_over_only_payload_and_directory_fds(
     finally:
         for fd in role_fds.values():
             os.close(fd)
+
+
+def test_main_propagates_closed_identity_failure(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    parent, child = socket.socketpair()
+    identity = {"closed": "successor-authority"}
+    spec = {
+        "synthetic_run_id": RUN_ID,
+        "attempt_id": ATTEMPT_ID,
+        "logical_time_utc": "2026-07-30T00:00:00Z",
+        "execution_identity": identity,
+        "payload_fds": [
+            {"role": role, "fd_number": 20 + index}
+            for index, role in enumerate(worker.PAYLOAD_ROLES)
+        ],
+        "write_directory_fds": {
+            role: 40 + index
+            for index, role in enumerate(worker.WRITE_ROLES)
+        },
+    }
+    payloads = {role: role.encode() for role in worker.PAYLOAD_ROLES}
+    identities = {
+        role: (1, 2, 3, 4, 5, 6, 1, 0o400)
+        for role in worker.SOURCE_PAYLOAD_ROLES
+    }
+
+    monkeypatch.setattr(
+        worker, "_parse_cli", lambda _argv: (7, child.fileno())
+    )
+    monkeypatch.setattr(
+        worker,
+        "_read_regular_fd",
+        lambda _fd, maximum=None: _canonical(spec),
+    )
+    monkeypatch.setattr(worker, "_validate_spec", lambda *_args: None)
+    monkeypatch.setattr(worker.fcntl, "fcntl", lambda *_args: 0)
+    monkeypatch.setattr(
+        worker,
+        "_payload_snapshot",
+        lambda _spec: (payloads, identities),
+    )
+    monkeypatch.setattr(worker, "_run_canaries", lambda _run_id: [])
+    monkeypatch.setattr(
+        worker, "_write_canary_report", lambda _spec, _canaries: None
+    )
+    monkeypatch.setattr(worker.time, "sleep", lambda _seconds: None)
+    ticks = iter((0.0, 1.0, 61.0))
+    monkeypatch.setattr(worker.time, "monotonic", lambda: next(ticks))
+
+    def fail_process(
+        _spec: dict,
+        _payloads: dict,
+        *,
+        execution_identity: dict,
+        allowed_root: Path = worker.ALLOWED_ROOT,
+    ) -> tuple[str, dict]:
+        assert execution_identity == identity
+        raise worker.WorkerStop(
+            "closed failure",
+            worker_phase="IDENTITY",
+            worker_reason_code="SPEC_CONTROL_IDENTITY_MISMATCH",
+        )
+
+    monkeypatch.setattr(worker, "_process", fail_process)
+    try:
+        assert worker.main(["worker"]) == 2
+        child.close()
+        buffer = bytearray()
+        while True:
+            chunk = parent.recv(65_536)
+            if not chunk:
+                break
+            buffer.extend(chunk)
+    finally:
+        parent.close()
+        if child.fileno() >= 0:
+            child.close()
+    frames = []
+    while buffer:
+        size = struct.unpack(">I", buffer[:4])[0]
+        frames.append(json.loads(bytes(buffer[4 : 4 + size])))
+        del buffer[: 4 + size]
+    assert [frame["message_type"] for frame in frames] == ["READY", "STOP"]
+    assert frames[1]["schema_version"] == (
+        "sireto-v4.12-fresh-s0-control-result-2"
+    )
+    assert frames[1]["worker_failure"] == {
+        "schema_version": "sireto-v4.12-fresh-s0-worker-failure-1",
+        "worker_phase": "IDENTITY",
+        "worker_reason_code": "SPEC_CONTROL_IDENTITY_MISMATCH",
+    }
 
 
 def test_cli_is_exact_and_fd_only() -> None:

@@ -62,7 +62,7 @@ def _authority(*, success: bool) -> dict:
 def _terminal(*, success: bool) -> dict:
     return _hashed_message(
         {
-            "schema_version": "sireto-v4.12-fresh-s0-control-result-1",
+            "schema_version": "sireto-v4.12-fresh-s0-control-result-2",
             "message_type": "RESULT" if success else "STOP",
             "synthetic_run_id": "a" * 64,
             "attempt_id": "b" * 64,
@@ -79,8 +79,66 @@ def _terminal(*, success: bool) -> dict:
                 "monotonic_elapsed_seconds": "60.000000000" if success else "0.1",
             },
             "output_authority": _authority(success=success),
+            "worker_failure": (
+                None
+                if success
+                else {
+                    "schema_version": (
+                        "sireto-v4.12-fresh-s0-worker-failure-1"
+                    ),
+                    "worker_phase": "WORKER_RUNTIME",
+                    "worker_reason_code": "INTERNAL_ERROR",
+                }
+            ),
         }
     )
+
+
+def test_closed_worker_failure_matrix_is_enforced() -> None:
+    lock = {"synthetic_run_id": "a" * 64, "attempt_id": "b" * 64}
+    launcher._validate_terminal(_terminal(success=True), lock)
+    launcher._validate_terminal(_terminal(success=False), lock)
+
+    result_with_failure = _terminal(success=True)
+    result_with_failure["worker_failure"] = {
+        "schema_version": "sireto-v4.12-fresh-s0-worker-failure-1",
+        "worker_phase": "WORKER_RUNTIME",
+        "worker_reason_code": "INTERNAL_ERROR",
+    }
+    result_with_failure = _hashed_message(
+        {
+            key: value
+            for key, value in result_with_failure.items()
+            if key != "message_sha256"
+        }
+    )
+    with pytest.raises(launcher.LauncherStop):
+        launcher._validate_terminal(result_with_failure, lock)
+
+    stop_without_failure = _terminal(success=False)
+    stop_without_failure["worker_failure"] = None
+    stop_without_failure = _hashed_message(
+        {
+            key: value
+            for key, value in stop_without_failure.items()
+            if key != "message_sha256"
+        }
+    )
+    with pytest.raises(launcher.LauncherStop):
+        launcher._validate_terminal(stop_without_failure, lock)
+
+    crossed = _terminal(success=False)
+    crossed["worker_failure"]["worker_phase"] = "IDENTITY"
+    crossed["worker_failure"]["worker_reason_code"] = "INTERNAL_ERROR"
+    crossed = _hashed_message(
+        {
+            key: value
+            for key, value in crossed.items()
+            if key != "message_sha256"
+        }
+    )
+    with pytest.raises(launcher.LauncherStop):
+        launcher._validate_terminal(crossed, lock)
 
 
 def test_public_main_rejects_every_argument_without_launching(monkeypatch, capsys) -> None:
