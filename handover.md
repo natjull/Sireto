@@ -291,6 +291,19 @@ sans rouvrir la vérité. Les arbres, manifests, rôles 12 data + 4 runtime,
 temporaires d'état hors slot et verrou parent durable sont définis
 exactement. Aucun oracle ni résultat réel n'a été ouvert pendant
 l'amendement. *(commit GitHub : `9e25ebf`)*
+L'évaluateur scellé, son parent, son profil Seatbelt, son audit indépendant
+et leurs tests sont implémentés et doublement reçus
+**`GO_EVALUATOR_CODE_1`** / **`GO_EVALUATOR_CODE_2`**. Le worker est chargé
+et attesté avant le commit oracle, puis reçoit les quatre FDs oracle dans
+l'ordre contractuel unique via `SCM_RIGHTS`. L'attestation calculée, le
+journal v2, le verrou de slot, la reprise sans réouverture oracle, les
+manifests, le ledger, la provenance, le plafond RSS et la publication
+exclusive sont testés, y compris via le vrai orchestrateur. Les falsifications
+coordonnées, symlinks, IDs/rangs invalides et fenêtres de crash sont rejetés.
+67 tests evaluator et les 890 tests du dépôt passent ; smokes et audit
+statique sont `GO`. Aucun input réel n'a été ouvert. Le prochain geste
+autorisé est la création puis le double contre-audit du verrou evaluator, pas
+encore l'ouverture oracle. *(commit GitHub : `3ebddc9`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
