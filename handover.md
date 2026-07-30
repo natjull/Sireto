@@ -71,13 +71,16 @@ Le contrat autoritatif du lancement S0 franchit désormais
 FD-only distinct du core, le runtime Python/PyArrow privé, la sandbox
 `deny default`, les autorités parent/worker disjointes, le protocole de
 contrôle, l'automate lease puis claim anti-rejeu, les canaris synthétiques et
-la cohérence complète résultat/exit/receipt. Le plan canonique a pour hash
-`64a52729d28618ee71c6741448c7e6946bc63435a3d5e81d73691c3e903775a4`
+la cohérence complète résultat/exit/receipt. Le plan canonique amendé a pour
+hash
+`f73d855b9d6c76f6175cae5e04f2bd2bc61a19a5d78d356ebe99d3d6289f8596`
 et épingle le contrat
-`88a79caf6019f73e68260451e4b1d894f0f658ac90d12ded18f57f5cce28d5f5`.
+`b969a8d552ba060e5b7e24bd1e295abbaf025f1dfbfb7e5683bd5853b689b5df`.
+L'amendement `GO_AMENDMENT` interdit de fabriquer des preuves canaris lors
+d'un STOP précoce : succès = liste complète, STOP avant preuve = liste vide.
 Ce GO autorise seulement l'implémentation du launcher, du worker, du sealer et
 du profil ; aucun run, fixture nouvelle ou CRM réel n'a été ouvert.
-*(commit GitHub : `46b1958`)*.
+*(commits GitHub : contrat initial `46b1958`, amendement `7a3353f`)*.
 
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
