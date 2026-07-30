@@ -219,6 +219,30 @@ def test_root_owned_macos_runtime_files_use_explicit_trusted_owner() -> None:
         assert info.st_uid == 0
 
 
+@pytest.mark.skipif(sys.platform != "darwin", reason="APFS volume authority")
+def test_volume_uuid_resolution_does_not_cache_by_device() -> None:
+    repository_fd = launcher._open_anchored(
+        launcher.REPOSITORY_ROOT,
+        directory=True,
+    )
+    root_fd = os.open(
+        "/",
+        os.O_RDONLY
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_CLOEXEC", 0),
+    )
+    try:
+        resolver = launcher.VolumeUUIDResolver()
+        resolver.for_fd(repository_fd)
+        root_after_repository = resolver.for_fd(root_fd)
+        root_independent = launcher.VolumeUUIDResolver().for_fd(root_fd)
+    finally:
+        os.close(repository_fd)
+        os.close(root_fd)
+    assert root_after_repository == root_independent
+
+
 def test_control_frames_are_compact_canonical_without_lf() -> None:
     ready = _ready()
     terminal = _terminal(success=True)

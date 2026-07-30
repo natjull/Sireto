@@ -589,13 +589,7 @@ class _AttrList(ctypes.Structure):
 
 
 class VolumeUUIDResolver:
-    def __init__(self) -> None:
-        self._cache: dict[int, str] = {}
-
     def for_fd(self, fd: int) -> str:
-        info = os.fstat(fd)
-        if info.st_dev in self._cache:
-            return self._cache[info.st_dev]
         if platform.system() != "Darwin":
             _stop("PRESPAWN", "RUNTIME_INVALID", "volume UUID requires macOS")
         before = os.fstat(fd)
@@ -629,8 +623,11 @@ class VolumeUUIDResolver:
         after = os.fstat(fd)
         if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
             _stop("PRESPAWN", "RUNTIME_INVALID", "volume anchor drift")
-        self._cache[info.st_dev] = value
-        return self._cache[info.st_dev]
+        # APFS firmlinks can expose the System and Data volumes with the same
+        # st_dev while fgetattrlist correctly returns distinct volume UUIDs.
+        # Caching by st_dev would therefore substitute one trust boundary for
+        # another depending on lookup order.
+        return value
 
 
 def _identity(fd: int, volume_uuid: str) -> dict[str, Any]:
