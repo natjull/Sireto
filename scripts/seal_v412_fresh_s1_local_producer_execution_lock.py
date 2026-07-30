@@ -8,6 +8,8 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import re
+import subprocess
 import sys
 from typing import Any, Mapping
 
@@ -77,6 +79,68 @@ def _volume_identity(path: Path) -> tuple[int, str]:
         os.close(fd)
 
 
+def _git(*arguments: str, allow_status_one: bool = False) -> bytes:
+    command = ["/usr/bin/git", "-C", str(REPOSITORY), *arguments]
+    try:
+        result = subprocess.run(
+            command,
+            check=False,
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+            env={
+                "PATH": "/usr/bin:/bin",
+                "LANG": "C",
+                "LC_ALL": "C",
+                "GIT_CONFIG_NOSYSTEM": "1",
+                "GIT_CONFIG_GLOBAL": "/dev/null",
+            },
+        )
+    except OSError:
+        _stop("GIT_EXECUTION")
+    allowed = {0, 1} if allow_status_one else {0}
+    if result.returncode not in allowed:
+        _stop("GIT_STATUS")
+    return result.stdout
+
+
+def _verify_git_binding(
+    commit: str,
+    pinned_files: Mapping[str, bytes],
+) -> None:
+    if re.fullmatch(r"[0-9a-f]{40}", commit) is None:
+        _stop("GIT_COMMIT_FORMAT")
+    _git("cat-file", "-e", f"{commit}^{{commit}}")
+    ancestry = subprocess.run(
+        [
+            "/usr/bin/git",
+            "-C",
+            str(REPOSITORY),
+            "merge-base",
+            "--is-ancestor",
+            commit,
+            "HEAD",
+        ],
+        check=False,
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        env={
+            "PATH": "/usr/bin:/bin",
+            "LANG": "C",
+            "LC_ALL": "C",
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "GIT_CONFIG_GLOBAL": "/dev/null",
+        },
+    )
+    if ancestry.returncode != 0:
+        _stop("GIT_COMMIT_NOT_ANCESTOR")
+    for path, live_raw in pinned_files.items():
+        committed_raw = _git("cat-file", "blob", f"{commit}:{path}")
+        if committed_raw != live_raw:
+            _stop("GIT_BLOB_MISMATCH")
+
+
 def build_lock(
     plan: Mapping[str, Any],
     plan_raw: bytes,
@@ -97,6 +161,13 @@ def build_lock(
     tests_raw = provisioner._read_regular(
         REPOSITORY / plan["future_implementation"]["tests"]["path"],
         "PROVISIONER_TESTS",
+    )
+    _verify_git_binding(
+        IMPLEMENTATION_COMMIT,
+        {
+            plan["future_implementation"]["provisioner"]["path"]: source_raw,
+            plan["future_implementation"]["tests"]["path"]: tests_raw,
+        },
     )
     device, volume_uuid = _volume_identity(trusted_output_parent)
     implementation = {

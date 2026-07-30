@@ -7,6 +7,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+from types import SimpleNamespace
 
 import pytest
 
@@ -143,6 +144,53 @@ def test_lock_rejects_noncanonical_plan_and_contract_drift(
     with pytest.raises(subject.LockSealError, match="CONTRACT_HASH"):
         subject.build_lock(
             plan, _canonical(plan), trusted_output_parent=tmp_path
+        )
+
+
+def test_sealer_itself_rejects_live_blob_commit_mismatch(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan, raw = _fixture(tmp_path)
+    original = subject.provisioner._read_regular
+
+    def changed(path, label, **kwargs):
+        value = original(path, label, **kwargs)
+        return value + b"\n" if label == "PROVISIONER" else value
+
+    monkeypatch.setattr(subject.provisioner, "_read_regular", changed)
+    with pytest.raises(subject.LockSealError, match="GIT_BLOB_MISMATCH"):
+        subject.build_lock(
+            plan, raw, trusted_output_parent=tmp_path
+        )
+
+
+def test_sealer_rejects_missing_or_nonancestor_commit(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan, raw = _fixture(tmp_path)
+    monkeypatch.setattr(subject, "IMPLEMENTATION_COMMIT", "0" * 40)
+    with pytest.raises(subject.LockSealError, match="GIT_STATUS"):
+        subject.build_lock(
+            plan, raw, trusted_output_parent=tmp_path
+        )
+    monkeypatch.setattr(
+        subject,
+        "IMPLEMENTATION_COMMIT",
+        "ad74b4eaeeae1836e9ca08703d442b60454f2682",
+    )
+    real_run = subject.subprocess.run
+
+    def nonancestor(command, **kwargs):
+        if "merge-base" in command:
+            return SimpleNamespace(returncode=1, stdout=b"")
+        return real_run(command, **kwargs)
+
+    monkeypatch.setattr(subject.subprocess, "run", nonancestor)
+    with pytest.raises(
+        subject.LockSealError, match="GIT_COMMIT_NOT_ANCESTOR"
+    ):
+        subject.build_lock(
+            plan, raw, trusted_output_parent=tmp_path
         )
 
 
