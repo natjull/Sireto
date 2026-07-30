@@ -304,6 +304,18 @@ coordonnées, symlinks, IDs/rangs invalides et fenêtres de crash sont rejetés.
 statique sont `GO`. Aucun input réel n'a été ouvert. Le prochain geste
 autorisé est la création puis le double contre-audit du verrou evaluator, pas
 encore l'ouverture oracle. *(commit GitHub : `3ebddc9`)*
+Le verrou evaluator, hash
+`bcda9024258031ca10e00313443e75ddb5f5650d599e310c4e7eafd27b1e6b4f`,
+épingle le commit code `3ebddc9e977151c91d827a783d9996c642e04a58`
+et franchit **`GO_EVALUATOR_LOCK_1`** /
+**`GO_EVALUATOR_LOCK_2`**. Les 7 sources correspondent au worktree et aux
+blobs Git ; les 12 entrées non-oracle ont été rehashées physiquement. Les
+quatre engagements oracle ont uniquement été comparés entre plan et verrou,
+sans accès filesystem. Runtime, sandbox, racines, RSS et identités build
+`50cbc46e...32e7c`, slot `9cf7f6d3...21b7` et attempt
+`01260473...c2ed` sont exacts ; aucune destination n'existait au gel. Ce
+verrou autorise désormais l'unique évaluation oracle officielle. *(commit
+GitHub : `d886ee9`)*
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
