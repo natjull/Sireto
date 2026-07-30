@@ -102,6 +102,13 @@ provisioner et la suite locale `1209 passed` sont verts, sans appel Keychain
 réel. Nouveau double audit requis avant lock.
 *(commit GitHub : tests complets du pont CoreFoundation `2ed1ba8`)*.
 
+Deux audits indépendants rendent désormais **`GO_NATIVE_BACKEND_NEXT_LOCK`**
+sur `2ed1ba8`. Ils confirment l'ABI, les dictionnaires exacts, la projection,
+les statuts, les libérations CF et la remise à zéro des buffers, sans appel
+Keychain réel. Ce GO autorise seulement la construction et l'audit du lock,
+du pré-vol lecture seule et du test multiprocessus ; il n'autorise pas encore
+la lecture du locator, l'autorisation one-shot ou le provisionnement.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
