@@ -225,7 +225,7 @@ Le runner fixe `umask(0077)`, crée tous les répertoires privés en `0700` et
 tous les fichiers en `0600`.
 
 Le build byte-identique utilise exclusivement macOS arm64, Python `3.14.3` et
-PyArrow `23.0.0`, sans pandas pour sérialiser. Avant écriture, chaque table est
+PyArrow `23.0.1`, sans pandas pour sérialiser. Avant écriture, chaque table est
 castée vers le schéma Arrow exact et réassemblée avec un chunk par colonne.
 Les trois fichiers Parquet utilisent tous : Parquet `2.6`, compression ZSTD
 niveau `9`, dictionnaire désactivé, statistiques activées, data page `1.0`,
