@@ -329,6 +329,18 @@ conformes et termine `FINAL`; aucun modèle ni test final n'a été ouvert.
 Rapport : `reports/v9/v4_12_unit_retrieval_evaluation_results.md`. Ce GO est
 un gate développement historique ; il autorise le contrat de l'unique test
 retrieval final, pas encore le dégel du ranker/accepteur.
+L'audit de transférabilité conclut ensuite
+**`PIVOT_NEW_HOLDOUT_REQUIRED`**. Le test final sélectif consommé mesurait
+une admission multicanal différente : elle obtenait 2 116/2 128 = 99,436 %,
+alors que son sparse seul — correspondant à la famille V4.12 — obtenait
+2 059/2 128 = 96,758 %. Le résultat final ne peut donc pas être hérité.
+L'inventaire confirme que les 23 609 lignes CRM locales sont toutes
+consommées : 23 384 par historique/V4-Fresh puis les 225 restantes par le
+challenge V4.11. Aucun nouvel export CRM local n'existe depuis le registre du
+28 juillet. Rapport :
+`reports/v9/v4_12_retrieval_final_evidence_decision.md`. V4.12 reste
+candidat grâce à son GO dev, mais toute certification finale exige un nouvel
+export CRM indépendant ; ranker et accepteur restent gelés.
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
