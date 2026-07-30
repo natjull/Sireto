@@ -272,6 +272,23 @@ construction unique, puis le lock et son audit, jamais le CRM réel.
 Rapport :
 `reports/v9/v4_12_fresh_s0_r3_code_gate_results.md`.
 
+L'unique exécution autoritative S0-R3 est désormais doublement certifiée
+**`INGESTED_R3_CERTIFIED`**. Le receipt-3 canonique SHA-256
+`8061247794f403f52a692e41f19549dcf2803a6db744c74e9719cb824ad96a08`
+lie l'autorisation `f686ffd9…`, le lock `de545687…`, le claim `c6a1c5…`,
+le spec worker et les sorties. Le worker termine `exit=0`, stdout/stderr
+vides, après `60.002720750` secondes avec le même processus et les mêmes cinq
+FDs ; 11/11 canaris sont refusés, les 14 observations parent sont identiques,
+les arbres sont scellés et le journal compte trois générations. Il existe
+exactement un claim, un lease, un spec et un receipt ; le chemin idempotent
+interdit désormais tout nouveau spawn. Aucun processus R3 n'est actif.
+Autorisation initiale non canonique jamais lancée : commit `ffccb7e` ;
+autorisation canonique utilisée : commit GitHub `b64133f`.
+Rapport :
+`reports/v9/v4_12_fresh_s0_r3_authoritative_results.md`.
+Ce succès ouvre uniquement la construction puis la qualification aveugle du
+CRM frais ; labels, retrieval, modèles et test final restent fermés.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
