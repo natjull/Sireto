@@ -4,6 +4,7 @@ import base64
 import hashlib
 import importlib.util
 import json
+import multiprocessing
 import os
 from pathlib import Path
 import platform
@@ -166,6 +167,69 @@ def _write_claim(
         store.create_claim(raw)
     finally:
         store.close()
+
+
+class _ProcessKeychain:
+    def __init__(self, state, lock) -> None:
+        self.state = state
+        self.lock = lock
+
+    @property
+    def read_calls(self):
+        return self.state["read_calls"]
+
+    @property
+    def add_calls(self):
+        return self.state["add_calls"]
+
+    def copy_item(self):
+        with self.lock:
+            self.state["read_calls"] += 1
+            if "seed" not in self.state:
+                return None
+            return subject.KeychainRecord(
+                bytearray(self.state["seed"]),
+                bytes(self.state["binding"]),
+            )
+
+    def add_item(self, *, seed, claim_sha256_raw):
+        with self.lock:
+            self.state["add_calls"] += 1
+            if "seed" in self.state:
+                return "DUPLICATE"
+            self.state["seed"] = bytes(seed)
+            self.state["binding"] = bytes(claim_sha256_raw)
+            return "ADDED"
+
+
+def _multiprocess_launch(
+    bundle,
+    backend,
+    trusted_parent,
+    barrier,
+    fill,
+    queue,
+) -> None:
+    calls = 0
+
+    def random32():
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            barrier.wait(timeout=10)
+        return bytes([fill + calls]) * 32
+
+    try:
+        receipt = subject.provision(
+            bundle,
+            backend,
+            trusted_parent=trusted_parent,
+            root=Path(bundle.plan["paths"]["root"]),
+            random32=random32,
+        )
+        queue.put(("OK", receipt["authority_id"]))
+    except subject.ProvisionError as exc:
+        queue.put(("STOP", str(exc)))
 
 
 def test_rfc8032_vector_one() -> None:
@@ -421,6 +485,39 @@ def test_two_concurrent_launchers_converge_to_one_authority(
     assert len(list((root / "claims").iterdir())) == 1
     assert backend.add_calls == 1
     assert backend.item is not None
+    authority = next((root / "authorities").iterdir())
+    assert (authority / "provision_receipt.json").exists()
+
+
+def test_two_real_processes_converge_to_one_authority(
+    tmp_path: Path,
+) -> None:
+    context = multiprocessing.get_context("spawn")
+    bundle = _bundle(tmp_path)
+    with context.Manager() as manager:
+        state = manager.dict(read_calls=0, add_calls=0)
+        backend = _ProcessKeychain(state, manager.RLock())
+        barrier = context.Barrier(2)
+        queue = context.Queue()
+        processes = [
+            context.Process(
+                target=_multiprocess_launch,
+                args=(bundle, backend, tmp_path, barrier, fill, queue),
+            )
+            for fill in (30, 40)
+        ]
+        for process in processes:
+            process.start()
+        for process in processes:
+            process.join(timeout=15)
+            assert process.exitcode == 0
+        outcomes = [queue.get(timeout=2) for _ in processes]
+        assert sorted(kind for kind, _value in outcomes) == ["OK", "STOP"]
+        assert state["add_calls"] == 1
+        assert "seed" in state
+    root = Path(bundle.plan["paths"]["root"])
+    assert len(list((root / "claims").iterdir())) == 1
+    assert len(list((root / "authorities").iterdir())) == 1
     authority = next((root / "authorities").iterdir())
     assert (authority / "provision_receipt.json").exists()
 
