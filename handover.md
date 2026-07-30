@@ -49,6 +49,14 @@ backend macOS réel reste volontairement fermé par
 accès Keychain réel, CRM ou `/Volumes` n'a eu lieu.
 *(commit GitHub : cœur et tests synthétiques `97f7d0d`)*.
 
+Le premier contre-audit du cœur synthétique rend **`NO_GO`** avant backend
+natif. Il valide le one-shot, la cryptographie, la reprise et la gestion des
+secrets, mais exige trois fermetures : validation récursive de tous les types
+et pins du lock, reconstruction publique exacte du payload depuis plan+lock,
+et store entièrement FD-ancré appliquant les pins root/device/volume. La
+couche native et tout run restent fermés jusqu'au correctif et à deux nouveaux
+audits.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
