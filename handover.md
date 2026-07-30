@@ -140,6 +140,24 @@ n'épingle pas le blob corrigé ; reconstruire encore lock et autorisation avant
 tout lancement.
 *(commit GitHub : `75edb12`)*.
 
+Le run autoritatif S0-R1 a été exécuté une seule fois et conclut **`PIVOT`**.
+Son receipt immuable
+`68d1267351447d6dd755cfca62cccec700715191b45a906e28ecc59b40bc6746`
+rapporte `WORKER_CONTROL_INVALID`, enfant `exit=65`, aucune frame
+`READY`, aucune sortie, aucun canari et aucune stabilité fabriqués ; les
+13 autorités parent sont identiques avant/après. La cause est prouvée
+byte-for-byte : le stderr de 62 octets, SHA
+`1d24b61273dbf35a7162215eaa0aa2668c83773f003884a01e326b8065132cf7`,
+est exactement
+`sandbox-exec: /dev/fd/effective.sb: No such file or directory\n`.
+Le transport verrouillé `sandbox-exec -f /dev/fd/<fd>` échoue donc avant
+Python et avant le worker. Le claim et le receipt R1 restent immuables ; aucun
+rerun, déplacement ou rebuild sous les mêmes identifiants n'est autorisé.
+La suite exige une autorité S0-R2 préenregistrée avec nouvelle racine,
+nouveaux `synthetic_run_id` et `attempt_id`, et transmission du profil par
+`-p` depuis les octets relus et rehashés du FD retenu.
+*(commit GitHub d'autorisation R1 : `37b453f`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
