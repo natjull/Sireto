@@ -125,6 +125,21 @@ environnement doit être archivé sans suppression, puis lock et autorisation
 doivent être reconstruits sur le commit corrigé.
 *(commit GitHub : `2bb2bc2`)*.
 
+Le troisième lock S0
+`d608a0e13334270a16a554f3ca676135b4cec671af3a52d468ec8a8a28a40e50`
+a lui aussi été arrêté au pré-vol, sans autorisation mise à jour ni worker. Le
+launcher mettait en cache l'UUID de volume par `st_dev`; or, sur ce Mac, le
+dépôt (volume Data) et `/` (volume System) partagent le même `st_dev` tout en
+ayant des UUID APFS distincts. Selon l'ordre de lecture, la frontière de
+confiance système était donc remplacée par celle du dépôt. Le resolver relit
+désormais l'UUID directement sur chaque FD avec contrôle d'identité
+avant/après, sans cache ambigu. Deux audits indépendants rendent
+`GO_APFS_PATCH` et `GO_APFS_PATCH_2`; les 112 tests S0 et les validations
+runtime/volumes du lock réel passent. Ce troisième lock reste révoqué car il
+n'épingle pas le blob corrigé ; reconstruire encore lock et autorisation avant
+tout lancement.
+*(commit GitHub : `75edb12`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
