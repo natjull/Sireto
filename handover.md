@@ -37,6 +37,18 @@ provisioner ; aucun item Keychain, root S1 ou CRM réel n'a été ouvert.
 *(commits GitHub : préenregistrement initial `aacc76a`, fermeture ownership
 et gates `28ef796`, Data Protection Keychain `c64c0c9`)*.
 
+Le cœur synthétique du provisioner local S1 est désormais implémenté. Il
+produit le claim durable, la clé/signature Ed25519 via un backend injecté, le
+genesis, le payload, le seal et le receipt ; il reprend le même attempt après
+crash, refuse tout item étranger ou artefact divergent et retourne un receipt
+valide sans relire le secret. Vingt tests dédiés couvrent notamment le vecteur
+RFC 8032, les contrats Data Protection Keychain, cinq frontières de crash,
+l'idempotence et la corruption ; la suite complète donne `1179 passed`. Le
+backend macOS réel reste volontairement fermé par
+`NATIVE_KEYCHAIN_NOT_PINNED` jusqu'à son implémentation et son audit : aucun
+accès Keychain réel, CRM ou `/Volumes` n'a eu lieu.
+*(commit GitHub : cœur et tests synthétiques `97f7d0d`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
