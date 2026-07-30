@@ -95,7 +95,7 @@ def test_private_key_can_only_live_in_keychain() -> None:
         "value": "RAW_32_BYTE_SHA256_OF_EXACT_CLAIM_BYTES",
         "verified_on_every_read": True,
     }
-    assert keychain["item_attributes_exact"] == {
+    assert keychain["secitemadd_dictionary_exact"] == {
         "kSecClass": "kSecClassGenericPassword",
         "kSecAttrService": keychain["service"],
         "kSecAttrAccount": keychain["account"],
@@ -107,9 +107,34 @@ def test_private_key_can_only_live_in_keychain() -> None:
         "kSecAttrAccessible": (
             "kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly"
         ),
+        "kSecUseDataProtectionKeychain": True,
         "kSecValueData": "RAW_32_BYTE_ED25519_SEED",
     }
-    assert keychain["item_attributes_extra"] == "REJECT"
+    assert keychain["secitemadd_dictionary_extra"] == "REJECT"
+    assert keychain["secitemcopymatching_query_exact"] == {
+        "kSecClass": "kSecClassGenericPassword",
+        "kSecAttrService": keychain["service"],
+        "kSecAttrAccount": keychain["account"],
+        "kSecAttrSynchronizable": False,
+        "kSecUseDataProtectionKeychain": True,
+        "kSecUseAuthenticationUI": "kSecUseAuthenticationUIFail",
+        "kSecReturnData": True,
+        "kSecReturnAttributes": True,
+        "kSecMatchLimit": "kSecMatchLimitOne",
+    }
+    assert keychain["secitemcopymatching_query_extra"] == "REJECT"
+    result_policy = keychain["secitemcopymatching_result_policy"]
+    assert result_policy["result_type"] == "CFDICTIONARY"
+    assert result_policy["missing_required_key"] == "STOP"
+    assert result_policy["required_projection_mismatch"] == "STOP"
+    assert result_policy["all_nonprojected_returned_keys"] == (
+        "IGNORE_WITHOUT_SERIALIZE_LOG_OR_DECISION"
+    )
+    expected_returned = dict(keychain["secitemadd_dictionary_exact"])
+    expected_returned.pop("kSecUseDataProtectionKeychain")
+    assert result_policy[
+        "required_persisted_attributes_verified_exactly"
+    ] == expected_returned
     assert set(keychain["forbidden_secret_channels"]) == {
         "ARGV",
         "ENVIRONMENT",
@@ -147,6 +172,10 @@ def test_schemas_are_closed_and_genesis_signature_is_non_recursive() -> None:
     }
     for field, schema_name in expected_nested_types.items():
         assert schemas["payload"]["types"][field] == schema_name
+    for schema_name in ("keychain_locator_object", "keychain_policy_object"):
+        schema = schemas[schema_name]
+        assert "data_protection_keychain" in schema["exact_fields"]
+        assert schema["types"]["data_protection_keychain"] == "boolean_true"
 
 
 def test_claim_binds_lock_authorization_nonce_and_keychain_item() -> None:

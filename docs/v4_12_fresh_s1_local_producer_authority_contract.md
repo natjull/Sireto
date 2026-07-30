@@ -41,6 +41,8 @@ La clé privée est une graine Ed25519 aléatoire de 32 octets produite par
 - `kSecAttrSynchronizable` : `false` ;
 - `kSecAttrAccessible` :
   `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` ;
+- `kSecUseDataProtectionKeychain` : `true` sur création et lecture, condition
+  requise sur macOS pour rendre `kSecAttrAccessible` effectif ;
 - lecture via `SecItemCopyMatching` ;
 - création via `SecItemAdd` ;
 - UI forcée à `kSecUseAuthenticationUIFail`.
@@ -49,7 +51,18 @@ Le binaire n’utilise jamais la commande `security`, un argument, une variable
 d’environnement, stdin, un fichier temporaire ou un log pour le secret.
 Seuls la clé publique brute de 32 octets, son Base64 canonique et ses hashes
 sortent du processus. La copie mutable de la graine est écrasée après usage.
-Tout attribut supplémentaire sur l'item est rejeté.
+Le dictionnaire `SecItemAdd` est fermé séparément et rejette toute clé
+supplémentaire. La requête `SecItemCopyMatching` est elle aussi fermée :
+classe, service, compte, `synchronizable=false`, Data Protection, UI fail,
+retour des données et attributs, limite à un résultat.
+
+Le résultat Keychain n'est pas soumis à une règle impossible « aucun champ
+supplémentaire ». La projection contractuelle vérifie exactement classe,
+service, compte, label, claim SHA, synchronisation, accessibilité et graine.
+Les autres métadonnées renvoyées par macOS sont non fiables, ignorées sans
+sérialisation, log ou usage de décision ; cette règle évite de dépendre d'une
+liste de champs système variable selon la version de macOS. Toute clé requise
+absente ou toute valeur de la projection divergente provoque `STOP`.
 
 Le lien d'appartenance ne repose ni sur le nom du service ni sur l'ordre
 présumé des opérations : il repose sur l'égalité exacte entre
