@@ -144,6 +144,16 @@ valeur ; les 7 tests du sealer passent. Nouveau verdict requis, lock toujours
 absent.
 *(commit GitHub : replacement objects interdits `8c3ac72`)*.
 
+Après deux `GO_SEAL_LOCAL_PRODUCER_LOCK`, le sealer a été exécuté une fois.
+Le lock canonique de 15 champs a pour SHA-256
+`78665f07bdcee12cfdd3989c7e7c55dd3ac625571181b1b2b6a52ea98f54954b`,
+mode matériel `0600`, UID 501. Il épingle le commit d'implémentation
+`ad74b4e`, le runtime Python 3.14.3/cryptography 46.0.3 et le volume externe
+UUID `76ff6087-fe11-4be1-8bb0-c89638a64de8`. L'autorisation, le root, le claim
+et toute clé réelle restent absents. Le lock doit maintenant être audité
+matériellement avant pré-vol et autorisation.
+*(commit GitHub : lock d'exécution scellé `d21d028`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
