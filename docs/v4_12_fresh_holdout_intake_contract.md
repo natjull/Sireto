@@ -301,8 +301,8 @@ Un registre `consumed_sirens` n’existe pas encore avec une fermeture
 suffisante. Sa spécification est portée par
 `docs/v4_12_consumed_sirens_registry_contract.md` et
 `config/v4_12_consumed_sirens_registry_plan.json`, épinglés respectivement à
-`75af5b7e5940290d19506362d1259388974c9f2192f3266d39e563b0e4b37c0e`
-et `fa1e925ebe165c33522093fb1dc6cf469ce74781de62a5d7ffc7019bf9040295`.
+`87b3924d1789b836358b42ed690e05675b0eba443a0bc4e0a6973f0948fba84a`
+et `f3528ec459652a69b3bf04c3f7425d465676ee96a2eb1c6d5b1a4c27136bb742`.
 Un pinner séparé doit le construire et le sceller **avant toute
 ouverture du nouveau CRM** à partir des oracles/labels consommés listés par
 les deux catalogues. Le lock d’intake doit épingler les SHA-256 finaux de la
@@ -319,8 +319,8 @@ registre défini par
 `docs/v4_12_consumed_compatibility_registry_contract.md` et
 `config/v4_12_consumed_compatibility_registry_plan.json`, épinglés
 respectivement à
-`1a394e15be8a1cc399b0739de5dfcd639b3f76656e84abf21ff8459f81b963e7`
-et `0c78a0494d248140675f1333ad47037fe9cc29139ecde1b3c671328e997e31a4`.
+`34364b3c5832c4d55c96807d7a30f8594b75eb64385e89a58e4feb8cf404acfe`
+et `2f71746b91d47fa8af09fc261d47f987efacda98f66c404f6138a332965d1653`.
 
 Avant toute ouverture du nouveau CRM, ce registre doit être réellement
 construit et scellé. Le lock d’intake épingle au minimum ses SHA-256 finaux de
