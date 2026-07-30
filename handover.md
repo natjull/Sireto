@@ -71,8 +71,12 @@ valeur exacte ; un test concurrent synchronise deux launchers et prouve un
 seul claim, item, arbre d'autorité et receipt. Les frontières de crash
 `CLAIM_DURABLE`, `KEYCHAIN_QUERIED` et `SEED_GENERATED`, ainsi que les états
 terminaux du receipt, sont aussi couvertes. Les tests dédiés passent à 38 et
-la suite complète donne `1197 passed`. Nouveau ré-audit obligatoire avant le
-backend natif.
+la suite locale donne `1197 passed`; la reproduction d'audit collecte les
+mêmes 1197 tests avec `1135 passed, 62 skipped` selon ses capacités
+d'environnement. Deux audits indépendants rendent désormais
+**`GO_SYNTHETIC_CORE_NEXT_NATIVE_BACKEND`**. Ce GO autorise uniquement
+l'implémentation et les tests mockés du backend Data Protection ; un test
+multiprocessus reste obligatoire avant tout run réel.
 *(commit GitHub : concurrence, temps logique et crashs `3b38fe0`)*.
 
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
