@@ -319,8 +319,8 @@ registre défini par
 `docs/v4_12_consumed_compatibility_registry_contract.md` et
 `config/v4_12_consumed_compatibility_registry_plan.json`, épinglés
 respectivement à
-`34364b3c5832c4d55c96807d7a30f8594b75eb64385e89a58e4feb8cf404acfe`
-et `2f71746b91d47fa8af09fc261d47f987efacda98f66c404f6138a332965d1653`.
+`7413952f31b40da6e647e907dd3a5bd5b611d50884e3a1e0590da9a89d1c110f`
+et `8c4f31ce4ebaee86724148e6b69638a0f4d6876f3a71e27ac23876f26700a258`.
 
 Avant toute ouverture du nouveau CRM, ce registre doit être réellement
 construit et scellé. Le lock d’intake épingle au minimum ses SHA-256 finaux de
@@ -328,10 +328,11 @@ contrat et plan, `build_id`, `payload_manifest_sha256`, `seal_sha256` et les
 hashes des quatre keysets privés. Il épingle aussi `hmac_key_id` et
 `hmac_key_sha256`. La clé HMAC de production est la même que celle du build du
 registre : elle reste dans le Keychain macOS, n’est jamais placée dans Git, un
-argument, une variable d’environnement, un log ou un manifest, et est fournie
-au sandbox uniquement par un descripteur déjà ouvert et scellé nommé
-logiquement `COMPATIBILITY_HMAC_KEY`. Le sandbox vérifie le hash de ses octets
-contre le lock avant toute comparaison.
+argument, une variable d’environnement, un fichier temporaire, un log ou un
+manifest. Le processus d'intake la lit dans son propre processus via
+`SecItemCopyMatching`, avec la même fiche Keychain épinglée et
+`kSecUseAuthenticationUIFail`. Il vérifie identifiant, longueur et hash contre
+le lock avant toute comparaison, puis efface sa copie mémoire mutable.
 
 - `service_id_keyset.parquet` ;
 - `siret_masked_keyset.parquet` ;
@@ -376,10 +377,12 @@ réseau, fork, modèle, cache retrieval, partition, candidat, résultat, registr
 de développement ou oracle historique. Il reçoit uniquement par descripteurs
 scellés et par canaux séparés : lignes CRM sûres + manifeste source d’un côté,
 paquet evidence source + catalogue de preuves + registre `consumed_sirens`
-minimal + `COMPATIBILITY_HMAC_KEY` de l’autre. Le processus parent garantit
-que la clé provient du Keychain, correspond aux `hmac_key_id` et
-`hmac_key_sha256` du lock et n’est jamais sérialisée. Il garantit aussi que le paquet evidence et
-l’oracle produit ne sont jamais transmis au scorer.
+minimal de l’autre. Le processus d'intake charge directement la clé depuis le
+Keychain sans UI, vérifie les `hmac_key_id` et `hmac_key_sha256` du lock et ne
+la sérialise jamais. Les permissions macOS strictement nécessaires à cette
+lecture native doivent être gelées et testées avant toute ouverture du CRM.
+Le processus parent garantit aussi que le paquet evidence et l’oracle produit
+ne sont jamais transmis au scorer.
 
 - `MATCH_EXACT` : preuves convergentes vers un unique SIRET éligible à
   `reference_date`, SIREN cohérent et au moins une preuve autoritative ;
