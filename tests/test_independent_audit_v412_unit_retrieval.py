@@ -47,14 +47,22 @@ def test_audit_source_hashes_are_closed_to_code_contract_and_profiles(
 
 def test_audit_never_opens_real_runtime_artifacts(
     monkeypatch: pytest.MonkeyPatch,
+    tmp_path: Path,
 ) -> None:
     original = os.open
     forbidden_opened: list[str] = []
+    allowed_test_root = str(tmp_path)
 
     def guarded(path: object, *args: object, **kwargs: object) -> int:
         text = os.fspath(path) if isinstance(path, (str, os.PathLike)) else ""
         if (
-            "/Volumes/CATNAT_DATA/" in text
+            (
+                "/Volumes/CATNAT_DATA/" in text
+                and not (
+                    text == allowed_test_root
+                    or text.startswith(allowed_test_root + os.sep)
+                )
+            )
             or text.startswith(str(ROOT / "models"))
         ):
             forbidden_opened.append(text)
@@ -62,6 +70,7 @@ def test_audit_never_opens_real_runtime_artifacts(
         return original(path, *args, **kwargs)
 
     monkeypatch.setattr(os, "open", guarded)
+    monkeypatch.setattr(subject.tempfile, "tempdir", allowed_test_root)
     result = subject.audit_repository(ROOT)
     assert result["verdict"] == subject.GO
     assert forbidden_opened == []

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import ast
+import inspect
 import json
 import os
 import subprocess
@@ -22,10 +23,10 @@ sealer = importlib.util.module_from_spec(SPEC)
 sys.modules[SPEC.name] = sealer
 SPEC.loader.exec_module(sealer)
 BUILDER_SOURCE = (
-    REPOSITORY / "scripts/build_v412_fresh_intake_synthetic_fixture.py"
+    REPOSITORY / "scripts/build_v412_fresh_s0_r2_fixture.py"
 )
 BUILDER_SPEC = importlib.util.spec_from_file_location(
-    "v412_s0_fixture_builder_for_lock_test", BUILDER_SOURCE
+    "v412_s0_r2_fixture_builder_for_lock_test", BUILDER_SOURCE
 )
 assert BUILDER_SPEC is not None and BUILDER_SPEC.loader is not None
 builder = importlib.util.module_from_spec(BUILDER_SPEC)
@@ -136,8 +137,14 @@ def test_fixture_validation_binds_control_and_all_five_payloads(
     tmp_path: Path,
 ) -> None:
     root = tmp_path / "fixture"
-    built = builder.build_fixture(sealer.CORE_PLAN_PATH, root)
     plan, core = sealer._load_plans()
+    test_plan = json.loads(json.dumps(plan))
+    test_plan["r2_successor"]["root"] = str(root)
+    test_plan_path = tmp_path / "r2-plan.json"
+    test_plan_path.write_bytes(builder.canonical_json_bytes(test_plan))
+    built = builder.build_fixture(
+        root=root, authoritative_plan_path=test_plan_path
+    )
     run_id, attempt_id, logical_time, inputs = sealer._validate_fixture(
         plan, core, root
     )
@@ -196,6 +203,28 @@ def test_sealer_has_no_authoritative_worker_launch() -> None:
         and isinstance(node.func.value, ast.Name)
         and node.func.value.id == "subprocess"
     ]
-    assert len(calls) == 1
-    assert calls[0].func.attr == "run"
+    assert len(calls) == 2
+    assert sorted(call.func.attr for call in calls) == ["Popen", "run"]
     assert "[str(OTOOL), *arguments]" in source
+    assert "subprocess.Popen(" in inspect.getsource(
+        sealer._run_bounded_child
+    )
+    smoke_source = inspect.getsource(sealer._run_r2_smoke)
+    assert "private_python" in smoke_source
+    assert "_run_bounded_child(" in smoke_source
+
+
+def test_r2b_smoke_capture_is_bounded_during_read() -> None:
+    with pytest.raises(
+        sealer.LockSealError, match="stdout exceeded capture limit"
+    ):
+        sealer._run_bounded_child(
+            [
+                sys.executable,
+                "-c",
+                "import os;os.write(1,b'x'*65537)",
+            ],
+            {"PATH": "/usr/bin:/bin"},
+            timeout_seconds=10,
+            capture_limit_bytes_each=65536,
+        )

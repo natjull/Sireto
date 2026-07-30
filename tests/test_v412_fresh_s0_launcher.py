@@ -108,7 +108,9 @@ def test_git_head_and_plan_blob_are_read_without_child_process() -> None:
     assert launcher.COMMIT40.fullmatch(head)
     raw = launcher._git_blob(head, launcher.PLAN_RELATIVE_PATH)
     value = json.loads(raw)
-    assert value["status"] == "PREREGISTERED_DO_NOT_IMPLEMENT_UNTIL_AUDIT"
+    assert value["status"] == (
+        "PREREGISTERED_R2B_DO_NOT_IMPLEMENT_UNTIL_TWO_INDEPENDENT_AUDITS"
+    )
     assert launcher._git_is_ancestor(
         "46b1958b21c2741d9922d252da9f4e81175c385c", head
     )

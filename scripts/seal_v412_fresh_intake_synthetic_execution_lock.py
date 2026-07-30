@@ -2,8 +2,9 @@
 """Build the V4.12 synthetic S0 private runtime and immutable execution lock.
 
 This program is a pre-run authority builder.  It never imports or launches the
-launcher/worker and never scans an input row.  Its only permitted child process
-is the pinned ``/usr/bin/otool`` used to close Mach-O dependencies.
+launcher/worker and never scans an input row.  Its permitted child processes
+are the pinned ``/usr/bin/otool`` used to close Mach-O dependencies and one
+final pinned ``/usr/bin/sandbox-exec`` smoke without payload.
 """
 
 from __future__ import annotations
@@ -17,11 +18,13 @@ import os
 import platform
 import plistlib
 import re
+import selectors
 import stat
 import struct
 import subprocess
 import sys
 import sysconfig
+import time
 import uuid
 import zlib
 from pathlib import Path
@@ -37,16 +40,24 @@ CORE_PLAN_PATH = (
     / "config/v4_12_fresh_intake_synthetic_scanner_sealer_plan.json"
 )
 EXPECTED_PLAN_SHA256 = (
-    "f73d855b9d6c76f6175cae5e04f2bd2bc61a19a5d78d356ebe99d3d6289f8596"
+    "2ab9a1d5954588c01de22c54e21c721aa0e9da9a9e7f140d9f93950cb8b1abf4"
 )
 EXPECTED_CONTRACT_SHA256 = (
-    "b969a8d552ba060e5b7e24bd1e295abbaf025f1dfbfb7e5683bd5853b689b5df"
+    "66418a23ae6b166f253f7ef4bc220e3a47ce0655c2ee96c7e8a9db51e0519a42"
 )
 ALLOWED_ROOT = Path(
-    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic"
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r2"
 )
 SANDBOX_EXEC = Path("/usr/bin/sandbox-exec")
 OTOOL = Path("/usr/bin/otool")
+PYTHON_APP_HELPER = Path(
+    "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/"
+    "Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python"
+)
+HOST_PYTHON_FRAMEWORK = Path(
+    "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/"
+    "Python.framework/Versions/3.14/Python"
+)
 HEX40 = re.compile(r"^[0-9a-f]{40}$")
 OPAQUE_ID = re.compile(r"^[a-p]{64}$")
 MACHO_MAGICS = {
@@ -63,10 +74,12 @@ IMPLEMENTATION_ROLE_PATHS = {
     "LOCK_SEALER": "scripts/seal_v412_fresh_intake_synthetic_execution_lock.py",
     "LAUNCHER": "scripts/launch_v412_fresh_intake_synthetic_scanner_sealer.py",
     "WORKER": "scripts/run_v412_fresh_s0_worker.py",
+    "R2_FIXTURE_BUILDER": "scripts/build_v412_fresh_s0_r2_fixture.py",
     "SANDBOX_PROFILE": (
         "config/v4_12_fresh_intake_synthetic_scanner_sealer.sb"
     ),
     "IMPLEMENTATION_TESTS": "tests/test_v412_fresh_s0_authoritative_run.py",
+    "R2_FIXTURE_TESTS": "tests/test_v412_fresh_s0_r2_fixture.py",
     "AUTHORITATIVE_PLAN": (
         "config/v4_12_fresh_s0_authoritative_run_plan.json"
     ),
@@ -580,17 +593,25 @@ def _validate_fixture(
     plan: Mapping[str, Any], core_plan: Mapping[str, Any], root: Path
 ) -> tuple[str, str, str, list[tuple[str, Path, bytes, os.stat_result]]]:
     core_plan_bytes, _ = _read_regular(CORE_PLAN_PATH)
-    run_id = opaque_digest(
-        core_plan["ids"]["run"]["domain"],
-        {
-            "fixture_spec_sha256": core_plan["control_manifest"][
-                "fixture_spec_sha256"
-            ],
-            "plan_sha256": sha256_bytes(core_plan_bytes),
-        },
-    )
+    r2 = plan["r2_successor"]
+    run_derivation = r2["run_derivation"]
+    run_values = {
+        "fixture_spec_sha256": core_plan["control_manifest"][
+            "fixture_spec_sha256"
+        ],
+        "core_plan_sha256": sha256_bytes(core_plan_bytes),
+        "predecessor_receipt_sha256": r2["predecessor_receipt_sha256"],
+    }
+    if (
+        list(run_values) != run_derivation["projection"]
+        or run_values != run_derivation["values"]
+    ):
+        _stop("R2 run derivation authority mismatch")
+    run_id = opaque_digest(run_derivation["domain"], run_values)
     if not OPAQUE_ID.fullmatch(run_id):
         _stop("derived synthetic run id invalid")
+    if run_id == r2["predecessor_run_id"]:
+        _stop("R2 synthetic run id equals R1")
     package = root / "inbox" / run_id / "package"
     control_path = (
         root / "control" / run_id / "fixture_control_manifest.json"
@@ -681,6 +702,8 @@ def _validate_fixture(
     )
     if not OPAQUE_ID.fullmatch(attempt_id):
         _stop("derived attempt id invalid")
+    if attempt_id == plan["r2_successor"]["predecessor_attempt_id"]:
+        _stop("R2 attempt id equals R1")
     return run_id, attempt_id, control["logical_time_utc"], payloads
 
 
@@ -817,6 +840,15 @@ def _iter_source_files(root: Path) -> Iterable[Path]:
         pending.extend(reversed(directories))
 
 
+def _iter_stdlib_runtime_files(root: Path) -> Iterable[Path]:
+    for source in _iter_source_files(root):
+        # Homebrew ships a stdlib/config symlink back to the framework dylib.
+        # R2-B keeps that dylib exclusively as the retained host authority.
+        if source.resolve() == HOST_PYTHON_FRAMEWORK:
+            continue
+        yield source
+
+
 def _seatbelt_literal(value: str) -> str:
     if "\n" in value or "\r" in value or "\0" in value:
         _stop("sandbox path contains forbidden control characters")
@@ -835,7 +867,9 @@ def _render_profile(
     except UnicodeDecodeError:
         _stop("sandbox template is not UTF-8")
     replacements = {
+        "@@ALLOWED_ROOT@@": str(root),
         "@@PRIVATE_RUNTIME_ROOT@@": str(runtime_root),
+        "@@HOST_PYTHON_FRAMEWORK@@": str(HOST_PYTHON_FRAMEWORK),
         "@@SEALED_RUN_ROOT@@": str(root / "sealed" / run_id),
         "@@SCAN_RUN_ROOT@@": str(root / "scan" / run_id),
         "@@QUARANTINE_RUN_ROOT@@": str(root / "quarantine" / run_id),
@@ -893,7 +927,7 @@ def _build_private_runtime(
     implementation_payloads: Mapping[str, bytes],
     root: Path,
     run_id: str,
-) -> tuple[dict[str, Any], Path, str]:
+) -> tuple[dict[str, Any], Path, str, Path, Path]:
     runtime_root = root / "runtime" / run_id
     if runtime_root.exists():
         _stop("private runtime already exists")
@@ -905,13 +939,22 @@ def _build_private_runtime(
     for path in (rootfs, app, profile_dir):
         _mkdir_exclusive(path)
     records: dict[str, dict[str, Any]] = {}
-    executable = Path(sys.executable).resolve()
+    build_executable = Path(sys.executable).resolve()
+    boundary = plan["r2_successor"]["runtime_boundary_amendment"]
+    helper_pin = boundary["private_python_helper"]
+    framework_pin = boundary["host_python_framework"]
     if (
-        executable
+        build_executable
         != Path(
             "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/"
             "Python.framework/Versions/3.14/bin/python3.14"
         )
+        or Path(helper_pin["source_path"]) != PYTHON_APP_HELPER
+        or helper_pin["sha256"]
+        != "7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211"
+        or Path(framework_pin["path"]) != HOST_PYTHON_FRAMEWORK
+        or framework_pin["sha256"]
+        != "e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0a"
         or platform.machine() != "arm64"
         or platform.python_version() != "3.14.3"
         or pa.__version__ != "23.0.1"
@@ -924,9 +967,13 @@ def _build_private_runtime(
             _stop("runtime source is not absolute")
         return rootfs.joinpath(*resolved.parts[1:])
 
+    helper_payload, _helper_info = _read_regular(PYTHON_APP_HELPER)
+    if sha256_bytes(helper_payload) != helper_pin["sha256"]:
+        _stop("pinned Python.app helper hash mismatch")
+    private_python = rootfs_destination(PYTHON_APP_HELPER)
     _copy_runtime_file(
-        executable,
-        rootfs_destination(executable),
+        PYTHON_APP_HELPER,
+        private_python,
         "PYTHON_EXECUTABLE",
         runtime_root,
         records,
@@ -934,7 +981,7 @@ def _build_private_runtime(
     )
     stdlib_logical = Path(sysconfig.get_path("stdlib"))
     stdlib_source = stdlib_logical.resolve()
-    for source in _iter_source_files(stdlib_source):
+    for source in _iter_stdlib_runtime_files(stdlib_source):
         try:
             relative = source.relative_to(stdlib_source)
         except ValueError:
@@ -958,6 +1005,8 @@ def _build_private_runtime(
     pyarrow_logical = Path(next(iter(spec.submodule_search_locations)))
     pyarrow_source = pyarrow_logical.resolve()
     for source in _iter_source_files(pyarrow_source):
+        if source.resolve() == HOST_PYTHON_FRAMEWORK:
+            _stop("PyArrow unexpectedly aliases the host Python framework")
         try:
             relative = source.relative_to(pyarrow_source)
         except ValueError:
@@ -1003,7 +1052,7 @@ def _build_private_runtime(
         if _is_macho(runtime_root / relative)
     ]
     visited: set[str] = set()
-    framework_source: Path | None = None
+    framework_seen = False
     while pending:
         private_loader = pending.pop(0)
         loader_record = records[private_loader.relative_to(runtime_root).as_posix()]
@@ -1014,20 +1063,20 @@ def _build_private_runtime(
         rpaths = _macho_rpaths(source_loader)
         for install_name in _macho_dependencies(source_loader):
             dependency = _expand_install_name(
-                install_name, source_loader, executable, rpaths
+                install_name, source_loader, PYTHON_APP_HELPER, rpaths
             )
             if dependency is None:
                 continue
             if not dependency.is_file():
                 _stop(f"Mach-O dependency is absent: {dependency}")
-            if (
-                framework_source is None
-                and "Python.framework/" in str(dependency)
-            ):
-                role = "PYTHON_FRAMEWORK"
-                framework_source = dependency
-            else:
-                role = "MACHO_DEPENDENCY"
+            if dependency == HOST_PYTHON_FRAMEWORK:
+                if source_loader != PYTHON_APP_HELPER or framework_seen:
+                    _stop("host Python framework dependency is not unique")
+                framework_seen = True
+                continue
+            if "Python.framework/" in str(dependency):
+                _stop("unexpected Python framework dependency")
+            role = "MACHO_DEPENDENCY"
             destination = rootfs_destination(dependency)
             before = set(records)
             _copy_runtime_file(
@@ -1036,8 +1085,10 @@ def _build_private_runtime(
             relative = destination.relative_to(runtime_root).as_posix()
             if relative not in before and _is_macho(destination):
                 pending.append(destination)
-    if framework_source is None:
-        _stop("Python framework dependency was not closed")
+    if not framework_seen:
+        _stop("private Python.app helper does not reference pinned host framework")
+    if _macho_dependencies(private_python).count(str(HOST_PYTHON_FRAMEWORK)) != 1:
+        _stop("private Python.app helper install name mismatch")
 
     profile_template = implementation_payloads["SANDBOX_PROFILE"]
     effective = _render_profile(
@@ -1074,7 +1125,13 @@ def _build_private_runtime(
     }
     manifest_path = runtime_root / "private_runtime_manifest.json"
     _write_exclusive(manifest_path, canonical_json(manifest), 0o400)
-    return manifest, manifest_path, sha256_bytes(effective)
+    return (
+        manifest,
+        manifest_path,
+        sha256_bytes(effective),
+        private_python,
+        effective_path,
+    )
 
 
 def _create_canaries(
@@ -1210,6 +1267,255 @@ def _prepare_run_directories(
         _stop("claim exists before authorization")
 
 
+def _directory_is_empty(path: Path) -> bool:
+    descriptor = _open_anchored(path, os.O_RDONLY, directory=True)
+    try:
+        with os.scandir(descriptor) as iterator:
+            return next(iterator, None) is None
+    finally:
+        os.close(descriptor)
+
+
+def _r2_worker_environment(
+    root: Path, run_id: str, runtime_root: Path
+) -> dict[str, str]:
+    pythonhome = (
+        runtime_root
+        / "rootfs/opt/homebrew/Cellar/python@3.14/3.14.3_1/"
+        "Frameworks/Python.framework/Versions/3.14"
+    )
+    private_site = (
+        runtime_root / "rootfs/opt/homebrew/lib/python3.14/site-packages"
+    )
+    return {
+        "PATH": "/usr/bin:/bin",
+        "PYTHONDONTWRITEBYTECODE": "1",
+        "PYTHONHOME": str(pythonhome),
+        "PYTHONPATH": f"{private_site}:{runtime_root / 'app'}",
+        "TMPDIR": str(root / "tmp" / run_id),
+    }
+
+
+def _sandbox_exec_record() -> dict[str, Any]:
+    raw, info = _read_regular(
+        SANDBOX_EXEC, allowed_uids=frozenset({0})
+    )
+    if stat.S_IMODE(info.st_mode) & 0o022:
+        _stop("sandbox-exec is group/other writable")
+    return {
+        "role": "SANDBOX_EXEC",
+        "path": str(SANDBOX_EXEC),
+        "size_bytes": len(raw),
+        "sha256": sha256_bytes(raw),
+        "mode": _mode_string(info.st_mode),
+    }
+
+
+def _revalidate_host_framework(expected: Mapping[str, Any]) -> None:
+    current = _input_record("HOST_PYTHON_FRAMEWORK", HOST_PYTHON_FRAMEWORK)
+    if current != expected:
+        _stop("host Python framework changed before sandbox execution")
+    if current["sha256"] != (
+        "e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0a"
+    ):
+        _stop("host Python framework hash differs from R2-B pin")
+
+
+def _run_bounded_child(
+    argv: Sequence[str],
+    environment: Mapping[str, str],
+    *,
+    timeout_seconds: float,
+    capture_limit_bytes_each: int,
+) -> tuple[int, bytes, bytes]:
+    process = subprocess.Popen(
+        list(argv),
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        close_fds=True,
+        env=dict(environment),
+    )
+    if process.stdout is None or process.stderr is None:
+        process.kill()
+        process.wait()
+        _stop("R2-B smoke pipes are absent")
+    selector = selectors.DefaultSelector()
+    buffers = {"stdout": bytearray(), "stderr": bytearray()}
+    streams = {"stdout": process.stdout, "stderr": process.stderr}
+    try:
+        for name, stream in streams.items():
+            os.set_blocking(stream.fileno(), False)
+            selector.register(stream, selectors.EVENT_READ, name)
+        deadline = time.monotonic() + timeout_seconds
+        while selector.get_map():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                process.kill()
+                _stop("R2-B sandbox smoke timed out")
+            events = selector.select(min(remaining, 0.25))
+            for key, _mask in events:
+                name = key.data
+                stream = key.fileobj
+                allowance = (
+                    capture_limit_bytes_each + 1 - len(buffers[name])
+                )
+                try:
+                    chunk = os.read(stream.fileno(), max(1, allowance))
+                except BlockingIOError:
+                    continue
+                if not chunk:
+                    selector.unregister(stream)
+                    stream.close()
+                    continue
+                buffers[name].extend(chunk)
+                if len(buffers[name]) > capture_limit_bytes_each:
+                    process.kill()
+                    _stop(f"R2-B smoke {name} exceeded capture limit")
+        return_code = process.wait(
+            timeout=max(0.0, deadline - time.monotonic())
+        )
+    except subprocess.TimeoutExpired:
+        process.kill()
+        _stop("R2-B sandbox smoke timed out")
+    finally:
+        selector.close()
+        for stream in streams.values():
+            if not stream.closed:
+                stream.close()
+        if process.poll() is None:
+            process.kill()
+            process.wait()
+    return return_code, bytes(buffers["stdout"]), bytes(buffers["stderr"])
+
+
+def _run_r2_smoke(
+    plan: Mapping[str, Any],
+    implementation_commit: str,
+    root: Path,
+    run_id: str,
+    attempt_id: str,
+    private_python: Path,
+    effective_profile_path: Path,
+    effective_profile_sha256: str,
+    host_framework_record: Mapping[str, Any],
+    sandbox_exec_record: Mapping[str, Any],
+) -> dict[str, Any]:
+    runtime_root = root / "runtime" / run_id
+    environment = _r2_worker_environment(root, run_id, runtime_root)
+    if list(environment) != plan["launcher"]["environment_exact_keys"]:
+        _stop("R2-B smoke environment key order mismatch")
+    if any(key.startswith("DYLD_") for key in environment):
+        _stop("DYLD environment is forbidden for R2-B")
+    output_directories = [
+        root / "sealed" / run_id,
+        root / "scan" / run_id,
+        root / "quarantine" / run_id,
+        root / "audit" / run_id / "worker",
+        root / "tmp" / run_id,
+    ]
+    empty_before = all(_directory_is_empty(path) for path in output_directories)
+    if not empty_before:
+        _stop("R2-B smoke outputs are not empty before execution")
+    profile_raw, _profile_info = _read_regular(effective_profile_path)
+    if sha256_bytes(profile_raw) != effective_profile_sha256:
+        _stop("R2-B smoke profile hash mismatch")
+    try:
+        profile_text = profile_raw.decode("utf-8", errors="strict")
+    except UnicodeDecodeError:
+        _stop("R2-B smoke profile is not UTF-8")
+    if (
+        not profile_text.endswith("\n")
+        or profile_text.endswith("\n\n")
+        or "\r" in profile_text
+        or "\0" in profile_text
+        or "@@" in profile_text
+    ):
+        _stop("R2-B smoke profile bytes are invalid")
+    _revalidate_host_framework(host_framework_record)
+    if _sandbox_exec_record() != sandbox_exec_record:
+        _stop("sandbox-exec changed before R2-B smoke")
+    if _macho_dependencies(private_python).count(str(HOST_PYTHON_FRAMEWORK)) != 1:
+        _stop("private Python install name changed before smoke")
+    root_literal = json.dumps(str(runtime_root), ensure_ascii=True)
+    assertion = (
+        "import encodings,os,pyarrow;"
+        f"r=os.path.realpath({root_literal});"
+        "e=os.path.realpath(encodings.__file__);"
+        "p=os.path.realpath(pyarrow.__file__);"
+        "assert pyarrow.__version__=='23.0.1';"
+        "assert os.path.isfile(e) and e!=r and os.path.commonpath((r,e))==r;"
+        "assert os.path.isfile(p) and p!=r and os.path.commonpath((r,p))==r"
+    )
+    argv = [
+        str(SANDBOX_EXEC),
+        "-p",
+        profile_text,
+        str(private_python),
+        "-c",
+        assertion,
+    ]
+    return_code, stdout, stderr = _run_bounded_child(
+        argv,
+        environment,
+        timeout_seconds=60,
+        capture_limit_bytes_each=65536,
+    )
+    signal_number = -return_code if return_code < 0 else None
+    exit_code = return_code if return_code >= 0 else None
+    empty_after = all(_directory_is_empty(path) for path in output_directories)
+    if (
+        exit_code != 0
+        or signal_number is not None
+        or stdout
+        or stderr
+        or not empty_after
+    ):
+        _stop("R2-B sandbox smoke failed")
+    python_record_sha = sha256_file(private_python)
+    expected_python_sha = plan["r2_successor"]["runtime_boundary_amendment"][
+        "private_python_helper"
+    ]["sha256"]
+    if python_record_sha != expected_python_sha:
+        _stop("R2-B private Python hash changed before smoke")
+    projection = {
+        "schema_version": (
+            "sireto-v4.12-fresh-s0-r2-smoke-attestation-2"
+        ),
+        "implementation_commit": implementation_commit,
+        "synthetic_run_id": run_id,
+        "attempt_id": attempt_id,
+        "python_sha256": python_record_sha,
+        "profile_sha256": effective_profile_sha256,
+        "environment_sha256": sha256_bytes(
+            canonical_json(environment, final_lf=False)
+        ),
+        "argv_sha256": sha256_bytes(
+            canonical_json(argv, final_lf=False)
+        ),
+        "pass_fds": [],
+        "exit_code": exit_code,
+        "signal": signal_number,
+        "stdout_size_bytes": len(stdout),
+        "stdout_sha256": sha256_bytes(stdout),
+        "stderr_size_bytes": len(stderr),
+        "stderr_sha256": sha256_bytes(stderr),
+        "five_output_directories_empty_before": empty_before,
+        "five_output_directories_empty_after": empty_after,
+    }
+    exact_fields = plan["schema_definitions"]["r2_smoke_attestation"][
+        "exact_fields"
+    ]
+    if list(projection) != exact_fields[:-1]:
+        _stop("R2-B smoke attestation field order mismatch")
+    return {
+        **projection,
+        "smoke_sha256": sha256_bytes(
+            canonical_json(projection, final_lf=False)
+        ),
+    }
+
+
 def _input_record(
     role: str, path: Path
 ) -> dict[str, Any]:
@@ -1295,39 +1601,65 @@ def seal_execution_lock(implementation_commit: str) -> dict[str, Any]:
             plan, core_plan, root
         )
         _prepare_run_directories(root, run_id, attempt_id)
-        private_manifest, private_manifest_path, effective_profile_sha = (
-            _build_private_runtime(
-                plan,
-                implementation_commit,
-                implementation_payloads,
-                root,
-                run_id,
-            )
+        sandbox_exec_record = _sandbox_exec_record()
+        host_framework_record = _input_record(
+            "HOST_PYTHON_FRAMEWORK", HOST_PYTHON_FRAMEWORK
         )
+        host_framework_pin = plan["r2_successor"][
+            "runtime_boundary_amendment"
+        ]["host_python_framework"]
+        if (
+            host_framework_record["absolute_path"]
+            != host_framework_pin["path"]
+            or host_framework_record["sha256"]
+            != host_framework_pin["sha256"]
+        ):
+            _stop("host Python framework input differs from R2-B pin")
+        (
+            private_manifest,
+            private_manifest_path,
+            effective_profile_sha,
+            private_python,
+            effective_profile_path,
+        ) = _build_private_runtime(
+            plan,
+            implementation_commit,
+            implementation_payloads,
+            root,
+            run_id,
+        )
+        r2_smoke = _run_r2_smoke(
+            plan,
+            implementation_commit,
+            root,
+            run_id,
+            attempt_id,
+            private_python,
+            effective_profile_path,
+            effective_profile_sha,
+            host_framework_record,
+            sandbox_exec_record,
+        )
+        _revalidate_host_framework(host_framework_record)
         _canary_manifest, canary_manifest_path = _create_canaries(
             plan, root, run_id
         )
         input_paths = {
             role: path for role, path, _raw, _info in fixture_inputs
         }
+        input_paths["HOST_PYTHON_FRAMEWORK"] = HOST_PYTHON_FRAMEWORK
         input_paths["PRIVATE_RUNTIME_MANIFEST"] = private_manifest_path
         input_paths["CANARY_MANIFEST"] = canary_manifest_path
-        read_inputs = [
-            _input_record(role, input_paths[role])
-            for role in plan["fd_protocol"]["lock_input_roles_exact_order"]
-        ]
-        sandbox_exec_raw, sandbox_exec_info = _read_regular(
-            SANDBOX_EXEC, allowed_uids=frozenset({0})
-        )
-        if stat.S_IMODE(sandbox_exec_info.st_mode) & 0o022:
-            _stop("sandbox-exec is group/other writable")
-        sandbox_exec_record = {
-            "role": "SANDBOX_EXEC",
-            "path": str(SANDBOX_EXEC),
-            "size_bytes": len(sandbox_exec_raw),
-            "sha256": sha256_bytes(sandbox_exec_raw),
-            "mode": _mode_string(sandbox_exec_info.st_mode),
-        }
+        read_inputs = []
+        for role in plan["fd_protocol"]["lock_input_roles_exact_order"]:
+            record = (
+                host_framework_record
+                if role == "HOST_PYTHON_FRAMEWORK"
+                else _input_record(role, input_paths[role])
+            )
+            read_inputs.append(record)
+        if _sandbox_exec_record() != sandbox_exec_record:
+            _stop("sandbox-exec changed after R2-B smoke")
         template_sha = next(
             record["sha256"]
             for record in implementation
@@ -1343,7 +1675,7 @@ def seal_execution_lock(implementation_commit: str) -> dict[str, Any]:
             _stop("sandbox derivation token remained in execution lock")
         lock = {
             "schema_version": plan["execution_lock"]["schema_version"],
-            "purpose": "SIRETO_V412_FRESH_SYNTHETIC_S0_AUTHORITATIVE_RUN",
+            "purpose": "SIRETO_V412_FRESH_SYNTHETIC_S0_R2_AUTHORITATIVE_RUN",
             "status": plan["execution_lock"]["status"],
             "implementation_commit": implementation_commit,
             "implementation_blobs": implementation,
@@ -1355,6 +1687,7 @@ def seal_execution_lock(implementation_commit: str) -> dict[str, Any]:
                 "sandbox_exec": sandbox_exec_record,
                 "private_runtime_manifest": private_manifest,
             },
+            "r2_smoke": r2_smoke,
             "read_fds": read_inputs,
             "paths": _substitute_lock_paths(
                 plan, root, run_id, attempt_id

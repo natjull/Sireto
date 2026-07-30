@@ -30,7 +30,7 @@ except ModuleNotFoundError:
 
 
 ALLOWED_ROOT = Path(
-    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic"
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r2"
 )
 CORE_PLAN_SHA256 = (
     "e8a55a999035183363c0bf7711280b09553a305434173286e41c696ea3e4772f"

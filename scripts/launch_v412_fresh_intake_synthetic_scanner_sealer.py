@@ -67,6 +67,7 @@ LOCK_FIELDS = (
     "implementation_blobs",
     "core",
     "runtime",
+    "r2_smoke",
     "read_fds",
     "paths",
     "sandbox",
@@ -157,6 +158,7 @@ WORKER_PAYLOAD_ROLES = (
     "EVIDENCE_PARQUET",
 )
 LOCK_INPUT_ROLES = WORKER_PAYLOAD_ROLES + (
+    "HOST_PYTHON_FRAMEWORK",
     "PRIVATE_RUNTIME_MANIFEST",
     "CANARY_MANIFEST",
 )
@@ -165,6 +167,7 @@ PARENT_RETAINED_ROLES = (
     "AUTHORIZATION",
     "WORKER",
     "SANDBOX_PROFILE",
+    "HOST_PYTHON_FRAMEWORK",
     "PRIVATE_RUNTIME_MANIFEST",
     *WORKER_PAYLOAD_ROLES,
     "WORKER_SPEC",
@@ -686,7 +689,10 @@ def _load_plan() -> tuple[dict[str, Any], bytes]:
     if raw != disk:
         _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "plan differs from HEAD")
     plan = decode_canonical_json(raw, "authoritative plan")
-    if plan.get("status") != "PREREGISTERED_DO_NOT_IMPLEMENT_UNTIL_AUDIT":
+    if (
+        plan.get("status")
+        != "PREREGISTERED_R2B_DO_NOT_IMPLEMENT_UNTIL_TWO_INDEPENDENT_AUDITS"
+    ):
         _stop("AUTHORIZATION", "IMPLEMENTATION_INVALID", "unexpected plan status")
     return plan, raw
 
@@ -744,7 +750,8 @@ def _load_lock(
         _stop("AUTHORIZATION", "LOCK_INVALID", "execution lock fields")
     if (
         lock["schema_version"] != plan["execution_lock"]["schema_version"]
-        or lock["purpose"] != "SIRETO_V412_FRESH_SYNTHETIC_S0_AUTHORITATIVE_RUN"
+        or lock["purpose"]
+        != "SIRETO_V412_FRESH_SYNTHETIC_S0_R2_AUTHORITATIVE_RUN"
         or lock["status"] != "SEALED_AUTHORITY_READY_TO_AUTHORIZE"
         or lock["implementation_commit"] != authorization["implementation_commit"]
         or lock["synthetic_run_id"] != authorization["synthetic_run_id"]
@@ -1090,6 +1097,154 @@ def _runtime_path(lock: Mapping[str, Any], plan: Mapping[str, Any], record: Mapp
     return root / relative
 
 
+def _r2b_runtime_boundary(plan: Mapping[str, Any]) -> Mapping[str, Any]:
+    boundary = plan["r2_successor"]["runtime_boundary_amendment"]
+    if (
+        type(boundary) is not dict
+        or boundary.get("status") != "PREREGISTERED_R2B_RUNTIME_BOUNDARY"
+        or boundary.get("dyld_environment_forbidden")
+        != ["DYLD_LIBRARY_PATH", "DYLD_FRAMEWORK_PATH", "DYLD_ROOT_PATH"]
+    ):
+        _stop("PRESPAWN", "RUNTIME_INVALID", "R2-B runtime boundary")
+    return boundary
+
+
+def _private_python_path(
+    lock: Mapping[str, Any], plan: Mapping[str, Any]
+) -> Path:
+    boundary = _r2b_runtime_boundary(plan)
+    expected = boundary["private_python_helper"]
+    record = _private_record(lock, "PYTHON_EXECUTABLE")
+    source = expected["source_path"]
+    if (
+        type(expected) is not dict
+        or record["source_path"] != source
+        or record["sha256"] != expected["sha256"]
+        or source == boundary["private_python_stub_forbidden"]
+        or record["private_relative_path"]
+        != f"rootfs/{source.removeprefix('/')}"
+    ):
+        _stop("PRESPAWN", "RUNTIME_INVALID", "private Python.app helper authority")
+    return _runtime_path(lock, plan, record)
+
+
+def _host_python_framework(
+    lock: Mapping[str, Any], plan: Mapping[str, Any]
+) -> Mapping[str, Any]:
+    expected = _r2b_runtime_boundary(plan)["host_python_framework"]
+    records = [
+        record
+        for record in lock["read_fds"]
+        if record.get("role") == "HOST_PYTHON_FRAMEWORK"
+    ]
+    if (
+        type(expected) is not dict
+        or len(records) != 1
+        or records[0].get("absolute_path") != expected.get("path")
+        or records[0].get("sha256") != expected.get("sha256")
+        or expected.get("retained_parent_authority") is not True
+        or expected.get("sandbox_read_rule")
+        != "LITERAL_ONLY_NO_OPT_OR_CELLAR_SUBPATH"
+    ):
+        _stop("PRESPAWN", "RUNTIME_INVALID", "host Python framework authority")
+    return records[0]
+
+
+def _macho_dylib_load_names(raw: bytes) -> tuple[str, ...]:
+    # R2-B pins a thin little-endian arm64 MH_EXECUTE.  Parsing it in-process
+    # keeps the authoritative launcher at exactly one child process.
+    if len(raw) < 32:
+        _stop("PRESPAWN", "RUNTIME_INVALID", "short Mach-O helper")
+    try:
+        (
+            magic,
+            cpu_type,
+            _cpu_subtype,
+            file_type,
+            command_count,
+            command_bytes,
+            _flags,
+            _reserved,
+        ) = struct.unpack_from("<IiiIIIII", raw, 0)
+    except struct.error:
+        _stop("PRESPAWN", "RUNTIME_INVALID", "invalid Mach-O header")
+    if (
+        magic != 0xFEEDFACF
+        or cpu_type != 0x0100000C
+        or file_type != 2
+        or command_count > 4096
+        or command_bytes > len(raw) - 32
+    ):
+        _stop("PRESPAWN", "RUNTIME_INVALID", "unexpected Mach-O helper")
+    cursor = 32
+    end = cursor + command_bytes
+    names: list[str] = []
+    dylib_commands = {0xC, 0x18, 0x1F, 0x23}
+    for _index in range(command_count):
+        if cursor + 8 > end:
+            _stop("PRESPAWN", "RUNTIME_INVALID", "truncated Mach-O command")
+        command, command_size = struct.unpack_from("<II", raw, cursor)
+        if command_size < 8 or command_size % 4 or cursor + command_size > end:
+            _stop("PRESPAWN", "RUNTIME_INVALID", "invalid Mach-O command size")
+        if (command & 0x7FFFFFFF) in dylib_commands:
+            if command_size < 24:
+                _stop("PRESPAWN", "RUNTIME_INVALID", "short dylib command")
+            name_offset = struct.unpack_from("<I", raw, cursor + 8)[0]
+            if name_offset < 24 or name_offset >= command_size:
+                _stop("PRESPAWN", "RUNTIME_INVALID", "invalid dylib name offset")
+            payload = raw[cursor + name_offset : cursor + command_size]
+            nul = payload.find(b"\0")
+            if nul < 1:
+                _stop("PRESPAWN", "RUNTIME_INVALID", "invalid dylib name")
+            try:
+                name = payload[:nul].decode("utf-8", "strict")
+            except UnicodeDecodeError:
+                _stop("PRESPAWN", "RUNTIME_INVALID", "non-UTF8 dylib name")
+            names.append(name)
+        cursor += command_size
+    if cursor != end:
+        _stop("PRESPAWN", "RUNTIME_INVALID", "Mach-O command size mismatch")
+    return tuple(names)
+
+
+def _validate_python_helper_install_name(
+    lock: Mapping[str, Any], plan: Mapping[str, Any], *, phase: str
+) -> None:
+    python_path = _private_python_path(lock, plan)
+    fd = _open_anchored(python_path)
+    try:
+        raw, _ = _read_regular_fd(fd, "private Python.app helper")
+    finally:
+        os.close(fd)
+    expected = _r2b_runtime_boundary(plan)["host_python_framework"]["path"]
+    names = _macho_dylib_load_names(raw)
+    non_system = tuple(
+        name
+        for name in names
+        if not name.startswith("/System/") and not name.startswith("/usr/lib/")
+    )
+    if non_system != (expected,):
+        _stop(phase, "RUNTIME_INVALID", "Python helper install-name authority")
+
+
+def _verified_profile_text(authority: OpenAuthority) -> str:
+    raw, _ = _read_regular_fd(authority.fd, "effective sandbox profile")
+    if (
+        len(raw) != authority.expected_size
+        or sha256_bytes(raw) != authority.expected_sha256
+        or not raw.endswith(b"\n")
+        or raw.endswith(b"\n\n")
+        or b"\r" in raw
+        or b"\0" in raw
+        or b"@@" in raw
+    ):
+        _stop("PRESPAWN", "RUNTIME_INVALID", "effective sandbox profile bytes")
+    try:
+        return raw.decode("utf-8", "strict")
+    except UnicodeDecodeError:
+        _stop("PRESPAWN", "RUNTIME_INVALID", "effective sandbox profile UTF-8")
+
+
 def _enumerate_anchored_tree(root: Path) -> list[str]:
     root_fd = _open_anchored(root, directory=True)
     root_info = os.fstat(root_fd)
@@ -1263,6 +1418,38 @@ def _revalidate_private_runtime_critical(
         or f"{stat.S_IMODE(info.st_mode):04o}" != python_record["mode"]
     ):
         _stop(phase, "RUNTIME_INVALID", "private Python path drift")
+    host = retained_by_role.get("HOST_PYTHON_FRAMEWORK")
+    expected_host = _host_python_framework(lock, plan)
+    if host is None:
+        _stop(phase, "RUNTIME_INVALID", "retained host framework FD absent")
+    reopened = _open_anchored(Path(expected_host["absolute_path"]))
+    try:
+        host_raw, reopened_info = _read_regular_fd(
+            reopened, "reopened host Python framework"
+        )
+        held_info = os.fstat(host.fd)
+    finally:
+        os.close(reopened)
+    identity_fields = (
+        "st_dev",
+        "st_ino",
+        "st_mode",
+        "st_uid",
+        "st_nlink",
+        "st_size",
+        "st_mtime_ns",
+        "st_ctime_ns",
+    )
+    if (
+        any(
+            getattr(reopened_info, field) != getattr(held_info, field)
+            for field in identity_fields
+        )
+        or sha256_bytes(host_raw) != expected_host["sha256"]
+        or len(host_raw) != expected_host["size_bytes"]
+    ):
+        _stop(phase, "RUNTIME_INVALID", "host Python framework path/FD drift")
+    _validate_python_helper_install_name(lock, plan, phase=phase)
 
 
 def _validate_precreated_directory(path: Path, *, allowed_root: Path) -> int:
@@ -1965,11 +2152,25 @@ def _worker_environment(
     runtime_layout = lock["runtime"].get("layout")
     if runtime_layout is not None:
         _stop("PRESPAWN", "RUNTIME_INVALID", "runtime object has extra layout")
-    python_record = _private_record(lock, "PYTHON_EXECUTABLE")
-    python_path = _runtime_path(lock, plan, python_record)
-    if python_path.name != "python3.14" or python_path.parent.name != "bin":
-        _stop("PRESPAWN", "RUNTIME_INVALID", "unexpected private Python source")
-    pythonhome = python_path.parent.parent
+    _private_python_path(lock, plan)
+    pythonhome = (
+        root
+        / "rootfs/opt/homebrew/Cellar/python@3.14/3.14.3_1/"
+        "Frameworks/Python.framework/Versions/3.14"
+    )
+    encodings_records = [
+        record
+        for record in lock["runtime"]["private_runtime_manifest"]["records"]
+        if record["role"] == "PYTHON_STDLIB"
+        and record["private_relative_path"]
+        == (
+            "rootfs/opt/homebrew/Cellar/python@3.14/3.14.3_1/"
+            "Frameworks/Python.framework/Versions/3.14/lib/python3.14/"
+            "encodings/__init__.py"
+        )
+    ]
+    if len(encodings_records) != 1:
+        _stop("PRESPAWN", "RUNTIME_INVALID", "private encodings authority absent")
     pyarrow_records = [
         record
         for record in lock["runtime"]["private_runtime_manifest"]["records"]
@@ -1988,25 +2189,99 @@ def _worker_environment(
     private_pyarrow = _runtime_path(lock, plan, init_records[0]).parent
     private_site = private_pyarrow.parent
     app_root = root / "app"
-    framework_records = [
-        record for record in lock["runtime"]["private_runtime_manifest"]["records"]
-        if record["role"] == "PYTHON_FRAMEWORK"
-    ]
-    if len(framework_records) != 1:
-        _stop("PRESPAWN", "RUNTIME_INVALID", "Python framework record ambiguous")
-    private_framework = _runtime_path(
-        lock, plan, framework_records[0]
-    ).parent
-    return {
+    environment = {
         "PATH": "/usr/bin:/bin",
         "PYTHONDONTWRITEBYTECODE": "1",
         "PYTHONHOME": os.fspath(pythonhome),
         "PYTHONPATH": f"{private_site}:{app_root}",
         "TMPDIR": os.fspath(Path(plan["paths"]["allowed_root"]) / "tmp" / lock["synthetic_run_id"]),
-        "DYLD_LIBRARY_PATH": os.fspath(private_pyarrow),
-        "DYLD_FRAMEWORK_PATH": os.fspath(private_framework),
-        "DYLD_ROOT_PATH": os.fspath(root / "rootfs"),
     }
+    if (
+        list(environment) != plan["launcher"]["environment_exact_keys"]
+        or any(
+            key in environment
+            for key in _r2b_runtime_boundary(plan)["dyld_environment_forbidden"]
+        )
+    ):
+        _stop("PRESPAWN", "RUNTIME_INVALID", "R2-B worker environment")
+    return environment
+
+
+def _private_import_assertion(
+    lock: Mapping[str, Any], plan: Mapping[str, Any]
+) -> str:
+    root = (
+        Path(plan["paths"]["allowed_root"])
+        / "runtime"
+        / lock["synthetic_run_id"]
+    )
+    root_literal = json.dumps(os.fspath(root), ensure_ascii=True)
+    return (
+        "import encodings,os,pyarrow;"
+        f"r=os.path.realpath({root_literal});"
+        "e=os.path.realpath(encodings.__file__);"
+        "p=os.path.realpath(pyarrow.__file__);"
+        "assert pyarrow.__version__=='23.0.1';"
+        "assert os.path.isfile(e) and e!=r and os.path.commonpath((r,e))==r;"
+        "assert os.path.isfile(p) and p!=r and os.path.commonpath((r,p))==r"
+    )
+
+
+def _validate_r2_smoke(
+    lock: Mapping[str, Any],
+    plan: Mapping[str, Any],
+    profile_authority: OpenAuthority,
+) -> None:
+    smoke = lock["r2_smoke"]
+    schema = plan["schema_definitions"]["r2_smoke_attestation"]
+    fields = schema["exact_fields"]
+    if type(smoke) is not dict or set(smoke) != set(fields):
+        _stop("PRESPAWN", "LOCK_INVALID", "R2-B smoke schema")
+    profile_text = _verified_profile_text(profile_authority)
+    python_record = _private_record(lock, "PYTHON_EXECUTABLE")
+    python_path = _private_python_path(lock, plan)
+    environment = _worker_environment(lock, plan)
+    argv = [
+        os.fspath(SANDBOX_EXEC_PATH),
+        "-p",
+        profile_text,
+        os.fspath(python_path),
+        "-c",
+        _private_import_assertion(lock, plan),
+    ]
+    required = plan["r2_successor"]["smoke_attestation"]["required_result"]
+    expected = {
+        "schema_version": "sireto-v4.12-fresh-s0-r2-smoke-attestation-2",
+        "implementation_commit": lock["implementation_commit"],
+        "synthetic_run_id": lock["synthetic_run_id"],
+        "attempt_id": lock["attempt_id"],
+        "python_sha256": python_record["sha256"],
+        "profile_sha256": profile_authority.expected_sha256,
+        "environment_sha256": sha256_bytes(
+            canonical_json(environment, final_lf=False)
+        ),
+        "argv_sha256": sha256_bytes(canonical_json(argv, final_lf=False)),
+        "pass_fds": [],
+        "exit_code": required["exit_code"],
+        "signal": required["signal"],
+        "stdout_size_bytes": required["stdout_size_bytes"],
+        "stdout_sha256": required["stdout_sha256"],
+        "stderr_size_bytes": required["stderr_size_bytes"],
+        "stderr_sha256": required["stderr_sha256"],
+        "five_output_directories_empty_before": required[
+            "five_output_directories_empty_before"
+        ],
+        "five_output_directories_empty_after": required[
+            "five_output_directories_empty_after"
+        ],
+    }
+    if any(smoke.get(key) != value for key, value in expected.items()):
+        _stop("PRESPAWN", "LOCK_INVALID", "R2-B smoke authority mismatch")
+    projection = {key: smoke[key] for key in fields if key != "smoke_sha256"}
+    if smoke["smoke_sha256"] != sha256_bytes(
+        canonical_json(projection, final_lf=False)
+    ):
+        _stop("PRESPAWN", "LOCK_INVALID", "R2-B smoke hash")
 
 
 def _validate_canaries(
@@ -2590,6 +2865,16 @@ def run_authoritative_launch() -> dict[str, Any]:
                     None,
                 )
             )
+        host_framework_record = _host_python_framework(lock, plan)
+        authorities.append(
+            _open_authority(
+                "HOST_PYTHON_FRAMEWORK",
+                Path(host_framework_record["absolute_path"]),
+                host_framework_record["sha256"],
+                host_framework_record["size_bytes"],
+                host_framework_record["identity"],
+            )
+        )
         for role in ("PRIVATE_RUNTIME_MANIFEST", *WORKER_PAYLOAD_ROLES):
             record = input_records[role]
             authorities.append(
@@ -2634,6 +2919,17 @@ def run_authoritative_launch() -> dict[str, Any]:
             )
             if os.listdir(write_fds[role]):
                 _stop("PRESPAWN", "FD_INVALID", f"pre-spawn output not empty: {role}")
+        host_framework_authority = next(
+            item
+            for item in authorities
+            if item.role == "HOST_PYTHON_FRAMEWORK"
+        )
+        observe(host_framework_authority, resolver)
+        _validate_python_helper_install_name(lock, plan, phase="PRESPAWN")
+        profile_authority = next(
+            item for item in authorities if item.role == "SANDBOX_PROFILE"
+        )
+        _validate_r2_smoke(lock, plan, profile_authority)
         worker_spec_value = _worker_spec(lock, lock_raw, payloads, write_fds, resolver)
         claim_raw = _write_exclusive(
             claim_path, _claim_value(lock, auth_raw, lock_raw), mode=0o400
@@ -2674,8 +2970,7 @@ def run_authoritative_launch() -> dict[str, Any]:
         )
         worker_authority = next(item for item in authorities if item.role == "WORKER")
         profile_authority = next(item for item in authorities if item.role == "SANDBOX_PROFILE")
-        python_record = _private_record(lock, "PYTHON_EXECUTABLE")
-        python_path = _runtime_path(lock, plan, python_record)
+        python_path = _private_python_path(lock, plan)
         child_fd = control_child.fileno()
         pass_fds = [
             *(authority.fd for authority in payloads),
@@ -2685,10 +2980,14 @@ def run_authoritative_launch() -> dict[str, Any]:
         ]
         if len(pass_fds) != len(set(pass_fds)):
             _stop("PRESPAWN", "FD_INVALID", "duplicate passed descriptor")
+        _revalidate_private_runtime_critical(
+            lock, plan, authorities, phase="PRESPAWN"
+        )
+        profile_text = _verified_profile_text(profile_authority)
         command = [
             os.fspath(SANDBOX_EXEC_PATH),
-            "-f",
-            f"/dev/fd/{profile_authority.fd}",
+            "-p",
+            profile_text,
             os.fspath(python_path),
             os.fspath(worker_authority.path),
             "--worker-spec-fd",
@@ -2696,11 +2995,6 @@ def run_authoritative_launch() -> dict[str, Any]:
             "--worker-control-fd",
             str(child_fd),
         ]
-        # sandbox-exec must be able to read its profile FD.
-        pass_fds.append(profile_authority.fd)
-        _revalidate_private_runtime_critical(
-            lock, plan, authorities, phase="PRESPAWN"
-        )
         detached_child_fd = control_child.detach()
         control_child = None
         execution = _execute_worker(
