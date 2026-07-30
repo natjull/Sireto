@@ -4,6 +4,7 @@ from copy import deepcopy
 import fcntl
 import hashlib
 import importlib.util
+import inspect
 import json
 import os
 from pathlib import Path
@@ -18,6 +19,9 @@ import pytest
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 PLAN_PATH = REPO_ROOT / "config/v4_12_consumed_compatibility_registry_plan.json"
+EXECUTION_LOCK_PATH = (
+    REPO_ROOT / "config/v4_12_consumed_compatibility_execution_lock.json"
+)
 SCRIPT_PATH = (
     REPO_ROOT / "scripts/build_v412_consumed_compatibility_registry.py"
 )
@@ -300,6 +304,652 @@ def test_hmac_key_is_read_only_cloexec_single_link_and_hash_pinned(
             builder.read_hmac_key_from_fd(short_fd, expected_sha256=None)
     finally:
         os.close(short_fd)
+
+
+def test_keychain_provider_pins_logical_id_hash_and_never_discloses_secret(
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    secret = b"do-not-log-this-key-material-0123456789"
+    expected = hashlib.sha256(secret).hexdigest()
+    monkeypatch.setattr(
+        builder,
+        "_copy_keychain_generic_password_no_ui",
+        lambda: secret,
+    )
+    provider = builder.MacOSKeychainHmacKeyProvider(
+        logical_key_id="LOGICAL-ID",
+        expected_sha256=expected,
+    )
+    assert provider.load(expected_key_id="LOGICAL-ID") == secret
+    wrong_hash = builder.MacOSKeychainHmacKeyProvider(
+        logical_key_id="LOGICAL-ID",
+        expected_sha256="0" * 64,
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="hash differs",
+    ) as failure:
+        wrong_hash.load(expected_key_id="LOGICAL-ID")
+    output = capsys.readouterr()
+    observed = output.out + output.err + str(failure.value)
+    assert secret.decode() not in observed
+
+
+def test_keychain_provider_rejects_wrong_key_id_before_keychain_access(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    accessed = False
+
+    def forbidden() -> bytes:
+        nonlocal accessed
+        accessed = True
+        raise AssertionError("Keychain must not be read for a wrong key ID")
+
+    monkeypatch.setattr(
+        builder,
+        "_copy_keychain_generic_password_no_ui",
+        forbidden,
+    )
+    provider = builder.MacOSKeychainHmacKeyProvider(
+        logical_key_id="LOCK-ID",
+        expected_sha256="0" * 64,
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="plan and execution lock",
+    ):
+        provider.load(expected_key_id="PLAN-ID")
+    assert not accessed
+
+
+def test_keychain_boundary_has_no_cli_and_authentication_ui_is_fail_only(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def forbidden_subprocess(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("Keychain boundary must not spawn a process")
+
+    monkeypatch.setattr(builder.subprocess, "run", forbidden_subprocess)
+    source = inspect.getsource(builder._copy_keychain_generic_password_no_ui)
+    assert "subprocess" not in source
+    assert "kSecUseAuthenticationUIFail" in source
+
+    def auth_denied() -> bytes:
+        builder._stop(
+            "Keychain HMAC unavailable without UI (OSStatus -25308)"
+        )
+
+    monkeypatch.setattr(
+        builder,
+        "_copy_keychain_generic_password_no_ui",
+        auth_denied,
+    )
+    provider = builder.MacOSKeychainHmacKeyProvider(
+        logical_key_id="ID",
+        expected_sha256="0" * 64,
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="unavailable without UI",
+    ):
+        provider.load(expected_key_id="ID")
+
+
+def test_run_boundary_revalidates_injected_provider_and_zeroizes_failures() -> None:
+    class IgnoringProvider:
+        def __init__(self, value: bytearray) -> None:
+            self.value = value
+
+        def load(self, *, expected_key_id: str) -> bytearray:
+            return self.value
+
+    valid = bytearray(b"v" * 32)
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="plan and execution lock",
+    ):
+        builder.validate_provider_key(
+            IgnoringProvider(valid),
+            plan_key_id="PLAN",
+            lock_key_id="LOCK",
+            lock_key_sha256=hashlib.sha256(valid).hexdigest(),
+        )
+    short = bytearray(b"s" * 31)
+    with pytest.raises(builder.CompatibilityRegistryError, match="256 bits"):
+        builder.validate_provider_key(
+            IgnoringProvider(short),
+            plan_key_id="ID",
+            lock_key_id="ID",
+            lock_key_sha256=hashlib.sha256(short).hexdigest(),
+        )
+    assert short == bytearray(len(short))
+    wrong = bytearray(b"w" * 32)
+    with pytest.raises(builder.CompatibilityRegistryError, match="hash differs"):
+        builder.validate_provider_key(
+            IgnoringProvider(wrong),
+            plan_key_id="ID",
+            lock_key_id="ID",
+            lock_key_sha256="0" * 64,
+        )
+    assert wrong == bytearray(len(wrong))
+
+
+def test_keychain_cf_resources_query_and_abi_are_exact_on_success(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Function:
+        def __init__(self, implementation: object) -> None:
+            self.implementation = implementation
+            self.argtypes: object = "unset"
+            self.restype: object = "unset"
+
+        def __call__(self, *args: object) -> object:
+            return self.implementation(*args)  # type: ignore[operator]
+
+    released: list[int] = []
+    pairs: list[tuple[int, int]] = []
+    strings = iter([201, 202])
+    secret = (builder.ctypes.c_uint8 * 32)(*range(32))
+
+    class Core:
+        CFDictionaryCreateMutable = Function(lambda *_args: 101)
+        CFDictionarySetValue = Function(
+            lambda query, key, value: pairs.append((int(key), int(value)))
+        )
+        CFStringCreateWithCString = Function(
+            lambda *_args: next(strings)
+        )
+        CFGetTypeID = Function(lambda value: 77 if value == 303 else 0)
+        CFDataGetTypeID = Function(lambda: 77)
+        CFDataGetLength = Function(lambda value: 32 if value == 303 else -1)
+        CFDataGetBytePtr = Function(
+            lambda _value: builder.ctypes.cast(
+                secret,
+                builder.ctypes.POINTER(builder.ctypes.c_uint8),
+            )
+        )
+        CFRelease = Function(lambda value: released.append(int(value)))
+
+    class Security:
+        @staticmethod
+        def copy(_query: int, output: object) -> int:
+            output._obj.value = 303
+            return 0
+
+        SecItemCopyMatching = Function(copy)
+
+    constants = {
+        "kSecClass": 1,
+        "kSecClassGenericPassword": 2,
+        "kSecAttrService": 3,
+        "kSecAttrAccount": 4,
+        "kSecReturnData": 5,
+        "kCFBooleanTrue": 6,
+        "kSecMatchLimit": 7,
+        "kSecMatchLimitOne": 8,
+        "kSecUseAuthenticationUI": 9,
+        "kSecUseAuthenticationUIFail": 10,
+    }
+    requested: list[str] = []
+
+    def constant(_library: object, name: str) -> builder.ctypes.c_void_p:
+        requested.append(name)
+        return builder.ctypes.c_void_p(constants[name])
+
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        builder,
+        "_load_keychain_frameworks",
+        lambda: (Security(), Core()),
+    )
+    monkeypatch.setattr(builder, "_framework_constant", constant)
+    assert builder._copy_keychain_generic_password_no_ui() == bytearray(
+        range(32)
+    )
+    assert pairs == [
+        (1, 2),
+        (3, 201),
+        (4, 202),
+        (5, 6),
+        (7, 8),
+        (9, 10),
+    ]
+    assert requested == list(constants)
+    assert released == [303, 201, 202, 101]
+    assert Core.CFDictionarySetValue.restype is None
+    assert Core.CFRelease.restype is None
+    assert Core.CFDataGetTypeID.argtypes == []
+
+
+def test_keychain_cf_resources_are_released_on_api_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Function:
+        def __init__(self, implementation: object) -> None:
+            self.implementation = implementation
+
+        def __call__(self, *args: object) -> object:
+            return self.implementation(*args)  # type: ignore[operator]
+
+    released: list[int] = []
+    strings = iter([201, 202])
+
+    class Core:
+        CFDictionaryCreateMutable = Function(lambda *_args: 101)
+        CFDictionarySetValue = Function(lambda *_args: None)
+        CFStringCreateWithCString = Function(lambda *_args: next(strings))
+        CFGetTypeID = Function(lambda _value: 0)
+        CFDataGetTypeID = Function(lambda: 0)
+        CFDataGetLength = Function(lambda _value: 0)
+        CFDataGetBytePtr = Function(lambda _value: None)
+        CFRelease = Function(lambda value: released.append(int(value)))
+
+    class Security:
+        SecItemCopyMatching = Function(lambda _query, _output: -25308)
+
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        builder,
+        "_load_keychain_frameworks",
+        lambda: (Security(), Core()),
+    )
+    monkeypatch.setattr(
+        builder,
+        "_framework_constant",
+        lambda _library, name: builder.ctypes.c_void_p(
+            {
+                "kSecClass": 1,
+                "kSecClassGenericPassword": 2,
+                "kSecAttrService": 3,
+                "kSecAttrAccount": 4,
+                "kSecReturnData": 5,
+                "kCFBooleanTrue": 6,
+                "kSecMatchLimit": 7,
+                "kSecMatchLimitOne": 8,
+                "kSecUseAuthenticationUI": 9,
+                "kSecUseAuthenticationUIFail": 10,
+            }[name]
+        ),
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="OSStatus -25308",
+    ):
+        builder._copy_keychain_generic_password_no_ui()
+    assert released == [201, 202, 101]
+
+
+def test_keychain_cf_partial_string_allocation_releases_owned_resources(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class Function:
+        def __init__(self, implementation: object) -> None:
+            self.implementation = implementation
+
+        def __call__(self, *args: object) -> object:
+            return self.implementation(*args)  # type: ignore[operator]
+
+    released: list[int] = []
+    strings = iter([201, 0])
+
+    class Core:
+        CFDictionaryCreateMutable = Function(lambda *_args: 101)
+        CFDictionarySetValue = Function(lambda *_args: None)
+        CFStringCreateWithCString = Function(lambda *_args: next(strings))
+        CFGetTypeID = Function(lambda _value: 0)
+        CFDataGetTypeID = Function(lambda: 0)
+        CFDataGetLength = Function(lambda _value: 0)
+        CFDataGetBytePtr = Function(lambda _value: None)
+        CFRelease = Function(lambda value: released.append(int(value)))
+
+    class Security:
+        SecItemCopyMatching = Function(
+            lambda _query, _output: pytest.fail(
+                "API must not run after allocation failure"
+            )
+        )
+
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        builder,
+        "_load_keychain_frameworks",
+        lambda: (Security(), Core()),
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="allocate pinned Keychain locator",
+    ):
+        builder._copy_keychain_generic_password_no_ui()
+    assert released == [201, 101]
+
+
+def test_failed_key_validation_precedes_attempt_and_historical_source_io(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _fixture_plan()
+    plan["build"]["output_root"] = str(tmp_path / "output")
+    plan["outputs"]["attempts_root"] = str(tmp_path / "attempts")
+    plan_bytes = builder.canonical_json(plan)
+    plan_path = Path("/private/test/plan.json")
+    tests_path = Path("/private/test/tests.py")
+    contract_path = Path(plan["contract"]["path"])
+    builder_path = Path(builder.__file__).absolute()
+    allowed_before_key = {
+        str(plan_path.absolute()),
+        str(contract_path.absolute()),
+        str(builder_path),
+        str(tests_path.absolute()),
+    }
+    observed_reads: list[str] = []
+    pin = builder.IdentityPin(uid=os.getuid(), device=1, volume_uuid="UUID")
+    lock = builder.ExecutionLock(
+        plan_path=plan_path,
+        plan_sha256="0" * 64,
+        builder_git_commit="a" * 40,
+        builder_source_sha256="1" * 64,
+        tests_path=tests_path,
+        tests_sha256="2" * 64,
+        hmac_key_id=plan["hmac_lineage"]["key_id"],
+        hmac_key_sha256="3" * 64,
+        attempt_id="attempt",
+        identity_pins={path: pin for path in allowed_before_key},
+        output_identity_pin=pin,
+    )
+
+    def snapshot(path: Path, **_kwargs: object) -> builder.FileSnapshot:
+        normalized = str(path.absolute())
+        observed_reads.append(normalized)
+        assert normalized in allowed_before_key
+        data = plan_bytes if normalized == str(plan_path.absolute()) else b"x"
+        return builder.FileSnapshot(
+            data=data,
+            sha256=hashlib.sha256(data).hexdigest(),
+            size=len(data),
+            device=1,
+            inode=1,
+            uid=os.getuid(),
+            nlink=1,
+        )
+
+    class DeniedProvider:
+        def load(self, *, expected_key_id: str) -> bytes:
+            assert expected_key_id == plan["hmac_lineage"]["key_id"]
+            raise builder.CompatibilityRegistryError("KEY_DENIED")
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("private attempt/source I/O occurred before key")
+
+    monkeypatch.setattr(builder, "read_pinned_file", snapshot)
+    monkeypatch.setattr(builder, "verify_identity_pin", lambda *_args: None)
+    monkeypatch.setattr(builder, "load_plan", lambda _path: (plan, plan_bytes))
+    monkeypatch.setattr(builder, "validate_runtime", lambda _plan: None)
+    monkeypatch.setattr(builder, "validate_golden_vectors", lambda _plan: None)
+    monkeypatch.setattr(
+        builder,
+        "validate_audited_git_state",
+        lambda **_kwargs: "head",
+    )
+    monkeypatch.setattr(
+        builder,
+        "_mkdirs_anchored",
+        lambda path, **_kwargs: Path(path).mkdir(
+            parents=True, exist_ok=True, mode=0o700
+        ),
+    )
+    monkeypatch.setattr(builder, "create_attempt_receipt", forbidden)
+    monkeypatch.setattr(builder, "_read_private_regular", forbidden)
+    monkeypatch.setattr(builder, "parse_historical_csv", forbidden)
+    with pytest.raises(builder.CompatibilityRegistryError, match="KEY_DENIED"):
+        builder.run_build(
+            execution_lock=lock,
+            key_provider=DeniedProvider(),
+            require_fullfsync=False,
+        )
+    assert set(observed_reads) == allowed_before_key
+
+
+def test_existing_attempt_recovery_uses_neither_keychain_nor_sources(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _fixture_plan()
+    output = tmp_path / "output"
+    attempts = tmp_path / "attempts"
+    plan["build"]["output_root"] = str(output)
+    plan["outputs"]["attempts_root"] = str(attempts)
+    plan_bytes = builder.canonical_json(plan)
+    plan_path = Path("/private/test/recovery-plan.json")
+    tests_path = Path("/private/test/recovery-tests.py")
+    control_paths = {
+        str(plan_path.absolute()),
+        str(Path(plan["contract"]["path"]).absolute()),
+        str(Path(builder.__file__).absolute()),
+        str(tests_path.absolute()),
+    }
+    pin = builder.IdentityPin(uid=os.getuid(), device=1, volume_uuid="UUID")
+    lock = builder.ExecutionLock(
+        plan_path=plan_path,
+        plan_sha256="0" * 64,
+        builder_git_commit="a" * 40,
+        builder_source_sha256="1" * 64,
+        tests_path=tests_path,
+        tests_sha256="2" * 64,
+        hmac_key_id="INTENTIONALLY-UNAVAILABLE-DURING-RECOVERY",
+        hmac_key_sha256="3" * 64,
+        attempt_id="existing",
+        identity_pins={path: pin for path in control_paths},
+        output_identity_pin=pin,
+    )
+
+    def snapshot(path: Path, **_kwargs: object) -> builder.FileSnapshot:
+        normalized = str(path.absolute())
+        assert normalized in control_paths
+        data = plan_bytes if normalized == str(plan_path.absolute()) else b"x"
+        return builder.FileSnapshot(
+            data=data,
+            sha256=hashlib.sha256(data).hexdigest(),
+            size=len(data),
+            device=1,
+            inode=1,
+            uid=os.getuid(),
+            nlink=1,
+        )
+
+    class ForbiddenProvider:
+        def load(self, *, expected_key_id: str) -> bytearray:
+            raise AssertionError("recovery accessed Keychain")
+
+    recovered = output / "recovered"
+    recovery_calls: list[dict[str, object]] = []
+
+    def recover(**kwargs: object) -> Path:
+        recovery_calls.append(kwargs)
+        return recovered
+
+    def mkdir(path: Path, **_kwargs: object) -> None:
+        Path(path).mkdir(parents=True, exist_ok=True, mode=0o700)
+        if Path(path) == attempts:
+            (attempts / lock.attempt_id).mkdir(mode=0o700)
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        raise AssertionError("recovery accessed fresh receipt or source")
+
+    monkeypatch.setattr(builder, "read_pinned_file", snapshot)
+    monkeypatch.setattr(builder, "verify_identity_pin", lambda *_args: None)
+    monkeypatch.setattr(builder, "load_plan", lambda _path: (plan, plan_bytes))
+    monkeypatch.setattr(builder, "validate_runtime", lambda _plan: None)
+    monkeypatch.setattr(builder, "validate_golden_vectors", lambda _plan: None)
+    monkeypatch.setattr(
+        builder,
+        "validate_audited_git_state",
+        lambda **_kwargs: "head",
+    )
+    monkeypatch.setattr(builder, "_mkdirs_anchored", mkdir)
+    monkeypatch.setattr(builder, "recover_existing_attempt", recover)
+    monkeypatch.setattr(builder, "create_attempt_receipt", forbidden)
+    monkeypatch.setattr(builder, "parse_historical_csv", forbidden)
+    assert builder.run_build(
+        execution_lock=lock,
+        key_provider=ForbiddenProvider(),
+        require_fullfsync=False,
+    ) == recovered
+    assert len(recovery_calls) == 1
+
+
+def test_fresh_attempt_orders_key_receipt_source_and_zeroizes_after_projection(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    plan = _fixture_plan()
+    output = tmp_path / "output"
+    attempts = tmp_path / "attempts"
+    plan["build"]["output_root"] = str(output)
+    plan["outputs"]["attempts_root"] = str(attempts)
+    plan_bytes = builder.canonical_json(plan)
+    plan_path = Path("/private/test/fresh-plan.json")
+    tests_path = Path("/private/test/fresh-tests.py")
+    control_paths = {
+        str(plan_path.absolute()),
+        str(Path(plan["contract"]["path"]).absolute()),
+        str(Path(builder.__file__).absolute()),
+        str(tests_path.absolute()),
+    }
+    private_paths = {
+        str(Path(plan["inputs"]["historical_raw"]["path"]).absolute()),
+        *(
+            str(
+                Path(plan["inputs"]["v411_registry"][name]["path"]).absolute()
+            )
+            for name in ("source_registry", "consumed", "unseen", "manifest")
+        ),
+        *(
+            str(Path(spec["manifest_path"]).absolute())
+            for spec in plan["inputs"]["challenge_225"].values()
+        ),
+    }
+    all_paths = control_paths | private_paths
+    pin = builder.IdentityPin(uid=os.getuid(), device=1, volume_uuid="UUID")
+    secret = bytearray(b"k" * 32)
+    lock = builder.ExecutionLock(
+        plan_path=plan_path,
+        plan_sha256="0" * 64,
+        builder_git_commit="a" * 40,
+        builder_source_sha256="1" * 64,
+        tests_path=tests_path,
+        tests_sha256="2" * 64,
+        hmac_key_id=plan["hmac_lineage"]["key_id"],
+        hmac_key_sha256=hashlib.sha256(secret).hexdigest(),
+        attempt_id="fresh",
+        identity_pins={path: pin for path in all_paths},
+        output_identity_pin=pin,
+    )
+    order: list[str] = []
+    expected_tables = _tables()
+
+    def snapshot(path: Path, **_kwargs: object) -> builder.FileSnapshot:
+        normalized = str(path.absolute())
+        assert normalized in all_paths
+        if normalized in private_paths:
+            order.append("source")
+        data = (
+            plan_bytes
+            if normalized == str(plan_path.absolute())
+            else b"{}\n"
+        )
+        return builder.FileSnapshot(
+            data=data,
+            sha256=hashlib.sha256(data).hexdigest(),
+            size=len(data),
+            device=1,
+            inode=1,
+            uid=os.getuid(),
+            nlink=1,
+        )
+
+    class Provider:
+        def load(self, *, expected_key_id: str) -> bytearray:
+            order.append("key")
+            return secret
+
+    def receipt(root: Path, **_kwargs: object) -> Path:
+        order.append("receipt")
+        attempt = root / lock.attempt_id
+        attempt.mkdir(mode=0o700)
+        return attempt
+
+    def projected(*_args: object, **kwargs: object) -> builder.RegistryTables:
+        order.append("project")
+        assert kwargs["hmac_key"] == bytearray(b"k" * 32)
+        return expected_tables
+
+    monkeypatch.setattr(builder, "read_pinned_file", snapshot)
+    monkeypatch.setattr(builder, "verify_identity_pin", lambda *_args: None)
+    monkeypatch.setattr(builder, "load_plan", lambda _path: (plan, plan_bytes))
+    monkeypatch.setattr(builder, "validate_runtime", lambda _plan: None)
+    monkeypatch.setattr(builder, "validate_golden_vectors", lambda _plan: None)
+    monkeypatch.setattr(
+        builder,
+        "validate_audited_git_state",
+        lambda **_kwargs: "head",
+    )
+    monkeypatch.setattr(
+        builder,
+        "_mkdirs_anchored",
+        lambda path, **_kwargs: Path(path).mkdir(
+            parents=True, exist_ok=True, mode=0o700
+        ),
+    )
+    monkeypatch.setattr(builder, "create_attempt_receipt", receipt)
+    monkeypatch.setattr(builder, "append_attempt_event", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(builder, "parse_historical_csv", lambda _data: _rows())
+    monkeypatch.setattr(builder, "_load_pinned_parquet", lambda *_args, **_kwargs: object())
+    monkeypatch.setattr(builder, "_validate_v411_parity", lambda *_args: {2})
+    monkeypatch.setattr(builder, "build_registry_tables", projected)
+    monkeypatch.setattr(
+        builder,
+        "write_payload_tree",
+        lambda *_args, **_kwargs: (_ for _ in ()).throw(
+            builder.CompatibilityRegistryError("STOP_AFTER_PROJECTION")
+        ),
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="STOP_AFTER_PROJECTION",
+    ):
+        builder.run_build(
+            execution_lock=lock,
+            key_provider=Provider(),
+            require_fullfsync=False,
+        )
+    assert order.index("key") < order.index("receipt") < order.index("source")
+    assert order.index("source") < order.index("project")
+    assert secret == bytearray(32)
+
+
+@pytest.mark.skipif(
+    sys.platform != "darwin",
+    reason="read-only Keychain integration requires macOS",
+)
+def test_keychain_native_read_only_integration_no_prompt() -> None:
+    plan, plan_bytes = builder.load_plan(PLAN_PATH)
+    lock_bytes = EXECUTION_LOCK_PATH.read_bytes()
+    lock = json.loads(lock_bytes)
+    assert lock_bytes == builder.canonical_json(lock)
+    assert lock["plan"]["sha256"] == hashlib.sha256(plan_bytes).hexdigest()
+    assert lock["hmac"]["key_id"] == plan["hmac_lineage"]["key_id"]
+    provider = builder.MacOSKeychainHmacKeyProvider(
+        logical_key_id=lock["hmac"]["key_id"],
+        expected_sha256=lock["hmac"]["key_sha256"],
+    )
+    secret = provider.load(expected_key_id=plan["hmac_lineage"]["key_id"])
+    try:
+        assert isinstance(secret, bytearray)
+        assert len(secret) >= 32
+        assert hashlib.sha256(secret).hexdigest() == lock["hmac"]["key_sha256"]
+    finally:
+        builder.zeroize_secret(secret)
+    assert secret == bytearray(len(secret))
 
 
 def test_pinned_reader_rejects_symlink_and_hash_drift(tmp_path: Path) -> None:
@@ -598,8 +1248,6 @@ def test_single_canonical_execution_lock_contains_all_execution_pins(
     assert lock.hmac_key_sha256 == "d" * 64
     parsed = builder._parse_args(
         [
-            "--hmac-key-fd",
-            "7",
             "--execution-lock",
             str(lock_path),
             "--execution-lock-sha256",
@@ -607,6 +1255,18 @@ def test_single_canonical_execution_lock_contains_all_execution_pins(
         ]
     )
     assert not hasattr(parsed, "builder_source_sha256")
+    assert not hasattr(parsed, "hmac_key_fd")
+    with pytest.raises(SystemExit):
+        builder._parse_args(
+            [
+                "--hmac-key-fd",
+                "7",
+                "--execution-lock",
+                str(lock_path),
+                "--execution-lock-sha256",
+                hashlib.sha256(lock_path.read_bytes()).hexdigest(),
+            ]
+        )
     payload["unexpected"] = True
     lock_path.write_bytes(builder.canonical_json(payload))
     with pytest.raises(builder.CompatibilityRegistryError, match="fields"):

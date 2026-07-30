@@ -32,7 +32,7 @@ import stat
 import subprocess
 import sys
 import unicodedata
-from typing import Any, Iterable, Mapping, Sequence
+from typing import Any, Iterable, Mapping, Protocol, Sequence
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -53,6 +53,8 @@ EXECUTION_LOCK_SCHEMA = (
 SERVICE_DOMAIN = b"SIRETO-V412-SERVICE-ID-LINEAGE\0"
 SIRET_DOMAIN = b"SIRETO-V412-INPUT-SIRET-LINEAGE\0"
 HEX64 = frozenset("0123456789abcdef")
+KEYCHAIN_SERVICE = "com.sireto.v412.compatibility-hmac"
+KEYCHAIN_ACCOUNT = "SIRETO"
 CRM_COLUMNS = (
     "SITE",
     "CODE_POSTAL",
@@ -188,7 +190,9 @@ def fuzzy_singletons(row: Mapping[str, Any]) -> list[tuple[int, str, str]]:
     ]
 
 
-def lineage_hmac(key: bytes, domain: bytes, normalized_value: str) -> str:
+def lineage_hmac(
+    key: bytes | bytearray, domain: bytes, normalized_value: str
+) -> str:
     if not normalized_value:
         _stop("empty HMAC value")
     return hmac.new(
@@ -198,12 +202,14 @@ def lineage_hmac(key: bytes, domain: bytes, normalized_value: str) -> str:
     ).hexdigest()
 
 
-def service_lineage_hmac(key: bytes, value: Any) -> str | None:
+def service_lineage_hmac(key: bytes | bytearray, value: Any) -> str | None:
     normalized = canonical_text(value)
     return lineage_hmac(key, SERVICE_DOMAIN, normalized) if normalized else None
 
 
-def input_siret_lineage_hmac(key: bytes, value: Any) -> str | None:
+def input_siret_lineage_hmac(
+    key: bytes | bytearray, value: Any
+) -> str | None:
     normalized = normalize_siret(value)
     return lineage_hmac(key, SIRET_DOMAIN, normalized) if normalized else None
 
@@ -319,7 +325,7 @@ def _table(rows: Sequence[Mapping[str, Any]], schema: pa.Schema) -> pa.Table:
 def build_registry_tables(
     historical_rows: Sequence[Mapping[str, Any]],
     *,
-    hmac_key: bytes,
+    hmac_key: bytes | bytearray,
     challenge_source_rows: Iterable[int] = (),
     expected_rows: int | None = None,
     expected_empty_service_ids: int | None = None,
@@ -491,7 +497,7 @@ def read_hmac_key_from_fd(
     *,
     expected_sha256: str | None,
     require_regular: bool = True,
-) -> bytes:
+) -> bytearray:
     flags = fcntl.fcntl(fd, fcntl.F_GETFL)
     if flags & os.O_ACCMODE != os.O_RDONLY:
         _stop("HMAC key descriptor is not read-only")
@@ -519,29 +525,222 @@ def read_hmac_key_from_fd(
     observed = sha256_bytes(key)
     if expected_sha256 is not None and observed != expected_sha256:
         _stop("HMAC key hash differs from execution lock")
-    return key
+    return bytearray(key)
 
 
 @dataclass(frozen=True)
 class FdHmacKeyProvider:
-    """Boundary used by a Keychain launcher without serialising the key.
-
-    The launcher is responsible for resolving ``key_id`` in macOS Keychain
-    and opening the sealed key file.  The builder only accepts the resulting
-    read-only descriptor plus the independently pinned digest.
-    """
+    """Test-only provider for unit tests which already own a private FD."""
 
     key_id: str
     descriptor: int
     expected_sha256: str
 
-    def load(self, *, expected_key_id: str) -> bytes:
+    def load(self, *, expected_key_id: str) -> bytearray:
         if self.key_id != expected_key_id:
             _stop("HMAC key ID differs from plan")
         return read_hmac_key_from_fd(
             self.descriptor,
             expected_sha256=self.expected_sha256,
         )
+
+
+class HmacKeyProvider(Protocol):
+    def load(self, *, expected_key_id: str) -> bytearray:
+        """Return an already validated secret without persisting it."""
+
+
+def _framework_constant(library: ctypes.CDLL, name: str) -> ctypes.c_void_p:
+    try:
+        value = ctypes.c_void_p.in_dll(library, name).value
+    except ValueError:
+        _stop(f"required macOS security constant unavailable: {name}")
+    if value is None:
+        _stop(f"required macOS security constant is null: {name}")
+    return ctypes.c_void_p(value)
+
+
+def _load_keychain_frameworks() -> tuple[ctypes.CDLL, ctypes.CDLL]:
+    try:
+        return (
+            ctypes.CDLL(
+                "/System/Library/Frameworks/Security.framework/Security"
+            ),
+            ctypes.CDLL(
+                "/System/Library/Frameworks/"
+                "CoreFoundation.framework/CoreFoundation"
+            ),
+        )
+    except OSError as exc:
+        _stop(f"cannot load macOS Keychain frameworks: {exc}")
+
+
+def _copy_keychain_generic_password_no_ui() -> bytearray:
+    """Read the pinned generic-password item with authentication UI disabled."""
+    if platform.system() != "Darwin":
+        _stop("Keychain HMAC retrieval requires macOS")
+    security, core = _load_keychain_frameworks()
+
+    core.CFDictionaryCreateMutable.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_long,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    ]
+    core.CFDictionaryCreateMutable.restype = ctypes.c_void_p
+    core.CFDictionarySetValue.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+        ctypes.c_void_p,
+    ]
+    core.CFDictionarySetValue.restype = None
+    core.CFStringCreateWithCString.argtypes = [
+        ctypes.c_void_p,
+        ctypes.c_char_p,
+        ctypes.c_uint32,
+    ]
+    core.CFStringCreateWithCString.restype = ctypes.c_void_p
+    core.CFGetTypeID.argtypes = [ctypes.c_void_p]
+    core.CFGetTypeID.restype = ctypes.c_ulong
+    core.CFDataGetTypeID.argtypes = []
+    core.CFDataGetTypeID.restype = ctypes.c_ulong
+    core.CFDataGetLength.argtypes = [ctypes.c_void_p]
+    core.CFDataGetLength.restype = ctypes.c_long
+    core.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
+    core.CFDataGetBytePtr.restype = ctypes.POINTER(ctypes.c_uint8)
+    core.CFRelease.argtypes = [ctypes.c_void_p]
+    core.CFRelease.restype = None
+    security.SecItemCopyMatching.argtypes = [
+        ctypes.c_void_p,
+        ctypes.POINTER(ctypes.c_void_p),
+    ]
+    security.SecItemCopyMatching.restype = ctypes.c_int32
+
+    query_value = core.CFDictionaryCreateMutable(None, 0, None, None)
+    if not query_value:
+        _stop("cannot allocate Keychain query")
+    query = ctypes.c_void_p(query_value)
+    created: list[ctypes.c_void_p] = []
+    result = ctypes.c_void_p()
+    try:
+        utf8 = 0x08000100
+        for raw in (KEYCHAIN_SERVICE, KEYCHAIN_ACCOUNT):
+            value = core.CFStringCreateWithCString(
+                None,
+                raw.encode("utf-8"),
+                utf8,
+            )
+            if not value:
+                _stop("cannot allocate pinned Keychain locator")
+            created.append(ctypes.c_void_p(value))
+        pairs = (
+            (
+                _framework_constant(security, "kSecClass"),
+                _framework_constant(security, "kSecClassGenericPassword"),
+            ),
+            (
+                _framework_constant(security, "kSecAttrService"),
+                created[0],
+            ),
+            (
+                _framework_constant(security, "kSecAttrAccount"),
+                created[1],
+            ),
+            (
+                _framework_constant(security, "kSecReturnData"),
+                _framework_constant(core, "kCFBooleanTrue"),
+            ),
+            (
+                _framework_constant(security, "kSecMatchLimit"),
+                _framework_constant(security, "kSecMatchLimitOne"),
+            ),
+            (
+                _framework_constant(security, "kSecUseAuthenticationUI"),
+                _framework_constant(security, "kSecUseAuthenticationUIFail"),
+            ),
+        )
+        for key, value in pairs:
+            core.CFDictionarySetValue(
+                query.value,
+                key.value,
+                value.value,
+            )
+        status = security.SecItemCopyMatching(
+            query.value,
+            ctypes.byref(result),
+        )
+        if status != 0:
+            # Never ask Security.framework for a human-readable error: it can
+            # include item metadata. Numeric OSStatus is sufficient to audit.
+            _stop(f"Keychain HMAC unavailable without UI (OSStatus {status})")
+        if not result.value or (
+            core.CFGetTypeID(result.value) != core.CFDataGetTypeID()
+        ):
+            _stop("Keychain HMAC result is not data")
+        length = core.CFDataGetLength(result.value)
+        pointer = core.CFDataGetBytePtr(result.value)
+        if length < 0 or (length and not pointer):
+            _stop("Keychain HMAC data is invalid")
+        return bytearray(pointer[:length])
+    finally:
+        if result.value:
+            core.CFRelease(result.value)
+        for value in created:
+            core.CFRelease(value.value)
+        core.CFRelease(query.value)
+
+
+@dataclass(frozen=True)
+class MacOSKeychainHmacKeyProvider:
+    logical_key_id: str
+    expected_sha256: str
+
+    def load(self, *, expected_key_id: str) -> bytearray:
+        if self.logical_key_id != expected_key_id:
+            _stop("HMAC key ID differs between plan and execution lock")
+        key = _copy_keychain_generic_password_no_ui()
+        if not isinstance(key, bytearray):
+            key = bytearray(key)
+        if len(key) < 32:
+            zeroize_secret(key)
+            _stop("Keychain HMAC contains fewer than 256 bits")
+        if sha256_bytes(key) != self.expected_sha256:
+            zeroize_secret(key)
+            _stop("Keychain HMAC hash differs from execution lock")
+        return key
+
+
+def zeroize_secret(secret: bytearray) -> None:
+    """Best-effort overwrite of the owned Python buffer.
+
+    CPython and Security.framework may transiently hold internal copies which
+    Python cannot control. The builder owns only this mutable buffer, never
+    serialises it, and overwrites it immediately after HMAC table projection.
+    """
+    secret[:] = b"\0" * len(secret)
+
+
+def validate_provider_key(
+    provider: HmacKeyProvider,
+    *,
+    plan_key_id: str,
+    lock_key_id: str,
+    lock_key_sha256: str,
+) -> bytearray:
+    """Revalidate an injected provider at the run boundary."""
+    if lock_key_id != plan_key_id:
+        _stop("HMAC key ID differs between plan and execution lock")
+    supplied = provider.load(expected_key_id=plan_key_id)
+    if not isinstance(supplied, (bytes, bytearray)):
+        _stop("HMAC provider returned an invalid secret type")
+    secret = supplied if isinstance(supplied, bytearray) else bytearray(supplied)
+    if len(secret) < 32:
+        zeroize_secret(secret)
+        _stop("HMAC key contains fewer than 256 bits")
+    if sha256_bytes(secret) != lock_key_sha256:
+        zeroize_secret(secret)
+        _stop("HMAC key hash differs from execution lock")
+    return secret
 
 
 def _openat_anchored(path: Path, *, directory: bool) -> tuple[Path, int]:
@@ -2565,8 +2764,8 @@ def _validate_v411_parity(
 
 def run_build(
     *,
-    key_fd: int,
     execution_lock: ExecutionLock,
+    key_provider: HmacKeyProvider | None = None,
     require_fullfsync: bool = True,
 ) -> Path:
     def locked_snapshot(
@@ -2602,11 +2801,6 @@ def run_build(
         expected_size=None,
     )
     validate_runtime(plan)
-    key_provider = FdHmacKeyProvider(
-        key_id=execution_lock.hmac_key_id,
-        descriptor=key_fd,
-        expected_sha256=execution_lock.hmac_key_sha256,
-    )
     locked_snapshot(
         Path(__file__).absolute(),
         expected_sha256=execution_lock.builder_source_sha256,
@@ -2625,6 +2819,7 @@ def run_build(
             execution_lock.tests_path: execution_lock.tests_sha256,
         },
     )
+    validate_golden_vectors(plan)
     build_spec = build_specification(
         plan,
         builder_git_commit=execution_lock.builder_git_commit,
@@ -2669,74 +2864,94 @@ def run_build(
             )
         finally:
             os.close(output_fd)
-    attempt_root = create_attempt_receipt(
-        attempts_root,
-        attempt_id=execution_lock.attempt_id,
-        plan_sha256=plan_sha256,
-        input_pins_sha256=input_pins_sha256,
-        require_fullfsync=require_fullfsync,
+    provider = key_provider or MacOSKeychainHmacKeyProvider(
+        logical_key_id=execution_lock.hmac_key_id,
+        expected_sha256=execution_lock.hmac_key_sha256,
     )
-    # The receipt is durable before the public golden corpus, the private key,
-    # or any historical source is semantically consumed.
-    validate_golden_vectors(plan)
-    key = key_provider.load(expected_key_id=plan["hmac_lineage"]["key_id"])
-    append_attempt_event(
-        attempt_root,
-        event_type="ATTEMPT_RECEIPTED",
-        fields={"plan_sha256": sha256_bytes(plan_bytes)},
-        require_fullfsync=require_fullfsync,
+    # Recovery above is deliberately keyless and source-free. Only a fresh
+    # attempt crosses this boundary, before receipt creation or source reads.
+    expected_key_id = plan["hmac_lineage"]["key_id"]
+    key = validate_provider_key(
+        provider,
+        plan_key_id=expected_key_id,
+        lock_key_id=execution_lock.hmac_key_id,
+        lock_key_sha256=execution_lock.hmac_key_sha256,
     )
 
-    def pinned(spec: Mapping[str, Any]) -> FileSnapshot:
-        source_path = Path(spec["path"])
-        return locked_snapshot(
-            source_path,
-            expected_sha256=spec["sha256"],
-            expected_size=spec.get("size_bytes"),
+    def project_fresh_attempt(
+        secret: bytearray,
+    ) -> tuple[Path, RegistryTables]:
+        fresh_attempt_root = create_attempt_receipt(
+            attempts_root,
+            attempt_id=execution_lock.attempt_id,
+            plan_sha256=plan_sha256,
+            input_pins_sha256=input_pins_sha256,
+            require_fullfsync=require_fullfsync,
+        )
+        append_attempt_event(
+            fresh_attempt_root,
+            event_type="ATTEMPT_RECEIPTED",
+            fields={"plan_sha256": sha256_bytes(plan_bytes)},
+            require_fullfsync=require_fullfsync,
         )
 
-    raw_spec = plan["inputs"]["historical_raw"]
-    historical_rows = parse_historical_csv(pinned(raw_spec).data)
-    registry_spec = plan["inputs"]["v411_registry"]
-    schema_hash = registry_spec["arrow_schema"]["ipc_serialized_sha256"]
-    loaded = {}
-    for name in ("source_registry", "consumed", "unseen"):
-        spec = registry_spec[name]
-        loaded[name] = _load_pinned_parquet(
-            pinned(spec),
-            expected_rows=spec["rows"],
-            expected_row_groups=spec["row_groups"],
-            expected_schema_sha256=schema_hash,
+        def pinned(spec: Mapping[str, Any]) -> FileSnapshot:
+            source_path = Path(spec["path"])
+            return locked_snapshot(
+                source_path,
+                expected_sha256=spec["sha256"],
+                expected_size=spec.get("size_bytes"),
+            )
+
+        raw_spec = plan["inputs"]["historical_raw"]
+        historical_rows = parse_historical_csv(pinned(raw_spec).data)
+        registry_spec = plan["inputs"]["v411_registry"]
+        schema_hash = registry_spec["arrow_schema"]["ipc_serialized_sha256"]
+        loaded = {}
+        for name in ("source_registry", "consumed", "unseen"):
+            spec = registry_spec[name]
+            loaded[name] = _load_pinned_parquet(
+                pinned(spec),
+                expected_rows=spec["rows"],
+                expected_row_groups=spec["row_groups"],
+                expected_schema_sha256=schema_hash,
+            )
+        pinned(registry_spec["manifest"])
+        for spec in plan["inputs"]["challenge_225"].values():
+            challenge_spec = {
+                "path": spec["manifest_path"],
+                "sha256": spec["manifest_sha256"],
+                "size_bytes": spec["size_bytes"],
+            }
+            snapshot = pinned(challenge_spec)
+            json.loads(snapshot.data)
+        challenge_rows = _validate_v411_parity(
+            historical_rows,
+            loaded["source_registry"],
+            loaded["consumed"],
+            loaded["unseen"],
         )
-    manifest_spec = registry_spec["manifest"]
-    pinned(manifest_spec)
-    for spec in plan["inputs"]["challenge_225"].values():
-        challenge_spec = {
-            "path": spec["manifest_path"],
-            "sha256": spec["manifest_sha256"],
-            "size_bytes": spec["size_bytes"],
-        }
-        snapshot = pinned(challenge_spec)
-        json.loads(snapshot.data)
-    challenge_rows = _validate_v411_parity(
-        historical_rows,
-        loaded["source_registry"],
-        loaded["consumed"],
-        loaded["unseen"],
-    )
-    append_attempt_event(
-        attempt_root,
-        event_type="INPUTS_VALIDATED",
-        fields={"source_rows": len(historical_rows)},
-        require_fullfsync=require_fullfsync,
-    )
-    tables = build_registry_tables(
-        historical_rows,
-        hmac_key=key,
-        challenge_source_rows=challenge_rows,
-        expected_rows=plan["invariants"]["compatibility_rows"],
-        expected_empty_service_ids=plan["invariants"]["expected_empty_service_id"],
-    )
+        append_attempt_event(
+            fresh_attempt_root,
+            event_type="INPUTS_VALIDATED",
+            fields={"source_rows": len(historical_rows)},
+            require_fullfsync=require_fullfsync,
+        )
+        projected = build_registry_tables(
+            historical_rows,
+            hmac_key=secret,
+            challenge_source_rows=challenge_rows,
+            expected_rows=plan["invariants"]["compatibility_rows"],
+            expected_empty_service_ids=plan["invariants"][
+                "expected_empty_service_id"
+            ],
+        )
+        return fresh_attempt_root, projected
+
+    try:
+        attempt_root, tables = project_fresh_attempt(key)
+    finally:
+        zeroize_secret(key)
     staging = output_root / (
         f".tmp-{build_id}-{execution_lock.attempt_id}-primary"
     )
@@ -2804,7 +3019,6 @@ def run_build(
 
 def _parse_args(argv: Sequence[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--hmac-key-fd", type=int, required=True)
     parser.add_argument("--execution-lock", type=Path, required=True)
     parser.add_argument("--execution-lock-sha256", required=True)
     return parser.parse_args(argv)
@@ -2827,7 +3041,6 @@ def main(argv: Sequence[str] | None = None) -> int:
     )
     with private_umask():
         destination = run_build(
-            key_fd=args.hmac_key_fd,
             execution_lock=execution_lock,
         )
     sys.stdout.write(str(destination) + "\n")
