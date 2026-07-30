@@ -529,6 +529,115 @@ def test_keychain_operation_contracts_are_exact(tmp_path: Path) -> None:
     assert query["kSecUseAuthenticationUI"] == "kSecUseAuthenticationUIFail"
 
 
+def test_native_backend_uses_exact_query_and_projects_secret(
+    tmp_path: Path,
+) -> None:
+    plan = _bundle(tmp_path).plan
+
+    class API:
+        def __init__(self) -> None:
+            self.query = None
+            self.required = None
+
+        def copy_matching(self, query, required):
+            self.query = query
+            self.required = required
+            projection = dict(required)
+            projection["kSecAttrGeneric"] = b"g" * 32
+            projection["kSecValueData"] = b"s" * 32
+            return subject.NativeCopyResult(0, projection)
+
+        def add(self, attributes):
+            pytest.fail("add forbidden")
+
+    api = API()
+    backend = subject.MacOSDataProtectionKeychain(plan, api)
+    item = backend.copy_item()
+    assert item is not None
+    assert item.claim_sha256_raw == b"g" * 32
+    assert item.seed == bytearray(b"s" * 32)
+    assert api.query == plan["keychain"]["secitemcopymatching_query_exact"]
+    assert set(api.required) == set(
+        plan["keychain"][
+            "secitemcopymatching_result_policy"
+        ]["required_persisted_attributes_verified_exactly"]
+    )
+
+
+@pytest.mark.parametrize(
+    ("status", "expected"),
+    [
+        (0, "ADDED"),
+        (subject.ERR_SEC_DUPLICATE_ITEM, "DUPLICATE"),
+    ],
+)
+def test_native_backend_add_contract_and_status(
+    tmp_path: Path, status: int, expected: str
+) -> None:
+    plan = _bundle(tmp_path).plan
+
+    class API:
+        attributes = None
+
+        def copy_matching(self, query, required):
+            pytest.fail("copy forbidden")
+
+        def add(self, attributes):
+            self.attributes = attributes
+            return status
+
+    api = API()
+    backend = subject.MacOSDataProtectionKeychain(plan, api)
+    result = backend.add_item(
+        seed=bytearray(b"s" * 32), claim_sha256_raw=b"g" * 32
+    )
+    assert result == expected
+    assert api.attributes == (
+        subject.MacOSDataProtectionKeychain.add_contract(
+            plan, b"s" * 32, b"g" * 32
+        )
+    )
+    assert api.attributes["kSecUseDataProtectionKeychain"] is True
+    assert "kSecUseAuthenticationUI" not in api.attributes
+
+
+def test_native_backend_copy_failures_are_closed(tmp_path: Path) -> None:
+    plan = _bundle(tmp_path).plan
+
+    class API:
+        def __init__(self, result):
+            self.result = result
+
+        def copy_matching(self, query, required):
+            return self.result
+
+        def add(self, attributes):
+            pytest.fail("add forbidden")
+
+    missing = subject.MacOSDataProtectionKeychain(
+        plan,
+        API(subject.NativeCopyResult(subject.ERR_SEC_ITEM_NOT_FOUND, None)),
+    )
+    assert missing.copy_item() is None
+    bad_status = subject.MacOSDataProtectionKeychain(
+        plan, API(subject.NativeCopyResult(-1, None))
+    )
+    with pytest.raises(subject.ProvisionError, match="COPY_STATUS"):
+        bad_status.copy_item()
+    required = dict(
+        plan["keychain"][
+            "secitemcopymatching_result_policy"
+        ]["required_persisted_attributes_verified_exactly"]
+    )
+    required["kSecAttrGeneric"] = b"g" * 31
+    required["kSecValueData"] = b"s" * 32
+    bad_length = subject.MacOSDataProtectionKeychain(
+        plan, API(subject.NativeCopyResult(0, required))
+    )
+    with pytest.raises(subject.ProvisionError, match="BINDING_LENGTH"):
+        bad_length.copy_item()
+
+
 def test_control_mutations_stop_before_keychain(tmp_path: Path) -> None:
     bundle = _bundle(tmp_path)
     bundle.authorization["execution_lock_sha256"] = "0" * 64
@@ -737,6 +846,18 @@ def test_main_rejects_arguments_before_control_or_keychain(capsys) -> None:
     assert capsys.readouterr().err == "STOP:ARGS_FORBIDDEN\n"
 
 
+def test_main_without_real_lock_stops_before_native_backend(
+    monkeypatch: pytest.MonkeyPatch, capsys
+) -> None:
+    monkeypatch.setattr(
+        subject,
+        "MacOSDataProtectionKeychain",
+        lambda _plan: pytest.fail("native backend must not be constructed"),
+    )
+    assert subject.main([]) == 65
+    assert capsys.readouterr().err == "STOP:EXECUTION_LOCK_OPEN\n"
+
+
 def test_source_has_no_forbidden_secret_or_external_channels() -> None:
     source = SUBJECT_PATH.read_text()
     for forbidden in (
@@ -744,8 +865,11 @@ def test_source_has_no_forbidden_secret_or_external_channels() -> None:
         "tempfile",
         "requests",
         "urllib",
-        "security ",
+        "os.system",
+        "Popen",
         "input(",
     ):
         assert forbidden not in source
-    assert "NATIVE_KEYCHAIN_NOT_PINNED" in source
+    assert "CoreFoundationKeychainAPI" in source
+    assert "SecItemCopyMatching" in source
+    assert "SecItemAdd" in source

@@ -608,6 +608,258 @@ class MemoryKeychain:
         return "ADDED"
 
 
+@dataclass(frozen=True)
+class NativeCopyResult:
+    status: int
+    projection: Mapping[str, Any] | None
+
+
+class NativeKeychainAPI(Protocol):
+    def copy_matching(
+        self,
+        query: Mapping[str, Any],
+        required_projection: Mapping[str, Any],
+    ) -> NativeCopyResult: ...
+
+    def add(self, attributes: Mapping[str, Any]) -> int: ...
+
+
+def _framework_constant(library: Any, name: str) -> ctypes.c_void_p:
+    try:
+        pointer = ctypes.c_void_p.in_dll(library, name)
+    except (ValueError, OSError):
+        _stop("KEYCHAIN_CONSTANT")
+    if not pointer.value:
+        _stop("KEYCHAIN_CONSTANT")
+    return pointer
+
+
+class CoreFoundationKeychainAPI:
+    """Minimal in-process Security.framework bridge; no CLI or UI."""
+
+    def __init__(self) -> None:
+        if platform.system() != "Darwin":
+            _stop("KEYCHAIN_PLATFORM")
+        try:
+            self.security = ctypes.CDLL(
+                "/System/Library/Frameworks/Security.framework/Security"
+            )
+            self.core = ctypes.CDLL(
+                "/System/Library/Frameworks/CoreFoundation.framework/"
+                "CoreFoundation"
+            )
+        except OSError:
+            _stop("KEYCHAIN_FRAMEWORK")
+        self._configure_abi()
+
+    def _configure_abi(self) -> None:
+        core = self.core
+        security = self.security
+        core.CFDictionaryCreateMutable.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_long,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        core.CFDictionaryCreateMutable.restype = ctypes.c_void_p
+        core.CFDictionarySetValue.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        core.CFDictionarySetValue.restype = None
+        core.CFDictionaryGetValue.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_void_p,
+        ]
+        core.CFDictionaryGetValue.restype = ctypes.c_void_p
+        core.CFStringCreateWithCString.argtypes = [
+            ctypes.c_void_p,
+            ctypes.c_char_p,
+            ctypes.c_uint32,
+        ]
+        core.CFStringCreateWithCString.restype = ctypes.c_void_p
+        core.CFDataCreate.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_uint8),
+            ctypes.c_long,
+        ]
+        core.CFDataCreate.restype = ctypes.c_void_p
+        core.CFGetTypeID.argtypes = [ctypes.c_void_p]
+        core.CFGetTypeID.restype = ctypes.c_ulong
+        core.CFDictionaryGetTypeID.argtypes = []
+        core.CFDictionaryGetTypeID.restype = ctypes.c_ulong
+        core.CFDataGetTypeID.argtypes = []
+        core.CFDataGetTypeID.restype = ctypes.c_ulong
+        core.CFDataGetLength.argtypes = [ctypes.c_void_p]
+        core.CFDataGetLength.restype = ctypes.c_long
+        core.CFDataGetBytePtr.argtypes = [ctypes.c_void_p]
+        core.CFDataGetBytePtr.restype = ctypes.POINTER(ctypes.c_uint8)
+        core.CFEqual.argtypes = [ctypes.c_void_p, ctypes.c_void_p]
+        core.CFEqual.restype = ctypes.c_bool
+        core.CFRelease.argtypes = [ctypes.c_void_p]
+        core.CFRelease.restype = None
+        security.SecItemCopyMatching.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_void_p),
+        ]
+        security.SecItemCopyMatching.restype = ctypes.c_int32
+        security.SecItemAdd.argtypes = [
+            ctypes.c_void_p,
+            ctypes.POINTER(ctypes.c_void_p),
+        ]
+        security.SecItemAdd.restype = ctypes.c_int32
+
+    def _string(self, value: str) -> ctypes.c_void_p:
+        pointer = self.core.CFStringCreateWithCString(
+            None, value.encode("utf-8"), 0x08000100
+        )
+        if not pointer:
+            _stop("KEYCHAIN_CFSTRING")
+        return ctypes.c_void_p(pointer)
+
+    def _data(self, value: bytes) -> ctypes.c_void_p:
+        array = (ctypes.c_uint8 * len(value)).from_buffer_copy(value)
+        pointer = self.core.CFDataCreate(None, array, len(value))
+        if not pointer:
+            _stop("KEYCHAIN_CFDATA")
+        return ctypes.c_void_p(pointer)
+
+    def _constant_value(self, name: str) -> ctypes.c_void_p:
+        if name in {"kCFBooleanTrue", "kCFBooleanFalse"}:
+            return _framework_constant(self.core, name)
+        return _framework_constant(self.security, name)
+
+    def _object_for(
+        self, key: str, value: Any, owned: list[ctypes.c_void_p]
+    ) -> ctypes.c_void_p:
+        symbolic = {
+            "kSecClassGenericPassword",
+            "kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly",
+            "kSecMatchLimitOne",
+            "kSecUseAuthenticationUIFail",
+        }
+        if type(value) is bool:
+            return self._constant_value(
+                "kCFBooleanTrue" if value else "kCFBooleanFalse"
+            )
+        if type(value) is bytes:
+            result = self._data(value)
+            owned.append(result)
+            return result
+        if type(value) is str and value in symbolic:
+            return self._constant_value(value)
+        if type(value) is str:
+            result = self._string(value)
+            owned.append(result)
+            return result
+        _stop(f"KEYCHAIN_VALUE_{key}")
+
+    def _dictionary(
+        self, values: Mapping[str, Any]
+    ) -> tuple[ctypes.c_void_p, list[ctypes.c_void_p]]:
+        pointer = self.core.CFDictionaryCreateMutable(None, 0, None, None)
+        if not pointer:
+            _stop("KEYCHAIN_CFDICTIONARY")
+        dictionary = ctypes.c_void_p(pointer)
+        owned: list[ctypes.c_void_p] = []
+        try:
+            for key, value in values.items():
+                key_pointer = _framework_constant(self.security, key)
+                value_pointer = self._object_for(key, value, owned)
+                self.core.CFDictionarySetValue(
+                    dictionary.value, key_pointer.value, value_pointer.value
+                )
+        except Exception:
+            for item in owned:
+                self.core.CFRelease(item.value)
+            self.core.CFRelease(dictionary.value)
+            raise
+        return dictionary, owned
+
+    def _data_bytes(self, pointer: int, label: str) -> bytes:
+        if not pointer or (
+            self.core.CFGetTypeID(pointer) != self.core.CFDataGetTypeID()
+        ):
+            _stop(f"KEYCHAIN_{label}_TYPE")
+        length = self.core.CFDataGetLength(pointer)
+        data = self.core.CFDataGetBytePtr(pointer)
+        if length < 0 or (length and not data):
+            _stop(f"KEYCHAIN_{label}_DATA")
+        return bytes(data[:length])
+
+    def _required_value(
+        self, result: int, key: str
+    ) -> int:
+        key_pointer = _framework_constant(self.security, key)
+        value = self.core.CFDictionaryGetValue(result, key_pointer.value)
+        if not value:
+            _stop("KEYCHAIN_RESULT_MISSING")
+        return int(value)
+
+    def copy_matching(
+        self,
+        query: Mapping[str, Any],
+        required_projection: Mapping[str, Any],
+    ) -> NativeCopyResult:
+        dictionary, owned = self._dictionary(query)
+        result = ctypes.c_void_p()
+        try:
+            status = int(
+                self.security.SecItemCopyMatching(
+                    dictionary.value, ctypes.byref(result)
+                )
+            )
+            if status == ERR_SEC_ITEM_NOT_FOUND:
+                return NativeCopyResult(status, None)
+            if status != 0:
+                return NativeCopyResult(status, None)
+            if not result.value or (
+                self.core.CFGetTypeID(result.value)
+                != self.core.CFDictionaryGetTypeID()
+            ):
+                _stop("KEYCHAIN_RESULT_TYPE")
+            projection: dict[str, Any] = {}
+            for key, expected in required_projection.items():
+                value_pointer = self._required_value(result.value, key)
+                if key in {"kSecAttrGeneric", "kSecValueData"}:
+                    projection[key] = self._data_bytes(
+                        value_pointer, key
+                    )
+                    continue
+                expected_owned: list[ctypes.c_void_p] = []
+                expected_pointer = self._object_for(
+                    key, expected, expected_owned
+                )
+                try:
+                    projection[key] = (
+                        expected
+                        if self.core.CFEqual(
+                            value_pointer, expected_pointer.value
+                        )
+                        else "MISMATCH"
+                    )
+                finally:
+                    for item in expected_owned:
+                        self.core.CFRelease(item.value)
+            return NativeCopyResult(status, projection)
+        finally:
+            if result.value:
+                self.core.CFRelease(result.value)
+            for item in owned:
+                self.core.CFRelease(item.value)
+            self.core.CFRelease(dictionary.value)
+
+    def add(self, attributes: Mapping[str, Any]) -> int:
+        dictionary, owned = self._dictionary(attributes)
+        try:
+            return int(self.security.SecItemAdd(dictionary.value, None))
+        finally:
+            for item in owned:
+                self.core.CFRelease(item.value)
+            self.core.CFRelease(dictionary.value)
+
+
 class MacOSDataProtectionKeychain:
     """Production backend boundary.
 
@@ -616,8 +868,15 @@ class MacOSDataProtectionKeychain:
     native call remains fail-closed until it is pinned by the execution lock.
     """
 
-    read_calls = 0
-    add_calls = 0
+    def __init__(
+        self,
+        plan: Mapping[str, Any],
+        api: NativeKeychainAPI | None = None,
+    ) -> None:
+        self.plan = plan
+        self.api = api if api is not None else CoreFoundationKeychainAPI()
+        self.read_calls = 0
+        self.add_calls = 0
 
     @staticmethod
     def add_contract(plan: Mapping[str, Any], seed: bytes, claim_hash: bytes) -> dict[str, Any]:
@@ -631,10 +890,50 @@ class MacOSDataProtectionKeychain:
         return dict(plan["keychain"]["secitemcopymatching_query_exact"])
 
     def copy_item(self) -> KeychainRecord | None:
-        _stop("NATIVE_KEYCHAIN_NOT_PINNED")
+        self.read_calls += 1
+        required = {
+            key: value
+            for key, value in self.plan["keychain"][
+                "secitemcopymatching_result_policy"
+            ]["required_persisted_attributes_verified_exactly"].items()
+        }
+        required["kSecAttrGeneric"] = b""
+        required["kSecValueData"] = b""
+        result = self.api.copy_matching(
+            self.query_contract(self.plan), required
+        )
+        if result.status == ERR_SEC_ITEM_NOT_FOUND:
+            return None
+        if result.status != 0 or result.projection is None:
+            _stop(f"KEYCHAIN_COPY_STATUS_{result.status}")
+        if set(result.projection) != set(required):
+            _stop("KEYCHAIN_RESULT_FIELDS")
+        for key, expected in required.items():
+            if key in {"kSecAttrGeneric", "kSecValueData"}:
+                continue
+            if result.projection[key] != expected:
+                _stop("KEYCHAIN_RESULT_PROJECTION")
+        binding = result.projection["kSecAttrGeneric"]
+        seed = result.projection["kSecValueData"]
+        if type(binding) is not bytes or len(binding) != 32:
+            _stop("KEYCHAIN_BINDING_LENGTH")
+        if type(seed) is not bytes or len(seed) != 32:
+            _stop("KEYCHAIN_SEED_LENGTH")
+        return KeychainRecord(bytearray(seed), binding, True)
 
     def add_item(self, *, seed: bytearray, claim_sha256_raw: bytes) -> str:
-        _stop("NATIVE_KEYCHAIN_NOT_PINNED")
+        self.add_calls += 1
+        if len(seed) != 32 or len(claim_sha256_raw) != 32:
+            _stop("KEYCHAIN_ADD_LENGTH")
+        attributes = self.add_contract(
+            self.plan, bytes(seed), claim_sha256_raw
+        )
+        status = self.api.add(attributes)
+        if status == 0:
+            return "ADDED"
+        if status == ERR_SEC_DUPLICATE_ITEM:
+            return "DUPLICATE"
+        _stop(f"KEYCHAIN_ADD_STATUS_{status}")
 
 
 def zeroize(secret: bytearray | None) -> None:
@@ -1305,7 +1604,7 @@ def main(argv: list[str] | None = None) -> int:
         return 64
     try:
         bundle = load_control_bundle()
-        backend = MacOSDataProtectionKeychain()
+        backend = MacOSDataProtectionKeychain(bundle.plan)
         receipt = provision(
             bundle,
             backend,
