@@ -497,6 +497,12 @@ d’au moins 60 secondes sont obligatoires seulement pour `INGESTED` et
 éventuellement `false`, `null` ou inférieures à 60 selon le schéma. Un STOP
 pré-spawn n’invente ni PID, ni durée, ni observations worker.
 
+Les canaris sont tous présents, dans l'ordre fermé, pour `INGESTED` et
+`QUARANTINED`. Un receipt `STOP` antérieur à la publication de la preuve
+canari porte une liste vide ; il ne fabrique jamais de refus non observé. Dès
+que `canaries.json` existe et est valide, le receipt doit reprendre la liste
+complète, y compris pour `STOP`.
+
 Les timestamps et PID sont audit-only. Ils n’entrent dans aucun identifiant ou
 résultat reproductible.
 
