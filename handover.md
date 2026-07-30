@@ -42,8 +42,18 @@ le CSV réel porte un BOM UTF-8 non déclaré. L'attempt
 un éventuel `U+FEFF` dans une valeur CRM sale et prouve la parité réelle des
 23 609 lignes. Le second attempt a été publié après reproduction
 byte-for-byte et deux audits indépendants
-*(commits GitHub : ancien lock révoqué `213a3b0`, code BOM `47e9772`,
-contrat/plan `6f9ad7e`, cross-pin `63e45f1`, lock final `5516ba6`)*.
+  *(commits GitHub : ancien lock révoqué `213a3b0`, code BOM `47e9772`,
+  contrat/plan `6f9ad7e`, cross-pin `63e45f1`, lock final `5516ba6`)*.
+
+Le scanner/sealer d'arrivée S0 est maintenant préenregistré et deux audits
+indépendants rendent **`GO pour commencer le code S0`**. Sa fixture de six
+lignes est entièrement déterministe, l'identifiant de run n'est plus
+circulaire, les trois types d'arbres scellés et le journal de reprise sont
+fermés, et les tests négatifs couvrent stabilité, structure CSV, quarantaine,
+conflits et crashs. Ce GO autorise uniquement l'implémentation sur synthétique :
+aucun CRM réel ni run autoritaire ne peut être ouvert avant le sandbox, le
+launcher, le verrou et le control manifest pinnés.
+*(commit GitHub : `50333d3`)*.
 
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
