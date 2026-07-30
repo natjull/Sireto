@@ -55,7 +55,14 @@ secrets, mais exige trois fermetures : validation récursive de tous les types
 et pins du lock, reconstruction publique exacte du payload depuis plan+lock,
 et store entièrement FD-ancré appliquant les pins root/device/volume. La
 couche native et tout run restent fermés jusqu'au correctif et à deux nouveaux
-audits.
+audits. Le correctif est maintenant figé : validateur récursif des 13 schémas,
+contrôles exhaustifs plan/contrat/implémentation/runtime/Keychain/device/UUID,
+reconstruction publique du payload et du genesis, et store exclusivement
+`openat`/`O_NOFOLLOW` avec identité avant/après. Les tests dédiés passent à 31,
+dont mutations de chaque famille de pins, payload auto-cohérent falsifié,
+symlink, hardlink et permissions ; la suite complète donne `1190 passed`.
+Il reste soumis aux deux ré-audits avant toute couche native.
+*(commit GitHub : fermeture des frontières de confiance `83efe3b`)*.
 
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
