@@ -136,6 +136,14 @@ non ancêtre. Ses 6 tests et la suite locale `1216 passed` sont verts ; le lock
 réel reste absent en attente du nouveau double audit.
 *(commit GitHub : provenance Git dans le sealer `7249239`)*.
 
+Le ré-audit détecte encore la possibilité Git locale `refs/replace`. Tous les
+appels `cat-file` et `merge-base` imposent désormais
+`GIT_NO_REPLACE_OBJECTS=1`, en plus des configurations globale et système
+neutralisées. Un test capture chaque environnement subprocess et prouve cette
+valeur ; les 7 tests du sealer passent. Nouveau verdict requis, lock toujours
+absent.
+*(commit GitHub : replacement objects interdits `8c3ac72`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
