@@ -205,6 +205,22 @@ prochain geste autorisé est l'audit du commit, puis seulement la construction
 de la fixture et du lock R2.
 *(commit GitHub : `0afb010`)*.
 
+L'unique exécution autoritative S0-R2 a ensuite conclu
+**`PIVOT_R2_WORKER_IDENTITY`**. Son receipt canonique immuable, SHA-256
+`6d9fb590bab4d205ce9004454954d47406de5e0d2ec74ad9390f01f6948f839e`,
+atteste onze canaris refusés, le même processus et les mêmes cinq FD pendant
+`60.005023459` secondes, puis `WORKER_CONTROLLED_STOP`, sans stdout, stderr
+ni sortie `sealed`, `scan`, `quarantine` ou `tmp`. Le builder R2 dérive
+correctement `bjpoib...` avec le domaine successeur et le receipt R1, mais le
+worker recalcule encore l'ancienne identité cœur `komapn...`; il échoue donc
+avant toute écriture sur l'invariant d'identité. Le catch global masque cette
+cause sous un code générique. R2 est consommé et ne doit jamais être relancé.
+Avant tout R3, corriger la dérivation, produire un STOP à phase/code fermés et
+faire atteindre `INGESTED` au vrai `_process` dans un gate sandbox jetable.
+Autorisation R2 : commit GitHub `5dbb2ff`. Rapport de pivot :
+`reports/v9/v4_12_fresh_s0_r2_pivot.md`
+*(commit GitHub : `648cd4f`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
