@@ -1,4 +1,4 @@
-# SIRETO Handover - 28 Juillet 2026
+# SIRETO Handover - 30 Juillet 2026
 
 ## Etat des lieux
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
@@ -17,27 +17,41 @@ nouveau CRM. Trois frontières séparées sont gelées :
   maximum et une certification AUTO 99,8 % distincte
   *(commit GitHub : `9c7eccd`)*.
 
-Les builders, leurs locks et les deux registres réels restent à implémenter et
-à sceller avant toute lecture d'un futur export CRM. Le ranker, le decider, le
-risk model et l'accepteur restent gelés.
+Les deux registres préalables sont désormais réellement construits, scellés
+et contre-audités **`GO_V412_CONTAMINATION_REGISTRIES`** :
 
-Les deux builders préalables sont maintenant implémentés et contre-audités,
-mais leurs builds réels restent interdits avant création des locks :
+- `consumed_sirens` ferme 64 618 observations et 19 754 SIREN uniques, sans
+  candidat, prédiction ou sonde technique et avec zéro rejet. Build
+  `fbc0b84d9c81b01a`, manifest
+  `b220efd7c4dc89a980b9d0b5501e16fd286edcafdff61573ae6c5e8d8423c6ff`
+  *(commits GitHub : code/tests `3b66fd7`, contrat/plan `9f74c00`,
+  cross-pin intake `a20c704`)* ;
+- `consumed_compatibility` ferme les 23 609 anciennes lignes, dont les 225
+  cas du challenge, par des keysets privés HMAC/masked/fuzzy. Build
+  `48851668dd2f173686f3240ecc62e30fcbfdb96d8abf0ced498eb29891d8a490`,
+  seal `2068a5d18aac189b7bffc0515054fa31166cb5cd9e4d066f143d3c2d5bc3e976`,
+  zéro rejet. La clé reste dans le Keychain et est lue en processus sans UI,
+  argument, environnement, fichier temporaire ou log
+  *(commits GitHub : identité volume `6de4585`, Keychain `4a5ac60`,
+  contrat/plan `38b18d8`, cross-pin `4b8bd2a`)*.
 
-- `consumed_sirens` obtient **`GO_CODE_SIRENS_FINAL`** après rejet d'un arbre
-  falsifié puis rescéllé. Les 15 tests passent, le preflight réel ferme
-  64 618 observations, 19 754 SIREN et zéro rejet
-  *(commits GitHub : contrat amendé `029e3fb`, code `5fe28b3`)* ;
-- `consumed_compatibility` obtient **`GO_CODE_COMPAT_FINAL`** après rejet d'un
-  keyset HMAC falsifié, neutralisation d'un swap de racine et reprise autonome
-  d'un attempt existant. Les 20 tests passent
-  *(commits GitHub : contrat amendé `a499f2f`, code `2dfc4e0`)*.
+Le premier lancement du registre de compatibilité s'est arrêté sans payload :
+le CSV réel porte un BOM UTF-8 non déclaré. L'attempt
+`v412-compat-8c4f31ce-attempt-01` reste immuable avec son seul receipt et
+`ATTEMPT_RECEIPTED`. Le correctif épingle exactement le BOM initial, conserve
+un éventuel `U+FEFF` dans une valeur CRM sale et prouve la parité réelle des
+23 609 lignes. Le second attempt a été publié après reproduction
+byte-for-byte et deux audits indépendants
+*(commits GitHub : ancien lock révoqué `213a3b0`, code BOM `47e9772`,
+contrat/plan `6f9ad7e`, cross-pin `63e45f1`, lock final `5516ba6`)*.
 
-Les 35 tests cumulés passent avec le temporaire placé sur
-`/Volumes/CATNAT_DATA`. Les pins finaux ont été propagés au contrat d'intake
-*(commit GitHub : `474b52a`)*. Le disque interne étant presque plein, tout
-test ou build suivant doit utiliser le SSD externe ; aucun nettoyage
-destructif n'a été effectué.
+Rapport complet :
+`reports/v9/v4_12_contamination_registries_results.md`
+*(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
+scanner/sealer d'arrivée sur paquets synthétiques uniquement. Aucun futur CRM
+ne peut encore être ouvert et le ranker, le decider, le risk model et
+l'accepteur restent gelés. Tout test ou build suivant doit utiliser le SSD
+externe ; aucun nettoyage destructif n'a été effectué.
 
 Le builder des entrées sûres du moteur unitaire V4.12 est implémenté et
 contre-audité, sans build réel. Une première revue a rendu `STOP_CODE` malgré
