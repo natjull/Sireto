@@ -616,3 +616,12 @@ events_manifests/<generation:08d>-<generation_manifest_sha256>.json
 Il existe exactement un manifest générationnel complet par numéro de
 génération. Toute concurrence ou coexistence conflictuelle produit `STOP` ;
 aucun timestamp ne départage des candidats.
+
+### 13.15 Provenance du code pré-lock
+
+Avant l'introduction du lock, `builder_source_sha256` n'est jamais un sentinel.
+Il vaut le SHA-256 sans LF du JSON canonique compact portant exactement
+`producer_sha256` et `scanner_sha256`, chacun calculé sur les octets du fichier
+source correspondant. `tests_sha256` vaut le SHA-256 des octets exacts de
+`tests/test_v412_fresh_intake_synthetic_scanner_sealer.py`. La reprise
+recalcule ces valeurs et refuse tout arbre scan construit par d'autres octets.
