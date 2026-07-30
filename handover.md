@@ -64,6 +64,17 @@ symlink, hardlink et permissions ; la suite complète donne `1190 passed`.
 Il reste soumis aux deux ré-audits avant toute couche native.
 *(commit GitHub : fermeture des frontières de confiance `83efe3b`)*.
 
+Le second ré-audit confirme ces trois corrections mais maintient `NO_GO` sur
+deux derniers écarts : absence de preuve de concurrence et temps logique du
+claim seulement typé, pas égal au plan. Le claim compare maintenant cette
+valeur exacte ; un test concurrent synchronise deux launchers et prouve un
+seul claim, item, arbre d'autorité et receipt. Les frontières de crash
+`CLAIM_DURABLE`, `KEYCHAIN_QUERIED` et `SEED_GENERATED`, ainsi que les états
+terminaux du receipt, sont aussi couvertes. Les tests dédiés passent à 38 et
+la suite complète donne `1197 passed`. Nouveau ré-audit obligatoire avant le
+backend natif.
+*(commit GitHub : concurrence, temps logique et crashs `3b38fe0`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
