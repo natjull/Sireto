@@ -147,6 +147,28 @@ def test_committed_plan_is_canonical_and_all_golden_vectors_pass() -> None:
     assert raw == builder.canonical_json(plan)
     builder.validate_runtime(plan)
     builder.validate_golden_vectors(plan)
+    missing_bom_policy = deepcopy(plan)
+    del missing_bom_policy["inputs"]["historical_raw"]["leading_utf8_bom"]
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="BOM policy missing or mismatched",
+    ):
+        builder.validate_plan(
+            missing_bom_policy,
+            builder.canonical_json(missing_bom_policy),
+        )
+    wrong_bom_policy = deepcopy(plan)
+    wrong_bom_policy["inputs"]["historical_raw"][
+        "leading_utf8_bom"
+    ] = "OPTIONAL"
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="BOM policy missing or mismatched",
+    ):
+        builder.validate_plan(
+            wrong_bom_policy,
+            builder.canonical_json(wrong_bom_policy),
+        )
     superscript = next(
         item
         for item in plan["golden_vectors"]["vectors"]
@@ -154,6 +176,77 @@ def test_committed_plan_is_canonical_and_all_golden_vectors_pass() -> None:
     )
     assert superscript["expected"]["normalized_input_siret"] == "2" * 14
     assert builder.normalize_siret(superscript["input_siret"]) == "2" * 14
+
+
+def test_historical_csv_bom_policy_is_exact_and_fail_closed() -> None:
+    header = ";".join(builder.CRM_COLUMNS).encode("utf-8") + b"\n"
+    row = b";;;;;;;\n"
+    valid = builder.UTF8_BOM + header + row
+    parsed = builder.parse_historical_csv(
+        valid,
+        leading_utf8_bom=builder.HISTORICAL_CSV_BOM_POLICY,
+    )
+    assert parsed == [{column: "" for column in builder.CRM_COLUMNS}]
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="policy is absent or unsupported",
+    ):
+        builder.parse_historical_csv(valid, leading_utf8_bom="")
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="required leading UTF-8 BOM is absent",
+    ):
+        builder.parse_historical_csv(
+            header + row,
+            leading_utf8_bom=builder.HISTORICAL_CSV_BOM_POLICY,
+        )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="more than one leading",
+    ):
+        builder.parse_historical_csv(
+            builder.UTF8_BOM + valid,
+            leading_utf8_bom=builder.HISTORICAL_CSV_BOM_POLICY,
+        )
+    embedded = builder.UTF8_BOM + header + builder.UTF8_BOM + row
+    embedded_parsed = builder.parse_historical_csv(
+        embedded,
+        leading_utf8_bom=builder.HISTORICAL_CSV_BOM_POLICY,
+    )
+    assert embedded_parsed[0]["SITE"] == "\ufeff"
+    drifted_header = header.replace(b"SITE", b"SITE_DRIFT", 1)
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="columns drift",
+    ):
+        builder.parse_historical_csv(
+            builder.UTF8_BOM + drifted_header + row,
+            leading_utf8_bom=builder.HISTORICAL_CSV_BOM_POLICY,
+        )
+
+
+def test_real_historical_csv_bom_rows_and_v411_parity() -> None:
+    plan, _raw = builder.load_plan(PLAN_PATH)
+    raw_spec = plan["inputs"]["historical_raw"]
+    data = Path(raw_spec["path"]).read_bytes()
+    assert len(data) == raw_spec["size_bytes"]
+    assert hashlib.sha256(data).hexdigest() == raw_spec["sha256"]
+    rows = builder.parse_historical_csv(
+        data,
+        leading_utf8_bom=raw_spec["leading_utf8_bom"],
+    )
+    assert len(rows) == raw_spec["rows"] == 23609
+    registry = plan["inputs"]["v411_registry"]
+    source = pq.read_table(registry["source_registry"]["path"])
+    consumed = pq.read_table(registry["consumed"]["path"])
+    unseen = pq.read_table(registry["unseen"]["path"])
+    challenge_rows = builder._validate_v411_parity(
+        rows,
+        source,
+        consumed,
+        unseen,
+    )
+    assert len(challenge_rows) == plan["invariants"]["challenge_rows"] == 225
 
 
 def test_fuzzy_emits_one_future_compatible_hash_per_distinct_city() -> None:
@@ -902,7 +995,11 @@ def test_fresh_attempt_orders_key_receipt_source_and_zeroizes_after_projection(
     )
     monkeypatch.setattr(builder, "create_attempt_receipt", receipt)
     monkeypatch.setattr(builder, "append_attempt_event", lambda *_args, **_kwargs: None)
-    monkeypatch.setattr(builder, "parse_historical_csv", lambda _data: _rows())
+    monkeypatch.setattr(
+        builder,
+        "parse_historical_csv",
+        lambda _data, **_kwargs: _rows(),
+    )
     monkeypatch.setattr(builder, "_load_pinned_parquet", lambda *_args, **_kwargs: object())
     monkeypatch.setattr(builder, "_validate_v411_parity", lambda *_args: {2})
     monkeypatch.setattr(builder, "build_registry_tables", projected)
@@ -936,17 +1033,25 @@ def test_keychain_native_read_only_integration_no_prompt() -> None:
     lock_bytes = EXECUTION_LOCK_PATH.read_bytes()
     lock = json.loads(lock_bytes)
     assert lock_bytes == builder.canonical_json(lock)
-    assert lock["plan"]["sha256"] == hashlib.sha256(plan_bytes).hexdigest()
-    assert lock["hmac"]["key_id"] == plan["hmac_lineage"]["key_id"]
+    # The committed execution lock is a non-executable draft while audited
+    # code/plan hashes move. Keep its real Keychain pins but form the exact
+    # future lock fixture in memory; never rewrite or bless the stale lock.
+    lock_fixture = deepcopy(lock)
+    lock_fixture["plan"]["sha256"] = hashlib.sha256(plan_bytes).hexdigest()
+    assert lock_fixture["plan"]["sha256"] == hashlib.sha256(plan_bytes).hexdigest()
+    assert lock_fixture["hmac"]["key_id"] == plan["hmac_lineage"]["key_id"]
     provider = builder.MacOSKeychainHmacKeyProvider(
-        logical_key_id=lock["hmac"]["key_id"],
-        expected_sha256=lock["hmac"]["key_sha256"],
+        logical_key_id=lock_fixture["hmac"]["key_id"],
+        expected_sha256=lock_fixture["hmac"]["key_sha256"],
     )
     secret = provider.load(expected_key_id=plan["hmac_lineage"]["key_id"])
     try:
         assert isinstance(secret, bytearray)
         assert len(secret) >= 32
-        assert hashlib.sha256(secret).hexdigest() == lock["hmac"]["key_sha256"]
+        assert (
+            hashlib.sha256(secret).hexdigest()
+            == lock_fixture["hmac"]["key_sha256"]
+        )
     finally:
         builder.zeroize_secret(secret)
     assert secret == bytearray(len(secret))

@@ -55,6 +55,8 @@ SIRET_DOMAIN = b"SIRETO-V412-INPUT-SIRET-LINEAGE\0"
 HEX64 = frozenset("0123456789abcdef")
 KEYCHAIN_SERVICE = "com.sireto.v412.compatibility-hmac"
 KEYCHAIN_ACCOUNT = "SIRETO"
+HISTORICAL_CSV_BOM_POLICY = "REQUIRED_EXACTLY_ONE_AT_FILE_START"
+UTF8_BOM = b"\xef\xbb\xbf"
 CRM_COLUMNS = (
     "SITE",
     "CODE_POSTAL",
@@ -1360,9 +1362,26 @@ def read_pinned_file(
         os.close(fd)
 
 
-def parse_historical_csv(data: bytes) -> list[dict[str, str]]:
+def parse_historical_csv(
+    data: bytes,
+    *,
+    leading_utf8_bom: str,
+) -> list[dict[str, str]]:
+    if leading_utf8_bom != HISTORICAL_CSV_BOM_POLICY:
+        _stop("historical CSV BOM policy is absent or unsupported")
+    if not data.startswith(UTF8_BOM):
+        _stop(
+            "historical CSV required leading UTF-8 BOM is absent",
+            "STOP_INPUT_DRIFT",
+        )
+    payload = data[len(UTF8_BOM) :]
+    if payload.startswith(UTF8_BOM):
+        _stop(
+            "historical CSV contains more than one leading UTF-8 BOM",
+            "STOP_INPUT_DRIFT",
+        )
     try:
-        text = data.decode("utf-8")
+        text = payload.decode("utf-8")
     except UnicodeDecodeError as exc:
         _stop(f"historical CSV is not UTF-8: {exc}", "STOP_INPUT_DRIFT")
     reader = csv.DictReader(io.StringIO(text, newline=""), delimiter=";")
@@ -1407,6 +1426,12 @@ def validate_plan(plan: Mapping[str, Any], raw_bytes: bytes) -> None:
         _stop("plan unexpectedly authorizes immediate execution")
     if build.get("status") != "PREREGISTERED_DO_NOT_EXECUTE":
         _stop("plan status mismatch")
+    historical_raw = plan.get("inputs", {}).get("historical_raw", {})
+    if (
+        historical_raw.get("leading_utf8_bom")
+        != HISTORICAL_CSV_BOM_POLICY
+    ):
+        _stop("historical CSV BOM policy missing or mismatched in plan")
     if tuple(plan["outputs"]["payload_files_exact"]) != PAYLOAD_FILES:
         _stop("payload list mismatch")
     for filename, schema in TABLE_SCHEMAS.items():
@@ -2904,7 +2929,10 @@ def run_build(
             )
 
         raw_spec = plan["inputs"]["historical_raw"]
-        historical_rows = parse_historical_csv(pinned(raw_spec).data)
+        historical_rows = parse_historical_csv(
+            pinned(raw_spec).data,
+            leading_utf8_bom=raw_spec.get("leading_utf8_bom", ""),
+        )
         registry_spec = plan["inputs"]["v411_registry"]
         schema_hash = registry_spec["arrow_schema"]["ipc_serialized_sha256"]
         loaded = {}
