@@ -158,6 +158,20 @@ nouveaux `synthetic_run_id` et `attempt_id`, et transmission du profil par
 `-p` depuis les octets relus et rehashés du FD retenu.
 *(commit GitHub d'autorisation R1 : `37b453f`)*.
 
+Le successeur S0-R2 franchit **`GO_R2_IMPLEMENTATION`** et
+**`GO_R2_IMPLEMENTATION_2`**. Il conserve R1 immuable, utilise la racine
+distincte `fresh_holdout_intake_synthetic_r2`, dérive un nouveau run
+`bjpoibmapghmeklagcnddeamijgmlfijmifdobbmmanmohkknplbpolonjfjahlo`,
+et impose un nouvel attempt. Le transport du profil devient `sandbox-exec -p`
+depuis les octets relus et rehashés du FD parent, sans FD profil transmis. Un
+smoke final sans payload doit réussir après construction du runtime et être
+attesté dans un lock R2 schema-3 avant toute autorisation. Plan canonique :
+`e05102a36b9aaf37ed3aa1052814a9e2bb8ff77a62d26cf135f9ff1f240abd27`;
+contrat :
+`2933d217f169b67d3eff399c5b270a91590a2ccec82430469a3ab8489a17a937`.
+Ce GO autorise seulement l'implémentation R2.
+*(commit GitHub : `4cf640e`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
