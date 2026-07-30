@@ -711,3 +711,121 @@ L’ordre R2 est strict :
    puis seulement sceller un nouveau lock ;
 6. auditer le lock puis commiter une nouvelle autorisation fixe ;
 7. exécuter une seule fois le worker R2.
+
+## 15. Amendement R2-B — frontière Python exécutable sous Seatbelt
+
+Les diagnostics exécutés après le Gate A de la section 14 invalident une
+hypothèse technique de cette section, sans consommer la racine, le run ou
+l'attempt R2 :
+
+- `sandbox-exec` retire les variables `DYLD_ROOT_PATH`,
+  `DYLD_LIBRARY_PATH` et `DYLD_FRAMEWORK_PATH` de l'environnement transmis ;
+- la copie privée de `.../Versions/3.14/bin/python3.14` est un lanceur qui
+  tente d'exécuter `Python.app`, ce que le profil `deny process-fork` refuse ;
+- une copie privée du vrai exécutable
+  `.../Resources/Python.app/Contents/MacOS/Python` démarre directement sous
+  `sandbox-exec -p`, sans fork, avec `PYTHONHOME` et `PYTHONPATH` privés ;
+- ce vrai exécutable charge néanmoins par install name absolu la bibliothèque
+  framework Homebrew `.../Versions/3.14/Python`.
+
+Le présent amendement prévaut donc sur les clauses incompatibles des sections
+4.1, 6, 8, 9, 10 et 14. La racine R2, ses dérivations d'identifiants, son
+builder, son transport `-p`, sa politique sans rejeu et l'ordre d'autorisation
+restent inchangés.
+
+### 15.1 Exécutable privé et unique exception hôte
+
+La source du record privé `PYTHON_EXECUTABLE` devient exactement :
+
+`/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Resources/Python.app/Contents/MacOS/Python`
+
+Son SHA-256 préenregistré est
+`7ecc1ecbf9daa9303c4bf502ff62ffdd9010ed5c08729d470ae9380c10ce1211`.
+Le sealer le copie dans le `rootfs` privé en conservant son chemin absolu
+relatif, puis vérifie octets, mode, mono-lien et fermeture de l'inventaire. Le
+profil autorise `process-exec` uniquement sur cette copie. Le lanceur
+`.../bin/python3.14` n'est ni copié comme exécutable, ni lancé.
+
+L'unique dépendance applicative autorisée hors de l'arbre privé est :
+
+`/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/Python`
+
+Son SHA-256 préenregistré est
+`e5728c35bdc26dee85e45b3fb94780afc1c9f97ced6b0af64d54e4eab3422e0a`.
+Elle devient un input de lock `HOST_PYTHON_FRAMEWORK`, régulier, mono-lien,
+sur le volume système épinglé, avec identité, taille, mode, uid et hash. Le
+parent conserve son FD et l'observe avant et après le worker. Avant le smoke
+et le lock, le sealer vérifie avec `/usr/bin/otool` que l'exécutable privé
+référence exactement cette bibliothèque. Juste avant le spawn autoritatif, le
+launcher rouvre le chemin de façon ancrée, exige la même identité et le même
+hash que le FD retenu, puis parse lui-même les octets Mach-O du helper pour
+revalider le même install name, sans subprocess.
+
+Le profil n'autorise pas `/opt`, `/opt/homebrew` ou le Cellar en `subpath`. Il
+n'autorise en lecture que le littéral de cette bibliothèque et les métadonnées
+strictement nécessaires de ses ancêtres. Le littéral `/` peut être autorisé en
+lecture pour l'initialisation dyld, mais jamais `(subpath "/")`. Les stdlib,
+PyArrow, dépendances
+Mach-O de PyArrow et sources applicatives restent privés, inventoriés et
+hashés. La bibliothèque framework hôte n'est pas dupliquée comme
+`PYTHON_FRAMEWORK` privé et n'est jamais reçue comme FD par le worker.
+
+Cette dépendance est possédée par l'utilisateur et son chemin ne peut pas être
+exécuté directement depuis un FD par `dyld`. La preuve ferme donc l'état
+observé avant/après, pas l'absence mathématique d'une substitution concurrente
+par un processus local hostile. Le run synthétique est autorisé seulement en
+l'absence d'un tel adversaire concurrent ; cette limitation
+`HOST_PYTHON_FRAMEWORK_PATH_NOT_FD_LOADABLE` est publiée dans le receipt.
+
+### 15.2 Environnement et smoke probant
+
+L'environnement enfant contient exactement, dans l'ordre canonique du plan :
+
+```text
+PATH
+PYTHONDONTWRITEBYTECODE
+PYTHONHOME
+PYTHONPATH
+TMPDIR
+```
+
+Les trois variables `DYLD_*` sont interdites. `PYTHONHOME` vise le préfixe
+framework privé contenant la stdlib ; `PYTHONPATH` vise uniquement le
+site-packages privé et l'application privée. Aucun chemin de travail ni
+site-packages hôte ne peut y figurer.
+
+Le smoke pré-lock n'exécute plus `-c "pass"`. Il importe `encodings` et
+`pyarrow`, exige `pyarrow.__version__ == "23.0.1"`, puis exige que les chemins
+résolus de `encodings.__file__` et `pyarrow.__file__` soient des fichiers
+réguliers sous le runtime privé exact. Il conserve `pass_fds=[]`, ne produit
+aucun stdout/stderr et laisse les cinq répertoires de sortie vides. Le lock
+atteste la liste argv et l'environnement exacts. Le launcher reconstruit ces
+deux objets et l'attestation entière avant claim.
+
+Pour rendre l'amendement non ambigu, le schéma du lock devient
+`sireto-v4.12-fresh-s0-r2-authoritative-execution-lock-4` et celui du smoke
+devient `sireto-v4.12-fresh-s0-r2-smoke-attestation-2`. Les valeurs `-3` et
+`smoke-attestation-1` sont refusées pour R2-B.
+
+Un smoke avec `pass`, un import depuis `/opt/homebrew/lib`, un environnement
+contenant `DYLD_*`, un exécutable égal au lanceur `bin/python3.14`, une lecture
+générale de `/opt`, ou une absence d'autorité
+`HOST_PYTHON_FRAMEWORK` produit `STOP`.
+
+### 15.3 Gate d'implémentation amendé
+
+Avant toute création de la racine R2 :
+
+1. le plan canonique est mis en cohérence avec le présent amendement ;
+2. deux audits indépendants concluent `GO_R2B_IMPLEMENTATION` ;
+3. l'implémentation et les tests prouvent la copie du helper réel, l'absence
+   des variables `DYLD_*`, l'import privé de PyArrow et la conservation du FD
+   `HOST_PYTHON_FRAMEWORK` avant/après ;
+   il prouve aussi que le contrôle Mach-O pre-spawn du launcher n'utilise
+   aucun subprocess ;
+4. un smoke temporaire hors racine R2 reproduit ces invariants ;
+5. seulement ensuite le commit d'implémentation peut construire la fixture et
+   sceller le lock R2.
+
+Le moindre échec avant le lock reste un `PIVOT` d'infrastructure, pas un
+résultat de retrieval et pas un `STOP` du projet.
