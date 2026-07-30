@@ -319,8 +319,8 @@ registre défini par
 `docs/v4_12_consumed_compatibility_registry_contract.md` et
 `config/v4_12_consumed_compatibility_registry_plan.json`, épinglés
 respectivement à
-`7413952f31b40da6e647e907dd3a5bd5b611d50884e3a1e0590da9a89d1c110f`
-et `8c4f31ce4ebaee86724148e6b69638a0f4d6876f3a71e27ac23876f26700a258`.
+`b283143bbd35091add755665f9edbaee4b00ac9b08fca36abf5f457163b11946`
+et `57fa9ce0d4239ca42cbcd06cd9fe2025c6dee414bddadbce4d8b3b3115261ab1`.
 
 Avant toute ouverture du nouveau CRM, ce registre doit être réellement
 construit et scellé. Le lock d’intake épingle au minimum ses SHA-256 finaux de
