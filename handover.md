@@ -191,6 +191,20 @@ et aucun accès général à `/opt`. La racine R2 reste absente ; ce GO autorise
 uniquement l'implémentation et son Gate B avant toute création R2.
 *(commit GitHub : `5fc7116`)*.
 
+Le bundle R2-B franchit maintenant le Gate B **`GO_R2B_CODE_FINAL`**, confirmé
+par deux contre-audits. Le runtime homologue construit hors racine R2 contient
+1 525 records fermés ; son smoke réel charge `encodings` et PyArrow 23.0.1
+depuis le privé avec `exit=0`, stdout/stderr vides, puis le launcher reconstruit
+exactement la même attestation. Le Gate B a détecté et corrigé avant commit un
+alias Homebrew de stdlib qui dupliquait le framework hôte, puis une capture
+stdout/stderr initialement plafonnée après coup : la lecture est maintenant
+bornée en continu à 65 536 octets par flux, avec kill/close/wait au
+dépassement ou timeout et stdin sur `/dev/null`. La suite complète est verte :
+1 090 tests passent sur le `TMPDIR` SSD. La racine R2 reste absente ; le
+prochain geste autorisé est l'audit du commit, puis seulement la construction
+de la fixture et du lock R2.
+*(commit GitHub : `0afb010`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
