@@ -172,6 +172,25 @@ contrat :
 Ce GO autorise seulement l'implémentation R2.
 *(commit GitHub : `4cf640e`)*.
 
+Le Gate A R2 a ensuite découvert, avant création de la racine R2, que
+`sandbox-exec` supprime les variables `DYLD_*` et rend inexécutable la copie
+du stub Homebrew `bin/python3.14`. L'amendement R2-B franchit désormais deux
+audits indépendants **`GO_R2B_IMPLEMENTATION`**. Il copie le vrai helper
+`Python.app`, conserve stdlib et PyArrow privés, supprime tout `DYLD_*`, et
+épingle comme unique exception hôte la bibliothèque framework exacte,
+retenue et rehashée avant/après. Le smoke pré-lock doit importer
+`encodings` et PyArrow 23.0.1 depuis le runtime privé, sans stdout/stderr.
+`otool` reste limité au sealer pré-lock ; le launcher revalide l'install name
+Mach-O en processus afin de conserver un seul child autoritatif. Plan
+canonique :
+`2ab9a1d5954588c01de22c54e21c721aa0e9da9a9e7f140d9f93950cb8b1abf4`;
+contrat :
+`66418a23ae6b166f253f7ef4bc220e3a47ce0655c2ee96c7e8a9db51e0519a42`.
+La sonde homologue hors racine R2 réussit avec `exit=0`, stdout/stderr vides
+et aucun accès général à `/opt`. La racine R2 reste absente ; ce GO autorise
+uniquement l'implémentation et son Gate B avant toute création R2.
+*(commit GitHub : `5fc7116`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
