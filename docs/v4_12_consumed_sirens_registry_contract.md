@@ -192,7 +192,7 @@ canonique comprenant :
 - chemin, SHA-256, projection et rôles de toutes les sources porteuses dans
   l'ordre du plan ;
 - chemin et SHA-256 de tous les manifests d'événement dans l'ordre du plan ;
-- SHA-256 du contrat, du plan et du futur builder ;
+- SHA-256 du contrat, du plan, du builder et de ses tests ;
 - commit Git du builder.
 
 Le timestamp, le chemin temporaire et les métadonnées de runtime non
@@ -203,6 +203,7 @@ fonctionnelles sont exclus du calcul.
 `manifest.json` ne contient pas son propre SHA-256. Il contient :
 
 - l'identité complète du build ;
+- les SHA-256 du builder et de ses tests au commit Git audité ;
 - tous les pins d'entrée ;
 - les volumes et rejets par source/rôle ;
 - le hash logique des observations ;
