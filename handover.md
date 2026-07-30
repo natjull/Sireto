@@ -240,6 +240,22 @@ Rapport :
 `reports/v9/v4_12_fresh_s0_r3_gate_results.md`
 *(commit GitHub : `5d1820d`)*.
 
+Le contrat et le plan S0-R3 franchissent maintenant deux audits indépendants
+post-commit **`GO_R3_IMPLEMENTATION`**. Le plan canonique SHA-256
+`ce7f8ed4a9d6236e61cffca72b92a1043d414afc69571ae79c94f191e6def1e2`
+est lié au contrat
+`247b41f60a39211f85431d141625bf0d8321ae88c701d17ffd380a04ef7a9353`.
+L'overlay fermé applique 30 overrides et quatre suppressions au plan R2 :
+les schémas R3 matérialisent intégralement champs, nullabilité et types,
+`SANDBOX_EXEC` reste une autorité système hors des blobs Git, et aucune
+identité R2 interdite ne pilote R3. Les 11 tests R3 et les 1 106 tests du
+dépôt passent sur le SSD. La racine R3 reste absente. Ce GO autorise seulement
+l'implémentation R3 ; ni build, ni autorisation, ni run, ni CRM réel ne sont
+encore ouverts.
+Préenregistrement : commits GitHub `7bf1ea4`, correctif `a483107`.
+Rapport :
+`reports/v9/v4_12_fresh_s0_r3_preregistration_audits.md`.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
