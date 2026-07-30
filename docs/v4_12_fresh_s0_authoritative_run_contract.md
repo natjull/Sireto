@@ -551,8 +551,10 @@ Après implémentation, mais avant toute fixture ou tout run :
   modification des sources du commit d’implémentation ;
 - tests unitaires, statiques et sandbox macOS sont verts ;
 - pendant le run, le launcher est l’unique source utilisant `subprocess` ;
-  avant le lock, le sealer peut invoquer uniquement `/usr/bin/otool` pour
-  fermer les dépendances Mach-O, et ses sorties sont validées puis hashées ;
+  avant le lock, R1 limite le sealer à `/usr/bin/otool` pour fermer les
+  dépendances Mach-O ; par dérogation fermée pour R2, le sealer peut en plus
+  invoquer exactement une fois `/usr/bin/sandbox-exec` pour le smoke décrit
+  en section 14 ; toutes les sorties sont capturées et validées ;
 - aucun chemin réel n’est ouvert par les tests ;
 - un audit indépendant conclut `GO_SYNTHETIC_RUN`.
 
@@ -569,3 +571,143 @@ Un run S0 est recevable seulement si :
 
 Même réussi, ce gate conclut seulement
 `INGESTED_SYNTHETIC_SCANNER_SEALER_V412`. Il n’autorise aucun CRM réel.
+
+## 14. Successeur S0-R2 après le PIVOT de transport du profil
+
+Le run S0-R1 est définitivement consommé. Son autorité reste à
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic` et son
+receipt terminal, de SHA-256
+`68d1267351447d6dd755cfca62cccec700715191b45a906e28ecc59b40bc6746`,
+reste immuable. Il conclut `STOP`, phase `WORKER`, raison
+`WORKER_CONTROL_INVALID`, enfant `exit=65`, sans `READY`, sans canari et sans
+sortie. Aucun état R2 ne déplace, ne supprime, ne remplace ou ne rejoue ce
+claim, ce receipt, ce `synthetic_run_id` ou cet `attempt_id`.
+
+La cause est bornée au transport du profil : les 62 octets
+`sandbox-exec: /dev/fd/effective.sb: No such file or directory\n` ont le
+SHA-256
+`1d24b61273dbf35a7162215eaa0aa2668c83773f003884a01e326b8065132cf7`,
+égal à l’autorité `stderr` du receipt R1. S0-R2 est une nouvelle autorité et
+non une reprise de R1.
+
+S0-R2 impose :
+
+- une racine distincte
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic_r2` ;
+- un `synthetic_run_id` distinct, dérivé avec le domaine
+  `SIRETO-V412-FRESH-SYNTHETIC-S0-R2-RUN-ID\0` sur le hash du plan fixture
+  core, le hash de sa fixture et le hash du receipt R1 ;
+- un `attempt_id` ensuite dérivé par la règle core existante sur ce nouveau
+  run, le nouveau control manifest et le temps logique ;
+- un builder adaptateur R2 séparé, épinglé comme blob d’implémentation, qui
+  conserve byte-for-byte `crm_safe.csv` et `evidence_source.parquet`, conserve
+  toutes les constantes du fixture spec core, puis régénère canoniquement les
+  trois manifests et le control manifest avec le seul changement sémantique
+  du `synthetic_run_id` et de ses hashes transitifs ; aucune autre différence
+  n’est admise et aucune donnée CRM réelle n’est lue ;
+- `new_attempt_on_recovery_allowed=false` à l’intérieur de R2 : un claim R2
+  consommé ne peut pas être rejoué.
+
+La frontière de racine est propagée sans découverte dynamique : le sealer et
+le worker ont la constante R2 exacte, et le profil sandbox utilise un
+placeholder `@@ALLOWED_ROOT@@` remplacé avant lock pour ses permissions
+metadata. Un test AST/texte refuse tout littéral de la racine R1 dans le
+sealer, le worker ou le profil d’implémentation R2. Les onze canaris du worker
+doivent donc viser la racine R2 exacte ; un refus obtenu en visant R1 ne
+constitue jamais une preuve R2.
+
+Les deux dérivations utilisent exactement :
+
+```text
+digest = SHA256(
+  domain UTF-8
+  || JSON canonique UTF-8 sans LF
+     (sort_keys, séparateurs compacts, allow_nan=false)
+)
+id = mapping de chaque nibble hexadécimal 0..f vers a..p
+```
+
+Pour le run R2, l’objet a exactement les clés
+`fixture_spec_sha256`, `core_plan_sha256` et
+`predecessor_receipt_sha256`. Leurs valeurs sont respectivement le pin
+`control_manifest.fixture_spec_sha256` du plan core, le SHA-256 des octets
+exacts de ce plan core épinglé, et
+`68d1267351447d6dd755cfca62cccec700715191b45a906e28ecc59b40bc6746`.
+Le builder et le lock sealer recalculent indépendamment cette même valeur,
+rejettent la formule R1 et refusent un run égal au run R1.
+
+Pour l’attempt R2, le domaine et l’objet exacts restent ceux du core :
+`SIRETO-V412-FRESH-SYNTHETIC-ATTEMPT-ID\0` et les clés
+`synthetic_run_id`, `fixture_control_manifest_sha256`,
+`logical_time_utc`. Le sealer refuse aussi un attempt égal à l’attempt R1.
+
+Le launcher R2 relit le profil effectif depuis le FD parent retenu juste avant
+le spawn, restaure sa position, puis exige simultanément :
+
+- taille et SHA-256 égaux au record privé et au lock ;
+- UTF-8 strict, sans NUL ;
+- un unique LF final ;
+- aucun placeholder `@@...@@` restant.
+
+Il invoque ensuite `/usr/bin/sandbox-exec -p <profil_exact>` ; aucun chemin de
+profil et aucun FD de profil n’est transmis au child. Le texte est passé comme
+un argument direct de `Popen`, jamais via un shell. Le FD du profil reste dans
+les observations parent avant/après mais ne figure plus dans `pass_fds`.
+
+Après le commit d’implémentation et la construction de la fixture, le sealer
+construit le runtime et le profil effectifs finaux, puis exécute avant écriture
+du lock un smoke test sandbox R2 sans payload. Il utilise exactement le Python
+privé, l’environnement et le texte `-p` qui seront épinglés, exécute seulement
+`-c "pass"`, reçoit `pass_fds=[]` et ne peut créer aucune sortie.
+
+Le lock R2 utilise le nouveau schéma
+`sireto-v4.12-fresh-s0-r2-authoritative-execution-lock-3`, le purpose
+`SIRETO_V412_FRESH_SYNTHETIC_S0_R2_AUTHORITATIVE_RUN` et ajoute un objet
+`r2_smoke` non nullable. Cet objet canonique contient exactement :
+
+```text
+schema_version
+implementation_commit
+synthetic_run_id
+attempt_id
+python_sha256
+profile_sha256
+environment_sha256
+argv_sha256
+pass_fds
+exit_code
+signal
+stdout_size_bytes
+stdout_sha256
+stderr_size_bytes
+stderr_sha256
+five_output_directories_empty_before
+five_output_directories_empty_after
+smoke_sha256
+```
+
+`pass_fds=[]`, `exit_code=0`, `signal=null`, stdout et stderr sont vides et
+leurs hashes valent SHA-256 vide. Les deux booléens de sortie valent `true`.
+`environment_sha256` porte le SHA-256 du JSON canonique `sort_keys`, compact,
+UTF-8 **sans LF** de la map d’environnement exacte ; `argv_sha256` applique
+la même règle à la liste argv exacte ; `smoke_sha256` applique la même règle à
+l’objet aux 17 champs exacts hors `smoke_sha256`. Le sealer refuse de sceller
+si l’un de ces invariants échoue. Le launcher reconstruit et valide toute
+l’attestation avant claim.
+
+L’exception subprocess du sealer est fermée : outre les appels `/usr/bin/otool`
+déjà autorisés pour fermer Mach-O, R2 autorise exactement un child
+`/usr/bin/sandbox-exec` pour ce smoke final. Aucun shell, aucun autre
+exécutable et aucun FD hérité ne sont permis. stdout et stderr sont capturés
+avec une limite stricte et doivent être vides.
+
+L’ordre R2 est strict :
+
+1. préenregistrer et auditer le présent amendement et le plan canonique R2 ;
+2. implémenter le builder adaptateur, le transport `-p` et leurs tests ;
+3. commiter l’implémentation ;
+4. construire la fixture sous la racine R2 ;
+5. construire le runtime final, exécuter et attester le smoke sans payload,
+   puis seulement sceller un nouveau lock ;
+6. auditer le lock puis commiter une nouvelle autorisation fixe ;
+7. exécuter une seule fois le worker R2.
