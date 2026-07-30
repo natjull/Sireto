@@ -1110,6 +1110,98 @@ def validate_runtime(plan: Mapping[str, Any]) -> None:
         _stop(f"runtime drift: expected {expected}, observed {observed}")
 
 
+def validate_audited_git_state(
+    *,
+    repo_root: Path,
+    audited_commit: str,
+    artifact_hashes: Mapping[Path, str],
+) -> str:
+    if (
+        len(audited_commit) != 40
+        or any(character not in "0123456789abcdef" for character in audited_commit)
+    ):
+        _stop("audited Git commit must be a full lowercase SHA-1")
+    resolved_root = repo_root.resolve()
+
+    def git(
+        arguments: Sequence[str], *, text: bool = False
+    ) -> subprocess.CompletedProcess[Any]:
+        environment = {
+            key: value
+            for key, value in os.environ.items()
+            if not key.startswith("GIT_")
+        }
+        environment.update(
+            {
+                "GIT_NO_REPLACE_OBJECTS": "1",
+                "GIT_CONFIG_NOSYSTEM": "1",
+                "GIT_CONFIG_GLOBAL": "/dev/null",
+                "LC_ALL": "C",
+                "LANG": "C",
+            }
+        )
+        return subprocess.run(
+            ["/usr/bin/git", "--no-replace-objects", *arguments],
+            cwd=resolved_root,
+            check=False,
+            capture_output=True,
+            text=text,
+            env=environment,
+        )
+
+    top_level = git(["rev-parse", "--show-toplevel"], text=True)
+    if (
+        top_level.returncode != 0
+        or Path(top_level.stdout.strip()).resolve() != resolved_root
+    ):
+        _stop("Git top-level differs from audited repository root")
+    audited_type = git(["cat-file", "-t", audited_commit], text=True)
+    if (
+        audited_type.returncode != 0
+        or audited_type.stdout.strip() != "commit"
+    ):
+        _stop("audited Git object is not a commit")
+    head_result = git(["rev-parse", "--verify", "HEAD"], text=True)
+    if head_result.returncode != 0:
+        _stop("cannot resolve current Git HEAD")
+    current_head = head_result.stdout.strip()
+    if (
+        len(current_head) != 40
+        or any(
+            character not in "0123456789abcdef"
+            for character in current_head
+        )
+    ):
+        _stop("current Git HEAD is not a full lowercase SHA-1")
+    head_type = git(["cat-file", "-t", current_head], text=True)
+    if head_type.returncode != 0 or head_type.stdout.strip() != "commit":
+        _stop("current Git HEAD object is not a commit")
+    ancestor_result = git(
+        ["merge-base", "--is-ancestor", audited_commit, current_head]
+    )
+    if ancestor_result.returncode != 0:
+        _stop("audited builder commit is not an ancestor of HEAD")
+    for artifact_path, expected_sha256 in artifact_hashes.items():
+        if not is_hex64(expected_sha256):
+            _stop("invalid audited artifact hash")
+        try:
+            relative = artifact_path.resolve().relative_to(resolved_root)
+        except ValueError:
+            _stop(f"audited artifact is outside repository: {artifact_path}")
+        blob_result = git(
+            [
+                "cat-file",
+                "blob",
+                f"{audited_commit}:{relative.as_posix()}",
+            ]
+        )
+        if blob_result.returncode != 0:
+            _stop(f"audited Git blob is unavailable: {relative}")
+        if sha256_bytes(blob_result.stdout) != expected_sha256:
+            _stop(f"audited Git blob hash mismatch: {relative}")
+    return current_head
+
+
 def load_plan(path: Path) -> tuple[dict[str, Any], bytes]:
     raw = _read_private_regular(path, expected_mode=None)
     try:
@@ -2389,18 +2481,14 @@ def run_build(
         expected_sha256=execution_lock.tests_sha256,
         expected_size=None,
     )
-    git_result = subprocess.run(
-        ["/usr/bin/git", "rev-parse", "HEAD"],
-        cwd=Path(__file__).resolve().parent.parent,
-        check=False,
-        capture_output=True,
-        text=True,
+    validate_audited_git_state(
+        repo_root=Path(__file__).resolve().parent.parent,
+        audited_commit=execution_lock.builder_git_commit,
+        artifact_hashes={
+            Path(__file__).absolute(): execution_lock.builder_source_sha256,
+            execution_lock.tests_path: execution_lock.tests_sha256,
+        },
     )
-    if (
-        git_result.returncode != 0
-        or git_result.stdout.strip() != execution_lock.builder_git_commit
-    ):
-        _stop("builder Git commit differs from execution lock")
     build_spec = build_specification(
         plan,
         builder_git_commit=execution_lock.builder_git_commit,

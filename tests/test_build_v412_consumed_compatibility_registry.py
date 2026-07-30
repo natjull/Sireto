@@ -8,6 +8,7 @@ import json
 import os
 from pathlib import Path
 import stat
+import subprocess
 import sys
 
 import pyarrow.parquet as pq
@@ -423,6 +424,291 @@ def test_single_canonical_execution_lock_contains_all_execution_pins(
         builder.load_execution_lock(
             lock_path,
             expected_sha256=hashlib.sha256(lock_path.read_bytes()).hexdigest(),
+        )
+
+
+def test_audited_git_blobs_match_and_later_head_is_accepted(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def git(*arguments: str) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.run(
+            ["/usr/bin/git", *arguments],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+        )
+
+    git("init", "-q")
+    git("config", "user.name", "SIRETO Test")
+    git("config", "user.email", "sireto-test@example.invalid")
+    script = repo / "scripts" / "builder.py"
+    tests = repo / "tests" / "test_builder.py"
+    script.parent.mkdir()
+    tests.parent.mkdir()
+    script.write_bytes(b"audited builder\n")
+    tests.write_bytes(b"audited tests\n")
+    git("add", "scripts/builder.py", "tests/test_builder.py")
+    git("commit", "-q", "-m", "audited code")
+    audited_commit = git("rev-parse", "HEAD").stdout.decode().strip()
+    (repo / "execution-lock.json").write_text("{}\n", encoding="utf-8")
+    git("add", "execution-lock.json")
+    git("commit", "-q", "-m", "later lock commit")
+    later_head = git("rev-parse", "HEAD").stdout.decode().strip()
+    assert later_head != audited_commit
+    fake_bin = tmp_path / "fake-bin"
+    fake_bin.mkdir()
+    fake_git = fake_bin / "git"
+    marker = tmp_path / "fake-git-was-called"
+    fake_git.write_text(
+        f"#!/bin/sh\n/usr/bin/touch '{marker}'\nexit 99\n",
+        encoding="utf-8",
+    )
+    fake_git.chmod(0o700)
+    lure = tmp_path / "lure.git"
+    subprocess.run(
+        ["/usr/bin/git", "init", "--bare", "-q", str(lure)],
+        check=True,
+    )
+    monkeypatch.setenv("PATH", str(fake_bin))
+    monkeypatch.setenv("GIT_DIR", str(lure))
+    monkeypatch.setenv("GIT_WORK_TREE", str(tmp_path / "false-worktree"))
+    assert builder.validate_audited_git_state(
+        repo_root=repo,
+        audited_commit=audited_commit,
+        artifact_hashes={
+            script: hashlib.sha256(script.read_bytes()).hexdigest(),
+            tests: hashlib.sha256(tests.read_bytes()).hexdigest(),
+        },
+    ) == later_head
+    assert not marker.exists()
+
+
+def test_audited_git_blob_hash_mismatch_fails_closed(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(
+        ["/usr/bin/git", "init", "-q"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "config", "user.name", "SIRETO Test"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "/usr/bin/git",
+            "config",
+            "user.email",
+            "sireto-test@example.invalid",
+        ],
+        cwd=repo,
+        check=True,
+    )
+    artifact = repo / "builder.py"
+    artifact.write_bytes(b"committed bytes\n")
+    subprocess.run(
+        ["/usr/bin/git", "add", "builder.py"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "commit", "-q", "-m", "audited"],
+        cwd=repo,
+        check=True,
+    )
+    commit = subprocess.run(
+        ["/usr/bin/git", "rev-parse", "HEAD"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="blob hash mismatch",
+    ):
+        builder.validate_audited_git_state(
+            repo_root=repo,
+            audited_commit=commit,
+            artifact_hashes={artifact: "0" * 64},
+        )
+
+
+def test_audited_git_ignores_chained_replace_refs(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+
+    def git(*arguments: str) -> str:
+        return subprocess.run(
+            ["/usr/bin/git", *arguments],
+            cwd=repo,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    git("init", "-q")
+    git("config", "user.name", "SIRETO Test")
+    git("config", "user.email", "sireto-test@example.invalid")
+    artifact = repo / "builder.py"
+    artifact.write_bytes(b"audited bytes\n")
+    audited_hash = hashlib.sha256(artifact.read_bytes()).hexdigest()
+    git("add", "builder.py")
+    git("commit", "-q", "-m", "audited")
+    audited_commit = git("rev-parse", "HEAD")
+    artifact.write_bytes(b"replacement bytes\n")
+    git("add", "builder.py")
+    git("commit", "-q", "-m", "replacement one")
+    replacement_one = git("rev-parse", "HEAD")
+    artifact.write_bytes(b"second replacement bytes\n")
+    git("add", "builder.py")
+    git("commit", "-q", "-m", "replacement two")
+    replacement_two = git("rev-parse", "HEAD")
+    git("replace", audited_commit, replacement_one)
+    git("replace", replacement_one, replacement_two)
+    # The real worktree verification is a separate pinned-FD check in the
+    # runner. Restore audited bytes here to isolate Git object semantics.
+    artifact.write_bytes(b"audited bytes\n")
+    assert builder.validate_audited_git_state(
+        repo_root=repo,
+        audited_commit=audited_commit,
+        artifact_hashes={artifact: audited_hash},
+    ) == replacement_two
+
+
+def test_annotated_tag_object_is_rejected_as_audited_commit(
+    tmp_path: Path,
+) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    subprocess.run(["/usr/bin/git", "init", "-q"], cwd=repo, check=True)
+    subprocess.run(
+        ["/usr/bin/git", "config", "user.name", "SIRETO Test"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(
+        [
+            "/usr/bin/git",
+            "config",
+            "user.email",
+            "sireto-test@example.invalid",
+        ],
+        cwd=repo,
+        check=True,
+    )
+    artifact = repo / "builder.py"
+    artifact.write_bytes(b"builder\n")
+    subprocess.run(
+        ["/usr/bin/git", "add", "builder.py"], cwd=repo, check=True
+    )
+    subprocess.run(
+        ["/usr/bin/git", "commit", "-q", "-m", "commit"],
+        cwd=repo,
+        check=True,
+    )
+    subprocess.run(
+        ["/usr/bin/git", "tag", "-a", "audited", "-m", "annotated"],
+        cwd=repo,
+        check=True,
+    )
+    tag_object = subprocess.run(
+        ["/usr/bin/git", "rev-parse", "audited"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="not a commit",
+    ):
+        builder.validate_audited_git_state(
+            repo_root=repo,
+            audited_commit=tag_object,
+            artifact_hashes={
+                artifact: hashlib.sha256(artifact.read_bytes()).hexdigest()
+            },
+        )
+
+
+def test_git_commit_injection_outside_path_and_shallow_history_fail_closed(
+    tmp_path: Path,
+) -> None:
+    source = tmp_path / "source"
+    source.mkdir()
+
+    def source_git(*arguments: str) -> str:
+        return subprocess.run(
+            ["/usr/bin/git", *arguments],
+            cwd=source,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+
+    source_git("init", "-q")
+    source_git("config", "user.name", "SIRETO Test")
+    source_git("config", "user.email", "sireto-test@example.invalid")
+    artifact = source / "builder.py"
+    artifact.write_bytes(b"old\n")
+    source_git("add", "builder.py")
+    source_git("commit", "-q", "-m", "old")
+    old_commit = source_git("rev-parse", "HEAD")
+    artifact.write_bytes(b"new\n")
+    source_git("add", "builder.py")
+    source_git("commit", "-q", "-m", "new")
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="full lowercase SHA-1",
+    ):
+        builder.validate_audited_git_state(
+            repo_root=source,
+            audited_commit="a" * 39 + ";",
+            artifact_hashes={artifact: hashlib.sha256(b"new\n").hexdigest()},
+        )
+    outside = tmp_path / "outside.py"
+    outside.write_bytes(b"outside\n")
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="outside repository",
+    ):
+        builder.validate_audited_git_state(
+            repo_root=source,
+            audited_commit=source_git("rev-parse", "HEAD"),
+            artifact_hashes={
+                outside: hashlib.sha256(outside.read_bytes()).hexdigest()
+            },
+        )
+    shallow = tmp_path / "shallow"
+    subprocess.run(
+        [
+            "/usr/bin/git",
+            "clone",
+            "-q",
+            "--depth",
+            "1",
+            source.as_uri(),
+            str(shallow),
+        ],
+        check=True,
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="not a commit",
+    ):
+        builder.validate_audited_git_state(
+            repo_root=shallow,
+            audited_commit=old_commit,
+            artifact_hashes={
+                shallow / "builder.py": hashlib.sha256(b"new\n").hexdigest()
+            },
         )
 
 
