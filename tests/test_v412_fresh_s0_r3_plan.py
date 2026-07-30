@@ -192,7 +192,7 @@ def test_r3_predecessor_and_gate_are_immutable_authorities() -> None:
     assert gate["r1_rejection_output_tree_unchanged"] is True
 
 
-def test_r3_schema_chain_is_closed_and_root_is_absent() -> None:
+def test_r3_schema_chain_is_closed_and_authoritative_root_is_certified() -> None:
     plan = _plan()
     schemas = plan["schemas"]
     assert "execution_identity" in schemas["execution_lock"]["exact_fields"]
@@ -211,7 +211,19 @@ def test_r3_schema_chain_is_closed_and_root_is_absent() -> None:
         ],
         "WORKER_RUNTIME": ["INTERNAL_ERROR"],
     }
-    assert not Path(plan["paths"]["allowed_root"]).exists()
+    root = Path(plan["paths"]["allowed_root"])
+    identity = plan["execution_identity"]
+    receipt_path = (
+        root
+        / "audit"
+        / identity["run"]["result"]
+        / "parent"
+        / "launch_receipts"
+        / f"{identity['attempt']['result']}.json"
+    )
+    assert hashlib.sha256(receipt_path.read_bytes()).hexdigest() == (
+        "8061247794f403f52a692e41f19549dcf2803a6db744c74e9719cb824ad96a08"
+    )
 
 
 def test_r3_baseline_blobs_match_the_gate_commit_state() -> None:

@@ -386,5 +386,22 @@ def test_mutated_core_or_contract_pin_stops_before_root(tmp_path: Path) -> None:
     assert not root.exists()
 
 
-def test_authoritative_r3_root_is_never_created_by_tests() -> None:
-    assert not subject.R3_ROOT.exists()
+def test_authoritative_r3_root_is_certified_and_tests_use_temp_roots() -> None:
+    receipt_path = (
+        subject.R3_ROOT
+        / "audit"
+        / subject.EXPECTED_RUN_ID
+        / "parent"
+        / "launch_receipts"
+        / f"{subject.EXPECTED_ATTEMPT_ID}.json"
+    )
+    assert subject.R3_ROOT.exists()
+    assert _sha(receipt_path.read_bytes()) == (
+        "8061247794f403f52a692e41f19549dcf2803a6db744c74e9719cb824ad96a08"
+    )
+    receipt = json.loads(receipt_path.read_bytes())
+    assert receipt["verdict"] == "INGESTED"
+    assert receipt["reason_code"] == "OK"
+    assert receipt["terminal_result"] == (
+        "INGESTED_SYNTHETIC_SCANNER_SEALER_V412"
+    )
