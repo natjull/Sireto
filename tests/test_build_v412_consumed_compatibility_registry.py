@@ -7,6 +7,7 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import plistlib
 import stat
 import subprocess
 import sys
@@ -362,6 +363,194 @@ def test_identity_pin_lock_is_canonical_and_path_exact(tmp_path: Path) -> None:
             lock,
             expected_sha256=hashlib.sha256(lock.read_bytes()).hexdigest(),
         )
+
+
+def test_macos_volume_uuid_uses_anchored_fd_device_and_sanitized_environment(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    source.write_bytes(b"stable")
+    info = source.stat()
+    calls: list[tuple[object, object]] = []
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        builder,
+        "_darwin_fstatfs",
+        lambda _fd: ("/dev/disk99s1", "/Volumes/Trusted"),
+    )
+
+    def run(arguments: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        calls.append((arguments, kwargs))
+        payload = {
+            "DeviceNode": "/dev/disk99s1",
+            "MountPoint": "/Volumes/Trusted",
+            "VolumeUUID": "abc-def",
+        }
+        return subprocess.CompletedProcess(
+            arguments,
+            0,
+            stdout=plistlib.dumps(payload),
+            stderr=b"",
+        )
+
+    monkeypatch.setattr(builder.subprocess, "run", run)
+    monkeypatch.setenv("PATH", str(tmp_path / "attacker-bin"))
+    monkeypatch.setenv("GIT_DIR", str(tmp_path / "attacker.git"))
+    assert builder.macos_volume_uuid(
+        source,
+        expected_device=info.st_dev,
+        expected_inode=info.st_ino,
+    ) == "ABC-DEF"
+    assert len(calls) == 1
+    arguments, kwargs = calls[0]
+    assert arguments == [
+        "/usr/sbin/diskutil",
+        "info",
+        "-plist",
+        "/dev/disk99s1",
+    ]
+    assert kwargs["env"] == {"LANG": "C", "LC_ALL": "C"}
+    assert kwargs["close_fds"] is True
+    assert "PATH" not in kwargs["env"]
+    assert "GIT_DIR" not in kwargs["env"]
+
+
+def test_macos_volume_uuid_rejects_symlink_and_prelookup_identity_drift(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    source.write_bytes(b"stable")
+    link = tmp_path / "link"
+    link.symlink_to(source)
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    with pytest.raises(OSError):
+        builder.macos_volume_uuid(link)
+    called = False
+
+    def forbidden(*_args: object, **_kwargs: object) -> object:
+        nonlocal called
+        called = True
+        raise AssertionError("diskutil must not run after identity drift")
+
+    monkeypatch.setattr(builder.subprocess, "run", forbidden)
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="identity changed before",
+    ):
+        builder.macos_volume_uuid(
+            source,
+            expected_device=source.stat().st_dev,
+            expected_inode=source.stat().st_ino + 1,
+        )
+    assert not called
+
+
+@pytest.mark.parametrize(
+    ("mounted_device", "payload_override", "message"),
+    [
+        ("relative-device", {}, "unexpected mounted device"),
+        (
+            "/dev/disk99s1",
+            {"DeviceNode": "/dev/disk88s1"},
+            "diskutil device mismatch",
+        ),
+        (
+            "/dev/disk99s1",
+            {"MountPoint": "/Volumes/Substituted"},
+            "diskutil mount-point mismatch",
+        ),
+    ],
+)
+def test_macos_volume_uuid_rejects_untrusted_mount_or_diskutil_identity(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    mounted_device: str,
+    payload_override: dict[str, str],
+    message: str,
+) -> None:
+    source = tmp_path / "source"
+    source.write_bytes(b"x")
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        builder,
+        "_darwin_fstatfs",
+        lambda _fd: (mounted_device, "/Volumes/Trusted"),
+    )
+    payload = {
+        "DeviceNode": "/dev/disk99s1",
+        "MountPoint": "/Volumes/Trusted",
+        "VolumeUUID": "UUID",
+        **payload_override,
+    }
+    monkeypatch.setattr(
+        builder.subprocess,
+        "run",
+        lambda arguments, **_kwargs: subprocess.CompletedProcess(
+            arguments,
+            0,
+            stdout=plistlib.dumps(payload),
+            stderr=b"",
+        ),
+    )
+    with pytest.raises(builder.CompatibilityRegistryError, match=message):
+        builder.macos_volume_uuid(source)
+
+
+def test_macos_volume_uuid_detects_mount_change_during_diskutil_lookup(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    source = tmp_path / "source"
+    source.write_bytes(b"x")
+    identities = iter(
+        [
+            ("/dev/disk99s1", "/Volumes/Trusted"),
+            ("/dev/disk88s1", "/Volumes/Substituted"),
+        ]
+    )
+    monkeypatch.setattr(builder.platform, "system", lambda: "Darwin")
+    monkeypatch.setattr(
+        builder,
+        "_darwin_fstatfs",
+        lambda _fd: next(identities),
+    )
+    payload = {
+        "DeviceNode": "/dev/disk99s1",
+        "MountPoint": "/Volumes/Trusted",
+        "VolumeUUID": "UUID",
+    }
+    monkeypatch.setattr(
+        builder.subprocess,
+        "run",
+        lambda arguments, **_kwargs: subprocess.CompletedProcess(
+            arguments,
+            0,
+            stdout=plistlib.dumps(payload),
+            stderr=b"",
+        ),
+    )
+    with pytest.raises(
+        builder.CompatibilityRegistryError,
+        match="mount changed during",
+    ):
+        builder.macos_volume_uuid(source)
+
+
+@pytest.mark.skipif(
+    sys.platform != "darwin",
+    reason="read-only integration check requires macOS",
+)
+def test_macos_volume_uuid_real_internal_and_catnat_data() -> None:
+    external = Path("/Volumes/CATNAT_DATA")
+    if not external.is_dir():
+        pytest.skip("CATNAT_DATA is not mounted")
+    internal_uuid = builder.macos_volume_uuid(SCRIPT_PATH)
+    external_uuid = builder.macos_volume_uuid(external)
+    assert internal_uuid
+    assert external_uuid
+    assert internal_uuid != external_uuid
 
 
 def test_single_canonical_execution_lock_contains_all_execution_pins(

@@ -710,34 +710,166 @@ class AttemptChainValidation:
     orphan_event_paths: Sequence[Path]
 
 
-def macos_volume_uuid(path: Path) -> str:
+class _DarwinFsid(ctypes.Structure):
+    _fields_ = [("val", ctypes.c_int32 * 2)]
+
+
+class _DarwinStatfs(ctypes.Structure):
+    # Darwin 24 / macOS 15 struct statfs, from <sys/mount.h>.
+    _fields_ = [
+        ("f_bsize", ctypes.c_uint32),
+        ("f_iosize", ctypes.c_int32),
+        ("f_blocks", ctypes.c_uint64),
+        ("f_bfree", ctypes.c_uint64),
+        ("f_bavail", ctypes.c_uint64),
+        ("f_files", ctypes.c_uint64),
+        ("f_ffree", ctypes.c_uint64),
+        ("f_fsid", _DarwinFsid),
+        ("f_owner", ctypes.c_uint32),
+        ("f_type", ctypes.c_uint32),
+        ("f_flags", ctypes.c_uint32),
+        ("f_fssubtype", ctypes.c_uint32),
+        ("f_fstypename", ctypes.c_char * 16),
+        ("f_mntonname", ctypes.c_char * 1024),
+        ("f_mntfromname", ctypes.c_char * 1024),
+        ("f_flags_ext", ctypes.c_uint32),
+        ("f_reserved", ctypes.c_uint32 * 7),
+    ]
+
+
+def _darwin_fstatfs(fd: int) -> tuple[str, str]:
+    try:
+        libc = ctypes.CDLL(
+            "/usr/lib/libSystem.B.dylib",
+            use_errno=True,
+        )
+    except OSError as exc:
+        _stop(f"cannot load macOS mount API: {exc}")
+    function = libc.fstatfs
+    function.argtypes = [ctypes.c_int, ctypes.POINTER(_DarwinStatfs)]
+    function.restype = ctypes.c_int
+    result = _DarwinStatfs()
+    if function(fd, ctypes.byref(result)) != 0:
+        error = ctypes.get_errno()
+        _stop(f"cannot resolve mount from descriptor: errno {error}")
+
+    def decode(value: bytes, field: str) -> str:
+        try:
+            decoded = value.split(b"\0", 1)[0].decode("utf-8", "strict")
+        except UnicodeDecodeError:
+            _stop(f"invalid UTF-8 in macOS {field}")
+        if not decoded:
+            _stop(f"empty macOS {field}")
+        return decoded
+
+    return (
+        decode(bytes(result.f_mntfromname), "mounted device"),
+        decode(bytes(result.f_mntonname), "mount point"),
+    )
+
+
+def _open_anchored_identity(path: Path) -> tuple[Path, int]:
+    """Open a regular file or directory without following any path symlink."""
+    absolute = path.absolute()
+    if not absolute.is_absolute() or ".." in absolute.parts or absolute == Path("/"):
+        _stop(f"unsafe anchored path: {path}")
+    directory_flags = (
+        os.O_RDONLY
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+    )
+    current = os.open("/", directory_flags)
+    try:
+        components = absolute.parts[1:]
+        for index, component in enumerate(components):
+            final = index == len(components) - 1
+            flags = (
+                os.O_RDONLY
+                | getattr(os, "O_CLOEXEC", 0)
+                | getattr(os, "O_NOFOLLOW", 0)
+                | (0 if final else getattr(os, "O_DIRECTORY", 0))
+            )
+            child = os.open(component, flags, dir_fd=current)
+            os.close(current)
+            current = child
+        info = os.fstat(current)
+        if not (stat.S_ISREG(info.st_mode) or stat.S_ISDIR(info.st_mode)):
+            _stop(f"anchored identity path has wrong type: {absolute}")
+        return absolute, current
+    except BaseException:
+        os.close(current)
+        raise
+
+
+def macos_volume_uuid(
+    path: Path,
+    *,
+    expected_device: int | None = None,
+    expected_inode: int | None = None,
+) -> str:
     if platform.system() != "Darwin":
         _stop("volume UUID verification requires macOS")
-    absolute = path.absolute()
-    df = subprocess.run(
-        ["/bin/df", "-P", str(absolute)],
-        check=False,
-        capture_output=True,
-        text=True,
-    )
-    lines = df.stdout.splitlines()
-    if df.returncode != 0 or len(lines) != 2:
-        _stop(f"cannot resolve mounted device for {absolute}")
-    fields = lines[1].split()
-    if not fields or not fields[0].startswith("/dev/"):
-        _stop(f"unexpected mounted device for {absolute}")
-    result = subprocess.run(
-        ["/usr/sbin/diskutil", "info", "-plist", fields[0]],
-        check=False,
-        capture_output=True,
-    )
-    if result.returncode != 0:
-        _stop(f"cannot resolve volume UUID for {path}")
-    payload = plistlib.loads(result.stdout)
-    value = payload.get("VolumeUUID")
-    if not isinstance(value, str) or not value:
-        _stop(f"volume UUID absent for {path}")
-    return value.upper()
+    absolute, fd = _open_anchored_identity(path)
+    try:
+        before = os.fstat(fd)
+        if (
+            expected_device is not None
+            and before.st_dev != expected_device
+        ) or (
+            expected_inode is not None
+            and before.st_ino != expected_inode
+        ):
+            _stop(f"path identity changed before volume lookup: {absolute}")
+        mounted_device, mount_point = _darwin_fstatfs(fd)
+        if (
+            not mounted_device.startswith("/dev/")
+            or mounted_device != os.path.normpath(mounted_device)
+            or "\0" in mounted_device
+        ):
+            _stop(f"unexpected mounted device for {absolute}")
+        result = subprocess.run(
+            ["/usr/sbin/diskutil", "info", "-plist", mounted_device],
+            check=False,
+            capture_output=True,
+            env={"LANG": "C", "LC_ALL": "C"},
+            close_fds=True,
+        )
+        if result.returncode != 0 or result.stderr:
+            _stop(f"cannot resolve volume UUID for {absolute}")
+        try:
+            payload = plistlib.loads(result.stdout)
+        except (plistlib.InvalidFileException, ValueError, TypeError):
+            _stop(f"invalid diskutil plist for {absolute}")
+        if not isinstance(payload, dict):
+            _stop(f"invalid diskutil payload for {absolute}")
+        if payload.get("DeviceNode") != mounted_device:
+            _stop(f"diskutil device mismatch for {absolute}")
+        if payload.get("MountPoint") != mount_point:
+            _stop(f"diskutil mount-point mismatch for {absolute}")
+        value = payload.get("VolumeUUID")
+        if not isinstance(value, str) or not value:
+            _stop(f"volume UUID absent for {absolute}")
+        after_device, after_mount_point = _darwin_fstatfs(fd)
+        after = os.fstat(fd)
+        identity_fields = (
+            "st_dev",
+            "st_ino",
+            "st_mode",
+            "st_uid",
+            "st_nlink",
+        )
+        if any(
+            getattr(before, field) != getattr(after, field)
+            for field in identity_fields
+        ) or (mounted_device, mount_point) != (
+            after_device,
+            after_mount_point,
+        ):
+            _stop(f"path or mount changed during volume lookup: {absolute}")
+        return value.upper()
+    finally:
+        os.close(fd)
 
 
 def load_identity_pins(
@@ -873,7 +1005,11 @@ def load_execution_lock(
 def verify_identity_pin(path: Path, snapshot: FileSnapshot, pin: IdentityPin) -> None:
     if snapshot.uid != pin.uid or snapshot.device != pin.device:
         _stop(f"UID/device pin mismatch: {path}")
-    if macos_volume_uuid(path) != pin.volume_uuid:
+    if macos_volume_uuid(
+        path,
+        expected_device=snapshot.device,
+        expected_inode=snapshot.inode,
+    ) != pin.volume_uuid:
         _stop(f"volume UUID pin mismatch: {path}")
 
 
