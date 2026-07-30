@@ -28,12 +28,12 @@ accessibilité exige sur macOS le Data Protection Keychain : les dictionnaires
 `SecItemAdd` et `SecItemCopyMatching` imposent maintenant
 `kSecUseDataProtectionKeychain=true` et sont fermés séparément de la
 projection des attributs retournés par l'OS. Les schémas imbriqués sont
-désormais
-fermés, le commit de certification S1 est corrigé et l'autorisation précède
+désormais fermés, le commit de certification S1 est corrigé et l'autorisation précède
 les audits de provisionnement. Les 7 tests ciblés et la suite complète
-(`1159 passed`) sont verts. Le commit reste soumis à deux audits indépendants
-avant toute implémentation ; aucun item Keychain, root S1 ou CRM réel n'a été
-ouvert.
+(`1159 passed`) sont verts. Deux audits indépendants rendent désormais
+**`GO_S1_LOCAL_PRODUCER_IMPLEMENTATION`** sur le commit exact `c64c0c9`.
+Ce verdict autorise uniquement le code et les tests synthétiques du
+provisioner ; aucun item Keychain, root S1 ou CRM réel n'a été ouvert.
 *(commits GitHub : préenregistrement initial `aacc76a`, fermeture ownership
 et gates `28ef796`, Data Protection Keychain `c64c0c9`)*.
 
