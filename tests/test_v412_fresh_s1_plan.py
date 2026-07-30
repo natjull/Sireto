@@ -152,6 +152,15 @@ def test_s1_catalogs_are_required_before_any_real_crm_open() -> None:
         "PREREGISTERED_OFFICIAL_IDENTIFIER",
         "SEALED_ADMINISTRATIVE_DOCUMENT",
     ]
+    source = plan["catalogs"]["source"]
+    assert {
+        "single_active_producer",
+        "producer_export_ledger_id",
+        "producer_export_ledger_head_sha256",
+        "next_expected_export_sequence",
+        "broker_entrypoint_no_target_argument",
+        "broker_enumeration_and_tie_break",
+    } <= set(source["payload_exact_fields"])
 
 
 def test_s1_manifests_have_closed_fields_types_and_nullability() -> None:
@@ -168,8 +177,13 @@ def test_s1_manifests_have_closed_fields_types_and_nullability() -> None:
     )
     assert source["types"]["lineage_attestation_reference"] == "string_nonempty"
     for name in ("collection_manifest", "source_manifest", "evidence_manifest"):
+        assert "producer_id" in schemas[name]["fields"]
+        assert schemas[name]["types"]["producer_id"] == "string_nonempty"
         assert "producer_key_id" in schemas[name]["fields"]
         assert schemas[name]["types"]["producer_key_id"] == "string_nonempty"
+    collection = schemas["collection_manifest"]
+    assert collection["types"]["producer_export_sequence"] == "integer_positive"
+    assert collection["types"]["producer_export_previous_entry_sha256"] == "sha256"
 
 
 def test_s1_admission_claims_before_payload_and_is_one_shot() -> None:
@@ -195,6 +209,7 @@ def test_s1_admission_claims_before_payload_and_is_one_shot() -> None:
     assert signature["signed_projection"].endswith(
         "EXCLUDING_ONLY_PRODUCER_SIGNATURE"
     )
+    assert "PRODUCER_ID_AND_PRODUCER_KEY_ID" in signature["key_selection"]
     protocol = plan["admission_protocol"]
     assert protocol["global_claim"]["create"] == "O_EXCL"
     assert protocol["payload_open_marker"]["create"] == (
@@ -231,6 +246,14 @@ def test_s1_admission_claims_before_payload_and_is_one_shot() -> None:
         "ordered_evidence_manifest_hashes",
     } <= set(arrival["record_exact_fields"])
     assert protocol["durable_order"][-1] == "OPEN_FIRST_PAYLOAD_FD"
+    broker = arrival["broker"]
+    assert broker["target_path_argument_allowed"] is False
+    assert broker["target_path_environment_allowed"] is False
+    assert broker["accepted_producer_count"] == 1
+    assert broker["gap_or_missing_expected_sequence"] == (
+        "WAIT_WITHOUT_OPENING_ANY_PAYLOAD"
+    )
+    assert broker["duplicate_expected_sequence"] == "STOP"
     for name in (
         "global_claim",
         "arrival_receipt",

@@ -95,9 +95,9 @@ d’entrée/oracle, builder, tests, runtime et configuration. Les snapshots fixe
 peuvent être vides ; dans ce cas seul le paquet de preuve producteur signé
 peut créer une vérité.
 
-Les manifests collection, source et evidence contiennent `producer_key_id` et
-sont signés en Ed25519 par l’unique clé active correspondant au couple
-producteur/clé dans le catalogue source. La signature est le
+Les manifests collection, source et evidence contiennent `producer_id` et
+`producer_key_id` et sont signés en Ed25519 par l’unique clé active
+correspondant à ce couple dans le catalogue source. La signature est le
 Base64 RFC 4648 canonique des octets canoniques du manifeste dont seul
 `producer_signature` est exclu. Une clé inconnue, révoquée ou une signature
 invalide produit `STOP`.
@@ -118,7 +118,18 @@ catalogue source et de la séquence d’arrivée exclusive. `attempt_id` est
 dérivé du verrou statique, du verrou de collection et du temps logique
 annoncé. Les domaines et projections sont fermés par le plan.
 
-La séquence d’arrivée est allouée sous mutex sur le répertoire ancré et
+S1 n’admet qu’un producteur actif. Le catalogue source épingle son ledger
+d’exports, son hash de tête et le prochain numéro attendu. Le manifeste
+collection signé porte `producer_export_sequence`, l’identifiant du ledger et
+le hash de l’entrée précédente. Le broker n’accepte aucun chemin cible en
+argument ou variable d’environnement : il énumère tous les manifests enfants
+directs de l’inbox, enregistre leur état, et ne peut sélectionner que la
+collection complète portant exactement le prochain numéro attendu et le bon
+lien de chaîne. Un numéro supérieur avec un trou attend sans ouvrir de
+payload ; deux manifests au numéro attendu produisent `STOP`.
+
+La séquence technique d’arrivée est ensuite allouée sous mutex sur le
+répertoire ancré et
 produit un enregistrement monotone `O_EXCL` qui ferme chemins et hashes de
 tous les manifests. Le mutex est conservé jusqu’au `F_FULLFSYNC` du claim :
 la plus petite séquence durable gagne sans course entre allocation et claim.
