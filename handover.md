@@ -221,6 +221,25 @@ Autorisation R2 : commit GitHub `5dbb2ff`. Rapport de pivot :
 `reports/v9/v4_12_fresh_s0_r2_pivot.md`
 *(commit GitHub : `648cd4f`)*.
 
+Le gate jetable du successeur conclut désormais **`GO_PREREG_R3`**, sans
+autoriser encore build, lock ou run R3. L'artefact probant
+`diag-r3-successor-gate.yww2qf5m` possède un résultat persistant canonique,
+SHA-256
+`c86ad8bf1a4b8af0525c6870e05ddabb2f27c4208f9f07c8be07edebb52e212b`.
+Sous le vrai Python privé et Seatbelt, le worker atteint `INGESTED`, conserve
+les mêmes FD pendant `60.003147917` secondes, refuse les onze canaris avec
+`EPERM`, garde stdout/stderr vides et publie trois générations de journal.
+Une identité R1 complète est rejetée
+`IDENTITY/EXECUTION_IDENTITY_SCHEMA_INVALID` sans mutation de sortie. Le
+worker consomme désormais l'identité successeur du spec, et
+`control-result-2` transporte un diagnostic fermé validé par le launcher.
+Les 1 095 tests passent. Les gates antérieurs `zi2oynzm` et `9fy69i1l`
+restent non promotables. Le prochain geste est exclusivement la
+préinscription du contrat/plan R3 fermant la chaîne lock → spec → worker.
+Rapport :
+`reports/v9/v4_12_fresh_s0_r3_gate_results.md`
+*(commit GitHub : `5d1820d`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
