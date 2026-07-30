@@ -53,6 +53,8 @@ FORBIDDEN_IDENTITY_TOKENS = (
     "hit",
     "decision",
 )
+BUILDER_REPOSITORY_PATH = "scripts/build_v412_consumed_sirens_registry.py"
+GIT_BINARY = "/usr/bin/git"
 
 
 class RegistryStop(RuntimeError):
@@ -100,15 +102,113 @@ def _raw_value_hash(value: Any) -> str | None:
     return hashlib.sha256(str(value).encode("utf-8")).hexdigest()
 
 
-def _git_commit(root: Path) -> str:
-    result = subprocess.run(
-        ["git", "rev-parse", "HEAD"],
-        cwd=root,
-        check=True,
+def _git_environment() -> dict[str, str]:
+    environment = {
+        key: value
+        for key, value in os.environ.items()
+        if not key.upper().startswith("GIT_")
+    }
+    environment.update(
+        {
+            "GIT_CONFIG_NOSYSTEM": "1",
+            "LANG": "C",
+            "LC_ALL": "C",
+        }
+    )
+    return environment
+
+
+def _git_run(
+    root: Path,
+    arguments: list[str],
+    *,
+    check: bool,
+    text: bool,
+) -> subprocess.CompletedProcess[Any]:
+    repository = root.resolve(strict=True)
+    return subprocess.run(
+        [GIT_BINARY, "--no-replace-objects", *arguments],
+        cwd=repository,
+        env=_git_environment(),
+        check=check,
         capture_output=True,
+        text=text,
+    )
+
+
+def _git_commit(root: Path) -> str:
+    result = _git_run(
+        root,
+        ["rev-parse", "--verify", "HEAD^{commit}"],
+        check=True,
         text=True,
     )
-    return result.stdout.strip()
+    commit = result.stdout.strip()
+    if not re.fullmatch(r"[0-9a-f]{40}", commit):
+        raise _stop(STOP_INTEGRITY, "HEAD did not resolve to a full commit OID")
+    if _git_object_type(root, commit) != "commit":
+        raise _stop(STOP_INTEGRITY, "HEAD object is not a commit")
+    return commit
+
+
+def _git_object_type(root: Path, object_id: str) -> str | None:
+    result = _git_run(
+        root,
+        ["cat-file", "-t", object_id],
+        check=False,
+        text=True,
+    )
+    return result.stdout.strip() if result.returncode == 0 else None
+
+
+def _git_blob_sha256(root: Path, commit: str, repository_path: str) -> str:
+    result = _git_run(
+        root,
+        ["cat-file", "blob", f"{commit}:{repository_path}"],
+        check=True,
+        text=False,
+    )
+    return hashlib.sha256(result.stdout).hexdigest()
+
+
+def _is_ancestor(root: Path, ancestor: str, descendant: str) -> bool:
+    result = _git_run(
+        root,
+        ["merge-base", "--is-ancestor", ancestor, descendant],
+        check=False,
+        text=False,
+    )
+    return result.returncode == 0
+
+
+def _builder_pin_is_valid(
+    builder: Mapping[str, Any],
+    script_path: Path,
+    repository_root: Path,
+) -> bool:
+    audited_commit = builder.get("git_commit")
+    if (
+        builder.get("status") != "PINNED"
+        or builder.get("source_path") != BUILDER_REPOSITORY_PATH
+        or not isinstance(audited_commit, str)
+        or not re.fullmatch(r"[0-9a-f]{40}", audited_commit)
+    ):
+        return False
+    if _git_object_type(repository_root, audited_commit) != "commit":
+        return False
+    worktree_hash = file_sha256(script_path)
+    if builder.get("source_sha256") != worktree_hash:
+        return False
+    head = _git_commit(repository_root)
+    try:
+        blob_hash = _git_blob_sha256(
+            repository_root, audited_commit, BUILDER_REPOSITORY_PATH
+        )
+    except subprocess.CalledProcessError:
+        return False
+    return blob_hash == worktree_hash and _is_ancestor(
+        repository_root, audited_commit, head
+    )
 
 
 def _full_fsync(fd: int) -> None:
@@ -1135,20 +1235,14 @@ def validate_plan(
     repository_root = script_path.resolve().parent.parent
     commit = _git_commit(repository_root)
     builder = plan["build"]["builder"]
-    configured_script = Path(builder.get("source_path", ""))
-    if not configured_script.is_absolute():
-        configured_script = repository_root / configured_script
-    if require_builder_pin and (
-        builder.get("source_sha256") != script_hash
-        or builder.get("git_commit") != commit
-        or builder.get("status") not in {"PINNED", "READY"}
-        or configured_script.resolve() != script_path.resolve()
-    ):
+    pin_valid = _builder_pin_is_valid(builder, script_path, repository_root)
+    if require_builder_pin and not pin_valid:
         raise _stop(
             STOP_INTEGRITY,
-            "builder source/commit/status is not pinned for execution",
+            "builder worktree/blob/ancestry/path/status pin is invalid",
         )
-    return plan, plan_hash, contract_hash, commit
+    audited_commit = builder.get("git_commit") if pin_valid else commit
+    return plan, plan_hash, contract_hash, audited_commit
 
 
 def validate_inputs(plan: Mapping[str, Any]) -> None:
@@ -1387,19 +1481,12 @@ def main(argv: list[str] | None = None) -> int:
         if args.validate_only:
             builder = plan["build"]["builder"]
             repository_root = script_path.parent.parent
-            configured_script = Path(builder.get("source_path", ""))
-            if not configured_script.is_absolute():
-                configured_script = repository_root / configured_script
             result = {
                 "status": "VALIDATED_NO_BUILD",
                 "plan_sha256": plan_hash,
                 "contract_sha256": contract_hash,
-                "builder_pinned_for_execution": (
-                    plan["build"]["builder"].get("source_sha256")
-                    == file_sha256(script_path)
-                    and builder.get("git_commit") == _git_commit(repository_root)
-                    and builder.get("status") in {"PINNED", "READY"}
-                    and configured_script.resolve() == script_path.resolve()
+                "builder_pinned_for_execution": _builder_pin_is_valid(
+                    builder, script_path, repository_root
                 ),
             }
         else:
