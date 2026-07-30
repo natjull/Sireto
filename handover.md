@@ -109,6 +109,22 @@ façon récupérable, puis la fixture et un nouveau lock doivent être reconstru
 sur le commit corrigé.
 *(commit GitHub : `61a52c5`)*.
 
+Le deuxième lock S0
+`f918b8af6c9dc47bc61bcb6ab36d0808704206a28865f8fa32b629b1a32d59e2`
+avait franchi deux audits statiques, puis le pré-vol exécutable a détecté un
+second défaut avant tout worker : le helper de lecture imposait l'UID
+utilisateur aux deux autorités macOS légitimement détenues par `root`
+(`SystemVersion.plist` et `/usr/bin/sandbox-exec`). L'autorisation initiale
+`0bcdb7a`, non canonique, puis sa correction `10b907e` sont toutes deux
+révoquées avec ce lock et ne doivent jamais servir à un lancement. Le helper
+accepte désormais un propriétaire explicite, limité à `uid=0` pour ces deux
+fichiers système ; toutes les autorités privées restent obligatoirement
+détenues par l'utilisateur. Deux audits rendent `GO_PATCH` et `GO_PATCH_2`,
+les 111 tests S0 passent et le pré-vol runtime réel est vert. Le deuxième
+environnement doit être archivé sans suppression, puis lock et autorisation
+doivent être reconstruits sur le commit corrigé.
+*(commit GitHub : `2bb2bc2`)*.
+
 Rapport complet :
 `reports/v9/v4_12_contamination_registries_results.md`
 *(commit GitHub : `a0b510a`)*. Le prochain geste autorisé est le
