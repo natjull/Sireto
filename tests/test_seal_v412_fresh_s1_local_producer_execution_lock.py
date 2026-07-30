@@ -194,6 +194,26 @@ def test_sealer_rejects_missing_or_nonancestor_commit(
         )
 
 
+def test_every_git_call_disables_replace_objects(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan, raw = _fixture(tmp_path)
+    real_run = subject.subprocess.run
+    environments: list[dict[str, str]] = []
+
+    def capture(command, **kwargs):
+        environments.append(dict(kwargs["env"]))
+        return real_run(command, **kwargs)
+
+    monkeypatch.setattr(subject.subprocess, "run", capture)
+    subject.build_lock(plan, raw, trusted_output_parent=tmp_path)
+    assert len(environments) >= 4
+    assert all(
+        environment["GIT_NO_REPLACE_OBJECTS"] == "1"
+        for environment in environments
+    )
+
+
 def test_main_rejects_arguments_without_writing(capsys) -> None:
     assert subject.main(["forbidden"]) == 64
     assert capsys.readouterr().err == "STOP:ARGS_FORBIDDEN\n"

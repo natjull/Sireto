@@ -94,6 +94,7 @@ def _git(*arguments: str, allow_status_one: bool = False) -> bytes:
                 "LC_ALL": "C",
                 "GIT_CONFIG_NOSYSTEM": "1",
                 "GIT_CONFIG_GLOBAL": "/dev/null",
+                "GIT_NO_REPLACE_OBJECTS": "1",
             },
         )
     except OSError:
@@ -131,6 +132,7 @@ def _verify_git_binding(
             "LC_ALL": "C",
             "GIT_CONFIG_NOSYSTEM": "1",
             "GIT_CONFIG_GLOBAL": "/dev/null",
+            "GIT_NO_REPLACE_OBJECTS": "1",
         },
     )
     if ancestry.returncode != 0:
