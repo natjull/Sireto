@@ -1,0 +1,67 @@
+(version 1)
+(deny default)
+
+(deny network*)
+(deny process-fork)
+(deny mach-lookup
+  (global-name "com.apple.SecurityServer")
+  (global-name "com.apple.securityd")
+  (global-name "com.apple.trustd.agent")
+  (global-name "com.apple.LocalAuthentication.UIAgent")
+)
+
+; The executable is the realpath-pinned Python 3.14.3 copied beneath the
+; private rootfs.  A runtime change invalidates the implementation bundle.
+(allow process-exec
+  (literal "@@PRIVATE_RUNTIME_ROOT@@/rootfs/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.14/bin/python3.14")
+)
+
+(allow file-read*
+  (subpath "/System")
+  (subpath "/usr/lib")
+  (literal "/dev/null")
+  (literal "/dev/urandom")
+  (literal "/dev/fd")
+  (subpath "/dev/fd")
+  (literal "@@PRIVATE_RUNTIME_ROOT@@")
+  (subpath "@@PRIVATE_RUNTIME_ROOT@@")
+  (literal "@@SEALED_RUN_ROOT@@")
+  (subpath "@@SEALED_RUN_ROOT@@")
+  (literal "@@SCAN_RUN_ROOT@@")
+  (subpath "@@SCAN_RUN_ROOT@@")
+  (literal "@@QUARANTINE_RUN_ROOT@@")
+  (subpath "@@QUARANTINE_RUN_ROOT@@")
+  (literal "@@WORKER_AUDIT_ROOT@@")
+  (subpath "@@WORKER_AUDIT_ROOT@@")
+  (literal "@@TMP_RUN_ROOT@@")
+  (subpath "@@TMP_RUN_ROOT@@")
+)
+
+(allow file-read-metadata
+  (literal "/")
+  (literal "/Volumes")
+  (literal "/Volumes/CATNAT_DATA")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic/runtime")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic/sealed")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic/scan")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic/quarantine")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic/audit")
+  (literal "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake_synthetic/tmp")
+)
+
+(allow file-write*
+  (literal "@@SEALED_RUN_ROOT@@")
+  (subpath "@@SEALED_RUN_ROOT@@")
+  (literal "@@SCAN_RUN_ROOT@@")
+  (subpath "@@SCAN_RUN_ROOT@@")
+  (literal "@@QUARANTINE_RUN_ROOT@@")
+  (subpath "@@QUARANTINE_RUN_ROOT@@")
+  (literal "@@WORKER_AUDIT_ROOT@@")
+  (subpath "@@WORKER_AUDIT_ROOT@@")
+  (literal "@@TMP_RUN_ROOT@@")
+  (subpath "@@TMP_RUN_ROOT@@")
+)
+
+(allow sysctl-read)
