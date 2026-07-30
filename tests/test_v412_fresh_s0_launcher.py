@@ -200,6 +200,25 @@ def test_directory_canary_is_anchored_and_requires_safe_existing_directory(
     assert symlink.value.reason_code == "SANDBOX_EXPECTATION_FAILED"
 
 
+@pytest.mark.skipif(sys.platform != "darwin", reason="macOS runtime authority")
+def test_root_owned_macos_runtime_files_use_explicit_trusted_owner() -> None:
+    for path in (
+        Path("/System/Library/CoreServices/SystemVersion.plist"),
+        Path("/usr/bin/sandbox-exec"),
+    ):
+        fd = launcher._open_anchored(path)
+        try:
+            raw, info = launcher._read_regular_fd(
+                fd,
+                os.fspath(path),
+                expected_uid=0,
+            )
+        finally:
+            os.close(fd)
+        assert raw
+        assert info.st_uid == 0
+
+
 def test_control_frames_are_compact_canonical_without_lf() -> None:
     ready = _ready()
     terminal = _terminal(success=True)

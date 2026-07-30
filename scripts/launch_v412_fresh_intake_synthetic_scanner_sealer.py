@@ -415,12 +415,18 @@ def _git_is_ancestor(ancestor: str, descendant: str) -> bool:
     return False
 
 
-def _read_regular_fd(fd: int, label: str) -> tuple[bytes, os.stat_result]:
+def _read_regular_fd(
+    fd: int,
+    label: str,
+    *,
+    expected_uid: int | None = None,
+) -> tuple[bytes, os.stat_result]:
     before = os.fstat(fd)
+    owner_uid = os.getuid() if expected_uid is None else expected_uid
     if (
         not stat.S_ISREG(before.st_mode)
         or before.st_nlink != 1
-        or before.st_uid != os.getuid()
+        or before.st_uid != owner_uid
         or stat.S_IMODE(before.st_mode) & 0o022
     ):
         _stop("PRESPAWN", "FD_INVALID", f"unsafe regular file: {label}")
@@ -814,10 +820,17 @@ def _validate_runtime(lock: Mapping[str, Any], plan: Mapping[str, Any]) -> None:
     }:
         _stop("PRESPAWN", "RUNTIME_INVALID", "runtime schema")
     system = runtime["system"]
-    system_version_raw = _read_anchored_path(
-        Path("/System/Library/CoreServices/SystemVersion.plist"),
-        "macOS system version",
+    system_version_fd = _open_anchored(
+        Path("/System/Library/CoreServices/SystemVersion.plist")
     )
+    try:
+        system_version_raw, _ = _read_regular_fd(
+            system_version_fd,
+            "macOS system version",
+            expected_uid=0,
+        )
+    finally:
+        os.close(system_version_fd)
     try:
         system_version = plistlib.loads(system_version_raw)
     except (plistlib.InvalidFileException, ValueError, TypeError):
@@ -847,7 +860,7 @@ def _validate_runtime(lock: Mapping[str, Any], plan: Mapping[str, Any]) -> None:
         _stop("PRESPAWN", "RUNTIME_INVALID", "sandbox-exec record")
     fd = _open_anchored(SANDBOX_EXEC_PATH)
     try:
-        raw, info = _read_regular_fd(fd, "sandbox-exec")
+        raw, info = _read_regular_fd(fd, "sandbox-exec", expected_uid=0)
     finally:
         os.close(fd)
     if (
