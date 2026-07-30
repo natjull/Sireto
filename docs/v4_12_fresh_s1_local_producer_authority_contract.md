@@ -35,6 +35,12 @@ La clé privée est une graine Ed25519 aléatoire de 32 octets produite par
 
 - service : `com.sireto.v412.fresh-s1-producer-ed25519` ;
 - account : `SIRETO` ;
+- label : `SIRETO_V412_FRESH_S1_LOCAL_PRODUCER_ED25519_V1` ;
+- `kSecAttrGeneric` : les 32 octets bruts du SHA-256 des octets exacts du
+  claim ;
+- `kSecAttrSynchronizable` : `false` ;
+- `kSecAttrAccessible` :
+  `kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly` ;
 - lecture via `SecItemCopyMatching` ;
 - création via `SecItemAdd` ;
 - UI forcée à `kSecUseAuthenticationUIFail`.
@@ -43,10 +49,12 @@ Le binaire n’utilise jamais la commande `security`, un argument, une variable
 d’environnement, stdin, un fichier temporaire ou un log pour le secret.
 Seuls la clé publique brute de 32 octets, son Base64 canonique et ses hashes
 sortent du processus. La copie mutable de la graine est écrasée après usage.
+Tout attribut supplémentaire sur l'item est rejeté.
 
-Un item préexistant sans claim/receipt correspondant produit
-`STOP_FOREIGN_KEYCHAIN_ITEM`. Un item créé après le claim mais avant un crash
-est relu pour terminer le même attempt.
+Le lien d'appartenance ne repose ni sur le nom du service ni sur l'ordre
+présumé des opérations : il repose sur l'égalité exacte entre
+`kSecAttrGeneric` et le SHA-256 du claim. Un item préexistant au nouveau claim,
+sans cet ancrage démontrable, produit `STOP_FOREIGN_KEYCHAIN_ITEM`.
 
 ## 4. One-shot et reprise
 
@@ -57,15 +65,28 @@ ses pins, puis crée avec `O_EXCL` le claim fixe :
 <root>/claims/provision.claim.json
 ```
 
-Le claim est `fsync`/`F_FULLFSYNC`, puis son répertoire est synchronisé avant
-tout accès Keychain. Deux processus concurrents ne peuvent donc pas créer deux
-autorités.
+Le claim contient exactement les pins du plan, du lock d'exécution et de
+l'autorisation, un nonce public aléatoire de 32 octets et son SHA-256, le temps
+logique et l'état du claim. Il est `fsync`/`F_FULLFSYNC`, puis son répertoire
+est synchronisé avant tout accès Keychain. Deux processus concurrents ne
+peuvent donc pas créer deux autorités.
 
 - receipt valide présent : retour idempotent, sans nouvel accès secret ;
-- claim présent, receipt absent, item présent : reprise du même attempt ;
-- claim présent, receipt absent, item absent : création de la clé puis suite ;
+- nouveau claim, item déjà présent : `STOP_FOREIGN_KEYCHAIN_ITEM` ;
+- claim existant, receipt absent, item absent : création de la clé via
+  `SecItemAdd` avec le SHA-256 du claim dans `kSecAttrGeneric`, puis suite ;
+- claim existant, receipt absent, item présent et attribut identique :
+  reprise du même attempt ;
+- claim existant, item sans attribut ou avec un attribut différent :
+  `STOP_FOREIGN_KEYCHAIN_ITEM` ;
+- `SecItemAdd` retourne duplicate : `STOP_FOREIGN_KEYCHAIN_ITEM` ;
 - item présent sans claim : `STOP_FOREIGN_KEYCHAIN_ITEM` ;
 - divergence entre item, clé publique, genesis, seal ou receipt : `STOP`.
+
+Aucun fichier intermédiaire de type « key intent » n'est créé : un crash avant
+`SecItemAdd` laisse le claim durable et permet une création sûre ; un crash
+après `SecItemAdd` laisse l'ancrage atomique dans le Keychain et permet une
+reprise vérifiable.
 
 Aucun artefact durable n’est écrasé ou supprimé.
 
@@ -128,6 +149,7 @@ Avant provisionnement :
 - gate réel en lecture seule prouvant que le locator Keychain est absent ;
 - suite complète verte.
 
-Après code et lock, deux audits doivent rendre
-`GO_S1_LOCAL_PRODUCER_PROVISION`. Une unique autorisation canonique est ensuite
-committée avant l’unique run réel.
+Après code et lock, une unique autorisation canonique est committée. Elle ne
+permet pas encore le run. Deux audits du code, du lock et de cette
+autorisation doivent ensuite rendre `GO_S1_LOCAL_PRODUCER_PROVISION` avant
+l’unique run réel.
