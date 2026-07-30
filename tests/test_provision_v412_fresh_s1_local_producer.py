@@ -544,7 +544,7 @@ def test_native_backend_uses_exact_query_and_projects_secret(
             self.required = required
             projection = dict(required)
             projection["kSecAttrGeneric"] = b"g" * 32
-            projection["kSecValueData"] = b"s" * 32
+            projection["kSecValueData"] = bytearray(b"s" * 32)
             return subject.NativeCopyResult(0, projection)
 
         def add(self, attributes):
@@ -583,7 +583,10 @@ def test_native_backend_add_contract_and_status(
             pytest.fail("copy forbidden")
 
         def add(self, attributes):
-            self.attributes = attributes
+            self.attributes = dict(attributes)
+            self.attributes["kSecValueData"] = bytes(
+                attributes["kSecValueData"]
+            )
             return status
 
     api = API()
@@ -630,12 +633,337 @@ def test_native_backend_copy_failures_are_closed(tmp_path: Path) -> None:
         ]["required_persisted_attributes_verified_exactly"]
     )
     required["kSecAttrGeneric"] = b"g" * 31
-    required["kSecValueData"] = b"s" * 32
+    required["kSecValueData"] = bytearray(b"s" * 32)
     bad_length = subject.MacOSDataProtectionKeychain(
         plan, API(subject.NativeCopyResult(0, required))
     )
     with pytest.raises(subject.ProvisionError, match="BINDING_LENGTH"):
         bad_length.copy_item()
+
+
+def test_native_backend_rejects_projection_shape_value_seed_and_add_status(
+    tmp_path: Path,
+) -> None:
+    plan = _bundle(tmp_path).plan
+    base = dict(
+        plan["keychain"][
+            "secitemcopymatching_result_policy"
+        ]["required_persisted_attributes_verified_exactly"]
+    )
+    base["kSecAttrGeneric"] = b"g" * 32
+    base["kSecValueData"] = bytearray(b"s" * 32)
+
+    class API:
+        def __init__(self, projection=None, add_status=0):
+            self.projection = projection
+            self.add_status = add_status
+
+        def copy_matching(self, query, required):
+            return subject.NativeCopyResult(0, self.projection)
+
+        def add(self, attributes):
+            return self.add_status
+
+    missing = dict(base)
+    missing.pop("kSecAttrLabel")
+    with pytest.raises(subject.ProvisionError, match="RESULT_FIELDS"):
+        subject.MacOSDataProtectionKeychain(
+            plan, API(missing)
+        ).copy_item()
+    extra = dict(base, unexpected="ignored-by-os-layer-but-not-wrapper")
+    with pytest.raises(subject.ProvisionError, match="RESULT_FIELDS"):
+        subject.MacOSDataProtectionKeychain(plan, API(extra)).copy_item()
+    mismatch = dict(base)
+    mismatch["kSecAttrAccount"] = "WRONG"
+    with pytest.raises(subject.ProvisionError, match="RESULT_PROJECTION"):
+        subject.MacOSDataProtectionKeychain(
+            plan, API(mismatch)
+        ).copy_item()
+    short_seed = dict(base)
+    short_seed["kSecValueData"] = bytearray(b"s" * 31)
+    with pytest.raises(subject.ProvisionError, match="SEED_LENGTH"):
+        subject.MacOSDataProtectionKeychain(
+            plan, API(short_seed)
+        ).copy_item()
+    with pytest.raises(subject.ProvisionError, match="ADD_LENGTH"):
+        subject.MacOSDataProtectionKeychain(plan, API()).add_item(
+            seed=bytearray(b"s" * 31), claim_sha256_raw=b"g" * 32
+        )
+    with pytest.raises(subject.ProvisionError, match="ADD_STATUS_-1"):
+        subject.MacOSDataProtectionKeychain(
+            plan, API(add_status=-1)
+        ).add_item(seed=bytearray(b"s" * 32), claim_sha256_raw=b"g" * 32)
+
+
+class _FakeFunction:
+    def __init__(self, implementation):
+        self.implementation = implementation
+        self.argtypes = None
+        self.restype = None
+
+    def __call__(self, *args):
+        return self.implementation(*args)
+
+
+class _FakeCoreFoundation:
+    def __init__(self) -> None:
+        self.next_pointer = 1000
+        self.objects: dict[int, tuple[str, object]] = {}
+        self.data_arrays: dict[int, object] = {}
+        self.released: list[int] = []
+        self.constants = {
+            "kCFBooleanTrue": 101,
+            "kCFBooleanFalse": 102,
+        }
+        self.objects[101] = ("constant", True)
+        self.objects[102] = ("constant", False)
+        self.CFDictionaryCreateMutable = _FakeFunction(
+            lambda *_args: self._new("dictionary", {})
+        )
+        self.CFDictionarySetValue = _FakeFunction(self._set)
+        self.CFDictionaryGetValue = _FakeFunction(self._get)
+        self.CFStringCreateWithCString = _FakeFunction(self._string)
+        self.CFDataCreate = _FakeFunction(self._data)
+        self.CFGetTypeID = _FakeFunction(self._type_id)
+        self.CFDictionaryGetTypeID = _FakeFunction(lambda: 1)
+        self.CFDataGetTypeID = _FakeFunction(lambda: 2)
+        self.CFDataGetLength = _FakeFunction(
+            lambda pointer: len(self.objects[int(pointer)][1])
+        )
+        self.CFDataGetBytePtr = _FakeFunction(self._data_pointer)
+        self.CFEqual = _FakeFunction(self._equal)
+        self.CFRelease = _FakeFunction(
+            lambda pointer: self.released.append(int(pointer))
+        )
+
+    def _new(self, kind: str, value: object) -> int:
+        self.next_pointer += 1
+        self.objects[self.next_pointer] = (kind, value)
+        return self.next_pointer
+
+    def _set(self, dictionary: int, key: int, value: int) -> None:
+        self.objects[int(dictionary)][1][int(key)] = int(value)
+
+    def _get(self, dictionary: int, key: int) -> int:
+        return self.objects[int(dictionary)][1].get(int(key), 0)
+
+    def _string(self, _allocator, raw: bytes, _encoding: int) -> int:
+        return self._new("string", raw.decode())
+
+    def _data(self, _allocator, pointer, length: int) -> int:
+        raw = bytes(pointer[:length])
+        result = self._new("data", raw)
+        array = (subject.ctypes.c_uint8 * len(raw))(*raw)
+        self.data_arrays[result] = array
+        return result
+
+    def _type_id(self, pointer: int) -> int:
+        return {"dictionary": 1, "data": 2}.get(
+            self.objects[int(pointer)][0], 3
+        )
+
+    def _data_pointer(self, pointer: int):
+        return subject.ctypes.cast(
+            self.data_arrays[int(pointer)],
+            subject.ctypes.POINTER(subject.ctypes.c_uint8),
+        )
+
+    def _equal(self, left: int, right: int) -> bool:
+        return self.objects[int(left)] == self.objects[int(right)]
+
+    def make_value(self, value: object, symbols: dict[str, int]) -> int:
+        if type(value) is bool:
+            return self.constants[
+                "kCFBooleanTrue" if value else "kCFBooleanFalse"
+            ]
+        if type(value) is bytes:
+            array = (subject.ctypes.c_uint8 * len(value))(*value)
+            return self._data(None, array, len(value))
+        if type(value) is str and value in symbols:
+            return symbols[value]
+        if type(value) is str:
+            return self._new("string", value)
+        raise AssertionError(value)
+
+
+class _FakeSecurityFramework:
+    def __init__(self, core: _FakeCoreFoundation) -> None:
+        self.core = core
+        names = [
+            "kSecClass",
+            "kSecClassGenericPassword",
+            "kSecAttrService",
+            "kSecAttrAccount",
+            "kSecAttrLabel",
+            "kSecAttrGeneric",
+            "kSecAttrSynchronizable",
+            "kSecAttrAccessible",
+            "kSecAttrAccessibleAfterFirstUnlockThisDeviceOnly",
+            "kSecUseDataProtectionKeychain",
+            "kSecValueData",
+            "kSecReturnData",
+            "kSecReturnAttributes",
+            "kSecMatchLimit",
+            "kSecMatchLimitOne",
+            "kSecUseAuthenticationUI",
+            "kSecUseAuthenticationUIFail",
+        ]
+        self.constants = {
+            name: 200 + index for index, name in enumerate(names)
+        }
+        for name, pointer in self.constants.items():
+            core.objects[pointer] = ("constant", name)
+        self.copy_status = 0
+        self.add_status = 0
+        self.result_projection: dict[str, object] = {}
+        self.copy_dictionary: dict[int, int] | None = None
+        self.add_dictionary: dict[int, int] | None = None
+        self.SecItemCopyMatching = _FakeFunction(self._copy)
+        self.SecItemAdd = _FakeFunction(self._add)
+
+    def _result(self) -> int:
+        result = self.core._new("dictionary", {})
+        values = self.core.objects[result][1]
+        for key, value in self.result_projection.items():
+            values[self.constants[key]] = self.core.make_value(
+                value, self.constants
+            )
+        return result
+
+    def _copy(self, dictionary: int, output) -> int:
+        self.copy_dictionary = dict(
+            self.core.objects[int(dictionary)][1]
+        )
+        if self.copy_status == 0:
+            output._obj.value = self._result()
+        return self.copy_status
+
+    def _add(self, dictionary: int, _output) -> int:
+        self.add_dictionary = dict(
+            self.core.objects[int(dictionary)][1]
+        )
+        return self.add_status
+
+
+def _fake_native_api(monkeypatch: pytest.MonkeyPatch):
+    core = _FakeCoreFoundation()
+    security = _FakeSecurityFramework(core)
+
+    def load(path: str):
+        return security if "Security.framework" in path else core
+
+    def constant(library, name: str):
+        return subject.ctypes.c_void_p(library.constants[name])
+
+    monkeypatch.setattr(subject.ctypes, "CDLL", load)
+    monkeypatch.setattr(subject, "_framework_constant", constant)
+    return subject.CoreFoundationKeychainAPI(), security, core
+
+
+def test_corefoundation_bridge_builds_and_releases_exact_copy_and_add(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan = _bundle(tmp_path).plan
+    api, security, core = _fake_native_api(monkeypatch)
+    required = dict(
+        plan["keychain"][
+            "secitemcopymatching_result_policy"
+        ]["required_persisted_attributes_verified_exactly"]
+    )
+    required["kSecAttrGeneric"] = b"g" * 32
+    required["kSecValueData"] = b"s" * 32
+    security.result_projection = required
+    before = len(core.released)
+    result = api.copy_matching(
+        plan["keychain"]["secitemcopymatching_query_exact"], required
+    )
+    assert result == subject.NativeCopyResult(0, required)
+    assert len(security.copy_dictionary) == 9
+    assert set(security.copy_dictionary) == {
+        security.constants[key]
+        for key in plan["keychain"]["secitemcopymatching_query_exact"]
+    }
+    for key, expected in plan["keychain"][
+        "secitemcopymatching_query_exact"
+    ].items():
+        pointer = security.copy_dictionary[security.constants[key]]
+        assert core.objects[pointer][1] == expected
+    assert len(core.released) > before
+    copy_releases = list(core.released)
+    attributes = subject.MacOSDataProtectionKeychain.add_contract(
+        plan, b"s" * 32, b"g" * 32
+    )
+    assert api.add(attributes) == 0
+    assert len(security.add_dictionary) == 9
+    assert set(security.add_dictionary) == {
+        security.constants[key] for key in attributes
+    }
+    for key, expected in attributes.items():
+        pointer = security.add_dictionary[security.constants[key]]
+        observed = core.objects[pointer][1]
+        assert observed == expected
+    assert len(core.released) > len(copy_releases)
+    assert api.core.CFDictionarySetValue.restype is None
+    assert api.security.SecItemCopyMatching.restype is subject.ctypes.c_int32
+    assert api.security.SecItemAdd.restype is subject.ctypes.c_int32
+
+
+def test_framework_constant_resolution_fails_closed() -> None:
+    library = subject.ctypes.CDLL(None)
+    with pytest.raises(subject.ProvisionError, match="KEYCHAIN_CONSTANT"):
+        subject._framework_constant(
+            library, "SIRETO_MISSING_SECURITY_CONSTANT_FOR_TEST"
+        )
+
+
+@pytest.mark.parametrize(
+    "status",
+    [subject.ERR_SEC_ITEM_NOT_FOUND, -1],
+)
+def test_corefoundation_bridge_releases_query_on_copy_status(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, status: int
+) -> None:
+    plan = _bundle(tmp_path).plan
+    api, security, core = _fake_native_api(monkeypatch)
+    security.copy_status = status
+    result = api.copy_matching(
+        plan["keychain"]["secitemcopymatching_query_exact"], {}
+    )
+    assert result == subject.NativeCopyResult(status, None)
+    assert security.copy_dictionary is not None
+    assert core.released
+
+
+def test_corefoundation_bridge_releases_add_dictionary_on_error(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan = _bundle(tmp_path).plan
+    api, security, core = _fake_native_api(monkeypatch)
+    security.add_status = -1
+    attributes = subject.MacOSDataProtectionKeychain.add_contract(
+        plan, b"s" * 32, b"g" * 32
+    )
+    assert api.add(attributes) == -1
+    assert security.add_dictionary is not None
+    assert core.released
+
+
+def test_corefoundation_bridge_rejects_missing_projection_and_releases(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    plan = _bundle(tmp_path).plan
+    api, security, core = _fake_native_api(monkeypatch)
+    required = dict(
+        plan["keychain"][
+            "secitemcopymatching_result_policy"
+        ]["required_persisted_attributes_verified_exactly"]
+    )
+    security.result_projection = {}
+    with pytest.raises(subject.ProvisionError, match="RESULT_MISSING"):
+        api.copy_matching(
+            plan["keychain"]["secitemcopymatching_query_exact"], required
+        )
+    assert core.released
 
 
 def test_control_mutations_stop_before_keychain(tmp_path: Path) -> None:

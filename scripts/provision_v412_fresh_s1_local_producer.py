@@ -743,7 +743,7 @@ class CoreFoundationKeychainAPI:
             return self._constant_value(
                 "kCFBooleanTrue" if value else "kCFBooleanFalse"
             )
-        if type(value) is bytes:
+        if type(value) in {bytes, bytearray}:
             result = self._data(value)
             owned.append(result)
             return result
@@ -777,7 +777,9 @@ class CoreFoundationKeychainAPI:
             raise
         return dictionary, owned
 
-    def _data_bytes(self, pointer: int, label: str) -> bytes:
+    def _data_bytes(
+        self, pointer: int, label: str, *, mutable: bool = False
+    ) -> bytes | bytearray:
         if not pointer or (
             self.core.CFGetTypeID(pointer) != self.core.CFDataGetTypeID()
         ):
@@ -786,6 +788,8 @@ class CoreFoundationKeychainAPI:
         data = self.core.CFDataGetBytePtr(pointer)
         if length < 0 or (length and not data):
             _stop(f"KEYCHAIN_{label}_DATA")
+        if mutable:
+            return bytearray(data[:length])
         return bytes(data[:length])
 
     def _required_value(
@@ -824,7 +828,9 @@ class CoreFoundationKeychainAPI:
                 value_pointer = self._required_value(result.value, key)
                 if key in {"kSecAttrGeneric", "kSecValueData"}:
                     projection[key] = self._data_bytes(
-                        value_pointer, key
+                        value_pointer,
+                        key,
+                        mutable=key == "kSecValueData",
                     )
                     continue
                 expected_owned: list[ctypes.c_void_p] = []
@@ -881,7 +887,7 @@ class MacOSDataProtectionKeychain:
     @staticmethod
     def add_contract(plan: Mapping[str, Any], seed: bytes, claim_hash: bytes) -> dict[str, Any]:
         expected = dict(plan["keychain"]["secitemadd_dictionary_exact"])
-        expected["kSecValueData"] = seed
+        expected["kSecValueData"] = bytearray(seed)
         expected["kSecAttrGeneric"] = claim_hash
         return expected
 
@@ -906,20 +912,26 @@ class MacOSDataProtectionKeychain:
             return None
         if result.status != 0 or result.projection is None:
             _stop(f"KEYCHAIN_COPY_STATUS_{result.status}")
-        if set(result.projection) != set(required):
-            _stop("KEYCHAIN_RESULT_FIELDS")
-        for key, expected in required.items():
-            if key in {"kSecAttrGeneric", "kSecValueData"}:
-                continue
-            if result.projection[key] != expected:
-                _stop("KEYCHAIN_RESULT_PROJECTION")
-        binding = result.projection["kSecAttrGeneric"]
-        seed = result.projection["kSecValueData"]
-        if type(binding) is not bytes or len(binding) != 32:
-            _stop("KEYCHAIN_BINDING_LENGTH")
-        if type(seed) is not bytes or len(seed) != 32:
-            _stop("KEYCHAIN_SEED_LENGTH")
-        return KeychainRecord(bytearray(seed), binding, True)
+        seed_candidate = result.projection.get("kSecValueData")
+        try:
+            if set(result.projection) != set(required):
+                _stop("KEYCHAIN_RESULT_FIELDS")
+            for key, expected in required.items():
+                if key in {"kSecAttrGeneric", "kSecValueData"}:
+                    continue
+                if result.projection[key] != expected:
+                    _stop("KEYCHAIN_RESULT_PROJECTION")
+            binding = result.projection["kSecAttrGeneric"]
+            seed = result.projection["kSecValueData"]
+            if type(binding) is not bytes or len(binding) != 32:
+                _stop("KEYCHAIN_BINDING_LENGTH")
+            if type(seed) is not bytearray or len(seed) != 32:
+                _stop("KEYCHAIN_SEED_LENGTH")
+            return KeychainRecord(seed, binding, True)
+        except Exception:
+            if type(seed_candidate) is bytearray:
+                zeroize(seed_candidate)
+            raise
 
     def add_item(self, *, seed: bytearray, claim_sha256_raw: bytes) -> str:
         self.add_calls += 1
@@ -928,7 +940,12 @@ class MacOSDataProtectionKeychain:
         attributes = self.add_contract(
             self.plan, bytes(seed), claim_sha256_raw
         )
-        status = self.api.add(attributes)
+        try:
+            status = self.api.add(attributes)
+        finally:
+            value = attributes.get("kSecValueData")
+            if type(value) is bytearray:
+                zeroize(value)
         if status == 0:
             return "ADDED"
         if status == ERR_SEC_DUPLICATE_ITEM:
