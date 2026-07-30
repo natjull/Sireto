@@ -126,6 +126,80 @@ def test_canonical_json_rejects_duplicate_noncanonical_and_nonfinite() -> None:
         assert caught.value.reason_code == "AUTHORIZATION_INVALID"
 
 
+def _directory_canary_authorities(directory: Path) -> tuple[bytes, dict, dict]:
+    code = "DENY_PARENT_ENUMERATION"
+    record = {
+        "code": code,
+        "kind": "EXISTING_DIRECTORY",
+        "absolute_path_or_capability": os.fspath(directory),
+        "identity": None,
+        "size_bytes": None,
+        "sha256": None,
+    }
+    manifest = {
+        "schema_version": "sireto-v4.12-fresh-s0-canary-manifest-1",
+        "synthetic_run_id": "a" * 64,
+        "ordered_records": [record],
+        "record_count": 1,
+        "records_sha256": hashlib.sha256(
+            launcher.canonical_json([record], final_lf=False)
+        ).hexdigest(),
+    }
+    lock = {
+        "synthetic_run_id": manifest["synthetic_run_id"],
+        "runtime": {
+            "system": {
+                "volumes": {
+                    "run": {
+                        "device": directory.parent.stat().st_dev,
+                        "volume_uuid": "synthetic-volume",
+                    }
+                }
+            }
+        },
+    }
+    plan = {
+        "schema_definitions": {
+            "canary_manifest": {
+                "exact_fields": list(manifest),
+            }
+        },
+        "canary_matrix": {
+            "runtime_codes_exact_order": [code],
+            "synthetic_target_by_runtime_code": {code: os.fspath(directory)},
+        },
+        "paths": {"allowed_root": os.fspath(directory.parent)},
+    }
+    return launcher.canonical_json(manifest), lock, plan
+
+
+def test_directory_canary_is_anchored_and_requires_safe_existing_directory(
+    tmp_path: Path,
+) -> None:
+    target = tmp_path / "forbidden"
+    target.mkdir(mode=0o700)
+    raw, lock, plan = _directory_canary_authorities(target)
+    launcher._validate_canary_manifest(raw, lock, plan)
+
+    target.chmod(0o777)
+    with pytest.raises(launcher.LauncherStop) as unsafe:
+        launcher._validate_canary_manifest(raw, lock, plan)
+    assert unsafe.value.reason_code == "SANDBOX_EXPECTATION_FAILED"
+
+    target.chmod(0o700)
+    target.rmdir()
+    with pytest.raises(launcher.LauncherStop) as missing:
+        launcher._validate_canary_manifest(raw, lock, plan)
+    assert missing.value.reason_code == "SANDBOX_EXPECTATION_FAILED"
+
+    replacement = tmp_path / "replacement"
+    replacement.mkdir(mode=0o700)
+    target.symlink_to(replacement, target_is_directory=True)
+    with pytest.raises(launcher.LauncherStop) as symlink:
+        launcher._validate_canary_manifest(raw, lock, plan)
+    assert symlink.value.reason_code == "SANDBOX_EXPECTATION_FAILED"
+
+
 def test_control_frames_are_compact_canonical_without_lf() -> None:
     ready = _ready()
     terminal = _terminal(success=True)

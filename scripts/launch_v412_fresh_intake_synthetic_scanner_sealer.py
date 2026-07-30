@@ -1001,17 +1001,35 @@ def _validate_canary_manifest(
                     "capability/absence canary carried file authority",
                 )
         elif kind == "EXISTING_DIRECTORY":
-            if (
-                type(record["identity"]) is not dict
-                or set(record["identity"]) != set(IDENTITY_FIELDS)
-                or not _is_uint(record["size_bytes"])
-                or record["sha256"] is not None
-            ):
+            if nullable != (None, None, None):
                 _stop(
                     "PRESPAWN",
                     "SANDBOX_EXPECTATION_FAILED",
                     "directory canary authority invalid",
                 )
+            directory_path = Path(expected_target)
+            directory_fd: int | None = None
+            try:
+                directory_fd = _open_anchored(directory_path, directory=True)
+                directory_info = os.fstat(directory_fd)
+                run_volume = lock["runtime"]["system"]["volumes"]["run"]
+                if (
+                    type(run_volume) is not dict
+                    or set(run_volume) != {"device", "volume_uuid"}
+                    or directory_info.st_uid != os.getuid()
+                    or directory_info.st_dev != run_volume["device"]
+                    or stat.S_IMODE(directory_info.st_mode) & 0o022
+                ):
+                    raise ValueError("unsafe directory canary")
+            except (KeyError, OSError, LauncherStop, ValueError):
+                _stop(
+                    "PRESPAWN",
+                    "SANDBOX_EXPECTATION_FAILED",
+                    "directory canary target invalid",
+                )
+            finally:
+                if directory_fd is not None:
+                    os.close(directory_fd)
         elif (
             type(record["identity"]) is not dict
             or set(record["identity"]) != set(IDENTITY_FIELDS)
