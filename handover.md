@@ -5,6 +5,19 @@ Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
 
+Le successeur exécutable S1 est maintenant préenregistré et deux audits
+indépendants rendent **`GO_S1_IMPLEMENTATION`**. L’admission est manifest-only,
+Worker Q voit le CRM sans vérité, Worker E voit les preuves sans nom/adresse
+CRM, et le scorer ne voit que les requêtes scellées. Les registres matériels,
+schémas exacts, catalogues payload/seal, signatures Ed25519, ledger producteur
+séquentiel, anti-relance durable, gates distincts et évaluation retrieval
+one-shot sont fermés. La suite complète donne `1152 passed`. Ce GO autorise
+uniquement la construction des catalogues et l’implémentation synthétique ; il
+n’autorise aucune ouverture CRM réelle.
+*(commits GitHub : réparation tests R3 `421ec40`, préenregistrement
+`6cbd80a`, fermeture autorités `f7079ed`, ordre producteur `288a1de` ;
+rapport : `reports/v9/v4_12_fresh_s1_preregistration_results.md`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
