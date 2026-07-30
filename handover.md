@@ -18,6 +18,20 @@ n’autorise aucune ouverture CRM réelle.
 `6cbd80a`, fermeture autorités `f7079ed`, ordre producteur `288a1de` ;
 rapport : `reports/v9/v4_12_fresh_s1_preregistration_results.md`)*.
 
+L'autorité locale Ed25519 du futur producteur S1 est préenregistrée, sans
+accès au CRM et sans création de clé réelle. Le correctif ferme
+l'appartenance de l'item Keychain par le SHA-256 exact du claim dans
+`kSecAttrGeneric`, lie le claim au lock, à l'autorisation et à un nonce
+aléatoire, interdit la synchronisation Keychain et impose
+`AfterFirstUnlockThisDeviceOnly`. Les schémas imbriqués sont désormais
+fermés, le commit de certification S1 est corrigé et l'autorisation précède
+les audits de provisionnement. Les 7 tests ciblés et la suite complète
+(`1159 passed`) sont verts. Le commit reste soumis à deux audits indépendants
+avant toute implémentation ; aucun item Keychain, root S1 ou CRM réel n'a été
+ouvert.
+*(commits GitHub : préenregistrement initial `aacc76a`, fermeture ownership
+et gates `28ef796`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
