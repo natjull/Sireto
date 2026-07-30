@@ -21,6 +21,24 @@ Les builders, leurs locks et les deux registres réels restent à implémenter e
 à sceller avant toute lecture d'un futur export CRM. Le ranker, le decider, le
 risk model et l'accepteur restent gelés.
 
+Les deux builders préalables sont maintenant implémentés et contre-audités,
+mais leurs builds réels restent interdits avant création des locks :
+
+- `consumed_sirens` obtient **`GO_CODE_SIRENS_FINAL`** après rejet d'un arbre
+  falsifié puis rescéllé. Les 15 tests passent, le preflight réel ferme
+  64 618 observations, 19 754 SIREN et zéro rejet
+  *(commits GitHub : contrat amendé `029e3fb`, code `5fe28b3`)* ;
+- `consumed_compatibility` obtient **`GO_CODE_COMPAT_FINAL`** après rejet d'un
+  keyset HMAC falsifié, neutralisation d'un swap de racine et reprise autonome
+  d'un attempt existant. Les 20 tests passent
+  *(commits GitHub : contrat amendé `a499f2f`, code `2dfc4e0`)*.
+
+Les 35 tests cumulés passent avec le temporaire placé sur
+`/Volumes/CATNAT_DATA`. Les pins finaux ont été propagés au contrat d'intake
+*(commit GitHub : `474b52a`)*. Le disque interne étant presque plein, tout
+test ou build suivant doit utiliser le SSD externe ; aucun nettoyage
+destructif n'a été effectué.
+
 Le builder des entrées sûres du moteur unitaire V4.12 est implémenté et
 contre-audité, sans build réel. Une première revue a rendu `STOP_CODE` malgré
 18 tests verts et a exposé une mauvaise empreinte TF-IDF, un contournement du
