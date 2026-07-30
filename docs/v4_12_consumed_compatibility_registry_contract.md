@@ -76,11 +76,16 @@ SHA-256 :
 
 `f770215cd0d0fcc654b750b90dbba835acbf4efb5c74ed269d339e046c2b049d`
 
-Il est lu en UTF-8, séparateur `;`, toutes colonnes en chaînes, valeurs vides
-conservées. Son ordre et ses huit colonnes doivent reproduire exactement les
-23 609 lignes brutes du `source_registry.parquet`. Le builder recalcule aussi
-`service_id_norm`, `input_siret_norm` et `row_fingerprint_sha256` V4.11 et exige
-une égalité ligne à ligne avec le registre.
+Il doit commencer par exactement un marqueur UTF-8 `EF BB BF`. Le builder
+exige ces trois octets à l'offset zéro, refuse un second marqueur immédiatement
+après, retire uniquement le premier puis décode strictement le reste en UTF-8.
+Un caractère `U+FEFF` situé dans une valeur CRM reste une donnée et n'est pas
+interdit par cette règle d'en-tête. Le séparateur est `;`, toutes les colonnes
+sont des chaînes et les valeurs vides sont conservées. Son ordre et ses huit
+colonnes doivent reproduire exactement les 23 609 lignes brutes du
+`source_registry.parquet`. Le builder recalcule aussi `service_id_norm`,
+`input_siret_norm` et `row_fingerprint_sha256` V4.11 et exige une égalité ligne
+à ligne avec le registre.
 
 Si la source brute, les huit champs du registre ou cette parité ne sont pas
 disponibles, le verdict est `STOP_UNPROVABLE_LINEAGE`. Aucune approximation à
