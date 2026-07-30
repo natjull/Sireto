@@ -278,23 +278,27 @@ HMAC-SHA256(K, "SIRETO-V412-INPUT-SIRET-LINEAGE\0" + input_siret_norm UTF-8)
 
 Un SHA-256 simple est interdit car les espaces de `SERVICE ID` et SIRET sont
 énumérables. `K` est une clé aléatoire privée d'au moins 256 bits, conservée
-dans le Keychain macOS et fournie au builder puis au sandbox intake par un
-descripteur déjà ouvert par le launcher avec
-`O_RDONLY|O_NOFOLLOW|O_CLOEXEC`. Le builder vérifie sur ce FD `O_RDONLY`,
-`O_CLOEXEC`, le type régulier, le mode, l'UID, le link count et la stabilité
-des métadonnées ; `O_NOFOLLOW`, qui n'est pas observable via `F_GETFL` après
-`open(2)` sur macOS, reste une obligation vérifiée côté launcher. Le plan fixe un
-`hmac_key_id`; le futur lock fixe le SHA-256 des octets de `K`. La clé n'est
-jamais présente dans Git, un argument CLI, une variable d'environnement, un log,
-un manifest ou une sortie. Le builder et l'intake vérifient `key_id`, hash de
-clé et golden vectors HMAC avant toute donnée.
+dans le Keychain macOS. Le builder la lit dans son propre processus avec
+`SecItemCopyMatching`, en épinglant le service
+`com.sireto.v412.compatibility-hmac`, le compte `SIRETO`, une seule fiche
+`GenericPassword`, un retour `CFData` et
+`kSecUseAuthenticationUIFail`. Pour la lecture et le transport de la clé, il
+n'appelle ni le CLI `security`, ni un launcher, ni un sous-processus et échoue
+sans afficher de demande d'autorisation. Le plan fixe un `hmac_key_id`; le
+lock fixe le SHA-256 des octets exacts de `K`. La clé n'est jamais présente
+dans Git, un argument CLI, une variable d'environnement, un fichier
+temporaire, un log, un manifest ou une sortie. Le builder vérifie
+indépendamment `key_id`, longueur minimale, hash de clé et golden vectors
+HMAC, puis efface sa copie mémoire mutable dans un `finally`. Les copies
+internes transitoires de Security.framework, CPython et HMAC ne sont pas
+présentées comme effaçables par le builder.
 
 Toutes les sorties sont des fichiers mode `0600` sous des répertoires mode
 `0700`. Les valeurs sources en clair ne quittent jamais le processus builder.
 Le registre, ses keysets et les fingerprints sont interdits au retrieval, au
 ranker, à l’accepteur et au scorer ; seul le processus d’intake anti-overlap,
-dans un sandbox deny-by-default recevant la même clé par FD, peut lire les
-projections minimales nécessaires.
+dans un sandbox deny-by-default lisant la même fiche Keychain par l'API
+native sans UI, peut lire les projections minimales nécessaires.
 
 ## 7. Schémas physiques et reproductibilité byte-for-byte
 
@@ -365,10 +369,11 @@ la dernière lecture doit reproduire device, inode, taille, mtime, ctime, UID et
 link count. Chaque entrée est lue jusqu'à EOF et hashée avant/après sur le même
 FD ; lecture courte, octet supplémentaire ou dérive produit `STOP`.
 
-Avant toute lecture sémantique, un receipt d'attempt immuable est créé avec
-`O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC`, mode `0600`. Les événements
-canoniques sont ensuite créés individuellement avec `O_EXCL` et chaînés par
-`previous_event_sha256`. Des manifests générationnels immuables
+Pour un nouvel attempt, après validation en mémoire de la clé et avant toute
+lecture sémantique d'une source historique, un receipt d'attempt immuable est
+créé avec `O_WRONLY|O_CREAT|O_EXCL|O_NOFOLLOW|O_CLOEXEC`, mode `0600`. Les
+événements canoniques sont ensuite créés individuellement avec `O_EXCL` et
+chaînés par `previous_event_sha256`. Des manifests générationnels immuables
 `events_manifests/<generation>-<sha256>.json` ferment chaque préfixe valide.
 Le receipt reste statique ; l'état courant appartient uniquement à cette chaîne.
 
@@ -378,8 +383,8 @@ chemin et SHA-256. Il contient sans exception le chemin et le hash du plan, le
 commit et le hash du builder, le chemin et le hash des tests, l'identifiant et
 le hash de la clé HMAC, l'identifiant d'attempt, ainsi que les pins UID, device
 et UUID de volume de chaque fichier lu et de la racine de sortie. Ces valeurs
-ne peuvent pas être remplacées individuellement sur la ligne de commande ; le
-seul autre descripteur accepté est le FD déjà ouvert de la clé privée.
+ne peuvent pas être remplacées individuellement sur la ligne de commande.
+Le CLI n'accepte aucun secret, chemin de secret ou descripteur de clé.
 
 Chaque fichier temporaire est créé `O_EXCL` dans la racine cible sur le même
 volume. L'ordre durable est : écriture complète, `fsync`, `F_FULLFSYNC`,
@@ -418,6 +423,13 @@ déjà promu correspondant. Il promeut exclusivement un arbre complet lié à
 `TREE_VALIDATED`, ou retourne l'arbre déjà promu ; il ne recrée pas le receipt,
 ne relit aucune source et ne relance aucun build. Un état antérieur non
 récupérable produit `STOP`.
+
+En l'absence d'attempt existant, le runner lit et valide la clé dans le
+Keychain avant de créer le receipt et avant toute lecture d'une source
+historique. Un échec Keychain, une interaction nécessaire, un identifiant
+différent, une clé trop courte ou un hash différent ne crée donc ni receipt,
+ni payload, ni arbre de build. Après validation de la clé, le receipt est
+rendu durable avant la première lecture historique.
 
 ## 10. Rejets et échec fermé
 
@@ -461,8 +473,9 @@ Le build promu exige :
   manifest et du seal ;
 - somme des multiplicités fuzzy égale au nombre d'observations fuzzy, et chaque
   ligne possède exactement une observation par ville normalisée distincte ;
-- clé HMAC reçue uniquement par FD, `hmac_key_id` et hash conformes au lock,
-  aucun SHA simple de service/SIRET et aucune clé secrète dans les sorties ;
+- clé HMAC lue uniquement par l'API Keychain native en processus, sans UI,
+  `hmac_key_id` et hash conformes au lock, aucun SHA simple de service/SIRET
+  et aucune clé secrète dans les sorties ;
 - aucune valeur `SERVICE ID`, SIRET, nom ou adresse en clair dans les sorties ;
 - schémas Arrow, runtime, compression, row groups, tris et bytes reproductibles ;
 - modes `0600/0700`, receipts, événements, durabilité, recovery,
@@ -486,8 +499,8 @@ Ordre obligatoire :
 7. vérifier indépendamment payload, keysets, seal et invariants ;
 8. pinner le `build_id` complet et le SHA-256 de `seal.json` dans le lock
    d’intake V4.12 ;
-9. fournir à l'intake la même clé par FD et seulement ensuite autoriser
-   l’observation stable du prochain export CRM.
+9. faire lire à l'intake la même fiche Keychain par l'API native sans UI et
+   seulement ensuite autoriser l’observation stable du prochain export CRM.
 
 Le présent contrat et son plan ne construisent pas le registre et
 n’autorisent pas encore l’étape 8.
