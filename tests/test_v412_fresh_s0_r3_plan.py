@@ -259,8 +259,10 @@ def test_r3_closed_overlay_materializes_from_the_pinned_r2_plan() -> None:
         plan["source_blob_roles"]
     )
     assert effective["execution_lock"]["implementation_blob_roles"] == (
-        plan["source_blob_roles"]
+        plan["implementation_blob_roles"]
     )
+    assert "SANDBOX_EXEC" not in plan["implementation_blob_roles"]
+    assert "SANDBOX_EXEC" in plan["source_blob_roles"]
     assert "r2_fixture_builder" not in effective["future_implementation"]["artifacts"]
     assert "r2_fixture_tests" not in effective["future_implementation"]["artifacts"]
     assert effective["future_implementation"]["artifacts"]["r3_fixture_builder"] == (
@@ -280,6 +282,52 @@ def test_r3_inherited_authorities_resolve_in_the_pinned_r2_plan() -> None:
             _resolve(base, authority["base_path"])
         for dotted_path in authority.get("base_paths", []):
             _resolve(base, dotted_path)
+
+
+def test_r3_replacement_schemas_are_fully_materialized() -> None:
+    plan = _plan()
+    effective = _materialize_r3(plan)
+    for name in (
+        "control_result",
+        "execution_identity",
+        "runtime_smoke_attestation",
+        "worker_failure",
+        "worker_spec",
+    ):
+        schema = effective["schema_definitions"][name]
+        assert schema["exact_fields"]
+        assert "nullable_fields" in schema
+        assert schema["types"]
+        assert set(schema["exact_fields"]) == (
+            set(schema["types"]) | set(schema["nullable_fields"])
+        )
+    assert effective["schema_definitions"]["control_result"]["types"][
+        "worker_failure"
+    ] == "null_iff_RESULT_else_worker_failure_record"
+    assert effective["schema_definitions"]["worker_spec"]["types"][
+        "execution_identity"
+    ] == "execution_identity_literal_equal_lock_and_plan"
+    assert effective["schema_definitions"]["execution_identity"][
+        "component_types"
+    ]
+
+
+def test_r3_overlay_never_reads_legacy_r2_successor_identity_authorities() -> None:
+    plan = _plan()
+    forbidden = set(
+        plan["inheritance"]["legacy_r2_successor_forbidden_authorities"]
+    )
+    allowed = set(plan["inheritance"]["legacy_r2_successor_allowed_reads"])
+    override_sources = {
+        record["source"] for record in plan["inheritance"]["overrides"]
+    }
+    assert not (override_sources & forbidden)
+    assert not {
+        source
+        for source in override_sources
+        if source.startswith("r2_successor") and source not in allowed
+    }
+    assert plan["r3_successor"]["runtime_boundary_source"] in allowed
 
 
 def test_r3_overlay_rejects_hostile_missing_source_and_target_parent() -> None:

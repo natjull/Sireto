@@ -239,6 +239,18 @@ Toute autre paire transforme le terminal en
 `WORKER_CONTROL_INVALID`. Le verdict externe reste
 `STOP / WORKER_CONTROLLED_STOP`.
 
+Les définitions remplacées `control_result-2`, `worker-spec-2`,
+`execution_identity`, `worker_failure` et `runtime_smoke_attestation` sont
+matérialisées intégralement dans le plan R3 : champs exacts, nullabilité et
+types. Les annotations `inherited_from_r2` sont documentaires et ne remplacent
+jamais une contrainte exécutable.
+
+Les rôles de sources globales et les blobs Git sont deux ensembles distincts.
+`SANDBOX_EXEC` appartient aux sources globales et reste épinglé comme binaire
+système dans le runtime hérité ; il est interdit dans
+`execution_lock.implementation_blob_roles`. Chaque rôle de ce dernier ensemble
+doit correspondre à un blob du commit d'implémentation.
+
 Le receipt parent R3 passe au schéma :
 
 ```text
