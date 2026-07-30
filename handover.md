@@ -109,6 +109,14 @@ Keychain réel. Ce GO autorise seulement la construction et l'audit du lock,
 du pré-vol lecture seule et du test multiprocessus ; il n'autorise pas encore
 la lecture du locator, l'autorisation one-shot ou le provisionnement.
 
+La preuve multiprocessus requise avant lock utilise maintenant deux processus
+Python `spawn`, synchronisés avant `O_EXCL`, et un backend atomique partagé.
+Elle converge vers exactement un succès, un claim, un add/item simulé, un
+arbre d'autorité et un receipt ; trois répétitions indépendantes passent. La
+suite locale complète donne `1210 passed` (le warning `fork` observé lors du
+premier essai a été supprimé par le passage à `spawn`). Aucun Keychain réel.
+*(commit GitHub : convergence multiprocessus `ad74b4e`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
