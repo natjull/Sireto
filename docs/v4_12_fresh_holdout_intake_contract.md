@@ -301,8 +301,8 @@ Un registre `consumed_sirens` n’existe pas encore avec une fermeture
 suffisante. Sa spécification est portée par
 `docs/v4_12_consumed_sirens_registry_contract.md` et
 `config/v4_12_consumed_sirens_registry_plan.json`, épinglés respectivement à
-`87b3924d1789b836358b42ed690e05675b0eba443a0bc4e0a6973f0948fba84a`
-et `f3528ec459652a69b3bf04c3f7425d465676ee96a2eb1c6d5b1a4c27136bb742`.
+`90e3587f49f2cb84d3903e6120e9def22bcbf3affde64d5942b03077f582b4d5`
+et `9ab3bdff52d65fe18a001ad4ca9f24857b0785cc809ad744a456ba7af53c187d`.
 Un pinner séparé doit le construire et le sceller **avant toute
 ouverture du nouveau CRM** à partir des oracles/labels consommés listés par
 les deux catalogues. Le lock d’intake doit épingler les SHA-256 finaux de la
