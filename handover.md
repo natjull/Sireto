@@ -316,6 +316,19 @@ sans accès filesystem. Runtime, sandbox, racines, RSS et identités build
 `01260473...c2ed` sont exacts ; aucune destination n'existait au gel. Ce
 verrou autorise désormais l'unique évaluation oracle officielle. *(commit
 GitHub : `d886ee9`)*
+L'évaluation officielle termine `FINAL` et franchit
+**`GO_V412_UNIT_RETRIEVAL_EVALUATION`**, confirmé par
+`GO_EVALUATOR_ARTIFACTS_1` / `GO_EVALUATOR_ARTIFACTS_2`. Sur 1 456
+requêtes, 1 217 sont `MATCH_EXACT` et 239 `AMBIGUOUS` : couverture
+identifiable **83,585 %**. Le Recall exact vaut 1 075/1 217 à @1
+(88,332 %), 1 211/1 217 à @10 (99,507 %) et 1 217/1 217 à @50/@100
+(100 %), avec zéro vérité absente. La borne Wilson bilatérale 99 % de
+Recall@100 est 99,458–100 %. Les 145 236 candidats respectent tous le
+plafond 100. La chaîne officielle possède sept événements, 16 entrées
+conformes et termine `FINAL`; aucun modèle ni test final n'a été ouvert.
+Rapport : `reports/v9/v4_12_unit_retrieval_evaluation_results.md`. Ce GO est
+un gate développement historique ; il autorise le contrat de l'unique test
+retrieval final, pas encore le dégel du ranker/accepteur.
 
 Le contrat V4.11-B est préenregistré avant tout nouveau dataset ou fit.
 Il corrige la frontière produit : le SIRET/SIREN historique du CRM devient
