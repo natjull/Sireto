@@ -12,14 +12,18 @@ from dataclasses import dataclass, fields
 import ctypes
 import errno
 import hashlib
+import importlib.metadata
 import json
 import os
 from pathlib import Path
-import shutil
+import platform
+import secrets
 import stat
-import tempfile
+import subprocess
+import sys
 from typing import Any, Mapping, Sequence
 
+import numpy as np
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -27,7 +31,7 @@ import pyarrow.parquet as pq
 from src.xgb_matcher.v412_direct_evidence import apply_guard, validate_evidence
 
 
-SCHEMA_VERSION = "sireto-v4.12-service-parity-reference-1"
+SCHEMA_VERSION = "sireto-v4.12-service-parity-reference-2"
 EXPECTED_QUERY_COUNT = 1_456
 EXPECTED_CANDIDATE_COUNT = 145_236
 MAX_CANDIDATES = 100
@@ -86,6 +90,53 @@ CANDIDATE_COLUMNS = [
     "enseigne3",
     "denomination_usuelle",
     "activity_code",
+    "has_any_name",
+    "name_count",
+    "name_jaro_max",
+    "name_jaro_second",
+    "name_jaro_gap",
+    "name_levenshtein_max",
+    "name_token_overlap_max",
+    "idf_name",
+    "numeric_token_match",
+    "name_first_word_match_max",
+    "name_contains_crm_max",
+    "name_crm_contains_cand_max",
+    "acronym_match_max",
+    "name_sim_max_etab",
+    "name_sim_max_ul",
+    "name_sim_max_sigle",
+    "name_sim_max_pm_dirigeant",
+    "type_of_max_name",
+    "is_ul_name_max",
+    "is_sigle_max",
+    "name_length_max",
+    "has_person_name",
+    "person_name_jaro_max",
+    "name_city_overlap_max",
+    "name_is_city_like_max",
+    "addr_jaro",
+    "addr_levenshtein",
+    "postcode_match",
+    "city_match",
+    "street_number_diff",
+    "addr_token_overlap",
+    "address_density",
+    "street_name_jaro",
+    "name_addr_consistency",
+    "legal_form_category",
+    "is_siege",
+    "is_association",
+    "alias_match",
+    "token_overlap_ul",
+    "ul_vs_pm_indicator",
+    "is_crm_school",
+    "geo_exact_match",
+    "name_norm_exact",
+    "street_number_match",
+    "retrieval_rank_recip",
+]
+RANKER_FEATURES = [
     "has_any_name",
     "name_count",
     "name_jaro_max",
@@ -227,6 +278,14 @@ SCENE_FEATURES = [
 SCENE_COLUMNS = [
     "query_id",
     "crm_record_id",
+    "predicted_siret",
+    "predicted_siren",
+    *SCENE_FEATURES,
+]
+SCENE_SOURCE_COLUMNS = [
+    "query_id",
+    "crm_record_id",
+    "dev_partition",
     "predicted_siret",
     "predicted_siren",
     *SCENE_FEATURES,
@@ -384,7 +443,7 @@ SOURCE_PROJECTIONS = {
     "splits": SPLIT_COLUMNS,
     "candidates": CANDIDATE_COLUMNS,
     "ranker": RANKER_COLUMNS,
-    "scenes": SCENE_COLUMNS,
+    "scenes": SCENE_SOURCE_COLUMNS,
     "acceptor": ACCEPTOR_COLUMNS,
     "guard": GUARD_SOURCE_COLUMNS,
     "query_evidence": QUERY_EVIDENCE_COLUMNS,
@@ -438,11 +497,34 @@ def file_sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def _validate_source(source: SourceFile) -> None:
-    if (
-        len(source.sha256) != 64
-        or any(character not in "0123456789abcdef" for character in source.sha256)
-        or file_sha256(source.path) != source.sha256
+def _fd_sha256(fd: int, size: int) -> str:
+    digest = hashlib.sha256()
+    offset = 0
+    while offset < size:
+        chunk = os.pread(fd, min(1 << 20, size - offset), offset)
+        if not chunk:
+            raise ReferenceBuildError("STOP_REFERENCE_INPUT_SHORT_READ")
+        digest.update(chunk)
+        offset += len(chunk)
+    return digest.hexdigest()
+
+
+def _fd_identity(metadata: os.stat_result) -> tuple[int, ...]:
+    return (
+        metadata.st_dev,
+        metadata.st_ino,
+        metadata.st_mode,
+        metadata.st_nlink,
+        metadata.st_uid,
+        metadata.st_size,
+        metadata.st_mtime_ns,
+        metadata.st_ctime_ns,
+    )
+
+
+def _validate_pin(sha256: str) -> None:
+    if len(sha256) != 64 or any(
+        character not in "0123456789abcdef" for character in sha256
     ):
         raise ReferenceBuildError("STOP_REFERENCE_INPUT_HASH")
 
@@ -453,13 +535,43 @@ def read_projection(
     *,
     reader: Any = pd.read_parquet,
 ) -> pd.DataFrame:
-    """Validate a pin, then request exactly the declared projection."""
-    _validate_source(source)
-    frame = reader(source.path, columns=list(columns))
+    """Capture pinned bytes once, then decode only the safe projection."""
+    _validate_safe_columns(str(source.path), columns)
+    _validate_pin(source.sha256)
+    flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0) | getattr(
+        os, "O_NOFOLLOW", 0
+    )
+    try:
+        fd = os.open(source.path, flags)
+    except OSError as exc:
+        raise ReferenceBuildError("STOP_REFERENCE_INPUT_OPEN") from exc
+    try:
+        before = os.fstat(fd)
+        if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
+            raise ReferenceBuildError("STOP_REFERENCE_INPUT_IDENTITY")
+        payload = bytearray()
+        offset = 0
+        digest = hashlib.sha256()
+        while offset < before.st_size:
+            chunk = os.pread(fd, min(1 << 20, before.st_size - offset), offset)
+            if not chunk:
+                raise ReferenceBuildError("STOP_REFERENCE_INPUT_SHORT_READ")
+            payload.extend(chunk)
+            digest.update(chunk)
+            offset += len(chunk)
+        if digest.hexdigest() != source.sha256:
+            raise ReferenceBuildError("STOP_REFERENCE_INPUT_HASH")
+        after = os.fstat(fd)
+        if (
+            _fd_identity(before) != _fd_identity(after)
+            or _fd_sha256(fd, after.st_size) != source.sha256
+        ):
+            raise ReferenceBuildError("STOP_REFERENCE_INPUT_DRIFT")
+    finally:
+        os.close(fd)
+    frame = reader(pa.BufferReader(bytes(payload)), columns=list(columns))
     if type(frame) is not pd.DataFrame or list(frame.columns) != list(columns):
         raise ReferenceBuildError("STOP_REFERENCE_PROJECTION")
-    if file_sha256(source.path) != source.sha256:
-        raise ReferenceBuildError("STOP_REFERENCE_INPUT_DRIFT")
     return frame
 
 
@@ -474,6 +586,59 @@ def _require_exact_ids(
 def _require_non_null(frame: pd.DataFrame, columns: Sequence[str], label: str) -> None:
     if frame[list(columns)].isna().any(axis=None):
         raise ReferenceBuildError(f"STOP_REFERENCE_{label}_NULL")
+
+
+def _require_integer_series(
+    series: pd.Series,
+    label: str,
+    *,
+    minimum: int | None = None,
+) -> pd.Series:
+    if (
+        not pd.api.types.is_integer_dtype(series.dtype)
+        or pd.api.types.is_bool_dtype(series.dtype)
+    ):
+        raise ReferenceBuildError(f"STOP_REFERENCE_{label}")
+    numeric = pd.to_numeric(series, errors="coerce")
+    values = numeric.to_numpy(dtype=np.float64)
+    if (
+        not np.isfinite(values).all()
+        or not np.equal(values, np.floor(values)).all()
+        or (minimum is not None and bool((values < minimum).any()))
+    ):
+        raise ReferenceBuildError(f"STOP_REFERENCE_{label}")
+    return numeric.astype("int64")
+
+
+def _require_finite(
+    frame: pd.DataFrame,
+    columns: Sequence[str],
+    label: str,
+) -> None:
+    try:
+        values = frame[list(columns)].to_numpy(dtype=np.float64)
+    except (TypeError, ValueError) as exc:
+        raise ReferenceBuildError(f"STOP_REFERENCE_{label}_FINITE") from exc
+    if not np.isfinite(values).all():
+        raise ReferenceBuildError(f"STOP_REFERENCE_{label}_FINITE")
+
+
+def _require_siret_siren(
+    frame: pd.DataFrame,
+    siret_column: str,
+    siren_column: str,
+    label: str,
+) -> None:
+    sirets = frame[siret_column].astype("string")
+    sirens = frame[siren_column].astype("string")
+    if (
+        sirets.isna().any()
+        or sirens.isna().any()
+        or not bool(sirets.str.fullmatch(r"[0-9]{14}").all())
+        or not bool(sirens.str.fullmatch(r"[0-9]{9}").all())
+        or not bool(sirets.str[:9].eq(sirens).all())
+    ):
+        raise ReferenceBuildError(f"STOP_REFERENCE_{label}_IDENTITY")
 
 
 def _validate_safe_columns(filename: str, columns: Sequence[str]) -> None:
@@ -666,6 +831,74 @@ def build_frames(
         _require_exact_ids(frame, dev_ids, label, unique=False)
         if len(frame) != expected_candidate_count:
             raise ReferenceBuildError(f"STOP_REFERENCE_{label}_COUNT")
+    _require_non_null(
+        candidates,
+        ["query_id", "candidate_siret", "candidate_siren", "candidate_state"],
+        "CANDIDATES",
+    )
+    _require_non_null(
+        ranker,
+        ["query_id", "candidate_siret", "candidate_siren"],
+        "RANKER",
+    )
+    _require_siret_siren(
+        candidates, "candidate_siret", "candidate_siren", "CANDIDATE"
+    )
+    _require_siret_siren(
+        ranker, "candidate_siret", "candidate_siren", "RANKER"
+    )
+    if not bool(candidates["candidate_state"].astype(str).eq("A").all()):
+        raise ReferenceBuildError("STOP_REFERENCE_CANDIDATE_STATE")
+    candidate_retrieval_ranks = _require_integer_series(
+        candidates["retrieval_rank"], "CANDIDATE_RANK", minimum=1
+    )
+    ranker_retrieval_ranks = _require_integer_series(
+        ranker["retrieval_rank"], "RANKER_RETRIEVAL_RANK", minimum=1
+    )
+    ranker_ranks = _require_integer_series(
+        ranker["ranker_rank"], "RANKER_RANK", minimum=1
+    )
+    _require_finite(candidates, RANKER_FEATURES, "RANKER_FEATURES")
+    try:
+        float32_features = candidates[RANKER_FEATURES].to_numpy(
+            dtype=np.float32
+        )
+    except (TypeError, ValueError, OverflowError) as exc:
+        raise ReferenceBuildError(
+            "STOP_REFERENCE_RANKER_FEATURES_FLOAT32"
+        ) from exc
+    if not np.isfinite(float32_features).all():
+        raise ReferenceBuildError("STOP_REFERENCE_RANKER_FEATURES_FLOAT32")
+    _require_finite(ranker, ["ranker_score"], "RANKER_SCORE")
+    ranker_scores = ranker["ranker_score"].to_numpy(dtype=np.float32)
+    if not np.isfinite(ranker_scores).all():
+        raise ReferenceBuildError("STOP_REFERENCE_RANKER_SCORE_FLOAT32")
+    ranker = ranker.assign(ranker_score=ranker_scores)
+    _require_finite(scenes, SCENE_FEATURES, "SCENE_FEATURES")
+    _require_finite(acceptor, ["score", "threshold"], "ACCEPTOR")
+    scores = acceptor["score"].astype(float)
+    if scores.lt(0.0).any() or scores.gt(1.0).any():
+        raise ReferenceBuildError("STOP_REFERENCE_ACCEPTOR_SCORE")
+    for frame, columns, label in (
+        (
+            query_evidence,
+            [
+                "active_universe_count",
+                "direct_candidate_count",
+                "direct_siren_count",
+            ],
+            "QUERY_EVIDENCE_COUNT",
+        ),
+        (
+            guard,
+            ["direct_candidate_count", "direct_siren_count"],
+            "GUARD_COUNT",
+        ),
+    ):
+        for column in columns:
+            frame[column] = _require_integer_series(
+                frame[column], label, minimum=0
+            )
     candidate_keys = set(
         zip(
             candidates["query_id"].astype(str),
@@ -685,18 +918,68 @@ def build_frames(
         or len(candidate_keys) != expected_candidate_count
     ):
         raise ReferenceBuildError("STOP_REFERENCE_CANDIDATE_PARITY")
+    candidates = candidates.assign(retrieval_rank=candidate_retrieval_ranks)
+    ranker = ranker.assign(
+        retrieval_rank=ranker_retrieval_ranks,
+        ranker_rank=ranker_ranks,
+    )
+    identity_parity = candidates[
+        ["query_id", "candidate_siret", "candidate_siren", "retrieval_rank"]
+    ].merge(
+        ranker[
+            ["query_id", "candidate_siret", "candidate_siren", "retrieval_rank"]
+        ],
+        on=["query_id", "candidate_siret"],
+        how="inner",
+        validate="one_to_one",
+        suffixes=("_candidate", "_ranker"),
+    )
+    if (
+        len(identity_parity) != expected_candidate_count
+        or identity_parity["candidate_siren_candidate"]
+        .astype(str)
+        .ne(identity_parity["candidate_siren_ranker"].astype(str))
+        .any()
+        or identity_parity["retrieval_rank_candidate"]
+        .ne(identity_parity["retrieval_rank_ranker"])
+        .any()
+    ):
+        raise ReferenceBuildError("STOP_REFERENCE_CANDIDATE_RANKER_PARITY")
     for query_id, group in candidates.groupby("query_id", sort=False):
-        ranks = sorted(group["retrieval_rank"].astype(int).tolist())
+        ranks = sorted(group["retrieval_rank"].tolist())
         if len(ranks) > MAX_CANDIDATES or ranks != list(range(1, len(ranks) + 1)):
             raise ReferenceBuildError("STOP_REFERENCE_POOL_CAP_OR_RANKS")
     for query_id, group in ranker.groupby("query_id", sort=False):
-        ranks = sorted(group["ranker_rank"].astype(int).tolist())
+        ranks = sorted(group["ranker_rank"].tolist())
         if len(ranks) > MAX_CANDIDATES or ranks != list(range(1, len(ranks) + 1)):
             raise ReferenceBuildError("STOP_REFERENCE_RANKER_RANKS")
+        expected = group.sort_values(
+            ["ranker_score", "retrieval_rank", "candidate_siret"],
+            ascending=[False, True, True],
+            kind="mergesort",
+        )
+        expected_ranks = pd.Series(
+            np.arange(1, len(expected) + 1),
+            index=expected.index,
+        ).sort_index()
+        if not group["ranker_rank"].sort_index().eq(expected_ranks).all():
+            raise ReferenceBuildError("STOP_REFERENCE_RANKER_ORDER")
+    expected_decision = np.where(
+        scores.ge(FIXED_THRESHOLD), "AUTO_MATCH", "REVIEW"
+    )
     if (
         acceptor["model_family"].ne(COMPACT_LOGIT).any()
+        or not bool(
+            acceptor["evaluation_partition"]
+            .isin(["threshold_dev", "comparison_dev"])
+            .all()
+        )
         or not bool(acceptor["decision"].isin(["AUTO_MATCH", "REVIEW"]).all())
         or acceptor["threshold"].astype(float).ne(FIXED_THRESHOLD).any()
+        or not np.array_equal(
+            acceptor["decision"].astype(str).to_numpy(),
+            expected_decision,
+        )
     ):
         raise ReferenceBuildError("STOP_REFERENCE_ACCEPTOR_POLICY")
     _require_non_null(
@@ -709,6 +992,37 @@ def build_frames(
         ["query_id", "predicted_siret", "score", "threshold", "decision"],
         "ACCEPTOR",
     )
+    _require_siret_siren(
+        scenes, "predicted_siret", "predicted_siren", "SCENE_PREDICTION"
+    )
+    partition_parity = scenes[["query_id", "dev_partition"]].merge(
+        acceptor[["query_id", "evaluation_partition"]],
+        on="query_id",
+        how="inner",
+        validate="one_to_one",
+    )
+    if (
+        len(partition_parity) != expected_query_count
+        or partition_parity["dev_partition"]
+        .astype(str)
+        .ne(partition_parity["evaluation_partition"].astype(str))
+        .any()
+    ):
+        raise ReferenceBuildError("STOP_REFERENCE_ACCEPTOR_PARTITION")
+    if expected_query_count == EXPECTED_QUERY_COUNT:
+        counts = acceptor["evaluation_partition"].value_counts().to_dict()
+        if counts != {"comparison_dev": 746, "threshold_dev": 710}:
+            raise ReferenceBuildError("STOP_REFERENCE_ACCEPTOR_PARTITION")
+    if (
+        scenes["candidate_count"].astype(float).ne(
+            scenes["query_id"].astype(str).map(
+                candidates.groupby(
+                    candidates["query_id"].astype(str), sort=False
+                ).size()
+            )
+        ).any()
+    ):
+        raise ReferenceBuildError("STOP_REFERENCE_SCENE_CANDIDATE_COUNT")
     ranker_top1 = ranker.loc[
         ranker["ranker_rank"].astype(int).eq(1),
         ["query_id", "candidate_siret", "candidate_siren"],
@@ -792,9 +1106,9 @@ def build_frames(
         "ranker_reference.parquet": ranker.sort_values(
             ["query_id", "ranker_rank", "candidate_siret"]
         ).reset_index(drop=True),
-        "scenes_reference.parquet": scenes.sort_values("query_id").reset_index(
-            drop=True
-        ),
+        "scenes_reference.parquet": scenes[SCENE_COLUMNS]
+        .sort_values("query_id")
+        .reset_index(drop=True),
         "acceptor_reference.parquet": acceptor.sort_values("query_id").reset_index(
             drop=True
         ),
@@ -820,41 +1134,67 @@ def build_frames(
     return outputs
 
 
-def _write_parquet(path: Path, frame: pd.DataFrame) -> None:
-    table = pa.Table.from_pandas(frame, preserve_index=False)
-    pq.write_table(
-        table,
-        path,
-        compression="zstd",
-        compression_level=9,
-        use_dictionary=False,
-        write_statistics=True,
-        version="2.6",
-        data_page_version="1.0",
-        row_group_size=65_536,
-    )
-    os.chmod(path, 0o600)
-    fd = os.open(path, os.O_RDONLY | getattr(os, "O_NOFOLLOW", 0))
+def _full_fsync(fd: int) -> None:
+    os.fsync(fd)
+    full = getattr(__import__("fcntl"), "F_FULLFSYNC", None)
+    if full is None:
+        raise ReferenceBuildError("STOP_REFERENCE_FULLFSYNC_UNAVAILABLE")
     try:
-        os.fsync(fd)
-        full = getattr(__import__("fcntl"), "F_FULLFSYNC", None)
-        if full is None:
-            raise ReferenceBuildError("STOP_REFERENCE_FULLFSYNC_UNAVAILABLE")
         __import__("fcntl").fcntl(fd, full)
-    finally:
-        os.close(fd)
+    except OSError as exc:
+        raise ReferenceBuildError("STOP_REFERENCE_FULLFSYNC") from exc
 
 
-def _write_json(path: Path, value: Mapping[str, Any]) -> None:
+def _write_parquet_at(
+    staging_fd: int,
+    filename: str,
+    frame: pd.DataFrame,
+) -> int:
     flags = (
-        os.O_WRONLY
+        os.O_RDWR
+        | os.O_CREAT
+        | os.O_EXCL
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+    fd = os.open(filename, flags, 0o600, dir_fd=staging_fd)
+    table = pa.Table.from_pandas(frame, preserve_index=False)
+    try:
+        with os.fdopen(os.dup(fd), "wb") as sink:
+            pq.write_table(
+                table,
+                sink,
+                compression="zstd",
+                compression_level=9,
+                use_dictionary=False,
+                write_statistics=True,
+                version="2.6",
+                data_page_version="1.0",
+                row_group_size=65_536,
+            )
+            sink.flush()
+        os.fchmod(fd, 0o400)
+        _full_fsync(fd)
+        return fd
+    except BaseException:
+        os.close(fd)
+        raise
+
+
+def _write_json_at(
+    staging_fd: int,
+    filename: str,
+    value: Mapping[str, Any],
+) -> int:
+    flags = (
+        os.O_RDWR
         | os.O_CREAT
         | os.O_EXCL
         | getattr(os, "O_NOFOLLOW", 0)
         | getattr(os, "O_CLOEXEC", 0)
     )
     raw = canonical_json(value)
-    fd = os.open(path, flags, 0o600)
+    fd = os.open(filename, flags, 0o600, dir_fd=staging_fd)
     try:
         view = memoryview(raw)
         while view:
@@ -862,16 +1202,24 @@ def _write_json(path: Path, value: Mapping[str, Any]) -> None:
             if written <= 0:
                 raise ReferenceBuildError("STOP_REFERENCE_SHORT_WRITE")
             view = view[written:]
-        os.fsync(fd)
-        full = getattr(__import__("fcntl"), "F_FULLFSYNC", None)
-        if full is None:
-            raise ReferenceBuildError("STOP_REFERENCE_FULLFSYNC_UNAVAILABLE")
-        __import__("fcntl").fcntl(fd, full)
-    finally:
+        os.fchmod(fd, 0o400)
+        _full_fsync(fd)
+        return fd
+    except BaseException:
         os.close(fd)
+        raise
 
 
-def _promote_exclusive(staging: Path, target: Path) -> None:
+def _promote_exclusive_at(
+    parent_fd: int,
+    staging_name: str,
+    target_name: str,
+    *,
+    staging_fd: int,
+    output_fds: Mapping[str, int],
+    manifest: Mapping[str, Any],
+) -> None:
+    _validate_staging(staging_fd, output_fds, manifest)
     libc = ctypes.CDLL(None, use_errno=True)
     function = getattr(libc, "renameatx_np", None)
     if function is None:
@@ -885,16 +1233,18 @@ def _promote_exclusive(staging: Path, target: Path) -> None:
     ]
     function.restype = ctypes.c_int
     result = function(
-        -2,
-        os.fsencode(staging),
-        -2,
-        os.fsencode(target),
+        parent_fd,
+        os.fsencode(staging_name),
+        parent_fd,
+        os.fsencode(target_name),
         0x00000004,
     )
     if result != 0:
         error = ctypes.get_errno()
         if error in {errno.EEXIST, errno.ENOTEMPTY}:
-            raise FileExistsError(f"Immutable reference exists: {target}")
+            raise FileExistsError(
+                f"Immutable reference exists: {target_name}"
+            )
         raise ReferenceBuildError("STOP_REFERENCE_PROMOTION")
 
 
@@ -909,22 +1259,175 @@ def _source_manifest(sources: ReferenceSources) -> dict[str, Any]:
     }
 
 
-def build_reference(
+def _sha256_bytes(value: bytes) -> str:
+    return hashlib.sha256(value).hexdigest()
+
+
+def _implementation_identity(*, require_committed: bool) -> dict[str, Any]:
+    repository = Path(__file__).resolve().parents[1]
+    paths = [
+        Path(__file__).resolve(),
+        repository / "docs/v4_12_service_parity_latency_contract.md",
+        repository / "src/xgb_matcher/v412_direct_evidence.py",
+    ]
+    environment = {**os.environ, "GIT_NO_REPLACE_OBJECTS": "1"}
+    try:
+        commit = subprocess.run(
+            ["git", "rev-parse", "HEAD"],
+            cwd=repository,
+            env=environment,
+            check=True,
+            capture_output=True,
+            text=True,
+        ).stdout.strip()
+    except (OSError, subprocess.CalledProcessError) as exc:
+        raise ReferenceBuildError("STOP_REFERENCE_GIT_IDENTITY") from exc
+    artifacts: dict[str, Any] = {}
+    for path in paths:
+        relative = path.relative_to(repository).as_posix()
+        live = path.read_bytes()
+        try:
+            committed = subprocess.run(
+                ["git", "show", f"{commit}:{relative}"],
+                cwd=repository,
+                env=environment,
+                check=True,
+                capture_output=True,
+            ).stdout
+        except (OSError, subprocess.CalledProcessError) as exc:
+            raise ReferenceBuildError("STOP_REFERENCE_GIT_IDENTITY") from exc
+        live_sha = _sha256_bytes(live)
+        committed_sha = _sha256_bytes(committed)
+        if require_committed and live_sha != committed_sha:
+            raise ReferenceBuildError("STOP_REFERENCE_IMPLEMENTATION_DIRTY")
+        artifacts[relative] = {
+            "live_sha256": live_sha,
+            "committed_sha256": committed_sha,
+        }
+    executable = Path(sys.executable).resolve()
+    return {
+        "git_commit": commit,
+        "artifacts": artifacts,
+        "runtime": {
+            "platform": platform.platform(),
+            "python_version": platform.python_version(),
+            "python_executable": str(executable),
+            "python_executable_sha256": file_sha256(executable),
+            "numpy_version": importlib.metadata.version("numpy"),
+            "pandas_version": importlib.metadata.version("pandas"),
+            "pyarrow_version": importlib.metadata.version("pyarrow"),
+        },
+    }
+
+
+def _capture_output_fd(fd: int) -> tuple[bytes, os.stat_result]:
+    before = os.fstat(fd)
+    if (
+        not stat.S_ISREG(before.st_mode)
+        or before.st_nlink != 1
+        or stat.S_IMODE(before.st_mode) != 0o400
+    ):
+        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_IDENTITY")
+    payload = bytearray()
+    offset = 0
+    while offset < before.st_size:
+        chunk = os.pread(fd, min(1 << 20, before.st_size - offset), offset)
+        if not chunk:
+            raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_SHORT_READ")
+        payload.extend(chunk)
+        offset += len(chunk)
+    after = os.fstat(fd)
+    if _fd_identity(before) != _fd_identity(after):
+        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_DRIFT")
+    return bytes(payload), after
+
+
+def _validate_staging(
+    staging_fd: int,
+    output_fds: Mapping[str, int],
+    manifest: Mapping[str, Any],
+) -> None:
+    expected_names = {*OUTPUT_FILES, "manifest.json"}
+    if set(os.listdir(staging_fd)) != expected_names:
+        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_TREE")
+    for filename, expected_columns in OUTPUT_FILES.items():
+        fd = output_fds[filename]
+        payload, metadata = _capture_output_fd(fd)
+        named = os.stat(filename, dir_fd=staging_fd, follow_symlinks=False)
+        if _fd_identity(metadata) != _fd_identity(named):
+            raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_IDENTITY")
+        record = manifest["outputs"][filename]
+        if (
+            _sha256_bytes(payload) != record["sha256"]
+            or len(payload) != record["size_bytes"]
+        ):
+            raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_HASH")
+        try:
+            table = pq.read_table(pa.BufferReader(payload))
+        except Exception as exc:
+            raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_PARQUET") from exc
+        if (
+            table.column_names != expected_columns
+            or table.num_rows != record["row_count"]
+        ):
+            raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_SCHEMA")
+        _validate_safe_columns(filename, table.column_names)
+    manifest_payload, manifest_metadata = _capture_output_fd(
+        output_fds["manifest.json"]
+    )
+    named_manifest = os.stat(
+        "manifest.json", dir_fd=staging_fd, follow_symlinks=False
+    )
+    if _fd_identity(manifest_metadata) != _fd_identity(named_manifest):
+        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_IDENTITY")
+    try:
+        decoded_manifest = json.loads(manifest_payload)
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ReferenceBuildError("STOP_REFERENCE_MANIFEST") from exc
+    if decoded_manifest != manifest:
+        raise ReferenceBuildError("STOP_REFERENCE_MANIFEST")
+    _full_fsync(staging_fd)
+
+
+def _open_output_root(output_root: Path) -> tuple[Path, int]:
+    path = Path(output_root).absolute()
+    flags = (
+        os.O_RDONLY
+        | getattr(os, "O_DIRECTORY", 0)
+        | getattr(os, "O_NOFOLLOW", 0)
+        | getattr(os, "O_CLOEXEC", 0)
+    )
+    try:
+        fd = os.open(path, flags)
+    except OSError as exc:
+        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_ROOT") from exc
+    metadata = os.fstat(fd)
+    if not stat.S_ISDIR(metadata.st_mode):
+        os.close(fd)
+        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_ROOT")
+    return path, fd
+
+
+def _build_reference(
     output_root: Path,
     *,
-    sources: ReferenceSources = DEFAULT_SOURCES,
-    expected_query_count: int = EXPECTED_QUERY_COUNT,
-    expected_candidate_count: int = EXPECTED_CANDIDATE_COUNT,
-    reader: Any = pd.read_parquet,
+    sources: ReferenceSources,
+    expected_query_count: int,
+    expected_candidate_count: int,
+    reader: Any,
+    synthetic_fixture: bool,
 ) -> Path:
-    output_root_input = Path(output_root)
-    if output_root_input.is_symlink():
-        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_ROOT")
-    output_root = output_root_input.resolve()
-    if not output_root.is_dir() or output_root.is_symlink():
-        raise ReferenceBuildError("STOP_REFERENCE_OUTPUT_ROOT")
+    if not synthetic_fixture and (
+        sources != DEFAULT_SOURCES or reader is not pd.read_parquet
+    ):
+        raise ReferenceBuildError("STOP_REFERENCE_PRODUCTION_INJECTION")
+    implementation = _implementation_identity(
+        require_committed=not synthetic_fixture
+    )
     spec = {
         "schema_version": SCHEMA_VERSION,
+        "synthetic_fixture": synthetic_fixture,
+        "implementation": implementation,
         "sources": _source_manifest(sources),
         "outputs": OUTPUT_FILES,
         "expected_query_count": expected_query_count,
@@ -932,16 +1435,41 @@ def build_reference(
         "max_candidates": MAX_CANDIDATES,
         "model_family": COMPACT_LOGIT,
         "threshold": FIXED_THRESHOLD,
+        "parquet_writer": {
+            "compression": "zstd",
+            "compression_level": 9,
+            "use_dictionary": False,
+            "write_statistics": True,
+            "version": "2.6",
+            "data_page_version": "1.0",
+            "row_group_size": 65_536,
+        },
     }
     build_id = hashlib.sha256(canonical_json(spec)).hexdigest()[:16]
-    target = output_root / build_id
-    if target.exists() or target.is_symlink():
-        raise FileExistsError(f"Immutable reference exists: {target}")
-    staging: Path | None = Path(
-        tempfile.mkdtemp(prefix=f".{build_id}.tmp-", dir=output_root)
-    )
-    os.chmod(staging, 0o700)
+    output_root_path, parent_fd = _open_output_root(output_root)
+    target_name = build_id
+    staging_name = f".{build_id}.tmp-{secrets.token_hex(16)}"
+    staging_fd: int | None = None
+    output_fds: dict[str, int] = {}
+    promoted = False
     try:
+        try:
+            os.stat(target_name, dir_fd=parent_fd, follow_symlinks=False)
+        except FileNotFoundError:
+            pass
+        else:
+            raise FileExistsError(
+                f"Immutable reference exists: {output_root_path / target_name}"
+            )
+        os.mkdir(staging_name, 0o700, dir_fd=parent_fd)
+        staging_fd = os.open(
+            staging_name,
+            os.O_RDONLY
+            | getattr(os, "O_DIRECTORY", 0)
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_CLOEXEC", 0),
+            dir_fd=parent_fd,
+        )
         frames = build_frames(
             sources,
             expected_query_count=expected_query_count,
@@ -950,11 +1478,12 @@ def build_reference(
         )
         outputs: dict[str, Any] = {}
         for filename in OUTPUT_FILES:
-            path = staging / filename
-            _write_parquet(path, frames[filename])
+            fd = _write_parquet_at(staging_fd, filename, frames[filename])
+            output_fds[filename] = fd
+            payload, _ = _capture_output_fd(fd)
             outputs[filename] = {
-                "sha256": file_sha256(path),
-                "size_bytes": path.stat().st_size,
+                "sha256": _sha256_bytes(payload),
+                "size_bytes": len(payload),
                 "row_count": len(frames[filename]),
                 "columns": OUTPUT_FILES[filename],
             }
@@ -972,28 +1501,90 @@ def build_reference(
                 "test_or_final_opened": False,
                 "model_retrained": False,
                 "reference_only": True,
+                "synthetic_fixture": synthetic_fixture,
             },
         }
-        _write_json(staging / "manifest.json", manifest)
-        parent_fd = os.open(output_root, os.O_RDONLY | getattr(os, "O_DIRECTORY", 0))
-        try:
-            os.fsync(parent_fd)
-            _promote_exclusive(staging, target)
-            os.fsync(parent_fd)
-        finally:
-            os.close(parent_fd)
-        staging = None
-        return target
+        output_fds["manifest.json"] = _write_json_at(
+            staging_fd, "manifest.json", manifest
+        )
+        _validate_staging(staging_fd, output_fds, manifest)
+        _full_fsync(parent_fd)
+        _promote_exclusive_at(
+            parent_fd,
+            staging_name,
+            target_name,
+            staging_fd=staging_fd,
+            output_fds=output_fds,
+            manifest=manifest,
+        )
+        promoted = True
+        _full_fsync(parent_fd)
+        return output_root_path / target_name
     finally:
-        if staging is not None and staging.exists():
-            if (
-                staging.parent != output_root
-                or not staging.name.startswith(f".{build_id}.tmp-")
-                or staging.is_symlink()
-                or not staging.is_dir()
-            ):
-                raise ReferenceBuildError("STOP_REFERENCE_STAGING_IDENTITY")
-            shutil.rmtree(staging)
+        for fd in output_fds.values():
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        if staging_fd is not None and not promoted:
+            try:
+                entries = os.listdir(staging_fd)
+            except OSError:
+                entries = []
+            if set(entries).issubset({*OUTPUT_FILES, "manifest.json"}):
+                for filename in entries:
+                    try:
+                        os.unlink(filename, dir_fd=staging_fd)
+                    except (FileNotFoundError, OSError):
+                        pass
+                try:
+                    os.close(staging_fd)
+                except OSError:
+                    pass
+                staging_fd = None
+                try:
+                    os.rmdir(staging_name, dir_fd=parent_fd)
+                except (FileNotFoundError, OSError):
+                    pass
+        if staging_fd is not None:
+            try:
+                os.close(staging_fd)
+            except OSError:
+                pass
+        os.close(parent_fd)
+
+
+def build_reference(
+    output_root: Path,
+) -> Path:
+    """Build the production reference from the nine pinned sources only."""
+    return _build_reference(
+        output_root,
+        sources=DEFAULT_SOURCES,
+        expected_query_count=EXPECTED_QUERY_COUNT,
+        expected_candidate_count=EXPECTED_CANDIDATE_COUNT,
+        reader=pd.read_parquet,
+        synthetic_fixture=False,
+    )
+
+
+def _build_synthetic_reference(
+    output_root: Path,
+    *,
+    sources: ReferenceSources,
+    expected_query_count: int,
+    expected_candidate_count: int,
+    reader: Any = pd.read_parquet,
+) -> Path:
+    """Test-only builder whose manifest can never masquerade as production."""
+    return _build_reference(
+        output_root,
+        sources=sources,
+        expected_query_count=expected_query_count,
+        expected_candidate_count=expected_candidate_count,
+        reader=reader,
+        synthetic_fixture=True,
+    )
 
 
 def main() -> int:

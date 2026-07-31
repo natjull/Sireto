@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import inspect
 import json
+import os
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
 
@@ -99,6 +102,8 @@ def _reference_sources(tmp_path: Path) -> subject.ReferenceSources:
             "acceptor_target": 1,
         }
         row.update({feature: 0.0 for feature in subject.SCENE_FEATURES})
+        row["candidate_count"] = 2.0
+        row["dev_partition"] = "threshold_dev"
         scene_rows.append(row)
     scenes = pd.DataFrame(scene_rows)
 
@@ -245,6 +250,18 @@ def _frames(
     )
 
 
+def _reader_for_loaded(
+    sources: subject.ReferenceSources,
+    loaded: dict[str, pd.DataFrame],
+):
+    names = iter(field.name for field in subject.fields(sources))
+
+    def reader(payload, *, columns: list[str]) -> pd.DataFrame:
+        return loaded[next(names)][columns].copy()
+
+    return reader
+
+
 def test_build_publishes_closed_label_free_reference_atomically(
     tmp_path: Path,
 ) -> None:
@@ -252,7 +269,7 @@ def test_build_publishes_closed_label_free_reference_atomically(
     output_root = tmp_path / "output"
     output_root.mkdir()
 
-    target = subject.build_reference(
+    target = subject._build_synthetic_reference(
         output_root,
         sources=sources,
         expected_query_count=3,
@@ -287,18 +304,119 @@ def test_build_publishes_closed_label_free_reference_atomically(
 
 def test_reader_receives_only_exact_safe_projections(tmp_path: Path) -> None:
     sources = _reference_sources(tmp_path)
-    calls: dict[Path, list[str]] = {}
+    source_fields = list(subject.fields(sources))
+    calls: list[list[str]] = []
+    call_index = 0
 
-    def spy(path: Path, *, columns: list[str]) -> pd.DataFrame:
-        calls[Path(path)] = columns
-        return pd.read_parquet(path, columns=columns)
+    def spy(payload, *, columns: list[str]) -> pd.DataFrame:
+        nonlocal call_index
+        calls.append(columns)
+        source = getattr(sources, source_fields[call_index].name)
+        call_index += 1
+        return pd.read_parquet(source.path, columns=columns)
 
     _frames(sources, reader=spy)
 
-    for field in subject.fields(sources):
-        source = getattr(sources, field.name)
-        assert calls[source.path] == subject.SOURCE_PROJECTIONS[field.name]
-        subject._validate_safe_columns(field.name, calls[source.path])
+    for index, field in enumerate(source_fields):
+        assert calls[index] == subject.SOURCE_PROJECTIONS[field.name]
+        subject._validate_safe_columns(field.name, calls[index])
+
+
+def test_production_api_has_no_source_or_reader_injection() -> None:
+    assert list(inspect.signature(subject.build_reference).parameters) == [
+        "output_root"
+    ]
+
+
+def test_projection_decodes_the_bytes_that_were_hashed(tmp_path: Path) -> None:
+    sources = _reference_sources(tmp_path)
+    source = sources.queries
+    original = pd.read_parquet(source.path, columns=subject.QUERY_COLUMNS)
+    replacement = original.copy()
+    replacement.loc[0, "crm_name"] = "SUBSTITUTED"
+    replacement_path = tmp_path / "replacement.parquet"
+    replacement.to_parquet(replacement_path, index=False)
+
+    def swap_after_capture(payload, *, columns: list[str]) -> pd.DataFrame:
+        source.path.unlink()
+        replacement_path.rename(source.path)
+        return pd.read_parquet(payload, columns=columns)
+
+    observed = subject.read_projection(
+        source,
+        subject.QUERY_COLUMNS,
+        reader=swap_after_capture,
+    )
+    assert observed.equals(original)
+    assert pd.read_parquet(source.path).loc[0, "crm_name"] == "SUBSTITUTED"
+
+
+@pytest.mark.parametrize("rank_value", [1.0, 1.25, True, "1"])
+def test_candidate_rank_requires_physical_integer_dtype(
+    tmp_path: Path, rank_value
+) -> None:
+    sources = _reference_sources(tmp_path)
+    loaded = {
+        field.name: pd.read_parquet(getattr(sources, field.name).path)
+        for field in subject.fields(sources)
+    }
+    loaded["candidates"]["retrieval_rank"] = rank_value
+    with pytest.raises(subject.ReferenceBuildError, match="CANDIDATE_RANK"):
+        _frames(sources, reader=_reader_for_loaded(sources, loaded))
+
+
+@pytest.mark.parametrize(
+    ("frame_name", "column", "stop"),
+    [
+        ("candidates", "name_jaro_max", "RANKER_FEATURES_FINITE"),
+        ("ranker", "ranker_score", "RANKER_SCORE_FINITE"),
+        ("scenes", "ranker_gap_fraction", "SCENE_FEATURES_FINITE"),
+        ("acceptor", "score", "ACCEPTOR_FINITE"),
+    ],
+)
+def test_non_finite_model_values_are_rejected(
+    tmp_path: Path, frame_name: str, column: str, stop: str
+) -> None:
+    sources = _reference_sources(tmp_path)
+    loaded = {
+        field.name: pd.read_parquet(getattr(sources, field.name).path)
+        for field in subject.fields(sources)
+    }
+    loaded[frame_name].loc[0, column] = np.nan
+    with pytest.raises(subject.ReferenceBuildError, match=stop):
+        _frames(sources, reader=_reader_for_loaded(sources, loaded))
+
+
+def test_non_top1_ranker_identity_drift_is_rejected(tmp_path: Path) -> None:
+    sources = _reference_sources(tmp_path)
+    loaded = {
+        field.name: pd.read_parquet(getattr(sources, field.name).path)
+        for field in subject.fields(sources)
+    }
+    row = loaded["ranker"]["ranker_rank"].eq(2)
+    loaded["ranker"].loc[row, "candidate_siren"] = "999999999"
+    with pytest.raises(subject.ReferenceBuildError, match="RANKER_IDENTITY"):
+        _frames(sources, reader=_reader_for_loaded(sources, loaded))
+
+
+def test_acceptor_decision_must_follow_frozen_score_threshold(
+    tmp_path: Path,
+) -> None:
+    sources = _reference_sources(tmp_path)
+    loaded = {
+        field.name: pd.read_parquet(getattr(sources, field.name).path)
+        for field in subject.fields(sources)
+    }
+    mask = (
+        loaded["acceptor"]["model_family"].eq(subject.COMPACT_LOGIT)
+        & loaded["acceptor"]["query_id"].eq("q1")
+    )
+    loaded["acceptor"].loc[mask, "decision"] = "AUTO_MATCH"
+    loaded["guard"].loc[
+        loaded["guard"]["query_id"].eq("q1"), "decision_v411"
+    ] = "AUTO_MATCH"
+    with pytest.raises(subject.ReferenceBuildError, match="ACCEPTOR_POLICY"):
+        _frames(sources, reader=_reader_for_loaded(sources, loaded))
 
 
 def test_hash_drift_fails_before_any_projection_read(tmp_path: Path) -> None:
@@ -330,7 +448,7 @@ def test_hash_drift_fails_before_any_projection_read(tmp_path: Path) -> None:
                 "candidate_siret",
                 ["99999999999999", *frames["ranker"]["candidate_siret"].iloc[1:]],
             ),
-            "CANDIDATE_PARITY",
+            "RANKER_IDENTITY",
         ),
         (
             lambda frames: frames["acceptor"].__setitem__(
@@ -343,7 +461,7 @@ def test_hash_drift_fails_before_any_projection_read(tmp_path: Path) -> None:
                 "predicted_siret",
                 ["99999999999999", *frames["scenes"]["predicted_siret"].iloc[1:]],
             ),
-            "PREDICTION_PARITY",
+            "SCENE_PREDICTION_IDENTITY",
         ),
         (
             lambda frames: frames["query_evidence"].__setitem__(
@@ -370,12 +488,10 @@ def test_contract_drift_is_fail_closed(
     }
     mutator(loaded)
 
-    def reader(path: Path, *, columns: list[str]) -> pd.DataFrame:
-        name = next(
-            field.name
-            for field in subject.fields(sources)
-            if getattr(sources, field.name).path == path
-        )
+    names = iter(field.name for field in subject.fields(sources))
+
+    def reader(payload, *, columns: list[str]) -> pd.DataFrame:
+        name = next(names)
         return loaded[name][columns].copy()
 
     with pytest.raises(subject.ReferenceBuildError, match=stop):
@@ -391,13 +507,14 @@ def test_pool_cap_and_contiguous_ranks_are_enforced(tmp_path: Path) -> None:
     loaded["candidates"].loc[
         loaded["candidates"]["query_id"].eq("q0"), "retrieval_rank"
     ] = [1, 3]
+    loaded["ranker"].loc[
+        loaded["ranker"]["query_id"].eq("q0"), "retrieval_rank"
+    ] = [1, 3]
 
-    def reader(path: Path, *, columns: list[str]) -> pd.DataFrame:
-        name = next(
-            field.name
-            for field in subject.fields(sources)
-            if getattr(sources, field.name).path == path
-        )
+    names = iter(field.name for field in subject.fields(sources))
+
+    def reader(payload, *, columns: list[str]) -> pd.DataFrame:
+        name = next(names)
         return loaded[name][columns].copy()
 
     with pytest.raises(subject.ReferenceBuildError, match="POOL_CAP_OR_RANKS"):
@@ -408,7 +525,7 @@ def test_immutable_rerun_preserves_first_publication(tmp_path: Path) -> None:
     sources = _reference_sources(tmp_path)
     output_root = tmp_path / "output"
     output_root.mkdir()
-    target = subject.build_reference(
+    target = subject._build_synthetic_reference(
         output_root,
         sources=sources,
         expected_query_count=3,
@@ -419,7 +536,7 @@ def test_immutable_rerun_preserves_first_publication(tmp_path: Path) -> None:
     }
 
     with pytest.raises(FileExistsError, match="Immutable reference exists"):
-        subject.build_reference(
+        subject._build_synthetic_reference(
             output_root,
             sources=sources,
             expected_query_count=3,
@@ -459,10 +576,44 @@ def test_symlink_output_root_is_rejected(tmp_path: Path) -> None:
     linked_output.symlink_to(real_output, target_is_directory=True)
 
     with pytest.raises(subject.ReferenceBuildError, match="OUTPUT_ROOT"):
-        subject.build_reference(
+        subject._build_synthetic_reference(
             linked_output,
             sources=sources,
             expected_query_count=3,
             expected_candidate_count=6,
         )
     assert not list(real_output.iterdir())
+
+
+def test_terminal_revalidation_rejects_post_manifest_mutation(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources = _reference_sources(tmp_path)
+    output_root = tmp_path / "output"
+    output_root.mkdir()
+    original = subject._promote_exclusive_at
+
+    def attack(parent_fd, staging_name, target_name, **kwargs):
+        staging_fd = kwargs["staging_fd"]
+        filename = "candidates_features.parquet"
+        os.chmod(filename, 0o600, dir_fd=staging_fd)
+        fd = os.open(filename, os.O_WRONLY, dir_fd=staging_fd)
+        try:
+            os.pwrite(fd, b"X", 0)
+        finally:
+            os.close(fd)
+        os.chmod(filename, 0o400, dir_fd=staging_fd)
+        return original(parent_fd, staging_name, target_name, **kwargs)
+
+    monkeypatch.setattr(subject, "_promote_exclusive_at", attack)
+    with pytest.raises(
+        subject.ReferenceBuildError,
+        match="OUTPUT_(DRIFT|HASH|IDENTITY)",
+    ):
+        subject._build_synthetic_reference(
+            output_root,
+            sources=sources,
+            expected_query_count=3,
+            expected_candidate_count=6,
+        )
+    assert not [path for path in output_root.iterdir() if not path.name.startswith(".")]
