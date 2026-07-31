@@ -2,6 +2,32 @@
 
 ## Etat des lieux
 
+### V4.12 — 60 REVIEW supplémentaires adjudiqués et cause des faux labels établie
+
+Deux lots supplémentaires de 30 REVIEW historiques ont été traités sans
+validation utilisateur : **56 `MATCH_EXACT` fiables, quatre `AMBIGUOUS`, zéro
+`UNRESOLVED`**. Le ranker avait déjà le bon SIRET en top 1 dans **51/56** cas
+exacts ; cinq erreurs relèvent réellement du classement. Au total, **53/60**
+qualifications V4.1 doivent être corrigées.
+
+L'audit de provenance écarte un bug de jointure dans V4.1 : le CRM y est relié
+par `crm_record_id`/`SERVICE ID` unique et les labels restent identiques dans
+V4.6 puis V4.11. La cause dominante est la politique V4
+`MULTIPLE_ACTIVE_DIRECT_MATCHES → AMBIGUOUS`, trop prudente : parmi les 50
+vérités exactes marquées ambiguës, 46 conservaient le bon SIRET historique et
+49 avaient la vérité dans les correspondances directes. L'ancien benchmark V6A
+avait séparément un vrai défaut d'identité positionnelle (`query_id` recréé
+après filtrage), ce qui explique les anciens SIRET totalement étrangers sans
+expliquer V4.1.
+
+Le prochain essai autorisé est la reconstruction locale des scènes hors
+échantillon avec l'overlay de ces 60 décisions, puis le réentraînement du
+ranker et de l'accepteur. Ces dossiers doivent être exclus du choix de seuil et
+de la comparaison classique ; le test final reste fermé.
+
+*(commits Git : premier lot `7866e34`/`0215151`, second lot
+`7edcc97`/`d3e14cd`; correction du diagnostic : commit du présent milestone)*
+
 ### V4.12-R30 — contrat de collecte gelé, réseau encore fermé
 
 Le goal North Star est réactivé après le gel du service V4.12. L'inventaire

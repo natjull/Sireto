@@ -35,15 +35,28 @@ En ajoutant le premier lot complémentaire :
 - cinq erreurs relèvent réellement du ranker ;
 - aucune absence générale du retrieval n'est mise en évidence.
 
-La contamination ne ressemble plus à quelques erreurs ponctuelles. Plusieurs
-anciens SIRET sont sans rapport avec le CRM par le nom, l'adresse et parfois le
-département. L'hypothèse prioritaire devient une ancienne jointure ou un
-réindexage décalé lors de la fabrication des vérités historiques.
+La contamination ne ressemble plus à quelques erreurs ponctuelles. L'audit de
+provenance distingue finalement deux causes qui ne doivent pas être confondues :
+
+- l'ancien benchmark V6A reconstruisait `query_id` à partir de la position des
+  lignes après filtrage ; ses SIRET devenus étrangers au CRM proviennent bien
+  d'identifiants positionnels instables ;
+- V4.1 ne présente pas ce bug de jointure : il relie le CRM par
+  `crm_record_id`/`SERVICE ID` unique. En revanche, sa qualification mécanique
+  transforme toute scène comportant plusieurs correspondances directes actives
+  en `AMBIGUOUS`, même lorsqu'une preuve métier permet d'identifier exactement
+  le SIRET.
+
+Sur les 56 vérités exactes du lot, 50 sont égales au SIRET CRM d'entrée et 51
+étaient déjà le top 1 du ranker. Parmi les 50 cas exacts que V4.1 avait marqués
+`AMBIGUOUS`, 46 conservaient en réalité le bon SIRET historique et 49 avaient
+la vérité exacte dans la liste des correspondances directes. Le défaut dominant
+est donc une politique de label trop prudente, non un défaut du retrieval.
 
 ## Suite
 
-Avant de relire mécaniquement tous les dossiers restants, il faut auditer la
-construction des labels historiques afin de déterminer si le décalage suit une
-règle reproductible. Si une erreur de jointure est retrouvée, elle permettra de
-corriger le corpus entier de manière traçable ; sinon l'adjudication dossier par
-dossier continue. Aucun réentraînement n'est autorisé avant ce diagnostic.
+Le diagnostic de provenance est désormais terminé. Les 56 labels exacts et les
+quatre ambiguïtés peuvent être utilisés comme overlay de développement. Le
+prochain essai autorisé est un réentraînement local hors échantillon du ranker
+et de l'accepteur avec ces corrections, en excluant ces 60 dossiers du choix de
+seuil et de la comparaison classique. Le test final reste fermé.
