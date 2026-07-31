@@ -341,6 +341,22 @@ traditionnel avec ACL fermée, et n'autorisera aucun fallback de graine en
 fichier. Ce pivot reste local, sans GPU, location ni dépense externe.
 *(rapport : `reports/v9/v4_12_fresh_s1_local_producer_v1_failure.md`)*.
 
+L'audit d'alignement North Star montre ensuite que V2 Keychain serait encore
+un détour : aucun exporteur, catalogue ou worker S1 métier ne consomme
+l'autorité, sept composants S1 restent `UNIMPLEMENTED`, et aucune collection
+CRM fraîche n'existe dans l'inbox. Le contrat minimal V4.13 retire donc la
+PKI locale du chemin scientifique sous le threat model « opérateur local
+coopératif ». Il conserve frame exhaustive, preuve SIRET indépendante,
+registres anti-chevauchement, séparation physique queries/oracle, splits
+SIREN-disjoints, plafond 100 et test one-shot. Son gate zéro exige avant tout
+nouveau code ML au moins 657 `MATCH_EXACT`, 80 % de couverture et zéro
+chevauchement ; sinon `WAITING_FOR_NEW_SOURCE` ou
+`PIVOT_SOURCE_EVIDENCE`. Les six tests du plan passent. Le ranker, le
+decider, le risk model et l'accepteur restent gelés. Deux audits de
+préenregistrement sont requis avant toute implémentation ou ouverture source.
+*(contrat : `docs/v4_13_fresh_labels_minimal_contract.md`; plan :
+`config/v4_13_fresh_labels_minimal_plan.json`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
