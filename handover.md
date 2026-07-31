@@ -2,6 +2,26 @@
 
 ## Etat des lieux
 
+### V4.12 — nettoyage de la cible accepteur : 47/143 AUTO difficiles OOF
+
+La cause aval est confirmée : 881 `AMBIGUOUS` mécaniques non adjudiquées
+étaient encore utilisées comme négatifs dans le fit de l'accepteur. Le candidat
+nettoyé conserve 4 666 `MATCH_EXACT` historiques et les 143 dossiers difficiles
+adjudiqués, mais retire ces 881 faux négatifs potentiels. Le modèle et les
+features restent inchangés.
+
+Le XGBoost monotone, poids difficile `10`, seuil figé
+`0.9940522313117981`, automatise **47/143** scènes difficiles OOF sans erreur
+ni ambiguïté, contre 3/143 auparavant. Après sélection, il automatise 8/30
+dossiers du lot désormais consommé, également sans erreur. Verdict
+`GO_NEXT_BLIND_DOCKET`, sans déploiement : les volumes sont insuffisants pour
+certifier 99,8 %.
+
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_acceptor_clean_target/ac50c1c8c00344b5`.
+
+*(commit Git : implémentation et rapport du présent milestone)*
+
 ### V4.12 — validation indépendante : accepteur à 0 % de couverture
 
 Un docket de 30 REVIEW jamais adjudiqués a été gelé par hash avant tout score
