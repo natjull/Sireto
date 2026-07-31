@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import hashlib
+import importlib.metadata
 from io import BytesIO
 import json
 import os
 from pathlib import Path
+import platform
 import stat
 from typing import Any, Mapping
 
@@ -27,7 +29,9 @@ from .v412_service import (
 from .v412_service_retrieval import V412RetrievalFeatureService
 from .v412_strict_stores import (
     StrictPartitionStore,
+    StrictPartitionError,
     StrictSnapshotLookup,
+    StrictTfidfError,
     StrictVerifiedTfidfCache,
 )
 from .v412_unit_retrieval import CACHE_NAMESPACE
@@ -93,7 +97,29 @@ EXPECTED_FILES = {
         TAXONOMY_PATH,
         "48bbb7e1795a0731f1f12df41aeb971667c10d03c879bf06d5ba15b65f8b121d",
     ),
+    "acceptor_source": (
+        Path(
+            "/Users/nathanjullia/Documents/Projets/SIRETO/"
+            "src/xgb_matcher/v411_acceptor.py"
+        ),
+        "a85833a78ab98121d3ccf4bc9e93b63cbd33c2e727b980bc456bff64424740b4",
+    ),
+    "scene_source": (
+        Path(
+            "/Users/nathanjullia/Documents/Projets/SIRETO/"
+            "src/xgb_matcher/v411_scene.py"
+        ),
+        "ce90f6a9402cd062e5afb1f5248085df551a87f2ac0b40657e7c57b8236086a1",
+    ),
+    "site_function_source": (
+        Path(
+            "/Users/nathanjullia/Documents/Projets/SIRETO/"
+            "src/xgb_matcher/v49_site_function.py"
+        ),
+        "8463086d2ce404e5c83140df8ea7351cfb363793edfa7e74db95fe202d9c54e2",
+    ),
 }
+_BUNDLE_ATTESTATION = object()
 
 
 def _fail(detail: str) -> None:
@@ -111,7 +137,36 @@ def _identity(metadata: os.stat_result) -> tuple[int, int, int, int, int, int]:
     )
 
 
+def _path_chain(path: Path) -> tuple[tuple[int, int, int], ...]:
+    absolute = Path(path)
+    if not absolute.is_absolute():
+        _fail(f"frozen path is not absolute: {path}")
+    identities: list[tuple[int, int, int]] = []
+    current = Path(absolute.anchor)
+    root = os.lstat(current)
+    if not stat.S_ISDIR(root.st_mode) or stat.S_ISLNK(root.st_mode):
+        _fail(f"invalid frozen path root: {path}")
+    identities.append((int(root.st_dev), int(root.st_ino), int(root.st_mode)))
+    for component in absolute.parts[1:]:
+        current = current / component
+        try:
+            metadata = os.lstat(current)
+        except OSError as exc:
+            _fail(f"cannot inspect frozen path {current}: errno={exc.errno}")
+        if stat.S_ISLNK(metadata.st_mode):
+            _fail(f"frozen path contains a symlink: {current}")
+        identities.append(
+            (
+                int(metadata.st_dev),
+                int(metadata.st_ino),
+                int(metadata.st_mode),
+            )
+        )
+    return tuple(identities)
+
+
 def _capture_exact(path: Path, expected_sha256: str) -> bytes:
+    chain_before = _path_chain(path)
     flags = os.O_RDONLY | getattr(os, "O_CLOEXEC", 0)
     if hasattr(os, "O_NOFOLLOW"):
         flags |= os.O_NOFOLLOW
@@ -138,6 +193,8 @@ def _capture_exact(path: Path, expected_sha256: str) -> bytes:
             _fail(f"frozen path disappeared: {path}: errno={exc.errno}")
         if _identity(current) != _identity(before):
             _fail(f"frozen path identity changed: {path}")
+        if _path_chain(path) != chain_before:
+            _fail(f"frozen path chain changed: {path}")
         return payload
     finally:
         os.close(descriptor)
@@ -282,6 +339,15 @@ def _validate_model_controls(payloads: Mapping[str, bytes]) -> None:
         ("scene", "taxonomy_sha256"): hashlib.sha256(
             payloads["taxonomy"]
         ).hexdigest(),
+        ("acceptor", "source_sha256"): hashlib.sha256(
+            payloads["acceptor_source"]
+        ).hexdigest(),
+        ("scene", "source_sha256"): hashlib.sha256(
+            payloads["scene_source"]
+        ).hexdigest(),
+        ("scene", "site_function_source_sha256"): hashlib.sha256(
+            payloads["site_function_source"]
+        ).hexdigest(),
     }
     for (component, field), expected in expected_component_hashes.items():
         value = components.get(component)
@@ -302,21 +368,119 @@ def _validate_model_controls(payloads: Mapping[str, bytes]) -> None:
         _fail("acceptor metadata changed")
 
 
-@dataclass
+def _validate_runtime(
+    certification: Mapping[str, Any],
+    ranker_manifest: Mapping[str, Any],
+) -> None:
+    expected = {
+        "python": platform.python_version(),
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "numpy": importlib.metadata.version("numpy"),
+        "pandas": importlib.metadata.version("pandas"),
+        "pyarrow": importlib.metadata.version("pyarrow"),
+        "scikit_learn": importlib.metadata.version("scikit-learn"),
+        "duckdb": importlib.metadata.version("duckdb"),
+        "joblib": importlib.metadata.version("joblib"),
+        "scipy": importlib.metadata.version("scipy"),
+    }
+    if certification.get("runtime") != expected:
+        _fail("strict-store runtime changed")
+    ranker_runtime = ranker_manifest.get("runtime")
+    if type(ranker_runtime) is not dict:
+        _fail("ranker runtime missing")
+    dependencies = ranker_runtime.get("dependencies")
+    expected_dependencies = {
+        "numpy": expected["numpy"],
+        "pandas": expected["pandas"],
+        "pyarrow": expected["pyarrow"],
+        "scikit-learn": expected["scikit_learn"],
+        "xgboost": importlib.metadata.version("xgboost"),
+    }
+    if (
+        ranker_runtime.get("python") != expected["python"]
+        or ranker_runtime.get("platform") != expected["platform"]
+        or ranker_runtime.get("machine") != expected["machine"]
+        or dependencies != expected_dependencies
+    ):
+        _fail("Ranker C runtime changed")
+
+
+class ObservedPartitionStore:
+    """Expose strict-store misses as measured service telemetry."""
+
+    def __init__(self, inner: StrictPartitionStore) -> None:
+        self._inner = inner
+        self.sealed_key_miss_count = 0
+
+    @property
+    def partition_keys(self):
+        return self._inner.partition_keys
+
+    def load(self, partition_key):
+        try:
+            return self._inner.load(partition_key)
+        except StrictPartitionError as exc:
+            if "not in the frozen subset" in str(exc):
+                self.sealed_key_miss_count += 1
+            raise
+
+    def load_with_status(self, partition_key):
+        try:
+            return self._inner.load_with_status(partition_key)
+        except StrictPartitionError as exc:
+            if "not in the frozen subset" in str(exc):
+                self.sealed_key_miss_count += 1
+            raise
+
+    def release(self, partition_key):
+        return self._inner.release(partition_key)
+
+
+class ObservedTfidfCache:
+    """Measure sealed misses; rebuild/write are structurally unavailable."""
+
+    rebuild_api_absent = True
+    write_api_absent = True
+
+    def __init__(self, inner: StrictVerifiedTfidfCache) -> None:
+        self._inner = inner
+        self.sealed_key_miss_count = 0
+        self.cache_rebuild_count = 0
+        self.cache_write_count = 0
+
+    @property
+    def partition_keys(self):
+        return self._inner.partition_keys
+
+    def get(self, partition_key, aligned_pool):
+        try:
+            return self._inner.get(partition_key, aligned_pool)
+        except StrictTfidfError as exc:
+            if "cache miss" in str(exc):
+                self.sealed_key_miss_count += 1
+            raise
+
+    def release(self, partition_key):
+        return self._inner.release(partition_key)
+
+
+@dataclass(frozen=True)
 class FrozenV412ServiceBundle:
-    partition_store: StrictPartitionStore
-    tfidf_cache: StrictVerifiedTfidfCache
+    partition_store: ObservedPartitionStore
+    tfidf_cache: ObservedTfidfCache
     lookup: StrictSnapshotLookup
     retrieval: V412RetrievalFeatureService
     downstream: V412DownstreamService
     evidence: V412DirectEvidenceService | None
     asset_hashes: dict[str, str]
+    _attestation: object
     _closed: bool = False
 
     def close(self) -> None:
         if not self._closed:
             self.lookup.close()
-            self._closed = True
+            object.__setattr__(self, "_closed", True)
 
     def __enter__(self) -> "FrozenV412ServiceBundle":
         if self._closed:
@@ -327,6 +491,24 @@ class FrozenV412ServiceBundle:
         self.close()
 
 
+def validate_frozen_v412_service_bundle(
+    bundle: FrozenV412ServiceBundle,
+) -> None:
+    if (
+        type(bundle) is not FrozenV412ServiceBundle
+        or bundle._attestation is not _BUNDLE_ATTESTATION
+        or bundle._closed
+        or bundle.retrieval.partition_store is not bundle.partition_store
+        or bundle.retrieval.tfidf_cache is not bundle.tfidf_cache
+        or bundle.retrieval.lookup is not bundle.lookup
+        or (
+            bundle.evidence is not None
+            and bundle.evidence.partition_store is not bundle.partition_store
+        )
+    ):
+        _fail("unattested or mutated service bundle")
+
+
 def load_frozen_v412_service_bundle(
     *,
     include_evidence: bool,
@@ -335,8 +517,12 @@ def load_frozen_v412_service_bundle(
     if type(include_evidence) is not bool:
         _fail("include_evidence must be boolean")
     payloads = _capture_bundle_files()
-    _, run_spec, descriptor = _validate_control_files(payloads)
+    certification, run_spec, descriptor = _validate_control_files(payloads)
     _validate_model_controls(payloads)
+    _validate_runtime(
+        certification,
+        _json_object(payloads["ranker_manifest"], "ranker manifest"),
+    )
     allowed = run_spec.get("allowed_read_files")
     partition_records = run_spec.get("partition_records")
     cache_records = run_spec.get("cache_records")
@@ -346,16 +532,20 @@ def load_frozen_v412_service_bundle(
     ):
         _fail("strict store records missing")
 
-    partition_store = StrictPartitionStore(
-        partition_records,
-        allowed,
-        max_cache_entries=5,
+    partition_store = ObservedPartitionStore(
+        StrictPartitionStore(
+            partition_records,
+            allowed,
+            max_cache_entries=5,
+        )
     )
-    tfidf_cache = StrictVerifiedTfidfCache(
-        cache_records,
-        allowed,
-        namespace=CACHE_NAMESPACE,
-        max_cache_entries=20,
+    tfidf_cache = ObservedTfidfCache(
+        StrictVerifiedTfidfCache(
+            cache_records,
+            allowed,
+            namespace=CACHE_NAMESPACE,
+            max_cache_entries=20,
+        )
     )
     if partition_store.partition_keys != tfidf_cache.partition_keys:
         _fail("strict partition and TF-IDF keysets differ")
@@ -386,7 +576,7 @@ def load_frozen_v412_service_bundle(
             if include_evidence
             else None
         )
-        return FrozenV412ServiceBundle(
+        bundle = FrozenV412ServiceBundle(
             partition_store=partition_store,
             tfidf_cache=tfidf_cache,
             lookup=lookup,
@@ -397,7 +587,10 @@ def load_frozen_v412_service_bundle(
                 role: hashlib.sha256(payload).hexdigest()
                 for role, payload in payloads.items()
             },
+            _attestation=_BUNDLE_ATTESTATION,
         )
+        validate_frozen_v412_service_bundle(bundle)
+        return bundle
     except BaseException:
         lookup.close()
         raise
@@ -406,4 +599,5 @@ def load_frozen_v412_service_bundle(
 __all__ = [
     "FrozenV412ServiceBundle",
     "load_frozen_v412_service_bundle",
+    "validate_frozen_v412_service_bundle",
 ]

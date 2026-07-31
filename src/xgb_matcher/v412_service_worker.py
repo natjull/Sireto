@@ -8,7 +8,10 @@ from typing import Any, Literal, Mapping
 
 from .v412_evidence_service import EvidenceResult
 from .v412_service import ServiceTrace, V411Trace
-from .v412_service_bundle import FrozenV412ServiceBundle
+from .v412_service_bundle import (
+    FrozenV412ServiceBundle,
+    validate_frozen_v412_service_bundle,
+)
 from .v412_service_retrieval import RetrievalFeatureResult
 
 
@@ -55,6 +58,7 @@ class PersistentV412Worker:
         bundle: FrozenV412ServiceBundle,
         mode: WorkerMode,
     ) -> None:
+        validate_frozen_v412_service_bundle(bundle)
         if mode not in {"v411", "v412g"}:
             raise ValueError(
                 "STOP_V412_SERVICE_INTEGRITY: invalid worker mode"
@@ -72,11 +76,9 @@ class PersistentV412Worker:
         self.query_count = 0
         self.lookup_missing_count = 0
         self.maximum_candidate_count = 0
-        self.sealed_key_miss_count = 0
-        self.cache_rebuild_count = 0
-        self.cache_write_count = 0
 
     def process(self, query: Mapping[str, Any]) -> WorkerResult:
+        validate_frozen_v412_service_bundle(self.bundle)
         wall_started = time.perf_counter_ns()
         retrieval = self.bundle.retrieval.build(query)
         self.lookup_missing_count += retrieval.lookup_missing_count
@@ -136,15 +138,54 @@ class PersistentV412Worker:
             ),
         )
 
-    def counters(self) -> dict[str, int]:
+    def counters(self) -> dict[str, int | bool]:
+        evidence = self.bundle.evidence
+        sealed_misses = (
+            self.bundle.partition_store.sealed_key_miss_count
+            + self.bundle.tfidf_cache.sealed_key_miss_count
+        )
         return {
             "query_count": self.query_count,
             "lookup_missing_count": self.lookup_missing_count,
             "maximum_candidate_count": self.maximum_candidate_count,
-            "sealed_key_miss_count": self.sealed_key_miss_count,
-            "cache_rebuild_count": self.cache_rebuild_count,
-            "cache_write_count": self.cache_write_count,
+            "sealed_key_miss_count": sealed_misses,
+            "cache_rebuild_count": (
+                self.bundle.tfidf_cache.cache_rebuild_count
+            ),
+            "cache_write_count": (
+                self.bundle.tfidf_cache.cache_write_count
+            ),
+            "cache_rebuild_api_absent": (
+                self.bundle.tfidf_cache.rebuild_api_absent
+            ),
+            "cache_write_api_absent": (
+                self.bundle.tfidf_cache.write_api_absent
+            ),
+            "evidence_cache_hit_count": (
+                evidence.cache_hit_count if evidence is not None else 0
+            ),
+            "evidence_cache_miss_count": (
+                evidence.cache_miss_count if evidence is not None else 0
+            ),
+            "evidence_cache_eviction_count": (
+                evidence.cache_eviction_count if evidence is not None else 0
+            ),
         }
+
+    def reset_counters(self) -> None:
+        """Exclude warm-up requests without clearing persistent caches."""
+        self.query_count = 0
+        self.lookup_missing_count = 0
+        self.maximum_candidate_count = 0
+        self.bundle.partition_store.sealed_key_miss_count = 0
+        self.bundle.tfidf_cache.sealed_key_miss_count = 0
+        self.bundle.tfidf_cache.cache_rebuild_count = 0
+        self.bundle.tfidf_cache.cache_write_count = 0
+        evidence = self.bundle.evidence
+        if evidence is not None:
+            evidence.cache_hit_count = 0
+            evidence.cache_miss_count = 0
+            evidence.cache_eviction_count = 0
 
 
 __all__ = [

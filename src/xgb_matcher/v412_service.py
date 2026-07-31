@@ -8,7 +8,7 @@ V4.12-G veto.  It performs no file, network, model-training or label I/O.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 import math
@@ -148,6 +148,11 @@ class V411Trace:
     scene: dict[str, Any]
     ranker_ns: int
     scene_acceptor_ns: int
+    _origin_token: object | None = field(
+        default=None,
+        repr=False,
+        compare=False,
+    )
 
 
 def _require_label_blind(fields: Sequence[str], *, label: str) -> None:
@@ -275,6 +280,7 @@ class V412DownstreamService:
         self.ranker_feature_order = tuple(ranker_feature_order)
         self.threshold = threshold
         self.scene_builder = scene_builder
+        self._trace_origin_token = object()
 
     def rank_and_accept_one(
         self,
@@ -345,6 +351,9 @@ class V412DownstreamService:
         if (
             probabilities.shape != (1, 2)
             or not np.isfinite(probabilities).all()
+            or (probabilities < 0.0).any()
+            or (probabilities > 1.0).any()
+            or abs(float(probabilities[0].sum()) - 1.0) > 1e-12
         ):
             raise ValueError(
                 "STOP_V412_SERVICE_INTEGRITY: invalid acceptor score"
@@ -398,7 +407,78 @@ class V412DownstreamService:
             scene=scene,
             ranker_ns=ranker_ns,
             scene_acceptor_ns=scene_acceptor_ns,
+            _origin_token=self._trace_origin_token,
         )
+
+    def _validate_v411_trace(self, trace: V411Trace) -> None:
+        if (
+            not isinstance(trace, V411Trace)
+            or trace._origin_token is not self._trace_origin_token
+            or trace.threshold != self.threshold
+            or not math.isfinite(trace.acceptor_score)
+            or not 0.0 <= trace.acceptor_score <= 1.0
+            or not trace.query_id
+            or type(trace.ranker_ns) is not int
+            or trace.ranker_ns < 0
+            or type(trace.scene_acceptor_ns) is not int
+            or trace.scene_acceptor_ns < 0
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid V4.11 trace provenance"
+            )
+        predicted_siret = trace.predicted_siret
+        predicted_siren = trace.predicted_siren
+        if (
+            (predicted_siret is not None and _SIRET.fullmatch(predicted_siret) is None)
+            or (predicted_siren is not None and _SIREN.fullmatch(predicted_siren) is None)
+            or (
+                predicted_siret is not None
+                and predicted_siret[:9] != predicted_siren
+            )
+            or trace.scene.get("predicted_siret") != predicted_siret
+            or trace.scene.get("predicted_siren") != predicted_siren
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid V4.11 trace identity"
+            )
+        expected_decision = (
+            "AUTO_MATCH"
+            if predicted_siret is not None
+            and trace.acceptor_score >= self.threshold
+            else "REVIEW"
+        )
+        expected_reason = (
+            None
+            if expected_decision == "AUTO_MATCH"
+            else (
+                "NO_CANDIDATE"
+                if len(trace.scored_candidates) == 0
+                else "LOW_CONFIDENCE"
+            )
+        )
+        if (
+            trace.decision_v411 != expected_decision
+            or trace.review_reason_v411 != expected_reason
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid V4.11 trace decision"
+            )
+        required = {"ranker_score", "ranker_rank"}
+        if not required.issubset(trace.scored_candidates.columns):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid scored trace schema"
+            )
+        scores = trace.scored_candidates["ranker_score"].to_numpy(
+            dtype=np.float32
+        )
+        ranks = trace.scored_candidates["ranker_rank"].astype(int).tolist()
+        if (
+            not np.isfinite(scores).all()
+            or ranks != list(range(1, len(ranks) + 1))
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid scored trace values"
+            )
 
     def apply_guard_to_trace(
         self,
@@ -406,6 +486,7 @@ class V412DownstreamService:
         trace: V411Trace,
         direct_evidence: Mapping[str, Any],
     ) -> ServiceTrace:
+        self._validate_v411_trace(trace)
         _validate_direct_evidence(trace.query_id, direct_evidence)
         guard_started = time.perf_counter_ns()
         sole = direct_evidence.get("sole_direct_siret")

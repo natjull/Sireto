@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import replace
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -126,6 +128,42 @@ def test_v411_stage_can_run_without_loading_or_applying_evidence() -> None:
     )
     assert guarded.decision_v411 == "AUTO_MATCH"
     assert guarded.decision_v412 == "REVIEW"
+
+
+def test_guard_rejects_forged_or_mutated_v411_trace() -> None:
+    engine = _engine()
+    trace = engine.rank_and_accept_one(
+        query={"query_id": "q1"},
+        candidates=_candidates(),
+    )
+    with pytest.raises(ValueError, match="trace provenance"):
+        engine.apply_guard_to_trace(
+            trace=replace(trace, acceptor_score=-99.0),
+            direct_evidence=_evidence(0, None),
+        )
+    with pytest.raises(ValueError, match="trace decision"):
+        engine.apply_guard_to_trace(
+            trace=replace(
+                trace,
+                decision_v411="REVIEW",
+                review_reason_v411="LOW_CONFIDENCE",
+            ),
+            direct_evidence=_evidence(0, None),
+        )
+
+
+def test_acceptor_probabilities_must_be_in_probability_domain() -> None:
+    class InvalidAcceptor:
+        def predict_proba(self, matrix):
+            return np.asarray([[-1.0, 2.0]], dtype=np.float64)
+
+    engine = _engine()
+    engine.acceptor = InvalidAcceptor()
+    with pytest.raises(ValueError, match="invalid acceptor score"):
+        engine.rank_and_accept_one(
+            query={"query_id": "q1"},
+            candidates=_candidates(),
+        )
 
 
 def test_low_acceptor_score_cannot_be_upgraded_by_guard() -> None:

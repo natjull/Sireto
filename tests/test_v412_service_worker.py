@@ -5,6 +5,8 @@ from types import SimpleNamespace
 import pandas as pd
 import pytest
 
+from src.xgb_matcher.v411_scene import V411_ACCEPTOR_FEATURE_NAMES
+from src.xgb_matcher.v412_service import RANKER_C_FEATURE_ORDER
 from src.xgb_matcher.v412_evidence_service import (
     EvidenceResult,
     EvidenceTimings,
@@ -15,16 +17,32 @@ from src.xgb_matcher.v412_service import (
     V411Trace,
 )
 from src.xgb_matcher.v412_service_retrieval import (
+    OUTPUT_COLUMNS,
+    ROLE_COLUMNS,
     RetrievalFeatureResult,
     RetrievalFeatureTimings,
 )
 from src.xgb_matcher.v412_service_worker import PersistentV412Worker
+from src.xgb_matcher import v412_service_worker as worker_module
 
 
 class _Retrieval:
     def build(self, query):
+        siret = "12345678900001"
+        row = {
+            "query_id": query["query_id"],
+            "candidate_siret": siret,
+            "candidate_siren": siret[:9],
+            "candidate_state": "A",
+            "retrieval_rank": 1,
+            "retrieval_source": "sparse_name",
+            "retrieval_channel_count": 1,
+            "retrieval_agreement": 0,
+            **{name: None for name in ROLE_COLUMNS},
+            **{name: 0.0 for name in RANKER_C_FEATURE_ORDER},
+        }
         return RetrievalFeatureResult(
-            candidates=pd.DataFrame({"query_id": [query["query_id"]]}),
+            candidates=pd.DataFrame([row], columns=OUTPUT_COLUMNS),
             partition_key="75056_",
             raw_pool_count=1,
             aligned_pool_count=1,
@@ -46,8 +64,15 @@ class _Evidence:
         return EvidenceResult(
             query={
                 "query_id": query["query_id"],
+                "partition_key": "insee:75056",
+                "active_universe_count": 0,
                 "direct_candidate_count": 0,
+                "direct_siren_count": 0,
                 "sole_direct_siret": None,
+                "sole_direct_siren": None,
+                "cross_siren_direct_collision": False,
+                "same_siren_direct_multisite": False,
+                "evidence_refs_json": "[]",
             },
             candidates=(),
             timings=EvidenceTimings(
@@ -59,6 +84,9 @@ class _Evidence:
 
 class _Downstream:
     def rank_and_accept_one(self, *, query, candidates):
+        scored = candidates.copy()
+        scored["ranker_score"] = 0.0
+        scored["ranker_rank"] = 1
         return V411Trace(
             query_id=query["query_id"],
             predicted_siret=None,
@@ -67,8 +95,11 @@ class _Downstream:
             threshold=0.8,
             decision_v411="REVIEW",
             review_reason_v411="NO_CANDIDATE",
-            scored_candidates=candidates,
-            scene={},
+            scored_candidates=scored,
+            scene={
+                name: 0.0
+                for name in V411_ACCEPTOR_FEATURE_NAMES
+            },
             ranker_ns=50,
             scene_acceptor_ns=60,
         )
@@ -99,6 +130,24 @@ def _bundle(*, evidence):
         retrieval=_Retrieval(),
         downstream=_Downstream(),
         evidence=evidence,
+        asset_hashes={"fixture": "0" * 64},
+        partition_store=SimpleNamespace(sealed_key_miss_count=0),
+        tfidf_cache=SimpleNamespace(
+            sealed_key_miss_count=0,
+            cache_rebuild_count=0,
+            cache_write_count=0,
+            rebuild_api_absent=True,
+            write_api_absent=True,
+        ),
+    )
+
+
+@pytest.fixture(autouse=True)
+def _allow_explicit_test_bundle(monkeypatch):
+    monkeypatch.setattr(
+        worker_module,
+        "validate_frozen_v412_service_bundle",
+        lambda bundle: None,
     )
 
 
@@ -119,6 +168,11 @@ def test_v411_worker_never_loads_or_calls_evidence() -> None:
         "sealed_key_miss_count": 0,
         "cache_rebuild_count": 0,
         "cache_write_count": 0,
+        "cache_rebuild_api_absent": True,
+        "cache_write_api_absent": True,
+        "evidence_cache_hit_count": 0,
+        "evidence_cache_miss_count": 0,
+        "evidence_cache_eviction_count": 0,
     }
 
 

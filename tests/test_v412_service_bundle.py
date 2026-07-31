@@ -12,8 +12,11 @@ from src.xgb_matcher.v411_scene import V411_ACCEPTOR_FEATURE_NAMES
 from src.xgb_matcher.v412_service_bundle import (
     _capture_bundle_files,
     _capture_exact,
+    _json_object,
     _validate_model_controls,
+    _validate_runtime,
     load_frozen_v412_service_bundle,
+    validate_frozen_v412_service_bundle,
 )
 
 
@@ -34,8 +37,17 @@ def test_capture_exact_rejects_hash_and_symlink(tmp_path: Path) -> None:
 
     link = tmp_path / "link.json"
     link.symlink_to(target)
-    with pytest.raises(ValueError, match="cannot open"):
+    with pytest.raises(ValueError, match="contains a symlink"):
         _capture_exact(link, digest)
+
+    real_parent = tmp_path / "real"
+    real_parent.mkdir()
+    nested = real_parent / "nested.json"
+    nested.write_bytes(b"{}")
+    linked_parent = tmp_path / "linked"
+    linked_parent.symlink_to(real_parent, target_is_directory=True)
+    with pytest.raises(ValueError, match="contains a symlink"):
+        _capture_exact(linked_parent / "nested.json", digest)
 
 
 def test_model_control_mutation_is_fail_closed() -> None:
@@ -51,6 +63,20 @@ def test_model_control_mutation_is_fail_closed() -> None:
 
     with pytest.raises(ValueError, match="acceptor metadata changed"):
         _validate_model_controls(payloads)
+
+
+def test_runtime_and_bundle_attestation_are_fail_closed() -> None:
+    payloads = _capture_bundle_files()
+    certification = _json_object(
+        payloads["certification_manifest"],
+        "certification",
+    )
+    ranker = _json_object(payloads["ranker_manifest"], "ranker")
+    certification["runtime"]["numpy"] = "0.0.0"
+    with pytest.raises(ValueError, match="runtime changed"):
+        _validate_runtime(certification, ranker)
+    with pytest.raises(ValueError, match="unattested"):
+        validate_frozen_v412_service_bundle(object())
 
 
 def test_real_frozen_bundle_reproduces_all_downstream_stages() -> None:
