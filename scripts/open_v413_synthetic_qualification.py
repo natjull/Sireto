@@ -19,7 +19,7 @@ import os
 import stat
 import tempfile
 from pathlib import Path
-from typing import Any, Callable, Mapping, Sequence
+from typing import Any, Mapping, Sequence
 
 try:
     from scripts import audit_v413_fresh_source_availability as gate0a
@@ -53,9 +53,6 @@ MARKER_FILENAME = "payload_opening.json"
 RECEIPT_FILENAME = "qualification_receipt.json"
 MARKER_SCHEMA = "sireto-v4.13-payload-opening-synthetic-1"
 RECEIPT_SCHEMA = "sireto-v4.13-qualification-receipt-synthetic-1"
-
-CrashHook = Callable[[str], None]
-
 
 class Gate0BStop(RuntimeError):
     """Fail-closed synthetic Gate 0B error."""
@@ -414,10 +411,10 @@ def _paths_overlap(left: Path, right: Path) -> bool:
 
 
 def _read_written_artifacts(
-    output_root: Path,
+    raw_by_name: Mapping[str, bytes],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
-    query_raw = (output_root / "queries/queries.csv").read_bytes()
-    oracle_raw = (output_root / "oracle/oracle.csv").read_bytes()
+    query_raw = raw_by_name["queries"]
+    oracle_raw = raw_by_name["oracle"]
     queries = _csv_rows(query_raw, [
         "query_id", "reference_date", "crm_name_raw", "crm_address_raw",
         "crm_postcode_raw", "crm_city_raw", "crm_insee_raw",
@@ -440,9 +437,7 @@ def _read_written_artifacts(
             _stop("WRITTEN_ORACLE_ENCODING")
         oracle.append(decoded)
     split_rows: list[dict[str, Any]] = []
-    for line in (
-        output_root / "audit/private_split_rows.jsonl"
-    ).read_text(encoding="utf-8").splitlines():
+    for line in raw_by_name["private_split_rows"].decode("utf-8").splitlines():
         value = json.loads(line)
         if not isinstance(value, dict):
             _stop("WRITTEN_SPLIT_ROW")
@@ -455,28 +450,71 @@ def _validate_final_outputs(
     *,
     expected_counts: Mapping[str, Any],
     expected_contamination: Mapping[str, Any],
-) -> None:
-    queries, oracle, split_rows = _read_written_artifacts(output_root)
-    validate_artifacts(queries, oracle)
-    audit = json.loads(
-        (output_root / "audit/qualification.json").read_text(encoding="utf-8")
-    )
-    if audit.get("counts") != expected_counts:
-        _stop("FINAL_AUDIT_COUNTS")
-    contamination = json.loads(
-        (output_root / "audit/contamination.json").read_text(encoding="utf-8")
-    )
-    if contamination != expected_contamination:
-        _stop("FINAL_CONTAMINATION")
-    expected_splits = build_manifests(split_rows)
-    for split, expected in expected_splits.items():
-        observed = json.loads(
-            (
-                output_root / f"splits/{split}/split_manifest.json"
-            ).read_text(encoding="utf-8")
-        )
-        if observed != expected:
-            _stop(f"FINAL_SPLIT_{split.upper()}")
+    expected_uid: int,
+) -> tuple[dict[str, str], list[tuple[int, tuple[int, ...]]]]:
+    relative = {
+        "queries": Path("queries/queries.csv"),
+        "oracle": Path("oracle/oracle.csv"),
+        "audit": Path("audit/qualification.json"),
+        "contamination": Path("audit/contamination.json"),
+        "private_split_rows": Path("audit/private_split_rows.jsonl"),
+        "split_fit": Path("splits/fit/split_manifest.json"),
+        "split_dev": Path("splits/dev/split_manifest.json"),
+        "split_test": Path("splits/test/split_manifest.json"),
+    }
+    raw_by_name: dict[str, bytes] = {}
+    retained: list[tuple[int, tuple[int, ...]]] = []
+    try:
+        for name, suffix in relative.items():
+            fd = os.open(
+                output_root / suffix,
+                os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC,
+            )
+            retained_here = False
+            try:
+                metadata = os.fstat(fd)
+                gate0a._regular_metadata(
+                    metadata, expected_uid, f"FINAL_{name.upper()}"
+                )
+                retained.append((fd, _identity(metadata)))
+                retained_here = True
+                raw_by_name[name] = _read_fd(fd)
+            except Exception:
+                if not retained_here:
+                    os.close(fd)
+                raise
+    except Exception:
+        for fd, _ in retained:
+            os.close(fd)
+        raise
+    try:
+        queries, oracle, split_rows = _read_written_artifacts(raw_by_name)
+        validate_artifacts(queries, oracle)
+        audit = json.loads(raw_by_name["audit"])
+        expected_audit = {
+            "schema_version": "sireto-v4.13-synthetic-qualification-audit-1",
+            "synthetic_fixtures_only": True,
+            "counts": dict(expected_counts),
+        }
+        if audit != expected_audit:
+            _stop("FINAL_AUDIT_COUNTS")
+        contamination = json.loads(raw_by_name["contamination"])
+        if contamination != expected_contamination:
+            _stop("FINAL_CONTAMINATION")
+        expected_splits = build_manifests(split_rows)
+        for split, expected in expected_splits.items():
+            observed = json.loads(raw_by_name[f"split_{split}"])
+            if observed != expected:
+                _stop(f"FINAL_SPLIT_{split.upper()}")
+        hashes = {
+            name: hashlib.sha256(raw).hexdigest()
+            for name, raw in raw_by_name.items()
+        }
+        return hashes, retained
+    except Exception:
+        for fd, _ in retained:
+            os.close(fd)
+        raise
 
 
 def open_synthetic_qualification(
@@ -488,7 +526,7 @@ def open_synthetic_qualification(
     contamination_keysets: Mapping[str, set[str]],
     synthetic_hmac_key: bytes,
     synthetic_only: bool,
-    crash_hook: CrashHook | None = None,
+    crash_stage: str | None = None,
     repository: Path = gate0a.REPOSITORY,
     plan_path: Path | None = None,
     lock_path: Path | None = None,
@@ -507,9 +545,8 @@ def open_synthetic_qualification(
     ):
         if _paths_overlap(left, right):
             _stop("ROOTS_NOT_PAIRWISE_DISJOINT")
-    hook = crash_hook or (lambda _stage: None)
-    if not callable(hook):
-        _stop("CRASH_HOOK")
+    if crash_stage not in {None, "after_marker"}:
+        _stop("CRASH_STAGE")
 
     bundle = gate0a._validate_bundle(
         repository,
@@ -519,6 +556,7 @@ def open_synthetic_qualification(
     expected_uid = bundle.lock["uid"]
     control_fd = gate0a._open_directory(control_root, expected_uid, "CONTROL_ROOT")
     retained_payload_fds: list[tuple[int, tuple[int, ...]]] = []
+    retained_output_fds: list[tuple[int, tuple[int, ...]]] = []
     try:
         fcntl.flock(control_fd, fcntl.LOCK_EX)
         receipt = _read_receipt(control_fd)
@@ -637,7 +675,8 @@ def open_synthetic_qualification(
                     control_fd, MARKER_FILENAME, marker_raw
                 ):
                     _stop("PAYLOAD_MARKER_EXISTS")
-                hook("after_marker")
+                if crash_stage == "after_marker":
+                    raise Gate0BStop("SYNTHETIC_CRASH_AFTER_MARKER")
 
                 if manifest["crm_format"] != "CSV" or manifest["mapping_format"] != "CSV":
                     _stop("SYNTHETIC_GATE_0B_CSV_ONLY")
@@ -695,8 +734,15 @@ def open_synthetic_qualification(
         contamination_path = output_root / "audit/contamination.json"
         contamination_path.write_bytes(_canonical_json(contamination))
         contamination_path.chmod(0o600)
+        preseal_raw = {
+            "queries": (output_root / "queries/queries.csv").read_bytes(),
+            "oracle": (output_root / "oracle/oracle.csv").read_bytes(),
+            "private_split_rows": (
+                output_root / "audit/private_split_rows.jsonl"
+            ).read_bytes(),
+        }
         queries_written, oracle_written, split_rows_written = (
-            _read_written_artifacts(output_root)
+            _read_written_artifacts(preseal_raw)
         )
         validate_artifacts(queries_written, oracle_written)
         seal_manifests(split_rows_written, output_root / "splits")
@@ -717,14 +763,44 @@ def open_synthetic_qualification(
                 os.close(collection_fd)
         finally:
             os.close(inbox_fd)
-        for payload_fd, expected_identity in retained_payload_fds:
-            if _identity(os.fstat(payload_fd)) != expected_identity:
-                _stop("PAYLOAD_CHANGED_BEFORE_RECEIPT")
-        _validate_final_outputs(
+        final_output_hashes, retained_output_fds = _validate_final_outputs(
             output_root,
             expected_counts=result["counts"],
             expected_contamination=contamination,
+            expected_uid=expected_uid,
         )
+        inbox_fd = gate0a._open_directory(inbox, expected_uid, "INBOX")
+        try:
+            collection_fd = os.open(
+                claim["directory_name"],
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=inbox_fd,
+            )
+            try:
+                final_manifest_raw, final_manifest_fd, final_manifest_identity = (
+                    _read_payload_once(
+                        collection_fd,
+                        "collection_manifest.json",
+                        expected_size=len(manifest_raw),
+                        expected_sha256=claim["collection_manifest_sha256"],
+                        expected_uid=expected_uid,
+                        label="FINAL_COLLECTION_MANIFEST",
+                    )
+                )
+                retained_payload_fds.append(
+                    (final_manifest_fd, final_manifest_identity)
+                )
+                if final_manifest_raw != manifest_raw:
+                    _stop("FINAL_COLLECTION_MANIFEST_CHANGED")
+            finally:
+                os.close(collection_fd)
+        finally:
+            os.close(inbox_fd)
+        for retained_fd, expected_identity in (
+            retained_payload_fds + retained_output_fds
+        ):
+            if _identity(os.fstat(retained_fd)) != expected_identity:
+                _stop("RETAINED_FD_CHANGED_BEFORE_RECEIPT")
 
         receipt = {
             "schema_version": RECEIPT_SCHEMA,
@@ -738,7 +814,7 @@ def open_synthetic_qualification(
             "crm_sha256": manifest["crm_sha256"],
             "mapping_sha256": manifest["mapping_sha256"],
             "output_root": str(output_root),
-            "output_hashes": _artifact_hashes(output_root),
+            "output_hashes": final_output_hashes,
             "counts": result["counts"],
         }
         if not gate0a._write_exclusive(
@@ -750,6 +826,11 @@ def open_synthetic_qualification(
         for payload_fd, _ in retained_payload_fds:
             try:
                 os.close(payload_fd)
+            except OSError:
+                pass
+        for output_fd, _ in retained_output_fds:
+            try:
+                os.close(output_fd)
             except OSError:
                 pass
         os.close(control_fd)

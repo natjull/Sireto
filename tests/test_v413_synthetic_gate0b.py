@@ -227,12 +227,8 @@ def test_crash_after_marker_forbids_second_payload_open(
 ) -> None:
     inbox, control, output, _ = _fixture(tmp_path)
 
-    def crash(stage: str) -> None:
-        if stage == "after_marker":
-            raise RuntimeError("synthetic crash")
-
-    with pytest.raises(RuntimeError, match="synthetic crash"):
-        _run(inbox, control, output, crash_hook=crash)
+    with pytest.raises(Gate0BStop, match="SYNTHETIC_CRASH_AFTER_MARKER"):
+        _run(inbox, control, output, crash_stage="after_marker")
 
     subject = __import__(
         "scripts.open_v413_synthetic_qualification", fromlist=["os"]
@@ -326,13 +322,15 @@ def test_forbidden_siren_overlap_stops_before_outputs(tmp_path: Path) -> None:
     assert not output.exists()
 
 
-@pytest.mark.parametrize("target", ["query", "contamination", "split"])
+@pytest.mark.parametrize(
+    "target", ["query", "audit", "contamination", "split", "manifest"]
+)
 def test_final_semantic_revalidation_rejects_late_output_mutation(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     target: str,
 ) -> None:
-    inbox, control, output, _ = _fixture(tmp_path)
+    inbox, control, output, collection = _fixture(tmp_path)
     subject = __import__(
         "scripts.open_v413_synthetic_qualification",
         fromlist=["seal_manifests"],
@@ -348,13 +346,25 @@ def test_final_semantic_revalidation_rejects_late_output_mutation(
                     "Boulangerie des Lilas", "LEAK 12345678901234"
                 )
             )
+        elif target == "audit":
+            path = output / "audit/qualification.json"
+            value = json.loads(path.read_text())
+            value["synthetic_fixtures_only"] = False
+            value["unexpected"] = "same counts"
+            path.write_bytes(gate0a.canonical_json(value))
         elif target == "contamination":
             path = output / "audit/contamination.json"
             value = json.loads(path.read_text())
             value["verdict"] = "BYPASSED"
             path.write_bytes(gate0a.canonical_json(value))
-        else:
+        elif target == "split":
             (output / "splits/fit/split_manifest.json").write_text("{}\n")
+        else:
+            path = collection / "collection_manifest.json"
+            value = json.loads(path.read_text())
+            value["created_at_utc"] = "2026-08-03T00:00:00Z"
+            path.write_bytes(gate0a.canonical_json(value))
+            path.chmod(0o600)
         return result
 
     monkeypatch.setattr(subject, "seal_manifests", seal_then_mutate)
@@ -362,3 +372,12 @@ def test_final_semantic_revalidation_rejects_late_output_mutation(
         _run(inbox, control, output)
     assert "FINAL_" in str(caught.value) or "digit leak" in str(caught.value)
     assert not (control / RECEIPT_FILENAME).exists()
+
+
+def test_arbitrary_crash_callback_is_not_an_execution_surface(
+    tmp_path: Path,
+) -> None:
+    inbox, control, output, _ = _fixture(tmp_path)
+    with pytest.raises(TypeError, match="crash_hook"):
+        _run(inbox, control, output, crash_hook=lambda _: None)
+    assert not (control / MARKER_FILENAME).exists()
