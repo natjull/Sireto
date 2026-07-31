@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor
 import threading
+import time
 
 import pandas as pd
 import pytest
@@ -238,23 +239,37 @@ def test_missing_frozen_feature_is_fail_closed() -> None:
 
 
 def test_idf_context_is_isolated_between_concurrent_queries() -> None:
-    barrier = threading.Barrier(2)
+    state_lock = threading.Lock()
+    active_builders = 0
+    maximum_active_builders = 0
 
     def run(default_idf: float) -> float:
+        nonlocal active_builders, maximum_active_builders
         captured: list[list[dict[str, object]]] = []
         service = _service(_context(), captured)
         service.idf_builder = lambda pool: ({"TARGET": default_idf}, default_idf)
 
         def concurrent_builder(crm, candidates, *, include_semantic):
-            barrier.wait(timeout=5)
-            value = feature_module._idf_overlap("TARGET", "TARGET")
-            return [
-                {
-                    name: value if name == "idf_name" else 0.0
-                    for name in FEATURES[:-1]
-                }
-                for _candidate_row in candidates
-            ]
+            nonlocal active_builders, maximum_active_builders
+            with state_lock:
+                active_builders += 1
+                maximum_active_builders = max(
+                    maximum_active_builders,
+                    active_builders,
+                )
+            try:
+                time.sleep(0.03)
+                value = feature_module._idf_overlap("TARGET", "TARGET")
+                return [
+                    {
+                        name: value if name == "idf_name" else 0.0
+                        for name in FEATURES[:-1]
+                    }
+                    for _candidate_row in candidates
+                ]
+            finally:
+                with state_lock:
+                    active_builders -= 1
 
         service.feature_builder = concurrent_builder
         result = service.build({"query_id": f"q{default_idf}"})
@@ -263,6 +278,7 @@ def test_idf_context_is_isolated_between_concurrent_queries() -> None:
     with ThreadPoolExecutor(max_workers=2) as executor:
         observed = sorted(executor.map(run, (2.0, 7.0)))
     assert observed == [2.0, 7.0]
+    assert maximum_active_builders == 1
 
 
 def test_empty_retrieval_output_routes_to_no_candidate_review() -> None:

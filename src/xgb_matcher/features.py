@@ -29,7 +29,6 @@ from __future__ import annotations
 
 import os
 import re
-from contextvars import ContextVar
 from typing import Any, Dict, List, Mapping, Set
 
 import numpy as np
@@ -88,28 +87,21 @@ NAME_STOPWORDS: Set[str] = {
 }
 
 # Global IDF map for name tokens (set by candidate loader)
-_GLOBAL_NAME_IDF: ContextVar[Dict[str, float]] = ContextVar(
-    "xgb_matcher_name_idf",
-    default={},
-)
-_GLOBAL_NAME_IDF_DEFAULT: ContextVar[float] = ContextVar(
-    "xgb_matcher_name_idf_default",
-    default=0.0,
-)
+_GLOBAL_NAME_IDF: Dict[str, float] = {}
+_GLOBAL_NAME_IDF_DEFAULT: float = 0.0
 
 
 def set_global_name_idf_map(idf_map: Mapping[str, float] | None, default_idf: float | None = None) -> None:
-    """Register the current execution context's IDF map for ``idf_name``."""
-    current = dict(idf_map) if idf_map else {}
-    _GLOBAL_NAME_IDF.set(current)
+    """Register a global IDF map for name tokens (used by idf_name feature)."""
+    global _GLOBAL_NAME_IDF, _GLOBAL_NAME_IDF_DEFAULT
+    _GLOBAL_NAME_IDF = dict(idf_map) if idf_map else {}
     if default_idf is None:
-        if current:
-            current_default = max(current.values())
+        if _GLOBAL_NAME_IDF:
+            _GLOBAL_NAME_IDF_DEFAULT = max(_GLOBAL_NAME_IDF.values())
         else:
-            current_default = 0.0
+            _GLOBAL_NAME_IDF_DEFAULT = 0.0
     else:
-        current_default = float(default_idf)
-    _GLOBAL_NAME_IDF_DEFAULT.set(current_default)
+        _GLOBAL_NAME_IDF_DEFAULT = float(default_idf)
 
 
 def semantic_gate_allows(name_jaro_max: float | None, name_token_overlap_max: float | None) -> bool:
@@ -608,8 +600,7 @@ def contains_check(container: str, contained: str) -> int:
 
 def _idf_overlap(a: str, b: str) -> float:
     """Average IDF of overlapping name tokens (0 if no overlap or no IDF map)."""
-    idf_map = _GLOBAL_NAME_IDF.get()
-    if not idf_map:
+    if not _GLOBAL_NAME_IDF:
         return 0.0
     tokens_a = _tokenize(a, stopwords=NAME_STOPWORDS, min_len=2)
     tokens_b = _tokenize(b, stopwords=NAME_STOPWORDS, min_len=2)
@@ -618,8 +609,7 @@ def _idf_overlap(a: str, b: str) -> float:
     overlap = tokens_a & tokens_b
     if not overlap:
         return 0.0
-    default_idf = _GLOBAL_NAME_IDF_DEFAULT.get()
-    return sum(idf_map.get(tok, default_idf) for tok in overlap) / len(overlap)
+    return sum(_GLOBAL_NAME_IDF.get(tok, _GLOBAL_NAME_IDF_DEFAULT) for tok in overlap) / len(overlap)
 
 
 def numeric_token_match(a: str, b: str) -> float:

@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import math
+from threading import RLock
 import time
 from typing import Any, Callable, Mapping, Sequence
 
@@ -48,6 +49,7 @@ OUTPUT_COLUMNS = (
     *ROLE_COLUMNS,
     *RANKER_C_FEATURE_ORDER,
 )
+_FEATURE_CONTEXT_LOCK = RLock()
 
 
 @dataclass(frozen=True)
@@ -230,12 +232,15 @@ class V412RetrievalFeatureService:
             )
             final_candidates.append(candidate)
 
-        set_global_name_idf_map(idf_map, float(default_idf))
-        feature_rows = self.feature_builder(
-            _crm_preprocessed(query),
-            final_candidates,
-            include_semantic=False,
-        )
+        # Historical feature generation consumes a module-level IDF map.
+        # Keep set+read atomic across every service instance in this process.
+        with _FEATURE_CONTEXT_LOCK:
+            set_global_name_idf_map(idf_map, float(default_idf))
+            feature_rows = self.feature_builder(
+                _crm_preprocessed(query),
+                final_candidates,
+                include_semantic=False,
+            )
         if len(feature_rows) != len(final_candidates):
             raise ValueError(
                 "STOP_V412_SERVICE_INTEGRITY: feature row count changed"
