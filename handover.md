@@ -2,7 +2,7 @@
 
 ## Etat des lieux
 
-### V4.12-R30 — pilote REVIEW préenregistré, avant implémentation
+### V4.12-R30 — dossier REVIEW canonique construit, collecte encore fermée
 
 Le goal North Star est réactivé après le gel du service V4.12. L'inventaire
 confirme que les labels déterministes V2/V3 et les datasets ranker/accepteur
@@ -26,10 +26,47 @@ fiables et au moins un négatif dans les strates multi-sites et collision.
 `SCALE_ADJUDICATION` autorisera seulement un lot historique plus large, jamais
 un entraînement ou une revendication produit. Deux audits indépendants ont
 reproduit population, exclusions, docket et hash, puis rendu
-**`GO_CONTRACT`**. Prochaine étape : implémenter et contre-auditer le builder,
-le collecteur borné, le schéma de faits et le launcher avant la première
-collecte réseau.
-*(commit Git : contrat `2418e9e`)*
+**`GO_CONTRACT`**. L'amendement ultérieur précise que quatre identifiants
+préfixés `fresh:` appartiennent en réalité au dev historique déjà consommé et
+ne constituent donc jamais un holdout frais.
+*(commits Git : contrat `2418e9e`, handover initial `960efb6`, amendement
+`694bd10`)*
+
+Le builder label-free est maintenant implémenté et gelé. Les entrées sont
+copiées, lues et revalidées par descripteurs ; les sorties sont écrites,
+scellées, promues et rouvertes par descripteurs ; toute substitution de la
+racine provoque un arrêt. Le chemin d'échec post-promotion utilise une
+quarantaine atomique `NOREPLACE` et non destructive. Les attaques de
+substitution, collisions de quarantaine, mutations d'ancêtres, hardlinks et
+publications concurrentes sont couvertes. Deux audits indépendants rendent
+**`GO_DOCKET_BUILDER_PHASE`** sur les hashes exacts :
+
+- builder :
+  `ed08c907a34f19389e436c1270ba7d07a35f8c1ce3472b26e501fde19625352d` ;
+- tests :
+  `0efec26a6e89858a34e8794e87ab33779abd9d6c49fe791b6a21a0d2fc0b7e7b` ;
+- contrat :
+  `f594800f4011ebf243987c36f31dd03d425f59d01226b03a1ddc2c11806592cc`.
+
+La validation locale donne 21 tests ciblés, 28 tests dans la commande combinée
+avec les suites V4.7 présentes, et 20/20 répétitions de publication
+concurrente.
+*(commit Git : builder et tests `9f942cf`)*
+
+Le dossier canonique immuable est publié sous :
+
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/v4_12_review_adjudication_pilot/c7a9feecaf2d3c2a/`
+
+La revalidation indépendante confirme 30 requêtes, dix par strate, 90
+requêtes de recherche préenregistrées, 3 000 lignes candidates, un plafond
+strict de 100 par cas, le hash de sélection attendu et le sceau d'arbre
+`8a9aade72e741e393bdd5647ae440f38793da879462b185640dbf8ac6cf02df0`.
+Aucun label, accès réseau, modèle ou test final n'a été ouvert.
+
+Prochaine étape autorisée : implémenter puis contre-auditer le collecteur
+borné, le schéma de faits et le launcher fail-closed. Le double GO du builder
+n'autorise pas encore la collecte, l'adjudication, le gate R30 complet,
+l'entraînement ou le test final.
 
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
