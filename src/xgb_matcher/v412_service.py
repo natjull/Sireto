@@ -135,6 +135,21 @@ class ServiceTrace:
     timings: ServiceTimings
 
 
+@dataclass
+class V411Trace:
+    query_id: str
+    predicted_siret: str | None
+    predicted_siren: str | None
+    acceptor_score: float
+    threshold: float
+    decision_v411: str
+    review_reason_v411: str | None
+    scored_candidates: pd.DataFrame
+    scene: dict[str, Any]
+    ranker_ns: int
+    scene_acceptor_ns: int
+
+
 def _require_label_blind(fields: Sequence[str], *, label: str) -> None:
     leaked = FORBIDDEN_FIELDS & set(fields)
     if leaked:
@@ -143,14 +158,22 @@ def _require_label_blind(fields: Sequence[str], *, label: str) -> None:
         )
 
 
-def _validate_query(
-    query: Mapping[str, Any],
-    direct_evidence: Mapping[str, Any],
-) -> str:
+def _validate_query(query: Mapping[str, Any]) -> str:
     _require_label_blind(list(query), label="query")
-    _require_label_blind(list(direct_evidence), label="direct evidence")
     query_id = str(query.get("query_id") or "")
-    if not query_id or str(direct_evidence.get("query_id") or "") != query_id:
+    if not query_id:
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: empty query identity"
+        )
+    return query_id
+
+
+def _validate_direct_evidence(
+    query_id: str,
+    direct_evidence: Mapping[str, Any],
+) -> None:
+    _require_label_blind(list(direct_evidence), label="direct evidence")
+    if str(direct_evidence.get("query_id") or "") != query_id:
         raise ValueError(
             "STOP_V412_SERVICE_INTEGRITY: query/evidence identity mismatch"
         )
@@ -173,7 +196,6 @@ def _validate_query(
         raise ValueError(
             "STOP_V412_SERVICE_INTEGRITY: unexpected sole direct SIRET"
         )
-    return query_id
 
 
 def _validate_candidates(
@@ -254,14 +276,13 @@ class V412DownstreamService:
         self.threshold = threshold
         self.scene_builder = scene_builder
 
-    def infer_one(
+    def rank_and_accept_one(
         self,
         *,
         query: Mapping[str, Any],
         candidates: pd.DataFrame,
-        direct_evidence: Mapping[str, Any],
-    ) -> ServiceTrace:
-        query_id = _validate_query(query, direct_evidence)
+    ) -> V411Trace:
+        query_id = _validate_query(query)
         _validate_candidates(
             query_id,
             candidates,
@@ -363,13 +384,35 @@ class V412DownstreamService:
             )
         )
         scene_acceptor_ns = time.perf_counter_ns() - scene_started
+        if not math.isfinite(acceptor_score):
+            raise AssertionError("non-finite score escaped validation")
+        return V411Trace(
+            query_id=query_id,
+            predicted_siret=predicted_siret,
+            predicted_siren=predicted_siren,
+            acceptor_score=acceptor_score,
+            threshold=self.threshold,
+            decision_v411=decision_v411,
+            review_reason_v411=review_reason_v411,
+            scored_candidates=scored,
+            scene=scene,
+            ranker_ns=ranker_ns,
+            scene_acceptor_ns=scene_acceptor_ns,
+        )
 
+    def apply_guard_to_trace(
+        self,
+        *,
+        trace: V411Trace,
+        direct_evidence: Mapping[str, Any],
+    ) -> ServiceTrace:
+        _validate_direct_evidence(trace.query_id, direct_evidence)
         guard_started = time.perf_counter_ns()
         sole = direct_evidence.get("sole_direct_siret")
         decision_v412, review_reason_v412 = apply_guard(
-            decision_v411=decision_v411,
-            review_reason_v411=review_reason_v411,
-            predicted_siret=predicted_siret,
+            decision_v411=trace.decision_v411,
+            review_reason_v411=trace.review_reason_v411,
+            predicted_siret=trace.predicted_siret,
             direct_candidate_count=int(
                 direct_evidence["direct_candidate_count"]
             ),
@@ -380,27 +423,41 @@ class V412DownstreamService:
             ),
         )
         guard_ns = time.perf_counter_ns() - guard_started
-        if decision_v411 == "REVIEW" and decision_v412 != "REVIEW":
+        if trace.decision_v411 == "REVIEW" and decision_v412 != "REVIEW":
             raise AssertionError("V4.12-G created an AUTO decision")
-        if not math.isfinite(acceptor_score):
-            raise AssertionError("non-finite score escaped validation")
         return ServiceTrace(
-            query_id=query_id,
-            predicted_siret=predicted_siret,
-            predicted_siren=predicted_siren,
-            acceptor_score=acceptor_score,
-            threshold=self.threshold,
-            decision_v411=decision_v411,
-            review_reason_v411=review_reason_v411,
+            query_id=trace.query_id,
+            predicted_siret=trace.predicted_siret,
+            predicted_siren=trace.predicted_siren,
+            acceptor_score=trace.acceptor_score,
+            threshold=trace.threshold,
+            decision_v411=trace.decision_v411,
+            review_reason_v411=trace.review_reason_v411,
             decision_v412=decision_v412,
             review_reason_v412=review_reason_v412,
-            scored_candidates=scored,
-            scene=scene,
+            scored_candidates=trace.scored_candidates,
+            scene=trace.scene,
             timings=ServiceTimings(
-                ranker_ns=ranker_ns,
-                scene_acceptor_ns=scene_acceptor_ns,
+                ranker_ns=trace.ranker_ns,
+                scene_acceptor_ns=trace.scene_acceptor_ns,
                 guard_ns=guard_ns,
             ),
+        )
+
+    def infer_one(
+        self,
+        *,
+        query: Mapping[str, Any],
+        candidates: pd.DataFrame,
+        direct_evidence: Mapping[str, Any],
+    ) -> ServiceTrace:
+        trace = self.rank_and_accept_one(
+            query=query,
+            candidates=candidates,
+        )
+        return self.apply_guard_to_trace(
+            trace=trace,
+            direct_evidence=direct_evidence,
         )
 
 
@@ -412,5 +469,6 @@ __all__ = [
     "RANKER_C_FEATURE_ORDER_SHA256",
     "ServiceTimings",
     "ServiceTrace",
+    "V411Trace",
     "V412DownstreamService",
 ]

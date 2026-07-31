@@ -106,6 +106,28 @@ def test_service_scores_one_query_and_guard_is_only_a_veto() -> None:
     )
 
 
+def test_v411_stage_can_run_without_loading_or_applying_evidence() -> None:
+    candidates = _candidates()
+    engine = _engine()
+
+    trace = engine.rank_and_accept_one(
+        query={"query_id": "q1"},
+        candidates=candidates,
+    )
+
+    assert trace.predicted_siret == str(candidates.iloc[0]["candidate_siret"])
+    assert trace.decision_v411 == "AUTO_MATCH"
+    assert trace.ranker_ns > 0
+    assert trace.scene_acceptor_ns > 0
+
+    guarded = engine.apply_guard_to_trace(
+        trace=trace,
+        direct_evidence=_evidence(2, None),
+    )
+    assert guarded.decision_v411 == "AUTO_MATCH"
+    assert guarded.decision_v412 == "REVIEW"
+
+
 def test_low_acceptor_score_cannot_be_upgraded_by_guard() -> None:
     candidates = _candidates()
     top = str(candidates.iloc[0]["candidate_siret"])
