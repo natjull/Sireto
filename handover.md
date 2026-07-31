@@ -62,6 +62,20 @@ Keychain, retrieval ou modèle n'a été ouvert.
 *(commits GitHub : split `3f862f1`, validation `2b27df2`, disponibilité
 `cb6d7ff`, qualification intégrée `6936174`)*
 
+Les deux premiers audits de cette tranche ont rendu `NO_GO` : Gate 0B
+n'était pas relié à la claim 0A, les API synthétiques n'étaient pas toutes
+confinées à `/tmp`, l'inventaire de preuves pouvait devenir incohérent et le
+writer ne rescannait pas une mutation post-qualification. Le correctif ajoute
+un opener 0B one-shot : marqueur durable avant le premier FD payload, lecture
+same-FD avec identité/taille/SHA, parsing CSV exact, liaison
+claim/ledger/collection, receipt terminal et interdiction de reprise après
+crash sans receipt. Les claims sont maintenant entièrement liés, les writers
+rescannent, les trois manifests de split sont promus depuis un staging, et
+toutes les racines synthétiques sont confinées à l'OS tmp. La suite V4.13
+donne 86 tests verts, dont availability → Gate 0B → qualification et matrice
+de crash. Aucun run réel n'est autorisé.
+*(commit GitHub : fermeture Gate 0B synthétique `8cb5d51`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
