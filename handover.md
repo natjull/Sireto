@@ -276,6 +276,26 @@ Autorisation, root, claim, item Keychain et receipt réel restent absents.
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
 matrice exhaustive et parcours FD `7c33a9b`)*.
 
+L'audit technique de `25aa424` a ensuite réfuté la garantie générique : un
+processus non coopératif du même UID peut modifier une garde après sa dernière
+revalidation et avant l'écriture du reçu. L'amendement `db68537` sépare donc
+les deux fenêtres irréductibles. Un remplacement du parent d'état reste borné
+à un appel et interdit tout reçu ; un remplacement d'une garde après son
+dernier contrôle reste borné à un appel mais peut laisser un reçu purement
+observationnel, qui n'autorise jamais le provisionnement. `cf99d95` ferme le
+validateur sur 28 cas exacts — 26 à zéro appel, deux à un — et reproduit les
+deux courses avec un backend synthétique. Deux audits indépendants rendent
+**`GO_PREFLIGHT_RACE_AMENDMENT_NEXT_IMPLEMENTATION_AUDIT`** sur `db68537` et
+**`GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK`** sur `cf99d95`. Les 243 tests
+ciblés et la suite `1457 passed, 3 deselected` sont verts ; les trois
+exclusions sont les assertions historiques exigeant l'absence du lock
+d'autorité déjà committé. Aucun appel Keychain réel, lock de pré-vol, claim,
+reçu, autorisation ou root producteur n'a été créé. Le seul geste désormais
+autorisé est de fabriquer puis faire auditer le lock de pré-vol ; le run
+matériel reste interdit.
+*(commits GitHub : séparation contractuelle `db68537`, alignement code/tests
+`cf99d95`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
