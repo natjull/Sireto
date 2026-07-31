@@ -143,6 +143,30 @@ def test_acceptor_class_and_downstream_method_mutations_are_fail_closed() -> Non
             validate_frozen_v412_service_bundle(bundle)
 
 
+def test_ranker_class_method_closure_mutation_is_fail_closed() -> None:
+    with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
+        method = type(bundle.downstream.ranker).predict
+        cell = next(
+            closure_cell
+            for closure_cell in (method.__closure__ or ())
+            if callable(closure_cell.cell_contents)
+        )
+        original = cell.cell_contents
+
+        def replacement(*args, **kwargs):
+            return np.zeros(len(args[1]), dtype=np.float32)
+
+        try:
+            cell.cell_contents = replacement
+            with pytest.raises(
+                ValueError,
+                match="mutated service bundle",
+            ):
+                validate_frozen_v412_service_bundle(bundle)
+        finally:
+            cell.cell_contents = original
+
+
 @pytest.mark.parametrize("target", ("ranker", "retrieval", "evidence"))
 def test_instance_method_override_is_fail_closed(target: str) -> None:
     with load_frozen_v412_service_bundle(include_evidence=True) as bundle:

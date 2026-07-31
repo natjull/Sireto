@@ -642,7 +642,7 @@ def _bundle_instance_shapes(
 
 def _object_code_identity(instance: Any) -> str:
     """Fingerprint Python implementations reached through an object."""
-    records: list[tuple[str, str, int, str]] = []
+    records: list[tuple[str, str, str]] = []
     for cls in type(instance).__mro__:
         class_name = f"{cls.__module__}.{cls.__qualname__}"
         for name, member in sorted(cls.__dict__.items()):
@@ -654,8 +654,7 @@ def _object_code_identity(instance: Any) -> str:
                     (
                         class_name,
                         name,
-                        id(code),
-                        hashlib.sha256(code.co_code).hexdigest(),
+                        _callable_state_identity(member),
                     )
                 )
     return hashlib.sha256(
@@ -663,11 +662,61 @@ def _object_code_identity(instance: Any) -> str:
     ).hexdigest()
 
 
-def _callable_state_identity(callback: Any) -> str:
+def _closure_value_identity(value: Any, seen: set[int]) -> Any:
+    identity = id(value)
+    if identity in seen:
+        return {"cycle_identity": identity}
+    if value is None or isinstance(value, (str, int, float, bool)):
+        return {"type": type(value).__name__, "value": value}
+    seen.add(identity)
+    try:
+        if callable(value) and getattr(value, "__code__", None) is not None:
+            return {
+                "callable": _callable_state_identity(value, _seen=seen)
+            }
+        if isinstance(value, (list, tuple)):
+            return {
+                "type": type(value).__name__,
+                "items": [
+                    _closure_value_identity(item, seen)
+                    for item in value
+                ],
+            }
+        if isinstance(value, dict):
+            return {
+                "type": "dict",
+                "items": sorted(
+                    (
+                        repr(key),
+                        _closure_value_identity(item, seen),
+                    )
+                    for key, item in value.items()
+                ),
+            }
+        if isinstance(value, (set, frozenset)):
+            return {
+                "type": type(value).__name__,
+                "items": sorted(repr(item) for item in value),
+            }
+        return {
+            "type": f"{type(value).__module__}.{type(value).__qualname__}",
+            "identity": identity,
+            "repr": repr(value),
+        }
+    finally:
+        seen.remove(identity)
+
+
+def _callable_state_identity(
+    callback: Any,
+    *,
+    _seen: set[int] | None = None,
+) -> str:
     code = getattr(callback, "__code__", None)
     if code is None:
         _fail("service callback has no Python code object")
     try:
+        seen = set() if _seen is None else _seen
         payload = json.dumps(
             {
                 "module": getattr(callback, "__module__", None),
@@ -676,12 +725,16 @@ def _callable_state_identity(callback: Any) -> str:
                 "code_bytes_sha256": hashlib.sha256(
                     code.co_code
                 ).hexdigest(),
-                "defaults": repr(getattr(callback, "__defaults__", None)),
-                "kwdefaults": repr(
-                    getattr(callback, "__kwdefaults__", None)
+                "defaults": _closure_value_identity(
+                    getattr(callback, "__defaults__", None),
+                    seen,
                 ),
-                "closure_object_identities": [
-                    id(cell.cell_contents)
+                "kwdefaults": _closure_value_identity(
+                    getattr(callback, "__kwdefaults__", None),
+                    seen,
+                ),
+                "closure": [
+                    _closure_value_identity(cell.cell_contents, seen)
                     for cell in (
                         getattr(callback, "__closure__", None) or ()
                     )
