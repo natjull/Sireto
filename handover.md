@@ -211,6 +211,21 @@ commit doit recevoir deux audits
 `GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK` avant toute matérialisation du lock ;
 lock, claim, résultat, autorisation, root et item Keychain restent absents.
 *(commit GitHub : implémentation status-only `b71747e`)*.
+
+Les deux audits d'implémentation ont rendu `NO_GO` sur `b71747e`. Ils ont
+reproduit une égalité runtime tautologique dans le validateur du sealer et une
+vraie course de namespace : renommer puis remplacer le parent pendant
+`fstatat` permettait de conclure absent sur l'ancien FD alors que le chemin
+canonique contenait l'autorisation. Le correctif `a8e7aac` injecte le lock
+autoritatif séparément dans chaque égalité runtime, conserve toute la chaîne
+FD depuis `/`, la rouvre et compare chaque `(dev, ino)` avant et après l'appel,
+et garde aussi le parent claim/reçu ancré pendant tout le run. Les tests
+effectuent maintenant de vrais renommages concurrents, toutes les mutations
+claim/guards/lifecycle et les 102 mutations du lock ; Git sélectionne le
+dernier commit ayant effectivement modifié les quatre blobs plutôt que le
+simple `HEAD`. Les 228 tests ciblés et la suite `1442 passed, 3 deselected`
+sont verts. Deux nouveaux audits sont requis avant lock réel.
+*(commit GitHub : runtime autoritatif et courses namespace `a8e7aac`)*.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
