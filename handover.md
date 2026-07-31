@@ -2970,6 +2970,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 | Candidat accepteur V4.11 gelé | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/models/v4_11_acceptor/9d23bf3deb6b63de/` |
 | CRM challenge V4.11 assaini | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_sanitized/1c994c852c10acaf/` |
 | Labels challenge V4.11 gelés | `/Volumes/CATNAT_DATA/SIRETO_RECALL100/challenges/v4_11_unseen_qualification/4f9ef46516b89ab8/` |
+| Audit métier 30 REVIEW V4.12 | `reports/v412_review_adjudication_30.md` |
+
+## Milestone métier V4.12 — 30 REVIEW adjudiqués
+
+- Commit : `fd39303` (`audit: adjudicate 30 V4.12 review dossiers`).
+- Les 30 dossiers préenregistrés ont été traités sans réentraînement, GPU,
+  service payant ni validation utilisateur.
+- Résultat : 27 SIRET exacts exploitables, 3 labels `AMBIGUOUS`, aucun
+  `UNRESOLVED`.
+- Parmi les 27 cas résolus, le top 1 V4.12 est correct dans 15 cas et faux
+  dans 12 cas. Les 12 erreurs ont toutes leur bon candidat dans le pool : 7
+  erreurs intra-SIREN, 4 collisions de sociétés ou de groupe à la même
+  adresse, et 1 adresse CRM historique.
+- Le prochain travail autorisé est une expérience corrective bornée sur
+  train/dev réutilisant ces familles d'erreurs. Aucun nouveau gate
+  d'infrastructure et aucune ouverture du test final.
 
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
@@ -2993,6 +3009,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    populations uniquement : garde multi-SIREN forte, nouvelles features
    d'unicité, comparaison garde seule puis accepteur. Geler le candidat avant
    tout nouvel export CRM indépendant, indispensable à une décision produit.
+8. **Priorité active après l'audit des 30** : tester d'abord une correction de
+   classement minimale sur les scènes déjà étiquetées : identité légale ou
+   enseigne exacte, rôle siège/service, activité/site, suffixe de voie et
+   domination indue de l'adresse. Mesurer séparément les 12 top 1 faux, les 15
+   top 1 corrects et les 3 ambiguïtés. Ne recalibrer l'accepteur qu'après cette
+   mesure et sans transformer les ambiguïtés en positifs.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
