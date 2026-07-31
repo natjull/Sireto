@@ -35,6 +35,7 @@ interdits et un unique LF final. Son SHA-256 attendu est
 ## Autorités et résultat
 
 Le code et ses tests ne peuvent être exécutés qu'après deux audits
+`GO_PREFLIGHT_RACE_AMENDMENT_NEXT_IMPLEMENTATION_AUDIT`, puis deux audits
 `GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK`. Un lock d'exécution propre au
 pré-vol épingle ensuite le commit, les quatre blobs code/tests/sealer/tests,
 le plan, le contrat, le lock producteur, le runtime, l'UID, les chemins et le
@@ -59,7 +60,8 @@ plan préenregistre une matrice obligatoire couvrant chaque garde sous forme de
 fichier, répertoire, lien valide ou pendant et erreur de parcours, chaque état de
 reprise, et les mutations extra/manquante/type/valeur du claim et du lock
 imbriqué. Chaque cas de garde et de cycle de vie, y compris le replay valide
-claim+reçu, possède une attente explicite de zéro appel natif. Le
+claim+reçu, possède une borne explicite d'appels natifs. Cette borne est zéro,
+sauf pour la fenêtre concurrente irréductible définie ci-dessous. Le
 résultat canonique contient exactement :
 
 ```text
@@ -105,6 +107,27 @@ stocké, sans nouvel appel Keychain. Tout claim seul, reçu seul, contenu
 partiel, non canonique, corrompu ou divergent produit `STOP` sans nouvel
 appel, réécriture ni suppression. Un crash après réservation est donc classé
 indéterminé et ne peut jamais provoquer une seconde requête.
+
+## Limite concurrente explicite
+
+Aucune suite finie de contrôles de chemin en espace utilisateur ne peut
+empêcher un autre processus du même UID de renommer un parent exactement
+entre la dernière instruction de contrôle et l'instruction suivante. Pour
+`STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW`, la garantie réaliste
+est donc :
+
+- au plus un appel `SecItemCopyMatching` status-only ;
+- toujours un pointeur résultat nul, donc aucune donnée ni attribut retourné ;
+- revalidation immédiatement après l'appel ;
+- `STOP` et aucun reçu si le namespace a changé ;
+- claim seul, donc aucune relance automatique ni autorisation de
+  provisionnement.
+
+Tous les remplacements observables avant l'appel restent bornés à zéro appel.
+Le déplacement ou la suppression volontaire des autorités persistantes par
+un processus non coopératif du même UID entre deux exécutions est hors du
+modèle ; le code n'en déduit jamais un reçu valide pendant l'exécution
+courante.
 
 Ce pré-vol n'autorise pas le provisionnement. Après son audit matériel, une
 autorisation canonique distincte devra encore être committée et deux audits

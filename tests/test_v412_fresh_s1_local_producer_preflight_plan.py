@@ -381,6 +381,11 @@ def test_preflight_is_bound_to_future_code_lock_and_closed_gates() -> None:
         "IMPLEMENT_PREFLIGHT_AND_SEALER_WITH_FAKE_FRAMEWORKS_ONLY"
     )
     assert sequence.index(
+        "TWO_GO_PREFLIGHT_RACE_AMENDMENT_AUDITS"
+    ) < sequence.index(
+        "TWO_GO_PREFLIGHT_IMPLEMENTATION_AUDITS"
+    )
+    assert sequence.index(
         "TWO_GO_PREFLIGHT_IMPLEMENTATION_AUDITS"
     ) < sequence.index("SEAL_PREFLIGHT_EXECUTION_LOCK_ONCE")
     assert sequence.index(
@@ -392,6 +397,7 @@ def test_preflight_is_bound_to_future_code_lock_and_closed_gates() -> None:
         "GO_PREFLIGHT_PREREG_NEXT_IMPLEMENTATION",
         "GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK",
         "GO_PREFLIGHT_LOCK_MATERIAL_NEXT_RUN",
+        "GO_PREFLIGHT_RACE_AMENDMENT_NEXT_IMPLEMENTATION_AUDIT",
     }
 
 
@@ -622,18 +628,22 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
     expected_cases = set(requirements["absence_guard_cases"]) | set(
         requirements["lifecycle_cases"]
     )
-    assert set(requirements["expected_native_call_count_by_case"]) == (
+    assert set(requirements["maximum_native_call_count_by_case"]) == (
         expected_cases
     )
+    race_case = "STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
     assert all(
         count == 0
-        for count in requirements[
-            "expected_native_call_count_by_case"
-        ].values()
+        for case, count in requirements[
+            "maximum_native_call_count_by_case"
+        ].items()
+        if case != race_case
     )
-    assert requirements["expected_native_call_count_by_case"][
+    assert requirements["maximum_native_call_count_by_case"][
         "CLAIM_AND_RESULT_VALID"
     ] == 0
+    assert requirements["maximum_native_call_count_by_case"][race_case] == 1
+    assert requirements["forbidden_result_cases"] == [race_case]
     assert requirements["mutation_targets"] == [
         "CLAIM_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
         "LOCK_TOP_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
