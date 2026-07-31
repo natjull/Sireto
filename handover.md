@@ -96,6 +96,32 @@ avant la receipt. Des mutations tardives de chacune de ces familles sont
 désormais testées. La suite V4.13 donne 99 tests verts.
 *(commit GitHub : fermeture fenêtre pré-receipt `7b6f587`)*
 
+Les audits de `7b6f587` ont ensuite reproduit une dernière fenêtre entre la
+validation sémantique et les hashes de receipt, ainsi qu'une validation trop
+faible de l'audit et du manifeste de collection. Le correctif lit, valide et
+hashe désormais les huit artefacts depuis les mêmes FDs retenus, compare
+l'objet d'audit exact, relit le manifeste source par hash et contenu, puis
+recontrôle l'identité de tous les FDs juste avant la receipt. Un premier
+ré-audit a rendu GO ; le second a encore refusé une dérive de permissions
+post-receipt. La reprise idempotente revalide donc maintenant l'arborescence
+exacte, les propriétaires, modes `0700/0600`, types, liens et hashes. Les
+mutations de permissions, entrées supplémentaires et anciennes attaques
+TOCTOU sont refusées. Deux audits indépendants rendent finalement
+**`GO_V413_SYNTHETIC_INTAKE_IMPLEMENTATION`** sur le commit exact `280043d`;
+la suite auditée donne 105 tests verts.
+*(commits GitHub : fermeture validation/hash same-FD `c98fa4f`, fermeture
+arborescence post-receipt et double GO `280043d`)*
+
+Le verrou de milestone pinne le commit audité, les hashes du contrat, du
+préenregistrement, des six modules et des neuf tests, les deux verdicts et le
+runtime Mac. Son statut est volontairement limité à
+`GO_V413_SYNTHETIC_INTAKE_IMPLEMENTATION_ONLY`. Il interdit explicitement
+Gate 0A/0B réels, Keychain/registre historique réel, retrieval, entraînement
+et test final. Le test du verrou porte la suite V4.13 à 106 tests verts.
+L'allowlist d'autorités réelles reste vide : aucune ouverture de données
+réelles n'est autorisée par ce milestone.
+*(commit GitHub : verrou intake synthétique V4.13 `ca0a754`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
