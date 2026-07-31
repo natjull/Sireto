@@ -801,7 +801,40 @@ def test_final_instruction_window_is_bounded_to_one_query_and_no_result(
     assert not (state_parent / Path(plan["output"]["path"]).name).exists()
 
 
-def test_preregistered_query_bounds_are_exactly_27_cases() -> None:
+def test_guard_replacement_after_final_revalidation_can_leave_receipt(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    config = root / "config"
+    displaced = root / "config-displaced"
+    authorization = config / "synthetic_authorization.json"
+    original = subject.AbsenceProof.revalidate
+    authorization_revalidations = 0
+    replaced = False
+
+    def revalidate(proof):
+        nonlocal authorization_revalidations, replaced
+        original(proof)
+        if proof.missing_name == authorization.name:
+            authorization_revalidations += 1
+            if authorization_revalidations == 3:
+                replaced = True
+                config.rename(displaced)
+                config.mkdir()
+                authorization.write_text("present\n")
+
+    monkeypatch.setattr(subject.AbsenceProof, "revalidate", revalidate)
+    native = FakeNative()
+    result = run_synthetic(root, native)
+    output = root / plan["output"]["path"]
+    assert replaced
+    assert authorization.exists()
+    assert len(native.calls) == 1
+    assert output.exists()
+    assert result == json.loads(output.read_bytes())
+
+
+def test_preregistered_query_bounds_are_exactly_28_cases() -> None:
     plan = json.loads(
         (
             REPOSITORY
@@ -811,17 +844,21 @@ def test_preregistered_query_bounds_are_exactly_27_cases() -> None:
     matrix = plan["implementation_test_requirements"][
         "maximum_native_call_count_by_case"
     ]
-    race_case = (
-        "PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    state_race_case = (
+        "STATE_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
     )
-    assert len(matrix) == 27
-    assert matrix[race_case] == 1
+    guard_race_case = (
+        "GUARD_NAMESPACE_REPLACEMENT_AFTER_FINAL_REVALIDATION"
+    )
+    race_cases = {state_race_case, guard_race_case}
+    assert len(matrix) == 28
+    assert all(matrix[case] == 1 for case in race_cases)
     assert all(
-        count == 0 for case, count in matrix.items() if case != race_case
+        count == 0 for case, count in matrix.items() if case not in race_cases
     )
     assert plan["implementation_test_requirements"][
         "forbidden_result_cases"
-    ] == [race_case]
+    ] == [state_race_case]
 
 
 def test_concurrent_attempts_allow_at_most_one_native_query(

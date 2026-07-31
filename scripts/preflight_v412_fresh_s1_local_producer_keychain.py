@@ -334,21 +334,25 @@ def validate_plan(plan: Mapping[str, Any]) -> None:
         ],
         "PLAN_NATIVE_COUNTS",
     )
-    race_case = (
-        "PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    state_race_case = (
+        "STATE_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
     )
+    guard_race_case = (
+        "GUARD_NAMESPACE_REPLACEMENT_AFTER_FINAL_REVALIDATION"
+    )
+    race_cases = {state_race_case, guard_race_case}
     if (
         any(type(value) is not int for value in maximum_calls.values())
-        or maximum_calls.get(race_case) != 1
+        or any(maximum_calls.get(case) != 1 for case in race_cases)
         or any(
             value != 0
             for case, value in maximum_calls.items()
-            if case != race_case
+            if case not in race_cases
         )
         or plan["implementation_test_requirements"][
             "forbidden_result_cases"
         ]
-        != [race_case]
+        != [state_race_case]
     ):
         _stop("PLAN_NATIVE_COUNTS_VALUE")
     if set(plan["query_exact"]) & set(plan["query_forbidden_keys"]):
