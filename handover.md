@@ -328,6 +328,19 @@ l'unique run réel du provisioner, toujours sans lecture CRM.
 *(commits GitHub : résultat one-shot `58798a4`, autorisation producteur
 `651ef43`)*.
 
+Le run producteur V1 autorisé s'est arrêté proprement sur
+`KEYCHAIN_ADD_STATUS_-34018` (`errSecMissingEntitlement`). Le root et le claim
+V1 existent en `0700/0600`, mais `authorities/` est vide et aucun receipt,
+payload, seal ou genesis n'a été créé. Deux diagnostics indépendants
+confirment que le Python pinné est signé ad hoc sans Team ID ni entitlement :
+le Data Protection Keychain imposé par V1 exige un profil de provisioning
+appliqué au processus hôte. V1 reste immuable et ne sera pas relancée.
+Verdict : **`PIVOT_FILE_BASED_KEYCHAIN_V2`**. V2 aura un locator, un root et
+toutes ses autorités distincts, utilisera `SecItem` sur le Keychain macOS
+traditionnel avec ACL fermée, et n'autorisera aucun fallback de graine en
+fichier. Ce pivot reste local, sans GPU, location ni dépense externe.
+*(rapport : `reports/v9/v4_12_fresh_s1_local_producer_v1_failure.md`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
