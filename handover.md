@@ -21,6 +21,12 @@ test final fermé.
 *(commits Git : dernier docket `b61664f`; labels `5c77a36`; résultats, bilan
 métier et présent handover : commit du présent milestone)*
 
+Les huit sources d'adjudication sont aussi normalisées dans
+`reports/v412_review_trusted_labels_279.csv` : 279 identifiants uniques, 254
+`MATCH_EXACT`, 25 `AMBIGUOUS`, tous dans le split dev. Ce fichier est l'entrée
+canonique du prochain apprentissage OOF. *(commit Git : milestone de
+normalisation qui suit l'audit `9f60f36`)*
+
 ### V4.12 — B2 aveugle : 6 AUTO sur 30, tous corrects
 
 Le deuxième lot indépendant de 30 REVIEW a été gelé avant scoring puis
