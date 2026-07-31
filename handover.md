@@ -2,6 +2,19 @@
 
 ## Etat des lieux
 
+### V4.12 — parité train/serve du bundle validée
+
+Le bundle `c2a01c6bca43a468` a été rechargé et exécuté sur 1 127 requêtes et
+112 389 candidats de contrôle. Les top 1 ranker, les 80 features de scène, les
+scores accepteur et les 1 077 AUTO / 50 REVIEW sont identiques bit à bit aux
+artefacts de développement. Aucun pool ne dépasse 100 et aucun SIRET n'est
+dupliqué dans un pool.
+
+Verdict `PASS_BUNDLE_TRAIN_SERVE_PARITY`. Le dernier gate interne vérifiable
+est fermé ; il reste uniquement le nouvel export CRM indépendant.
+
+*(script, JSON, rapport et présent handover : commit du présent milestone)*
+
 ### V4.12 — bundle trusted-label figé
 
 Le bundle `c2a01c6bca43a468` lie le ranker, l'accepteur, le seuil

@@ -1,0 +1,22 @@
+{
+  "auto_count": 1077,
+  "bundle_id": "c2a01c6bca43a468",
+  "checks": {
+    "acceptor_scores_bit_exact": true,
+    "all_80_scene_features_bit_exact": true,
+    "bundle_hashes_valid": true,
+    "candidate_budget_max_100": true,
+    "candidate_siret_unique_per_query": true,
+    "decisions_bit_exact": true,
+    "feature_orders_valid": true,
+    "final_test_opened": false,
+    "ranker_top1_bit_exact": true
+  },
+  "feature_count": 80,
+  "fixture_candidate_count": 112389,
+  "fixture_query_count": 1127,
+  "fixture_role": "NON_TRUSTED_DEV_POSITIVE_CONTROL",
+  "review_count": 50,
+  "schema_version": "sireto-v4.12-trusted-bundle-verification-1",
+  "verdict": "PASS_BUNDLE_TRAIN_SERVE_PARITY"
+}
