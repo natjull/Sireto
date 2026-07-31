@@ -2,6 +2,21 @@
 
 ## Etat des lieux
 
+### V4.12 — B2 aveugle : 6 AUTO sur 30, tous corrects
+
+Le deuxième lot indépendant de 30 REVIEW a été gelé avant scoring puis
+adjudiqué avec preuves : 28 `MATCH_EXACT`, deux `AMBIGUOUS`, aucun non résolu.
+Le ranker corrigé trouve 23/28 SIRET exacts. L'accepteur clean-target figé
+automatise 6/30 dossiers, tous corrects ; les cinq erreurs du ranker et les deux
+ambiguïtés restent en REVIEW.
+
+Le cumul des deux lots aveugles atteint 19 AUTO sur 60, avec 19/19 corrects,
+mais ce volume ne certifie pas 99,8 %. Verdict `GO_COMPLETE_REMAINING_39` :
+modèle et seuil inchangés, audit des 39 REVIEW encore vierges, test final fermé.
+
+*(commits Git : docket `2a62d69`; labels `a653027`; résultats et présent
+handover : commit du présent milestone)*
+
 ### V4.12 — clean-target validé sur 13 AUTO aveugles sans erreur
 
 Un nouveau docket de 30 REVIEW parmi les 99 encore vierges a été gelé avant
