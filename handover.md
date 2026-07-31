@@ -3035,5 +3035,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    Aucun réentraînement avant ce contre-échantillon ; aucune ambiguïté ne doit
    être transformée en positif.
 
+## Contre-audit V4.12-R53 — changements de top 1
+
+- Commit : `393c52f` (`audit: adjudicate 53 rerank counter-cases`).
+- Les 53 dossiers `REVIEW` restants dont la correction exploratoire change le
+  top 1 ont été adjudiqués sur le snapshot SIRENE local, les pools réellement
+  servis au ranker et des preuves externes traçables pour les collisions,
+  transferts et changements d'exploitant.
+- Résultat : 50 labels `MATCH_EXACT`, trois `AMBIGUOUS`, aucun `UNRESOLVED`.
+  La correction choisit le SIRET exact dans 43/50 cas identifiables, mais
+  régresse sur trois top 1 initiaux fiables (`IDEF 86`, `CCI EMERAINVILLE`,
+  `AVELIS GROUP`).
+- Quatre vérités ne sont ni l'ancien ni le nouveau choix : deux sont absentes
+  des 100 candidats (`GROUPE DELAMBRE`, `SIX ARES`) et deux sont présentes
+  mais classées 23e et 30e (`CLINIQUE DE TOURNAN`, `ALCYACONSEIL`).
+- Verdict : `PIVOT_FROM_RULE_TO_TRAINABLE_SIGNAL`. Le bonus fixe n'est pas
+  déployable. Les 50 nouveaux labels exacts peuvent alimenter un entraînement
+  borné de développement avec groupes SIREN et prédictions hors échantillon ;
+  les trois ambiguïtés restent réservées à l'abstention. Toute promotion exige
+  une population indépendante nouvelle et le test final reste fermé.
+- Rapports : `reports/v412_review_rerank_counteraudit_first10.md`,
+  `reports/v412_review_rerank_counteraudit_53.md` et table machine
+  `reports/v412_review_rerank_counteraudit_53.csv`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
