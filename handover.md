@@ -2,6 +2,25 @@
 
 ## Etat des lieux
 
+### V4.12 — audit métier des 279 REVIEW terminé
+
+Les 279 REVIEW de développement sont tous adjudiqués : 254 SIRET exacts
+identifiables, 25 ambiguïtés structurelles et aucun non-résolu. L'audit montre
+que 218 des 254 dossiers identifiables avaient été transformés à tort en
+`AMBIGUOUS` par la construction mécanique V4.
+
+Sur les 99 dossiers réellement aveugles, le ranker corrigé trouve 75/89 SIRET
+et l'accepteur clean-target automatise 32/99 dossiers, avec 32/32 corrects. Les
+14 erreurs du ranker et les 10 ambiguïtés restent toutes en REVIEW. Ce volume
+ne certifie pas 99,8 %.
+
+Verdict `GO_RETRAIN_ON_TRUSTED_LABELS` : les 254 labels exacts et 25 abstentions
+fiables permettent maintenant un apprentissage OOF corrigé. Retrieval inchangé,
+test final fermé.
+
+*(commits Git : dernier docket `b61664f`; labels `5c77a36`; résultats, bilan
+métier et présent handover : commit du présent milestone)*
+
 ### V4.12 — B2 aveugle : 6 AUTO sur 30, tous corrects
 
 Le deuxième lot indépendant de 30 REVIEW a été gelé avant scoring puis
