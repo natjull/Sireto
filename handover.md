@@ -3152,5 +3152,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Rapport : `reports/v412_acceptor_hard_weight.md`. Artefact :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_acceptor_hard_weight/a9bdb09ea504194e`.
 
+## Expérience V4.12-Accepteur — preuves relationnelles
+
+- Commit : `adb1507` (`experiment: test V4.12 acceptor relational evidence`).
+- Deux variantes bornées ajoutent respectivement deux puis quatre relations
+  explicites entre ressemblance au nom légal, ressemblance au nom
+  d'établissement, écart ranker et concurrence entre sites. Ranker, pools,
+  poids `10`, splits et seuil restent inchangés.
+- La référence produit 597/701 AUTO sur les contrôles et 1/83 AUTO difficile
+  OOF. Les variantes relationnelles produisent 594 et 595 AUTO contrôles, mais
+  restent toutes deux à 1/83 AUTO difficile ; aucune erreur ni ambiguïté n'est
+  automatisée dans ces comparaisons.
+- Verdict : `PIVOT_ACCEPTOR_FEATURES`. Les deux explications simples issues de
+  l'audit métier — pondération et relations nom légal/établissement — sont
+  falsifiées comme leviers de couverture. Ajouter d'autres combinaisons sur
+  les mêmes 83 dossiers risquerait le sur-ajustement.
+- Le candidat historique franchit le gate global de développement, mais il
+  n'existe plus de preuve produit locale vierge : test final et challenge sont
+  consommés, et les 189 REVIEW restants ont déjà contribué au seuil ou à la
+  comparaison par leurs labels historiques. Une conclusion produit exige une
+  nouvelle cohorte CRM avec preuve SIRET indépendante du matching.
+- Rapport : `reports/v412_acceptor_relational_features.md`. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_acceptor_relational_features/81a976729f2140de`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
