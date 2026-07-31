@@ -55,44 +55,63 @@ def load_schema() -> dict:
     return schema
 
 
-def validate_exact_object_keys(value: object, schema: dict, path: str = "/") -> None:
-    if isinstance(value, dict):
-        assert path in schema["exact_object_keys"], f"unregistered object {path}"
-        assert sorted(value) == schema["exact_object_keys"][path]
-        for key, child in value.items():
-            child_path = path.rstrip("/") + "/" + key
-            validate_exact_object_keys(child, schema, child_path)
-    elif isinstance(value, list):
-        for child in value:
-            if isinstance(child, (dict, list)):
-                validate_exact_object_keys(child, schema, path + "/*")
+def validate_exact_content(value: object, schema: dict) -> None:
+    assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
+    assert schema["content_validation"] == (
+        "SHA256_OF_EXACT_CANONICAL_TARGET_BYTES"
+    )
+    assert hashlib.sha256(canonical_json(value)).hexdigest() == (
+        schema["target_sha256"]
+    )
 
 
-def test_plan_is_recursively_closed_and_canonical() -> None:
+def test_plan_is_exactly_closed_and_canonical() -> None:
     plan = load_plan()
     schema = load_schema()
     assert schema["target_schema_version"] == plan["schema_version"]
-    assert schema["additional_object_fields"] == "REJECT"
-    validate_exact_object_keys(plan, schema)
+    validate_exact_content(plan, schema)
 
 
-@pytest.mark.parametrize("mutation", ["extra", "missing"])
-def test_closed_schema_rejects_nested_key_mutations(mutation: str) -> None:
+@pytest.mark.parametrize(
+    ("mutation", "value"),
+    [
+        ("extra", True),
+        ("missing", None),
+        ("wrong_type", "yes"),
+        ("wrong_value", 10000),
+        ("wrong_enum", ["GO"]),
+        ("wrong_status", "READY_AND_OPENED"),
+    ],
+)
+def test_closed_schema_rejects_all_plan_mutation_families(
+    mutation: str, value: object
+) -> None:
     plan = copy.deepcopy(load_plan())
     if mutation == "extra":
-        plan["retrieval"]["frozen_policy"]["unexpected"] = True
-    else:
+        plan["retrieval"]["frozen_policy"]["unexpected"] = value
+    elif mutation == "missing":
         del plan["source_protocol"]["manifest_only_0a"]["selection"]
+    elif mutation == "wrong_type":
+        plan["retrieval"]["truth_absent_is_error"] = value
+    elif mutation == "wrong_value":
+        plan["retrieval"]["candidate_maximum_absolute"] = value
+    elif mutation == "wrong_enum":
+        plan["final_test"]["terminal_verdicts"] = value
+    else:
+        plan["status"] = value
     with pytest.raises(AssertionError):
-        validate_exact_object_keys(plan, load_schema())
+        validate_exact_content(plan, load_schema())
 
 
 def test_contract_schema_and_frozen_historical_authorities_are_pinned() -> None:
     plan = load_plan()
-    for pin in (plan["contract"], plan["schema"]):
-        assert hashlib.sha256((REPOSITORY / pin["path"]).read_bytes()).hexdigest() == (
-            pin["sha256"]
-        )
+    contract = plan["contract"]
+    assert hashlib.sha256(
+        (REPOSITORY / contract["path"]).read_bytes()
+    ).hexdigest() == contract["sha256"]
+    assert plan["schema"] == {
+        "path": "config/v4_13_fresh_labels_minimal_plan.schema.json"
+    }
     historical = plan["retrieval"]["historical_contract"]
     assert historical == {
         "git_commit": "eb0e6a3ca034a0b1e78ae77e5bde780608a836d7",
@@ -100,7 +119,7 @@ def test_contract_schema_and_frozen_historical_authorities_are_pinned() -> None:
         "sha256": "51e078610441644d582b0d83c631e26119134f36ad8d4bf559e92df4a4aaecf1",
     }
     assert plan["retrieval"]["historical_evaluator"] == {
-        "git_commit": "5a0e67f",
+        "git_commit": "5a0e67f5b7fea4e68069eb6fc2ad0684c4bb7095",
         "path": "scripts/evaluate_retrieval_admission.py",
         "sha256": "b24ee3f52ab5d713c92114ac13d3b1e99498bb40a3ca6cca015bb991dd237c45",
     }
@@ -127,6 +146,17 @@ def test_existing_registry_payloads_and_all_keysets_are_exact() -> None:
             (compatibility_root / pin["file"]).read_bytes()
         ).hexdigest() == pin["sha256"]
     comparison = plan["contamination"]["comparison"]
+    assert comparison["applicable_keysets"] == [
+        "service_id",
+        "siret_masked",
+        "fuzzy_historical",
+    ]
+    assert comparison["excluded_keysets"] == {
+        "input_siret_lineage": (
+            "NOT_APPLICABLE_REQUIRES_FORBIDDEN_RAW_CRM_SIRET_NO_ZERO_OVERLAP_CLAIM"
+        )
+    }
+    assert comparison["noncomparable_row_policy_applicable_keysets"] == "STOP"
     assert comparison["maximum_hit_count_each_keyset"] == 0
     assert comparison["maximum_hit_count_keyset_union"] == 0
     assert comparison["maximum_hit_count_siren_registry"] == 0
@@ -189,6 +219,13 @@ def test_authority_mapping_cannot_use_similarity_or_self_assert_truth() -> None:
         "CONTRACT_OR_BILLING_SIRET",
         "SEALED_ADMINISTRATIVE_DOCUMENT",
     }
+    catalog_pin = plan["authority_catalog"]["real_allowlist"]
+    catalog_raw = (REPOSITORY / catalog_pin["path"]).read_bytes()
+    assert hashlib.sha256(catalog_raw).hexdigest() == catalog_pin["sha256"]
+    catalog = json.loads(catalog_raw)
+    assert catalog["allowlist"] == []
+    assert catalog["real_collection_open_authorized"] is False
+    assert plan["authority_catalog"]["real_collection_open_authorized"] is False
 
 
 def test_opaque_id_split_and_oof_have_frozen_vectors() -> None:
@@ -249,6 +286,10 @@ def test_retrieval_model_and_final_test_gates_are_closed() -> None:
     assert plan["model"]["threshold_selection"]["minimum_auto"] == (
         "MAX_50_OR_CEIL_25_PERCENT_DEV_ROWS"
     )
+    model_prereg = plan["model"]["preregistration"]
+    assert model_prereg["status"] == "NOT_CREATED_DEV_EXECUTION_FORBIDDEN"
+    assert model_prereg["execution_before_first_retrieval_dev"] is True
+    assert model_prereg["independent_go_required"] == 2
     final = plan["final_test"]
     assert final["events_in_order"] == [
         "OPENING_O_EXCL_BEFORE_FIRST_TEST_QUERY_FD",
@@ -270,5 +311,8 @@ def test_no_source_observation_or_implementation_is_smuggled_into_plan() -> None
     assert plan["status"] == "PREREGISTRATION_AMENDMENT_AWAITING_TWO_GO"
     for path in plan["implementation"]["components"].values():
         assert path.startswith("scripts/")
-    assert plan["implementation"]["tests"] == "tests/test_v413_fresh_intake.py"
+    assert plan["implementation"]["tests"] == [
+        "tests/test_v413_fresh_intake.py",
+        "tests/test_v413_model_pipeline.py",
+    ]
     assert plan["preregistration_lock"]["status"] == "NOT_CREATED"

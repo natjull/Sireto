@@ -220,14 +220,29 @@
     ],
     "issuer_and_system_id_required": true,
     "join": "EXACT_SOURCE_RECORD_ID_ONLY",
-    "matching_pipeline_used_must_be_false": true
+    "matching_pipeline_used_must_be_false": true,
+    "real_allowlist": {
+      "path": "config/v4_13_fresh_labels_authority_catalog.json",
+      "sha256": "780e920ed529199dfbede007053328b46c2a929532d1b089161a10779568ea25",
+      "status": "EMPTY_NO_REAL_AUTHORITY_REGISTERED"
+    },
+    "real_collection_open_authorized": false
   },
   "contamination": {
     "comparison": {
       "all_authoritatively_known_sirens_included": true,
+      "applicable_keysets": [
+        "service_id",
+        "siret_masked",
+        "fuzzy_historical"
+      ],
+      "excluded_keysets": {
+        "input_siret_lineage": "NOT_APPLICABLE_REQUIRES_FORBIDDEN_RAW_CRM_SIRET_NO_ZERO_OVERLAP_CLAIM"
+      },
       "maximum_hit_count_each_keyset": 0,
       "maximum_hit_count_keyset_union": 0,
       "maximum_hit_count_siren_registry": 0,
+      "noncomparable_row_policy_applicable_keysets": "STOP",
       "noncomparable_rows_reported_per_keyset": true,
       "report_raw_counts_per_keyset_and_union": true
     },
@@ -276,7 +291,7 @@
   },
   "contract": {
     "path": "docs/v4_13_fresh_labels_minimal_contract.md",
-    "sha256": "334a754b7ba9313e3542762f47c4f2aa81ca6b1524f824d3bbfe298945540c5d"
+    "sha256": "ec11f9466029a19f394fe8b1c93997ebff8b617ad45c617c22cecd02fcc8c7b4"
   },
   "final_test": {
     "crash_policy": {
@@ -349,11 +364,18 @@
   },
   "implementation": {
     "components": {
+      "acceptor_trainer": "scripts/train_v413_acceptor.py",
       "availability_auditor": "scripts/audit_v413_fresh_source_availability.py",
+      "bundle_sealer_publisher": "scripts/seal_publish_v413_model_bundle.py",
+      "dataset_builder": "scripts/build_v413_model_datasets.py",
       "final_test_opener_evaluator": "scripts/open_evaluate_v413_final_test.py",
+      "model_preregistration_validator": "scripts/validate_v413_model_preregistration.py",
+      "oof_builder": "scripts/build_v413_ranker_oof.py",
       "qualification_builder": "scripts/build_v413_fresh_qualification.py",
+      "ranker_trainer": "scripts/train_v413_ranker.py",
       "retrieval_runner": "scripts/run_v413_frozen_retrieval.py",
       "split_sealer": "scripts/seal_v413_fresh_splits.py",
+      "threshold_selector": "scripts/select_v413_acceptor_threshold.py",
       "validator_leak_scanner": "scripts/validate_v413_fresh_artifacts.py"
     },
     "execution_lock": "config/v4_13_fresh_labels_execution_lock.json",
@@ -371,7 +393,10 @@
       "retrieval_policy_sha256"
     ],
     "status": "UNIMPLEMENTED_NOT_AUTHORIZED",
-    "tests": "tests/test_v413_fresh_intake.py"
+    "tests": [
+      "tests/test_v413_fresh_intake.py",
+      "tests/test_v413_model_pipeline.py"
+    ]
   },
   "model": {
     "acceptor_training": "QUERY_LEVEL_SCENES_FROM_RANKER_OOF_ONLY",
@@ -387,6 +412,26 @@
       "domain": "SIRETO-V413-RANKER-OOF-FOLD\u0000",
       "folds": 5,
       "function": "UINT64_BE_FIRST_8_BYTES_SHA256_DOMAIN_PLUS_COMPONENT_KEY_MOD_5"
+    },
+    "preregistration": {
+      "contract_path": "docs/v4_13_model_preregistration.md",
+      "execution_before_first_retrieval_dev": true,
+      "independent_go_required": 2,
+      "must_pin": [
+        "dataset_builder",
+        "ranker_trainer",
+        "oof_builder",
+        "acceptor_trainer",
+        "threshold_selector",
+        "bundle_sealer_publisher",
+        "tests",
+        "features",
+        "model_families",
+        "hyperparameters",
+        "seeds",
+        "bounded_selection_protocol"
+      ],
+      "status": "NOT_CREATED_DEV_EXECUTION_FORBIDDEN"
     },
     "ranker_training": "FIT_REAL_RETRIEVAL_POOLS_ONLY",
     "threshold_selection": {
@@ -493,7 +538,7 @@
       "sha256": "51e078610441644d582b0d83c631e26119134f36ad8d4bf559e92df4a4aaecf1"
     },
     "historical_evaluator": {
-      "git_commit": "5a0e67f",
+      "git_commit": "5a0e67f5b7fea4e68069eb6fc2ad0684c4bb7095",
       "path": "scripts/evaluate_retrieval_admission.py",
       "sha256": "b24ee3f52ab5d713c92114ac13d3b1e99498bb40a3ca6cca015bb991dd237c45"
     },
@@ -502,8 +547,7 @@
     "truth_absent_is_error": true
   },
   "schema": {
-    "path": "config/v4_13_fresh_labels_minimal_plan.schema.json",
-    "sha256": "01c223bcad4e59e1ea7ac9636ee26ea60e7634bb1e736dc701778893052221e0"
+    "path": "config/v4_13_fresh_labels_minimal_plan.schema.json"
   },
   "schema_version": "sireto-v4.13-fresh-labels-minimal-plan-2",
   "source_protocol": {
@@ -544,8 +588,16 @@
     },
     "temporal_freshness": {
       "collection_created_after_preregistration_lock": true,
+      "cross_constraints": [
+        "PERIOD_START_LE_PERIOD_END_LE_EXPORT_CUTOFF_LE_CREATED_AT",
+        "REFERENCE_DATE_WITHIN_PERIOD_OR_EQUAL_EXPORT_DATE",
+        "VALID_FROM_LE_VALID_TO",
+        "EVIDENCE_CREATED_AT_LE_EXPORT_CUTOFF",
+        "AUTHORITATIVE_SIRET_PREFIX_9_EQUALS_AUTHORITATIVE_SIREN_WHEN_BOTH_PRESENT"
+      ],
       "export_cutoff_after_preregistration_lock": true,
-      "period_start_after_preregistration_lock": true
+      "period_start_after_preregistration_lock": true,
+      "source_record_id_equivalence_attested_all_rows": true
     }
   },
   "split": {

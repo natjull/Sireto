@@ -91,7 +91,7 @@ un type de preuve, un issuer, un identifiant autoritatif, sa temporalité et le
 hash d'un payload de preuve. Il ne porte aucun nom, adresse ou champ utilisable
 pour une similarité.
 
-Le catalogue fermé admet uniquement :
+Le catalogue fermé peut admettre uniquement :
 
 - `SOURCE_SYSTEM_OFFICIAL_SIRET` : SIRET déjà présent dans le système de
   référence avant l'export, sans production par SIRETO ;
@@ -100,7 +100,17 @@ Le catalogue fermé admet uniquement :
 - `SEALED_ADMINISTRATIVE_DOCUMENT` : document administratif antérieur au
   cutoff, référencé et hashé.
 
-Chaque entrée atteste `matching_pipeline_used=false`, nomme
+Au présent préenregistrement, l'allowlist réelle est volontairement vide :
+aucun issuer et aucun système de preuve réel n'est encore connu. Cela permet
+d'implémenter et d'auditer les composants sur fixtures synthétiques, mais
+interdit Gate 0A et tout `MATCH_EXACT` réel. Avant qu'une collection soit
+déposée, un amendement séparé devra pinner pour chaque couple
+`(authority_type, authority_issuer_id, authority_system_id)` le root, le
+manifest, le schéma, le mécanisme de lookup, le cutoff et les payloads de
+preuve rehashables, puis obtenir deux GO. Une chaîne libre ou une simple
+attestation n'est jamais admissible.
+
+Chaque future entrée autorisée atteste `matching_pipeline_used=false`, nomme
 `authority_issuer_id` et `authority_system_id`, et doit avoir été créée avant
 le cutoff du CRM. Une ressemblance nom/adresse, SIRENE seul, le retrieval, un
 candidat, un hit, un rang, un score, une prédiction, un LLM ou une validation
@@ -118,21 +128,31 @@ source restent au dénominateur.
 
 ## 5. Anti-chevauchement exact
 
-Avant le split, chaque ligne est comparée aux quatre keysets historiques
-pinnés : `service_id`, `input_siret_lineage`, `siret_masked` et
-`fuzzy_historical`. Les projections et normalisations sont exactement celles
-du plan V4.12 pinné. La clé HMAC historique est lue en lecture seule et son
-identifiant ainsi que son SHA sont vérifiés avant usage.
+Avant le split, chaque ligne est comparée aux trois keysets historiques dont
+la projection reste sémantiquement applicable : `service_id`,
+`siret_masked` et `fuzzy_historical`. `source_record_id_equivalence_attested`
+doit être vrai pour toutes les lignes ; sinon la collection est refusée, de
+sorte que `service_id` est toujours comparable. Les projections et
+normalisations sont exactement celles du plan V4.12 pinné. La clé HMAC
+historique est lue en lecture seule et son identifiant ainsi que son SHA sont
+vérifiés avant usage.
 
-Le rapport publie, pour chaque keyset puis pour leur union, le nombre de lignes
+`input_siret_lineage` reste matériellement pinné mais est explicitement exclu
+du claim : il exigeait le SIRET brut du CRM historique, champ volontairement
+interdit dans le nouveau CRM. Le SIRET autoritatif du mapping n'a pas la même
+sémantique et ne lui est jamais substitué. Il est donc interdit de publier
+« zéro hit sur quatre keysets » ; la publication dit « trois keysets
+applicables, input_siret_lineage non applicable par conception ».
+
+Le rapport publie, pour chaque keyset applicable puis pour leur union, le nombre de lignes
 comparables, de hits et de lignes uniques en collision. Le seuil autorisé est
 zéro sur chaque keyset et sur l'union. Chaque SIREN autoritativement connu,
 y compris dans les lignes ambiguës ou contradictoires, est aussi comparé au
 registre gelé des 19 754 SIREN ; l'intersection autorisée est zéro.
 
 Une copie ancienne dotée d'un nouvel `export_id` échoue donc. Une ligne non
-comparable à un keyset est comptée explicitement ; elle ne devient pas un
-non-hit silencieux.
+comparable à l'un des trois keysets applicables provoque `STOP` ; elle ne
+devient jamais un non-hit silencieux.
 
 ## 6. Qualification, IDs et splits
 
@@ -198,6 +218,15 @@ Le gate dev exige simultanément :
 Ranker, decider, risk model et accepteur restent gelés jusque-là.
 
 ## 8. Ranker et accepteur
+
+Le présent contrat ne choisit pas encore leurs familles, features ou
+hyperparamètres. Avant la première exécution retrieval dev, un contrat modèle
+séparé doit pinner les builders de dataset, trainer ranker, générateur OOF,
+trainer accepteur, sélecteur de seuil, sealer/publisher, tests, features,
+familles, hyperparamètres, seeds et protocole de sélection borné. Il doit
+obtenir deux audits indépendants. Sans ce lock, le retrieval dev et toute
+phase modèle sont interdits ; aucun choix de méthode ne peut donc être fait
+après observation de dev.
 
 Après le GO retrieval seulement, le ranker candidat apprend sur les pools
 réels de fit. Ses données pour l'accepteur sont produites en cinq folds OOF

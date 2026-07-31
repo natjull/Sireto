@@ -1,0 +1,25 @@
+{
+  "allowlist": [],
+  "amendment_requirements": {
+    "independent_go_required": 2,
+    "must_pin_per_authority": [
+      "authority_type",
+      "authority_issuer_id",
+      "authority_system_id",
+      "root_or_endpoint",
+      "manifest_sha256",
+      "schema_sha256",
+      "lookup_mechanism",
+      "cutoff_utc",
+      "evidence_payload_policy"
+    ],
+    "must_precede_collection_deposit": true,
+    "unlisted_authority_result": "UNRESOLVED"
+  },
+  "real_collection_open_authorized": false,
+  "schema_version": "sireto-v4.13-authority-catalog-1",
+  "status": "EMPTY_NO_REAL_AUTHORITY_REGISTERED",
+  "synthetic_test_authorities": [
+    "TEST_ONLY_NEVER_REAL_MATCH_EXACT"
+  ]
+}
