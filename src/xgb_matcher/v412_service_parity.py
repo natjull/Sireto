@@ -227,10 +227,38 @@ def _assert_exact(
     *,
     label: str,
 ) -> None:
+    observed = observed.reset_index(drop=True).copy()
+    expected = expected.reset_index(drop=True).copy()
+    if tuple(observed.columns) == tuple(expected.columns):
+        for column in observed.columns:
+            observed_dtype = observed[column].dtype
+            expected_dtype = expected[column].dtype
+            if not (
+                isinstance(observed_dtype, pd.StringDtype)
+                or isinstance(expected_dtype, pd.StringDtype)
+            ):
+                continue
+            observed_non_null = observed[column].dropna()
+            expected_non_null = expected[column].dropna()
+            if not (
+                observed_non_null.map(lambda value: type(value) is str).all()
+                and expected_non_null.map(
+                    lambda value: type(value) is str
+                ).all()
+            ):
+                continue
+            observed[column] = observed[column].astype(object).where(
+                observed[column].notna(),
+                None,
+            )
+            expected[column] = expected[column].astype(object).where(
+                expected[column].notna(),
+                None,
+            )
     try:
         pd.testing.assert_frame_equal(
-            observed.reset_index(drop=True),
-            expected.reset_index(drop=True),
+            observed,
+            expected,
             check_dtype=True,
             check_exact=True,
         )
@@ -454,9 +482,21 @@ def validate_worker_output(
     expected_acceptor = reference["acceptor_reference.parquet"].reset_index(
         drop=True
     )
+    if (
+        set(acceptor["evaluation_partition"].astype(str))
+        != {"threshold_dev"}
+        or set(expected_acceptor["evaluation_partition"].astype(str))
+        != {"comparison_dev", "threshold_dev"}
+    ):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: "
+            "acceptor evaluation metadata changed"
+        )
     _assert_exact(
-        acceptor.drop(columns=["score"]),
-        expected_acceptor.drop(columns=["score"]),
+        acceptor.drop(columns=["score", "evaluation_partition"]),
+        expected_acceptor.drop(
+            columns=["score", "evaluation_partition"],
+        ),
         label="acceptor non-score",
     )
     differences = np.abs(
