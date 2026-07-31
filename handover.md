@@ -2,6 +2,20 @@
 
 ## Etat des lieux
 
+### V4.12 — ranker trusted-label : 216/254 OOF
+
+Le ranker a été réentraîné sans changement de retrieval ni de features sur les
+254 labels exacts de l'audit complet. Le poids `0,5` reste optimal : 216/254
+bons top 1 OOF contre 168/254 pour la baseline, 52 erreurs corrigées et quatre
+régressions. Les trois vérités absentes du pool restent des erreurs end-to-end.
+
+Le contrôle dev non concerné reste à 1 127/1 127. Verdict
+`GO_BUILD_TRUSTED_OOF_SCENES`; prochaine étape : accepteur sur les prédictions
+OOF corrigées, test final toujours fermé.
+
+*(artefact `v4_12_trusted_label_ranker/2f57628196fefce0`; code, rapport et
+présent handover : commit du présent milestone)*
+
 ### V4.12 — audit métier des 279 REVIEW terminé
 
 Les 279 REVIEW de développement sont tous adjudiqués : 254 SIRET exacts
