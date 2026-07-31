@@ -166,6 +166,33 @@ faits/preuves sans candidat, puis reçoit le docket après cette barrière pour
 produire les comparaisons. Le C natif reste une sonde de capacités, jamais un
 substitut digest-only au métier.
 
+Les primitives de protocole M3 sont maintenant gelées. Le framing binaire
+borne chaque frame à 64 Kio et les objets à 32 Mio, impose rôles, directions,
+séquences et machine d'état, utilise JSON canonique et des deadlines absolues,
+et transporte sans pickle les lots de 3 000 candidats. Les bombes de
+profondeur/nœuds sont rejetées par pré-scan avant `json.loads`; l'encodage est
+préflighté et une plage de séquences complète est réservée avant tout octet.
+Le contre-audit rend **`GO_M3_PROTOCOL_PRIMITIVES`** après 53 tests.
+*(commit Git : protocole M3 et tests `4c532f0`)*
+
+Le cœur métier M3b est également gelé, mais avec une portée volontairement
+conditionnelle. Il vérifie le plan 30×3, les 90 tentatives, les relations
+SEARCH/DNS/PAGE, les décisions d'ouverture, domaines, quotas et slots, décode
+uniquement `text/plain` depuis les octets raw, reconstruit spans/SIRET Luhn,
+lookups SIRENE globaux et comparaisons 30×100. La validation URL rejoue IDNA
+3.11/UTS46/STD3 et les suffixes épinglés. Aucun objet ne peut porter
+`reliable=true` ni `provenance_verified=true`; même une source auto-attestée
+reste `M3B_TEXT_PLAIN_IDNA311_CONDITIONAL_SUPPORT_NOT_LABEL`. Après sept
+contre-audits successifs, le verdict final est
+**`GO_M3B_CONDITIONAL_SUPPORT_PRIMITIVES`** avec 59 tests.
+*(commit Git : cœur conditionnel M3b et tests `dc868c6`)*
+
+Le prochain jalon n'est donc pas un label : il faut intégrer protocole,
+sandbox, broker M2 et cœur M3b dans deux vrais workers, puis authentifier la
+provenance par des reçus broker/store avant toute promotion vers une
+adjudication fiable. HTML/PDF restent hors du cœur M3b tant que leurs
+dépendances ne sont pas packagées dans le runtime sandboxé.
+
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
 Le worker persistant complet est maintenant validé sur les 1 456 requêtes
