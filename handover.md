@@ -87,6 +87,15 @@ Il refuse aussi une sortie imbriquée dans la collection et tout overlap
 synthétique injecté. La suite V4.13 donne désormais 96 tests verts.
 *(commit GitHub : chaîne Gate 0B jusqu'aux splits scellés `9353294`)*
 
+Un audit sur deux a rendu GO sur `9353294`; le second a trouvé que les hooks
+de crash tardifs permettaient encore une mutation entre validation et
+receipt. Ces hooks sont supprimés, les mêmes FDs payload restent ouverts
+jusqu'au contrôle final d'identité et queries/oracle, counts, contamination
+et trois manifests split sont reparsés puis comparés sémantiquement juste
+avant la receipt. Des mutations tardives de chacune de ces familles sont
+désormais testées. La suite V4.13 donne 99 tests verts.
+*(commit GitHub : fermeture fenêtre pré-receipt `7b6f587`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
