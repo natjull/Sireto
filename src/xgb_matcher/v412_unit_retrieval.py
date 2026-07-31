@@ -263,6 +263,18 @@ class UnitRetrievalResult:
     lookup_missing_count: int
 
 
+@dataclass(frozen=True)
+class UnitRetrievalContext:
+    """Label-blind details required to reproduce the frozen 45 features."""
+
+    result: UnitRetrievalResult
+    aligned_pool: tuple[dict[str, Any], ...]
+    selected_indices: tuple[int, ...]
+    scores_by_index: dict[int, float]
+    channel_ranks_by_index: dict[int, dict[str, int]]
+    snapshot_details: dict[str, dict[str, Any]]
+
+
 def _normalize_code(value: object) -> str | None:
     if value is None:
         return None
@@ -561,7 +573,7 @@ def _retrieve_internal(
     partition_store: Any,
     tfidf_cache: Any,
     lookup: Any,
-) -> tuple[UnitRetrievalResult, int, int]:
+) -> tuple[UnitRetrievalResult, int, int, UnitRetrievalContext]:
     started = time.perf_counter_ns()
     partition_key = route_query(query, partition_store.partition_keys)
     rows = partition_store.load(partition_key)
@@ -571,6 +583,7 @@ def _retrieve_internal(
     aligned_pool = _build_aligned_pool(rows)
     aligned_pool_count = len(aligned_pool)
     scores_by_index: dict[int, float] = {}
+    channels: dict[str, list[int]] = {}
 
     if aligned_pool_count > 1:
         artifacts = tfidf_cache.get(partition_key, aligned_pool)
@@ -620,14 +633,13 @@ def _retrieve_internal(
                 "address",
             )
         )
-        fused = _rrf(
-            {
-                "sparse_name": [index for index, _ in name_hits],
-                "sparse_address": [index for index, _ in address_hits],
-                "dense": [],
-                "rescue": _rescue_indices(query, aligned_pool),
-            }
-        )
+        channels = {
+            "sparse_name": [index for index, _ in name_hits],
+            "sparse_address": [index for index, _ in address_hits],
+            "dense": [],
+            "rescue": _rescue_indices(query, aligned_pool),
+        }
+        fused = _rrf(channels)
         selected_indices = [index for index, _ in fused]
         scores_by_index = dict(fused)
         selected = set(selected_indices)
@@ -642,6 +654,16 @@ def _retrieve_internal(
     else:
         selected_indices = list(range(aligned_pool_count))
         scores_by_index = {index: 0.0 for index in selected_indices}
+
+    channel_ranks_by_index: dict[int, dict[str, int]] = {}
+    for channel_name, ordered_indices in channels.items():
+        seen: set[int] = set()
+        for rank, raw_index in enumerate(ordered_indices, start=1):
+            index = int(raw_index)
+            if index in seen:
+                continue
+            seen.add(index)
+            channel_ranks_by_index.setdefault(index, {})[channel_name] = rank
 
     selected_sirets: list[str] = []
     for index in selected_indices:
@@ -683,17 +705,28 @@ def _retrieve_internal(
     if len(set(final_sirets)) != len(final_sirets):
         _stop("duplicate SIRET after lookup")
     lookup_ns = time.perf_counter_ns() - lookup_started
-    return (
-        UnitRetrievalResult(
-            partition_key=partition_key,
-            candidate_sirets=final_sirets,
-            raw_pool_count=raw_pool_count,
-            aligned_pool_count=aligned_pool_count,
-            lookup_missing_count=missing_count,
-        ),
-        retrieval_ns,
-        lookup_ns,
+    result = UnitRetrievalResult(
+        partition_key=partition_key,
+        candidate_sirets=final_sirets,
+        raw_pool_count=raw_pool_count,
+        aligned_pool_count=aligned_pool_count,
+        lookup_missing_count=missing_count,
     )
+    context = UnitRetrievalContext(
+        result=result,
+        aligned_pool=tuple(dict(row) for row in aligned_pool),
+        selected_indices=tuple(selected_indices),
+        scores_by_index=dict(scores_by_index),
+        channel_ranks_by_index={
+            index: dict(ranks)
+            for index, ranks in channel_ranks_by_index.items()
+        },
+        snapshot_details={
+            str(siret): dict(detail)
+            for siret, detail in details.items()
+        },
+    )
+    return result, retrieval_ns, lookup_ns, context
 
 
 def retrieve_unit_query(
@@ -705,13 +738,31 @@ def retrieve_unit_query(
 ) -> UnitRetrievalResult:
     """Retrieve at most 100 active SIRETs for one safe CRM query."""
 
-    result, _retrieval_ns, _lookup_ns = _retrieve_internal(
+    result, _retrieval_ns, _lookup_ns, _context = _retrieve_internal(
         query=query,
         partition_store=partition_store,
         tfidf_cache=tfidf_cache,
         lookup=lookup,
     )
     return result
+
+
+def retrieve_unit_query_context(
+    *,
+    query: Mapping[str, Any],
+    partition_store: Any,
+    tfidf_cache: Any,
+    lookup: Any,
+) -> UnitRetrievalContext:
+    """Return the label-blind pre-lookup context used by feature serving."""
+
+    _result, _retrieval_ns, _lookup_ns, context = _retrieve_internal(
+        query=query,
+        partition_store=partition_store,
+        tfidf_cache=tfidf_cache,
+        lookup=lookup,
+    )
+    return context
 
 
 def _strict_json_bytes(data: bytes, label: str) -> dict[str, Any]:
@@ -1096,7 +1147,12 @@ def run_child_worker(
     lookup_missing_count = 0
     with strict_stores.StrictSnapshotLookup(descriptor, allowed) as lookup:
         for query in query_rows:
-            result, query_retrieval_ns, query_lookup_ns = _retrieve_internal(
+            (
+                result,
+                query_retrieval_ns,
+                query_lookup_ns,
+                _context,
+            ) = _retrieve_internal(
                 query=query,
                 partition_store=partition_store,
                 tfidf_cache=tfidf_cache,
