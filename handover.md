@@ -3058,5 +3058,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `reports/v412_review_rerank_counteraudit_53.md` et table machine
   `reports/v412_review_rerank_counteraudit_53.csv`.
 
+## Expérience V4.12-Ranker — apprentissage des labels difficiles
+
+- Commit : `4f57c2f` (`experiment: train hard-label ranker candidate`).
+- Les 27 labels exacts R30 et les 50 labels exacts R53 sont compatibles
+  bit-à-bit avec les 45 features et les pools V4.11. Les 77 SIREN sont
+  disjoints du `fit` historique. Deux positifs absents des 100 candidats
+  restent des erreurs end-to-end ; les six ambiguïtés sont exclues du fit.
+- Cinq modèles OOF utilisent les folds SIREN gelés. Le baseline obtient 18/77
+  bons top 1 sur cette population difficile. Le candidat non pondéré atteint
+  60/77 mais régresse sur trois des 1 197 contrôles non adjudiqués : rejet.
+- L'ablation figée retient un poids de groupe `0,5` pour les nouveaux cas :
+  59/77 bons top 1, 43 corrections, deux régressions difficiles connues et
+  zéro régression sur les 1 197 contrôles. Les poids `0,25` et `0,1` sont
+  dominés sous cette contrainte.
+- L'expérience a été reproduite indépendamment avec prédictions, écran de
+  régression et modèle bit-à-bit identiques. Modèle candidat :
+  `45f8735382111ee3dc308926bd4883f2c71601cb9e30be72ebb76eba36fd62cd`.
+- Verdict : `GO_NEW_INDEPENDENT_VALIDATION`. Il s'agit d'un candidat de
+  développement, sans autorisation produit. Prochaine priorité : geler un
+  nouveau lot parmi les REVIEW non adjudiqués, avant lecture des vérités, en
+  ciblant les désaccords entre baseline et candidat ; le test final reste
+  fermé.
+- Rapport : `reports/v412_hard_label_ranker_experiment.md`. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_hard_label_ranker/bba02575366ebe80`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
