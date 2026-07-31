@@ -40,6 +40,8 @@ EXPECTED_ENTRY_ORDER = [
     "IF_ANY_CLAIM_OR_RESULT_OTHERWISE_EXISTS_STOP_WITHOUT_KEYCHAIN",
     "CREATE_DURABLE_CLAIM_O_EXCL",
     "CALL_SECITEMCOPYMATCHING_ONCE",
+    "REVALIDATE_ALL_GUARDS_AND_STATE_AFTER_NATIVE_CALL",
+    "IF_ANY_REVALIDATION_FAILS_STOP_WITHOUT_RESULT",
     "IF_STATUS_IS_MINUS_25300_CREATE_DURABLE_RESULT_O_EXCL",
     "OTHERWISE_STOP_WITHOUT_RESULT",
 ]
@@ -332,7 +334,9 @@ def validate_plan(plan: Mapping[str, Any]) -> None:
         ],
         "PLAN_NATIVE_COUNTS",
     )
-    race_case = "STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    race_case = (
+        "PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    )
     if (
         any(type(value) is not int for value in maximum_calls.values())
         or maximum_calls.get(race_case) != 1

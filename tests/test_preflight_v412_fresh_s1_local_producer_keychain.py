@@ -811,7 +811,9 @@ def test_preregistered_query_bounds_are_exactly_27_cases() -> None:
     matrix = plan["implementation_test_requirements"][
         "maximum_native_call_count_by_case"
     ]
-    race_case = "STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    race_case = (
+        "PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    )
     assert len(matrix) == 27
     assert matrix[race_case] == 1
     assert all(
