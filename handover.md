@@ -177,10 +177,18 @@ lié au code, gardes d'absence et cycle de crash ouverts. Le correctif
 lock de pré-vol liant commit et blobs, vérifie l'absence de l'autorisation, du
 root et du claim producteur, et réserve l'appel par un claim durable : tout
 état indéterminé interdit un second appel. Ses 6 tests ciblés passent. Deux
-nouveaux audits de préenregistrement sont requis avant toute implémentation.
+nouveaux audits ont donné un premier `GO` et un second `NO_GO` : la notion
+`ABSENT` acceptait encore implicitement les liens pendants et le runtime du
+futur lock n'était pas fermé champ par champ. Le correctif `2049251` définit
+désormais l'absence par un parcours `lstat` sans symlink conclu uniquement
+par `ENOENT`, ferme les 15 champs du lock, les 9 champs d'implémentation et
+les 9 champs runtime, et préenregistre la matrice fichiers/répertoires/liens/
+erreurs/crashs avec zéro appel natif sur chaque état invalide. Ses 8 tests
+ciblés passent. Deux nouveaux audits de préenregistrement sont requis avant
+toute implémentation.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
-autorités et crashs `f07c84e`)*.
+autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`)*.
 
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
