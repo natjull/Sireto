@@ -86,11 +86,20 @@ def test_invalid_or_ambiguous_inputs_fail_closed(bad: list[dict]) -> None:
 
 def test_sealing_is_exclusive_and_physically_separate(tmp_path: Path) -> None:
     rows = [row("a" * 64), row("b" * 64), row("c" * 64)]
-    hashes = subject.seal_manifests(rows, tmp_path)
+    output = tmp_path / "splits"
+    hashes = subject.seal_manifests(rows, output)
     assert set(hashes) == {"fit", "dev", "test"}
     for split in hashes:
-        path = tmp_path / split / "split_manifest.json"
+        path = output / split / "split_manifest.json"
         assert path.is_file()
         assert json.loads(path.read_text())["split"] == split
     with pytest.raises(FileExistsError):
-        subject.seal_manifests(rows, tmp_path)
+        subject.seal_manifests(rows, output)
+
+
+def test_synthetic_sealer_rejects_production_root() -> None:
+    with pytest.raises(subject.SplitStopped, match="below OS tmp"):
+        subject.seal_manifests(
+            [row("a" * 64)],
+            Path("/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/splits"),
+        )

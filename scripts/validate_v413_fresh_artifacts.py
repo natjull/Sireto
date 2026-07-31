@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import tempfile
 import unicodedata
 from pathlib import Path
 from typing import Any, Iterable
@@ -106,7 +107,11 @@ def _validate_oracle(row: dict[str, Any], ordinal: int) -> tuple[str, str]:
         _stop(f"oracle {ordinal} invalid evidence inventory")
     if label == "MATCH_EXACT" and (siret is None or siren is None or count < 1):
         _stop(f"oracle {ordinal} MATCH_EXACT requires unique evidence and SIRET")
-    if label == "UNRESOLVED" and (siret is not None or siren is not None):
+    if label == "AMBIGUOUS" and (siret is not None or count < 1):
+        _stop(f"oracle {ordinal} AMBIGUOUS cannot expose exact SIRET")
+    if label == "UNRESOLVED" and (
+        siret is not None or siren is not None or count != 0 or hashes
+    ):
         _stop(f"oracle {ordinal} UNRESOLVED cannot expose truth")
     if not isinstance(row["reason_code"], str) or not row["reason_code"]:
         _stop(f"oracle {ordinal} reason_code required")
@@ -142,8 +147,12 @@ def validate_artifacts(
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    resolved = path.resolve()
+    temporary = Path(tempfile.gettempdir()).resolve()
+    if temporary not in resolved.parents or path.is_symlink():
+        _stop(f"{path.name} must be a nonsymlink synthetic tempfile")
     rows: list[dict[str, Any]] = []
-    for ordinal, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    for ordinal, line in enumerate(resolved.read_text(encoding="utf-8").splitlines(), 1):
         value = json.loads(line)
         if not isinstance(value, dict):
             _stop(f"{path.name} line {ordinal} is not object")

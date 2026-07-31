@@ -534,7 +534,7 @@ def qualify_fixture_rows(
                 "authoritative_siret": authoritative_siret,
                 "authoritative_siren": authoritative_siren,
                 "reason_code": reason,
-                "evidence_count": len(eligible),
+                "evidence_count": len(hashes),
                 "evidence_payload_sha256s": hashes,
             }
         )
@@ -570,6 +570,102 @@ def _assert_temporary_output(output_root: Path) -> Path:
     return root
 
 
+def _validate_result_for_write(result: Mapping[str, Any]) -> None:
+    if set(result) != {"queries", "oracle", "split_rows", "counts"}:
+        raise QualificationError("qualification result schema mismatch")
+    queries = result["queries"]
+    oracle = result["oracle"]
+    split_rows = result["split_rows"]
+    if (
+        not isinstance(queries, list)
+        or not isinstance(oracle, list)
+        or not isinstance(split_rows, list)
+        or not queries
+        or len(queries) != len(oracle)
+        or len(queries) != len(split_rows)
+    ):
+        raise QualificationError("qualification result row sets mismatch")
+    query_ids: list[str] = []
+    labels: list[str] = []
+    for query in queries:
+        scan_query_for_truth(query)
+        query_id = _nonempty_string(query["query_id"], "query_id")
+        if len(query_id) != 64 or any(character not in "abcdefghijklmnop" for character in query_id):
+            raise QualificationError("query_id must be opaque a-p lowercase")
+        query_ids.append(query_id)
+    for row in oracle:
+        _exact_keys(row, ORACLE_COLUMNS, "oracle")
+        query_id = _nonempty_string(row["query_id"], "query_id")
+        label = row["label"]
+        if label not in {"MATCH_EXACT", "AMBIGUOUS", "UNRESOLVED"}:
+            raise QualificationError("oracle label invalid")
+        siret = _optional_identifier(row["authoritative_siret"], 14, "authoritative_siret")
+        siren = _optional_identifier(row["authoritative_siren"], 9, "authoritative_siren")
+        if siret is not None and siren is not None and siret[:9] != siren:
+            raise QualificationError("oracle SIRET/SIREN mismatch")
+        hashes = row["evidence_payload_sha256s"]
+        if (
+            not isinstance(hashes, list)
+            or hashes != sorted(set(hashes))
+            or any(_hex64(value, "evidence_payload_sha256") != value for value in hashes)
+            or type(row["evidence_count"]) is not int
+            or row["evidence_count"] != len(hashes)
+        ):
+            raise QualificationError("oracle evidence inventory invalid")
+        if label == "MATCH_EXACT" and (
+            siret is None or siren is None or not hashes
+        ):
+            raise QualificationError("MATCH_EXACT oracle invariant")
+        if label == "AMBIGUOUS" and (siret is not None or not hashes):
+            raise QualificationError("AMBIGUOUS oracle invariant")
+        if label == "UNRESOLVED" and (
+            siret is not None or siren is not None or hashes
+        ):
+            raise QualificationError("UNRESOLVED oracle invariant")
+        _nonempty_string(row["reason_code"], "reason_code")
+        query_ids.append(query_id)
+        labels.append(label)
+    query_half = query_ids[: len(queries)]
+    oracle_half = query_ids[len(queries) :]
+    if (
+        len(set(query_half)) != len(query_half)
+        or len(set(oracle_half)) != len(oracle_half)
+        or set(query_half) != set(oracle_half)
+    ):
+        raise QualificationError("query/oracle ID sets mismatch")
+    split_ids: list[str] = []
+    for row in split_rows:
+        if set(row) != {
+            "schema_version",
+            "query_id",
+            "source_group_id",
+            "authoritative_sirens",
+        }:
+            raise QualificationError("split row schema mismatch")
+        if row["schema_version"] != "sireto-v4.13-split-input-row-1":
+            raise QualificationError("split row schema_version mismatch")
+        split_ids.append(_nonempty_string(row["query_id"], "query_id"))
+        group = row["source_group_id"]
+        if group is not None and (not isinstance(group, str) or not group):
+            raise QualificationError("split source_group_id invalid")
+        sirens = row["authoritative_sirens"]
+        if (
+            not isinstance(sirens, list)
+            or sirens != sorted(set(sirens))
+            or any(_optional_identifier(value, 9, "authoritative_siren") is None for value in sirens)
+        ):
+            raise QualificationError("split authoritative_sirens invalid")
+    if split_ids != query_half:
+        raise QualificationError("query/split ID order mismatch")
+    expected_counts = {
+        label: labels.count(label)
+        for label in ("MATCH_EXACT", "AMBIGUOUS", "UNRESOLVED")
+    }
+    expected_counts["source_rows"] = len(queries)
+    if result["counts"] != expected_counts:
+        raise QualificationError("qualification counts mismatch")
+
+
 def _exclusive_csv(path: Path, columns: Sequence[str], rows: Iterable[Mapping[str, Any]]) -> None:
     fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "w", encoding="utf-8", newline="") as handle:
@@ -582,11 +678,14 @@ def _exclusive_csv(path: Path, columns: Sequence[str], rows: Iterable[Mapping[st
                     encoded["evidence_payload_sha256s"], separators=(",", ":")
                 )
             writer.writerow(encoded)
+        handle.flush()
+        os.fsync(handle.fileno())
 
 
 def write_fixture_outputs(result: Mapping[str, Any], output_root: Path) -> dict[str, Path]:
     """Write separated fixture artifacts, exclusively below the temp directory."""
     root = _assert_temporary_output(output_root)
+    _validate_result_for_write(result)
     root.mkdir(mode=0o700, parents=True, exist_ok=False)
     query_dir = root / "queries"
     oracle_dir = root / "oracle"
@@ -607,6 +706,8 @@ def write_fixture_outputs(result: Mapping[str, Any], output_root: Path) -> dict[
     fd = os.open(audit_path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, "wb") as handle:
         handle.write(_compact_canonical_json(audit_payload))
+        handle.flush()
+        os.fsync(handle.fileno())
     fd = os.open(
         split_rows_path,
         os.O_WRONLY | os.O_CREAT | os.O_EXCL,
@@ -615,6 +716,8 @@ def write_fixture_outputs(result: Mapping[str, Any], output_root: Path) -> dict[
     with os.fdopen(fd, "wb") as handle:
         for row in result["split_rows"]:
             handle.write(_compact_canonical_json(row))
+        handle.flush()
+        os.fsync(handle.fileno())
     return {
         "queries": query_path,
         "oracle": oracle_path,

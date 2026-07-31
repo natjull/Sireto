@@ -13,6 +13,9 @@ import hashlib
 import json
 import os
 import re
+import shutil
+import tempfile
+import uuid
 from collections import defaultdict
 from pathlib import Path
 from typing import Any, Iterable
@@ -190,18 +193,41 @@ def _write_exclusive(path: Path, payload: bytes) -> None:
 
 def seal_manifests(rows: Iterable[dict[str, Any]], output_root: Path) -> dict[str, str]:
     manifests = build_manifests(rows)
+    resolved = output_root.resolve()
+    temporary = Path(tempfile.gettempdir()).resolve()
+    if resolved == temporary or temporary not in resolved.parents or output_root.is_symlink():
+        _stop("synthetic split output must be below OS tmp without symlink")
+    if resolved.exists():
+        raise FileExistsError(resolved)
+    staging = resolved.parent / f".{resolved.name}.staging-{uuid.uuid4().hex}"
+    staging.mkdir(mode=0o700, parents=False, exist_ok=False)
     hashes: dict[str, str] = {}
-    for split, manifest in manifests.items():
-        payload = canonical_json_bytes(manifest)
-        path = output_root / split / "split_manifest.json"
-        _write_exclusive(path, payload)
-        hashes[split] = hashlib.sha256(payload).hexdigest()
+    try:
+        for split, manifest in manifests.items():
+            payload = canonical_json_bytes(manifest)
+            path = staging / split / "split_manifest.json"
+            _write_exclusive(path, payload)
+            hashes[split] = hashlib.sha256(payload).hexdigest()
+        os.rename(staging, resolved)
+        parent_fd = os.open(resolved.parent, os.O_RDONLY)
+        try:
+            os.fsync(parent_fd)
+        finally:
+            os.close(parent_fd)
+    except Exception:
+        if staging.exists():
+            shutil.rmtree(staging)
+        raise
     return hashes
 
 
 def _read_jsonl(path: Path) -> list[dict[str, Any]]:
+    resolved = path.resolve()
+    temporary = Path(tempfile.gettempdir()).resolve()
+    if temporary not in resolved.parents or path.is_symlink():
+        _stop("synthetic split input must be below OS tmp without symlink")
     rows: list[dict[str, Any]] = []
-    for ordinal, line in enumerate(path.read_text(encoding="utf-8").splitlines(), 1):
+    for ordinal, line in enumerate(resolved.read_text(encoding="utf-8").splitlines(), 1):
         try:
             value = json.loads(line)
         except Exception as exc:

@@ -307,6 +307,37 @@ def test_rejects_corrupt_existing_claim(
         _run(inbox, control)
 
 
+@pytest.mark.parametrize(
+    ("field", "value"),
+    [("arrival_epoch_ns", 999), ("collection_id", "tampered")],
+)
+def test_claim_identity_is_bound_to_selected_ledger_record(
+    synthetic_roots: tuple[Path, Path],
+    field: str,
+    value: object,
+) -> None:
+    inbox, control = synthetic_roots
+    _collection(inbox, arrival=1, collection_id="bound")
+    _run(inbox, control)
+    claim_path = control / subject.CLAIM_FILENAME
+    claim = json.loads(claim_path.read_bytes())
+    claim[field] = value
+    claim_path.unlink()
+    _write_private(claim_path, subject.canonical_json(claim))
+    with pytest.raises(subject.AvailabilityStop, match="CLAIM_LEDGER_BINDING"):
+        _run(inbox, control)
+
+
+def test_synthetic_api_rejects_non_tmp_roots() -> None:
+    with pytest.raises(subject.AvailabilityStop, match="NOT_SYNTHETIC_TMP"):
+        subject.audit_synthetic_availability(
+            inbox=Path("/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/inbox"),
+            control_root=Path("/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/control"),
+            stability_observer=_stable,
+            synthetic_only=True,
+        )
+
+
 def test_rejects_corrupt_existing_ledger(
     synthetic_roots: tuple[Path, Path],
 ) -> None:

@@ -15,6 +15,7 @@ import json
 import os
 import re
 import stat
+import tempfile
 from dataclasses import dataclass
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -95,6 +96,19 @@ def canonical_json(value: Any) -> bytes:
 
 def _stop(reason: str) -> None:
     raise AvailabilityStop(reason)
+
+
+def _require_synthetic_root(path: Path, label: str) -> Path:
+    resolved = path.resolve()
+    temporary = Path(tempfile.gettempdir()).resolve()
+    if resolved == temporary or temporary not in resolved.parents:
+        _stop(f"{label}_NOT_SYNTHETIC_TMP")
+    current = Path(resolved.anchor)
+    for part in resolved.parts[1:]:
+        current /= part
+        if current.exists() and stat.S_ISLNK(os.lstat(current).st_mode):
+            _stop(f"{label}_SYMLINK_COMPONENT")
+    return resolved
 
 
 def _read_all(fd: int) -> bytes:
@@ -761,6 +775,8 @@ def audit_synthetic_availability(
     if not callable(stability_observer):
         _stop("STABILITY_OBSERVER")
 
+    inbox = _require_synthetic_root(inbox, "INBOX")
+    control_root = _require_synthetic_root(control_root, "CONTROL_ROOT")
     plan_path = plan_path or repository / PLAN_PATH.relative_to(REPOSITORY)
     lock_path = lock_path or repository / LOCK_PATH.relative_to(REPOSITORY)
     bundle = _validate_bundle(repository, plan_path, lock_path)
@@ -783,6 +799,21 @@ def audit_synthetic_availability(
                 != existing["directory_name"]
                 or ledger.get("selected_manifest_sha256")
                 != existing["collection_manifest_sha256"]
+                or existing["arrival_epoch_ns"]
+                != int(existing["directory_name"].split("_", 1)[0])
+            ):
+                _stop("CLAIM_LEDGER_BINDING")
+            selected_records = [
+                record
+                for record in ledger["observed_manifests"]
+                if record["directory_name"] == existing["directory_name"]
+                and record["manifest_sha256"]
+                == existing["collection_manifest_sha256"]
+            ]
+            if (
+                len(selected_records) != 1
+                or selected_records[0]["collection_id"]
+                != existing["collection_id"]
             ):
                 _stop("CLAIM_LEDGER_BINDING")
             return existing

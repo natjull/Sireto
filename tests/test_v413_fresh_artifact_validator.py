@@ -69,7 +69,14 @@ def test_postcode_and_insee_are_not_false_positive_leaks() -> None:
 
 @pytest.mark.parametrize(
     "mutation",
-    ["extra_query_field", "id_mismatch", "bad_siret_siren", "unresolved_truth", "bad_evidence"],
+    [
+        "extra_query_field",
+        "id_mismatch",
+        "bad_siret_siren",
+        "unresolved_truth",
+        "ambiguous_exact_siret",
+        "bad_evidence",
+    ],
 )
 def test_schema_join_and_oracle_invariants_fail_closed(mutation: str) -> None:
     q, o = query(), oracle()
@@ -81,6 +88,8 @@ def test_schema_join_and_oracle_invariants_fail_closed(mutation: str) -> None:
         o["authoritative_siren"] = "987654321"
     elif mutation == "unresolved_truth":
         o["label"] = "UNRESOLVED"
+    elif mutation == "ambiguous_exact_siret":
+        o["label"] = "AMBIGUOUS"
     else:
         o["evidence_count"] = 2
     with pytest.raises(subject.ValidationStopped):

@@ -348,6 +348,24 @@ def test_exact_ordered_schemas_reject_extra_or_reordered_fields() -> None:
         qualify([crm_row("crm-1")], [reordered])
 
 
+def test_duplicate_evidence_payload_hash_has_consistent_unique_inventory() -> None:
+    first = mapping_row("crm-1")
+    second = mapping_row("crm-1", record_id="invoice-2")
+    second["evidence_payload_sha256"] = first["evidence_payload_sha256"]
+    result = qualify([crm_row("crm-1")], [first, second])
+    assert result["oracle"][0]["evidence_count"] == 1
+    assert len(result["oracle"][0]["evidence_payload_sha256s"]) == 1
+
+
+def test_writer_rescans_mutated_result_before_any_output(tmp_path: Path) -> None:
+    result = qualify([crm_row("crm-1")], [mapping_row("crm-1")])
+    result["queries"][0]["crm_name_raw"] = "LEAK 12345678901234"
+    output = tmp_path / "must-not-exist"
+    with pytest.raises(QualificationError, match="truth leak"):
+        write_fixture_outputs(result, output)
+    assert not output.exists()
+
+
 def test_output_writer_refuses_non_temporary_path() -> None:
     with pytest.raises(QualificationError, match="temporary"):
         write_fixture_outputs(
