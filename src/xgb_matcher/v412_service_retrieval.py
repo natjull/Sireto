@@ -17,7 +17,12 @@ from .features import (
     preprocess_crm_row,
     set_global_name_idf_map,
 )
-from .v412_service import CANDIDATE_CEILING, FORBIDDEN_FIELDS
+from .v412_service import (
+    CANDIDATE_CEILING,
+    FORBIDDEN_FIELDS,
+    RANKER_C_FEATURE_ORDER,
+    RANKER_C_FEATURE_ORDER_SHA256,
+)
 from .v412_unit_retrieval import (
     UnitRetrievalContext,
     retrieve_unit_query_context,
@@ -30,6 +35,18 @@ ROLE_COLUMNS = (
     "enseigne3",
     "denomination_usuelle",
     "activity_code",
+)
+OUTPUT_COLUMNS = (
+    "query_id",
+    "candidate_siret",
+    "candidate_siren",
+    "candidate_state",
+    "retrieval_rank",
+    "retrieval_source",
+    "retrieval_channel_count",
+    "retrieval_agreement",
+    *ROLE_COLUMNS,
+    *RANKER_C_FEATURE_ORDER,
 )
 
 
@@ -105,11 +122,7 @@ class V412RetrievalFeatureService:
         feature_builder: FeatureBuilder = make_feature_rows_from_preprocessed,
         idf_builder: IdfBuilder = compute_name_idf_map,
     ) -> None:
-        if (
-            len(ranker_feature_order) != 45
-            or len(set(ranker_feature_order)) != 45
-            or ranker_feature_order[-1] != "retrieval_rank_recip"
-        ):
+        if tuple(ranker_feature_order) != RANKER_C_FEATURE_ORDER:
             raise ValueError(
                 "STOP_V412_SERVICE_INTEGRITY: Ranker C feature order changed"
             )
@@ -242,8 +255,16 @@ class V412RetrievalFeatureService:
                 if channel != "dense"
             )
             source = "+".join(sources) if sources else "padding"
+            missing_features = set(self.ranker_feature_order[:-1]) - set(
+                features
+            )
+            if missing_features:
+                raise ValueError(
+                    "STOP_V412_SERVICE_INTEGRITY: frozen Ranker C feature "
+                    f"missing: {sorted(missing_features)}"
+                )
             feature_values = {
-                name: _finite(features.get(name, 0.0), name)
+                name: _finite(features[name], name)
                 for name in self.ranker_feature_order[:-1]
             }
             feature_values["retrieval_rank_recip"] = 1.0 / rank
@@ -266,7 +287,23 @@ class V412RetrievalFeatureService:
                     **feature_values,
                 }
             )
-        frame = pd.DataFrame(rows)
+        frame = pd.DataFrame(rows, columns=OUTPUT_COLUMNS)
+        frame = frame.astype(
+            {
+                "query_id": "string",
+                "candidate_siret": "string",
+                "candidate_siren": "string",
+                "candidate_state": "string",
+                "retrieval_rank": "int64",
+                "retrieval_source": "string",
+                "retrieval_channel_count": "int32",
+                "retrieval_agreement": "int32",
+                **{
+                    name: "float32"
+                    for name in self.ranker_feature_order
+                },
+            }
+        )
         if len(frame):
             matrix = frame[list(self.ranker_feature_order)].to_numpy(
                 dtype=np.float32
@@ -291,6 +328,9 @@ class V412RetrievalFeatureService:
 
 
 __all__ = [
+    "OUTPUT_COLUMNS",
+    "RANKER_C_FEATURE_ORDER",
+    "RANKER_C_FEATURE_ORDER_SHA256",
     "ROLE_COLUMNS",
     "RetrievalFeatureResult",
     "RetrievalFeatureTimings",

@@ -7,11 +7,12 @@ import pytest
 from src.xgb_matcher.v411_scene import V411_ACCEPTOR_FEATURE_NAMES
 from src.xgb_matcher.v412_service import (
     FIXED_THRESHOLD,
+    RANKER_C_FEATURE_ORDER,
     V412DownstreamService,
 )
 
 
-FEATURES = [f"feature_{index:02d}" for index in range(45)]
+FEATURES = list(RANKER_C_FEATURE_ORDER)
 
 
 class _Ranker:

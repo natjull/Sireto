@@ -9,6 +9,8 @@ V4.12-G veto.  It performs no file, network, model-training or label I/O.
 from __future__ import annotations
 
 from dataclasses import dataclass
+import hashlib
+import json
 import math
 import re
 import time
@@ -26,6 +28,67 @@ from .v412_direct_evidence import apply_guard
 
 CANDIDATE_CEILING = 100
 FIXED_THRESHOLD = 0.8720916706888049
+RANKER_C_FEATURE_ORDER = (
+    "has_any_name",
+    "name_count",
+    "name_jaro_max",
+    "name_jaro_second",
+    "name_jaro_gap",
+    "name_levenshtein_max",
+    "name_token_overlap_max",
+    "idf_name",
+    "numeric_token_match",
+    "name_first_word_match_max",
+    "name_contains_crm_max",
+    "name_crm_contains_cand_max",
+    "acronym_match_max",
+    "name_sim_max_etab",
+    "name_sim_max_ul",
+    "name_sim_max_sigle",
+    "name_sim_max_pm_dirigeant",
+    "type_of_max_name",
+    "is_ul_name_max",
+    "is_sigle_max",
+    "name_length_max",
+    "has_person_name",
+    "person_name_jaro_max",
+    "name_city_overlap_max",
+    "name_is_city_like_max",
+    "addr_jaro",
+    "addr_levenshtein",
+    "postcode_match",
+    "city_match",
+    "street_number_diff",
+    "addr_token_overlap",
+    "address_density",
+    "street_name_jaro",
+    "name_addr_consistency",
+    "legal_form_category",
+    "is_siege",
+    "is_association",
+    "alias_match",
+    "token_overlap_ul",
+    "ul_vs_pm_indicator",
+    "is_crm_school",
+    "geo_exact_match",
+    "name_norm_exact",
+    "street_number_match",
+    "retrieval_rank_recip",
+)
+RANKER_C_FEATURE_ORDER_SHA256 = hashlib.sha256(
+    json.dumps(
+        list(RANKER_C_FEATURE_ORDER),
+        sort_keys=True,
+        separators=(",", ":"),
+    ).encode("utf-8")
+).hexdigest()
+if (
+    RANKER_C_FEATURE_ORDER_SHA256
+    != "760db4db1397c85ad34440819e868533a3a11684999285c30a7047eccdba4746"
+):
+    raise RuntimeError(
+        "STOP_V412_SERVICE_INTEGRITY: frozen Ranker C feature hash changed"
+    )
 FORBIDDEN_FIELDS = frozenset(
     {
         "label_kind",
@@ -176,10 +239,7 @@ class V412DownstreamService:
         threshold: float = FIXED_THRESHOLD,
         scene_builder: SceneBuilder = build_v411_compact_scene,
     ) -> None:
-        if (
-            len(ranker_feature_order) != 45
-            or len(set(ranker_feature_order)) != 45
-        ):
+        if tuple(ranker_feature_order) != RANKER_C_FEATURE_ORDER:
             raise ValueError(
                 "STOP_V412_SERVICE_INTEGRITY: Ranker C feature order changed"
             )
@@ -348,6 +408,8 @@ __all__ = [
     "CANDIDATE_CEILING",
     "FIXED_THRESHOLD",
     "FORBIDDEN_FIELDS",
+    "RANKER_C_FEATURE_ORDER",
+    "RANKER_C_FEATURE_ORDER_SHA256",
     "ServiceTimings",
     "ServiceTrace",
     "V412DownstreamService",
