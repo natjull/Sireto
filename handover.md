@@ -2987,6 +2987,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   train/dev réutilisant ces familles d'erreurs. Aucun nouveau gate
   d'infrastructure et aucune ouverture du test final.
 
+## Expérience V4.12-R30 — correction bornée du ranker REVIEW
+
+- Commit : `d0a2c9a` (`experiment: test bounded REVIEW reranking`).
+- Sans entraînement, une correction conditionnelle réutilisant deux features
+  existantes (`name_sim_max_ul` et `is_siege`) passe de 15 à 25 bons top 1
+  sur les 27 labels exacts R30 : 10 corrections, aucune régression et aucune
+  ambiguïté convertie en positif.
+- La contre-expérience globale est rejetée : elle atteindrait 26/27 sur R30
+  mais dégraderait 20 des 116 anciens top 1 fiables.
+- La variante bornée, appliquée seulement si le score top 1 initial est au
+  moins 2,5, ne dégrade aucun de ces 116 cas. Ce contrôle est un écran de
+  développement consommé, pas une validation indépendante ni une
+  autorisation de production.
+- Verdict : `GO_EXPAND_LABELS_BEFORE_TRAINING`. Les deux erreurs restantes
+  sont GHNE Longjumeau (fonction du site non portée par le nom légal) et INLOG
+  (correction bloquée par le seuil prudent).
+- Rapport : `reports/v412_review_rerank_spike.md`. Labels machine :
+  `reports/v412_review_adjudication_labels.csv`.
+
 ## Prochaines etapes
 1. Ne plus réutiliser le test historique, le holdout V4-Fresh, le random V4.8
    ni les 172 cas V4.9 pour sélectionner ou valider une variante.
@@ -3009,12 +3028,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
    populations uniquement : garde multi-SIREN forte, nouvelles features
    d'unicité, comparaison garde seule puis accepteur. Geler le candidat avant
    tout nouvel export CRM indépendant, indispensable à une décision produit.
-8. **Priorité active après l'audit des 30** : tester d'abord une correction de
-   classement minimale sur les scènes déjà étiquetées : identité légale ou
-   enseigne exacte, rôle siège/service, activité/site, suffixe de voie et
-   domination indue de l'adresse. Mesurer séparément les 12 top 1 faux, les 15
-   top 1 corrects et les 3 ambiguïtés. Ne recalibrer l'accepteur qu'après cette
-   mesure et sans transformer les ambiguïtés en positifs.
+8. La correction minimale du classement est terminée avec le verdict
+   `GO_EXPAND_LABELS_BEFORE_TRAINING` (`d0a2c9a`). **Priorité active** :
+   sélectionner parmi les 249 REVIEW historiques restants ceux dont cette
+   correction change le top 1, puis les adjudiquer avec preuves traçables.
+   Aucun réentraînement avant ce contre-échantillon ; aucune ambiguïté ne doit
+   être transformée en positif.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
