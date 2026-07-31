@@ -253,6 +253,18 @@ recevoir deux `GO_PREFLIGHT_RACE_AMENDMENT_NEXT_IMPLEMENTATION_AUDIT`, puis le
 code deux `GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK`, avant tout lock réel.
 *(commits GitHub : amendement de concurrence `442416e`, implémentation de la
 borne `efe76fe`)*.
+
+Le premier audit de l'amendement a rendu `GO`, le second `NO_GO` sur deux
+ambiguïtés : l'ordre du plan ne plaçait pas explicitement la revalidation
+post-appel avant le reçu, et le nom du cas semblait limiter la fenêtre au
+parent d'état. Le correctif `c170865` généralise l'unique exception à tous les
+namespaces protégés et inscrit dans `entry_order` :
+appel → revalidation de toutes les gardes et de l'état → `STOP` éventuel →
+seulement alors création possible du reçu. `25aa424` aligne les constantes et
+tests du code. Les 242 tests ciblés passent. Nouveau double audit de
+l'amendement requis avant le gate d'implémentation.
+*(commits GitHub : amendement généralisé `c170865`, alignement code
+`25aa424`)*.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
