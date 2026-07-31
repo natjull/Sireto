@@ -154,6 +154,14 @@ et toute clé réelle restent absents. Le lock doit maintenant être audité
 matériellement avant pré-vol et autorisation.
 *(commit GitHub : lock d'exécution scellé `d21d028`)*.
 
+Deux audits matériels indépendants rendent
+**`GO_LOCK_MATERIAL_NEXT_PREFLIGHT`** : lock 2 375 octets, hash exact,
+canonicalité, schémas imbriqués, blobs Git, runtime, politique
+Data Protection, UID, device et UUID concordent. L'autorisation, le root et le
+claim restent absents. Le prochain geste autorisé est uniquement le pré-vol
+du locator Keychain en lecture seule, avec receipt non secret ; aucun add ni
+provisionnement.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
