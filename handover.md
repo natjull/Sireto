@@ -309,6 +309,25 @@ geste autorisé est désormais l'unique requête Keychain status-only fermée pa
 ce lock ; elle ne constitue toujours pas une autorisation de provisionnement.
 *(commit GitHub : lock matériel de pré-vol `71920a7`)*.
 
+L'unique pré-vol réel a ensuite retourné `-25300 /
+KEYCHAIN_LOCATOR_ABSENT`. `58798a4` fige le claim one-shot
+`c6446c0a…` et le reçu non secret `a4e5dc25…`, tous deux canoniques et
+matériellement `0600`. Deux audits indépendants rendent
+**`GO_PREFLIGHT_RESULT_MATERIAL_NEXT_AUTHORIZATION`** après reconstruction
+exacte, dix mutations adversariales et replay synthétique à zéro appel natif.
+L'autorisation canonique à six champs a alors été committée seule par
+`651ef43` ; son SHA-256 est `b8796626…`. Deux contre-audits complets rendent
+**`GO_S1_LOCAL_PRODUCER_PROVISION`** : implémentation `ad74b4e`, lock
+producteur `78665f07…`, plan/contrat, runtime, UID, volume, pré-vol et
+autorisation sont cohérents. La suite active adaptée donne `1453 passed,
+7 deselected` ; les sept exclusions sont uniquement des assertions
+historiques exigeant l'absence des artefacts de phases désormais achevées,
+sans retrait des tests de secret, crash, concurrence ou idempotence. Le root
+et le claim producteur restent absents. Le prochain geste autorisé est
+l'unique run réel du provisioner, toujours sans lecture CRM.
+*(commits GitHub : résultat one-shot `58798a4`, autorisation producteur
+`651ef43`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
