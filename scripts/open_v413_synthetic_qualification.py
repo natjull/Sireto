@@ -270,33 +270,91 @@ def _validate_claim_binding(
     }
 
 
-def _artifact_hashes(output_root: Path) -> dict[str, str]:
-    relative = {
-        "queries": Path("queries/queries.csv"),
-        "oracle": Path("oracle/oracle.csv"),
-        "audit": Path("audit/qualification.json"),
-        "contamination": Path("audit/contamination.json"),
-        "private_split_rows": Path("audit/private_split_rows.jsonl"),
-        "split_fit": Path("splits/fit/split_manifest.json"),
-        "split_dev": Path("splits/dev/split_manifest.json"),
-        "split_test": Path("splits/test/split_manifest.json"),
-    }
-    hashes: dict[str, str] = {}
-    for name, suffix in relative.items():
-        path = output_root / suffix
-        try:
-            fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
-        except OSError:
-            _stop(f"OUTPUT_{name.upper()}_READ")
-        try:
-            metadata = os.fstat(fd)
-            if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
-                _stop(f"OUTPUT_{name.upper()}_TYPE")
-            raw = _read_fd(fd)
-        finally:
+OUTPUT_FILES = {
+    "queries": Path("queries/queries.csv"),
+    "oracle": Path("oracle/oracle.csv"),
+    "audit": Path("audit/qualification.json"),
+    "contamination": Path("audit/contamination.json"),
+    "private_split_rows": Path("audit/private_split_rows.jsonl"),
+    "split_fit": Path("splits/fit/split_manifest.json"),
+    "split_dev": Path("splits/dev/split_manifest.json"),
+    "split_test": Path("splits/test/split_manifest.json"),
+}
+
+OUTPUT_DIRECTORIES = {
+    Path("."): {"queries", "oracle", "audit", "splits"},
+    Path("queries"): {"queries.csv"},
+    Path("oracle"): {"oracle.csv"},
+    Path("audit"): {
+        "qualification.json",
+        "contamination.json",
+        "private_split_rows.jsonl",
+    },
+    Path("splits"): {"fit", "dev", "test"},
+    Path("splits/fit"): {"split_manifest.json"},
+    Path("splits/dev"): {"split_manifest.json"},
+    Path("splits/test"): {"split_manifest.json"},
+}
+
+
+def _retain_valid_output_tree(
+    output_root: Path,
+    expected_uid: int,
+) -> list[tuple[int, tuple[int, ...]]]:
+    retained: list[tuple[int, tuple[int, ...]]] = []
+    try:
+        for suffix, expected_entries in OUTPUT_DIRECTORIES.items():
+            fd = os.open(
+                output_root / suffix,
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+            )
+            retained_here = False
+            try:
+                metadata = os.fstat(fd)
+                label = (
+                    "OUTPUT_ROOT"
+                    if suffix == Path(".")
+                    else f"OUTPUT_{str(suffix).replace('/', '_').upper()}_DIR"
+                )
+                gate0a._directory_metadata(metadata, expected_uid, label)
+                retained.append((fd, _identity(metadata)))
+                retained_here = True
+                if set(os.listdir(fd)) != expected_entries:
+                    _stop(f"{label}_ENTRIES")
+            except Exception:
+                if not retained_here:
+                    os.close(fd)
+                raise
+        return retained
+    except Exception:
+        for fd, _ in retained:
             os.close(fd)
-        hashes[name] = hashlib.sha256(raw).hexdigest()
-    return hashes
+        raise
+
+
+def _artifact_hashes(output_root: Path, expected_uid: int) -> dict[str, str]:
+    _retained_directories = _retain_valid_output_tree(output_root, expected_uid)
+    try:
+        hashes: dict[str, str] = {}
+        for name, suffix in OUTPUT_FILES.items():
+            path = output_root / suffix
+            try:
+                fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
+            except OSError:
+                _stop(f"OUTPUT_{name.upper()}_READ")
+            try:
+                metadata = os.fstat(fd)
+                gate0a._regular_metadata(
+                    metadata, expected_uid, f"OUTPUT_{name.upper()}"
+                )
+                raw = _read_fd(fd)
+            finally:
+                os.close(fd)
+            hashes[name] = hashlib.sha256(raw).hexdigest()
+        return hashes
+    finally:
+        for fd, _ in _retained_directories:
+            os.close(fd)
 
 
 def _fsync_outputs(output_root: Path) -> None:
@@ -597,7 +655,7 @@ def open_synthetic_qualification(
                 != receipt["availability_ledger_sha256"]
             ):
                 _stop("RECEIPT_MARKER_BINDING")
-            if _artifact_hashes(output_root) != receipt["output_hashes"]:
+            if _artifact_hashes(output_root, expected_uid) != receipt["output_hashes"]:
                 _stop("RECEIPT_OUTPUT_BINDING")
             audit = json.loads(
                 (output_root / "audit/qualification.json").read_text(
@@ -763,12 +821,16 @@ def open_synthetic_qualification(
                 os.close(collection_fd)
         finally:
             os.close(inbox_fd)
-        final_output_hashes, retained_output_fds = _validate_final_outputs(
+        retained_output_fds = _retain_valid_output_tree(
+            output_root, expected_uid
+        )
+        final_output_hashes, retained_final_file_fds = _validate_final_outputs(
             output_root,
             expected_counts=result["counts"],
             expected_contamination=contamination,
             expected_uid=expected_uid,
         )
+        retained_output_fds.extend(retained_final_file_fds)
         inbox_fd = gate0a._open_directory(inbox, expected_uid, "INBOX")
         try:
             collection_fd = os.open(

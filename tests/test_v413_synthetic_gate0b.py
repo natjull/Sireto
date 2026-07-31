@@ -292,6 +292,25 @@ def test_post_receipt_claim_tamper_is_not_masked(tmp_path: Path) -> None:
         _run(inbox, control, output)
 
 
+@pytest.mark.parametrize("drift", ["file_mode", "directory_mode", "extra_entry"])
+def test_post_receipt_output_tree_drift_is_rejected(
+    tmp_path: Path,
+    drift: str,
+) -> None:
+    inbox, control, output, _ = _fixture(tmp_path)
+    _run(inbox, control, output)
+    if drift == "file_mode":
+        (output / "queries/queries.csv").chmod(0o644)
+    elif drift == "directory_mode":
+        (output / "queries").chmod(0o755)
+    else:
+        extra = output / "audit/unsealed.json"
+        extra.write_text("{}\n")
+        extra.chmod(0o600)
+    with pytest.raises((Gate0BStop, gate0a.AvailabilityStop)):
+        _run(inbox, control, output)
+
+
 def test_input_control_output_roots_must_be_pairwise_disjoint(
     tmp_path: Path,
 ) -> None:
