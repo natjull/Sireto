@@ -7,6 +7,7 @@ import hashlib
 import importlib.metadata
 from io import BytesIO
 import json
+import marshal
 import os
 from pathlib import Path
 import platform
@@ -125,6 +126,8 @@ EXPECTED_FILES = {
     ),
 }
 _BUNDLE_ATTESTATION = object()
+_SUCCESSFUL_BUNDLE_LOAD_COUNT = 0
+_SUCCESSFUL_STORE_LOAD_COUNT = 0
 
 
 def _fail(detail: str) -> None:
@@ -530,7 +533,90 @@ def _bundle_state_identity(
         hashlib.sha256(taxonomy_raw).hexdigest(),
         repr(bundle.downstream.threshold),
         json.dumps(list(bundle.downstream.ranker_feature_order)),
+        _object_code_identity(bundle.downstream),
+        _object_code_identity(bundle.downstream.ranker),
+        _object_code_identity(bundle.downstream.acceptor),
+        _object_code_identity(bundle.downstream.taxonomy),
+        _object_code_identity(bundle.retrieval),
+        *(
+            _object_code_identity(step)
+            for _name, step in getattr(
+                bundle.downstream.acceptor,
+                "steps",
+                (),
+            )
+        ),
+        *(
+            (_object_code_identity(bundle.evidence),)
+            if bundle.evidence is not None
+            else ()
+        ),
+        *(
+            _callable_state_identity(callback)
+            for callback in (
+                bundle.retrieval.retriever,
+                bundle.retrieval.feature_builder,
+                bundle.retrieval.idf_builder,
+                bundle.downstream.scene_builder,
+                *(
+                    (
+                        bundle.evidence.route,
+                        bundle.evidence.load_partition,
+                        bundle.evidence.build_index,
+                        bundle.evidence.search,
+                    )
+                    if bundle.evidence is not None
+                    else ()
+                ),
+            )
+        ),
     )
+
+
+def _object_code_identity(instance: Any) -> str:
+    """Fingerprint Python implementations reached through an object."""
+    records: list[tuple[str, str, str]] = []
+    for cls in type(instance).__mro__:
+        class_name = f"{cls.__module__}.{cls.__qualname__}"
+        for name, member in sorted(cls.__dict__.items()):
+            if isinstance(member, (staticmethod, classmethod)):
+                member = member.__func__
+            code = getattr(member, "__code__", None)
+            if code is not None:
+                records.append(
+                    (
+                        class_name,
+                        name,
+                        hashlib.sha256(marshal.dumps(code)).hexdigest(),
+                    )
+                )
+    return hashlib.sha256(
+        json.dumps(records, separators=(",", ":")).encode("utf-8")
+    ).hexdigest()
+
+
+def _callable_state_identity(callback: Any) -> str:
+    code = getattr(callback, "__code__", None)
+    if code is None:
+        _fail("service callback has no Python code object")
+    try:
+        payload = pickle.dumps(
+            (
+                getattr(callback, "__module__", None),
+                getattr(callback, "__qualname__", None),
+                marshal.dumps(code),
+                getattr(callback, "__defaults__", None),
+                getattr(callback, "__kwdefaults__", None),
+                tuple(
+                    cell.cell_contents
+                    for cell in (getattr(callback, "__closure__", None) or ())
+                ),
+            ),
+            protocol=5,
+        )
+    except Exception as exc:
+        _fail(f"cannot fingerprint service callback state: {exc}")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def validate_frozen_v412_service_bundle(
@@ -571,6 +657,16 @@ def validate_frozen_v412_service_bundle(
     acceptor_classes = np.asarray(
         getattr(bundle.downstream.acceptor, "classes_", []),
     )
+    expected_downstream_state = {
+        "ranker",
+        "acceptor",
+        "taxonomy",
+        "ranker_feature_order",
+        "threshold",
+        "scene_builder",
+        "_trace_origin_token",
+        "_trace_secret",
+    }
     if (
         bundle._attestation is not _BUNDLE_ATTESTATION
         or bundle._closed
@@ -585,6 +681,7 @@ def validate_frozen_v412_service_bundle(
         or bundle.downstream.threshold != FIXED_THRESHOLD
         or acceptor_classes.shape != (2,)
         or not np.array_equal(acceptor_classes, np.asarray([0, 1]))
+        or set(bundle.downstream.__dict__) != expected_downstream_state
         or (
             bundle.evidence is not None
             and bundle.evidence.partition_store is not bundle.partition_store
@@ -718,14 +815,23 @@ def load_frozen_v412_service_bundle(
             _bundle_state_identity(bundle),
         )
         validate_frozen_v412_service_bundle(bundle)
+        global _SUCCESSFUL_BUNDLE_LOAD_COUNT, _SUCCESSFUL_STORE_LOAD_COUNT
+        _SUCCESSFUL_BUNDLE_LOAD_COUNT += 1
+        _SUCCESSFUL_STORE_LOAD_COUNT += 1
         return bundle
     except BaseException:
         lookup.close()
         raise
 
 
+def successful_load_counts() -> tuple[int, int]:
+    """Return observed successful bundle/store constructions in this process."""
+    return _SUCCESSFUL_BUNDLE_LOAD_COUNT, _SUCCESSFUL_STORE_LOAD_COUNT
+
+
 __all__ = [
     "FrozenV412ServiceBundle",
     "load_frozen_v412_service_bundle",
+    "successful_load_counts",
     "validate_frozen_v412_service_bundle",
 ]

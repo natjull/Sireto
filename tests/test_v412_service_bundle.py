@@ -107,6 +107,41 @@ def test_nested_bundle_state_and_acceptor_classes_are_fail_closed() -> None:
             validate_frozen_v412_service_bundle(bundle)
 
 
+def test_callback_code_mutation_is_fail_closed() -> None:
+    with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
+        callback = bundle.retrieval.retriever
+        original_code = callback.__code__
+
+        def replacement(*args, **kwargs):
+            return None
+
+        try:
+            callback.__code__ = replacement.__code__
+            with pytest.raises(ValueError, match="mutated service bundle"):
+                validate_frozen_v412_service_bundle(bundle)
+        finally:
+            callback.__code__ = original_code
+
+
+def test_acceptor_class_and_downstream_method_mutations_are_fail_closed() -> None:
+    with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
+        acceptor_class = type(bundle.downstream.acceptor)
+        original = acceptor_class.predict_proba
+        try:
+            acceptor_class.predict_proba = lambda self, matrix: np.asarray(
+                [[1.0, 0.0]]
+            )
+            with pytest.raises(ValueError, match="mutated service bundle"):
+                validate_frozen_v412_service_bundle(bundle)
+        finally:
+            acceptor_class.predict_proba = original
+
+    with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
+        bundle.downstream.apply_guard_to_trace = lambda **kwargs: None
+        with pytest.raises(ValueError, match="mutated service bundle"):
+            validate_frozen_v412_service_bundle(bundle)
+
+
 def test_real_frozen_bundle_reproduces_all_downstream_stages() -> None:
     query = (
         pd.read_parquet(REFERENCE / "queries.parquet")

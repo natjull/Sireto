@@ -14,7 +14,6 @@ import hmac
 import json
 import math
 import os
-import pickle
 import re
 import struct
 import time
@@ -93,6 +92,38 @@ if (
     raise RuntimeError(
         "STOP_V412_SERVICE_INTEGRITY: frozen Ranker C feature hash changed"
     )
+_CANDIDATE_CONTEXT_COLUMNS = (
+    "query_id",
+    "candidate_siret",
+    "candidate_siren",
+    "candidate_state",
+    "retrieval_rank",
+    "retrieval_source",
+    "retrieval_channel_count",
+    "retrieval_agreement",
+    "enseigne1",
+    "enseigne2",
+    "enseigne3",
+    "denomination_usuelle",
+    "activity_code",
+)
+_INPUT_CANDIDATE_COLUMNS = (
+    *_CANDIDATE_CONTEXT_COLUMNS,
+    *RANKER_C_FEATURE_ORDER,
+)
+_SCORED_CANDIDATE_COLUMNS = (
+    *_INPUT_CANDIDATE_COLUMNS,
+    "ranker_score",
+    "ranker_rank",
+)
+_NULLABLE_TEXT_COLUMNS = (
+    "retrieval_source",
+    "enseigne1",
+    "enseigne2",
+    "enseigne3",
+    "denomination_usuelle",
+    "activity_code",
+)
 FORBIDDEN_FIELDS = frozenset(
     {
         "label_kind",
@@ -216,19 +247,18 @@ def _validate_candidates(
     query_id: str,
     candidates: pd.DataFrame,
     feature_order: Sequence[str],
+    *,
+    scored: bool = False,
 ) -> None:
     _require_label_blind(list(candidates.columns), label="candidate pool")
-    required = {
-        "query_id",
-        "candidate_siret",
-        "candidate_siren",
-        "candidate_state",
-        "retrieval_rank",
-        *feature_order,
-    }
-    if not required.issubset(candidates.columns):
+    expected_columns = (
+        _SCORED_CANDIDATE_COLUMNS
+        if scored
+        else _INPUT_CANDIDATE_COLUMNS
+    )
+    if tuple(candidates.columns) != expected_columns:
         raise ValueError(
-            "STOP_V412_SERVICE_INTEGRITY: candidate schema incomplete"
+            "STOP_V412_SERVICE_INTEGRITY: candidate schema changed"
         )
     if len(candidates) > CANDIDATE_CEILING:
         raise ValueError(
@@ -241,6 +271,17 @@ def _validate_candidates(
     sirets = candidates["candidate_siret"].astype(str)
     sirens = candidates["candidate_siren"].astype(str)
     if (
+        not all(
+            isinstance(value, str)
+            for column in (
+                "query_id",
+                "candidate_siret",
+                "candidate_siren",
+                "candidate_state",
+            )
+            for value in candidates[column].tolist()
+        )
+        or
         sirets.duplicated().any()
         or not sirets.map(_SIRET.fullmatch).all()
         or not sirens.map(_SIREN.fullmatch).all()
@@ -260,6 +301,43 @@ def _validate_candidates(
         raise ValueError(
             "STOP_V412_SERVICE_INTEGRITY: non-finite ranker feature"
         )
+    if not all(
+        value is None
+        or value is pd.NA
+        or isinstance(value, str)
+        or bool(pd.isna(value))
+        for column in _NULLABLE_TEXT_COLUMNS
+        for value in candidates[column].tolist()
+    ):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: invalid candidate text value"
+        )
+    for column in ("retrieval_rank", "retrieval_channel_count", "retrieval_agreement"):
+        values = candidates[column].tolist()
+        if not all(
+            isinstance(value, (int, np.integer))
+            and not isinstance(value, (bool, np.bool_))
+            for value in values
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid candidate integer value"
+            )
+    if scored:
+        ranker_scores = candidates["ranker_score"].to_numpy(
+            dtype=np.float32
+        )
+        ranker_ranks = candidates["ranker_rank"].tolist()
+        if (
+            not np.isfinite(ranker_scores).all()
+            or not all(
+                isinstance(value, (int, np.integer))
+                and not isinstance(value, (bool, np.bool_))
+                for value in ranker_ranks
+            )
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid scored candidate value"
+            )
 
 
 class V412DownstreamService:
@@ -491,10 +569,29 @@ class V412DownstreamService:
         digest.update(
             self._trace_text(trace.scene.get("predicted_siren"))
         )
-        for nested in (trace.scored_candidates, trace.scene):
-            payload = pickle.dumps(nested, protocol=5)
-            digest.update(len(payload).to_bytes(8, "big"))
-            digest.update(payload)
+        for column in _SCORED_CANDIDATE_COLUMNS:
+            digest.update(self._trace_text(column))
+            digest.update(
+                self._trace_text(str(trace.scored_candidates[column].dtype))
+            )
+        for column in (
+            "query_id",
+            "candidate_state",
+            *_NULLABLE_TEXT_COLUMNS,
+        ):
+            for value in trace.scored_candidates[column].tolist():
+                if value is None or value is pd.NA or bool(pd.isna(value)):
+                    digest.update(b"N")
+                else:
+                    digest.update(b"S")
+                    digest.update(self._trace_text(str(value)))
+        digest.update(
+            trace.scored_candidates[
+                ["retrieval_channel_count", "retrieval_agreement"]
+            ]
+            .to_numpy(dtype=np.int64)
+            .tobytes()
+        )
         return digest.digest()
 
     def _validate_v411_trace(self, trace: V411Trace) -> None:
@@ -526,11 +623,17 @@ class V412DownstreamService:
             trace.query_id,
             trace.scored_candidates,
             self.ranker_feature_order,
+            scored=True,
         )
         missing_scene = set(V411_ACCEPTOR_FEATURE_NAMES) - set(trace.scene)
-        if missing_scene:
+        expected_scene = {
+            "predicted_siret",
+            "predicted_siren",
+            *V411_ACCEPTOR_FEATURE_NAMES,
+        }
+        if missing_scene or set(trace.scene) != expected_scene:
             raise ValueError(
-                "STOP_V412_SERVICE_INTEGRITY: scene trace feature missing"
+                "STOP_V412_SERVICE_INTEGRITY: scene trace schema changed"
             )
         predicted_siret = trace.predicted_siret
         predicted_siren = trace.predicted_siren

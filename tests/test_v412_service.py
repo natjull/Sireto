@@ -61,6 +61,14 @@ def _candidates(count: int = 2) -> pd.DataFrame:
                 "candidate_siren": siret[:9],
                 "candidate_state": "A",
                 "retrieval_rank": index + 1,
+                "retrieval_source": "sparse_name",
+                "retrieval_channel_count": 1,
+                "retrieval_agreement": 0,
+                "enseigne1": None,
+                "enseigne2": None,
+                "enseigne3": None,
+                "denomination_usuelle": None,
+                "activity_code": None,
                 **{
                     feature: float(count - index)
                     if position == 0
@@ -136,12 +144,12 @@ def test_guard_rejects_forged_or_mutated_v411_trace() -> None:
         query={"query_id": "q1"},
         candidates=_candidates(),
     )
-    with pytest.raises(ValueError, match="trace provenance"):
+    with pytest.raises(ValueError, match="STOP_V412_SERVICE_INTEGRITY"):
         engine.apply_guard_to_trace(
             trace=replace(trace, acceptor_score=-99.0),
             direct_evidence=_evidence(0, None),
         )
-    with pytest.raises(ValueError, match="trace provenance"):
+    with pytest.raises(ValueError, match="STOP_V412_SERVICE_INTEGRITY"):
         engine.apply_guard_to_trace(
             trace=replace(
                 trace,
@@ -151,7 +159,7 @@ def test_guard_rejects_forged_or_mutated_v411_trace() -> None:
             direct_evidence=_evidence(0, None),
         )
     trace.scored_candidates["is_ground_truth"] = True
-    with pytest.raises(ValueError, match="trace provenance"):
+    with pytest.raises(ValueError, match="STOP_V412_SERVICE_INTEGRITY"):
         engine.apply_guard_to_trace(
             trace=trace,
             direct_evidence=_evidence(0, None),
@@ -181,7 +189,7 @@ def test_guard_rejects_every_nested_trace_mutation(mutation: str) -> None:
         trace.scored_candidates.loc[0, "query_id"] = "other"
     else:
         trace.scored_candidates["retrieval_source"] = "forged"
-    with pytest.raises(ValueError, match="trace provenance"):
+    with pytest.raises(ValueError, match="STOP_V412_SERVICE_INTEGRITY"):
         engine.apply_guard_to_trace(
             trace=trace,
             direct_evidence=_evidence(0, None),

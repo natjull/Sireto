@@ -80,8 +80,8 @@ class PersistentV412Worker:
         self.route_sealed_key_miss_count = 0
 
     def process(self, query: Mapping[str, Any]) -> WorkerResult:
-        validate_frozen_v412_service_bundle(self.bundle)
         wall_started = time.perf_counter_ns()
+        validate_frozen_v412_service_bundle(self.bundle)
         try:
             retrieval = self.bundle.retrieval.build(query)
         except UnitRetrievalError as exc:
