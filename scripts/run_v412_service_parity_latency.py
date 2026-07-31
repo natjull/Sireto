@@ -80,9 +80,14 @@ def _launch_worker(
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     child_nonce = _worker_nonce(parent_nonce, phase, mode)
     output = staging / f"{phase}_{mode}"
+    pycache_prefix = staging / f".pycache-{phase}-{mode}"
+    pycache_prefix.mkdir(mode=0o700)
     command = [
         sys.executable,
         "-I",
+        "-B",
+        "-X",
+        f"pycache_prefix={pycache_prefix}",
         str(BOOTSTRAP),
         "--mode",
         mode,
@@ -128,6 +133,11 @@ def _launch_worker(
         raise ValueError(
             f"{STOP}: worker {phase}/{mode} timed out"
         )
+    if any(pycache_prefix.iterdir()):
+        raise ValueError(
+            f"{STOP}: isolated worker pycache is not empty"
+        )
+    os.rmdir(pycache_prefix)
     launch = {
         "phase": phase,
         "mode": mode,
@@ -167,11 +177,58 @@ def _public_summary(summary: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def _revalidate_worker_trees(
+    *,
+    staging: Path,
+    launches: list[dict[str, Any]],
+    summaries: dict[str, dict[str, Any]],
+    execution_lock_sha256: str,
+) -> None:
+    for launch in launches:
+        key = f"{launch['phase']}_{launch['mode']}"
+        output = staging / launch["output"]
+        repeated = validate_worker_output(
+            output,
+            expected_mode=launch["mode"],
+            expected_phase=launch["phase"],
+            expected_nonce=launch["child_nonce"],
+            expected_pid=launch["pid"],
+            expected_parent_pid=os.getpid(),
+            expected_execution_lock_sha256=execution_lock_sha256,
+        )
+        manifest_sha256 = hashlib.sha256(
+            _capture_untrusted_regular(output / "manifest.json")
+        ).hexdigest()
+        if (
+            repeated != summaries[key]
+            or manifest_sha256 != launch["manifest_sha256"]
+        ):
+            raise ValueError(
+                f"{STOP}: worker output changed after first validation"
+            )
+
+
 def run(
     *,
     execution_lock_sha256: str,
     timeout_seconds: int = 14_400,
 ) -> tuple[str, Path]:
+    parent_pycache = (
+        Path(sys.pycache_prefix)
+        if sys.pycache_prefix is not None
+        else None
+    )
+    if (
+        sys.flags.isolated != 1
+        or not sys.dont_write_bytecode
+        or parent_pycache is None
+        or not parent_pycache.is_absolute()
+        or not parent_pycache.is_dir()
+        or any(parent_pycache.iterdir())
+    ):
+        raise ValueError(
+            f"{STOP}: parent must use -I -B and an empty pycache prefix"
+        )
     lock, lock_sha256 = validate_execution_lock(
         expected_sha256=execution_lock_sha256,
         verify_git=True,
@@ -197,21 +254,12 @@ def run(
         pids = [record["pid"] for record in launches]
         if len(set(pids)) != 2:
             raise ValueError(f"{STOP}: workers did not use two processes")
-        for launch in launches:
-            key = f"{launch['phase']}_{launch['mode']}"
-            repeated = validate_worker_output(
-                staging / launch["output"],
-                expected_mode=launch["mode"],
-                expected_phase=launch["phase"],
-                expected_nonce=launch["child_nonce"],
-                expected_pid=launch["pid"],
-                expected_parent_pid=os.getpid(),
-                expected_execution_lock_sha256=lock_sha256,
-            )
-            if repeated != summaries[key]:
-                raise ValueError(
-                    f"{STOP}: worker output changed after first validation"
-                )
+        _revalidate_worker_trees(
+            staging=staging,
+            launches=launches,
+            summaries=summaries,
+            execution_lock_sha256=lock_sha256,
+        )
         validate_execution_lock(
             expected_sha256=lock_sha256,
             verify_git=True,
@@ -255,6 +303,16 @@ def run(
             "verdict": gate["verdict"],
         }
         _write_new(staging / "seal.json", _canonical_json(seal))
+        _revalidate_worker_trees(
+            staging=staging,
+            launches=launches,
+            summaries=summaries,
+            execution_lock_sha256=lock_sha256,
+        )
+        validate_execution_lock(
+            expected_sha256=lock_sha256,
+            verify_git=True,
+        )
         directory_fd = os.open(staging, os.O_RDONLY)
         try:
             os.fsync(directory_fd)

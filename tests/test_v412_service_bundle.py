@@ -99,7 +99,7 @@ def test_capture_rejects_an_imported_source_from_another_path(
 def test_nested_bundle_state_and_acceptor_classes_are_fail_closed() -> None:
     with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
         bundle.downstream.acceptor.steps[-1][1].coef_[0, 0] += 1.0
-        with pytest.raises(ValueError, match="mutated service bundle"):
+        with pytest.raises(ValueError, match="STOP_V412_SERVICE_INTEGRITY"):
             validate_frozen_v412_service_bundle(bundle)
 
     with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
@@ -155,6 +155,20 @@ def test_instance_method_override_is_fail_closed(target: str) -> None:
         else:
             assert bundle.evidence is not None
             bundle.evidence.build = lambda query: None
+        with pytest.raises(ValueError, match="STOP_V412_SERVICE_INTEGRITY"):
+            validate_frozen_v412_service_bundle(bundle)
+
+
+@pytest.mark.parametrize("target", ("ranker_config", "evidence_config"))
+def test_existing_configuration_value_mutation_is_fail_closed(
+    target: str,
+) -> None:
+    with load_frozen_v412_service_bundle(include_evidence=True) as bundle:
+        if target == "ranker_config":
+            bundle.downstream.ranker.missing = 0.0
+        else:
+            assert bundle.evidence is not None
+            bundle.evidence.max_index_cache_entries = 1
         with pytest.raises(ValueError, match="mutated service bundle"):
             validate_frozen_v412_service_bundle(bundle)
 

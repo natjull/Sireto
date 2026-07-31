@@ -288,10 +288,16 @@ def evaluate_paired_gate(
             "cache_write_count",
         ):
             if counters[name] != 0:
-                persistence_reasons.append(f"{label}:{name}")
+                raise ValueError(
+                    "STOP_V412_SERVICE_INTEGRITY: "
+                    f"{label}:{name} is nonzero"
+                )
         for name in ("cache_rebuild_api_absent", "cache_write_api_absent"):
             if counters.get(name) is not True:
-                persistence_reasons.append(f"{label}:{name}")
+                raise ValueError(
+                    "STOP_V412_SERVICE_INTEGRITY: "
+                    f"{label}:{name} changed"
+                )
         if summary["model_load_count"] != 1:
             persistence_reasons.append(f"{label}:model_load_count")
         if summary["store_load_count"] != 1:
@@ -402,7 +408,8 @@ def validate_worker_output(
     if (
         type(counters) is not dict
         or counters.get("query_count") != 1456
-        or counters.get("maximum_candidate_count", 101) > 100
+        or type(counters.get("maximum_candidate_count")) is not int
+        or not 0 <= counters["maximum_candidate_count"] <= 100
         or any(
             type(counters.get(name)) is not int
             or counters[name] < 0

@@ -517,6 +517,10 @@ def _bundle_state_identity(
 ) -> tuple[str, ...]:
     try:
         ranker_raw = bytes(bundle.downstream.ranker.get_booster().save_raw())
+        ranker_pickle = pickle.dumps(
+            bundle.downstream.ranker,
+            protocol=5,
+        )
         acceptor_raw = pickle.dumps(
             bundle.downstream.acceptor,
             protocol=5,
@@ -525,12 +529,49 @@ def _bundle_state_identity(
             bundle.downstream.taxonomy,
             protocol=5,
         )
+        partition_inner = bundle.partition_store._inner
+        tfidf_inner = bundle.tfidf_cache._inner
+        lookup = bundle.lookup
+        frozen_configuration = pickle.dumps(
+            {
+                "partition_records": partition_inner._records,
+                "partition_max_cache_entries": (
+                    partition_inner._max_cache_entries
+                ),
+                "tfidf_records": tfidf_inner._records,
+                "tfidf_namespace": tfidf_inner._namespace,
+                "tfidf_max_cache_entries": (
+                    tfidf_inner._max_cache_entries
+                ),
+                "tfidf_max_cache_bytes": tfidf_inner._max_cache_bytes,
+                "tfidf_sidecar_schema_version": (
+                    tfidf_inner._sidecar_schema_version
+                ),
+                "lookup_path": lookup._path,
+                "lookup_expected_sha": lookup._expected_sha,
+                "lookup_expected_size": lookup._expected_size,
+                "lookup_expected_rows": lookup._expected_rows,
+                "lookup_maximum": lookup._maximum,
+                "lookup_database_identity": lookup._database_identity,
+                "lookup_path_chain_identity": (
+                    lookup._path_chain_identity
+                ),
+                "evidence_max_index_cache_entries": (
+                    bundle.evidence.max_index_cache_entries
+                    if bundle.evidence is not None
+                    else None
+                ),
+            },
+            protocol=5,
+        )
     except Exception as exc:
         _fail(f"cannot fingerprint service model state: {exc}")
     return (
         hashlib.sha256(ranker_raw).hexdigest(),
+        hashlib.sha256(ranker_pickle).hexdigest(),
         hashlib.sha256(acceptor_raw).hexdigest(),
         hashlib.sha256(taxonomy_raw).hexdigest(),
+        hashlib.sha256(frozen_configuration).hexdigest(),
         repr(bundle.downstream.threshold),
         json.dumps(list(bundle.downstream.ranker_feature_order)),
         _object_code_identity(bundle.downstream),

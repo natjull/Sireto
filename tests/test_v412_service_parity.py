@@ -52,8 +52,8 @@ def test_paired_gate_distinguishes_go_pivot_and_integrity() -> None:
 
     v412g["latency"]["p95_ns"] = 150
     v412g["counters"]["cache_write_count"] = 1
-    pivot = evaluate_paired_gate(v411, v412g)
-    assert "v412g:cache_write_count" in pivot["persistence_reasons"]
+    with pytest.raises(ValueError, match="cache_write_count is nonzero"):
+        evaluate_paired_gate(v411, v412g)
 
     v412g["counters"]["cache_write_count"] = 0
     v412g["model_load_count"] = 2
