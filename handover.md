@@ -3102,5 +3102,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `reports/v412_ranker_independent_validation.md` et labels machine
   `reports/v412_ranker_independent_validation_labels.csv`.
 
+## Expérience V4.12-Stack — ranker candidat + accepteur
+
+- Commit : `931ec52` (`experiment: evaluate V4.12 selective stack`).
+- Cinq rankers conjoints produisent des prédictions OOF pour les 5 547 scènes
+  fit historiques et les 83 adjudications difficiles. Le fit accepteur compte
+  5 630 scènes ; 665 scènes non adjudiquées servent au seuil, 701 à la
+  comparaison et les sept décisions indépendantes restent séparées jusqu'à
+  la sélection de la famille.
+- La logistique compacte est refusée : 619/701 AUTO, une erreur et une
+  ambiguïté automatisée. Le XGBoost monotone est sélectionné avec 592/701
+  AUTO (84,45 %), zéro erreur observée et zéro ambiguïté AUTO au seuil
+  `0,9892662764`.
+- Sur le docket difficile indépendant, le ranker a six top 1 exacts et une
+  ambiguïté, mais l'accepteur route les sept cas en REVIEW : couverture 0 %.
+  La sécurité sans aucune décision n'est pas un gain North Star.
+- Verdict : `PIVOT_ACCEPTOR_COVERAGE`. Les sept cas indépendants sont
+  consommés. La prochaine expérience peut pondérer les scènes difficiles et
+  doit être sélectionnée uniquement sur OOF/développement consommé ; toute
+  variante retenue exigera un nouveau docket parmi les 189 REVIEW restants.
+- Rapport : `reports/v412_ranker_acceptor_stack.md`. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_ranker_acceptor_stack/f6d3c21bd8a8359e`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
