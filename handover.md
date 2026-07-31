@@ -265,6 +265,12 @@ tests du code. Les 242 tests ciblés passent. Nouveau double audit de
 l'amendement requis avant le gate d'implémentation.
 *(commits GitHub : amendement généralisé `c170865`, alignement code
 `25aa424`)*.
+
+Deux audits indépendants rendent désormais
+**`GO_PREFLIGHT_RACE_AMENDMENT_NEXT_IMPLEMENTATION_AUDIT`** sur `c170865`.
+Ils confirment les 27 cas, la borne unique, l'interdiction du reçu et l'ordre
+post-appel fermé. Le prochain geste autorisé est uniquement l'audit technique
+de `25aa424`; le lock réel reste interdit.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
