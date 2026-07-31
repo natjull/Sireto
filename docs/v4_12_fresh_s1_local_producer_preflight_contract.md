@@ -61,7 +61,7 @@ fichier, répertoire, lien valide ou pendant et erreur de parcours, chaque état
 reprise, et les mutations extra/manquante/type/valeur du claim et du lock
 imbriqué. Chaque cas de garde et de cycle de vie, y compris le replay valide
 claim+reçu, possède une borne explicite d'appels natifs. Cette borne est zéro,
-sauf pour la fenêtre concurrente irréductible définie ci-dessous. Le
+sauf pour les deux fenêtres concurrentes irréductibles définies ci-dessous. Le
 résultat canonique contient exactement :
 
 ```text
@@ -112,17 +112,32 @@ indéterminé et ne peut jamais provoquer une seconde requête.
 
 Aucune suite finie de contrôles de chemin en espace utilisateur ne peut
 empêcher un autre processus du même UID de renommer un parent exactement
-entre la dernière instruction de contrôle et l'instruction suivante. Pour
-`PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW`, qui couvre
-indistinctement les trois gardes et le parent claim/reçu, la garantie réaliste
-est donc :
+entre la dernière instruction de contrôle et l'instruction suivante. Le plan
+sépare donc les deux garanties réellement démontrables :
 
-- au plus un appel `SecItemCopyMatching` status-only ;
-- toujours un pointeur résultat nul, donc aucune donnée ni attribut retourné ;
-- revalidation immédiatement après l'appel ;
-- `STOP` et aucun reçu si le namespace a changé ;
-- claim seul, donc aucune relance automatique ni autorisation de
-  provisionnement.
+| Cas | Appels natifs maximum | Reçu |
+|---|---:|---|
+| `STATE_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW` | 1 | interdit |
+| `GUARD_NAMESPACE_REPLACEMENT_AFTER_FINAL_REVALIDATION` | 1 | peut exister |
+
+Dans le premier cas, la revalidation du magasin d'état ancré détecte le
+remplacement après l'appel : l'exécution produit `STOP`, sans reçu, et laisse
+au plus un claim seul.
+
+Dans le second cas, un processus non coopératif du même UID modifie une garde
+après sa toute dernière revalidation. Cette modification peut être
+inobservable avant l'écriture du reçu. Le reçu prouve alors uniquement que le
+locator était absent au moment précis de la requête status-only ; il ne prouve
+pas que les gardes sont restées absentes ensuite et n'autorise jamais le
+provisionnement. Toute étape ultérieure doit revalider l'autorisation, la
+racine, le claim et l'ordre des autorités sous son propre protocole.
+
+Dans les deux cas, il y a au plus un appel `SecItemCopyMatching`, toujours
+avec un pointeur résultat nul : aucune donnée ni aucun attribut n'est
+retourné. Les écrivains coopératifs devront respecter le futur protocole
+commun d'autorisation et de verrouillage. La manipulation concurrente du
+namespace par un processus non coopératif du même UID est explicitement hors
+de la garantie d'ordonnancement séquentiel.
 
 Tous les remplacements observables avant l'appel restent bornés à zéro appel.
 Le déplacement ou la suppression volontaire des autorités persistantes par

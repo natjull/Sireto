@@ -640,21 +640,28 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
     assert set(requirements["maximum_native_call_count_by_case"]) == (
         expected_cases
     )
-    race_case = (
-        "PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    state_race_case = (
+        "STATE_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
     )
+    guard_race_case = (
+        "GUARD_NAMESPACE_REPLACEMENT_AFTER_FINAL_REVALIDATION"
+    )
+    race_cases = {state_race_case, guard_race_case}
     assert all(
         count == 0
         for case, count in requirements[
             "maximum_native_call_count_by_case"
         ].items()
-        if case != race_case
+        if case not in race_cases
     )
     assert requirements["maximum_native_call_count_by_case"][
         "CLAIM_AND_RESULT_VALID"
     ] == 0
-    assert requirements["maximum_native_call_count_by_case"][race_case] == 1
-    assert requirements["forbidden_result_cases"] == [race_case]
+    assert all(
+        requirements["maximum_native_call_count_by_case"][case] == 1
+        for case in race_cases
+    )
+    assert requirements["forbidden_result_cases"] == [state_race_case]
     assert requirements["mutation_targets"] == [
         "CLAIM_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
         "LOCK_TOP_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
