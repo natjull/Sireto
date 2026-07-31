@@ -2,6 +2,25 @@
 
 ## Etat des lieux
 
+### V4.12 — clean-target validé sur 13 AUTO aveugles sans erreur
+
+Un nouveau docket de 30 REVIEW parmi les 99 encore vierges a été gelé avant
+scoring. L'audit métier produit 28 `MATCH_EXACT` actifs courants et deux
+`AMBIGUOUS`. Le ranker corrigé trouve 24/28 vérités exactes.
+
+Le candidat clean-target figé automatise **13/30 dossiers (43,33 %)** : les
+13 sont corrects, aucune des deux ambiguïtés et aucune des quatre erreurs du
+ranker ne sont automatisées. Ce résultat réfute l'abstention totale du modèle
+précédent et confirme que le défaut principal venait des faux négatifs de la
+cible d'apprentissage.
+
+Verdict `GO_EXTEND_BLIND_MEASUREMENT`, sans déploiement : 13 AUTO sans erreur
+ne suffisent pas à revendiquer 99,8 %. Le candidat reste figé pendant la mesure
+des 69 REVIEW historiques non adjudiqués restants. Le test final reste fermé.
+
+*(commit Git : docket `54f6815`; labels, résultats et rapport : commit du
+présent milestone)*
+
 ### V4.12 — nettoyage de la cible accepteur : 47/143 AUTO difficiles OOF
 
 La cause aval est confirmée : 881 `AMBIGUOUS` mécaniques non adjudiquées
