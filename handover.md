@@ -2,6 +2,92 @@
 
 ## Etat des lieux
 
+### V4.12-S — service persistant gelé après parité exacte et gate Mac
+
+Le worker persistant complet est maintenant validé sur les 1 456 requêtes
+`dev` déjà consommées, sans ouvrir de label ni de test final et sans
+réentraîner de modèle. Il exécute réellement, requête par requête :
+
+```text
+retrieval sparse top 100
+  → 45 features Ranker C
+  → Ranker C gelé
+  → 80 features de scène
+  → accepteur COMPACT_LOGIT gelé
+  → preuve directe sur l'univers géographique actif
+  → veto V4.12-G
+```
+
+L'orchestrateur charge modèles et stores une seule fois par processus,
+interdit réseau, fork, sous-processus enfant, reconstruction et écriture des
+caches, lie les sources, modèles, closures et constantes de politique, puis
+publie les sorties et leur rapport atomiquement. Les contre-audits ont fermé
+successivement l'attestation terminale, les closures de méthodes, les helpers
+globaux et les constantes non-callables ; seuls les deux états IDF
+transitoires, recalculés sous verrou avant chaque génération de features,
+restent explicitement mutables.
+*(commits Git : orchestrateur/gate `97d74d7`, `d848a89`, `4fecf7e` ;
+attestation `b06cfe8`, `459f360`, `fbfd431`, `4805574`, `c261408`)*
+
+Quatre exécutions fail-closed ont été conservées avant le GO final :
+
+1. divergence d'identité runtime causée par `platform.platform()` sous le
+   hook interdisant `sw_vers` ;
+2. même dépendance cachée dans la validation runtime des manifests legacy ;
+3. équivalence physique Arrow `string`, mais metadata Pandas
+   `StringDtype/object`, plus un champ descriptif `evaluation_partition`
+   absent des requêtes assainies ;
+4. tolérance `1e-15` appliquée au score accepteur, mais pas encore à sa copie
+   strictement identique dans la trace de garde.
+
+Les corrections remplacent l'identité runtime par `sys.version_info` et
+`os.uname`, continuent d'exiger les deux plateformes legacy scellées
+exactement, ne normalisent que le stockage de vraies chaînes/nulls et
+appliquent la tolérance uniquement aux deux copies `float64` du même score.
+Les valeurs texte, ordre, nullité, dtypes numériques, non-finis et écarts
+supérieurs à `1e-15` restent refusés. La suite ciblée finale donne
+`116 passed`.
+*(commits Git : runtime lock `465cf13`, runtime legacy `443b2fb`, parité
+texte logique `6789df2`, score dupliqué `bcec840` ; locks successifs isolés
+`a0b3c9e`, `c4fef1f`, `f3c0511`, `fa2161f`, lock final `404f7da`)*
+
+Le run officiel immuable est :
+
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/runs/v4_12_service_parity_latency/4c50821748becdfc/`
+
+- verrou SHA-256 :
+  `471165d626483f53c767a7c68d8a2c24d3f8825dee5361fa41398ee4c83e7322` ;
+- commit source lié :
+  `bcec840a9d00b73488b7bed40d722df21d5e4c78` ;
+- rapport SHA-256 :
+  `9289aad1223f00ee4fed2908d07d34bfe76cfa0f9eaeb00376bcf9f1562131a9` ;
+- verdict scellé : **`GO_V412_SERVICE_FREEZE`**.
+
+| Mesure | V4.11 | V4.12-G |
+|---|---:|---:|
+| Parité | `EXACT_5_STAGES` | `EXACT_7_STAGES` |
+| Requêtes | 1 456 | 1 456 |
+| Candidats | 145 236 | 145 236 |
+| Maximum par requête | 100 | 100 |
+| p95 complet | 2,435 s | 2,770 s |
+| Pic RSS | 3,65 Go | 5,53 Go |
+| Chargements modèle/store | 1 / 1 | 1 / 1 |
+
+Le ratio p95 est `1,1377`, sous le gate `2×`. Les misses lookup/cache scellé,
+reconstructions et écritures sont tous à zéro. Deux audits indépendants ont
+revalidé les Parquets, manifests, hashes, permissions, deux PID distincts,
+rapport, sceau et calcul du gate ; tous deux rendent
+**`GO_V412_SERVICE_FREEZE`**.
+
+Ce résultat gèle une baseline de service reproductible sur le Mac. Il ne
+mesure pas la précision produit, ne certifie donc pas encore la North Star
+`99,8 %`, et ne justifie aucune ouverture du test final. Le prochain jalon
+autorisé est de constituer par preuves traçables un jeu fiable de cas
+difficiles déjà consommés (`REVIEW`, erreurs de ranker, ambiguïtés
+multi-sites), puis de décider si un nouvel entraînement OOF du ranker ou de
+l'accepteur est justifié. La certification produit restera impossible tant
+qu'une collection CRM indépendante réellement fraîche n'est pas disponible.
+
 ### V4.12-S — référence de parité service assainie et doublement auditée
 
 Le chantier de certification produit V4.13 reste fermé faute de nouvelle
@@ -39,10 +125,8 @@ plafond 100, 1 177 décisions `AUTO_MATCH`, 279 `REVIEW`, schémas exacts,
 hashes exacts et zéro colonne interdite. Cela prouve une parité d'ingénierie,
 pas encore la précision produit de 99,8 %.
 
-La prochaine étape active est l'implémentation du worker persistant complet :
-retrieval et 45 features recalculés, modèles/taxonomie chargés une fois,
-preuve directe sur l'univers géographique complet, parité des sept étages,
-latences appariées V4.11/V4.12-G et pic RSS. Le futur export CRM indépendant
+Cette étape historique est désormais close par le
+`GO_V412_SERVICE_FREEZE` documenté ci-dessus. Le futur export CRM indépendant
 reste indispensable pour toute certification produit.
 
 ### V4.12-S — retrieval, features et preuve directe persistants
@@ -80,10 +164,10 @@ contre-audits techniques du commit exact `bc33483` rendent GO, avec
 62 ignorés et 7 échecs préexistants exclusivement liés aux artefacts réels
 Fresh-S1 déjà présents sur le Mac ; aucun ne touche ce service.
 
-La prochaine étape est désormais de charger une seule fois les modèles OOF
-de parité, l'accepteur et la taxonomie dans l'orchestrateur persistant, puis
-de vérifier les sept étages et la latence/RSS appariée. Le test final produit
-et tout réentraînement restent fermés.
+Cette étape historique est désormais close par le worker persistant et le
+gate apparié documentés ci-dessus. Le test final produit reste fermé ; tout
+réentraînement exige d'abord des labels difficiles fiables et un protocole
+OOF séparé.
 
 ### Direction active V4.13 — labels réellement frais, sans nouvelle PKI
 
