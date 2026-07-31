@@ -226,6 +226,17 @@ dernier commit ayant effectivement modifié les quatre blobs plutôt que le
 simple `HEAD`. Les 228 tests ciblés et la suite `1442 passed, 3 deselected`
 sont verts. Deux nouveaux audits sont requis avant lock réel.
 *(commit GitHub : runtime autoritatif et courses namespace `a8e7aac`)*.
+
+Les ré-audits de `a8e7aac` ont encore rendu `NO_GO` sur une fenêtre plus
+étroite après le dernier `stat`, et sur les erreurs `fstat` qui pouvaient
+s'échapper sans normalisation. Le correctif `a49d28b` revalide toute la chaîne
+de namespace après l'observation `ENOENT`, double la réouverture du parent
+d'état, convertit chaque erreur `open/stat/fstat` en arrêt fermé et ajoute une
+matrice réelle `EACCES/EIO`, au dernier contrôle pré-appel, après claim et
+après appel simulé. Les 239 tests ciblés et la suite
+`1453 passed, 3 deselected` sont verts. Nouveau double audit requis ; aucun
+lock ni appel réel.
+*(commit GitHub : revalidation post-statut et erreurs syscall `a49d28b`)*.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
