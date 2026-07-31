@@ -3083,5 +3083,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Rapport : `reports/v412_hard_label_ranker_experiment.md`. Artefact :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_hard_label_ranker/bba02575366ebe80`.
 
+## Validation indépendante V4.12-Ranker
+
+- Commit de gel antérieur aux vérités : `c39dfb1` (`audit: freeze independent
+  ranker validation docket`). Parmi les 196 REVIEW non adjudiqués, les sept
+  désaccords baseline/candidat ont été retenus exhaustivement.
+- Commit d'adjudication : `21e87e9` (`audit: adjudicate independent ranker
+  validation`). Résultat : six `MATCH_EXACT`, un `AMBIGUOUS`, aucun
+  `UNRESOLVED` et aucune vérité absente du pool.
+- Le candidat pondéré `0,5` gagne les six dossiers exacts ; le baseline en
+  gagne zéro. `PROMOTRANS LYON` reste ambigu car deux établissements actifs
+  du même SIREN partagent exactement adresse, date et activité.
+- Verdict : `GO_RANKER_CANDIDATE_FOR_ACCEPTOR_DEVELOPMENT`. Ce résultat
+  autorise la production de scènes OOF pour un accepteur de développement,
+  pas le déploiement du ranker. Six décisions exactes ne prouvent ni la
+  précision AUTO à 99,8 %, ni une certification statistique.
+- Rapports : `reports/v412_ranker_independent_validation_docket.md`,
+  `reports/v412_ranker_independent_validation.md` et labels machine
+  `reports/v412_ranker_independent_validation_labels.csv`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
