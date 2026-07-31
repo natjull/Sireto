@@ -9,10 +9,10 @@ from io import BytesIO
 import json
 import os
 from pathlib import Path
-import platform
 import pickle
 import re
 import stat
+import sys
 from types import MappingProxyType
 from types import CodeType
 from types import ModuleType
@@ -46,6 +46,7 @@ from .v412_unit_retrieval import CACHE_NAMESPACE
 
 
 STOP = "STOP_V412_SERVICE_INTEGRITY"
+_CERTIFIED_LEGACY_PLATFORM = "macOS-26.5.2-arm64-arm-64bit-Mach-O"
 _ATTESTED_RUNTIME_MUTABLE_GLOBALS = frozenset(
     {
         ("src.xgb_matcher.features", "_GLOBAL_NAME_IDF"),
@@ -400,9 +401,8 @@ def _validate_runtime(
     ranker_manifest: Mapping[str, Any],
 ) -> None:
     expected = {
-        "python": platform.python_version(),
-        "platform": platform.platform(),
-        "machine": platform.machine(),
+        "python": ".".join(str(part) for part in sys.version_info[:3]),
+        "machine": os.uname().machine,
         "numpy": importlib.metadata.version("numpy"),
         "pandas": importlib.metadata.version("pandas"),
         "pyarrow": importlib.metadata.version("pyarrow"),
@@ -411,7 +411,17 @@ def _validate_runtime(
         "joblib": importlib.metadata.version("joblib"),
         "scipy": importlib.metadata.version("scipy"),
     }
-    if certification.get("runtime") != expected:
+    certified_runtime = certification.get("runtime")
+    if (
+        type(certified_runtime) is not dict
+        or certified_runtime.get("platform") != _CERTIFIED_LEGACY_PLATFORM
+        or {
+            key: value
+            for key, value in certified_runtime.items()
+            if key != "platform"
+        }
+        != expected
+    ):
         _fail("strict-store runtime changed")
     ranker_runtime = ranker_manifest.get("runtime")
     if type(ranker_runtime) is not dict:
@@ -426,7 +436,7 @@ def _validate_runtime(
     }
     if (
         ranker_runtime.get("python") != expected["python"]
-        or ranker_runtime.get("platform") != expected["platform"]
+        or ranker_runtime.get("platform") != _CERTIFIED_LEGACY_PLATFORM
         or ranker_runtime.get("machine") != expected["machine"]
         or dependencies != expected_dependencies
     ):

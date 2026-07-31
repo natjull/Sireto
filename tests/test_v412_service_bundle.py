@@ -75,8 +75,19 @@ def test_runtime_and_bundle_attestation_are_fail_closed() -> None:
         "certification",
     )
     ranker = _json_object(payloads["ranker_manifest"], "ranker")
+    certified_numpy = certification["runtime"]["numpy"]
     certification["runtime"]["numpy"] = "0.0.0"
     with pytest.raises(ValueError, match="runtime changed"):
+        _validate_runtime(certification, ranker)
+    certification["runtime"]["numpy"] = certified_numpy
+    certification["runtime"]["platform"] = "forged-platform"
+    with pytest.raises(ValueError, match="strict-store runtime changed"):
+        _validate_runtime(certification, ranker)
+    certification["runtime"]["platform"] = (
+        bundle_module._CERTIFIED_LEGACY_PLATFORM
+    )
+    ranker["runtime"]["platform"] = "forged-platform"
+    with pytest.raises(ValueError, match="Ranker C runtime changed"):
         _validate_runtime(certification, ranker)
     with pytest.raises(ValueError, match="unattested"):
         validate_frozen_v412_service_bundle(object())
