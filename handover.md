@@ -2,7 +2,7 @@
 
 ## Etat des lieux
 
-### V4.12-R30 — dossier REVIEW canonique construit, collecte encore fermée
+### V4.12-R30 — contrat de collecte gelé, réseau encore fermé
 
 Le goal North Star est réactivé après le gel du service V4.12. L'inventaire
 confirme que les labels déterministes V2/V3 et les datasets ranker/accepteur
@@ -63,10 +63,27 @@ strict de 100 par cas, le hash de sélection attendu et le sceau d'arbre
 `8a9aade72e741e393bdd5647ae440f38793da879462b185640dbf8ac6cf02df0`.
 Aucun label, accès réseau, modèle ou test final n'a été ouvert.
 
-Prochaine étape autorisée : implémenter puis contre-auditer le collecteur
-borné, le schéma de faits et le launcher fail-closed. Le double GO du builder
-n'autorise pas encore la collecte, l'adjudication, le gate R30 complet,
-l'entraînement ou le test final.
+Le contrat d'exécution de la collecte est maintenant fermé et reproductible.
+Il épingle la politique réseau, 14 autorités locales, les quotas, les schémas,
+les archives et la séparation irréversible entre worker identité et worker
+comparaison. La protection SSRF utilise 31 CIDR interdits et des replays
+incluant IPv4/IPv6, NAT64, 6to4, Teredo et réponses mixtes. Les goldens
+couvrent aussi quatre scènes de reconstruction de faits, sept scènes
+`facts → evidence` et six décisions finales. Deux contre-audits indépendants
+ont rendu **`GO_COLLECTION_CONTRACT`** sur :
+
+- contrat :
+  `af0550c86b5f06b62240289bfbb349bb7429883ae9bd8216e6fa6938be0f5cea` ;
+- politique :
+  `1238eb957f84c811ac64375c66a0d62e1bef977a139c0a685e669a5d18c63b88`.
+
+*(commit Git : contrat, politique et vectors `0fbdd80`)*
+
+Prochaine étape autorisée : implémenter le broker, les deux workers, le
+sandbox effectif, les validateurs et un run synthétique strictement hors
+réseau. La collecte réelle reste interdite avant deux
+**`GO_IDENTITY_BROKER_WORKER_PHASE`**. L'adjudication, le gate R30 complet,
+l'entraînement et le test final restent également fermés.
 
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
