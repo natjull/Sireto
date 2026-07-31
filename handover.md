@@ -79,9 +79,9 @@ ont rendu **`GO_COLLECTION_CONTRACT`** sur :
 
 *(commit Git : contrat, politique et vectors `0fbdd80`)*
 
-Prochaine étape autorisée : implémenter le broker, les deux workers, le
-sandbox effectif, les validateurs et un run synthétique strictement hors
-réseau. La collecte réelle reste interdite avant deux
+Prochaine étape autorisée : implémenter les deux workers métier, les
+validateurs et un run synthétique strictement hors réseau. La collecte réelle
+reste interdite avant deux
 **`GO_IDENTITY_BROKER_WORKER_PHASE`**. L'adjudication, le gate R30 complet,
 l'entraînement et le test final restent également fermés.
 
@@ -105,10 +105,36 @@ quatre positions d'échec de pipe sont sans fuite. La suite combinée donne
 **`GO_OFFLINE_NATIVE_BUILD_PRIMITIVES`**.
 *(commit Git : runtime natif, build, binaire ancré et tests `467f096`)*
 
-Ces GO ne permettent toujours aucun réseau. Étape suivante : implémenter le
-broker HTTP/DNS/SIRENE borné et les vraies transformations des workers sur
-fixtures locales, puis obtenir deux **`GO_IDENTITY_BROKER_WORKER_PHASE`**
-sur le run synthétique complet avant la première collecte.
+Le broker M2 hors ligne et son harness M1 sont maintenant gelés. Le broker
+authentifie sans paramètres les deux Parquets identité et leur plan 30/90 ;
+il n'ouvre jamais le docket de comparaison. Son transport injecté est scellé,
+one-shot et sans socket. Les corps sont consommés par chunks d'au plus 64 Kio,
+avec arrêt au premier dépassement, archivage O_EXCL avant parsing, recalcul des
+faits depuis les octets bruts, quotas et ordre stricts, lookup SIRENE dérivé
+et cache global par SIRET. Toute anomalie de streaming ferme l'intention,
+empoisonne définitivement le broker et interdit la suite.
+*(commit Git : broker M2 hors ligne et tests `3b6e567`)*
+
+Le harness intégré exerce ce vrai broker sur les 30 dossiers et les 90
+requêtes canoniques avec une fixture externe volontairement vide, sans SIRET,
+SIREN ni preuve. Il archive les 90 réponses, scelle et révoque M2 avant toute
+ouverture du docket et des 3 000 candidats. Exactement deux workers natifs
+séquentiels sont lancés ; leur rôle reste explicitement limité au protocole et
+aux digests, avec `native_business_logic_executed=false`. Aucun fait ni lookup
+n'est fabriqué depuis un candidat. Deux builds sont byte-identical.
+*(commit Git : fixture et harness M1-M2 `775787d`)*
+
+Après deux premiers `NO_GO` qui ont détecté une preuve circulaire puis deux
+erreurs de streaming, le contre-audit final rend
+**`GO_M1_M2_INTEGRATION_HARNESS`** et **`GO_BROKER_M2_OFFLINE`**. La commande
+combinée donne 110 tests réussis. Ces verdicts excluent explicitement M3, le
+transport live et les tables de sortie de la section 5.
+
+Ces GO ne permettent toujours aucun réseau. Étape suivante : implémenter les
+vraies transformations des deux workers métier sur fixtures locales, puis les
+writers/validateurs de la section 5 et obtenir deux
+**`GO_IDENTITY_BROKER_WORKER_PHASE`** sur le run synthétique complet avant la
+première collecte.
 
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
