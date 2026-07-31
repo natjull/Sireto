@@ -296,6 +296,19 @@ matériel reste interdit.
 *(commits GitHub : séparation contractuelle `db68537`, alignement code/tests
 `cf99d95`)*.
 
+Le lock de pré-vol a été scellé une seule fois par `71920a7`. Son SHA-256 est
+`af6d6685b5379ab0bddb7ef1cc30feb52bfe4982ffbd86977ba1b3ca5447a1ac` ;
+il ferme 15 champs racine, 9 champs d'implémentation et 9 champs runtime,
+épingle `cf99d95` et les quatre blobs code/tests, le plan `b580157b…`, le
+contrat `cf48e739…`, l'autorité `78665f07…`, la requête et l'UID 501. Deux
+audits indépendants, dont 12 mutations adversariales en mémoire, rendent
+**`GO_PREFLIGHT_LOCK_MATERIAL_NEXT_RUN`**. Ils confirment le commit
+mono-fichier, les hashes Git/worktree, le runtime local exact et l'absence du
+claim, du reçu, de l'autorisation et de la racine producteur. Le prochain
+geste autorisé est désormais l'unique requête Keychain status-only fermée par
+ce lock ; elle ne constitue toujours pas une autorisation de provisionnement.
+*(commit GitHub : lock matériel de pré-vol `71920a7`)*.
+
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
   *(commit GitHub : `96be59e`)* ;
