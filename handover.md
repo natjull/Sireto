@@ -2,6 +2,18 @@
 
 ## Etat des lieux
 
+### V4.12 — bundle trusted-label figé
+
+Le bundle `c2a01c6bca43a468` lie le ranker, l'accepteur, le seuil
+`0.9886879324913025`, les ordres de features, la taxonomie, le retrieval V4.2
+max 100 et tous les hashes d'entrée. Les artefacts copiés ont été revérifiés.
+
+Chemin : `/Volumes/CATNAT_DATA/SIRETO_RECALL100/bundles/v4_12_trusted/c2a01c6bca43a468`.
+Le bundle n'autorise ni production ni ouverture d'un ancien test. Prochaine
+preuve obligatoire : nouvel export CRM indépendant.
+
+*(script, rapport et présent handover : commit du présent milestone)*
+
 ### V4.12 — gate dev conservateur franchi à 82,93 %
 
 Après le pivot calibration/comparaison, le seuil conservateur est fixé à
