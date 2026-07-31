@@ -1,0 +1,42 @@
+{
+  "authority_catalog": {
+    "path": "config/v4_13_fresh_labels_authority_catalog.json",
+    "sha256": "780e920ed529199dfbede007053328b46c2a929532d1b089161a10779568ea25",
+    "status": "EMPTY_NO_REAL_AUTHORITY_REGISTERED"
+  },
+  "contract": {
+    "path": "docs/v4_13_fresh_labels_minimal_contract.md",
+    "sha256": "ec11f9466029a19f394fe8b1c93997ebff8b617ad45c617c22cecd02fcc8c7b4"
+  },
+  "created_at_utc": "2026-07-31T02:25:02Z",
+  "git_commit": "bf4ed261ba80e0242bda8b46884fcf484c6c8e1b",
+  "independent_audits": [
+    {
+      "auditor": "audit_r3_gate_code",
+      "commit": "bf4ed261ba80e0242bda8b46884fcf484c6c8e1b",
+      "verdict": "GO_V413_PREREGISTRATION"
+    },
+    {
+      "auditor": "audit_r3_gate_tests",
+      "commit": "bf4ed261ba80e0242bda8b46884fcf484c6c8e1b",
+      "verdict": "GO_V413_PREREGISTRATION"
+    }
+  ],
+  "plan": {
+    "path": "config/v4_13_fresh_labels_minimal_plan.json",
+    "sha256": "ec1c8891edfbb8d7cfb56afaab8a689fddbe9041bc2d6b5345fb5e30f9febbfe"
+  },
+  "plan_schema": {
+    "path": "config/v4_13_fresh_labels_minimal_plan.schema.json",
+    "sha256": "43acf2c0cb80bff2a8376dfab5ec2f818ec954acb9a3bbaa3a4cc9b1271e45f2"
+  },
+  "real_collection_open_authorized": false,
+  "schema_version": "sireto-v4.13-fresh-labels-preregistration-lock-1",
+  "ssd_volume_uuid": "76FF6087-FE11-4BE1-8BB0-C89638A64DE8",
+  "status": "GO_V413_PREREGISTRATION_IMPLEMENT_SYNTHETIC_ONLY",
+  "tests": {
+    "path": "tests/test_v413_fresh_labels_minimal_plan.py",
+    "sha256": "af96aef5e8597e3a8577607915b2efc956738fec76b97f253e81f43ee3226f42"
+  },
+  "uid": 501
+}
