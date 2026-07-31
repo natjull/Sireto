@@ -119,8 +119,14 @@ runtime Mac. Son statut est volontairement limité à
 Gate 0A/0B réels, Keychain/registre historique réel, retrieval, entraînement
 et test final. Le test du verrou porte la suite V4.13 à 106 tests verts.
 L'allowlist d'autorités réelles reste vide : aucune ouverture de données
-réelles n'est autorisée par ce milestone.
-*(commit GitHub : verrou intake synthétique V4.13 `ca0a754`)*
+réelles n'est autorisée par ce milestone. Un premier contre-audit a confirmé
+le contenu du verrou mais refusé un test susceptible d'auto-attestation. Le
+test impose maintenant littéralement le commit `280043d`, l'ensemble exact
+des 17 blobs, les deux verdicts, le scope fermé, le runtime et désactive les
+objets de remplacement Git. Deux contre-audits indépendants rendent
+**`GO_V413_SYNTHETIC_INTAKE_LOCK`** sur `c09e6c8`.
+*(commits GitHub : verrou intake synthétique V4.13 `ca0a754`, fermeture
+anti-auto-attestation et double GO du verrou `c09e6c8`)*
 
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
