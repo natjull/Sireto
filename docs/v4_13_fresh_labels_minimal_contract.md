@@ -1,54 +1,54 @@
-# V4.13 — Contrat minimal de labels CRM frais
+# V4.13 — Contrat exécutable minimal de labels CRM frais
 
-## 1. Décision d'architecture
+## 1. Objet et frontière de confiance
 
-Ce contrat succède à la branche S1 pour le seul objectif scientifique actif :
-valider puis améliorer le matching CRM vers SIRET. Il ne modifie pas les
-artefacts S1 et V1 existants, qui restent immuables et historiques.
+V4.13 vise uniquement la North Star SIRETO : mesurer puis améliorer le
+matching CRM vers SIRET sur une population réellement nouvelle. Les artefacts
+V1/S1 sont conservés comme historique, mais Ed25519, le producteur Keychain et
+la PKI locale sortent du chemin critique.
 
-L'autorité Ed25519, le Keychain producteur, les manifests signés et les
-workers S1 ne sont plus dans le chemin critique. Ils apportaient une preuve
-de non-répudiation du producteur, mais ne créaient ni export CRM frais, ni
-vérité indépendante, ni couverture identifiable.
+Le modèle de menace est un opérateur local coopératif sous un UID unique. Les
+hashes, manifests, écritures exclusives et séparations physiques empêchent les
+erreurs, la dérive, la réutilisation accidentelle, la fuite de vérité,
+l'optional stopping et le rejeu. Ils ne prétendent pas résister à un processus
+hostile déjà maître du même UID.
 
-Le threat model V4.13 est un opérateur local coopératif sous un UID unique.
-Le contrat protège contre la dérive, la réutilisation accidentelle, la fuite
-de vérité, l'optional stopping et le rejeu. Il ne prétend pas résister à un
-processus hostile déjà maître du même UID.
+Une exception étroite est autorisée : l'auditeur anti-chevauchement peut lire,
+sans interface utilisateur, la clé HMAC historique déjà existante
+`SIRETO_V412_COMPATIBILITY_LINEAGE_HMAC_V1`. Il utilise uniquement
+`SecItemCopyMatching`, ne crée, ne modifie, ne supprime et n'exporte aucune
+clé. Cette lecture ne constitue pas une PKI et ne peut créer un label.
 
-## 2. Gate zéro : disponibilité de la matière première
+## 2. Séquence sans circularité
 
-Avant toute qualification, il faut une collection nouvelle contenant :
+L'ordre suivant est obligatoire :
 
-1. une frame CRM exhaustive, postérieure aux 23 609 lignes consommées ;
-2. un identifiant source stable et unique par ligne ;
-3. une preuve indépendante permettant de relier cet identifiant à un SIRET.
+1. préenregistrer ce contrat, le plan, les schémas et leurs hashes ;
+2. obtenir deux audits indépendants `GO_V413_PREREGISTRATION` ;
+3. implémenter sur fixtures synthétiques les composants listés dans le plan ;
+4. geler un execution lock qui pinne commit, blobs, tests, runtime et
+   préenregistrement, puis obtenir deux audits `GO_V413_IMPLEMENTATION` ;
+5. attendre une collection sans ouvrir ses payloads ;
+6. Gate 0A : sélectionner une seule collection à partir des manifests
+   uniquement et créer une claim durable `O_EXCL` ;
+7. Gate 0B : créer le marqueur d'ouverture, ouvrir les payloads une seule
+   fois, qualifier toutes les lignes et sceller queries/oracle/audit ;
+8. geler les splits, exécuter le retrieval sur fit/dev et franchir le gate
+   dev ;
+9. seulement alors entraîner ranker et accepteur ;
+10. geler tout le bundle puis ouvrir et évaluer test une seule fois ;
+11. conclure exactement `GO`, `PIVOT` ou `STOP`.
 
-La preuve indépendante peut être :
+Le Gate 0A ne lit que `collection_manifest.json`. Le Gate 0B n'est autorisé
+que si le préenregistrement et l'implémentation ont chacun deux GO et si la
+claim 0A existe. Aucune source réelle n'est nécessaire pour coder ou auditer
+les composants génériques.
 
-- un mapping contractuel ou administratif `source_record_id → SIRET` ;
-- un identifiant officiel déjà porté par le système source ;
-- un document administratif scellé et versionné.
+## 3. Première collection : sélection déterministe
 
-Une ressemblance nom/adresse, le retrieval, un candidat, un rang, un score,
-une prédiction ou SIRENE seul ne peut jamais créer `MATCH_EXACT`. SIRENE peut
-uniquement contrôler le format, le SIREN, l'état et la cohérence temporelle
-d'un SIRET déjà fourni par une preuve indépendante.
-
-Le gate zéro est exécuté sur la collection complète, sans arrêt anticipé :
-
-- au moins 657 lignes `MATCH_EXACT` ;
-- couverture `MATCH_EXACT / toutes les lignes source ≥ 80,0 %` ;
-- zéro chevauchement interdit avec les registres consommés.
-
-Si l'export ou la preuve n'existe pas, le verdict est
-`WAITING_FOR_NEW_SOURCE`. Si l'intégrité est saine mais que le volume ou la
-couverture échoue, le verdict est `PIVOT_SOURCE_EVIDENCE`. Aucun modèle n'est
-alors entraîné.
-
-## 3. Entrée minimale
-
-La collection est déposée sous une racine SSD fixe et contient exactement :
+L'inbox fixe ne contient que des répertoires enfants directs nommés
+`<20 chiffres UTC epoch-ns>_<64 hex du SHA-256 du manifeste>`. Chaque enfant
+contient exactement :
 
 ```text
 collection_manifest.json
@@ -56,101 +56,201 @@ crm_source.csv | crm_source.parquet
 authoritative_mapping.csv | authoritative_mapping.parquet
 ```
 
-Le manifeste canonique fixe avant ouverture :
+L'auditeur énumère tous les enfants directs, rejette liens symboliques,
+hardlinks, fichiers supplémentaires, noms non conformes et manifests non
+canoniques. Il observe chaque manifeste deux fois à au moins 60 secondes
+d'intervalle ; inode, device, uid, nlink, mode, taille, mtime, ctime et hash
+doivent rester identiques.
 
-- `export_id`, `reference_date`, période et cutoff ;
-- définition exhaustive de la population ;
-- format, taille, nombre de lignes et SHA-256 des deux fichiers ;
-- colonnes et sémantique de `source_record_id` ;
-- type, origine, date et portée de la preuve autoritative ;
-- absence d'exclusion fondée sur un résultat de matching.
+Sont admissibles les manifests qui :
 
-Les fichiers sont réguliers, à lien unique, sans symlink, en `0600` sous des
-répertoires `0700`. Deux observations espacées d'au moins 60 secondes doivent
-conserver inode, taille, mtime, ctime et hash. Les écritures aval sont
-`O_EXCL`, durables et non-clobbering.
+- lient le SHA du plan, le commit et le SHA de l'execution lock ;
+- déclarent une population exhaustive et aucune exclusion issue d'un matching ;
+- ont `period_start_utc`, `export_cutoff_utc` et `created_at_utc` strictement
+  postérieurs à `preregistration_lock.created_at_utc` ;
+- utilisent les schémas exacts et le catalogue de preuves préenregistrés ;
+- déclarent hashes, tailles et nombres de lignes non nuls.
 
-## 4. Qualification et séparation
+Le gagnant est le tuple lexicographiquement minimal
+`(arrival_epoch_ns, collection_manifest_sha256)`. L'auditeur écrit d'abord un
+ledger exhaustif de tous les manifests observés, puis une claim globale
+`O_EXCL`; une autre collection ne peut jamais être sélectionnée. Une claim
+valide incomplète reprend seulement la même collection. Une claim incohérente
+ou un crash après marqueur d'ouverture produit `STOP`, jamais une seconde
+sélection.
 
-Le builder de qualification n'importe aucun module de retrieval ou de
-modèle. Il produit trois arbres physiquement distincts :
+## 4. Schémas source et preuve indépendante
 
-- `queries` : ID opaque, date et champs CRM autorisés, sans SIRET/SIREN ;
-- `oracle` : ID opaque, label, SIRET/SIREN éventuels, preuves et motifs ;
-- `audit` : manifests, hashes, couverture, collisions et anti-chevauchement.
+Les schémas fermés sont dans le fichier pinné par le plan. La frame CRM porte
+un `source_record_id` stable, un éventuel `source_group_id`, une date de
+création source et uniquement les champs CRM bruts autorisés. Elle ne porte
+jamais SIRET, SIREN, label, candidat, rang, score ou prédiction.
 
-Chaque ligne reçoit exactement un label :
+Le mapping est joint uniquement par égalité de `source_record_id`. Il porte
+un type de preuve, un issuer, un identifiant autoritatif, sa temporalité et le
+hash d'un payload de preuve. Il ne porte aucun nom, adresse ou champ utilisable
+pour une similarité.
 
-- `MATCH_EXACT` : une preuve indépendante unique, SIRET valide et
-  temporellement cohérent ;
-- `AMBIGUOUS` : plusieurs SIRET compatibles ou seulement un SIREN ;
-- `UNRESOLVED` : preuve absente, invalide, expirée ou contradictoire.
+Le catalogue fermé admet uniquement :
 
-Toutes les lignes source restent au dénominateur. Le scanner de fuite refuse
-toute séquence décimale autonome de 9 ou 14 chiffres dans les colonnes
-requêtes, y compris Unicode et après projection NFKC.
+- `SOURCE_SYSTEM_OFFICIAL_SIRET` : SIRET déjà présent dans le système de
+  référence avant l'export, sans production par SIRETO ;
+- `CONTRACT_OR_BILLING_SIRET` : identifiant tiré d'un système contractuel ou
+  de facturation distinct du matching ;
+- `SEALED_ADMINISTRATIVE_DOCUMENT` : document administratif antérieur au
+  cutoff, référencé et hashé.
 
-Les registres gelés sont obligatoires :
+Chaque entrée atteste `matching_pipeline_used=false`, nomme
+`authority_issuer_id` et `authority_system_id`, et doit avoir été créée avant
+le cutoff du CRM. Une ressemblance nom/adresse, SIRENE seul, le retrieval, un
+candidat, un hit, un rang, un score, une prédiction, un LLM ou une validation
+utilisateur ne peut jamais créer la vérité.
 
-- compatibilité des 23 609 anciennes lignes, manifest
-  `6435f071c027b7458a8c8b3f09dce796cadc8a0fdc03e0413bcecba1fe969f9b` ;
-- 19 754 SIREN consommés, manifest
-  `b220efd7c4dc89a980b9d0b5501e16fd286edcafdff61573ae6c5e8d8423c6ff`.
+Après contrôle de syntaxe et de temporalité :
 
-## 5. Splits et ordre ML
+- un unique SIRET autoritatif valide donne `MATCH_EXACT` ;
+- plusieurs SIRET, un SIREN seul ou des preuves contradictoires donnent
+  `AMBIGUOUS` ;
+- aucune preuve admissible donne `UNRESOLVED`.
 
-Après qualification complète, les composantes partageant un SIREN
-autoritatif sont affectées ensemble à `fit`, `dev` ou `test` par une fonction
-de hash préenregistrée. Les proportions cibles sont 70/15/15. Une ligne sans
-SIREN suit le hash de son ID opaque. L'affectation ne reçoit aucun score ou
-résultat modèle.
+SIRENE peut uniquement contrôler un SIRET déjà fourni. Toutes les lignes
+source restent au dénominateur.
 
-L'ordre est obligatoire :
+## 5. Anti-chevauchement exact
 
-1. geler les trois splits et leurs manifests ;
-2. exécuter le retrieval gelé sur `fit` et `dev`, jamais encore sur `test` ;
-3. franchir couverture identifiable ≥ 80 % et Recall SIRET exact @100 ≥ 99 %
-   sur `dev`, vérité absente du pool comptée comme erreur ;
-4. entraîner le ranker candidat sur les pools réels `fit` ;
-5. produire ses prédictions OOF par composante SIREN ;
-6. entraîner l'accepteur query-level sur ces scènes OOF ;
-7. choisir le seuil sur `dev` à précision SIRET exacte observée ≥ 99,8 % ;
-8. geler code, modèles, seuils et politiques ;
-9. ouvrir `test` une seule fois.
+Avant le split, chaque ligne est comparée aux quatre keysets historiques
+pinnés : `service_id`, `input_siret_lineage`, `siret_masked` et
+`fuzzy_historical`. Les projections et normalisations sont exactement celles
+du plan V4.12 pinné. La clé HMAC historique est lue en lecture seule et son
+identifiant ainsi que son SHA sont vérifiés avant usage.
 
-Le ranker, le decider, le risk model et l'accepteur historiques restent gelés
-jusqu'au gate retrieval de l'étape 3.
+Le rapport publie, pour chaque keyset puis pour leur union, le nombre de lignes
+comparables, de hits et de lignes uniques en collision. Le seuil autorisé est
+zéro sur chaque keyset et sur l'union. Chaque SIREN autoritativement connu,
+y compris dans les lignes ambiguës ou contradictoires, est aussi comparé au
+registre gelé des 19 754 SIREN ; l'intersection autorisée est zéro.
 
-## 6. Mesures et interprétation
+Une copie ancienne dotée d'un nouvel `export_id` échoue donc. Une ligne non
+comparable à un keyset est comptée explicitement ; elle ne devient pas un
+non-hit silencieux.
 
-Le plafond de candidats est 100 par requête, jamais une moyenne. Sont publiés
-ensemble :
+## 6. Qualification, IDs et splits
 
-- couverture identifiable et nombres bruts ;
-- Recall SIRET exact @1/@10/@50/@100 ;
-- précision et couverture `AUTO_MATCH` ;
-- intervalles Wilson 95 % et 99 % ;
-- métriques historique, V2, V3 et V4.13 ;
-- résultats par actifs, fermés, mégapoles et multi-sites.
+L'ID opaque est le SHA-256 de :
 
-Une précision observée ≥ 99,8 % n'est pas une garantie. Une revendication
-unilatérale à 99 % avec zéro erreur exige au moins 2 301 décisions AUTO
-indépendantes. En dessous, le rapport doit dire « estimation observée ».
+```text
+UTF8("SIRETO-V413-OPAQUE-QUERY-ID\0")
++ canonical_json([collection_manifest_sha256,
+                  source_file_sha256,
+                  source_row_ordinal_1_based,
+                  source_record_id])
+```
 
-## 7. État actuel et séquence
+Chaque nibble hexadécimal `0..f` est ensuite transcodé `a..p`. Le builder
+n'importe aucun module de retrieval ou modèle et produit des arbres séparés
+`queries`, `oracle` et `audit`. Le scanner refuse les champs interdits et
+toute séquence Unicode autonome de 9 ou 14 chiffres après NFKC.
 
-Au 31 juillet 2026 :
+Le split utilise un union-find sur toutes les lignes. Deux lignes sont reliées
+si elles partagent un `source_group_id` non vide ou un SIREN autoritativement
+connu, y compris ambigu ou contradictoire. Une ligne sans aucun lien forme une
+composante singleton. La clé de composante est le JSON canonique du tableau
+trié de ses IDs opaques.
 
-- le retrieval V4.12 passe le dev historique à 1 217/1 217 Recall@100 ;
-- la garde V4.12-G produit 614/746 AUTO, zéro erreur historique ;
-- les 23 609 lignes locales sont toutes consommées ;
-- aucune collection CRM fraîche admissible n'est présente dans l'inbox.
+On calcule :
 
-La séquence suivante est donc :
+```text
+digest = SHA256(UTF8("SIRETO-V413-FRESH-SPLIT\0") + component_key)
+u = unsigned_big_endian_uint64(digest[0:8])
+fit  si u < 12912720851596686131
+dev  si 12912720851596686131 <= u < 15679732462653118873
+test sinon
+```
 
-1. auditer et geler le présent contrat et son plan ;
-2. attendre une nouvelle collection sans ouvrir retrieval ou modèle ;
-3. exécuter seulement le gate zéro ;
-4. implémenter le builder minimal si et seulement si la source et la preuve
-   existent ;
-5. poursuivre les gates dans l'ordre défini ci-dessus.
+Les manifests fit/dev/test sont physiquement distincts, scellés avant tout
+retrieval et leur intersection de composantes doit être vide.
+
+## 7. Gate source et retrieval gelé
+
+Gate 0B est calculé exhaustivement :
+
+- au moins 657 `MATCH_EXACT` ;
+- couverture `MATCH_EXACT / toutes les lignes source ≥ 80,0 %` ;
+- zéro fuite et zéro chevauchement interdit.
+
+Sans manifest admissible : `WAITING_FOR_NEW_SOURCE`. Intégrité saine mais
+volume/couverture insuffisant : `PIVOT_SOURCE_EVIDENCE`. Fuite, collision,
+dérive ou protocole violé : `STOP`.
+
+Le retrieval est exactement celui du contrat actif pinné : mêmes sept canaux,
+poids RRF, quotas, profondeur 5 000, tie-break SIRET croissant et plafond
+absolu de 100. Aucune variante n'est autorisée. Fit et dev sont exécutés une
+fois ; chaque exécution est inscrite dans un ledger.
+
+Le gate dev exige simultanément :
+
+- couverture identifiable ≥ 80,0 % ;
+- Recall SIRET exact @100 ≥ 99,0 % ;
+- vérité absente du pool comptée comme erreur ;
+- zéro liste de plus de 100 candidats ;
+- métriques historique, V2, V3 et V4.13 publiées ensemble.
+
+Ranker, decider, risk model et accepteur restent gelés jusque-là.
+
+## 8. Ranker et accepteur
+
+Après le GO retrieval seulement, le ranker candidat apprend sur les pools
+réels de fit. Ses données pour l'accepteur sont produites en cinq folds OOF
+par composante, avec :
+
+```text
+fold = uint64_be(SHA256(
+  UTF8("SIRETO-V413-RANKER-OOF-FOLD\0") + component_key)[0:8]) mod 5
+```
+
+Chaque scène d'accepteur provient exclusivement d'une prédiction OOF. Les
+misses retrieval/ranker restent présents et incorrects. Le seuil est choisi
+une seule fois sur dev parmi les scores uniques : maximiser le nombre d'AUTO,
+sous précision SIRET exacte observée ≥ 99,8 %, zéro `AMBIGUOUS` ou
+`UNRESOLVED` en AUTO et au moins `max(50, ceil(25 % des lignes dev))` AUTO.
+Les égalités préfèrent moins d'erreurs, puis le seuil le plus élevé. Si aucun
+seuil n'est admissible, le produit reste intégralement en REVIEW et le verdict
+qualité est `PIVOT`.
+
+## 9. Test fermé et verdict terminal
+
+Les queries test, l'oracle test et les arbres fit/dev sont physiquement
+séparés. Aucun entrypoint fit/dev ne peut recevoir un path, un hash ou un
+handle de l'oracle test. Après gel du code, des modèles, du seuil, du runtime,
+du retrieval et des manifests :
+
+1. créer `test/opening.json` en `O_EXCL` avant le premier FD query test ;
+2. scorer une fois puis sceller candidats et décisions ;
+3. créer l'événement `results-sealed` avant le premier FD oracle test ;
+4. créer l'événement `oracle-open`, calculer les métriques sans rescoring ;
+5. sceller métriques et receipt terminal.
+
+Crash avant scellement des résultats : `STOP_NO_RESCORING`. Crash après
+scellement mais avant oracle : reprise uniquement depuis les résultats
+scellés. Crash après oracle : recalcul des métriques autorisé, rescoring
+interdit. Une receipt valide rend toute relance idempotente sans réouverture.
+
+`GO` exige sur test : couverture identifiable ≥ 80 %, Recall exact @100
+≥ 99 %, plafond 100 respecté, précision AUTO exacte observée ≥ 99,8 %, zéro
+AUTO ambigu/non résolu et volume AUTO minimal identique au dev. `PIVOT`
+signifie intégrité saine mais au moins un gate qualité manqué. `STOP` signifie
+fuite, corruption, contamination, rerun ou violation de protocole.
+
+Les nombres bruts, Wilson bilatéral 95/99 % et segments sont toujours publiés.
+Une garantie 99,8 % n'est revendiquée que si la borne inférieure
+Clopper-Pearson unilatérale 99 % est ≥ 99,8 %, avec décisions indépendantes
+agrégées au niveau composante. Avec zéro erreur, cela exige au moins 2 301
+composantes AUTO indépendantes ; avant cela, on publie « estimation observée ».
+
+## 10. État au préenregistrement
+
+Les 23 609 lignes locales sont consommées et aucune collection admissible
+n'est actuellement présente. Cet état est une observation de handover, pas
+une constante normative du plan. V4.13 peut donc avancer jusqu'au verrouillage
+de l'implémentation ; l'ouverture réelle attendra une nouvelle matière
+première et ne sera jamais simulée par des labels reconstruits.

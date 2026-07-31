@@ -1,1 +1,588 @@
-{"contract":{"path":"docs/v4_13_fresh_labels_minimal_contract.md","sha256":"be007c0e94bb5adc9d393b6824f99927173ef3b98c14cd9d7261234870c3541e"},"current_evidence":{"fresh_collection_present":false,"guard_comparison_dev_auto":614,"guard_comparison_dev_errors":0,"local_historical_rows_all_consumed":23609,"retrieval_dev_match_exact":1217,"retrieval_dev_recall_at_100_success":1217},"future_implementation":{"availability_auditor":"UNIMPLEMENTED","qualification_builder":"UNIMPLEMENTED","tests":"UNIMPLEMENTED"},"gate_zero":{"maximum_forbidden_overlap":0,"minimum_coverage":0.8,"minimum_match_exact":657,"requires_complete_frame":true,"verdicts":{"go":"GO_BUILD_FRESH_LABELS","pivot":"PIVOT_SOURCE_EVIDENCE","stop":"STOP_INTEGRITY_OR_CONTAMINATION","waiting":"WAITING_FOR_NEW_SOURCE"}},"gates":{"implementation":{"independent_audits_required":2,"verdict":"GO_V413_FRESH_LABELS_IMPLEMENTATION"},"new_source_open":{"requires":["PREREGISTRATION_GO","IMPLEMENTATION_GO","COMPLETE_STABLE_COLLECTION_PRESENT"],"verdict":"GO_V413_OPEN_NEW_SOURCE_ONCE"},"preregistration":{"independent_audits_required":2,"verdict":"GO_V413_FRESH_LABELS_PREREG"}},"model_sequence":["RETRIEVAL_GATE_FIT_DEV","RANKER_FIT_ON_REAL_POOLS","RANKER_SIREN_GROUPED_OOF","QUERY_LEVEL_ACCEPTOR_ON_OOF_SCENES","THRESHOLD_ON_DEV_AT_OBSERVED_EXACT_SIRET_PRECISION_GE_0_998","FREEZE_CODE_MODELS_THRESHOLDS","OPEN_TEST_ONCE"],"outputs":{"directories_mode":"0700","files_mode":"0600","query_forbidden_fields":["SIRET","SIREN","EVIDENCE","LABEL","CANDIDATE","RANK","SCORE","PREDICTION"],"root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13","trees":["queries","oracle","audit"],"write_policy":"O_EXCL_FSYNC_F_FULLFSYNC_NO_OVERWRITE_NO_DELETE"},"publication":{"auto_998_is_observed_until_minimum_independent_zero_error_auto":2301,"confidence_intervals":["WILSON_95_TWO_SIDED","WILSON_99_TWO_SIDED"],"references_always_together":["HISTORICAL","V2","V3","V4_13"]},"purpose":"FRESH_CRM_LABELS_AND_SELECTIVE_MATCHING_WITHOUT_LOCAL_PKI","registries":{"consumed_compatibility":{"historical_rows":23609,"manifest_sha256":"6435f071c027b7458a8c8b3f09dce796cadc8a0fdc03e0413bcecba1fe969f9b","root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake/registry/consumed_compatibility/48851668dd2f173686f3240ecc62e30fcbfdb96d8abf0ced498eb29891d8a490"},"consumed_sirens":{"manifest_sha256":"b220efd7c4dc89a980b9d0b5501e16fd286edcafdff61573ae6c5e8d8423c6ff","root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/registries/v4_12_consumed_sirens/fbc0b84d9c81b01a","unique_sirens":19754}},"retrieval_gate":{"candidate_maximum":100,"candidate_maximum_is_absolute":true,"historical_reference_contract":"docs/retrieval_selective_recall100_contract.md","minimum_exact_siret_recall_at_100_dev":0.99,"minimum_identifiable_coverage":0.8,"models_frozen_until_go":["RANKER","DECIDER","RISK_MODEL","ACCEPTOR"],"truth_absent_is_error":true},"schema_version":"sireto-v4.13-fresh-labels-minimal-plan-1","source":{"all_source_rows_in_denominator":true,"allowed_data_extensions":[".csv",".parquet"],"inbox":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/inbox","minimum_stability_seconds":60,"optional_stopping_allowed":false,"required_files":["collection_manifest.json","crm_source","authoritative_mapping"],"selection":"FIRST_COMPLETE_STABLE_COLLECTION_AFTER_PLAN_COMMIT"},"split":{"domain":"SIRETO-V413-FRESH-SPLIT\u0000","fallback_unit":"OPAQUE_QUERY_ID","frozen_before_retrieval":true,"proportions":{"dev":0.15,"fit":0.7,"test":0.15},"test_open_once_after_full_freeze":true,"unit":"AUTHORITATIVE_SIREN_CONNECTED_COMPONENT"},"status":"PREREGISTERED_WAITING_FOR_TWO_AUDITS_AND_NEW_SOURCE","supersedes_for_north_star_only":{"contract":"docs/v4_12_fresh_s1_contract.md","mutation_policy":"PRESERVE_ALL_V1_AND_S1_ARTIFACTS_IMMUTABLY","producer_v1_failure":"reports/v9/v4_12_fresh_s1_local_producer_v1_failure.md"},"threat_model":{"claims_external_non_repudiation":false,"excluded":"HOSTILE_PROCESS_ALREADY_CONTROLLING_SAME_UID","trusted":"COOPERATIVE_LOCAL_OPERATOR_SINGLE_UID"},"truth_policy":{"allowed":["CONTRACTUAL_SOURCE_RECORD_TO_SIRET_MAPPING","PREREGISTERED_OFFICIAL_IDENTIFIER","SEALED_ADMINISTRATIVE_DOCUMENT"],"ambiguous":"MULTIPLE_COMPATIBLE_SIRETS_OR_SIREN_ONLY","forbidden":["NAME_ADDRESS_SIMILARITY","SIRENE_ALONE","RETRIEVAL","CANDIDATE","HIT","RANK","SCORE","PREDICTION","MODEL_OUTPUT","USER_VALIDATION"],"labels":["MATCH_EXACT","AMBIGUOUS","UNRESOLVED"],"match_exact":"ONE_INDEPENDENT_VALID_TEMPORALLY_COHERENT_SIRET","unresolved":"NO_VALID_UNIQUE_INDEPENDENT_SIRET"}}
+{
+  "artifact_schemas": {
+    "authoritative_mapping": {
+      "additional_fields": "REJECT",
+      "columns_in_order": [
+        "source_record_id",
+        "authority_type",
+        "authority_issuer_id",
+        "authority_system_id",
+        "authority_record_id",
+        "authoritative_siret",
+        "authoritative_siren",
+        "valid_from",
+        "valid_to",
+        "evidence_created_at_utc",
+        "evidence_payload_sha256",
+        "matching_pipeline_used"
+      ],
+      "join": "EXACT_SOURCE_RECORD_ID_ONLY",
+      "nullable": [
+        "authoritative_siret",
+        "authoritative_siren",
+        "valid_from",
+        "valid_to"
+      ],
+      "types": {
+        "authoritative_siren": "ascii_digits_9_or_null",
+        "authoritative_siret": "ascii_digits_14_or_null",
+        "authority_issuer_id": "utf8_nonempty",
+        "authority_record_id": "utf8_nonempty",
+        "authority_system_id": "utf8_nonempty",
+        "authority_type": "closed_authority_enum",
+        "evidence_created_at_utc": "rfc3339_utc",
+        "evidence_payload_sha256": "hex64",
+        "matching_pipeline_used": "boolean_false",
+        "source_record_id": "utf8_nonempty",
+        "valid_from": "date_iso8601_or_null",
+        "valid_to": "date_iso8601_or_null"
+      }
+    },
+    "collection_manifest": {
+      "additional_fields": "REJECT",
+      "fields": {
+        "authority_catalog_id": "enum:v413-independent-authorities-1",
+        "collection_id": "string_nonempty",
+        "created_at_utc": "rfc3339_utc",
+        "crm_file": "safe_basename",
+        "crm_format": "enum:CSV,PARQUET",
+        "crm_row_count": "uint64_positive",
+        "crm_sha256": "hex64",
+        "crm_size_bytes": "uint64_positive",
+        "export_cutoff_utc": "rfc3339_utc",
+        "export_id": "string_nonempty",
+        "mapping_file": "safe_basename",
+        "mapping_format": "enum:CSV,PARQUET",
+        "mapping_row_count": "uint64_positive",
+        "mapping_sha256": "hex64",
+        "mapping_size_bytes": "uint64_positive",
+        "matching_based_exclusions": "boolean_false",
+        "period_end_utc": "rfc3339_utc",
+        "period_start_utc": "rfc3339_utc",
+        "plan_git_commit": "hex40",
+        "plan_sha256": "hex64",
+        "population_definition": "string_nonempty",
+        "population_exclusions": "array:closed_exclusion",
+        "population_is_exhaustive": "boolean_true",
+        "preregistration_lock_sha256": "hex64",
+        "producer_id": "string_nonempty",
+        "reference_date": "date_iso8601",
+        "schema_version": "enum:sireto-v4.13-collection-manifest-1",
+        "source_record_id_semantics": "string_nonempty"
+      },
+      "nullable": []
+    },
+    "crm_source": {
+      "additional_fields": "REJECT",
+      "columns_in_order": [
+        "source_record_id",
+        "source_group_id",
+        "source_record_created_at_utc",
+        "reference_date",
+        "crm_name_raw",
+        "crm_address_raw",
+        "crm_postcode_raw",
+        "crm_city_raw",
+        "crm_insee_raw",
+        "source_record_id_equivalence_attested"
+      ],
+      "nullable": [
+        "source_group_id",
+        "crm_name_raw",
+        "crm_address_raw",
+        "crm_postcode_raw",
+        "crm_city_raw",
+        "crm_insee_raw"
+      ],
+      "types": {
+        "crm_address_raw": "utf8_or_null",
+        "crm_city_raw": "utf8_or_null",
+        "crm_insee_raw": "utf8_or_null",
+        "crm_name_raw": "utf8_or_null",
+        "crm_postcode_raw": "utf8_or_null",
+        "reference_date": "date_iso8601",
+        "source_group_id": "utf8_or_null",
+        "source_record_created_at_utc": "rfc3339_utc",
+        "source_record_id": "utf8_nonempty_unique",
+        "source_record_id_equivalence_attested": "boolean"
+      }
+    },
+    "gate_result": {
+      "additional_fields": "REJECT",
+      "fields": [
+        "schema_version",
+        "stage",
+        "input_manifest_sha256s",
+        "counts",
+        "rates",
+        "keyset_overlap_counts",
+        "consumed_siren_overlap_count",
+        "maximum_candidates_observed",
+        "verdict",
+        "reason_codes",
+        "created_at_utc"
+      ]
+    },
+    "oracle": {
+      "additional_fields": "REJECT",
+      "columns_in_order": [
+        "query_id",
+        "label",
+        "authoritative_siret",
+        "authoritative_siren",
+        "reason_code",
+        "evidence_count",
+        "evidence_payload_sha256s"
+      ],
+      "labels": [
+        "MATCH_EXACT",
+        "AMBIGUOUS",
+        "UNRESOLVED"
+      ],
+      "nullable": [
+        "authoritative_siret",
+        "authoritative_siren"
+      ]
+    },
+    "query": {
+      "additional_fields": "REJECT",
+      "columns_in_order": [
+        "query_id",
+        "reference_date",
+        "crm_name_raw",
+        "crm_address_raw",
+        "crm_postcode_raw",
+        "crm_city_raw",
+        "crm_insee_raw"
+      ],
+      "forbidden_tokens": [
+        "SIRET",
+        "SIREN",
+        "EVIDENCE",
+        "LABEL",
+        "CANDIDATE",
+        "HIT",
+        "RANK",
+        "SCORE",
+        "PREDICTION"
+      ],
+      "nullable": [
+        "crm_name_raw",
+        "crm_address_raw",
+        "crm_postcode_raw",
+        "crm_city_raw",
+        "crm_insee_raw"
+      ]
+    },
+    "receipt": {
+      "additional_fields": "REJECT",
+      "fields": [
+        "schema_version",
+        "stage",
+        "attempt_id",
+        "input_hashes",
+        "output_hashes",
+        "event_head_sha256",
+        "terminal_state",
+        "reason_code",
+        "created_at_utc"
+      ]
+    }
+  },
+  "authority_catalog": {
+    "allowed": {
+      "CONTRACT_OR_BILLING_SIRET": {
+        "independent_system_required": true,
+        "proof_created_before_export_cutoff": true
+      },
+      "SEALED_ADMINISTRATIVE_DOCUMENT": {
+        "evidence_payload_sha256_required": true,
+        "proof_created_before_export_cutoff": true
+      },
+      "SOURCE_SYSTEM_OFFICIAL_SIRET": {
+        "identifier_existed_before_export": true,
+        "sireto_producer_forbidden": true
+      }
+    },
+    "catalog_id": "v413-independent-authorities-1",
+    "forbidden_truth_creators": [
+      "NAME_ADDRESS_SIMILARITY",
+      "SIRENE_ALONE",
+      "RETRIEVAL",
+      "CANDIDATE",
+      "HIT",
+      "RANK",
+      "SCORE",
+      "PREDICTION",
+      "MODEL_OUTPUT",
+      "LLM",
+      "USER_VALIDATION"
+    ],
+    "issuer_and_system_id_required": true,
+    "join": "EXACT_SOURCE_RECORD_ID_ONLY",
+    "matching_pipeline_used_must_be_false": true
+  },
+  "contamination": {
+    "comparison": {
+      "all_authoritatively_known_sirens_included": true,
+      "maximum_hit_count_each_keyset": 0,
+      "maximum_hit_count_keyset_union": 0,
+      "maximum_hit_count_siren_registry": 0,
+      "noncomparable_rows_reported_per_keyset": true,
+      "report_raw_counts_per_keyset_and_union": true
+    },
+    "compatibility_keysets": {
+      "fuzzy_historical": {
+        "column": "fuzzy_historical_fingerprint_sha256",
+        "expected_unique_keys": 23568,
+        "file": "fuzzy_historical_keyset.parquet",
+        "sha256": "a9eaf5c51af5c04b47297b8d5be0c7caa6e1b3e3a52c494f14524f0356d243bc"
+      },
+      "input_siret_lineage": {
+        "column": "input_siret_lineage_hmac_sha256",
+        "expected_unique_keys": 23594,
+        "file": "input_siret_lineage_keyset.parquet",
+        "sha256": "5b6f6e0a72ff49c08dd65259b0bf8c8c74d8c539fdb697fea66c04475303470e"
+      },
+      "service_id": {
+        "column": "service_id_lineage_hmac_sha256",
+        "expected_unique_keys": 22950,
+        "file": "service_id_keyset.parquet",
+        "sha256": "0e3bf8ffef71c378d9d94fbcac9420fab258a02bc43537cc1f402725682eec61"
+      },
+      "siret_masked": {
+        "column": "siret_masked_fingerprint_sha256",
+        "expected_unique_keys": 23609,
+        "file": "siret_masked_keyset.parquet",
+        "sha256": "b6354e982b41a93350955a4621fb32e8654597f1ed5d217a81c8055634b48575"
+      }
+    },
+    "historical_projection_authority": {
+      "contract_sha256": "b283143bbd35091add755665f9edbaee4b00ac9b08fca36abf5f457163b11946",
+      "execution_lock_sha256": "89e06772ac57c72738ca6bb7cde2c42ce5ee57ac2f5075a1c6e95cdee97ee115",
+      "plan_git_commit": "6f9ad7e09c63967d7191d4b5490fe648b3418afb",
+      "plan_sha256": "57fa9ce0d4239ca42cbcd06cd9fe2025c6dee414bddadbce4d8b3b3115261ab1"
+    },
+    "keychain_read_only": {
+      "account": "SIRETO",
+      "allowed_api": "SecItemCopyMatching",
+      "authentication_ui": "FAIL",
+      "create_update_delete_forbidden": true,
+      "key_id": "SIRETO_V412_COMPATIBILITY_LINEAGE_HMAC_V1",
+      "key_sha256": "639ea96ba64008c7ec8c2cd69dce39f0c02c0d0d1e802b42d3d0bf02a707c4fe",
+      "secret_output_forbidden": true,
+      "service": "com.sireto.v412.compatibility-hmac"
+    }
+  },
+  "contract": {
+    "path": "docs/v4_13_fresh_labels_minimal_contract.md",
+    "sha256": "334a754b7ba9313e3542762f47c4f2aa81ca6b1524f824d3bbfe298945540c5d"
+  },
+  "final_test": {
+    "crash_policy": {
+      "after_oracle_open": "METRICS_RECOMPUTE_ONLY_NO_RESCORING",
+      "after_results_sealed_before_oracle": "RESUME_FROM_SEALED_RESULTS",
+      "before_results_sealed": "STOP_NO_RESCORING"
+    },
+    "events_in_order": [
+      "OPENING_O_EXCL_BEFORE_FIRST_TEST_QUERY_FD",
+      "CANDIDATES_AND_DECISIONS_SEALED",
+      "ORACLE_OPEN",
+      "METRICS_SEALED",
+      "TERMINAL_RECEIPT"
+    ],
+    "fit_dev_entrypoints_forbid_test_paths_hashes_and_handles": true,
+    "gate": {
+      "ambiguous_or_unresolved_auto_maximum": 0,
+      "candidate_maximum_absolute": 100,
+      "minimum_auto_exact_siret_precision_observed": 0.998,
+      "minimum_exact_siret_recall_at_100": 0.99,
+      "minimum_identifiable_coverage": 0.8,
+      "minimum_test_auto": "MAX_50_OR_CEIL_25_PERCENT_TEST_ROWS"
+    },
+    "oracle_first_open_after_results_seal": true,
+    "physical_roots_separate": true,
+    "rescoring_allowed": false,
+    "terminal_verdicts": [
+      "GO",
+      "PIVOT",
+      "STOP"
+    ]
+  },
+  "gates": {
+    "availability_0a": {
+      "reads": "DIRECT_CHILD_COLLECTION_MANIFESTS_ONLY",
+      "verdicts": [
+        "WAITING_FOR_NEW_SOURCE",
+        "GO_V413_COLLECTION_CLAIMED",
+        "STOP"
+      ]
+    },
+    "implementation": {
+      "independent_go_required": 2,
+      "verdict": "GO_V413_IMPLEMENTATION"
+    },
+    "preregistration": {
+      "independent_go_required": 2,
+      "verdict": "GO_V413_PREREGISTRATION"
+    },
+    "qualification_0b": {
+      "maximum_forbidden_overlap": 0,
+      "minimum_coverage": 0.8,
+      "minimum_match_exact": 657,
+      "requires_complete_frame": true,
+      "verdicts": [
+        "GO_V413_FRESH_LABELS",
+        "PIVOT_SOURCE_EVIDENCE",
+        "STOP"
+      ]
+    },
+    "retrieval_dev": {
+      "minimum_exact_siret_recall_at_100": 0.99,
+      "minimum_identifiable_coverage": 0.8,
+      "verdicts": [
+        "GO",
+        "PIVOT",
+        "STOP"
+      ]
+    }
+  },
+  "implementation": {
+    "components": {
+      "availability_auditor": "scripts/audit_v413_fresh_source_availability.py",
+      "final_test_opener_evaluator": "scripts/open_evaluate_v413_final_test.py",
+      "qualification_builder": "scripts/build_v413_fresh_qualification.py",
+      "retrieval_runner": "scripts/run_v413_frozen_retrieval.py",
+      "split_sealer": "scripts/seal_v413_fresh_splits.py",
+      "validator_leak_scanner": "scripts/validate_v413_fresh_artifacts.py"
+    },
+    "execution_lock": "config/v4_13_fresh_labels_execution_lock.json",
+    "required_lock_pins": [
+      "preregistration_git_commit",
+      "plan_sha256",
+      "plan_schema_sha256",
+      "contract_sha256",
+      "implementation_git_commit",
+      "component_blob_sha256s",
+      "tests_sha256",
+      "runtime",
+      "uid",
+      "ssd_volume_uuid",
+      "retrieval_policy_sha256"
+    ],
+    "status": "UNIMPLEMENTED_NOT_AUTHORIZED",
+    "tests": "tests/test_v413_fresh_intake.py"
+  },
+  "model": {
+    "acceptor_training": "QUERY_LEVEL_SCENES_FROM_RANKER_OOF_ONLY",
+    "ambiguous_or_unresolved_auto_maximum": 0,
+    "models_frozen_until_retrieval_go": [
+      "RANKER",
+      "DECIDER",
+      "RISK_MODEL",
+      "ACCEPTOR"
+    ],
+    "oof": {
+      "component_key": "CANONICAL_JSON_SORTED_OPAQUE_QUERY_IDS",
+      "domain": "SIRETO-V413-RANKER-OOF-FOLD\u0000",
+      "folds": 5,
+      "function": "UINT64_BE_FIRST_8_BYTES_SHA256_DOMAIN_PLUS_COMPONENT_KEY_MOD_5"
+    },
+    "ranker_training": "FIT_REAL_RETRIEVAL_POOLS_ONLY",
+    "threshold_selection": {
+      "candidates": "UNIQUE_DEV_SCORES_DESCENDING",
+      "minimum_auto": "MAX_50_OR_CEIL_25_PERCENT_DEV_ROWS",
+      "objective": "MAXIMIZE_AUTO_COUNT",
+      "precision_denominator": "ALL_AUTO_DECISIONS",
+      "required_observed_exact_siret_precision": 0.998,
+      "tie_break": [
+        "MINIMUM_ERROR_COUNT",
+        "HIGHEST_THRESHOLD"
+      ]
+    }
+  },
+  "outputs": {
+    "directory_mode": "0700",
+    "file_mode": "0600",
+    "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13",
+    "trees": [
+      "queries",
+      "oracle",
+      "audit",
+      "control"
+    ],
+    "write_policy": "O_EXCL_FSYNC_F_FULLFSYNC_PARENT_FSYNC_NO_OVERWRITE_NO_DELETE"
+  },
+  "preregistration_lock": {
+    "created_after_double_go": true,
+    "future_path": "config/v4_13_fresh_labels_preregistration_lock.json",
+    "must_pin": [
+      "git_commit",
+      "plan_sha256",
+      "plan_schema_sha256",
+      "contract_sha256",
+      "tests_sha256",
+      "created_at_utc"
+    ],
+    "status": "NOT_CREATED"
+  },
+  "publication": {
+    "clopper_pearson": {
+      "confidence": 0.99,
+      "independence_unit": "AUTHORITATIVE_SIREN_CONNECTED_COMPONENT",
+      "minimum_zero_error_independent_auto_for_0_998_lower_bound": 2301,
+      "sidedness": "ONE_SIDED_LOWER"
+    },
+    "confidence_intervals": [
+      "WILSON_95_TWO_SIDED",
+      "WILSON_99_TWO_SIDED",
+      "CLOPPER_PEARSON_99_ONE_SIDED_LOWER"
+    ],
+    "references_always_together": [
+      "HISTORICAL",
+      "V2",
+      "V3",
+      "V4_13"
+    ],
+    "segments": [
+      "ACTIVE",
+      "CLOSED",
+      "MEGAPOLIS",
+      "MULTISITE"
+    ]
+  },
+  "purpose": "FRESH_CRM_LABELS_AND_SELECTIVE_MATCHING_WITHOUT_NEW_LOCAL_PKI",
+  "registries": {
+    "consumed_compatibility": {
+      "historical_rows": 23609,
+      "manifest_sha256": "6435f071c027b7458a8c8b3f09dce796cadc8a0fdc03e0413bcecba1fe969f9b",
+      "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_holdout_intake/registry/consumed_compatibility/48851668dd2f173686f3240ecc62e30fcbfdb96d8abf0ced498eb29891d8a490"
+    },
+    "consumed_sirens": {
+      "file_sha256": "9d440612a2560fe1a63e7ff5b3b196d33ad615c1d09720dfe05b3d70969851de",
+      "manifest_sha256": "b220efd7c4dc89a980b9d0b5501e16fd286edcafdff61573ae6c5e8d8423c6ff",
+      "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/registries/v4_12_consumed_sirens/fbc0b84d9c81b01a",
+      "unique_sirens": 19754
+    }
+  },
+  "retrieval": {
+    "candidate_maximum_absolute": 100,
+    "channel_internal_depth_maximum": 5000,
+    "dev_execution_count_maximum": 1,
+    "fit_execution_count_maximum": 1,
+    "frozen_policy": {
+      "overlay_quotas": {
+        "name_char": 10,
+        "name_word": 1
+      },
+      "rrf_constant": 60,
+      "tie_break": "SIRET_ASCENDING",
+      "weights": {
+        "address_exact": 2.0,
+        "address_word": 0.5,
+        "current_sparse": 2.0,
+        "name_char": 1.0,
+        "name_exact": 2.0,
+        "name_word": 1.0,
+        "siren_head": 1.0
+      }
+    },
+    "historical_contract": {
+      "git_commit": "eb0e6a3ca034a0b1e78ae77e5bde780608a836d7",
+      "path": "docs/retrieval_selective_recall100_contract.md",
+      "sha256": "51e078610441644d582b0d83c631e26119134f36ad8d4bf559e92df4a4aaecf1"
+    },
+    "historical_evaluator": {
+      "git_commit": "5a0e67f",
+      "path": "scripts/evaluate_retrieval_admission.py",
+      "sha256": "b24ee3f52ab5d713c92114ac13d3b1e99498bb40a3ca6cca015bb991dd237c45"
+    },
+    "ledger_required": true,
+    "no_policy_variation_after_preregistration": true,
+    "truth_absent_is_error": true
+  },
+  "schema": {
+    "path": "config/v4_13_fresh_labels_minimal_plan.schema.json",
+    "sha256": "01c223bcad4e59e1ea7ac9636ee26ea60e7634bb1e736dc701778893052221e0"
+  },
+  "schema_version": "sireto-v4.13-fresh-labels-minimal-plan-2",
+  "source_protocol": {
+    "collection_directory_regex": "^[0-9]{20}_[0-9a-f]{64}$",
+    "extra_files": "REJECT",
+    "inbox": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/inbox",
+    "manifest_only_0a": {
+      "enumeration": "ALL_DIRECT_CHILDREN_LEXICOGRAPHIC",
+      "global_claim": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/control/collection.claim.json",
+      "ledger": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/control/availability_ledger.json",
+      "payload_open_forbidden": true,
+      "selection": "MINIMUM_ARRIVAL_EPOCH_NS_THEN_MANIFEST_SHA256"
+    },
+    "payload_open_0b": {
+      "marker": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/fresh_labels_v4_13/control/payload_opening.json",
+      "marker_created_o_excl_before_first_payload_fd": true,
+      "second_open_after_crash_forbidden": true
+    },
+    "required_exact_files": [
+      "collection_manifest.json",
+      "crm_source.csv|crm_source.parquet",
+      "authoritative_mapping.csv|authoritative_mapping.parquet"
+    ],
+    "stability": {
+      "fields": [
+        "device",
+        "inode",
+        "uid",
+        "nlink",
+        "mode",
+        "size",
+        "mtime_ns",
+        "ctime_ns",
+        "sha256"
+      ],
+      "minimum_seconds": 60,
+      "observations": 2
+    },
+    "temporal_freshness": {
+      "collection_created_after_preregistration_lock": true,
+      "export_cutoff_after_preregistration_lock": true,
+      "period_start_after_preregistration_lock": true
+    }
+  },
+  "split": {
+    "component_edges": [
+      "SAME_NONEMPTY_SOURCE_GROUP_ID",
+      "SAME_ANY_AUTHORITATIVELY_KNOWN_SIREN"
+    ],
+    "component_key": "CANONICAL_JSON_SORTED_OPAQUE_QUERY_IDS",
+    "dev_upper_exclusive_uint64": 15679732462653118873,
+    "domain": "SIRETO-V413-FRESH-SPLIT\u0000",
+    "fit_upper_exclusive_uint64": 12912720851596686131,
+    "hash": "SHA256_DOMAIN_UTF8_PLUS_COMPONENT_KEY",
+    "manifests_physically_separate_and_sealed": true,
+    "source_graph": "UNION_FIND_ALL_ROWS_ALL_AUTHORITY_RECORDS_INCLUDING_AMBIGUOUS_CONTRADICTORY",
+    "uint64": "FIRST_8_DIGEST_BYTES_UNSIGNED_BIG_ENDIAN"
+  },
+  "status": "PREREGISTRATION_AMENDMENT_AWAITING_TWO_GO",
+  "supersedes_for_north_star_only": {
+    "historical_contract": "docs/v4_12_fresh_s1_contract.md",
+    "historical_producer_failure": "reports/v9/v4_12_fresh_s1_local_producer_v1_failure.md",
+    "preserve_historical_artifacts": true
+  },
+  "threat_model": {
+    "claims_external_non_repudiation": false,
+    "excluded": "HOSTILE_PROCESS_ALREADY_CONTROLLING_SAME_UID",
+    "trusted": "COOPERATIVE_LOCAL_OPERATOR_SINGLE_UID"
+  },
+  "truth_policy": {
+    "all_source_rows_in_denominator": true,
+    "ambiguous": "MULTIPLE_VALID_SIRETS_OR_SIREN_ONLY_OR_CONTRADICTION",
+    "labels": [
+      "MATCH_EXACT",
+      "AMBIGUOUS",
+      "UNRESOLVED"
+    ],
+    "match_exact": "EXACTLY_ONE_VALID_TEMPORALLY_COHERENT_INDEPENDENT_SIRET",
+    "sirene_role": "VALIDATION_ONLY_NEVER_TRUTH_CREATOR",
+    "unresolved": "NO_ADMISSIBLE_AUTHORITY_RECORD"
+  }
+}
