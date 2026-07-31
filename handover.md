@@ -184,11 +184,20 @@ désormais l'absence par un parcours `lstat` sans symlink conclu uniquement
 par `ENOENT`, ferme les 15 champs du lock, les 9 champs d'implémentation et
 les 9 champs runtime, et préenregistre la matrice fichiers/répertoires/liens/
 erreurs/crashs avec zéro appel natif sur chaque état invalide. Ses 8 tests
-ciblés passent. Deux nouveaux audits de préenregistrement sont requis avant
+ciblés passent. Le ré-audit suivant a encore rendu un `GO` et un `NO_GO`,
+cette fois sur l'exhaustivité réelle de la matrice : chaque champ n'exerçait
+pas séparément type, valeur et absence, et le replay claim+reçu valide n'avait
+pas sa propre attente zéro appel. Le correctif `7c33a9b` exécute désormais
+chaque mutation sur chaque champ racine/implémentation/runtime, ferme chaque
+cas de garde et de cycle de vie par un compteur natif nul, et remplace le
+parcours `lstat` par un parcours FD-ancré `openat`/`fstatat` sans symlink pour
+fermer le remplacement concurrent des parents. Les 8 tests ciblés passent.
+Deux nouveaux audits de préenregistrement sont requis avant
 toute implémentation.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
-autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`)*.
+autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
+matrice exhaustive et parcours FD `7c33a9b`)*.
 
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
