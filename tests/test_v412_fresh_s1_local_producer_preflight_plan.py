@@ -1,8 +1,11 @@
 from __future__ import annotations
 
+import errno
 import hashlib
 import json
+import os
 from pathlib import Path
+import stat
 
 import pytest
 
@@ -68,6 +71,92 @@ def _validate_closed_result(
             raise ValueError("VALUE")
 
 
+def _validate_nested_lock(
+    value: dict,
+    *,
+    exact_fields: list[str],
+    fields: dict,
+    equalities: dict[str, object],
+    nested: dict[str, tuple[list[str], dict]],
+) -> None:
+    if list(value) != exact_fields:
+        raise ValueError("FIELDS")
+    for field in exact_fields:
+        rule = fields[field]
+        candidate = value[field]
+        if rule["type"] == "object":
+            if type(candidate) is not dict or "schema" not in rule:
+                raise ValueError("TYPE")
+            child_exact, child_fields = nested[rule["schema"]]
+            _validate_nested_lock(
+                candidate,
+                exact_fields=child_exact,
+                fields=child_fields,
+                equalities=equalities,
+                nested=nested,
+            )
+            continue
+        expected_type = int if rule["type"] == "integer" else str
+        if type(candidate) is not expected_type:
+            raise ValueError("TYPE")
+        expected = (
+            rule["const"]
+            if "const" in rule
+            else equalities[rule["equals"]]
+        )
+        if candidate != expected:
+            raise ValueError("VALUE")
+
+
+def _materialize_nested(
+    *,
+    exact_fields: list[str],
+    fields: dict,
+    equalities: dict[str, object],
+    nested: dict[str, tuple[list[str], dict]],
+) -> dict:
+    result: dict[str, object] = {}
+    for field in exact_fields:
+        rule = fields[field]
+        if "schema" in rule:
+            child_exact, child_fields = nested[rule["schema"]]
+            result[field] = _materialize_nested(
+                exact_fields=child_exact,
+                fields=child_fields,
+                equalities=equalities,
+                nested=nested,
+            )
+        elif "const" in rule:
+            result[field] = rule["const"]
+        else:
+            result[field] = equalities[rule["equals"]]
+    return result
+
+
+def _reference_absent(
+    path: Path, *, lstat=os.lstat
+) -> bool:
+    if not path.is_absolute():
+        raise ValueError("ABSOLUTE_PATH_REQUIRED")
+    current = Path(path.anchor)
+    parts = path.parts[1:]
+    for index, component in enumerate(parts):
+        current /= component
+        try:
+            metadata = lstat(current)
+        except OSError as exc:
+            if exc.errno == errno.ENOENT:
+                return True
+            raise ValueError("LSTAT_ERROR") from exc
+        if stat.S_ISLNK(metadata.st_mode):
+            raise ValueError("SYMLINK")
+        if index < len(parts) - 1 and not stat.S_ISDIR(metadata.st_mode):
+            raise ValueError("PARENT_NOT_DIRECTORY")
+        if index == len(parts) - 1:
+            raise ValueError("ENTRY_EXISTS")
+    raise ValueError("ROOT_EXISTS")
+
+
 def test_preflight_plan_is_canonical_and_cross_pinned() -> None:
     raw = PLAN.read_bytes()
     plan = json.loads(raw)
@@ -94,6 +183,7 @@ def test_preflight_plan_objects_and_field_rules_are_closed() -> None:
     assert variants == {
         frozenset(("const", "type")),
         frozenset(("equals", "type")),
+        frozenset(("schema", "type")),
     }
     for result_schema in (
         plan["lifecycle"]["claim"]["schema"],
@@ -214,6 +304,44 @@ def test_preflight_output_is_closed_and_real_output_absent() -> None:
     assert not (REPOSITORY / plan["output"]["path"]).exists()
 
 
+def test_preflight_claim_schema_rejects_every_mutation() -> None:
+    plan = json.loads(PLAN.read_bytes())
+    schema = plan["lifecycle"]["claim"]["schema"]
+    equalities = {
+        "canonical_preflight_plan.sha256": hashlib.sha256(
+            PLAN.read_bytes()
+        ).hexdigest(),
+        "preflight_execution_lock.file_sha256": "b" * 64,
+    }
+    valid = {
+        field: (
+            rule["const"]
+            if "const" in rule
+            else equalities[rule["equals"]]
+        )
+        for field, rule in schema["fields"].items()
+    }
+    valid = {field: valid[field] for field in schema["exact_fields"]}
+    _validate_closed_result(valid, schema, equalities)
+    for field in schema["exact_fields"]:
+        wrong_value = dict(valid)
+        wrong_value[field] = valid[field] + "x"
+        with pytest.raises(ValueError):
+            _validate_closed_result(wrong_value, schema, equalities)
+        wrong_type = dict(valid)
+        wrong_type[field] = 1
+        with pytest.raises(ValueError):
+            _validate_closed_result(wrong_type, schema, equalities)
+    with pytest.raises(ValueError):
+        _validate_closed_result({**valid, "extra": "x"}, schema, equalities)
+    with pytest.raises(ValueError):
+        _validate_closed_result(
+            {key: value for key, value in valid.items() if key != "state"},
+            schema,
+            equalities,
+        )
+
+
 def test_preflight_is_bound_to_future_code_lock_and_closed_gates() -> None:
     plan = json.loads(PLAN.read_bytes())
     assert all(
@@ -242,8 +370,133 @@ def test_preflight_is_bound_to_future_code_lock_and_closed_gates() -> None:
     }
 
 
-def test_preflight_absence_guards_and_crash_policy_are_closed() -> None:
+def test_preflight_execution_lock_schema_rejects_nested_mutations() -> None:
     plan = json.loads(PLAN.read_bytes())
+    schema = plan["preflight_execution_lock"]["schema"]
+    authority_lock = json.loads(
+        (REPOSITORY / plan["execution_lock"]["path"]).read_bytes()
+    )
+    equalities: dict[str, object] = {
+        "canonical_preflight_plan.contract.sha256": plan["contract"]["sha256"],
+        "canonical_preflight_plan.sha256": hashlib.sha256(
+            PLAN.read_bytes()
+        ).hexdigest(),
+        "runtime.os.getuid": os.getuid(),
+        "git.commit_containing_all_implementation_blobs": "a" * 40,
+    }
+    for role in ("preflight", "tests", "sealer", "sealer_tests"):
+        equalities[f"git_blob_sha256_at_commit.{role}_path"] = role[0] * 64
+    for field, value in authority_lock["runtime"].items():
+        equalities[
+            f"authority_execution_lock.runtime.{field}"
+        ] = value
+    nested = {
+        "preflight_execution_lock.implementation": (
+            schema["implementation_exact_fields"],
+            schema["implementation_fields"],
+        ),
+        "preflight_execution_lock.runtime": (
+            schema["runtime_exact_fields"],
+            schema["runtime_fields"],
+        ),
+    }
+    valid = _materialize_nested(
+        exact_fields=schema["exact_fields"],
+        fields=schema["fields"],
+        equalities=equalities,
+        nested=nested,
+    )
+    _validate_nested_lock(
+        valid,
+        exact_fields=schema["exact_fields"],
+        fields=schema["fields"],
+        equalities=equalities,
+        nested=nested,
+    )
+    for section, fields in (
+        (valid, schema["exact_fields"]),
+        (valid["implementation"], schema["implementation_exact_fields"]),
+        (valid["runtime"], schema["runtime_exact_fields"]),
+    ):
+        assert isinstance(section, dict)
+        for field in fields:
+            mutated = json.loads(json.dumps(valid))
+            if section is valid:
+                target = mutated
+            elif section is valid["implementation"]:
+                target = mutated["implementation"]
+            else:
+                target = mutated["runtime"]
+            candidate = target[field]
+            target[field] = (
+                candidate + "x" if type(candidate) is str else "WRONG_TYPE"
+            )
+            with pytest.raises(ValueError):
+                _validate_nested_lock(
+                    mutated,
+                    exact_fields=schema["exact_fields"],
+                    fields=schema["fields"],
+                    equalities=equalities,
+                    nested=nested,
+                )
+        missing = json.loads(json.dumps(valid))
+        target = (
+            missing
+            if section is valid
+            else missing[
+                "implementation"
+                if section is valid["implementation"]
+                else "runtime"
+            ]
+        )
+        target.pop(fields[0])
+        with pytest.raises(ValueError):
+            _validate_nested_lock(
+                missing,
+                exact_fields=schema["exact_fields"],
+                fields=schema["fields"],
+                equalities=equalities,
+                nested=nested,
+            )
+        extra = json.loads(json.dumps(valid))
+        target = (
+            extra
+            if section is valid
+            else extra[
+                "implementation"
+                if section is valid["implementation"]
+                else "runtime"
+            ]
+        )
+        target["extra"] = "x"
+        with pytest.raises(ValueError):
+            _validate_nested_lock(
+                extra,
+                exact_fields=schema["exact_fields"],
+                fields=schema["fields"],
+                equalities=equalities,
+                nested=nested,
+            )
+
+
+def test_preflight_absence_guards_and_crash_policy_are_closed(
+    tmp_path: Path,
+) -> None:
+    plan = json.loads(PLAN.read_bytes())
+    assert plan["absence_semantics"] == {
+        "absent_only_when": (
+            "FIRST_MISSING_COMPONENT_LSTAT_RETURNS_ENOENT"
+        ),
+        "allowed_syscall": (
+            "lstat_or_dirfd_stat_follow_symlinks_false"
+        ),
+        "existing_entry_policy": "STOP",
+        "other_errno_policy": "STOP",
+        "parent_traversal": (
+            "EACH_EXISTING_COMPONENT_MUST_BE_REAL_DIRECTORY_NO_SYMLINK"
+        ),
+        "symlink_policy": "STOP_INCLUDING_DANGLING_SYMLINK",
+    }
     guards = plan["runtime_absence_guards"]
     assert [guard["path"] for guard in guards] == [
         "config/v4_12_fresh_s1_local_producer_authorization.json",
@@ -259,13 +512,43 @@ def test_preflight_absence_guards_and_crash_policy_are_closed() -> None:
     ]
     assert all(guard["required_state"] == "ABSENT" for guard in guards)
     assert all(
-        not (
+        _reference_absent(
             (REPOSITORY / guard["path"])
             if guard["resolution"] == "REPOSITORY"
             else Path(guard["path"])
-        ).exists()
+        )
         for guard in guards
     )
+    assert _reference_absent(tmp_path / "missing")
+    existing_file = tmp_path / "file"
+    existing_file.touch()
+    existing_directory = tmp_path / "directory"
+    existing_directory.mkdir()
+    target = tmp_path / "target"
+    target.touch()
+    valid_symlink = tmp_path / "valid-symlink"
+    valid_symlink.symlink_to(target)
+    dangling_symlink = tmp_path / "dangling-symlink"
+    dangling_symlink.symlink_to(tmp_path / "missing-target")
+    parent_symlink = tmp_path / "parent-symlink"
+    parent_symlink.symlink_to(existing_directory, target_is_directory=True)
+    for path in (
+        existing_file,
+        existing_directory,
+        valid_symlink,
+        dangling_symlink,
+        parent_symlink / "child",
+    ):
+        with pytest.raises(ValueError):
+            _reference_absent(path)
+
+    def denied(candidate: Path):
+        if candidate == tmp_path / "denied":
+            raise PermissionError(errno.EACCES, "denied", candidate)
+        return os.lstat(candidate)
+
+    with pytest.raises(ValueError, match="LSTAT_ERROR"):
+        _reference_absent(tmp_path / "denied", lstat=denied)
     lifecycle = plan["lifecycle"]
     assert lifecycle["entry_order"].index(
         "CREATE_DURABLE_CLAIM_O_EXCL"
@@ -277,3 +560,33 @@ def test_preflight_absence_guards_and_crash_policy_are_closed() -> None:
         for disposition in lifecycle["existing_state_policy"].values()
     )
     assert not (REPOSITORY / lifecycle["claim"]["path"]).exists()
+    requirements = plan["implementation_test_requirements"]
+    assert requirements[
+        "required_native_call_count_for_every_invalid_case"
+    ] == 0
+    assert {
+        "AUTHORIZATION_DANGLING_SYMLINK",
+        "ROOT_VALID_SYMLINK",
+        "PRODUCER_CLAIM_DIRECTORY_PRESENT",
+        "PARENT_SYMLINK",
+        "LSTAT_PERMISSION_ERROR",
+    }.issubset(requirements["absence_guard_cases"])
+    assert {
+        "CLAIM_PRESENT_RESULT_MISSING",
+        "CRASH_AFTER_NATIVE_CALL_BEFORE_RESULT",
+        "RESULT_NONCANONICAL",
+    }.issubset(requirements["lifecycle_cases"])
+    assert requirements["mutation_targets"] == [
+        "CLAIM_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
+        "LOCK_TOP_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
+        (
+            "LOCK_IMPLEMENTATION_EACH_FIELD_EXTRA_MISSING_"
+            "WRONG_TYPE_WRONG_VALUE"
+        ),
+        (
+            "LOCK_RUNTIME_EACH_FIELD_EXTRA_MISSING_"
+            "WRONG_TYPE_WRONG_VALUE"
+        ),
+        "GUARDS_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
+        "LIFECYCLE_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
+    ]

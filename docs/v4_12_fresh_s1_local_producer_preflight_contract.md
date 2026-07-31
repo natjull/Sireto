@@ -43,7 +43,22 @@ hash de requête. Deux audits matériels
 
 Avant toute réservation, le script valide ces autorités byte-for-byte et
 exige l'absence de l'autorisation producteur, de la racine producteur et de
-son claim. Le résultat canonique contient exactement :
+son claim. `ABSENT` signifie exclusivement qu'un parcours composant par
+composant avec `lstat` (ou `stat` relatif à un descripteur avec
+`follow_symlinks=false`) rencontre `ENOENT`, après des parents existants qui
+sont tous de vrais répertoires. Une entrée existante, un lien symbolique
+valide ou pendant, un parent symbolique, une erreur de permission ou tout
+autre errno produit `STOP`.
+
+Le lock de pré-vol ferme les 15 champs racine par type et constante/égalité,
+les 9 champs d'implémentation et les 9 champs du runtime. Le runtime doit être
+identique à celui du lock producteur déjà scellé. Tout champ supplémentaire,
+manquant, mal typé ou divergent produit `STOP` avant l'appel natif. Le
+plan préenregistre une matrice obligatoire couvrant chaque garde sous forme de
+fichier, répertoire, lien valide ou pendant et erreur `lstat`, chaque état de
+reprise, et les mutations extra/manquante/type/valeur du claim et du lock
+imbriqué. Chacun de ces cas invalides doit observer zéro appel natif. Le
+résultat canonique contient exactement :
 
 ```text
 schema_version
