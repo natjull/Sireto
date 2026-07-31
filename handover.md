@@ -23,6 +23,22 @@ obtenir deux audits indépendants `GO_V413_PREREGISTRATION` avant toute
 implémentation.
 *(commit GitHub : préenregistrement exécutable corrigé `574746f`)*
 
+Le ré-audit de `574746f` a validé les gates, splits, retrieval, OOF et
+one-shot, mais a encore refusé l'auto-attestation de provenance, un claim
+abusif sur le keyset historique `input_siret_lineage` et un schéma ne
+contrôlant que les noms de clés. Le correctif `bf4ed26` remplace ce schéma par
+un contrôle du contenu canonique exact, teste six familles de mutations,
+préenregistre une allowlist d'autorités réelles volontairement vide, réduit
+le claim anti-overlap aux trois projections réellement applicables avec STOP
+sur toute ligne non comparable, et rend obligatoire un préenregistrement
+modèle séparé avant la première lecture retrieval dev. Quinze tests dédiés
+passent. La conséquence est explicite : l'implémentation synthétique peut être
+préparée après double GO, mais aucune collection réelle ni aucun
+`MATCH_EXACT` n'est autorisé tant qu'un issuer/système de référence vérifiable
+n'est pas pinné avant dépôt.
+*(commit GitHub : fermeture provenance, schéma exact et gate modèle
+`bf4ed26`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
