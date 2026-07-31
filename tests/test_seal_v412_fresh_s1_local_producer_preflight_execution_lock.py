@@ -88,7 +88,7 @@ def test_git_calls_are_absolute_closed_and_disable_replacements(
         calls.append((command, kwargs["env"]))
         stdout = (
             "a" * 40 + "\n"
-            if command[1:3] == ["rev-parse", "HEAD"]
+            if command[1] == "rev-list"
             else b"blob\n"
         )
         return SimpleNamespace(returncode=0, stdout=stdout)

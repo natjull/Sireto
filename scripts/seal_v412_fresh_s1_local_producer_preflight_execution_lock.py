@@ -45,6 +45,12 @@ except ImportError:  # pragma: no cover - package-style import in tests
 
 
 REPOSITORY = Path(__file__).resolve().parents[1]
+IMPLEMENTATION_PATHS = (
+    "scripts/preflight_v412_fresh_s1_local_producer_keychain.py",
+    "tests/test_preflight_v412_fresh_s1_local_producer_keychain.py",
+    "scripts/seal_v412_fresh_s1_local_producer_preflight_execution_lock.py",
+    "tests/test_seal_v412_fresh_s1_local_producer_preflight_execution_lock.py",
+)
 
 
 def _stop(reason: str) -> None:
@@ -70,7 +76,14 @@ def git_file_bytes(repo_root: Path, commit: str, path: str) -> bytes:
 
 def _git_commit(repo_root: Path) -> str:
     process = subprocess.run(
-        [GIT_EXECUTABLE, "rev-parse", "HEAD"],
+        [
+            GIT_EXECUTABLE,
+            "rev-list",
+            "-1",
+            "HEAD",
+            "--",
+            *IMPLEMENTATION_PATHS,
+        ],
         cwd=repo_root,
         check=False,
         stdin=subprocess.DEVNULL,
@@ -145,6 +158,7 @@ def build_execution_lock(
         plan=plan,
         plan_sha256=plan_sha,
         lock_sha256=sha256_bytes(canonical_json(lock)),
+        authority_lock=authority,
         repo_root=repo_root,
         git_reader=git_reader,
     )

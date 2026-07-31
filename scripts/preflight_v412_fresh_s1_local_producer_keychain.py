@@ -33,6 +33,32 @@ EXPECTED_QUERY_SHA256 = (
     "0d5d2fe817391a4d91e51a57b3eaa447"
     "cad932c8c081b64a8b630bdc566fb96f"
 )
+EXPECTED_ENTRY_ORDER = [
+    "VALIDATE_ALL_AUTHORITIES_AND_HASHES",
+    "REQUIRE_RUNTIME_ABSENCE_GUARDS",
+    "IF_VALID_CLAIM_AND_VALID_RESULT_RETURN_WITHOUT_KEYCHAIN",
+    "IF_ANY_CLAIM_OR_RESULT_OTHERWISE_EXISTS_STOP_WITHOUT_KEYCHAIN",
+    "CREATE_DURABLE_CLAIM_O_EXCL",
+    "CALL_SECITEMCOPYMATCHING_ONCE",
+    "IF_STATUS_IS_MINUS_25300_CREATE_DURABLE_RESULT_O_EXCL",
+    "OTHERWISE_STOP_WITHOUT_RESULT",
+]
+EXPECTED_STATE_POLICY = {
+    "claim_and_result_valid": "RETURN_STORED_RESULT_WITHOUT_KEYCHAIN",
+    "claim_missing_result_present": "STOP_OUTPUT_WITHOUT_CLAIM",
+    "claim_present_result_invalid": (
+        "STOP_INDETERMINATE_NO_REQUERY_NO_REWRITE"
+    ),
+    "claim_present_result_missing": (
+        "STOP_INDETERMINATE_NO_REQUERY_NO_REWRITE"
+    ),
+    "partial_or_noncanonical_claim": (
+        "STOP_INVALID_CLAIM_NO_REQUERY_NO_REWRITE"
+    ),
+    "partial_or_noncanonical_result": (
+        "STOP_INVALID_RESULT_NO_REQUERY_NO_REWRITE"
+    ),
+}
 
 
 class PreflightError(RuntimeError):
@@ -151,6 +177,7 @@ def _resolve_reference(
     plan_sha256: str,
     lock: Mapping[str, Any] | None,
     lock_sha256: str | None,
+    authority_lock: Mapping[str, Any] | None,
 ) -> Any:
     fixed = {
         "canonical_preflight_plan.sha256": plan_sha256,
@@ -191,10 +218,10 @@ def _resolve_reference(
             _stop("UNKNOWN_GIT_BLOB_REFERENCE")
         return lock["implementation"][hash_field]
     if reference.startswith("authority_execution_lock.runtime."):
-        if lock is None:
-            _stop("REFERENCE_BEFORE_LOCK")
+        if authority_lock is None:
+            _stop("REFERENCE_BEFORE_AUTHORITY_LOCK")
         field = reference.removeprefix("authority_execution_lock.runtime.")
-        return lock["runtime"][field]
+        return authority_lock["runtime"][field]
     _stop("UNKNOWN_REFERENCE")
 
 
@@ -207,6 +234,7 @@ def _validate_rule_object(
     plan_sha256: str,
     lock: Mapping[str, Any] | None,
     lock_sha256: str | None,
+    authority_lock: Mapping[str, Any] | None,
 ) -> None:
     _require_exact(value, schema["exact_fields"], label)
     if set(schema["fields"]) != set(schema["exact_fields"]):
@@ -223,6 +251,7 @@ def _validate_rule_object(
                 plan_sha256=plan_sha256,
                 lock=lock,
                 lock_sha256=lock_sha256,
+                authority_lock=authority_lock,
             )
             if value[field] != expected:
                 _stop(f"{label}_{field}_VALUE")
@@ -302,6 +331,10 @@ def validate_plan(plan: Mapping[str, Any]) -> None:
         _stop("PLAN_QUERY_FORBIDDEN")
     if sha256_bytes(canonical_json(plan["query_exact"])) != plan["query_sha256"]:
         _stop("PLAN_QUERY_HASH")
+    if plan["lifecycle"]["entry_order"] != EXPECTED_ENTRY_ORDER:
+        _stop("PLAN_LIFECYCLE_ORDER")
+    if plan["lifecycle"]["existing_state_policy"] != EXPECTED_STATE_POLICY:
+        _stop("PLAN_LIFECYCLE_POLICY")
 
 
 def validate_preflight_lock(
@@ -310,6 +343,7 @@ def validate_preflight_lock(
     plan: Mapping[str, Any],
     plan_sha256: str,
     lock_sha256: str,
+    authority_lock: Mapping[str, Any],
     repo_root: Path,
     git_reader: Callable[[Path, str, str], bytes] | None = None,
 ) -> None:
@@ -322,6 +356,7 @@ def validate_preflight_lock(
         plan_sha256=plan_sha256,
         lock=lock,
         lock_sha256=lock_sha256,
+        authority_lock=authority_lock,
     )
     for name in ("implementation", "runtime"):
         _validate_rule_object(
@@ -335,6 +370,7 @@ def validate_preflight_lock(
             plan_sha256=plan_sha256,
             lock=lock,
             lock_sha256=lock_sha256,
+            authority_lock=authority_lock,
         )
     if lock["expected_uid"] != os.getuid():
         _stop("PREFLIGHT_LOCK_UID")
@@ -532,6 +568,7 @@ def load_and_validate_controls(
         plan=plan,
         plan_sha256=plan_sha,
         lock_sha256=lock_sha,
+        authority_lock=authority,
         repo_root=repo_root,
         git_reader=git_reader,
     )
@@ -553,101 +590,156 @@ def _directory_flags() -> int:
     )
 
 
-def _open_directory_fd_anchored(path: Path) -> int:
-    path = Path(path)
-    if not path.is_absolute():
-        _stop("DIRECTORY_NOT_ABSOLUTE")
-    try:
-        current = os.open(Path("/"), _directory_flags())
-    except OSError:
-        _stop("DIRECTORY_ROOT_OPEN")
-    try:
-        for component in path.parts[1:]:
-            if component in ("", ".", ".."):
-                _stop("DIRECTORY_COMPONENT")
-            before = os.fstat(current)
-            try:
+def _identity(fd: int) -> tuple[int, int]:
+    metadata = os.fstat(fd)
+    if not stat.S_ISDIR(metadata.st_mode):
+        _stop("DIRECTORY_IDENTITY")
+    return metadata.st_dev, metadata.st_ino
+
+
+class _DirectoryChain:
+    def __init__(self, names: list[str], fds: list[int]) -> None:
+        self.names = names
+        self.fds = fds
+        self.identities = [_identity(fd) for fd in fds]
+
+    @classmethod
+    def open_existing(cls, path: Path) -> "_DirectoryChain":
+        path = Path(path)
+        if not path.is_absolute():
+            _stop("DIRECTORY_NOT_ABSOLUTE")
+        fds: list[int] = []
+        names: list[str] = []
+        success = False
+        try:
+            fds.append(os.open(Path("/"), _directory_flags()))
+            for component in path.parts[1:]:
+                if component in ("", ".", ".."):
+                    _stop("DIRECTORY_COMPONENT")
                 following = os.open(
-                    component, _directory_flags(), dir_fd=current
+                    component, _directory_flags(), dir_fd=fds[-1]
                 )
+                fds.append(following)
+                names.append(component)
+            result = cls(names, fds)
+            success = True
+            return result
+        except OSError:
+            _stop("DIRECTORY_OPEN")
+        finally:
+            if not success:
+                for fd in reversed(fds):
+                    os.close(fd)
+
+    def reopen_verified(self) -> "_DirectoryChain":
+        fresh = self.open_existing(
+            Path("/").joinpath(*self.names)
+        )
+        if fresh.identities != self.identities:
+            fresh.close()
+            _stop("DIRECTORY_NAMESPACE_REPLACED")
+        return fresh
+
+    @property
+    def final_fd(self) -> int:
+        return self.fds[-1]
+
+    def close(self) -> None:
+        while self.fds:
+            os.close(self.fds.pop())
+
+
+class AbsenceProof:
+    def __init__(self, chain: _DirectoryChain, missing_name: str) -> None:
+        self.chain = chain
+        self.missing_name = missing_name
+
+    def revalidate(self) -> None:
+        fresh = self.chain.reopen_verified()
+        try:
+            try:
+                os.stat(
+                    self.missing_name,
+                    dir_fd=fresh.final_fd,
+                    follow_symlinks=False,
+                )
+            except FileNotFoundError as exc:
+                if exc.errno != errno.ENOENT:
+                    _stop("GUARD_NOT_ENOENT")
+                return
             except OSError:
-                _stop("DIRECTORY_OPEN")
-            after = os.fstat(current)
-            opened = os.fstat(following)
-            if (before.st_dev, before.st_ino) != (
-                after.st_dev,
-                after.st_ino,
-            ):
-                os.close(following)
-                _stop("DIRECTORY_PARENT_REPLACED")
-            if not stat.S_ISDIR(opened.st_mode):
-                os.close(following)
-                _stop("DIRECTORY_IDENTITY")
-            os.close(current)
-            current = following
-        return current
-    except Exception:
-        os.close(current)
-        raise
+                _stop("GUARD_FSTATAT")
+            _stop("GUARD_ENTRY_EXISTS")
+        finally:
+            fresh.close()
+
+    def close(self) -> None:
+        self.chain.close()
 
 
-def require_absent_fd_anchored(path: Path, *, anchor: Path) -> None:
-    """Prove absence using openat/fstatat while rejecting every ambiguity."""
+def require_absent_fd_anchored(
+    path: Path, *, anchor: Path
+) -> AbsenceProof:
+    """Prove and retain an absence chain rooted at the filesystem root."""
     path = Path(path)
     anchor = Path(anchor)
+    if not anchor.is_absolute():
+        _stop("GUARD_ANCHOR_NOT_ABSOLUTE")
     if path.is_absolute():
-        components = path.parts[1:]
-        anchor_path = Path("/")
+        full_path = path
     else:
-        if ".." in path.parts:
-            _stop("GUARD_PARENT_COMPONENT")
-        components = path.parts
-        anchor_path = anchor
+        if any(component in ("", ".", "..") for component in path.parts):
+            _stop("GUARD_COMPONENT")
+        full_path = anchor / path
+    components = full_path.parts[1:]
+    if not components:
+        _stop("GUARD_EMPTY_PATH_EXISTS")
+    fds: list[int] = []
+    names: list[str] = []
     try:
-        current = os.open(anchor_path, _directory_flags())
-    except OSError:
-        _stop("GUARD_ANCHOR_OPEN")
-    try:
+        fds.append(os.open(Path("/"), _directory_flags()))
         for index, component in enumerate(components):
             if component in ("", ".", ".."):
                 _stop("GUARD_COMPONENT")
-            before = os.fstat(current)
             final = index == len(components) - 1
             if final:
                 try:
-                    os.stat(component, dir_fd=current, follow_symlinks=False)
-                except FileNotFoundError:
-                    after = os.fstat(current)
-                    if (before.st_dev, before.st_ino) != (
-                        after.st_dev,
-                        after.st_ino,
-                    ):
-                        _stop("GUARD_PARENT_REPLACED")
-                    return
+                    os.stat(
+                        component,
+                        dir_fd=fds[-1],
+                        follow_symlinks=False,
+                    )
+                except FileNotFoundError as exc:
+                    if exc.errno != errno.ENOENT:
+                        _stop("GUARD_NOT_ENOENT")
+                    proof = AbsenceProof(_DirectoryChain(names, fds), component)
+                    proof.revalidate()
+                    return proof
                 except OSError:
                     _stop("GUARD_FSTATAT")
                 _stop("GUARD_ENTRY_EXISTS")
             try:
-                following = os.open(component, _directory_flags(), dir_fd=current)
-            except FileNotFoundError:
-                after = os.fstat(current)
-                if (before.st_dev, before.st_ino) != (
-                    after.st_dev,
-                    after.st_ino,
-                ):
-                    _stop("GUARD_PARENT_REPLACED")
-                return
+                following = os.open(
+                    component, _directory_flags(), dir_fd=fds[-1]
+                )
+            except FileNotFoundError as exc:
+                if exc.errno != errno.ENOENT:
+                    _stop("GUARD_NOT_ENOENT")
+                proof = AbsenceProof(_DirectoryChain(names, fds), component)
+                proof.revalidate()
+                return proof
             except OSError:
                 _stop("GUARD_PARENT_OPEN")
-            after = os.fstat(current)
-            if (before.st_dev, before.st_ino) != (after.st_dev, after.st_ino):
-                os.close(following)
-                _stop("GUARD_PARENT_REPLACED")
-            os.close(current)
-            current = following
+            fds.append(following)
+            names.append(component)
         _stop("GUARD_EMPTY_PATH_EXISTS")
-    finally:
-        os.close(current)
+    except Exception:
+        for fd in reversed(fds):
+            try:
+                os.close(fd)
+            except OSError:
+                pass
+        raise
 
 
 def _sync_file(fd: int) -> None:
@@ -661,17 +753,106 @@ def _sync_file(fd: int) -> None:
         _stop("F_FULLFSYNC_FAILED")
 
 
-def write_exclusive_durable(path: Path, raw: bytes) -> None:
-    flags = (
-        os.O_WRONLY
-        | os.O_CREAT
-        | os.O_EXCL
-        | getattr(os, "O_NOFOLLOW", 0)
-        | getattr(os, "O_CLOEXEC", 0)
-    )
-    parent_fd = _open_directory_fd_anchored(path.parent)
-    try:
-        fd = os.open(path.name, flags, 0o600, dir_fd=parent_fd)
+class AnchoredStateStore:
+    def __init__(self, parent: Path) -> None:
+        self.parent = Path(parent)
+        self.chain = _DirectoryChain.open_existing(self.parent)
+        self._revalidate()
+
+    def _revalidate(self) -> None:
+        verified = self.chain.reopen_verified()
+        verified.close()
+
+    def _name(self, path: Path) -> str:
+        path = Path(path)
+        if path.parent != self.parent or path.name in ("", ".", ".."):
+            _stop("STATE_PATH")
+        return path.name
+
+    def exists(self, path: Path) -> bool:
+        name = self._name(path)
+        self._revalidate()
+        try:
+            os.stat(
+                name,
+                dir_fd=self.chain.final_fd,
+                follow_symlinks=False,
+            )
+        except FileNotFoundError as exc:
+            if exc.errno != errno.ENOENT:
+                _stop("STATE_NOT_ENOENT")
+            self._revalidate()
+            return False
+        except OSError:
+            _stop("STATE_FSTATAT")
+        self._revalidate()
+        return True
+
+    def read(self, path: Path, label: str) -> bytes:
+        name = self._name(path)
+        self._revalidate()
+        try:
+            fd = os.open(
+                name,
+                os.O_RDONLY
+                | getattr(os, "O_NOFOLLOW", 0)
+                | getattr(os, "O_CLOEXEC", 0),
+                dir_fd=self.chain.final_fd,
+            )
+        except OSError:
+            _stop(f"{label}_OPEN")
+        try:
+            before = os.fstat(fd)
+            if (
+                not stat.S_ISREG(before.st_mode)
+                or before.st_nlink != 1
+            ):
+                _stop(f"{label}_IDENTITY")
+            chunks: list[bytes] = []
+            while True:
+                chunk = os.read(fd, 1 << 20)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            after = os.fstat(fd)
+            if (
+                before.st_dev,
+                before.st_ino,
+                before.st_size,
+                before.st_mtime_ns,
+            ) != (
+                after.st_dev,
+                after.st_ino,
+                after.st_size,
+                after.st_mtime_ns,
+            ):
+                _stop(f"{label}_DRIFT")
+            raw = b"".join(chunks)
+            if len(raw) != after.st_size:
+                _stop(f"{label}_SIZE")
+        finally:
+            os.close(fd)
+        self._revalidate()
+        return raw
+
+    def write(self, path: Path, raw: bytes) -> None:
+        name = self._name(path)
+        flags = (
+            os.O_WRONLY
+            | os.O_CREAT
+            | os.O_EXCL
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_CLOEXEC", 0)
+        )
+        self._revalidate()
+        try:
+            fd = os.open(
+                name, flags, 0o600, dir_fd=self.chain.final_fd
+            )
+        except FileExistsError:
+            _stop("OUTPUT_ALREADY_EXISTS")
+        except OSError:
+            _stop("OUTPUT_CREATE")
         try:
             os.fchmod(fd, 0o600)
             view = memoryview(raw)
@@ -689,18 +870,45 @@ def write_exclusive_durable(path: Path, raw: bytes) -> None:
                 or info.st_nlink != 1
             ):
                 _stop("OUTPUT_IDENTITY")
-            os.lseek(fd, 0, os.SEEK_SET)
         finally:
             os.close(fd)
-        os.fsync(parent_fd)
-    except FileExistsError:
-        _stop("OUTPUT_ALREADY_EXISTS")
-    except OSError:
-        _stop("OUTPUT_CREATE")
+        read_fd = os.open(
+            name,
+            os.O_RDONLY
+            | getattr(os, "O_NOFOLLOW", 0)
+            | getattr(os, "O_CLOEXEC", 0),
+            dir_fd=self.chain.final_fd,
+        )
+        try:
+            read_info = os.fstat(read_fd)
+            if (read_info.st_dev, read_info.st_ino) != (
+                info.st_dev,
+                info.st_ino,
+            ):
+                _stop("OUTPUT_REPLACED")
+            chunks: list[bytes] = []
+            while True:
+                chunk = os.read(read_fd, 1 << 20)
+                if not chunk:
+                    break
+                chunks.append(chunk)
+            if b"".join(chunks) != raw:
+                _stop("OUTPUT_VERIFY")
+        finally:
+            os.close(read_fd)
+        self._revalidate()
+        os.fsync(self.chain.final_fd)
+
+    def close(self) -> None:
+        self.chain.close()
+
+
+def write_exclusive_durable(path: Path, raw: bytes) -> None:
+    store = AnchoredStateStore(path.parent)
+    try:
+        store.write(path, raw)
     finally:
-        os.close(parent_fd)
-    if _read_regular(path, "OUTPUT_VERIFY") != raw:
-        _stop("OUTPUT_VERIFY")
+        store.close()
 
 
 def _expected_claim(
@@ -741,16 +949,6 @@ def _expected_result(
     }
 
 
-def _lexists(path: Path) -> bool:
-    try:
-        os.lstat(path)
-        return True
-    except FileNotFoundError:
-        return False
-    except OSError:
-        _stop("STATE_LSTAT")
-
-
 def run_preflight(
     repo_root: Path,
     native_query: Callable[[Mapping[str, Any]], int],
@@ -762,43 +960,64 @@ def run_preflight(
     plan, plan_sha, lock, lock_sha = load_and_validate_controls(
         repo_root, git_reader=git_reader
     )
-    for guard in plan["runtime_absence_guards"]:
-        guard_path = Path(guard["path"])
-        require_absent_fd_anchored(guard_path, anchor=repo_root)
+    proofs: list[AbsenceProof] = []
+    state_store: AnchoredStateStore | None = None
+    try:
+        for guard in plan["runtime_absence_guards"]:
+            guard_path = Path(guard["path"])
+            proofs.append(
+                require_absent_fd_anchored(guard_path, anchor=repo_root)
+            )
 
-    claim_path = repo_root / plan["lifecycle"]["claim"]["path"]
-    output_path = repo_root / plan["output"]["path"]
-    expected_claim = _expected_claim(plan, plan_sha, lock_sha)
-    expected_result = _expected_result(plan, plan_sha, lock, lock_sha)
-    claim_exists = _lexists(claim_path)
-    result_exists = _lexists(output_path)
-    if claim_exists and result_exists:
-        if (
-            parse_canonical_object(_read_regular(claim_path, "CLAIM"), "CLAIM")
-            != expected_claim
-        ):
-            _stop("CLAIM_DIVERGENCE")
-        stored = parse_canonical_object(
-            _read_regular(output_path, "RESULT"), "RESULT"
-        )
-        if stored != expected_result:
-            _stop("RESULT_DIVERGENCE")
-        return stored
-    if claim_exists or result_exists:
-        _stop("INDETERMINATE_EXISTING_STATE")
+        claim_path = repo_root / plan["lifecycle"]["claim"]["path"]
+        output_path = repo_root / plan["output"]["path"]
+        if claim_path.parent != output_path.parent:
+            _stop("STATE_PARENT_DIVERGENCE")
+        state_store = AnchoredStateStore(claim_path.parent)
+        expected_claim = _expected_claim(plan, plan_sha, lock_sha)
+        expected_result = _expected_result(plan, plan_sha, lock, lock_sha)
+        claim_exists = state_store.exists(claim_path)
+        result_exists = state_store.exists(output_path)
+        if claim_exists and result_exists:
+            if (
+                parse_canonical_object(
+                    state_store.read(claim_path, "CLAIM"), "CLAIM"
+                )
+                != expected_claim
+            ):
+                _stop("CLAIM_DIVERGENCE")
+            stored = parse_canonical_object(
+                state_store.read(output_path, "RESULT"), "RESULT"
+            )
+            if stored != expected_result:
+                _stop("RESULT_DIVERGENCE")
+            return stored
+        if claim_exists or result_exists:
+            _stop("INDETERMINATE_EXISTING_STATE")
 
-    write_exclusive_durable(claim_path, canonical_json(expected_claim))
-    if checkpoint is not None:
-        checkpoint("AFTER_CLAIM_BEFORE_NATIVE_CALL")
-    status = native_query(dict(plan["query_exact"]))
-    if type(status) is not int:
-        _stop("NATIVE_STATUS_TYPE")
-    if checkpoint is not None:
-        checkpoint("AFTER_NATIVE_CALL_BEFORE_RESULT")
-    if status != ERR_SEC_ITEM_NOT_FOUND:
-        _stop("KEYCHAIN_LOCATOR_NOT_PROVEN_ABSENT")
-    write_exclusive_durable(output_path, canonical_json(expected_result))
-    return expected_result
+        state_store.write(claim_path, canonical_json(expected_claim))
+        if checkpoint is not None:
+            checkpoint("AFTER_CLAIM_BEFORE_NATIVE_CALL")
+        state_store._revalidate()
+        for proof in proofs:
+            proof.revalidate()
+        status = native_query(dict(plan["query_exact"]))
+        if type(status) is not int:
+            _stop("NATIVE_STATUS_TYPE")
+        state_store._revalidate()
+        for proof in proofs:
+            proof.revalidate()
+        if checkpoint is not None:
+            checkpoint("AFTER_NATIVE_CALL_BEFORE_RESULT")
+        if status != ERR_SEC_ITEM_NOT_FOUND:
+            _stop("KEYCHAIN_LOCATOR_NOT_PROVEN_ABSENT")
+        state_store.write(output_path, canonical_json(expected_result))
+        return expected_result
+    finally:
+        if state_store is not None:
+            state_store.close()
+        for proof in reversed(proofs):
+            proof.close()
 
 
 def build_query_contract(plan: Mapping[str, Any]) -> dict[str, Any]:

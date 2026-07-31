@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import ctypes
+import errno
 import importlib.util
 import json
 import os
@@ -175,6 +176,15 @@ def synthetic_repository(tmp_path: Path) -> tuple[Path, dict[str, Any]]:
     return root, plan
 
 
+def _rewrite_plan_and_rebind_lock(root: Path, plan: dict[str, Any]) -> None:
+    plan_raw = _canonical(plan)
+    (root / subject.PLAN_RELATIVE).write_bytes(plan_raw)
+    lock_path = root / plan["preflight_execution_lock"]["path"]
+    lock = json.loads(lock_path.read_bytes())
+    lock["preflight_plan_sha256"] = subject.sha256_bytes(plan_raw)
+    lock_path.write_bytes(_canonical(lock))
+
+
 def test_query_is_exact_status_only_contract() -> None:
     plan = json.loads(
         (
@@ -341,6 +351,138 @@ def test_invalid_lifecycle_states_never_query(
     assert native.calls == []
 
 
+def _claim_mutation_cases() -> list[tuple[str, str]]:
+    plan = json.loads(
+        (
+            REPOSITORY
+            / "config/v4_12_fresh_s1_local_producer_preflight_plan.json"
+        ).read_bytes()
+    )
+    fields = plan["lifecycle"]["claim"]["schema"]["exact_fields"]
+    return [
+        (field, mutation)
+        for field in fields
+        for mutation in ("wrong_value", "wrong_type", "missing")
+    ] + [("extra", "extra")]
+
+
+@pytest.mark.parametrize("field,mutation", _claim_mutation_cases())
+def test_every_claim_mutation_replays_with_zero_query(
+    tmp_path: Path, field: str, mutation: str
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    first = FakeNative()
+    run_synthetic(root, first)
+    assert len(first.calls) == 1
+    claim_path = root / plan["lifecycle"]["claim"]["path"]
+    claim = json.loads(claim_path.read_bytes())
+    if mutation == "extra":
+        claim["extra"] = "forbidden"
+    elif mutation == "missing":
+        claim.pop(field)
+    else:
+        value = claim[field]
+        claim[field] = (
+            1
+            if mutation == "wrong_type"
+            else value + "-MUTATED"
+        )
+    claim_path.write_bytes(_canonical(claim))
+    replay = FakeNative()
+    with pytest.raises(subject.PreflightError):
+        run_synthetic(root, replay)
+    assert replay.calls == []
+
+
+def _guard_mutation_cases() -> list[tuple[int, str, str]]:
+    return [
+        (index, field, mutation)
+        for index in range(3)
+        for field in ("path", "required_state", "resolution")
+        for mutation in ("wrong_value", "wrong_type", "missing")
+    ] + [(index, "extra", "extra") for index in range(3)]
+
+
+@pytest.mark.parametrize("index,field,mutation", _guard_mutation_cases())
+def test_every_guard_mutation_is_zero_query(
+    tmp_path: Path, index: int, field: str, mutation: str
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    guard = plan["runtime_absence_guards"][index]
+    if mutation == "extra":
+        guard["extra"] = "forbidden"
+    elif mutation == "missing":
+        guard.pop(field)
+    elif mutation == "wrong_type":
+        guard[field] = 1
+    else:
+        guard[field] = {
+            "path": "",
+            "required_state": "PRESENT",
+            "resolution": "UNKNOWN",
+        }[field]
+    _rewrite_plan_and_rebind_lock(root, plan)
+    native = FakeNative()
+    with pytest.raises(subject.PreflightError):
+        run_synthetic(root, native)
+    assert native.calls == []
+
+
+def _lifecycle_mutation_cases() -> list[tuple[str, str | None]]:
+    plan = json.loads(
+        (
+            REPOSITORY
+            / "config/v4_12_fresh_s1_local_producer_preflight_plan.json"
+        ).read_bytes()
+    )
+    policy_fields = list(plan["lifecycle"]["existing_state_policy"])
+    return [
+        ("order_wrong_type", None),
+        ("order_wrong_value", None),
+        ("order_missing", None),
+        ("order_extra", None),
+        *[
+            (mutation, field)
+            for field in policy_fields
+            for mutation in (
+                "policy_wrong_type",
+                "policy_wrong_value",
+                "policy_missing",
+            )
+        ],
+        ("policy_extra", None),
+    ]
+
+
+@pytest.mark.parametrize("mutation,field", _lifecycle_mutation_cases())
+def test_every_lifecycle_plan_mutation_is_zero_query(
+    tmp_path: Path, mutation: str, field: str | None
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    lifecycle = plan["lifecycle"]
+    if mutation == "order_wrong_type":
+        lifecycle["entry_order"] = "wrong"
+    elif mutation == "order_wrong_value":
+        lifecycle["entry_order"] = list(reversed(lifecycle["entry_order"]))
+    elif mutation == "order_missing":
+        lifecycle["entry_order"].pop()
+    elif mutation == "order_extra":
+        lifecycle["entry_order"].append("EXTRA")
+    elif mutation == "policy_extra":
+        lifecycle["existing_state_policy"]["extra"] = "forbidden"
+    elif mutation == "policy_missing":
+        lifecycle["existing_state_policy"].pop(field)
+    elif mutation == "policy_wrong_type":
+        lifecycle["existing_state_policy"][field] = 1
+    else:
+        lifecycle["existing_state_policy"][field] += "-MUTATED"
+    _rewrite_plan_and_rebind_lock(root, plan)
+    native = FakeNative()
+    with pytest.raises(subject.PreflightError):
+        run_synthetic(root, native)
+    assert native.calls == []
+
+
 def _lock_mutation_cases() -> list[tuple[str | None, str, str]]:
     plan = json.loads(
         (
@@ -394,27 +536,128 @@ def test_every_lock_mutation_fails_before_query(
     assert native.calls == []
 
 
+def test_direct_lock_validator_rejects_runtime_divergent_from_authority(
+    tmp_path: Path,
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    plan_raw = (root / subject.PLAN_RELATIVE).read_bytes()
+    lock_path = root / plan["preflight_execution_lock"]["path"]
+    lock = json.loads(lock_path.read_bytes())
+    authority = json.loads(
+        (root / plan["execution_lock"]["path"]).read_bytes()
+    )
+    lock["runtime"]["platform"] += "-MUTATED"
+    with pytest.raises(subject.PreflightError, match="platform_VALUE"):
+        subject.validate_preflight_lock(
+            lock,
+            plan=plan,
+            plan_sha256=subject.sha256_bytes(plan_raw),
+            lock_sha256=subject.sha256_bytes(_canonical(lock)),
+            authority_lock=authority,
+            repo_root=root,
+            git_reader=_git_reader,
+        )
+
+
 @pytest.mark.parametrize(
     "case",
     [
         "FD_TRAVERSAL_PERMISSION_ERROR",
         "FD_TRAVERSAL_OTHER_ERROR",
-        "PARENT_REPLACEMENT_RACE",
     ],
 )
-def test_ambiguous_fd_guard_failures_are_zero_query(
+def test_real_fd_guard_errors_are_zero_query(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, case: str
 ) -> None:
     root, _ = synthetic_repository(tmp_path)
+    real_stat = os.stat
 
-    def fail(*args, **kwargs) -> None:
-        raise subject.PreflightError(case)
+    def fail(component, *args, **kwargs):
+        if component == "synthetic_authorization.json":
+            error = (
+                errno.EACCES
+                if case == "FD_TRAVERSAL_PERMISSION_ERROR"
+                else errno.EIO
+            )
+            raise OSError(error, case)
+        return real_stat(component, *args, **kwargs)
 
-    monkeypatch.setattr(subject, "require_absent_fd_anchored", fail)
+    monkeypatch.setattr(subject.os, "stat", fail)
     native = FakeNative()
-    with pytest.raises(subject.PreflightError, match=case):
+    with pytest.raises(subject.PreflightError):
         run_synthetic(root, native)
     assert native.calls == []
+
+
+def test_real_parent_replacement_race_is_detected_before_query(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, _ = synthetic_repository(tmp_path)
+    config = root / "config"
+    displaced = root / "config-displaced"
+    authorization = config / "synthetic_authorization.json"
+    real_stat = os.stat
+    triggered = False
+
+    def race(component, *args, **kwargs):
+        nonlocal triggered
+        if component == authorization.name and not triggered:
+            triggered = True
+            config.rename(displaced)
+            config.mkdir()
+            authorization.write_text("present\n")
+        return real_stat(component, *args, **kwargs)
+
+    monkeypatch.setattr(subject.os, "stat", race)
+    native = FakeNative()
+    with pytest.raises(
+        subject.PreflightError, match="DIRECTORY_NAMESPACE_REPLACED"
+    ):
+        run_synthetic(root, native)
+    assert triggered
+    assert authorization.exists()
+    assert native.calls == []
+
+
+def test_state_parent_replacement_after_claim_is_zero_query(
+    tmp_path: Path,
+) -> None:
+    root, _ = synthetic_repository(tmp_path)
+    state_parent = root / "reports/v9"
+    displaced = root / "reports/v9-displaced"
+
+    def replace(stage: str) -> None:
+        assert stage == "AFTER_CLAIM_BEFORE_NATIVE_CALL"
+        state_parent.rename(displaced)
+        state_parent.mkdir()
+
+    native = FakeNative()
+    with pytest.raises(
+        subject.PreflightError, match="DIRECTORY_NAMESPACE_REPLACED"
+    ):
+        run_synthetic(root, native, checkpoint=replace)
+    assert native.calls == []
+
+
+def test_state_parent_replacement_after_native_never_writes_result(
+    tmp_path: Path,
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    state_parent = root / "reports/v9"
+    displaced = root / "reports/v9-displaced"
+
+    def replace(stage: str) -> None:
+        if stage == "AFTER_NATIVE_CALL_BEFORE_RESULT":
+            state_parent.rename(displaced)
+            state_parent.mkdir()
+
+    native = FakeNative()
+    with pytest.raises(
+        subject.PreflightError, match="DIRECTORY_NAMESPACE_REPLACED"
+    ):
+        run_synthetic(root, native, checkpoint=replace)
+    assert len(native.calls) == 1
+    assert not (state_parent / Path(plan["output"]["path"]).name).exists()
 
 
 def test_preregistered_zero_query_matrix_is_exactly_26_cases() -> None:
