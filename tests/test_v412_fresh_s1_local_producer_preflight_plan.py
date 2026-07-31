@@ -604,6 +604,15 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
     assert lifecycle["entry_order"].index(
         "CREATE_DURABLE_CLAIM_O_EXCL"
     ) < lifecycle["entry_order"].index("CALL_SECITEMCOPYMATCHING_ONCE")
+    assert lifecycle["entry_order"].index(
+        "CALL_SECITEMCOPYMATCHING_ONCE"
+    ) < lifecycle["entry_order"].index(
+        "REVALIDATE_ALL_GUARDS_AND_STATE_AFTER_NATIVE_CALL"
+    ) < lifecycle["entry_order"].index(
+        "IF_ANY_REVALIDATION_FAILS_STOP_WITHOUT_RESULT"
+    ) < lifecycle["entry_order"].index(
+        "IF_STATUS_IS_MINUS_25300_CREATE_DURABLE_RESULT_O_EXCL"
+    )
     assert all(
         "NO_REQUERY" in disposition
         or disposition == "RETURN_STORED_RESULT_WITHOUT_KEYCHAIN"
@@ -631,7 +640,9 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
     assert set(requirements["maximum_native_call_count_by_case"]) == (
         expected_cases
     )
-    race_case = "STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    race_case = (
+        "PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    )
     assert all(
         count == 0
         for case, count in requirements[

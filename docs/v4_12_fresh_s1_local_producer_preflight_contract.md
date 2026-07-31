@@ -113,7 +113,8 @@ indéterminé et ne peut jamais provoquer une seconde requête.
 Aucune suite finie de contrôles de chemin en espace utilisateur ne peut
 empêcher un autre processus du même UID de renommer un parent exactement
 entre la dernière instruction de contrôle et l'instruction suivante. Pour
-`STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW`, la garantie réaliste
+`PROTECTED_NAMESPACE_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW`, qui couvre
+indistinctement les trois gardes et le parent claim/reçu, la garantie réaliste
 est donc :
 
 - au plus un appel `SecItemCopyMatching` status-only ;
