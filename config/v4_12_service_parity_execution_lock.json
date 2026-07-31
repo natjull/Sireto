@@ -1,6 +1,6 @@
 {
   "audit_verdict": "GO_V412_SERVICE_IMPLEMENTATION",
-  "git_commit": "443b2fb28b3d51b35c02cf5fbbfc865b8c89783c",
+  "git_commit": "6789df266991e871a09508f8fde9c7adcb1e2b26",
   "input_hashes": {
     "reference_manifest": "cbcb3303107cd00f895561b49b8ad3a26e5c8e3df8a07777817e7a6ed97f2340",
     "safe_queries": "70ded26776bfd56c96501c6033e0e322a6dd11ed296c3309ad89bd9deec84cf9"
@@ -53,7 +53,7 @@
     "src/xgb_matcher/v412_service.py": "8ec1c740920e09a06937e5ec7ac1204f50510a1dbbcc6af6f8dff81327985d7e",
     "src/xgb_matcher/v412_service_bundle.py": "a97aca506139643d1cb406a4b07ad0556805483d613240320a068d8552aeacc5",
     "src/xgb_matcher/v412_service_execution_lock.py": "c5abb39501a0b8f821c40db87d2aad54db0b4187e39624d8f596605eb50a4600",
-    "src/xgb_matcher/v412_service_parity.py": "bee55a5dd8a1367ed8f6e8c65bc55feca7aea23695428ab5bbf65470d7066ebf",
+    "src/xgb_matcher/v412_service_parity.py": "4edbaf3dc4a30400c941f4364ec9490cd48c38905321ffe0171215d12c405701",
     "src/xgb_matcher/v412_service_retrieval.py": "5b8bc8094fa46e576fd63bff8440effc01ded8b944898bc0b705595c0e8b6a3b",
     "src/xgb_matcher/v412_service_run.py": "32c6e43a9f83ca7a7874ece40b1f54674ba529ad265495caf3094d0fcfc7383b",
     "src/xgb_matcher/v412_service_worker.py": "0647b66cc70e7c7b3d3c6eedf9222369a856046d0de1bab3a7810ca331e97b40",
