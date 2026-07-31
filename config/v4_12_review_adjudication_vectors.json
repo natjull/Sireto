@@ -1,0 +1,80 @@
+[
+  {
+    "case_id": "unique_top1",
+    "top1_siret": "78983652500020",
+    "top100_sirets": ["78983652500020"],
+    "supporting_groups_by_siret": {
+      "78983652500020": ["PUBLIC_ADMINISTRATION", "SIRENE_REGISTRY"]
+    },
+    "expected_status": "TOP1_CORRECT",
+    "expected_reliable": true,
+    "expected_group_count": 2,
+    "expected_alternative_siret": null,
+    "expected_alternative_in_top100": false
+  },
+  {
+    "case_id": "unique_alternative_in_top100",
+    "top1_siret": "78983652500020",
+    "top100_sirets": ["78983652500020", "55210055400013"],
+    "supporting_groups_by_siret": {
+      "55210055400013": ["ENTITY_OFFICIAL_SITE", "SIRENE_REGISTRY"]
+    },
+    "expected_status": "TOP1_WRONG",
+    "expected_reliable": true,
+    "expected_group_count": 2,
+    "expected_alternative_siret": "55210055400013",
+    "expected_alternative_in_top100": true
+  },
+  {
+    "case_id": "unique_alternative_outside_top100",
+    "top1_siret": "78983652500020",
+    "top100_sirets": ["78983652500020"],
+    "supporting_groups_by_siret": {
+      "55210055400013": ["ENTITY_OFFICIAL_SITE", "SIRENE_REGISTRY"]
+    },
+    "expected_status": "TOP1_WRONG",
+    "expected_reliable": true,
+    "expected_group_count": 2,
+    "expected_alternative_siret": "55210055400013",
+    "expected_alternative_in_top100": false
+  },
+  {
+    "case_id": "two_supported_sirets_minimum_group_count",
+    "top1_siret": "78983652500020",
+    "top100_sirets": ["78983652500020", "55210055400013"],
+    "supporting_groups_by_siret": {
+      "78983652500020": ["PUBLIC_ADMINISTRATION", "SIRENE_REGISTRY"],
+      "55210055400013": ["DATED_PUBLIC_DOCUMENT", "ENTITY_OFFICIAL_SITE", "SIRENE_REGISTRY"]
+    },
+    "expected_status": "AMBIGUOUS",
+    "expected_reliable": true,
+    "expected_group_count": 2,
+    "expected_alternative_siret": null,
+    "expected_alternative_in_top100": false
+  },
+  {
+    "case_id": "within_family_contradiction_removes_web_support",
+    "top1_siret": "78983652500020",
+    "top100_sirets": ["78983652500020", "55210055400013"],
+    "qualified_sirets_by_family": {
+      "ENTITY_OFFICIAL_SITE": ["55210055400013", "78983652500020"]
+    },
+    "supporting_groups_by_siret": {},
+    "expected_status": "UNRESOLVED",
+    "expected_reliable": false,
+    "expected_group_count": 0,
+    "expected_alternative_siret": null,
+    "expected_alternative_in_top100": false
+  },
+  {
+    "case_id": "zero_support",
+    "top1_siret": "78983652500020",
+    "top100_sirets": ["78983652500020"],
+    "supporting_groups_by_siret": {},
+    "expected_status": "UNRESOLVED",
+    "expected_reliable": false,
+    "expected_group_count": 0,
+    "expected_alternative_siret": null,
+    "expected_alternative_in_top100": false
+  }
+]

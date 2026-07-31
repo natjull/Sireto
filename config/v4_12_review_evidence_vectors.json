@@ -1,0 +1,91 @@
+{
+  "tuple_schema": {
+    "web_proof": ["proof_id","independence_group","archive_content_sha256","related_siret","site_name","site_address","site_specific"],
+    "sirene_record": ["proof_id","archive_content_sha256","siret","found_exactly_once","etat_administratif","site_names","site_address"],
+    "expected_evidence": ["related_siret","independence_group","proof_id","archive_content_sha256","has_siret_identifier","name_rule_pass","address_rule_pass","site_specific_pass","within_group_contradiction","group_supports","evidence_ref_id"]
+  },
+  "cases": [
+    {
+      "case_id": "web_and_sirene_exact_support",
+      "query_id": "q_exact",
+      "web_proofs": [["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true]],
+      "sirene_records": [["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",true,"A",["agence alpha"],"24 avenue victor hugo 69002"]],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,false,true,"e3ceaf203f772cc5735e4d5017563a16606349befae6cc5c2caf738349200b7b"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",true,true,true,true,false,true,"819a0b1e4df5b8f5c5127da75c1440ed77a3990f586ee7b63df050a561b27afb"]
+      ]
+    },
+    {
+      "case_id": "sirene_closed",
+      "query_id": "q_closed",
+      "web_proofs": [["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true]],
+      "sirene_records": [["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",true,"F",["agence alpha"],"24 avenue victor hugo 69002"]],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,false,true,"84f076b51b7aac1cc3867929ed13d1de5b19dd2f04a712c066b47ec9df8e8af0"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",false,false,false,false,false,false,"fed354a227b758fba072222c8106854529e976330a905fa0b076648fdad3afbc"]
+      ]
+    },
+    {
+      "case_id": "sirene_record_non_unique",
+      "query_id": "q_nonunique",
+      "web_proofs": [["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true]],
+      "sirene_records": [["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",false,null,[],null]],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,false,true,"43211ebbfd62379a6ca4b99ad4403551fec234a6b9637400185d2d0b8f5ba720"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",false,false,false,false,true,false,"37bba0125ae01a32624a3fb08edce149efd25efce1a39c7b3ba330da9a05266a"]
+      ]
+    },
+    {
+      "case_id": "sirene_name_mismatch",
+      "query_id": "q_name",
+      "web_proofs": [["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true]],
+      "sirene_records": [["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",true,"A",["agence beta"],"24 avenue victor hugo 69002"]],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,false,true,"a032ca41147ee72454b9045c6ffabf6e3ab9af505ef8c4eb22081e802a1a6139"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",false,false,false,false,false,false,"64bbd7eb755ae01089bfba3c344f342fb890bac042909791a4c1e12e41e7270a"]
+      ]
+    },
+    {
+      "case_id": "sirene_address_number_mismatch",
+      "query_id": "q_address",
+      "web_proofs": [["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true]],
+      "sirene_records": [["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",true,"A",["agence alpha"],"26 avenue victor hugo 69002"]],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,false,true,"a12254ba0e98488b7c6d2ae141460dac7c55452dbc15921bebfaf097b35f8d62"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",false,false,false,false,false,false,"43f34091911a4c109652e8d049abf5cbe6c3fbb7c06d3514fd4fb496604d2e07"]
+      ]
+    },
+    {
+      "case_id": "two_sirets_same_family_contradiction",
+      "query_id": "q_contradiction",
+      "web_proofs": [
+        ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true],
+        ["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","PUBLIC_ADMINISTRATION","2222222222222222222222222222222222222222222222222222222222222222","73282932000074","agence alpha","24 avenue victor hugo 69002",true]
+      ],
+      "sirene_records": [
+        ["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",true,"A",["agence alpha"],"24 avenue victor hugo 69002"],
+        ["eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","5555555555555555555555555555555555555555555555555555555555555555","73282932000074",true,"A",["agence alpha"],"24 avenue victor hugo 69002"]
+      ],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,true,false,"bf4f902b43873ce71c1fdbfec8cf0268e861fb4d65ef3e67e47671807c2cfd82"],
+        ["73282932000074","PUBLIC_ADMINISTRATION","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","2222222222222222222222222222222222222222222222222222222222222222",true,true,true,true,true,false,"44d431773d3deffb7cc157da96864f571802c3077aed043f0223e3845ae084fe"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",true,true,true,true,false,true,"da584c81f19222fba6146579fcfe9f29c007c29104a34bade4270db220ed1788"],
+        ["73282932000074","SIRENE_REGISTRY","eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee","5555555555555555555555555555555555555555555555555555555555555555",true,true,true,true,false,true,"501d76ae6d9d7e8a0158f16a40b30b11ca9d18416391ef6cd08c16866becad33"]
+      ]
+    },
+    {
+      "case_id": "two_independent_web_families_support",
+      "query_id": "q_two_families",
+      "web_proofs": [
+        ["aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","PUBLIC_ADMINISTRATION","1111111111111111111111111111111111111111111111111111111111111111","55210055400013","agence alpha","24 avenue victor hugo 69002",true],
+        ["bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","ENTITY_OFFICIAL_SITE","2222222222222222222222222222222222222222222222222222222222222222","55210055400013","agence alpha","24 avenue victor hugo 69002",true]
+      ],
+      "sirene_records": [["dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444","55210055400013",true,"A",["agence alpha"],"24 avenue victor hugo 69002"]],
+      "expected_evidence": [
+        ["55210055400013","PUBLIC_ADMINISTRATION","aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","1111111111111111111111111111111111111111111111111111111111111111",true,true,true,true,false,true,"d80421bd1e8159f003859c7fa088670c26e0bfebe73c05315779f08303daf86e"],
+        ["55210055400013","ENTITY_OFFICIAL_SITE","bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb","2222222222222222222222222222222222222222222222222222222222222222",true,true,true,true,false,true,"f3e2cc4d1c224c40a6df91b3538a1a46326f808e8b26878fc7098ed04627d29c"],
+        ["55210055400013","SIRENE_REGISTRY","dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd","4444444444444444444444444444444444444444444444444444444444444444",true,true,true,true,false,true,"756771eced523315b760462457018b8972093204b4ac87d7779a9c1d131f7b3f"]
+      ]
+    }
+  ]
+}

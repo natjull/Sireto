@@ -1,0 +1,66 @@
+[
+  {
+    "input_hostname": "WWW.Exemple.FR.",
+    "normalized_hostname": "www.exemple.fr",
+    "registrable_domain": "exemple.fr",
+    "matches_public_administration": false,
+    "matches_sirene_copy": false,
+    "safe": true
+  },
+  {
+    "input_hostname": "münchen.example.fr",
+    "normalized_hostname": "xn--mnchen-3ya.example.fr",
+    "registrable_domain": "example.fr",
+    "matches_public_administration": false,
+    "matches_sirene_copy": false,
+    "safe": true
+  },
+  {
+    "input_hostname": "service.example.co.uk",
+    "normalized_hostname": "service.example.co.uk",
+    "registrable_domain": "example.co.uk",
+    "matches_public_administration": false,
+    "matches_sirene_copy": false,
+    "safe": true
+  },
+  {
+    "input_hostname": "evilgouv.fr",
+    "normalized_hostname": "evilgouv.fr",
+    "registrable_domain": "evilgouv.fr",
+    "matches_public_administration": false,
+    "matches_sirene_copy": false,
+    "safe": true
+  },
+  {
+    "input_hostname": "service.gouv.fr",
+    "normalized_hostname": "service.gouv.fr",
+    "registrable_domain": "gouv.fr",
+    "matches_public_administration": true,
+    "matches_sirene_copy": false,
+    "safe": true
+  },
+  {
+    "input_hostname": "annuaire-entreprises.data.gouv.fr",
+    "normalized_hostname": "annuaire-entreprises.data.gouv.fr",
+    "registrable_domain": "gouv.fr",
+    "matches_public_administration": true,
+    "matches_sirene_copy": true,
+    "safe": true
+  },
+  {
+    "input_hostname": "localhost",
+    "normalized_hostname": "localhost",
+    "registrable_domain": null,
+    "matches_public_administration": false,
+    "matches_sirene_copy": false,
+    "safe": false
+  },
+  {
+    "input_hostname": "host.internal",
+    "normalized_hostname": "host.internal",
+    "registrable_domain": null,
+    "matches_public_administration": false,
+    "matches_sirene_copy": false,
+    "safe": false
+  }
+]

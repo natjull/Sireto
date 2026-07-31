@@ -1,0 +1,75 @@
+[
+  {
+    "case_id": "accented_name_and_address",
+    "crm_name": "Médiathèque Jacques Prévert",
+    "crm_address": "10 rue de la République",
+    "crm_postcode": "75001",
+    "text_segments": [{"literal": "Médiathèque Jacques Prévert — SIRET 789 836 525 00020 — 10 rue de la République 75001 Paris."}],
+    "expanded_text_sha256": "ad1a7c868c3dfe142436a0269d7c634acaeb556131770c22397fb0b0d769b2d9",
+    "expected_unqualified_sirets": [],
+    "expected_facts": [
+      ["78983652500020","SIRET_IDENTIFIER","78983652500020",41,58,"7565da33a603b2c826d4f056425db5f08b4afe26558eab67df5f39983213ba23"],
+      ["78983652500020","SIREN_IDENTIFIER","789836525",41,52,"275e42006ce4bc314500f25085fc0c24303b2cc993ae4df9c5b3bb2d8794aeda"],
+      ["78983652500020","SITE_NAME","mediatheque jacques prevert",0,30,"b4e5ff473b0a60a5734570bcb7c33f0923fda7962d7a39c0818d846b9310280b"],
+      ["78983652500020","SITE_ADDRESS","10 rue de la republique 75001",63,93,"74fda2ef0ceb9c3bcdabf22a1205f6ab747d137a97334628b73fe16c5ef80355"],
+      ["78983652500020","ENTITY_SITE_RELATION","mediatheque jacques prevert siret 789 836 525 00020 10 rue de la republique 75001",0,93,"77101d1293fff60c7dc0d2d85a11d54a455ae07bfc858336e6b1564685b3aa1d"]
+    ]
+  },
+  {
+    "case_id": "two_nearby_sirets_are_kept_separate",
+    "crm_name": "Agence Alpha",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "text_segments": [{"literal": "Agence Alpha SIRET 55210055400013 24 avenue Victor Hugo 69002 Lyon. Agence Alpha SIRET 73282932000074 24 avenue Victor Hugo 69002 Lyon."}],
+    "expanded_text_sha256": "5c948b7aa9a123432f54b34bf0ab6361997b78f40a03ff7099b19cf8167cdbbb",
+    "expected_unqualified_sirets": [],
+    "expected_facts": [
+      ["55210055400013","SIRET_IDENTIFIER","55210055400013",19,33,"921db7c7ecdebc1465a192effee92b2ebc938b7f5731d41d660768f5a278e201"],
+      ["55210055400013","SIREN_IDENTIFIER","552100554",19,28,"fde7c9c43dd1b4479eb402a2bd500a8b2d11b5228b2a55d13ff1a856cc882052"],
+      ["55210055400013","SITE_NAME","agence alpha",0,12,"3ada72e088df7f32a662db1e92ebfdbee5401823e7c75cf426823d9e8b813e5c"],
+      ["55210055400013","SITE_ADDRESS","24 avenue victor hugo 69002",34,61,"86cd153bfd511a9a1dffcb7a98b99eb92069d09369a6bd2e1c9b1d42fc87c125"],
+      ["55210055400013","ENTITY_SITE_RELATION","agence alpha siret 55210055400013 24 avenue victor hugo 69002",0,61,"c3ab3b8be9ccebada68fad2413f1e9dc7351c3e20abfd635e21b1bedb64c2116"],
+      ["73282932000074","SIRET_IDENTIFIER","73282932000074",87,101,"156a3e41da51063fc17b54f493c7777c5665f5991f0643b0f899795911a61732"],
+      ["73282932000074","SIREN_IDENTIFIER","732829320",87,96,"953ae8ad207be63f428ca6ab2f0beb867dc71e7b81f04aa55931a34d4a6d5388"],
+      ["73282932000074","SITE_NAME","agence alpha",68,80,"3ada72e088df7f32a662db1e92ebfdbee5401823e7c75cf426823d9e8b813e5c"],
+      ["73282932000074","SITE_ADDRESS","24 avenue victor hugo 69002",102,129,"86cd153bfd511a9a1dffcb7a98b99eb92069d09369a6bd2e1c9b1d42fc87c125"],
+      ["73282932000074","ENTITY_SITE_RELATION","agence alpha siret 73282932000074 24 avenue victor hugo 69002",68,129,"acd1b896dcc47fda7309f57b1df227b61ce60edaca183ab7fa50bedb185f078d"]
+    ]
+  },
+  {
+    "case_id": "duplicate_siret_uses_first_occurrence",
+    "crm_name": "Société Exemple",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "text_segments": [{"literal": "Société Exemple SIRET 55210055400013 24 avenue Victor Hugo 69002. Société Exemple SIRET 55210055400013 24 avenue Victor Hugo 69002."}],
+    "expanded_text_sha256": "3644af3ba47365781dc5026ddeac9ca55c03449169b4623c60eb1d935b9acd99",
+    "expected_unqualified_sirets": [],
+    "expected_facts": [
+      ["55210055400013","SIRET_IDENTIFIER","55210055400013",24,38,"921db7c7ecdebc1465a192effee92b2ebc938b7f5731d41d660768f5a278e201"],
+      ["55210055400013","SIREN_IDENTIFIER","552100554",24,33,"fde7c9c43dd1b4479eb402a2bd500a8b2d11b5228b2a55d13ff1a856cc882052"],
+      ["55210055400013","SITE_NAME","societe exemple",0,17,"6052779c8dbdd18b4afb17c88241167e7fa8f8969e8b5d6afd20beae2ebe33ea"],
+      ["55210055400013","SITE_ADDRESS","24 avenue victor hugo 69002",39,66,"86cd153bfd511a9a1dffcb7a98b99eb92069d09369a6bd2e1c9b1d42fc87c125"],
+      ["55210055400013","ENTITY_SITE_RELATION","societe exemple siret 55210055400013 24 avenue victor hugo 69002",0,66,"c742addba88d2e257a5e0e23d5279649ab4b3ae39a4a20b84628b9158d55959c"]
+    ]
+  },
+  {
+    "case_id": "distant_siret_is_not_propagated",
+    "crm_name": "Agence Alpha",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "text_segments": [
+      {"literal": "Agence Alpha SIRET 55210055400013 24 avenue Victor Hugo 69002 Lyon."},
+      {"repeat": "x", "count": 600},
+      {"literal": " SIRET 73282932000074."}
+    ],
+    "expanded_text_sha256": "3fd5e013bac1c18aac7890ba70e000619c5b14d801c3f7f0c2a7211e80569e65",
+    "expected_unqualified_sirets": ["73282932000074"],
+    "expected_facts": [
+      ["55210055400013","SIRET_IDENTIFIER","55210055400013",19,33,"921db7c7ecdebc1465a192effee92b2ebc938b7f5731d41d660768f5a278e201"],
+      ["55210055400013","SIREN_IDENTIFIER","552100554",19,28,"fde7c9c43dd1b4479eb402a2bd500a8b2d11b5228b2a55d13ff1a856cc882052"],
+      ["55210055400013","SITE_NAME","agence alpha",0,12,"3ada72e088df7f32a662db1e92ebfdbee5401823e7c75cf426823d9e8b813e5c"],
+      ["55210055400013","SITE_ADDRESS","24 avenue victor hugo 69002",34,61,"86cd153bfd511a9a1dffcb7a98b99eb92069d09369a6bd2e1c9b1d42fc87c125"],
+      ["55210055400013","ENTITY_SITE_RELATION","agence alpha siret 55210055400013 24 avenue victor hugo 69002",0,61,"c3ab3b8be9ccebada68fad2413f1e9dc7351c3e20abfd635e21b1bedb64c2116"]
+    ]
+  }
+]

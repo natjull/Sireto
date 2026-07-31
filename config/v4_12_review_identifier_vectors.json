@@ -1,0 +1,32 @@
+[
+  {
+    "case_id": "formatted_valid_siret",
+    "text": "SIRET 789 836 525 00020.",
+    "expected_sirets": ["78983652500020"],
+    "expected_sirens": ["789836525"]
+  },
+  {
+    "case_id": "contiguous_valid_siret",
+    "text": "Identifiant: 55210055400013",
+    "expected_sirets": ["55210055400013"],
+    "expected_sirens": ["552100554"]
+  },
+  {
+    "case_id": "invalid_luhn",
+    "text": "Faux SIRET 55210055400014",
+    "expected_sirets": [],
+    "expected_sirens": []
+  },
+  {
+    "case_id": "standalone_valid_siren",
+    "text": "SIREN 552100554",
+    "expected_sirets": [],
+    "expected_sirens": ["552100554"]
+  },
+  {
+    "case_id": "embedded_digits_rejected",
+    "text": "1552100554000139",
+    "expected_sirets": [],
+    "expected_sirens": []
+  }
+]

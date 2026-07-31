@@ -1,0 +1,37 @@
+[
+  {
+    "observed_href": "//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.example.fr%2Fcontact&rut=ignored",
+    "resolved_url": "https://www.example.fr/contact",
+    "result_rank": 1,
+    "snippet": "Adresse et informations officielles",
+    "title": "Site officiel Example"
+  },
+  {
+    "observed_href": "https://service-public.gouv.fr/fiche",
+    "resolved_url": "https://service-public.gouv.fr/fiche",
+    "result_rank": 2,
+    "snippet": "Document public daté",
+    "title": "Fiche publique"
+  },
+  {
+    "observed_href": "http://insecure.example.org/",
+    "resolved_url": "http://insecure.example.org/",
+    "result_rank": 3,
+    "snippet": "Conservé comme résultat, inadmissible à l'ouverture",
+    "title": "HTTP observé"
+  },
+  {
+    "observed_href": "https://four.example.com/",
+    "resolved_url": "https://four.example.com/",
+    "result_rank": 4,
+    "snippet": "Résultat quatre",
+    "title": "Quatrième résultat"
+  },
+  {
+    "observed_href": "https://five.example.net/",
+    "resolved_url": "https://five.example.net/",
+    "result_rank": 5,
+    "snippet": "Résultat cinq",
+    "title": "Cinquième résultat"
+  }
+]

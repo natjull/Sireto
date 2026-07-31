@@ -1,0 +1,111 @@
+{
+  "rule_id": "PINNED_FORBIDDEN_CIDR_MEMBERSHIP_V1",
+  "forbidden_cidrs": [
+    "0.0.0.0/8",
+    "10.0.0.0/8",
+    "100.64.0.0/10",
+    "127.0.0.0/8",
+    "169.254.0.0/16",
+    "172.16.0.0/12",
+    "192.0.0.0/24",
+    "192.0.2.0/24",
+    "192.88.99.0/24",
+    "192.168.0.0/16",
+    "198.18.0.0/15",
+    "198.51.100.0/24",
+    "203.0.113.0/24",
+    "224.0.0.0/4",
+    "240.0.0.0/4",
+    "::/96",
+    "::ffff:0:0/96",
+    "64:ff9b::/96",
+    "64:ff9b:1::/48",
+    "100::/64",
+    "2001::/32",
+    "2001:2::/48",
+    "2001:10::/28",
+    "2001:20::/28",
+    "2001:db8::/32",
+    "2002::/16",
+    "3fff::/20",
+    "fc00::/7",
+    "fe80::/10",
+    "fec0::/10",
+    "ff00::/8"
+  ],
+  "address_cases": [
+    {"address": "8.8.8.8", "forbidden": false},
+    {"address": "2606:4700:4700::1111", "forbidden": false},
+    {"address": "127.0.0.1", "forbidden": true},
+    {"address": "10.20.30.40", "forbidden": true},
+    {"address": "100.64.1.2", "forbidden": true},
+    {"address": "169.254.10.20", "forbidden": true},
+    {"address": "224.0.0.1", "forbidden": true},
+    {"address": "192.0.2.10", "forbidden": true},
+    {"address": "0.0.0.0", "forbidden": true},
+    {"address": "::1", "forbidden": true},
+    {"address": "fc00::1", "forbidden": true},
+    {"address": "fe80::1", "forbidden": true},
+    {"address": "ff02::1", "forbidden": true},
+    {"address": "2001:db8::1", "forbidden": true},
+    {"address": "64:ff9b::7f00:1", "forbidden": true},
+    {"address": "64:ff9b::a00:1", "forbidden": true},
+    {"address": "2002:7f00:1::1", "forbidden": true},
+    {"address": "2002:a00:1::1", "forbidden": true},
+    {"address": "2001::1", "forbidden": true},
+    {"address": "::192.168.1.1", "forbidden": true},
+    {"address": "fec0::1", "forbidden": true},
+    {"address": "::ffff:127.0.0.1", "forbidden": true},
+    {"address": "::ffff:8.8.8.8", "forbidden": true}
+  ],
+  "resolution_cases": [
+    {
+      "case_id": "empty",
+      "addresses": [],
+      "expected_addresses": [],
+      "permitted": false,
+      "chosen_ip": null,
+      "error_type": "DNS"
+    },
+    {
+      "case_id": "global_v4_v6_sorted",
+      "addresses": ["2606:4700:4700::1111", "8.8.8.8", "1.1.1.1"],
+      "expected_addresses": ["1.1.1.1", "8.8.8.8", "2606:4700:4700::1111"],
+      "permitted": true,
+      "chosen_ip": "1.1.1.1",
+      "error_type": null
+    },
+    {
+      "case_id": "mixed_global_private",
+      "addresses": ["8.8.8.8", "10.0.0.1"],
+      "expected_addresses": ["8.8.8.8", "10.0.0.1"],
+      "permitted": false,
+      "chosen_ip": null,
+      "error_type": "PRIVATE_ADDRESS"
+    },
+    {
+      "case_id": "mapped_ipv4",
+      "addresses": ["::ffff:8.8.8.8"],
+      "expected_addresses": ["::ffff:8.8.8.8"],
+      "permitted": false,
+      "chosen_ip": null,
+      "error_type": "PRIVATE_ADDRESS"
+    },
+    {
+      "case_id": "nat64_private",
+      "addresses": ["64:ff9b::a00:1"],
+      "expected_addresses": ["64:ff9b::a00:1"],
+      "permitted": false,
+      "chosen_ip": null,
+      "error_type": "PRIVATE_ADDRESS"
+    },
+    {
+      "case_id": "mixed_global_6to4_private",
+      "addresses": ["2606:4700:4700::1111", "2002:a00:1::1"],
+      "expected_addresses": ["2002:a00:1::1", "2606:4700:4700::1111"],
+      "permitted": false,
+      "chosen_ip": null,
+      "error_type": "PRIVATE_ADDRESS"
+    }
+  ]
+}

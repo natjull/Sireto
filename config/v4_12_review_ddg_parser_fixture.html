@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+  <head><meta charset="utf-8"></head>
+  <body>
+    <div class="result result--ad">
+      <a class="result__a" href="https://ads.example.invalid/">Publicité</a>
+      <a class="result__snippet">Annonce à ignorer</a>
+    </div>
+    <div class="result" data-testid="ad">
+      <a class="result__a" href="https://second-ad.example.invalid/">Publicité data-testid</a>
+      <a class="result__snippet">Annonce à ignorer</a>
+    </div>
+    <div class="resultant">
+      <a class="result__a" href="https://class-token.example.invalid/">Faux token de classe</a>
+      <a class="result__snippet">À ignorer</a>
+    </div>
+    <div class="result">
+      <a class="result__a" href="//duckduckgo.com/l/?uddg=https%3A%2F%2Fwww.example.fr%2Fcontact&amp;rut=ignored">  Site officiel Example  </a>
+      <a class="result__snippet">Adresse et informations officielles</a>
+    </div>
+    <div class="result">
+      <a class="result__a" href="https://www.example.fr/contact">Doublon direct</a>
+      <a class="result__snippet">Même URL, à ignorer</a>
+    </div>
+    <div class="result">
+      <a class="result__a" href="/relative-without-uddg">Lien relatif invalide</a>
+      <a class="result__snippet">À ignorer</a>
+    </div>
+    <div class="result">
+      <a class="result__a" href="/l/?uddg=https%3A%2F%2Fone.example.fr%2F&amp;uddg=https%3A%2F%2Ftwo.example.fr%2F">Wrapper ambigu</a>
+      <a class="result__snippet">À ignorer</a>
+    </div>
+    <div class="result">
+      <a class="result__a" href="https://service-public.gouv.fr/fiche">Fiche publique</a>
+      <div class="result__snippet">  Document public daté  </div>
+    </div>
+    <div class="result">
+      <a class="result__a" href="http://insecure.example.org/">HTTP observé</a>
+      <div class="result__snippet">Conservé comme résultat, inadmissible à l'ouverture</div>
+    </div>
+    <div class="result">
+      <a class="result__a" href="https://four.example.com/">Quatrième résultat</a>
+      <div class="result__snippet">Résultat quatre</div>
+    </div>
+    <div class="result">
+      <a class="result__a" href="https://five.example.net/">Cinquième résultat</a>
+      <div class="result__snippet">Résultat cinq</div>
+    </div>
+    <div class="result">
+      <a class="result__a" href="https://six.example.eu/">Sixième résultat</a>
+      <div class="result__snippet">Doit être tronqué</div>
+    </div>
+  </body>
+</html>

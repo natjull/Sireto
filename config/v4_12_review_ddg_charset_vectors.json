@@ -1,0 +1,20 @@
+[
+  {
+    "case_id": "utf8",
+    "http_charset": "utf-8",
+    "body_base64": "PGh0bWw+PGJvZHk+PGRpdiBjbGFzcz0icmVzdWx0Ij48YSBjbGFzcz0icmVzdWx0X19hIiBocmVmPSJodHRwczovL2V4YW1wbGUuZnIvIj5Sw6lzdWx0YXQgw6l0w6k8L2E+PHNwYW4gY2xhc3M9InJlc3VsdF9fc25pcHBldCI+cHJldXZlPC9zcGFuPjwvZGl2PjwvYm9keT48L2h0bWw+",
+    "expected_title": "Résultat été"
+  },
+  {
+    "case_id": "iso_8859_1",
+    "http_charset": "iso-8859-1",
+    "body_base64": "PGh0bWw+PGJvZHk+PGRpdiBjbGFzcz0icmVzdWx0Ij48YSBjbGFzcz0icmVzdWx0X19hIiBocmVmPSJodHRwczovL2V4YW1wbGUuZnIvIj5S6XN1bHRhdCDpdOk8L2E+PHNwYW4gY2xhc3M9InJlc3VsdF9fc25pcHBldCI+cHJldXZlPC9zcGFuPjwvZGl2PjwvYm9keT48L2h0bWw+",
+    "expected_title": "Résultat été"
+  },
+  {
+    "case_id": "unknown_charset_falls_back_to_utf8_replace",
+    "http_charset": "x-unknown",
+    "body_base64": "PGh0bWw+PGJvZHk+PGRpdiBjbGFzcz0icmVzdWx0Ij48YSBjbGFzcz0icmVzdWx0X19hIiBocmVmPSJodHRwczovL2V4YW1wbGUuZnIvIj5S6XN1bHRhdCDpdOk8L2E+PHNwYW4gY2xhc3M9InJlc3VsdF9fc25pcHBldCI+cHJldXZlPC9zcGFuPjwvZGl2PjwvYm9keT48L2h0bWw+",
+    "expected_title": "R�sultat �t�"
+  }
+]

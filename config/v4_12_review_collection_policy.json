@@ -1,0 +1,185 @@
+{
+  "schema_version": "sireto-v4.12-r30-collection-policy-1",
+  "search_engine": {
+    "endpoint": "https://html.duckduckgo.com/html/",
+    "method": "GET",
+    "query_parameter": "q",
+    "fixed_parameters": {},
+    "url_encoding_rule": "UTF8_URLENCODE_ORDERED_PAIRS_QUOTE_PLUS_SAFE_EMPTY_V1",
+    "result_parser_rule": "DDG_HTML_ORGANIC_RESULT_V1",
+    "parser_fixture_path": "config/v4_12_review_ddg_parser_fixture.html",
+    "parser_fixture_sha256": "08b450a351b0856c7ec0cb9958c03137068a50c6a5477ec4c86114c31d27be69",
+    "parser_fixture_http_charset": "utf-8",
+    "parser_expected_path": "config/v4_12_review_ddg_parser_expected.json",
+    "parser_expected_sha256": "78c6ad766b24c617dd3b03c30216f263678ac44acb387f4ad4d7d983f2ff5491",
+    "charset_vectors_path": "config/v4_12_review_ddg_charset_vectors.json",
+    "charset_vectors_sha256": "f7b4ef1702f2c33698c38d141c2475f206c57a9b8741d57b5e04b959b9ca4b0a",
+    "user_agent": "SIRETO-V4.12-R30/1.0 (+offline-entity-resolution-audit)",
+    "accept": "text/html",
+    "accept_language": "fr-FR,fr;q=0.9",
+    "accept_encoding": "identity",
+    "timeout_seconds": 20,
+    "retry_count": 0,
+    "maximum_wire_bytes": 2097152,
+    "maximum_decoded_bytes": 2097152,
+    "maximum_results_logged": 5
+  },
+  "parser_runtime": {
+    "lxml_version": "6.0.2",
+    "idna_version": "3.11",
+    "pypdfium2_version": "4.30.0",
+    "html_text_rule": "LXML_TEXT_CONTENT_COLLAPSE_WHITESPACE_UTF8_V1",
+    "pdf_text_rule": "PDFIUM_PAGE_TEXT_ORDER_1_TO_N_COLLAPSE_WHITESPACE_UTF8_V1",
+    "maximum_pdf_pages": 50,
+    "maximum_extracted_text_bytes": 2097152
+  },
+  "page_fetch": {
+    "allowed_scheme": "https",
+    "allowed_port": 443,
+    "timeout_seconds": 20,
+    "retry_count": 0,
+    "maximum_redirects": 0,
+    "accept_encoding": "identity",
+    "allowed_content_encodings": [
+      "identity"
+    ],
+    "maximum_wire_bytes": 10485760,
+    "maximum_decoded_bytes": 10485760,
+    "allowed_mime_types": [
+      "text/html",
+      "text/plain",
+      "application/pdf"
+    ],
+    "maximum_open_attempts_per_query": 2,
+    "maximum_open_attempts_per_dossier": 6
+  },
+  "domain_policy": {
+    "host_normalization_rule": "IDNA2008_UTS46_STD3_NFC_LOWER_STRIP_ONE_TRAILING_DOT_V1",
+    "suffix_match_rule": "HOST_EQUALS_SUFFIX_OR_DOT_BOUNDARY_SUFFIX_V1",
+    "registrable_domain_rule": "PINNED_RESTRICTED_PSL_LONGEST_MATCH_V1",
+    "public_suffixes_path": "config/v4_12_review_public_suffixes.txt",
+    "public_suffixes_sha256": "10fe038631c2a3dd619370e368be3dbd9b6cb8daf2bd4203ced236cf6226c823",
+    "domain_vectors_path": "config/v4_12_review_domain_vectors.json",
+    "domain_vectors_sha256": "2adca818a3196049caf574e2252ece41963f7cd26a0069cf4044a61b74b18917",
+    "unrecognized_public_suffix_action": "INADMISSIBLE",
+    "classification_precedence": [
+      "UNSAFE_URL",
+      "SIRENE_COPY",
+      "ALWAYS_INADMISSIBLE",
+      "PUBLIC_ADMINISTRATION",
+      "OFFICIAL_SECTOR_DIRECTORY",
+      "DATED_PUBLIC_DOCUMENT_CANDIDATE",
+      "ENTITY_OFFICIAL_SITE_CANDIDATE",
+      "INADMISSIBLE"
+    ],
+    "public_administration_suffixes": [
+      "gouv.fr"
+    ],
+    "official_sector_directory_suffixes": [
+      "education.fr",
+      "fhf.fr",
+      "sante.fr"
+    ],
+    "always_inadmissible_suffixes": [
+      "duckduckgo.com",
+      "google.com",
+      "bing.com",
+      "yahoo.com",
+      "societe.com",
+      "pappers.fr",
+      "verif.com",
+      "manageo.fr",
+      "infogreffe.fr",
+      "kompass.com",
+      "linkedin.com",
+      "facebook.com",
+      "instagram.com",
+      "x.com",
+      "twitter.com",
+      "pagesjaunes.fr",
+      "118000.fr",
+      "annuaire-entreprises.data.gouv.fr"
+    ],
+    "sirene_copy_suffixes": [
+      "annuaire-entreprises.data.gouv.fr",
+      "sirene.fr"
+    ],
+    "entity_candidate_rule": "CRM_SIGNIFICANT_TOKEN_IN_HOST_TITLE_OR_SNIPPET_V1",
+    "name_token_rule": "NFKD_STRIP_MARKS_CASEFOLD_NONALNUM_TO_SPACE_STOPWORD_FILTER_V1",
+    "entity_official_site_validation_rule": "PREOPEN_ENTITY_PLUS_ARCHIVE_DIRECT_TRIPLE_V1",
+    "dated_public_document_validation_rule": "PREOPEN_DOCUMENT_PLUS_ARCHIVE_DIRECT_TRIPLE_PLUS_DATE_V1",
+    "postopen_validation_vectors_path": "config/v4_12_review_postopen_validation_vectors.json",
+    "postopen_validation_vectors_sha256": "97f56cf2c747293c8d3a7cfd6d19d7b32d074c5f14c2c16a9057f3f751b5e231",
+    "fact_reconstruction_vectors_path": "config/v4_12_review_fact_reconstruction_vectors.json",
+    "fact_reconstruction_vectors_sha256": "b50924bbd301a0fb7a4b970faf9a8b97da27195b227329906fc28aee48b48325",
+    "evidence_vectors_path": "config/v4_12_review_evidence_vectors.json",
+    "evidence_vectors_sha256": "691d434591a03a9b75c59beac968921e43c38881632ef6ef4123e4212bb37b8f",
+    "adjudication_vectors_path": "config/v4_12_review_adjudication_vectors.json",
+    "adjudication_vectors_sha256": "c5b9bab97770a6f0a17ea735cc42b554febc3f585e94199158b9bd5cd934dfa3",
+    "public_administration_validation_rule": "PINNED_PUBLIC_SUFFIX_PLUS_ARCHIVE_DIRECT_TRIPLE_V1",
+    "official_sector_validation_rule": "PINNED_SECTOR_SUFFIX_PLUS_ARCHIVE_DIRECT_TRIPLE_V1",
+    "fact_eligibility_rule": "LUHN_SIRET_AND_CRM_NAME_SEQUENCE_AND_ADDRESS_WINDOW_V1",
+    "identifier_extractor_rule": "ASCII_DIGIT_WITH_OPTIONAL_SPACE_DOT_HYPHEN_LUHN_V1",
+    "identifier_vectors_path": "config/v4_12_review_identifier_vectors.json",
+    "identifier_vectors_sha256": "2e3f87d909c02f8ca50eaf7687358f0d67f7dab9e002d5ef9ecfe3efa52557b9",
+    "date_extractor_rule": "ISO_OR_FRENCH_CALENDAR_DATE_VALID_V1",
+    "significant_token_minimum_length": 4,
+    "name_stopwords": [
+      "association",
+      "commune",
+      "entreprise",
+      "etablissement",
+      "france",
+      "groupe",
+      "mairie",
+      "societe"
+    ]
+  },
+  "network_security": {
+    "dns_rule": "PINNED_FORBIDDEN_CIDR_MEMBERSHIP_V1",
+    "dns_security_vectors_path": "config/v4_12_review_dns_security_vectors.json",
+    "dns_security_vectors_sha256": "a1f460b1c8e51a2e9bcf33e06c512cba7d1ab4854f34321d2429cff887b1fb61",
+    "forbidden_hostnames": [
+      "localhost",
+      "localhost.localdomain"
+    ],
+    "forbidden_hostname_suffixes": [
+      "local"
+    ],
+    "tls_minimum_version": "TLSv1.2",
+    "tls_hostname_verification": true,
+    "sni_uses_normalized_hostname": true,
+    "http_host_uses_normalized_hostname": true,
+    "proxy_environment_allowed": false,
+    "netrc_allowed": false,
+    "cookies_allowed": false,
+    "authorization_header_allowed": false,
+    "ca_bundle_path": "/opt/homebrew/etc/ca-certificates/cert.pem",
+    "ca_bundle_sha256": "a4b2e4b2a34ad1a99d9c426261858f5c31afadfd07a88cca4af173399249fbc5",
+    "hosts_path": "/private/etc/hosts",
+    "hosts_sha256": "c7dd0e2ed261ce76d76f852596c5b54026b9a894fa481381ffd399b556c0e2da",
+    "resolver_path": "/private/var/run/resolv.conf",
+    "resolver_sha256": "a1ff91810c50ace9d6802e96e2b8cfc133a9a337480d33676e74623ff31cea77"
+  },
+  "path_policy": {
+    "forbidden_normalized_component_tokens": [
+      "test",
+      "final",
+      "holdout",
+      "challenge",
+      "unseen",
+      "fresh",
+      "random",
+      "locked"
+    ]
+  },
+  "collection_state_machine": {
+    "search_attempts_per_dossier": 3,
+    "search_error_consumes_search_attempt": true,
+    "page_error_consumes_open_slot": true,
+    "duplicate_domain_consumes_open_slot": false,
+    "redirect_action": "HTTP_ERROR_REDIRECT_FORBIDDEN",
+    "pagination_allowed": false,
+    "query_reformulation_allowed": false
+  }
+}

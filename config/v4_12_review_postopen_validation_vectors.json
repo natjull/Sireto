@@ -1,0 +1,90 @@
+[
+  {
+    "case_id": "public_positive",
+    "preopen_family": "PUBLIC_ADMINISTRATION",
+    "normalized_hostname": "annuaire.exemple.gouv.fr",
+    "crm_name": "Médiathèque Jacques Prévert",
+    "crm_address": "10 rue de la République",
+    "crm_postcode": "75001",
+    "extracted_text": "Médiathèque Jacques Prévert — établissement public. SIRET 789 836 525 00020. Contact : 10 rue de la République, 75001 Paris.",
+    "expected_family": "PUBLIC_ADMINISTRATION",
+    "facts_eligible": true
+  },
+  {
+    "case_id": "public_missing_address_negative",
+    "preopen_family": "PUBLIC_ADMINISTRATION",
+    "normalized_hostname": "service-public.gouv.fr",
+    "crm_name": "Médiathèque Jacques Prévert",
+    "crm_address": "10 rue de la République",
+    "crm_postcode": "75001",
+    "extracted_text": "Médiathèque Jacques Prévert SIRET 78983652500020. Informations générales sans adresse du site.",
+    "expected_family": "INADMISSIBLE_AFTER_OPEN",
+    "facts_eligible": false
+  },
+  {
+    "case_id": "entity_positive",
+    "preopen_family": "ENTITY_OFFICIAL_SITE_CANDIDATE",
+    "normalized_hostname": "www.exemple.fr",
+    "crm_name": "Société Exemple",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "extracted_text": "Mentions légales Société Exemple. SIRET : 552 100 554 00013. Notre établissement : 24 avenue Victor Hugo 69002 Lyon.",
+    "expected_family": "ENTITY_OFFICIAL_SITE",
+    "facts_eligible": true
+  },
+  {
+    "case_id": "entity_missing_address_negative",
+    "preopen_family": "ENTITY_OFFICIAL_SITE_CANDIDATE",
+    "normalized_hostname": "www.exemple.fr",
+    "crm_name": "Société Exemple",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "extracted_text": "Société Exemple. SIRET 55210055400013. Bienvenue sur notre site.",
+    "expected_family": "INADMISSIBLE_AFTER_OPEN",
+    "facts_eligible": false
+  },
+  {
+    "case_id": "sector_positive",
+    "preopen_family": "OFFICIAL_SECTOR_DIRECTORY",
+    "normalized_hostname": "etablissements.fhf.fr",
+    "crm_name": "Centre hospitalier Exemple",
+    "crm_address": "5 boulevard Pasteur",
+    "crm_postcode": "33000",
+    "extracted_text": "Fiche établissement Centre hospitalier Exemple. SIRET 21770445100210. Adresse 5 boulevard Pasteur 33000 Bordeaux.",
+    "expected_family": "OFFICIAL_SECTOR_DIRECTORY",
+    "facts_eligible": true
+  },
+  {
+    "case_id": "sector_wrong_postcode_negative",
+    "preopen_family": "OFFICIAL_SECTOR_DIRECTORY",
+    "normalized_hostname": "etablissements.fhf.fr",
+    "crm_name": "Centre hospitalier Exemple",
+    "crm_address": "5 boulevard Pasteur",
+    "crm_postcode": "33000",
+    "extracted_text": "Fiche établissement Centre hospitalier Exemple. SIRET 21770445100210. Adresse 5 boulevard Pasteur 31000 Toulouse.",
+    "expected_family": "INADMISSIBLE_AFTER_OPEN",
+    "facts_eligible": false
+  },
+  {
+    "case_id": "dated_document_positive",
+    "preopen_family": "DATED_PUBLIC_DOCUMENT_CANDIDATE",
+    "normalized_hostname": "www.exemple.fr",
+    "crm_name": "Société Exemple",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "extracted_text": "Société Exemple — document publié le 31/07/2026. SIRET 55210055400013. Siège : 24 avenue Victor Hugo 69002 Lyon.",
+    "expected_family": "DATED_PUBLIC_DOCUMENT",
+    "facts_eligible": true
+  },
+  {
+    "case_id": "dated_document_without_date_negative",
+    "preopen_family": "DATED_PUBLIC_DOCUMENT_CANDIDATE",
+    "normalized_hostname": "www.exemple.fr",
+    "crm_name": "Société Exemple",
+    "crm_address": "24 avenue Victor Hugo",
+    "crm_postcode": "69002",
+    "extracted_text": "Société Exemple. SIRET 55210055400013. Siège : 24 avenue Victor Hugo 69002 Lyon.",
+    "expected_family": "INADMISSIBLE_AFTER_OPEN",
+    "facts_eligible": false
+  }
+]
