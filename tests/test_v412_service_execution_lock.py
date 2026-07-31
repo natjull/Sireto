@@ -32,6 +32,23 @@ def _valid_lock() -> dict:
     }
 
 
+def test_runtime_identity_uses_no_subprocess(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def deny(*args, **kwargs):
+        raise AssertionError("runtime identity must not spawn a process")
+
+    monkeypatch.setattr(lock_module.subprocess, "Popen", deny)
+    observed = lock_module.runtime_identity()
+
+    uname = lock_module.os.uname()
+    assert observed["platform"] == (
+        f"{lock_module.sys.platform}:{uname.sysname}:"
+        f"{uname.release}:{uname.machine}"
+    )
+    assert observed["machine"] == uname.machine
+
+
 def test_execution_lock_requires_external_hash_and_stable_regular_file(
     monkeypatch,
     tmp_path: Path,

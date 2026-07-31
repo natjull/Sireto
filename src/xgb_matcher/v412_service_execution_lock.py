@@ -7,7 +7,6 @@ import importlib.metadata
 import json
 import os
 from pathlib import Path
-import platform
 import re
 import subprocess
 import sys
@@ -83,10 +82,14 @@ def _fail(detail: str) -> None:
 
 
 def runtime_identity() -> dict[str, str]:
+    uname = os.uname()
     return {
-        "python": platform.python_version(),
-        "platform": platform.platform(),
-        "machine": platform.machine(),
+        "python": ".".join(str(part) for part in sys.version_info[:3]),
+        "platform": (
+            f"{sys.platform}:{uname.sysname}:"
+            f"{uname.release}:{uname.machine}"
+        ),
+        "machine": uname.machine,
         "numpy": importlib.metadata.version("numpy"),
         "pandas": importlib.metadata.version("pandas"),
         "pyarrow": importlib.metadata.version("pyarrow"),
