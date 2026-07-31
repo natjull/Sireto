@@ -13,6 +13,7 @@ from .v412_service_bundle import (
     validate_frozen_v412_service_bundle,
 )
 from .v412_service_retrieval import RetrievalFeatureResult
+from .v412_unit_retrieval import UnitRetrievalError
 
 
 WorkerMode = Literal["v411", "v412g"]
@@ -76,11 +77,17 @@ class PersistentV412Worker:
         self.query_count = 0
         self.lookup_missing_count = 0
         self.maximum_candidate_count = 0
+        self.route_sealed_key_miss_count = 0
 
     def process(self, query: Mapping[str, Any]) -> WorkerResult:
         validate_frozen_v412_service_bundle(self.bundle)
         wall_started = time.perf_counter_ns()
-        retrieval = self.bundle.retrieval.build(query)
+        try:
+            retrieval = self.bundle.retrieval.build(query)
+        except UnitRetrievalError as exc:
+            if "no frozen partition for query" in str(exc):
+                self.route_sealed_key_miss_count += 1
+            raise
         self.lookup_missing_count += retrieval.lookup_missing_count
         self.maximum_candidate_count = max(
             self.maximum_candidate_count,
@@ -141,7 +148,8 @@ class PersistentV412Worker:
     def counters(self) -> dict[str, int | bool]:
         evidence = self.bundle.evidence
         sealed_misses = (
-            self.bundle.partition_store.sealed_key_miss_count
+            self.route_sealed_key_miss_count
+            + self.bundle.partition_store.sealed_key_miss_count
             + self.bundle.tfidf_cache.sealed_key_miss_count
         )
         return {
@@ -177,6 +185,7 @@ class PersistentV412Worker:
         self.query_count = 0
         self.lookup_missing_count = 0
         self.maximum_candidate_count = 0
+        self.route_sealed_key_miss_count = 0
         self.bundle.partition_store.sealed_key_miss_count = 0
         self.bundle.tfidf_cache.sealed_key_miss_count = 0
         self.bundle.tfidf_cache.cache_rebuild_count = 0

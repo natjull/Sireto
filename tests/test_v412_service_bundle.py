@@ -9,6 +9,7 @@ import pandas as pd
 import pytest
 
 from src.xgb_matcher.v411_scene import V411_ACCEPTOR_FEATURE_NAMES
+from src.xgb_matcher import v412_service_bundle as bundle_module
 from src.xgb_matcher.v412_service_bundle import (
     _capture_bundle_files,
     _capture_exact,
@@ -77,6 +78,33 @@ def test_runtime_and_bundle_attestation_are_fail_closed() -> None:
         _validate_runtime(certification, ranker)
     with pytest.raises(ValueError, match="unattested"):
         validate_frozen_v412_service_bundle(object())
+
+
+def test_capture_rejects_an_imported_source_from_another_path(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    replacement = tmp_path / "v411_acceptor.py"
+    replacement.write_text("# not the executed frozen source\n")
+    monkeypatch.setattr(
+        bundle_module._v411_acceptor,
+        "__file__",
+        str(replacement),
+    )
+    with pytest.raises(ValueError, match="executed source path changed"):
+        _capture_bundle_files()
+
+
+def test_nested_bundle_state_and_acceptor_classes_are_fail_closed() -> None:
+    with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
+        bundle.downstream.acceptor.steps[-1][1].coef_[0, 0] += 1.0
+        with pytest.raises(ValueError, match="mutated service bundle"):
+            validate_frozen_v412_service_bundle(bundle)
+
+    with load_frozen_v412_service_bundle(include_evidence=False) as bundle:
+        bundle.downstream.acceptor.classes_[0] = 7
+        with pytest.raises(ValueError, match="mutated service bundle"):
+            validate_frozen_v412_service_bundle(bundle)
 
 
 def test_real_frozen_bundle_reproduces_all_downstream_stages() -> None:

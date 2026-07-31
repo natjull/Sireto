@@ -10,13 +10,18 @@ import json
 import os
 from pathlib import Path
 import platform
+import pickle
 import stat
+from types import MappingProxyType
 from typing import Any, Mapping
 
 import joblib
+import numpy as np
 import xgboost as xgb
 
-from . import v411_acceptor as _v411_acceptor  # noqa: F401
+from . import v411_acceptor as _v411_acceptor
+from . import v411_scene as _v411_scene
+from . import v49_site_function as _v49_site_function
 from .v411_scene import V411_ACCEPTOR_FEATURE_NAMES
 from .v49_site_function import SiteFunctionTaxonomy
 from .v412_evidence_service import V412DirectEvidenceService
@@ -219,6 +224,17 @@ def _json_object(payload: bytes, label: str) -> dict[str, Any]:
 
 
 def _capture_bundle_files() -> dict[str, bytes]:
+    imported_sources = {
+        "acceptor_source": Path(_v411_acceptor.__file__).resolve(),
+        "scene_source": Path(_v411_scene.__file__).resolve(),
+        "site_function_source": Path(_v49_site_function.__file__).resolve(),
+    }
+    for role, imported_path in imported_sources.items():
+        expected_path = EXPECTED_FILES[role][0].resolve()
+        if imported_path != expected_path:
+            _fail(
+                f"executed source path changed: {role}: {imported_path}"
+            )
     return {
         role: _capture_exact(path, digest)
         for role, (path, digest) in EXPECTED_FILES.items()
@@ -473,8 +489,10 @@ class FrozenV412ServiceBundle:
     retrieval: V412RetrievalFeatureService
     downstream: V412DownstreamService
     evidence: V412DirectEvidenceService | None
-    asset_hashes: dict[str, str]
+    asset_hashes: Mapping[str, str]
     _attestation: object
+    _component_identity: tuple[int, ...]
+    _state_identity: tuple[str, ...]
     _closed: bool = False
 
     def close(self) -> None:
@@ -491,16 +509,82 @@ class FrozenV412ServiceBundle:
         self.close()
 
 
+def _bundle_state_identity(
+    bundle: FrozenV412ServiceBundle,
+) -> tuple[str, ...]:
+    try:
+        ranker_raw = bytes(bundle.downstream.ranker.get_booster().save_raw())
+        acceptor_raw = pickle.dumps(
+            bundle.downstream.acceptor,
+            protocol=5,
+        )
+        taxonomy_raw = pickle.dumps(
+            bundle.downstream.taxonomy,
+            protocol=5,
+        )
+    except Exception as exc:
+        _fail(f"cannot fingerprint service model state: {exc}")
+    return (
+        hashlib.sha256(ranker_raw).hexdigest(),
+        hashlib.sha256(acceptor_raw).hexdigest(),
+        hashlib.sha256(taxonomy_raw).hexdigest(),
+        repr(bundle.downstream.threshold),
+        json.dumps(list(bundle.downstream.ranker_feature_order)),
+    )
+
+
 def validate_frozen_v412_service_bundle(
     bundle: FrozenV412ServiceBundle,
 ) -> None:
+    if type(bundle) is not FrozenV412ServiceBundle:
+        _fail("unattested or mutated service bundle")
+    observed_identity = (
+        id(bundle.partition_store),
+        id(bundle.partition_store._inner),
+        id(bundle.tfidf_cache),
+        id(bundle.tfidf_cache._inner),
+        id(bundle.lookup),
+        id(bundle.retrieval),
+        id(bundle.retrieval.retriever),
+        id(bundle.retrieval.feature_builder),
+        id(bundle.retrieval.idf_builder),
+        id(bundle.downstream),
+        id(bundle.downstream.ranker),
+        id(bundle.downstream.acceptor),
+        id(bundle.downstream.taxonomy),
+        id(bundle.downstream.scene_builder),
+        id(bundle.downstream._trace_origin_token),
+        id(bundle.downstream._trace_secret),
+        id(bundle.evidence),
+        id(bundle.evidence.route) if bundle.evidence is not None else 0,
+        (
+            id(bundle.evidence.load_partition)
+            if bundle.evidence is not None
+            else 0
+        ),
+        id(bundle.evidence.build_index) if bundle.evidence is not None else 0,
+        id(bundle.evidence.search) if bundle.evidence is not None else 0,
+    )
+    expected_hashes = {
+        role: digest for role, (_path, digest) in EXPECTED_FILES.items()
+    }
+    acceptor_classes = np.asarray(
+        getattr(bundle.downstream.acceptor, "classes_", []),
+    )
     if (
-        type(bundle) is not FrozenV412ServiceBundle
-        or bundle._attestation is not _BUNDLE_ATTESTATION
+        bundle._attestation is not _BUNDLE_ATTESTATION
         or bundle._closed
         or bundle.retrieval.partition_store is not bundle.partition_store
         or bundle.retrieval.tfidf_cache is not bundle.tfidf_cache
         or bundle.retrieval.lookup is not bundle.lookup
+        or bundle._component_identity != observed_identity
+        or bundle._state_identity != _bundle_state_identity(bundle)
+        or dict(bundle.asset_hashes) != expected_hashes
+        or bundle.downstream.ranker_feature_order
+        != RANKER_C_FEATURE_ORDER
+        or bundle.downstream.threshold != FIXED_THRESHOLD
+        or acceptor_classes.shape != (2,)
+        or not np.array_equal(acceptor_classes, np.asarray([0, 1]))
         or (
             bundle.evidence is not None
             and bundle.evidence.partition_store is not bundle.partition_store
@@ -583,11 +667,55 @@ def load_frozen_v412_service_bundle(
             retrieval=retrieval,
             downstream=downstream,
             evidence=evidence,
-            asset_hashes={
-                role: hashlib.sha256(payload).hexdigest()
-                for role, payload in payloads.items()
-            },
+            asset_hashes=MappingProxyType(
+                {
+                    role: hashlib.sha256(payload).hexdigest()
+                    for role, payload in payloads.items()
+                }
+            ),
             _attestation=_BUNDLE_ATTESTATION,
+            _component_identity=(),
+            _state_identity=(),
+        )
+        object.__setattr__(
+            bundle,
+            "_component_identity",
+            (
+                id(bundle.partition_store),
+                id(bundle.partition_store._inner),
+                id(bundle.tfidf_cache),
+                id(bundle.tfidf_cache._inner),
+                id(bundle.lookup),
+                id(bundle.retrieval),
+                id(bundle.retrieval.retriever),
+                id(bundle.retrieval.feature_builder),
+                id(bundle.retrieval.idf_builder),
+                id(bundle.downstream),
+                id(bundle.downstream.ranker),
+                id(bundle.downstream.acceptor),
+                id(bundle.downstream.taxonomy),
+                id(bundle.downstream.scene_builder),
+                id(bundle.downstream._trace_origin_token),
+                id(bundle.downstream._trace_secret),
+                id(bundle.evidence),
+                id(bundle.evidence.route) if bundle.evidence is not None else 0,
+                (
+                    id(bundle.evidence.load_partition)
+                    if bundle.evidence is not None
+                    else 0
+                ),
+                (
+                    id(bundle.evidence.build_index)
+                    if bundle.evidence is not None
+                    else 0
+                ),
+                id(bundle.evidence.search) if bundle.evidence is not None else 0,
+            ),
+        )
+        object.__setattr__(
+            bundle,
+            "_state_identity",
+            _bundle_state_identity(bundle),
         )
         validate_frozen_v412_service_bundle(bundle)
         return bundle

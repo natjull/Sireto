@@ -23,6 +23,7 @@ from src.xgb_matcher.v412_service_retrieval import (
     RetrievalFeatureTimings,
 )
 from src.xgb_matcher.v412_service_worker import PersistentV412Worker
+from src.xgb_matcher.v412_unit_retrieval import UnitRetrievalError
 from src.xgb_matcher import v412_service_worker as worker_module
 
 
@@ -200,3 +201,24 @@ def test_worker_mode_and_bundle_shape_are_fail_closed() -> None:
         PersistentV412Worker(bundle=_bundle(evidence=_Evidence()), mode="v411")
     with pytest.raises(ValueError, match="evidence service absent"):
         PersistentV412Worker(bundle=_bundle(evidence=None), mode="v412g")
+
+
+def test_worker_counts_a_route_outside_the_sealed_keyset() -> None:
+    bundle = _bundle(evidence=None)
+
+    class MissingRoute:
+        def build(self, query):
+            raise UnitRetrievalError(
+                "STOP_V412_UNIT_RETRIEVAL: no frozen partition for query"
+            )
+
+    bundle.retrieval = MissingRoute()
+    worker = PersistentV412Worker(bundle=bundle, mode="v411")
+
+    with pytest.raises(UnitRetrievalError, match="no frozen partition"):
+        worker.process({"query_id": "outside"})
+
+    assert worker.counters()["sealed_key_miss_count"] == 1
+    assert worker.counters()["query_count"] == 0
+    worker.reset_counters()
+    assert worker.counters()["sealed_key_miss_count"] == 0

@@ -8,11 +8,14 @@ V4.12-G veto.  It performs no file, network, model-training or label I/O.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 import hashlib
+import hmac
 import json
 import math
+import os
 import re
+import struct
 import time
 from typing import Any, Callable, Mapping, Sequence
 
@@ -135,7 +138,7 @@ class ServiceTrace:
     timings: ServiceTimings
 
 
-@dataclass
+@dataclass(frozen=True)
 class V411Trace:
     query_id: str
     predicted_siret: str | None
@@ -150,6 +153,11 @@ class V411Trace:
     scene_acceptor_ns: int
     _origin_token: object | None = field(
         default=None,
+        repr=False,
+        compare=False,
+    )
+    _integrity_tag: bytes = field(
+        default=b"",
         repr=False,
         compare=False,
     )
@@ -281,6 +289,7 @@ class V412DownstreamService:
         self.threshold = threshold
         self.scene_builder = scene_builder
         self._trace_origin_token = object()
+        self._trace_secret = os.urandom(32)
 
     def rank_and_accept_one(
         self,
@@ -395,7 +404,7 @@ class V412DownstreamService:
         scene_acceptor_ns = time.perf_counter_ns() - scene_started
         if not math.isfinite(acceptor_score):
             raise AssertionError("non-finite score escaped validation")
-        return V411Trace(
+        trace = V411Trace(
             query_id=query_id,
             predicted_siret=predicted_siret,
             predicted_siren=predicted_siren,
@@ -409,11 +418,88 @@ class V412DownstreamService:
             scene_acceptor_ns=scene_acceptor_ns,
             _origin_token=self._trace_origin_token,
         )
+        return replace(
+            trace,
+            _integrity_tag=self._sign_v411_trace(trace),
+        )
+
+    @staticmethod
+    def _trace_text(value: str | None) -> bytes:
+        payload = (value or "").encode("utf-8")
+        return len(payload).to_bytes(4, "big") + payload
+
+    def _sign_v411_trace(self, trace: V411Trace) -> bytes:
+        digest = hmac.new(self._trace_secret, digestmod=hashlib.sha256)
+        for value in (
+            trace.query_id,
+            trace.predicted_siret,
+            trace.predicted_siren,
+            trace.decision_v411,
+            trace.review_reason_v411,
+        ):
+            digest.update(self._trace_text(value))
+        digest.update(
+            struct.pack(
+                ">ddqq",
+                trace.acceptor_score,
+                trace.threshold,
+                trace.ranker_ns,
+                trace.scene_acceptor_ns,
+            )
+        )
+        scored = trace.scored_candidates
+        for column in (
+            "candidate_siret",
+            "candidate_siren",
+        ):
+            if column not in scored.columns:
+                digest.update(b"MISSING")
+            else:
+                for value in scored[column].astype(str):
+                    digest.update(self._trace_text(value))
+        for column in ("retrieval_rank", "ranker_rank"):
+            if column not in scored.columns:
+                digest.update(b"MISSING")
+            else:
+                digest.update(
+                    scored[column].to_numpy(dtype=np.int64).tobytes()
+                )
+        if "ranker_score" not in scored.columns:
+            digest.update(b"MISSING")
+        else:
+            digest.update(
+                scored["ranker_score"].to_numpy(dtype=np.float32).tobytes()
+            )
+        if set(RANKER_C_FEATURE_ORDER).issubset(scored.columns):
+            digest.update(
+                scored[list(RANKER_C_FEATURE_ORDER)]
+                .to_numpy(dtype=np.float32)
+                .tobytes()
+            )
+        else:
+            digest.update(b"MISSING_FEATURES")
+        for name in V411_ACCEPTOR_FEATURE_NAMES:
+            value = trace.scene.get(name)
+            try:
+                digest.update(struct.pack(">d", float(value)))
+            except (TypeError, ValueError):
+                digest.update(b"INVALID")
+        digest.update(
+            self._trace_text(trace.scene.get("predicted_siret"))
+        )
+        digest.update(
+            self._trace_text(trace.scene.get("predicted_siren"))
+        )
+        return digest.digest()
 
     def _validate_v411_trace(self, trace: V411Trace) -> None:
         if (
             not isinstance(trace, V411Trace)
             or trace._origin_token is not self._trace_origin_token
+            or not hmac.compare_digest(
+                trace._integrity_tag,
+                self._sign_v411_trace(trace),
+            )
             or trace.threshold != self.threshold
             or not math.isfinite(trace.acceptor_score)
             or not 0.0 <= trace.acceptor_score <= 1.0

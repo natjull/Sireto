@@ -141,7 +141,7 @@ def test_guard_rejects_forged_or_mutated_v411_trace() -> None:
             trace=replace(trace, acceptor_score=-99.0),
             direct_evidence=_evidence(0, None),
         )
-    with pytest.raises(ValueError, match="trace decision"):
+    with pytest.raises(ValueError, match="trace provenance"):
         engine.apply_guard_to_trace(
             trace=replace(
                 trace,
