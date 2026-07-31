@@ -1,4 +1,4 @@
-# SIRETO Handover - 30 Juillet 2026
+# SIRETO Handover - 31 Juillet 2026
 
 ## Etat des lieux
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
@@ -161,6 +161,20 @@ Data Protection, UID, device et UUID concordent. L'autorisation, le root et le
 claim restent absents. Le prochain geste autorisé est uniquement le pré-vol
 du locator Keychain en lecture seule, avec receipt non secret ; aucun add ni
 provisionnement.
+
+Le pré-vol Keychain est désormais préenregistré, mais **n'a pas été
+exécuté**. Sa requête fermée contient exactement les sept clés de localisation
+du generic password, sans `kSecReturnData`, `kSecReturnAttributes` ni buffer
+de sortie. Son seul succès possible est `errSecItemNotFound` (`-25300`) et son
+receipt canonique ne peut contenir que six champs non secrets. Le plan est
+cross-pinné au lock matériel et au contrat ; ses 3 tests ciblés passent. La
+suite d'état post-lock donne `1217 passed, 3 deselected` : les trois exclusions
+sont les assertions historiques de phase pré-scellage qui exigent
+explicitement l'absence du lock désormais committé. Avant toute lecture réelle,
+il faut encore implémenter le pré-vol avec frameworks factices et obtenir deux
+audits indépendants de cette implémentation. Autorisation, root, claim, item
+Keychain et receipt réel restent absents.
+*(commit GitHub : préenregistrement du pré-vol `a833e33`)*.
 
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
