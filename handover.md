@@ -48,6 +48,20 @@ synthétiques ; Gate 0A, Gate 0B, retrieval dev et modèles réels restent
 interdits.
 *(commit GitHub : lock double-GO V4.13 `19986f0`)*
 
+La première tranche d'implémentation V4.13 est terminée sur fixtures
+synthétiques uniquement. L'auditeur Gate 0A valide le lock, observe seulement
+les manifests, prouve par tests instrumentés qu'il n'ouvre aucun payload,
+sélectionne déterministement et écrit ledger/claim `O_EXCL`. Le builder
+qualifie toutes les lignes, sépare queries/oracle, conserve un pont privé des
+SIREN pour le split et refuse les autorités non test. Le validateur détecte
+les fuites Unicode de 9/14 chiffres et les incohérences oracle. Le sealer
+union-find applique exactement la fonction de split gelée et écrit trois
+manifests séparés. Un test intégré relie qualification, validation et split.
+La suite V4.13 donne 73 tests verts ; aucune inbox réelle, SSD de production,
+Keychain, retrieval ou modèle n'a été ouvert.
+*(commits GitHub : split `3f862f1`, validation `2b27df2`, disponibilité
+`cb6d7ff`, qualification intégrée `6936174`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
