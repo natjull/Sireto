@@ -1,6 +1,28 @@
 # SIRETO Handover - 31 Juillet 2026
 
 ## Etat des lieux
+
+### Direction active V4.13 — labels réellement frais, sans nouvelle PKI
+
+Le provisioner S1/V1 a échoué proprement sur le Mac réel avec
+`errSecMissingEntitlement`; ses artefacts incomplets restent gelés et cette
+piste n'est plus le chemin critique de la North Star. L'analyse du dépôt et du
+SSD confirme que les 23 609 lignes locales sont toutes consommées et
+qu'aucune nouvelle collection CRM avec mapping SIRET indépendant n'est
+présente.
+
+Le préenregistrement minimal V4.13 a été réécrit après deux audits `NO_GO`.
+Il ferme désormais la sélection déterministe manifest-only de la première
+collection, sépare Gate 0A et ouverture payload 0B, autorise seulement la
+lecture HMAC historique nécessaire aux quatre keysets anti-chevauchement,
+définit les schémas CRM/preuves/queries/oracle, la fonction de split exacte,
+les folds OOF, le volume AUTO minimal, le protocole test one-shot et le verdict
+terminal `GO|PIVOT|STOP`. Onze tests dédiés passent. Aucun payload frais,
+retrieval ou modèle n'a été ouvert ou exécuté. Le commit doit maintenant
+obtenir deux audits indépendants `GO_V413_PREREGISTRATION` avant toute
+implémentation.
+*(commit GitHub : préenregistrement exécutable corrigé `574746f`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
