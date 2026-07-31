@@ -60,7 +60,9 @@ def _json_dump(path: Path, payload: dict[str, Any]) -> None:
 
 
 def load_hard_labels(
-    r30_path: Path, r53_path: Path
+    r30_path: Path,
+    r53_path: Path,
+    corrected_overlay_path: Path | None = None,
 ) -> tuple[pd.DataFrame, set[str], dict[str, int]]:
     r30 = pd.read_csv(r30_path, dtype=str).fillna("")
     r30_exact = r30[r30["ranking_label_usable"].eq("true")][
@@ -78,26 +80,46 @@ def load_hard_labels(
     if len(r53_exact) != EXPECTED_R53_EXACT or r53_ambiguous != EXPECTED_R53_AMBIGUOUS:
         raise ValueError("R53 labels differ from the adjudicated milestone")
 
-    labels = pd.concat([r30_exact, r53_exact], ignore_index=True)
-    if len(labels) != EXPECTED_HARD_EXACT or labels["query_id"].duplicated().any():
-        raise ValueError("Hard labels must contain 77 unique exact queries")
-    labels["ground_truth_siret"] = labels["ground_truth_siret"].astype(str)
-    if not labels["ground_truth_siret"].str.fullmatch(r"\d{14}").all():
-        raise ValueError("Every hard exact label must be a 14-digit SIRET")
-    labels["ground_truth_siren"] = labels["ground_truth_siret"].str[:9]
-    if labels["ground_truth_siren"].duplicated().any():
-        raise ValueError("Hard exact labels unexpectedly share a SIREN")
-    all_adjudicated_ids = set(r30["query_id"].astype(str)) | set(
-        r53["query_id"].astype(str)
-    )
-    if len(all_adjudicated_ids) != 83:
-        raise ValueError("Expected 83 distinct adjudicated REVIEW queries")
-    return labels, all_adjudicated_ids, {
+    exact_parts = [r30_exact, r53_exact]
+    all_id_parts = [r30["query_id"].astype(str), r53["query_id"].astype(str)]
+    counts = {
         "r30_exact": len(r30_exact),
         "r30_ambiguous": r30_ambiguous,
         "r53_exact": len(r53_exact),
         "r53_ambiguous": r53_ambiguous,
     }
+    expected_exact = EXPECTED_HARD_EXACT
+    expected_all = 83
+    if corrected_overlay_path is not None:
+        corrected = pd.read_csv(corrected_overlay_path, dtype=str).fillna("")
+        corrected_counts = corrected["label_kind"].value_counts().to_dict()
+        if len(corrected) != 60 or corrected_counts != {
+            "MATCH_EXACT": 56,
+            "AMBIGUOUS": 4,
+        }:
+            raise ValueError("Corrected REVIEW overlay must contain 56 exact and 4 ambiguous labels")
+        corrected_exact = corrected[corrected["label_kind"].eq("MATCH_EXACT")][
+            ["query_id", "ground_truth_siret"]
+        ]
+        exact_parts.append(corrected_exact)
+        all_id_parts.append(corrected["query_id"].astype(str))
+        counts.update({"corrected_exact": 56, "corrected_ambiguous": 4})
+        expected_exact += 56
+        expected_all += 60
+
+    labels = pd.concat(exact_parts, ignore_index=True)
+    if len(labels) != expected_exact or labels["query_id"].duplicated().any():
+        raise ValueError(f"Hard labels must contain {expected_exact} unique exact queries")
+    labels["ground_truth_siret"] = labels["ground_truth_siret"].astype(str)
+    if not labels["ground_truth_siret"].str.fullmatch(r"\d{14}").all():
+        raise ValueError("Every hard exact label must be a 14-digit SIRET")
+    labels["ground_truth_siren"] = labels["ground_truth_siret"].str[:9]
+    if corrected_overlay_path is None and labels["ground_truth_siren"].duplicated().any():
+        raise ValueError("Hard exact labels unexpectedly share a SIREN")
+    all_adjudicated_ids = set(pd.concat(all_id_parts, ignore_index=True))
+    if len(all_adjudicated_ids) != expected_all:
+        raise ValueError(f"Expected {expected_all} distinct adjudicated REVIEW queries")
+    return labels, all_adjudicated_ids, counts
 
 
 def fit_weighted_ranker(
@@ -177,8 +199,9 @@ def run(args: argparse.Namespace) -> Path:
     dataset = args.dataset.resolve()
     reference = args.reference.resolve()
     hard_labels, all_adjudicated_ids, label_counts = load_hard_labels(
-        args.r30_labels, args.r53_labels
+        args.r30_labels, args.r53_labels, args.corrected_overlay
     )
+    expected_hard_exact = len(hard_labels)
 
     assignments = pd.read_parquet(dataset / "split_assignments.parquet")
     labels = pd.read_parquet(dataset / "labels.parquet")
@@ -193,7 +216,7 @@ def run(args: argparse.Namespace) -> Path:
         how="left",
         validate="one_to_one",
     )
-    if hard_assignments["split"].value_counts().to_dict() != {"dev": EXPECTED_HARD_EXACT}:
+    if hard_assignments["split"].value_counts().to_dict() != {"dev": expected_hard_exact}:
         raise ValueError("Every hard label must belong to the consumed V4.11 dev split")
     hard_assignments["oof_fold"] = hard_assignments["oof_fold"].astype(int)
 
@@ -252,8 +275,8 @@ def run(args: argparse.Namespace) -> Path:
             "held_out_query_count": int(held_out["query_id"].nunique()),
         }
     oof_predictions = pd.concat(oof_parts, ignore_index=True)
-    if oof_predictions["query_id"].nunique() != EXPECTED_HARD_EXACT:
-        raise ValueError("OOF predictions do not cover all 77 hard queries")
+    if oof_predictions["query_id"].nunique() != expected_hard_exact:
+        raise ValueError(f"OOF predictions do not cover all {expected_hard_exact} hard queries")
 
     hard_truth = hard_assignments[
         ["query_id", "ground_truth_siret", "ground_truth_siren", "oof_fold"]
@@ -342,6 +365,11 @@ def run(args: argparse.Namespace) -> Path:
             "reference": str(reference),
             "r30_labels_sha256": _sha256(args.r30_labels),
             "r53_labels_sha256": _sha256(args.r53_labels),
+            "corrected_overlay_sha256": (
+                _sha256(args.corrected_overlay)
+                if args.corrected_overlay is not None
+                else None
+            ),
             "label_counts": label_counts,
             "all_adjudicated_query_count": len(all_adjudicated_ids),
         },
@@ -383,6 +411,7 @@ def run(args: argparse.Namespace) -> Path:
                 "dataset": result["inputs"]["dataset_manifest_sha256"],
                 "r30": result["inputs"]["r30_labels_sha256"],
                 "r53": result["inputs"]["r53_labels_sha256"],
+                "corrected_overlay": result["inputs"]["corrected_overlay_sha256"],
                 "params": RANKER_PARAMS,
                 "hard_weight": args.hard_weight,
             },
@@ -426,6 +455,7 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         default=Path("reports/v412_review_rerank_counteraudit_53.csv"),
     )
+    parser.add_argument("--corrected-overlay", type=Path)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     parser.add_argument("--hard-weight", type=float, default=1.0)
     return parser.parse_args()

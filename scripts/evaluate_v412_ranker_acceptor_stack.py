@@ -84,13 +84,23 @@ def _rank(model: xgb.XGBRanker, rows: pd.DataFrame, origin: str) -> pd.DataFrame
 def _load_adjudications(
     r30_path: Path,
     r53_path: Path,
+    corrected_overlay_path: Path | None = None,
 ) -> tuple[pd.DataFrame, set[str]]:
-    exact, all_ids, _ = load_hard_labels(r30_path, r53_path)
+    exact, all_ids, _ = load_hard_labels(
+        r30_path, r53_path, corrected_overlay_path
+    )
     r30 = pd.read_csv(r30_path, dtype=str).fillna("")
     r53 = pd.read_csv(r53_path, dtype=str).fillna("")
     ambiguous_ids = set(r30.loc[r30["label"].eq("AMBIGUOUS"), "query_id"]) | set(
         r53.loc[r53["label"].eq("AMBIGUOUS"), "query_id"]
     )
+    if corrected_overlay_path is not None:
+        corrected = pd.read_csv(corrected_overlay_path, dtype=str).fillna("")
+        ambiguous_ids |= set(
+            corrected.loc[
+                corrected["label_kind"].eq("AMBIGUOUS"), "query_id"
+            ].astype(str)
+        )
     rows = exact.assign(label_kind="MATCH_EXACT")
     ambiguous = pd.DataFrame(
         {
@@ -101,8 +111,8 @@ def _load_adjudications(
         }
     )
     output = pd.concat([rows, ambiguous], ignore_index=True)
-    if len(output) != 83 or set(output["query_id"]) != all_ids:
-        raise ValueError("Expected 77 exact and six ambiguous hard adjudications")
+    if len(output) != len(all_ids) or set(output["query_id"]) != all_ids:
+        raise ValueError("Hard adjudication labels do not cover the expected population")
     return output, all_ids
 
 
@@ -172,7 +182,9 @@ def run(args: argparse.Namespace) -> Path:
     for frame in (queries, audit, labels, assignments, candidates):
         frame["query_id"] = frame["query_id"].astype(str)
 
-    hard, hard_ids = _load_adjudications(args.r30_labels, args.r53_labels)
+    hard, hard_ids = _load_adjudications(
+        args.r30_labels, args.r53_labels, args.corrected_overlay
+    )
     independent = _load_independent(args.independent_labels)
     independent_ids = set(independent["query_id"])
     if hard_ids & independent_ids:
@@ -290,7 +302,8 @@ def run(args: argparse.Namespace) -> Path:
     threshold = development[development["dev_partition"].eq("threshold_dev")].copy()
     comparison = development[development["dev_partition"].eq("comparison_dev")].copy()
     independent_scene = scenes[scenes["query_id"].isin(independent_ids)].copy()
-    if len(independent_scene) != 7 or len(fit_scene) != 5630:
+    expected_fit_scenes = 5547 + len(hard_ids)
+    if len(independent_scene) != 7 or len(fit_scene) != expected_fit_scenes:
         raise ValueError("Acceptor populations changed unexpectedly")
 
     variants: list[dict[str, Any]] = []
@@ -381,7 +394,10 @@ def run(args: argparse.Namespace) -> Path:
             "joint_oof_query_count": int(
                 fit_population["query_id"].nunique() + len(hard_ids)
             ),
-            "hard_retrieval_miss_count": 83 - len(eligible_hard_ids) - 6,
+            "hard_retrieval_miss_count": int(
+                hard["label_kind"].eq("MATCH_EXACT").sum()
+                - len(eligible_hard_ids)
+            ),
             "full_model_sha256": _sha256(args.ranker_model),
         },
         "populations": {
@@ -394,12 +410,16 @@ def run(args: argparse.Namespace) -> Path:
         "selected_family": None if winner is None else winner["family"],
         "independent_metrics": final_metrics,
         "verdict": (
-            "GO_EXPAND_INDEPENDENT_ACCEPTOR_VALIDATION"
-            if final_metrics is not None
-            and final_metrics["auto_count"] > 0
-            and final_metrics["error_auto"] == 0
-            and final_metrics["ambiguous_auto"] == 0
-            else "PIVOT_ACCEPTOR_COVERAGE"
+            "SCENES_READY_FOR_CORRECTED_ACCEPTOR_OOF"
+            if args.corrected_overlay is not None
+            else (
+                "GO_EXPAND_INDEPENDENT_ACCEPTOR_VALIDATION"
+                if final_metrics is not None
+                and final_metrics["auto_count"] > 0
+                and final_metrics["error_auto"] == 0
+                and final_metrics["ambiguous_auto"] == 0
+                else "PIVOT_ACCEPTOR_COVERAGE"
+            )
         ),
     }
     identity = hashlib.sha256(
@@ -411,6 +431,11 @@ def run(args: argparse.Namespace) -> Path:
                 "r30": _sha256(args.r30_labels),
                 "r53": _sha256(args.r53_labels),
                 "independent": _sha256(args.independent_labels),
+                "corrected_overlay": (
+                    _sha256(args.corrected_overlay)
+                    if args.corrected_overlay is not None
+                    else None
+                ),
             },
             sort_keys=True,
         ).encode()
@@ -434,6 +459,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--r30-labels", type=Path, default=Path("reports/v412_review_adjudication_labels.csv"))
     parser.add_argument("--r53-labels", type=Path, default=Path("reports/v412_review_rerank_counteraudit_53.csv"))
     parser.add_argument("--independent-labels", type=Path, default=Path("reports/v412_ranker_independent_validation_labels.csv"))
+    parser.add_argument("--corrected-overlay", type=Path)
     parser.add_argument("--taxonomy", type=Path, default=Path("config/v4_9_site_function_taxonomy.json"))
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     return parser.parse_args()

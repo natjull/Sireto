@@ -2,6 +2,38 @@
 
 ## Etat des lieux
 
+### V4.12 — ranker corrigé en progrès, accepteur toujours bloquant
+
+L'overlay des 60 REVIEW supplémentaires est scellé : 56 `MATCH_EXACT`, quatre
+`AMBIGUOUS`, 53 corrections de label, avec preuves et anciennes cibles
+conservées. Il porte à 133 exacts et dix ambiguïtés la population difficile
+adjudiquée utilisée en développement.
+
+Le ranker pondéré `0,5`, évalué hors échantillon sur les 133 exacts, passe de
+69 à **110 bons top 1** (82,71 %), corrige 43 dossiers et en régresse deux. Il
+reste à 1 175/1 175 sur le contrôle classique disjoint. Les deux vérités
+absentes du retrieval restent comptées comme erreurs.
+
+L'accepteur XGBoost monotone pondéré `10` est le seul candidat sûr sur les deux
+contrôles : 602/669 AUTO classiques sans erreur et 3/143 AUTO difficiles sans
+erreur. Cette couverture difficile de **2,10 %** est insuffisante et trois AUTO
+ne certifient rien. La régression logistique atteint 615/669 AUTO classiques
+sans erreur mais commet une erreur parmi trois AUTO difficiles hors
+échantillon. Verdict : `GO_NEW_INDEPENDENT_ACCEPTOR_DOCKET`, sans déploiement ni
+ouverture du test final.
+
+Artefacts :
+
+- ranker :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_corrected_label_ranker/9fea31939cff7fea` ;
+- scènes :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_corrected_label_stack/aae2ad5814ecfb5b` ;
+- accepteur :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_corrected_acceptor_family_weight/c88e443950d188cf`.
+
+*(commit Git : overlay `c140f55`; implémentation et rapport : commit du présent
+milestone)*
+
 ### V4.12 — 60 REVIEW supplémentaires adjudiqués et cause des faux labels établie
 
 Deux lots supplémentaires de 30 REVIEW historiques ont été traités sans

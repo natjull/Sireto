@@ -28,7 +28,9 @@ from scripts.run_v411_acceptor_development import (  # noqa: E402
     select_threshold,
 )
 from src.xgb_matcher.v411_acceptor import (  # noqa: E402
+    COMPACT_LOGIT,
     MONOTONIC_XGB,
+    V411_ACCEPTOR_FAMILIES,
     build_v411_acceptor,
 )
 from src.xgb_matcher.v411_scene import V411_ACCEPTOR_FEATURE_NAMES  # noqa: E402
@@ -58,15 +60,25 @@ def _scores(model: Any, frame: pd.DataFrame) -> np.ndarray:
     )
 
 
-def _fit(frame: pd.DataFrame, hard_ids: set[str], weight: float) -> Any:
-    model = build_v411_acceptor(MONOTONIC_XGB, EXPECTED_MODEL_CONFIGS[MONOTONIC_XGB])
+def _fit(
+    frame: pd.DataFrame,
+    hard_ids: set[str],
+    weight: float,
+    family: str = MONOTONIC_XGB,
+) -> Any:
+    model = build_v411_acceptor(family, EXPECTED_MODEL_CONFIGS[family])
     sample_weight = np.where(frame["query_id"].isin(hard_ids), weight, 1.0).astype(
         np.float32
+    )
+    fit_kwargs = (
+        {"model__sample_weight": sample_weight}
+        if family == COMPACT_LOGIT
+        else {"sample_weight": sample_weight}
     )
     model.fit(
         frame[V411_ACCEPTOR_FEATURE_NAMES].to_numpy(dtype=np.float64),
         frame["acceptor_target"].astype(int).to_numpy(),
-        sample_weight=sample_weight,
+        **fit_kwargs,
     )
     return model
 
@@ -77,10 +89,19 @@ def run(args: argparse.Namespace) -> Path:
     hard_ids = set(pd.read_csv(args.r30_labels, dtype=str)["query_id"]) | set(
         pd.read_csv(args.r53_labels, dtype=str)["query_id"]
     )
+    if args.corrected_overlay is not None:
+        hard_ids |= set(
+            pd.read_csv(args.corrected_overlay, dtype=str)["query_id"].astype(str)
+        )
     independent_ids = set(
         pd.read_csv(args.independent_labels, dtype=str)["query_id"]
     )
-    if len(hard_ids) != 83 or len(independent_ids) != 7 or hard_ids & independent_ids:
+    expected_hard_count = 143 if args.corrected_overlay is not None else 83
+    if (
+        len(hard_ids) != expected_hard_count
+        or len(independent_ids) != 7
+        or hard_ids & independent_ids
+    ):
         raise ValueError("Adjudicated populations changed")
 
     base_fit = scenes[scenes["split"].eq("fit")].copy()
@@ -93,92 +114,125 @@ def run(args: argparse.Namespace) -> Path:
     ].copy()
     threshold = development[development["dev_partition"].eq("threshold_dev")]
     comparison = development[development["dev_partition"].eq("comparison_dev")]
-    if (len(base_fit), len(hard), len(threshold), len(comparison)) != (
-        5547,
-        83,
-        665,
-        701,
+    expected_development = 1306 if args.corrected_overlay is not None else 1366
+    if (
+        len(base_fit) != 5547
+        or len(hard) != expected_hard_count
+        or len(threshold) + len(comparison) != expected_development
+        or threshold.empty
+        or comparison.empty
     ):
         raise ValueError("Hard-weight populations changed")
 
     variants: list[dict[str, Any]] = []
-    models: dict[float, Any] = {}
-    for weight in WEIGHTS:
-        model = _fit(fit, hard_ids, weight)
-        threshold_scores = _scores(model, threshold)
-        selected = select_threshold(
-            threshold_scores,
-            threshold["acceptor_target"].astype(int).to_numpy(),
-            threshold["label_kind"].astype(str).to_numpy(),
-        )
-        if selected is None:
-            variants.append({"hard_weight": weight, "eligible": False, "reason": "NO_THRESHOLD"})
-            continue
-        cutoff, threshold_metrics, _ = selected
-        comparison_metrics = decision_metrics(
-            _scores(model, comparison),
-            comparison["acceptor_target"].astype(int).to_numpy(),
-            comparison["label_kind"].astype(str).to_numpy(),
-            cutoff,
-        )
-
-        hard_parts: list[pd.DataFrame] = []
-        hard_scores: list[np.ndarray] = []
-        for fold in range(5):
-            train_hard = hard[hard["oof_fold"].astype(int).ne(fold)]
-            fold_fit = pd.concat([base_fit, train_hard], ignore_index=True)
-            fold_model = _fit(fold_fit, set(train_hard["query_id"]), weight)
-            held_out = hard[hard["oof_fold"].astype(int).eq(fold)]
-            hard_parts.append(held_out)
-            hard_scores.append(_scores(fold_model, held_out))
-        hard_oof = pd.concat(hard_parts, ignore_index=True)
-        hard_oof_scores = np.concatenate(hard_scores)
-        hard_metrics = decision_metrics(
-            hard_oof_scores,
-            hard_oof["acceptor_target"].astype(int).to_numpy(),
-            hard_oof["label_kind"].astype(str).to_numpy(),
-            cutoff,
-        )
-        comparison_safe = (
-            comparison_metrics["auto_count"] > 0
-            and 1000 * comparison_metrics["correct_auto"]
-            >= 998 * comparison_metrics["auto_count"]
-            and comparison_metrics["ambiguous_auto"] == 0
-        )
-        hard_safe_and_useful = (
-            hard_metrics["auto_count"] > 0
-            and hard_metrics["error_auto"] == 0
-            and hard_metrics["ambiguous_auto"] == 0
-        )
-        variants.append(
-            {
-                "hard_weight": weight,
-                "eligible": comparison_safe and hard_safe_and_useful,
-                "threshold": cutoff,
-                "threshold_metrics": threshold_metrics,
-                "comparison_metrics": comparison_metrics,
-                "hard_oof_metrics": hard_metrics,
-            }
-        )
-        models[weight] = model
-
-    # The experiment asks whether additional hard-scene weight improves the
-    # acceptor.  Weight 1 is therefore the comparator, not a candidate gain.
-    # A safe variant that accepts no more hard OOF scenes than weight 1 has not
-    # demonstrated any benefit from weighting and must not trigger a new
-    # independent adjudication docket.
-    baseline_hard_auto = next(
-        int(variant["hard_oof_metrics"]["auto_count"])
-        for variant in variants
-        if variant.get("hard_weight") == 1.0 and "hard_oof_metrics" in variant
+    models: dict[tuple[str, float], Any] = {}
+    families = (
+        V411_ACCEPTOR_FAMILIES
+        if args.corrected_overlay is not None
+        else (MONOTONIC_XGB,)
     )
-    eligible = [
-        variant
-        for variant in variants
-        if variant.get("eligible")
-        and float(variant["hard_weight"]) > 1.0
-        and int(variant["hard_oof_metrics"]["auto_count"]) > baseline_hard_auto
-    ]
+    for family in families:
+        for weight in WEIGHTS:
+            model = _fit(fit, hard_ids, weight, family)
+            threshold_scores = _scores(model, threshold)
+            selected = select_threshold(
+                threshold_scores,
+                threshold["acceptor_target"].astype(int).to_numpy(),
+                threshold["label_kind"].astype(str).to_numpy(),
+            )
+            if selected is None:
+                variants.append(
+                    {
+                        "family": family,
+                        "hard_weight": weight,
+                        "eligible": False,
+                        "reason": "NO_THRESHOLD",
+                    }
+                )
+                continue
+            cutoff, threshold_metrics, _ = selected
+            comparison_metrics = decision_metrics(
+                _scores(model, comparison),
+                comparison["acceptor_target"].astype(int).to_numpy(),
+                comparison["label_kind"].astype(str).to_numpy(),
+                cutoff,
+            )
+
+            hard_parts: list[pd.DataFrame] = []
+            hard_scores: list[np.ndarray] = []
+            for fold in range(5):
+                train_hard = hard[hard["oof_fold"].astype(int).ne(fold)]
+                fold_fit = pd.concat([base_fit, train_hard], ignore_index=True)
+                fold_model = _fit(
+                    fold_fit,
+                    set(train_hard["query_id"]),
+                    weight,
+                    family,
+                )
+                held_out = hard[hard["oof_fold"].astype(int).eq(fold)]
+                hard_parts.append(held_out)
+                hard_scores.append(_scores(fold_model, held_out))
+            hard_oof = pd.concat(hard_parts, ignore_index=True)
+            hard_oof_scores = np.concatenate(hard_scores)
+            hard_metrics = decision_metrics(
+                hard_oof_scores,
+                hard_oof["acceptor_target"].astype(int).to_numpy(),
+                hard_oof["label_kind"].astype(str).to_numpy(),
+                cutoff,
+            )
+            comparison_safe = (
+                comparison_metrics["auto_count"] > 0
+                and 1000 * comparison_metrics["correct_auto"]
+                >= 998 * comparison_metrics["auto_count"]
+                and comparison_metrics["ambiguous_auto"] == 0
+            )
+            hard_safe_and_useful = (
+                hard_metrics["auto_count"] > 0
+                and hard_metrics["error_auto"] == 0
+                and hard_metrics["ambiguous_auto"] == 0
+            )
+            variants.append(
+                {
+                    "family": family,
+                    "hard_weight": weight,
+                    "eligible": comparison_safe and hard_safe_and_useful,
+                    "threshold": cutoff,
+                    "threshold_metrics": threshold_metrics,
+                    "comparison_metrics": comparison_metrics,
+                    "hard_oof_metrics": hard_metrics,
+                }
+            )
+            models[(family, weight)] = model
+
+    # In the historical mode, weight 1 remains a comparator.  With the
+    # corrected overlay, both frozen model families and every weight are
+    # eligible because the question is now model selection on corrected data.
+    baseline_hard_auto = {
+        family: next(
+            int(variant["hard_oof_metrics"]["auto_count"])
+            for variant in variants
+            if variant.get("family") == family
+            and variant.get("hard_weight") == 1.0
+            and "hard_oof_metrics" in variant
+        )
+        for family in families
+    }
+    if args.corrected_overlay is not None:
+        eligible = [
+            variant
+            for variant in variants
+            if variant.get("eligible")
+            and int(variant["hard_oof_metrics"]["auto_count"]) > 0
+        ]
+    else:
+        eligible = [
+            variant
+            for variant in variants
+            if variant.get("eligible")
+            and float(variant["hard_weight"]) > 1.0
+            and int(variant["hard_oof_metrics"]["auto_count"])
+            > baseline_hard_auto[MONOTONIC_XGB]
+        ]
     winner = None
     if eligible:
         winner = sorted(
@@ -187,6 +241,7 @@ def run(args: argparse.Namespace) -> Path:
                 -int(variant["hard_oof_metrics"]["auto_count"]),
                 -int(variant["comparison_metrics"]["auto_count"]),
                 float(variant["hard_weight"]),
+                str(variant["family"]),
             ),
         )[0]
 
@@ -212,7 +267,13 @@ def run(args: argparse.Namespace) -> Path:
             {
                 "schema": SCHEMA_VERSION,
                 "stack_scenes": _sha256(stack / "acceptor_scenes.parquet"),
+                "corrected_overlay": (
+                    _sha256(args.corrected_overlay)
+                    if args.corrected_overlay is not None
+                    else None
+                ),
                 "weights": WEIGHTS,
+                "families": families,
             },
             sort_keys=True,
         ).encode()
@@ -223,7 +284,10 @@ def run(args: argparse.Namespace) -> Path:
         json.dumps(result, ensure_ascii=False, indent=2, sort_keys=True) + "\n"
     )
     if winner is not None:
-        joblib.dump(models[float(winner["hard_weight"])], output / "acceptor_candidate.joblib")
+        joblib.dump(
+            models[(str(winner["family"]), float(winner["hard_weight"]))],
+            output / "acceptor_candidate.joblib",
+        )
     return output
 
 
@@ -233,6 +297,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--r30-labels", type=Path, default=Path("reports/v412_review_adjudication_labels.csv"))
     parser.add_argument("--r53-labels", type=Path, default=Path("reports/v412_review_rerank_counteraudit_53.csv"))
     parser.add_argument("--independent-labels", type=Path, default=Path("reports/v412_ranker_independent_validation_labels.csv"))
+    parser.add_argument("--corrected-overlay", type=Path)
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT)
     return parser.parse_args()
 
