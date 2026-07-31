@@ -166,15 +166,21 @@ Le pré-vol Keychain est désormais préenregistré, mais **n'a pas été
 exécuté**. Sa requête fermée contient exactement les sept clés de localisation
 du generic password, sans `kSecReturnData`, `kSecReturnAttributes` ni buffer
 de sortie. Son seul succès possible est `errSecItemNotFound` (`-25300`) et son
-receipt canonique ne peut contenir que six champs non secrets. Le plan est
-cross-pinné au lock matériel et au contrat ; ses 3 tests ciblés passent. La
+receipt canonique ne contient que des champs non secrets. Le plan est
+cross-pinné au lock matériel et au contrat. La
 suite d'état post-lock donne `1217 passed, 3 deselected` : les trois exclusions
 sont les assertions historiques de phase pré-scellage qui exigent
-explicitement l'absence du lock désormais committé. Avant toute lecture réelle,
-il faut encore implémenter le pré-vol avec frameworks factices et obtenir deux
-audits indépendants de cette implémentation. Autorisation, root, claim, item
-Keychain et receipt réel restent absents.
-*(commit GitHub : préenregistrement du pré-vol `a833e33`)*.
+explicitement l'absence du lock désormais committé. Les deux premiers audits
+ont rendu `NO_GO` sur `a833e33` : hash de requête ambigu, résultat insuffisamment
+lié au code, gardes d'absence et cycle de crash ouverts. Le correctif
+`f07c84e` ferme la canonicalisation et les types/constantes/égalités, impose un
+lock de pré-vol liant commit et blobs, vérifie l'absence de l'autorisation, du
+root et du claim producteur, et réserve l'appel par un claim durable : tout
+état indéterminé interdit un second appel. Ses 6 tests ciblés passent. Deux
+nouveaux audits de préenregistrement sont requis avant toute implémentation.
+Autorisation, root, claim, item Keychain et receipt réel restent absents.
+*(commits GitHub : préenregistrement initial `a833e33`, fermeture des
+autorités et crashs `f07c84e`)*.
 
 - le registre de compatibilité ferme les 23 609 anciennes lignes avec des
   empreintes SIRET-masked/fuzzy et des clés de lignée HMAC privées
