@@ -3175,5 +3175,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Rapport : `reports/v412_acceptor_relational_features.md`. Artefact :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_acceptor_relational_features/81a976729f2140de`.
 
+## Audit métier V4.12 — 30 REVIEW complémentaires
+
+- Docket des cinq premiers gelé avant vérité : commit `f477828` (`audit:
+  freeze next five V4.12 REVIEW cases`). Adjudication : commit `7866e34`
+  (`audit: adjudicate five remaining V4.12 REVIEW cases`).
+- Docket des 25 suivants gelé avant vérité : commit `ff54e30` (`audit: freeze
+  next 25 V4.12 REVIEW cases`). Adjudication : commit `0215151` (`audit:
+  adjudicate 25 additional V4.12 REVIEW cases`).
+- Bilan métier : 27 `MATCH_EXACT` fiables, trois `AMBIGUOUS`, zéro
+  `UNRESOLVED`. Les 27 labels exacts sont utilisables pour le développement ;
+  26/30 anciennes qualifications doivent être corrigées.
+- Le ranker avait déjà le bon SIRET en top 1 dans 24/27 cas exacts. Les trois
+  erreurs réelles sont un site hospitalier après restructuration, CESI
+  Association confondu avec CESI SAS à la même adresse, et Institut Lemonnier
+  confondu avec sa filiale CFC co-localisée. Les trois ambiguïtés concernent
+  LG Alès après cession, Constructys sans date CRM et Promotrans avec deux
+  entités actives sous la même marque au même lieu.
+- Ce lot révèle la cause dominante du blocage accepteur : 24 anciens labels
+  `AMBIGUOUS` sont en réalité exacts. L'accepteur et les deux ablations
+  précédentes apprenaient donc sur de nombreux faux négatifs. Aucun nouveau
+  réentraînement n'est autorisé avant d'avoir mesuré et corrigé cette
+  contamination sur un volume plus large des REVIEW restants.
+- Rapports : `reports/v412_remaining_review_audit_first5.md`,
+  `reports/v412_remaining_review_audit_30.md` et tables machine associées.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
