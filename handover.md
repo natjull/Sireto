@@ -197,6 +197,20 @@ Deux audits indépendants rendent désormais
 uniquement l'implémentation du pré-vol et de son sealer avec frameworks
 fictifs, puis leur audit. Il n'autorise ni lock de pré-vol matériel, ni appel
 Keychain réel.
+
+Le pré-vol et son sealer sont maintenant implémentés sur synthétique, sans
+exécution réelle. Le pont CoreFoundation construit les sept paires exactes et
+appelle `SecItemCopyMatching` avec un pointeur résultat nul ; aucune API
+d'ajout, suppression, mise à jour ou retour de secret n'existe dans le
+programme. Le runtime est comparé au lock producteur, Git est invoqué par
+`/usr/bin/git` dans un environnement fermé avec `GIT_NO_REPLACE_OBJECTS=1`,
+les gardes et écritures sont FD-ancrées, et les mutations exhaustives
+top/implémentation/runtime prouvent zéro appel natif avant les gates. Les 156
+tests ciblés et la suite d'état `1370 passed, 3 deselected` sont verts. Le
+commit doit recevoir deux audits
+`GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK` avant toute matérialisation du lock ;
+lock, claim, résultat, autorisation, root et item Keychain restent absents.
+*(commit GitHub : implémentation status-only `b71747e`)*.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
