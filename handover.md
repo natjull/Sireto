@@ -2,6 +2,35 @@
 
 ## Etat des lieux
 
+### V4.12-R30 — pilote REVIEW préenregistré, avant implémentation
+
+Le goal North Star est réactivé après le gel du service V4.12. L'inventaire
+confirme que les labels déterministes V2/V3 et les datasets ranker/accepteur
+historiques ne sont pas des vérités humaines indépendantes. Le meilleur noyau
+ré-auditable reste V4.4/V4.7, déjà consommé, tandis que les 279 `REVIEW` du
+dev V4.12-G n'ont jamais été adjudiqués. Il est donc injustifié de
+réentraîner immédiatement le ranker ou l'accepteur.
+
+Un pilote autonome de 30 REVIEW est préenregistré : dix multi-sites du même
+SIREN, dix collisions entre SIREN et dix autres REVIEW. La sélection est
+aveugle aux labels, déterministe et liée au SHA-256
+`ec481d8db07165185fecc61bf437d868bfcbe4db6f4938a62b6c344e7000c2ee`.
+La collecte est séparée en découverte d'identité sans top-1 puis comparaison
+au pool gelé, bornée à trois requêtes et six pages par dossier, avec faits
+atomiques, deux groupes indépendants et table de décision exhaustive. Le
+launcher futur devra fermer les accès locaux par allowlist/denylist et
+journal d'ouvertures avant tout réseau.
+
+Le gate exige au moins 18 décisions fiables, quatre par strate, six négatifs
+fiables et au moins un négatif dans les strates multi-sites et collision.
+`SCALE_ADJUDICATION` autorisera seulement un lot historique plus large, jamais
+un entraînement ou une revendication produit. Deux audits indépendants ont
+reproduit population, exclusions, docket et hash, puis rendu
+**`GO_CONTRACT`**. Prochaine étape : implémenter et contre-auditer le builder,
+le collecteur borné, le schéma de faits et le launcher avant la première
+collecte réseau.
+*(commit Git : contrat `2418e9e`)*
+
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
 Le worker persistant complet est maintenant validé sur les 1 456 requêtes
