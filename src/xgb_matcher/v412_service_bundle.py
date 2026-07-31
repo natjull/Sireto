@@ -11,6 +11,7 @@ import os
 from pathlib import Path
 import platform
 import pickle
+import re
 import stat
 from types import MappingProxyType
 from types import CodeType
@@ -45,6 +46,12 @@ from .v412_unit_retrieval import CACHE_NAMESPACE
 
 
 STOP = "STOP_V412_SERVICE_INTEGRITY"
+_ATTESTED_RUNTIME_MUTABLE_GLOBALS = frozenset(
+    {
+        ("src.xgb_matcher.features", "_GLOBAL_NAME_IDF"),
+        ("src.xgb_matcher.features", "_GLOBAL_NAME_IDF_DEFAULT"),
+    }
+)
 CERTIFICATION_ROOT = Path(
     "/Volumes/CATNAT_DATA/SIRETO_RECALL100/certifications/"
     "v4_12_strict_stores/"
@@ -670,6 +677,27 @@ def _closure_value_identity(value: Any, seen: set[int]) -> Any:
         return {"cycle_identity": identity}
     if value is None or isinstance(value, (str, int, float, bool)):
         return {"type": type(value).__name__, "value": value}
+    if isinstance(value, bytes):
+        return {
+            "type": "bytes",
+            "sha256": hashlib.sha256(value).hexdigest(),
+        }
+    if isinstance(value, re.Pattern):
+        return {
+            "type": "re.Pattern",
+            "pattern": value.pattern,
+            "flags": value.flags,
+        }
+    if isinstance(value, np.ndarray):
+        contiguous = np.ascontiguousarray(value)
+        return {
+            "type": "numpy.ndarray",
+            "dtype": str(contiguous.dtype),
+            "shape": list(contiguous.shape),
+            "sha256": hashlib.sha256(
+                contiguous.view(np.uint8)
+            ).hexdigest(),
+        }
     if callable(value) and isinstance(
         getattr(value, "__code__", None),
         CodeType,
@@ -743,23 +771,39 @@ def _callable_state_identity(
         ):
             if name not in callback.__globals__:
                 continue
+            if (
+                module_name,
+                name,
+            ) in _ATTESTED_RUNTIME_MUTABLE_GLOBALS:
+                continue
             value = callback.__globals__[name]
             if isinstance(value, ModuleType):
                 attributes = []
                 module_values = vars(value)
+                inspect_module_values = value.__name__.startswith(
+                    ("src.xgb_matcher.", "scripts.")
+                )
                 for attribute_name in sorted(set(code.co_names)):
                     if attribute_name in module_values:
+                        if (
+                            value.__name__,
+                            attribute_name,
+                        ) in _ATTESTED_RUNTIME_MUTABLE_GLOBALS:
+                            continue
                         attribute = module_values[attribute_name]
-                        if callable(attribute):
-                            attributes.append(
-                                (
-                                    attribute_name,
-                                    _closure_value_identity(
-                                        attribute,
-                                        seen,
-                                    ),
-                                )
+                        if not inspect_module_values and not callable(
+                            attribute
+                        ):
+                            continue
+                        attributes.append(
+                            (
+                                attribute_name,
+                                _closure_value_identity(
+                                    attribute,
+                                    seen,
+                                ),
                             )
+                        )
                 referenced_globals.append(
                     (
                         name,
@@ -770,7 +814,7 @@ def _callable_state_identity(
                         },
                     )
                 )
-            elif callable(value):
+            else:
                 referenced_globals.append(
                     (
                         name,
@@ -858,6 +902,8 @@ def validate_frozen_v412_service_bundle(
         "_trace_origin_token",
         "_trace_secret",
     }
+    observed_state_identity = _bundle_state_identity(bundle)
+    observed_instance_shapes = _bundle_instance_shapes(bundle)
     if (
         bundle._attestation is not _BUNDLE_ATTESTATION
         or bundle._closed
@@ -865,8 +911,8 @@ def validate_frozen_v412_service_bundle(
         or bundle.retrieval.tfidf_cache is not bundle.tfidf_cache
         or bundle.retrieval.lookup is not bundle.lookup
         or bundle._component_identity != observed_identity
-        or bundle._state_identity != _bundle_state_identity(bundle)
-        or bundle._instance_shapes != _bundle_instance_shapes(bundle)
+        or bundle._state_identity != observed_state_identity
+        or bundle._instance_shapes != observed_instance_shapes
         or dict(bundle.asset_hashes) != expected_hashes
         or bundle.downstream.ranker_feature_order
         != RANKER_C_FEATURE_ORDER
@@ -879,7 +925,26 @@ def validate_frozen_v412_service_bundle(
             and bundle.evidence.partition_store is not bundle.partition_store
         )
     ):
-        _fail("unattested or mutated service bundle")
+        state_changes = [
+            str(index)
+            for index, (expected, observed) in enumerate(
+                zip(
+                    bundle._state_identity,
+                    observed_state_identity,
+                    strict=True,
+                )
+            )
+            if expected != observed
+        ]
+        detail = (
+            "unattested or mutated service bundle"
+            + (
+                f" (state slots {','.join(state_changes)})"
+                if state_changes
+                else ""
+            )
+        )
+        _fail(detail)
 
 
 def load_frozen_v412_service_bundle(

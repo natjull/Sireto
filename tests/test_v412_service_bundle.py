@@ -185,6 +185,36 @@ def test_guard_global_callable_mutation_is_fail_closed() -> None:
             service_module.apply_guard = original
 
 
+@pytest.mark.parametrize(
+    ("name", "replacement"),
+    (
+        (
+            "V411_ACCEPTOR_FEATURE_NAMES",
+            tuple(reversed(service_module.V411_ACCEPTOR_FEATURE_NAMES)),
+        ),
+        (
+            "FORBIDDEN_FIELDS",
+            frozenset(),
+        ),
+    ),
+)
+def test_service_policy_global_mutation_is_fail_closed(
+    name: str,
+    replacement: object,
+) -> None:
+    with load_frozen_v412_service_bundle(include_evidence=True) as bundle:
+        original = getattr(service_module, name)
+        try:
+            setattr(service_module, name, replacement)
+            with pytest.raises(
+                ValueError,
+                match="mutated service bundle",
+            ):
+                validate_frozen_v412_service_bundle(bundle)
+        finally:
+            setattr(service_module, name, original)
+
+
 @pytest.mark.parametrize("target", ("ranker", "retrieval", "evidence"))
 def test_instance_method_override_is_fail_closed(target: str) -> None:
     with load_frozen_v412_service_bundle(include_evidence=True) as bundle:
