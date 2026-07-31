@@ -122,7 +122,11 @@ Sont exclus avant tri :
   `descriptive_locked` ; les composantes interdites sont d'abord dérivées
   des seules colonnes `query_id`, `component_id`, `partition` et `role`,
   puis tous leurs identifiants sont exclus ;
-- toute population challenge, holdout, fresh, unseen ou test final ;
+- toute population challenge, holdout, unseen, test final ou collection
+  fraîche non consommée. Les `query_id` préfixés `fresh:` déjà inclus dans la
+  référence dev V4.12 sont un namespace historique de V4-Fresh consommé :
+  ils restent admissibles uniquement via les Parquets de référence épinglés.
+  Ce préfixe n'autorise l'ouverture d'aucune racine ou source V4-Fresh ;
 - toute requête absente de la référence dev V4.12 ;
 - tout dossier déjà adjudiqué dans V4.4 ou V4.7.
 
@@ -312,7 +316,9 @@ d'ouverture :
 - autorisent en écriture seulement un staging privé sous la racine du run ;
 - interdisent toute racine dont un composant normalisé contient
   `test`, `final`, `holdout`, `challenge`, `unseen`, `fresh`, `random` ou
-  `locked`, hors le fichier V4.8 explicitement épinglé ;
+  `locked`, hors les fichiers d'entrée explicitement épinglés. La présence du
+  préfixe historique `fresh:` dans une valeur `query_id` n'est pas un chemin
+  et ne crée aucune exception à cette denylist ;
 - interdisent les symlinks, les hardlinks multiples, les sous-processus et
   tout fichier local non allowlisté ;
 - journalisent chaque ouverture locale et chaque URL avant son accès.
@@ -334,8 +340,8 @@ Le verdict est `SCALE_ADJUDICATION` si et seulement si :
   moins un `TOP1_WRONG` ou `AMBIGUOUS` fiable ;
 - aucune décision fiable ne repose sur moins de deux groupes indépendants ;
 - aucun label antérieur n'a été transporté ;
-- aucun random, holdout, challenge, unseen, fresh ou test final n'a été
-  ouvert ;
+- aucun random, holdout, challenge, unseen, test final, ni racine ou
+  population fraîche non consommée n'a été ouvert ;
 - aucun candidat positif n'a été injecté.
 
 Le verdict est `STOP_LABEL_PATH` si l'intégrité est saine mais qu'un seuil de
