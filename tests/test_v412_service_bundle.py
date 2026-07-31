@@ -10,6 +10,7 @@ import pytest
 
 from src.xgb_matcher.v411_scene import V411_ACCEPTOR_FEATURE_NAMES
 from src.xgb_matcher import v412_service_bundle as bundle_module
+from src.xgb_matcher import v412_service as service_module
 from src.xgb_matcher.v412_service_bundle import (
     _capture_bundle_files,
     _capture_exact,
@@ -165,6 +166,23 @@ def test_ranker_class_method_closure_mutation_is_fail_closed() -> None:
                 validate_frozen_v412_service_bundle(bundle)
         finally:
             cell.cell_contents = original
+
+
+def test_guard_global_callable_mutation_is_fail_closed() -> None:
+    with load_frozen_v412_service_bundle(include_evidence=True) as bundle:
+        original = service_module.apply_guard
+        try:
+            service_module.apply_guard = lambda **kwargs: (
+                kwargs["decision_v411"],
+                kwargs["review_reason_v411"],
+            )
+            with pytest.raises(
+                ValueError,
+                match="mutated service bundle",
+            ):
+                validate_frozen_v412_service_bundle(bundle)
+        finally:
+            service_module.apply_guard = original
 
 
 @pytest.mark.parametrize("target", ("ranker", "retrieval", "evidence"))

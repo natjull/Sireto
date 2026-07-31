@@ -13,6 +13,8 @@ import platform
 import pickle
 import stat
 from types import MappingProxyType
+from types import CodeType
+from types import ModuleType
 from typing import Any, Mapping
 
 import joblib
@@ -668,12 +670,15 @@ def _closure_value_identity(value: Any, seen: set[int]) -> Any:
         return {"cycle_identity": identity}
     if value is None or isinstance(value, (str, int, float, bool)):
         return {"type": type(value).__name__, "value": value}
+    if callable(value) and isinstance(
+        getattr(value, "__code__", None),
+        CodeType,
+    ):
+        return {
+            "callable": _callable_state_identity(value, _seen=seen)
+        }
     seen.add(identity)
     try:
-        if callable(value) and getattr(value, "__code__", None) is not None:
-            return {
-                "callable": _callable_state_identity(value, _seen=seen)
-            }
         if isinstance(value, (list, tuple)):
             return {
                 "type": type(value).__name__,
@@ -713,10 +718,65 @@ def _callable_state_identity(
     _seen: set[int] | None = None,
 ) -> str:
     code = getattr(callback, "__code__", None)
-    if code is None:
+    if not isinstance(code, CodeType):
         _fail("service callback has no Python code object")
     try:
         seen = set() if _seen is None else _seen
+        callback_identity = id(callback)
+        if callback_identity in seen:
+            return hashlib.sha256(
+                (
+                    f"cycle:{callback.__module__}:"
+                    f"{callback.__qualname__}:{callback_identity}"
+                ).encode("utf-8")
+            ).hexdigest()
+        seen.add(callback_identity)
+        referenced_globals = []
+        module_name = str(getattr(callback, "__module__", "") or "")
+        inspect_globals = module_name.startswith(
+            ("src.xgb_matcher.", "scripts.")
+        )
+        for name in (
+            sorted(set(code.co_names))
+            if inspect_globals
+            else ()
+        ):
+            if name not in callback.__globals__:
+                continue
+            value = callback.__globals__[name]
+            if isinstance(value, ModuleType):
+                attributes = []
+                module_values = vars(value)
+                for attribute_name in sorted(set(code.co_names)):
+                    if attribute_name in module_values:
+                        attribute = module_values[attribute_name]
+                        if callable(attribute):
+                            attributes.append(
+                                (
+                                    attribute_name,
+                                    _closure_value_identity(
+                                        attribute,
+                                        seen,
+                                    ),
+                                )
+                            )
+                referenced_globals.append(
+                    (
+                        name,
+                        {
+                            "module": value.__name__,
+                            "identity": id(value),
+                            "attributes": attributes,
+                        },
+                    )
+                )
+            elif callable(value):
+                referenced_globals.append(
+                    (
+                        name,
+                        _closure_value_identity(value, seen),
+                    )
+                )
         payload = json.dumps(
             {
                 "module": getattr(callback, "__module__", None),
@@ -739,10 +799,12 @@ def _callable_state_identity(
                         getattr(callback, "__closure__", None) or ()
                     )
                 ],
+                "referenced_globals": referenced_globals,
             },
             sort_keys=True,
             separators=(",", ":"),
         ).encode("utf-8")
+        seen.remove(callback_identity)
     except Exception as exc:
         _fail(f"cannot fingerprint service callback state: {exc}")
     return hashlib.sha256(payload).hexdigest()
