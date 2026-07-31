@@ -192,8 +192,11 @@ chaque mutation sur chaque champ racine/implémentation/runtime, ferme chaque
 cas de garde et de cycle de vie par un compteur natif nul, et remplace le
 parcours `lstat` par un parcours FD-ancré `openat`/`fstatat` sans symlink pour
 fermer le remplacement concurrent des parents. Les 8 tests ciblés passent.
-Deux nouveaux audits de préenregistrement sont requis avant
-toute implémentation.
+Deux audits indépendants rendent désormais
+**`GO_PREFLIGHT_PREREG_NEXT_IMPLEMENTATION`** sur `7c33a9b`. Ce GO autorise
+uniquement l'implémentation du pré-vol et de son sealer avec frameworks
+fictifs, puis leur audit. Il n'autorise ni lock de pré-vol matériel, ni appel
+Keychain réel.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
