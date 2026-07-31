@@ -2,6 +2,28 @@
 
 ## Etat des lieux
 
+### V4.12 — validation indépendante : accepteur à 0 % de couverture
+
+Un docket de 30 REVIEW jamais adjudiqués a été gelé par hash avant tout score
+du modèle corrigé. L'audit métier aveugle produit 26 `MATCH_EXACT`, quatre
+`AMBIGUOUS` et zéro `UNRESOLVED`. Le ranker corrigé retrouve 24/26 vérités
+exactes (92,31 %).
+
+L'accepteur XGBoost monotone, poids difficile `10` et seuil figé
+`0.8974587321281433`, envoie **30/30 dossiers en REVIEW**. Ses scores restent
+entre `0,0308` et `0,8328`. Zéro erreur AUTO est donc obtenu au prix d'une
+couverture AUTO nulle. Le `GO_NEW_INDEPENDENT_ACCEPTOR_DOCKET` fondé sur trois
+AUTO difficiles ne se généralise pas.
+
+Verdict : **`PIVOT_ACCEPTOR_REDESIGN`**. Le seuil ne doit pas être abaissé
+après coup et la pondération ne doit plus être poursuivie. Le prochain travail
+utile est de revoir la cible et les preuves de l'accepteur, puis de réserver un
+autre lot parmi les 99 REVIEW historiques encore non adjudiqués pour la future
+validation. Le test final reste fermé.
+
+*(commit Git : docket `311603e`; labels, résultats et rapport : commit du
+présent milestone)*
+
 ### V4.12 — ranker corrigé en progrès, accepteur toujours bloquant
 
 L'overlay des 60 REVIEW supplémentaires est scellé : 56 `MATCH_EXACT`, quatre
