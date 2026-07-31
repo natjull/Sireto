@@ -2,6 +2,23 @@
 
 ## Etat des lieux
 
+### V4.12 — gate dev conservateur franchi à 82,93 %
+
+Après le pivot calibration/comparaison, le seuil conservateur est fixé à
+`0.9886879324913025` sur tout l'OOF trusted consommé. Il automatise 89/279 cas
+difficiles sans erreur observée. Sur 1 127 contrôles positifs dev non utilisés,
+il automatise 1 077 dossiers sans erreur.
+
+La projection combinée est 1 166/1 406 AUTO, soit 82,93 %, avec 0 erreur et 0
+ambiguïté AUTO. La borne Wilson basse 95 % est 99,67 % : 99,8 % n'est pas
+certifié. Verdict `GO_FREEZE_FOR_NEW_HOLDOUT`.
+
+Les anciens holdouts sont consommés et les racines du nouvel intake CRM sont
+absentes du SSD. Aucun test final n'est ouvert ni recyclé.
+
+*(artefact `v4_12_acceptor_conservative/88e50a879d7fcc2b`; code, rapport et
+présent handover : commit du présent milestone)*
+
 ### V4.12 — accepteur trusted-label : PIVOT
 
 Avec le ranker corrigé et l'accepteur XGBoost monotone poids `10` figés, le
