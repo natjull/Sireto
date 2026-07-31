@@ -134,27 +134,52 @@ def _materialize_nested(
 
 
 def _reference_absent(
-    path: Path, *, lstat=os.lstat
+    path: Path, *, stat_at=os.stat
 ) -> bool:
     if not path.is_absolute():
         raise ValueError("ABSOLUTE_PATH_REQUIRED")
-    current = Path(path.anchor)
     parts = path.parts[1:]
-    for index, component in enumerate(parts):
-        current /= component
-        try:
-            metadata = lstat(current)
-        except OSError as exc:
-            if exc.errno == errno.ENOENT:
-                return True
-            raise ValueError("LSTAT_ERROR") from exc
-        if stat.S_ISLNK(metadata.st_mode):
-            raise ValueError("SYMLINK")
-        if index < len(parts) - 1 and not stat.S_ISDIR(metadata.st_mode):
-            raise ValueError("PARENT_NOT_DIRECTORY")
-        if index == len(parts) - 1:
-            raise ValueError("ENTRY_EXISTS")
-    raise ValueError("ROOT_EXISTS")
+    directory_fd = os.open(
+        path.anchor, os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW
+    )
+    try:
+        for index, component in enumerate(parts):
+            try:
+                metadata = stat_at(
+                    component,
+                    dir_fd=directory_fd,
+                    follow_symlinks=False,
+                )
+            except OSError as exc:
+                if exc.errno == errno.ENOENT:
+                    return True
+                raise ValueError("FD_TRAVERSAL_ERROR") from exc
+            if stat.S_ISLNK(metadata.st_mode):
+                raise ValueError("SYMLINK")
+            if index == len(parts) - 1:
+                raise ValueError("ENTRY_EXISTS")
+            if not stat.S_ISDIR(metadata.st_mode):
+                raise ValueError("PARENT_NOT_DIRECTORY")
+            try:
+                next_fd = os.open(
+                    component,
+                    os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW,
+                    dir_fd=directory_fd,
+                )
+            except OSError as exc:
+                raise ValueError("FD_TRAVERSAL_ERROR") from exc
+            opened = os.fstat(next_fd)
+            if (opened.st_dev, opened.st_ino) != (
+                metadata.st_dev,
+                metadata.st_ino,
+            ):
+                os.close(next_fd)
+                raise ValueError("PARENT_REPLACED")
+            os.close(directory_fd)
+            directory_fd = next_fd
+        raise ValueError("ROOT_EXISTS")
+    finally:
+        os.close(directory_fd)
 
 
 def test_preflight_plan_is_canonical_and_cross_pinned() -> None:
@@ -413,60 +438,73 @@ def test_preflight_execution_lock_schema_rejects_nested_mutations() -> None:
         equalities=equalities,
         nested=nested,
     )
-    for section, fields in (
-        (valid, schema["exact_fields"]),
-        (valid["implementation"], schema["implementation_exact_fields"]),
-        (valid["runtime"], schema["runtime_exact_fields"]),
+    for section_key, fields in (
+        (None, schema["exact_fields"]),
+        ("implementation", schema["implementation_exact_fields"]),
+        ("runtime", schema["runtime_exact_fields"]),
     ):
-        assert isinstance(section, dict)
         for field in fields:
-            mutated = json.loads(json.dumps(valid))
-            if section is valid:
-                target = mutated
-            elif section is valid["implementation"]:
-                target = mutated["implementation"]
-            else:
-                target = mutated["runtime"]
-            candidate = target[field]
-            target[field] = (
-                candidate + "x" if type(candidate) is str else "WRONG_TYPE"
+            wrong_value = json.loads(json.dumps(valid))
+            target = (
+                wrong_value
+                if section_key is None
+                else wrong_value[section_key]
             )
+            candidate = target[field]
+            if type(candidate) is str:
+                target[field] = candidate + "x"
+            elif type(candidate) is int:
+                target[field] = candidate + 1
+            else:
+                target[field] = {**candidate, "extra": "x"}
             with pytest.raises(ValueError):
                 _validate_nested_lock(
-                    mutated,
+                    wrong_value,
                     exact_fields=schema["exact_fields"],
                     fields=schema["fields"],
                     equalities=equalities,
                     nested=nested,
                 )
-        missing = json.loads(json.dumps(valid))
-        target = (
-            missing
-            if section is valid
-            else missing[
-                "implementation"
-                if section is valid["implementation"]
-                else "runtime"
-            ]
-        )
-        target.pop(fields[0])
-        with pytest.raises(ValueError):
-            _validate_nested_lock(
-                missing,
-                exact_fields=schema["exact_fields"],
-                fields=schema["fields"],
-                equalities=equalities,
-                nested=nested,
+            wrong_type = json.loads(json.dumps(valid))
+            target = (
+                wrong_type
+                if section_key is None
+                else wrong_type[section_key]
             )
+            candidate = target[field]
+            target[field] = (
+                1
+                if type(candidate) is str
+                else "WRONG_TYPE"
+            )
+            with pytest.raises(ValueError):
+                _validate_nested_lock(
+                    wrong_type,
+                    exact_fields=schema["exact_fields"],
+                    fields=schema["fields"],
+                    equalities=equalities,
+                    nested=nested,
+                )
+            missing = json.loads(json.dumps(valid))
+            target = (
+                missing
+                if section_key is None
+                else missing[section_key]
+            )
+            target.pop(field)
+            with pytest.raises(ValueError):
+                _validate_nested_lock(
+                    missing,
+                    exact_fields=schema["exact_fields"],
+                    fields=schema["fields"],
+                    equalities=equalities,
+                    nested=nested,
+                )
         extra = json.loads(json.dumps(valid))
         target = (
             extra
-            if section is valid
-            else extra[
-                "implementation"
-                if section is valid["implementation"]
-                else "runtime"
-            ]
+            if section_key is None
+            else extra[section_key]
         )
         target["extra"] = "x"
         with pytest.raises(ValueError):
@@ -485,10 +523,11 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
     plan = json.loads(PLAN.read_bytes())
     assert plan["absence_semantics"] == {
         "absent_only_when": (
-            "FIRST_MISSING_COMPONENT_LSTAT_RETURNS_ENOENT"
+            "FIRST_MISSING_COMPONENT_OPENAT_OR_FSTATAT_RETURNS_ENOENT"
         ),
         "allowed_syscall": (
-            "lstat_or_dirfd_stat_follow_symlinks_false"
+            "FD_ANCHORED_OPENAT_O_DIRECTORY_O_NOFOLLOW_"
+            "AND_FSTATAT_NOFOLLOW"
         ),
         "existing_entry_policy": "STOP",
         "other_errno_policy": "STOP",
@@ -542,13 +581,19 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
         with pytest.raises(ValueError):
             _reference_absent(path)
 
-    def denied(candidate: Path):
-        if candidate == tmp_path / "denied":
-            raise PermissionError(errno.EACCES, "denied", candidate)
-        return os.lstat(candidate)
+    def denied(
+        component: str, *, dir_fd: int, follow_symlinks: bool
+    ):
+        if component == "denied":
+            raise PermissionError(errno.EACCES, "denied", component)
+        return os.stat(
+            component,
+            dir_fd=dir_fd,
+            follow_symlinks=follow_symlinks,
+        )
 
-    with pytest.raises(ValueError, match="LSTAT_ERROR"):
-        _reference_absent(tmp_path / "denied", lstat=denied)
+    with pytest.raises(ValueError, match="FD_TRAVERSAL_ERROR"):
+        _reference_absent(tmp_path / "denied", stat_at=denied)
     lifecycle = plan["lifecycle"]
     assert lifecycle["entry_order"].index(
         "CREATE_DURABLE_CLAIM_O_EXCL"
@@ -561,21 +606,34 @@ def test_preflight_absence_guards_and_crash_policy_are_closed(
     )
     assert not (REPOSITORY / lifecycle["claim"]["path"]).exists()
     requirements = plan["implementation_test_requirements"]
-    assert requirements[
-        "required_native_call_count_for_every_invalid_case"
-    ] == 0
     assert {
         "AUTHORIZATION_DANGLING_SYMLINK",
         "ROOT_VALID_SYMLINK",
         "PRODUCER_CLAIM_DIRECTORY_PRESENT",
         "PARENT_SYMLINK",
-        "LSTAT_PERMISSION_ERROR",
+        "FD_TRAVERSAL_PERMISSION_ERROR",
+        "PARENT_REPLACEMENT_RACE",
     }.issubset(requirements["absence_guard_cases"])
     assert {
         "CLAIM_PRESENT_RESULT_MISSING",
         "CRASH_AFTER_NATIVE_CALL_BEFORE_RESULT",
         "RESULT_NONCANONICAL",
     }.issubset(requirements["lifecycle_cases"])
+    expected_cases = set(requirements["absence_guard_cases"]) | set(
+        requirements["lifecycle_cases"]
+    )
+    assert set(requirements["expected_native_call_count_by_case"]) == (
+        expected_cases
+    )
+    assert all(
+        count == 0
+        for count in requirements[
+            "expected_native_call_count_by_case"
+        ].values()
+    )
+    assert requirements["expected_native_call_count_by_case"][
+        "CLAIM_AND_RESULT_VALID"
+    ] == 0
     assert requirements["mutation_targets"] == [
         "CLAIM_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
         "LOCK_TOP_EACH_FIELD_EXTRA_MISSING_WRONG_TYPE_WRONG_VALUE",
