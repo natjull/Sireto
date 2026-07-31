@@ -2,6 +2,49 @@
 
 ## Etat des lieux
 
+### V4.12-S — référence de parité service assainie et doublement auditée
+
+Le chantier de certification produit V4.13 reste fermé faute de nouvelle
+collection CRM indépendante. Le travail autorisé a donc repris sur le chemin
+produit déjà gelé V4.12-G, sans réentraînement, sans nouveau seuil et sans
+ouvrir de test final.
+
+Le contrat service/parité/latence fixe la chaîne sparse top 100, Ranker C,
+scène 80 features, accepteur `COMPACT_LOGIT` au seuil
+`0.8720916706888049`, puis veto de preuve directe V4.12-G. Le cœur aval pur
+valide le plafond 100, les 45 features, les identités SIRET/SIREN et
+l'irréversibilité du veto.
+*(commits GitHub : contrat `ab2bbe7`, cœur aval `087ee2b`)*
+
+Le builder de référence projette désormais neuf sources historiques gelées
+sans désérialiser leurs colonnes de vérité. La sortie guard est reconstruite
+depuis l'accepteur, les scènes et les preuves, puis comparée à la décision
+historique indépendante. Après deux audits `STOP`, la frontière a été fermée :
+capture immuable des octets sources avant projection, politique
+score/seuil/décision recalculée, rangs et valeurs numériques stricts, API
+production non injectable, provenance code/contrat/runtime dans le build ID,
+staging et promotion ancrés par FD, revalidation terminale des huit Parquets
+et liaison d'identité du répertoire nommé. Deux audits indépendants rendent
+**GO** sur le commit exact
+`fab0e52ba563e539e1ff3d1ab1869e51a360aa90`; 70 tests ciblés passent.
+*(commits GitHub : builder initial `5a87baa`, durcissement `05b9254`,
+liaison staging finale `fab0e52`)*
+
+La référence immuable production est publiée sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/references/v4_12_service_parity/b4b7fef24c5e7036/`.
+Son manifeste SHA-256 est
+`cbcb3303107cd00f895561b49b8ad3a26e5c8e3df8a07777817e7a6ed97f2340`.
+La revalidation indépendante confirme 1 456 requêtes, 145 236 candidats,
+plafond 100, 1 177 décisions `AUTO_MATCH`, 279 `REVIEW`, schémas exacts,
+hashes exacts et zéro colonne interdite. Cela prouve une parité d'ingénierie,
+pas encore la précision produit de 99,8 %.
+
+La prochaine étape active est l'implémentation du worker persistant complet :
+retrieval et 45 features recalculés, modèles/taxonomie chargés une fois,
+preuve directe sur l'univers géographique complet, parité des sept étages,
+latences appariées V4.11/V4.12-G et pic RSS. Le futur export CRM indépendant
+reste indispensable pour toute certification produit.
+
 ### Direction active V4.13 — labels réellement frais, sans nouvelle PKI
 
 Le provisioner S1/V1 a échoué proprement sur le Mac réel avec
