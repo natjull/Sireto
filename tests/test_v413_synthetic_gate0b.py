@@ -21,6 +21,7 @@ from scripts.open_v413_synthetic_qualification import (
     open_synthetic_qualification,
 )
 from scripts.audit_v413_synthetic_contamination import ContaminationStop
+from scripts.validate_v413_fresh_artifacts import ValidationStopped
 
 
 def _private_dir(path: Path) -> None:
@@ -323,3 +324,41 @@ def test_forbidden_siren_overlap_stops_before_outputs(tmp_path: Path) -> None:
     assert (control / MARKER_FILENAME).is_file()
     assert not (control / RECEIPT_FILENAME).exists()
     assert not output.exists()
+
+
+@pytest.mark.parametrize("target", ["query", "contamination", "split"])
+def test_final_semantic_revalidation_rejects_late_output_mutation(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    target: str,
+) -> None:
+    inbox, control, output, _ = _fixture(tmp_path)
+    subject = __import__(
+        "scripts.open_v413_synthetic_qualification",
+        fromlist=["seal_manifests"],
+    )
+    original = subject.seal_manifests
+
+    def seal_then_mutate(rows, root):
+        result = original(rows, root)
+        if target == "query":
+            path = output / "queries/queries.csv"
+            path.write_text(
+                path.read_text().replace(
+                    "Boulangerie des Lilas", "LEAK 12345678901234"
+                )
+            )
+        elif target == "contamination":
+            path = output / "audit/contamination.json"
+            value = json.loads(path.read_text())
+            value["verdict"] = "BYPASSED"
+            path.write_bytes(gate0a.canonical_json(value))
+        else:
+            (output / "splits/fit/split_manifest.json").write_text("{}\n")
+        return result
+
+    monkeypatch.setattr(subject, "seal_manifests", seal_then_mutate)
+    with pytest.raises((Gate0BStop, ValidationStopped)) as caught:
+        _run(inbox, control, output)
+    assert "FINAL_" in str(caught.value) or "digit leak" in str(caught.value)
+    assert not (control / RECEIPT_FILENAME).exists()

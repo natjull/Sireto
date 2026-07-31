@@ -33,7 +33,7 @@ try:
     from scripts.audit_v413_synthetic_contamination import (
         audit_synthetic_contamination,
     )
-    from scripts.seal_v413_fresh_splits import seal_manifests
+    from scripts.seal_v413_fresh_splits import build_manifests, seal_manifests
     from scripts.validate_v413_fresh_artifacts import validate_artifacts
 except ModuleNotFoundError:  # Direct ``python scripts/...py`` execution.
     import audit_v413_fresh_source_availability as gate0a
@@ -45,7 +45,7 @@ except ModuleNotFoundError:  # Direct ``python scripts/...py`` execution.
         write_fixture_outputs,
     )
     from audit_v413_synthetic_contamination import audit_synthetic_contamination
-    from seal_v413_fresh_splits import seal_manifests
+    from seal_v413_fresh_splits import build_manifests, seal_manifests
     from validate_v413_fresh_artifacts import validate_artifacts
 
 
@@ -112,7 +112,7 @@ def _read_payload_once(
     expected_sha256: str,
     expected_uid: int,
     label: str,
-) -> bytes:
+) -> tuple[bytes, int, tuple[int, ...]]:
     try:
         fd = os.open(
             filename,
@@ -132,9 +132,10 @@ def _read_payload_once(
             _stop(f"{label}_SIZE")
         if hashlib.sha256(raw).hexdigest() != expected_sha256:
             _stop(f"{label}_SHA256")
-        return raw
-    finally:
+        return raw, fd, _identity(before)
+    except Exception:
         os.close(fd)
+        raise
 
 
 def _csv_rows(raw: bytes, columns: Sequence[str], label: str) -> list[dict[str, Any]]:
@@ -449,6 +450,35 @@ def _read_written_artifacts(
     return queries, oracle, split_rows
 
 
+def _validate_final_outputs(
+    output_root: Path,
+    *,
+    expected_counts: Mapping[str, Any],
+    expected_contamination: Mapping[str, Any],
+) -> None:
+    queries, oracle, split_rows = _read_written_artifacts(output_root)
+    validate_artifacts(queries, oracle)
+    audit = json.loads(
+        (output_root / "audit/qualification.json").read_text(encoding="utf-8")
+    )
+    if audit.get("counts") != expected_counts:
+        _stop("FINAL_AUDIT_COUNTS")
+    contamination = json.loads(
+        (output_root / "audit/contamination.json").read_text(encoding="utf-8")
+    )
+    if contamination != expected_contamination:
+        _stop("FINAL_CONTAMINATION")
+    expected_splits = build_manifests(split_rows)
+    for split, expected in expected_splits.items():
+        observed = json.loads(
+            (
+                output_root / f"splits/{split}/split_manifest.json"
+            ).read_text(encoding="utf-8")
+        )
+        if observed != expected:
+            _stop(f"FINAL_SPLIT_{split.upper()}")
+
+
 def open_synthetic_qualification(
     *,
     inbox: Path,
@@ -488,6 +518,7 @@ def open_synthetic_qualification(
     )
     expected_uid = bundle.lock["uid"]
     control_fd = gate0a._open_directory(control_root, expected_uid, "CONTROL_ROOT")
+    retained_payload_fds: list[tuple[int, tuple[int, ...]]] = []
     try:
         fcntl.flock(control_fd, fcntl.LOCK_EX)
         receipt = _read_receipt(control_fd)
@@ -610,7 +641,7 @@ def open_synthetic_qualification(
 
                 if manifest["crm_format"] != "CSV" or manifest["mapping_format"] != "CSV":
                     _stop("SYNTHETIC_GATE_0B_CSV_ONLY")
-                crm_raw = _read_payload_once(
+                crm_raw, crm_fd, crm_identity = _read_payload_once(
                     collection_fd,
                     manifest["crm_file"],
                     expected_size=manifest["crm_size_bytes"],
@@ -618,8 +649,8 @@ def open_synthetic_qualification(
                     expected_uid=expected_uid,
                     label="CRM_PAYLOAD",
                 )
-                hook("after_crm_payload")
-                mapping_raw = _read_payload_once(
+                retained_payload_fds.append((crm_fd, crm_identity))
+                mapping_raw, mapping_fd, mapping_identity = _read_payload_once(
                     collection_fd,
                     manifest["mapping_file"],
                     expected_size=manifest["mapping_size_bytes"],
@@ -627,7 +658,7 @@ def open_synthetic_qualification(
                     expected_uid=expected_uid,
                     label="MAPPING_PAYLOAD",
                 )
-                hook("after_mapping_payload")
+                retained_payload_fds.append((mapping_fd, mapping_identity))
             finally:
                 os.close(collection_fd)
         finally:
@@ -670,7 +701,6 @@ def open_synthetic_qualification(
         validate_artifacts(queries_written, oracle_written)
         seal_manifests(split_rows_written, output_root / "splits")
         _fsync_outputs(output_root)
-        hook("after_outputs")
 
         inbox_fd = gate0a._open_directory(inbox, expected_uid, "INBOX")
         try:
@@ -687,6 +717,14 @@ def open_synthetic_qualification(
                 os.close(collection_fd)
         finally:
             os.close(inbox_fd)
+        for payload_fd, expected_identity in retained_payload_fds:
+            if _identity(os.fstat(payload_fd)) != expected_identity:
+                _stop("PAYLOAD_CHANGED_BEFORE_RECEIPT")
+        _validate_final_outputs(
+            output_root,
+            expected_counts=result["counts"],
+            expected_contamination=contamination,
+        )
 
         receipt = {
             "schema_version": RECEIPT_SCHEMA,
@@ -709,6 +747,11 @@ def open_synthetic_qualification(
             _stop("RECEIPT_EXISTS")
         return receipt
     finally:
+        for payload_fd, _ in retained_payload_fds:
+            try:
+                os.close(payload_fd)
+            except OSError:
+                pass
         os.close(control_fd)
 
 
