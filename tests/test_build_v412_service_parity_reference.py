@@ -617,3 +617,45 @@ def test_terminal_revalidation_rejects_post_manifest_mutation(
             expected_candidate_count=6,
         )
     assert not [path for path in output_root.iterdir() if not path.name.startswith(".")]
+
+
+def test_promotion_rejects_named_staging_directory_substitution(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    sources = _reference_sources(tmp_path)
+    output_root = tmp_path / "output"
+    output_root.mkdir()
+    original = subject._promote_exclusive_at
+
+    def substitute(parent_fd, staging_name, target_name, **kwargs):
+        parked_name = f"{staging_name}.parked"
+        os.rename(
+            staging_name,
+            parked_name,
+            src_dir_fd=parent_fd,
+            dst_dir_fd=parent_fd,
+        )
+        os.mkdir(staging_name, 0o700, dir_fd=parent_fd)
+        try:
+            return original(parent_fd, staging_name, target_name, **kwargs)
+        finally:
+            os.rmdir(staging_name, dir_fd=parent_fd)
+            os.rename(
+                parked_name,
+                staging_name,
+                src_dir_fd=parent_fd,
+                dst_dir_fd=parent_fd,
+            )
+
+    monkeypatch.setattr(subject, "_promote_exclusive_at", substitute)
+    with pytest.raises(
+        subject.ReferenceBuildError,
+        match="STAGING_IDENTITY",
+    ):
+        subject._build_synthetic_reference(
+            output_root,
+            sources=sources,
+            expected_query_count=3,
+            expected_candidate_count=6,
+        )
+    assert not list(output_root.iterdir())

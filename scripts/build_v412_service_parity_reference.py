@@ -1220,6 +1220,21 @@ def _promote_exclusive_at(
     manifest: Mapping[str, Any],
 ) -> None:
     _validate_staging(staging_fd, output_fds, manifest)
+    opened_staging = os.fstat(staging_fd)
+    try:
+        named_staging = os.stat(
+            staging_name,
+            dir_fd=parent_fd,
+            follow_symlinks=False,
+        )
+    except OSError as exc:
+        raise ReferenceBuildError("STOP_REFERENCE_STAGING_IDENTITY") from exc
+    if (
+        not stat.S_ISDIR(opened_staging.st_mode)
+        or not stat.S_ISDIR(named_staging.st_mode)
+        or _fd_identity(opened_staging) != _fd_identity(named_staging)
+    ):
+        raise ReferenceBuildError("STOP_REFERENCE_STAGING_IDENTITY")
     libc = ctypes.CDLL(None, use_errno=True)
     function = getattr(libc, "renameatx_np", None)
     if function is None:
