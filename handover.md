@@ -237,6 +237,22 @@ après appel simulé. Les 239 tests ciblés et la suite
 `1453 passed, 3 deselected` sont verts. Nouveau double audit requis ; aucun
 lock ni appel réel.
 *(commit GitHub : revalidation post-statut et erreurs syscall `a49d28b`)*.
+
+Les audits de `a49d28b` ont divergé (`GO` / `NO_GO`) sur une propriété
+impossible à garantir en espace utilisateur : un processus du même UID peut
+toujours renommer un parent juste après la dernière vérification, quel que
+soit le nombre de relectures. L'amendement `442416e` remplace cette prétention
+par une borne explicite : 26 cas restent à zéro appel ; dans l'unique fenêtre
+finale, au plus une requête status-only à pointeur nul peut avoir lieu, mais
+la revalidation post-appel impose `STOP`, interdit le reçu et laisse le claim
+seul. Le déplacement volontaire des autorités persistantes par un processus
+non coopératif est désormais explicitement hors modèle. L'implémentation
+`efe76fe` normalise aussi `fsync` et teste cette borne exacte ainsi que
+`open/stat/fstat × EACCES/EIO`. Les 242 tests ciblés passent. L'amendement doit
+recevoir deux `GO_PREFLIGHT_RACE_AMENDMENT_NEXT_IMPLEMENTATION_AUDIT`, puis le
+code deux `GO_PREFLIGHT_IMPLEMENTATION_NEXT_LOCK`, avant tout lock réel.
+*(commits GitHub : amendement de concurrence `442416e`, implémentation de la
+borne `efe76fe`)*.
 Autorisation, root, claim, item Keychain et receipt réel restent absents.
 *(commits GitHub : préenregistrement initial `a833e33`, fermeture des
 autorités et crashs `f07c84e`, fermeture absence/runtime `2049251`,
