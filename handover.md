@@ -85,6 +85,31 @@ réseau. La collecte réelle reste interdite avant deux
 **`GO_IDENTITY_BROKER_WORKER_PHASE`**. L'adjudication, le gate R30 complet,
 l'entraînement et le test final restent également fermés.
 
+Les primitives hors réseau sont désormais gelées. Le replay recalcule la
+politique, les 14 pins, les versions de bibliothèques, le parseur DDG, les
+identifiants, les faits avec spans UTF-8, les preuves et les adjudications.
+Un audit indépendant a rendu **`GO_OFFLINE_REPLAY_PRIMITIVES`** après 25
+tests adversariaux.
+*(commit Git : replay et tests `d8e4722`)*
+
+La frontière de processus est également prouvée par un worker natif arm64
+déterministe et signé, ancré avec toute sa chaîne de build. Les deux workers
+sont des processus `sandbox-exec` distincts. Le binaire temporaire est
+authentifié, signale `READY`, puis est supprimé avant traitement. Le profil
+refuse réseau, fork, exec/ré-exec, écritures et lectures hors capacités,
+y compris les alias `/System/Volumes`. Le journal O_EXCL est chaîné et écrit
+par descripteurs retenus ; la révocation est monotone ; les timeouts et les
+quatre positions d'échec de pipe sont sans fuite. La suite combinée donne
+64 tests réussis. Deux audits indépendants rendent
+**`GO_OFFLINE_NATIVE_RUNTIME_PRIMITIVES`** et
+**`GO_OFFLINE_NATIVE_BUILD_PRIMITIVES`**.
+*(commit Git : runtime natif, build, binaire ancré et tests `467f096`)*
+
+Ces GO ne permettent toujours aucun réseau. Étape suivante : implémenter le
+broker HTTP/DNS/SIRENE borné et les vraies transformations des workers sur
+fixtures locales, puis obtenir deux **`GO_IDENTITY_BROKER_WORKER_PHASE`**
+sur le run synthétique complet avant la première collecte.
+
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
 Le worker persistant complet est maintenant validé sur les 1 456 requêtes
