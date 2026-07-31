@@ -45,6 +45,46 @@ preuve directe sur l'univers géographique complet, parité des sept étages,
 latences appariées V4.11/V4.12-G et pic RSS. Le futur export CRM indépendant
 reste indispensable pour toute certification produit.
 
+### V4.12-S — retrieval, features et preuve directe persistants
+
+Le premier étage du worker persistant est maintenant implémenté sans modifier
+les modèles gelés. Le retrieval unitaire expose le pool INSEE complet, la
+sélection avant lookup, les rangs de canaux et le snapshot nécessaires pour
+recalculer exactement les 45 features Ranker C. Le service de features calcule
+l'IDF sur le pool aligné complet, la densité sur le top 100 avant filtrage des
+établissements fermés, puis hydrate l'ordre actif final. Le service de preuve
+directe cherche séparément dans tout l'univers géographique actif via les
+partitions strictes certifiées, jamais dans le top 100.
+*(commit GitHub : étages retrieval et preuve initiaux `e902ab6`)*
+
+Les contre-audits initiaux ont correctement arrêté l'intégration sur cinq
+défauts : ancien store non scellé pour la preuve, ordre des features trop
+permissif, contexte IDF concurrent, schéma vide absent et types divergents.
+Le correctif utilise uniquement `StrictPartitionStore`, épingle les 39 codes
+INSEE mégapoles du manifeste historique SHA-256 `a07bf9cd...`, filtre leur
+partition INSEE certifiée par code postal, impose le tuple Ranker C et son
+hash `760db4db...`, conserve un schéma vide exploitable et sérialise la
+section globale IDF/features. La première correction avait modifié
+`features.py`, pourtant scellé historiquement ; la correction suivante le
+restaure octet pour octet et place le verrou uniquement dans le service.
+*(commits GitHub : durcissement `13e2418`, restauration de la source scellée
+et verrou service `bc33483`)*
+
+La parité exhaustive donne 1 456/1 456 requêtes, 145 236 candidats, plafond
+maximal 100, mêmes identités/rangs et 45 features `float32` bit à bit. Les
+100/100 requêtes `insee_cp` reproduisent exactement les preuves directes et
+leurs agrégats ; le cas vide aboutit à `REVIEW / NO_CANDIDATE` sans appeler
+le ranker. Deux requêtes réelles concurrentes restent bit-exactes. Deux
+contre-audits techniques du commit exact `bc33483` rendent GO, avec
+151/151 et 137/137 tests ciblés. La suite globale donne 1 554 tests passés,
+62 ignorés et 7 échecs préexistants exclusivement liés aux artefacts réels
+Fresh-S1 déjà présents sur le Mac ; aucun ne touche ce service.
+
+La prochaine étape est désormais de charger une seule fois les modèles OOF
+de parité, l'accepteur et la taxonomie dans l'orchestrateur persistant, puis
+de vérifier les sept étages et la latence/RSS appariée. Le test final produit
+et tout réentraînement restent fermés.
+
 ### Direction active V4.13 — labels réellement frais, sans nouvelle PKI
 
 Le provisioner S1/V1 a échoué proprement sur le Mac réel avec
