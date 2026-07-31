@@ -208,6 +208,11 @@ def seal_manifests(rows: Iterable[dict[str, Any]], output_root: Path) -> dict[st
             path = staging / split / "split_manifest.json"
             _write_exclusive(path, payload)
             hashes[split] = hashlib.sha256(payload).hexdigest()
+        staging_fd = os.open(staging, os.O_RDONLY)
+        try:
+            os.fsync(staging_fd)
+        finally:
+            os.close(staging_fd)
         os.rename(staging, resolved)
         parent_fd = os.open(resolved.parent, os.O_RDONLY)
         try:

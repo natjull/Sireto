@@ -30,6 +30,11 @@ try:
         qualify_fixture_rows,
         write_fixture_outputs,
     )
+    from scripts.audit_v413_synthetic_contamination import (
+        audit_synthetic_contamination,
+    )
+    from scripts.seal_v413_fresh_splits import seal_manifests
+    from scripts.validate_v413_fresh_artifacts import validate_artifacts
 except ModuleNotFoundError:  # Direct ``python scripts/...py`` execution.
     import audit_v413_fresh_source_availability as gate0a
     from build_v413_fresh_qualification import (
@@ -39,6 +44,9 @@ except ModuleNotFoundError:  # Direct ``python scripts/...py`` execution.
         qualify_fixture_rows,
         write_fixture_outputs,
     )
+    from audit_v413_synthetic_contamination import audit_synthetic_contamination
+    from seal_v413_fresh_splits import seal_manifests
+    from validate_v413_fresh_artifacts import validate_artifacts
 
 
 MARKER_FILENAME = "payload_opening.json"
@@ -269,7 +277,11 @@ def _artifact_hashes(output_root: Path) -> dict[str, str]:
         "queries": Path("queries/queries.csv"),
         "oracle": Path("oracle/oracle.csv"),
         "audit": Path("audit/qualification.json"),
+        "contamination": Path("audit/contamination.json"),
         "private_split_rows": Path("audit/private_split_rows.jsonl"),
+        "split_fit": Path("splits/fit/split_manifest.json"),
+        "split_dev": Path("splits/dev/split_manifest.json"),
+        "split_test": Path("splits/test/split_manifest.json"),
     }
     hashes: dict[str, str] = {}
     for name, suffix in relative.items():
@@ -294,7 +306,11 @@ def _fsync_outputs(output_root: Path) -> None:
         output_root / "queries/queries.csv",
         output_root / "oracle/oracle.csv",
         output_root / "audit/qualification.json",
+        output_root / "audit/contamination.json",
         output_root / "audit/private_split_rows.jsonl",
+        output_root / "splits/fit/split_manifest.json",
+        output_root / "splits/dev/split_manifest.json",
+        output_root / "splits/test/split_manifest.json",
     )
     for path in files:
         fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_CLOEXEC)
@@ -306,6 +322,10 @@ def _fsync_outputs(output_root: Path) -> None:
         output_root / "queries",
         output_root / "oracle",
         output_root / "audit",
+        output_root / "splits/fit",
+        output_root / "splits/dev",
+        output_root / "splits/test",
+        output_root / "splits",
         output_root,
         output_root.parent,
     ):
@@ -364,7 +384,16 @@ def _read_receipt(control_fd: int) -> dict[str, Any] | None:
         or not isinstance(receipt["output_root"], str)
         or not isinstance(receipt["output_hashes"], dict)
         or set(receipt["output_hashes"])
-        != {"queries", "oracle", "audit", "private_split_rows"}
+        != {
+            "queries",
+            "oracle",
+            "audit",
+            "contamination",
+            "private_split_rows",
+            "split_fit",
+            "split_dev",
+            "split_test",
+        }
         or any(
             not isinstance(value, str) or gate0a.HEX64.fullmatch(value) is None
             for value in receipt["output_hashes"].values()
@@ -375,12 +404,59 @@ def _read_receipt(control_fd: int) -> dict[str, Any] | None:
     return receipt
 
 
+def _paths_overlap(left: Path, right: Path) -> bool:
+    return (
+        left == right
+        or left in right.parents
+        or right in left.parents
+    )
+
+
+def _read_written_artifacts(
+    output_root: Path,
+) -> tuple[list[dict[str, Any]], list[dict[str, Any]], list[dict[str, Any]]]:
+    query_raw = (output_root / "queries/queries.csv").read_bytes()
+    oracle_raw = (output_root / "oracle/oracle.csv").read_bytes()
+    queries = _csv_rows(query_raw, [
+        "query_id", "reference_date", "crm_name_raw", "crm_address_raw",
+        "crm_postcode_raw", "crm_city_raw", "crm_insee_raw",
+    ], "WRITTEN_QUERIES")
+    oracle_rows = _csv_rows(oracle_raw, [
+        "query_id", "label", "authoritative_siret", "authoritative_siren",
+        "reason_code", "evidence_count", "evidence_payload_sha256s",
+    ], "WRITTEN_ORACLE")
+    oracle: list[dict[str, Any]] = []
+    for row in oracle_rows:
+        decoded = dict(row)
+        decoded["authoritative_siret"] = decoded["authoritative_siret"] or None
+        decoded["authoritative_siren"] = decoded["authoritative_siren"] or None
+        try:
+            decoded["evidence_count"] = int(decoded["evidence_count"])
+            decoded["evidence_payload_sha256s"] = json.loads(
+                decoded["evidence_payload_sha256s"]
+            )
+        except (ValueError, TypeError, json.JSONDecodeError):
+            _stop("WRITTEN_ORACLE_ENCODING")
+        oracle.append(decoded)
+    split_rows: list[dict[str, Any]] = []
+    for line in (
+        output_root / "audit/private_split_rows.jsonl"
+    ).read_text(encoding="utf-8").splitlines():
+        value = json.loads(line)
+        if not isinstance(value, dict):
+            _stop("WRITTEN_SPLIT_ROW")
+        split_rows.append(value)
+    return queries, oracle, split_rows
+
+
 def open_synthetic_qualification(
     *,
     inbox: Path,
     control_root: Path,
     output_root: Path,
     authority_catalog: Mapping[str, Any],
+    contamination_keysets: Mapping[str, set[str]],
+    synthetic_hmac_key: bytes,
     synthetic_only: bool,
     crash_hook: CrashHook | None = None,
     repository: Path = gate0a.REPOSITORY,
@@ -394,6 +470,13 @@ def open_synthetic_qualification(
     inbox = _tmp_path(inbox, must_exist=True, label="INBOX")
     control_root = _tmp_path(control_root, must_exist=True, label="CONTROL_ROOT")
     output_root = _tmp_path(output_root, must_exist=False, label="OUTPUT_ROOT")
+    for left, right in (
+        (inbox, control_root),
+        (inbox, output_root),
+        (control_root, output_root),
+    ):
+        if _paths_overlap(left, right):
+            _stop("ROOTS_NOT_PAIRWISE_DISJOINT")
     hook = crash_hook or (lambda _stage: None)
     if not callable(hook):
         _stop("CRASH_HOOK")
@@ -414,6 +497,19 @@ def open_synthetic_qualification(
             marker, marker_raw = gate0a._read_control(
                 control_fd, MARKER_FILENAME, "PAYLOAD_MARKER"
             )
+            claim = gate0a._existing_claim(control_fd, bundle)
+            if claim is None:
+                _stop("RECEIPT_CLAIM_MISSING")
+            ledger, ledger_raw = gate0a._read_control(
+                control_fd, gate0a.LEDGER_FILENAME, "AVAILABILITY_LEDGER"
+            )
+            gate0a._validate_ledger(ledger, bundle)
+            _, claim_raw = gate0a._read_control(
+                control_fd, gate0a.CLAIM_FILENAME, "CLAIM"
+            )
+            binding = _validate_claim_binding(
+                claim, claim_raw, ledger, ledger_raw
+            )
             if (
                 marker.get("schema_version") != MARKER_SCHEMA
                 or marker.get("stage") != "GATE_0B"
@@ -427,10 +523,20 @@ def open_synthetic_qualification(
                 != receipt["availability_ledger_sha256"]
                 or marker.get("collection_manifest_sha256")
                 != receipt["collection_manifest_sha256"]
+                or binding["claim_sha256"] != receipt["claim_sha256"]
+                or binding["ledger_sha256"]
+                != receipt["availability_ledger_sha256"]
             ):
                 _stop("RECEIPT_MARKER_BINDING")
             if _artifact_hashes(output_root) != receipt["output_hashes"]:
                 _stop("RECEIPT_OUTPUT_BINDING")
+            audit = json.loads(
+                (output_root / "audit/qualification.json").read_text(
+                    encoding="utf-8"
+                )
+            )
+            if audit.get("counts") != receipt["counts"]:
+                _stop("RECEIPT_COUNTS_BINDING")
             return receipt
 
         try:
@@ -441,6 +547,8 @@ def open_synthetic_qualification(
             _stop("PAYLOAD_MARKER_STAT")
         else:
             _stop("INCOMPLETE_PRIOR_PAYLOAD_OPEN")
+        if output_root.exists():
+            _stop("OUTPUT_ROOT_PREEXISTS")
 
         claim = gate0a._existing_claim(control_fd, bundle)
         if claim is None:
@@ -543,11 +651,42 @@ def open_synthetic_qualification(
                 authority_catalog=authority_catalog,
                 synthetic_fixtures_only=True,
             )
+            contamination = audit_synthetic_contamination(
+                crm_rows=crm_rows,
+                split_rows=result["split_rows"],
+                keysets=contamination_keysets,
+                hmac_key=synthetic_hmac_key,
+                synthetic_only=True,
+            )
             write_fixture_outputs(result, output_root)
         except QualificationError as exc:
             _stop(f"QUALIFICATION:{exc}")
+        contamination_path = output_root / "audit/contamination.json"
+        contamination_path.write_bytes(_canonical_json(contamination))
+        contamination_path.chmod(0o600)
+        queries_written, oracle_written, split_rows_written = (
+            _read_written_artifacts(output_root)
+        )
+        validate_artifacts(queries_written, oracle_written)
+        seal_manifests(split_rows_written, output_root / "splits")
         _fsync_outputs(output_root)
         hook("after_outputs")
+
+        inbox_fd = gate0a._open_directory(inbox, expected_uid, "INBOX")
+        try:
+            collection_fd = os.open(
+                claim["directory_name"],
+                os.O_RDONLY | os.O_DIRECTORY | os.O_NOFOLLOW | os.O_CLOEXEC,
+                dir_fd=inbox_fd,
+            )
+            try:
+                gate0a._inspect_collection_entries(
+                    collection_fd, manifest, expected_uid
+                )
+            finally:
+                os.close(collection_fd)
+        finally:
+            os.close(inbox_fd)
 
         receipt = {
             "schema_version": RECEIPT_SCHEMA,
@@ -579,17 +718,34 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--control-root", type=Path, required=True)
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--authority-catalog", type=Path, required=True)
+    parser.add_argument("--contamination-keysets", type=Path, required=True)
+    parser.add_argument("--synthetic-hmac-key-hex", required=True)
     parser.add_argument("--synthetic-only", action="store_true")
     args = parser.parse_args(argv)
     catalog_path = _tmp_path(
         args.authority_catalog, must_exist=True, label="AUTHORITY_CATALOG"
     )
     catalog = json.loads(catalog_path.read_text(encoding="utf-8"))
+    keysets_path = _tmp_path(
+        args.contamination_keysets,
+        must_exist=True,
+        label="CONTAMINATION_KEYSETS",
+    )
+    keysets_raw = json.loads(keysets_path.read_text(encoding="utf-8"))
+    if not isinstance(keysets_raw, dict):
+        _stop("CONTAMINATION_KEYSETS_SCHEMA")
+    try:
+        keysets = {key: set(values) for key, values in keysets_raw.items()}
+        synthetic_key = bytes.fromhex(args.synthetic_hmac_key_hex)
+    except (TypeError, ValueError):
+        _stop("SYNTHETIC_CONTAMINATION_INPUT")
     result = open_synthetic_qualification(
         inbox=args.inbox,
         control_root=args.control_root,
         output_root=args.output_root,
         authority_catalog=catalog,
+        contamination_keysets=keysets,
+        synthetic_hmac_key=synthetic_key,
         synthetic_only=args.synthetic_only,
     )
     print(json.dumps(result, sort_keys=True, separators=(",", ":")))

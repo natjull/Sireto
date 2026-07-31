@@ -20,6 +20,7 @@ from scripts.open_v413_synthetic_qualification import (
     RECEIPT_FILENAME,
     open_synthetic_qualification,
 )
+from scripts.audit_v413_synthetic_contamination import ContaminationStop
 
 
 def _private_dir(path: Path) -> None:
@@ -147,11 +148,22 @@ def _catalog() -> dict:
 
 
 def _run(inbox: Path, control: Path, output: Path, **kwargs):
+    keysets = kwargs.pop(
+        "contamination_keysets",
+        {
+            "service_id": set(),
+            "siret_masked": set(),
+            "fuzzy_historical": set(),
+            "consumed_sirens": set(),
+        },
+    )
     return open_synthetic_qualification(
         inbox=inbox,
         control_root=control,
         output_root=output,
         authority_catalog=_catalog(),
+        contamination_keysets=keysets,
+        synthetic_hmac_key=bytes(range(32)),
         synthetic_only=True,
         **kwargs,
     )
@@ -168,6 +180,9 @@ def test_real_gate0a_to_gate0b_outputs_and_idempotence(
     assert (control / RECEIPT_FILENAME).is_file()
     assert (output / "queries/queries.csv").is_file()
     assert (output / "oracle/oracle.csv").is_file()
+    assert (output / "audit/contamination.json").is_file()
+    for split in ("fit", "dev", "test"):
+        assert (output / f"splits/{split}/split_manifest.json").is_file()
 
     original_open = os.open
 
@@ -265,3 +280,46 @@ def test_claim_metadata_tamper_is_rejected_before_marker(tmp_path: Path) -> None
     with pytest.raises(Gate0BStop, match="CLAIM_DIRECTORY_BINDING"):
         _run(inbox, control, output)
     assert not (control / MARKER_FILENAME).exists()
+
+
+def test_post_receipt_claim_tamper_is_not_masked(tmp_path: Path) -> None:
+    inbox, control, output, _ = _fixture(tmp_path)
+    _run(inbox, control, output)
+    claim_path = control / gate0a.CLAIM_FILENAME
+    claim = json.loads(claim_path.read_bytes())
+    claim["collection_id"] = "TAMPERED"
+    claim_path.unlink()
+    claim_path.write_bytes(gate0a.canonical_json(claim))
+    claim_path.chmod(0o600)
+    with pytest.raises(Gate0BStop, match="CLAIM_COLLECTION_BINDING"):
+        _run(inbox, control, output)
+
+
+def test_input_control_output_roots_must_be_pairwise_disjoint(
+    tmp_path: Path,
+) -> None:
+    inbox, control, _, collection = _fixture(tmp_path)
+    embedded = collection / "embedded-output"
+    with pytest.raises(Gate0BStop, match="ROOTS_NOT_PAIRWISE_DISJOINT"):
+        _run(inbox, control, embedded)
+    assert len(list(collection.iterdir())) == 3
+    assert not (control / MARKER_FILENAME).exists()
+
+
+def test_forbidden_siren_overlap_stops_before_outputs(tmp_path: Path) -> None:
+    inbox, control, output, _ = _fixture(tmp_path)
+    with pytest.raises(ContaminationStop, match="forbidden historical overlap"):
+        _run(
+            inbox,
+            control,
+            output,
+            contamination_keysets={
+                "service_id": set(),
+                "siret_masked": set(),
+                "fuzzy_historical": set(),
+                "consumed_sirens": {"123456789"},
+            },
+        )
+    assert (control / MARKER_FILENAME).is_file()
+    assert not (control / RECEIPT_FILENAME).exists()
+    assert not output.exists()
