@@ -2,6 +2,22 @@
 
 ## Etat des lieux
 
+### V4.12 — accepteur trusted-label : PIVOT
+
+Avec le ranker corrigé et l'accepteur XGBoost monotone poids `10` figés, le
+seuil appris sur 147 scènes sans erreur produit deux ambiguïtés AUTO sur les
+132 scènes de comparaison. Le cumul OOF est 121/123 AUTO corrects, insuffisant
+pour 99,8 %.
+
+Les erreurs Promotrans Mondeville et Ligue AURA Handball sont des entités
+co-localisées. Les gardes manuelles et surpondérations négatives bornées ont été
+rejetées : elles restent fautives ou détruisent trop de couverture. Verdict
+`PIVOT_ACCEPTOR`; prochaine étape : calibration conservatrice sur tout l'OOF
+consommé, puis gate end-to-end dev. Test final fermé.
+
+*(artefact `v4_12_trusted_acceptor/7bde8fd021ec1915`; code, rapport et présent
+handover : commit du présent milestone)*
+
 ### V4.12 — ranker trusted-label : 216/254 OOF
 
 Le ranker a été réentraîné sans changement de retrieval ni de features sur les
