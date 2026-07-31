@@ -268,6 +268,36 @@ def _assert_exact(
         ) from exc
 
 
+def _assert_float_tolerance(
+    observed: pd.Series,
+    expected: pd.Series,
+    *,
+    label: str,
+    tolerance: float,
+) -> None:
+    if (
+        observed.dtype != expected.dtype
+        or len(observed) != len(expected)
+        or observed.dtype != np.dtype("float64")
+    ):
+        raise ValueError(
+            f"STOP_V412_SERVICE_INTEGRITY: {label} dtype changed"
+        )
+    differences = np.abs(
+        observed.to_numpy(dtype=np.float64)
+        - expected.to_numpy(dtype=np.float64)
+    )
+    if (
+        not np.isfinite(observed.to_numpy(dtype=np.float64)).all()
+        or not np.isfinite(expected.to_numpy(dtype=np.float64)).all()
+        or not np.isfinite(differences).all()
+        or (differences > tolerance).any()
+    ):
+        raise ValueError(
+            f"STOP_V412_SERVICE_INTEGRITY: {label} parity changed"
+        )
+
+
 def _latency_summary(timings: pd.DataFrame) -> dict[str, int]:
     values = timings["total_wall_ns"].astype(int).tolist()
     evidence = timings["evidence_guard_ns"].astype(int).tolist()
@@ -499,26 +529,38 @@ def validate_worker_output(
         ),
         label="acceptor non-score",
     )
-    differences = np.abs(
-        acceptor["score"].to_numpy(dtype=np.float64)
-        - expected_acceptor["score"].to_numpy(dtype=np.float64)
+    _assert_float_tolerance(
+        acceptor["score"],
+        expected_acceptor["score"],
+        label="acceptor score",
+        tolerance=1e-15,
     )
-    if not np.isfinite(differences).all() or (differences > 1e-15).any():
-        raise ValueError(
-            "STOP_V412_SERVICE_INTEGRITY: acceptor score parity changed"
-        )
 
     if expected_mode == "v412g":
         for observed_name, expected_name in (
             ("query_evidence.parquet", "query_evidence.parquet"),
             ("candidate_evidence.parquet", "candidate_evidence.parquet"),
-            ("guard.parquet", "guard_reference.parquet"),
         ):
             _assert_exact(
                 observed[observed_name],
                 reference[expected_name],
                 label=observed_name,
             )
+        guard = observed["guard.parquet"].reset_index(drop=True)
+        expected_guard = reference["guard_reference.parquet"].reset_index(
+            drop=True
+        )
+        _assert_exact(
+            guard.drop(columns=["acceptor_score"]),
+            expected_guard.drop(columns=["acceptor_score"]),
+            label="guard non-score",
+        )
+        _assert_float_tolerance(
+            guard["acceptor_score"],
+            expected_guard["acceptor_score"],
+            label="guard acceptor score",
+            tolerance=1e-15,
+        )
     timings = observed["timings.parquet"]
     queries = reference["queries.parquet"]
     if (

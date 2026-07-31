@@ -5,6 +5,7 @@ import pytest
 
 from src.xgb_matcher.v412_service_parity import (
     _assert_exact,
+    _assert_float_tolerance,
     evaluate_paired_gate,
     nearest_rank,
 )
@@ -69,6 +70,39 @@ def test_exact_parity_accepts_only_equivalent_text_storage() -> None:
             observed,
             changed_numeric_dtype,
             label="numeric dtype",
+        )
+
+
+def test_float_tolerance_is_narrow_and_dtype_strict() -> None:
+    expected = pd.Series([0.5, 1.0], dtype="float64")
+    observed = pd.Series([0.5 + 5e-16, 1.0], dtype="float64")
+    _assert_float_tolerance(
+        observed,
+        expected,
+        label="duplicated acceptor score",
+        tolerance=1e-15,
+    )
+
+    with pytest.raises(ValueError, match="parity changed"):
+        _assert_float_tolerance(
+            pd.Series([0.5 + 2e-15, 1.0], dtype="float64"),
+            expected,
+            label="changed score",
+            tolerance=1e-15,
+        )
+    with pytest.raises(ValueError, match="dtype changed"):
+        _assert_float_tolerance(
+            observed.astype("float32"),
+            expected,
+            label="changed score dtype",
+            tolerance=1e-15,
+        )
+    with pytest.raises(ValueError, match="parity changed"):
+        _assert_float_tolerance(
+            pd.Series([float("nan"), 1.0], dtype="float64"),
+            expected,
+            label="non-finite score",
+            tolerance=1e-15,
         )
 
 
