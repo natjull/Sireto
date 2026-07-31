@@ -1,0 +1,354 @@
+"""Label-blind, query-level V4.11 + V4.12-G downstream service core.
+
+The caller owns retrieval and candidate-feature construction.  This module
+accepts one already bounded candidate pool, scores it with the frozen Ranker
+C, builds the shared V4.11 scene, calls the frozen acceptor, then applies the
+V4.12-G veto.  It performs no file, network, model-training or label I/O.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+import math
+import re
+import time
+from typing import Any, Callable, Mapping, Sequence
+
+import numpy as np
+import pandas as pd
+
+from .v411_scene import (
+    V411_ACCEPTOR_FEATURE_NAMES,
+    build_v411_compact_scene,
+)
+from .v412_direct_evidence import apply_guard
+
+
+CANDIDATE_CEILING = 100
+FIXED_THRESHOLD = 0.8720916706888049
+FORBIDDEN_FIELDS = frozenset(
+    {
+        "label_kind",
+        "ground_truth_siret",
+        "ground_truth_siren",
+        "is_ground_truth",
+        "acceptor_target",
+        "correct_exact_siret",
+    }
+)
+_SIRET = re.compile(r"^[0-9]{14}$")
+_SIREN = re.compile(r"^[0-9]{9}$")
+
+SceneBuilder = Callable[
+    [Mapping[str, Any], pd.DataFrame, Any],
+    Mapping[str, Any],
+]
+
+
+@dataclass(frozen=True)
+class ServiceTimings:
+    ranker_ns: int
+    scene_acceptor_ns: int
+    guard_ns: int
+
+    @property
+    def downstream_ns(self) -> int:
+        return self.ranker_ns + self.scene_acceptor_ns + self.guard_ns
+
+
+@dataclass
+class ServiceTrace:
+    query_id: str
+    predicted_siret: str | None
+    predicted_siren: str | None
+    acceptor_score: float
+    threshold: float
+    decision_v411: str
+    review_reason_v411: str | None
+    decision_v412: str
+    review_reason_v412: str | None
+    scored_candidates: pd.DataFrame
+    scene: dict[str, Any]
+    timings: ServiceTimings
+
+
+def _require_label_blind(fields: Sequence[str], *, label: str) -> None:
+    leaked = FORBIDDEN_FIELDS & set(fields)
+    if leaked:
+        raise ValueError(
+            f"STOP_V412_SERVICE_INTEGRITY: {label} contains {sorted(leaked)}"
+        )
+
+
+def _validate_query(
+    query: Mapping[str, Any],
+    direct_evidence: Mapping[str, Any],
+) -> str:
+    _require_label_blind(list(query), label="query")
+    _require_label_blind(list(direct_evidence), label="direct evidence")
+    query_id = str(query.get("query_id") or "")
+    if not query_id or str(direct_evidence.get("query_id") or "") != query_id:
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: query/evidence identity mismatch"
+        )
+    count = direct_evidence.get("direct_candidate_count")
+    if (
+        not isinstance(count, int)
+        or isinstance(count, bool)
+        or count < 0
+    ):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: invalid direct candidate count"
+        )
+    sole = direct_evidence.get("sole_direct_siret")
+    if count == 1:
+        if not isinstance(sole, str) or _SIRET.fullmatch(sole) is None:
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: sole direct SIRET missing"
+            )
+    elif sole is not None and not pd.isna(sole):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: unexpected sole direct SIRET"
+        )
+    return query_id
+
+
+def _validate_candidates(
+    query_id: str,
+    candidates: pd.DataFrame,
+    feature_order: Sequence[str],
+) -> None:
+    _require_label_blind(list(candidates.columns), label="candidate pool")
+    required = {
+        "query_id",
+        "candidate_siret",
+        "candidate_siren",
+        "candidate_state",
+        "retrieval_rank",
+        *feature_order,
+    }
+    if not required.issubset(candidates.columns):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: candidate schema incomplete"
+        )
+    if len(candidates) > CANDIDATE_CEILING:
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: candidate ceiling exceeded"
+        )
+    if candidates["query_id"].astype(str).ne(query_id).any():
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: candidate query mismatch"
+        )
+    sirets = candidates["candidate_siret"].astype(str)
+    sirens = candidates["candidate_siren"].astype(str)
+    if (
+        sirets.duplicated().any()
+        or not sirets.map(_SIRET.fullmatch).all()
+        or not sirens.map(_SIREN.fullmatch).all()
+        or not sirets.str[:9].eq(sirens).all()
+        or not candidates["candidate_state"].astype(str).eq("A").all()
+    ):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: invalid candidate identity/state"
+        )
+    ranks = sorted(candidates["retrieval_rank"].astype(int).tolist())
+    if ranks != list(range(1, len(candidates) + 1)):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: retrieval ranks not contiguous"
+        )
+    matrix = candidates[list(feature_order)].to_numpy(dtype=np.float32)
+    if not np.isfinite(matrix).all():
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: non-finite ranker feature"
+        )
+
+
+class V412DownstreamService:
+    """Persistent frozen ranker, acceptor and V4.12-G veto."""
+
+    def __init__(
+        self,
+        *,
+        ranker: Any,
+        acceptor: Any,
+        taxonomy: Any,
+        ranker_feature_order: Sequence[str],
+        threshold: float = FIXED_THRESHOLD,
+        scene_builder: SceneBuilder = build_v411_compact_scene,
+    ) -> None:
+        if (
+            len(ranker_feature_order) != 45
+            or len(set(ranker_feature_order)) != 45
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: Ranker C feature order changed"
+            )
+        if threshold != FIXED_THRESHOLD:
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: acceptor threshold changed"
+            )
+        self.ranker = ranker
+        self.acceptor = acceptor
+        self.taxonomy = taxonomy
+        self.ranker_feature_order = tuple(ranker_feature_order)
+        self.threshold = threshold
+        self.scene_builder = scene_builder
+
+    def infer_one(
+        self,
+        *,
+        query: Mapping[str, Any],
+        candidates: pd.DataFrame,
+        direct_evidence: Mapping[str, Any],
+    ) -> ServiceTrace:
+        query_id = _validate_query(query, direct_evidence)
+        _validate_candidates(
+            query_id,
+            candidates,
+            self.ranker_feature_order,
+        )
+
+        ranker_started = time.perf_counter_ns()
+        scored = candidates.copy()
+        scores = (
+            np.asarray(
+                self.ranker.predict(
+                    scored[list(self.ranker_feature_order)].to_numpy(
+                        dtype=np.float32
+                    )
+                ),
+                dtype=np.float32,
+            )
+            if len(scored)
+            else np.asarray([], dtype=np.float32)
+        )
+        if scores.shape != (len(scored),) or not np.isfinite(scores).all():
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid ranker scores"
+            )
+        scored["ranker_score"] = scores
+        scored = scored.sort_values(
+            [
+                "ranker_score",
+                "retrieval_rank",
+                "candidate_siret",
+            ],
+            ascending=[False, True, True],
+            kind="mergesort",
+        ).reset_index(drop=True)
+        scored["ranker_rank"] = np.arange(
+            1, len(scored) + 1, dtype=np.int16
+        )
+        ranker_ns = time.perf_counter_ns() - ranker_started
+
+        scene_started = time.perf_counter_ns()
+        scene = dict(self.scene_builder(query, scored, self.taxonomy))
+        _require_label_blind(list(scene), label="scene")
+        missing_scene = set(V411_ACCEPTOR_FEATURE_NAMES) - set(scene)
+        if missing_scene:
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: scene feature missing"
+            )
+        scene_matrix = np.asarray(
+            [[float(scene[name]) for name in V411_ACCEPTOR_FEATURE_NAMES]],
+            dtype=np.float64,
+        )
+        if not np.isfinite(scene_matrix).all():
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: non-finite scene feature"
+            )
+        probabilities = np.asarray(
+            self.acceptor.predict_proba(scene_matrix),
+            dtype=np.float64,
+        )
+        if (
+            probabilities.shape != (1, 2)
+            or not np.isfinite(probabilities).all()
+        ):
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: invalid acceptor score"
+            )
+        acceptor_score = float(probabilities[0, 1])
+        predicted_siret_raw = scene.get("predicted_siret")
+        predicted_siren_raw = scene.get("predicted_siren")
+        predicted_siret = (
+            str(predicted_siret_raw)
+            if isinstance(predicted_siret_raw, str)
+            and _SIRET.fullmatch(predicted_siret_raw)
+            else None
+        )
+        predicted_siren = (
+            str(predicted_siren_raw)
+            if isinstance(predicted_siren_raw, str)
+            and _SIREN.fullmatch(predicted_siren_raw)
+            else None
+        )
+        if predicted_siret is not None and predicted_siret[:9] != predicted_siren:
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: predicted SIRET/SIREN mismatch"
+            )
+        decision_v411 = (
+            "AUTO_MATCH"
+            if predicted_siret is not None
+            and acceptor_score >= self.threshold
+            else "REVIEW"
+        )
+        review_reason_v411 = (
+            None
+            if decision_v411 == "AUTO_MATCH"
+            else (
+                "NO_CANDIDATE"
+                if len(scored) == 0
+                else "LOW_CONFIDENCE"
+            )
+        )
+        scene_acceptor_ns = time.perf_counter_ns() - scene_started
+
+        guard_started = time.perf_counter_ns()
+        sole = direct_evidence.get("sole_direct_siret")
+        decision_v412, review_reason_v412 = apply_guard(
+            decision_v411=decision_v411,
+            review_reason_v411=review_reason_v411,
+            predicted_siret=predicted_siret,
+            direct_candidate_count=int(
+                direct_evidence["direct_candidate_count"]
+            ),
+            sole_direct_siret=(
+                str(sole)
+                if isinstance(sole, str) and not pd.isna(sole)
+                else None
+            ),
+        )
+        guard_ns = time.perf_counter_ns() - guard_started
+        if decision_v411 == "REVIEW" and decision_v412 != "REVIEW":
+            raise AssertionError("V4.12-G created an AUTO decision")
+        if not math.isfinite(acceptor_score):
+            raise AssertionError("non-finite score escaped validation")
+        return ServiceTrace(
+            query_id=query_id,
+            predicted_siret=predicted_siret,
+            predicted_siren=predicted_siren,
+            acceptor_score=acceptor_score,
+            threshold=self.threshold,
+            decision_v411=decision_v411,
+            review_reason_v411=review_reason_v411,
+            decision_v412=decision_v412,
+            review_reason_v412=review_reason_v412,
+            scored_candidates=scored,
+            scene=scene,
+            timings=ServiceTimings(
+                ranker_ns=ranker_ns,
+                scene_acceptor_ns=scene_acceptor_ns,
+                guard_ns=guard_ns,
+            ),
+        )
+
+
+__all__ = [
+    "CANDIDATE_CEILING",
+    "FIXED_THRESHOLD",
+    "FORBIDDEN_FIELDS",
+    "ServiceTimings",
+    "ServiceTrace",
+    "V412DownstreamService",
+]
