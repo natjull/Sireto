@@ -3119,10 +3119,38 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   La sécurité sans aucune décision n'est pas un gain North Star.
 - Verdict : `PIVOT_ACCEPTOR_COVERAGE`. Les sept cas indépendants sont
   consommés. La prochaine expérience peut pondérer les scènes difficiles et
-  doit être sélectionnée uniquement sur OOF/développement consommé ; toute
-  variante retenue exigera un nouveau docket parmi les 189 REVIEW restants.
+  doit être sélectionnée uniquement sur OOF/développement consommé. La
+  qualification ultérieure a établi que les 189 REVIEW restants ont déjà
+  contribué aux lots de seuil/comparaison via leurs labels historiques : ils
+  peuvent être ré-adjudiqués, mais ne constituent pas une preuve indépendante
+  de l'accepteur.
 - Rapport : `reports/v412_ranker_acceptor_stack.md`. Artefact :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_ranker_acceptor_stack/f6d3c21bd8a8359e`.
+
+## Expérience V4.12-Accepteur — poids des cas difficiles
+
+- Commit : `0cf3f09` (`experiment: pivot V4.12 acceptor weighting`).
+- Les poids `1`, `5`, `10`, `20` et `50` ont été comparés sur les 83 scènes
+  difficiles avec décisions accepteur hors apprentissage en cinq plis SIREN.
+  Les sept adjudications indépendantes précédentes sont exclues et le test
+  final reste fermé.
+- Les cinq variantes n'automatisent chacune qu'un seul dossier difficile sur
+  83, sans erreur ni ambiguïté AUTO. La pondération n'apporte donc aucun gain
+  par rapport au poids `1`. Sur les 701 contrôles consommés, les variantes
+  produisent 593 à 597 AUTO sans erreur observée, mais ce petit écart ne résout
+  pas le goulot métier étudié.
+- Une ablation locale retirant les contraintes monotones reste également à
+  zéro ou un AUTO difficile. Le problème n'est pas un simple réglage de poids
+  ou une contrainte isolée.
+- Verdict : `PIVOT_ACCEPTOR_FEATURES`. Le ranker candidat classe correctement
+  60/77 dossiers exacts difficiles, tandis que l'accepteur n'en laisse passer
+  qu'un. La prochaine expérience autorisée doit tester, sur développement déjà
+  consommé, des preuves relationnelles explicites : avantage du nom légal sur
+  le nom d'établissement, écart avec le second candidat et concurrence entre
+  sites/SIREN. Aucun nouveau docket indépendant ne doit être ouvert avant un
+  gain hors apprentissage réel.
+- Rapport : `reports/v412_acceptor_hard_weight.md`. Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_acceptor_hard_weight/a9bdb09ea504194e`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
