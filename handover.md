@@ -76,6 +76,17 @@ donne 86 tests verts, dont availability → Gate 0B → qualification et matrice
 de crash. Aucun run réel n'est autorisé.
 *(commit GitHub : fermeture Gate 0B synthétique `8cb5d51`)*
 
+Le ré-audit de `8cb5d51` a encore rendu `NO_GO` : les trois racines pouvaient
+se chevaucher, une receipt masquait une claim/ledger corrompue après succès et
+le test Gate 0B ne relisait pas les artefacts écrits jusqu'au split. Le
+correctif `9353294` impose des racines deux à deux disjointes, revalide toute
+la chaîne claim/ledger/marker/receipt à chaque reprise, relit et valide les
+CSV réellement écrits, exécute les trois projections anti-chevauchement
+applicables plus le registre SIREN, puis scelle fit/dev/test avant la receipt.
+Il refuse aussi une sortie imbriquée dans la collection et tout overlap
+synthétique injecté. La suite V4.13 donne désormais 96 tests verts.
+*(commit GitHub : chaîne Gate 0B jusqu'aux splits scellés `9353294`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
