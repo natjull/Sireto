@@ -618,6 +618,33 @@ def test_low_level_guard_errors_are_normalized_and_zero_query(
     assert native.calls == []
 
 
+@pytest.mark.parametrize("error", [errno.EACCES, errno.EIO])
+def test_fsync_errors_are_normalized_before_query(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    error: int,
+) -> None:
+    root, _ = synthetic_repository(tmp_path)
+    original_loader = subject.load_and_validate_controls
+    real_fsync = subject.os.fsync
+
+    def load_then_arm(*args, **kwargs):
+        controls = original_loader(*args, **kwargs)
+
+        def fail(_fd: int):
+            raise OSError(error, "injected-fsync")
+
+        monkeypatch.setattr(subject.os, "fsync", fail)
+        return controls
+
+    monkeypatch.setattr(subject, "load_and_validate_controls", load_then_arm)
+    native = FakeNative()
+    with pytest.raises(subject.PreflightError, match="FSYNC_FAILED"):
+        run_synthetic(root, native)
+    monkeypatch.setattr(subject.os, "fsync", real_fsync)
+    assert native.calls == []
+
+
 @pytest.mark.parametrize(
     "stage,expected_calls",
     [
@@ -733,7 +760,48 @@ def test_state_parent_replacement_after_native_never_writes_result(
     assert not (state_parent / Path(plan["output"]["path"]).name).exists()
 
 
-def test_preregistered_zero_query_matrix_is_exactly_26_cases() -> None:
+def test_final_instruction_window_is_bounded_to_one_query_and_no_result(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    state_parent = root / "reports/v9"
+    displaced = root / "reports/v9-displaced"
+    original = subject._DirectoryChain.reopen_verified
+    armed = False
+    state_reopens = 0
+    replaced = False
+
+    def reopen(chain):
+        nonlocal state_reopens, replaced
+        fresh = original(chain)
+        if armed and chain.names[-2:] == ["reports", "v9"]:
+            state_reopens += 1
+            if state_reopens == 2 and not replaced:
+                replaced = True
+                state_parent.rename(displaced)
+                state_parent.mkdir()
+        return fresh
+
+    def checkpoint(stage: str) -> None:
+        nonlocal armed
+        if stage == "AFTER_CLAIM_BEFORE_NATIVE_CALL":
+            armed = True
+
+    monkeypatch.setattr(
+        subject._DirectoryChain, "reopen_verified", reopen
+    )
+    native = FakeNative()
+    with pytest.raises(
+        subject.PreflightError, match="DIRECTORY_NAMESPACE_REPLACED"
+    ):
+        run_synthetic(root, native, checkpoint=checkpoint)
+    assert replaced
+    assert len(native.calls) <= 1
+    assert len(native.calls) == 1
+    assert not (state_parent / Path(plan["output"]["path"]).name).exists()
+
+
+def test_preregistered_query_bounds_are_exactly_27_cases() -> None:
     plan = json.loads(
         (
             REPOSITORY
@@ -741,10 +809,17 @@ def test_preregistered_zero_query_matrix_is_exactly_26_cases() -> None:
         ).read_text()
     )
     matrix = plan["implementation_test_requirements"][
-        "expected_native_call_count_by_case"
+        "maximum_native_call_count_by_case"
     ]
-    assert len(matrix) == 26
-    assert set(matrix.values()) == {0}
+    race_case = "STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    assert len(matrix) == 27
+    assert matrix[race_case] == 1
+    assert all(
+        count == 0 for case, count in matrix.items() if case != race_case
+    )
+    assert plan["implementation_test_requirements"][
+        "forbidden_result_cases"
+    ] == [race_case]
 
 
 def test_concurrent_attempts_allow_at_most_one_native_query(

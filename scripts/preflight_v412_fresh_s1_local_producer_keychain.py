@@ -322,17 +322,30 @@ def validate_plan(plan: Mapping[str, Any]) -> None:
         guard_paths.append(value["path"])
     if len(set(guard_paths)) != len(guard_paths):
         _stop("PLAN_GUARD_DUPLICATE")
-    expected_cases = plan["implementation_test_requirements"][
-        "expected_native_call_count_by_case"
+    maximum_calls = plan["implementation_test_requirements"][
+        "maximum_native_call_count_by_case"
     ]
     _require_exact(
-        expected_cases,
+        maximum_calls,
         closed[
-            "implementation_test_requirements.expected_native_call_count_by_case"
+            "implementation_test_requirements.maximum_native_call_count_by_case"
         ],
         "PLAN_NATIVE_COUNTS",
     )
-    if any(type(v) is not int or v != 0 for v in expected_cases.values()):
+    race_case = "STATE_PARENT_REPLACEMENT_IN_FINAL_INSTRUCTION_WINDOW"
+    if (
+        any(type(value) is not int for value in maximum_calls.values())
+        or maximum_calls.get(race_case) != 1
+        or any(
+            value != 0
+            for case, value in maximum_calls.items()
+            if case != race_case
+        )
+        or plan["implementation_test_requirements"][
+            "forbidden_result_cases"
+        ]
+        != [race_case]
+    ):
         _stop("PLAN_NATIVE_COUNTS_VALUE")
     if set(plan["query_exact"]) & set(plan["query_forbidden_keys"]):
         _stop("PLAN_QUERY_FORBIDDEN")
@@ -759,7 +772,10 @@ def require_absent_fd_anchored(
 
 
 def _sync_file(fd: int) -> None:
-    os.fsync(fd)
+    try:
+        os.fsync(fd)
+    except OSError:
+        _stop("FSYNC_FAILED")
     full = getattr(fcntl, "F_FULLFSYNC", None)
     if full is None:
         _stop("F_FULLFSYNC_UNAVAILABLE")
@@ -917,7 +933,10 @@ class AnchoredStateStore:
         finally:
             os.close(read_fd)
         self._revalidate()
-        os.fsync(self.chain.final_fd)
+        try:
+            os.fsync(self.chain.final_fd)
+        except OSError:
+            _stop("OUTPUT_PARENT_FSYNC")
 
     def close(self) -> None:
         self.chain.close()
