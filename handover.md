@@ -39,6 +39,15 @@ n'est pas pinné avant dépôt.
 *(commit GitHub : fermeture provenance, schéma exact et gate modèle
 `bf4ed26`)*
 
+Deux ré-audits indépendants du commit exact `bf4ed26` rendent maintenant
+**`GO_V413_PREREGISTRATION`**. Le verrou de préenregistrement pinne le commit,
+le plan, son schéma exact-content, le contrat, le catalogue d'autorités vide,
+les tests, l'UID et le volume SSD. Dix-sept tests plan+lock passent. Le seul
+travail désormais autorisé est l'implémentation et l'audit sur fixtures
+synthétiques ; Gate 0A, Gate 0B, retrieval dev et modèles réels restent
+interdits.
+*(commit GitHub : lock double-GO V4.13 `19986f0`)*
+
 Le pivot V4.12 vers un holdout CRM réellement frais est désormais
 préenregistré et contre-audité **`GO_CONTRACTS_FINAL`** sans ouverture d'un
 nouveau CRM. Trois frontières séparées sont gelées :
