@@ -136,6 +136,36 @@ writers/validateurs de la section 5 et obtenir deux
 **`GO_IDENTITY_BROKER_WORKER_PHASE`** sur le run synthétique complet avant la
 première collecte.
 
+La fixture M3 indépendante est désormais gelée avec 17 scénarios réellement
+exercés : recherches vide/top-5, déduplication, quotas, HTML, texte, PDF,
+triple direct valide, identifiant distant rejeté, dates, SIRENE actif/fermé/
+non unique, cache global, timeouts et dépassement. Ses quatre SIRET sont
+générés localement avec Luhn, absents des 3 000 candidats et de leur univers
+SIREN, et la fixture est explicitement `NOT_EVIDENCE`. Aucun fichier de
+comparaison n'est ouvert lors du build. Le contre-audit rend
+**`GO_M3_FIXTURE`**.
+*(commit Git : fixture M3 et tests `7c036bf`)*
+
+Le spike de workers Python sandboxés est également gelé. Un runtime arm64
+relogeable minimal de 35 Mo est copié dans une capacité privée, inventorié et
+haché avant/après ; exactement deux processus séquentiels communiquent par un
+unique socket AF_UNIX hérité. Réseau, nouvelle socket, fork, exec/ré-exec,
+spawn, subprocess et lectures hors capacité sont refusés. Le binaire est
+supprimé après `READY` et avant `GATE`; environnement et CWD sont fermés, les
+deadlines sont absolues et le cleanup couvre tous les échecs pré/post-spawn.
+Après plusieurs `NO_GO` sur ré-exec, late-path, slow-drip et fuite de stage,
+le contre-audit final rend **`GO_M3_PYTHON_SANDBOX_FEASIBILITY`** avec 27 tests
+séquentiels. Ce verdict prouve uniquement la faisabilité : aucun broker,
+Parquet, traitement métier, live ou sortie section 5 n'est exécuté.
+*(commit Git : spike sandbox Python, pin et tests `870cafe`)*
+
+Prochaine étape active : construire les deux workers Python réellement métier
+sur cette frontière validée. Le premier orchestre M2 et produit les artefacts
+d'identité depuis les archives ; le second reconstruit et scelle d'abord les
+faits/preuves sans candidat, puis reçoit le docket après cette barrière pour
+produire les comparaisons. Le C natif reste une sonde de capacités, jamais un
+substitut digest-only au métier.
+
 ### V4.12-S — service persistant gelé après parité exacte et gate Mac
 
 Le worker persistant complet est maintenant validé sur les 1 456 requêtes
