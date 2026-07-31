@@ -128,6 +128,7 @@ def _write_run(
     phase: str,
     run_nonce: str,
     execution_lock_sha256: str,
+    parent_pid: int,
 ) -> None:
     frames = {
         "candidates_features.parquet": run.candidates,
@@ -157,6 +158,7 @@ def _write_run(
         "phase": phase,
         "run_nonce": run_nonce,
         "execution_lock_sha256": execution_lock_sha256,
+        "parent_pid": parent_pid,
         "safe_queries_path": str(SAFE_QUERIES),
         "safe_queries_sha256": SAFE_QUERIES_SHA256,
         "files": files,
@@ -199,6 +201,7 @@ def run(
     phase: str,
     run_nonce: str,
     execution_lock_sha256: str,
+    parent_pid: int,
 ) -> None:
     if mode not in {"v411", "v412g"}:
         raise ValueError(
@@ -218,6 +221,14 @@ def run(
     if os.environ.get("SIRETO_NETWORK_AUDIT_DENY") != "1":
         raise ValueError(
             "STOP_V412_SERVICE_INTEGRITY: network-deny bootstrap absent"
+        )
+    if (
+        type(parent_pid) is not int
+        or parent_pid <= 0
+        or os.getppid() != parent_pid
+    ):
+        raise ValueError(
+            "STOP_V412_SERVICE_INTEGRITY: parent process identity changed"
         )
     lock, observed_lock_sha256 = validate_execution_lock(
         expected_sha256=execution_lock_sha256,
@@ -246,12 +257,18 @@ def run(
             model_load_count=loads_after[0] - loads_before[0],
             store_load_count=loads_after[1] - loads_before[1],
         )
+    validate_execution_lock(
+        expected_sha256=execution_lock_sha256,
+        verify_git=False,
+    )
+    validate_loaded_repository_modules(lock["source_hashes"])
     _write_run(
         output,
         collected,
         phase=phase,
         run_nonce=run_nonce,
         execution_lock_sha256=execution_lock_sha256,
+        parent_pid=parent_pid,
     )
 
 
@@ -266,6 +283,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     )
     parser.add_argument("--run-nonce", required=True)
     parser.add_argument("--execution-lock-sha256", required=True)
+    parser.add_argument("--parent-pid", required=True, type=int)
     return parser.parse_args(argv)
 
 
@@ -278,6 +296,7 @@ def main(argv: list[str] | None = None) -> int:
             phase=args.phase,
             run_nonce=args.run_nonce,
             execution_lock_sha256=args.execution_lock_sha256,
+            parent_pid=args.parent_pid,
         )
     except Exception as exc:
         print(str(exc), file=sys.stderr)

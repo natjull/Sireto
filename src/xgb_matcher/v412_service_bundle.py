@@ -7,7 +7,6 @@ import hashlib
 import importlib.metadata
 from io import BytesIO
 import json
-import marshal
 import os
 from pathlib import Path
 import platform
@@ -496,6 +495,7 @@ class FrozenV412ServiceBundle:
     _attestation: object
     _component_identity: tuple[int, ...]
     _state_identity: tuple[str, ...]
+    _instance_shapes: tuple[tuple[int, tuple[str, ...]], ...]
     _closed: bool = False
 
     def close(self) -> None:
@@ -573,9 +573,35 @@ def _bundle_state_identity(
     )
 
 
+def _bundle_instance_shapes(
+    bundle: FrozenV412ServiceBundle,
+) -> tuple[tuple[int, tuple[str, ...]], ...]:
+    objects = [
+        bundle.retrieval,
+        bundle.downstream,
+        bundle.downstream.ranker,
+        bundle.downstream.acceptor,
+        bundle.downstream.taxonomy,
+    ]
+    objects.extend(
+        step
+        for _name, step in getattr(
+            bundle.downstream.acceptor,
+            "steps",
+            (),
+        )
+    )
+    if bundle.evidence is not None:
+        objects.append(bundle.evidence)
+    return tuple(
+        (id(instance), tuple(sorted(instance.__dict__)))
+        for instance in objects
+    )
+
+
 def _object_code_identity(instance: Any) -> str:
     """Fingerprint Python implementations reached through an object."""
-    records: list[tuple[str, str, str]] = []
+    records: list[tuple[str, str, int, str]] = []
     for cls in type(instance).__mro__:
         class_name = f"{cls.__module__}.{cls.__qualname__}"
         for name, member in sorted(cls.__dict__.items()):
@@ -587,7 +613,8 @@ def _object_code_identity(instance: Any) -> str:
                     (
                         class_name,
                         name,
-                        hashlib.sha256(marshal.dumps(code)).hexdigest(),
+                        id(code),
+                        hashlib.sha256(code.co_code).hexdigest(),
                     )
                 )
     return hashlib.sha256(
@@ -600,20 +627,28 @@ def _callable_state_identity(callback: Any) -> str:
     if code is None:
         _fail("service callback has no Python code object")
     try:
-        payload = pickle.dumps(
-            (
-                getattr(callback, "__module__", None),
-                getattr(callback, "__qualname__", None),
-                marshal.dumps(code),
-                getattr(callback, "__defaults__", None),
-                getattr(callback, "__kwdefaults__", None),
-                tuple(
-                    cell.cell_contents
-                    for cell in (getattr(callback, "__closure__", None) or ())
+        payload = json.dumps(
+            {
+                "module": getattr(callback, "__module__", None),
+                "qualname": getattr(callback, "__qualname__", None),
+                "code_identity": id(code),
+                "code_bytes_sha256": hashlib.sha256(
+                    code.co_code
+                ).hexdigest(),
+                "defaults": repr(getattr(callback, "__defaults__", None)),
+                "kwdefaults": repr(
+                    getattr(callback, "__kwdefaults__", None)
                 ),
-            ),
-            protocol=5,
-        )
+                "closure_object_identities": [
+                    id(cell.cell_contents)
+                    for cell in (
+                        getattr(callback, "__closure__", None) or ()
+                    )
+                ],
+            },
+            sort_keys=True,
+            separators=(",", ":"),
+        ).encode("utf-8")
     except Exception as exc:
         _fail(f"cannot fingerprint service callback state: {exc}")
     return hashlib.sha256(payload).hexdigest()
@@ -675,6 +710,7 @@ def validate_frozen_v412_service_bundle(
         or bundle.retrieval.lookup is not bundle.lookup
         or bundle._component_identity != observed_identity
         or bundle._state_identity != _bundle_state_identity(bundle)
+        or bundle._instance_shapes != _bundle_instance_shapes(bundle)
         or dict(bundle.asset_hashes) != expected_hashes
         or bundle.downstream.ranker_feature_order
         != RANKER_C_FEATURE_ORDER
@@ -773,6 +809,7 @@ def load_frozen_v412_service_bundle(
             _attestation=_BUNDLE_ATTESTATION,
             _component_identity=(),
             _state_identity=(),
+            _instance_shapes=(),
         )
         object.__setattr__(
             bundle,
@@ -813,6 +850,11 @@ def load_frozen_v412_service_bundle(
             bundle,
             "_state_identity",
             _bundle_state_identity(bundle),
+        )
+        object.__setattr__(
+            bundle,
+            "_instance_shapes",
+            _bundle_instance_shapes(bundle),
         )
         validate_frozen_v412_service_bundle(bundle)
         global _SUCCESSFUL_BUNDLE_LOAD_COUNT, _SUCCESSFUL_STORE_LOAD_COUNT

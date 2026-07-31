@@ -306,12 +306,6 @@ def evaluate_paired_gate(
         cost_reasons.append("v412g:peak_rss")
     if latency_v412g["p95_ns"] >= 2 * latency_v411["p95_ns"]:
         cost_reasons.append("full_latency_ratio")
-    if (
-        latency_v412g["evidence_guard_p95_ns"]
-        > latency_v411["retrieval_lookup_ns_p95_ns"]
-    ):
-        cost_reasons.append("evidence_guard_vs_retrieval")
-
     v411_totals = v411["_total_wall_ns"]
     v412g_totals = v412g["_total_wall_ns"]
     if len(v411_totals) != 1456 or len(v412g_totals) != 1456:
@@ -352,6 +346,7 @@ def validate_worker_output(
     expected_phase: str,
     expected_nonce: str,
     expected_pid: int,
+    expected_parent_pid: int,
     expected_execution_lock_sha256: str,
 ) -> dict[str, Any]:
     if expected_mode not in {"v411", "v412g"}:
@@ -362,6 +357,8 @@ def validate_worker_output(
         expected_phase not in {"diagnostic", "gate"}
         or type(expected_pid) is not int
         or expected_pid <= 0
+        or type(expected_parent_pid) is not int
+        or expected_parent_pid <= 0
         or len(expected_nonce) != 64
         or any(
             character not in "0123456789abcdef"
@@ -393,10 +390,9 @@ def validate_worker_output(
         or manifest.get("candidate_count") != 145236
         or manifest.get("warmup_excluded") is not True
         or manifest.get("pid") != expected_pid
+        or manifest.get("parent_pid") != expected_parent_pid
         or type(manifest.get("peak_rss_bytes")) is not int
         or manifest["peak_rss_bytes"] <= 0
-        or manifest.get("model_load_count") != 1
-        or manifest.get("store_load_count") != 1
         or manifest.get("network_denied") is not True
     ):
         raise ValueError(

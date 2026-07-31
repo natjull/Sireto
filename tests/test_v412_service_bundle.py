@@ -19,6 +19,7 @@ from src.xgb_matcher.v412_service_bundle import (
     load_frozen_v412_service_bundle,
     validate_frozen_v412_service_bundle,
 )
+from src.xgb_matcher.v412_service_worker import PersistentV412Worker
 
 
 REFERENCE = Path(
@@ -142,6 +143,22 @@ def test_acceptor_class_and_downstream_method_mutations_are_fail_closed() -> Non
             validate_frozen_v412_service_bundle(bundle)
 
 
+@pytest.mark.parametrize("target", ("ranker", "retrieval", "evidence"))
+def test_instance_method_override_is_fail_closed(target: str) -> None:
+    with load_frozen_v412_service_bundle(include_evidence=True) as bundle:
+        if target == "ranker":
+            bundle.downstream.ranker.predict = lambda matrix: np.zeros(
+                len(matrix)
+            )
+        elif target == "retrieval":
+            bundle.retrieval.build = lambda query: None
+        else:
+            assert bundle.evidence is not None
+            bundle.evidence.build = lambda query: None
+        with pytest.raises(ValueError, match="mutated service bundle"):
+            validate_frozen_v412_service_bundle(bundle)
+
+
 def test_real_frozen_bundle_reproduces_all_downstream_stages() -> None:
     query = (
         pd.read_parquet(REFERENCE / "queries.parquet")
@@ -198,3 +215,19 @@ def test_real_frozen_bundle_reproduces_all_downstream_stages() -> None:
     assert trace.decision_v411 == expected_acceptor["decision"]
     assert trace.decision_v412 == expected_guard["decision_v412"]
     assert trace.review_reason_v412 == expected_guard["review_reason_v412"]
+
+
+def test_real_bundle_attestation_is_stable_across_ten_requests() -> None:
+    query = (
+        pd.read_parquet(REFERENCE / "queries.parquet")
+        .query("query_id == '10014'")
+        .iloc[0]
+        .to_dict()
+    )
+    with load_frozen_v412_service_bundle(include_evidence=True) as bundle:
+        worker = PersistentV412Worker(bundle=bundle, mode="v412g")
+        decisions = []
+        for _index in range(10):
+            decisions.append(worker.process(query).v412.decision_v412)
+            validate_frozen_v412_service_bundle(bundle)
+    assert decisions == ["AUTO_MATCH"] * 10

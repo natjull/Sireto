@@ -55,6 +55,11 @@ def test_paired_gate_distinguishes_go_pivot_and_integrity() -> None:
     pivot = evaluate_paired_gate(v411, v412g)
     assert "v412g:cache_write_count" in pivot["persistence_reasons"]
 
+    v412g["counters"]["cache_write_count"] = 0
+    v412g["model_load_count"] = 2
+    pivot = evaluate_paired_gate(v411, v412g)
+    assert "v412g:model_load_count" in pivot["persistence_reasons"]
+
     v412g["pid"] = v411["pid"]
     with pytest.raises(ValueError, match="worker identity changed"):
         evaluate_paired_gate(v411, v412g)

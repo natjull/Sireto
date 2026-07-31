@@ -118,16 +118,14 @@ def _json(payload: bytes) -> dict[str, Any]:
 
 def validate_execution_lock(
     *,
-    expected_sha256: str | None = None,
+    expected_sha256: str,
     verify_git: bool,
 ) -> tuple[dict[str, Any], str]:
-    if expected_sha256 is not None and _HEX.fullmatch(expected_sha256) is None:
+    if _HEX.fullmatch(expected_sha256) is None:
         _fail("invalid expected execution-lock hash")
-    if not LOCK_PATH.is_file() or LOCK_PATH.is_symlink():
-        _fail("execution lock absent or linked")
-    payload = LOCK_PATH.read_bytes()
+    payload = _capture_exact(LOCK_PATH, expected_sha256)
     observed_sha256 = hashlib.sha256(payload).hexdigest()
-    if expected_sha256 is not None and observed_sha256 != expected_sha256:
+    if observed_sha256 != expected_sha256:
         _fail("execution-lock hash changed")
     lock = _json(payload)
     expected_fields = {

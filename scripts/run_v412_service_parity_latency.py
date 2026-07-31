@@ -76,11 +76,13 @@ def _launch_worker(
     mode: str,
     parent_nonce: str,
     execution_lock_sha256: str,
+    timeout_seconds: int,
 ) -> tuple[dict[str, Any], dict[str, Any]]:
     child_nonce = _worker_nonce(parent_nonce, phase, mode)
     output = staging / f"{phase}_{mode}"
     command = [
         sys.executable,
+        "-I",
         str(BOOTSTRAP),
         "--mode",
         mode,
@@ -90,28 +92,21 @@ def _launch_worker(
         child_nonce,
         "--execution-lock-sha256",
         execution_lock_sha256,
+        "--parent-pid",
+        str(os.getpid()),
         "--output-dir",
         str(output),
     ]
     environment = {
-        key: value
-        for key, value in os.environ.items()
-        if key
-        not in {
-            "PYTHONPATH",
-            "PYTHONSTARTUP",
-            "PYTHONINSPECT",
-            "SIRETO_NETWORK_AUDIT_DENY",
-        }
+        "PATH": os.environ.get("PATH", "/usr/bin:/bin"),
+        "HOME": os.environ["HOME"],
+        "TMPDIR": os.environ.get("TMPDIR", "/tmp"),
+        "LANG": os.environ.get("LANG", "C.UTF-8"),
+        "PYTHONHASHSEED": "0",
+        "OMP_NUM_THREADS": "1",
+        "OPENBLAS_NUM_THREADS": "1",
+        "VECLIB_MAXIMUM_THREADS": "1",
     }
-    environment.update(
-        {
-            "PYTHONHASHSEED": "0",
-            "OMP_NUM_THREADS": "1",
-            "OPENBLAS_NUM_THREADS": "1",
-            "VECLIB_MAXIMUM_THREADS": "1",
-        }
-    )
     process = subprocess.Popen(
         command,
         cwd=REPOSITORY,
@@ -121,7 +116,18 @@ def _launch_worker(
         stderr=subprocess.PIPE,
         text=True,
     )
-    stdout, stderr = process.communicate()
+    try:
+        stdout, stderr = process.communicate(timeout=timeout_seconds)
+    except subprocess.TimeoutExpired:
+        process.terminate()
+        try:
+            stdout, stderr = process.communicate(timeout=30)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate()
+        raise ValueError(
+            f"{STOP}: worker {phase}/{mode} timed out"
+        )
     launch = {
         "phase": phase,
         "mode": mode,
@@ -143,6 +149,7 @@ def _launch_worker(
         expected_phase=phase,
         expected_nonce=child_nonce,
         expected_pid=process.pid,
+        expected_parent_pid=os.getpid(),
         expected_execution_lock_sha256=execution_lock_sha256,
     )
     manifest_payload = _capture_untrusted_regular(output / "manifest.json")
@@ -160,8 +167,15 @@ def _public_summary(summary: dict[str, Any]) -> dict[str, Any]:
     }
 
 
-def run() -> tuple[str, Path]:
-    lock, lock_sha256 = validate_execution_lock(verify_git=True)
+def run(
+    *,
+    execution_lock_sha256: str,
+    timeout_seconds: int = 14_400,
+) -> tuple[str, Path]:
+    lock, lock_sha256 = validate_execution_lock(
+        expected_sha256=execution_lock_sha256,
+        verify_git=True,
+    )
     OUTPUT_ROOT.mkdir(mode=0o700, parents=False, exist_ok=True)
     parent_nonce = secrets.token_hex(32)
     staging = OUTPUT_ROOT / f".staging-{parent_nonce}"
@@ -169,20 +183,39 @@ def run() -> tuple[str, Path]:
     launches: list[dict[str, Any]] = []
     summaries: dict[str, dict[str, Any]] = {}
     try:
-        for phase in ("diagnostic", "gate"):
-            for mode in ("v411", "v412g"):
-                summary, launch = _launch_worker(
-                    staging=staging,
-                    phase=phase,
-                    mode=mode,
-                    parent_nonce=parent_nonce,
-                    execution_lock_sha256=lock_sha256,
-                )
-                summaries[f"{phase}_{mode}"] = summary
-                launches.append(launch)
+        for mode in ("v411", "v412g"):
+            summary, launch = _launch_worker(
+                staging=staging,
+                phase="gate",
+                mode=mode,
+                parent_nonce=parent_nonce,
+                execution_lock_sha256=lock_sha256,
+                timeout_seconds=timeout_seconds,
+            )
+            summaries[f"gate_{mode}"] = summary
+            launches.append(launch)
         pids = [record["pid"] for record in launches]
-        if len(set(pids)) != 4:
-            raise ValueError(f"{STOP}: workers did not use four processes")
+        if len(set(pids)) != 2:
+            raise ValueError(f"{STOP}: workers did not use two processes")
+        for launch in launches:
+            key = f"{launch['phase']}_{launch['mode']}"
+            repeated = validate_worker_output(
+                staging / launch["output"],
+                expected_mode=launch["mode"],
+                expected_phase=launch["phase"],
+                expected_nonce=launch["child_nonce"],
+                expected_pid=launch["pid"],
+                expected_parent_pid=os.getpid(),
+                expected_execution_lock_sha256=lock_sha256,
+            )
+            if repeated != summaries[key]:
+                raise ValueError(
+                    f"{STOP}: worker output changed after first validation"
+                )
+        validate_execution_lock(
+            expected_sha256=lock_sha256,
+            verify_git=True,
+        )
         gate = evaluate_paired_gate(
             summaries["gate_v411"],
             summaries["gate_v412g"],
@@ -195,13 +228,10 @@ def run() -> tuple[str, Path]:
             "parent_pid": os.getpid(),
             "parent_nonce": parent_nonce,
             "order": [
-                "diagnostic_v411",
-                "diagnostic_v412g",
                 "gate_v411",
                 "gate_v412g",
             ],
-            "first_pass_diagnostic_only": True,
-            "gate_uses_warm_filesystem": True,
+            "per_process_first_query_warmup_excluded": True,
             "launches": launches,
             "summaries": {
                 name: _public_summary(summary)
@@ -254,9 +284,21 @@ def run() -> tuple[str, Path]:
         raise
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--execution-lock-sha256", required=True)
+    parser.add_argument("--timeout-seconds", type=int, default=14_400)
+    args = parser.parse_args(argv)
+    if args.timeout_seconds <= 0:
+        print(f"{STOP}: invalid timeout", file=sys.stderr)
+        return 65
     try:
-        verdict, output = run()
+        verdict, output = run(
+            execution_lock_sha256=args.execution_lock_sha256,
+            timeout_seconds=args.timeout_seconds,
+        )
     except Exception as exc:
         print(f"{STOP}: {exc}", file=sys.stderr)
         return 65
