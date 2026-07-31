@@ -93,6 +93,13 @@ def sha256_bytes(raw: bytes) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
+def _fstat(fd: int, label: str) -> os.stat_result:
+    try:
+        return os.fstat(fd)
+    except OSError:
+        _stop(f"{label}_FSTAT")
+
+
 def parse_canonical_object(raw: bytes, label: str) -> dict[str, Any]:
     def no_duplicates(pairs: list[tuple[str, Any]]) -> dict[str, Any]:
         result: dict[str, Any] = {}
@@ -120,7 +127,7 @@ def _read_regular(path: Path, label: str) -> bytes:
     except OSError:
         _stop(f"{label}_OPEN")
     try:
-        before = os.fstat(fd)
+        before = _fstat(fd, label)
         if not stat.S_ISREG(before.st_mode) or before.st_nlink != 1:
             _stop(f"{label}_IDENTITY")
         chunks: list[bytes] = []
@@ -129,7 +136,7 @@ def _read_regular(path: Path, label: str) -> bytes:
             if not chunk:
                 break
             chunks.append(chunk)
-        after = os.fstat(fd)
+        after = _fstat(fd, label)
         if (
             before.st_dev,
             before.st_ino,
@@ -591,7 +598,7 @@ def _directory_flags() -> int:
 
 
 def _identity(fd: int) -> tuple[int, int]:
-    metadata = os.fstat(fd)
+    metadata = _fstat(fd, "DIRECTORY")
     if not stat.S_ISDIR(metadata.st_mode):
         _stop("DIRECTORY_IDENTITY")
     return metadata.st_dev, metadata.st_ino
@@ -656,6 +663,7 @@ class AbsenceProof:
 
     def revalidate(self) -> None:
         fresh = self.chain.reopen_verified()
+        absent = False
         try:
             try:
                 os.stat(
@@ -666,12 +674,17 @@ class AbsenceProof:
             except FileNotFoundError as exc:
                 if exc.errno != errno.ENOENT:
                     _stop("GUARD_NOT_ENOENT")
-                return
+                absent = True
             except OSError:
                 _stop("GUARD_FSTATAT")
-            _stop("GUARD_ENTRY_EXISTS")
+            if not absent:
+                _stop("GUARD_ENTRY_EXISTS")
         finally:
             fresh.close()
+        # Re-resolve every namespace component after observing ENOENT.  This
+        # catches a parent renamed/replaced during the status observation.
+        confirmed = self.chain.reopen_verified()
+        confirmed.close()
 
     def close(self) -> None:
         self.chain.close()
@@ -697,7 +710,10 @@ def require_absent_fd_anchored(
     fds: list[int] = []
     names: list[str] = []
     try:
-        fds.append(os.open(Path("/"), _directory_flags()))
+        try:
+            fds.append(os.open(Path("/"), _directory_flags()))
+        except OSError:
+            _stop("GUARD_ROOT_OPEN")
         for index, component in enumerate(components):
             if component in ("", ".", ".."):
                 _stop("GUARD_COMPONENT")
@@ -760,8 +776,9 @@ class AnchoredStateStore:
         self._revalidate()
 
     def _revalidate(self) -> None:
-        verified = self.chain.reopen_verified()
-        verified.close()
+        for _ in range(2):
+            verified = self.chain.reopen_verified()
+            verified.close()
 
     def _name(self, path: Path) -> str:
         path = Path(path)
@@ -802,7 +819,7 @@ class AnchoredStateStore:
         except OSError:
             _stop(f"{label}_OPEN")
         try:
-            before = os.fstat(fd)
+            before = _fstat(fd, label)
             if (
                 not stat.S_ISREG(before.st_mode)
                 or before.st_nlink != 1
@@ -814,7 +831,7 @@ class AnchoredStateStore:
                 if not chunk:
                     break
                 chunks.append(chunk)
-            after = os.fstat(fd)
+            after = _fstat(fd, label)
             if (
                 before.st_dev,
                 before.st_ino,
@@ -862,7 +879,7 @@ class AnchoredStateStore:
                     _stop("OUTPUT_SHORT_WRITE")
                 view = view[count:]
             _sync_file(fd)
-            info = os.fstat(fd)
+            info = _fstat(fd, "OUTPUT")
             if (
                 not stat.S_ISREG(info.st_mode)
                 or stat.S_IMODE(info.st_mode) != 0o600
@@ -872,15 +889,18 @@ class AnchoredStateStore:
                 _stop("OUTPUT_IDENTITY")
         finally:
             os.close(fd)
-        read_fd = os.open(
-            name,
-            os.O_RDONLY
-            | getattr(os, "O_NOFOLLOW", 0)
-            | getattr(os, "O_CLOEXEC", 0),
-            dir_fd=self.chain.final_fd,
-        )
         try:
-            read_info = os.fstat(read_fd)
+            read_fd = os.open(
+                name,
+                os.O_RDONLY
+                | getattr(os, "O_NOFOLLOW", 0)
+                | getattr(os, "O_CLOEXEC", 0),
+                dir_fd=self.chain.final_fd,
+            )
+        except OSError:
+            _stop("OUTPUT_VERIFY_OPEN")
+        try:
+            read_info = _fstat(read_fd, "OUTPUT_VERIFY")
             if (read_info.st_dev, read_info.st_ino) != (
                 info.st_dev,
                 info.st_ino,

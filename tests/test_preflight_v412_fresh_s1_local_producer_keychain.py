@@ -589,8 +589,74 @@ def test_real_fd_guard_errors_are_zero_query(
     assert native.calls == []
 
 
+@pytest.mark.parametrize("operation", ["open", "stat", "fstat"])
+@pytest.mark.parametrize("error", [errno.EACCES, errno.EIO])
+def test_low_level_guard_errors_are_normalized_and_zero_query(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    operation: str,
+    error: int,
+) -> None:
+    root, _ = synthetic_repository(tmp_path)
+    original_loader = subject.load_and_validate_controls
+    original_operation = getattr(subject.os, operation)
+
+    def load_then_arm(*args, **kwargs):
+        controls = original_loader(*args, **kwargs)
+
+        def fail(*_args, **_kwargs):
+            raise OSError(error, f"injected-{operation}")
+
+        monkeypatch.setattr(subject.os, operation, fail)
+        return controls
+
+    monkeypatch.setattr(subject, "load_and_validate_controls", load_then_arm)
+    native = FakeNative()
+    with pytest.raises(subject.PreflightError):
+        run_synthetic(root, native)
+    monkeypatch.setattr(subject.os, operation, original_operation)
+    assert native.calls == []
+
+
+@pytest.mark.parametrize(
+    "stage,expected_calls",
+    [
+        ("AFTER_CLAIM_BEFORE_NATIVE_CALL", 0),
+        ("AFTER_NATIVE_CALL_BEFORE_RESULT", 1),
+    ],
+)
+@pytest.mark.parametrize("error", [errno.EACCES, errno.EIO])
+def test_fstat_errors_at_crash_boundaries_are_normalized(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    stage: str,
+    expected_calls: int,
+    error: int,
+) -> None:
+    root, plan = synthetic_repository(tmp_path)
+    real_fstat = subject.os.fstat
+
+    def checkpoint(current: str) -> None:
+        if current == stage:
+            def fail(_fd: int):
+                raise OSError(error, "injected-fstat")
+
+            monkeypatch.setattr(subject.os, "fstat", fail)
+
+    native = FakeNative()
+    with pytest.raises(subject.PreflightError):
+        run_synthetic(root, native, checkpoint=checkpoint)
+    monkeypatch.setattr(subject.os, "fstat", real_fstat)
+    assert len(native.calls) == expected_calls
+    claim = root / plan["lifecycle"]["claim"]["path"]
+    result = root / plan["output"]["path"]
+    assert claim.exists()
+    assert not result.exists()
+
+
+@pytest.mark.parametrize("trigger_at", [1, 3])
 def test_real_parent_replacement_race_is_detected_before_query(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, trigger_at: int
 ) -> None:
     root, _ = synthetic_repository(tmp_path)
     config = root / "config"
@@ -598,10 +664,17 @@ def test_real_parent_replacement_race_is_detected_before_query(
     authorization = config / "synthetic_authorization.json"
     real_stat = os.stat
     triggered = False
+    observations = 0
 
     def race(component, *args, **kwargs):
-        nonlocal triggered
-        if component == authorization.name and not triggered:
+        nonlocal triggered, observations
+        if component == authorization.name:
+            observations += 1
+        if (
+            component == authorization.name
+            and observations == trigger_at
+            and not triggered
+        ):
             triggered = True
             config.rename(displaced)
             config.mkdir()
