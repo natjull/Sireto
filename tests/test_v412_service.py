@@ -150,6 +150,42 @@ def test_guard_rejects_forged_or_mutated_v411_trace() -> None:
             ),
             direct_evidence=_evidence(0, None),
         )
+    trace.scored_candidates["is_ground_truth"] = True
+    with pytest.raises(ValueError, match="trace provenance"):
+        engine.apply_guard_to_trace(
+            trace=trace,
+            direct_evidence=_evidence(0, None),
+        )
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    (
+        "scene_extra",
+        "candidate_state",
+        "candidate_query",
+        "retrieval_source",
+    ),
+)
+def test_guard_rejects_every_nested_trace_mutation(mutation: str) -> None:
+    engine = _engine()
+    trace = engine.rank_and_accept_one(
+        query={"query_id": "q1"},
+        candidates=_candidates(),
+    )
+    if mutation == "scene_extra":
+        trace.scene["arbitrary"] = "forged"
+    elif mutation == "candidate_state":
+        trace.scored_candidates.loc[0, "candidate_state"] = "F"
+    elif mutation == "candidate_query":
+        trace.scored_candidates.loc[0, "query_id"] = "other"
+    else:
+        trace.scored_candidates["retrieval_source"] = "forged"
+    with pytest.raises(ValueError, match="trace provenance"):
+        engine.apply_guard_to_trace(
+            trace=trace,
+            direct_evidence=_evidence(0, None),
+        )
 
 
 def test_acceptor_probabilities_must_be_in_probability_domain() -> None:

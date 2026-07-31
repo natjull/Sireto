@@ -14,6 +14,7 @@ import hmac
 import json
 import math
 import os
+import pickle
 import re
 import struct
 import time
@@ -490,6 +491,10 @@ class V412DownstreamService:
         digest.update(
             self._trace_text(trace.scene.get("predicted_siren"))
         )
+        for nested in (trace.scored_candidates, trace.scene):
+            payload = pickle.dumps(nested, protocol=5)
+            digest.update(len(payload).to_bytes(8, "big"))
+            digest.update(payload)
         return digest.digest()
 
     def _validate_v411_trace(self, trace: V411Trace) -> None:
@@ -511,6 +516,21 @@ class V412DownstreamService:
         ):
             raise ValueError(
                 "STOP_V412_SERVICE_INTEGRITY: invalid V4.11 trace provenance"
+            )
+        _require_label_blind(
+            list(trace.scored_candidates.columns),
+            label="scored trace",
+        )
+        _require_label_blind(list(trace.scene), label="scene trace")
+        _validate_candidates(
+            trace.query_id,
+            trace.scored_candidates,
+            self.ranker_feature_order,
+        )
+        missing_scene = set(V411_ACCEPTOR_FEATURE_NAMES) - set(trace.scene)
+        if missing_scene:
+            raise ValueError(
+                "STOP_V412_SERVICE_INTEGRITY: scene trace feature missing"
             )
         predicted_siret = trace.predicted_siret
         predicted_siren = trace.predicted_siren
