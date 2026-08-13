@@ -2,6 +2,31 @@
 
 ## Etat des lieux
 
+### V4.12-L — population unifiée 17 097 pour apprentissage OOF
+
+Le dataset appris est matérialisé sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_learned_unified_population/2d29be3ccd8fcc3e`.
+Il lie les 17 054 lignes de `crm_ok_gt.csv` aux qualifications V3, remplace 236
+labels par leurs adjudications locales, ajoute 43 dossiers frais audités et
+applique deux corrections de contrôle déjà présentes. Deux contrôles frais
+restent volontairement hors entraînement.
+
+La population contient 13 704 `MATCH_EXACT`, 625 `AMBIGUOUS` et 2 768
+`UNRESOLVED`. Parmi les exacts, 11 619 SIRET sont actifs et 2 085 fermés. Les
+cinq plis OOF groupés par composante SIREN contiennent 3 499, 3 321, 3 539,
+3 419 et 3 319 requêtes, avec zéro composante traversant deux plis. Aucun
+candidat, hit, rang ou score retrieval n'entre dans le build. Les anciens
+splits et les audits étant consommés, cette population sert au développement
+OOF et ne recrée pas un test indépendant.
+
+Le prochain milestone est la matérialisation uniforme des pools retrieval
+gelés à 100 candidats maximum sur ces 17 097 requêtes, puis la publication des
+métriques globale, active, fermée, mégapole et multi-site avant tout
+réentraînement du ranker.
+
+*(builder, test et rapport : commit `b0e71ba`; présent handover : commit du
+présent milestone)*
+
 ### V4.12 — politique accepteur North Star : GO dev à zéro erreur observée
 
 Sur les scènes role-aware, les sept `UNRESOLVED` ont été réintégrés comme
