@@ -3646,5 +3646,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   limites de développement consommé y sont référencés ; le test final reste
   fermé.
 
+## V4.12-L — ranker métier appris sur population unifiée
+
+- Commit : `ca73b03` (`ranker: evaluate learned V4.12-L business signals`).
+- Construction immuable de 1 708 184 lignes candidat, 17 097 scènes et 129
+  features apprises. Les comparaisons requête, même SIREN et même adresse sont
+  des entrées XGBoost ; aucune règle ne promeut directement un candidat.
+- Le run initial tronqué aux 40 premiers négatifs a été rejeté comme défaut
+  d'exécution. Tous les scores retenus utilisent jusqu'à 100 candidats au train
+  comme à l'inférence, sans injection du positif.
+- Meilleur résultat propre : `BUSINESS_LEARNED`, 11 939/13 704 exacts en OOF
+  groupé SIREN, dont 220/241 cas difficiles. La baseline 45 features obtenait
+  11 501/13 704 et 211/241.
+- Les ablations poids humains x2/x4, labels ouverts faibles, objectif NDCG,
+  spécialiste humain et scores de deux cross-encoders locaux ne franchissent
+  pas 220/241 après apprentissage propre. Verdict : **`PIVOT_RANKER`** ; le
+  gate 225/241 reste fermé et le test final n'est pas ouvert.
+- Artefacts : dataset métier `8800ef53f6927215`, comparaison principale
+  `839ef55308d5077e`, pondérations `ed06ca38cb669291`, NDCG
+  `46803026b12aae59`, sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100`.
+- Rapport : `reports/v412_learned_oof_ranker.md`. Tests ciblés : cinq passants
+  avec les tests dataset/retrieval déjà gelés.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
