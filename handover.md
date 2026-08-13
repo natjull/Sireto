@@ -37,6 +37,21 @@ Artefact :
 *(builder, test et rapport : commit `2a26446`; présent handover : commit du
 présent milestone)*
 
+### V4.12-N — scènes groupwise matérialisées
+
+Les folds d'entraînement 2/3/4 fournissent 8 192 scènes de 16 candidats : une
+vérité réellement présente et 15 concurrents. Les négatifs prioritaires sont
+les autres établissements du même SIREN, puis le haut du retrieval gelé. Il
+n'y a ni sélection XGBoost, ni règle de promotion, ni injection du positif.
+Les folds 0 et 1 sont absents de cet artefact.
+
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_neural_training_groups/55b5fa545d29fd26`.
+
+*(builder, test et rapport : commit `895d88d`; entraînement encoder : commit
+`e18b31e`; entraînement Qwen MLX : commit `a914dee`; présent handover : commit
+du présent milestone)*
+
 ### V4.12-L — gate retrieval unifié franchi
 
 La politique sélective gelée a été matérialisée à 100 candidats maximum pour
