@@ -22,6 +22,21 @@ Contrat : `docs/v412_neural_ranker_contract.md`.
 *(préenregistrement : commit `704678c`; présent handover : commit du présent
 milestone)*
 
+### V4.12-N — corpus texte top-100 matérialisé
+
+Le corpus commun contient 17 097 CRM et 1 708 184 candidats, sans dépasser
+100 candidats par CRM. Aucun positif n'est injecté et le SIRET candidat n'est
+pas écrit dans le texte donné aux modèles. La baseline XGBoost vaut
+11 939/13 704 au total ; sur le fold 0 de sélection elle vaut 2 437/2 797,
+dont 33/38 cas difficiles. Les sorties des nouveaux modèles sur le fold 1
+restent fermées.
+
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_neural_text_corpus/02b8668f8050c5e9`.
+
+*(builder, test et rapport : commit `2a26446`; présent handover : commit du
+présent milestone)*
+
 ### V4.12-L — gate retrieval unifié franchi
 
 La politique sélective gelée a été matérialisée à 100 candidats maximum pour
