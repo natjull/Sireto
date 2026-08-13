@@ -79,6 +79,14 @@ SOURCE_FEATURES = [
     "business_role_conflict",
     "strict_school_role_match",
     "strict_school_role_conflict",
+    "source_ul_exact",
+    "source_etab_exact",
+    "source_name_score",
+    "source_name_exact",
+    "source_name_address_consistency",
+    "role_signal",
+    "candidate_is_operating",
+    "operating_evidence",
 ]
 
 RELATIONAL_FEATURES = [
@@ -94,6 +102,31 @@ RELATIONAL_FEATURES = [
     "ul_gap_to_best_same_address",
     "etab_gap_to_best_same_address",
     "role_gap_to_best_same_address",
+    "best_source_name_query",
+    "source_name_gap_to_best_query",
+    "best_address_query",
+    "address_gap_to_best_query",
+    "best_identity_consistency_query",
+    "identity_gap_to_best_query",
+    "best_operating_evidence_query",
+    "operating_gap_to_best_query",
+    "same_siren_source_exact_count",
+    "same_siren_role_match_count",
+    "same_siren_employer_count",
+    "same_siren_seat_count",
+    "only_candidate_same_siren",
+    "unique_source_exact_same_siren",
+    "unique_role_match_same_siren",
+    "unique_seat_same_siren",
+    "best_source_name_same_siren",
+    "source_name_gap_to_best_same_siren",
+    "address_gap_to_best_same_siren",
+    "best_operating_evidence_same_siren",
+    "operating_gap_to_best_same_siren",
+    "best_source_name_same_address",
+    "source_name_gap_to_best_same_address",
+    "best_identity_same_address",
+    "identity_gap_to_best_same_address",
 ]
 
 VARIANTS = {
@@ -205,6 +238,8 @@ def _read_enriched_sources(
     dataset: Path,
     etablissements: Path,
     unites_legales: Path,
+    *,
+    candidate_filename: str = "candidates_sparse_top100.parquet",
 ) -> pd.DataFrame:
     with duckdb.connect() as connection:
         frame = connection.execute(
@@ -243,7 +278,7 @@ def _read_enriched_sources(
             ORDER BY candidates.query_id, candidates.candidate_siret
             """,
             [
-                str(dataset / "candidates_sparse_top100.parquet"),
+                str(dataset / candidate_filename),
                 str(dataset / "queries.parquet"),
                 str(etablissements.resolve()),
                 str(unites_legales.resolve()),
@@ -350,7 +385,12 @@ def _source_features(frame: pd.DataFrame) -> pd.DataFrame:
     frame["legal_is_public"] = legal.str.startswith("7").astype("float32")
     frame["legal_is_company"] = legal.str.startswith(("5", "6")).astype("float32")
 
-    activity = frame["source_etab_activity"].fillna(frame["activity_code"]).fillna("").astype(str)
+    activity_fallback = (
+        frame["activity_code"]
+        if "activity_code" in frame.columns
+        else pd.Series("", index=frame.index)
+    )
+    activity = frame["source_etab_activity"].fillna(activity_fallback).fillna("").astype(str)
     ul_activity = frame["source_ul_activity"].fillna("").astype(str)
     frame["_activity"] = activity
     frame["activity_matches_ul_full"] = (
@@ -408,6 +448,30 @@ def _source_features(frame: pd.DataFrame) -> pd.DataFrame:
         school_conflict[mask & combined_name.str.contains(rf"\b{conflicting}\b", regex=True)] = 1.0
     frame["strict_school_role_match"] = school_match
     frame["strict_school_role_conflict"] = school_conflict
+    frame["source_ul_exact"] = frame[["ul_name_exact", "ul_name_compact_exact"]].max(axis=1).astype("float32")
+    frame["source_etab_exact"] = frame[["etab_name_exact", "etab_name_compact_exact"]].max(axis=1).astype("float32")
+    frame["source_name_score"] = frame[["name_sim_max_ul", "name_sim_max_etab"]].max(axis=1).astype("float32")
+    frame["source_name_exact"] = frame[["source_ul_exact", "source_etab_exact"]].max(axis=1).astype("float32")
+    frame["source_name_address_consistency"] = (
+        frame["source_name_score"].astype(float) * frame["addr_jaro"].astype(float)
+    ).astype("float32")
+    frame["role_signal"] = (
+        frame["business_role_match"].astype(float)
+        - frame["business_role_conflict"].astype(float)
+    ).astype("float32")
+    frame["candidate_is_operating"] = (
+        frame["activity_is_holding"].eq(0)
+        & frame["activity_is_property"].eq(0)
+    ).astype("float32")
+    frame["operating_evidence"] = (
+        frame["source_etab_exact"].astype(float)
+        + frame["business_role_match"].astype(float)
+        - frame["business_role_conflict"].astype(float)
+        + 0.50 * frame["has_operating_enseigne"].astype(float)
+        + 0.25 * frame["is_employer"].astype(float)
+        + 0.10 * frame["has_known_effectif"].astype(float)
+        + 0.10 * frame["candidate_is_operating"].astype(float)
+    ).astype("float32")
     return frame
 
 
@@ -431,6 +495,7 @@ def _relational_features(frame: pd.DataFrame) -> pd.DataFrame:
 
     same_siren = frame.groupby("_siren_group", sort=False)
     same_address = frame.groupby("_address_group", sort=False)
+    same_query = frame.groupby("query_id", sort=False)
     frame["same_siren_count"] = same_siren["candidate_siret"].transform("size").astype("float32")
     frame["same_address_count"] = same_address["candidate_siret"].transform("size").astype("float32")
     frame["same_address_siren_count"] = same_address["candidate_siren"].transform("nunique").astype("float32")
@@ -453,6 +518,52 @@ def _relational_features(frame: pd.DataFrame) -> pd.DataFrame:
     frame["ul_gap_to_best_same_address"] = (frame["name_sim_max_ul"] - best_ul_address).astype("float32")
     frame["etab_gap_to_best_same_address"] = (frame["name_sim_max_etab"] - best_etab_address).astype("float32")
     frame["role_gap_to_best_same_address"] = (role_signal - best_role_address).astype("float32")
+
+    identity = frame["source_name_address_consistency"].astype(float)
+    operating = frame["operating_evidence"].astype(float)
+    best_source_query = same_query["source_name_score"].transform("max")
+    best_address_query = same_query["addr_jaro"].transform("max")
+    best_identity_query = identity.groupby(frame["query_id"], sort=False).transform("max")
+    best_operating_query = operating.groupby(frame["query_id"], sort=False).transform("max")
+    frame["best_source_name_query"] = frame["source_name_score"].eq(best_source_query).astype("float32")
+    frame["source_name_gap_to_best_query"] = (frame["source_name_score"] - best_source_query).astype("float32")
+    frame["best_address_query"] = frame["addr_jaro"].eq(best_address_query).astype("float32")
+    frame["address_gap_to_best_query"] = (frame["addr_jaro"] - best_address_query).astype("float32")
+    frame["best_identity_consistency_query"] = identity.eq(best_identity_query).astype("float32")
+    frame["identity_gap_to_best_query"] = (identity - best_identity_query).astype("float32")
+    frame["best_operating_evidence_query"] = operating.eq(best_operating_query).astype("float32")
+    frame["operating_gap_to_best_query"] = (operating - best_operating_query).astype("float32")
+
+    frame["same_siren_source_exact_count"] = same_siren["source_name_exact"].transform("sum").astype("float32")
+    frame["same_siren_role_match_count"] = same_siren["business_role_match"].transform("sum").astype("float32")
+    frame["same_siren_employer_count"] = same_siren["is_employer"].transform("sum").astype("float32")
+    frame["same_siren_seat_count"] = same_siren["is_siege"].transform("sum").astype("float32")
+    frame["only_candidate_same_siren"] = frame["same_siren_count"].eq(1).astype("float32")
+    frame["unique_source_exact_same_siren"] = (
+        frame["source_name_exact"].eq(1) & frame["same_siren_source_exact_count"].eq(1)
+    ).astype("float32")
+    frame["unique_role_match_same_siren"] = (
+        frame["business_role_match"].eq(1) & frame["same_siren_role_match_count"].eq(1)
+    ).astype("float32")
+    frame["unique_seat_same_siren"] = (
+        frame["is_siege"].eq(1) & frame["same_siren_seat_count"].eq(1)
+    ).astype("float32")
+
+    best_source_siren = same_siren["source_name_score"].transform("max")
+    best_address_siren = same_siren["addr_jaro"].transform("max")
+    best_operating_siren = operating.groupby(frame["_siren_group"], sort=False).transform("max")
+    frame["best_source_name_same_siren"] = frame["source_name_score"].eq(best_source_siren).astype("float32")
+    frame["source_name_gap_to_best_same_siren"] = (frame["source_name_score"] - best_source_siren).astype("float32")
+    frame["address_gap_to_best_same_siren"] = (frame["addr_jaro"] - best_address_siren).astype("float32")
+    frame["best_operating_evidence_same_siren"] = operating.eq(best_operating_siren).astype("float32")
+    frame["operating_gap_to_best_same_siren"] = (operating - best_operating_siren).astype("float32")
+
+    best_source_address = same_address["source_name_score"].transform("max")
+    best_identity_address = identity.groupby(frame["_address_group"], sort=False).transform("max")
+    frame["best_source_name_same_address"] = frame["source_name_score"].eq(best_source_address).astype("float32")
+    frame["source_name_gap_to_best_same_address"] = (frame["source_name_score"] - best_source_address).astype("float32")
+    frame["best_identity_same_address"] = identity.eq(best_identity_address).astype("float32")
+    frame["identity_gap_to_best_same_address"] = (identity - best_identity_address).astype("float32")
     return frame
 
 
