@@ -3668,5 +3668,29 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Rapport : `reports/v412_learned_oof_ranker.md`. Tests ciblés : cinq passants
   avec les tests dataset/retrieval déjà gelés.
 
+## V4.12-L — scènes, accepteur et conclusion du goal
+
+- Commit : `4dd252d` (`acceptor: evaluate V4.12-L learned scenes`).
+- Dataset `2f2bb2b0208241e0` : 17 097 scènes OOF, 259 features query-level
+  décrivant top1, top2, meilleur autre SIREN, marges, densité et concurrence.
+  Aucune vérité ni règle de promotion n'entre dans les features.
+- Accepteur nested OOF `13997088931181ba` : chaque fold externe est exclu du
+  train et de la calibration. XGBoost obtient 743 AUTO/17 097 (4,35 %) à
+  99,596 % observés, trois erreurs et 0/38 AUTO sur les ambigus/non résolus
+  audités. Sur les seules exactes : 741 AUTO/13 704, 99,865 % et une erreur.
+- La borne oracle du ranker est 11 939/17 097 = 69,831 % sur toute la
+  population et 11 939/13 704 = 87,121 % sur les exactes : l'objectif
+  88–92 % AUTO ne peut pas être atteint par un accepteur qui ne corrige pas le
+  top1.
+- Le pilote pairwise cross-encoder `d517650eb9951cf9`, entraîné localement sur
+  10 825 requêtes et évalué sur le fold 0 exclu, gagne au mieux 1/2 797 au
+  global et 0/38 sur les cas difficiles. Les quatre autres folds n'ont pas été
+  exécutés.
+- Verdict final : **`PIVOT`**. Retrieval V4.12-L conservé ; ranker/accepteur
+  non promus ; baseline historique inchangée ; test final non ouvert.
+- Rapport consolidé : `reports/v412_learned_goal_conclusion.md`. Sept tests
+  ciblés passent et les trois artefacts sont reproductibles à froid par leur
+  identité immuable.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
