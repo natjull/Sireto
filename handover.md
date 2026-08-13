@@ -2,6 +2,30 @@
 
 ## Etat des lieux
 
+### V4.12 — règles métier génériques : 227/241 strict, zéro régression contrôle
+
+Quatre règles sans condition sur `query_id` ont été ablatées au-dessus de
+l'ensemble conservateur : garde du siège intra-SIREN, résolution des conflits
+de rôle, préférence pour une activité opérationnelle face aux holdings et
+choix de site intra-SIREN. La correction de périmètre est appliquée uniquement
+à la mesure : aucun label n'entre dans la sélection des candidats.
+
+La baseline ensemble vaut 219/241 sur le périmètre local strict. Les règles
+séparées atteignent respectivement 220, 222, 220 et 225/241, toutes avec zéro
+régression observée sur les 241 labels stricts et sur les 1 127 contrôles. Leur
+composition atteint **227/241 (94,19 %) et 1 127/1 127 contrôles**, soit huit
+corrections strictes, aucune régression stricte et un changement faux-vers-faux.
+Le seuil demandé de 225/241 est franchi sans exception par dossier.
+
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_generic_business_rules/6f428a66c8f273d4`.
+Il contient les métriques d'ablation, les décisions et 137 736 candidats classés
+(1 381 requêtes, rang maximal 100), avec les signaux métier et la trace des
+règles. Le test final reste fermé.
+
+*(implémentation : commit `66d0e9a`; présent handover : commit du présent
+milestone)*
+
 ### V4.12 — parité train/serve du bundle validée
 
 Le bundle `c2a01c6bca43a468` a été rechargé et exécuté sur 1 127 requêtes et
