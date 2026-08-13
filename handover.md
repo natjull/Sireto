@@ -3546,5 +3546,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   n'a été ouvert et aucun résultat n'est présenté comme validation
   indépendante.
 
+## Audit ranker et accepteur V4.12 — ablations locales
+
+- Commit : `f76e016` (`experiment: audit ranker and acceptance alternatives`).
+- Les 35 erreurs récupérables du ranker ont été matérialisées candidat par
+  candidat avec raisons sociales, enseignes, activités, statuts de siège,
+  adresses et rangs de retrieval. L'audit sépare les erreurs de modèle des
+  ambiguïtés et des labels historiquement faux.
+- Les ablations réfutent trois solutions simples prises isolément : ajout de
+  features métier dans le même XGBoost (`219/241` au mieux), second XGBoost
+  top-20 (`215/254`) et cross-encoder seul (`222/254` au mieux). Les deux
+  cross-encoders gratuits ont été exécutés localement sur le Mac, sans GPU
+  loué ni service payant.
+- L'accepteur enrichi de 24 features de concurrence progresse de `87/216` à
+  `113/216` bons top-1 acceptés sans erreur sur les labels historiques, mais
+  reste à `87/219` (`39,73 %`) sur l'ensemble ranker et les labels strictement
+  locaux. Verdict : `PIVOT_FEATURES`; le seuil n'est pas abaissé.
+- Rapport : `reports/v412_ranker_error_audit_and_ablations.md`. Artefacts et
+  limites de développement consommé y sont référencés ; le test final reste
+  fermé.
+
 ---
-*Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
+*Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
