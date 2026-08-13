@@ -53,6 +53,11 @@ certification indépendante ou une garantie de production.
 | MMINILM_REF | `cross-encoder/mmarco-mMiniLMv2-L12-H384-v1` | `1427fd652930e4ba29e8149678df786c240d8825` | référence historique |
 | BGE_REF | `BAAI/bge-reranker-v2-m3` | `953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e` | référence historique |
 
+La configuration GTE appelle le code distant `Alibaba-NLP/new-impl`. Ce code
+est lui aussi épinglé, à la révision
+`40ced75c3017eb27626c9d4ea981bde21a2662f4`; aucun code `main` mouvant n'est
+autorisé pendant le benchmark.
+
 Les cinq modèles sont d'abord évalués zéro-shot avec le même texte et les 100
 candidats. Les deux meilleurs candidats parmi QWEN_RERANKER, GTE_RERANKER et
 CAMEMBERT_FR sont retenus par Hit@1 global sur le fold 0 ; le Hit@1 difficile,
@@ -117,4 +122,3 @@ fold 1 dans ce cycle.
   ressources ;
 - un commit isolé pour le contrat, le corpus, le benchmark, l'apprentissage et
   le handover.
-
