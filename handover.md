@@ -2,6 +2,34 @@
 
 ## Etat des lieux
 
+### V4.12-L — gate retrieval unifié franchi
+
+La politique sélective gelée a été matérialisée à 100 candidats maximum pour
+les 17 097 requêtes de la population apprise. Les 43 ajouts frais ont été
+rejoués sur les mêmes canaux actif et overlay : leurs anciens pools V4.11
+divergeaient et n'ont pas été mélangés à la mesure. Les 33 ajouts frais exacts
+sont tous retrouvés.
+
+La vue corrigée contient 13 704 `MATCH_EXACT` et atteint **13 604/13 704 =
+99,270 % de Recall@100**, pour **80,154 % de couverture identifiable**. Aucun
+pool ne dépasse 100 candidats. Les références publiées ensemble valent
+96,106 % sur l'historique, 96,423 % sur V2 exact et 99,268 % sur V3 exact. Les
+cinq plis OOF sont tous au-dessus de 99,15 %.
+
+Verdict : **`GO_RANKER_TRAINING`** en développement consommé, sans prétention
+de certification indépendante. Le segment actif vaut 99,552 %, contre 97,698
+% pour les fermés ; les fermés restent donc des exemples auxiliaires pondérés
+à 0,5 et non des cibles opérationnelles préférées.
+
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/evaluations/v4_12_learned_unified_retrieval/cce1bc83f82a1c3f`.
+Il contient les 17 097 pools, les outcomes, les métriques et les hashes. La
+suite autorisée est la matérialisation des lignes candidat/features puis le
+ranker XGBoost en cinq plis OOF, sans règle de promotion déterministe.
+
+*(préparation du replay, évaluateur, tests et rapport : commit `bf41918` ;
+présent handover : commit du présent milestone)*
+
 ### V4.12-L — population unifiée 17 097 pour apprentissage OOF
 
 Le dataset appris est matérialisé sous
