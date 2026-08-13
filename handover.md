@@ -3456,5 +3456,71 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le périmètre est entièrement consommé en développement : aucun résultat
   n'est présenté comme validation indépendante et le test final reste fermé.
 
+## Audit qualité des labels et ablation ranker locale V4.12
+
+- Commit de code, données dérivées et résultats : `93f637f`
+  (`experiment: audit and rerank local-identifiable labels`). Le canonique
+  `reports/v412_review_trusted_labels_279.csv` n'est pas modifié.
+- L'overlay qualité contient 14 dossiers : une correction SIRET
+  (`10613`), deux corrections vers `AMBIGUOUS`, huit exclusions du périmètre
+  local et trois quarantaines dépendant d'une preuve externe. Le builder
+  rejouable produit 279 lignes : 241 `MATCH_EXACT`, 31 `AMBIGUOUS` et sept
+  `UNRESOLVED`.
+- Huit rankers ont été entraînés en cinq plis OOF : variantes `targeted` et
+  `source_relational`, poids difficiles `0,25`, `0,50`, `0,75` et `1,00`,
+  avec leurs sorties candidats complètes. Les sorties `non_trusted_dev`
+  natives à 1 135 cas sont ignorées pour le gate : les modèles finaux ont été
+  rescored sur les 1 127 identifiants figés `scope=CONTROL`, puis les quatre
+  vérités de `reports/v412_control_label_counteraudit_4.csv` ont été
+  appliquées en mémoire.
+- La meilleure variante standalone est `targeted`, poids `0,50`, artefact
+  `a8e21e7eb9e1c0cf` : 219/241 OOF (90,87 %) contre 212/241 pour le ranker
+  courant, soit douze corrections, cinq régressions et un gain net de sept.
+  Sur les contrôles corrigés, elle obtient 1 125/1 127 contre 1 123/1 127,
+  avec deux corrections et aucune perte parmi les 1 123 dossiers déjà
+  corrects. Elle ne corrige toutefois que deux des quatre contre-audits et son
+  écran base-fit baisse de 4 655/4 666 à 4 647/4 666.
+- L'ensemble conservateur existant, réévalué sur la vue stricte, obtient lui
+  aussi 219/241, mais conserve 1 127/1 127 contrôles corrigés. Les deux
+  systèmes ne commettent pas les mêmes erreurs : le standalone corrige sept
+  erreurs de l'ensemble et en réintroduit sept autres.
+- Verdict : **`PIVOT_STANDALONE_KEEP_CONSERVATIVE_ENSEMBLE`**. Le nouveau
+  ranker ne remplace pas l'ensemble conservateur : son gain contre le ranker
+  courant ne dépasse pas l'ensemble sur les 241 cas et sa protection des
+  contrôles est inférieure. Conserver l'ensemble `9ba1012722cc4b3f` comme
+  candidat de développement ; le standalone `targeted/0,50` reste une
+  ablation utile ou un signal candidat, sans promotion autonome.
+- Hashes SHA-256 des vues suivies : overlay qualité
+  `0744952bb2eb76352aa7fb0b5985c1e48f38d957bc4b17387bfe7785fcff9f87`,
+  labels locaux 279
+  `11e499168d0df4268c8cb62abeb6f49725a5675c83749e29d60591d982a3d2c4`,
+  synthèse CSV
+  `a6a2e374a9dbee8638da3dbe59ada2d972e134de0af9e309e88d009ba2b1aef4`.
+- Artefacts locaux sous
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_ranker_business_features_local241`.
+  Pour chaque run, les trois hashes ci-dessous correspondent à
+  `evaluation.json`, au modèle ranker et aux candidats rescored sur les 1 127
+  contrôles :
+
+| Run | Variante / poids | Evaluation | Modèle | Contrôles 1 127 |
+|---|---|---|---|---|
+| `71d7b303ea41560a` | targeted / 0,25 | `b41dafc71bf803e8bccefcd23740f555fc5af0d2ceb7cf9849a806d713ea008d` | `37c218da135b3645cef1282700b94be6d800fa560ef9ade182e3497c5f14f0b7` | `c99edc7dd48b7226b92a9a78ba9c4287f270b9c9544a0f63f35322a68447e08f` |
+| `a8e21e7eb9e1c0cf` | targeted / 0,50 | `0238120bd7bfc454dcc59e487cd3b0aa061d932de972698521c8a7dc3f835887` | `73d5fde9435c10c45c17bae7e9c26a702c4ed3132a0a80707222f56bf8648acd` | `54af007b8e9040687d2924e888bb2d8aa5cbf4cfaea24d1dfeed82aac6399d4d` |
+| `b94578d415ab5310` | targeted / 0,75 | `1b2f406a9ee4b65e18b15497a84ba8d0656b062f146ebdc02ef04bbd47f8a4c6` | `08897a65c02fdceb017fb47ef6fa427e62bc726f7e86d26c19c5f1e5831fce90` | `e66de6f2fd47d2ef1940a8777348041124ff442983b5941cc7feda3773aaf38d` |
+| `d8d2d84c2d646213` | targeted / 1,00 | `e0aee9a46a0ba5f899f2195926b42521264caf591bee8a2d7825c5878936d53a` | `bc1c161e103924fe2edf876c4024ab443e8e1b38e57d0398841b055ec7cb4908` | `b826928a8d441b9c4208ba0537b95aa899b3ac8f28b1a1c1af37ca5e3d8516c6` |
+| `7bddbecea1ebe30c` | source_relational / 0,25 | `a4f0da884257f9f664c586b37b0e92a76d4b5101505eb0d0e171ccf8e2f49836` | `2275e48e439917df3d89a32df22303a58f2e1c7da542cbabdc4332c035f6a81e` | `0ed0b1e3fedb50212ec69dfb4d3cb64d3b9321efc3cc989140873d0c6b21acfb` |
+| `f6ef119fea7885ce` | source_relational / 0,50 | `8aeb29f1733d85b74d6d70f6f7f94dd760f5366db094838b2de9bdbf8ac8f49f` | `d4ad7c94efcd70666892e5595247bac20c8b2b8aa10033b86f070f044af5d0e3` | `b125342c107005503163915279af394bc8c0a6b8c30ed85a8483d0388bef02c0` |
+| `d52284e24ccce43a` | source_relational / 0,75 | `14fbcda8ebe5c1756f00681fd81316cad7b52e8fd307356f3691a2e4ec0bc968` | `ddc596b77d275981d023ed4495e0fd9e183e621855fbabf935b80fac583497be` | `5678ab9d537f467b76153d5ab4c664377b01c881f7944851e9dd048509f7575c` |
+| `f685d7def7e926cd` | source_relational / 1,00 | `a7e36debd8ccca214d45ff28f80c116ce6c4207e7789ab47369bf48e1fe698de` | `02c51b633c7a384a9e6f65796c95644ea6fcff7595c0ecb68bcdb33f578a50ec` | `a6a8640377f3923a0c9be1ec25a4e54a13e41dc8e95687deba4334062000ed8f` |
+- Hashes de l'ensemble conservé `9ba1012722cc4b3f` : `evaluation.json`
+  `572902d1301ed1a737ab9c985fe8c7e232b5eb67fa2c76912bfe4dd5ba170307`,
+  `decisions.parquet`
+  `991b8c0ce6c869637f49d42c664e6872d5000990650b2046f91f104d6e701191`
+  et `ranked_candidates.parquet`
+  `4e1a522bd451bad9dfd73510529a1c4c8b1434e9a839329c9d5368fe999c27dd`.
+- Le périmètre reste du développement entièrement consommé. Aucun test final
+  n'a été ouvert et aucun résultat n'est présenté comme validation
+  indépendante.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
