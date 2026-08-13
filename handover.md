@@ -2,6 +2,33 @@
 
 ## Etat des lieux
 
+### V4.12 — politique accepteur North Star : GO dev à zéro erreur observée
+
+Sur les scènes role-aware, les sept `UNRESOLVED` ont été réintégrés comme
+négatifs évaluables : la population difficile contient 227 top 1 corrects et
+52 erreurs, ambiguïtés ou non-résolus. Aucun modèle CPU seul ne franchit le
+gate prudent ; XGBoost sans contraintes est le meilleur candidat sûr avec
+105/227 AUTO et 0/52 erreur en nested component-OOF.
+
+L'union de ce modèle et de huit preuves métier directionnelles atteint
+**149/227 (65,64 %) AUTO difficiles avec 0/52 erreur**, ainsi que 1 124/1 127
+AUTO sur les contrôles positifs. La projection combinée vaut **1 273/1 406
+(90,54 %) AUTO, 1 273/1 273 correct observé**. Les décisions individuelles
+conservent le nom CRM et les raisons d'acceptation.
+
+Verdict `GO_NORTH_STAR_DEV_ZERO_ERROR`, sans déploiement : les seuils des
+règles ont été choisis sur le dev consommé, les contrôles ne contiennent que
+des top 1 corrects, et cette projection ne certifie pas 99,8 %. Le test final
+reste fermé. Prochaine preuve utile : figer exactement la politique et
+l'évaluer sur un nouveau lot indépendant.
+
+Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_acceptor_cpu_families/7270609bd3d59376`.
+Implémentation et rapport : commit
+`a5ffbcd0c6d5ab161fdb77487c8e8756beb06e79`.
+
+*(présent handover : commit du présent milestone)*
+
 ### V4.12 — règles métier génériques : 227/241 strict, zéro régression contrôle
 
 Quatre règles sans condition sur `query_id` ont été ablatées au-dessus de
