@@ -3431,5 +3431,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Rapports : `reports/v412_remaining_review_audit_first5.md`,
   `reports/v412_remaining_review_audit_30.md` et tables machine associées.
 
+## Ensemble ranker conservateur V4.12 — labels de contrôle contre-audités
+
+- Commit : `35391c7` (`experiment: build conservative ranker ensemble`).
+- Quatre prétendues régressions sur les 1 127 contrôles sont des labels
+  historiques erronés : LEVAC, NETWORK HOLDING, STOCK J BOUTIQUE JENNYFER et
+  l'office Xavier Maitre / Guillaume Laguë. Les corrections, toutes de
+  fiabilité haute, sont consignées sans modifier le dataset canonique dans
+  `reports/v412_control_label_counteraudit_4.csv`.
+- Le gate retenu conserve le ranker trusted par défaut. Il ne promeut que son
+  rang 2, soit avec le petit CE mélangé à `alpha=0,75`, soit lorsque BGE
+  (`alpha=10`) et le business ranker ciblé s'accordent avec une marge BGE brute
+  d'au moins `0,004`.
+- Sur la vue identifiable corrigée : 225/254 top-1 exacts difficiles
+  (88,58 %), 1 127/1 127 contrôles exacts et 1 352/1 381 combinés (97,90 %),
+  soit 13 corrections et zéro régression métier observée par rapport au ranker
+  trusted. Sur les labels historiques non corrigés : 1 348/1 381 (97,61 %).
+- Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_conservative_ensemble/9ba1012722cc4b3f`.
+  Il contient `decisions.parquet`, `evaluation.json` et les 27 620 candidats
+  top-20 reclassés des 254 requêtes fiables et 1 127 contrôles dans
+  `ranked_candidates.parquet`, prêts pour la reconstruction des scènes de
+  l'accepteur.
+- Le périmètre est entièrement consommé en développement : aucun résultat
+  n'est présenté comme validation indépendante et le test final reste fermé.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub dans ce document.*
