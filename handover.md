@@ -2,6 +2,26 @@
 
 ## Etat des lieux
 
+### V4.12-N — expérience de reranker neuronal préenregistrée
+
+Le nouveau cycle ne modifie ni le CRM, ni les labels, ni le retrieval : il
+teste si un reranker de texte peut mieux choisir le SIRET parmi les 100
+candidats V4.12-L. Les folds SIREN-disjoint sont figés avant mesure : 2/3/4
+pour apprendre, 0 pour sélectionner et 1 pour une confirmation unique. Le test
+final historique reste fermé.
+
+Le tournoi compare Qwen3-Reranker-0.6B, GTE multilingual reranker et un
+cross-encoder CamemBERT français, avec mMiniLM et BGE comme références. Les
+deux meilleurs modèles spécialisés seront entraînés avec des groupes de vrais
+candidats concurrents. Qwen3-1.7B listwise n'est autorisé qu'en pilote si les
+rerankers spécialisés plafonnent. Tous les calculs restent sur le Mac et le
+SSD externe, sans dépense.
+
+Contrat : `docs/v412_neural_ranker_contract.md`.
+
+*(préenregistrement : commit `704678c`; présent handover : commit du présent
+milestone)*
+
 ### V4.12-L — gate retrieval unifié franchi
 
 La politique sélective gelée a été matérialisée à 100 candidats maximum pour
