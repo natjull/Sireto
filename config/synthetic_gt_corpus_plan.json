@@ -28,7 +28,7 @@
       "path": "data/crm_ok_gt.csv",
       "format": "CSV_SEMICOLON_UTF8",
       "row_count": 17054,
-      "sha256": "2e624326bdc96ea5ffb963ed765351e5ecb94d0720dfa403132bf7b742d883e",
+      "sha256": "2e624326bdc96ea5ffb963ed765351e5ecb94d0720dfa403132bf7b742d883e4",
       "key": "zero_based_csv_row_index",
       "truth_field": "gt_siret",
       "license": "PROJECT_EXISTING_AUTHORIZED_GROUND_TRUTH"
