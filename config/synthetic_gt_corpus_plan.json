@@ -1,0 +1,151 @@
+{
+  "schema_version": "sireto-synthetic-gt-corpus-plan-1",
+  "cycle_id": "SYNTHETIC_GT_CORPUS_2026_08",
+  "date_frozen": "2026-08-15",
+  "generator": {
+    "version": "0.1.0",
+    "seed": 42,
+    "fold_count": 5,
+    "allowed_oof_folds": [2, 3, 4],
+    "allowed_legacy_split": "train",
+    "max_candidates_per_group": 16,
+    "max_negatives_per_group": 15,
+    "no_optional_stopping": true,
+    "network_allowed_sirene_branch": false,
+    "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus"
+  },
+  "sources": {
+    "crm_ok_gt": {
+      "path": "data/crm_ok_gt.csv",
+      "format": "CSV_SEMICOLON_UTF8",
+      "row_count": 17054,
+      "sha256": "2e624326bdc96ea5ffb963ed765351e5ecb94d0720dfa403132bf7b742d883e",
+      "key": "zero_based_csv_row_index",
+      "truth_field": "gt_siret",
+      "license": "PROJECT_EXISTING_AUTHORIZED_GROUND_TRUTH"
+    },
+    "sirene_establishments": {
+      "path": "data/StockEtablissement_utf8.parquet",
+      "format": "PARQUET",
+      "row_count": 42322035,
+      "sha256": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845",
+      "license": "LICENCE_OUVERTE_OPEN_LICENCE_2_0",
+      "official_provenance_url": "https://www.insee.fr/fr/information/3591226",
+      "snapshot_role": "ESTABLISHMENT_IDENTITY_AND_LOCAL_CANDIDATES"
+    },
+    "sirene_legal_units": {
+      "path": "data/StockUniteLegale_utf8.parquet",
+      "format": "PARQUET",
+      "row_count": 28983495,
+      "sha256": "5c17354cdabe707beffaa965896e81d98c51bfc6ca150ceed59e4404c924ced8",
+      "license": "LICENCE_OUVERTE_OPEN_LICENCE_2_0",
+      "official_provenance_url": "https://www.insee.fr/fr/information/3591226",
+      "snapshot_role": "OPTIONAL_LEGAL_NAME_AND_SIGLE_CONTEXT"
+    },
+    "fold_assignments": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_learned_unified_population/2d29be3ccd8fcc3e/fold_assignments.parquet",
+      "format": "PARQUET",
+      "row_count": 17097,
+      "sha256": "43d587a7b5aefbcafb2fd0bb208476001eee7ae22c94ef7d545cb28f3d1333e",
+      "projection": ["query_id", "siren_component_id", "oof_fold", "legacy_split"],
+      "role": "SIREN_DISJOINT_TRAIN_ONLY_ASSIGNMENT"
+    }
+  },
+  "population": {
+    "join": "crm_ok_gt.zero_based_row_index == fold_assignments.query_id",
+    "expected_joined_rows": 17054,
+    "allowed_rows": 7099,
+    "allowed_by_fold": {"2": 2393, "3": 2377, "4": 2329},
+    "allowed_components": 5965,
+    "allowed_sirens": 5963,
+    "forbidden_oof_folds": [0, 1],
+    "forbidden_legacy_splits": ["dev", "test"],
+    "forbidden_components_are_derived_before_generation": true,
+    "fresh_query_rows_excluded": true,
+    "test_final_opened": false,
+    "expected_target_state_counts": {"A": 5764, "F": 1335}
+  },
+  "transformations": {
+    "families": [
+      "LEGAL_FORM",
+      "ACRONYM_TOKENIZATION",
+      "ACCENT_PUNCTUATION",
+      "OCR_LIMITED",
+      "TOKEN_ORDER",
+      "FIELD_MISSING",
+      "ADDRESS_ABBREVIATION",
+      "ADDRESS_TOKEN_ORDER",
+      "ADDRESS_OCR",
+      "COMMUNE_VARIANT",
+      "ENSEIGNE_VS_DENOMINATION"
+    ],
+    "base_views": ["CRM_OBSERVED", "SIRENE_OFFICIAL_NAME", "SIRENE_OFFICIAL_ENSEIGNE", "SIRENE_OFFICIAL_ADDRESS"],
+    "historical_official_source_enabled": false,
+    "autonomous_decimal_leak_lengths": [9, 14],
+    "max_family_share": 0.25,
+    "min_family_coverage": 0.8,
+    "seeded_parameter_stream": "SHA256(seed, seed_query_id, family, variant_index)"
+  },
+  "quality_gates": {
+    "pilot_seed_count": 128,
+    "pilot_variants_per_seed": 8,
+    "pilot_min_families_covered": 0.8,
+    "max_duplicate_rate": 0.05,
+    "min_unique_variant_rate": 0.85,
+    "pilot_min_marginal_structural_diversity": 0.4,
+    "extension_min_marginal_structural_diversity": 0.2,
+    "max_group_candidates": 16,
+    "max_negatives": 15,
+    "stop_on_forbidden_siren_overlap": true,
+    "stop_on_positive_injection": true,
+    "stop_on_source_drift": true
+  },
+  "maps_assisted": {
+    "enabled": false,
+    "source_kind": "MAPS_ASSISTED",
+    "environment_secret_name": "SIRETO_GOOGLE_MAPS_API_KEY",
+    "endpoint": "https://places.googleapis.com/v1/places:searchText",
+    "field_mask": "places.id,places.displayName,places.formattedAddress,places.addressComponents",
+    "query_version": "maps-text-search-new-v1-minimal-fields-2026-08",
+    "max_results_considered": 5,
+    "max_retries": 2,
+    "max_requests": 0,
+    "daily_quota": 0,
+    "max_cost_eur": 0.0,
+    "cost_per_request_eur": null,
+    "smoke_seed_count": 8,
+    "cache_enabled": true,
+    "cache_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/synthetic_gt_corpus/maps_assisted",
+    "only_exact_high_confidence_train": true,
+    "never_validation_or_test": true,
+    "no_secret_persistence": true,
+    "no_secret_logging": true
+  },
+  "publication": {
+    "heavy_artifacts_outside_git": true,
+    "manifest_non_self_referential": true,
+    "parquet_writer": {
+      "format_version": "2.6",
+      "compression": "zstd",
+      "compression_level": 9,
+      "use_dictionary": false,
+      "write_statistics": true,
+      "row_group_size": 65536,
+      "metadata": "no_application_metadata"
+    },
+    "required_outputs": [
+      "synthetic_queries.parquet",
+      "candidate_pairs.parquet",
+      "rejection_ledger.parquet",
+      "distribution_report.json",
+      "quality_report.json",
+      "source_manifest.json",
+      "manifest.json"
+    ]
+  },
+  "verdicts": {
+    "pilot": ["GO_PILOT", "PIVOT_PILOT", "STOP_PILOT"],
+    "maps_smoke": ["GO_MAPS_SMOKE", "PIVOT_MAPS", "STOP_MAPS"],
+    "cycle": ["GO", "PIVOT", "STOP"]
+  }
+}
