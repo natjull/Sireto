@@ -70,6 +70,16 @@ SIREN du seed, du positif ou d'un hard negative ne se trouve dans cette
 denylist. La présence d'un composant dans plusieurs folds est une erreur
 bloquante ; les composants sont traités comme des atomes.
 
+Pour atteindre le minimum quantitatif sans recycler les mêmes identités, le
+builder peut compléter les 7 099 seeds `crm_ok_gt` par des seeds
+`SIRENE_ONLY_TRAIN`. Ceux-ci sont sélectionnés directement dans le snapshot
+SIRENE, avec SIRET/SIREN, nom et localisation valides, et doivent être absents
+de **tous** les SIREN observés dans `crm_ok_gt` (train, dev et test) ainsi que
+des composants interdits. Leur composant synthétique est un atome
+`SIRENE_ONLY:<siren>` affecté de façon déterministe à 2, 3 ou 4 ; il n'est
+jamais présenté comme une ligne historique `crm_ok_gt` et ne peut ouvrir un
+fold 0/1 ou le test.
+
 Le test final historique reste fermé. Aucun fichier de test final, oracle,
 résultat, hit, rang, score ou sortie de modèle n'est une entrée du builder.
 La qualification du seed utilise uniquement les sources et les règles
@@ -247,7 +257,26 @@ Il n'existe aucun objectif de volume fixe : la taille finale s'arrête quand la
 diversité utile marginale échoue, pas quand une duplication artificielle est
 atteinte.
 
-## 10. Ressources et interdits
+## 10 bis. Objectifs quantitatifs préenregistrés
+
+Après les contrôles du pilote, les objectifs minimaux sont :
+
+- au moins **20 000 SIRET seed distincts**, tous train autorisés et hors de
+  tout SIREN des folds 0/1 ou du test ;
+- au moins **3 variantes CRM réalistes, distinctes et non triviales par
+  SIRET**, soit au moins **60 000 couples positifs** ;
+- de **5 à 10 hard negatives par positif**, soit une cible de **300 000 à
+  600 000 paires négatives**, avec quotas publiés par famille.
+
+Le stretch est de 100 000 couples positifs uniquement si les mêmes gates de
+diversité, identifiabilité, fidélité, déduplication et anti-fuite passent. Les
+permutations superficielles, répétitions ou variantes quasi identiques ne
+comptent pas. Le rapport doit publier le nombre de seeds distincts, positifs
+uniques, négatifs par famille, rejet, doublons et transformations. Si le
+minimum n'est pas atteignable proprement, le verdict est `PIVOT` avec le
+maximum valide obtenu.
+
+## 11. Ressources et interdits
 
 Calcul : Mac M4 Pro et `/Volumes/CATNAT_DATA` uniquement. Aucun GPU loué,
 service d'annotation, API payante ou dépense externe n'est requis par la

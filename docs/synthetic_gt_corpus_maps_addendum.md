@@ -99,10 +99,37 @@ espace cache. Il s'arrête avant tout dépassement. Une estimation de coût
 inconnue ou une valeur de coût non épinglée produit `STOP_MAPS_BUDGET`, sans
 appel.
 
-Le smoke est très petit et préenregistré ; le rapport publie le nombre de
-seeds proposés, appels cache/non-cache, réponses, erreurs, retries, rejet,
-ambiguïté, exactité et coût estimé. Aucun dépassement silencieux, retry
-illimité, parallélisme non borné ou prolongation opportuniste n'est permis.
+Le pilote initial est borné à **100 appels**. S'il passe les gates, les seuls
+paliers autorisés sont 500, 2 000 puis 5 000 appels maximum. Le rapport publie
+avant toute extension le nombre de seeds proposés, appels cache/non-cache,
+réponses, erreurs, retries, `EXACT_HIGH_CONFIDENCE`, `SILVER_AMBIGUOUS`,
+`REJECTED`, causes de rejet et coût observé/estimé. Une cible indicative de
+2 000 couples `MAPS_ASSISTED` exacts ne se substitue jamais aux 60 000
+couples `SIRENE_SYNTHETIC`.
+
+L'extension s'arrête si le rendement marginal exact baisse, si une
+famille/SIREN/zone domine, si le quota ou le budget risque d'être dépassé, ou
+si les gardes sibling/adresse/commune échouent. Aucun résultat ambigu ou
+rejeté ne devient positif. Aucun dépassement silencieux, retry illimité,
+parallélisme non borné ou prolongation opportuniste n'est permis.
+
+## 5 bis. Fallback Keychain macOS
+
+Après la variable d'environnement, le préflight peut lire le compte courant
+avec l'appel sans shell :
+
+```text
+security find-generic-password -a <current-user>
+  -s SIRETO_GOOGLE_MAPS_API_KEY -w
+```
+
+La commande est passée comme une liste à `subprocess`, `shell=False`, avec
+capture bornée et timeout. Le compte est obtenu localement par le runtime ;
+aucun secret n'est recherché ailleurs. La priorité est variable puis
+Keychain, sinon `NOT_CONFIGURED`. `stdout`, sa longueur, les headers complets,
+l'URL ou les exceptions susceptibles de contenir le secret ne sont jamais
+imprimés. Le secret reste en mémoire volatile uniquement pendant la requête
+et n'entre dans aucun manifest, artefact, cache ou log.
 
 ## 6. Publication et verdict
 

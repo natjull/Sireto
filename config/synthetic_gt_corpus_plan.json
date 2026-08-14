@@ -8,8 +8,17 @@
     "fold_count": 5,
     "allowed_oof_folds": [2, 3, 4],
     "allowed_legacy_split": "train",
-    "max_candidates_per_group": 16,
-    "max_negatives_per_group": 15,
+    "max_candidates_per_group": 11,
+    "max_negatives_per_group": 10,
+    "minimum_negatives_per_positive": 5,
+    "minimum_seed_sirets": 20000,
+    "minimum_variants_per_seed": 3,
+    "minimum_positive_pairs": 60000,
+    "stretch_positive_pairs": 100000,
+    "minimum_negative_pairs": 300000,
+    "maximum_negative_pairs": 600000,
+    "seed_sources": ["CRM_OK_GT_TRAIN", "SIRENE_ONLY_TRAIN"],
+    "sirene_only_excludes_all_crm_ok_gt_sirens": true,
     "no_optional_stopping": true,
     "network_allowed_sirene_branch": false,
     "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus"
@@ -64,6 +73,8 @@
     "fresh_query_rows_excluded": true,
     "test_final_opened": false,
     "expected_target_state_counts": {"A": 5764, "F": 1335}
+    ,"minimum_crm_ok_gt_train_seeds": 7099
+    ,"minimum_sirene_only_seeds_to_reach_target": 12901
   },
   "transformations": {
     "families": [
@@ -94,8 +105,11 @@
     "min_unique_variant_rate": 0.85,
     "pilot_min_marginal_structural_diversity": 0.4,
     "extension_min_marginal_structural_diversity": 0.2,
-    "max_group_candidates": 16,
-    "max_negatives": 15,
+    "max_group_candidates": 11,
+    "max_negatives": 10,
+    "min_negatives_per_positive": 5,
+    "minimum_seed_sirets": 20000,
+    "minimum_positive_pairs": 60000,
     "stop_on_forbidden_siren_overlap": true,
     "stop_on_positive_injection": true,
     "stop_on_source_drift": true
@@ -113,7 +127,8 @@
     "daily_quota": 0,
     "max_cost_eur": 0.0,
     "cost_per_request_eur": null,
-    "smoke_seed_count": 8,
+    "smoke_seed_count": 100,
+    "allowed_extension_request_batches": [100, 500, 2000, 5000],
     "cache_enabled": true,
     "cache_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/synthetic_gt_corpus/maps_assisted",
     "only_exact_high_confidence_train": true,
