@@ -160,7 +160,112 @@ Si le stack améliore XGBoost d'au moins dix bonnes réponses mais reste entre
 avec la configuration CamemBERT déjà publiée. Dans tous les autres cas, aucun
 score CamemBERT supplémentaire n'est calculé.
 
-## Confirmation fold 1 et verdict
+## Accepteur pré-Maps et objectif produit
+
+Le gate ranker reste une précondition technique. Un candidat qui le franchit
+n'est toutefois pas `GO` produit tant qu'il n'améliore pas l'automatisation
+sûre avant Google Maps.
+
+L'accepteur ne classe et ne remplace jamais un SIRET. Il reçoit le top 1 du
+ranker gelé et rend exclusivement `AUTO_MATCH` ou `REVIEW`. Toute ligne
+`REVIEW` est un appel Maps théorique ; aucune API Maps n'est appelée dans ce
+cycle. Un futur rematching après réparation Maps sera un second passage
+séparé, avec ranker et accepteur gelés.
+
+### Scènes et prédictions nested OOF
+
+Après promotion technique d'un ranker, des prédictions candidat complètes
+sont produites hors apprentissage pour chaque fold :
+
+- folds 0 et 1 : modèles BGE et stack appris sur 2/3/4 ;
+- fold 2 : modèles appris sur 3/4 ;
+- fold 3 : modèles appris sur 2/4 ;
+- fold 4 : modèles appris sur 2/3.
+
+Chaque requête `MATCH_EXACT`, `AMBIGUOUS` ou `UNRESOLVED` reçoit exactement
+une scène OOF. Les cibles de l'accepteur sont `1` uniquement si le top 1 est
+le SIRET exact ; les erreurs de ranker, les ambiguïtés et les non-résolus sont
+des négatifs. Aucune scène n'est supprimée.
+
+La scène reprend les agrégats query-level V4.12-L compatibles et ajoute :
+
+- accord top 1 XGBoost/BGE et, si la branche conditionnelle existe,
+  CamemBERT ;
+- rangs top 1 réciproques et rang de chaque modèle pour le candidat retenu ;
+- marges top 1/top 2 propres à XGBoost, BGE et stack ;
+- écart de score normalisé entre XGBoost et BGE ;
+- stabilité du top 1 entre ranker historique, BGE et stack ;
+- identité ou différence des SIREN choisis par chaque modèle ;
+- nombre de SIREN distincts dans les top 2 et top 10 ;
+- différence entre le meilleur concurrent du même SIREN et le meilleur
+  concurrent d'un autre SIREN.
+
+Les features ne contiennent ni vérité, ni correction par dossier, ni décision
+Maps.
+
+### Apprentissage et calibration de l'accepteur
+
+Deux familles déjà fixées dans V4.12-L sont comparées sans nouveau tuning :
+
+- logistique standardisée : `C=0.2`, `max_iter=1500`, seed 42 ;
+- XGBoost : 450 arbres, learning rate `0.025`, profondeur 4,
+  `min_child_weight=10`, `subsample=0.85`, `colsample_bytree=0.80`,
+  `reg_lambda=10`, `reg_alpha=0.25`, seed 42.
+
+Pour chaque fold externe `f`, le fold de calibration vaut `(f+1) mod 5` et le
+modèle apprend sur les trois folds restants. Sur le fold de calibration, le
+seuil maximise le nombre d'AUTO sous deux contraintes : précision observée
+`>= 99,8 %` et zéro `AMBIGUOUS/UNRESOLVED` humainement audité automatisé.
+Le fold externe n'intervient ni dans le fit ni dans le choix du seuil.
+
+Une baseline accepteur est reconstruite avec exactement ce protocole sur le
+top 1 `BUSINESS_LEARNED`. Le candidat utilise le nouveau top 1 et les signaux
+de désaccord. Dans chaque système, la famille gagnante est celle qui maximise
+la couverture OOF agrégée sous la précision observée `>=99,8 %` et zéro cas
+ouvert audité AUTO ; une égalité va à la logistique.
+
+### Métriques pré-Maps obligatoires
+
+Les dénominateurs sont toujours écrits avec les nombres bruts :
+
+- Hit@1 exact : bonnes réponses / 13 704 identifiables ;
+- AUTO total CRM : AUTO / 17 097 ;
+- précision AUTO : AUTO corrects / AUTO ;
+- AUTO parmi les identifiables : AUTO exacts / 13 704 ;
+- REVIEW et taux théorique d'appels Maps : REVIEW / 17 097 ;
+- appels Maps évités : AUTO / 17 097 ;
+- bornes de Wilson bilatérales 95 % et 99 % pour précision et couvertures.
+
+La couverture identifiable est **13 704/17 097 = 80,154 %**. Les résultats ne
+doivent jamais présenter cette borne comme une couverture automatique
+atteignable ou dépassable sans nouvelles preuves pour les 3 393 cas ouverts.
+
+La comparaison appariée publie aussi :
+
+1. erreurs top 1 `BUSINESS_LEARNED` corrigées par le nouveau ranker ;
+2. top 1 déjà corrects mais nouvellement AUTO grâce à l'accord neuronal ;
+3. décisions auparavant AUTO désormais `REVIEW`/Maps en présence d'un
+   désaccord neuronal ;
+4. régressions de top 1 et pertes d'AUTO correctes.
+
+### Gate produit pré-Maps
+
+Un `GO_PRODUCT_PRE_MAPS` exige simultanément :
+
+1. gate ranker fold 0 puis confirmation fold 1 franchis ;
+2. précision AUTO OOF agrégée `>=99,8 %` ;
+3. zéro `AMBIGUOUS/UNRESOLVED` humainement audité en AUTO ;
+4. couverture AUTO totale supérieure d'au moins **1,0 point absolu** à la
+   baseline accepteur reconstruite avec le même protocole ;
+5. aucune baisse de la couverture AUTO parmi les 13 704 exacts ;
+6. toutes les scènes produites, scores finis et décisions déterministes.
+
+Une amélioration du Hit@1 sans ce gain AUTO vaut `PIVOT_PRODUCT_ACCEPTOR`.
+Un gain AUTO sans confirmation ranker vaut également `PIVOT`. Aucun résultat
+de ce cycle n'autorise un appel Maps réel ni une revendication de performance
+post-Maps.
+
+## Confirmation fold 1 et verdict ranker
 
 Si le gate fold 0 passe, la politique et tous les poids sont gelés puis le
 fold 1 est ouvert exactement une fois. `GO` exige :
@@ -172,7 +277,8 @@ fold 1 est ouvert exactement une fois. `GO` exige :
 - toutes les requêtes scorées et les mêmes contrôles de fuite/intégrité.
 
 Un gain fold 0 qui ne se confirme pas vaut `PIVOT`. Un stack qui n'améliore
-pas matériellement XGBoost sur fold 0 vaut `STOP`. Le test final reste fermé
+pas matériellement XGBoost sur fold 0 vaut `STOP`. Après confirmation, le gate
+accepteur ci-dessus décide le verdict produit final. Le test final reste fermé
 quel que soit le verdict.
 
 ## Ressources et arrêts
