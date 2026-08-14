@@ -2,6 +2,21 @@
 
 ## Etat des lieux
 
+### Corpus GT synthétique SIRETO — préenregistrement
+
+Le cycle train-only est préenregistré dans `docs/synthetic_gt_corpus_contract.md`
+et `config/synthetic_gt_corpus_plan.json`, avec une branche séparée
+`MAPS_ASSISTED` désactivée par défaut et son avenant
+`docs/synthetic_gt_corpus_maps_addendum.md`. La population autorisée joint
+`crm_ok_gt.csv` aux assignments V4.12-L et conserve uniquement
+`legacy_split=train` et les folds OOF 2/3/4 : 7 099 seeds, 5 965 composants,
+zéro recouvrement avec les folds 0/1 ou le test. Aucun appel Maps n'a été
+effectué ; le secret éventuel ne pourra être lu que depuis
+`SIRETO_GOOGLE_MAPS_API_KEY`, sans journalisation.
+
+*(préenregistrement et avenant : commit `9a79fbb`; sources, pins, quotas et
+gates sont dans le plan)*
+
 ### V4.12-BGE — cycle BGE + XGBoost préenregistré
 
 Le nouveau cycle teste BGE fine-tuné seul puis, en priorité, ses scores
