@@ -63,17 +63,19 @@ Une scène contient exactement un positif déjà présent dans le top 100 et
 jusqu'à quinze négatifs réellement retrouvés. Le positif n'est jamais ajouté
 à un pool qui ne le contenait pas.
 
-Les négatifs sont dédupliqués par SIRET puis pris selon cet ordre déterministe :
+Les négatifs sont dédupliqués par SIRET puis pris avec les quotas déterministes
+suivants ; une ligne déjà retenue par une catégorie prioritaire n'est pas
+reprise :
 
 1. cinq premiers négatifs du ranker `BUSINESS_LEARNED` OOF ;
-2. autres SIRET du même SIREN que la vérité ;
-3. concurrents à la même adresse (`same_address_count > 1`) ou portant un
-   nom/une enseigne fortement similaire
-   (`max(source_name_score, name_jaro_max) >= 0.90`) ;
-4. concurrents dont l'état SIRENE `A/F`, lu dans le texte candidat gelé,
-   diffère de `ground_truth_state` ;
-5. meilleurs candidats restants par rang XGBoost, puis rang retrieval et
-   SIRET lexical.
+2. jusqu'à trois autres SIRET du même SIREN que la vérité ;
+3. jusqu'à trois homonymes ou adresses fortes :
+   `max(source_name_score, name_jaro_max) >= 0.90`, ou
+   `addr_jaro >= 0.98 AND postcode_match = 1` ;
+4. jusqu'à deux concurrents dont l'état SIRENE `A/F`, lu dans le texte
+   candidat gelé, diffère de `ground_truth_state` ;
+5. les meilleurs candidats restants par rang XGBoost, puis rang retrieval et
+   SIRET lexical, jusqu'à quinze négatifs au total.
 
 Les catégories sont publiées pour chaque ligne (`xgb_top`, `same_siren`,
 `homonym_or_same_address`, `state_competitor`, `retrieval_fill`). Elles ne
