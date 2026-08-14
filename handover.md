@@ -21,10 +21,20 @@ Gate fold 0 : 2 452/2 797 exacts, 33/38 difficiles, 2 164/2 391 actifs,
 qu'une fois après franchissement ; `GO` y exige au moins +10 réponses nettes
 face à `BUSINESS_LEARNED`.
 
+Le contrat inclut désormais le vrai gate produit avant Google Maps. Après
+confirmation du ranker, un accepteur strictement nested OOF compare une
+baseline `BUSINESS_LEARNED` et le nouveau stack avec leurs accords, rangs,
+marges, stabilité top 1 et concurrence SIREN. Il ne change jamais le SIRET.
+Un `GO_PRODUCT_PRE_MAPS` exige une précision AUTO observée d'au moins 99,8 %,
+zéro cas ouvert audité automatisé et au moins +1 point de couverture AUTO
+totale face à la baseline reconstruite. Les AUTO/17 097, AUTO/13 704,
+REVIEW/appels Maps théoriques et Wilson 95/99 seront publiés séparément.
+Aucune API Maps ne sera appelée dans ce cycle.
+
 Contrat : `docs/v412_bge_xgb_stack_contract.md`.
 
-*(préenregistrement : commit `b6b6006`; présent handover : commit du présent
-milestone)*
+*(préenregistrement : commit `b6b6006`; seuils de minage : `b1fa89c` ; gate
+pré-Maps : `0081c82`; présent handover : commit du présent milestone)*
 
 ### V4.12-N — reranker neuronal seul arrêté, pivot BGE + XGBoost
 
