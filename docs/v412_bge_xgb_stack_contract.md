@@ -67,9 +67,11 @@ Les négatifs sont dédupliqués par SIRET puis pris selon cet ordre déterminis
 
 1. cinq premiers négatifs du ranker `BUSINESS_LEARNED` OOF ;
 2. autres SIRET du même SIREN que la vérité ;
-3. concurrents à la même adresse ou portant un nom/une enseigne fortement
-   similaire, selon les features métier déjà gelées ;
-4. concurrents actifs contre vérité fermée, ou fermés contre vérité active ;
+3. concurrents à la même adresse (`same_address_count > 1`) ou portant un
+   nom/une enseigne fortement similaire
+   (`max(source_name_score, name_jaro_max) >= 0.90`) ;
+4. concurrents dont l'état SIRENE `A/F`, lu dans le texte candidat gelé,
+   diffère de `ground_truth_state` ;
 5. meilleurs candidats restants par rang XGBoost, puis rang retrieval et
    SIRET lexical.
 
