@@ -55,7 +55,7 @@
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_learned_unified_population/2d29be3ccd8fcc3e/fold_assignments.parquet",
       "format": "PARQUET",
       "row_count": 17097,
-      "sha256": "43d587a7b5aefbcafb2fd0bb208476001eee7ae22c94ef7d545cb28f3d1333e",
+      "sha256": "43d587a7b5aefbcafb2fd0bb208476001eee7ae22c94efe7d545cb28f3d1333e",
       "projection": ["query_id", "siren_component_id", "oof_fold", "legacy_split"],
       "role": "SIREN_DISJOINT_TRAIN_ONLY_ASSIGNMENT"
     }
