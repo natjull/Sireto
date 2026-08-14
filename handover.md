@@ -2,6 +2,29 @@
 
 ## Etat des lieux
 
+### V4.12-N — reranker neuronal seul arrêté, pivot BGE + XGBoost
+
+Le benchmark fold 0 est clos sans ouvrir le fold 1 ni le test final. La
+baseline `BUSINESS_LEARNED` reste à **2 437/2 797 (87,129 %)**. BGE zéro-shot
+obtient 2 171/2 797, CamemBERT zéro-shot 1 846/2 797 et Qwen 1 782/2 797.
+Le fine-tuning groupwise de CamemBERT progresse à **2 353/2 797 (84,126 %)**
+mais reste 84 réponses derrière XGBoost et sous tous les gates de promotion.
+
+Le fine-tuning Qwen a été interrompu à 3 000/8 192 scènes sur instruction
+explicite ; aucun modèle final ni score de sélection n'en est publié et le
+pilote Qwen 1,7B est annulé. La seconde variante CamemBERT n'a produit aucun
+artefact final et n'est pas retenue.
+
+Verdict : **`STOP_PURE_NEURAL_REPLACEMENT`**. La complémentarité des erreurs
+autorise un nouveau cycle distinct, préenregistré avant fit, consacré à BGE
+fine-tuné puis à ses scores cross-fittés dans un stack déterministe avec
+XGBoost. Les résultats du cycle clos sont immuables.
+
+Rapport : `reports/v412_neural_ranker_benchmark.md`.
+
+*(rapport de clôture : commit `b6b674c`; présent handover : commit du présent
+milestone)*
+
 ### V4.12-N — expérience de reranker neuronal préenregistrée
 
 Le nouveau cycle ne modifie ni le CRM, ni les labels, ni le retrieval : il
