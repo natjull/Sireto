@@ -34,7 +34,20 @@ Aucune API Maps ne sera appelée dans ce cycle.
 Contrat : `docs/v412_bge_xgb_stack_contract.md`.
 
 *(préenregistrement : commit `b6b6006`; seuils de minage : `b1fa89c` ; gate
-pré-Maps : `0081c82`; présent handover : commit du présent milestone)*
+pré-Maps : `0081c82`; quotas négatifs équilibrés : `4a033a3`; présent
+handover : commit du présent milestone)*
+
+Les groupes BGE définitifs sont publiés sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/v4_12_bge_training_groups/114b407f2ccf7b40` :
+8 192 scènes, 131 072 paires, exactement un positif réel et quinze négatifs,
+zéro injection et zéro SIREN vérité traversant les folds 2/3/4. Les négatifs
+comprennent 40 960 top XGBoost OOF, 1 659 autres sites du même SIREN, 12 028
+homonymes/adresses fortes, 16 384 concurrents actif/fermé et 51 849 compléments
+par rang. Le premier build trop large `12b9127e397bbc65` est supersédé avant
+entraînement mais conservé physiquement pour traçabilité.
+
+*(builder, tests et rapport : commit `fcd41d0`; présent handover : commit du
+présent milestone)*
 
 ### V4.12-N — reranker neuronal seul arrêté, pivot BGE + XGBoost
 
