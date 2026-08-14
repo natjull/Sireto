@@ -2,6 +2,30 @@
 
 ## Etat des lieux
 
+### V4.12-BGE — cycle BGE + XGBoost préenregistré
+
+Le nouveau cycle teste BGE fine-tuné seul puis, en priorité, ses scores
+cross-fittés comme features d'un méta-ranker XGBoost sur le top 10
+`BUSINESS_LEARNED`. Les folds 2/3/4 servent exclusivement à apprendre, le
+fold 0 à sélectionner et le fold 1 reste fermé jusqu'au gate. Le test final
+historique reste fermé.
+
+Une seule configuration BGE est autorisée : loss groupwise, un positif
+réellement présent + quinze négatifs maximum, quatre couches supérieures,
+`1e-5`, un epoch et seed 42. Le stack utilise les 129 features métier et des
+scores/rangs/marges/accords BGE strictement OOF. Il n'existe ni règle par
+dossier, ni injection positive, ni tuning libre.
+
+Gate fold 0 : 2 452/2 797 exacts, 33/38 difficiles, 2 164/2 391 actifs,
+246/406 fermés, couverture complète et zéro fuite. Le fold 1 n'est ouvert
+qu'une fois après franchissement ; `GO` y exige au moins +10 réponses nettes
+face à `BUSINESS_LEARNED`.
+
+Contrat : `docs/v412_bge_xgb_stack_contract.md`.
+
+*(préenregistrement : commit `b6b6006`; présent handover : commit du présent
+milestone)*
+
 ### V4.12-N — reranker neuronal seul arrêté, pivot BGE + XGBoost
 
 Le benchmark fold 0 est clos sans ouvrir le fold 1 ni le test final. La
