@@ -4314,6 +4314,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   du sélecteur sont byte-identiques. Suite ciblée : 44 tests passants. Seul ce
   canary peut être lancé ; aucun passage à 30/150/20 000 avant son audit
   full-SIRENE et un nouveau verdict indépendant.
+- Résultat v4 : 22 `ACCEPT`, 7 `REJECT`, 1 `SILVER`; 28/30 slots passent le
+  preflight et 22/22 `ACCEPT` sont exacts full-SIRENE. La mécanique par
+  variante et toute la provenance passent, mais seulement 7/10 seeds gardent
+  3/3, soit 21 couples admissibles. Les audits indépendants concluent `PIVOT` :
+  six `ACCEPT` coupent un composé ou finissent sur un mot fonctionnel, et le
+  fingerprint alphanumérique a créé un faux doublon entre deux suppressions de
+  ponctuation. Aucun de ces 21 couples n'est promu.
+- Correctif v5 : `d4e1d17` (`fix: reject linguistically invalid GT
+  contracts`). La déduplication utilise la surface canonique, jamais
+  l'empreinte alphanumérique. `TOKEN_ORDER` est réservé au déplacement d'une
+  forme juridique; `TOKEN_SUBSET` conserve atomiquement les composés
+  apostrophés/tiretés, au moins trois tokens sur quatre et ne peut finir par un
+  mot fonctionnel. Sa part planifiée baisse de 14/30 à 10/30. Le critic ne peut
+  qualifier `OPERATIONAL_ONLY` qu'avec même SIREN et même site officiel.
+- Le canary v5 neuf contient 10 cibles / 30 contrats, 5 actives/5 fermées,
+  4 multisites, 1 multi-actif, 42 références train et 24 opérateurs exacts ;
+  zéro ajout de marque et zéro relation suspendue. Seed hash :
+  `17b896016dd30199`. Deux sélections indépendantes sont byte-identiques et les
+  30 contrats passent l'initialisation fail-closed. Nouveau canary10 obligatoire
+  avant toute extension.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
