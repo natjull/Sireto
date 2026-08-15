@@ -3,7 +3,20 @@
   "cycle_id": "SYNTHETIC_GT_CORPUS_2026_08",
   "date_frozen": "2026-08-15",
   "generator": {
-    "version": "0.1.0",
+    "version": "2.0.0-agentic-loop",
+    "mode": "AGENTIC_LUNA_ONLY",
+    "mechanical_text_generation_forbidden": true,
+    "agent_roles": ["GENERATOR", "CRITIC", "ADJUDICATOR"],
+    "prompt_set": "docs/synthetic_gt_agent_prompts_v1.md",
+    "output_schema": "config/synthetic_gt_agentic_message_schema_v2.json",
+    "orchestrator": "scripts/run_synthetic_gt_agentic_loop.py",
+    "state_store": "SQLITE_WAL_APPEND_ONLY_EVENTS",
+    "generator_workers": 2,
+    "critic_workers": 1,
+    "worker_model": "gpt-5.6-luna",
+    "worker_thinking": "low",
+    "pilot_critic_mode": "all",
+    "production_critic_mode_requires_pilot_gate": true,
     "seed": 42,
     "fold_count": 5,
     "allowed_oof_folds": [2, 3, 4],
@@ -20,6 +33,8 @@
     "seed_sources": ["CRM_OK_GT_TRAIN", "SIRENE_ONLY_TRAIN"],
     "sirene_only_excludes_all_crm_ok_gt_sirens": true,
     "no_optional_stopping": true,
+    "content_writer": "LUNA_AGENT_ONLY",
+    "code_may_not_transform_crm_text": true,
     "network_allowed_sirene_branch": false,
     "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus"
   },
@@ -63,18 +78,18 @@
   "population": {
     "join": "crm_ok_gt.zero_based_row_index == fold_assignments.query_id",
     "expected_joined_rows": 17054,
-    "allowed_rows": 7099,
-    "allowed_by_fold": {"2": 2393, "3": 2377, "4": 2329},
-    "allowed_components": 5965,
-    "allowed_sirens": 5963,
+    "allowed_rows": 7095,
+    "allowed_by_fold": {"2": 2389, "3": 2377, "4": 2329},
+    "allowed_components": 5961,
+    "allowed_sirens": 5959,
     "forbidden_oof_folds": [0, 1],
     "forbidden_legacy_splits": ["dev", "test"],
     "forbidden_components_are_derived_before_generation": true,
     "fresh_query_rows_excluded": true,
     "test_final_opened": false,
-    "expected_target_state_counts": {"A": 5764, "F": 1335}
-    ,"minimum_crm_ok_gt_train_seeds": 7099
-    ,"minimum_sirene_only_seeds_to_reach_target": 12901
+    "expected_target_state_counts": {"A": 5761, "F": 1334}
+    ,"minimum_crm_ok_gt_train_seeds": 7095
+    ,"minimum_sirene_only_seeds_to_reach_target": 12905
   },
   "transformations": {
     "families": [
@@ -95,17 +110,25 @@
     "autonomous_decimal_leak_lengths": [9, 14],
     "max_family_share": 0.25,
     "min_family_coverage": 0.8,
-    "seeded_parameter_stream": "SHA256(seed, seed_query_id, family, variant_index)"
+    "seeded_parameter_stream": "SHA256(seed, batch_id, seed_query_id) for assignment only",
+    "families_are_observed_labels_only": true,
+    "python_transformation_engine": false
   },
   "quality_gates": {
-    "pilot_seed_count": 128,
-    "pilot_variants_per_seed": 8,
+    "pilot_seed_count": 4,
+    "pilot_variants_per_seed": 3,
     "pilot_min_families_covered": 0.8,
     "max_duplicate_rate": 0.05,
     "min_unique_variant_rate": 0.85,
     "pilot_min_marginal_structural_diversity": 0.4,
     "extension_min_marginal_structural_diversity": 0.2,
     "max_group_candidates": 11,
+    "max_local_candidates_per_key": 64,
+    "minimum_agentic_accepts_per_seed": 3,
+    "require_generator_critic_adjudicator": true,
+    "require_response_hash_and_prompt_versions": true,
+    "require_byte_for_byte_agent_fields": true,
+    "reject_if_mechanical_generation_detected": true,
     "max_negatives": 10,
     "min_negatives_per_positive": 5,
     "minimum_seed_sirets": 20000,

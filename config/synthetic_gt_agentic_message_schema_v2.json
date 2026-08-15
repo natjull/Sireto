@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "sireto://synthetic-gt/agentic-message/2",
+  "title": "SIRETO agentic worker response",
+  "oneOf": [
+    {"$ref": "#/$defs/generator"},
+    {"$ref": "#/$defs/critic"},
+    {"$ref": "#/$defs/adjudicator"}
+  ],
+  "$defs": {
+    "envelope": {
+      "type": "object",
+      "required": ["schema_version", "task_id", "run_id", "batch_id", "role", "prompt_version", "input_sha256", "seed"],
+      "properties": {
+        "schema_version": {"const": "sireto-synthetic-gt-agentic-message-2"},
+        "task_id": {"type": "string", "pattern": "^[0-9a-f]{32}$"},
+        "run_id": {"type": "string", "minLength": 1, "maxLength": 128},
+        "batch_id": {"type": "string", "minLength": 8, "maxLength": 128},
+        "input_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "seed": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["siret", "siren"],
+          "properties": {
+            "siret": {"type": "string", "pattern": "^[0-9]{14}$"},
+            "siren": {"type": "string", "pattern": "^[0-9]{9}$"}
+          }
+        }
+      }
+    },
+    "crm": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "address", "postcode", "city", "insee"],
+      "properties": {
+        "name": {"type": "string", "maxLength": 300},
+        "address": {"type": "string", "maxLength": 500},
+        "postcode": {"type": "string", "maxLength": 20},
+        "city": {"type": "string", "maxLength": 200},
+        "insee": {"type": "string", "maxLength": 20}
+      }
+    },
+    "variant": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant_id", "crm", "corruption_families_observed", "transformation_summary"],
+      "properties": {
+        "variant_id": {"enum": ["v1", "v2", "v3"]},
+        "crm": {"$ref": "#/$defs/crm"},
+        "corruption_families_observed": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": {"enum": ["LEGAL_FORM", "ACRONYM_TOKENIZATION", "ACCENT_PUNCTUATION", "OCR_LIMITED", "TOKEN_ORDER", "FIELD_MISSING", "ADDRESS_ABBREVIATION", "ADDRESS_TOKEN_ORDER", "ADDRESS_OCR", "COMMUNE_VARIANT", "ENSEIGNE_VS_DENOMINATION", "HISTORICAL_OFFICIAL", "MAPS_OBSERVED"]}
+        },
+        "transformation_summary": {"type": "string", "minLength": 1, "maxLength": 500}
+      }
+    },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["variant_id", "decision", "confidence", "reason_codes", "reason"],
+      "properties": {
+        "variant_id": {"enum": ["v1", "v2", "v3"]},
+        "decision": {"enum": ["ACCEPT", "SILVER", "REJECT"]},
+        "confidence": {"type": "number", "minimum": 0, "maximum": 1},
+        "reason_codes": {"type": "array", "uniqueItems": true, "items": {"type": "string", "minLength": 1, "maxLength": 80}},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000}
+      }
+    },
+    "generator": {
+      "allOf": [
+        {"$ref": "#/$defs/envelope"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema_version", "task_id", "run_id", "batch_id", "role", "prompt_version", "input_sha256", "seed", "variants"],
+          "properties": {
+            "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
+            "role": {"const": "GENERATOR"},
+            "prompt_version": {"const": "sireto-gt-generator-v2"},
+            "variants": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/variant"}}
+          }
+        }
+      ]
+    },
+    "critic": {
+      "allOf": [
+        {"$ref": "#/$defs/envelope"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema_version", "task_id", "run_id", "batch_id", "role", "prompt_version", "input_sha256", "seed", "independent", "generator_rationale_seen", "decisions"],
+          "properties": {
+            "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
+            "role": {"const": "CRITIC"},
+            "prompt_version": {"const": "sireto-gt-critic-v2"},
+            "independent": {"const": true},
+            "generator_rationale_seen": {"const": false},
+            "decisions": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/decision"}}
+          }
+        }
+      ]
+    },
+    "adjudicator": {
+      "allOf": [
+        {"$ref": "#/$defs/envelope"},
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schema_version", "task_id", "run_id", "batch_id", "role", "prompt_version", "input_sha256", "seed", "decisions"],
+          "properties": {
+            "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
+            "role": {"const": "ADJUDICATOR"},
+            "prompt_version": {"const": "sireto-gt-adjudicator-v2"},
+            "decisions": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/decision"}}
+          }
+        }
+      ]
+    }
+  }
+}

@@ -1,5 +1,6 @@
 tqdm
 duckdb
+jsonschema>=4.20
 scikit-learn
 pandas
 pyarrow
