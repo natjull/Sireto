@@ -29,10 +29,14 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import run_synthetic_gt_agentic_loop as loop  # noqa: E402
+from scripts import manage_synthetic_gt_balanced_registry as registry_lib  # noqa: E402
 from scripts import select_synthetic_gt_fragment_pilot as fragments  # noqa: E402
 
 
-SAFE_NAME_RELATIONS = ("LEGAL_FORM_REMOVE", "TOKEN_ORDER", "PUNCTUATION_REMOVED")
+SAFE_NAME_RELATIONS = (
+    "LEGAL_FORM_REMOVE", "TOKEN_ORDER", "TOKEN_SUBSET", "PUNCTUATION_REMOVED",
+    "OFFICIAL_NAME_ALIAS",
+)
 SAFE_LOCATION_RELATIONS = (
     ("address", "ADDRESS_ABBREVIATE"),
     ("address", "ADDRESS_ALIAS_EXPAND"),
@@ -52,6 +56,21 @@ STRATUM_TO_OOF_CELL = {
     "FAIL_BGE_ONLY": "XGB_ONLY_CORRECT",
     "TRAIN_DISTRIBUTION": "BOTH_CORRECT",
 }
+TOKEN_SUBSET_FUNCTION_WORDS = {
+    "a", "au", "aux", "d", "de", "des", "du", "en", "et", "l", "la", "le",
+    "les", "par", "pour", "sous", "sur", "avec", "sans", "chez", "que", "qu",
+    "qui", "y",
+}
+TOKEN_SUBSET_GENERIC_WORDS = {
+    "service", "services", "conseil", "consulting", "management", "holding",
+    "commerce", "distribution", "industrie", "batiment", "btp", "travaux",
+    "transport", "transports", "location", "immobilier", "hotel", "garage",
+    "restaurant", "auto", "autos", "electricite", "soldes",
+}
+TOKEN_SUBSET_ORG_DESCRIPTORS = {
+    "association", "entreprise", "societe", "groupe", "hotel", "garage", "centre",
+    "cabinet", "clinique", "ecole", "college", "lycee", "restaurant", "transports",
+}
 
 
 def sha256(path: Path) -> str:
@@ -70,6 +89,64 @@ def exact_counts(total: int, shares: dict[str, float]) -> dict[str, int]:
     for key in order[:remainder]:
         result[key] += 1
     return result
+
+
+def remaining_quota_counts(
+    new_count: int,
+    final_total: int,
+    shares: dict[str, float],
+    prior_counts: Counter[str] | dict[str, int],
+) -> dict[str, int]:
+    """Allocate this batch against the remaining *global* corpus quotas."""
+    if new_count < 0 or final_total <= 0:
+        raise ValueError("invalid quota totals")
+    final_counts = exact_counts(final_total, shares)
+    remaining = {
+        key: max(0, final_counts[key] - int(prior_counts.get(key, 0)))
+        for key in shares
+    }
+    if new_count > sum(remaining.values()):
+        raise ValueError(
+            f"batch requests {new_count} variants but only {sum(remaining.values())} "
+            "global quota slots remain"
+        )
+    if not new_count:
+        return {key: 0 for key in shares}
+    remaining_total = sum(remaining.values())
+    allocation = exact_counts(
+        new_count,
+        {key: value / remaining_total for key, value in remaining.items()},
+    )
+    # Largest-remainder rounding cannot exceed a positive remaining cell when
+    # new_count <= remaining_total, except for a zero-share cell (which exact_counts
+    # keeps at zero).  Retain an explicit invariant because this gates production.
+    if any(allocation[key] > remaining[key] for key in allocation):
+        raise RuntimeError("global quota allocation exceeded a remaining cell")
+    return allocation
+
+
+def registry_usage(
+    path: Path,
+) -> tuple[
+    int, Counter[str], Counter[str], Counter[str], Counter[str], Counter[str],
+    Counter[str], set[str], set[str], str,
+]:
+    production_registry = registry_lib.load_registry(path)
+    snapshot = registry_lib.snapshot(production_registry)
+    if production_registry.get("summary") != snapshot:
+        raise ValueError("production registry summary is not sealed")
+    return (
+        int(snapshot["promoted_variants"]),
+        Counter(snapshot["inspiration_ref_counts"]),
+        Counter(snapshot["exact_operator_counts"]),
+        Counter(snapshot["relation_pair_counts"]),
+        Counter(snapshot["difficulty_counts"]),
+        Counter(snapshot["augmentation_stratum_counts"]),
+        Counter(snapshot["name_token_subset_signature_counts"]),
+        set(snapshot["excluded_target_sirets"]),
+        set(snapshot["excluded_target_sirens"]),
+        sha256(path),
+    )
 
 
 def pair_signature(pair: tuple[str, tuple[str, str]]) -> str:
@@ -122,7 +199,9 @@ def variant_archetypes(
 ) -> set[str]:
     flags = context_flags(context)
     name_relation, (_field, location_relation) = pair
-    name_weak = name_relation in {"TOKEN_ORDER", "PUNCTUATION_REMOVED"}
+    name_weak = name_relation in {
+        "TOKEN_ORDER", "TOKEN_SUBSET", "PUNCTUATION_REMOVED",
+    }
     address_weak = location_relation in {"ADDRESS_TOKEN_SUBSET", "PUNCTUATION_REMOVED"}
     if name_weak and address_weak:
         flags.add("WEAK_NAME_AND_ADDRESS")
@@ -145,7 +224,7 @@ def difficulty(
         score += 1
     if "SAME_ADDRESS_COMPETITION" in flags:
         score += 1
-    if name_relation == "TOKEN_ORDER":
+    if name_relation in {"TOKEN_ORDER", "TOKEN_SUBSET"}:
         score += 1
     if location_relation == "ADDRESS_TOKEN_SUBSET":
         score += 1
@@ -160,27 +239,224 @@ def safe_capabilities(
     context: dict[str, Any],
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
     document_frequencies: Counter[str],
+    allowed_name_relations: Sequence[str] = SAFE_NAME_RELATIONS,
+    support_cache: dict[tuple[Any, ...], list[dict[str, Any]]] | None = None,
 ) -> tuple[
     dict[str, list[dict[str, Any]]],
     dict[tuple[str, str], list[dict[str, Any]]],
 ]:
     values = fragments.baseline(context)
     anchors = fragments.distinctive_name_tokens(context, document_frequencies)
-    names = {
-        relation: [
-            value for value in grouped.get(("name", relation), [])
-            if fragments.fragment_supports("name", values["name"], value, anchors)
+    cache = support_cache if support_cache is not None else {}
+
+    def supported(field: str, relation: str) -> list[dict[str, Any]]:
+        source = values[field]
+        key = (
+            field, relation, source,
+            tuple(anchors) if field == "name" else (),
+        )
+        if key in cache:
+            return cache[key]
+        if relation == "PUNCTUATION_REMOVED" and not any(
+            character in loop.PUNCTUATION for character in source
+        ):
+            cache[key] = []
+            return []
+        source_count = len(loop.normalized_words(source))
+        possible = [
+            value for value in grouped.get((field, relation), [])
+            if value.get("operation_parameters", {}).get("source_token_count", source_count)
+            == source_count
         ]
-        for relation in SAFE_NAME_RELATIONS
-    }
+        result = [
+            value for value in possible
+            if fragments.fragment_supports(field, source, value, anchors)
+        ]
+        cache[key] = result
+        return result
+
+    names = {}
+    for relation in allowed_name_relations:
+        if relation == "OFFICIAL_NAME_ALIAS":
+            continue
+        candidates = supported("name", relation)
+        if relation == "TOKEN_SUBSET":
+            candidates = [
+                value for value in candidates
+                if strict_token_subset_anchor(context, value, document_frequencies)
+            ]
+        names[relation] = distinct_exact_operators(candidates)
+    if "OFFICIAL_NAME_ALIAS" in allowed_name_relations:
+        names["OFFICIAL_NAME_ALIAS"] = official_name_alias_fragments(context)
     locations = {
-        key: [
-            value for value in grouped.get(key, [])
-            if fragments.fragment_supports(key[0], values[key[0]], value, anchors)
-        ]
+        key: distinct_exact_operators(supported(*key))
         for key in SAFE_LOCATION_RELATIONS
     }
     return names, locations
+
+
+def distinct_exact_operators(values: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
+    """Keep one deterministic proof per materialized exact operator."""
+    by_operator: dict[str, dict[str, Any]] = {}
+    for value in sorted(values, key=lambda item: item["inspiration_ref"]):
+        by_operator.setdefault(fragment_operator(value), value)
+    return list(by_operator.values())
+
+
+def official_enseigne_tokens(context: dict[str, Any]) -> set[str]:
+    return {
+        token
+        for option in context.get("target", {}).get("names", [])
+        if option.get("kind") == "ENSEIGNE"
+        for token in loop.normalized_words(option.get("value", ""))
+    }
+
+
+def strict_token_subset_anchor(
+    context: dict[str, Any],
+    fragment: dict[str, Any],
+    document_frequencies: Counter[str],
+) -> str | None:
+    """Return the audited protected anchor, or reject this TOKEN_SUBSET."""
+    source = fragments.baseline(context)["name"]
+    words = loop.normalized_words(source)
+    if not (4 <= len(words) <= 10) or any(
+        character in loop.PUNCTUATION for character in source
+    ):
+        return None
+    legal = {value.casefold() for value in loop.LEGAL_FORM_TOKENS}
+    enseigne_tokens = official_enseigne_tokens(context)
+    has_distinct_enseigne = any(
+        loop.normalized_surface(option.get("value", ""))
+        != loop.normalized_surface(source)
+        for option in context.get("target", {}).get("names", [])
+        if option.get("kind") == "ENSEIGNE" and str(option.get("value", "")).strip()
+    )
+    person_like = (
+        not any(word in legal for word in words)
+        and not has_distinct_enseigne
+        and not any(word in TOKEN_SUBSET_ORG_DESCRIPTORS for word in words)
+    )
+    if person_like:
+        return None
+    retained = fragment.get("operation_parameters", {}).get("retained_positions")
+    if not isinstance(retained, list) or retained != sorted(set(retained)):
+        return None
+    retained_set = set(retained)
+    removed = [index for index in range(len(words)) if index not in retained_set]
+    if (
+        not (1 <= len(removed) <= 2)
+        or removed != list(range(removed[0], removed[-1] + 1))
+        or len(retained) < max(3, math.ceil(0.60 * len(words)))
+        or all(words[index] in legal for index in removed)
+    ):
+        return None
+    projected = [words[index] for index in retained]
+    if not projected:
+        return None
+    if projected[0] in TOKEN_SUBSET_FUNCTION_WORDS and projected[0] not in legal:
+        return None
+    if projected[-1] in TOKEN_SUBSET_FUNCTION_WORDS and projected[-1] not in legal:
+        return None
+    left, right = removed[0] - 1, removed[-1] + 1
+    if left in retained_set and right in retained_set and (
+        words[left] in TOKEN_SUBSET_FUNCTION_WORDS
+        or words[right] in TOKEN_SUBSET_FUNCTION_WORDS
+    ):
+        return None
+    address_city_tokens = set(loop.normalized_words(
+        f"{fragments.baseline(context)['address']} {fragments.baseline(context)['city']}"
+    ))
+    candidates = [
+        word for index, word in enumerate(words)
+        if index in retained_set
+        and len(word) >= 3
+        and not word.isdigit()
+        and fragments.ROMAN_NUMERAL.fullmatch(word) is None
+        and word not in legal
+        and word.upper() not in fragments.STOP_ANCHORS
+        and word not in TOKEN_SUBSET_GENERIC_WORDS
+        and word not in TOKEN_SUBSET_FUNCTION_WORDS
+        and word not in address_city_tokens
+        and (document_frequencies.get(word, 0) <= 32 or word in enseigne_tokens)
+    ]
+    if not candidates:
+        return None
+    return min(
+        candidates,
+        key=lambda word: (document_frequencies.get(word, 0), -len(word), words.index(word)),
+    )
+
+
+def eligible_for_official_alias(context: dict[str, Any]) -> bool:
+    qualification = context.get("qualification", {})
+    address = context.get("target", {}).get("address", {})
+    complete_context = all(
+        qualification.get(key)
+        for key in (
+            "pre_generation_exact_eligible", "siblings_complete",
+            "same_address_complete", "same_name_geography_complete",
+        )
+    )
+    address_complete = all(
+        str(address.get(key) or "").strip()
+        for key in ("number", "street_type", "street", "postcode", "insee", "city")
+    )
+    return bool(
+        complete_context and address_complete and official_name_alias_fragments(context)
+    )
+
+
+def official_name_alias_fragments(context: dict[str, Any]) -> list[dict[str, Any]]:
+    """Build target-specific evidence from distinct official SIRENE name options.
+
+    This is not synthetic text and is not borrowed from a protected fold.  Luna
+    must still emit the selected official alias byte-for-byte; the fragment only
+    freezes the authoritative relationship and its provenance.
+    """
+    source = fragments.baseline(context)["name"]
+    baseline_values = fragments.baseline(context)
+    source_fingerprint = loop.comparison_fingerprint(baseline_values)
+    seen_fingerprints = {source_fingerprint}
+    result: list[dict[str, Any]] = []
+    for option in context.get("target", {}).get("names", []):
+        alias = str(option.get("value", "")).strip()
+        if not alias:
+            continue
+        alias_values = {**baseline_values, "name": alias}
+        alias_fingerprint = loop.comparison_fingerprint(alias_values)
+        if alias_fingerprint in seen_fingerprints:
+            continue
+        seen_fingerprints.add(alias_fingerprint)
+        alias_sha = hashlib.sha256(alias.encode("utf-8")).hexdigest()
+        parameters = loop.official_name_alias_parameters(alias)
+        inspiration_ref = loop.digest_json({
+            "evidence_source_type": "SIRENE_OFFICIAL_NAME_OPTION",
+            "target_siret": context["target_siret"],
+            "official_value": source,
+            "observed_crm_value": alias,
+            "operation_parameters": parameters,
+        })
+        result.append({
+            "schema_version": "sireto-synthetic-field-inspiration-1",
+            "field": "name",
+            "relation": "OFFICIAL_NAME_ALIAS",
+            "inspiration_ref": inspiration_ref,
+            "official_value": source,
+            "observed_crm_value": alias,
+            "operation_parameters": parameters,
+            "evidence_source_type": "SIRENE_OFFICIAL_NAME_OPTION",
+            "source_fold": -1,
+            "source_legacy_split": "sirene_official",
+            "source_state": context["target"]["state"],
+            "provenance_digest": loop.digest_json({
+                "context_sha256": context["context_sha256"],
+                "target_siret": context["target_siret"],
+                "name_kind": option.get("kind"),
+                "alias_sha256": alias_sha,
+            }),
+        })
+    return sorted(result, key=lambda value: value["inspiration_ref"])
 
 
 def candidate_bundles(
@@ -197,14 +473,20 @@ def candidate_bundles(
     ]
     if len(pairs) < 3:
         return []
-    values = list(itertools.combinations(pairs, 3))
+    values = list(itertools.combinations_with_replacement(pairs, 3))
     # Keep several difficulty profiles before deterministic thinning.
     by_profile: dict[tuple[int, int, int], list[Any]] = defaultdict(list)
     for bundle in values:
         name_counts = Counter(pair[0] for pair in bundle)
         location_counts = Counter(pair[1] for pair in bundle)
+        if name_counts["TOKEN_SUBSET"] > 1:
+            continue
         if any(
-            count > len({value["inspiration_ref"] for value in names[relation]})
+            count > (
+                3 * len({value["inspiration_ref"] for value in names[relation]})
+                if relation == "OFFICIAL_NAME_ALIAS"
+                else len({value["inspiration_ref"] for value in names[relation]})
+            )
             for relation, count in name_counts.items()
         ) or any(
             count > len({value["inspiration_ref"] for value in locations[key]})
@@ -241,17 +523,30 @@ def choose_targets_and_bundles(
     relation_pair_cap: int,
     prior_pair_counts: Counter[str],
     relation_capacities: dict[tuple[str, str], int],
+    name_token_subset_remaining: int,
+    ref_cap: int,
+    operator_cap: int,
+    prior_ref_counts: Counter[str],
+    prior_operator_counts: Counter[str],
+    effective_ref_caps: dict[str, int],
+    token_subset_signature_cap: int,
+    prior_token_subset_signature_counts: Counter[str],
     selection_seed: str,
 ) -> list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]]:
     options: list[tuple[int, tuple[tuple[str, tuple[str, str]], ...]]] = []
     context_by_index: list[dict[str, Any]] = []
-    # A bounded deterministic pool keeps the MILP quick while leaving ample choice.
+    # Authoritative aliases are comparatively rare and are the safe source of
+    # easy capacity.  Keep them before deterministic thinning of ordinary rows.
+    pool_limit = max(3000, 3 * target_count)
     eligible = sorted(
         contexts,
-        key=lambda value: hashlib.sha256(
-            f"{selection_seed}|pool|{value['target_siret']}".encode()
-        ).hexdigest(),
-    )[:3000]
+        key=lambda value: (
+            not bool(capabilities[value["target_siret"]][0].get("OFFICIAL_NAME_ALIAS")),
+            hashlib.sha256(
+                f"{selection_seed}|pool|{value['target_siret']}".encode()
+            ).hexdigest(),
+        ),
+    )[:pool_limit]
     for context in eligible:
         siret = context["target_siret"]
         names, locations = capabilities[siret]
@@ -293,11 +588,15 @@ def choose_targets_and_bundles(
             )
             for index, (context_index, bundle) in enumerate(options)
         }, difficulty_counts[level], difficulty_counts[level])
+    add({
+        index: sum(pair[0] == "TOKEN_SUBSET" for pair in bundle)
+        for index, (_context_index, bundle) in enumerate(options)
+    }, 0, name_token_subset_remaining)
     all_pairs = sorted({pair for _context_index, bundle in options for pair in bundle})
     for pair in all_pairs:
         remaining = max(0, relation_pair_cap - prior_pair_counts[pair_signature(pair)])
         add({
-            index: int(pair in bundle)
+            index: sum(value == pair for value in bundle)
             for index, (_context_index, bundle) in enumerate(options)
         }, 0, remaining)
     for (field, relation), capacity in relation_capacities.items():
@@ -309,6 +608,106 @@ def choose_targets_and_bundles(
             )
             for index, (_context_index, bundle) in enumerate(options)
         }, 0, capacity)
+
+    # Hall-style resource constraints couple target selection to the fragments
+    # that are actually compatible with each surface.  Relation-level totals are
+    # insufficient: thousands of targets can otherwise all depend on the same
+    # almost-saturated abbreviation proof.
+    for field, relation in (
+        [("name", value) for value in SAFE_NAME_RELATIONS]
+        + list(SAFE_LOCATION_RELATIONS)
+    ):
+        if (field, relation) == ("name", "OFFICIAL_NAME_ALIAS"):
+            # Its evidence is target-specific, has local capacity three, and is
+            # already bounded by candidate_bundles; cross-target Hall sets are
+            # disjoint and add no information.
+            continue
+        support_by_context: dict[int, list[dict[str, Any]]] = {}
+        for context_index, context in enumerate(context_by_index):
+            names, locations = capabilities[context["target_siret"]]
+            values = (
+                names.get(relation, []) if field == "name"
+                else locations.get((field, relation), [])
+            )
+            if values:
+                support_by_context[context_index] = values
+        if not support_by_context:
+            continue
+        resource_specs = [
+            (
+                "REF",
+                lambda value: str(value["inspiration_ref"]),
+                lambda resource: effective_ref_caps.get(resource, 0),
+            ),
+            (
+                "OPERATOR",
+                fragment_operator,
+                lambda resource: max(
+                    0, operator_cap - prior_operator_counts[resource]
+                ),
+            ),
+        ]
+        if (field, relation) == ("name", "TOKEN_SUBSET"):
+            resource_specs.append((
+                "TOKEN_SUBSET_SIGNATURE",
+                lambda value: str(registry_lib.token_subset_signature(value)),
+                lambda resource: max(
+                    0, token_subset_signature_cap
+                    - prior_token_subset_signature_counts[resource]
+                ),
+            ))
+        for _resource_kind, resource_key, remaining_capacity in resource_specs:
+            support_sets = {
+                context_index: frozenset(resource_key(value) for value in values)
+                for context_index, values in support_by_context.items()
+            }
+            unique_support_sets = sorted(
+                set(support_sets.values()), key=lambda value: (len(value), sorted(value))
+            )
+            hall_sets = set(unique_support_sets)
+            resources = set().union(*unique_support_sets)
+            for resource in resources:
+                touching = [value for value in unique_support_sets if resource in value]
+                if len(touching) > 1:
+                    hall_sets.add(frozenset().union(*touching))
+            # The union of an overlap component is another necessary Hall cut;
+            # disjoint components need no combined cut because capacities add.
+            pending = set(unique_support_sets)
+            while pending:
+                component = {pending.pop()}
+                component_union = set(next(iter(component)))
+                changed = True
+                while changed:
+                    changed = False
+                    touching = {
+                        value for value in pending if component_union.intersection(value)
+                    }
+                    if touching:
+                        pending.difference_update(touching)
+                        component.update(touching)
+                        component_union.update(*touching)
+                        changed = True
+                if len(component) > 1:
+                    hall_sets.add(frozenset(component_union))
+            for resource_set in sorted(
+                hall_sets, key=lambda value: (len(value), sorted(value))
+            ):
+                capacity = sum(remaining_capacity(value) for value in resource_set)
+                coefficients: dict[int, float] = {}
+                for context_index, support in support_sets.items():
+                    if not support.issubset(resource_set):
+                        continue
+                    for option_index in option_by_context[context_index]:
+                        bundle = options[option_index][1]
+                        demand = sum(
+                            pair[0] == relation if field == "name"
+                            else pair[1] == (field, relation)
+                            for pair in bundle
+                        )
+                        if demand:
+                            coefficients[option_index] = demand
+                if coefficients:
+                    add(coefficients, 0, capacity)
 
     matrix_rows: list[int] = []
     matrix_columns: list[int] = []
@@ -353,6 +752,46 @@ def fragment_operator(value: dict[str, Any]) -> str:
     return fragments.fragment_operator(value)
 
 
+def effective_ref_capacities(
+    values: Sequence[dict[str, Any]],
+    ref_cap: int,
+    operator_cap: int,
+    prior_ref_counts: Counter[str],
+    prior_operator_counts: Counter[str],
+) -> dict[str, int]:
+    """Deterministically partition each residual operator cap across its refs.
+
+    This turns the coupled ref/operator assignment into one capacitated matching:
+    any flow respecting these effective ref caps respects both original caps.
+    """
+    refs_by_operator: dict[str, set[str]] = defaultdict(set)
+    for value in values:
+        refs_by_operator[fragment_operator(value)].add(value["inspiration_ref"])
+    result: dict[str, int] = {}
+    for operator, refs in sorted(refs_by_operator.items()):
+        remaining_operator = max(0, operator_cap - prior_operator_counts[operator])
+        residual = {
+            ref: max(0, ref_cap - prior_ref_counts[ref]) for ref in sorted(refs)
+        }
+        # Round-robin waterfill is deterministic and avoids stranding capacity on
+        # one proof when another compatible surface only admits a sibling proof.
+        active = [ref for ref, capacity in residual.items() if capacity > 0]
+        allocated: Counter[str] = Counter()
+        while remaining_operator > 0 and active:
+            next_active = []
+            for ref in active:
+                if remaining_operator <= 0:
+                    break
+                if allocated[ref] < residual[ref]:
+                    allocated[ref] += 1
+                    remaining_operator -= 1
+                if allocated[ref] < residual[ref]:
+                    next_active.append(ref)
+            active = next_active
+        result.update(allocated)
+    return result
+
+
 def assign_fragments(
     selected: list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]],
     capabilities: dict[str, tuple[dict[str, Any], dict[tuple[str, str], Any]]],
@@ -360,6 +799,9 @@ def assign_fragments(
     operator_cap: int,
     prior_ref_counts: Counter[str],
     prior_operator_counts: Counter[str],
+    effective_ref_caps: dict[str, int],
+    token_subset_signature_cap: int,
+    prior_token_subset_signature_counts: Counter[str],
     selection_seed: str,
 ) -> tuple[dict[str, list[dict[str, dict[str, Any]]]], Counter[str], Counter[str]]:
     graph = nx.DiGraph()
@@ -380,9 +822,26 @@ def assign_fragments(
                 for fragment in values:
                     ref = fragment["inspiration_ref"]
                     operator = fragment_operator(fragment)
-                    ref_remaining = ref_cap - prior_ref_counts[ref]
+                    subset_signature = registry_lib.token_subset_signature(fragment)
+                    ref_remaining = (
+                        min(
+                            ref_cap - prior_ref_counts[ref],
+                            operator_cap - prior_operator_counts[operator],
+                        )
+                        if fragment.get("evidence_source_type")
+                        == "SIRENE_OFFICIAL_NAME_OPTION"
+                        else effective_ref_caps.get(ref, 0)
+                    )
                     operator_remaining = operator_cap - prior_operator_counts[operator]
-                    if ref_remaining <= 0 or operator_remaining <= 0:
+                    signature_remaining = (
+                        token_subset_signature_cap
+                        - prior_token_subset_signature_counts[subset_signature]
+                        if subset_signature is not None else operator_remaining
+                    )
+                    if (
+                        ref_remaining <= 0 or operator_remaining <= 0
+                        or signature_remaining <= 0
+                    ):
                         continue
                     by_ref[ref] = fragment
                     target_ref = ("TARGET_REF", siret, ref)
@@ -395,13 +854,33 @@ def assign_fragments(
                         request, target_ref, capacity=1,
                         weight=int(digest[:8], 16),
                     )
-                    graph.add_edge(target_ref, ref_node, capacity=1, weight=0)
+                    # A train-observed fragment stays unique within a target.  An
+                    # authoritative alias is target-specific and may be paired with
+                    # up to three distinct location operators for that same target.
+                    target_ref_capacity = (
+                        3 if fragment.get("evidence_source_type")
+                        == "SIRENE_OFFICIAL_NAME_OPTION" else 1
+                    )
+                    graph.add_edge(
+                        target_ref, ref_node, capacity=target_ref_capacity, weight=0
+                    )
                     graph.add_edge(
                         ref_node, operator_node, capacity=ref_remaining, weight=0
                     )
-                    graph.add_edge(
-                        operator_node, sink, capacity=operator_remaining, weight=0
-                    )
+                    if subset_signature is None:
+                        graph.add_edge(
+                            operator_node, sink, capacity=operator_remaining, weight=0
+                        )
+                    else:
+                        signature_node = ("TOKEN_SUBSET_SIGNATURE", subset_signature)
+                        graph.add_edge(
+                            operator_node, signature_node,
+                            capacity=operator_remaining, weight=0,
+                        )
+                        graph.add_edge(
+                            signature_node, sink,
+                            capacity=signature_remaining, weight=0,
+                        )
     flow = nx.max_flow_min_cost(graph, source, sink)
     flow_value = sum(flow[source].values())
     if flow_value != len(request_specs):
@@ -511,21 +990,52 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         or set(catalog.get("allowed_folds", [])) != {2, 3, 4}
     ):
         raise ValueError("failure catalog does not prove train-only aggregate provenance")
+    allowed_name_relations = tuple(plan["relations"]["name_allowed"])
+    unsupported_name_relations = set(allowed_name_relations) - set(SAFE_NAME_RELATIONS)
+    if unsupported_name_relations:
+        raise ValueError(
+            f"unsupported safe name relations in plan: {sorted(unsupported_name_relations)}"
+        )
 
     prior_variant_count, prior_ref_counts, prior_operator_counts, prior_pair_counts = (
         production_usage(args.prior_counted_seed_input)
     )
+    prior_difficulty_counts: Counter[str] = Counter()
+    prior_stratum_counts: Counter[str] = Counter()
+    prior_token_subset_signature_counts: Counter[str] = Counter()
+    registry_sirets: set[str] = set()
+    registry_sirens: set[str] = set()
+    registry_hash: str | None = None
+    if args.production_registry is not None:
+        if args.prior_counted_seed_input:
+            raise ValueError(
+                "--production-registry and --prior-counted-seed-input are mutually exclusive"
+            )
+        (
+            prior_variant_count, prior_ref_counts, prior_operator_counts,
+            prior_pair_counts, prior_difficulty_counts, prior_stratum_counts,
+            prior_token_subset_signature_counts, registry_sirets, registry_sirens,
+            registry_hash,
+        ) = registry_usage(args.production_registry)
     all_excluded_inputs = [
         *args.exclude_seed_input, *args.prior_counted_seed_input,
     ]
     all_contexts = rows(source_paths["official_context"])
     document_frequencies = fragments.name_token_document_frequencies(all_contexts)
     excluded_sirets, excluded_sirens = fragments.excluded_target_ids(all_excluded_inputs)
+    excluded_sirets.update(registry_sirets)
+    excluded_sirens.update(registry_sirens)
     contexts = [
         value for value in all_contexts
         if value["target_siret"] not in excluded_sirets
         and value["target_siren"] not in excluded_sirens
-        and fragments.eligible(value)
+        and (
+            fragments.eligible(value)
+            or (
+                "OFFICIAL_NAME_ALIAS" in allowed_name_relations
+                and eligible_for_official_alias(value)
+            )
+        )
     ]
     variant_count = args.target_count * 3
     cumulative_variant_count = prior_variant_count + variant_count
@@ -545,6 +1055,20 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         operator_cap = max(
             operator_cap, int(first_batch.get("bootstrap_exact_operator_cap", 0))
         )
+    final_variant_target = int(plan["objective"]["promoted_variant_target"])
+    name_token_subset_cap = int(math.floor(
+        final_variant_target * plan["global_caps"]["name_token_subset_share"]
+    ))
+    token_subset_signature_cap = min(
+        int(math.floor(
+            final_variant_target
+            * plan["global_caps"]["name_token_subset_signature_share_global"]
+        )),
+        int(math.floor(
+            name_token_subset_cap
+            * plan["global_caps"]["name_token_subset_signature_share_within_family"]
+        )),
+    )
     ref_cap = int(plan["global_caps"]["inspiration_ref_uses"])
     grouped_all = fragments.group_fragments(rows(source_paths["field_inspiration_bank"]))
     grouped = {
@@ -552,13 +1076,36 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             value for value in values
             if prior_ref_counts[value["inspiration_ref"]] < ref_cap
             and prior_operator_counts[fragment_operator(value)] < operator_cap
+            and (
+                registry_lib.token_subset_signature(value) is None
+                or prior_token_subset_signature_counts[
+                    registry_lib.token_subset_signature(value)
+                ] < token_subset_signature_cap
+            )
         ]
         for key, values in grouped_all.items()
     }
     capabilities = {}
     feasible_contexts = []
-    for context in contexts:
-        names, locations = safe_capabilities(context, grouped, document_frequencies)
+    support_cache: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
+    capability_pool_limit = (
+        args.selection_pool_limit
+        if args.selection_pool_limit > 0 else max(3000, 3 * args.target_count)
+    )
+    capability_contexts = sorted(
+        contexts,
+        key=lambda value: (
+            not bool(official_name_alias_fragments(value)),
+            hashlib.sha256(
+                f"{args.selection_seed}|capability-pool|{value['target_siret']}".encode()
+            ).hexdigest(),
+        ),
+    )[:capability_pool_limit]
+    for context in capability_contexts:
+        names, locations = safe_capabilities(
+            context, grouped, document_frequencies, allowed_name_relations,
+            support_cache,
+        )
         if sum(bool(value) for value in names.values()) and sum(
             bool(value) for value in locations.values()
         ):
@@ -569,28 +1116,101 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 capabilities[context["target_siret"]] = (names, locations)
                 feasible_contexts.append(context)
 
-    difficulty_counts = exact_counts(
-        variant_count, plan["corpus_balance"]["difficulty"]
+    compatible_train_values = {
+        value["inspiration_ref"]: value
+        for names, locations in capabilities.values()
+        for values in [*names.values(), *locations.values()]
+        for value in values
+        if value.get("evidence_source_type") != "SIRENE_OFFICIAL_NAME_OPTION"
+    }
+    effective_ref_caps = effective_ref_capacities(
+        list(compatible_train_values.values()), ref_cap, operator_cap,
+        prior_ref_counts, prior_operator_counts,
     )
-    stratum_counts = exact_counts(
-        variant_count, plan["corpus_balance"]["augmentation_strata"]
+    pruned_capabilities = {}
+    feasible_contexts = []
+    for context in capability_contexts:
+        if context["target_siret"] not in capabilities:
+            continue
+        names, locations = capabilities[context["target_siret"]]
+        names = {
+            relation: [
+                value for value in values
+                if value.get("evidence_source_type")
+                == "SIRENE_OFFICIAL_NAME_OPTION"
+                or effective_ref_caps.get(value["inspiration_ref"], 0) > 0
+            ]
+            for relation, values in names.items()
+        }
+        locations = {
+            key: [
+                value for value in values
+                if effective_ref_caps.get(value["inspiration_ref"], 0) > 0
+            ]
+            for key, values in locations.items()
+        }
+        if sum(bool(value) for value in names.values()) * sum(
+            bool(value) for value in locations.values()
+        ) >= 3:
+            pruned_capabilities[context["target_siret"]] = (names, locations)
+            feasible_contexts.append(context)
+    capabilities = pruned_capabilities
+
+    difficulty_counts = remaining_quota_counts(
+        variant_count, final_variant_target,
+        plan["corpus_balance"]["difficulty"], prior_difficulty_counts,
+    )
+    stratum_counts = remaining_quota_counts(
+        variant_count, final_variant_target,
+        plan["corpus_balance"]["augmentation_strata"], prior_stratum_counts,
     )
     relation_capacities: dict[tuple[str, str], int] = {}
+    prior_name_token_subsets = sum(
+        count for signature, count in prior_pair_counts.items()
+        if signature.startswith("name:TOKEN_SUBSET+")
+    )
+    name_token_subset_remaining = max(
+        0, name_token_subset_cap - prior_name_token_subsets
+    )
     for field, relation in (
-        [("name", value) for value in SAFE_NAME_RELATIONS]
+        [("name", value) for value in allowed_name_relations]
         + list(SAFE_LOCATION_RELATIONS)
     ):
-        available = grouped.get((field, relation), [])
-        relation_capacities[(field, relation)] = min(
-            sum(
-                ref_cap - prior_ref_counts[ref]
-                for ref in {value["inspiration_ref"] for value in available}
-            ),
-            sum(
-                operator_cap - prior_operator_counts[operator]
-                for operator in {fragment_operator(value) for value in available}
-            ),
-        )
+        if (field, relation) == ("name", "OFFICIAL_NAME_ALIAS"):
+            # Each target-specific official alias can support the three variants
+            # when the location relation differs.  Per-ref and per-operator caps
+            # are still enforced by the assignment flow.
+            available = [
+                value
+                for names, _locations in capabilities.values()
+                for value in names.get("OFFICIAL_NAME_ALIAS", [])
+            ]
+            relation_capacities[(field, relation)] = sum(
+                min(3, ref_cap - prior_ref_counts[value["inspiration_ref"]])
+                for value in available
+                if prior_ref_counts[value["inspiration_ref"]] < ref_cap
+                and prior_operator_counts[fragment_operator(value)] < operator_cap
+            )
+        else:
+            available_by_ref = {
+                value["inspiration_ref"]: value
+                for names, locations in capabilities.values()
+                for value in (
+                    names.get(relation, []) if field == "name"
+                    else locations.get((field, relation), [])
+                )
+            }
+            available = list(available_by_ref.values())
+            relation_capacities[(field, relation)] = min(
+                sum(
+                    effective_ref_caps.get(ref, 0)
+                    for ref in {value["inspiration_ref"] for value in available}
+                ),
+                sum(
+                    operator_cap - prior_operator_counts[operator]
+                    for operator in {fragment_operator(value) for value in available}
+                ),
+            )
     if args.batch_id == first_batch.get("batch_id") and not prior_variant_count:
         for key, capacity in first_batch.get("bootstrap_relation_caps", {}).items():
             field, relation = key.split(":", 1)
@@ -599,11 +1219,17 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             )
     selected = choose_targets_and_bundles(
         feasible_contexts, capabilities, args.target_count, difficulty_counts,
-        relation_pair_cap, prior_pair_counts, relation_capacities, args.selection_seed,
+        relation_pair_cap, prior_pair_counts, relation_capacities,
+        name_token_subset_remaining, ref_cap, operator_cap,
+        prior_ref_counts, prior_operator_counts, effective_ref_caps,
+        token_subset_signature_cap,
+        prior_token_subset_signature_counts, args.selection_seed,
     )
     assigned_fragments, ref_counts, operator_counts = assign_fragments(
         selected, capabilities, ref_cap,
-        operator_cap, prior_ref_counts, prior_operator_counts, args.selection_seed,
+        operator_cap, prior_ref_counts, prior_operator_counts, effective_ref_caps,
+        token_subset_signature_cap, prior_token_subset_signature_counts,
+        args.selection_seed,
     )
 
     variant_records = []
@@ -627,6 +1253,14 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             variant_id = f"v{slot + 1}"
             name_relation, (location_field, location_relation) = pair
             field_fragments = assigned_fragments[siret][slot]
+            protected_name_anchor = (
+                strict_token_subset_anchor(
+                    context, field_fragments["name"], document_frequencies
+                )
+                if name_relation == "TOKEN_SUBSET" else None
+            )
+            if name_relation == "TOKEN_SUBSET" and not protected_name_anchor:
+                raise RuntimeError(f"selected TOKEN_SUBSET lost its protected anchor: {siret}")
             key = f"{siret}:{variant_id}"
             variant_record = next(value for value in variant_records if value["key"] == key)
             stratum = stratum_assignment[key]
@@ -640,7 +1274,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                     location_field: location_relation,
                 },
                 "field_inspirations": field_fragments,
-                "protected_target_tokens": {"name": []},
+                "protected_target_tokens": {
+                    "name": [protected_name_anchor] if protected_name_anchor else []
+                },
                 "operator_guidance": {
                     field: {
                         "source_tokens_zero_indexed": list(enumerate(
@@ -665,7 +1301,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 },
                 "rules": {
                     "copy_non_target_fields_byte_for_byte": True,
-                    "no_new_lexical_or_numeric_tokens": True,
+                    "no_new_lexical_or_numeric_tokens": (
+                        name_relation != "OFFICIAL_NAME_ALIAS"
+                    ),
+                    "official_alias_exact_value_authorized": (
+                        name_relation == "OFFICIAL_NAME_ALIAS"
+                    ),
                     "added_marks_forbidden": True,
                     "preserve_house_number": True,
                 },
@@ -748,11 +1389,29 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             (prior_operator_counts + operator_counts).values(), default=0
         ),
         "prior_counted_variants_reserved": prior_variant_count,
+        "prior_counting_basis": (
+            "FULL_SIRENE_EXACT_PROMOTIONS" if args.production_registry is not None
+            else "LEGACY_PLANNED_SEED_INPUTS"
+        ),
         "cumulative_planned_variants": cumulative_variant_count,
+        "global_quota_targets": {
+            "difficulty": exact_counts(
+                final_variant_target, plan["corpus_balance"]["difficulty"]
+            ),
+            "augmentation_strata": exact_counts(
+                final_variant_target, plan["corpus_balance"]["augmentation_strata"]
+            ),
+        },
+        "prior_promoted_counts": {
+            "difficulty": dict(prior_difficulty_counts),
+            "augmentation_strata": dict(prior_stratum_counts),
+        },
         "caps": {
             "inspiration_ref": int(plan["global_caps"]["inspiration_ref_uses"]),
             "exact_operator": operator_cap,
             "relation_pair": relation_pair_cap,
+            "name_token_subset": name_token_subset_cap,
+            "name_token_subset_signature": token_subset_signature_cap,
         },
         "excluded_prior_sirets": len(excluded_sirets),
         "excluded_prior_sirens": len(excluded_sirens),
@@ -765,6 +1424,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 f"prior_counted:{path}": sha256(path)
                 for path in args.prior_counted_seed_input
             },
+            **({"production_registry": registry_hash} if registry_hash else {}),
         },
         "output_sha256": sha256(args.output),
     }
@@ -786,6 +1446,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--output", type=Path, required=True)
     result.add_argument("--batch-id", default="P000")
     result.add_argument("--target-count", type=int, default=150)
+    result.add_argument(
+        "--selection-pool-limit", type=int, default=0,
+        help="Bound costly capability materialization (0 = max(3000, 3*target-count)).",
+    )
     result.add_argument("--selection-seed", default="SIRETO-BALANCED-P000-V1")
     result.add_argument("--exclude-seed-input", type=Path, action="append", default=[])
     result.add_argument(
@@ -793,6 +1457,14 @@ def parser() -> argparse.ArgumentParser:
         help=(
             "Prior counted production input: excludes its targets and reserves its "
             "reference/operator/relation capacities from global corpus caps."
+        ),
+    )
+    result.add_argument(
+        "--production-registry", type=Path,
+        help=(
+            "Sealed balanced-production registry. Only its full-SIRENE exact "
+            "promotions reserve cumulative quotas and caps; every registered target "
+            "SIRET/SIREN is excluded from later batches."
         ),
     )
     result.set_defaults(func=build)

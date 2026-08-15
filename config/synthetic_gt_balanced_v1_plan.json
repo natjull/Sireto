@@ -47,7 +47,9 @@
     "name_allowed": [
       "LEGAL_FORM_REMOVE",
       "TOKEN_ORDER",
-      "PUNCTUATION_REMOVED"
+      "TOKEN_SUBSET",
+      "PUNCTUATION_REMOVED",
+      "OFFICIAL_NAME_ALIAS"
     ],
     "address_allowed": [
       "ADDRESS_ABBREVIATE",
@@ -57,7 +59,6 @@
     ],
     "city_allowed": ["PUNCTUATION_REMOVED"],
     "suspended": [
-      "NAME_TOKEN_SUBSET",
       "JOIN_SPLIT",
       "OCR",
       "DIACRITIC_ADDED",
@@ -93,6 +94,10 @@
     "inspiration_ref_uses": 30,
     "exact_operator_share": 0.05,
     "relation_pair_share": 0.10,
+    "name_token_subset_share": 0.15,
+    "name_token_subset_signature_share_global": 0.025,
+    "name_token_subset_signature_share_within_family": 0.20,
+    "name_token_subset_per_target": 1,
     "duplicate_surface_count": 0
   },
   "promotion_gates": {
