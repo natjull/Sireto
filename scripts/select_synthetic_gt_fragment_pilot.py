@@ -15,6 +15,8 @@ from typing import Any, Sequence
 import unicodedata
 
 import networkx as nx
+import numpy as np
+from scipy.optimize import Bounds, LinearConstraint, milp
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -258,9 +260,15 @@ def fragment_supports(
     if relation == "PUNCTUATION_REMOVED":
         edits = parameters.get("edits", [])
         available = punctuation_boundaries(source_value)
+        requested_marks = Counter(str(value.get("mark", "")) for value in edits)
+        source_marks = Counter(
+            character for character in source_value if character in loop.PUNCTUATION
+        )
         return bool(edits) and all(
             (int(value.get("after_token_index", -99)), str(value.get("mark", ""))) in available
             for value in edits
+        ) and all(
+            source_marks[mark] == count for mark, count in requested_marks.items()
         )
     if relation == "JOIN_SPLIT":
         groups = parameters.get("groups")
@@ -528,7 +536,7 @@ def select_feasible_targets(
     dict[str, list[dict[str, Any]]],
     dict[str, Any],
 ]:
-    candidates = []
+    candidates: list[dict[str, Any]] = []
     all_caps: dict[str, Any] = {}
     for context in contexts:
         if not eligible(context):
@@ -543,65 +551,126 @@ def select_feasible_targets(
             continue
         siret = context["target_siret"]
         all_caps[siret] = {"name": name_caps, "location": location_caps}
-        order = hashlib.sha256(f"{selection_seed}|{siret}".encode()).hexdigest()
-        candidates.append((order, context))
-    candidates.sort(key=lambda value: value[0])
-    for trial in range(512):
-        selected: list[dict[str, Any]] = []
-        state_counts = {"A": 0, "F": 0}
+        candidates.append(context)
+    candidates.sort(key=lambda value: value["target_siret"])
 
-        def feature_counts() -> dict[str, int]:
-            return {
-                "multi_active": sum(is_multi_active(value) for value in selected),
-                "multi": sum(is_multi(value) for value in selected),
-                "legal": sum(bool(all_caps[value["target_siret"]]["name"]["LEGAL_FORM_REMOVE"]) for value in selected),
-                "name_punctuation": sum(bool(all_caps[value["target_siret"]]["name"]["PUNCTUATION_REMOVED"]) for value in selected),
-                "address_punctuation": sum(bool(all_caps[value["target_siret"]]["location"][("address", "PUNCTUATION_REMOVED")]) for value in selected),
-                "city": sum(bool(all_caps[value["target_siret"]]["location"][("city", "PUNCTUATION_REMOVED")]) for value in selected),
-            }
+    name_relations = list(NAME_QUOTAS)
+    location_relations = list(LOCATION_QUOTAS)
+    target_count = len(candidates)
+    name_offset = target_count
+    location_offset = name_offset + target_count * len(name_relations)
+    variable_count = location_offset + target_count * len(location_relations)
+    lower = np.zeros(variable_count)
+    upper = np.full(variable_count, 2.0)
+    upper[:target_count] = 1.0
+    integrality = np.ones(variable_count)
+    base_rows: list[np.ndarray] = []
+    base_lower: list[float] = []
+    base_upper: list[float] = []
 
-        requirements = {
-            "multi_active": 1, "multi": 4, "legal": 6,
-            "name_punctuation": 7, "address_punctuation": 3, "city": 3,
-        }
-        weights = {
-            "multi_active": 5, "multi": 1, "legal": 4,
-            "name_punctuation": 4, "address_punctuation": 5, "city": 1,
-        }
-        while len(selected) < 10:
-            current = feature_counts()
-            choices = []
-            for _order, context in candidates:
-                state = context["target"]["state"]
-                if context in selected or state_counts[state] >= 5:
-                    continue
-                caps = all_caps[context["target_siret"]]
-                features = {
-                    "multi_active": is_multi_active(context),
-                    "multi": is_multi(context),
-                    "legal": bool(caps["name"]["LEGAL_FORM_REMOVE"]),
-                    "name_punctuation": bool(caps["name"]["PUNCTUATION_REMOVED"]),
-                    "address_punctuation": bool(caps["location"][("address", "PUNCTUATION_REMOVED")]),
-                    "city": bool(caps["location"][("city", "PUNCTUATION_REMOVED")]),
-                }
-                score = sum(
-                    weights[key] for key, enabled in features.items()
-                    if enabled and current[key] < requirements[key]
-                )
-                tie = hashlib.sha256(
-                    f"{selection_seed}|{trial}|{context['target_siret']}".encode()
-                ).hexdigest()
-                choices.append((-score, tie, context))
-            if not choices:
-                break
-            choices.sort(key=lambda value: value[:2])
-            chosen = choices[0][2]
-            selected.append(chosen)
-            state_counts[chosen["target"]["state"]] += 1
-        if len(selected) != 10 or any(
-            feature_counts()[key] < minimum for key, minimum in requirements.items()
-        ):
-            continue
+    def constraint(coefficients: np.ndarray, minimum: float, maximum: float) -> None:
+        base_rows.append(coefficients)
+        base_lower.append(minimum)
+        base_upper.append(maximum)
+
+    for index, context in enumerate(candidates):
+        siret = context["target_siret"]
+        name_slice = slice(
+            name_offset + index * len(name_relations),
+            name_offset + (index + 1) * len(name_relations),
+        )
+        location_slice = slice(
+            location_offset + index * len(location_relations),
+            location_offset + (index + 1) * len(location_relations),
+        )
+        for current_slice in (name_slice, location_slice):
+            coefficients = np.zeros(variable_count)
+            coefficients[current_slice] = 1
+            coefficients[index] = -3
+            constraint(coefficients, 0, 0)
+        for relation_index, relation in enumerate(name_relations):
+            variable = name_offset + index * len(name_relations) + relation_index
+            if not all_caps[siret]["name"][relation]:
+                upper[variable] = 0
+            coefficients = np.zeros(variable_count)
+            coefficients[variable] = 1
+            coefficients[index] = -2
+            constraint(coefficients, -np.inf, 0)
+        for relation_index, relation in enumerate(location_relations):
+            variable = location_offset + index * len(location_relations) + relation_index
+            if not all_caps[siret]["location"][relation]:
+                upper[variable] = 0
+            coefficients = np.zeros(variable_count)
+            coefficients[variable] = 1
+            coefficients[index] = -2
+            constraint(coefficients, -np.inf, 0)
+
+    coefficients = np.zeros(variable_count)
+    coefficients[:target_count] = 1
+    constraint(coefficients, 10, 10)
+    for state in ("A", "F"):
+        coefficients = np.zeros(variable_count)
+        for index, context in enumerate(candidates):
+            coefficients[index] = context["target"]["state"] == state
+        constraint(coefficients, 5, 5)
+    for relation_index, relation in enumerate(name_relations):
+        coefficients = np.zeros(variable_count)
+        for index in range(target_count):
+            coefficients[name_offset + index * len(name_relations) + relation_index] = 1
+        constraint(coefficients, NAME_QUOTAS[relation], NAME_QUOTAS[relation])
+    for relation_index, relation in enumerate(location_relations):
+        coefficients = np.zeros(variable_count)
+        for index in range(target_count):
+            coefficients[
+                location_offset + index * len(location_relations) + relation_index
+            ] = 1
+        constraint(coefficients, LOCATION_QUOTAS[relation], LOCATION_QUOTAS[relation])
+
+    requirements = (
+        (1, is_multi_active),
+        (4, is_multi),
+        (6, lambda value: bool(all_caps[value["target_siret"]]["name"]["LEGAL_FORM_REMOVE"])),
+        (7, lambda value: bool(all_caps[value["target_siret"]]["name"]["PUNCTUATION_REMOVED"])),
+        (3, lambda value: bool(all_caps[value["target_siret"]]["location"][("address", "PUNCTUATION_REMOVED")])),
+        (3, lambda value: bool(all_caps[value["target_siret"]]["location"][("city", "PUNCTUATION_REMOVED")])),
+    )
+    for minimum, predicate in requirements:
+        coefficients = np.zeros(variable_count)
+        for index, context in enumerate(candidates):
+            coefficients[index] = predicate(context)
+        constraint(coefficients, minimum, np.inf)
+
+    objective = np.zeros(variable_count)
+    for index, context in enumerate(candidates):
+        digest = hashlib.sha256(
+            f"{selection_seed}|target|{context['target_siret']}".encode()
+        ).hexdigest()
+        objective[index] = int(digest[:16], 16) / float(2**64)
+    rejected_target_sets: list[list[int]] = []
+    for _trial in range(128):
+        rows = list(base_rows)
+        minima = list(base_lower)
+        maxima = list(base_upper)
+        for rejected in rejected_target_sets:
+            coefficients = np.zeros(variable_count)
+            coefficients[rejected] = 1
+            rows.append(coefficients)
+            minima.append(-np.inf)
+            maxima.append(9)
+        result = milp(
+            objective,
+            integrality=integrality,
+            bounds=Bounds(lower, upper),
+            constraints=LinearConstraint(np.asarray(rows), minima, maxima),
+            options={"time_limit": 30},
+        )
+        if not result.success or result.x is None:
+            break
+        selected_indices = [
+            index for index in range(target_count) if result.x[index] > 0.5
+        ]
+        rejected_target_sets.append(selected_indices)
+        selected = [candidates[index] for index in selected_indices]
         target_values = {value["target_siret"]: baseline(value) for value in selected}
         target_anchors = {
             value["target_siret"]: distinctive_name_tokens(value, document_frequencies)
@@ -629,7 +698,7 @@ def select_feasible_targets(
                 f"{selection_seed}|final|{value['target_siret']}".encode()
             ).hexdigest())
             return selected, name_plan, location_plan, all_caps
-    raise ValueError("could not find a feasible balanced 30-target fragment pilot")
+    raise ValueError("could not solve a feasible balanced 30-target fragment pilot")
 
 
 def build(args: argparse.Namespace) -> dict[str, Any]:

@@ -93,6 +93,29 @@ def test_subset_requires_highest_ranked_distinctive_anchor() -> None:
     )
 
 
+def test_partial_removal_of_repeated_punctuation_is_not_transferable() -> None:
+    remove_terminal_apostrophe = fragment(
+        "name", "PUNCTUATION_REMOVED",
+        {"edits": [{"after_token_index": 2, "mark": "'"}]},
+    )
+    assert not selector.fragment_supports(
+        "name", "'NATUREL ET GOURMANDISE'", remove_terminal_apostrophe, []
+    )
+    remove_one_dot = fragment(
+        "name", "PUNCTUATION_REMOVED",
+        {"edits": [{"after_token_index": 2, "mark": "."}]},
+    )
+    assert not selector.fragment_supports(
+        "name", "ASSOCIATION ROMAINE CREA...", remove_one_dot, []
+    )
+    assert selector.fragment_supports(
+        "name", "C.BOBBIA MODERNE", fragment(
+            "name", "PUNCTUATION_REMOVED",
+            {"edits": [{"after_token_index": 0, "mark": "."}]},
+        ), []
+    )
+
+
 def test_protected_subset_anchor_can_be_selected_from_retained_positions() -> None:
     words = ["alpha", "beta", "gamma", "delta"]
     retained = [0, 2]
