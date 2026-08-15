@@ -67,8 +67,11 @@ def main() -> int:
     parser.add_argument("--profile-source-request", type=Path)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=4)
+    parser.add_argument("--offset", type=int, default=0)
     args = parser.parse_args()
-    rows = [json.loads(line) for line in args.seeds.read_text(encoding="utf-8").splitlines() if line.strip()][: args.limit]
+    if args.offset < 0:
+        raise SystemExit("--offset must be non-negative")
+    rows = [json.loads(line) for line in args.seeds.read_text(encoding="utf-8").splitlines() if line.strip()][args.offset : args.offset + args.limit]
     if bool(args.profile) == bool(args.profile_source_request):
         raise SystemExit("provide exactly one of --profile or --profile-source-request")
     if args.profile:
