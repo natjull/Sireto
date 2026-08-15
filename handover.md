@@ -2,6 +2,23 @@
 
 ## Etat des lieux
 
+### Politique métier — équivalence opérationnelle même SIREN / même site
+
+La décision métier du 15 août 2026 distingue désormais la justesse SIRET
+exacte de la justesse opérationnelle CRM. Un autre SIRET du même SIREN prouvé
+à la même adresse physique que le CRM est
+`OPERATIONAL_EQUIVALENT_SAME_SITE` et compte comme correct dans la vue
+opérationnelle. Si la vérité exacte est fermée et ce candidat actif, il devient
+le résultat préféré `ACTIVE_SUCCESSOR_SAME_SITE`. Les métriques et gates SIRET
+exacts historiques restent publiés séparément et inchangés.
+
+Pour tout futur apprentissage, un sibling même SIREN / même site est un positif
+opérationnel et ne peut plus être utilisé comme hard negative. Les cycles déjà
+gelés ne sont pas modifiés rétroactivement. Politique :
+`docs/siret_operational_equivalence_policy.md`.
+
+*(politique et directive centrale : commit `7889974`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
