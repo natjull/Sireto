@@ -4132,5 +4132,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   les versions de prompts et gardes v21 gelées jusqu'à 20 000 positifs
   acceptés. Maps reste désactivé dans le plan gelé (`max_requests=0`).
 
+## GT synthétique — extension prouvée et préproduction v22
+
+- Commit : `cb32f9e` (`feat: scale evidence-backed Luna GT contracts`).
+- Le profil train-only v2 compare les 7 095 lignes strictement train à leurs
+  fiches SIRENE : 23 `TOKEN_ORDER`, 14 OCR nom, 22 OCR adresse avec numéro
+  intact, 1 `ADDRESS_TOKEN_ORDER` et 15 `ENSEIGNE_VS_DENOMINATION`. Les paires
+  de substitutions autorisées sont stockées avec leur compte et leur hash ;
+  aucune famille n'est déclarée sur la seule base d'une intuition.
+- L'intake SIRENE-only a été enrichi avec les unités légales officielles :
+  13 316 SIRET/SIREN distincts possèdent désormais nom, numéro, type/nom de
+  voie, CP, commune et INSEE complets. Aucun texte CRM n'est produit par cet
+  enrichissement.
+- Le scheduler déterministe a construit 8 000 contrats disjoints représentant
+  24 000 variantes brutes. Il ne transforme aucun champ ; il assigne seulement
+  des familles faisables et prouvées. À partir du profil et des sources hashés,
+  le seed JSONL de production contient 8 000 SIRET et 8 000 SIREN distincts.
+- Le gate v22 étendu (`pilot-agentic-v22-extended`) est terminé : 32 seeds,
+  91 `ACCEPT`, 5 `REJECT`, 0 `SILVER`, soit 94,792 %. Par famille :
+  `TOKEN_ORDER` 24/24, OCR nom 19/19, OCR adresse 2/2, commune 6/6,
+  forme juridique 4/4. Les 91 surfaces sont uniques, sans fuite ni mauvais
+  préflight. Export :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_loop_v2/pilot/v22_export_final/`.
+- Production autorisée sous prompts GENERATOR/CRITIC v4 et runtime `cb32f9e`.
+  L'estimation au rendement v22 est ~22 750 positifs acceptés pour 24 000
+  variantes brutes ; l'exécution doit rester reprenable et s'arrêter à la
+  consolidation lorsque 20 000 couples uniques ont franchi tous les gates.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
