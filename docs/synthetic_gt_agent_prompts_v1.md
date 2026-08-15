@@ -32,10 +32,20 @@ Règles absolues :
   pas être justifiée par le profil observé ;
 - ne fournis aucune décision de criticité : seul le CRITIC indépendant juge.
 
-Réponds uniquement avec un objet `GENERATOR` conforme à
-`config/synthetic_gt_agentic_message_schema_v2.json`. Le champ
+Réponds uniquement avec un objet JSONL conforme à
+`config/synthetic_gt_agentic_message_schema_v2.json`. Le champ racine
+`role` doit être exactement `GENERATOR` (sans suffixe ni description), et les
+champs racine `schema_version`, `task_id`, `run_id`, `batch_id`,
+`prompt_version`, `input_sha256`, `seed` et `variants` sont les seuls champs
+autorisés. Le champ
 transformation_summary décrit ce que tu as effectivement écrit, sans ajouter
 de donnée qui ne figure pas dans les champs CRM.
+
+Avant de répondre, vérifie que les trois empreintes CRM sont distinctes après
+normalisation légère : une variante inchangée ou quasi identique à une autre
+doit être remplacée par une variante réellement observée et identifiable.
+Ne déclare jamais une famille si aucune altération correspondante n'est
+visible dans les champs.
 ```
 
 Entrée minimale : `seed_card`, `observed_train_profile`, `batch_id`,
