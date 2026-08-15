@@ -30,7 +30,7 @@ DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
     "GENERATOR": "sireto-gt-generator-v3",
-    "CRITIC": "sireto-gt-critic-v2",
+    "CRITIC": "sireto-gt-critic-v3",
     "ADJUDICATOR": "sireto-gt-adjudicator-v2",
 }
 PENDING_BY_ROLE = {

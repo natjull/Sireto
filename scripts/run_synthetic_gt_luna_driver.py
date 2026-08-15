@@ -54,10 +54,27 @@ Never output case-only OCR, gratuitous punctuation, an unofficial alternate name
 token order, or a fake address abbreviation. Never write SIRET/SIREN inside CRM fields. On retry,
 read retry_context and correct every listed preflight error. Return only the structured response.""",
     "CRITIC": """You are the independent SIRETO CRITIC. Compare every CRM variant with
-baseline_crm, seed_card, and variant_contract. Reject any changed non-target field, mismatched or
-non-visible family, case/space-only edit, gratuitous punctuation, unsupported OCR, unofficial
-alternate name, unchanged token order, or false abbreviation. Do not repair text. Set
-independent=true and generator_rationale_seen=false. Return only the structured response.""",
+baseline_crm, seed_card, and variant_contract. The requested corruption is intentionally not an
+official alternate value: never reject merely because the corrupted CRM text is absent from
+name_options or official fields. Judge whether it realizes the exact requested family while
+preserving identity and all non-target fields.
+
+Apply these decision rules literally:
+- ACRONYM_TOKENIZATION is valid when punctuation-delimited tokens are joined/split, the normalized
+  token sequence changes, and every alphanumeric character remains in the same order (G.D. -> GD).
+- ACCENT_PUNCTUATION is valid when an existing accent or punctuation mark is deleted/normalized,
+  including hyphen-to-space, provided no new mark or alphanumeric character is introduced. Do not
+  label such an expected deletion gratuitous, unofficial, or space-only.
+- ADDRESS_ABBREVIATION is valid only for the exact canonical street-type substitution in the
+  contract, with number/street/order unchanged.
+- COMMUNE_VARIANT is valid when separators, spaces, apostrophes, hyphens, or accents are normalized
+  while every alphanumeric character remains in the same order.
+- LEGAL_FORM is valid only when the explicit form token alone is removed.
+
+Reject any changed non-target field, mismatched/non-visible family, case-only edit, added accent or
+punctuation, changed alphanumeric content, unsupported OCR, unchanged tokenization, or false
+abbreviation. Do not repair text. Set independent=true and generator_rationale_seen=false. Return
+only the structured response.""",
     "ADJUDICATOR": """You are the SIRETO ADJUDICATOR. Decide each variant from the official
 baseline, contract, deterministic preflight, and independent critic. Never rewrite CRM text and
 never promote a critic REJECT. ACCEPT only when the exact establishment remains identifiable and
