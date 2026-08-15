@@ -14,7 +14,8 @@ from pathlib import Path
 
 
 def text(value: object) -> str:
-    return str(value or "").strip()
+    value = str(value or "").strip()
+    return "" if value.upper() in {"", "[ND]"} else value
 
 
 def official_address(fields: dict) -> str:

@@ -70,12 +70,21 @@ def main() -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--limit", type=int, default=20000)
     parser.add_argument("--seed", type=int, default=42)
+    parser.add_argument("--require-identifiable", action="store_true")
     args = parser.parse_args()
     if args.limit < 1:
         raise SystemExit("--limit must be positive")
 
     con = duckdb.connect()
-    query = """
+    identity_filter = """
+          AND (upper(trim(coalesce(denominationUsuelleEtablissement, ''))) NOT IN ('', '[ND]')
+               OR upper(trim(coalesce(enseigne1Etablissement, ''))) NOT IN ('', '[ND]'))
+          AND upper(trim(coalesce(numeroVoieEtablissement, ''))) NOT IN ('', '[ND]')
+          AND upper(trim(coalesce(libelleVoieEtablissement, ''))) NOT IN ('', '[ND]')
+          AND upper(trim(coalesce(codePostalEtablissement, ''))) NOT IN ('', '[ND]')
+          AND upper(trim(coalesce(libelleCommuneEtablissement, ''))) NOT IN ('', '[ND]')
+    """ if args.require_identifiable else ""
+    query = f"""
         WITH crm_sirens AS (
             SELECT DISTINCT substr(regexp_replace(gt_siret, '[^0-9]', '', 'g'), 1, 9) AS siren
             FROM read_csv(?, delim=';', header=true, all_varchar=true)
@@ -109,6 +118,7 @@ def main() -> int:
         WHERE siret IS NOT NULL
           AND length(siret) = 14
           AND etatAdministratifEtablissement IN ('A', 'F')
+          {identity_filter}
           AND siren NOT IN (SELECT siren FROM crm_sirens)
         )
         SELECT * EXCLUDE (siren_rank)
@@ -147,6 +157,7 @@ def main() -> int:
         "output_sha256": sha256(args.output),
         "text_generation": "none",
         "one_siret_per_siren": True,
+        "require_identifiable": args.require_identifiable,
     }
     args.output.with_suffix(args.output.suffix + ".manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     print(json.dumps(manifest, sort_keys=True))
