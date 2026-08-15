@@ -264,7 +264,7 @@ def test_composite_preflight_rejects_case_only_added_tokens_and_marks(tmp_path: 
         errors = json.loads(connection.execute("SELECT preflight_json FROM variants LIMIT 1").fetchone()[0])["errors"]
     assert status == "PENDING_GENERATOR"
     assert any("TARGET_UNCHANGED_OR_CASE_ONLY" in error for error in errors)
-    assert any("NAME_NEW_LEXICAL_TOKEN" in error for error in errors)
+    assert any("NAME_NEW_ALPHANUMERIC_MATERIAL" in error for error in errors)
     assert any("CITY_ADDED_MARK_FORBIDDEN" in error for error in errors)
 
 

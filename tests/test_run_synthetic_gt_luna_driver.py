@@ -61,6 +61,23 @@ def test_dynamic_schema_freezes_task_envelope():
     assert "uniqueItems" not in json.dumps(schema)
 
 
+def test_composite_output_schema_forces_single_composite_family():
+    value = task()
+    value["input"]["seed_card"] = {"generation_mode": "OBSERVED_COMPOSITE_ANALOGY_V2"}
+    schema = driver.task_output_schema(value, loop.load_json(loop.DEFAULT_SCHEMA))
+    family = schema["$defs"]["variant"]["properties"]["corruption_families_observed"]
+    assert family["minItems"] == family["maxItems"] == 1
+    assert family["items"] == {"const": loop.COMPOSITE_FAMILY, "type": "string"}
+
+
+def test_composite_worker_prompt_excludes_legacy_family_catalogue():
+    value = task()
+    value["input"]["seed_card"] = {"generation_mode": "OBSERVED_COMPOSITE_ANALOGY_V2"}
+    prompt = driver.worker_prompt(value)
+    assert "declare only\nOBSERVED_COMPOSITE_ANALOGY" in prompt
+    assert "OCR_LIMITED" not in prompt
+
+
 def test_codex_command_is_ephemeral_luna_low_and_read_only(tmp_path: Path, monkeypatch):
     executable = tmp_path / "codex"
     executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")

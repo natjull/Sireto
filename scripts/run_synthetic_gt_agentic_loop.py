@@ -29,9 +29,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
-    "GENERATOR": "sireto-gt-generator-v5",
-    "CRITIC": "sireto-gt-critic-v5",
-    "ADJUDICATOR": "sireto-gt-adjudicator-v2",
+    "GENERATOR": "sireto-gt-generator-v6",
+    "CRITIC": "sireto-gt-critic-v6",
+    "ADJUDICATOR": "sireto-gt-adjudicator-v3",
 }
 PENDING_BY_ROLE = {
     "GENERATOR": "PENDING_GENERATOR",
@@ -1051,11 +1051,13 @@ def composite_change_errors(
         if added_marks(source, target):
             errors.append(f"{field.upper()}_ADDED_MARK_FORBIDDEN")
         if field == "name":
-            if Counter(normalized_words(target)) - Counter(normalized_words(source)):
-                errors.append("NAME_NEW_LEXICAL_TOKEN")
+            if Counter(normalized_alnum(target)) - Counter(normalized_alnum(source)):
+                errors.append("NAME_NEW_ALPHANUMERIC_MATERIAL")
         elif field == "address":
-            if Counter(expanded_street_words(target)) - Counter(expanded_street_words(source)):
-                errors.append("ADDRESS_NEW_LEXICAL_TOKEN")
+            expanded_source = "".join(expanded_street_words(source)).casefold()
+            expanded_target = "".join(expanded_street_words(target)).casefold()
+            if Counter(expanded_target) - Counter(expanded_source):
+                errors.append("ADDRESS_NEW_ALPHANUMERIC_MATERIAL")
             source_digits = re.findall(r"[0-9]+", source)
             target_digits = re.findall(r"[0-9]+", target)
             if source_digits != target_digits:

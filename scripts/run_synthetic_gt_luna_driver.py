@@ -119,6 +119,38 @@ never promote a critic REJECT. ACCEPT only when the exact establishment remains 
 the requested family is genuinely realized. Return only the structured response.""",
 }
 
+COMPOSITE_ROLE_PROMPTS = {
+    "GENERATOR": """You are the SIRETO composite GENERATOR. The task has exactly three
+OBSERVED_COMPOSITE_ANALOGY contracts. For each contract, study its existing real train
+official->observed_crm inspiration only as a transformation analogy, then YOU directly write the
+new CRM for the target establishment. Return exactly v1/v2/v3 and declare only
+OBSERVED_COMPOSITE_ANALOGY for every variant.
+
+Change every target_field non-trivially; case-only is forbidden. Copy every non-target field
+byte-for-byte from baseline_crm. The result must combine a changed name with changed address
+and/or city exactly as the contract mask says. Never copy entity, street, city, or number material
+from the inspiration. In a target field, use only alphanumeric material already present in that
+target official field: deletion, token reordering, joining/splitting and observed surface
+normalization are allowed. A street type may use a canonical abbreviation. Never add punctuation
+or diacritics. Preserve all address digits, especially the house number, and preserve postcode and
+INSEE. Make all three complete CRM fingerprints distinct. Read retry_context and correct every
+listed error. The validator will reject, never repair, your text. Return only the structured JSON
+response with exact envelope constants.""",
+    "CRITIC": """You are the independent SIRETO composite CRITIC. You did not see the generator
+rationale. For each v1/v2/v3, compare baseline_crm, the generated CRM, its exact contract, its real
+train inspiration, and bounded official_context. ACCEPT only if every target field changes beyond
+case, all non-target fields are byte-identical, the combined name+location degradation is a
+plausible single human CRM record, no inspiration entity material was copied, and the target SIRET
+remains the best exact interpretation. A same-SIREN same-site active sibling can establish
+OPERATIONAL_ONLY but never exact success. Use distinct reason_codes for REALISTIC,
+EXACT_IDENTIFIABLE, OPERATIONAL_ONLY, or AMBIGUOUS. Never repair text. Set independent=true and
+generator_rationale_seen=false and return only the structured JSON response.""",
+    "ADJUDICATOR": """You are the SIRETO composite ADJUDICATOR. Resolve only the reviewed
+v1/v2/v3 decisions using baseline, contracts, deterministic preflight and critic. Never rewrite
+CRM, never override a deterministic failure, and never promote a critic REJECT. Keep exact SIRET
+and operational same-SIREN/same-site conclusions separate. Return only structured JSON.""",
+}
+
 
 def structured_output_compatible(value: Any) -> Any:
     """Adapt the strict local schema to the API's supported JSON-Schema subset.
@@ -197,6 +229,11 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
             "crm": copy.deepcopy(definitions["crm"]),
             "variant": copy.deepcopy(definitions["variant"]),
         }
+        if task["input"].get("seed_card", {}).get("generation_mode") == "OBSERVED_COMPOSITE_ANALOGY_V2":
+            family = selected_defs["variant"]["properties"]["corruption_families_observed"]
+            family["minItems"] = 1
+            family["maxItems"] = 1
+            family["items"] = {"const": loop.COMPOSITE_FAMILY}
     else:
         properties["decisions"] = {
             "type": "array", "minItems": 3, "maxItems": 3,
@@ -219,8 +256,10 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
 
 
 def worker_prompt(task: dict[str, Any]) -> str:
+    composite = task["input"].get("seed_card", {}).get("generation_mode") == "OBSERVED_COMPOSITE_ANALOGY_V2"
+    prompts = COMPOSITE_ROLE_PROMPTS if composite else ROLE_PROMPTS
     return (
-        ROLE_PROMPTS[task["role"]]
+        prompts[task["role"]]
         + "\n\nTask JSON (the response envelope constants must match it exactly):\n"
         + loop.canonical_json(task)
     )
