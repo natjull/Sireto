@@ -2,6 +2,26 @@
 
 ## Etat des lieux
 
+### Corpus GT synthétique — boucle agentique Luna v2
+
+La génération mécanique Python est retirée du chemin autorisé. Le runtime
+unique `scripts/run_synthetic_gt_agentic_loop.py` orchestre désormais deux
+workers Luna `low`, un critique indépendant et un adjudicateur conditionnel
+au moyen d'une file SQLite WAL, de leases expirables et d'un journal
+append-only. Le code ne rédige et ne répare aucun champ CRM : il assigne les
+seeds, valide les JSON, rejette les fuites SIRET/SIREN et les doublons globaux,
+route les cas risqués et conserve les réponses brutes avec SHA-256.
+
+Le pilote réel est initialisé sur quatre seeds sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_loop_v2/pilot`.
+Les quatre tâches GENERATOR sont louées en deux shards disjoints ; aucune
+réponse Luna n'est encore publiée. Quinze tests ciblés passent avec les tests
+agentic/Maps existants, dont reprise de lease, critique aveugle aux résumés du
+générateur, adjudication fail-closed et absence de générateur mécanique dans
+le runtime.
+
+*(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
+
 ### Corpus GT synthétique SIRETO — préenregistrement
 
 Le cycle train-only est préenregistré dans `docs/synthetic_gt_corpus_contract.md`
@@ -9,7 +29,7 @@ et `config/synthetic_gt_corpus_plan.json`, avec une branche séparée
 `MAPS_ASSISTED` désactivée par défaut et son avenant
 `docs/synthetic_gt_corpus_maps_addendum.md`. La population autorisée joint
 `crm_ok_gt.csv` aux assignments V4.12-L et conserve uniquement
-`legacy_split=train` et les folds OOF 2/3/4 : 7 099 seeds, 5 965 composants,
+`legacy_split=train` et les folds OOF 2/3/4 : 7 095 seeds, 5 961 composants,
 zéro recouvrement avec les folds 0/1 ou le test. Aucun appel Maps n'a été
 effectué ; le secret éventuel ne pourra être lu que depuis
 `SIRETO_GOOGLE_MAPS_API_KEY`, sans journalisation.
