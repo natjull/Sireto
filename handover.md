@@ -125,6 +125,30 @@ réactiver les subsets nominaux libres ou de relâcher les quotas en silence.
 `a8ce07d`; artefacts P000 :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1`)*
 
+### Évaluation nocturne réel seul vs réel + synthétique — protocole prêt
+
+Le protocole apparié est gelé avant le corpus complet. Il entraîne uniquement
+sur les folds 2/3/4 et évalue sur le fold 0 réel ; le fold 1 et le test restent
+fermés. Le mixeur sélectionne une scène synthétique pour deux scènes réelles,
+stratifiée par difficulté et famille d'augmentation, avec un poids `0.5/k` par
+SIRET cible. Il refuse tout SIREN chevauchant le corpus réel, toute vérité
+injectée, tout pool au-delà de 100 et toute autorisation du synthétique pour le
+risk model, la calibration ou les seuils AUTO.
+
+Deux comparaisons reproductibles sont prêtes : XGBoost reconstruit les bras
+`REAL_ONLY` et `REAL_PLUS_SYNTHETIC` avec les mêmes 129 features et les mêmes
+hyperparamètres ; BGE réutilise le contrôle réel publié et entraîne un seul
+bras augmenté. La loss BGE accepte maintenant le poids au niveau de la scène
+groupwise. Les métriques exactes et opérationnelles même-site sont publiées
+séparément. Runbook : `docs/synthetic_augmented_model_eval_runbook.md`.
+
+Le JSONL promu ne suffit pas : avant lancement, le retrieval top 100 gelé doit
+matérialiser le bundle non injecté `sireto-synthetic-gt-model-features-1`
+(features BUSINESS, labels et groupes texte). Aucun entraînement long n'a été
+lancé pendant cette préparation. Cinq tests ciblés passent.
+
+*(préparation mix, XGBoost, BGE pondéré et comparateurs : commit `541b560`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
