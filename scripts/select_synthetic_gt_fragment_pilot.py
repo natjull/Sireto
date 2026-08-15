@@ -410,11 +410,19 @@ def pair_fragment_plans(
         return None
     name_operators = [fragment_operator(value) for value in names]
     for candidate in itertools.permutations(locations):
-        pairs = {
+        operator_pairs = {
             (name_operators[index], fragment_operator(candidate[index]))
             for index in range(3)
         }
-        if len(pairs) == 3:
+        relation_pairs = {
+            (
+                names[index]["relation"],
+                candidate[index]["field"],
+                candidate[index]["relation"],
+            )
+            for index in range(3)
+        }
+        if len(operator_pairs) == 3 and len(relation_pairs) == 3:
             return list(candidate)
     return None
 
