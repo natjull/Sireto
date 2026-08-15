@@ -25,7 +25,7 @@
     "added_punctuation_or_diacritic_cap": 0,
     "exact_operation_parameters_required": true,
     "suspended_relations": ["JOIN_SPLIT", "ARBITRARY_TOKEN_ORDER"],
-    "token_order_allowlist": ["ADJACENT_SWAP", "EXPLICIT_LEGAL_FORM_END_MOVE"]
+    "token_order_allowlist": ["EXPLICIT_LEGAL_FORM_END_MOVE"]
   },
   "gates": {
     "canary_targets": 10,

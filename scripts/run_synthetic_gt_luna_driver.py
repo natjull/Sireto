@@ -163,7 +163,11 @@ token. Judge instead whether that formally valid edit is a plausible human CRM d
 whether a concrete semantic ambiguity remains. Any AMBIGUOUS decision must cite the relevant
 official site_ref or explicit official-context fact in its reason. Use REALISM_FAILURE only for a
 concrete implausibility not equal to the requested edit itself. A same-SIREN same-site active
-sibling can establish OPERATIONAL_ONLY but never exact success. Never repair text. Set
+sibling can establish OPERATIONAL_ONLY but never exact success. OPERATIONAL_ONLY requires both the
+same SIREN and the same normalized official site; cross-SIREN establishments sharing an address
+never establish operational equivalence. Do not infer exact ambiguity from address sharing alone:
+cite a name-compatible official competitor. Full-SIRENE G_N_A is the later authority for exact
+identity, while your role is semantic realism and bounded-context warning. Never repair text. Set
 independent=true and generator_rationale_seen=false and return only the structured JSON response.""",
     "ADJUDICATOR": """You are the SIRETO composite ADJUDICATOR. Resolve only the reviewed
 v1/v2/v3 decisions using baseline, contracts, deterministic preflight and critic. Never rewrite

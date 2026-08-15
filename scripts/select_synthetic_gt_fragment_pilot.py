@@ -9,8 +9,10 @@ import hashlib
 import itertools
 import json
 from pathlib import Path
+import re
 import sys
 from typing import Any, Sequence
+import unicodedata
 
 import networkx as nx
 
@@ -24,10 +26,10 @@ from scripts import select_synthetic_gt_composite_pilot as legacy  # noqa: E402
 
 
 NAME_QUOTAS = {
-    "TOKEN_SUBSET": 14,
+    "TOKEN_SUBSET": 10,
     "TOKEN_ORDER": 4,
-    "LEGAL_FORM_REMOVE": 6,
-    "PUNCTUATION_REMOVED": 6,
+    "LEGAL_FORM_REMOVE": 8,
+    "PUNCTUATION_REMOVED": 8,
 }
 LOCATION_QUOTAS = {
     ("address", "ADDRESS_ABBREVIATE"): 8,
@@ -40,6 +42,10 @@ STOP_ANCHORS = {
     "LES", "MAISON", "SAS", "SARL", "SCI", "SOCIETE",
 }
 ADDRESS_FUNCTION_WORDS = {"d", "de", "des", "du", "l", "la", "le", "les"}
+NAME_FUNCTION_TERMINALS = {
+    "a", "au", "aux", "d", "de", "des", "du", "en", "et", "l", "la", "le",
+    "les", "sous", "sur",
+}
 
 
 def sha256(path: Path) -> str:
@@ -105,6 +111,24 @@ def punctuation_boundaries(value: str) -> set[tuple[int, str]]:
     return marks
 
 
+def connected_token_pairs(value: str) -> set[tuple[int, int]]:
+    """Return token positions joined by punctuation without whitespace."""
+    decomposed = unicodedata.normalize("NFKD", str(value).casefold())
+    plain = "".join(
+        character for character in decomposed
+        if not unicodedata.combining(character)
+    )
+    matches = list(re.finditer(r"[a-z0-9]+", plain))
+    result: set[tuple[int, int]] = set()
+    for index, (left, right) in enumerate(zip(matches, matches[1:])):
+        separator = plain[left.end():right.start()]
+        if separator and not any(character.isspace() for character in separator) and any(
+            character in loop.PUNCTUATION for character in separator
+        ):
+            result.add((index, index + 1))
+    return result
+
+
 def fragment_supports(
     field: str,
     source_value: str,
@@ -130,7 +154,18 @@ def fragment_supports(
         ):
             return False
         if field == "name" and relation == "TOKEN_SUBSET":
-            return bool(set(anchors) & {words[index] for index in retained})
+            retained_set = set(retained)
+            return (
+                len(retained) >= 2
+                and len(retained) * 2 >= len(words)
+                and (len(words) < 4 or len(retained) >= 3)
+                and words[retained[-1]] not in NAME_FUNCTION_TERMINALS
+                and all(
+                    (left in retained_set) == (right in retained_set)
+                    for left, right in connected_token_pairs(source_value)
+                )
+                and bool(set(anchors) & {words[index] for index in retained})
+            )
         if relation == "LEGAL_FORM_REMOVE":
             removed = [words[index] for index in range(len(words)) if index not in retained]
             return (
@@ -171,18 +206,12 @@ def fragment_supports(
         # between the two ends.  This remains selector-only: Luna still writes
         # the resulting CRM text and the runtime validates the exact operator.
         moved = [index for index, source_index in enumerate(permutation) if index != source_index]
-        adjacent_swap = (
-            len(moved) == 2
-            and moved[1] == moved[0] + 1
-            and permutation[moved[0]] == moved[1]
-            and permutation[moved[1]] == moved[0]
-        )
         target_words = [words[index] for index in permutation]
         legal_form_end_move = bool(words) and (
             (words[0].upper() in loop.LEGAL_FORM_TOKENS and target_words[-1] == words[0])
             or (words[-1].upper() in loop.LEGAL_FORM_TOKENS and target_words[0] == words[-1])
         )
-        return adjacent_swap or legal_form_end_move
+        return legal_form_end_move
     if relation == "ADDRESS_ABBREVIATE":
         pairs = parameters.get("pairs", [])
         return (

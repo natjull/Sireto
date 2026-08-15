@@ -1683,7 +1683,7 @@ def store_generator_batch(
     )
     preflight = generator_preflight(response, seed)
     fingerprints = {
-        variant["variant_id"]: comparison_fingerprint(variant["crm"])
+        variant["variant_id"]: surface_fingerprint(variant["crm"])
         for variant in response["variants"]
     }
     existing_fingerprints = {
@@ -1769,7 +1769,7 @@ def store_generator_variant(
     response_sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()
     variant = response["variants"][0]
     preflight = generator_preflight(response, seed, {variant_id})
-    fingerprint = comparison_fingerprint(variant["crm"])
+    fingerprint = surface_fingerprint(variant["crm"])
     duplicate = connection.execute(
         """SELECT 1 FROM variants
            WHERE run_id=? AND crm_fingerprint=?

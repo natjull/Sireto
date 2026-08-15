@@ -20,10 +20,31 @@ def test_distinctive_tokens_exclude_competitor_and_generic_words() -> None:
 
 def test_subset_requires_retained_distinctive_anchor() -> None:
     value = fragment(
-        "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1]}
+        "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
     )
     assert selector.fragment_supports("name", "ALPHA BETA GAMMA DELTA", value, ["alpha"])
     assert not selector.fragment_supports("name", "ALPHA BETA GAMMA DELTA", value, ["delta"])
+
+
+def test_subset_preserves_linked_compounds_and_rejects_function_word_endings() -> None:
+    cut_compound = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 3, "retained_positions": [0, 1]}
+    )
+    assert not selector.fragment_supports(
+        "name", "GARAGE PRUD'HOMME", cut_compound, ["prud"]
+    )
+    ends_with_de = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1]}
+    )
+    assert not selector.fragment_supports(
+        "name", "ARTISANALE DE MACONNERIE GENERALE", ends_with_de, ["artisanale"]
+    )
+    keep_compound = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
+    )
+    assert selector.fragment_supports(
+        "name", "SARL PRUD'HOMME SERVICES", keep_compound, ["prud"]
+    )
 
 
 def test_protected_subset_anchor_can_be_selected_from_retained_positions() -> None:
@@ -63,7 +84,7 @@ def test_added_marks_and_wrong_punctuation_boundary_are_rejected() -> None:
     assert not selector.fragment_supports("city", "SAINT-DENIS", removed, [])
 
 
-def test_token_order_allows_only_local_swap_or_legal_form_end_move() -> None:
+def test_token_order_allows_only_legal_form_end_move() -> None:
     local_swap = fragment(
         "name", "TOKEN_ORDER", {"source_token_count": 3, "permutation": [1, 0, 2]}
     )
@@ -73,7 +94,7 @@ def test_token_order_allows_only_local_swap_or_legal_form_end_move() -> None:
     legal_form_move = fragment(
         "name", "TOKEN_ORDER", {"source_token_count": 3, "permutation": [1, 2, 0]}
     )
-    assert selector.fragment_supports("name", "ALPHA BETA GAMMA", local_swap, [])
+    assert not selector.fragment_supports("name", "ALPHA BETA GAMMA", local_swap, [])
     assert not selector.fragment_supports("name", "ALPHA BETA GAMMA", arbitrary_cycle, [])
     assert selector.fragment_supports("name", "SARL ALPHA BETA", legal_form_move, [])
 

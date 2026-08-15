@@ -311,6 +311,21 @@ def test_deterministic_proof_uses_canonical_hyphen_tokenization() -> None:
     assert proof["fields"]["name"]["operator_match"] is True
 
 
+def test_duplicate_fingerprint_preserves_meaningful_surface_differences() -> None:
+    first = {
+        "name": "GLOUE LOCATION RAVINE DES CABRIS",
+        "address": "14 CHE RANGAMA RAV DES CABRIS",
+        "postcode": "97410", "city": "SAINT-PIERRE", "insee": "97416",
+    }
+    second = {
+        "name": "G'LOUE LOCATION RAVINE DES CABRIS",
+        "address": "14 CHE RANGAMA-RAV DES CABRIS",
+        "postcode": "97410", "city": "SAINT PIERRE", "insee": "97416",
+    }
+    assert loop.comparison_fingerprint(first) == loop.comparison_fingerprint(second)
+    assert loop.surface_fingerprint(first) != loop.surface_fingerprint(second)
+
+
 def test_per_variant_generator_retries_only_failed_slot_then_assembles_critic_input(tmp_path: Path):
     db, run_id = init_run(
         tmp_path,
