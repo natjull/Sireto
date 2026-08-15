@@ -77,6 +77,32 @@ def pair_signature(pair: tuple[str, tuple[str, str]]) -> str:
     return f"name:{name_relation}+{field}:{location_relation}"
 
 
+def production_usage(
+    seed_inputs: Sequence[Path],
+) -> tuple[int, Counter[str], Counter[str], Counter[str]]:
+    """Reserve cumulative corpus caps from already-counted production inputs."""
+    variant_count = 0
+    ref_counts: Counter[str] = Counter()
+    operator_counts: Counter[str] = Counter()
+    pair_counts: Counter[str] = Counter()
+    for path in seed_inputs:
+        for row in rows(path):
+            for contract in row.get("seed_card", {}).get("composite_contracts", []):
+                relations = contract.get("field_relations", {})
+                location = [
+                    (field, relation) for field, relation in relations.items()
+                    if field != "name"
+                ]
+                if "name" not in relations or len(location) != 1:
+                    raise ValueError(f"invalid counted production contract: {path}")
+                variant_count += 1
+                pair_counts[pair_signature((relations["name"], location[0]))] += 1
+                for fragment in contract.get("field_inspirations", {}).values():
+                    ref_counts[fragment["inspiration_ref"]] += 1
+                    operator_counts[fragment_operator(fragment)] += 1
+    return variant_count, ref_counts, operator_counts, pair_counts
+
+
 def context_flags(context: dict[str, Any]) -> set[str]:
     flags: set[str] = set()
     if context["target"]["state"] == "F":
@@ -213,6 +239,7 @@ def choose_targets_and_bundles(
     target_count: int,
     difficulty_counts: dict[str, int],
     relation_pair_cap: int,
+    prior_pair_counts: Counter[str],
     relation_capacities: dict[tuple[str, str], int],
     selection_seed: str,
 ) -> list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]]:
@@ -268,10 +295,11 @@ def choose_targets_and_bundles(
         }, difficulty_counts[level], difficulty_counts[level])
     all_pairs = sorted({pair for _context_index, bundle in options for pair in bundle})
     for pair in all_pairs:
+        remaining = max(0, relation_pair_cap - prior_pair_counts[pair_signature(pair)])
         add({
             index: int(pair in bundle)
             for index, (_context_index, bundle) in enumerate(options)
-        }, 0, relation_pair_cap)
+        }, 0, remaining)
     for (field, relation), capacity in relation_capacities.items():
         add({
             index: sum(
@@ -330,6 +358,8 @@ def assign_fragments(
     capabilities: dict[str, tuple[dict[str, Any], dict[tuple[str, str], Any]]],
     ref_cap: int,
     operator_cap: int,
+    prior_ref_counts: Counter[str],
+    prior_operator_counts: Counter[str],
     selection_seed: str,
 ) -> tuple[dict[str, list[dict[str, dict[str, Any]]]], Counter[str], Counter[str]]:
     graph = nx.DiGraph()
@@ -350,6 +380,10 @@ def assign_fragments(
                 for fragment in values:
                     ref = fragment["inspiration_ref"]
                     operator = fragment_operator(fragment)
+                    ref_remaining = ref_cap - prior_ref_counts[ref]
+                    operator_remaining = operator_cap - prior_operator_counts[operator]
+                    if ref_remaining <= 0 or operator_remaining <= 0:
+                        continue
                     by_ref[ref] = fragment
                     target_ref = ("TARGET_REF", siret, ref)
                     ref_node = ("REF", ref)
@@ -362,8 +396,12 @@ def assign_fragments(
                         weight=int(digest[:8], 16),
                     )
                     graph.add_edge(target_ref, ref_node, capacity=1, weight=0)
-                    graph.add_edge(ref_node, operator_node, capacity=ref_cap, weight=0)
-                    graph.add_edge(operator_node, sink, capacity=operator_cap, weight=0)
+                    graph.add_edge(
+                        ref_node, operator_node, capacity=ref_remaining, weight=0
+                    )
+                    graph.add_edge(
+                        operator_node, sink, capacity=operator_remaining, weight=0
+                    )
     flow = nx.max_flow_min_cost(graph, source, sink)
     flow_value = sum(flow[source].values())
     if flow_value != len(request_specs):
@@ -378,7 +416,7 @@ def assign_fragments(
                 ref = fragment["inspiration_ref"]
                 ref_node = ("REF", ref)
                 used = sum(flow.get(ref_node, {}).values())
-                if used >= ref_cap:
+                if used >= max(0, ref_cap - prior_ref_counts[ref]):
                     saturated_refs[ref] = used
         raise ValueError(
             f"global fragment flow is infeasible: {flow_value}/{len(request_specs)} assignments; "
@@ -474,16 +512,49 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     ):
         raise ValueError("failure catalog does not prove train-only aggregate provenance")
 
+    prior_variant_count, prior_ref_counts, prior_operator_counts, prior_pair_counts = (
+        production_usage(args.prior_counted_seed_input)
+    )
+    all_excluded_inputs = [
+        *args.exclude_seed_input, *args.prior_counted_seed_input,
+    ]
     all_contexts = rows(source_paths["official_context"])
     document_frequencies = fragments.name_token_document_frequencies(all_contexts)
-    excluded_sirets, excluded_sirens = fragments.excluded_target_ids(args.exclude_seed_input)
+    excluded_sirets, excluded_sirens = fragments.excluded_target_ids(all_excluded_inputs)
     contexts = [
         value for value in all_contexts
         if value["target_siret"] not in excluded_sirets
         and value["target_siren"] not in excluded_sirens
         and fragments.eligible(value)
     ]
-    grouped = fragments.group_fragments(rows(source_paths["field_inspiration_bank"]))
+    variant_count = args.target_count * 3
+    cumulative_variant_count = prior_variant_count + variant_count
+    relation_pair_cap = max(
+        1, int(math.ceil(
+            cumulative_variant_count * plan["global_caps"]["relation_pair_share"]
+        ))
+    )
+    operator_cap = max(
+        1, int(math.ceil(
+            cumulative_variant_count * 2
+            * plan["global_caps"]["exact_operator_share"]
+        ))
+    )
+    first_batch = plan["production"].get("first_batch", {})
+    if args.batch_id == first_batch.get("batch_id") and not prior_variant_count:
+        operator_cap = max(
+            operator_cap, int(first_batch.get("bootstrap_exact_operator_cap", 0))
+        )
+    ref_cap = int(plan["global_caps"]["inspiration_ref_uses"])
+    grouped_all = fragments.group_fragments(rows(source_paths["field_inspiration_bank"]))
+    grouped = {
+        key: [
+            value for value in values
+            if prior_ref_counts[value["inspiration_ref"]] < ref_cap
+            and prior_operator_counts[fragment_operator(value)] < operator_cap
+        ]
+        for key, values in grouped_all.items()
+    }
     capabilities = {}
     feasible_contexts = []
     for context in contexts:
@@ -498,25 +569,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 capabilities[context["target_siret"]] = (names, locations)
                 feasible_contexts.append(context)
 
-    variant_count = args.target_count * 3
     difficulty_counts = exact_counts(
         variant_count, plan["corpus_balance"]["difficulty"]
     )
     stratum_counts = exact_counts(
         variant_count, plan["corpus_balance"]["augmentation_strata"]
     )
-    relation_pair_cap = max(
-        1, int(math.ceil(variant_count * plan["global_caps"]["relation_pair_share"]))
-    )
-    operator_cap = max(
-        1, int(math.ceil(variant_count * 2 * plan["global_caps"]["exact_operator_share"]))
-    )
-    first_batch = plan["production"].get("first_batch", {})
-    if args.batch_id == first_batch.get("batch_id"):
-        operator_cap = max(
-            operator_cap, int(first_batch.get("bootstrap_exact_operator_cap", 0))
-        )
-    ref_cap = int(plan["global_caps"]["inspiration_ref_uses"])
     relation_capacities: dict[tuple[str, str], int] = {}
     for field, relation in (
         [("name", value) for value in SAFE_NAME_RELATIONS]
@@ -524,10 +582,16 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     ):
         available = grouped.get((field, relation), [])
         relation_capacities[(field, relation)] = min(
-            len({value["inspiration_ref"] for value in available}) * ref_cap,
-            len({fragment_operator(value) for value in available}) * operator_cap,
+            sum(
+                ref_cap - prior_ref_counts[ref]
+                for ref in {value["inspiration_ref"] for value in available}
+            ),
+            sum(
+                operator_cap - prior_operator_counts[operator]
+                for operator in {fragment_operator(value) for value in available}
+            ),
         )
-    if args.batch_id == first_batch.get("batch_id"):
+    if args.batch_id == first_batch.get("batch_id") and not prior_variant_count:
         for key, capacity in first_batch.get("bootstrap_relation_caps", {}).items():
             field, relation = key.split(":", 1)
             relation_capacities[(field, relation)] = min(
@@ -535,11 +599,11 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             )
     selected = choose_targets_and_bundles(
         feasible_contexts, capabilities, args.target_count, difficulty_counts,
-        relation_pair_cap, relation_capacities, args.selection_seed,
+        relation_pair_cap, prior_pair_counts, relation_capacities, args.selection_seed,
     )
     assigned_fragments, ref_counts, operator_counts = assign_fragments(
         selected, capabilities, ref_cap,
-        operator_cap, args.selection_seed,
+        operator_cap, prior_ref_counts, prior_operator_counts, args.selection_seed,
     )
 
     variant_records = []
@@ -675,8 +739,16 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         )),
         "distinct_inspiration_refs": len(ref_counts),
         "maximum_inspiration_ref_uses": max(ref_counts.values(), default=0),
+        "maximum_cumulative_inspiration_ref_uses": max(
+            (prior_ref_counts + ref_counts).values(), default=0
+        ),
         "distinct_exact_operators": len(operator_counts),
         "maximum_exact_operator_uses": max(operator_counts.values(), default=0),
+        "maximum_cumulative_exact_operator_uses": max(
+            (prior_operator_counts + operator_counts).values(), default=0
+        ),
+        "prior_counted_variants_reserved": prior_variant_count,
+        "cumulative_planned_variants": cumulative_variant_count,
         "caps": {
             "inspiration_ref": int(plan["global_caps"]["inspiration_ref_uses"]),
             "exact_operator": operator_cap,
@@ -689,6 +761,10 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "plan": sha256(args.plan),
             **{key: sha256(path) for key, path in source_paths.items()},
             **{f"excluded:{path}": sha256(path) for path in args.exclude_seed_input},
+            **{
+                f"prior_counted:{path}": sha256(path)
+                for path in args.prior_counted_seed_input
+            },
         },
         "output_sha256": sha256(args.output),
     }
@@ -712,6 +788,13 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--target-count", type=int, default=150)
     result.add_argument("--selection-seed", default="SIRETO-BALANCED-P000-V1")
     result.add_argument("--exclude-seed-input", type=Path, action="append", default=[])
+    result.add_argument(
+        "--prior-counted-seed-input", type=Path, action="append", default=[],
+        help=(
+            "Prior counted production input: excludes its targets and reserves its "
+            "reference/operator/relation capacities from global corpus caps."
+        ),
+    )
     result.set_defaults(func=build)
     return result
 
