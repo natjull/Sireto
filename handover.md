@@ -153,6 +153,16 @@ positif/négatif. Le palier est classé `CONTINUE`, mais aucun corpus final n'es
 encore promu ; les artefacts et manifests sont sous
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/`.
 
+L'extension v8 a traité 64 seeds. Après CRITIC exhaustif et adjudication des
+4 cas ambigus, 187 variantes sont `ACCEPT`, 5 `SILVER`, 0 `REJECT`; 60 seeds
+ont trois variantes acceptées. L'audit distributionnel v8 compte 187
+empreintes uniques, et 97 sont nouvelles par rapport à v7 (51,9 %). Les
+cartes SIRENE ont produit 1 800 hard negatives uniques sur 180 positifs
+éligibles : 858 `ACTIVE_CLOSED`, 264 `SAME_SIREN_OTHER_SIRET`, 678
+`SHARED_ADDRESS`, sans collision positif/négatif. Le palier reste
+`CONTINUE` conditionnel ; les objectifs 20 000 seeds / 60 000 positifs ne sont
+pas encore atteints.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
