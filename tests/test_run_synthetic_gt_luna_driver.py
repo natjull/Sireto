@@ -61,6 +61,21 @@ def test_dynamic_schema_freezes_task_envelope():
     assert "uniqueItems" not in json.dumps(schema)
 
 
+def test_per_variant_dynamic_schema_freezes_single_target_variant():
+    value = task()
+    value["prompt_version"] = loop.PER_VARIANT_GENERATOR_PROMPT_VERSION
+    value["input"]["target_variant_id"] = "v2"
+    schema = driver.task_output_schema(value, loop.load_json(loop.DEFAULT_SCHEMA))
+    variants = schema["properties"]["variants"]
+    assert variants["minItems"] == variants["maxItems"] == 1
+    assert schema["$defs"]["variant"]["properties"]["variant_id"] == {
+        "const": "v2", "type": "string"
+    }
+    prompt = driver.worker_prompt(value)
+    assert "exactly the single variant named by target_variant_id" in prompt
+    assert "Do not emit either of the other" in prompt
+
+
 def test_composite_output_schema_forces_single_composite_family():
     value = task()
     value["input"]["seed_card"] = {"generation_mode": "OBSERVED_COMPOSITE_ANALOGY_V2"}
@@ -150,7 +165,7 @@ with open(output,'w',encoding='utf-8') as f:
         attempt = connection.execute("SELECT attempt FROM seeds").fetchone()[0]
     assert len(rows) == 1
     raw_path = next((artifacts / "generator").glob("*/raw_response.json"))
-    assert rows[0][0] == raw_path.read_text(encoding="utf-8").strip()
+    assert rows[0][0] == raw_path.read_text(encoding="utf-8")
     assert "\n" in rows[0][0]
     assert attempt == 1
 

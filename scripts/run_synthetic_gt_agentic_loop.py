@@ -33,6 +33,8 @@ PROMPT_VERSIONS = {
     "CRITIC": "sireto-gt-critic-v7",
     "ADJUDICATOR": "sireto-gt-adjudicator-v4",
 }
+PER_VARIANT_GENERATOR_PROMPT_VERSION = "sireto-gt-generator-variant-v1"
+GENERATOR_TASK_MODES = {"seed-batch", "per-variant"}
 PENDING_BY_ROLE = {
     "GENERATOR": "PENDING_GENERATOR",
     "CRITIC": "PENDING_CRITIC",
@@ -134,8 +136,8 @@ def iter_response_raw(path: Path, input_format: str) -> Iterable[tuple[str, dict
     if input_format == "jsonl":
         yield from iter_jsonl_raw(path)
         return
-    raw = path.read_text(encoding="utf-8").strip()
-    if not raw:
+    raw = path.read_text(encoding="utf-8")
+    if not raw.strip():
         raise ValueError(f"empty JSON response: {path}")
     try:
         value = json.loads(raw)
@@ -212,6 +214,7 @@ def create_schema(connection: sqlite3.Connection) -> None:
             run_id TEXT NOT NULL,
             seed_id TEXT NOT NULL,
             role TEXT NOT NULL,
+            variant_id TEXT,
             batch_id TEXT NOT NULL,
             worker_id TEXT NOT NULL,
             prompt_version TEXT NOT NULL,
@@ -245,6 +248,20 @@ def create_schema(connection: sqlite3.Connection) -> None:
             FOREIGN KEY (run_id, seed_id) REFERENCES seeds(run_id, seed_id)
         );
 
+        CREATE TABLE IF NOT EXISTS generator_slots (
+            run_id TEXT NOT NULL,
+            seed_id TEXT NOT NULL,
+            variant_id TEXT NOT NULL,
+            status TEXT NOT NULL,
+            attempt INTEGER NOT NULL DEFAULT 0,
+            last_preflight_json TEXT,
+            accepted_task_id TEXT,
+            updated_at INTEGER NOT NULL,
+            PRIMARY KEY (run_id, seed_id, variant_id),
+            FOREIGN KEY (run_id, seed_id) REFERENCES seeds(run_id, seed_id),
+            FOREIGN KEY (accepted_task_id) REFERENCES tasks(task_id)
+        );
+
         CREATE TABLE IF NOT EXISTS events (
             event_id INTEGER PRIMARY KEY AUTOINCREMENT,
             run_id TEXT NOT NULL,
@@ -259,8 +276,15 @@ def create_schema(connection: sqlite3.Connection) -> None:
             ON seeds(run_id, status, seed_id);
         CREATE INDEX IF NOT EXISTS tasks_seed_role_idx
             ON tasks(run_id, seed_id, role, status);
+        CREATE INDEX IF NOT EXISTS generator_slots_status_idx
+            ON generator_slots(run_id, seed_id, status, variant_id);
         """
     )
+    task_columns = {
+        str(row[1]) for row in connection.execute("PRAGMA table_info(tasks)").fetchall()
+    }
+    if "variant_id" not in task_columns:
+        connection.execute("ALTER TABLE tasks ADD COLUMN variant_id TEXT")
 
 
 def event(
@@ -550,15 +574,28 @@ def command_init(args: argparse.Namespace) -> None:
         "critic_sample_slots": args.critic_sample_slots,
         "allow_easy_supervisor": bool(args.allow_easy_supervisor),
         "max_generator_attempts": args.max_generator_attempts,
+        "generator_task_mode": args.generator_task_mode,
         "variants_per_seed": 3,
     }
     if args.critic_mode != "all" and not args.allow_easy_supervisor:
         raise ValueError("targeted critic requires --allow-easy-supervisor after a passed pilot")
     if not (0 <= args.critic_sample_slots <= args.critic_sample_modulus):
         raise ValueError("invalid critic sample slots/modulus")
+    if args.max_generator_attempts <= 0:
+        raise ValueError("max generator attempts must be positive")
     rows = [validate_seed(value) for _raw, value in iter_jsonl_raw(args.seeds)]
     if not rows:
         raise ValueError("seed JSONL is empty")
+    if args.generator_task_mode == "per-variant":
+        for row in rows:
+            contracts = variant_contract(row["seed_card"])
+            if len(contracts) != 3 or {value.get("variant_id") for value in contracts} != {
+                "v1", "v2", "v3"
+            }:
+                raise ValueError(
+                    "per-variant generation requires exact v1/v2/v3 contracts for "
+                    f"seed {row['seed_id']}"
+                )
     target_sirets = [row["target_siret"] for row in rows]
     seed_ids = [str(row["seed_id"]) for row in rows]
     if len(set(target_sirets)) != len(target_sirets) or len(set(seed_ids)) != len(seed_ids):
@@ -595,6 +632,16 @@ def command_init(args: argparse.Namespace) -> None:
                     now_ts(),
                 ),
             )
+            if args.generator_task_mode == "per-variant":
+                connection.executemany(
+                    """INSERT INTO generator_slots
+                       (run_id, seed_id, variant_id, status, updated_at)
+                       VALUES (?, ?, ?, 'PENDING', ?)""",
+                    [
+                        (args.run_id, str(row["seed_id"]), variant_id, now_ts())
+                        for variant_id in ("v1", "v2", "v3")
+                    ],
+                )
         event(connection, args.run_id, None, "RUN_INITIALIZED", {"seed_count": len(rows), "policy": policy})
     print(canonical_json({"run_id": args.run_id, "seed_count": len(rows), "status": "INITIALIZED"}))
 
@@ -624,10 +671,73 @@ def reap_expired(connection: sqlite3.Connection, run_id: str) -> int:
     return len(expired)
 
 
+def deterministic_variant_proof(
+    seed_card: dict[str, Any],
+    variant_id: str,
+    crm: dict[str, str],
+    preflight: dict[str, Any],
+) -> dict[str, Any]:
+    """Expose the runtime's formal result without generator rationale."""
+    baseline = official_baseline(seed_card)
+    contracts = {value["variant_id"]: value for value in variant_contract(seed_card)}
+    contract = contracts.get(variant_id)
+    fields: dict[str, Any] = {}
+    if contract and contract.get("requested_family") == COMPOSITE_FAMILY:
+        for field in contract["target_fields"]:
+            expected_relation = contract["field_relations"][field]
+            inspiration = contract.get("field_inspirations", {}).get(field, {})
+            expected_parameters = inspiration.get("operation_parameters")
+            actual_relation = composite_relation_class(field, baseline[field], crm[field])
+            actual_parameters = (
+                composite_operation_parameters(
+                    field, actual_relation, baseline[field], crm[field]
+                )
+                if actual_relation
+                else None
+            )
+            fields[field] = {
+                "source_tokens": normalized_words(baseline[field]),
+                "target_tokens": normalized_words(crm[field]),
+                "expected_relation": expected_relation,
+                "actual_relation": actual_relation,
+                "expected_operation_parameters": expected_parameters,
+                "actual_operation_parameters": actual_parameters,
+                "operator_match": (
+                    expected_relation == actual_relation
+                    and (
+                        expected_parameters is None
+                        or expected_parameters == actual_parameters
+                    )
+                ),
+            }
+    proof = {
+        "variant_id": variant_id,
+        "canonical_tokenizer": "normalized_words_v1_hyphen_is_separator",
+        "preflight_passed": preflight.get("passed") is True,
+        "preflight_errors": list(preflight.get("errors", [])),
+        "fields": fields,
+    }
+    proof["proof_sha256"] = digest_json(proof)
+    return proof
+
+
 def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row) -> dict[str, Any]:
     seed_card = json.loads(seed["seed_card_json"])
+    policy = json.loads(connection.execute(
+        "SELECT policy_json FROM runs WHERE run_id=?", (run_id,)
+    ).fetchone()[0])
+    if policy.get("generator_task_mode", "seed-batch") == "per-variant":
+        slots = connection.execute(
+            """SELECT variant_id, status FROM generator_slots
+               WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
+            (run_id, seed["seed_id"]),
+        ).fetchall()
+        if len(slots) != 3 or any(row["status"] != "PASSED" for row in slots):
+            raise RuntimeError(
+                f"critic requires three passed generator slots for seed {seed['seed_id']}"
+            )
     variants = connection.execute(
-        """SELECT variant_id, crm_json FROM variants
+        """SELECT variant_id, crm_json, preflight_json FROM variants
            WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
         (run_id, seed["seed_id"]),
     ).fetchall()
@@ -637,7 +747,17 @@ def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row)
         "baseline_crm": official_baseline(seed_card),
         "variant_contract": variant_contract(seed_card),
         "variants": [
-            {"variant_id": row["variant_id"], "crm": json.loads(row["crm_json"])} for row in variants
+            {
+                "variant_id": row["variant_id"],
+                "crm": json.loads(row["crm_json"]),
+                "deterministic_proof": deterministic_variant_proof(
+                    seed_card,
+                    row["variant_id"],
+                    json.loads(row["crm_json"]),
+                    json.loads(row["preflight_json"]),
+                ),
+            }
+            for row in variants
         ],
     }
 
@@ -675,20 +795,61 @@ def make_task(
     batch_id: str,
     seed: sqlite3.Row,
 ) -> dict[str, Any]:
+    task_variant_id: str | None = None
+    prompt_version = PROMPT_VERSIONS[role]
     if role == "GENERATOR":
         seed_card = json.loads(seed["seed_card_json"])
+        policy = json.loads(connection.execute(
+            "SELECT policy_json FROM runs WHERE run_id=?", (run_id,)
+        ).fetchone()[0])
+        per_variant = policy.get("generator_task_mode", "seed-batch") == "per-variant"
+        selected_contracts = variant_contract(seed_card)
+        public_seed_card = llm_seed_card(seed_card)
+        if per_variant:
+            slot = connection.execute(
+                """SELECT variant_id, attempt, last_preflight_json
+                   FROM generator_slots
+                   WHERE run_id=? AND seed_id=? AND status='PENDING'
+                   ORDER BY variant_id LIMIT 1""",
+                (run_id, seed["seed_id"]),
+            ).fetchone()
+            if slot is None:
+                raise RuntimeError(f"no pending generator slot for seed {seed['seed_id']}")
+            task_variant_id = str(slot["variant_id"])
+            selected_contracts = [
+                value for value in selected_contracts if value["variant_id"] == task_variant_id
+            ]
+            if len(selected_contracts) != 1:
+                raise RuntimeError(
+                    f"missing exact contract for {seed['seed_id']}:{task_variant_id}"
+                )
+            if "composite_contracts" in public_seed_card:
+                public_seed_card["composite_contracts"] = selected_contracts
+            prompt_version = PER_VARIANT_GENERATOR_PROMPT_VERSION
         requested = seed_card.get("requested_families")
         role_input = {
             "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
             "source_kind": seed["source_kind"],
-            "seed_card": llm_seed_card(seed_card),
+            "seed_card": public_seed_card,
             "observed_train_profile": json.loads(seed["profile_json"]),
             "risk_flags": json.loads(seed["risk_flags_json"]),
         }
         if requested or seed_card.get("composite_contracts") is not None:
             role_input["baseline_crm"] = official_baseline(seed_card)
-            role_input["variant_contract"] = variant_contract(seed_card)
-        if int(seed["attempt"]) > 0:
+            role_input["variant_contract"] = selected_contracts
+        if per_variant:
+            role_input["target_variant_id"] = task_variant_id
+            previous = connection.execute(
+                """SELECT crm_fingerprint, preflight_json FROM variants
+                   WHERE run_id=? AND seed_id=? AND variant_id=?""",
+                (run_id, seed["seed_id"], task_variant_id),
+            ).fetchone()
+            if previous:
+                role_input["retry_context"] = {
+                    "previous_fingerprints_to_avoid": [previous["crm_fingerprint"]],
+                    "previous_preflight_errors": json.loads(previous["preflight_json"])["errors"],
+                }
+        elif int(seed["attempt"]) > 0:
             previous = connection.execute(
                 """SELECT variant_id, crm_fingerprint, preflight_json FROM variants
                    WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
@@ -721,7 +882,7 @@ def make_task(
         "run_id": run_id,
         "batch_id": batch_id,
         "role": role,
-        "prompt_version": PROMPT_VERSIONS[role],
+        "prompt_version": prompt_version,
         "input_sha256": input_sha256,
         "input": role_input,
     }
@@ -746,12 +907,13 @@ def command_lease(args: argparse.Namespace) -> None:
             task = make_task(connection, args.run_id, role, args.worker_id, batch_id, seed)
             connection.execute(
                 """INSERT INTO tasks
-                   (task_id, run_id, seed_id, role, batch_id, worker_id,
+                   (task_id, run_id, seed_id, role, variant_id, batch_id, worker_id,
                     prompt_version, input_sha256, task_json, status, created_at)
-                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'LEASED', ?)""",
+                   VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'LEASED', ?)""",
                 (
-                    task["task_id"], args.run_id, seed["seed_id"], role, batch_id,
-                    args.worker_id, PROMPT_VERSIONS[role], task["input_sha256"],
+                    task["task_id"], args.run_id, seed["seed_id"], role,
+                    task["input"].get("target_variant_id"), batch_id,
+                    args.worker_id, task["prompt_version"], task["input_sha256"],
                     canonical_json(task), now_ts(),
                 ),
             )
@@ -1431,7 +1593,11 @@ def known_context_ambiguities(crm: dict[str, str], seed_card: dict[str, Any]) ->
     return sorted(set(result))
 
 
-def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str, Any]:
+def generator_preflight(
+    response: dict[str, Any],
+    seed: sqlite3.Row,
+    expected_variant_ids: set[str] | None = None,
+) -> dict[str, Any]:
     errors: list[str] = []
     fingerprints: list[str] = []
     seed_card = json.loads(seed["seed_card_json"])
@@ -1439,10 +1605,10 @@ def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str
     contracts = {
         value["variant_id"]: value for value in variant_contract(seed_card)
     }
-    expected_ids = {"v1", "v2", "v3"}
+    expected_ids = expected_variant_ids or {"v1", "v2", "v3"}
     observed_ids = {variant["variant_id"] for variant in response["variants"]}
-    if observed_ids != expected_ids:
-        errors.append("VARIANT_IDS_NOT_EXACT_V1_V2_V3")
+    if observed_ids != expected_ids or len(response["variants"]) != len(expected_ids):
+        errors.append("VARIANT_IDS_NOT_EXACT:" + ",".join(sorted(expected_ids)))
     for variant in response["variants"]:
         crm = variant["crm"]
         contract = contracts.get(variant["variant_id"])
@@ -1502,7 +1668,7 @@ def verify_response_envelope(response: dict[str, Any], task: sqlite3.Row, role: 
             raise ValueError(f"response envelope mismatch for {key}")
 
 
-def store_generator(
+def store_generator_batch(
     connection: sqlite3.Connection,
     task: sqlite3.Row,
     seed: sqlite3.Row,
@@ -1576,6 +1742,144 @@ def store_generator(
     event(connection, task["run_id"], seed["seed_id"], "GENERATOR_SUBMITTED", {
         "response_sha256": response_sha, "preflight": preflight, "next_status": next_status,
     })
+
+
+def store_generator_variant(
+    connection: sqlite3.Connection,
+    task: sqlite3.Row,
+    seed: sqlite3.Row,
+    raw: str,
+    response: dict[str, Any],
+    policy: dict[str, Any],
+) -> None:
+    task_json = json.loads(task["task_json"])
+    variant_id = str(task_json.get("input", {}).get("target_variant_id", ""))
+    if task["variant_id"] != variant_id or variant_id not in {"v1", "v2", "v3"}:
+        raise ValueError("per-variant generator task lacks an exact target variant")
+    if len(response["variants"]) != 1 or response["variants"][0]["variant_id"] != variant_id:
+        raise ValueError(f"generator response must contain only leased variant {variant_id}")
+    slot = connection.execute(
+        """SELECT * FROM generator_slots
+           WHERE run_id=? AND seed_id=? AND variant_id=?""",
+        (task["run_id"], seed["seed_id"], variant_id),
+    ).fetchone()
+    if slot is None or slot["status"] != "PENDING":
+        raise ValueError(f"generator slot is not pending: {seed['seed_id']}:{variant_id}")
+
+    response_sha = hashlib.sha256(raw.encode("utf-8")).hexdigest()
+    variant = response["variants"][0]
+    preflight = generator_preflight(response, seed, {variant_id})
+    fingerprint = comparison_fingerprint(variant["crm"])
+    duplicate = connection.execute(
+        """SELECT 1 FROM variants
+           WHERE run_id=? AND crm_fingerprint=?
+             AND NOT (seed_id=? AND variant_id=?)
+           LIMIT 1""",
+        (task["run_id"], fingerprint, seed["seed_id"], variant_id),
+    ).fetchone()
+    if duplicate:
+        preflight["errors"] = sorted(set(preflight["errors"] + [f"{variant_id}:GLOBAL_DUPLICATE"]))
+        preflight["passed"] = False
+
+    final_decision = None if preflight["passed"] else "REJECT"
+    final_reason = None if preflight["passed"] else "PREFLIGHT:" + ",".join(preflight["errors"])
+    connection.execute(
+        """INSERT INTO variants
+           (run_id, seed_id, variant_id, crm_json, crm_fingerprint, families_json,
+            transformation_summary, generator_response_sha256, preflight_json,
+            critic_json, critic_decision, adjudicator_json, adjudicator_decision,
+            final_decision, final_reason)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, NULL, NULL, NULL, ?, ?)
+           ON CONFLICT(run_id, seed_id, variant_id) DO UPDATE SET
+             crm_json=excluded.crm_json,
+             crm_fingerprint=excluded.crm_fingerprint,
+             families_json=excluded.families_json,
+             transformation_summary=excluded.transformation_summary,
+             generator_response_sha256=excluded.generator_response_sha256,
+             preflight_json=excluded.preflight_json,
+             critic_json=NULL,
+             critic_decision=NULL,
+             adjudicator_json=NULL,
+             adjudicator_decision=NULL,
+             final_decision=excluded.final_decision,
+             final_reason=excluded.final_reason""",
+        (
+            task["run_id"], seed["seed_id"], variant_id,
+            canonical_json(variant["crm"]), fingerprint,
+            canonical_json(variant["corruption_families_observed"]),
+            variant["transformation_summary"], response_sha, canonical_json(preflight),
+            final_decision, final_reason,
+        ),
+    )
+
+    attempt = int(slot["attempt"]) + 1
+    if preflight["passed"]:
+        slot_status = "PASSED"
+        accepted_task_id: str | None = task["task_id"]
+    elif attempt < int(policy["max_generator_attempts"]):
+        slot_status = "PENDING"
+        accepted_task_id = None
+    else:
+        slot_status = "EXHAUSTED"
+        accepted_task_id = None
+    connection.execute(
+        """UPDATE generator_slots
+           SET status=?, attempt=?, last_preflight_json=?, accepted_task_id=?, updated_at=?
+           WHERE run_id=? AND seed_id=? AND variant_id=?""",
+        (
+            slot_status, attempt, canonical_json(preflight), accepted_task_id, now_ts(),
+            task["run_id"], seed["seed_id"], variant_id,
+        ),
+    )
+    slot_states = [
+        str(row[0]) for row in connection.execute(
+            """SELECT status FROM generator_slots
+               WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
+            (task["run_id"], seed["seed_id"]),
+        ).fetchall()
+    ]
+    if len(slot_states) != 3:
+        raise RuntimeError(f"seed has incomplete generator slot state: {seed['seed_id']}")
+    if all(value == "PASSED" for value in slot_states):
+        if should_critic(seed, policy):
+            next_status = "PENDING_CRITIC"
+        elif policy["allow_easy_supervisor"]:
+            next_status = "READY_SUPERVISOR"
+        else:
+            next_status = "PENDING_CRITIC"
+    elif any(value == "PENDING" for value in slot_states):
+        next_status = "PENDING_GENERATOR"
+    else:
+        next_status = "READY_SUPERVISOR"
+    connection.execute(
+        """UPDATE seeds SET status=?, attempt=attempt+1, lease_role=NULL,
+           lease_worker=NULL, lease_expires_at=NULL, updated_at=?
+           WHERE run_id=? AND seed_id=?""",
+        (next_status, now_ts(), task["run_id"], seed["seed_id"]),
+    )
+    event(connection, task["run_id"], seed["seed_id"], "GENERATOR_VARIANT_SUBMITTED", {
+        "variant_id": variant_id,
+        "response_sha256": response_sha,
+        "preflight": preflight,
+        "slot_attempt": attempt,
+        "slot_status": slot_status,
+        "slot_states": slot_states,
+        "next_status": next_status,
+    })
+
+
+def store_generator(
+    connection: sqlite3.Connection,
+    task: sqlite3.Row,
+    seed: sqlite3.Row,
+    raw: str,
+    response: dict[str, Any],
+    policy: dict[str, Any],
+) -> None:
+    if policy.get("generator_task_mode", "seed-batch") == "per-variant":
+        store_generator_variant(connection, task, seed, raw, response, policy)
+    else:
+        store_generator_batch(connection, task, seed, raw, response, policy)
 
 
 def decision_map(response: dict[str, Any]) -> dict[str, dict[str, Any]]:
@@ -1730,6 +2034,13 @@ def command_supervise(args: argparse.Namespace) -> None:
     decisions_counter: Counter[str] = Counter()
     with connect(args.db) as connection:
         create_schema(connection)
+        run = connection.execute(
+            "SELECT policy_json FROM runs WHERE run_id=?", (args.run_id,)
+        ).fetchone()
+        if run is None:
+            raise ValueError(f"unknown run: {args.run_id}")
+        policy = json.loads(run["policy_json"])
+        per_variant = policy.get("generator_task_mode", "seed-batch") == "per-variant"
         seeds = connection.execute(
             """SELECT * FROM seeds WHERE run_id=? AND status='READY_SUPERVISOR'
                ORDER BY seed_id LIMIT ?""",
@@ -1746,9 +2057,23 @@ def command_supervise(args: argparse.Namespace) -> None:
                         f"supervisor requires exactly three variants for seed {seed['seed_id']}; "
                         f"found {len(variants)}"
                     )
+                generation_incomplete = False
+                if per_variant:
+                    slots = connection.execute(
+                        """SELECT variant_id, status FROM generator_slots
+                           WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
+                        (args.run_id, seed["seed_id"]),
+                    ).fetchall()
+                    if len(slots) != 3:
+                        raise RuntimeError(
+                            f"supervisor requires three generator slots for seed {seed['seed_id']}"
+                        )
+                    generation_incomplete = any(row["status"] != "PASSED" for row in slots)
                 for variant in variants:
                     preflight = json.loads(variant["preflight_json"])
-                    if not preflight["passed"]:
+                    if generation_incomplete:
+                        decision, reason = "REJECT", "SEED_GENERATION_INCOMPLETE"
+                    elif not preflight["passed"]:
                         decision, reason = "REJECT", "DETERMINISTIC_PREFLIGHT_FAILED"
                     elif variant["critic_decision"] == "REJECT":
                         decision, reason = "REJECT", "CRITIC_REJECT"
@@ -1808,7 +2133,21 @@ def status_payload(connection: sqlite3.Connection, run_id: str) -> dict[str, Any
             (run_id,),
         )
     }
-    return {"run_id": run_id, "seeds": seed_counts, "variants": variant_counts, "tasks": task_counts}
+    slot_counts = {
+        str(row["status"]): int(row["count"])
+        for row in connection.execute(
+            """SELECT status, COUNT(*) AS count FROM generator_slots
+               WHERE run_id=? GROUP BY status""",
+            (run_id,),
+        )
+    }
+    return {
+        "run_id": run_id,
+        "seeds": seed_counts,
+        "variants": variant_counts,
+        "tasks": task_counts,
+        "generator_slots": slot_counts,
+    }
 
 
 def command_status(args: argparse.Namespace) -> None:
@@ -1886,6 +2225,10 @@ def parser() -> argparse.ArgumentParser:
     init.add_argument("--critic-sample-slots", type=int, default=1)
     init.add_argument("--allow-easy-supervisor", action="store_true")
     init.add_argument("--max-generator-attempts", type=int, default=2)
+    init.add_argument(
+        "--generator-task-mode", choices=sorted(GENERATOR_TASK_MODES), default="seed-batch",
+        help="lease either one legacy three-variant batch or one independently retried variant",
+    )
     init.set_defaults(func=command_init)
 
     lease = sub.add_parser("lease")

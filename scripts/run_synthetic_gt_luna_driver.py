@@ -155,16 +155,43 @@ rationale. For each v1/v2/v3, compare baseline_crm, the generated CRM, its exact
 train inspiration, and bounded official_context. ACCEPT only if every target field changes beyond
 case, all non-target fields are byte-identical, the combined name+location degradation is a
 plausible single human CRM record, no inspiration entity material was copied, and the target SIRET
-remains the best exact interpretation. Verify that every generated field realizes exactly its
-declared field_relations class; reject internal street-name reordering, destructive token removal,
-or city token deletion/reordering. A same-SIREN same-site active sibling can establish
-OPERATIONAL_ONLY but never exact success. Use distinct reason_codes for REALISTIC,
-EXACT_IDENTIFIABLE, OPERATIONAL_ONLY, or AMBIGUOUS. Never repair text. Set independent=true and
-generator_rationale_seen=false and return only the structured JSON response.""",
+remains the best exact interpretation. Each variant includes a hashed deterministic_proof from the
+runtime's canonical tokenizer and exact operator validator. When preflight_passed is true and every
+operator_match is true, formal relation conformance is already established: do not contradict it
+using a different tokenization and do not reject merely because a requested TOKEN_SUBSET removes a
+token. Judge instead whether that formally valid edit is a plausible human CRM degradation and
+whether a concrete semantic ambiguity remains. Any AMBIGUOUS decision must cite the relevant
+official site_ref or explicit official-context fact in its reason. Use REALISM_FAILURE only for a
+concrete implausibility not equal to the requested edit itself. A same-SIREN same-site active
+sibling can establish OPERATIONAL_ONLY but never exact success. Never repair text. Set
+independent=true and generator_rationale_seen=false and return only the structured JSON response.""",
     "ADJUDICATOR": """You are the SIRETO composite ADJUDICATOR. Resolve only the reviewed
 v1/v2/v3 decisions using baseline, contracts, deterministic preflight and critic. Never rewrite
 CRM, never override a deterministic failure, and never promote a critic REJECT. Keep exact SIRET
 and operational same-SIREN/same-site conclusions separate. Return only structured JSON.""",
+}
+
+PER_VARIANT_GENERATOR_PROMPTS = {
+    "standard": """You are the SIRETO GENERATOR for one independently retried variant. Write
+exactly the single variant named by target_variant_id. The one-item variant_contract is exhaustive:
+modify only target_fields, copy every other baseline_crm field byte-for-byte, declare only the
+requested_family, and make the requested change genuinely visible. Do not emit either of the other
+variant ids. Never write SIRET/SIREN inside CRM fields. On retry, correct every listed deterministic
+preflight error without copying previous rejected text. The validator rejects and never repairs
+your CRM text. Return only the structured JSON response with the exact envelope constants.""",
+    "composite": """You are the SIRETO composite GENERATOR for one independently retried variant.
+Write exactly the single variant named by target_variant_id. The one-item variant_contract is the
+only contract to apply. Study each official_value->observed_crm_value fragment only as an edit
+analogy, then YOU directly write the target CRM text; no code creates or repairs it. Apply every
+field_relation and operation_parameter exactly, change every target_field non-trivially, and copy
+every non-target baseline_crm field byte-for-byte. Do not emit either of the other variant ids.
+
+Never copy inspiration entity, street, city, or numeric material. Never add alphanumeric material,
+punctuation, or a diacritic. Preserve protected_target_tokens, postcode, INSEE, and all address
+digits. City edits must preserve the exact alphanumeric sequence. Declare only
+OBSERVED_COMPOSITE_ANALOGY. On retry, correct every listed deterministic preflight error without
+reusing the rejected fingerprint. The validator rejects and never repairs your CRM text. Return
+only the structured JSON response with the exact envelope constants.""",
 }
 
 
@@ -236,8 +263,10 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
     required = list(properties)
     selected_defs: dict[str, Any]
     if role == "GENERATOR":
+        target_variant_id = task["input"].get("target_variant_id")
+        variant_count = 1 if target_variant_id else 3
         properties["variants"] = {
-            "type": "array", "minItems": 3, "maxItems": 3,
+            "type": "array", "minItems": variant_count, "maxItems": variant_count,
             "items": {"$ref": "#/$defs/variant"},
         }
         required.append("variants")
@@ -250,6 +279,10 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
             family["minItems"] = 1
             family["maxItems"] = 1
             family["items"] = {"const": loop.COMPOSITE_FAMILY}
+        if target_variant_id:
+            selected_defs["variant"]["properties"]["variant_id"] = {
+                "const": target_variant_id
+            }
     else:
         properties["decisions"] = {
             "type": "array", "minItems": 3, "maxItems": 3,
@@ -273,9 +306,13 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
 
 def worker_prompt(task: dict[str, Any]) -> str:
     composite = task["input"].get("seed_card", {}).get("generation_mode") == "OBSERVED_COMPOSITE_ANALOGY_V2"
-    prompts = COMPOSITE_ROLE_PROMPTS if composite else ROLE_PROMPTS
+    if task["role"] == "GENERATOR" and task["input"].get("target_variant_id"):
+        prompt = PER_VARIANT_GENERATOR_PROMPTS["composite" if composite else "standard"]
+    else:
+        prompts = COMPOSITE_ROLE_PROMPTS if composite else ROLE_PROMPTS
+        prompt = prompts[task["role"]]
     return (
-        prompts[task["role"]]
+        prompt
         + "\n\nTask JSON (the response envelope constants must match it exactly):\n"
         + loop.canonical_json(task)
     )
@@ -347,7 +384,7 @@ def invoke_luna(
             if result.returncode != 0:
                 last_error = f"codex exit code {result.returncode}"
                 continue
-            raw = output_path.read_text(encoding="utf-8").strip()
+            raw = output_path.read_text(encoding="utf-8")
             response = json.loads(raw)
             validator = Draft202012Validator(message_schema)
             validation_errors = list(validator.iter_errors(response))

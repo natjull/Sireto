@@ -33,6 +33,26 @@ def test_protected_subset_anchor_can_be_selected_from_retained_positions() -> No
     assert [value for value in anchors if value in {words[index] for index in retained}][:1] == ["gamma"]
 
 
+def test_address_subset_preserves_number_type_and_content_anchor() -> None:
+    remove_des = fragment(
+        "address", "ADDRESS_TOKEN_SUBSET",
+        {"source_token_count": 4, "retained_positions": [0, 1, 3]},
+    )
+    assert selector.fragment_supports(
+        "address", "26 RUE DES PETUNIAS", remove_des, []
+    )
+    assert not selector.fragment_supports(
+        "address", "26 RUE MAURICE THOREZ", remove_des, []
+    )
+    remove_type = fragment(
+        "address", "ADDRESS_TOKEN_SUBSET",
+        {"source_token_count": 4, "retained_positions": [0, 2, 3]},
+    )
+    assert not selector.fragment_supports(
+        "address", "26 RUE DES PETUNIAS", remove_type, []
+    )
+
+
 def test_added_marks_and_wrong_punctuation_boundary_are_rejected() -> None:
     added = fragment("city", "DIACRITIC_ADDED", {})
     assert not selector.fragment_supports("city", "SAINT-DENIS", added, [])
@@ -41,6 +61,26 @@ def test_added_marks_and_wrong_punctuation_boundary_are_rejected() -> None:
         {"edits": [{"after_token_index": 1, "mark": "-"}]},
     )
     assert not selector.fragment_supports("city", "SAINT-DENIS", removed, [])
+
+
+def test_token_order_allows_only_local_swap_or_legal_form_end_move() -> None:
+    local_swap = fragment(
+        "name", "TOKEN_ORDER", {"source_token_count": 3, "permutation": [1, 0, 2]}
+    )
+    arbitrary_cycle = fragment(
+        "name", "TOKEN_ORDER", {"source_token_count": 3, "permutation": [1, 2, 0]}
+    )
+    legal_form_move = fragment(
+        "name", "TOKEN_ORDER", {"source_token_count": 3, "permutation": [1, 2, 0]}
+    )
+    assert selector.fragment_supports("name", "ALPHA BETA GAMMA", local_swap, [])
+    assert not selector.fragment_supports("name", "ALPHA BETA GAMMA", arbitrary_cycle, [])
+    assert selector.fragment_supports("name", "SARL ALPHA BETA", legal_form_move, [])
+
+
+def test_canary_name_plan_suspends_join_split() -> None:
+    assert "JOIN_SPLIT" not in selector.NAME_QUOTAS
+    assert sum(selector.NAME_QUOTAS.values()) == 30
 
 
 def test_relation_flow_honours_quota_and_three_distinct_per_target() -> None:

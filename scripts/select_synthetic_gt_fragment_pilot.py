@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 import hashlib
+import itertools
 import json
 from pathlib import Path
 import sys
@@ -23,11 +24,10 @@ from scripts import select_synthetic_gt_composite_pilot as legacy  # noqa: E402
 
 
 NAME_QUOTAS = {
-    "TOKEN_SUBSET": 8,
-    "TOKEN_ORDER": 2,
+    "TOKEN_SUBSET": 14,
+    "TOKEN_ORDER": 4,
     "LEGAL_FORM_REMOVE": 6,
-    "PUNCTUATION_REMOVED": 7,
-    "JOIN_SPLIT": 7,
+    "PUNCTUATION_REMOVED": 6,
 }
 LOCATION_QUOTAS = {
     ("address", "ADDRESS_ABBREVIATE"): 8,
@@ -39,6 +39,7 @@ STOP_ANCHORS = {
     "ASS", "ASSOCIATION", "CABINET", "CENTRE", "DE", "DES", "DU", "ET", "LA", "LE",
     "LES", "MAISON", "SAS", "SARL", "SCI", "SOCIETE",
 }
+ADDRESS_FUNCTION_WORDS = {"d", "de", "des", "du", "l", "la", "le", "les"}
 
 
 def sha256(path: Path) -> str:
@@ -140,14 +141,48 @@ def fragment_supports(
             )
         if relation == "ADDRESS_TOKEN_SUBSET":
             retained_words = [words[index] for index in retained]
+            removed_indices = [index for index in range(len(words)) if index not in retained]
+            first_non_digit = next(
+                (index for index, value in enumerate(words) if not value.isdigit()), None
+            )
             return (
                 [value for value in retained_words if value.isdigit()]
                 == [value for value in words if value.isdigit()]
+                and first_non_digit in retained
+                and len(removed_indices) == 1
+                and words[removed_indices[0]] in ADDRESS_FUNCTION_WORDS
+                and any(
+                    not value.isdigit()
+                    and index != first_non_digit
+                    and value not in ADDRESS_FUNCTION_WORDS
+                    for index, value in enumerate(words)
+                    if index in retained
+                )
             )
         return True
     if relation in {"TOKEN_ORDER", "ADDRESS_TYPE_ORDER"}:
         permutation = parameters.get("permutation")
-        return isinstance(permutation, list) and sorted(permutation) == list(range(len(words)))
+        if not isinstance(permutation, list) or sorted(permutation) != list(range(len(words))):
+            return False
+        if relation == "ADDRESS_TYPE_ORDER":
+            return True
+        # Arbitrary long permutations transferred poorly in the first canary.
+        # Admit only a local adjacent swap or moving an explicit legal form
+        # between the two ends.  This remains selector-only: Luna still writes
+        # the resulting CRM text and the runtime validates the exact operator.
+        moved = [index for index, source_index in enumerate(permutation) if index != source_index]
+        adjacent_swap = (
+            len(moved) == 2
+            and moved[1] == moved[0] + 1
+            and permutation[moved[0]] == moved[1]
+            and permutation[moved[1]] == moved[0]
+        )
+        target_words = [words[index] for index in permutation]
+        legal_form_end_move = bool(words) and (
+            (words[0].upper() in loop.LEGAL_FORM_TOKENS and target_words[-1] == words[0])
+            or (words[-1].upper() in loop.LEGAL_FORM_TOKENS and target_words[0] == words[-1])
+        )
+        return adjacent_swap or legal_form_end_move
     if relation == "ADDRESS_ABBREVIATE":
         pairs = parameters.get("pairs", [])
         return (
@@ -220,11 +255,13 @@ def relation_assignment(
             siret = target["target_siret"]
             if capabilities[siret].get(relation):
                 node = ("TARGET_REL", siret, relation)
-                graph.add_edge(relation_node, node, capacity=1 if distinct_per_target else 3)
-                graph.add_edge(node, ("TARGET", siret), capacity=1 if distinct_per_target else 3)
+                graph.add_edge(relation_node, node, capacity=1 if distinct_per_target else 2)
+                graph.add_edge(node, ("TARGET", siret), capacity=1 if distinct_per_target else 2)
     for target in targets:
         graph.add_edge(("TARGET", target["target_siret"]), sink_node, capacity=3)
-    flow_value, flow = nx.maximum_flow(graph, source_node, sink_node)
+    flow_value, flow = nx.maximum_flow(
+        graph, source_node, sink_node, flow_func=nx.algorithms.flow.edmonds_karp
+    )
     if flow_value != total:
         return None
     result: dict[str, list[Any]] = defaultdict(list)
@@ -268,7 +305,9 @@ def assign_unique_fragments(
                 graph.add_edge(target_ref_node, ref_node, capacity=1)
                 graph.add_edge(ref_node, operator_node, capacity=3)
                 graph.add_edge(operator_node, sink_node, capacity=4)
-    flow_value, flow = nx.maximum_flow(graph, source_node, sink_node)
+    flow_value, flow = nx.maximum_flow(
+        graph, source_node, sink_node, flow_func=nx.algorithms.flow.edmonds_karp
+    )
     if flow_value != len(left_nodes):
         return None
     result = {}
@@ -285,6 +324,99 @@ def assign_unique_fragments(
             return None
         result[(node[1], node[2], node[3])] = by_ref[selected[0][1]]
     return result
+
+
+def assign_fragment_plan(
+    targets: list[dict[str, Any]],
+    quotas: dict[Any, int],
+    target_values: dict[str, dict[str, str]],
+    target_anchors: dict[str, list[str]],
+    grouped: dict[tuple[str, str], list[dict[str, Any]]],
+    *,
+    distinct_per_target: bool,
+) -> dict[str, list[dict[str, Any]]] | None:
+    """Jointly assign relations and evidence fragments under all reuse caps."""
+    graph = nx.DiGraph()
+    source_node, sink_node = "SOURCE", "SINK"
+    by_ref = {
+        value["inspiration_ref"]: value for values in grouped.values() for value in values
+    }
+    target_ids = sorted(target["target_siret"] for target in targets)
+    for relation_key, quota in quotas.items():
+        field, relation = (
+            relation_key if isinstance(relation_key, tuple) else ("name", relation_key)
+        )
+        relation_node = ("RELATION", field, relation)
+        graph.add_edge(source_node, relation_node, capacity=quota)
+        for fragment in grouped[(field, relation)]:
+            operator = loop.digest_json({
+                "field": field,
+                "relation": relation,
+                "parameters": fragment["operation_parameters"],
+            })
+            operator_node = ("OPERATOR", operator)
+            ref_node = ("FRAGMENT", fragment["inspiration_ref"])
+            graph.add_edge(relation_node, operator_node, capacity=4)
+            graph.add_edge(operator_node, ref_node, capacity=3)
+            for target in targets:
+                siret = target["target_siret"]
+                if not fragment_supports(
+                    field, target_values[siret][field], fragment, target_anchors[siret]
+                ):
+                    continue
+                target_ref = ("TARGET_FRAGMENT", siret, fragment["inspiration_ref"])
+                target_relation = ("TARGET_RELATION", siret, field, relation)
+                graph.add_edge(ref_node, target_ref, capacity=1)
+                graph.add_edge(target_ref, target_relation, capacity=1)
+                graph.add_edge(
+                    target_relation,
+                    ("TARGET", siret),
+                    capacity=1 if distinct_per_target else 2,
+                )
+    for siret in target_ids:
+        graph.add_edge(("TARGET", siret), sink_node, capacity=3)
+    flow_value, flow = nx.maximum_flow(
+        graph, source_node, sink_node, flow_func=nx.algorithms.flow.edmonds_karp
+    )
+    if flow_value != sum(quotas.values()):
+        return None
+    result: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for node, outgoing in flow.items():
+        if not isinstance(node, tuple) or node[0] != "FRAGMENT":
+            continue
+        for target_node, amount in outgoing.items():
+            if amount and isinstance(target_node, tuple) and target_node[0] == "TARGET_FRAGMENT":
+                result[target_node[1]].append(by_ref[node[1]])
+    if any(len(result[siret]) != 3 for siret in target_ids):
+        return None
+    for siret in result:
+        result[siret].sort(key=lambda value: (value["field"], value["relation"], value["inspiration_ref"]))
+    return dict(result)
+
+
+def fragment_operator(fragment: dict[str, Any]) -> str:
+    return loop.digest_json({
+        "field": fragment["field"],
+        "relation": fragment["relation"],
+        "parameters": fragment["operation_parameters"],
+    })
+
+
+def pair_fragment_plans(
+    names: list[dict[str, Any]], locations: list[dict[str, Any]]
+) -> list[dict[str, Any]] | None:
+    """Pair independently assigned fields without repeating a composite operator."""
+    if len(names) != 3 or len(locations) != 3:
+        return None
+    name_operators = [fragment_operator(value) for value in names]
+    for candidate in itertools.permutations(locations):
+        pairs = {
+            (name_operators[index], fragment_operator(candidate[index]))
+            for index in range(3)
+        }
+        if len(pairs) == 3:
+            return list(candidate)
+    return None
 
 
 def eligible(context: dict[str, Any]) -> bool:
@@ -314,7 +446,12 @@ def select_feasible_targets(
     contexts: list[dict[str, Any]],
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
     selection_seed: str,
-) -> tuple[list[dict[str, Any]], dict[str, list[Any]], dict[str, list[Any]], dict[str, Any]]:
+) -> tuple[
+    list[dict[str, Any]],
+    dict[str, list[dict[str, Any]]],
+    dict[str, list[dict[str, Any]]],
+    dict[str, Any],
+]:
     candidates = []
     all_caps: dict[str, Any] = {}
     for context in contexts:
@@ -322,7 +459,7 @@ def select_feasible_targets(
             continue
         name_caps, location_caps = target_capabilities(context, grouped)
         if (
-            sum(bool(value) for value in name_caps.values()) < 3
+            sum(bool(value) for value in name_caps.values()) < 2
             or not any(location_caps.values())
         ):
             continue
@@ -387,42 +524,32 @@ def select_feasible_targets(
             feature_counts()[key] < minimum for key, minimum in requirements.items()
         ):
             continue
-        name_assignment = relation_assignment(
-            selected, NAME_QUOTAS,
-            {siret: value["name"] for siret, value in all_caps.items()},
-            distinct_per_target=True,
-        )
-        location_assignment = relation_assignment(
-            selected, LOCATION_QUOTAS,
-            {siret: value["location"] for siret, value in all_caps.items()},
+        target_values = {value["target_siret"]: baseline(value) for value in selected}
+        target_anchors = {
+            value["target_siret"]: distinctive_name_tokens(value) for value in selected
+        }
+        name_plan = assign_fragment_plan(
+            selected, NAME_QUOTAS, target_values, target_anchors, grouped,
             distinct_per_target=False,
         )
-        if name_assignment is not None and location_assignment is not None:
+        location_plan = assign_fragment_plan(
+            selected, LOCATION_QUOTAS, target_values, target_anchors, grouped,
+            distinct_per_target=False,
+        )
+        if name_plan is not None and location_plan is not None:
+            paired_locations = {
+                siret: pair_fragment_plans(name_plan[siret], location_plan[siret])
+                for siret in target_values
+            }
+            if any(value is None for value in paired_locations.values()):
+                continue
+            location_plan = {
+                siret: value for siret, value in paired_locations.items() if value is not None
+            }
             selected.sort(key=lambda value: hashlib.sha256(
                 f"{selection_seed}|final|{value['target_siret']}".encode()
             ).hexdigest())
-            target_values = {value["target_siret"]: baseline(value) for value in selected}
-            target_anchors = {
-                value["target_siret"]: distinctive_name_tokens(value) for value in selected
-            }
-            name_requests: list[tuple[str, int, str, str]] = []
-            location_requests: list[tuple[str, int, str, str]] = []
-            for value in selected:
-                siret = value["target_siret"]
-                for slot, relation in enumerate(sorted(name_assignment[siret])):
-                    name_requests.append((siret, slot, "name", relation))
-                for slot, (field, relation) in enumerate(sorted(location_assignment[siret], key=str)):
-                    location_requests.append((siret, slot, field, relation))
-            if (
-                assign_unique_fragments(
-                    name_requests, target_values, target_anchors, grouped
-                ) is None
-                or assign_unique_fragments(
-                    location_requests, target_values, target_anchors, grouped
-                ) is None
-            ):
-                continue
-            return selected, name_assignment, location_assignment, all_caps
+            return selected, name_plan, location_plan, all_caps
     raise ValueError("could not find a feasible balanced 30-target fragment pilot")
 
 
@@ -434,43 +561,26 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         if sha256(path) != plan["sources"][key]["sha256"]:
             raise ValueError(f"source hash mismatch: {key}")
     grouped = group_fragments(rows(fragment_path))
-    targets, name_assignment, location_assignment, _caps = select_feasible_targets(
+    targets, name_plan, location_plan, _caps = select_feasible_targets(
         rows(context_path), grouped, args.selection_seed
     )
     target_values = {value["target_siret"]: baseline(value) for value in targets}
     target_anchors = {value["target_siret"]: distinctive_name_tokens(value) for value in targets}
-    name_requests: list[tuple[str, int, str, str]] = []
-    location_requests: list[tuple[str, int, str, str]] = []
-    for target in targets:
-        siret = target["target_siret"]
-        name_relations = sorted(name_assignment[siret])
-        location_relations = sorted(location_assignment[siret], key=str)
-        for slot, relation in enumerate(name_relations):
-            name_requests.append((siret, slot, "name", relation))
-        for slot, (field, relation) in enumerate(location_relations):
-            location_requests.append((siret, slot, field, relation))
-    name_fragments = assign_unique_fragments(
-        name_requests, target_values, target_anchors, grouped
-    )
-    location_fragments = assign_unique_fragments(
-        location_requests, target_values, target_anchors, grouped
-    )
-    if name_fragments is None or location_fragments is None:
-        raise ValueError("relation-feasible targets lack a globally unique fragment matching")
-
     output = []
     used_refs: Counter[str] = Counter()
     for target in targets:
         siret = target["target_siret"]
-        name_relations = sorted(name_assignment[siret])
-        location_relations = sorted(location_assignment[siret], key=str)
+        name_fragments = name_plan[siret]
+        location_fragments = location_plan[siret]
         contracts = []
         for slot, variant_id in enumerate(("v1", "v2", "v3")):
-            location_field, location_relation = location_relations[slot]
-            name_fragment = name_fragments[(siret, slot, "name")]
+            name_fragment = name_fragments[slot]
+            location_fragment = location_fragments[slot]
+            location_field = location_fragment["field"]
+            location_relation = location_fragment["relation"]
             field_fragments = {
                 "name": name_fragment,
-                location_field: location_fragments[(siret, slot, location_field)],
+                location_field: location_fragment,
             }
             refs = {value["inspiration_ref"] for value in field_fragments.values()}
             if any(used_refs[ref] >= 3 for ref in refs):
@@ -478,7 +588,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             used_refs.update(refs)
             anchors = target_anchors[siret]
             protected_anchor: list[str] = []
-            if name_relations[slot] == "TOKEN_SUBSET":
+            if name_fragment["relation"] == "TOKEN_SUBSET":
                 retained = name_fragment["operation_parameters"]["retained_positions"]
                 retained_words = {
                     loop.normalized_words(target_values[siret]["name"])[index]
@@ -494,7 +604,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 "requested_family": loop.COMPOSITE_FAMILY,
                 "target_fields": ["name", location_field],
                 "field_relations": {
-                    "name": name_relations[slot], location_field: location_relation,
+                    "name": name_fragment["relation"], location_field: location_relation,
                 },
                 "field_inspirations": field_fragments,
                 "protected_target_tokens": {"name": protected_anchor},

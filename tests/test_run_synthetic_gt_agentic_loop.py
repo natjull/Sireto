@@ -139,9 +139,18 @@ def composite_response(task: dict) -> dict:
     return {
         "schema_version": loop.SCHEMA_VERSION,
         "task_id": task["task_id"], "run_id": task["run_id"], "batch_id": task["batch_id"],
-        "role": "GENERATOR", "prompt_version": loop.PROMPT_VERSIONS["GENERATOR"],
+        "role": "GENERATOR", "prompt_version": task["prompt_version"],
         "input_sha256": task["input_sha256"], "seed": task["input"]["seed"], "variants": variants,
     }
+
+
+def composite_variant_response(task: dict) -> dict:
+    response = composite_response(task)
+    target_variant_id = task["input"]["target_variant_id"]
+    response["variants"] = [
+        value for value in response["variants"] if value["variant_id"] == target_variant_id
+    ]
+    return response
 
 
 def init_run(tmp_path: Path, seeds: list[dict], run_id: str = "run-1", extra=None) -> tuple[Path, str]:
@@ -264,6 +273,144 @@ def test_composite_task_hides_raw_competitor_ids_and_passes_fail_closed_prefligh
         preflights = [json.loads(row[0]) for row in connection.execute("SELECT preflight_json FROM variants")]
     assert status == "PENDING_CRITIC"
     assert all(value["passed"] for value in preflights)
+
+
+def test_deterministic_proof_uses_canonical_hyphen_tokenization() -> None:
+    card = {
+        "name_options": ["GOPA-HAIDER CONFECTION"],
+        "address": "11 IMP LISE DE HARME",
+        "postcode": "95350",
+        "city": "SAINT-BRICE-SOUS-FORET",
+        "insee": "95539",
+        "composite_contracts": [{
+            "variant_id": "v1",
+            "requested_family": loop.COMPOSITE_FAMILY,
+            "target_fields": ["name"],
+            "field_relations": {"name": "TOKEN_ORDER"},
+            "field_inspirations": {"name": {
+                "operation_parameters": {
+                    "source_token_count": 3,
+                    "permutation": [1, 2, 0],
+                }
+            }},
+        }],
+    }
+    crm = {
+        "name": "HAIDER CONFECTION GOPA",
+        "address": "11 IMP LISE DE HARME",
+        "postcode": "95350",
+        "city": "SAINT-BRICE-SOUS-FORET",
+        "insee": "95539",
+    }
+    proof = loop.deterministic_variant_proof(
+        card, "v1", crm, {"passed": True, "errors": []}
+    )
+    assert proof["fields"]["name"]["source_tokens"] == [
+        "gopa", "haider", "confection",
+    ]
+    assert proof["fields"]["name"]["operator_match"] is True
+
+
+def test_per_variant_generator_retries_only_failed_slot_then_assembles_critic_input(tmp_path: Path):
+    db, run_id = init_run(
+        tmp_path,
+        [composite_seed()],
+        run_id="composite-per-variant",
+        extra=["--generator-task-mode", "per-variant", "--max-generator-attempts", "2"],
+    )
+
+    v1_task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
+    assert v1_task["input"]["target_variant_id"] == "v1"
+    assert [value["variant_id"] for value in v1_task["input"]["variant_contract"]] == ["v1"]
+    assert len(v1_task["input"]["seed_card"]["composite_contracts"]) == 1
+    v1_response = composite_variant_response(v1_task)
+    submit(tmp_path, db, "GENERATOR", "luna-g1", [v1_response])
+
+    v2_bad_task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")[0]
+    assert v2_bad_task["input"]["target_variant_id"] == "v2"
+    v2_bad_response = composite_variant_response(v2_bad_task)
+    v2_bad_response["variants"][0]["crm"]["name"] += " BIDON"
+    submit(tmp_path, db, "GENERATOR", "luna-g2", [v2_bad_response])
+
+    v2_retry_task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g3")[0]
+    assert v2_retry_task["input"]["target_variant_id"] == "v2"
+    assert any(
+        "NAME_NEW_ALPHANUMERIC_MATERIAL" in value
+        for value in v2_retry_task["input"]["retry_context"]["previous_preflight_errors"]
+    )
+    submit(tmp_path, db, "GENERATOR", "luna-g3", [composite_variant_response(v2_retry_task)])
+
+    v3_task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g4")[0]
+    assert v3_task["input"]["target_variant_id"] == "v3"
+    submit(tmp_path, db, "GENERATOR", "luna-g4", [composite_variant_response(v3_task)])
+
+    with sqlite3.connect(db) as connection:
+        connection.row_factory = sqlite3.Row
+        assert connection.execute("SELECT status FROM seeds").fetchone()[0] == "PENDING_CRITIC"
+        slots = connection.execute(
+            "SELECT variant_id, status, attempt, accepted_task_id FROM generator_slots ORDER BY variant_id"
+        ).fetchall()
+        assert [(row["variant_id"], row["status"], row["attempt"]) for row in slots] == [
+            ("v1", "PASSED", 1), ("v2", "PASSED", 2), ("v3", "PASSED", 1)
+        ]
+        assert all(row["accepted_task_id"] for row in slots)
+        generator_tasks = connection.execute(
+            "SELECT variant_id, raw_response, response_sha256 FROM tasks WHERE role='GENERATOR' ORDER BY created_at, task_id"
+        ).fetchall()
+        assert len(generator_tasks) == 4
+        assert all(
+            row["response_sha256"] == loop.hashlib.sha256(row["raw_response"].encode("utf-8")).hexdigest()
+            for row in generator_tasks
+        )
+
+    critic_task = lease(tmp_path, db, run_id, "CRITIC", "luna-c1")[0]
+    assert [value["variant_id"] for value in critic_task["input"]["variants"]] == ["v1", "v2", "v3"]
+    for value in critic_task["input"]["variants"]:
+        proof = value["deterministic_proof"]
+        assert proof["preflight_passed"] is True
+        assert proof["canonical_tokenizer"] == "normalized_words_v1_hyphen_is_separator"
+        assert proof["proof_sha256"]
+        assert proof["fields"]
+        assert all(field["operator_match"] for field in proof["fields"].values())
+
+
+def test_per_variant_mode_rejects_seed_without_exact_variant_contracts(tmp_path: Path):
+    with pytest.raises(ValueError, match="requires exact v1/v2/v3 contracts"):
+        init_run(
+            tmp_path,
+            [seed()],
+            run_id="per-variant-without-contract",
+            extra=["--generator-task-mode", "per-variant"],
+        )
+
+
+def test_per_variant_exhaustion_never_sends_partial_seed_to_critic(tmp_path: Path):
+    db, run_id = init_run(
+        tmp_path,
+        [composite_seed()],
+        run_id="composite-exhausted",
+        extra=["--generator-task-mode", "per-variant", "--max-generator-attempts", "1"],
+    )
+    for expected in ("v1", "v2", "v3"):
+        task = lease(tmp_path, db, run_id, "GENERATOR", f"luna-{expected}")[0]
+        assert task["input"]["target_variant_id"] == expected
+        response = composite_variant_response(task)
+        if expected == "v1":
+            response["variants"][0]["crm"]["name"] += " BIDON"
+        submit(tmp_path, db, "GENERATOR", f"luna-{expected}", [response])
+
+    assert lease(tmp_path, db, run_id, "CRITIC", "luna-c1") == []
+    loop.main(["--db", str(db), "supervise", "--run-id", run_id])
+    with sqlite3.connect(db) as connection:
+        assert connection.execute("SELECT status FROM seeds").fetchone()[0] == "COMPLETED"
+        decisions = connection.execute(
+            "SELECT variant_id, final_decision, final_reason FROM variants ORDER BY variant_id"
+        ).fetchall()
+    assert decisions == [
+        ("v1", "REJECT", "SEED_GENERATION_INCOMPLETE"),
+        ("v2", "REJECT", "SEED_GENERATION_INCOMPLETE"),
+        ("v3", "REJECT", "SEED_GENERATION_INCOMPLETE"),
+    ]
 
 
 def test_composite_preflight_rejects_case_only_added_tokens_and_marks(tmp_path: Path):

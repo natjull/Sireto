@@ -78,8 +78,8 @@
           "properties": {
             "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
             "role": {"const": "GENERATOR"},
-            "prompt_version": {"const": "sireto-gt-generator-v7"},
-            "variants": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/variant"}}
+            "prompt_version": {"enum": ["sireto-gt-generator-v7", "sireto-gt-generator-variant-v1"]},
+            "variants": {"type": "array", "minItems": 1, "maxItems": 3, "items": {"$ref": "#/$defs/variant"}}
           }
         }
       ]
