@@ -661,6 +661,10 @@ def comparison_fingerprint(crm: dict[str, str]) -> str:
     return "".join(character for character in joined if character.isalnum())
 
 
+def surface_fingerprint(crm: dict[str, str]) -> str:
+    return "\x1f".join(normalized_surface(crm[field]) for field in CRM_FIELDS)
+
+
 def normalized_words(value: Any) -> list[str]:
     decomposed = unicodedata.normalize("NFKD", str(value or "").casefold())
     plain = "".join(character for character in decomposed if not unicodedata.combining(character))
@@ -681,6 +685,16 @@ def punctuation_marks(value: Any) -> set[str]:
 
 def has_diacritic(value: Any) -> bool:
     return any(unicodedata.combining(character) for character in unicodedata.normalize("NFD", str(value or "")))
+
+
+def diacritic_profile(value: Any) -> list[frozenset[str]]:
+    profile: list[frozenset[str]] = []
+    for character in str(value or ""):
+        decomposed = unicodedata.normalize("NFD", character)
+        bases = [item for item in decomposed if item.isalnum()]
+        marks = frozenset(item for item in decomposed if unicodedata.combining(item))
+        profile.extend(marks for _base in bases)
+    return profile
 
 
 def edit_distance(left: str, right: str) -> int:
@@ -833,7 +847,25 @@ def family_change_errors(
             errors.append("ACCENT_PUNCTUATION_CASE_ONLY")
         if not has_diacritic(source) and not punctuation_marks(source):
             errors.append("SOURCE_HAS_NO_ACCENT_OR_PUNCTUATION")
-        if punctuation_marks(target) - punctuation_marks(source):
+        source_punctuation = Counter(
+            character for character in str(source or "") if character in PUNCTUATION
+        )
+        target_punctuation = Counter(
+            character for character in str(target or "") if character in PUNCTUATION
+        )
+        source_diacritics = diacritic_profile(source)
+        target_diacritics = diacritic_profile(target)
+        added_diacritic = (
+            len(source_diacritics) != len(target_diacritics)
+            or any(
+                not target_marks.issubset(source_marks)
+                for source_marks, target_marks in zip(source_diacritics, target_diacritics)
+            )
+        )
+        if any(
+            target_punctuation[mark] > source_punctuation[mark]
+            for mark in target_punctuation
+        ) or added_diacritic:
             errors.append("ACCENT_PUNCTUATION_ADDED_GRATUITOUS_MARK")
     elif family == "ADDRESS_ABBREVIATION":
         if expanded_street_words(source) != expanded_street_words(target):
@@ -873,10 +905,10 @@ def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str
             errors.append(f"{variant['variant_id']}:NO_NAME_OR_ADDRESS")
         if leaked_identifier(crm, seed["target_siret"], seed["target_siren"]):
             errors.append(f"{variant['variant_id']}:IDENTIFIER_LEAK")
-        fingerprint = comparison_fingerprint(crm)
-        if not fingerprint:
+        comparison = comparison_fingerprint(crm)
+        if not comparison:
             errors.append(f"{variant['variant_id']}:EMPTY_FINGERPRINT")
-        fingerprints.append(fingerprint)
+        fingerprints.append(surface_fingerprint(crm))
         if contract:
             observed = variant["corruption_families_observed"]
             if observed != [contract["requested_family"]]:

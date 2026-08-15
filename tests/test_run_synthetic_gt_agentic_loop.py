@@ -302,12 +302,22 @@ def test_family_semantic_checks_reject_false_claims_and_accept_real_changes():
     ) == ["NOT_AN_OFFICIAL_ALTERNATE_NAME"]
     assert loop.family_change_errors("OCR_LIMITED", "SOCIETE", "S0CIETE", card) == []
     assert loop.family_change_errors("ACCENT_PUNCTUATION", "L'ÉTOILE", "L ETOILE", card) == []
+    assert "ACCENT_PUNCTUATION_ADDED_GRATUITOUS_MARK" in loop.family_change_errors(
+        "ACCENT_PUNCTUATION", "ETOILE-BLEUE", "ÉTOILE BLEUE", card
+    )
     assert loop.family_change_errors(
         "ADDRESS_ABBREVIATION", "12 RUE DES LILAS", "12 R DES LILAS", card
     ) == []
     assert loop.family_change_errors(
         "ENSEIGNE_VS_DENOMINATION", "SOCIETE DES FLEURS", "FLEURS DE PARIS", card
     ) == []
+    dotted = {
+        "name": "G.D. FERMETURES", "address": "1 RUE A", "postcode": "57000",
+        "city": "METZ", "insee": "57463",
+    }
+    compact = dict(dotted, name="GD FERMETURES")
+    assert loop.comparison_fingerprint(dotted) == loop.comparison_fingerprint(compact)
+    assert loop.surface_fingerprint(dotted) != loop.surface_fingerprint(compact)
 
 
 def test_source_family_feasibility_rejects_fake_abbreviation_and_generic_hyphen():
