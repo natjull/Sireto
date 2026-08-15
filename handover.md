@@ -93,6 +93,15 @@ GENERATOR bornée. Le taux de variantes acceptées reste 25 % et le gate de
 trois variantes acceptées par seed n'est franchi que pour 1 seed ; verdict
 `PIVOT_PILOT`, sans extension ni hard negatives promus.
 
+Un micro-pilote v4 a testé une consigne renforcée d'empreintes structurelles
+distinctes sur une seule seed. Luna LOW a encore produit une variante au
+`name` vide ; le schéma a rejeté la réponse avant tout preflight et la tâche a
+été clôturée `ABANDONED` avec raison
+`GENERATOR_SCHEMA_INVALID_EMPTY_NAME_AFTER_DIVERSITY_RETRY`. Ce résultat
+confirme le `PIVOT_PILOT` : aucune génération massive ni multiplication
+artificielle de variantes n'est autorisée tant que le débit de sorties valides
+et distinctes n'est pas démontré.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
