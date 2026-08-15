@@ -10,6 +10,13 @@ couverture identifiable d'au moins 80,0 %.
 
 Contrat détaillé : `docs/retrieval_selective_recall100_contract.md`.
 
+Politique métier complémentaire active :
+`docs/siret_operational_equivalence_policy.md`. Elle considère comme correcte
+pour l'usage CRM une prédiction d'un autre SIRET du même SIREN au même site
+physique, et préfère le candidat actif lorsque la vérité exacte est fermée.
+Elle ne remplace pas les métriques ni les gates SIRET exacts : les vues exacte
+et opérationnelle doivent toujours être publiées séparément.
+
 Ordre obligatoire :
 
 1. qualifier V2/V3 sans utiliser les résultats du retrieval ;
