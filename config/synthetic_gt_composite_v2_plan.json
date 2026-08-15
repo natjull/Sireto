@@ -1,0 +1,60 @@
+{
+  "schema_version": "sireto-synthetic-gt-composite-plan-2",
+  "objective": {
+    "accepted_pair_target": 20000,
+    "maximum_distinct_sirene_targets": 8000,
+    "pairs_per_target": 3,
+    "counting_unit": "accepted_official_to_llm_written_crm_pair",
+    "legacy_v1_counts_toward_target": false
+  },
+  "sources": {
+    "official_context": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v2b.jsonl",
+      "sha256": "373d70fd84324aaaca06a7c818f2556ae86d8851dac0b6f18f1905bd6ef131e2"
+    },
+    "train_inspiration_bank": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_compound_inspiration_bank_v2.jsonl",
+      "sha256": "f6fe81aee20a31beb8a58ed1cdeebbc96b9886d346142d5b4ddf9e0e0152c7c4"
+    }
+  },
+  "generation": {
+    "writer": "gpt-5.6-luna",
+    "reasoning_effort": "low",
+    "direct_llm_text_generation_required": true,
+    "mechanical_or_random_text_generation_forbidden": true,
+    "family": "OBSERVED_COMPOSITE_ANALOGY",
+    "variant_changed_fields": {
+      "v1": ["name", "address"],
+      "v2": ["name", "city"],
+      "v3": ["name", "address", "city"]
+    }
+  },
+  "gates": {
+    "pilot_targets": 30,
+    "pilot_pairs": 90,
+    "second_stage_targets": 150,
+    "production_epoch_accepted_pairs": 500,
+    "all_three_variants_required_per_target": true,
+    "critic": "independent_all_variants",
+    "adjudicator": "disagreements_only_never_overrides_deterministic_reject",
+    "exact_and_operational_metrics_separate": true,
+    "protected_folds": [0, 1, "test"],
+    "family_global_cap": 0.2,
+    "exact_structural_signature_global_cap": 0.02,
+    "exact_composite_signature_global_cap": 0.01,
+    "minimum_new_signature_rate_per_epoch": 0.2,
+    "minimum_unique_exact_trace_rate": 0.95
+  },
+  "pilot_strata": {
+    "active_targets": 15,
+    "closed_targets": 15,
+    "minimum_multi_site_siren": 12,
+    "minimum_multi_active_siren": 4,
+    "selection": "sha256_order_not_lexical",
+    "unique_inspiration_per_variant": true
+  },
+  "quarantine": {
+    "production_v1": "scientific_pause_single_field_repetitive_not_counted",
+    "automatic_migration": false
+  }
+}

@@ -29,8 +29,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
-    "GENERATOR": "sireto-gt-generator-v4",
-    "CRITIC": "sireto-gt-critic-v4",
+    "GENERATOR": "sireto-gt-generator-v5",
+    "CRITIC": "sireto-gt-critic-v5",
     "ADJUDICATOR": "sireto-gt-adjudicator-v2",
 }
 PENDING_BY_ROLE = {
@@ -74,6 +74,7 @@ STREET_TYPE_ABBREVIATIONS = {
     "ALL": "ALLEE", "QU": "QUAI", "RES": "RESIDENCE",
 }
 PUNCTUATION = set("'’.-,()/&")
+COMPOSITE_FAMILY = "OBSERVED_COMPOSITE_ANALOGY"
 
 
 def canonical_json(value: Any) -> str:
@@ -333,6 +334,9 @@ def validate_seed(seed: dict[str, Any]) -> dict[str, Any]:
     validate_profile_evidence(
         seed["seed_id"], seed["seed_card"], seed["observed_train_profile"]
     )
+    validate_composite_contracts(
+        seed["seed_id"], seed["seed_card"], seed["observed_train_profile"]
+    )
     return seed
 
 
@@ -413,6 +417,56 @@ def validate_profile_evidence(
                 f"source does not support family {family} in dimension {dimension} "
                 f"for seed {seed_id}"
             )
+
+
+def validate_composite_contracts(
+    seed_id: str,
+    seed_card: dict[str, Any],
+    profile: dict[str, Any],
+) -> None:
+    contracts = seed_card.get("composite_contracts")
+    if contracts is None:
+        return
+    if seed_card.get("generation_mode") != "OBSERVED_COMPOSITE_ANALOGY_V2":
+        raise ValueError(f"unsupported composite generation mode for seed {seed_id}")
+    if not isinstance(contracts, list) or len(contracts) != 3:
+        raise ValueError(f"composite contracts must contain exactly three variants for seed {seed_id}")
+    expected = {
+        "v1": {"name", "address"},
+        "v2": {"name", "city"},
+        "v3": {"name", "address", "city"},
+    }
+    refs: list[str] = []
+    for contract in contracts:
+        variant_id = contract.get("variant_id")
+        fields = set(contract.get("target_fields", []))
+        if variant_id not in expected or fields != expected[variant_id]:
+            raise ValueError(f"invalid composite field mask for seed {seed_id}: {variant_id}")
+        if contract.get("requested_family") != COMPOSITE_FAMILY:
+            raise ValueError(f"invalid composite family for seed {seed_id}: {variant_id}")
+        ref = str(contract.get("inspiration_ref", ""))
+        inspiration = contract.get("inspiration")
+        if not re.fullmatch(r"[0-9a-f]{64}", ref) or not isinstance(inspiration, dict):
+            raise ValueError(f"invalid composite inspiration for seed {seed_id}: {variant_id}")
+        if inspiration.get("inspiration_ref") != ref:
+            raise ValueError(f"composite inspiration ref mismatch for seed {seed_id}: {variant_id}")
+        if set(inspiration.get("structural_signature", {}).get("changed_fields", [])) != fields:
+            raise ValueError(f"composite inspiration mask mismatch for seed {seed_id}: {variant_id}")
+        if inspiration.get("source_fold") not in {2, 3, 4}:
+            raise ValueError(f"protected inspiration fold for seed {seed_id}: {variant_id}")
+        refs.append(ref)
+    if len(set(refs)) != 3:
+        raise ValueError(f"composite inspirations must be unique within seed {seed_id}")
+    if profile.get("rows", 0) <= 0 or COMPOSITE_FAMILY not in profile.get("supported_families", []):
+        raise ValueError(f"composite profile evidence missing for seed {seed_id}")
+    qualification = seed_card.get("qualification", {})
+    if not qualification.get("pre_generation_exact_eligible"):
+        raise ValueError(f"composite seed is not pre-generation exact eligible: {seed_id}")
+    if not all(
+        qualification.get(key)
+        for key in ("siblings_complete", "same_address_complete", "same_name_geography_complete")
+    ):
+        raise ValueError(f"composite official context is incomplete: {seed_id}")
 
 
 def command_init(args: argparse.Namespace) -> None:
@@ -509,7 +563,7 @@ def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row)
     ).fetchall()
     return {
         "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
-        "seed_card": seed_card,
+        "seed_card": llm_seed_card(seed_card),
         "baseline_crm": official_baseline(seed_card),
         "variant_contract": variant_contract(seed_card),
         "variants": [
@@ -527,7 +581,7 @@ def adjudicator_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3
     ).fetchall()
     return {
         "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
-        "seed_card": seed_card,
+        "seed_card": llm_seed_card(seed_card),
         "baseline_crm": official_baseline(seed_card),
         "variant_contract": variant_contract(seed_card),
         "variants": [
@@ -557,11 +611,11 @@ def make_task(
         role_input = {
             "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
             "source_kind": seed["source_kind"],
-            "seed_card": seed_card,
+            "seed_card": llm_seed_card(seed_card),
             "observed_train_profile": json.loads(seed["profile_json"]),
             "risk_flags": json.loads(seed["risk_flags_json"]),
         }
-        if requested:
+        if requested or seed_card.get("composite_contracts") is not None:
             role_input["baseline_crm"] = official_baseline(seed_card)
             role_input["variant_contract"] = variant_contract(seed_card)
         if int(seed["attempt"]) > 0:
@@ -730,6 +784,15 @@ def official_baseline(seed_card: dict[str, Any]) -> dict[str, str]:
     }
 
 
+def llm_seed_card(seed_card: dict[str, Any]) -> dict[str, Any]:
+    """Return the bounded public card, excluding raw competitor identities."""
+    return {
+        key: value
+        for key, value in seed_card.items()
+        if key != "internal_context"
+    }
+
+
 def orthographic_target_field(seed_card: dict[str, Any], family: str) -> str:
     baseline = official_baseline(seed_card)
     if family == "ACCENT_PUNCTUATION":
@@ -744,6 +807,9 @@ def orthographic_target_field(seed_card: dict[str, Any], family: str) -> str:
 
 
 def variant_contract(seed_card: dict[str, Any]) -> list[dict[str, Any]]:
+    composite = seed_card.get("composite_contracts")
+    if composite is not None:
+        return composite
     requested = seed_card.get("requested_families")
     if not requested:
         return []
@@ -941,6 +1007,109 @@ def leaked_identifier(crm: dict[str, str], siret: str, siren: str) -> bool:
     return bool(re.search(r"(?<![0-9])(?:[0-9]{14}|[0-9]{9})(?![0-9])", joined))
 
 
+def added_marks(source: str, target: str) -> bool:
+    source_punctuation = Counter(character for character in source if character in PUNCTUATION)
+    target_punctuation = Counter(character for character in target if character in PUNCTUATION)
+    if target_punctuation - source_punctuation:
+        return True
+    source_combining = Counter(
+        character
+        for character in unicodedata.normalize("NFD", source)
+        if unicodedata.combining(character)
+    )
+    target_combining = Counter(
+        character
+        for character in unicodedata.normalize("NFD", target)
+        if unicodedata.combining(character)
+    )
+    return bool(target_combining - source_combining)
+
+
+def composite_change_errors(
+    baseline: dict[str, str],
+    crm: dict[str, str],
+    contract: dict[str, Any],
+    seed_card: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    target_fields = set(contract["target_fields"])
+    if "name" not in target_fields or not ({"address", "city"} & target_fields):
+        errors.append("COMPOSITE_REQUIRES_NAME_AND_LOCATION")
+    for field in CRM_FIELDS:
+        source = baseline[field]
+        target = crm[field].strip()
+        if field not in target_fields:
+            if target != source:
+                errors.append(f"{field.upper()}_CHANGED_OUTSIDE_CONTRACT")
+            continue
+        if normalized_surface(source) == normalized_surface(target):
+            errors.append(f"{field.upper()}_TARGET_UNCHANGED_OR_CASE_ONLY")
+            continue
+        if not target:
+            errors.append(f"{field.upper()}_MISSING_FORBIDDEN")
+            continue
+        if added_marks(source, target):
+            errors.append(f"{field.upper()}_ADDED_MARK_FORBIDDEN")
+        if field == "name":
+            if Counter(normalized_words(target)) - Counter(normalized_words(source)):
+                errors.append("NAME_NEW_LEXICAL_TOKEN")
+        elif field == "address":
+            if Counter(expanded_street_words(target)) - Counter(expanded_street_words(source)):
+                errors.append("ADDRESS_NEW_LEXICAL_TOKEN")
+            source_digits = re.findall(r"[0-9]+", source)
+            target_digits = re.findall(r"[0-9]+", target)
+            if source_digits != target_digits:
+                errors.append("ADDRESS_NUMBER_CHANGED")
+            house_number = normalized_alnum(seed_card.get("street_number", ""))
+            if house_number and house_number not in normalized_words(target):
+                errors.append("HOUSE_NUMBER_NOT_PRESERVED")
+        elif field == "city":
+            if normalized_alnum(source) != normalized_alnum(target):
+                errors.append("CITY_ALPHANUMERICS_CHANGED")
+    return errors
+
+
+def candidate_address(candidate: dict[str, Any]) -> str:
+    return " ".join(
+        str(candidate.get(key) or "").strip()
+        for key in ("number", "repetition_index", "street_type", "street")
+        if str(candidate.get(key) or "").strip()
+    )
+
+
+def known_context_ambiguities(crm: dict[str, str], seed_card: dict[str, Any]) -> list[str]:
+    """Fail on a known official competitor compatible with all retained anchors.
+
+    The context builder guarantees exhaustive siblings and exact address/name
+    collisions at the official baseline.  This check applies the composite
+    subset invariances to those full internal rows.  The critic separately
+    judges semantic ambiguity; this function never uses retrieval/model scores.
+    """
+    crm_name = Counter(normalized_words(crm["name"]))
+    crm_address = Counter(expanded_street_words(crm["address"]))
+    result: list[str] = []
+    for candidate in seed_card.get("internal_context", []):
+        if crm["postcode"] and normalized_alnum(crm["postcode"]) != normalized_alnum(candidate.get("postcode")):
+            continue
+        if crm["insee"] and normalized_alnum(crm["insee"]) != normalized_alnum(candidate.get("insee")):
+            continue
+        if crm["city"] and normalized_alnum(crm["city"]) != normalized_alnum(candidate.get("city")):
+            continue
+        candidate_address_words = Counter(expanded_street_words(candidate_address(candidate)))
+        if crm_address - candidate_address_words:
+            continue
+        names = [
+            str(candidate.get(key) or "")
+            for key in ("usual_name", "enseigne1", "enseigne2", "enseigne3")
+            if str(candidate.get(key) or "").strip()
+        ]
+        if not names or not any(not (crm_name - Counter(normalized_words(name))) for name in names):
+            continue
+        ref = str(candidate.get("record_sha256") or "UNKNOWN")[:16]
+        result.append(ref)
+    return sorted(set(result))
+
+
 def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str, Any]:
     errors: list[str] = []
     fingerprints: list[str] = []
@@ -968,15 +1137,21 @@ def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str
             observed = variant["corruption_families_observed"]
             if observed != [contract["requested_family"]]:
                 errors.append(f"{variant['variant_id']}:DECLARED_FAMILY_MISMATCH")
-            target_fields = set(contract["target_fields"])
-            for field in CRM_FIELDS:
-                if field not in target_fields and crm[field].strip() != baseline[field]:
-                    errors.append(f"{variant['variant_id']}:{field.upper()}_CHANGED_OUTSIDE_CONTRACT")
-            for field in target_fields:
-                for reason in family_change_errors(
-                    contract["requested_family"], baseline[field], crm[field], seed_card
-                ):
+            if contract["requested_family"] == COMPOSITE_FAMILY:
+                for reason in composite_change_errors(baseline, crm, contract, seed_card):
                     errors.append(f"{variant['variant_id']}:{reason}")
+                for competitor_ref in known_context_ambiguities(crm, seed_card):
+                    errors.append(f"{variant['variant_id']}:KNOWN_CONTEXT_AMBIGUOUS:{competitor_ref}")
+            else:
+                target_fields = set(contract["target_fields"])
+                for field in CRM_FIELDS:
+                    if field not in target_fields and crm[field].strip() != baseline[field]:
+                        errors.append(f"{variant['variant_id']}:{field.upper()}_CHANGED_OUTSIDE_CONTRACT")
+                for field in target_fields:
+                    for reason in family_change_errors(
+                        contract["requested_family"], baseline[field], crm[field], seed_card
+                    ):
+                        errors.append(f"{variant['variant_id']}:{reason}")
     if len(set(fingerprints)) != len(fingerprints):
         errors.append("DUPLICATE_OR_COSMETIC_VARIANTS")
     return {"passed": not errors, "errors": sorted(set(errors)), "checked_fields": list(CRM_FIELDS)}

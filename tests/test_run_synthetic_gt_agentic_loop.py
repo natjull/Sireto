@@ -35,6 +35,100 @@ def seed(seed_id: str = "seed-1", siret: str = "12345678900012", risk_flags=None
     }
 
 
+def composite_seed() -> dict:
+    value = seed()
+    baseline = {
+        "name": "MAISON RETRAITE DES FLEURS",
+        "address": "12 RUE DES LILAS",
+        "postcode": "75001",
+        "city": "SAINT-DENIS",
+        "insee": "93066",
+    }
+    inspirations = []
+    masks = {
+        "v1": ["name", "address"],
+        "v2": ["name", "city"],
+        "v3": ["name", "address", "city"],
+    }
+    for index, (variant_id, fields) in enumerate(masks.items(), 1):
+        ref = f"{index:064x}"
+        inspiration = {
+            "inspiration_ref": ref,
+            "source_fold": 2,
+            "structural_signature": {"changed_fields": fields, "missing_fields": []},
+            "official": baseline,
+            "observed_crm": baseline,
+        }
+        inspirations.append({
+            "variant_id": variant_id,
+            "requested_family": loop.COMPOSITE_FAMILY,
+            "target_fields": fields,
+            "inspiration_ref": ref,
+            "inspiration": inspiration,
+        })
+    value.update({"source_kind": "SIRENE_ONLY_TRAIN", "oof_fold": -1})
+    value["seed_card"] = {
+        "generation_mode": "OBSERVED_COMPOSITE_ANALOGY_V2",
+        "name_options": [baseline["name"]],
+        "enseigne_options": [],
+        "address": baseline["address"],
+        "postcode": baseline["postcode"],
+        "city": baseline["city"],
+        "insee": baseline["insee"],
+        "street_number": "12",
+        "street_type": "RUE",
+        "composite_contracts": inspirations,
+        "official_context": {"target": {}, "official_context": []},
+        "internal_context": [{
+            "siret": "99999999900019", "siren": "999999999", "record_sha256": "a" * 64,
+            "usual_name": "AUTRE ENTREPRISE", "enseigne1": "", "enseigne2": "", "enseigne3": "",
+            "number": "99", "repetition_index": "", "street_type": "RUE", "street": "AILLEURS",
+            "postcode": "75001", "city": "SAINT-DENIS", "insee": "93066",
+        }],
+        "qualification": {
+            "pre_generation_exact_eligible": True,
+            "siblings_complete": True,
+            "same_address_complete": True,
+            "same_name_geography_complete": True,
+        },
+    }
+    value["observed_train_profile"] = {
+        "rows": 299,
+        "supported_families": [loop.COMPOSITE_FAMILY],
+        "source_sha256": "b" * 64,
+    }
+    return value
+
+
+def composite_response(task: dict) -> dict:
+    variants = [
+        {
+            "variant_id": "v1",
+            "crm": {"name": "MAISON DES FLEURS", "address": "12 R DES LILAS", "postcode": "75001", "city": "SAINT-DENIS", "insee": "93066"},
+            "corruption_families_observed": [loop.COMPOSITE_FAMILY],
+            "transformation_summary": "Nom raccourci et type de voie abrégé par analogie train.",
+        },
+        {
+            "variant_id": "v2",
+            "crm": {"name": "RETRAITE DES FLEURS MAISON", "address": "12 RUE DES LILAS", "postcode": "75001", "city": "SAINT DENIS", "insee": "93066"},
+            "corruption_families_observed": [loop.COMPOSITE_FAMILY],
+            "transformation_summary": "Ordre du nom et séparateur communal dégradés.",
+        },
+        {
+            "variant_id": "v3",
+            "crm": {"name": "FLEURS MAISON RETRAITE", "address": "12 R DES LILAS", "postcode": "75001", "city": "SAINT DENIS", "insee": "93066"},
+            "corruption_families_observed": [loop.COMPOSITE_FAMILY],
+            "transformation_summary": "Dégradation composite des trois champs.",
+        },
+    ]
+    return {
+        "schema_version": loop.SCHEMA_VERSION,
+        "task_id": task["task_id"], "run_id": task["run_id"], "batch_id": task["batch_id"],
+        "role": "GENERATOR", "prompt_version": loop.PROMPT_VERSIONS["GENERATOR"],
+        "input_sha256": task["input_sha256"], "seed": task["input"]["seed"], "variants": variants,
+    }
+
+
 def init_run(tmp_path: Path, seeds: list[dict], run_id: str = "run-1", extra=None) -> tuple[Path, str]:
     db = tmp_path / "agentic.sqlite"
     seed_path = tmp_path / f"{run_id}-seeds.jsonl"
@@ -140,6 +234,38 @@ def test_full_generator_critic_supervisor_cycle_preserves_agent_text(tmp_path: P
     assert accepted[0]["generator_response_sha256"] == loop.hashlib.sha256(
         loop.canonical_json(response).encode("utf-8")
     ).hexdigest()
+
+
+def test_composite_task_hides_raw_competitor_ids_and_passes_fail_closed_preflight(tmp_path: Path):
+    db, run_id = init_run(tmp_path, [composite_seed()], run_id="composite")
+    task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
+    encoded = loop.canonical_json(task)
+    assert "99999999900019" not in encoded
+    assert "internal_context" not in task["input"]["seed_card"]
+    assert len(task["input"]["variant_contract"]) == 3
+    submit(tmp_path, db, "GENERATOR", "luna-g1", [composite_response(task)])
+    with sqlite3.connect(db) as connection:
+        status = connection.execute("SELECT status FROM seeds").fetchone()[0]
+        preflights = [json.loads(row[0]) for row in connection.execute("SELECT preflight_json FROM variants")]
+    assert status == "PENDING_CRITIC"
+    assert all(value["passed"] for value in preflights)
+
+
+def test_composite_preflight_rejects_case_only_added_tokens_and_marks(tmp_path: Path):
+    db, run_id = init_run(tmp_path, [composite_seed()], run_id="composite-bad")
+    task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
+    response = composite_response(task)
+    response["variants"][0]["crm"]["name"] = "maison retraite des fleurs"
+    response["variants"][1]["crm"]["name"] = "MAISON RETRAITE DES FLEURS BIDON"
+    response["variants"][2]["crm"]["city"] = "SAINT.DENIS"
+    submit(tmp_path, db, "GENERATOR", "luna-g1", [response])
+    with sqlite3.connect(db) as connection:
+        status = connection.execute("SELECT status FROM seeds").fetchone()[0]
+        errors = json.loads(connection.execute("SELECT preflight_json FROM variants LIMIT 1").fetchone()[0])["errors"]
+    assert status == "PENDING_GENERATOR"
+    assert any("TARGET_UNCHANGED_OR_CASE_ONLY" in error for error in errors)
+    assert any("NAME_NEW_LEXICAL_TOKEN" in error for error in errors)
+    assert any("CITY_ADDED_MARK_FORBIDDEN" in error for error in errors)
 
 
 def test_identifier_leak_is_rejected_without_rewriting_and_released_for_retry(tmp_path: Path):

@@ -51,7 +51,7 @@
           "type": "array",
           "minItems": 1,
           "uniqueItems": true,
-          "items": {"enum": ["LEGAL_FORM", "ACRONYM_TOKENIZATION", "ACCENT_PUNCTUATION", "OCR_LIMITED", "TOKEN_ORDER", "FIELD_MISSING", "ADDRESS_ABBREVIATION", "ADDRESS_TOKEN_ORDER", "ADDRESS_OCR", "COMMUNE_VARIANT", "ENSEIGNE_VS_DENOMINATION", "HISTORICAL_OFFICIAL", "MAPS_OBSERVED"]}
+          "items": {"enum": ["LEGAL_FORM", "ACRONYM_TOKENIZATION", "ACCENT_PUNCTUATION", "OCR_LIMITED", "TOKEN_ORDER", "FIELD_MISSING", "ADDRESS_ABBREVIATION", "ADDRESS_TOKEN_ORDER", "ADDRESS_OCR", "COMMUNE_VARIANT", "ENSEIGNE_VS_DENOMINATION", "HISTORICAL_OFFICIAL", "MAPS_OBSERVED", "OBSERVED_COMPOSITE_ANALOGY"]}
         },
         "transformation_summary": {"type": "string", "minLength": 1, "maxLength": 500}
       }
@@ -78,7 +78,7 @@
           "properties": {
             "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
             "role": {"const": "GENERATOR"},
-            "prompt_version": {"const": "sireto-gt-generator-v4"},
+            "prompt_version": {"const": "sireto-gt-generator-v5"},
             "variants": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/variant"}}
           }
         }
@@ -94,7 +94,7 @@
           "properties": {
             "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
             "role": {"const": "CRITIC"},
-            "prompt_version": {"const": "sireto-gt-critic-v4"},
+            "prompt_version": {"const": "sireto-gt-critic-v5"},
             "independent": {"const": true},
             "generator_rationale_seen": {"const": false},
             "decisions": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/decision"}}

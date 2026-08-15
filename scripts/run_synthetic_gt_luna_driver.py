@@ -37,6 +37,18 @@ directly from the official task. Obey baseline_crm and variant_contract exactly:
 target_fields, copy every other field byte-for-byte, declare only requested_family, and make the
 requested change genuinely visible. The three complete CRM fingerprints must be different.
 
+When generation_mode is OBSERVED_COMPOSITE_ANALOGY_V2, each contract contains one existing real
+train official->observed_crm pair. Study that pair as an analogy for the kind, intensity, and
+interaction of human CRM degradation, then YOU must directly write a new CRM variant for the
+target establishment. Do not copy business, street, city, or numeric tokens from the inspiration.
+Change every target_field non-trivially (case-only is not a change), including name plus address
+or city. Use only lexical and numeric material already present in the target official field; an
+official street type may use its listed canonical abbreviation. You may delete, reorder, join, or
+normalize target material where the inspiration supports that style. Never add punctuation or a
+diacritic absent from the corresponding target official field. Preserve the house number, postal
+code, INSEE code, and every non-target field byte-for-byte. The code will reject rather than repair
+any violation. Declare only OBSERVED_COMPOSITE_ANALOGY.
+
 Apply the requested family literally:
 - ACRONYM_TOKENIZATION: join or split existing punctuation-delimited short tokens while preserving
   every alphanumeric character in the same order. Example: G.D. FERMETURES -> GD FERMETURES, not
@@ -67,6 +79,15 @@ baseline_crm, seed_card, and variant_contract. The requested corruption is inten
 official alternate value: never reject merely because the corrupted CRM text is absent from
 name_options or official fields. Judge whether it realizes the exact requested family while
 preserving identity and all non-target fields.
+
+For OBSERVED_COMPOSITE_ANALOGY, independently compare the target official->generated CRM delta
+with the contract's real train inspiration. ACCEPT only if all requested fields genuinely change,
+the combined name+location degradation is plausible as one human CRM record, no inspiration
+entity token was copied, the target establishment remains the best exact interpretation in the
+bounded official_context, and the result is not merely capitalization. Distinguish exact SIRET
+identifiability from operational same-SIREN/same-site equivalence in reason_codes. A closed target
+with an active same-site sibling may be OPERATIONAL_ONLY but is not exact. Never see or infer the
+generator rationale and never repair text.
 
 Apply these decision rules literally:
 - ACRONYM_TOKENIZATION is valid when punctuation-delimited tokens are joined/split, the normalized
