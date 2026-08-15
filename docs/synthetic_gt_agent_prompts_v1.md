@@ -52,6 +52,14 @@ normalisation légère : une variante inchangée ou quasi identique à une autre
 doit être remplacée par une variante réellement observée et identifiable.
 Ne déclare jamais une famille si aucune altération correspondante n'est
 visible dans les champs.
+
+Lorsque l'entrée contient `variant_contract`, ce contrat est impératif : `v1`
+modifie la dimension `name` avec sa famille, `v2` la dimension `address`, et
+`v3` la dimension `orthographic`. Les autres dimensions restent officielles.
+Lors d'un retry, `retry_context` énumère les empreintes précédentes à ne pas
+reproduire et les erreurs de préflight à corriger. Le runtime refuse avant
+lease toute famille placée dans une dimension incompatible ; il ne fabrique
+jamais lui-même une dégradation de remplacement.
 ```
 
 Entrée minimale : `seed_card`, `observed_train_profile`, `batch_id`,

@@ -172,6 +172,72 @@ def test_leases_are_disjoint_and_expired_lease_is_recovered(tmp_path: Path):
         submit(tmp_path, db, "GENERATOR", "luna-g1", [stale_response])
 
 
+def test_abandon_requeues_seed_in_same_role(tmp_path: Path):
+    db, run_id = init_run(tmp_path, [seed()])
+    task = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
+    loop.main([
+        "--db", str(db), "abandon", "--task-id", task["task_id"],
+        "--role", "GENERATOR", "--worker-id", "luna-g1", "--reason", "worker_failed",
+    ])
+    with sqlite3.connect(db) as connection:
+        seed_status = connection.execute("SELECT status FROM seeds").fetchone()[0]
+        task_status = connection.execute("SELECT status FROM tasks").fetchone()[0]
+    assert seed_status == "PENDING_GENERATOR"
+    assert task_status == "ABANDONED"
+    assert lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")
+
+
+def test_supervisor_refuses_seed_without_three_variants(tmp_path: Path):
+    db, run_id = init_run(tmp_path, [seed()])
+    with sqlite3.connect(db) as connection:
+        connection.execute("UPDATE seeds SET status='READY_SUPERVISOR'")
+        connection.commit()
+    with pytest.raises(RuntimeError, match="exactly three variants"):
+        loop.main(["--db", str(db), "supervise", "--run-id", run_id])
+    with sqlite3.connect(db) as connection:
+        assert connection.execute("SELECT status FROM seeds").fetchone()[0] == "READY_SUPERVISOR"
+
+
+def test_requested_family_dimension_mismatch_is_rejected_before_lease(tmp_path: Path):
+    value = seed()
+    value["seed_card"]["requested_families"] = {
+        "name": "ADDRESS_TOKEN_ORDER",
+        "address": "LEGAL_FORM",
+        "orthographic": "ENSEIGNE_VS_DENOMINATION",
+    }
+    with pytest.raises(ValueError, match="incompatible with dimension name"):
+        init_run(tmp_path, [value])
+
+
+def test_generator_task_carries_variant_contract_and_retry_errors(tmp_path: Path):
+    value = seed()
+    value["seed_card"].update({
+        "name_options": ["Société des Fleurs"],
+        "address": "12 RUE DES LILAS 75001 PARIS",
+        "street_type": "RUE",
+        "requested_families": {
+            "name": "TOKEN_ORDER",
+            "address": "ADDRESS_ABBREVIATION",
+            "orthographic": "ACCENT_PUNCTUATION",
+        },
+    })
+    db, run_id = init_run(tmp_path, [value])
+    first = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
+    assert first["input"]["variant_contract"] == [
+        {"variant_id": "v1", "target_dimension": "name", "requested_family": "TOKEN_ORDER"},
+        {"variant_id": "v2", "target_dimension": "address", "requested_family": "ADDRESS_ABBREVIATION"},
+        {"variant_id": "v3", "target_dimension": "orthographic", "requested_family": "ACCENT_PUNCTUATION"},
+    ]
+    response = generator_response(first)
+    response["variants"][2]["crm"] = dict(response["variants"][0]["crm"])
+    submit(tmp_path, db, "GENERATOR", "luna-g1", [response])
+    retry = lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")[0]
+    assert retry["input"]["retry_context"]["previous_preflight_errors"] == [
+        "DUPLICATE_OR_COSMETIC_VARIANTS"
+    ]
+    assert len(retry["input"]["retry_context"]["previous_fingerprints_to_avoid"]) == 3
+
+
 def test_forbidden_fold_and_unsafe_targeted_critic_are_fail_closed(tmp_path: Path):
     invalid = seed()
     invalid["oof_fold"] = 1

@@ -44,6 +44,24 @@ LEASED_BY_ROLE = {
 }
 CRM_FIELDS = ("name", "address", "postcode", "city", "insee")
 FINAL_DECISIONS = {"ACCEPT", "SILVER", "REJECT"}
+REQUESTED_FAMILIES_BY_DIMENSION = {
+    "name": {
+        "ACCENT_PUNCTUATION",
+        "ACRONYM_TOKENIZATION",
+        "ENSEIGNE_VS_DENOMINATION",
+        "LEGAL_FORM",
+        "OCR_LIMITED",
+        "TOKEN_ORDER",
+    },
+    "address": {
+        "ADDRESS_ABBREVIATION",
+        "ADDRESS_OCR",
+        "ADDRESS_TOKEN_ORDER",
+        "COMMUNE_VARIANT",
+    },
+    "orthographic": {"ACCENT_PUNCTUATION", "OCR_LIMITED"},
+}
+VARIANT_BY_DIMENSION = {"name": "v1", "address": "v2", "orthographic": "v3"}
 
 
 def canonical_json(value: Any) -> str:
@@ -283,7 +301,50 @@ def validate_seed(seed: dict[str, Any]) -> dict[str, Any]:
         isinstance(value, str) for value in seed["risk_flags"]
     ):
         raise ValueError("risk_flags must be a list of strings")
+    validate_requested_families(seed["seed_id"], seed["seed_card"])
     return seed
+
+
+def validate_requested_families(seed_id: str, seed_card: dict[str, Any]) -> None:
+    """Reject mechanically assigned corruption families that cannot fit their field."""
+    requested = seed_card.get("requested_families")
+    if requested is None:
+        return
+    if not isinstance(requested, dict) or set(requested) != set(REQUESTED_FAMILIES_BY_DIMENSION):
+        raise ValueError(
+            f"requested_families must define name/address/orthographic for seed {seed_id}"
+        )
+    for dimension in ("name", "address", "orthographic"):
+        family = requested[dimension]
+        if family not in REQUESTED_FAMILIES_BY_DIMENSION[dimension]:
+            raise ValueError(
+                f"family {family} is incompatible with dimension {dimension} for seed {seed_id}"
+            )
+
+    names = [
+        str(value).strip()
+        for key in ("name_options", "enseigne_options")
+        for value in seed_card.get(key, [])
+        if str(value).strip()
+    ]
+    if not names:
+        raise ValueError(f"name corruption requested without an official name for seed {seed_id}")
+    if requested["name"] == "ENSEIGNE_VS_DENOMINATION":
+        distinct_names = {comparison_fingerprint({
+            "name": value, "address": "", "postcode": "", "city": "", "insee": ""
+        }) for value in names}
+        if len(distinct_names) < 2:
+            raise ValueError(
+                f"ENSEIGNE_VS_DENOMINATION requires two distinct official names for seed {seed_id}"
+            )
+    if not str(seed_card.get("address", "")).strip():
+        raise ValueError(f"address corruption requested without an official address for seed {seed_id}")
+    if requested["address"] == "ADDRESS_ABBREVIATION" and not str(
+        seed_card.get("street_type", "")
+    ).strip():
+        raise ValueError(f"ADDRESS_ABBREVIATION requires a street type for seed {seed_id}")
+    if requested["address"] == "COMMUNE_VARIANT" and not str(seed_card.get("city", "")).strip():
+        raise ValueError(f"COMMUNE_VARIANT requires an official city for seed {seed_id}")
 
 
 def command_init(args: argparse.Namespace) -> None:
@@ -413,13 +474,39 @@ def make_task(
     seed: sqlite3.Row,
 ) -> dict[str, Any]:
     if role == "GENERATOR":
+        seed_card = json.loads(seed["seed_card_json"])
+        requested = seed_card.get("requested_families")
         role_input = {
             "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
             "source_kind": seed["source_kind"],
-            "seed_card": json.loads(seed["seed_card_json"]),
+            "seed_card": seed_card,
             "observed_train_profile": json.loads(seed["profile_json"]),
             "risk_flags": json.loads(seed["risk_flags_json"]),
         }
+        if requested:
+            role_input["variant_contract"] = [
+                {
+                    "variant_id": VARIANT_BY_DIMENSION[dimension],
+                    "target_dimension": dimension,
+                    "requested_family": requested[dimension],
+                }
+                for dimension in ("name", "address", "orthographic")
+            ]
+        if int(seed["attempt"]) > 0:
+            previous = connection.execute(
+                """SELECT variant_id, crm_fingerprint, preflight_json FROM variants
+                   WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
+                (run_id, seed["seed_id"]),
+            ).fetchall()
+            if previous:
+                role_input["retry_context"] = {
+                    "previous_fingerprints_to_avoid": [row["crm_fingerprint"] for row in previous],
+                    "previous_preflight_errors": sorted({
+                        error
+                        for row in previous
+                        for error in json.loads(row["preflight_json"])["errors"]
+                    }),
+                }
     elif role == "CRITIC":
         role_input = critic_input(connection, run_id, seed)
     else:
@@ -765,15 +852,21 @@ def command_abandon(args: argparse.Namespace) -> None:
                 (now_ts(), args.task_id),
             )
             connection.execute(
-                """UPDATE seeds SET status='READY_SUPERVISOR', lease_role=NULL,
+                """UPDATE seeds SET status=?, lease_role=NULL,
                    lease_worker=NULL, lease_expires_at=NULL, updated_at=?
                    WHERE run_id=? AND seed_id=?""",
-                (now_ts(), task["run_id"], seed["seed_id"]),
+                (PENDING_BY_ROLE[args.role], now_ts(), task["run_id"], seed["seed_id"]),
             )
-            event(connection, task["run_id"], seed["seed_id"], "GENERATOR_ABANDONED", {
-                "task_id": args.task_id, "reason": args.reason,
+            event(connection, task["run_id"], seed["seed_id"], "TASK_ABANDONED_REQUEUED", {
+                "task_id": args.task_id, "role": args.role, "reason": args.reason,
+                "next_status": PENDING_BY_ROLE[args.role],
             })
-    print(canonical_json({"task_id": args.task_id, "status": "ABANDONED", "reason": args.reason}))
+    print(canonical_json({
+        "task_id": args.task_id,
+        "task_status": "ABANDONED",
+        "seed_status": PENDING_BY_ROLE[args.role],
+        "reason": args.reason,
+    }))
 
 
 def command_supervise(args: argparse.Namespace) -> None:
@@ -792,6 +885,11 @@ def command_supervise(args: argparse.Namespace) -> None:
                     """SELECT * FROM variants WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
                     (args.run_id, seed["seed_id"]),
                 ).fetchall()
+                if len(variants) != 3:
+                    raise RuntimeError(
+                        f"supervisor requires exactly three variants for seed {seed['seed_id']}; "
+                        f"found {len(variants)}"
+                    )
                 for variant in variants:
                     preflight = json.loads(variant["preflight_json"])
                     if not preflight["passed"]:

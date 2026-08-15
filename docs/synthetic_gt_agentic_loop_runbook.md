@@ -27,6 +27,11 @@ Un lease expiré retourne dans son état `PENDING_*`. SQLite utilise WAL,
 `BEGIN IMMEDIATE`, `synchronous=FULL` et une contrainte unique sur
 `(run_id,target_siret)`.
 
+La commande `abandon` abandonne uniquement la tâche louée et remet toujours
+la seed dans le même état `PENDING_*`. Elle ne l'envoie jamais au superviseur.
+Le superviseur refuse par ailleurs de terminer une seed qui ne possède pas
+exactement trois variantes.
+
 ## Répartition des agents
 
 - parent : coordinateur et `supervise`, sans génération de volume ;
@@ -52,6 +57,11 @@ python scripts/run_synthetic_gt_agentic_loop.py --db "$DB" lease \
 
 python scripts/run_synthetic_gt_agentic_loop.py --db "$DB" submit \
   --role GENERATOR --worker-id luna-g1 --input generator_responses.jsonl
+
+# En cas d'échec du worker, réinscrire la seed sans la publier :
+python scripts/run_synthetic_gt_agentic_loop.py --db "$DB" abandon \
+  --task-id TASK_ID --role GENERATOR --worker-id luna-g1 \
+  --reason worker_failed
 
 python scripts/run_synthetic_gt_agentic_loop.py --db "$DB" lease \
   --run-id pilot-v1 --role CRITIC --worker-id luna-c1 \
@@ -80,6 +90,9 @@ et les cinq champs CRM produits.
 - aucune fuite de SIRET/SIREN dans les champs CRM ;
 - aucune réparation du JSON invalide ;
 - doublons exacts ou purement cosmétiques renvoyés au générateur ;
+- familles `name/address/orthographic` validées avant le premier lease ;
+- contrat explicite `v1=name`, `v2=address`, `v3=orthographic` ;
+- contexte du préflight précédent transmis au retry, sans réécriture par le code ;
 - deux tentatives maximum par défaut ;
 - un `REJECT` critique ne peut jamais être promu par le superviseur ;
 - seuls les fichiers `accept.jsonl` sont entraînables.
