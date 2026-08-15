@@ -4273,6 +4273,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `canary10_v3_diagnostic_anchor_bug.sqlite` et ne compte pas. Le contrat neuf
   protège exactement une ancre réellement retenue par l'opérateur de subset ;
   25 tests ciblés passent avant le run `synthetic-gt-composite-v3-canary10-v1`.
+- Deuxième correction : `1bf13f6` (`fix: lock exact join and legal-form edits`).
+  Le run v1, également diagnostique et non compté, a montré que `JOIN_SPLIT`
+  ne transportait que le nombre final de tokens et que `LEGAL_FORM_REMOVE`
+  n'imposait pas la forme exacte. Le contrat v2 transporte désormais les groupes
+  contigus exacts à joindre et refuse une forme juridique cible différente ;
+  l'ancre distinctive n'est exigée que pour `TOKEN_SUBSET`, les autres relations
+  conservant déjà tout le matériau alphanumérique. Banque régénérée sous hash
+  `b43a7b6b2675cf16`, canary v2 sous hash `c5aa6cb7431f31ef`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
