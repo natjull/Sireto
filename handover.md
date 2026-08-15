@@ -4206,6 +4206,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/composite_v2/pilot30.sqlite`.
 - Validation ciblée : 26 tests passants pour runtime/driver/sélecteur, plus 15
   tests passants pour les builders de preuves, inspirations et contexte.
+- Correction de lancement : `2424a32` (`fix: constrain composite Luna generation`).
+  Le premier micro-cycle diagnostique a été conservé séparément après avoir
+  révélé deux défauts avant montée en volume : famille de sortie non contrainte
+  et rejet erroné des jonctions de tokens réelles. Le schéma v6 force désormais
+  uniquement `OBSERVED_COMPOSITE_ANALOGY`; le garde autorise jonction/séparation
+  ou réordonnancement seulement sans nouveau matériau alphanumérique. Le ledger
+  propre a été réinitialisé sous `synthetic-gt-composite-v2-pilot30-v1` et la
+  suite runtime/driver compte 26 tests passants.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
