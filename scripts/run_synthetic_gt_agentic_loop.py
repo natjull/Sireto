@@ -29,7 +29,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
-    "GENERATOR": "sireto-gt-generator-v2",
+    "GENERATOR": "sireto-gt-generator-v3",
     "CRITIC": "sireto-gt-critic-v2",
     "ADJUDICATOR": "sireto-gt-adjudicator-v2",
 }
@@ -970,7 +970,7 @@ def store_generator(
     if not preflight["passed"]:
         next_status = (
             "PENDING_GENERATOR"
-            if int(seed["attempt"]) < int(policy["max_generator_attempts"])
+            if int(seed["attempt"]) + 1 < int(policy["max_generator_attempts"])
             else "READY_SUPERVISOR"
         )
         connection.execute(

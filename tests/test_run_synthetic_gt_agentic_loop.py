@@ -156,6 +156,27 @@ def test_identifier_leak_is_rejected_without_rewriting_and_released_for_retry(tm
     assert lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")
 
 
+def test_max_generator_attempts_is_total_attempts_not_retries(tmp_path: Path):
+    value = seed()
+    db, run_id = init_run(
+        tmp_path, [value], extra=["--max-generator-attempts", "2"]
+    )
+    first = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
+    submit(tmp_path, db, "GENERATOR", "luna-g1", [
+        generator_response(first, leaked_name=value["target_siret"])
+    ])
+    second = lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")[0]
+    submit(tmp_path, db, "GENERATOR", "luna-g2", [
+        generator_response(second, leaked_name=value["target_siret"])
+    ])
+    with sqlite3.connect(db) as connection:
+        status, attempt = connection.execute(
+            "SELECT status, attempt FROM seeds WHERE run_id=?", (run_id,)
+        ).fetchone()
+    assert (status, attempt) == ("READY_SUPERVISOR", 2)
+    assert lease(tmp_path, db, run_id, "GENERATOR", "luna-g3") == []
+
+
 def test_leases_are_disjoint_and_expired_lease_is_recovered(tmp_path: Path):
     db, run_id = init_run(tmp_path, [seed("seed-1"), seed("seed-2", "98765432100019")])
     first = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1", limit=1)

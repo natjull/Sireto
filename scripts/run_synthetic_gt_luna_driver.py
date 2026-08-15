@@ -33,9 +33,24 @@ ROLE_PROMPTS = {
     "GENERATOR": """You are the SIRETO GENERATOR. Write exactly three realistic CRM variants
 directly from the official task. Obey baseline_crm and variant_contract exactly: modify only
 target_fields, copy every other field byte-for-byte, declare only requested_family, and make the
-requested change genuinely visible. Never output case-only OCR, gratuitous punctuation, an
-unofficial alternate name, an unchanged token order, or a fake address abbreviation. Never write
-SIRET/SIREN inside CRM fields. Return only the structured response.""",
+requested change genuinely visible. The three complete CRM fingerprints must be different.
+
+Apply the requested family literally:
+- ACRONYM_TOKENIZATION: join or split existing punctuation-delimited short tokens while preserving
+  every alphanumeric character in the same order. Example: G.D. FERMETURES -> GD FERMETURES, not
+  G D FERMETURES (whose normalized tokens are unchanged).
+- ACCENT_PUNCTUATION: only delete or normalize an accent or punctuation mark already present.
+  Never introduce a new mark and never replace one mark by a different mark.
+- ADDRESS_ABBREVIATION: replace only the exact full street type with its canonical abbreviation,
+  e.g. RUE->R, AVENUE->AV, BOULEVARD->BD, CHEMIN->CH, IMPASSE->IMP, PLACE->PL, ROUTE->RTE,
+  ALLEE->ALL, QUAI->QU, RESIDENCE->RES. Preserve number, street words, and their order exactly.
+- COMMUNE_VARIANT: only remove/normalize separators, spaces, apostrophes, hyphens, or accents in
+  the official city. Preserve every alphanumeric character in the same order.
+- LEGAL_FORM: remove only the explicit legal-form token; preserve all other lexical tokens.
+
+Never output case-only OCR, gratuitous punctuation, an unofficial alternate name, an unchanged
+token order, or a fake address abbreviation. Never write SIRET/SIREN inside CRM fields. On retry,
+read retry_context and correct every listed preflight error. Return only the structured response.""",
     "CRITIC": """You are the independent SIRETO CRITIC. Compare every CRM variant with
 baseline_crm, seed_card, and variant_contract. Reject any changed non-target field, mismatched or
 non-visible family, case/space-only edit, gratuitous punctuation, unsupported OCR, unofficial
