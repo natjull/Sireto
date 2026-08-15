@@ -24,7 +24,8 @@ dont reprise de lease, critique aveugle aux résumés du générateur,
 adjudication fail-closed et absence de générateur mécanique dans le runtime.
 
 *(pilote v4 et export : artefacts lourds sous `/Volumes/CATNAT_DATA`; exécution
-validée après le runtime, commit de référence `c786ae2`)*
+validée après le runtime, commit de référence `c786ae2`; contrat de réponse
+GENERATOR renforcé par `e5ab523`)*
 
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
