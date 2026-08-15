@@ -4159,5 +4159,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   variantes brutes ; l'exécution doit rester reprenable et s'arrêter à la
   consolidation lorsque 20 000 couples uniques ont franchi tous les gates.
 
+## GT synthétique — consolidateur final auditable
+
+- Commit : `a3f5911` (`feat: audit and consolidate agentic GT corpus`).
+- `scripts/consolidate_synthetic_gt_agentic_corpus.py` ne génère ni ne répare
+  aucun texte. Il sélectionne de façon déterministe les seuls `ACCEPT`, garde
+  intégralement les familles rares, et publie exactement le volume demandé.
+- Avant publication, il vérifie chaque CRM contre les champs exacts de la
+  réponse brute Luna, recalcule les hashes GENERATOR/CRITIC/ADJUDICATOR,
+  contrôle l'indépendance du critique et la présence d'une adjudication sur
+  tout désaccord, refuse les doublons exacts ou de surface et les fuites
+  SIREN/SIRET.
+- La chaîne de provenance est vérifiée jusqu'aux manifests SIRENE, au profil
+  observé train-only, au plan gelé et aux affectations de folds. Les SIREN de
+  production doivent rester disjoints de tout `crm_ok_gt`; folds 0/1, dev et
+  test restent fermés. Le plan prouve également Maps désactivé,
+  `max_requests=0` et coût maximal nul.
+- Un smoke en lecture seule sur le ledger de production vivant a réaudité
+  1 091 variantes acceptées et consolidé 200/200 exemples avec tous les gates
+  à `true`. La suite ciblée compte 33 tests passants ; compilation Python et
+  `git diff --check` passent.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
