@@ -72,6 +72,18 @@ porte les hashes source et de sortie. Cet intake rend possible l'atteinte du
 nombre de seeds préenregistré, mais ne constitue pas encore des positifs :
 aucune génération Luna n'a été lancée sur ces seeds.
 
+Un pilote agentique SIRENE-only v1 a ensuite été exécuté sur 4 seeds avec deux
+leases GENERATOR Luna LOW, une reprise bornée, un CRITIC et un ADJUDICATOR.
+Trois seeds ont atteint la critique ; une seed a été abandonnée fail-closed
+car sa fiche officielle ne contenait ni nom/enseigne ni numéro/voie. Résultat
+exporté dans
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/sirene_pilot_export_v1/` :
+0 `ACCEPT`, 9 `SILVER`, 0 `REJECT`. Le pilote démontre la provenance et la
+reprise, mais échoue le gate de positivité et de diversité utile ; aucune
+extension n'est autorisée. Le runtime accepte désormais explicitement
+`SIRENE_ONLY_TRAIN` avec `oof_fold=-1` et fournit une clôture auditable des
+seeds non identifiables, sans inventer de texte (commit `91e775d`).
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
