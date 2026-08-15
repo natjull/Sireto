@@ -756,14 +756,29 @@ def source_supports_family(seed_card: dict[str, Any], dimension: str, family: st
     if family in {"TOKEN_ORDER", "ADDRESS_TOKEN_ORDER"}:
         return len(words) >= 2
     if family == "ACRONYM_TOKENIZATION":
-        return any(2 <= len(word) <= 8 for word in words)
+        surface = str(source or "").casefold()
+        return bool(
+            len(words) >= 2
+            and re.search(
+                r"(?:\b[a-z]{1,3}[.\-][a-z0-9]+|[a-z0-9]+[.\-][a-z]{1,3}\b)",
+                surface,
+            )
+        )
     if family == "ACCENT_PUNCTUATION":
         return has_diacritic(source) or bool(punctuation_marks(source))
     if family in {"OCR_LIMITED", "ADDRESS_OCR"}:
         return len(normalized_alnum(source)) >= 4
     if family == "ADDRESS_ABBREVIATION":
         street_type = normalized_surface(seed_card.get("street_type", "")).upper()
-        return bool(street_type and street_type in {word.upper() for word in words})
+        aliases = {
+            alias
+            for alias, canonical in STREET_TYPE_ABBREVIATIONS.items()
+            if canonical == street_type and alias != street_type
+        }
+        return bool(
+            aliases
+            and street_type in {word.upper() for word in words}
+        )
     if family == "COMMUNE_VARIANT":
         return has_diacritic(source) or bool(punctuation_marks(source)) or len(words) >= 2
     return bool(source)

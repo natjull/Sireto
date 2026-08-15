@@ -51,12 +51,14 @@ def test_dynamic_schema_freezes_task_envelope():
     properties = schema["properties"]
     for field in (
         "schema_version", "task_id", "run_id", "batch_id", "role",
-        "prompt_version", "input_sha256", "seed",
+        "prompt_version", "input_sha256",
     ):
-        expected = value["input"]["seed"] if field == "seed" else value[field]
-        assert properties[field] == {"const": expected}
+        assert properties[field] == {"const": value[field], "type": "string"}
+    assert properties["seed"]["additionalProperties"] is False
+    assert properties["seed"]["properties"]["siret"]["const"] == value["input"]["seed"]["siret"]
     assert schema["additionalProperties"] is False
     assert schema["properties"]["variants"]["minItems"] == 3
+    assert "uniqueItems" not in json.dumps(schema)
 
 
 def test_codex_command_is_ephemeral_luna_low_and_read_only(tmp_path: Path, monkeypatch):

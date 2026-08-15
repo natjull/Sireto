@@ -9,7 +9,6 @@
       "type": "array",
       "minItems": 32,
       "maxItems": 32,
-      "uniqueItems": true,
       "items": {
         "type": "object",
         "additionalProperties": false,
@@ -22,6 +21,7 @@
             "required": ["name", "address", "orthographic"],
             "properties": {
               "name": {
+                "type": "string",
                 "enum": [
                   "ACCENT_PUNCTUATION",
                   "ACRONYM_TOKENIZATION",
@@ -29,9 +29,13 @@
                 ]
               },
               "address": {
+                "type": "string",
                 "enum": ["ADDRESS_ABBREVIATION", "COMMUNE_VARIANT"]
               },
-              "orthographic": {"const": "ACCENT_PUNCTUATION"}
+              "orthographic": {
+                "type": "string",
+                "const": "ACCENT_PUNCTUATION"
+              }
             }
           }
         }

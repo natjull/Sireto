@@ -48,6 +48,40 @@ the requested family is genuinely realized. Return only the structured response.
 }
 
 
+def structured_output_compatible(value: Any) -> Any:
+    """Adapt the strict local schema to the API's supported JSON-Schema subset.
+
+    Unsupported constraints are removed only from the transport schema.  The
+    unmodified message schema is still applied locally before submission.
+    """
+    if isinstance(value, list):
+        return [structured_output_compatible(item) for item in value]
+    if not isinstance(value, dict):
+        return value
+    result = {
+        key: structured_output_compatible(item)
+        for key, item in value.items()
+        if key != "uniqueItems"
+    }
+    if "type" not in result:
+        sample: Any | None = None
+        if "const" in result:
+            sample = result["const"]
+        elif isinstance(result.get("enum"), list) and result["enum"]:
+            kinds = {type(item) for item in result["enum"]}
+            if len(kinds) == 1:
+                sample = result["enum"][0]
+        if isinstance(sample, bool):
+            result["type"] = "boolean"
+        elif isinstance(sample, str):
+            result["type"] = "string"
+        elif isinstance(sample, int):
+            result["type"] = "integer"
+        elif isinstance(sample, float):
+            result["type"] = "number"
+    return result
+
+
 def atomic_write(path: Path, value: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     temporary = path.with_name(f".{path.name}.{os.getpid()}.tmp")
@@ -69,7 +103,15 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
         "role": {"const": role},
         "prompt_version": {"const": task["prompt_version"]},
         "input_sha256": {"const": task["input_sha256"]},
-        "seed": {"const": task["input"]["seed"]},
+        "seed": {
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["siret", "siren"],
+            "properties": {
+                "siret": {"type": "string", "const": task["input"]["seed"]["siret"]},
+                "siren": {"type": "string", "const": task["input"]["seed"]["siren"]},
+            },
+        },
     }
     required = list(properties)
     selected_defs: dict[str, Any]
@@ -94,14 +136,14 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
             properties["independent"] = {"const": True}
             properties["generator_rationale_seen"] = {"const": False}
             required.extend(["independent", "generator_rationale_seen"])
-    return {
+    return structured_output_compatible({
         "$schema": "https://json-schema.org/draft/2020-12/schema",
         "type": "object",
         "additionalProperties": False,
         "required": required,
         "properties": properties,
         "$defs": selected_defs,
-    }
+    })
 
 
 def worker_prompt(task: dict[str, Any]) -> str:

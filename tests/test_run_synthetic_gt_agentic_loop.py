@@ -289,6 +289,29 @@ def test_family_semantic_checks_reject_false_claims_and_accept_real_changes():
     ) == []
 
 
+def test_source_family_feasibility_rejects_fake_abbreviation_and_generic_hyphen():
+    base = {
+        "name_options": ["NEPTUNE-SERVICES"],
+        "address": "12 LOT DES TILLEULS",
+        "street_type": "LOT",
+        "city": "PARIS",
+        "postcode": "75001",
+        "insee": "75056",
+        "requested_families": {
+            "name": "ACRONYM_TOKENIZATION",
+            "address": "ADDRESS_ABBREVIATION",
+            "orthographic": "ACCENT_PUNCTUATION",
+        },
+    }
+    assert not loop.source_supports_family(base, "name", "ACRONYM_TOKENIZATION")
+    assert not loop.source_supports_family(base, "address", "ADDRESS_ABBREVIATION")
+    base["name_options"] = ["J.O.B. ELEC"]
+    base["address"] = "12 RUE DES TILLEULS"
+    base["street_type"] = "RUE"
+    assert loop.source_supports_family(base, "name", "ACRONYM_TOKENIZATION")
+    assert loop.source_supports_family(base, "address", "ADDRESS_ABBREVIATION")
+
+
 def test_requested_family_requires_nonempty_observed_train_evidence(tmp_path: Path):
     value = seed()
     value["seed_card"].update({
