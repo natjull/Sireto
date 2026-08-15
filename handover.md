@@ -4004,5 +4004,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ciblés passent et les trois artefacts sont reproductibles à froid par leur
   identité immuable.
 
+## V4.12 — BGE groupwise, sélection fold 0
+
+- Commit : `3a9acad` (`report: record BGE groupwise fold0 result`).
+- BGE groupwise fine-tuné sur les folds 2/3/4 obtient 2 400/2 797 au fold 0
+  (85,806 %), contre 2 171/2 797 en zero-shot, 2 353/2 797 pour CamemBERT
+  fine-tuné et 2 437/2 797 pour `BUSINESS_LEARNED`.
+- Le modèle BGE seul n'est pas promu. Il corrige toutefois 79 erreurs propres
+  de `BUSINESS_LEARNED`; leur union oracle vaut 2 516/2 797. Le stack
+  préenregistré reste donc expérimentalement justifié sans sélection oracle.
+- Artefact :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_bge_groupwise/01e1049c16af2600`.
+  Les huit sorties du manifeste ont été revérifiées sans mismatch.
+- Rapport : `reports/v412_bge_groupwise_fold0.md`. Le fold 1 et le test final
+  restent fermés. Les trois runs BGE cross-fittés folds 2/3/4 sont en cours
+  séquentiellement avant le méta-ranker XGBoost.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
