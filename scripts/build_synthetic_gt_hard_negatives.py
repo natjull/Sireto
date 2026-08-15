@@ -56,12 +56,17 @@ def stable_key(seed_siret: str, candidate: dict[str, Any], family: str) -> str:
     return hashlib.sha256(raw).hexdigest()
 
 
-def build(accept_rows: Iterable[dict[str, Any]], card_rows: Iterable[dict[str, Any]], per_positive: int = 10) -> list[dict[str, Any]]:
+def build(accept_rows: Iterable[dict[str, Any]], card_rows: Iterable[dict[str, Any]], per_positive: int = 10, min_variants_per_seed: int = 3) -> list[dict[str, Any]]:
     cards = {row["siret"]: row for row in card_rows}
+    accepted = list(accept_rows)
+    counts = Counter(str(row.get("target_siret") or row.get("seed", {}).get("siret", "")) for row in accepted)
+    eligible = {siret for siret, count in counts.items() if count >= min_variants_per_seed}
     pairs: list[dict[str, Any]] = []
-    for accepted in accept_rows:
-        seed_siret = str(accepted.get("target_siret") or accepted.get("seed", {}).get("siret", ""))
+    for accepted_row in accepted:
+        seed_siret = str(accepted_row.get("target_siret") or accepted_row.get("seed", {}).get("siret", ""))
         if not seed_siret:
+            continue
+        if seed_siret not in eligible:
             continue
         card = cards.get(seed_siret)
         if not card:
@@ -90,8 +95,8 @@ def build(accept_rows: Iterable[dict[str, Any]], card_rows: Iterable[dict[str, A
                 break
         for ordinal, (family, candidate) in enumerate(chosen, 1):
             pairs.append({
-                "pair_id": hashlib.sha256(f"{seed_siret}|{accepted['variant_id']}|{candidate['siret']}".encode()).hexdigest(),
-                "variant_id": accepted["variant_id"],
+                "pair_id": hashlib.sha256(f"{seed_siret}|{accepted_row['variant_id']}|{candidate['siret']}".encode()).hexdigest(),
+                "variant_id": accepted_row["variant_id"],
                 "positive_siret": seed_siret,
                 "negative_siret": candidate["siret"],
                 "negative_siren": candidate.get("siren"),
@@ -125,12 +130,17 @@ def main() -> int:
     parser.add_argument("--candidate-pool", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--per-positive", type=int, default=10)
+    parser.add_argument("--min-variants-per-seed", type=int, default=3)
     args = parser.parse_args()
     if not 1 <= args.per_positive <= 10:
         raise SystemExit("--per-positive must be between 1 and 10")
     accepts = [json.loads(line) for line in args.accept.read_text().splitlines() if line.strip()]
     cards = [json.loads(line) for line in args.candidate_pool.read_text().splitlines() if line.strip()]
-    pairs = build(accepts, cards, args.per_positive)
+    if args.min_variants_per_seed < 1:
+        raise SystemExit("--min-variants-per-seed must be positive")
+    counts = Counter(str(row.get("target_siret") or row.get("seed", {}).get("siret", "")) for row in accepts)
+    eligible_rows = [row for row in accepts if counts[str(row.get("target_siret") or row.get("seed", {}).get("siret", ""))] >= args.min_variants_per_seed]
+    pairs = build(accepts, cards, args.per_positive, args.min_variants_per_seed)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8") as stream:
         for pair in pairs:
@@ -142,7 +152,10 @@ def main() -> int:
         "accept_input_sha256": sha256(args.accept),
         "candidate_pool_sha256": sha256(args.candidate_pool),
         "output_sha256": sha256(args.output),
-        "positive_rows": len(accepts),
+        "positive_rows": len(eligible_rows),
+        "accepted_input_rows": len(accepts),
+        "eligible_seed_sirets": sorted({str(row.get("target_siret") or row.get("seed", {}).get("siret", "")) for row in eligible_rows}),
+        "min_variants_per_seed": args.min_variants_per_seed,
         "pair_rows": len(pairs),
         "families": dict(sorted(counts.items())),
         "per_positive_cap": args.per_positive,

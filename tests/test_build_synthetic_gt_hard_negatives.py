@@ -26,7 +26,7 @@ def test_selects_families_without_touching_text():
         candidate("33333333300011", "333333333", names=["ALPHA"], address="4 RUE AUTRE"),
     ]}]
     accepts = [{"target_siret": seed["siret"], "variant_id": "v1"}]
-    pairs = MODULE.build(accepts, cards, per_positive=10)
+    pairs = MODULE.build(accepts, cards, per_positive=10, min_variants_per_seed=1)
     assert {pair["family"] for pair in pairs} == {
         "SAME_SIREN_OTHER_SIRET", "ACTIVE_CLOSED", "LOCAL_HOMONYM"
     }
@@ -38,7 +38,7 @@ def test_cap_and_stable_output():
     seed = candidate("12345678900011", "123456789")
     cards = [{"siret": seed["siret"], "candidates": [seed, candidate("12345678900022", "123456789")]}]
     accepts = [{"target_siret": seed["siret"], "variant_id": "v1"}]
-    first = MODULE.build(accepts, cards, per_positive=1)
-    second = MODULE.build(accepts, cards, per_positive=1)
+    first = MODULE.build(accepts, cards, per_positive=1, min_variants_per_seed=1)
+    second = MODULE.build(accepts, cards, per_positive=1, min_variants_per_seed=1)
     assert first == second
     assert len(first) == 1
