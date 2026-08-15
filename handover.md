@@ -4214,6 +4214,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ou réordonnancement seulement sans nouveau matériau alphanumérique. Le ledger
   propre a été réinitialisé sous `synthetic-gt-composite-v2-pilot30-v1` et la
   suite runtime/driver compte 26 tests passants.
+- Audit/pivot full-SIRENE : `3716817` (`fix: gate composite GT against full
+  SIRENE`). Le pilote v1 a terminé 30/30 seeds avec 65 `ACCEPT`, mais seulement
+  21 seeds ont 3/3. Le re-scan sans retrieval ni injection sur 590 206
+  établissements locaux reclasse 2 `ACCEPT` `NAF NAF` en ambiguïtés réelles ;
+  seules 20 seeds conservent 3/3 exacts.
+- L'audit a découvert une casse SQL erronée dans le contexte v2b, qui masquait
+  presque toutes les collisions. Le contexte v3 corrigé publie 962 734 relations
+  même-adresse, 3 988 même-nom+géographie et 33 419 siblings. Sur 8 000 cibles,
+  5 987 restent éligibles, 1 234 sont trop denses, 676 heurtent un SIREN protégé
+  et 103 sont seulement opérationnelles. Hash v3 : `b323ca196d3900e2`.
+- Le langage composite est désormais fini et identique dans le selector, le
+  prompt et le préflight. Chaque champ généré doit reproduire la classe de sa
+  vraie inspiration train (`TOKEN_SUBSET`, abréviation/type de voie, delta de
+  ponctuation/diacritique, etc.). Les permutations internes de rue, suppressions
+  de commune et analogies génériques sont rejetées. Le pilote v2 resélectionné
+  contient 30 seeds/90 inspirations distinctes sous hash `1048781832882431`.
+- Gate de reprise : aucun passage à 150 avant terminaison de
+  `synthetic-gt-composite-v2-pilot30-v2`, audit indépendant, 3/3 strict et
+  `EXACT_IDENTIFIABLE` sur le snapshot SIRENE complet pour chaque ligne admise.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
