@@ -1,0 +1,47 @@
+{
+  "schema_version": "sireto-synthetic-gt-composite-plan-3",
+  "objective": {
+    "accepted_pair_target": 20000,
+    "pairs_per_target": 3,
+    "legacy_v1_and_pilots_count_toward_target": false
+  },
+  "sources": {
+    "official_context": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v3.jsonl",
+      "sha256": "b323ca196d3900e288583544c46bc8d031edd84dc015cc0056cdc652a90e060d"
+    },
+    "field_inspiration_bank": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v1.jsonl",
+      "sha256": "bfbfcbd27b49762b9daf327b9c0a326f1bd7ddbbaec20999b5d9a3aaf23eea59"
+    }
+  },
+  "generation": {
+    "writer": "gpt-5.6-luna",
+    "reasoning_effort": "low",
+    "direct_llm_text_generation_required": true,
+    "mechanical_or_random_text_generation_forbidden": true,
+    "field_fragment_recombination": true,
+    "added_punctuation_or_diacritic_cap": 0,
+    "exact_operation_parameters_required": true
+  },
+  "gates": {
+    "canary_targets": 10,
+    "canary_pairs": 30,
+    "pilot_targets_after_canary_go": 30,
+    "all_three_variants_required_per_target": true,
+    "full_sirene_exact_witness": "G_N_A_SINGLETON_TARGET_ONLY",
+    "post_gate_allowlist_required": true,
+    "critic": "independent_all_variants",
+    "protected_folds": [0, 1, "test"],
+    "exact_operator_canary_cap": 4,
+    "inspiration_ref_canary_cap": 3,
+    "duplicate_surface_cap": 0,
+    "stage150_requires_independent_go": true
+  },
+  "quarantine": {
+    "production_v1": true,
+    "composite_pilot_v1": true,
+    "composite_pilot_v2": true,
+    "automatic_migration": false
+  }
+}

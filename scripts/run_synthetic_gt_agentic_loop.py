@@ -78,14 +78,14 @@ COMPOSITE_FAMILY = "OBSERVED_COMPOSITE_ANALOGY"
 COMPOSITE_RELATIONS_BY_FIELD = {
     "name": {
         "TOKEN_ORDER", "TOKEN_SUBSET", "LEGAL_FORM_REMOVE", "JOIN_SPLIT",
-        "PUNCTUATION_ADDED", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+        "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED",
     },
     "address": {
-        "ADDRESS_ABBREVIATE", "ADDRESS_TYPE_ORDER", "JOIN_SPLIT",
-        "PUNCTUATION_ADDED", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+        "ADDRESS_ABBREVIATE", "ADDRESS_TYPE_ORDER", "ADDRESS_TOKEN_SUBSET", "JOIN_SPLIT",
+        "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED",
     },
     "city": {
-        "JOIN_SPLIT", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+        "JOIN_SPLIT", "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED",
     },
 }
 
@@ -444,50 +444,89 @@ def validate_composite_contracts(
         raise ValueError(f"unsupported composite generation mode for seed {seed_id}")
     if not isinstance(contracts, list) or len(contracts) != 3:
         raise ValueError(f"composite contracts must contain exactly three variants for seed {seed_id}")
-    expected = {
-        "v1": {"name", "address"},
-        "v2": {"name", "city"},
-        "v3": {"name", "address", "city"},
-    }
+    expected_ids = {"v1", "v2", "v3"}
     refs: list[str] = []
+    signatures: list[str] = []
     for contract in contracts:
         variant_id = contract.get("variant_id")
         fields = set(contract.get("target_fields", []))
-        if variant_id not in expected or fields != expected[variant_id]:
+        if (
+            variant_id not in expected_ids
+            or "name" not in fields
+            or not ({"address", "city"} & fields)
+            or not fields.issubset({"name", "address", "city"})
+        ):
             raise ValueError(f"invalid composite field mask for seed {seed_id}: {variant_id}")
         if contract.get("requested_family") != COMPOSITE_FAMILY:
             raise ValueError(f"invalid composite family for seed {seed_id}: {variant_id}")
-        ref = str(contract.get("inspiration_ref", ""))
-        inspiration = contract.get("inspiration")
-        if not re.fullmatch(r"[0-9a-f]{64}", ref) or not isinstance(inspiration, dict):
-            raise ValueError(f"invalid composite inspiration for seed {seed_id}: {variant_id}")
-        if inspiration.get("inspiration_ref") != ref:
-            raise ValueError(f"composite inspiration ref mismatch for seed {seed_id}: {variant_id}")
-        if set(inspiration.get("structural_signature", {}).get("changed_fields", [])) != fields:
-            raise ValueError(f"composite inspiration mask mismatch for seed {seed_id}: {variant_id}")
-        if inspiration.get("source_fold") not in {2, 3, 4}:
-            raise ValueError(f"protected inspiration fold for seed {seed_id}: {variant_id}")
         field_relations = contract.get("field_relations")
         if not isinstance(field_relations, dict) or set(field_relations) != fields:
             raise ValueError(f"composite field relations mismatch for seed {seed_id}: {variant_id}")
+        field_inspirations = contract.get("field_inspirations")
+        if field_inspirations is not None:
+            if not isinstance(field_inspirations, dict) or set(field_inspirations) != fields:
+                raise ValueError(f"composite field inspirations mismatch for seed {seed_id}: {variant_id}")
+        else:
+            ref = str(contract.get("inspiration_ref", ""))
+            inspiration = contract.get("inspiration")
+            if not re.fullmatch(r"[0-9a-f]{64}", ref) or not isinstance(inspiration, dict):
+                raise ValueError(f"invalid composite inspiration for seed {seed_id}: {variant_id}")
+            if inspiration.get("inspiration_ref") != ref:
+                raise ValueError(f"composite inspiration ref mismatch for seed {seed_id}: {variant_id}")
+            if set(inspiration.get("structural_signature", {}).get("changed_fields", [])) != fields:
+                raise ValueError(f"composite inspiration mask mismatch for seed {seed_id}: {variant_id}")
+            if inspiration.get("source_fold") not in {2, 3, 4}:
+                raise ValueError(f"protected inspiration fold for seed {seed_id}: {variant_id}")
         for field, relation in field_relations.items():
             if relation not in COMPOSITE_RELATIONS_BY_FIELD.get(field, set()):
                 raise ValueError(
                     f"unsupported composite relation {field}:{relation} for seed {seed_id}: {variant_id}"
                 )
+            if field_inspirations is not None:
+                fragment = field_inspirations[field]
+                ref = str(fragment.get("inspiration_ref", ""))
+                if (
+                    not re.fullmatch(r"[0-9a-f]{64}", ref)
+                    or fragment.get("field") != field
+                    or fragment.get("source_fold") not in {2, 3, 4}
+                    or fragment.get("relation") != relation
+                ):
+                    raise ValueError(
+                        f"invalid field inspiration {field} for seed {seed_id}: {variant_id}"
+                    )
+                inspiration_source = str(fragment.get("official_value", ""))
+                inspiration_target = str(fragment.get("observed_crm_value", ""))
+                expected_parameters = fragment.get("operation_parameters")
+                refs.append(ref)
+            else:
+                inspiration_source = str(inspiration.get("official", {}).get(field, ""))
+                inspiration_target = str(inspiration.get("observed_crm", {}).get(field, ""))
+                expected_parameters = None
             inspiration_relation = composite_relation_class(
-                field,
-                str(inspiration.get("official", {}).get(field, "")),
-                str(inspiration.get("observed_crm", {}).get(field, "")),
+                field, inspiration_source, inspiration_target,
             )
             if inspiration_relation != relation:
                 raise ValueError(
                     f"inspiration relation mismatch {field}:{relation}!={inspiration_relation} "
                     f"for seed {seed_id}: {variant_id}"
                 )
-        refs.append(ref)
-    if len(set(refs)) != 3:
+            if field_inspirations is not None:
+                observed_parameters = composite_operation_parameters(
+                    field, relation, inspiration_source, inspiration_target
+                )
+                if expected_parameters != observed_parameters:
+                    raise ValueError(
+                        f"field inspiration operator mismatch {field} for seed {seed_id}: {variant_id}"
+                    )
+        if field_inspirations is None:
+            refs.append(ref)
+        signatures.append(digest_json({"fields": sorted(fields), "relations": field_relations}))
+    if {contract.get("variant_id") for contract in contracts} != expected_ids:
+        raise ValueError(f"composite variant ids must be exactly v1/v2/v3 for seed {seed_id}")
+    if len(set(refs)) != len(refs):
         raise ValueError(f"composite inspirations must be unique within seed {seed_id}")
+    if len(set(signatures)) != 3:
+        raise ValueError(f"composite operation signatures must differ within seed {seed_id}")
     if profile.get("rows", 0) <= 0 or COMPOSITE_FAMILY not in profile.get("supported_families", []):
         raise ValueError(f"composite profile evidence missing for seed {seed_id}")
     qualification = seed_card.get("qualification", {})
@@ -994,6 +1033,143 @@ def composite_relation_class(field: str, source: str, target: str) -> str | None
                 if all(word.upper() in LEGAL_FORM_TOKENS for word in removed)
                 else "TOKEN_SUBSET"
             )
+        if field == "address":
+            positions = composite_stable_positions(source_words, target_words)
+            source_digits = [value for value in source_words if value.isdigit()]
+            target_digits = [value for value in target_words if value.isdigit()]
+            if (
+                positions is not None
+                and len(target_words) >= 2
+                and len(target_words) * 2 >= len(source_words)
+                and source_digits == target_digits
+            ):
+                return "ADDRESS_TOKEN_SUBSET"
+    return None
+
+
+def composite_stable_positions(source_words: list[str], target_words: list[str]) -> list[int] | None:
+    positions: list[int] = []
+    cursor = 0
+    for target in target_words:
+        try:
+            index = source_words.index(target, cursor)
+        except ValueError:
+            return None
+        positions.append(index)
+        cursor = index + 1
+    return positions
+
+
+def composite_permutation(source_words: list[str], target_words: list[str]) -> list[int] | None:
+    if Counter(source_words) != Counter(target_words):
+        return None
+    available: dict[str, list[int]] = {}
+    for index, word in enumerate(source_words):
+        available.setdefault(word, []).append(index)
+    result: list[int] = []
+    for word in target_words:
+        result.append(available[word].pop(0))
+    return result if result != list(range(len(source_words))) else None
+
+
+def composite_punctuation_edits(source: str, target: str) -> list[dict[str, Any]] | None:
+    """Locate removed punctuation by the token boundary it occupied."""
+    source_marks: list[tuple[int, str]] = []
+    token_index = -1
+    in_token = False
+    for character in source:
+        if character.isalnum():
+            if not in_token:
+                token_index += 1
+                in_token = True
+        else:
+            if character in PUNCTUATION:
+                source_marks.append((token_index, character))
+            if character.isspace() or character in PUNCTUATION:
+                in_token = False
+    target_counter = Counter(character for character in target if character in PUNCTUATION)
+    source_counter = Counter(character for character in source if character in PUNCTUATION)
+    if target_counter - source_counter:
+        return None
+    remaining = source_counter - target_counter
+    edits: list[dict[str, Any]] = []
+    for boundary, mark in source_marks:
+        if remaining[mark] > 0:
+            edits.append({"after_token_index": boundary, "mark": mark})
+            remaining[mark] -= 1
+    return edits or None
+
+
+def composite_diacritic_edits(source: str, target: str) -> list[dict[str, Any]] | None:
+    def projection(value: str) -> list[tuple[str, tuple[str, ...]]]:
+        result: list[tuple[str, tuple[str, ...]]] = []
+        for character in value:
+            decomposed = unicodedata.normalize("NFD", character)
+            base = "".join(
+                item.casefold() for item in decomposed if not unicodedata.combining(item)
+            )
+            marks = tuple(sorted(
+                unicodedata.name(item, "") for item in decomposed if unicodedata.combining(item)
+            ))
+            if base.isalnum():
+                result.append((base, marks))
+        return result
+
+    left, right = projection(source), projection(target)
+    if len(left) != len(right) or [value[0] for value in left] != [value[0] for value in right]:
+        return None
+    edits: list[dict[str, Any]] = []
+    for index, ((base, source_marks), (_, target_marks)) in enumerate(zip(left, right, strict=True)):
+        if set(target_marks) - set(source_marks):
+            return None
+        removed = sorted(set(source_marks) - set(target_marks))
+        if removed:
+            edits.append({"alnum_index": index, "base": base, "removed_marks": removed})
+    return edits or None
+
+
+def composite_operation_parameters(
+    field: str, relation: str, source: str, target: str
+) -> dict[str, Any] | None:
+    left, right = normalized_words(source), normalized_words(target)
+    if relation in {"TOKEN_SUBSET", "ADDRESS_TOKEN_SUBSET"}:
+        positions = composite_stable_positions(left, right)
+        if positions is None or len(right) < 2 or len(right) * 2 < len(left):
+            return None
+        return {"source_token_count": len(left), "retained_positions": positions}
+    if relation in {"TOKEN_ORDER", "ADDRESS_TYPE_ORDER"}:
+        positions = composite_permutation(left, right)
+        return None if positions is None else {
+            "source_token_count": len(left), "permutation": positions,
+        }
+    if relation == "LEGAL_FORM_REMOVE":
+        positions = composite_stable_positions(left, right)
+        removed = [left[index] for index in range(len(left)) if positions is not None and index not in positions]
+        if positions is None or not removed or not all(value.upper() in LEGAL_FORM_TOKENS for value in removed):
+            return None
+        return {
+            "source_token_count": len(left), "retained_positions": positions,
+            "removed_legal_forms": removed,
+        }
+    if relation == "ADDRESS_ABBREVIATE":
+        if len(left) != len(right) or expanded_street_words(source) != expanded_street_words(target):
+            return None
+        pairs = [
+            {"source": source_word.upper(), "target": target_word.upper()}
+            for source_word, target_word in zip(left, right, strict=True)
+            if source_word.upper() != target_word.upper()
+        ]
+        return None if not pairs else {"pairs": pairs}
+    if relation == "PUNCTUATION_REMOVED":
+        edits = composite_punctuation_edits(source, target)
+        return None if edits is None else {"edits": edits}
+    if relation == "DIACRITIC_REMOVED":
+        edits = composite_diacritic_edits(source, target)
+        return None if edits is None else {"edits": edits}
+    if relation == "JOIN_SPLIT":
+        if normalized_alnum(source) != normalized_alnum(target) or len(right) >= len(left):
+            return None
+        return {"source_token_count": len(left), "target_token_count": len(right)}
     return None
 
 
@@ -1154,10 +1330,21 @@ def composite_change_errors(
             errors.append(
                 f"{field.upper()}_RELATION_MISMATCH:{expected_relation}:{actual_relation or 'NONE'}"
             )
-        if added_marks(source, target) and expected_relation not in {
-            "PUNCTUATION_ADDED", "DIACRITIC_ADDED",
-        }:
+        if added_marks(source, target):
             errors.append(f"{field.upper()}_ADDED_MARK_FORBIDDEN")
+        field_inspirations = contract.get("field_inspirations", {})
+        fragment = field_inspirations.get(field) if isinstance(field_inspirations, dict) else None
+        if fragment is not None:
+            actual_parameters = composite_operation_parameters(
+                field, expected_relation, source, target
+            )
+            if actual_parameters != fragment.get("operation_parameters"):
+                errors.append(f"{field.upper()}_OPERATOR_PARAMETERS_MISMATCH")
+            protected = [normalized_surface(value) for value in contract.get(
+                "protected_target_tokens", {}
+            ).get(field, [])]
+            if protected and not set(protected).issubset(set(normalized_words(target))):
+                errors.append(f"{field.upper()}_DISTINCTIVE_ANCHOR_REMOVED")
         if field == "name":
             if Counter(normalized_alnum(target)) - Counter(normalized_alnum(source)):
                 errors.append("NAME_NEW_ALPHANUMERIC_MATERIAL")
@@ -1213,11 +1400,16 @@ def known_context_ambiguities(crm: dict[str, str], seed_card: dict[str, Any]) ->
         candidate_address_words = Counter(expanded_street_words(candidate_address(candidate)))
         if crm_address - candidate_address_words:
             continue
-        names = [
-            str(candidate.get(key) or "")
-            for key in ("usual_name", "enseigne1", "enseigne2", "enseigne3")
-            if str(candidate.get(key) or "").strip()
-        ]
+        names = list(dict.fromkeys(
+            str(value).strip()
+            for value in (
+                list(candidate.get("name_values", []))
+                + [candidate.get(key) for key in (
+                    "usual_name", "enseigne1", "enseigne2", "enseigne3", "legal_name"
+                )]
+            )
+            if str(value or "").strip()
+        ))
         if not names or not any(not (crm_name - Counter(normalized_words(name))) for name in names):
             continue
         ref = str(candidate.get("record_sha256") or "UNKNOWN")[:16]

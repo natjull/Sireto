@@ -126,3 +126,11 @@ def test_query_context_uses_same_lowercase_normalization_aliases_and_physical_na
     assert set(result["12345678900012"][0]["relation_tags"]) == {
         "SAME_OFFICIAL_ADDRESS", "SAME_NAME_GEOGRAPHY",
     }
+    assert "Jean Dupont" in result["12345678900012"][0]["name_values"]
+
+
+def test_llm_candidate_keeps_legal_name_merged_after_address_discovery() -> None:
+    row = competitor("98765432100019", "987654321")
+    row["name_values"] = ["BOULANGERIE TEST", "SCP COSTA OUDIN"]
+    value = context.llm_candidate("12345678900012", row)
+    assert value["names"] == ["BOULANGERIE TEST", "SCP COSTA OUDIN"]

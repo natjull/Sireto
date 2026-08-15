@@ -188,10 +188,31 @@ def query_context(
             siret = clean(row.get("siret"))
             if not siret or siret == target_siret:
                 continue
-            existing = by_target[target_siret].setdefault(siret, {
+            cleaned = {
                 key: clean(value) if key not in {"is_headquarters"} else bool(value)
                 for key, value in row.items()
-            })
+            }
+            names = [
+                cleaned.get(key, "")
+                for key in ("usual_name", "enseigne1", "enseigne2", "enseigne3", "legal_name")
+                if cleaned.get(key, "")
+            ]
+            existing = by_target[target_siret].setdefault(siret, cleaned)
+            # A candidate may be discovered first through its address and only
+            # later through a legal-unit name.  Merge every name channel instead
+            # of letting discovery order silently discard the legal evidence.
+            existing["name_values"] = list(dict.fromkeys([
+                *existing.get("name_values", []),
+                *[
+                    existing.get(key, "")
+                    for key in ("usual_name", "enseigne1", "enseigne2", "enseigne3", "legal_name")
+                    if existing.get(key, "")
+                ],
+                *names,
+            ]))
+            for key, value in cleaned.items():
+                if key == "legal_name" and value and not existing.get(key):
+                    existing[key] = value
             existing.setdefault("relation_tags", [])
             if tag not in existing["relation_tags"]:
                 existing["relation_tags"].append(tag)
@@ -304,9 +325,12 @@ def opaque_ref(target_siret: str, candidate_siret: str) -> str:
 
 def llm_candidate(target_siret: str, row: dict[str, Any]) -> dict[str, Any]:
     names = list(dict.fromkeys(
-        clean(row.get(key))
-        for key in ("usual_name", "enseigne1", "enseigne2", "enseigne3", "legal_name")
-        if clean(row.get(key))
+        clean(value)
+        for value in (
+            list(row.get("name_values", []))
+            + [row.get(key) for key in ("usual_name", "enseigne1", "enseigne2", "enseigne3", "legal_name")]
+        )
+        if clean(value)
     ))[:4]
     return {
         "site_ref": opaque_ref(target_siret, clean(row["siret"])),

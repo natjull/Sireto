@@ -121,9 +121,11 @@ the requested family is genuinely realized. Return only the structured response.
 
 COMPOSITE_ROLE_PROMPTS = {
     "GENERATOR": """You are the SIRETO composite GENERATOR. The task has exactly three
-OBSERVED_COMPOSITE_ANALOGY contracts. For each contract, study its existing real train
-official->observed_crm inspiration only as a transformation analogy, then YOU directly write the
-new CRM for the target establishment. Return exactly v1/v2/v3 and declare only
+OBSERVED_COMPOSITE_ANALOGY contracts. A contract may provide one separate real train fragment per
+target field. Study each official_value->observed_crm_value fragment only as an edit analogy, then
+YOU directly write the new CRM for the target establishment. Apply the exact operation_parameters
+(retained token positions, permutation, removed mark boundary, or street-type pair) to the target
+field; do not copy any lexical content from a fragment. Return exactly v1/v2/v3 and declare only
 OBSERVED_COMPOSITE_ANALOGY for every variant.
 
 Change every target_field non-trivially; case-only is forbidden. Copy every non-target field
@@ -132,16 +134,19 @@ and/or city exactly as the contract mask says. Never copy entity, street, city, 
 from the inspiration. Reproduce each contract field_relations class exactly:
 - TOKEN_ORDER: same complete name-token multiset, different order;
 - TOKEN_SUBSET: delete whole name tokens only, retain at least two and at least half;
+- ADDRESS_TOKEN_SUBSET: delete only the token positions specified by the fragment, preserving the
+  house number and the order of all retained address tokens;
 - LEGAL_FORM_REMOVE: remove only the explicit legal-form token;
 - ADDRESS_ABBREVIATE: change only the official street type to a canonical listed alias;
 - ADDRESS_TYPE_ORDER: move only the street-type token; preserve internal street-name order;
-- PUNCTUATION_REMOVED/ADDED or DIACRITIC_REMOVED/ADDED: change only that kind of mark;
+- PUNCTUATION_REMOVED or DIACRITIC_REMOVED: remove only the exact attested mark at the exact
+  attested boundary/position;
 - JOIN_SPLIT: change word boundaries only while preserving the exact alphanumeric sequence.
 
 Never apply a different relation because it seems easier. In particular, never delete or reorder
 city letters/tokens: city changes may only preserve the exact alphanumeric sequence. Use no new
-alphanumeric material. Add punctuation or a diacritic only when the exact field relation says
-ADDED; otherwise add no mark. Preserve all address digits, especially the house number, and
+alphanumeric material. Never add punctuation or a diacritic. Preserve every protected_target_token,
+all address digits, especially the house number, and
 preserve postcode and INSEE. Make all three complete CRM fingerprints distinct. Read
 retry_context and correct every listed error. The validator will reject, never repair, your text.
 Return only the structured JSON response with exact envelope constants.""",

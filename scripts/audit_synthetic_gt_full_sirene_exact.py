@@ -146,10 +146,9 @@ def qualify_variant(
     addresses = {value["siret"] for value in local if address_compatible(crm["address"], value)}
     both = names & addresses
     witnesses = {"G_N_A": both, "G_A": addresses, "G_N": names}
-    exact_witness = next(
-        (key for key in ("G_N_A", "G_A", "G_N") if witnesses[key] == {target_siret}),
-        None,
-    )
+    # Composite positives require the conjunction of name and address.  A
+    # singleton on only one anchor is useful diagnostics, never exact truth.
+    exact_witness = "G_N_A" if witnesses["G_N_A"] == {target_siret} else None
     target_natural = any(target_siret in value for value in witnesses.values())
     overflow = any(len(value) > 100 for value in witnesses.values())
     if exact_witness:
@@ -163,11 +162,17 @@ def qualify_variant(
     else:
         decision = "AMBIGUOUS_OFFICIAL"
     by_siret = {value["siret"]: value for value in local}
+    target_candidate = by_siret.get(target_siret)
+    target_site = (
+        tuple(loop.expanded_street_words(official_address(target_candidate)))
+        if target_candidate is not None else ()
+    )
     operational = sorted(
         siret for siret in (both or addresses or names)
         if siret != target_siret
         and siret[:9] == target_siret[:9]
         and address_compatible(crm["address"], by_siret[siret])
+        and tuple(loop.expanded_street_words(official_address(by_siret[siret]))) == target_site
     )
     return {
         "decision": decision,
@@ -213,7 +218,7 @@ def load_variants(db: Path, run_id: str) -> list[dict[str, Any]]:
             "target_siren": row["target_siren"],
             "variant_id": row["variant_id"],
             "crm": json.loads(row["crm_json"]),
-            "seed_admissible_3_of_3": row["seed_id"] in admissible,
+            "seed_ledger_3_of_3_accept": row["seed_id"] in admissible,
             "pre_generation_qualification": card.get("qualification", {}),
         })
     connection.close()
@@ -298,7 +303,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     counts = Counter(value["full_sirene_qualification"]["decision"] for value in audited)
     exact_by_seed: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for value in audited:
-        if value["seed_admissible_3_of_3"]:
+        if value["seed_ledger_3_of_3_accept"]:
             exact_by_seed[value["seed_id"]].append(value)
     strict_seed_ids = {
         seed_id for seed_id, values in exact_by_seed.items()
@@ -307,6 +312,8 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             for value in values
         )
     }
+    for value in audited:
+        value["seed_promotable_3_of_3_exact"] = value["seed_id"] in strict_seed_ids
     report = {
         "schema_version": "sireto-synthetic-gt-full-sirene-audit-1",
         "run_id": args.run_id,
