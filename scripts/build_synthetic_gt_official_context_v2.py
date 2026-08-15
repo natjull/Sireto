@@ -94,7 +94,7 @@ def target_frame(candidates: dict[str, dict[str, Any]]) -> pd.DataFrame:
             "target_state": clean(fields.get("state")),
             "number_key": loop.normalized_alnum(fields.get("street_number")),
             "index_key": loop.normalized_alnum(fields.get("repetition_index")),
-            "street_type_key": loop.normalized_alnum(fields.get("street_type")),
+            "street_type_key": loop.normalized_alnum(canonical_street_type(fields.get("street_type"))),
             "street_key": loop.normalized_alnum(fields.get("street")),
             "postcode_key": loop.normalized_alnum(fields.get("postcode")),
             "insee_key": loop.normalized_alnum(fields.get("insee")),
@@ -137,6 +137,11 @@ PROJECTION = """
 """
 
 
+def canonical_street_type(value: Any) -> str:
+    normalized = loop.normalized_surface(value).upper()
+    return loop.STREET_TYPE_ABBREVIATIONS.get(normalized, normalized)
+
+
 def query_context(
     establishments: Path,
     legal_units: Path,
@@ -155,7 +160,25 @@ def query_context(
     connection.register("target_names", names)
     connection.execute("""
         CREATE OR REPLACE MACRO norm(value) AS
-        upper(regexp_replace(strip_accents(coalesce(value, '')), '[^A-Z0-9]', '', 'g'))
+        regexp_replace(lower(strip_accents(coalesce(value, ''))), '[^a-z0-9]', '', 'g')
+    """)
+    connection.execute("""
+        CREATE OR REPLACE MACRO street_type_norm(value) AS
+        CASE norm(value)
+          WHEN 'r' THEN 'rue'
+          WHEN 'av' THEN 'avenue'
+          WHEN 'bd' THEN 'boulevard'
+          WHEN 'ch' THEN 'chemin'
+          WHEN 'che' THEN 'chemin'
+          WHEN 'chem' THEN 'chemin'
+          WHEN 'imp' THEN 'impasse'
+          WHEN 'pl' THEN 'place'
+          WHEN 'rte' THEN 'route'
+          WHEN 'all' THEN 'allee'
+          WHEN 'qu' THEN 'quai'
+          WHEN 'res' THEN 'residence'
+          ELSE norm(value)
+        END
     """)
     by_target: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
 
@@ -188,7 +211,7 @@ def query_context(
         JOIN targets t
           ON norm(e.numeroVoieEtablissement)=t.number_key
          AND norm(e.indiceRepetitionEtablissement)=t.index_key
-         AND norm(e.typeVoieEtablissement)=t.street_type_key
+         AND street_type_norm(e.typeVoieEtablissement)=t.street_type_key
          AND norm(e.libelleVoieEtablissement)=t.street_key
          AND norm(e.codePostalEtablissement)=t.postcode_key
          AND norm(e.codeCommuneEtablissement)=t.insee_key
@@ -218,21 +241,36 @@ def query_context(
     ingest(name_geo_frame, "SAME_NAME_GEOGRAPHY")
 
     legal_name_geo_frame = connection.execute(f"""
-        WITH unit_names AS (
-          SELECT u.siren, value AS legal_name, norm(value) AS name_key
-          FROM read_parquet(?) u,
+        WITH target_geographies AS (
+          SELECT DISTINCT insee_key FROM targets
+        ), local_sirens AS (
+          SELECT DISTINCT g.insee_key, e.siren
+          FROM read_parquet(?) e
+          JOIN target_geographies g ON norm(e.codeCommuneEtablissement)=g.insee_key
+        ), local_units AS (
+          SELECT s.insee_key, u.*
+          FROM read_parquet(?) u
+          JOIN local_sirens s ON u.siren=s.siren
+        ), unit_names AS (
+          SELECT u.insee_key, u.siren, value AS legal_name, norm(value) AS name_key
+          FROM local_units u,
           UNNEST([
             u.denominationUniteLegale,
             u.denominationUsuelle1UniteLegale,
             u.denominationUsuelle2UniteLegale,
             u.denominationUsuelle3UniteLegale,
-            u.sigleUniteLegale
+            u.sigleUniteLegale,
+            concat_ws(' ', u.prenomUsuelUniteLegale, u.nomUniteLegale),
+            concat_ws(' ', u.nomUniteLegale, u.prenomUsuelUniteLegale),
+            concat_ws(' ', u.prenom1UniteLegale, u.nomUniteLegale),
+            concat_ws(' ', u.nomUniteLegale, u.prenom1UniteLegale),
+            u.nomUsageUniteLegale
           ]) names(value)
           WHERE norm(value)<>''
         ), matching_sirens AS (
           SELECT DISTINCT n.target_siret, u.siren, u.legal_name
           FROM unit_names u
-          JOIN target_names n ON n.name_key=u.name_key
+          JOIN target_names n ON n.insee_key=u.insee_key AND n.name_key=u.name_key
         )
         SELECT m.target_siret, {PROJECTION}, m.legal_name
         FROM matching_sirens m
@@ -240,7 +278,7 @@ def query_context(
         JOIN read_parquet(?) e ON e.siren=m.siren
         WHERE e.siret<>m.target_siret
           AND norm(e.codeCommuneEtablissement)=t.insee_key
-    """, [str(legal_units), str(establishments)]).fetchdf()
+    """, [str(establishments), str(legal_units), str(establishments)]).fetchdf()
     ingest(legal_name_geo_frame, "SAME_NAME_GEOGRAPHY")
     connection.close()
     return {
@@ -250,9 +288,13 @@ def query_context(
 
 
 def address_key(row: dict[str, Any]) -> tuple[str, ...]:
-    return tuple(
-        loop.normalized_alnum(row.get(key))
-        for key in ("number", "repetition_index", "street_type", "street", "postcode", "insee")
+    return (
+        loop.normalized_alnum(row.get("number")),
+        loop.normalized_alnum(row.get("repetition_index")),
+        loop.normalized_alnum(canonical_street_type(row.get("street_type"))),
+        loop.normalized_alnum(row.get("street")),
+        loop.normalized_alnum(row.get("postcode")),
+        loop.normalized_alnum(row.get("insee")),
     )
 
 
@@ -302,7 +344,7 @@ def context_row(
     target_address_key = tuple(
         loop.normalized_alnum(value)
         for value in (
-            card["number"], "", card["street_type"], card["street"], card["postcode"], card["insee"]
+            card["number"], "", canonical_street_type(card["street_type"]), card["street"], card["postcode"], card["insee"]
         )
     )
     for row in context:
@@ -357,7 +399,7 @@ def context_row(
         },
     }
     result = {
-        "schema_version": "sireto-synthetic-official-context-2",
+        "schema_version": "sireto-synthetic-official-context-3",
         "target_siret": target_siret,
         "target_siren": target_siren,
         "target_source_record_sha256": candidate.get("source_record_sha256"),
@@ -411,6 +453,14 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         context_row(candidates[siret], contexts.get(siret, []), protected_sirens, args.max_llm_context)
         for siret in seed_sirets
     ]
+    relation_counts = Counter(
+        tag for row in rows for candidate in row["internal_context"]
+        for tag in candidate.get("relation_tags", [])
+    )
+    if len(rows) >= 100 and relation_counts.get("SAME_OFFICIAL_ADDRESS", 0) == 0:
+        raise RuntimeError("degenerate context build: zero SAME_OFFICIAL_ADDRESS relations")
+    if len(rows) >= 100 and relation_counts.get("SAME_NAME_GEOGRAPHY", 0) == 0:
+        raise RuntimeError("degenerate context build: zero SAME_NAME_GEOGRAPHY relations")
     qualification_counts = Counter(
         "EXACT_ELIGIBLE" if row["qualification"]["pre_generation_exact_eligible"]
         else "OPERATIONAL_ONLY" if row["qualification"]["operational_equivalence"]
@@ -421,11 +471,18 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     loop.write_jsonl_atomic(args.output, rows)
     manifest = {
-        "schema_version": "sireto-synthetic-official-context-manifest-2",
+        "schema_version": "sireto-synthetic-official-context-manifest-3",
         "rows": len(rows),
         "distinct_siret": len({row["target_siret"] for row in rows}),
         "distinct_siren": len({row["target_siren"] for row in rows}),
         "qualification_counts": dict(sorted(qualification_counts.items())),
+        "relation_counts": dict(sorted(relation_counts.items())),
+        "normalization_contract": {
+            "unicode": "duckdb_strip_accents_then_lower",
+            "pattern": "[^a-z0-9]",
+            "street_type_aliases_sha256": loop.digest_json(loop.STREET_TYPE_ABBREVIATIONS),
+            "physical_person_names_included": True,
+        },
         "max_llm_context": args.max_llm_context,
         "source_hashes": {
             "seed_input": sha256(args.seed_input),

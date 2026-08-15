@@ -78,7 +78,7 @@
           "properties": {
             "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
             "role": {"const": "GENERATOR"},
-            "prompt_version": {"const": "sireto-gt-generator-v6"},
+            "prompt_version": {"const": "sireto-gt-generator-v7"},
             "variants": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/variant"}}
           }
         }
@@ -94,7 +94,7 @@
           "properties": {
             "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
             "role": {"const": "CRITIC"},
-            "prompt_version": {"const": "sireto-gt-critic-v6"},
+            "prompt_version": {"const": "sireto-gt-critic-v7"},
             "independent": {"const": true},
             "generator_rationale_seen": {"const": false},
             "decisions": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/decision"}}
@@ -112,7 +112,7 @@
           "properties": {
             "schema_version": {}, "task_id": {}, "run_id": {}, "batch_id": {}, "input_sha256": {}, "seed": {},
             "role": {"const": "ADJUDICATOR"},
-            "prompt_version": {"const": "sireto-gt-adjudicator-v3"},
+            "prompt_version": {"const": "sireto-gt-adjudicator-v4"},
             "decisions": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/decision"}}
           }
         }

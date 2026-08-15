@@ -29,6 +29,19 @@ CONTRACT_MASKS = {
     "v2": ["name", "city"],
     "v3": ["name", "address", "city"],
 }
+ALLOWED_RELATIONS = {
+    "name": {
+        "TOKEN_ORDER", "TOKEN_SUBSET", "LEGAL_FORM_REMOVE", "JOIN_SPLIT",
+        "PUNCTUATION_ADDED", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+    },
+    "address": {
+        "ADDRESS_ABBREVIATE", "ADDRESS_TYPE_ORDER", "JOIN_SPLIT",
+        "PUNCTUATION_ADDED", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+    },
+    "city": {
+        "JOIN_SPLIT", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+    },
+}
 
 
 def sha256(path: Path) -> str:
@@ -60,6 +73,46 @@ def address_line(context: dict[str, Any]) -> str:
 
 def count_relations(context: dict[str, Any], tag: str) -> int:
     return sum(tag in row.get("relation_tags", []) for row in context["internal_context"])
+
+
+def field_relation(field: str, source: str, target: str) -> str | None:
+    return loop.composite_relation_class(field, source, target)
+
+
+def transfer_relations(value: dict[str, Any]) -> dict[str, str] | None:
+    result: dict[str, str] = {}
+    for field in value.get("structural_signature", {}).get("changed_fields", []):
+        relation = field_relation(field, value["official"][field], value["observed_crm"][field])
+        if relation not in ALLOWED_RELATIONS.get(field, set()):
+            return None
+        result[field] = relation
+    return result
+
+
+def target_supports_relation(field: str, source: str, relation: str, seed_card: dict[str, Any]) -> bool:
+    words = loop.normalized_words(source)
+    if relation == "TOKEN_ORDER":
+        return len(words) >= 3
+    if relation == "TOKEN_SUBSET":
+        return len(words) >= 3
+    if relation == "LEGAL_FORM_REMOVE":
+        return any(word.upper() in loop.LEGAL_FORM_TOKENS for word in words)
+    if relation == "PUNCTUATION_REMOVED":
+        return bool(loop.punctuation_marks(source))
+    if relation == "PUNCTUATION_ADDED":
+        return any(character.isalpha() for character in source)
+    if relation == "DIACRITIC_REMOVED":
+        return loop.has_diacritic(source)
+    if relation == "DIACRITIC_ADDED":
+        return any(character.isalpha() for character in source)
+    if relation == "JOIN_SPLIT":
+        return len(words) >= 2
+    if relation == "ADDRESS_ABBREVIATE":
+        street_type = loop.normalized_surface(seed_card.get("street_type")).upper()
+        return any(canonical == street_type for canonical in loop.STREET_TYPE_ABBREVIATIONS.values())
+    if relation == "ADDRESS_TYPE_ORDER":
+        return field == "address" and len(words) >= 3 and bool(seed_card.get("street_type"))
+    return False
 
 
 def eligible(context: dict[str, Any]) -> bool:
@@ -94,7 +147,10 @@ def inspiration_groups(values: Iterable[dict[str, Any]]) -> dict[tuple[str, ...]
             continue
         if not value.get("analogy_safety", {}).get("numeric_tokens_subset_of_official"):
             continue
-        result[mask].append(value)
+        relations = transfer_relations(value)
+        if relations is None:
+            continue
+        result[mask].append({**value, "transfer_relations": relations})
     return result
 
 
@@ -105,6 +161,56 @@ def stable_order(values: Iterable[dict[str, Any]], seed: str, identity) -> list[
             f"{seed}|{identity(value)}".encode("utf-8")
         ).hexdigest(),
     )
+
+
+def assign_inspirations(
+    targets: list[dict[str, Any]],
+    candidates: list[dict[str, Any]],
+    fields: list[str],
+) -> dict[str, dict[str, Any]]:
+    """Deterministic bipartite matching; it selects text but never creates it."""
+    edges: dict[str, list[int]] = {}
+    for target in targets:
+        official = target["target"]
+        baseline = {
+            "name": primary_name(target),
+            "address": address_line(target),
+            "city": str(official["address"]["city"]),
+        }
+        card = {"street_type": official["address"]["street_type"]}
+        edges[target["target_siret"]] = [
+            index for index, candidate in enumerate(candidates)
+            if all(
+                target_supports_relation(
+                    field, baseline[field], candidate["transfer_relations"][field], card
+                )
+                for field in fields
+            )
+        ]
+    candidate_to_target: dict[int, str] = {}
+
+    def augment(target_siret: str, visited: set[int]) -> bool:
+        for candidate_index in edges[target_siret]:
+            if candidate_index in visited:
+                continue
+            visited.add(candidate_index)
+            previous = candidate_to_target.get(candidate_index)
+            if previous is None or augment(previous, visited):
+                candidate_to_target[candidate_index] = target_siret
+                return True
+        return False
+
+    for target in targets:
+        target_siret = target["target_siret"]
+        if not augment(target_siret, set()):
+            raise ValueError(f"no perfect transferable inspiration matching for {fields}: {target_siret}")
+    result = {
+        target_siret: candidates[candidate_index]
+        for candidate_index, target_siret in candidate_to_target.items()
+    }
+    if len(result) != len(targets):
+        raise RuntimeError(f"incomplete inspiration matching for {fields}")
+    return result
 
 
 def select_targets(values: list[dict[str, Any]], plan: dict[str, Any], selection_seed: str) -> list[dict[str, Any]]:
@@ -175,12 +281,16 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     }
     needed = len(targets)
     for mask, values in ordered_groups.items():
-        if len(values) < needed:
-            raise ValueError(f"not enough inspirations for {mask}: {len(values)} < {needed}")
+        if not values:
+            raise ValueError(f"no transferable inspirations for {mask}")
+    assignments = {
+        tuple(fields): assign_inspirations(targets, ordered_groups[tuple(fields)], fields)
+        for fields in CONTRACT_MASKS.values()
+    }
 
     output: list[dict[str, Any]] = []
     used_refs: set[str] = set()
-    for target_index, context in enumerate(targets):
+    for context in targets:
         official = context["target"]
         baseline = {
             "name": primary_name(context),
@@ -192,7 +302,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         contracts: list[dict[str, Any]] = []
         for variant_id, mask_list in CONTRACT_MASKS.items():
             mask = tuple(mask_list)
-            inspiration = ordered_groups[mask][target_index]
+            inspiration = assignments[mask][context["target_siret"]]
             ref = inspiration["inspiration_ref"]
             if ref in used_refs:
                 raise RuntimeError(f"inspiration reused in pilot: {ref}")
@@ -203,10 +313,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 "target_fields": mask_list,
                 "inspiration_ref": ref,
                 "inspiration": inspiration,
+                "field_relations": inspiration["transfer_relations"],
                 "rules": {
                     "copy_non_target_fields_byte_for_byte": True,
                     "no_new_lexical_or_numeric_tokens": True,
-                    "no_added_punctuation_or_diacritic": True,
+                    "punctuation_addition_only_when_relation_requires": True,
+                    "diacritic_addition_only_when_relation_requires": True,
                     "preserve_house_number": True,
                 },
             })

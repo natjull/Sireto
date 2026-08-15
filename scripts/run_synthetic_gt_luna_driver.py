@@ -129,19 +129,30 @@ OBSERVED_COMPOSITE_ANALOGY for every variant.
 Change every target_field non-trivially; case-only is forbidden. Copy every non-target field
 byte-for-byte from baseline_crm. The result must combine a changed name with changed address
 and/or city exactly as the contract mask says. Never copy entity, street, city, or number material
-from the inspiration. In a target field, use only alphanumeric material already present in that
-target official field: deletion, token reordering, joining/splitting and observed surface
-normalization are allowed. A street type may use a canonical abbreviation. Never add punctuation
-or diacritics. Preserve all address digits, especially the house number, and preserve postcode and
-INSEE. Make all three complete CRM fingerprints distinct. Read retry_context and correct every
-listed error. The validator will reject, never repair, your text. Return only the structured JSON
-response with exact envelope constants.""",
+from the inspiration. Reproduce each contract field_relations class exactly:
+- TOKEN_ORDER: same complete name-token multiset, different order;
+- TOKEN_SUBSET: delete whole name tokens only, retain at least two and at least half;
+- LEGAL_FORM_REMOVE: remove only the explicit legal-form token;
+- ADDRESS_ABBREVIATE: change only the official street type to a canonical listed alias;
+- ADDRESS_TYPE_ORDER: move only the street-type token; preserve internal street-name order;
+- PUNCTUATION_REMOVED/ADDED or DIACRITIC_REMOVED/ADDED: change only that kind of mark;
+- JOIN_SPLIT: change word boundaries only while preserving the exact alphanumeric sequence.
+
+Never apply a different relation because it seems easier. In particular, never delete or reorder
+city letters/tokens: city changes may only preserve the exact alphanumeric sequence. Use no new
+alphanumeric material. Add punctuation or a diacritic only when the exact field relation says
+ADDED; otherwise add no mark. Preserve all address digits, especially the house number, and
+preserve postcode and INSEE. Make all three complete CRM fingerprints distinct. Read
+retry_context and correct every listed error. The validator will reject, never repair, your text.
+Return only the structured JSON response with exact envelope constants.""",
     "CRITIC": """You are the independent SIRETO composite CRITIC. You did not see the generator
 rationale. For each v1/v2/v3, compare baseline_crm, the generated CRM, its exact contract, its real
 train inspiration, and bounded official_context. ACCEPT only if every target field changes beyond
 case, all non-target fields are byte-identical, the combined name+location degradation is a
 plausible single human CRM record, no inspiration entity material was copied, and the target SIRET
-remains the best exact interpretation. A same-SIREN same-site active sibling can establish
+remains the best exact interpretation. Verify that every generated field realizes exactly its
+declared field_relations class; reject internal street-name reordering, destructive token removal,
+or city token deletion/reordering. A same-SIREN same-site active sibling can establish
 OPERATIONAL_ONLY but never exact success. Use distinct reason_codes for REALISTIC,
 EXACT_IDENTIFIABLE, OPERATIONAL_ONLY, or AMBIGUOUS. Never repair text. Set independent=true and
 generator_rationale_seen=false and return only the structured JSON response.""",

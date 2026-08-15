@@ -9,8 +9,8 @@
   },
   "sources": {
     "official_context": {
-      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v2b.jsonl",
-      "sha256": "373d70fd84324aaaca06a7c818f2556ae86d8851dac0b6f18f1905bd6ef131e2"
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v3.jsonl",
+      "sha256": "b323ca196d3900e288583544c46bc8d031edd84dc015cc0056cdc652a90e060d"
     },
     "train_inspiration_bank": {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_compound_inspiration_bank_v2.jsonl",
@@ -23,6 +23,7 @@
     "direct_llm_text_generation_required": true,
     "mechanical_or_random_text_generation_forbidden": true,
     "family": "OBSERVED_COMPOSITE_ANALOGY",
+    "generated_field_relation_must_equal_inspiration_relation": true,
     "variant_changed_fields": {
       "v1": ["name", "address"],
       "v2": ["name", "city"],
@@ -38,6 +39,8 @@
     "critic": "independent_all_variants",
     "adjudicator": "disagreements_only_never_overrides_deterministic_reject",
     "exact_and_operational_metrics_separate": true,
+    "full_sirene_post_generation_gate_required": true,
+    "full_sirene_positive_injection": false,
     "protected_folds": [0, 1, "test"],
     "family_global_cap": 0.2,
     "exact_structural_signature_global_cap": 0.02,

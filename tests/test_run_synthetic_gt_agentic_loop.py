@@ -50,19 +50,34 @@ def composite_seed() -> dict:
         "v2": ["name", "city"],
         "v3": ["name", "address", "city"],
     }
+    relations = {
+        "v1": {"name": "TOKEN_SUBSET", "address": "ADDRESS_ABBREVIATE"},
+        "v2": {"name": "TOKEN_ORDER", "city": "PUNCTUATION_REMOVED"},
+        "v3": {"name": "TOKEN_SUBSET", "address": "ADDRESS_ABBREVIATE", "city": "PUNCTUATION_REMOVED"},
+    }
     for index, (variant_id, fields) in enumerate(masks.items(), 1):
         ref = f"{index:064x}"
+        observed = dict(baseline)
+        if relations[variant_id]["name"] == "TOKEN_ORDER":
+            observed["name"] = "FLEURS MAISON RETRAITE DES"
+        else:
+            observed["name"] = "MAISON DES FLEURS"
+        if "address" in fields:
+            observed["address"] = "12 R DES LILAS"
+        if "city" in fields:
+            observed["city"] = "SAINT DENIS"
         inspiration = {
             "inspiration_ref": ref,
             "source_fold": 2,
             "structural_signature": {"changed_fields": fields, "missing_fields": []},
             "official": baseline,
-            "observed_crm": baseline,
+            "observed_crm": observed,
         }
         inspirations.append({
             "variant_id": variant_id,
             "requested_family": loop.COMPOSITE_FAMILY,
             "target_fields": fields,
+            "field_relations": relations[variant_id],
             "inspiration_ref": ref,
             "inspiration": inspiration,
         })

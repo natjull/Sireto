@@ -29,9 +29,9 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
-    "GENERATOR": "sireto-gt-generator-v6",
-    "CRITIC": "sireto-gt-critic-v6",
-    "ADJUDICATOR": "sireto-gt-adjudicator-v3",
+    "GENERATOR": "sireto-gt-generator-v7",
+    "CRITIC": "sireto-gt-critic-v7",
+    "ADJUDICATOR": "sireto-gt-adjudicator-v4",
 }
 PENDING_BY_ROLE = {
     "GENERATOR": "PENDING_GENERATOR",
@@ -70,11 +70,24 @@ LEGAL_FORM_TOKENS = {
 }
 STREET_TYPE_ABBREVIATIONS = {
     "R": "RUE", "AV": "AVENUE", "BD": "BOULEVARD", "CH": "CHEMIN",
-    "CHE": "CHEMIN", "IMP": "IMPASSE", "PL": "PLACE", "RTE": "ROUTE",
+    "CHE": "CHEMIN", "CHEM": "CHEMIN", "IMP": "IMPASSE", "PL": "PLACE", "RTE": "ROUTE",
     "ALL": "ALLEE", "QU": "QUAI", "RES": "RESIDENCE",
 }
 PUNCTUATION = set("'’.-,()/&")
 COMPOSITE_FAMILY = "OBSERVED_COMPOSITE_ANALOGY"
+COMPOSITE_RELATIONS_BY_FIELD = {
+    "name": {
+        "TOKEN_ORDER", "TOKEN_SUBSET", "LEGAL_FORM_REMOVE", "JOIN_SPLIT",
+        "PUNCTUATION_ADDED", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+    },
+    "address": {
+        "ADDRESS_ABBREVIATE", "ADDRESS_TYPE_ORDER", "JOIN_SPLIT",
+        "PUNCTUATION_ADDED", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+    },
+    "city": {
+        "JOIN_SPLIT", "PUNCTUATION_REMOVED", "DIACRITIC_ADDED", "DIACRITIC_REMOVED",
+    },
+}
 
 
 def canonical_json(value: Any) -> str:
@@ -454,6 +467,24 @@ def validate_composite_contracts(
             raise ValueError(f"composite inspiration mask mismatch for seed {seed_id}: {variant_id}")
         if inspiration.get("source_fold") not in {2, 3, 4}:
             raise ValueError(f"protected inspiration fold for seed {seed_id}: {variant_id}")
+        field_relations = contract.get("field_relations")
+        if not isinstance(field_relations, dict) or set(field_relations) != fields:
+            raise ValueError(f"composite field relations mismatch for seed {seed_id}: {variant_id}")
+        for field, relation in field_relations.items():
+            if relation not in COMPOSITE_RELATIONS_BY_FIELD.get(field, set()):
+                raise ValueError(
+                    f"unsupported composite relation {field}:{relation} for seed {seed_id}: {variant_id}"
+                )
+            inspiration_relation = composite_relation_class(
+                field,
+                str(inspiration.get("official", {}).get(field, "")),
+                str(inspiration.get("observed_crm", {}).get(field, "")),
+            )
+            if inspiration_relation != relation:
+                raise ValueError(
+                    f"inspiration relation mismatch {field}:{relation}!={inspiration_relation} "
+                    f"for seed {seed_id}: {variant_id}"
+                )
         refs.append(ref)
     if len(set(refs)) != 3:
         raise ValueError(f"composite inspirations must be unique within seed {seed_id}")
@@ -898,6 +929,74 @@ def expanded_street_words(value: Any) -> list[str]:
     return [STREET_TYPE_ABBREVIATIONS.get(word.upper(), word.upper()) for word in normalized_words(value)]
 
 
+def _composite_mark_relation(source: str, target: str) -> str | None:
+    source_punctuation = Counter(character for character in source if character in PUNCTUATION)
+    target_punctuation = Counter(character for character in target if character in PUNCTUATION)
+    punctuation_added = target_punctuation - source_punctuation
+    punctuation_removed = source_punctuation - target_punctuation
+    source_marks = sum(
+        bool(unicodedata.combining(character))
+        for character in unicodedata.normalize("NFD", source)
+    )
+    target_marks = sum(
+        bool(unicodedata.combining(character))
+        for character in unicodedata.normalize("NFD", target)
+    )
+    delta_kinds = sum(bool(value) for value in (punctuation_added, punctuation_removed)) + (source_marks != target_marks)
+    if delta_kinds > 1:
+        return None
+    if punctuation_added:
+        return "PUNCTUATION_ADDED"
+    if punctuation_removed:
+        return "PUNCTUATION_REMOVED"
+    if target_marks > source_marks:
+        return "DIACRITIC_ADDED"
+    if target_marks < source_marks:
+        return "DIACRITIC_REMOVED"
+    if normalized_words(source) != normalized_words(target):
+        return "JOIN_SPLIT"
+    return None
+
+
+def composite_relation_class(field: str, source: str, target: str) -> str | None:
+    if normalized_surface(source) == normalized_surface(target):
+        return None
+    source_words = normalized_words(source)
+    target_words = normalized_words(target)
+    if (
+        field == "address"
+        and source_words != target_words
+        and expanded_street_words(source) == expanded_street_words(target)
+    ):
+        return "ADDRESS_ABBREVIATE"
+    if Counter(source_words) == Counter(target_words) and source_words != target_words:
+        if field == "address":
+            street_types = set(STREET_TYPE_ABBREVIATIONS.values())
+            source_core = [
+                word for word in source_words
+                if not word.isdigit()
+                and STREET_TYPE_ABBREVIATIONS.get(word.upper(), word.upper()) not in street_types
+            ]
+            target_core = [
+                word for word in target_words
+                if not word.isdigit()
+                and STREET_TYPE_ABBREVIATIONS.get(word.upper(), word.upper()) not in street_types
+            ]
+            return "ADDRESS_TYPE_ORDER" if source_core == target_core else None
+        return "TOKEN_ORDER" if field == "name" else None
+    if normalized_alnum(source) == normalized_alnum(target):
+        return _composite_mark_relation(source, target)
+    removed = Counter(source_words) - Counter(target_words)
+    if target_words and not (Counter(target_words) - Counter(source_words)) and removed:
+        if field == "name":
+            return (
+                "LEGAL_FORM_REMOVE"
+                if all(word.upper() in LEGAL_FORM_TOKENS for word in removed)
+                else "TOKEN_SUBSET"
+            )
+    return None
+
+
 def family_change_errors(
     family: str,
     source: str,
@@ -1033,6 +1132,7 @@ def composite_change_errors(
 ) -> list[str]:
     errors: list[str] = []
     target_fields = set(contract["target_fields"])
+    field_relations = contract["field_relations"]
     if "name" not in target_fields or not ({"address", "city"} & target_fields):
         errors.append("COMPOSITE_REQUIRES_NAME_AND_LOCATION")
     for field in CRM_FIELDS:
@@ -1048,11 +1148,24 @@ def composite_change_errors(
         if not target:
             errors.append(f"{field.upper()}_MISSING_FORBIDDEN")
             continue
-        if added_marks(source, target):
+        actual_relation = composite_relation_class(field, source, target)
+        expected_relation = field_relations[field]
+        if actual_relation != expected_relation:
+            errors.append(
+                f"{field.upper()}_RELATION_MISMATCH:{expected_relation}:{actual_relation or 'NONE'}"
+            )
+        if added_marks(source, target) and expected_relation not in {
+            "PUNCTUATION_ADDED", "DIACRITIC_ADDED",
+        }:
             errors.append(f"{field.upper()}_ADDED_MARK_FORBIDDEN")
         if field == "name":
             if Counter(normalized_alnum(target)) - Counter(normalized_alnum(source)):
                 errors.append("NAME_NEW_ALPHANUMERIC_MATERIAL")
+            if expected_relation == "TOKEN_SUBSET" and (
+                len(normalized_words(target)) < 2
+                or len(normalized_words(target)) * 2 < len(normalized_words(source))
+            ):
+                errors.append("NAME_TOKEN_SUBSET_TOO_DESTRUCTIVE")
         elif field == "address":
             expanded_source = "".join(expanded_street_words(source)).casefold()
             expanded_target = "".join(expanded_street_words(target)).casefold()

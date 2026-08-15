@@ -30,9 +30,17 @@ def context(index: int, state: str, *, multi: bool = False, multi_active: bool =
 
 
 def inspiration(index: int, fields: list[str]) -> dict:
+    official = {
+        "name": "MAISON DES FLEURS", "address": "12 RUE DES LILAS",
+        "postcode": "75001", "city": "SAINT-DENIS", "insee": "93066",
+    }
+    observed = dict(official)
+    observed.update({
+        "name": "FLEURS MAISON", "address": "12 R DES LILAS", "city": "SAINT DENIS",
+    })
     return {
         "inspiration_ref": f"ref-{'+'.join(fields)}-{index}", "source_fold": 2,
-        "official": {}, "observed_crm": {},
+        "official": official, "observed_crm": observed,
         "structural_signature": {"changed_fields": fields, "missing_fields": []},
         "analogy_safety": {"lexical_tokens_subset_of_official": True, "numeric_tokens_subset_of_official": True, "added_marks": {}},
     }
@@ -82,4 +90,8 @@ def test_inspiration_groups_rejects_protected_fold_and_missing_fields():
     bad_missing = inspiration(3, ["name", "address"])
     bad_missing["structural_signature"]["missing_fields"] = ["city"]
     grouped = selector.inspiration_groups([good, bad_fold, bad_missing])
-    assert grouped[("name", "address")] == [good]
+    assert len(grouped[("name", "address")]) == 1
+    assert grouped[("name", "address")][0]["inspiration_ref"] == good["inspiration_ref"]
+    assert grouped[("name", "address")][0]["transfer_relations"] == {
+        "name": "TOKEN_SUBSET", "address": "ADDRESS_ABBREVIATE",
+    }

@@ -1,6 +1,11 @@
 from __future__ import annotations
 
+from pathlib import Path
+
+import pandas as pd
+
 from scripts import build_synthetic_gt_official_context_v2 as context
+from scripts import run_synthetic_gt_agentic_loop as loop
 
 
 def target() -> dict:
@@ -80,3 +85,44 @@ def test_context_hash_is_deterministic() -> None:
     first = context.context_row(target(), [], set(), 32)
     second = context.context_row(target(), [], set(), 32)
     assert first["context_sha256"] == second["context_sha256"]
+
+
+def test_query_context_uses_same_lowercase_normalization_aliases_and_physical_names(tmp_path: Path) -> None:
+    establishments = pd.DataFrame([{
+        "siret": "98765432100019", "siren": "987654321",
+        "etatAdministratifEtablissement": "A", "etablissementSiege": True,
+        "denominationUsuelleEtablissement": "", "enseigne1Etablissement": "",
+        "enseigne2Etablissement": "", "enseigne3Etablissement": "",
+        "numeroVoieEtablissement": "12", "indiceRepetitionEtablissement": "",
+        "typeVoieEtablissement": "che", "libelleVoieEtablissement": "du port",
+        "codePostalEtablissement": "13002", "libelleCommuneEtablissement": "marseille",
+        "codeCommuneEtablissement": "13202",
+    }])
+    units = pd.DataFrame([{
+        "siren": "987654321", "denominationUniteLegale": "",
+        "denominationUsuelle1UniteLegale": "", "denominationUsuelle2UniteLegale": "",
+        "denominationUsuelle3UniteLegale": "", "sigleUniteLegale": "",
+        "prenomUsuelUniteLegale": "Jean", "prenom1UniteLegale": "Jean",
+        "nomUniteLegale": "Dupont", "nomUsageUniteLegale": "",
+    }])
+    establishment_path = tmp_path / "establishments.parquet"
+    legal_path = tmp_path / "units.parquet"
+    establishments.to_parquet(establishment_path, index=False)
+    units.to_parquet(legal_path, index=False)
+    targets = pd.DataFrame([{
+        "target_siret": "12345678900012", "target_siren": "123456789",
+        "target_state": "F", "number_key": "12", "index_key": "",
+        "street_type_key": loop.normalized_alnum(context.canonical_street_type("CHEMIN")),
+        "street_key": "duport", "postcode_key": "13002", "insee_key": "13202",
+        "city_key": "marseille", "name_values_json": '["JEAN DUPONT"]',
+    }])
+    names = pd.DataFrame([{
+        "target_siret": "12345678900012", "insee_key": "13202", "name_key": "jeandupont",
+    }])
+    result = context.query_context(
+        establishment_path, legal_path, targets, names, tmp_path / "duckdb"
+    )
+    assert len(result["12345678900012"]) == 1
+    assert set(result["12345678900012"][0]["relation_tags"]) == {
+        "SAME_OFFICIAL_ADDRESS", "SAME_NAME_GEOGRAPHY",
+    }
