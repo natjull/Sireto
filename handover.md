@@ -4308,7 +4308,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le canary v4 préparé contient 10 cibles / 30 contrats, 5 actives et 5
   fermées, 5 multisites et 1 multi-actif, 45 références train, 29 opérateurs
   exacts, zéro ajout de marque et zéro combinaison d'opérateurs dupliquée dans
-  une seed. Seed hash : `94104694a929856e`. Les deux générations indépendantes
+  une seed. Correctif final : `7875f92` (`fix: constrain synthetic GT canary
+  contracts`), qui impose aussi l'unicité des signatures relationnelles exigée
+  par le runtime. Seed hash : `3cd4337436979ea8`. Les deux générations indépendantes
   du sélecteur sont byte-identiques. Suite ciblée : 44 tests passants. Seul ce
   canary peut être lancé ; aucun passage à 30/150/20 000 avant son audit
   full-SIRENE et un nouveau verdict indépendant.
