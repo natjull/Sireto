@@ -26,6 +26,13 @@ def test_subset_requires_retained_distinctive_anchor() -> None:
     assert not selector.fragment_supports("name", "ALPHA BETA GAMMA DELTA", value, ["delta"])
 
 
+def test_protected_subset_anchor_can_be_selected_from_retained_positions() -> None:
+    words = ["alpha", "beta", "gamma", "delta"]
+    retained = [0, 2]
+    anchors = ["delta", "gamma"]
+    assert [value for value in anchors if value in {words[index] for index in retained}][:1] == ["gamma"]
+
+
 def test_added_marks_and_wrong_punctuation_boundary_are_rejected() -> None:
     added = fragment("city", "DIACRITIC_ADDED", {})
     assert not selector.fragment_supports("city", "SAINT-DENIS", added, [])

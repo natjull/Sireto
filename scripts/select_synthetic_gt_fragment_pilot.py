@@ -457,8 +457,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         contracts = []
         for slot, variant_id in enumerate(("v1", "v2", "v3")):
             location_field, location_relation = location_relations[slot]
+            name_fragment = name_fragments[(siret, slot, "name")]
             field_fragments = {
-                "name": name_fragments[(siret, slot, "name")],
+                "name": name_fragment,
                 location_field: location_fragments[(siret, slot, location_field)],
             }
             refs = {value["inspiration_ref"] for value in field_fragments.values()}
@@ -466,6 +467,18 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 raise RuntimeError("fragment reference exceeds pilot reuse cap")
             used_refs.update(refs)
             anchors = target_anchors[siret]
+            protected_anchor = anchors[:1]
+            if name_relations[slot] == "TOKEN_SUBSET":
+                retained = name_fragment["operation_parameters"]["retained_positions"]
+                retained_words = {
+                    loop.normalized_words(target_values[siret]["name"])[index]
+                    for index in retained
+                }
+                protected_anchor = [
+                    value for value in anchors if value in retained_words
+                ][:1]
+                if not protected_anchor:
+                    raise RuntimeError("TOKEN_SUBSET lacks a retained distinctive anchor")
             contracts.append({
                 "variant_id": variant_id,
                 "requested_family": loop.COMPOSITE_FAMILY,
@@ -474,7 +487,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                     "name": name_relations[slot], location_field: location_relation,
                 },
                 "field_inspirations": field_fragments,
-                "protected_target_tokens": {"name": anchors[:3]},
+                "protected_target_tokens": {"name": protected_anchor},
                 "rules": {
                     "copy_non_target_fields_byte_for_byte": True,
                     "no_new_lexical_or_numeric_tokens": True,
