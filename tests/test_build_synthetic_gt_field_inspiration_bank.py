@@ -33,6 +33,12 @@ def test_token_permutation_is_position_locked() -> None:
     ) == {"source_token_count": 3, "permutation": [2, 0, 1]}
 
 
+def test_join_operator_records_exact_contiguous_groups() -> None:
+    assert bank.operation_parameters(
+        "name", "JOIN_SPLIT", "ALPHA BETA GAMMA", "ALPHABETA GAMMA"
+    ) == {"source_token_count": 3, "groups": [[0, 1], [2]]}
+
+
 def test_address_subset_preserves_number_and_exact_positions() -> None:
     assert bank.operation_parameters(
         "address", "ADDRESS_TOKEN_SUBSET", "12 RUE DES LILAS", "12 RUE LILAS"

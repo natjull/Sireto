@@ -1169,7 +1169,21 @@ def composite_operation_parameters(
     if relation == "JOIN_SPLIT":
         if normalized_alnum(source) != normalized_alnum(target) or len(right) >= len(left):
             return None
-        return {"source_token_count": len(left), "target_token_count": len(right)}
+        groups: list[list[int]] = []
+        cursor = 0
+        for target_word in right:
+            joined = ""
+            group: list[int] = []
+            while cursor < len(left) and len(joined) < len(target_word):
+                joined += left[cursor]
+                group.append(cursor)
+                cursor += 1
+            if joined != target_word:
+                return None
+            groups.append(group)
+        if cursor != len(left) or all(len(group) == 1 for group in groups):
+            return None
+        return {"source_token_count": len(left), "groups": groups}
     return None
 
 

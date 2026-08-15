@@ -124,7 +124,7 @@ COMPOSITE_ROLE_PROMPTS = {
 OBSERVED_COMPOSITE_ANALOGY contracts. A contract may provide one separate real train fragment per
 target field. Study each official_value->observed_crm_value fragment only as an edit analogy, then
 YOU directly write the new CRM for the target establishment. Apply the exact operation_parameters
-(retained token positions, permutation, removed mark boundary, or street-type pair) to the target
+(retained token positions, permutation, exact joined-token groups, removed mark boundary, or street-type pair) to the target
 field; do not copy any lexical content from a fragment. Return exactly v1/v2/v3 and declare only
 OBSERVED_COMPOSITE_ANALOGY for every variant.
 

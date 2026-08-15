@@ -12,7 +12,7 @@
     },
     "field_inspiration_bank": {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v1.jsonl",
-      "sha256": "bfbfcbd27b49762b9daf327b9c0a326f1bd7ddbbaec20999b5d9a3aaf23eea59"
+      "sha256": "b43a7b6b2675cf167a92b623e64bbde009668489a69b3cea9a05ca257d335074"
     }
   },
   "generation": {

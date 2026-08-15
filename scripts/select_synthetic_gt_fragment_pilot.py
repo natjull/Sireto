@@ -132,7 +132,12 @@ def fragment_supports(
             return bool(set(anchors) & {words[index] for index in retained})
         if relation == "LEGAL_FORM_REMOVE":
             removed = [words[index] for index in range(len(words)) if index not in retained]
-            return bool(removed) and all(value.upper() in loop.LEGAL_FORM_TOKENS for value in removed)
+            return (
+                bool(removed)
+                and all(value.upper() in loop.LEGAL_FORM_TOKENS for value in removed)
+                and [value.casefold() for value in removed]
+                == [str(value).casefold() for value in parameters.get("removed_legal_forms", [])]
+            )
         if relation == "ADDRESS_TOKEN_SUBSET":
             retained_words = [words[index] for index in retained]
             return (
@@ -158,7 +163,12 @@ def fragment_supports(
             for value in edits
         )
     if relation == "JOIN_SPLIT":
-        return parameters.get("target_token_count", len(words)) < len(words)
+        groups = parameters.get("groups")
+        return (
+            isinstance(groups, list)
+            and [index for group in groups for index in group] == list(range(len(words)))
+            and any(len(group) > 1 for group in groups)
+        )
     return False
 
 
@@ -467,7 +477,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 raise RuntimeError("fragment reference exceeds pilot reuse cap")
             used_refs.update(refs)
             anchors = target_anchors[siret]
-            protected_anchor = anchors[:1]
+            protected_anchor: list[str] = []
             if name_relations[slot] == "TOKEN_SUBSET":
                 retained = name_fragment["operation_parameters"]["retained_positions"]
                 retained_words = {
