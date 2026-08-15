@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import json
 
 import pandas as pd
 
@@ -85,6 +86,15 @@ def test_context_hash_is_deterministic() -> None:
     first = context.context_row(target(), [], set(), 32)
     second = context.context_row(target(), [], set(), 32)
     assert first["context_sha256"] == second["context_sha256"]
+
+
+def test_read_seed_sirets_accepts_provenanced_sirene_intake(tmp_path: Path) -> None:
+    path = tmp_path / "intake.jsonl"
+    path.write_text(
+        json.dumps({"source_siret": "12345678900012"}) + "\n",
+        encoding="utf-8",
+    )
+    assert context.read_seed_sirets(path) == ["12345678900012"]
 
 
 def test_query_context_uses_same_lowercase_normalization_aliases_and_physical_names(tmp_path: Path) -> None:

@@ -1,0 +1,107 @@
+{
+  "schema_version": "sireto-synthetic-gt-balanced-production-1",
+  "objective": {
+    "promoted_variant_target": 20000,
+    "maximum_unique_targets": 8000,
+    "maximum_variants_per_target": 3,
+    "legacy_and_canary_rows_count_toward_target": false
+  },
+  "sources": {
+    "official_context": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v6_33447.jsonl",
+      "sha256": "3dede20db4086843bfe60b8983cdba635c1afe9f472d1e4b31237f154ebe4c71"
+    },
+    "field_inspiration_bank": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v3.jsonl",
+      "sha256": "871f9433eac08c90206c69062bee8c60d31fe67cbd53d2c57d9ef3e406fc8458"
+    },
+    "train_oof_failure_catalog": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_oof_bge_xgb_failure_catalog_v1.json",
+      "sha256": "9ab3eb713cde51222fcbc2de4b9979997a11ae5cca0918cf77b8d77f639cf25d"
+    }
+  },
+  "corpus_balance": {
+    "difficulty": {
+      "EASY": 0.20,
+      "MEDIUM": 0.50,
+      "HARD": 0.30
+    },
+    "augmentation_strata": {
+      "FAIL_BOTH_MODELS": 0.20,
+      "FAIL_XGB_ONLY": 0.15,
+      "FAIL_BGE_ONLY": 0.15,
+      "TRAIN_DISTRIBUTION": 0.40,
+      "NEAR_CLEAN_CONTROL": 0.10
+    },
+    "failure_evidence": "aggregate train-only OOF folds 2/3/4; no identities exported",
+    "real_synthetic_training_mix": "approximately 2:1",
+    "synthetic_scene_weight": "0.5 / number_of_promoted_variants_for_target",
+    "forbidden_consumers": [
+      "risk_model",
+      "probability_calibration",
+      "AUTO_threshold_selection",
+      "final_test"
+    ]
+  },
+  "relations": {
+    "name_allowed": [
+      "LEGAL_FORM_REMOVE",
+      "TOKEN_ORDER",
+      "PUNCTUATION_REMOVED"
+    ],
+    "address_allowed": [
+      "ADDRESS_ABBREVIATE",
+      "ADDRESS_ALIAS_EXPAND",
+      "ADDRESS_TOKEN_SUBSET",
+      "PUNCTUATION_REMOVED"
+    ],
+    "city_allowed": ["PUNCTUATION_REMOVED"],
+    "suspended": [
+      "NAME_TOKEN_SUBSET",
+      "JOIN_SPLIT",
+      "OCR",
+      "DIACRITIC_ADDED",
+      "PUNCTUATION_ADDED",
+      "FREE_SEMANTIC_REWRITE",
+      "ENSEIGNE_REWRITE"
+    ]
+  },
+  "production": {
+    "first_batch": {
+      "batch_id": "P000",
+      "target_count": 150,
+      "planned_variants": 450,
+      "counts_toward_target": true,
+      "bootstrap_exact_operator_cap": 180,
+      "bootstrap_relation_caps": {
+        "name:TOKEN_ORDER": 90
+      },
+      "bootstrap_cap_must_be_diluted_to_global_share": true
+    },
+    "later_batch_target_count": 500,
+    "generator_model": "gpt-5.6-luna",
+    "generator_reasoning_effort": "low",
+    "critic_reasoning_effort": "high",
+    "adjudicator_reasoning_effort": "max",
+    "initial_concurrency": 32,
+    "maximum_concurrency": 64,
+    "generator_task_mode": "per-variant",
+    "allow_partial_seed_promotion": true,
+    "max_generator_attempts": 3
+  },
+  "global_caps": {
+    "inspiration_ref_uses": 30,
+    "exact_operator_share": 0.05,
+    "relation_pair_share": 0.10,
+    "duplicate_surface_count": 0
+  },
+  "promotion_gates": {
+    "deterministic_preflight": true,
+    "critic_accept_required": true,
+    "full_sirene_exact_witness": "G_N_A_SINGLETON_TARGET_ONLY",
+    "positive_injection": false,
+    "qualification_uses_retrieval_or_model_scores": false,
+    "operational_equivalence_reported_separately": true,
+    "protected_folds": [0, 1, "test"]
+  }
+}

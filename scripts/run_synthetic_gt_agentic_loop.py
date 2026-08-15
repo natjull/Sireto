@@ -30,10 +30,10 @@ DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
     "GENERATOR": "sireto-gt-generator-v7",
-    "CRITIC": "sireto-gt-critic-v7",
+    "CRITIC": "sireto-gt-critic-v8",
     "ADJUDICATOR": "sireto-gt-adjudicator-v4",
 }
-PER_VARIANT_GENERATOR_PROMPT_VERSION = "sireto-gt-generator-variant-v1"
+PER_VARIANT_GENERATOR_PROMPT_VERSION = "sireto-gt-generator-variant-v2"
 GENERATOR_TASK_MODES = {"seed-batch", "per-variant"}
 PENDING_BY_ROLE = {
     "GENERATOR": "PENDING_GENERATOR",
@@ -83,7 +83,8 @@ COMPOSITE_RELATIONS_BY_FIELD = {
         "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED",
     },
     "address": {
-        "ADDRESS_ABBREVIATE", "ADDRESS_TYPE_ORDER", "ADDRESS_TOKEN_SUBSET", "JOIN_SPLIT",
+        "ADDRESS_ABBREVIATE", "ADDRESS_ALIAS_EXPAND", "ADDRESS_TYPE_ORDER",
+        "ADDRESS_TOKEN_SUBSET", "JOIN_SPLIT",
         "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED",
     },
     "city": {
@@ -466,8 +467,10 @@ def validate_composite_contracts(
         return
     if seed_card.get("generation_mode") != "OBSERVED_COMPOSITE_ANALOGY_V2":
         raise ValueError(f"unsupported composite generation mode for seed {seed_id}")
-    if not isinstance(contracts, list) or len(contracts) != 3:
-        raise ValueError(f"composite contracts must contain exactly three variants for seed {seed_id}")
+    if not isinstance(contracts, list) or not (1 <= len(contracts) <= 3):
+        raise ValueError(
+            f"composite contracts must contain between one and three variants for seed {seed_id}"
+        )
     expected_ids = {"v1", "v2", "v3"}
     refs: list[str] = []
     signatures: list[str] = []
@@ -545,11 +548,12 @@ def validate_composite_contracts(
         if field_inspirations is None:
             refs.append(ref)
         signatures.append(digest_json({"fields": sorted(fields), "relations": field_relations}))
-    if {contract.get("variant_id") for contract in contracts} != expected_ids:
-        raise ValueError(f"composite variant ids must be exactly v1/v2/v3 for seed {seed_id}")
+    contract_ids = [contract.get("variant_id") for contract in contracts]
+    if len(set(contract_ids)) != len(contract_ids) or not set(contract_ids).issubset(expected_ids):
+        raise ValueError(f"composite variant ids must be a unique subset of v1/v2/v3 for seed {seed_id}")
     if len(set(refs)) != len(refs):
         raise ValueError(f"composite inspirations must be unique within seed {seed_id}")
-    if len(set(signatures)) != 3:
+    if len(set(signatures)) != len(contracts):
         raise ValueError(f"composite operation signatures must differ within seed {seed_id}")
     if profile.get("rows", 0) <= 0 or COMPOSITE_FAMILY not in profile.get("supported_families", []):
         raise ValueError(f"composite profile evidence missing for seed {seed_id}")
@@ -575,7 +579,8 @@ def command_init(args: argparse.Namespace) -> None:
         "allow_easy_supervisor": bool(args.allow_easy_supervisor),
         "max_generator_attempts": args.max_generator_attempts,
         "generator_task_mode": args.generator_task_mode,
-        "variants_per_seed": 3,
+        "allow_partial_seed_promotion": bool(args.allow_partial_seed_promotion),
+        "variants_per_seed": "1_to_3" if args.allow_partial_seed_promotion else 3,
     }
     if args.critic_mode != "all" and not args.allow_easy_supervisor:
         raise ValueError("targeted critic requires --allow-easy-supervisor after a passed pilot")
@@ -589,11 +594,17 @@ def command_init(args: argparse.Namespace) -> None:
     if args.generator_task_mode == "per-variant":
         for row in rows:
             contracts = variant_contract(row["seed_card"])
-            if len(contracts) != 3 or {value.get("variant_id") for value in contracts} != {
-                "v1", "v2", "v3"
-            }:
+            contract_ids = {value.get("variant_id") for value in contracts}
+            expected_ids = {"v1", "v2", "v3"}
+            if (
+                not contracts
+                or len(contracts) != len(contract_ids)
+                or not contract_ids.issubset(expected_ids)
+                or (not args.allow_partial_seed_promotion and contract_ids != expected_ids)
+            ):
                 raise ValueError(
-                    "per-variant generation requires exact v1/v2/v3 contracts for "
+                    "per-variant generation requires exact v1/v2/v3 contracts by default "
+                    "or a unique subset with --allow-partial-seed-promotion for "
                     f"seed {row['seed_id']}"
                 )
     target_sirets = [row["target_siret"] for row in rows]
@@ -633,13 +644,16 @@ def command_init(args: argparse.Namespace) -> None:
                 ),
             )
             if args.generator_task_mode == "per-variant":
+                contract_ids = sorted(
+                    value["variant_id"] for value in variant_contract(row["seed_card"])
+                )
                 connection.executemany(
                     """INSERT INTO generator_slots
                        (run_id, seed_id, variant_id, status, updated_at)
                        VALUES (?, ?, ?, 'PENDING', ?)""",
                     [
                         (args.run_id, str(row["seed_id"]), variant_id, now_ts())
-                        for variant_id in ("v1", "v2", "v3")
+                        for variant_id in contract_ids
                     ],
                 )
         event(connection, args.run_id, None, "RUN_INITIALIZED", {"seed_count": len(rows), "policy": policy})
@@ -732,20 +746,37 @@ def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row)
                WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
             (run_id, seed["seed_id"]),
         ).fetchall()
-        if len(slots) != 3 or any(row["status"] != "PASSED" for row in slots):
+        if not slots or any(row["status"] == "PENDING" for row in slots):
             raise RuntimeError(
-                f"critic requires three passed generator slots for seed {seed['seed_id']}"
+                f"critic requires terminal generator slots for seed {seed['seed_id']}"
             )
+        if (
+            not policy.get("allow_partial_seed_promotion", False)
+            and any(row["status"] != "PASSED" for row in slots)
+        ):
+            raise RuntimeError(
+                f"critic requires all generator slots passed for seed {seed['seed_id']}"
+            )
+        passed_ids = {row["variant_id"] for row in slots if row["status"] == "PASSED"}
+        if not passed_ids:
+            raise RuntimeError(f"critic requires at least one passed slot for seed {seed['seed_id']}")
+    else:
+        passed_ids = {"v1", "v2", "v3"}
     variants = connection.execute(
         """SELECT variant_id, crm_json, preflight_json FROM variants
            WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
         (run_id, seed["seed_id"]),
     ).fetchall()
+    variants = [row for row in variants if row["variant_id"] in passed_ids]
+    selected_contracts = [
+        value for value in variant_contract(seed_card)
+        if value["variant_id"] in passed_ids
+    ]
     return {
         "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
         "seed_card": llm_seed_card(seed_card),
         "baseline_crm": official_baseline(seed_card),
-        "variant_contract": variant_contract(seed_card),
+        "variant_contract": selected_contracts,
         "variants": [
             {
                 "variant_id": row["variant_id"],
@@ -766,14 +797,19 @@ def adjudicator_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3
     seed_card = json.loads(seed["seed_card_json"])
     variants = connection.execute(
         """SELECT variant_id, crm_json, preflight_json, critic_json, critic_decision
-           FROM variants WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
+           FROM variants WHERE run_id=? AND seed_id=? AND critic_decision IS NOT NULL
+           ORDER BY variant_id""",
         (run_id, seed["seed_id"]),
     ).fetchall()
+    selected_ids = {row["variant_id"] for row in variants}
     return {
         "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
         "seed_card": llm_seed_card(seed_card),
         "baseline_crm": official_baseline(seed_card),
-        "variant_contract": variant_contract(seed_card),
+        "variant_contract": [
+            value for value in variant_contract(seed_card)
+            if value["variant_id"] in selected_ids
+        ],
         "variants": [
             {
                 "variant_id": row["variant_id"],
@@ -785,6 +821,35 @@ def adjudicator_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3
             for row in variants
         ],
     }
+
+
+def prior_generator_fingerprints(
+    connection: sqlite3.Connection,
+    run_id: str,
+    seed_id: str,
+    variant_id: str,
+) -> list[str]:
+    """Recover every prior rejected surface from immutable raw generator responses."""
+    result: list[str] = []
+    rows = connection.execute(
+        """SELECT raw_response FROM tasks
+           WHERE run_id=? AND seed_id=? AND role='GENERATOR' AND variant_id=?
+             AND raw_response IS NOT NULL
+           ORDER BY created_at, task_id""",
+        (run_id, seed_id, variant_id),
+    ).fetchall()
+    for row in rows:
+        try:
+            response = json.loads(row["raw_response"])
+            variants = [
+                value for value in response.get("variants", [])
+                if value.get("variant_id") == variant_id
+            ]
+            if len(variants) == 1:
+                result.append(surface_fingerprint(variants[0]["crm"]))
+        except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+            continue
+    return list(dict.fromkeys(result))
 
 
 def make_task(
@@ -845,9 +910,16 @@ def make_task(
                 (run_id, seed["seed_id"], task_variant_id),
             ).fetchone()
             if previous:
+                previous_fingerprints = prior_generator_fingerprints(
+                    connection, run_id, seed["seed_id"], task_variant_id
+                )
+                previous_preflight = json.loads(previous["preflight_json"])
                 role_input["retry_context"] = {
-                    "previous_fingerprints_to_avoid": [previous["crm_fingerprint"]],
-                    "previous_preflight_errors": json.loads(previous["preflight_json"])["errors"],
+                    "previous_fingerprints_to_avoid": previous_fingerprints,
+                    "previous_preflight_errors": previous_preflight["errors"],
+                    "operator_diagnostics": previous_preflight.get(
+                        "operator_diagnostics", {}
+                    ).get(task_variant_id, {}),
                 }
         elif int(seed["attempt"]) > 0:
             previous = connection.execute(
@@ -1130,6 +1202,34 @@ def expanded_street_words(value: Any) -> list[str]:
     return [STREET_TYPE_ABBREVIATIONS.get(word.upper(), word.upper()) for word in normalized_words(value)]
 
 
+def address_alias_relation(source: str, target: str) -> str | None:
+    """Classify one-way street-type aliases without conflating expansion and abbreviation."""
+    left, right = normalized_words(source), normalized_words(target)
+    if len(left) != len(right) or expanded_street_words(source) != expanded_street_words(target):
+        return None
+    directions: set[str] = set()
+    changed = 0
+    canonical_types = set(STREET_TYPE_ABBREVIATIONS.values())
+    for source_word, target_word in zip(left, right, strict=True):
+        source_upper, target_upper = source_word.upper(), target_word.upper()
+        if source_upper == target_upper:
+            continue
+        changed += 1
+        if (
+            source_upper in canonical_types
+            and STREET_TYPE_ABBREVIATIONS.get(target_upper) == source_upper
+        ):
+            directions.add("ADDRESS_ABBREVIATE")
+        elif (
+            source_upper in STREET_TYPE_ABBREVIATIONS
+            and STREET_TYPE_ABBREVIATIONS[source_upper] == target_upper
+        ):
+            directions.add("ADDRESS_ALIAS_EXPAND")
+        else:
+            return None
+    return next(iter(directions)) if changed == 1 and len(directions) == 1 else None
+
+
 def _composite_mark_relation(source: str, target: str) -> str | None:
     source_punctuation = Counter(character for character in source if character in PUNCTUATION)
     target_punctuation = Counter(character for character in target if character in PUNCTUATION)
@@ -1169,7 +1269,7 @@ def composite_relation_class(field: str, source: str, target: str) -> str | None
         and source_words != target_words
         and expanded_street_words(source) == expanded_street_words(target)
     ):
-        return "ADDRESS_ABBREVIATE"
+        return address_alias_relation(source, target)
     if Counter(source_words) == Counter(target_words) and source_words != target_words:
         if field == "address":
             street_types = set(STREET_TYPE_ABBREVIATIONS.values())
@@ -1252,6 +1352,25 @@ def positioned_punctuation_marks(value: str) -> list[tuple[int, str]]:
     return result
 
 
+def lexical_token_spans(value: str) -> list[tuple[int, int]]:
+    """Return raw spans for the lexical tokens used by punctuation-boundary contracts."""
+    return [match.span() for match in re.finditer(r"[^\W_]+", str(value), re.UNICODE)]
+
+
+def token_boundary_separator(value: str, boundary: int) -> str | None:
+    """Return the exact raw separator at a token boundary, including repeated spaces."""
+    spans = lexical_token_spans(value)
+    if not spans:
+        return None
+    if boundary == -1:
+        return value[:spans[0][0]]
+    if boundary < 0 or boundary >= len(spans):
+        return None
+    if boundary == len(spans) - 1:
+        return value[spans[-1][1]:]
+    return value[spans[boundary][1]:spans[boundary + 1][0]]
+
+
 def composite_punctuation_edits(source: str, target: str) -> list[dict[str, Any]] | None:
     """Locate removed punctuation by the token boundary it occupied."""
     source_marks = positioned_punctuation_marks(source)
@@ -1264,7 +1383,14 @@ def composite_punctuation_edits(source: str, target: str) -> list[dict[str, Any]
     edits: list[dict[str, Any]] = []
     for boundary, mark in source_marks:
         if remaining[(boundary, mark)] > 0:
-            edits.append({"after_token_index": boundary, "mark": mark})
+            replacement = token_boundary_separator(target, boundary)
+            if replacement not in {"", " "}:
+                return None
+            edits.append({
+                "after_token_index": boundary,
+                "mark": mark,
+                "replacement": replacement,
+            })
             remaining[(boundary, mark)] -= 1
     return edits or None
 
@@ -1362,8 +1488,8 @@ def composite_operation_parameters(
             "source_token_count": len(left), "retained_positions": positions,
             "removed_legal_forms": removed,
         }
-    if relation == "ADDRESS_ABBREVIATE":
-        if len(left) != len(right) or expanded_street_words(source) != expanded_street_words(target):
+    if relation in {"ADDRESS_ABBREVIATE", "ADDRESS_ALIAS_EXPAND"}:
+        if address_alias_relation(source, target) != relation:
             return None
         pairs = [
             {"source": source_word.upper(), "target": target_word.upper()}
@@ -1582,6 +1708,11 @@ def composite_change_errors(
                 or len(normalized_words(target)) * 2 < len(normalized_words(source))
             ):
                 errors.append("NAME_TOKEN_SUBSET_TOO_DESTRUCTIVE")
+            if expected_relation == "TOKEN_SUBSET":
+                if re.search(r"(?:[&/+\-]|\b(?:and|et))\s*$", target, re.IGNORECASE):
+                    errors.append("NAME_DANGLING_SEPARATOR")
+                if re.search(r"\s{2,}", target):
+                    errors.append("NAME_DOUBLE_SPACE")
         elif field == "address":
             expanded_source = "".join(expanded_street_words(source)).casefold()
             expanded_target = "".join(expanded_street_words(target)).casefold()
@@ -1653,6 +1784,7 @@ def generator_preflight(
 ) -> dict[str, Any]:
     errors: list[str] = []
     fingerprints: list[str] = []
+    operator_diagnostics: dict[str, dict[str, Any]] = {}
     seed_card = json.loads(seed["seed_card_json"])
     baseline = official_baseline(seed_card)
     contracts = {
@@ -1680,6 +1812,20 @@ def generator_preflight(
             if contract["requested_family"] == COMPOSITE_FAMILY:
                 for reason in composite_change_errors(baseline, crm, contract, seed_card):
                     errors.append(f"{variant['variant_id']}:{reason}")
+                variant_diagnostics: dict[str, Any] = {}
+                for field in contract.get("target_fields", []):
+                    fragment = contract.get("field_inspirations", {}).get(field, {})
+                    relation = contract.get("field_relations", {}).get(field)
+                    variant_diagnostics[field] = {
+                        "relation": relation,
+                        "source_tokens": normalized_words(baseline[field]),
+                        "target_tokens": normalized_words(crm[field]),
+                        "expected_parameters": fragment.get("operation_parameters"),
+                        "actual_parameters": composite_operation_parameters(
+                            field, relation, baseline[field], crm[field]
+                        ) if relation else None,
+                    }
+                operator_diagnostics[variant["variant_id"]] = variant_diagnostics
                 for competitor_ref in known_context_ambiguities(crm, seed_card):
                     errors.append(f"{variant['variant_id']}:KNOWN_CONTEXT_AMBIGUOUS:{competitor_ref}")
             else:
@@ -1694,7 +1840,12 @@ def generator_preflight(
                         errors.append(f"{variant['variant_id']}:{reason}")
     if len(set(fingerprints)) != len(fingerprints):
         errors.append("DUPLICATE_OR_COSMETIC_VARIANTS")
-    return {"passed": not errors, "errors": sorted(set(errors)), "checked_fields": list(CRM_FIELDS)}
+    return {
+        "passed": not errors,
+        "errors": sorted(set(errors)),
+        "checked_fields": list(CRM_FIELDS),
+        "operator_diagnostics": operator_diagnostics,
+    }
 
 
 def should_critic(seed: sqlite3.Row, policy: dict[str, Any]) -> bool:
@@ -1823,6 +1974,13 @@ def store_generator_variant(
     variant = response["variants"][0]
     preflight = generator_preflight(response, seed, {variant_id})
     fingerprint = surface_fingerprint(variant["crm"])
+    if fingerprint in prior_generator_fingerprints(
+        connection, task["run_id"], seed["seed_id"], variant_id
+    ):
+        preflight["errors"] = sorted(set(
+            preflight["errors"] + [f"{variant_id}:REPEATED_REJECTED_FINGERPRINT"]
+        ))
+        preflight["passed"] = False
     duplicate = connection.execute(
         """SELECT 1 FROM variants
            WHERE run_id=? AND crm_fingerprint=?
@@ -1891,9 +2049,15 @@ def store_generator_variant(
             (task["run_id"], seed["seed_id"]),
         ).fetchall()
     ]
-    if len(slot_states) != 3:
+    expected_slot_count = len(variant_contract(json.loads(seed["seed_card_json"])))
+    if len(slot_states) != expected_slot_count:
         raise RuntimeError(f"seed has incomplete generator slot state: {seed['seed_id']}")
-    if all(value == "PASSED" for value in slot_states):
+    slots_terminal = not any(value == "PENDING" for value in slot_states)
+    passed_count = sum(value == "PASSED" for value in slot_states)
+    partial_allowed = bool(policy.get("allow_partial_seed_promotion", False))
+    if slots_terminal and passed_count and (
+        partial_allowed or passed_count == len(slot_states)
+    ):
         if should_critic(seed, policy):
             next_status = "PENDING_CRITIC"
         elif policy["allow_easy_supervisor"]:
@@ -1935,11 +2099,20 @@ def store_generator(
         store_generator_batch(connection, task, seed, raw, response, policy)
 
 
-def decision_map(response: dict[str, Any]) -> dict[str, dict[str, Any]]:
+def expected_decision_ids(task: sqlite3.Row) -> set[str]:
+    task_json = json.loads(task["task_json"])
+    return {
+        value["variant_id"] for value in task_json["input"].get("variants", [])
+    }
+
+
+def decision_map(
+    response: dict[str, Any], expected_ids: set[str]
+) -> dict[str, dict[str, Any]]:
     values = response["decisions"]
     result = {value["variant_id"]: value for value in values}
-    if set(result) != {"v1", "v2", "v3"} or len(values) != 3:
-        raise ValueError("decisions must cover v1, v2 and v3 exactly once")
+    if not expected_ids or set(result) != expected_ids or len(values) != len(expected_ids):
+        raise ValueError("decisions must cover every reviewed variant exactly once")
     return result
 
 
@@ -1949,7 +2122,7 @@ def store_critic(
     seed: sqlite3.Row,
     response: dict[str, Any],
 ) -> None:
-    decisions = decision_map(response)
+    decisions = decision_map(response, expected_decision_ids(task))
     for variant_id, value in decisions.items():
         connection.execute(
             """UPDATE variants SET critic_json=?, critic_decision=?
@@ -1978,7 +2151,7 @@ def store_adjudicator(
     seed: sqlite3.Row,
     response: dict[str, Any],
 ) -> None:
-    decisions = decision_map(response)
+    decisions = decision_map(response, expected_decision_ids(task))
     for variant_id, value in decisions.items():
         connection.execute(
             """UPDATE variants SET adjudicator_json=?, adjudicator_decision=?
@@ -2094,6 +2267,7 @@ def command_supervise(args: argparse.Namespace) -> None:
             raise ValueError(f"unknown run: {args.run_id}")
         policy = json.loads(run["policy_json"])
         per_variant = policy.get("generator_task_mode", "seed-batch") == "per-variant"
+        allow_partial = bool(policy.get("allow_partial_seed_promotion", False))
         seeds = connection.execute(
             """SELECT * FROM seeds WHERE run_id=? AND status='READY_SUPERVISOR'
                ORDER BY seed_id LIMIT ?""",
@@ -2105,27 +2279,46 @@ def command_supervise(args: argparse.Namespace) -> None:
                     """SELECT * FROM variants WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
                     (args.run_id, seed["seed_id"]),
                 ).fetchall()
-                if len(variants) != 3:
+                contracted_ids = {
+                    value["variant_id"]
+                    for value in variant_contract(json.loads(seed["seed_card_json"]))
+                }
+                expected_ids = contracted_ids or {"v1", "v2", "v3"}
+                if {row["variant_id"] for row in variants} != expected_ids:
+                    if not contracted_ids:
+                        raise RuntimeError(
+                            f"supervisor requires exactly three variants for seed {seed['seed_id']}"
+                        )
                     raise RuntimeError(
-                        f"supervisor requires exactly three variants for seed {seed['seed_id']}; "
-                        f"found {len(variants)}"
+                        f"supervisor requires one row per contracted variant for seed "
+                        f"{seed['seed_id']}"
                     )
-                generation_incomplete = False
+                slot_status: dict[str, str] = {}
                 if per_variant:
                     slots = connection.execute(
                         """SELECT variant_id, status FROM generator_slots
                            WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
                         (args.run_id, seed["seed_id"]),
                     ).fetchall()
-                    if len(slots) != 3:
+                    if {row["variant_id"] for row in slots} != expected_ids:
                         raise RuntimeError(
-                            f"supervisor requires three generator slots for seed {seed['seed_id']}"
+                            f"supervisor generator slots disagree with contracts for seed {seed['seed_id']}"
                         )
-                    generation_incomplete = any(row["status"] != "PASSED" for row in slots)
+                    slot_status = {row["variant_id"]: row["status"] for row in slots}
                 for variant in variants:
                     preflight = json.loads(variant["preflight_json"])
-                    if generation_incomplete:
+                    generation_incomplete = (
+                        per_variant and slot_status.get(variant["variant_id"]) != "PASSED"
+                    )
+                    seed_generation_incomplete = (
+                        per_variant
+                        and not allow_partial
+                        and any(value != "PASSED" for value in slot_status.values())
+                    )
+                    if seed_generation_incomplete:
                         decision, reason = "REJECT", "SEED_GENERATION_INCOMPLETE"
+                    elif generation_incomplete:
+                        decision, reason = "REJECT", "VARIANT_GENERATION_INCOMPLETE"
                     elif not preflight["passed"]:
                         decision, reason = "REJECT", "DETERMINISTIC_PREFLIGHT_FAILED"
                     elif variant["critic_decision"] == "REJECT":
@@ -2210,7 +2403,15 @@ def command_status(args: argparse.Namespace) -> None:
 
 
 def export_row(seed: sqlite3.Row, variant: sqlite3.Row) -> dict[str, Any]:
-    return {
+    seed_card = json.loads(seed["seed_card_json"])
+    contract = next(
+        (
+            value for value in variant_contract(seed_card)
+            if value["variant_id"] == variant["variant_id"]
+        ),
+        {},
+    )
+    result = {
         "seed_id": seed["seed_id"],
         "source_kind": seed["source_kind"],
         "target_siret": seed["target_siret"],
@@ -2226,6 +2427,11 @@ def export_row(seed: sqlite3.Row, variant: sqlite3.Row) -> dict[str, Any]:
         "final_decision": variant["final_decision"],
         "final_reason": variant["final_reason"],
     }
+    for key in ("difficulty", "augmentation_stratum", "targeting_evidence"):
+        if key in contract:
+            result[key] = contract[key]
+    result["variant_contract_sha256"] = digest_json(contract) if contract else None
+    return result
 
 
 def command_export(args: argparse.Namespace) -> None:
@@ -2281,6 +2487,10 @@ def parser() -> argparse.ArgumentParser:
     init.add_argument(
         "--generator-task-mode", choices=sorted(GENERATOR_TASK_MODES), default="seed-batch",
         help="lease either one legacy three-variant batch or one independently retried variant",
+    )
+    init.add_argument(
+        "--allow-partial-seed-promotion", action="store_true",
+        help="review and promote each passed variant independently; legacy default remains atomic 3-of-3",
     )
     init.set_defaults(func=command_init)
 

@@ -111,6 +111,24 @@ def test_codex_command_is_ephemeral_luna_low_and_read_only(tmp_path: Path, monke
     assert "--output-last-message" in command
 
 
+def test_codex_command_uses_role_specific_reasoning_effort(tmp_path: Path, monkeypatch):
+    executable = tmp_path / "codex"
+    executable.write_text("#!/bin/sh\nexit 0\n", encoding="utf-8")
+    executable.chmod(0o755)
+    monkeypatch.setattr(driver.shutil, "which", lambda _value: str(executable))
+    args = driver.parser().parse_args([
+        "--db", str(tmp_path / "db.sqlite"), "--run-id", "run-1",
+        "--artifacts", str(tmp_path / "artifacts"),
+        "--generator-reasoning-effort", "low",
+        "--critic-reasoning-effort", "high",
+        "--adjudicator-reasoning-effort", "max",
+    ])
+    schema = tmp_path / "critic" / "task-id" / "schema.json"
+    schema.parent.mkdir(parents=True)
+    command = driver.codex_command(args, schema, tmp_path / "raw.json")
+    assert 'model_reasoning_effort="high"' in command
+
+
 def test_fake_luna_drains_cycle_and_preserves_multiline_raw_response(tmp_path: Path):
     db = tmp_path / "ledger.sqlite"
     seeds = tmp_path / "seeds.jsonl"

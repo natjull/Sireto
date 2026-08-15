@@ -21,7 +21,7 @@ def test_added_marks_are_never_safe_relations() -> None:
 def test_removed_mark_and_abbreviation_parameters_are_exact() -> None:
     assert bank.operation_parameters(
         "city", "PUNCTUATION_REMOVED", "SAINT-DENIS", "SAINT DENIS"
-    ) == {"edits": [{"after_token_index": 0, "mark": "-"}]}
+    ) == {"edits": [{"after_token_index": 0, "mark": "-", "replacement": " "}]}
     assert bank.operation_parameters(
         "address", "ADDRESS_ABBREVIATE", "12 RUE DES LILAS", "12 R DES LILAS"
     ) == {"pairs": [{"source": "RUE", "target": "R"}]}

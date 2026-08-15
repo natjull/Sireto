@@ -26,15 +26,15 @@ def test_prior_seed_registry_excludes_both_siret_and_siren(tmp_path) -> None:
     assert sirens == {"123456789", "987654321"}
 
 
-def test_distinctive_tokens_exclude_competitor_and_generic_words() -> None:
+def test_distinctive_tokens_keep_identity_even_if_shared_with_competitor() -> None:
     context = {
         "target": {"names": [{"kind": "OFFICIAL_NAME", "value": "SAS ALPHA UNIQUE PARIS"}]},
         "internal_context": [{"name_values": ["ALPHA SERVICES"]}],
     }
-    assert selector.distinctive_name_tokens(context) == ["unique", "paris"]
+    assert selector.distinctive_name_tokens(context) == ["alpha", "unique", "paris"]
 
 
-def test_distinctive_tokens_do_not_treat_same_siren_sibling_as_competitor() -> None:
+def test_identity_tokens_are_independent_of_local_competitor_context() -> None:
     context = {
         "target_siren": "123456789",
         "target": {"names": [{"kind": "OFFICIAL_NAME", "value": "ALPHA UNIQUE"}]},
@@ -43,7 +43,7 @@ def test_distinctive_tokens_do_not_treat_same_siren_sibling_as_competitor() -> N
             {"siren": "987654321", "name_values": ["ALPHA SERVICES"]},
         ],
     }
-    assert selector.distinctive_name_tokens(context) == ["unique"]
+    assert selector.distinctive_name_tokens(context) == ["alpha", "unique"]
 
 
 def test_distinctive_tokens_exclude_all_legal_forms() -> None:
@@ -52,6 +52,15 @@ def test_distinctive_tokens_exclude_all_legal_forms() -> None:
         "internal_context": [],
     }
     assert selector.distinctive_name_tokens(context) == ["antonio", "costa"]
+
+
+def test_distinctive_tokens_keep_short_identity_acronyms() -> None:
+    context = {
+        "target": {"names": [{"kind": "OFFICIAL_NAME", "value": "SARL HB QUINCAILLERIE"}]},
+        "internal_context": [],
+    }
+    frequencies = selector.Counter({"hb": 1, "quincaillerie": 100})
+    assert selector.distinctive_name_tokens(context, frequencies) == ["hb", "quincaillerie"]
 
 
 def test_distinctive_tokens_rank_rare_identity_and_exclude_roman_numerals() -> None:
@@ -114,6 +123,21 @@ def test_subset_rejects_clitic_tokenization_that_luna_cannot_follow() -> None:
     )
 
 
+def test_subset_rejects_any_punctuated_or_three_token_source() -> None:
+    punctuated = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
+    )
+    assert not selector.fragment_supports(
+        "name", "LUCENA CONSULTING & MANAGEMENT PLUS", punctuated, ["lucena"]
+    )
+    short = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 3, "retained_positions": [0, 1]}
+    )
+    assert not selector.fragment_supports(
+        "name", "SARL HB QUINCAILLERIE", short, ["hb"]
+    )
+
+
 def test_subset_requires_highest_ranked_distinctive_anchor() -> None:
     drop_last_anchor = fragment(
         "name", "TOKEN_SUBSET", {"source_token_count": 3, "retained_positions": [0, 1]}
@@ -133,14 +157,14 @@ def test_subset_requires_highest_ranked_distinctive_anchor() -> None:
 def test_partial_removal_of_repeated_punctuation_is_not_transferable() -> None:
     remove_terminal_apostrophe = fragment(
         "name", "PUNCTUATION_REMOVED",
-        {"edits": [{"after_token_index": 2, "mark": "'"}]},
+        {"edits": [{"after_token_index": 2, "mark": "'", "replacement": ""}]},
     )
     assert not selector.fragment_supports(
         "name", "'NATUREL ET GOURMANDISE'", remove_terminal_apostrophe, []
     )
     remove_one_dot = fragment(
         "name", "PUNCTUATION_REMOVED",
-        {"edits": [{"after_token_index": 2, "mark": "."}]},
+        {"edits": [{"after_token_index": 2, "mark": ".", "replacement": ""}]},
     )
     assert not selector.fragment_supports(
         "name", "ASSOCIATION ROMAINE CREA...", remove_one_dot, []
@@ -148,7 +172,7 @@ def test_partial_removal_of_repeated_punctuation_is_not_transferable() -> None:
     assert selector.fragment_supports(
         "name", "C.BOBBIA MODERNE", fragment(
             "name", "PUNCTUATION_REMOVED",
-            {"edits": [{"after_token_index": 0, "mark": "."}]},
+            {"edits": [{"after_token_index": 0, "mark": ".", "replacement": ""}]},
         ), []
     )
 
@@ -185,7 +209,7 @@ def test_added_marks_and_wrong_punctuation_boundary_are_rejected() -> None:
     assert not selector.fragment_supports("city", "SAINT-DENIS", added, [])
     removed = fragment(
         "city", "PUNCTUATION_REMOVED",
-        {"edits": [{"after_token_index": 1, "mark": "-"}]},
+        {"edits": [{"after_token_index": 1, "mark": "-", "replacement": " "}]},
     )
     assert not selector.fragment_supports("city", "SAINT-DENIS", removed, [])
 
@@ -210,19 +234,20 @@ def test_canary_name_plan_suspends_join_split() -> None:
     assert sum(selector.NAME_QUOTAS.values()) == 30
 
 
-def test_pilot30_preserves_ref_cap_by_limiting_scarce_token_order() -> None:
+def test_pilot30_balances_relations_in_expanded_official_pool() -> None:
     assert selector.name_quotas_for_target_count(30) == {
-        "TOKEN_SUBSET": 30,
+        "TOKEN_SUBSET": 24,
         "TOKEN_ORDER": 12,
         "LEGAL_FORM_REMOVE": 24,
-        "PUNCTUATION_REMOVED": 24,
+        "PUNCTUATION_REMOVED": 30,
     }
     assert sum(selector.name_quotas_for_target_count(30).values()) == 90
     assert selector.location_quotas_for_target_count(30) == {
-        ("address", "ADDRESS_ABBREVIATE"): 24,
-        ("address", "ADDRESS_TOKEN_SUBSET"): 24,
-        ("address", "PUNCTUATION_REMOVED"): 15,
-        ("city", "PUNCTUATION_REMOVED"): 27,
+        ("address", "ADDRESS_ABBREVIATE"): 18,
+        ("address", "ADDRESS_ALIAS_EXPAND"): 6,
+        ("address", "ADDRESS_TOKEN_SUBSET"): 36,
+        ("address", "PUNCTUATION_REMOVED"): 2,
+        ("city", "PUNCTUATION_REMOVED"): 28,
     }
     assert sum(selector.location_quotas_for_target_count(30).values()) == 90
 

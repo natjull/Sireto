@@ -34,28 +34,28 @@ NAME_QUOTAS = {
     "LEGAL_FORM_REMOVE": 8,
     "PUNCTUATION_REMOVED": 10,
 }
-# Frozen before any pilot30 generation.  TOKEN_ORDER has only four distinct
-# train-only inspiration refs in the clean bank, so its pilot quota cannot
-# exceed 12 under the unchanged three-use provenance cap.  The six displaced
-# operations and the overlap-constrained punctuation share go to guarded
-# TOKEN_SUBSET; every retained result still carries its rare official anchor.
+# Frozen before pilot30_v2 generation from the expanded official-only context.
+# The quotas keep every name relation represented without letting the easy
+# subset transformation dominate the pilot.
 PILOT30_NAME_QUOTAS = {
-    "TOKEN_SUBSET": 30,
+    "TOKEN_SUBSET": 24,
     "TOKEN_ORDER": 12,
     "LEGAL_FORM_REMOVE": 24,
-    "PUNCTUATION_REMOVED": 24,
+    "PUNCTUATION_REMOVED": 30,
 }
 LOCATION_QUOTAS = {
-    ("address", "ADDRESS_ABBREVIATE"): 8,
+    ("address", "ADDRESS_ABBREVIATE"): 5,
+    ("address", "ADDRESS_ALIAS_EXPAND"): 3,
     ("address", "ADDRESS_TOKEN_SUBSET"): 8,
     ("address", "PUNCTUATION_REMOVED"): 7,
     ("city", "PUNCTUATION_REMOVED"): 7,
 }
 PILOT30_LOCATION_QUOTAS = {
-    ("address", "ADDRESS_ABBREVIATE"): 24,
-    ("address", "ADDRESS_TOKEN_SUBSET"): 24,
-    ("address", "PUNCTUATION_REMOVED"): 15,
-    ("city", "PUNCTUATION_REMOVED"): 27,
+    ("address", "ADDRESS_ABBREVIATE"): 18,
+    ("address", "ADDRESS_ALIAS_EXPAND"): 6,
+    ("address", "ADDRESS_TOKEN_SUBSET"): 36,
+    ("address", "PUNCTUATION_REMOVED"): 2,
+    ("city", "PUNCTUATION_REMOVED"): 28,
 }
 QUOTA_UNIT_TARGETS = 10
 STOP_ANCHORS = {
@@ -132,27 +132,17 @@ def distinctive_name_tokens(
     document_frequencies: Counter[str] | None = None,
 ) -> list[str]:
     target_words = loop.normalized_words(legacy.primary_name(context))
-    target_siren = str(context.get("target_siren") or "").strip()
-    competitors = {
-        word
-        for candidate in context.get("internal_context", [])
-        # A sibling is the same legal entity and commonly shares the official
-        # name. It must not erase every usable name anchor; exact SIRET
-        # discrimination remains the job of the independent location anchor
-        # and the full-SIRENE G_N_A gate.
-        if not target_siren or str(candidate.get("siren") or "").strip() != target_siren
-        for name in candidate_names(candidate)
-        for word in loop.normalized_words(name)
-    }
+    # These are identity anchors, not local-discrimination features.  A rare
+    # official token remains part of the target identity even when a neighbour
+    # shares it; exact local ambiguity is handled independently by full G_N_A.
     candidates = list(dict.fromkeys(
         word for word in target_words
         if (
             word.upper() not in STOP_ANCHORS
             and word.upper() not in loop.LEGAL_FORM_TOKENS
-            and len(word) >= 3
+            and len(word) >= 2
             and not word.isdigit()
             and ROMAN_NUMERAL.fullmatch(word) is None
-            and word not in competitors
         )
     ))
     if document_frequencies is None:
@@ -232,6 +222,7 @@ def fragment_supports(
             ]
             return (
                 len(retained) >= 2
+                and len(words) >= 4
                 and len(retained) * 2 >= len(words)
                 and (len(words) < 4 or len(retained) >= 3)
                 and words[retained[-1]] not in NAME_FUNCTION_TERMINALS
@@ -242,6 +233,7 @@ def fragment_supports(
                 # therefore not safely transferable, even if it retains the whole
                 # connected group (for example J'ENTENDS).
                 and not connected_token_pairs(source_value)
+                and not any(character in loop.PUNCTUATION for character in source_value)
                 and bool(anchors)
                 and anchors[0] in {words[index] for index in retained}
             )
@@ -291,12 +283,23 @@ def fragment_supports(
             or (words[-1].upper() in loop.LEGAL_FORM_TOKENS and target_words[0] == words[-1])
         )
         return legal_form_end_move
-    if relation == "ADDRESS_ABBREVIATE":
+    if relation in {"ADDRESS_ABBREVIATE", "ADDRESS_ALIAS_EXPAND"}:
         pairs = parameters.get("pairs", [])
+        source_words = loop.normalized_words(source_value)
+        pair_source = str(pairs[0].get("source", "")).casefold() if len(pairs) == 1 else ""
+        pair_target = str(pairs[0].get("target", "")).casefold() if len(pairs) == 1 else ""
+        matching_positions = [
+            index for index, token in enumerate(source_words) if token == pair_source
+        ]
+        projected_words = list(source_words)
+        if len(matching_positions) == 1:
+            projected_words[matching_positions[0]] = pair_target
         return (
             len(pairs) == 1
-            and str(pairs[0].get("source", "")).upper()
-            == loop.normalized_surface(source_value.split()[1] if len(source_value.split()) > 1 else "").upper()
+            and len(matching_positions) == 1
+            and loop.address_alias_relation(
+                source_value, " ".join(projected_words)
+            ) == relation
         )
     if relation == "PUNCTUATION_REMOVED":
         edits = parameters.get("edits", [])
@@ -308,6 +311,8 @@ def fragment_supports(
         return bool(edits) and all(
             (int(value.get("after_token_index", -99)), str(value.get("mark", ""))) in available
             for value in edits
+        ) and all(
+            value.get("replacement") in {"", " "} for value in edits
         ) and all(
             source_marks[mark] == count for mark, count in requested_marks.items()
         )
@@ -577,15 +582,7 @@ def pair_fragment_plans(
             (name_operators[index], fragment_operator(candidate[index]))
             for index in range(3)
         }
-        relation_pairs = {
-            (
-                names[index]["relation"],
-                candidate[index]["field"],
-                candidate[index]["relation"],
-            )
-            for index in range(3)
-        }
-        if len(operator_pairs) == 3 and len(relation_pairs) == 3:
+        if len(operator_pairs) == 3:
             return list(candidate)
     return None
 
@@ -605,15 +602,7 @@ def pair_fragment_plans_globally(
                 (name_operators[index], fragment_operator(permutation[index]))
                 for index in range(3)
             ]
-            relation_pairs = {
-                (
-                    names[index]["relation"],
-                    permutation[index]["field"],
-                    permutation[index]["relation"],
-                )
-                for index in range(3)
-            }
-            if len(set(operator_pairs)) == 3 and len(relation_pairs) == 3:
+            if len(set(operator_pairs)) == 3:
                 valid.append(permutation)
         if not valid:
             return None
@@ -702,10 +691,13 @@ def select_integrated_fragment_targets(
     inspiration_ref_cap: int,
     minimum_multi_active: int,
     minimum_multi: int,
+    name_quota_bounds: dict[str, tuple[int, int]] | None = None,
+    location_quota_bounds: dict[tuple[str, str], tuple[int, int]] | None = None,
 ) -> tuple[
     list[dict[str, Any]],
     dict[str, list[dict[str, Any]]],
     dict[str, list[dict[str, Any]]],
+    dict[str, dict[Any, int]],
 ]:
     """Solve target, relation and exact-operator capacities in one MILP."""
     candidates: list[dict[str, Any]] = []
@@ -750,7 +742,10 @@ def select_integrated_fragment_targets(
     upper = np.ones(variable_count)
     integrality = np.ones(variable_count)
     for offset, spec in enumerate(assignment_specs, start=target_variables):
-        upper[offset] = min(2, len(spec["refs"]))
+        # One target may reuse a broad relation, but never the same exact
+        # operator twice.  Otherwise two variants can collapse to the same CRM
+        # transformation even when they cite distinct inspiration rows.
+        upper[offset] = min(1, len(spec["refs"]))
 
     constraint_rows: list[dict[int, float]] = []
     minima: list[float] = []
@@ -801,9 +796,22 @@ def select_integrated_fragment_targets(
                 add(coefficients, -np.inf, 0)
 
     for relation, quota in name_quotas.items():
-        add({index: 1 for index in relation_indexes[("name", relation)]}, quota, quota)
+        minimum, maximum = (
+            name_quota_bounds[relation] if name_quota_bounds else (quota, quota)
+        )
+        add(
+            {index: 1 for index in relation_indexes[("name", relation)]},
+            minimum, maximum,
+        )
     for (field, relation), quota in location_quotas.items():
-        add({index: 1 for index in relation_indexes[(field, relation)]}, quota, quota)
+        minimum, maximum = (
+            location_quota_bounds[(field, relation)]
+            if location_quota_bounds else (quota, quota)
+        )
+        add(
+            {index: 1 for index in relation_indexes[(field, relation)]},
+            minimum, maximum,
+        )
     for operator_key, indexes in operator_indexes.items():
         ref_capacity = len(operator_refs[operator_key]) * inspiration_ref_cap
         add({index: 1 for index in indexes}, 0, min(exact_operator_cap, ref_capacity))
@@ -839,6 +847,18 @@ def select_integrated_fragment_targets(
     selected = [
         context for index, context in enumerate(candidates) if result.x[index] > 0.5
     ]
+    resolved_name_quotas = {
+        relation: int(round(sum(
+            result.x[index] for index in relation_indexes[("name", relation)]
+        )))
+        for relation in name_quotas
+    }
+    resolved_location_quotas = {
+        (field, relation): int(round(sum(
+            result.x[index] for index in relation_indexes[(field, relation)]
+        )))
+        for field, relation in location_quotas
+    }
     selected_sirets = {value["target_siret"] for value in selected}
     refs_by_target_operator = {
         (spec["siret"], spec["field"], spec["relation"], spec["operator"]): spec["refs"]
@@ -846,8 +866,11 @@ def select_integrated_fragment_targets(
     }
     plans: dict[str, list[dict[str, Any]]] = defaultdict(list)
     quota_groups = (
-        ("name", {("name", relation): quota for relation, quota in name_quotas.items()}),
-        ("location", dict(location_quotas)),
+        ("name", {
+            ("name", relation): quota
+            for relation, quota in resolved_name_quotas.items()
+        }),
+        ("location", dict(resolved_location_quotas)),
     )
     for field_group, quotas in quota_groups:
         graph = nx.DiGraph()
@@ -930,7 +953,10 @@ def select_integrated_fragment_targets(
     selected.sort(key=lambda value: hashlib.sha256(
         f"{selection_seed}|integrated-final|{value['target_siret']}".encode()
     ).hexdigest())
-    return selected, name_plan, location_plan
+    return selected, name_plan, location_plan, {
+        "name": resolved_name_quotas,
+        "location": resolved_location_quotas,
+    }
 
 
 def select_feasible_targets(
@@ -1174,11 +1200,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         raise ValueError("target_count must be even for the frozen A/F balance")
     name_quotas = name_quotas_for_target_count(args.target_count)
     location_quotas = location_quotas_for_target_count(args.target_count)
-    # The integrated dry-run proves that cap 9 is infeasible under the frozen
-    # 30-target/state/multisite quotas, while cap 10 is feasible.  Ten uses are
-    # 5.56% of the 180 field operations and remain below the canary's relative
-    # cap (4/60 fields), with the independent ref cap still fixed at three.
-    exact_operator_cap = 4 if args.target_count == 10 else 10
+    exact_operator_cap = 4 if args.target_count == 10 else 6
     inspiration_ref_cap = 3
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     context_path = Path(plan["sources"]["official_context"]["path"])
@@ -1195,6 +1217,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         if value["target_siret"] not in excluded_sirets
         and value["target_siren"] not in excluded_sirens
     ]
+    resolved_quotas: dict[str, dict[Any, int]] | None = None
     if args.target_count == 10:
         targets, name_plan, location_plan, _caps = select_feasible_targets(
             contexts, grouped, document_frequencies, args.selection_seed,
@@ -1202,7 +1225,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             exact_operator_cap, inspiration_ref_cap,
         )
     else:
-        targets, name_plan, location_plan = select_integrated_fragment_targets(
+        targets, name_plan, location_plan, resolved_quotas = select_integrated_fragment_targets(
             contexts, grouped, document_frequencies, args.selection_seed,
             args.target_count, name_quotas, location_quotas,
             exact_operator_cap, inspiration_ref_cap,
@@ -1255,6 +1278,20 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 },
                 "field_inspirations": field_fragments,
                 "protected_target_tokens": {"name": protected_anchor},
+                "operator_guidance": {
+                    field: {
+                        "source_tokens_zero_indexed": list(enumerate(
+                            loop.normalized_words(target_values[siret][field])
+                        )),
+                        "expected_retained_tokens": [
+                            loop.normalized_words(target_values[siret][field])[index]
+                            for index in fragment.get("operation_parameters", {}).get(
+                                "retained_positions", []
+                            )
+                        ],
+                    }
+                    for field, fragment in field_fragments.items()
+                },
                 "rules": {
                     "copy_non_target_fields_byte_for_byte": True,
                     "no_new_lexical_or_numeric_tokens": True,
@@ -1328,6 +1365,16 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         "top_exact_operator_count": max(operation_counts.values(), default=0),
         "exact_operator_cap": exact_operator_cap,
         "inspiration_ref_cap": inspiration_ref_cap,
+        "quota_mode": "bounded_pre_generation_milp" if resolved_quotas else "exact",
+        "resolved_name_quotas": (
+            resolved_quotas["name"] if resolved_quotas else name_quotas
+        ),
+        "resolved_location_quotas": {
+            f"{field}:{relation}": quota
+            for (field, relation), quota in (
+                resolved_quotas["location"] if resolved_quotas else location_quotas
+            ).items()
+        },
         "forbidden_added_mark_contracts": sum(
             "ADDED" in relation for relation in relation_counts
         ),

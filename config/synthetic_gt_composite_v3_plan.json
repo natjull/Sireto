@@ -7,12 +7,12 @@
   },
   "sources": {
     "official_context": {
-      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v5.jsonl",
-      "sha256": "e63681b0ea6375607f9d18f52fe1a97cb87947a1aec0c1e35a1b9d0777e65242"
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v6_33447.jsonl",
+      "sha256": "3dede20db4086843bfe60b8983cdba635c1afe9f472d1e4b31237f154ebe4c71"
     },
     "field_inspiration_bank": {
-      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v2.jsonl",
-      "sha256": "707928c9aeb2a9f192b852a9d0a449d9311c268c559beefbe24ea0779ed9d8a3"
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v3.jsonl",
+      "sha256": "871f9433eac08c90206c69062bee8c60d31fe67cbd53d2c57d9ef3e406fc8458"
     }
   },
   "generation": {

@@ -17,13 +17,34 @@ def test_punctuation_edits_distinguish_identical_marks_by_position() -> None:
     source = "'NATUREL ET GOURMANDISE'"
     assert loop.composite_operation_parameters(
         "name", "PUNCTUATION_REMOVED", source, "'NATUREL ET GOURMANDISE"
-    ) == {"edits": [{"after_token_index": 2, "mark": "'"}]}
+    ) == {"edits": [{"after_token_index": 2, "mark": "'", "replacement": ""}]}
     assert loop.composite_operation_parameters(
         "name", "PUNCTUATION_REMOVED", source, "NATUREL ET GOURMANDISE'"
-    ) == {"edits": [{"after_token_index": -1, "mark": "'"}]}
+    ) == {"edits": [{"after_token_index": -1, "mark": "'", "replacement": ""}]}
     assert loop.composite_operation_parameters(
         "name", "PUNCTUATION_REMOVED", source, "NATUR'EL ET GOURMANDISE"
     ) is None
+
+
+def test_punctuation_removal_locks_space_versus_join() -> None:
+    assert loop.composite_operation_parameters(
+        "city", "PUNCTUATION_REMOVED", "SAINT-DENIS", "SAINT DENIS"
+    ) == {"edits": [{"after_token_index": 0, "mark": "-", "replacement": " "}]}
+    assert loop.composite_operation_parameters(
+        "city", "PUNCTUATION_REMOVED", "SAINT-DENIS", "SAINTDENIS"
+    ) == {"edits": [{"after_token_index": 0, "mark": "-", "replacement": ""}]}
+    assert loop.composite_operation_parameters(
+        "name", "PUNCTUATION_REMOVED", "ALPHA & BETA", "ALPHA  BETA"
+    ) is None
+
+
+def test_address_alias_direction_is_not_conflated() -> None:
+    assert loop.composite_relation_class(
+        "address", "12 RUE DES LILAS", "12 R DES LILAS"
+    ) == "ADDRESS_ABBREVIATE"
+    assert loop.composite_relation_class(
+        "address", "12 R DES LILAS", "12 RUE DES LILAS"
+    ) == "ADDRESS_ALIAS_EXPAND"
 
 
 def test_subset_must_preserve_punctuation_carried_by_retained_tokens() -> None:
@@ -38,6 +59,39 @@ def test_subset_must_preserve_punctuation_carried_by_retained_tokens() -> None:
     assert loop.composite_preserves_non_target_punctuation(
         "ADDRESS_TOKEN_SUBSET", "860 ROUTE D' ANNECY", "860 ROUTE ANNECY",
         address_subset,
+    )
+
+
+def test_subset_rejects_dangling_separator_and_double_space() -> None:
+    baseline = {
+        "name": "LUCENA CONSULTING MANAGEMENT ALPHA",
+        "address": "12 RUE DES LILAS",
+        "postcode": "75001",
+        "city": "PARIS",
+        "insee": "75056",
+    }
+    contract = {
+        "target_fields": ["name", "address"],
+        "field_relations": {
+            "name": "TOKEN_SUBSET", "address": "ADDRESS_TOKEN_SUBSET",
+        },
+        "field_inspirations": {
+            "name": {"operation_parameters": {
+                "source_token_count": 4, "retained_positions": [0, 1],
+            }},
+            "address": {"operation_parameters": {
+                "source_token_count": 4, "retained_positions": [0, 1, 3],
+            }},
+        },
+        "protected_target_tokens": {"name": ["lucena"]},
+    }
+    dangling = dict(baseline, name="LUCENA CONSULTING &", address="12 RUE LILAS")
+    assert "NAME_DANGLING_SEPARATOR" in loop.composite_change_errors(
+        baseline, dangling, contract, {"street_number": "12"}
+    )
+    doubled = dict(baseline, name="LUCENA  CONSULTING", address="12 RUE LILAS")
+    assert "NAME_DOUBLE_SPACE" in loop.composite_change_errors(
+        baseline, doubled, contract, {"street_number": "12"}
     )
 
 
@@ -453,6 +507,52 @@ def test_per_variant_exhaustion_never_sends_partial_seed_to_critic(tmp_path: Pat
         ("v1", "REJECT", "SEED_GENERATION_INCOMPLETE"),
         ("v2", "REJECT", "SEED_GENERATION_INCOMPLETE"),
         ("v3", "REJECT", "SEED_GENERATION_INCOMPLETE"),
+    ]
+
+
+def test_partial_policy_reviews_and_keeps_passed_siblings(tmp_path: Path):
+    db, run_id = init_run(
+        tmp_path,
+        [composite_seed()],
+        run_id="composite-partial",
+        extra=[
+            "--generator-task-mode", "per-variant",
+            "--allow-partial-seed-promotion",
+            "--max-generator-attempts", "1",
+        ],
+    )
+    for expected in ("v1", "v2", "v3"):
+        task = lease(tmp_path, db, run_id, "GENERATOR", f"luna-{expected}")[0]
+        response = composite_variant_response(task)
+        if expected == "v1":
+            response["variants"][0]["crm"]["name"] += " BIDON"
+        submit(tmp_path, db, "GENERATOR", f"luna-{expected}", [response])
+
+    critic_task = lease(tmp_path, db, run_id, "CRITIC", "luna-c1")[0]
+    assert [value["variant_id"] for value in critic_task["input"]["variants"]] == ["v2", "v3"]
+    decisions = [
+        {
+            "variant_id": variant_id,
+            "decision": "ACCEPT",
+            "confidence": 0.99,
+            "reason_codes": ["REALISTIC"],
+            "reason": "Dégradation CRM plausible.",
+        }
+        for variant_id in ("v2", "v3")
+    ]
+    submit(
+        tmp_path, db, "CRITIC", "luna-c1",
+        [review_response(critic_task, "CRITIC", decisions)],
+    )
+    loop.main(["--db", str(db), "supervise", "--run-id", run_id])
+    with sqlite3.connect(db) as connection:
+        values = connection.execute(
+            "SELECT variant_id, final_decision, final_reason FROM variants ORDER BY variant_id"
+        ).fetchall()
+    assert values == [
+        ("v1", "REJECT", "VARIANT_GENERATION_INCOMPLETE"),
+        ("v2", "ACCEPT", "AGENTIC_REVIEW_PASS"),
+        ("v3", "ACCEPT", "AGENTIC_REVIEW_PASS"),
     ]
 
 

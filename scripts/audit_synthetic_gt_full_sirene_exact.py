@@ -219,6 +219,7 @@ def load_variants(db: Path, run_id: str) -> list[dict[str, Any]]:
             "variant_id": row["variant_id"],
             "crm": json.loads(row["crm_json"]),
             "seed_ledger_3_of_3_accept": row["seed_id"] in admissible,
+            "variant_ledger_accept": row["final_decision"] == "ACCEPT",
             "pre_generation_qualification": card.get("qualification", {}),
         })
     connection.close()
@@ -314,6 +315,12 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     }
     for value in audited:
         value["seed_promotable_3_of_3_exact"] = value["seed_id"] in strict_seed_ids
+        value["variant_promotable_exact"] = (
+            value.get("variant_ledger_accept") is True
+            and value["full_sirene_qualification"]["decision"] == "EXACT_IDENTIFIABLE"
+            and value["full_sirene_qualification"]["exact_witness"] == "G_N_A"
+            and value["full_sirene_qualification"]["target_naturally_returned"] is True
+        )
     report = {
         "schema_version": "sireto-synthetic-gt-full-sirene-audit-1",
         "run_id": args.run_id,
@@ -326,6 +333,9 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "decision_counts": dict(sorted(counts.items())),
         "admissible_3_of_3_exact_variants": len(strict_seed_ids) * 3,
         "admissible_3_of_3_exact_seeds": len(strict_seed_ids),
+        "admissible_per_variant_exact": sum(
+            value["variant_promotable_exact"] for value in audited
+        ),
         "rows": audited,
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)

@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Promote only atomic 3/3 Luna GT seeds proven exact by full SIRENE."""
+"""Promote Luna GT variants proven exact by full SIRENE.
+
+Legacy runs remain atomic 3/3.  Balanced production opts into independent
+per-variant promotion so one exhausted sibling cannot discard two valid pairs.
+"""
 
 from __future__ import annotations
 
@@ -97,18 +101,24 @@ def promote(args: argparse.Namespace) -> dict[str, Any]:
     promotable_by_seed: dict[str, list[dict[str, Any]]] = defaultdict(list)
     for value in audit_by_key.values():
         qualification = value.get("full_sirene_qualification", {})
-        if (
-            value.get("seed_ledger_3_of_3_accept") is True
-            and value.get("seed_promotable_3_of_3_exact") is True
+        exact_variant = (
+            value.get("variant_promotable_exact") is True
             and qualification.get("decision") == "EXACT_IDENTIFIABLE"
             and qualification.get("exact_witness") == "G_N_A"
             and qualification.get("target_naturally_returned") is True
-        ):
+        )
+        exact_atomic = (
+            value.get("seed_ledger_3_of_3_accept") is True
+            and value.get("seed_promotable_3_of_3_exact") is True
+            and exact_variant
+        )
+        if exact_variant if args.promotion_mode == "per-variant" else exact_atomic:
             promotable_by_seed[value["seed_id"]].append(value)
-    promotable_by_seed = {
-        seed_id: values for seed_id, values in promotable_by_seed.items()
-        if {value["variant_id"] for value in values} == VARIANT_IDS and len(values) == 3
-    }
+    if args.promotion_mode == "atomic-three":
+        promotable_by_seed = {
+            seed_id: values for seed_id, values in promotable_by_seed.items()
+            if {value["variant_id"] for value in values} == VARIANT_IDS and len(values) == 3
+        }
 
     diagnostic_rows = read_jsonl(args.diagnostic_export / "accept.jsonl")
     diagnostic_by_key = {
@@ -116,6 +126,16 @@ def promote(args: argparse.Namespace) -> dict[str, Any]:
     }
     connection = sqlite3.connect(args.db)
     connection.row_factory = sqlite3.Row
+    run_row = connection.execute(
+        "SELECT policy_json, schema_sha256 FROM runs WHERE run_id=?", (args.run_id,)
+    ).fetchone()
+    if run_row is None:
+        raise ValueError("unknown run")
+    run_policy = json.loads(run_row["policy_json"])
+    if args.promotion_mode == "per-variant" and not run_policy.get(
+        "allow_partial_seed_promotion", False
+    ):
+        raise ValueError("per-variant promotion requires an explicitly partial run policy")
     records = connection.execute(
         """
         SELECT v.seed_id, v.variant_id, v.crm_json, v.families_json,
@@ -196,8 +216,10 @@ def promote(args: argparse.Namespace) -> dict[str, Any]:
             },
         })
     if not promoted:
-        raise ValueError("no atomic exact seed is promotable")
-    if any(count != 3 for count in seen_by_seed.values()):
+        raise ValueError("no exact variant is promotable")
+    if args.promotion_mode == "atomic-three" and any(
+        count != 3 for count in seen_by_seed.values()
+    ):
         raise ValueError("promotion is not atomic 3-of-3")
 
     stage = args.output.parent / f".{args.output.name}.staging-{uuid.uuid4().hex}"
@@ -206,11 +228,14 @@ def promote(args: argparse.Namespace) -> dict[str, Any]:
         promoted_path = stage / "promoted.jsonl"
         loop.write_jsonl_atomic(promoted_path, promoted)
         manifest = {
-            "schema_version": "sireto-synthetic-gt-full-exact-promotion-1",
+            "schema_version": "sireto-synthetic-gt-full-exact-promotion-2",
             "run_id": args.run_id,
             "promoted_seeds": len(seen_by_seed),
             "promoted_variants": len(promoted),
-            "atomic_three_of_three": True,
+            "promotion_mode": args.promotion_mode,
+            "atomic_three_of_three": args.promotion_mode == "atomic-three",
+            "run_policy": run_policy,
+            "message_schema_sha256": run_row["schema_sha256"],
             "exact_witness": "G_N_A",
             "positive_injection": False,
             "qualification_uses_retrieval_or_model_scores": False,
@@ -257,6 +282,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--full-audit", type=Path, required=True)
     result.add_argument("--seed-input", type=Path, required=True)
     result.add_argument("--output", type=Path, required=True)
+    result.add_argument(
+        "--promotion-mode", choices=("atomic-three", "per-variant"),
+        default="atomic-three",
+    )
     result.set_defaults(func=promote)
     return result
 

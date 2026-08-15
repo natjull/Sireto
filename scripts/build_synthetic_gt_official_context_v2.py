@@ -57,7 +57,11 @@ def read_crm_sirens(path: Path) -> set[str]:
 def read_seed_sirets(path: Path) -> list[str]:
     result: list[str] = []
     for _raw, value in loop.iter_jsonl_raw(path):
-        siret = clean(value.get("target_siret"))
+        # Context-only target lists use ``target_siret`` while the immutable
+        # SIRENE intake uses ``source_siret``.  Both identify the same official
+        # record; accepting the latter lets us expand the context directly from
+        # the provenance-rich intake without fabricating an intermediate file.
+        siret = clean(value.get("target_siret") or value.get("source_siret"))
         if not loop.valid_siret(siret):
             raise ValueError(f"invalid seed SIRET: {siret!r}")
         result.append(siret)

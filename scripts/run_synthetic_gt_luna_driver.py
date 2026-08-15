@@ -137,10 +137,12 @@ from the inspiration. Reproduce each contract field_relations class exactly:
 - ADDRESS_TOKEN_SUBSET: delete only the token positions specified by the fragment, preserving the
   house number and the order of all retained address tokens;
 - LEGAL_FORM_REMOVE: remove only the explicit legal-form token;
-- ADDRESS_ABBREVIATE: change only the official street type to a canonical listed alias;
+- ADDRESS_ABBREVIATE: change only the full official street type to the exact listed alias;
+- ADDRESS_ALIAS_EXPAND: expand only the exact official street-type alias to its canonical form;
 - ADDRESS_TYPE_ORDER: move only the street-type token; preserve internal street-name order;
-- PUNCTUATION_REMOVED or DIACRITIC_REMOVED: remove only the exact attested mark at the exact
-  attested boundary/position;
+- PUNCTUATION_REMOVED: remove only the exact attested mark at the exact boundary and reproduce
+  its exact replacement separator (one space or an empty join); DIACRITIC_REMOVED removes only
+  the exact attested mark at the exact position;
 - JOIN_SPLIT: change word boundaries only while preserving the exact alphanumeric sequence.
 
 Never apply a different relation because it seems easier. In particular, never delete or reorder
@@ -168,7 +170,11 @@ same SIREN and the same normalized official site; cross-SIREN establishments sha
 never establish operational equivalence. Do not infer exact ambiguity from address sharing alone:
 cite a name-compatible official competitor. Full-SIRENE G_N_A is the later authority for exact
 identity, while your role is semantic realism and bounded-context warning. Never repair text. Set
-independent=true and generator_rationale_seen=false and return only the structured JSON response.""",
+independent=true and generator_rationale_seen=false and return only the structured JSON response.
+Explicitly REJECT malformed residual text such as a name ending in &, -, /, + or a conjunction;
+a broken locution such as TANT QU' AURA; a legal form plus only a generic activity such as SARL
+QUINCAILLERIE; any doubled space introduced by punctuation removal; or a city joined when the
+attested replacement is one space.""",
     "ADJUDICATOR": """You are the SIRETO composite ADJUDICATOR. Resolve only the reviewed
 v1/v2/v3 decisions using baseline, contracts, deterministic preflight and critic. Never rewrite
 CRM, never override a deterministic failure, and never promote a critic REJECT. Keep exact SIRET
@@ -192,9 +198,13 @@ every non-target baseline_crm field byte-for-byte. Do not emit either of the oth
 
 Never copy inspiration entity, street, city, or numeric material. Never add alphanumeric material,
 punctuation, or a diacritic. Preserve protected_target_tokens, postcode, INSEE, and all address
-digits. City edits must preserve the exact alphanumeric sequence. Declare only
+digits. For TOKEN_SUBSET, use operator_guidance.source_tokens_zero_indexed literally and retain
+exactly operator_guidance.expected_retained_tokens in that order; preserve every punctuation mark
+carried by retained tokens. For PUNCTUATION_REMOVED, reproduce the exact replacement separator
+declared by every edit. City edits must preserve the exact alphanumeric sequence. Declare only
 OBSERVED_COMPOSITE_ANALOGY. On retry, correct every listed deterministic preflight error without
-reusing the rejected fingerprint. The validator rejects and never repairs your CRM text. Return
+reusing any rejected fingerprint; read operator_diagnostics for expected versus actual token
+positions and punctuation. The validator rejects and never repairs your CRM text. Return
 only the structured JSON response with the exact envelope constants.""",
 }
 
@@ -288,12 +298,16 @@ def task_output_schema(task: dict[str, Any], message_schema: dict[str, Any]) -> 
                 "const": target_variant_id
             }
     else:
+        expected_ids = [value["variant_id"] for value in task["input"]["variants"]]
         properties["decisions"] = {
-            "type": "array", "minItems": 3, "maxItems": 3,
+            "type": "array", "minItems": len(expected_ids), "maxItems": len(expected_ids),
             "items": {"$ref": "#/$defs/decision"},
         }
         required.append("decisions")
         selected_defs = {"decision": copy.deepcopy(definitions["decision"])}
+        selected_defs["decision"]["properties"]["variant_id"] = {
+            "enum": expected_ids
+        }
         if role == "CRITIC":
             properties["independent"] = {"const": True}
             properties["generator_rationale_seen"] = {"const": False}
@@ -326,6 +340,13 @@ def codex_command(args: argparse.Namespace, schema_path: Path, output_path: Path
     executable = shutil.which(args.codex_binary)
     if executable is None:
         raise RuntimeError(f"Codex executable not found: {args.codex_binary}")
+    role = schema_path.parent.parent.name.upper()
+    effort_by_role = {
+        "GENERATOR": args.generator_reasoning_effort,
+        "CRITIC": args.critic_reasoning_effort,
+        "ADJUDICATOR": args.adjudicator_reasoning_effort,
+    }
+    reasoning_effort = effort_by_role.get(role) or args.reasoning_effort
     return [
         executable,
         "exec",
@@ -335,7 +356,7 @@ def codex_command(args: argparse.Namespace, schema_path: Path, output_path: Path
         "-m",
         args.model,
         "-c",
-        f'model_reasoning_effort="{args.reasoning_effort}"',
+        f'model_reasoning_effort="{reasoning_effort}"',
         "-s",
         "read-only",
         "-C",
@@ -523,6 +544,9 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--schema", type=Path, default=loop.DEFAULT_SCHEMA)
     result.add_argument("--model", default="gpt-5.6-luna")
     result.add_argument("--reasoning-effort", default="low")
+    result.add_argument("--generator-reasoning-effort")
+    result.add_argument("--critic-reasoning-effort")
+    result.add_argument("--adjudicator-reasoning-effort")
     result.add_argument("--codex-binary", default="codex")
     result.add_argument("--concurrency", type=int, default=2)
     result.add_argument("--lease-ttl-seconds", type=int, default=1800)
