@@ -77,10 +77,12 @@ STREET_TYPE_ABBREVIATIONS = {
 }
 PUNCTUATION = set("'’.-,()/&")
 COMPOSITE_FAMILY = "OBSERVED_COMPOSITE_ANALOGY"
+OFFICIAL_NAME_ALIAS_RELATION = "OFFICIAL_NAME_ALIAS"
+OFFICIAL_NAME_ALIAS_EVIDENCE_SOURCE = "SIRENE_OFFICIAL_NAME_OPTION"
 COMPOSITE_RELATIONS_BY_FIELD = {
     "name": {
         "TOKEN_ORDER", "TOKEN_SUBSET", "LEGAL_FORM_REMOVE", "JOIN_SPLIT",
-        "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED",
+        "PUNCTUATION_REMOVED", "DIACRITIC_REMOVED", OFFICIAL_NAME_ALIAS_RELATION,
     },
     "address": {
         "ADDRESS_ABBREVIATE", "ADDRESS_ALIAS_EXPAND", "ADDRESS_TYPE_ORDER",
@@ -509,28 +511,49 @@ def validate_composite_contracts(
                 raise ValueError(
                     f"unsupported composite relation {field}:{relation} for seed {seed_id}: {variant_id}"
                 )
+            if relation == OFFICIAL_NAME_ALIAS_RELATION and field_inspirations is None:
+                raise ValueError(
+                    f"official name alias requires typed field evidence "
+                    f"for seed {seed_id}: {variant_id}"
+                )
             if field_inspirations is not None:
                 fragment = field_inspirations[field]
                 ref = str(fragment.get("inspiration_ref", ""))
-                if (
-                    not re.fullmatch(r"[0-9a-f]{64}", ref)
-                    or fragment.get("field") != field
-                    or fragment.get("source_fold") not in {2, 3, 4}
-                    or fragment.get("relation") != relation
-                ):
+                common_fragment_valid = (
+                    re.fullmatch(r"[0-9a-f]{64}", ref) is not None
+                    and fragment.get("field") == field
+                    and fragment.get("relation") == relation
+                )
+                if not common_fragment_valid:
                     raise ValueError(
                         f"invalid field inspiration {field} for seed {seed_id}: {variant_id}"
                     )
                 inspiration_source = str(fragment.get("official_value", ""))
                 inspiration_target = str(fragment.get("observed_crm_value", ""))
                 expected_parameters = fragment.get("operation_parameters")
-                refs.append(ref)
+                if relation == OFFICIAL_NAME_ALIAS_RELATION:
+                    validate_official_name_alias_fragment(
+                        seed_id, variant_id, seed_card, fragment,
+                    )
+                else:
+                    if (
+                        fragment.get("source_fold") not in {2, 3, 4}
+                        or fragment.get("evidence_source_type")
+                        == OFFICIAL_NAME_ALIAS_EVIDENCE_SOURCE
+                    ):
+                        raise ValueError(
+                            f"invalid train-observed inspiration source {field} "
+                            f"for seed {seed_id}: {variant_id}"
+                        )
+                    refs.append(ref)
             else:
                 inspiration_source = str(inspiration.get("official", {}).get(field, ""))
                 inspiration_target = str(inspiration.get("observed_crm", {}).get(field, ""))
                 expected_parameters = None
-            inspiration_relation = composite_relation_class(
-                field, inspiration_source, inspiration_target,
+            inspiration_relation = (
+                OFFICIAL_NAME_ALIAS_RELATION
+                if relation == OFFICIAL_NAME_ALIAS_RELATION
+                else composite_relation_class(field, inspiration_source, inspiration_target)
             )
             if inspiration_relation != relation:
                 raise ValueError(
@@ -538,8 +561,9 @@ def validate_composite_contracts(
                     f"for seed {seed_id}: {variant_id}"
                 )
             if field_inspirations is not None:
-                observed_parameters = composite_operation_parameters(
-                    field, relation, inspiration_source, inspiration_target
+                observed_parameters = contract_operation_parameters(
+                    field, relation, inspiration_source, inspiration_target,
+                    fragment, seed_card,
                 )
                 if expected_parameters != observed_parameters:
                     raise ValueError(
@@ -701,10 +725,14 @@ def deterministic_variant_proof(
             expected_relation = contract["field_relations"][field]
             inspiration = contract.get("field_inspirations", {}).get(field, {})
             expected_parameters = inspiration.get("operation_parameters")
-            actual_relation = composite_relation_class(field, baseline[field], crm[field])
+            actual_relation = contract_actual_relation(
+                field, expected_relation, baseline[field], crm[field],
+                inspiration, seed_card,
+            )
             actual_parameters = (
-                composite_operation_parameters(
-                    field, actual_relation, baseline[field], crm[field]
+                contract_operation_parameters(
+                    field, actual_relation, baseline[field], crm[field],
+                    inspiration, seed_card,
                 )
                 if actual_relation
                 else None
@@ -716,6 +744,15 @@ def deterministic_variant_proof(
                 "actual_relation": actual_relation,
                 "expected_operation_parameters": expected_parameters,
                 "actual_operation_parameters": actual_parameters,
+                "evidence_source_type": inspiration.get("evidence_source_type"),
+                "authoritative_value_byte_exact": (
+                    crm[field] == expected_parameters.get("official_alias_value")
+                    if (
+                        expected_relation == OFFICIAL_NAME_ALIAS_RELATION
+                        and isinstance(expected_parameters, dict)
+                    )
+                    else None
+                ),
                 "operator_match": (
                     expected_relation == actual_relation
                     and (
@@ -1043,6 +1080,97 @@ def normalized_alnum(value: Any) -> str:
 
 def normalized_surface(value: Any) -> str:
     return " ".join(str(value or "").strip().casefold().split())
+
+
+def official_name_alias_parameters(value: str) -> dict[str, str]:
+    """Bind an authoritative SIRENE name option without rewriting it."""
+    return {
+        "official_alias_value": value,
+        "official_alias_normalized": normalized_surface(value),
+        "official_alias_sha256": hashlib.sha256(value.encode("utf-8")).hexdigest(),
+    }
+
+
+def validate_official_name_alias_fragment(
+    seed_id: str,
+    variant_id: str,
+    seed_card: dict[str, Any],
+    fragment: dict[str, Any],
+) -> None:
+    """Validate explicitly authoritative evidence, never as train observation."""
+    if (
+        fragment.get("field") != "name"
+        or fragment.get("relation") != OFFICIAL_NAME_ALIAS_RELATION
+        or fragment.get("evidence_source_type") != OFFICIAL_NAME_ALIAS_EVIDENCE_SOURCE
+        or fragment.get("source_fold") != -1
+    ):
+        raise ValueError(
+            f"invalid official name alias evidence for seed {seed_id}: {variant_id}"
+        )
+    baseline = official_baseline(seed_card)["name"]
+    alias = str(fragment.get("observed_crm_value", ""))
+    official_options = [
+        str(value).strip()
+        for value in seed_card.get("name_options", [])
+        if str(value).strip()
+    ]
+    if (
+        str(fragment.get("official_value", "")) != baseline
+        or not alias
+        or alias not in official_options
+        or normalized_surface(alias) == normalized_surface(baseline)
+        or fragment.get("operation_parameters") != official_name_alias_parameters(alias)
+    ):
+        raise ValueError(
+            f"official name alias is not bound to a distinct SIRENE option "
+            f"for seed {seed_id}: {variant_id}"
+        )
+
+
+def contract_actual_relation(
+    field: str,
+    expected_relation: str,
+    source: str,
+    target: str,
+    fragment: dict[str, Any],
+    seed_card: dict[str, Any],
+) -> str | None:
+    if expected_relation == OFFICIAL_NAME_ALIAS_RELATION:
+        expected = fragment.get("operation_parameters", {})
+        alias = expected.get("official_alias_value") if isinstance(expected, dict) else None
+        if (
+            field == "name"
+            and isinstance(alias, str)
+            and target == alias
+            and alias in {
+                str(value).strip()
+                for value in seed_card.get("name_options", [])
+                if str(value).strip()
+            }
+            and normalized_surface(alias) != normalized_surface(source)
+            and expected == official_name_alias_parameters(alias)
+        ):
+            return OFFICIAL_NAME_ALIAS_RELATION
+    return composite_relation_class(field, source, target)
+
+
+def contract_operation_parameters(
+    field: str,
+    relation: str,
+    source: str,
+    target: str,
+    fragment: dict[str, Any],
+    seed_card: dict[str, Any],
+) -> dict[str, Any] | None:
+    if relation == OFFICIAL_NAME_ALIAS_RELATION:
+        return (
+            official_name_alias_parameters(target)
+            if contract_actual_relation(
+                field, relation, source, target, fragment, seed_card,
+            ) == relation
+            else None
+        )
+    return composite_operation_parameters(field, relation, source, target)
 
 
 def punctuation_marks(value: Any) -> set[str]:
@@ -1675,24 +1803,30 @@ def composite_change_errors(
         if not target:
             errors.append(f"{field.upper()}_MISSING_FORBIDDEN")
             continue
-        actual_relation = composite_relation_class(field, source, target)
         expected_relation = field_relations[field]
+        field_inspirations = contract.get("field_inspirations", {})
+        fragment = field_inspirations.get(field) if isinstance(field_inspirations, dict) else None
+        relation_fragment = fragment if isinstance(fragment, dict) else {}
+        actual_relation = contract_actual_relation(
+            field, expected_relation, source, target, relation_fragment, seed_card,
+        )
         if actual_relation != expected_relation:
             errors.append(
                 f"{field.upper()}_RELATION_MISMATCH:{expected_relation}:{actual_relation or 'NONE'}"
             )
-        if added_marks(source, target):
+        if expected_relation != OFFICIAL_NAME_ALIAS_RELATION and added_marks(source, target):
             errors.append(f"{field.upper()}_ADDED_MARK_FORBIDDEN")
-        field_inspirations = contract.get("field_inspirations", {})
-        fragment = field_inspirations.get(field) if isinstance(field_inspirations, dict) else None
         if fragment is not None:
-            actual_parameters = composite_operation_parameters(
-                field, expected_relation, source, target
+            actual_parameters = contract_operation_parameters(
+                field, expected_relation, source, target, relation_fragment, seed_card,
             )
             if actual_parameters != fragment.get("operation_parameters"):
                 errors.append(f"{field.upper()}_OPERATOR_PARAMETERS_MISMATCH")
-            if not composite_preserves_non_target_punctuation(
+            if (
+                expected_relation != OFFICIAL_NAME_ALIAS_RELATION
+                and not composite_preserves_non_target_punctuation(
                 expected_relation, source, target, actual_parameters
+                )
             ):
                 errors.append(f"{field.upper()}_UNDECLARED_PUNCTUATION_CHANGE")
             protected = [normalized_surface(value) for value in contract.get(
@@ -1701,7 +1835,10 @@ def composite_change_errors(
             if protected and not set(protected).issubset(set(normalized_words(target))):
                 errors.append(f"{field.upper()}_DISTINCTIVE_ANCHOR_REMOVED")
         if field == "name":
-            if Counter(normalized_alnum(target)) - Counter(normalized_alnum(source)):
+            if (
+                expected_relation != OFFICIAL_NAME_ALIAS_RELATION
+                and Counter(normalized_alnum(target)) - Counter(normalized_alnum(source))
+            ):
                 errors.append("NAME_NEW_ALPHANUMERIC_MATERIAL")
             if expected_relation == "TOKEN_SUBSET" and (
                 len(normalized_words(target)) < 2
@@ -1816,14 +1953,20 @@ def generator_preflight(
                 for field in contract.get("target_fields", []):
                     fragment = contract.get("field_inspirations", {}).get(field, {})
                     relation = contract.get("field_relations", {}).get(field)
+                    actual_relation = contract_actual_relation(
+                        field, relation, baseline[field], crm[field], fragment, seed_card,
+                    ) if relation else None
                     variant_diagnostics[field] = {
                         "relation": relation,
+                        "actual_relation": actual_relation,
                         "source_tokens": normalized_words(baseline[field]),
                         "target_tokens": normalized_words(crm[field]),
                         "expected_parameters": fragment.get("operation_parameters"),
-                        "actual_parameters": composite_operation_parameters(
-                            field, relation, baseline[field], crm[field]
-                        ) if relation else None,
+                        "actual_parameters": contract_operation_parameters(
+                            field, actual_relation, baseline[field], crm[field],
+                            fragment, seed_card,
+                        ) if actual_relation else None,
+                        "evidence_source_type": fragment.get("evidence_source_type"),
                     }
                 operator_diagnostics[variant["variant_id"]] = variant_diagnostics
                 for competitor_ref in known_context_ambiguities(crm, seed_card):
