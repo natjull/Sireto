@@ -209,3 +209,53 @@ def test_official_alias_cannot_use_legacy_train_inspiration_envelope() -> None:
     }
     with pytest.raises(ValueError, match="requires typed field evidence"):
         loop.validate_seed(value)
+
+
+def test_same_relation_pair_is_allowed_only_for_distinct_exact_operators() -> None:
+    value = copy.deepcopy(seed())
+    card = value["seed_card"]
+    card["address"] = "12 RUE DES LILAS"
+    card["city"] = "SAINT-PIERRE-SUR-MER"
+    contracts = []
+    for index, observed_city in enumerate(
+        ("SAINT PIERRE-SUR-MER", "SAINT-PIERRE SUR-MER"), start=1
+    ):
+        city_fragment = {
+            "inspiration_ref": str(index + 1) * 64,
+            "field": "city",
+            "relation": "PUNCTUATION_REMOVED",
+            "source_fold": 2,
+            "official_value": card["city"],
+            "observed_crm_value": observed_city,
+            "operation_parameters": loop.composite_operation_parameters(
+                "city", "PUNCTUATION_REMOVED", card["city"], observed_city,
+            ),
+        }
+        contracts.append({
+            "variant_id": f"v{index}",
+            "requested_family": loop.COMPOSITE_FAMILY,
+            "target_fields": ["name", "city"],
+            "field_relations": {
+                "name": loop.OFFICIAL_NAME_ALIAS_RELATION,
+                "city": "PUNCTUATION_REMOVED",
+            },
+            "field_inspirations": {
+                "name": official_alias_fragment(),
+                "city": city_fragment,
+            },
+        })
+    card["composite_contracts"] = contracts
+
+    loop.validate_seed(value)
+
+    duplicate = copy.deepcopy(value)
+    duplicate_city = duplicate["seed_card"]["composite_contracts"][1][
+        "field_inspirations"
+    ]["city"]
+    first_city = duplicate["seed_card"]["composite_contracts"][0][
+        "field_inspirations"
+    ]["city"]
+    duplicate_city["observed_crm_value"] = first_city["observed_crm_value"]
+    duplicate_city["operation_parameters"] = first_city["operation_parameters"]
+    with pytest.raises(ValueError, match="operation signatures must differ"):
+        loop.validate_seed(duplicate)

@@ -571,7 +571,23 @@ def validate_composite_contracts(
                     )
         if field_inspirations is None:
             refs.append(ref)
-        signatures.append(digest_json({"fields": sorted(fields), "relations": field_relations}))
+        if field_inspirations is not None:
+            signature_operators = {
+                field: {
+                    "relation": field_relations[field],
+                    "operation_parameters": field_inspirations[field].get(
+                        "operation_parameters"
+                    ),
+                }
+                for field in sorted(fields)
+            }
+        else:
+            signature_operators = {
+                "fields": sorted(fields),
+                "relations": field_relations,
+                "inspiration_ref": ref,
+            }
+        signatures.append(digest_json(signature_operators))
     contract_ids = [contract.get("variant_id") for contract in contracts]
     if len(set(contract_ids)) != len(contract_ids) or not set(contract_ids).issubset(expected_ids):
         raise ValueError(f"composite variant ids must be a unique subset of v1/v2/v3 for seed {seed_id}")
