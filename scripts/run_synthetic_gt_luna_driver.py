@@ -21,6 +21,8 @@ import sys
 import time
 from typing import Any, Sequence
 
+from jsonschema import Draft202012Validator
+
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -237,7 +239,7 @@ def invoke_luna(
                 continue
             raw = output_path.read_text(encoding="utf-8").strip()
             response = json.loads(raw)
-            validator = loop.response_validator(args.schema)
+            validator = Draft202012Validator(message_schema)
             validation_errors = list(validator.iter_errors(response))
             if validation_errors:
                 last_error = f"response schema error: {validation_errors[0].message}"
