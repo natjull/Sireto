@@ -4180,5 +4180,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   à `true`. La suite ciblée compte 33 tests passants ; compilation Python et
   `git diff --check` passent.
 
+## GT synthétique — arrêt v1 et pilote composite v2
+
+- Commit : `0578522` (`feat: launch evidence-backed composite GT pilot`).
+- La production unitaire v1 est arrêtée et quarantainée : son audit indépendant
+  a montré des dégradations mono-champ faciles et répétitives, une amplification
+  excessive de preuves OCR rares et des familles qui se recouvrent. Aucun de
+  ses `ACCEPT` ne compte vers la cible explicite de 20 000 couples.
+- Le nouveau profil composé retrouve 452 lignes CRM train avec au moins deux
+  relations classifiées. Une banque opaque distincte conserve 299 vrais couples
+  officiel→CRM issus uniquement des folds 2/3/4, soit 299 SIREN et 261 signatures
+  structurelles ; elle ne publie aucun identifiant source et ne génère aucun texte.
+- Le contexte officiel complet couvre 8 000 cibles SIRENE-only et leurs siblings,
+  collisions de site et collisions nom+géographie dans le snapshot local. 7 897
+  sont exactes à la baseline et 103 seulement opérationnelles selon la politique
+  même-SIREN/même-site ; les deux vues restent séparées.
+- Le pilote préenregistré contient 30 cibles / 90 couples : 15 actives, 15 fermées,
+  12 SIREN multisites, 4 multi-actifs et 90 inspirations train distinctes. Chaque
+  variante doit modifier le nom et l'adresse ou la commune ; le code ne choisit
+  que les sources et contrats, Luna LOW écrit directement tout nouveau CRM.
+- Le préflight v2 refuse les changements de casse seuls, tokens/numéros inventés,
+  ponctuation ou diacritiques ajoutés, numéro de voie altéré, champ hors contrat,
+  doublon et ambiguïté connue. Les identifiants bruts des concurrents internes ne
+  sont jamais transmis au modèle. Ledger :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/composite_v2/pilot30.sqlite`.
+- Validation ciblée : 26 tests passants pour runtime/driver/sélecteur, plus 15
+  tests passants pour les builders de preuves, inspirations et contexte.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
