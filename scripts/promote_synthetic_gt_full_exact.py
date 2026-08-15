@@ -119,6 +119,11 @@ def promote(args: argparse.Namespace) -> dict[str, Any]:
             seed_id: values for seed_id, values in promotable_by_seed.items()
             if {value["variant_id"] for value in values} == VARIANT_IDS and len(values) == 3
         }
+    promotable_keys = {
+        (seed_id, value["variant_id"])
+        for seed_id, values in promotable_by_seed.items()
+        for value in values
+    }
 
     diagnostic_rows = read_jsonl(args.diagnostic_export / "accept.jsonl")
     diagnostic_by_key = {
@@ -170,9 +175,9 @@ def promote(args: argparse.Namespace) -> dict[str, Any]:
     seen_by_seed: Counter[str] = Counter()
     for row in records:
         seed_id, variant_id = row["seed_id"], row["variant_id"]
-        if seed_id not in promotable_by_seed:
-            continue
         key = (seed_id, variant_id)
+        if key not in promotable_keys:
+            continue
         diagnostic = diagnostic_by_key.get(key)
         full_row = audit_by_key.get(key)
         if diagnostic is None or full_row is None:
