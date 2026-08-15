@@ -114,18 +114,17 @@ def test_query_context_uses_same_lowercase_normalization_aliases_and_physical_na
         "target_state": "F", "number_key": "12", "index_key": "",
         "street_type_key": loop.normalized_alnum(context.canonical_street_type("CHEMIN")),
         "street_key": "duport", "postcode_key": "13002", "insee_key": "13202",
-        "city_key": "marseille", "name_values_json": '["JEAN DUPONT"]',
+        "city_key": "marseille", "name_values_json": '["UNRELATED TARGET"]',
     }])
     names = pd.DataFrame([{
-        "target_siret": "12345678900012", "insee_key": "13202", "name_key": "jeandupont",
+        "target_siret": "12345678900012", "insee_key": "13202",
+        "name_key": "unrelatedtarget",
     }])
     result = context.query_context(
         establishment_path, legal_path, targets, names, tmp_path / "duckdb"
     )
     assert len(result["12345678900012"]) == 1
-    assert set(result["12345678900012"][0]["relation_tags"]) == {
-        "SAME_OFFICIAL_ADDRESS", "SAME_NAME_GEOGRAPHY",
-    }
+    assert result["12345678900012"][0]["relation_tags"] == ["SAME_OFFICIAL_ADDRESS"]
     assert "Jean Dupont" in result["12345678900012"][0]["name_values"]
 
 

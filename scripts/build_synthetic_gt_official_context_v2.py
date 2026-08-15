@@ -301,6 +301,58 @@ def query_context(
           AND norm(e.codeCommuneEtablissement)=t.insee_key
     """, [str(establishments), str(legal_units), str(establishments)]).fetchdf()
     ingest(legal_name_geo_frame, "SAME_NAME_GEOGRAPHY")
+
+    # Address-only and sibling discoveries must receive the same complete legal
+    # name evidence as name-geometry discoveries.  Otherwise a post-degradation
+    # CRM can collide with a same-site legal name that the deterministic gate and
+    # critic never saw.
+    contextual_sirens = sorted({
+        clean(row.get("siren"))
+        for values in by_target.values() for row in values.values()
+        if clean(row.get("siren"))
+    })
+    if contextual_sirens:
+        connection.register(
+            "contextual_sirens", pd.DataFrame({"siren": contextual_sirens})
+        )
+        legal_names_frame = connection.execute("""
+            WITH units AS (
+              SELECT u.* FROM read_parquet(?) u
+              JOIN contextual_sirens c ON u.siren=c.siren
+            ), names AS (
+              SELECT u.siren, value
+              FROM units u,
+              UNNEST([
+                u.denominationUniteLegale,
+                u.denominationUsuelle1UniteLegale,
+                u.denominationUsuelle2UniteLegale,
+                u.denominationUsuelle3UniteLegale,
+                u.sigleUniteLegale,
+                concat_ws(' ', u.prenomUsuelUniteLegale, u.nomUniteLegale),
+                concat_ws(' ', u.nomUniteLegale, u.prenomUsuelUniteLegale),
+                concat_ws(' ', u.prenom1UniteLegale, u.nomUniteLegale),
+                concat_ws(' ', u.nomUniteLegale, u.prenom1UniteLegale),
+                u.nomUsageUniteLegale
+              ]) values(value)
+              WHERE norm(value)<>''
+            )
+            SELECT siren, list(DISTINCT value ORDER BY value) AS legal_names
+            FROM names GROUP BY siren ORDER BY siren
+        """, [str(legal_units)]).fetchdf()
+        legal_names_by_siren = {
+            clean(row["siren"]): [
+                clean(value) for value in row["legal_names"] if clean(value)
+            ]
+            for row in legal_names_frame.to_dict("records")
+        }
+        for values in by_target.values():
+            for row in values.values():
+                legal_names = legal_names_by_siren.get(clean(row.get("siren")), [])
+                row["name_values"] = list(dict.fromkeys([
+                    *row.get("name_values", []), *legal_names,
+                ]))
+                if legal_names and not row.get("legal_name"):
+                    row["legal_name"] = legal_names[0]
     connection.close()
     return {
         target_siret: sorted(values.values(), key=lambda row: clean(row["siret"]))

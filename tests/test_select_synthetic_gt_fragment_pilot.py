@@ -66,7 +66,7 @@ def test_subset_preserves_linked_compounds_and_rejects_function_word_endings() -
     keep_compound = fragment(
         "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
     )
-    assert selector.fragment_supports(
+    assert not selector.fragment_supports(
         "name", "SARL PRUD'HOMME SERVICES", keep_compound, ["prud"]
     )
     legal_only_removal = fragment(
@@ -74,6 +74,15 @@ def test_subset_preserves_linked_compounds_and_rejects_function_word_endings() -
     )
     assert not selector.fragment_supports(
         "name", "SARL ALPHA BETA", legal_only_removal, ["alpha", "beta"]
+    )
+
+
+def test_subset_rejects_clitic_tokenization_that_luna_cannot_follow() -> None:
+    value = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 5, "retained_positions": [0, 1, 2]}
+    )
+    assert not selector.fragment_supports(
+        "name", "ASSOCIATION J'ENTENDS LE LOUP", value, ["entends"]
     )
 
 

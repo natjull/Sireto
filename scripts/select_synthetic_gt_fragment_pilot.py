@@ -197,10 +197,12 @@ def fragment_supports(
                 and (len(words) < 4 or len(retained) >= 3)
                 and words[retained[-1]] not in NAME_FUNCTION_TERMINALS
                 and not all(word.upper() in loop.LEGAL_FORM_TOKENS for word in removed_words)
-                and all(
-                    (left in retained_set) == (right in retained_set)
-                    for left, right in connected_token_pairs(source_value)
-                )
+                # Luna reasons about apostrophised/hyphenated compounds as visual
+                # units, whereas the deterministic runtime indexes their lexical
+                # components separately.  A positional subset on such a source is
+                # therefore not safely transferable, even if it retains the whole
+                # connected group (for example J'ENTENDS).
+                and not connected_token_pairs(source_value)
                 and bool(anchors)
                 and anchors[0] in {words[index] for index in retained}
             )
