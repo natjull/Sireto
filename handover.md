@@ -35,6 +35,15 @@ champs sources et manifeste hashé. Sur l'export pilote, 50 paires sont
 produites (16 même SIREN, 34 actif/fermé); les familles absentes du petit pool
 restent explicitement absentes, sans remplissage artificiel.
 
+Une itération v6 sur 8 seeds train-only a ensuite été préparée depuis les
+sources hashées et exécutée avec 2 workers GENERATOR Luna LOW (4 seeds par
+worker), puis 1 CRITIC et 1 ADJUDICATOR. Export :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/67653eb32d9998cc/export_v6/`.
+Résultat : 3 `ACCEPT`, 18 `SILVER`, 3 `REJECT`; le gate de 3 positifs
+acceptés par seed n'est pas atteint, donc verdict `PIVOT_PILOT` maintenu.
+Les hard negatives correspondants comptent 30 paires (9 même SIREN,
+21 actif/fermé). Aucun artefact v6 n'est promu en corpus d'entraînement.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
