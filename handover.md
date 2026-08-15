@@ -97,6 +97,34 @@ système synthétique passent.
 
 *(plan équilibré, catalogue OOF, sélection P000 et runtime : commit `5e738c3`)*
 
+P000 a été exécuté le 16 août 2026 avec deux pools de 32 workers, soit jusqu'à
+64 appels concurrents. Les 699 appels Luna ont tous abouti au premier essai de
+transport. En 633 secondes, les 450 slots ont produit 401 preflights passés et
+49 slots épuisés ; le critic a rendu 394 `ACCEPT`, 1 `REJECT` et 6 `SILVER`.
+Le re-scan full-SIRENE exhaustif qualifie 392/394 `ACCEPT` comme
+`EXACT_IDENTIFIABLE` avec témoin singleton `G_N_A`; deux ambiguïtés officielles
+sont exclues. Le promoteur par variante publie donc 392 couples sur 141 SIRET,
+tous distincts, sous SHA-256 `0e0d19c530c62353`. Distribution promue : 73
+`EASY` (18,6 %), 201 `MEDIUM` (51,3 %), 118 `HARD` (30,1 %); 79 échecs
+conjoints, 57 échecs XGBoost seul, 60 échecs BGE seul, 157 train-distribution
+et 39 contrôles near-clean. Actifs/fermés : 199/193. L'audit indépendant
+stratifié de 20 lignes trouve zéro faux réalisme certain et rend `PASS`.
+
+Le promoteur a été corrigé avant publication pour filtrer par clé
+`(seed_id, variant_id)` et ne jamais entraîner une variante sœur ambiguë ou
+rejetée. Les caps références/opérateurs/paires sont maintenant réservés et
+vérifiés cumulativement entre batches, au lieu d'être remis à zéro. La
+sélection P001 s'arrête fail-closed avant Luna : après exclusion des cibles
+P000, les seules transformations nominales strictes restantes ne permettent
+plus de maintenir 20 % d'`EASY` sur 250 ou 500 nouvelles cibles. Aucun P001
+n'a été écrit. La voie d'extension sûre est d'ajouter les noms alternatifs et
+enseignes officiels SIRENE comme relation autoritative validée, plutôt que de
+réactiver les subsets nominaux libres ou de relâcher les quotas en silence.
+
+*(promotion exacte par variante : commit `cb61310`; caps cumulatifs : commit
+`a8ce07d`; artefacts P000 :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
