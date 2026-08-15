@@ -27,6 +27,14 @@ adjudication fail-closed et absence de générateur mécanique dans le runtime.
 validée après le runtime, commit de référence `c786ae2`; contrat de réponse
 GENERATOR renforcé par `e5ab523`)*
 
+Un assembleur de hard negatives SIRENE-only a été ajouté (`554afcb`). Il ne
+transforme aucun texte CRM : il sélectionne au plus dix SIRET candidats par
+positif, avec familles `SAME_SIREN_OTHER_SIRET`, `SHARED_ADDRESS`,
+`ACTIVE_CLOSED`, `LOCAL_HOMONYM` et `GEOGRAPHIC_NEIGHBOR`, provenance des
+champs sources et manifeste hashé. Sur l'export pilote, 50 paires sont
+produites (16 même SIREN, 34 actif/fermé); les familles absentes du petit pool
+restent explicitement absentes, sans remplissage artificiel.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
