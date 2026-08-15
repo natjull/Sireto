@@ -112,6 +112,17 @@ Ce résultat valide le chemin agentique corrigé sur un cas, mais ne constitue
 pas un gate d'extension : le rendement v3 reste insuffisant et les hard
 negatives ne sont pas encore promus.
 
+La chaîne hard-negative a ensuite été exercée sur l'export v5. Le producteur
+de cartes SIRENE officielles (`02d05d9`) a projeté 3 617 candidats autour de
+la seed, sans modifier de texte CRM. Le builder a produit 30 paires uniques
+pour les 3 positifs : 21 `ACTIVE_CLOSED`, 3
+`SAME_SIREN_OTHER_SIRET` et 6 `SHARED_ADDRESS`, avec provenance complète,
+zéro collision positif/négatif et hashes des sources. Artefacts :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/sirene_micro_candidate_cards_v5.jsonl`
+et `sirene_micro_hard_negatives_v5.jsonl` avec leurs manifests. Cette
+milestone valide la chaîne de négatifs sur un micro-lot, sans constituer une
+promotion du corpus ni une extension quantitative.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
