@@ -43,8 +43,8 @@ STOP_ANCHORS = {
 }
 ADDRESS_FUNCTION_WORDS = {"d", "de", "des", "du", "l", "la", "le", "les"}
 NAME_FUNCTION_TERMINALS = {
-    "a", "au", "aux", "d", "de", "des", "du", "en", "et", "l", "la", "le",
-    "les", "sous", "sur",
+    "a", "au", "aux", "d", "da", "das", "de", "del", "della", "des", "do", "dos",
+    "du", "en", "et", "l", "la", "le", "les", "sous", "sur", "van", "von",
 }
 
 
@@ -90,7 +90,12 @@ def distinctive_name_tokens(context: dict[str, Any]) -> list[str]:
     }
     return list(dict.fromkeys(
         word for word in target_words
-        if word.upper() not in STOP_ANCHORS and len(word) >= 3 and word not in competitors
+        if (
+            word.upper() not in STOP_ANCHORS
+            and word.upper() not in loop.LEGAL_FORM_TOKENS
+            and len(word) >= 3
+            and word not in competitors
+        )
     ))
 
 
@@ -155,16 +160,21 @@ def fragment_supports(
             return False
         if field == "name" and relation == "TOKEN_SUBSET":
             retained_set = set(retained)
+            removed_words = [
+                word for index, word in enumerate(words) if index not in retained_set
+            ]
             return (
                 len(retained) >= 2
                 and len(retained) * 2 >= len(words)
                 and (len(words) < 4 or len(retained) >= 3)
                 and words[retained[-1]] not in NAME_FUNCTION_TERMINALS
+                and not all(word.upper() in loop.LEGAL_FORM_TOKENS for word in removed_words)
                 and all(
                     (left in retained_set) == (right in retained_set)
                     for left, right in connected_token_pairs(source_value)
                 )
-                and bool(set(anchors) & {words[index] for index in retained})
+                and bool(anchors)
+                and anchors[-1] in {words[index] for index in retained}
             )
         if relation == "LEGAL_FORM_REMOVE":
             removed = [words[index] for index in range(len(words)) if index not in retained]
@@ -632,7 +642,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                     for index in retained
                 }
                 protected_anchor = [
-                    value for value in anchors if value in retained_words
+                    value for value in reversed(anchors) if value in retained_words
                 ][:1]
                 if not protected_anchor:
                     raise RuntimeError("TOKEN_SUBSET lacks a retained distinctive anchor")

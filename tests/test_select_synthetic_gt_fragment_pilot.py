@@ -18,6 +18,14 @@ def test_distinctive_tokens_exclude_competitor_and_generic_words() -> None:
     assert selector.distinctive_name_tokens(context) == ["unique", "paris"]
 
 
+def test_distinctive_tokens_exclude_all_legal_forms() -> None:
+    context = {
+        "target": {"names": [{"kind": "OFFICIAL_NAME", "value": "EURL ANTONIO COSTA"}]},
+        "internal_context": [],
+    }
+    assert selector.distinctive_name_tokens(context) == ["antonio", "costa"]
+
+
 def test_subset_requires_retained_distinctive_anchor() -> None:
     value = fragment(
         "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
@@ -44,6 +52,28 @@ def test_subset_preserves_linked_compounds_and_rejects_function_word_endings() -
     )
     assert selector.fragment_supports(
         "name", "SARL PRUD'HOMME SERVICES", keep_compound, ["prud"]
+    )
+    legal_only_removal = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 3, "retained_positions": [1, 2]}
+    )
+    assert not selector.fragment_supports(
+        "name", "SARL ALPHA BETA", legal_only_removal, ["alpha", "beta"]
+    )
+
+
+def test_subset_requires_last_distinctive_anchor() -> None:
+    drop_last_anchor = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 3, "retained_positions": [0, 1]}
+    )
+    assert not selector.fragment_supports(
+        "name", "JEAN MICHEL COLOMBIER", drop_last_anchor,
+        ["jean", "michel", "colombier"],
+    )
+    ends_with_da = fragment(
+        "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
+    )
+    assert not selector.fragment_supports(
+        "name", "EURL ANTONIO DA COSTA", ends_with_da, ["antonio", "costa"]
     )
 
 
