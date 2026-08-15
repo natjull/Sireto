@@ -102,6 +102,16 @@ confirme le `PIVOT_PILOT` : aucune génération massive ni multiplication
 artificielle de variantes n'est autorisée tant que le débit de sorties valides
 et distinctes n'est pas démontré.
 
+Une vérification du schéma a précisé que les champs CRM vides sont autorisés
+pour `FIELD_MISSING`; l'échec v4 provenait de la liste de familles vide sur
+une variante inchangée, exigée non vide par le contrat. Un micro-pilote v5,
+avec ce point explicitement rappelé à Luna, a produit 3 `ACCEPT` sur une seed
+et une critique indépendante sans `SILVER` ni `REJECT`. Export :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/sirene_micro_export_v5/`.
+Ce résultat valide le chemin agentique corrigé sur un cas, mais ne constitue
+pas un gate d'extension : le rendement v3 reste insuffisant et les hard
+negatives ne sont pas encore promus.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
