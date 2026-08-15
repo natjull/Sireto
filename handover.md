@@ -4096,5 +4096,41 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Validation : `PYTHONPATH=. pytest -q tests/test_run_synthetic_gt_agentic_loop.py`
   — 12 tests passants ; compilation Python et `git diff --check` passants.
 
+## BGE final et boucle GT synthétique v17–v21
+
+- Verdict BGE final documenté par `c633ec2` et `77edb72`. Le BGE groupwise
+  fold 0 atteint 2 400/2 797 (85,806 %) contre 2 437/2 797 pour
+  `BUSINESS_LEARNED`. Le stack XGBoost+BGE obtient 2 436/2 797 : 41
+  corrections et 42 régressions face au meilleur XGBoost. Verdict
+  `STOP_RANKER_GATE`; fold 1 et test restent fermés. Rapport :
+  `reports/v412_bge_xgb_stack_verdict.md`.
+- Boucle Luna durable et contrats officiels introduits par `0dbaf6c`, puis
+  compatibilité Structured Outputs, faisabilité des familles et schéma strict
+  corrigés par `4743f89`. Le driver conserve les réponses brutes, exécute Luna
+  LOW en sessions éphémères indépendantes et ne génère/répare aucun champ CRM.
+- Les opérations exactes et le nombre total d'essais ont été corrigés par
+  `f545a8d`; le schéma validateur est figé par run par `875acb2`; les ajouts
+  gratuits d'accents/ponctuation et l'empreinte de surface ont été corrigés par
+  `cff96ba`; le CRITIC a été aligné sur le contrat de corruption par `c275b9e`.
+  La suite ciblée compte 23 tests passants.
+- v17 (`pilot-agentic-v17-strict`) est terminé et quarantainé : 32 seeds,
+  25 `ACCEPT`, 71 `REJECT` (26,0 %). Il a exposé l'incompatibilité entre
+  variantes alphanumériquement conservatrices et ancienne empreinte, ainsi que
+  des faux `ACCEPT` par ajout d'accents. v18 et v19 sont des diagnostics
+  interrompus avant publication après identification de ces biais.
+- v20 (`pilot-agentic-v20-critic-v3`) passe le mini-gate : 8 seeds, 24/24
+  `ACCEPT`, aucune fuite, aucun doublon de surface, aucun mauvais préflight et
+  correspondance complète des hashes entre réponses brutes et ledger.
+- v21 (`pilot-agentic-v21-full-gate`) passe le gate complet : 32 seeds,
+  81 `ACCEPT`, 15 `REJECT`, 0 `SILVER`, soit 84,375 % de rendement strict.
+  Les 81 surfaces acceptées sont uniques, sans fuite d'identifiant ni
+  préflight invalide. Export :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_loop_v2/pilot/v21_export_final/`.
+- Prochaine étape : enrichir l'intake SIRENE-only avec les dénominations de
+  l'unité légale, étendre uniquement les familles prouvées dans le train
+  (`TOKEN_ORDER`, OCR borné, ordre d'adresse), puis produire par shards avec
+  les versions de prompts et gardes v21 gelées jusqu'à 20 000 positifs
+  acceptés. Maps reste désactivé dans le plan gelé (`max_requests=0`).
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
