@@ -12,13 +12,19 @@ append-only. Le code ne rédige et ne répare aucun champ CRM : il assigne les
 seeds, valide les JSON, rejette les fuites SIRET/SIREN et les doublons globaux,
 route les cas risqués et conserve les réponses brutes avec SHA-256.
 
-Le pilote réel est initialisé sur quatre seeds sous
-`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_loop_v2/pilot`.
-Les quatre tâches GENERATOR sont louées en deux shards disjoints ; aucune
-réponse Luna n'est encore publiée. Quinze tests ciblés passent avec les tests
-agentic/Maps existants, dont reprise de lease, critique aveugle aux résumés du
-générateur, adjudication fail-closed et absence de générateur mécanique dans
-le runtime.
+Le pilote réel v4 est exécuté sur quatre seeds sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/5b6362f76951fa84`.
+Deux shards GENERATOR Luna LOW ont été loués, puis deux tâches CRITIC et une
+tâche ADJUDICATOR. L'export final est `export_v4_final/` : 5 variantes
+`ACCEPT`, 1 `SILVER`, 6 `REJECT` au preflight et 2 seeds épuisant leur retry
+sans promotion. Le gate de trois positifs acceptés par seed n'est donc pas
+franchi : verdict `PIVOT_PILOT`, aucune montée en volume. Le manifeste export
+contient les hashes des trois JSONL de sortie. Quinze tests ciblés passent,
+dont reprise de lease, critique aveugle aux résumés du générateur,
+adjudication fail-closed et absence de générateur mécanique dans le runtime.
+
+*(pilote v4 et export : artefacts lourds sous `/Volumes/CATNAT_DATA`; exécution
+validée après le runtime, commit de référence `c786ae2`)*
 
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
