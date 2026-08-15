@@ -13,6 +13,19 @@ def write_jsonl(path: Path, rows: list[dict]) -> None:
     path.write_text("".join(loop.canonical_json(row) + "\n" for row in rows), encoding="utf-8")
 
 
+def test_punctuation_edits_distinguish_identical_marks_by_position() -> None:
+    source = "'NATUREL ET GOURMANDISE'"
+    assert loop.composite_operation_parameters(
+        "name", "PUNCTUATION_REMOVED", source, "'NATUREL ET GOURMANDISE"
+    ) == {"edits": [{"after_token_index": 2, "mark": "'"}]}
+    assert loop.composite_operation_parameters(
+        "name", "PUNCTUATION_REMOVED", source, "NATUREL ET GOURMANDISE'"
+    ) == {"edits": [{"after_token_index": -1, "mark": "'"}]}
+    assert loop.composite_operation_parameters(
+        "name", "PUNCTUATION_REMOVED", source, "NATUR'EL ET GOURMANDISE"
+    ) is None
+
+
 def seed(seed_id: str = "seed-1", siret: str = "12345678900012", risk_flags=None) -> dict:
     return {
         "seed_id": seed_id,

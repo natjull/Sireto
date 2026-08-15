@@ -1236,29 +1236,34 @@ def composite_permutation(source_words: list[str], target_words: list[str]) -> l
 
 def composite_punctuation_edits(source: str, target: str) -> list[dict[str, Any]] | None:
     """Locate removed punctuation by the token boundary it occupied."""
-    source_marks: list[tuple[int, str]] = []
-    token_index = -1
-    in_token = False
-    for character in source:
-        if character.isalnum():
-            if not in_token:
-                token_index += 1
-                in_token = True
-        else:
-            if character in PUNCTUATION:
-                source_marks.append((token_index, character))
-            if character.isspace() or character in PUNCTUATION:
-                in_token = False
-    target_counter = Counter(character for character in target if character in PUNCTUATION)
-    source_counter = Counter(character for character in source if character in PUNCTUATION)
+    def positioned_marks(value: str) -> list[tuple[int, str]]:
+        result: list[tuple[int, str]] = []
+        token_index = -1
+        in_token = False
+        for character in value:
+            if character.isalnum():
+                if not in_token:
+                    token_index += 1
+                    in_token = True
+            else:
+                if character in PUNCTUATION:
+                    result.append((token_index, character))
+                if character.isspace() or character in PUNCTUATION:
+                    in_token = False
+        return result
+
+    source_marks = positioned_marks(source)
+    target_marks = positioned_marks(target)
+    source_counter = Counter(source_marks)
+    target_counter = Counter(target_marks)
     if target_counter - source_counter:
         return None
     remaining = source_counter - target_counter
     edits: list[dict[str, Any]] = []
     for boundary, mark in source_marks:
-        if remaining[mark] > 0:
+        if remaining[(boundary, mark)] > 0:
             edits.append({"after_token_index": boundary, "mark": mark})
-            remaining[mark] -= 1
+            remaining[(boundary, mark)] -= 1
     return edits or None
 
 
