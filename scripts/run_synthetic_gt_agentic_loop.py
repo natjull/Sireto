@@ -29,8 +29,8 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SCHEMA = ROOT / "config" / "synthetic_gt_agentic_message_schema_v2.json"
 SCHEMA_VERSION = "sireto-synthetic-gt-agentic-message-2"
 PROMPT_VERSIONS = {
-    "GENERATOR": "sireto-gt-generator-v3",
-    "CRITIC": "sireto-gt-critic-v3",
+    "GENERATOR": "sireto-gt-generator-v4",
+    "CRITIC": "sireto-gt-critic-v4",
     "ADJUDICATOR": "sireto-gt-adjudicator-v2",
 }
 PENDING_BY_ROLE = {
@@ -383,12 +383,20 @@ def validate_profile_evidence(
     if not names:
         raise ValueError(f"name corruption requested without an official name for seed {seed_id}")
     if requested["name"] == "ENSEIGNE_VS_DENOMINATION":
-        distinct_names = {comparison_fingerprint({
-            "name": value, "address": "", "postcode": "", "city": "", "insee": ""
-        }) for value in names}
-        if len(distinct_names) < 2:
+        baseline = comparison_fingerprint({
+            "name": str(seed_card.get("name_options", [""])[0]),
+            "address": "", "postcode": "", "city": "", "insee": "",
+        })
+        alternatives = {
+            comparison_fingerprint({
+                "name": str(value), "address": "", "postcode": "", "city": "", "insee": ""
+            })
+            for value in seed_card.get("enseigne_options", [])
+            if str(value).strip()
+        }
+        if not alternatives or alternatives == {baseline}:
             raise ValueError(
-                f"ENSEIGNE_VS_DENOMINATION requires two distinct official names for seed {seed_id}"
+                f"ENSEIGNE_VS_DENOMINATION requires a distinct official enseigne for seed {seed_id}"
             )
     if not str(seed_card.get("address", "")).strip():
         raise ValueError(f"address corruption requested without an official address for seed {seed_id}")
@@ -762,9 +770,20 @@ def source_supports_family(seed_card: dict[str, Any], dimension: str, family: st
     ]["target_fields"][0]]
     words = normalized_words(source)
     if family == "ENSEIGNE_VS_DENOMINATION":
-        names = [normalized_surface(value) for value in seed_card.get("name_options", []) if str(value).strip()]
-        enseignes = [normalized_surface(value) for value in seed_card.get("enseigne_options", []) if str(value).strip()]
-        return bool(names and enseignes and set(names) - set(enseignes) and set(enseignes) - {names[0]})
+        names = [str(value) for value in seed_card.get("name_options", []) if str(value).strip()]
+        enseignes = [str(value) for value in seed_card.get("enseigne_options", []) if str(value).strip()]
+        if not names or not enseignes:
+            return False
+        baseline = comparison_fingerprint({
+            "name": names[0], "address": "", "postcode": "", "city": "", "insee": ""
+        })
+        alternatives = {
+            comparison_fingerprint({
+                "name": value, "address": "", "postcode": "", "city": "", "insee": ""
+            })
+            for value in enseignes
+        }
+        return bool(alternatives - {baseline})
     if family == "LEGAL_FORM":
         return any(word.upper() in LEGAL_FORM_TOKENS for word in words)
     if family in {"TOKEN_ORDER", "ADDRESS_TOKEN_ORDER"}:
@@ -781,7 +800,18 @@ def source_supports_family(seed_card: dict[str, Any], dimension: str, family: st
     if family == "ACCENT_PUNCTUATION":
         return has_diacritic(source) or bool(punctuation_marks(source))
     if family in {"OCR_LIMITED", "ADDRESS_OCR"}:
-        return len(normalized_alnum(source)) >= 4
+        evidence_key = (
+            "address_ocr_substitution_pairs" if family == "ADDRESS_OCR"
+            else "ocr_substitution_pairs"
+        )
+        allowed_sources = {
+            str(value.get("source", "")).casefold()
+            for value in seed_card.get(evidence_key, [])
+            if isinstance(value, dict) and str(value.get("source", "")).strip()
+        }
+        return len(normalized_alnum(source)) >= 4 and any(
+            character in allowed_sources for character in normalized_alnum(source)
+        )
     if family == "ADDRESS_ABBREVIATION":
         street_type = normalized_surface(seed_card.get("street_type", "")).upper()
         aliases = {
@@ -838,8 +868,33 @@ def family_change_errors(
     elif family in {"OCR_LIMITED", "ADDRESS_OCR"}:
         distance = edit_distance(source_alnum, target_alnum)
         maximum = max(2, int(len(source_alnum) * 0.15))
-        if distance < 1 or distance > maximum:
+        evidence_key = (
+            "address_ocr_substitution_pairs" if family == "ADDRESS_OCR"
+            else "ocr_substitution_pairs"
+        )
+        allowed_pairs = {
+            (str(value.get("source", "")).casefold(), str(value.get("target", "")).casefold())
+            for value in seed_card.get(evidence_key, [])
+            if isinstance(value, dict)
+        }
+        observed_pairs = {
+            (left, right)
+            for left, right in zip(source_alnum, target_alnum)
+            if left != right
+        }
+        if (
+            len(source_alnum) != len(target_alnum)
+            or distance < 1
+            or distance > maximum
+            or not observed_pairs
+            or not observed_pairs.issubset(allowed_pairs)
+        ):
             errors.append("OCR_SUBSTITUTION_NOT_LIMITED_OR_ABSENT")
+        if family == "ADDRESS_OCR":
+            source_digits = "".join(character for character in str(source) if character.isdigit())
+            target_digits = "".join(character for character in str(target) if character.isdigit())
+            if source_digits != target_digits:
+                errors.append("ADDRESS_OCR_CHANGED_NUMBER")
     elif family == "ACCENT_PUNCTUATION":
         if source_alnum != target_alnum:
             errors.append("ACCENT_PUNCTUATION_CHANGED_ALPHANUMERICS")

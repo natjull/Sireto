@@ -290,6 +290,7 @@ def test_family_semantic_checks_reject_false_claims_and_accept_real_changes():
     card = {
         "name_options": ["SOCIETE DES FLEURS"],
         "enseigne_options": ["FLEURS DE PARIS"],
+        "ocr_substitution_pairs": [{"source": "o", "target": "0", "count": 1}],
     }
     assert loop.family_change_errors("OCR_LIMITED", "SOCIETE", "societe", card) == [
         "TARGET_FIELD_UNCHANGED"
@@ -341,6 +342,42 @@ def test_source_family_feasibility_rejects_fake_abbreviation_and_generic_hyphen(
     base["street_type"] = "RUE"
     assert loop.source_supports_family(base, "name", "ACRONYM_TOKENIZATION")
     assert loop.source_supports_family(base, "address", "ADDRESS_ABBREVIATION")
+
+
+def test_ocr_requires_observed_substitution_and_preserves_address_number():
+    card = {
+        "ocr_substitution_pairs": [{"source": "o", "target": "0", "count": 1}],
+        "address_ocr_substitution_pairs": [
+            {"source": "i", "target": "l", "count": 1}
+        ],
+    }
+    assert loop.family_change_errors("OCR_LIMITED", "SOCIETE", "S0CIETE", card) == []
+    assert "OCR_SUBSTITUTION_NOT_LIMITED_OR_ABSENT" in loop.family_change_errors(
+        "OCR_LIMITED", "SOCIETE", "SACIETE", card
+    )
+    assert "OCR_SUBSTITUTION_NOT_LIMITED_OR_ABSENT" in loop.family_change_errors(
+        "OCR_LIMITED", "SOCIETE", "SOCETE", card
+    )
+    assert "ADDRESS_OCR_CHANGED_NUMBER" in loop.family_change_errors(
+        "ADDRESS_OCR", "12 RUE LILAS", "13 RUE LLLAS", card
+    )
+
+
+def test_enseigne_feasibility_uses_comparison_fingerprint():
+    card = {
+        "name_options": ["L'ETOILE"],
+        "enseigne_options": ["L ETOILE"],
+        "address": "1 RUE A", "street_type": "RUE", "city": "PARIS",
+        "postcode": "75001", "insee": "75056",
+        "requested_families": {
+            "name": "ENSEIGNE_VS_DENOMINATION",
+            "address": "ADDRESS_ABBREVIATION",
+            "orthographic": "ACCENT_PUNCTUATION",
+        },
+    }
+    assert not loop.source_supports_family(
+        card, "name", "ENSEIGNE_VS_DENOMINATION"
+    )
 
 
 def test_requested_family_requires_nonempty_observed_train_evidence(tmp_path: Path):

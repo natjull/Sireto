@@ -37,6 +37,13 @@ def candidate_card(candidate: dict[str, Any]) -> dict[str, Any]:
     legal_name = official_text(fields.get("name"))
     enseigne = official_text(fields.get("enseigne"))
     baseline_name = legal_name or enseigne
+    legal_options = [
+        official_text(value) for value in fields.get("legal_name_options", [])
+        if official_text(value)
+    ]
+    name_options = list(dict.fromkeys(
+        value for value in [baseline_name, *legal_options] if value
+    ))
     address = " ".join(
         value for value in (
             official_text(fields.get("street_number")),
@@ -48,7 +55,7 @@ def candidate_card(candidate: dict[str, Any]) -> dict[str, Any]:
         "siret": official_text(candidate["source_siret"]),
         "siren": official_text(candidate["source_siren"]),
         "state": official_text(fields.get("state")),
-        "name_options": [baseline_name] if baseline_name else [],
+        "name_options": name_options,
         "enseigne_options": [enseigne] if enseigne else [],
         "number": official_text(fields.get("street_number")),
         "street_type": official_text(fields.get("street_type")),
@@ -95,6 +102,10 @@ def prepare(args: argparse.Namespace) -> None:
         siret = official_text(selection["siret"])
         candidate = candidates[siret]
         card = candidate_card(candidate)
+        card["ocr_substitution_pairs"] = profile.get("ocr_substitution_pairs", [])
+        card["address_ocr_substitution_pairs"] = profile.get(
+            "address_ocr_substitution_pairs", []
+        )
         card["requested_families"] = selection["requested_families"]
         row = {
             "seed_id": f"{args.seed_prefix}:{siret}",

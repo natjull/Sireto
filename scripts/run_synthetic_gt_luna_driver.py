@@ -49,6 +49,15 @@ Apply the requested family literally:
 - COMMUNE_VARIANT: only remove/normalize separators, spaces, apostrophes, hyphens, or accents in
   the official city. Preserve every alphanumeric character in the same order.
 - LEGAL_FORM: remove only the explicit legal-form token; preserve all other lexical tokens.
+- TOKEN_ORDER: move one complete name token or adjacent token block; preserve the exact token
+  multiset and every character. Do not reverse letters inside a token.
+- ADDRESS_TOKEN_ORDER: move only the full street-type token before/after the unchanged street-name
+  sequence; preserve house number and internal street-name order.
+- OCR_LIMITED or ADDRESS_OCR: perform exactly one same-length character substitution listed in the
+  corresponding *_ocr_substitution_pairs evidence in seed_card. Never insert/delete/truncate; for
+  an address, preserve every digit including the house number.
+- ENSEIGNE_VS_DENOMINATION: replace the name exactly by one distinct enseigne_options value, with
+  no additional spelling or punctuation edit.
 
 Never output case-only OCR, gratuitous punctuation, an unofficial alternate name, an unchanged
 token order, or a fake address abbreviation. Never write SIRET/SIREN inside CRM fields. On retry,
@@ -70,6 +79,14 @@ Apply these decision rules literally:
 - COMMUNE_VARIANT is valid when separators, spaces, apostrophes, hyphens, or accents are normalized
   while every alphanumeric character remains in the same order.
 - LEGAL_FORM is valid only when the explicit form token alone is removed.
+- TOKEN_ORDER is valid only when the exact name-token multiset is preserved and its sequence
+  changes, without reversing characters inside tokens.
+- ADDRESS_TOKEN_ORDER is valid only when the full street type moves before/after the unchanged
+  street-name sequence and the house number is preserved.
+- OCR_LIMITED and ADDRESS_OCR require exactly one same-length substitution present in the
+  corresponding evidence list; insertion, deletion, truncation and address digit changes reject.
+- ENSEIGNE_VS_DENOMINATION is valid only when the target equals a distinct official
+  enseigne_options value byte-for-byte after surrounding-space normalization.
 
 Reject any changed non-target field, mismatched/non-visible family, case-only edit, added accent or
 punctuation, changed alphanumeric content, unsupported OCR, unchanged tokenization, or false
