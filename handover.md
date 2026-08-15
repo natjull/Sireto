@@ -61,6 +61,17 @@ n'ont pas été fabriquées. Le gate de volume/diversité n'est pas franchi :
 verdict `PIVOT_PILOT`, aucune extension ni promotion. Commit du filtre et de
 ses tests : `730816d`.
 
+Un intake séparé `SIRENE_ONLY_TRAIN` a ensuite été matérialisé par
+`scripts/select_synthetic_gt_sirene_seeds.py` (commit `1d4ffd6`). Le sélecteur
+ne transforme aucun texte : il exclut les 14 198 SIREN de `crm_ok_gt`, conserve
+un seul SIRET par SIREN selon un ordre hashé stable et écrit les champs
+officiels SIRENE avec provenance. L'artefact pilote contient 20 000 SIRET et
+20 000 SIREN distincts, zéro recouvrement CRM, et le manifeste
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/sirene_only_train_seeds_v1.jsonl.manifest.json`
+porte les hashes source et de sortie. Cet intake rend possible l'atteinte du
+nombre de seeds préenregistré, mais ne constitue pas encore des positifs :
+aucune génération Luna n'a été lancée sur ces seeds.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
