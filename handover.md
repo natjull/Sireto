@@ -58,6 +58,45 @@ rehashés sans écart.
 
 *(verdict, rapport et vue opérationnelle secondaire : commit `c633ec2`)*
 
+### Corpus GT synthétique équilibré — production P000
+
+La trajectoire des canaries est close. Le corpus cible compte 20 000 variantes
+promues, au plus trois par SIRET et au plus 8 000 cibles. Sa distribution
+globale est gelée à 20 % `EASY`, 50 % `MEDIUM`, 30 % `HARD`; l'augmentation
+est orthogonale : 20 % erreurs conjointes BGE/XGBoost, 15 % échecs XGBoost
+seul, 15 % échecs BGE seul, 40 % distribution train et 10 % contrôles presque
+propres. Le synthétique est réservé au ranker/decider avec poids de scène
+`0.5/k` par identité; il est interdit au risk model, à la calibration, au
+choix des seuils AUTO et au test final.
+
+Le catalogue de ciblage est calculé uniquement sur les prédictions OOF des
+folds train 2/3/4 : 8 252 scènes jointes, dont 839 échecs conjoints, 224 cas où
+seul BGE est juste et 480 où seul XGBoost est juste. Il ne contient aucun
+query id, texte CRM, SIRET ou SIREN. Artefact :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_oof_bge_xgb_failure_catalog_v1.json`,
+SHA-256 `9ab3eb713cde5122`.
+
+Le batch compté `P000` est sélectionné et figé : 150 cibles / 450 contrats,
+75 actives et 75 fermées; exactement 90 faciles, 225 moyens, 135 difficiles;
+90 `FAIL_BOTH_MODELS`, 67 `FAIL_XGB_ONLY`, 68 `FAIL_BGE_ONLY`, 180
+`TRAIN_DISTRIBUTION` et 45 `NEAR_CLEAN_CONTROL`. Il mobilise 334 références
+train distinctes, maximum 28 usages par référence, 62 opérateurs exacts et
+aucune paire de relations au-delà de 45/450. Les 59 SIRET/SIREN des canaries
+et du pilot30 sont exclus. Seed :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1/P000_seed_input.jsonl`,
+SHA-256 `6e7b08584c358857`.
+
+Le runtime accepte désormais la promotion indépendante par variante lorsque
+le run l'active explicitement; le comportement historique reste atomique 3/3.
+Un slot épuisé ne détruit donc plus deux couples valides. Le critic reçoit
+uniquement les variantes passées. Les efforts sont séparés par rôle : Luna
+`low` pour GENERATOR, `high` pour CRITIC et `max` pour ADJUDICATOR. P000 doit
+être exécuté à concurrence 32, extensible à 64 selon la stabilité transport,
+puis audité full-SIRENE avant promotion par variante. Les 110 tests du sous-
+système synthétique passent.
+
+*(plan équilibré, catalogue OOF, sélection P000 et runtime : commit `5e738c3`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
