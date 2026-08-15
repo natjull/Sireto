@@ -60,6 +60,25 @@ def _json_dump(path: Path, payload: dict[str, Any]) -> None:
     )
 
 
+def _weighted_groupwise_cross_entropy(
+    logits: torch.Tensor,
+    target: torch.Tensor,
+    scene_weights: torch.Tensor,
+) -> torch.Tensor:
+    """Return the scene-weighted groupwise loss.
+
+    Historical groups have weight 1.  Synthetic augmentation groups may carry
+    the frozen ``0.5/k`` weight.  Weighting at scene level prevents the number
+    of negatives in a group from changing its contribution.
+    """
+    if scene_weights.ndim != 1 or scene_weights.shape[0] != logits.shape[0]:
+        raise ValueError("One BGE scene weight is required per group")
+    if not torch.isfinite(scene_weights).all() or bool((scene_weights <= 0).any()):
+        raise ValueError("BGE scene weights must be finite and strictly positive")
+    losses = torch.nn.functional.cross_entropy(logits, target, reduction="none")
+    return (losses * scene_weights).sum() / scene_weights.sum()
+
+
 def _parse_folds(value: str) -> tuple[int, ...]:
     folds = tuple(sorted({int(item) for item in value.split(",") if item != ""}))
     if not folds or any(fold not in {2, 3, 4} for fold in folds):
@@ -171,6 +190,15 @@ def run(args: argparse.Namespace) -> Path:
     torch.manual_seed(SEED)
     groups = pd.read_parquet(args.groups / "training_groups.parquet")
     groups["query_id"] = groups["query_id"].astype(str)
+    if "scene_weight" not in groups.columns:
+        groups["scene_weight"] = np.float32(1.0)
+    groups["scene_weight"] = groups["scene_weight"].astype(np.float32)
+    if not np.isfinite(groups["scene_weight"].to_numpy()).all() or groups[
+        "scene_weight"
+    ].le(0).any():
+        raise ValueError("BGE scene weights must be finite and strictly positive")
+    if groups.groupby("query_id", sort=False)["scene_weight"].nunique().max() != 1:
+        raise ValueError("A BGE scene carries multiple weights")
     groups = groups[groups["oof_fold"].astype(int).isin(args.train_folds)].copy()
     groups = groups.sort_values(["query_id", "group_position"], kind="mergesort")
     if args.max_train_scenes is not None:
@@ -219,7 +247,15 @@ def run(args: argparse.Namespace) -> Path:
             )
             logits = model(**encoded).logits.squeeze(-1).reshape(len(scene_ids), group_size)
             target = torch.zeros(len(scene_ids), dtype=torch.long, device=args.device)
-            loss = torch.nn.functional.cross_entropy(logits, target)
+            scene_weights = torch.tensor(
+                [
+                    float(frame_by_query[str(scene_id)]["scene_weight"].iloc[0])
+                    for scene_id in scene_ids
+                ],
+                dtype=logits.dtype,
+                device=args.device,
+            )
+            loss = _weighted_groupwise_cross_entropy(logits, target, scene_weights)
             optimizer.zero_grad(set_to_none=True)
             loss.backward()
             torch.nn.utils.clip_grad_norm_(
@@ -292,6 +328,14 @@ def run(args: argparse.Namespace) -> Path:
             "business_top_k": args.business_top_k,
             "train_scene_count": len(frame_by_query),
             "train_pair_count": len(groups),
+            "scene_weight": {
+                "minimum": float(groups["scene_weight"].min()),
+                "maximum": float(groups["scene_weight"].max()),
+                "sum": float(
+                    groups.drop_duplicates("query_id")["scene_weight"].sum()
+                ),
+                "weighted_groupwise_loss": True,
+            },
             "target_query_count": int(target["query_id"].nunique()),
             "target_candidate_count": len(target),
             "mean_last_100_loss": float(np.mean(losses[-100:])),

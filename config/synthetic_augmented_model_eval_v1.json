@@ -1,0 +1,53 @@
+{
+  "schema_version": "sireto-synthetic-augmented-model-eval-plan-1",
+  "seed": 42,
+  "fold_roles": {
+    "train": [2, 3, 4],
+    "development": 0,
+    "confirmation_closed": 1,
+    "final_test_closed": true
+  },
+  "sampling": {
+    "real_to_synthetic_scene_ratio": [2, 1],
+    "stratify_synthetic_by": ["difficulty", "augmentation_stratum"],
+    "stable_key": ["target_siren", "query_id"],
+    "without_replacement": true
+  },
+  "weights": {
+    "xgboost_real_scene": "existing_ranker_weight",
+    "bge_real_scene": 1.0,
+    "synthetic_scene_formula": "0.5 / variants_for_target_siret_in_complete_eligible_corpus",
+    "xgboost_weight_level": "query",
+    "bge_weight_level": "groupwise_scene"
+  },
+  "xgboost": {
+    "feature_set": "BUSINESS_FEATURE_ORDER",
+    "objective": "rank:pairwise",
+    "parameters_source": "scripts/train_v412_learned_oof_rankers.py:RANKER_PARAMS",
+    "arms": ["REAL_ONLY", "REAL_PLUS_SYNTHETIC"]
+  },
+  "bge": {
+    "model": "BAAI/bge-reranker-v2-m3",
+    "revision": "953dc6f6f85a1b2dbfca4c34a2796e7dde08d41e",
+    "control_artifact": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_bge_groupwise/01e1049c16af2600",
+    "parameters_source": "docs/v412_bge_xgb_stack_contract.md",
+    "arms": ["REAL_ONLY_PUBLISHED", "REAL_PLUS_SYNTHETIC"]
+  },
+  "development_gate": {
+    "minimum_exact_gain_over_paired_control": 10,
+    "minimum_exact_correct": 2452,
+    "minimum_difficult_correct": 33,
+    "minimum_active_correct": 2164,
+    "minimum_closed_correct": 246
+  },
+  "prohibitions": {
+    "synthetic_in_risk_model": true,
+    "synthetic_in_calibration": true,
+    "synthetic_in_auto_threshold_selection": true,
+    "synthetic_in_development_evaluation": true,
+    "synthetic_in_confirmation": true,
+    "synthetic_in_final_test": true,
+    "positive_injection": true,
+    "gpu_rental": true
+  }
+}
