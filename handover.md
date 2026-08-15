@@ -4037,5 +4037,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   restent fermés. Les trois runs BGE cross-fittés folds 2/3/4 sont en cours
   séquentiellement avant le méta-ranker XGBoost.
 
+## Boucle GT synthétique — durcissement après v15
+
+- Commit : `ae5f9cb` (`fix: harden synthetic GT agent loop`).
+- Le run v15 `pilot-agentic-v15-calibration-retry1` est terminé : 128 seeds,
+  263 `ACCEPT`, 29 `SILVER` et 92 `REJECT`. Son export est sous
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_loop_v2/pilot/v15_retry1_export_final/`.
+- Audit : les 128 contrats v15 plaçaient au moins une famille dans une
+  dimension incompatible (`ADDRESS_TOKEN_ORDER` sur le nom, `LEGAL_FORM` sur
+  l'adresse, etc.). Les 292 lignes publiées n'ont ni doublon, ni fuite
+  d'identifiant, ni champ vide, mais v15 reste **en quarantaine** jusqu'à audit
+  de la réalité des altérations déclarées et ne doit pas être ajouté au corpus
+  d'entraînement consolidé.
+- Le runtime refuse maintenant ces contrats avant lease, transmet à Luna un
+  contrat explicite `v1=name`, `v2=address`, `v3=orthographic`, et fournit au
+  retry les empreintes et erreurs précédentes. `abandon` réinscrit la seed dans
+  sa file `PENDING_*`; le superviseur refuse toute seed sans exactement trois
+  variantes. Le code ne génère ni ne répare aucun texte CRM.
+- Validation : `PYTHONPATH=. pytest -q tests/test_run_synthetic_gt_agentic_loop.py`
+  — 12 tests passants ; compilation Python et `git diff --check` passants.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
