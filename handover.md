@@ -4410,6 +4410,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ville. Le cap 9 était mathématiquement infaisable ; 10 est le premier cap
   opérateur faisable, soit 5,56 % des 180 opérations de champ. Les 90 contrats
   couvrent 75 signatures composites ; une seule atteint le plafond 3.
+  Sélecteur intégré, caps et promoteur : commit `fa22174`.
 - Le promoteur `scripts/promote_synthetic_gt_full_exact.py` impose désormais
   une promotion atomique 3-ou-0 par seed, vérifie le raw Luna et tous ses SHA,
   le preflight, le critic, l'absence d'injection et le témoin full-SIRENE
