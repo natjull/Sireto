@@ -44,6 +44,11 @@ acceptés par seed n'est pas atteint, donc verdict `PIVOT_PILOT` maintenu.
 Les hard negatives correspondants comptent 30 paires (9 même SIREN,
 21 actif/fermé). Aucun artefact v6 n'est promu en corpus d'entraînement.
 
+Le prompt GENERATOR a ensuite été renforcé (`8704a4d`) : toute variante
+destinée à être acceptée doit conserver au moins deux ancres indépendantes
+et ne peut pas omettre simultanément nom/enseigne et adresse-numéro. Une
+nouvelle itération pilote est requise avant toute extension.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
