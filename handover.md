@@ -131,6 +131,17 @@ Le rapport conserve le profil observé de 7 095 lignes train, ses hashes, et
 confirme `retrieval_inputs_used=false`. Ces statistiques restent un audit de
 micro-lot, pas une preuve de fidélité distributionnelle à l'échelle du corpus.
 
+Une calibration v6 bornée à 8 seeds identifiables a ensuite passé tout le
+chemin agentique : 24/24 variantes `ACCEPT`, 24 empreintes uniques et aucun
+`SILVER`/`REJECT`. Le rapport est
+`sirene_calibration_distribution_v6.json`. Les cartes candidates optimisées
+(`890a287`) contiennent 163 009 projections SIRENE officielles ; le builder a
+produit 240 hard negatives uniques (156 `ACTIVE_CLOSED`, 15
+`SAME_SIREN_OTHER_SIRET`, 69 `SHARED_ADDRESS`), avec zéro collision positif /
+négatif et zéro provenance manquante. Cette calibration mesure 3 variantes
+acceptées par seed sur 8/8 seeds, mais ne prouve pas encore le volume minimal
+20 000 / 60 000 ni la fidélité distributionnelle globale.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
