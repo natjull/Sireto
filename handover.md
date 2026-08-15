@@ -4266,6 +4266,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Validation avant lancement : 46 tests ciblés passent. Aucun stage 30, 150 ou
   epoch 500 n'est autorisé avant 3/3, full-SIRENE et audit indépendant du
   canary.
+- Correctif canary : `f70ea30` (`fix: preserve one distinctive subset anchor`).
+  Le premier run diagnostique a révélé que le sélecteur prouvait la conservation
+  d'au moins une ancre distinctive alors que le preflight exigeait par erreur
+  toutes les ancres listées. Il est conservé sous
+  `canary10_v3_diagnostic_anchor_bug.sqlite` et ne compte pas. Le contrat neuf
+  protège exactement une ancre réellement retenue par l'opérateur de subset ;
+  25 tests ciblés passent avant le run `synthetic-gt-composite-v3-canary10-v1`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
