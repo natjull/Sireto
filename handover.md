@@ -19,6 +19,45 @@ gelés ne sont pas modifiés rétroactivement. Politique :
 
 *(politique et directive centrale : commit `7889974`)*
 
+### BGE fine-tuné + stack XGBoost — cycle clos par STOP
+
+Le cycle préenregistré `docs/v412_bge_xgb_stack_contract.md` est terminé. Le
+BGE groupwise fine-tuné atteint 2 400/2 797 SIRET exacts sur le fold 0
+(85,81 %), contre 2 437/2 797 pour `BUSINESS_LEARNED`. Les trois scores BGE
+d'apprentissage du stack sont strictement cross-fittés sur les folds 2/3/4.
+Le stack XGBoost top 10 final atteint 2 436/2 797 : 41 erreurs corrigées mais
+42 régressions. Il échoue les gates exact (seuil 2 452) et difficile
+(32/38, seuil 33). Verdict : `STOP_RANKER_GATE`.
+
+Le fold 1 et le test final n'ont pas été ouverts. La branche CamemBERT
+conditionnelle n'était pas autorisée par le résultat. L'accepteur pré-Maps
+n'est pas entraîné, puisque le gate ranker était sa précondition ; aucune
+métrique AUTO ou Maps n'est revendiquée.
+
+La vue opérationnelle secondaire, conforme à la nouvelle politique même-site,
+reste elle aussi derrière la baseline : 2 453/2 797 pour le stack contre
+2 454/2 797 pour `BUSINESS_LEARNED`. Elle promeut 17 équivalents même-site
+dans chaque système, dont 5 successeurs actifs d'une vérité fermée, sans
+modifier les métriques primaires gelées.
+
+Artefacts :
+
+- BGE fold 0 :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_bge_groupwise/01e1049c16af2600` ;
+- BGE OOF folds 2/3/4 : `2b424777fbf2f02e`, `9c5091071d727cb6`,
+  `a79c8c3adb3ca3bc` sous le même répertoire ;
+- stack :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_bge_xgb_stack/8c1bce0bbf9593b5` ;
+- vue opérationnelle secondaire :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/v4_12_bge_operational_secondary/cccd9f1b99877848` ;
+- rapport : `reports/v412_bge_xgb_stack_verdict.md`.
+
+Le cycle a consommé 13,45 h de calcul BGE cumulé, avec un pic RSS de 5,39 Go,
+zéro OOM, zéro GPU loué et zéro service payant. Tous les manifests ont été
+rehashés sans écart.
+
+*(verdict, rapport et vue opérationnelle secondaire : commit `c633ec2`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
