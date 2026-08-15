@@ -4379,6 +4379,43 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   exacts distincts et 45 références, sous hash `c4cc16643917537b`. Deux runs
   du selector sont byte-identiques, 58 tests passent et les 30 contrats
   s'initialisent fail-closed. Nouveau canary10 obligatoire avant le pilot30.
+- Résultat v7 : 24 `ACCEPT` / 6 `REJECT`, 28/30 slots passés et 24/24
+  `EXACT_IDENTIFIABLE`, mais seulement 8/10 seeds strictes. Les deux slots
+  épuisés demandaient à Luna de retirer une seule occurrence parmi plusieurs
+  ponctuations identiques ; ces contrats non transférables sont désormais
+  exclus avant lease. Le lot reste en quarantaine.
+- Le canary v8 améliore le rendement ledger à 27 `ACCEPT` / 3 `REJECT` et
+  29/30 slots passés. Le full-SIRENE trouve toutefois une vraie ambiguïté
+  cross-SIREN sur `L'HOSPITAL` : 26 variantes exactes seulement et 8/10 seeds
+  strictes. Le critic avait accepté 27/27, confirmant qu'il juge le réalisme et
+  jamais l'identité.
+- Correctif de contexte : `1a794ef` (`fix: close synthetic GT context gaps`).
+  Tous les candidats siblings/même-adresse/name-geo reçoivent maintenant les
+  noms complets d'unité légale, indépendamment de leur canal de découverte.
+  Le snapshot v5 compte 8 000 cibles sous hash `e63681b0ea637560` et le cas
+  `L'HOSPITAL` déclenche désormais `KNOWN_CONTEXT_AMBIGUOUS` avant critique.
+  Les `TOKEN_SUBSET` sur groupes apostrophés ou tiretés sont aussi refusés :
+  Luna et le tokenizer canonique ne découpent pas `J'ENTENDS` de façon assez
+  fiable pour transporter des positions.
+- Préparation pilot30 : le sélecteur joint désormais dans un même MILP les
+  cibles, relations, opérateurs exacts et capacités des preuves sources. Les
+  29 SIRET/SIREN de tous les canaries v3-v8 sont exclus par registres hashés.
+  Le dry-run frais produit 30 cibles/90 contrats, 15 actives/15 fermées,
+  15 multi-sites dont 4 multi-actives, 142 références distinctes (maximum 3),
+  45 opérateurs exacts (maximum 10), zéro ajout de marque. Hash seed :
+  `33065afa11d58c39`. Deux matérialisations indépendantes sont byte-identiques.
+  Les quotas sont gelés avant toute génération Luna : nom
+  30 subset / 12 ordre / 24 forme légale / 24 ponctuation ; localisation
+  24 abréviation / 24 subset adresse / 15 ponctuation adresse / 27 ponctuation
+  ville. Le cap 9 était mathématiquement infaisable ; 10 est le premier cap
+  opérateur faisable, soit 5,56 % des 180 opérations de champ. Les 90 contrats
+  couvrent 75 signatures composites ; une seule atteint le plafond 3.
+- Le promoteur `scripts/promote_synthetic_gt_full_exact.py` impose désormais
+  une promotion atomique 3-ou-0 par seed, vérifie le raw Luna et tous ses SHA,
+  le preflight, le critic, l'absence d'injection et le témoin full-SIRENE
+  `G_N_A`, puis publie par renommage exclusif. Exercé sur le canary v8, il
+  promeut exactement les 8 seeds/24 variantes réellement exactes et exclut
+  l'ambiguïté `L'HOSPITAL` ainsi que la seed incomplète.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*

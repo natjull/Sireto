@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+
 from scripts import select_synthetic_gt_fragment_pilot as selector
 
 
@@ -10,12 +12,38 @@ def fragment(field: str, relation: str, parameters: dict) -> dict:
     }
 
 
+def test_prior_seed_registry_excludes_both_siret_and_siren(tmp_path) -> None:
+    first = tmp_path / "first.jsonl"
+    second = tmp_path / "second.jsonl"
+    first.write_text(
+        json.dumps({"target_siret": "12345678900011", "target_siren": "123456789"}) + "\n"
+    )
+    second.write_text(
+        json.dumps({"target_siret": "98765432100022", "target_siren": "987654321"}) + "\n"
+    )
+    sirets, sirens = selector.excluded_target_ids([first, second])
+    assert sirets == {"12345678900011", "98765432100022"}
+    assert sirens == {"123456789", "987654321"}
+
+
 def test_distinctive_tokens_exclude_competitor_and_generic_words() -> None:
     context = {
         "target": {"names": [{"kind": "OFFICIAL_NAME", "value": "SAS ALPHA UNIQUE PARIS"}]},
         "internal_context": [{"name_values": ["ALPHA SERVICES"]}],
     }
     assert selector.distinctive_name_tokens(context) == ["unique", "paris"]
+
+
+def test_distinctive_tokens_do_not_treat_same_siren_sibling_as_competitor() -> None:
+    context = {
+        "target_siren": "123456789",
+        "target": {"names": [{"kind": "OFFICIAL_NAME", "value": "ALPHA UNIQUE"}]},
+        "internal_context": [
+            {"siren": "123456789", "name_values": ["ALPHA UNIQUE"]},
+            {"siren": "987654321", "name_values": ["ALPHA SERVICES"]},
+        ],
+    }
+    assert selector.distinctive_name_tokens(context) == ["unique"]
 
 
 def test_distinctive_tokens_exclude_all_legal_forms() -> None:
@@ -180,6 +208,23 @@ def test_token_order_allows_only_legal_form_end_move() -> None:
 def test_canary_name_plan_suspends_join_split() -> None:
     assert "JOIN_SPLIT" not in selector.NAME_QUOTAS
     assert sum(selector.NAME_QUOTAS.values()) == 30
+
+
+def test_pilot30_preserves_ref_cap_by_limiting_scarce_token_order() -> None:
+    assert selector.name_quotas_for_target_count(30) == {
+        "TOKEN_SUBSET": 30,
+        "TOKEN_ORDER": 12,
+        "LEGAL_FORM_REMOVE": 24,
+        "PUNCTUATION_REMOVED": 24,
+    }
+    assert sum(selector.name_quotas_for_target_count(30).values()) == 90
+    assert selector.location_quotas_for_target_count(30) == {
+        ("address", "ADDRESS_ABBREVIATE"): 24,
+        ("address", "ADDRESS_TOKEN_SUBSET"): 24,
+        ("address", "PUNCTUATION_REMOVED"): 15,
+        ("city", "PUNCTUATION_REMOVED"): 27,
+    }
+    assert sum(selector.location_quotas_for_target_count(30).values()) == 90
 
 
 def test_relation_flow_honours_quota_and_three_distinct_per_target() -> None:

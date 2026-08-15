@@ -7,8 +7,8 @@
   },
   "sources": {
     "official_context": {
-      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v3.jsonl",
-      "sha256": "b323ca196d3900e288583544c46bc8d031edd84dc015cc0056cdc652a90e060d"
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/official_context_v5.jsonl",
+      "sha256": "e63681b0ea6375607f9d18f52fe1a97cb87947a1aec0c1e35a1b9d0777e65242"
     },
     "field_inspiration_bank": {
       "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v2.jsonl",
@@ -38,6 +38,9 @@
     "protected_folds": [0, 1, "test"],
     "exact_operator_canary_cap": 4,
     "inspiration_ref_canary_cap": 3,
+    "pilot30_exact_operator_cap": 10,
+    "pilot30_inspiration_ref_cap": 3,
+    "pilot30_composite_signature_cap": 3,
     "duplicate_surface_cap": 0,
     "stage150_requires_independent_go": true
   },

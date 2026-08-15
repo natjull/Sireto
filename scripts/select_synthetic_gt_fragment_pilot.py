@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Select a 30-target field-fragment composite pilot without writing CRM text."""
+"""Select a balanced field-fragment composite pilot without writing CRM text."""
 
 from __future__ import annotations
 
@@ -17,6 +17,7 @@ import unicodedata
 import networkx as nx
 import numpy as np
 from scipy.optimize import Bounds, LinearConstraint, milp
+from scipy.sparse import coo_matrix
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -33,12 +34,30 @@ NAME_QUOTAS = {
     "LEGAL_FORM_REMOVE": 8,
     "PUNCTUATION_REMOVED": 10,
 }
+# Frozen before any pilot30 generation.  TOKEN_ORDER has only four distinct
+# train-only inspiration refs in the clean bank, so its pilot quota cannot
+# exceed 12 under the unchanged three-use provenance cap.  The six displaced
+# operations and the overlap-constrained punctuation share go to guarded
+# TOKEN_SUBSET; every retained result still carries its rare official anchor.
+PILOT30_NAME_QUOTAS = {
+    "TOKEN_SUBSET": 30,
+    "TOKEN_ORDER": 12,
+    "LEGAL_FORM_REMOVE": 24,
+    "PUNCTUATION_REMOVED": 24,
+}
 LOCATION_QUOTAS = {
     ("address", "ADDRESS_ABBREVIATE"): 8,
     ("address", "ADDRESS_TOKEN_SUBSET"): 8,
     ("address", "PUNCTUATION_REMOVED"): 7,
     ("city", "PUNCTUATION_REMOVED"): 7,
 }
+PILOT30_LOCATION_QUOTAS = {
+    ("address", "ADDRESS_ABBREVIATE"): 24,
+    ("address", "ADDRESS_TOKEN_SUBSET"): 24,
+    ("address", "PUNCTUATION_REMOVED"): 15,
+    ("city", "PUNCTUATION_REMOVED"): 27,
+}
+QUOTA_UNIT_TARGETS = 10
 STOP_ANCHORS = {
     "ASS", "ASSOCIATION", "CABINET", "CENTRE", "DE", "DES", "DU", "ET", "LA", "LE",
     "LES", "MAISON", "SAS", "SARL", "SCI", "SOCIETE",
@@ -57,6 +76,20 @@ def sha256(path: Path) -> str:
 
 def rows(path: Path) -> list[dict[str, Any]]:
     return legacy.rows(path)
+
+
+def excluded_target_ids(paths: Sequence[Path]) -> tuple[set[str], set[str]]:
+    sirets: set[str] = set()
+    sirens: set[str] = set()
+    for path in paths:
+        for value in rows(path):
+            siret = str(value.get("target_siret") or "").strip()
+            siren = str(value.get("target_siren") or "").strip()
+            if siret:
+                sirets.add(siret)
+            if siren:
+                sirens.add(siren)
+    return sirets, sirens
 
 
 def baseline(context: dict[str, Any]) -> dict[str, str]:
@@ -99,9 +132,15 @@ def distinctive_name_tokens(
     document_frequencies: Counter[str] | None = None,
 ) -> list[str]:
     target_words = loop.normalized_words(legacy.primary_name(context))
+    target_siren = str(context.get("target_siren") or "").strip()
     competitors = {
         word
         for candidate in context.get("internal_context", [])
+        # A sibling is the same legal entity and commonly shares the official
+        # name. It must not erase every usable name anchor; exact SIRET
+        # discrimination remains the job of the independent location anchor
+        # and the full-SIRENE G_N_A gate.
+        if not target_siren or str(candidate.get("siren") or "").strip() != target_siren
         for name in candidate_names(candidate)
         for word in loop.normalized_words(name)
     }
@@ -291,6 +330,32 @@ def group_fragments(values: list[dict[str, Any]]) -> dict[tuple[str, str], list[
     return result
 
 
+def scaled_quotas(values: dict[Any, int], target_count: int) -> dict[Any, int]:
+    """Scale the preregistered canary mix to whole ten-target pilot blocks."""
+    if target_count < QUOTA_UNIT_TARGETS or target_count % QUOTA_UNIT_TARGETS:
+        raise ValueError("target_count must be a positive multiple of 10")
+    multiplier = target_count // QUOTA_UNIT_TARGETS
+    return {key: value * multiplier for key, value in values.items()}
+
+
+def name_quotas_for_target_count(target_count: int) -> dict[str, int]:
+    if target_count == 10:
+        return dict(NAME_QUOTAS)
+    if target_count == 30:
+        return dict(PILOT30_NAME_QUOTAS)
+    raise ValueError("only the preregistered canary10 and pilot30 sizes are supported")
+
+
+def location_quotas_for_target_count(
+    target_count: int,
+) -> dict[tuple[str, str], int]:
+    if target_count == 10:
+        return dict(LOCATION_QUOTAS)
+    if target_count == 30:
+        return dict(PILOT30_LOCATION_QUOTAS)
+    raise ValueError("only the preregistered canary10 and pilot30 sizes are supported")
+
+
 def target_capabilities(
     context: dict[str, Any],
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
@@ -411,6 +476,10 @@ def assign_fragment_plan(
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
     *,
     distinct_per_target: bool,
+    exact_operator_cap: int = 4,
+    inspiration_ref_cap: int = 3,
+    prior_operator_counts: Counter[str] | None = None,
+    prior_ref_counts: Counter[str] | None = None,
 ) -> dict[str, list[dict[str, Any]]] | None:
     """Jointly assign relations and evidence fragments under all reuse caps."""
     graph = nx.DiGraph()
@@ -418,6 +487,8 @@ def assign_fragment_plan(
     by_ref = {
         value["inspiration_ref"]: value for values in grouped.values() for value in values
     }
+    prior_operator_counts = prior_operator_counts or Counter()
+    prior_ref_counts = prior_ref_counts or Counter()
     target_ids = sorted(target["target_siret"] for target in targets)
     for relation_key, quota in quotas.items():
         field, relation = (
@@ -433,8 +504,12 @@ def assign_fragment_plan(
             })
             operator_node = ("OPERATOR", operator)
             ref_node = ("FRAGMENT", fragment["inspiration_ref"])
-            graph.add_edge(relation_node, operator_node, capacity=4)
-            graph.add_edge(operator_node, ref_node, capacity=3)
+            operator_capacity = exact_operator_cap - prior_operator_counts[operator]
+            ref_capacity = inspiration_ref_cap - prior_ref_counts[fragment["inspiration_ref"]]
+            if operator_capacity <= 0 or ref_capacity <= 0:
+                continue
+            graph.add_edge(relation_node, operator_node, capacity=operator_capacity)
+            graph.add_edge(operator_node, ref_node, capacity=ref_capacity)
             for target in targets:
                 siret = target["target_siret"]
                 if not fragment_supports(
@@ -479,6 +554,17 @@ def fragment_operator(fragment: dict[str, Any]) -> str:
     })
 
 
+def update_plan_counts(
+    plan: dict[str, list[dict[str, Any]]],
+    operator_counts: Counter[str],
+    ref_counts: Counter[str],
+) -> None:
+    for fragments in plan.values():
+        for fragment in fragments:
+            operator_counts[fragment_operator(fragment)] += 1
+            ref_counts[fragment["inspiration_ref"]] += 1
+
+
 def pair_fragment_plans(
     names: list[dict[str, Any]], locations: list[dict[str, Any]]
 ) -> list[dict[str, Any]] | None:
@@ -504,6 +590,83 @@ def pair_fragment_plans(
     return None
 
 
+def pair_fragment_plans_globally(
+    name_plan: dict[str, list[dict[str, Any]]],
+    location_plan: dict[str, list[dict[str, Any]]],
+    *,
+    composite_signature_cap: int,
+) -> dict[str, list[dict[str, Any]]] | None:
+    candidates: dict[str, list[tuple[dict[str, Any], ...]]] = {}
+    for siret, names in name_plan.items():
+        name_operators = [fragment_operator(value) for value in names]
+        valid = []
+        for permutation in itertools.permutations(location_plan[siret]):
+            operator_pairs = [
+                (name_operators[index], fragment_operator(permutation[index]))
+                for index in range(3)
+            ]
+            relation_pairs = {
+                (
+                    names[index]["relation"],
+                    permutation[index]["field"],
+                    permutation[index]["relation"],
+                )
+                for index in range(3)
+            }
+            if len(set(operator_pairs)) == 3 and len(relation_pairs) == 3:
+                valid.append(permutation)
+        if not valid:
+            return None
+        candidates[siret] = valid
+
+    options: list[tuple[str, tuple[dict[str, Any], ...], tuple[tuple[str, str], ...]]] = []
+    for siret in sorted(candidates):
+        names = name_plan[siret]
+        for permutation in candidates[siret]:
+            signatures = tuple(
+                (fragment_operator(names[index]), fragment_operator(permutation[index]))
+                for index in range(3)
+            )
+            options.append((siret, permutation, signatures))
+    variable_count = len(options)
+    constraint_rows: list[np.ndarray] = []
+    minima: list[float] = []
+    maxima: list[float] = []
+    for siret in sorted(candidates):
+        coefficients = np.zeros(variable_count)
+        for index, option in enumerate(options):
+            coefficients[index] = option[0] == siret
+        constraint_rows.append(coefficients)
+        minima.append(1)
+        maxima.append(1)
+    all_signatures = sorted({value for _, _, signatures in options for value in signatures})
+    for signature in all_signatures:
+        coefficients = np.zeros(variable_count)
+        for index, option in enumerate(options):
+            coefficients[index] = signature in option[2]
+        constraint_rows.append(coefficients)
+        minima.append(0)
+        maxima.append(composite_signature_cap)
+    objective = np.zeros(variable_count)
+    for index, (siret, permutation, _signatures) in enumerate(options):
+        refs = "|".join(value["inspiration_ref"] for value in permutation)
+        digest = hashlib.sha256(f"{siret}|{refs}".encode()).hexdigest()
+        objective[index] = int(digest[:16], 16) / float(2**64)
+    solution = milp(
+        objective,
+        integrality=np.ones(variable_count),
+        bounds=Bounds(np.zeros(variable_count), np.ones(variable_count)),
+        constraints=LinearConstraint(np.asarray(constraint_rows), minima, maxima),
+    )
+    if not solution.success or solution.x is None:
+        return None
+    return {
+        siret: list(permutation)
+        for index, (siret, permutation, _signatures) in enumerate(options)
+        if solution.x[index] > 0.5
+    }
+
+
 def eligible(context: dict[str, Any]) -> bool:
     value = baseline(context)
     address = context["target"]["address"]
@@ -527,11 +690,264 @@ def is_multi_active(context: dict[str, Any]) -> bool:
     )
 
 
+def select_integrated_fragment_targets(
+    contexts: list[dict[str, Any]],
+    grouped: dict[tuple[str, str], list[dict[str, Any]]],
+    document_frequencies: Counter[str],
+    selection_seed: str,
+    target_count: int,
+    name_quotas: dict[str, int],
+    location_quotas: dict[tuple[str, str], int],
+    exact_operator_cap: int,
+    inspiration_ref_cap: int,
+    minimum_multi_active: int,
+    minimum_multi: int,
+) -> tuple[
+    list[dict[str, Any]],
+    dict[str, list[dict[str, Any]]],
+    dict[str, list[dict[str, Any]]],
+]:
+    """Solve target, relation and exact-operator capacities in one MILP."""
+    candidates: list[dict[str, Any]] = []
+    capabilities: dict[str, dict[tuple[str, str], list[dict[str, Any]]]] = {}
+    for context in contexts:
+        if not eligible(context):
+            continue
+        names, locations = target_capabilities(context, grouped, document_frequencies)
+        if sum(bool(value) for value in names.values()) < 2 or not any(locations.values()):
+            continue
+        siret = context["target_siret"]
+        capabilities[siret] = {
+            **{("name", relation): values for relation, values in names.items()},
+            **locations,
+        }
+        candidates.append(context)
+    candidates.sort(key=lambda value: value["target_siret"])
+
+    target_variables = len(candidates)
+    assignment_specs: list[dict[str, Any]] = []
+    operator_refs: dict[tuple[str, str, str], dict[str, dict[str, Any]]] = defaultdict(dict)
+    for target_index, context in enumerate(candidates):
+        siret = context["target_siret"]
+        for (field, relation), fragments in capabilities[siret].items():
+            by_operator: dict[str, dict[str, dict[str, Any]]] = defaultdict(dict)
+            for fragment in fragments:
+                operator = fragment_operator(fragment)
+                by_operator[operator][fragment["inspiration_ref"]] = fragment
+                operator_refs[(field, relation, operator)][fragment["inspiration_ref"]] = fragment
+            for operator, by_ref in by_operator.items():
+                assignment_specs.append({
+                    "target_index": target_index,
+                    "siret": siret,
+                    "field": field,
+                    "relation": relation,
+                    "operator": operator,
+                    "refs": tuple(sorted(by_ref)),
+                })
+
+    variable_count = target_variables + len(assignment_specs)
+    lower = np.zeros(variable_count)
+    upper = np.ones(variable_count)
+    integrality = np.ones(variable_count)
+    for offset, spec in enumerate(assignment_specs, start=target_variables):
+        upper[offset] = min(2, len(spec["refs"]))
+
+    constraint_rows: list[dict[int, float]] = []
+    minima: list[float] = []
+    maxima: list[float] = []
+
+    def add(coefficients: dict[int, float], minimum: float, maximum: float) -> None:
+        constraint_rows.append(coefficients)
+        minima.append(minimum)
+        maxima.append(maximum)
+
+    add({index: 1 for index in range(target_variables)}, target_count, target_count)
+    for state in ("A", "F"):
+        add({
+            index: 1 for index, context in enumerate(candidates)
+            if context["target"]["state"] == state
+        }, target_count // 2, target_count // 2)
+    add({
+        index: 1 for index, context in enumerate(candidates) if is_multi(context)
+    }, minimum_multi, np.inf)
+    add({
+        index: 1 for index, context in enumerate(candidates) if is_multi_active(context)
+    }, minimum_multi_active, np.inf)
+
+    assignment_indexes: dict[tuple[int, str], list[int]] = defaultdict(list)
+    relation_indexes: dict[tuple[str, str], list[int]] = defaultdict(list)
+    target_relation_indexes: dict[tuple[int, str, str], list[int]] = defaultdict(list)
+    operator_indexes: dict[tuple[str, str, str], list[int]] = defaultdict(list)
+    for offset, spec in enumerate(assignment_specs, start=target_variables):
+        target_index = spec["target_index"]
+        field_group = "name" if spec["field"] == "name" else "location"
+        assignment_indexes[(target_index, field_group)].append(offset)
+        relation_indexes[(spec["field"], spec["relation"])].append(offset)
+        target_relation_indexes[(target_index, spec["field"], spec["relation"])].append(offset)
+        operator_indexes[(spec["field"], spec["relation"], spec["operator"])].append(offset)
+
+    for target_index in range(target_variables):
+        for field_group in ("name", "location"):
+            coefficients = {
+                index: 1 for index in assignment_indexes[(target_index, field_group)]
+            }
+            coefficients[target_index] = -3
+            add(coefficients, 0, 0)
+        for field, relation in list(relation_indexes):
+            indexes = target_relation_indexes[(target_index, field, relation)]
+            if indexes:
+                coefficients = {index: 1 for index in indexes}
+                coefficients[target_index] = -2
+                add(coefficients, -np.inf, 0)
+
+    for relation, quota in name_quotas.items():
+        add({index: 1 for index in relation_indexes[("name", relation)]}, quota, quota)
+    for (field, relation), quota in location_quotas.items():
+        add({index: 1 for index in relation_indexes[(field, relation)]}, quota, quota)
+    for operator_key, indexes in operator_indexes.items():
+        ref_capacity = len(operator_refs[operator_key]) * inspiration_ref_cap
+        add({index: 1 for index in indexes}, 0, min(exact_operator_cap, ref_capacity))
+
+    matrix_rows: list[int] = []
+    matrix_columns: list[int] = []
+    matrix_values: list[float] = []
+    for row_index, coefficients in enumerate(constraint_rows):
+        for column_index, coefficient in coefficients.items():
+            matrix_rows.append(row_index)
+            matrix_columns.append(column_index)
+            matrix_values.append(coefficient)
+    matrix = coo_matrix(
+        (matrix_values, (matrix_rows, matrix_columns)),
+        shape=(len(constraint_rows), variable_count),
+    ).tocsr()
+    objective = np.zeros(variable_count)
+    for index, context in enumerate(candidates):
+        digest = hashlib.sha256(
+            f"{selection_seed}|integrated-target|{context['target_siret']}".encode()
+        ).hexdigest()
+        objective[index] = int(digest[:16], 16) / float(2**64)
+    result = milp(
+        objective,
+        integrality=integrality,
+        bounds=Bounds(lower, upper),
+        constraints=LinearConstraint(matrix, minima, maxima),
+        options={"time_limit": 120},
+    )
+    if not result.success or result.x is None:
+        raise ValueError("integrated fragment MILP is infeasible")
+
+    selected = [
+        context for index, context in enumerate(candidates) if result.x[index] > 0.5
+    ]
+    selected_sirets = {value["target_siret"] for value in selected}
+    refs_by_target_operator = {
+        (spec["siret"], spec["field"], spec["relation"], spec["operator"]): spec["refs"]
+        for spec in assignment_specs if spec["siret"] in selected_sirets
+    }
+    plans: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    quota_groups = (
+        ("name", {("name", relation): quota for relation, quota in name_quotas.items()}),
+        ("location", dict(location_quotas)),
+    )
+    for field_group, quotas in quota_groups:
+        graph = nx.DiGraph()
+        source_node, sink_node = "SOURCE", "SINK"
+        for (field, relation), quota in quotas.items():
+            relation_node = ("RELATION", field, relation)
+            graph.add_edge(source_node, relation_node, capacity=quota, weight=0)
+            for operator_key, by_ref in sorted(operator_refs.items()):
+                if operator_key[:2] != (field, relation):
+                    continue
+                operator_node = ("OPERATOR", *operator_key)
+                graph.add_edge(
+                    relation_node, operator_node, capacity=exact_operator_cap, weight=0
+                )
+                for ref in sorted(by_ref):
+                    ref_node = ("REF", *operator_key, ref)
+                    graph.add_edge(
+                        operator_node, ref_node, capacity=inspiration_ref_cap, weight=0
+                    )
+                    for siret in sorted(selected_sirets):
+                        compatible_refs = refs_by_target_operator.get(
+                            (siret, field, relation, operator_key[2]), ()
+                        )
+                        if ref not in compatible_refs:
+                            continue
+                        target_relation_node = ("TARGET_RELATION", siret, field, relation)
+                        digest = hashlib.sha256(
+                            f"{selection_seed}|flow|{field}|{relation}|{operator_key[2]}|{ref}|{siret}".encode()
+                        ).hexdigest()
+                        graph.add_edge(
+                            ref_node, target_relation_node, capacity=1,
+                            weight=int(digest[:8], 16),
+                        )
+        for siret in sorted(selected_sirets):
+            target_group_node = ("TARGET_GROUP", field_group, siret)
+            for field, relation in quotas:
+                target_relation_node = ("TARGET_RELATION", siret, field, relation)
+                if target_relation_node in graph:
+                    graph.add_edge(
+                        target_relation_node, target_group_node, capacity=2, weight=0
+                    )
+            graph.add_edge(target_group_node, sink_node, capacity=3, weight=0)
+        flow = nx.max_flow_min_cost(graph, source_node, sink_node)
+        flow_value = sum(flow[source_node].values())
+        if flow_value != sum(quotas.values()):
+            raise ValueError(f"integrated {field_group} ref flow is infeasible")
+        for operator_key, by_ref in operator_refs.items():
+            if (operator_key[0] == "name") != (field_group == "name"):
+                continue
+            for ref, fragment in by_ref.items():
+                ref_node = ("REF", *operator_key, ref)
+                for target_node, amount in flow.get(ref_node, {}).items():
+                    if amount and isinstance(target_node, tuple) and target_node[0] == "TARGET_RELATION":
+                        plans[target_node[1]].append(fragment)
+
+    name_plan = {
+        siret: sorted(
+            [value for value in plans[siret] if value["field"] == "name"],
+            key=lambda value: (value["relation"], value["inspiration_ref"]),
+        )
+        for siret in plans
+    }
+    location_plan = {
+        siret: sorted(
+            [value for value in plans[siret] if value["field"] != "name"],
+            key=lambda value: (value["field"], value["relation"], value["inspiration_ref"]),
+        )
+        for siret in plans
+    }
+    if any(len(name_plan.get(value["target_siret"], [])) != 3 for value in selected):
+        raise RuntimeError("integrated name plan is incomplete")
+    if any(len(location_plan.get(value["target_siret"], [])) != 3 for value in selected):
+        raise RuntimeError("integrated location plan is incomplete")
+    paired_locations = pair_fragment_plans_globally(
+        name_plan, location_plan, composite_signature_cap=3
+    )
+    if paired_locations is None:
+        raise ValueError("integrated fragment pairing failed")
+    location_plan = paired_locations
+    selected.sort(key=lambda value: hashlib.sha256(
+        f"{selection_seed}|integrated-final|{value['target_siret']}".encode()
+    ).hexdigest())
+    return selected, name_plan, location_plan
+
+
 def select_feasible_targets(
     contexts: list[dict[str, Any]],
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
     document_frequencies: Counter[str],
     selection_seed: str,
+    requested_target_count: int,
+    name_quotas: dict[str, int],
+    location_quotas: dict[tuple[str, str], int],
+    exact_operator_cap: int,
+    inspiration_ref_cap: int,
+    prior_operator_counts: Counter[str] | None = None,
+    prior_ref_counts: Counter[str] | None = None,
+    minimum_multi_active: int | None = None,
+    minimum_multi: int | None = None,
+    use_derived_capability_minima: bool = False,
 ) -> tuple[
     list[dict[str, Any]],
     dict[str, list[dict[str, Any]]],
@@ -556,15 +972,15 @@ def select_feasible_targets(
         candidates.append(context)
     candidates.sort(key=lambda value: value["target_siret"])
 
-    name_relations = list(NAME_QUOTAS)
-    location_relations = list(LOCATION_QUOTAS)
-    target_count = len(candidates)
-    name_offset = target_count
-    location_offset = name_offset + target_count * len(name_relations)
-    variable_count = location_offset + target_count * len(location_relations)
+    name_relations = list(name_quotas)
+    location_relations = list(location_quotas)
+    candidate_count = len(candidates)
+    name_offset = candidate_count
+    location_offset = name_offset + candidate_count * len(name_relations)
+    variable_count = location_offset + candidate_count * len(location_relations)
     lower = np.zeros(variable_count)
     upper = np.full(variable_count, 2.0)
-    upper[:target_count] = 1.0
+    upper[:candidate_count] = 1.0
     integrality = np.ones(variable_count)
     base_rows: list[np.ndarray] = []
     base_lower: list[float] = []
@@ -574,6 +990,18 @@ def select_feasible_targets(
         base_rows.append(coefficients)
         base_lower.append(minimum)
         base_upper.append(maximum)
+
+    prior_operator_counts = prior_operator_counts or Counter()
+    prior_ref_counts = prior_ref_counts or Counter()
+
+    def per_target_relation_capacity(fragments: list[dict[str, Any]]) -> int:
+        available_refs = {
+            fragment["inspiration_ref"]
+            for fragment in fragments
+            if prior_ref_counts[fragment["inspiration_ref"]] < inspiration_ref_cap
+            and prior_operator_counts[fragment_operator(fragment)] < exact_operator_cap
+        }
+        return min(2, len(available_refs))
 
     for index, context in enumerate(candidates):
         siret = context["target_siret"]
@@ -592,49 +1020,74 @@ def select_feasible_targets(
             constraint(coefficients, 0, 0)
         for relation_index, relation in enumerate(name_relations):
             variable = name_offset + index * len(name_relations) + relation_index
-            if not all_caps[siret]["name"][relation]:
-                upper[variable] = 0
+            upper[variable] = per_target_relation_capacity(
+                all_caps[siret]["name"][relation]
+            )
             coefficients = np.zeros(variable_count)
             coefficients[variable] = 1
             coefficients[index] = -2
             constraint(coefficients, -np.inf, 0)
         for relation_index, relation in enumerate(location_relations):
             variable = location_offset + index * len(location_relations) + relation_index
-            if not all_caps[siret]["location"][relation]:
-                upper[variable] = 0
+            upper[variable] = per_target_relation_capacity(
+                all_caps[siret]["location"][relation]
+            )
             coefficients = np.zeros(variable_count)
             coefficients[variable] = 1
             coefficients[index] = -2
             constraint(coefficients, -np.inf, 0)
 
     coefficients = np.zeros(variable_count)
-    coefficients[:target_count] = 1
-    constraint(coefficients, 10, 10)
+    coefficients[:candidate_count] = 1
+    constraint(coefficients, requested_target_count, requested_target_count)
     for state in ("A", "F"):
         coefficients = np.zeros(variable_count)
         for index, context in enumerate(candidates):
             coefficients[index] = context["target"]["state"] == state
-        constraint(coefficients, 5, 5)
+        constraint(coefficients, requested_target_count // 2, requested_target_count // 2)
     for relation_index, relation in enumerate(name_relations):
         coefficients = np.zeros(variable_count)
-        for index in range(target_count):
+        for index in range(candidate_count):
             coefficients[name_offset + index * len(name_relations) + relation_index] = 1
-        constraint(coefficients, NAME_QUOTAS[relation], NAME_QUOTAS[relation])
+        constraint(coefficients, name_quotas[relation], name_quotas[relation])
     for relation_index, relation in enumerate(location_relations):
         coefficients = np.zeros(variable_count)
-        for index in range(target_count):
+        for index in range(candidate_count):
             coefficients[
                 location_offset + index * len(location_relations) + relation_index
             ] = 1
-        constraint(coefficients, LOCATION_QUOTAS[relation], LOCATION_QUOTAS[relation])
+        constraint(coefficients, location_quotas[relation], location_quotas[relation])
 
+    scale = requested_target_count // QUOTA_UNIT_TARGETS
+    minimum_multi_active = minimum_multi_active if minimum_multi_active is not None else 1 * scale
+    minimum_multi = minimum_multi if minimum_multi is not None else 4 * scale
+    if requested_target_count == 10 and not use_derived_capability_minima:
+        capability_minima = {
+            "legal": 6, "name_punctuation": 7,
+            "address_punctuation": 3, "city_punctuation": 3,
+        }
+    else:
+        # The assignment variables allow at most two uses of one relation on a
+        # target.  These are the exact mathematical minima implied by the
+        # frozen pilot quotas; higher scaled canary minima made the 30-target
+        # programme infeasible without adding any new diversity guarantee.
+        capability_minima = {
+            "legal": (name_quotas["LEGAL_FORM_REMOVE"] + 1) // 2,
+            "name_punctuation": (name_quotas["PUNCTUATION_REMOVED"] + 1) // 2,
+            "address_punctuation": (
+                location_quotas[("address", "PUNCTUATION_REMOVED")] + 1
+            ) // 2,
+            "city_punctuation": (
+                location_quotas[("city", "PUNCTUATION_REMOVED")] + 1
+            ) // 2,
+        }
     requirements = (
-        (1, is_multi_active),
-        (4, is_multi),
-        (6, lambda value: bool(all_caps[value["target_siret"]]["name"]["LEGAL_FORM_REMOVE"])),
-        (7, lambda value: bool(all_caps[value["target_siret"]]["name"]["PUNCTUATION_REMOVED"])),
-        (3, lambda value: bool(all_caps[value["target_siret"]]["location"][("address", "PUNCTUATION_REMOVED")])),
-        (3, lambda value: bool(all_caps[value["target_siret"]]["location"][("city", "PUNCTUATION_REMOVED")])),
+        (minimum_multi_active, is_multi_active),
+        (minimum_multi, is_multi),
+        (capability_minima["legal"], lambda value: bool(all_caps[value["target_siret"]]["name"]["LEGAL_FORM_REMOVE"])),
+        (capability_minima["name_punctuation"], lambda value: bool(all_caps[value["target_siret"]]["name"]["PUNCTUATION_REMOVED"])),
+        (capability_minima["address_punctuation"], lambda value: bool(all_caps[value["target_siret"]]["location"][("address", "PUNCTUATION_REMOVED")])),
+        (capability_minima["city_punctuation"], lambda value: bool(all_caps[value["target_siret"]]["location"][("city", "PUNCTUATION_REMOVED")])),
     )
     for minimum, predicate in requirements:
         coefficients = np.zeros(variable_count)
@@ -658,7 +1111,7 @@ def select_feasible_targets(
             coefficients[rejected] = 1
             rows.append(coefficients)
             minima.append(-np.inf)
-            maxima.append(9)
+            maxima.append(requested_target_count - 1)
         result = milp(
             objective,
             integrality=integrality,
@@ -669,7 +1122,7 @@ def select_feasible_targets(
         if not result.success or result.x is None:
             break
         selected_indices = [
-            index for index in range(target_count) if result.x[index] > 0.5
+            index for index in range(candidate_count) if result.x[index] > 0.5
         ]
         rejected_target_sets.append(selected_indices)
         selected = [candidates[index] for index in selected_indices]
@@ -679,12 +1132,23 @@ def select_feasible_targets(
             for value in selected
         }
         name_plan = assign_fragment_plan(
-            selected, NAME_QUOTAS, target_values, target_anchors, grouped,
-            distinct_per_target=False,
+            selected, name_quotas, target_values, target_anchors, grouped,
+            distinct_per_target=False, exact_operator_cap=exact_operator_cap,
+            inspiration_ref_cap=inspiration_ref_cap,
+            prior_operator_counts=prior_operator_counts,
+            prior_ref_counts=prior_ref_counts,
         )
+        if name_plan is None:
+            continue
+        combined_operator_counts = Counter(prior_operator_counts or {})
+        combined_ref_counts = Counter(prior_ref_counts or {})
+        update_plan_counts(name_plan, combined_operator_counts, combined_ref_counts)
         location_plan = assign_fragment_plan(
-            selected, LOCATION_QUOTAS, target_values, target_anchors, grouped,
-            distinct_per_target=False,
+            selected, location_quotas, target_values, target_anchors, grouped,
+            distinct_per_target=False, exact_operator_cap=exact_operator_cap,
+            inspiration_ref_cap=inspiration_ref_cap,
+            prior_operator_counts=combined_operator_counts,
+            prior_ref_counts=combined_ref_counts,
         )
         if name_plan is not None and location_plan is not None:
             paired_locations = {
@@ -700,10 +1164,22 @@ def select_feasible_targets(
                 f"{selection_seed}|final|{value['target_siret']}".encode()
             ).hexdigest())
             return selected, name_plan, location_plan, all_caps
-    raise ValueError("could not solve a feasible balanced 30-target fragment pilot")
+    raise ValueError(
+        f"could not solve a feasible balanced {requested_target_count}-target fragment pilot"
+    )
 
 
 def build(args: argparse.Namespace) -> dict[str, Any]:
+    if args.target_count % 2:
+        raise ValueError("target_count must be even for the frozen A/F balance")
+    name_quotas = name_quotas_for_target_count(args.target_count)
+    location_quotas = location_quotas_for_target_count(args.target_count)
+    # The integrated dry-run proves that cap 9 is infeasible under the frozen
+    # 30-target/state/multisite quotas, while cap 10 is feasible.  Ten uses are
+    # 5.56% of the 180 field operations and remain below the canary's relative
+    # cap (4/60 fields), with the independent ref cap still fixed at three.
+    exact_operator_cap = 4 if args.target_count == 10 else 10
+    inspiration_ref_cap = 3
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     context_path = Path(plan["sources"]["official_context"]["path"])
     fragment_path = Path(plan["sources"]["field_inspiration_bank"]["path"])
@@ -713,9 +1189,25 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     grouped = group_fragments(rows(fragment_path))
     contexts = rows(context_path)
     document_frequencies = name_token_document_frequencies(contexts)
-    targets, name_plan, location_plan, _caps = select_feasible_targets(
-        contexts, grouped, document_frequencies, args.selection_seed
-    )
+    excluded_sirets, excluded_sirens = excluded_target_ids(args.exclude_seed_input)
+    contexts = [
+        value for value in contexts
+        if value["target_siret"] not in excluded_sirets
+        and value["target_siren"] not in excluded_sirens
+    ]
+    if args.target_count == 10:
+        targets, name_plan, location_plan, _caps = select_feasible_targets(
+            contexts, grouped, document_frequencies, args.selection_seed,
+            args.target_count, name_quotas, location_quotas,
+            exact_operator_cap, inspiration_ref_cap,
+        )
+    else:
+        targets, name_plan, location_plan = select_integrated_fragment_targets(
+            contexts, grouped, document_frequencies, args.selection_seed,
+            args.target_count, name_quotas, location_quotas,
+            exact_operator_cap, inspiration_ref_cap,
+            minimum_multi_active=4, minimum_multi=12,
+        )
     target_values = {value["target_siret"]: baseline(value) for value in targets}
     target_anchors = {
         value["target_siret"]: distinctive_name_tokens(value, document_frequencies)
@@ -738,7 +1230,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 location_field: location_fragment,
             }
             refs = {value["inspiration_ref"] for value in field_fragments.values()}
-            if any(used_refs[ref] >= 3 for ref in refs):
+            if any(used_refs[ref] >= inspiration_ref_cap for ref in refs):
                 raise RuntimeError("fragment reference exceeds pilot reuse cap")
             used_refs.update(refs)
             anchors = target_anchors[siret]
@@ -820,9 +1312,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         for row in output for contract in row["seed_card"]["composite_contracts"]
         for field, fragment in contract["field_inspirations"].items()
     )
+    if max(operation_counts.values(), default=0) > exact_operator_cap:
+        raise RuntimeError("exact operator exceeds pilot-wide reuse cap")
     manifest = {
         "schema_version": "sireto-synthetic-fragment-pilot-manifest-1",
         "rows": len(output), "planned_pairs": len(output) * 3,
+        "requested_target_count": args.target_count,
         "state_counts": dict(Counter(row["seed_card"]["official_context"]["target"]["state"] for row in output)),
         "multi_site_targets": sum("MULTI_SITE_SIREN" in row["risk_flags"] for row in output),
         "multi_active_targets": sum(is_multi_active(target) for target in targets),
@@ -831,10 +1326,17 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         "relation_counts": dict(sorted(relation_counts.items())),
         "distinct_exact_operators": len(operation_counts),
         "top_exact_operator_count": max(operation_counts.values(), default=0),
+        "exact_operator_cap": exact_operator_cap,
+        "inspiration_ref_cap": inspiration_ref_cap,
         "forbidden_added_mark_contracts": sum(
             "ADDED" in relation for relation in relation_counts
         ),
         "text_generation": "none_selector_only", "selection_seed": args.selection_seed,
+        "excluded_prior_sirets": len(excluded_sirets),
+        "excluded_prior_sirens": len(excluded_sirens),
+        "exclusion_source_hashes": {
+            str(path): sha256(path) for path in args.exclude_seed_input
+        },
         "source_hashes": {
             "plan": sha256(args.plan), "official_context": sha256(context_path),
             "field_inspiration_bank": sha256(fragment_path),
@@ -853,6 +1355,11 @@ def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     result.add_argument("--plan", type=Path, default=ROOT / "config/synthetic_gt_composite_v3_plan.json")
     result.add_argument("--output", type=Path, required=True)
+    result.add_argument("--target-count", type=int, default=10)
+    result.add_argument(
+        "--exclude-seed-input", type=Path, action="append", default=[],
+        help="Prior seed JSONL whose target SIRET and SIREN must be excluded",
+    )
     result.add_argument("--selection-seed", default="SIRETO-COMPOSITE-FRAGMENT-PILOT-V3")
     result.set_defaults(func=build)
     return result
