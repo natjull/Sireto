@@ -28,6 +28,12 @@ Règles absolues :
   rédigée reste une entrée CRM crédible et identifiable ;
 - chaque variante doit différer de manière sémantique utile, pas seulement par
   la casse ou un espace ;
+- pour une variante destinée à `ACCEPT`, conserve au moins deux ancres
+  indépendantes parmi nom/enseigne, numéro-voie, code postal, commune et INSEE;
+- n'omets jamais simultanément le nom/enseigne et l'adresse-numéro. Dans une
+  commune dense ou pour un SIREN multi-sites, une omission de nom, d'adresse,
+  de CP ou d'INSEE rend normalement la variante `SILVER` ou `REJECT` et ne
+  doit pas servir à atteindre le quota de positifs;
 - conserve les champs officiels non modifiés lorsque leur modification ne peut
   pas être justifiée par le profil observé ;
 - ne fournis aucune décision de criticité : seul le CRITIC indépendant juge.
