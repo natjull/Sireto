@@ -38,35 +38,32 @@ def main() -> int:
         WITH seeds AS (
             SELECT DISTINCT target_siret, target_siren
             FROM read_json_auto(?, format='newline_delimited')
-        ), establishments AS (
-            SELECT siren, siret, etatAdministratifEtablissement AS state,
-                   denominationUsuelleEtablissement AS denomination_usuelle,
-                   enseigne1Etablissement AS enseigne,
-                   numeroVoieEtablissement AS number,
-                   typeVoieEtablissement AS street_type,
-                   libelleVoieEtablissement AS street,
-                   codePostalEtablissement AS postcode,
-                   libelleCommuneEtablissement AS city,
-                   codeCommuneEtablissement AS insee
-            FROM read_parquet(?)
-            WHERE siret IS NOT NULL AND length(siret)=14
-              AND etatAdministratifEtablissement IN ('A','F')
+        ), seed_facts AS (
+            SELECT seeds.target_siret, seeds.target_siren,
+                   e.codeCommuneEtablissement AS target_insee,
+                   e.codePostalEtablissement AS target_postcode
+            FROM seeds JOIN read_parquet(?) e ON e.siret = seeds.target_siret
         )
-        SELECT seeds.target_siret, establishments.*
-        FROM seeds JOIN establishments
-          ON establishments.siren = seeds.target_siren
-          OR establishments.insee IN (
-              SELECT DISTINCT insee FROM establishments e2
-              WHERE e2.siret = seeds.target_siret
-          )
-          OR establishments.postcode IN (
-              SELECT DISTINCT postcode FROM establishments e3
-              WHERE e3.siret = seeds.target_siret
-          )
-        ORDER BY seeds.target_siret, establishments.siret
+        SELECT seed_facts.target_siret,
+               e.siren, e.siret, e.etatAdministratifEtablissement AS state,
+               e.denominationUsuelleEtablissement AS denomination_usuelle,
+               e.enseigne1Etablissement AS enseigne,
+               e.numeroVoieEtablissement AS number,
+               e.typeVoieEtablissement AS street_type,
+               e.libelleVoieEtablissement AS street,
+               e.codePostalEtablissement AS postcode,
+               e.libelleCommuneEtablissement AS city,
+               e.codeCommuneEtablissement AS insee
+        FROM seed_facts JOIN read_parquet(?) e
+          ON e.siren = seed_facts.target_siren
+          OR e.codeCommuneEtablissement = seed_facts.target_insee
+          OR e.codePostalEtablissement = seed_facts.target_postcode
+        WHERE e.siret IS NOT NULL AND length(e.siret)=14
+          AND e.etatAdministratifEtablissement IN ('A','F')
+        ORDER BY seed_facts.target_siret, e.siret
     """
     con = duckdb.connect()
-    rows = con.execute(query, [str(args.accept), str(args.establishments)]).fetchall()
+    rows = con.execute(query, [str(args.accept), str(args.establishments), str(args.establishments)]).fetchall()
     columns = [item[0] for item in con.description]
     cards: dict[str, dict] = {}
     for raw in rows:
