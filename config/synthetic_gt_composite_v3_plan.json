@@ -11,8 +11,8 @@
       "sha256": "b323ca196d3900e288583544c46bc8d031edd84dc015cc0056cdc652a90e060d"
     },
     "field_inspiration_bank": {
-      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v1.jsonl",
-      "sha256": "b43a7b6b2675cf167a92b623e64bbde009668489a69b3cea9a05ca257d335074"
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/train_field_inspiration_bank_v2.jsonl",
+      "sha256": "707928c9aeb2a9f192b852a9d0a449d9311c268c559beefbe24ea0779ed9d8a3"
     }
   },
   "generation": {

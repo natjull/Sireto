@@ -43,3 +43,13 @@ def test_address_subset_preserves_number_and_exact_positions() -> None:
     assert bank.operation_parameters(
         "address", "ADDRESS_TOKEN_SUBSET", "12 RUE DES LILAS", "12 RUE LILAS"
     ) == {"source_token_count": 4, "retained_positions": [0, 1, 3]}
+
+
+def test_subset_inspiration_cannot_hide_a_punctuation_edit() -> None:
+    parameters = bank.operation_parameters(
+        "name", "TOKEN_SUBSET", "GARAGE PRUD'HOMME", "PRUD HOMME"
+    )
+    assert parameters == {"source_token_count": 3, "retained_positions": [1, 2]}
+    assert not bank.loop.composite_preserves_non_target_punctuation(
+        "TOKEN_SUBSET", "GARAGE PRUD'HOMME", "PRUD HOMME", parameters
+    )

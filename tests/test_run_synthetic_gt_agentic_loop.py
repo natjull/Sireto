@@ -26,6 +26,21 @@ def test_punctuation_edits_distinguish_identical_marks_by_position() -> None:
     ) is None
 
 
+def test_subset_must_preserve_punctuation_carried_by_retained_tokens() -> None:
+    subset = {"source_token_count": 3, "retained_positions": [1, 2]}
+    assert loop.composite_preserves_non_target_punctuation(
+        "TOKEN_SUBSET", "GARAGE PRUD'HOMME", "PRUD'HOMME", subset
+    )
+    assert not loop.composite_preserves_non_target_punctuation(
+        "TOKEN_SUBSET", "GARAGE PRUD'HOMME", "PRUD HOMME", subset
+    )
+    address_subset = {"source_token_count": 4, "retained_positions": [0, 1, 3]}
+    assert loop.composite_preserves_non_target_punctuation(
+        "ADDRESS_TOKEN_SUBSET", "860 ROUTE D' ANNECY", "860 ROUTE ANNECY",
+        address_subset,
+    )
+
+
 def seed(seed_id: str = "seed-1", siret: str = "12345678900012", risk_flags=None) -> dict:
     return {
         "seed_id": seed_id,

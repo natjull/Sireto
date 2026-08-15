@@ -26,10 +26,10 @@ from scripts import select_synthetic_gt_composite_pilot as legacy  # noqa: E402
 
 
 NAME_QUOTAS = {
-    "TOKEN_SUBSET": 10,
-    "TOKEN_ORDER": 4,
+    "TOKEN_SUBSET": 6,
+    "TOKEN_ORDER": 6,
     "LEGAL_FORM_REMOVE": 8,
-    "PUNCTUATION_REMOVED": 8,
+    "PUNCTUATION_REMOVED": 10,
 }
 LOCATION_QUOTAS = {
     ("address", "ADDRESS_ABBREVIATE"): 8,
@@ -46,6 +46,7 @@ NAME_FUNCTION_TERMINALS = {
     "a", "au", "aux", "d", "da", "das", "de", "del", "della", "des", "do", "dos",
     "du", "en", "et", "l", "la", "le", "les", "sous", "sur", "van", "von",
 }
+ROMAN_NUMERAL = re.compile(r"[ivxlcdm]+", re.IGNORECASE)
 
 
 def sha256(path: Path) -> str:
@@ -80,7 +81,21 @@ def candidate_names(candidate: dict[str, Any]) -> list[str]:
     ))
 
 
-def distinctive_name_tokens(context: dict[str, Any]) -> list[str]:
+def name_token_document_frequencies(
+    contexts: Sequence[dict[str, Any]],
+) -> Counter[str]:
+    """Count official-name tokens across the frozen target population."""
+    return Counter(
+        word
+        for context in contexts
+        for word in set(loop.normalized_words(legacy.primary_name(context)))
+    )
+
+
+def distinctive_name_tokens(
+    context: dict[str, Any],
+    document_frequencies: Counter[str] | None = None,
+) -> list[str]:
     target_words = loop.normalized_words(legacy.primary_name(context))
     competitors = {
         word
@@ -88,15 +103,26 @@ def distinctive_name_tokens(context: dict[str, Any]) -> list[str]:
         for name in candidate_names(candidate)
         for word in loop.normalized_words(name)
     }
-    return list(dict.fromkeys(
+    candidates = list(dict.fromkeys(
         word for word in target_words
         if (
             word.upper() not in STOP_ANCHORS
             and word.upper() not in loop.LEGAL_FORM_TOKENS
             and len(word) >= 3
+            and not word.isdigit()
+            and ROMAN_NUMERAL.fullmatch(word) is None
             and word not in competitors
         )
     ))
+    if document_frequencies is None:
+        return candidates
+    source_order = {word: index for index, word in enumerate(candidates)}
+    return sorted(
+        candidates,
+        key=lambda word: (
+            document_frequencies.get(word, 0), -len(word), source_order[word]
+        ),
+    )
 
 
 def punctuation_boundaries(value: str) -> set[tuple[int, str]]:
@@ -174,7 +200,7 @@ def fragment_supports(
                     for left, right in connected_token_pairs(source_value)
                 )
                 and bool(anchors)
-                and anchors[-1] in {words[index] for index in retained}
+                and anchors[0] in {words[index] for index in retained}
             )
         if relation == "LEGAL_FORM_REMOVE":
             removed = [words[index] for index in range(len(words)) if index not in retained]
@@ -256,10 +282,12 @@ def group_fragments(values: list[dict[str, Any]]) -> dict[tuple[str, str], list[
 
 
 def target_capabilities(
-    context: dict[str, Any], grouped: dict[tuple[str, str], list[dict[str, Any]]]
+    context: dict[str, Any],
+    grouped: dict[tuple[str, str], list[dict[str, Any]]],
+    document_frequencies: Counter[str],
 ) -> tuple[dict[str, list[dict[str, Any]]], dict[tuple[str, str], list[dict[str, Any]]]]:
     values = baseline(context)
-    anchors = distinctive_name_tokens(context)
+    anchors = distinctive_name_tokens(context, document_frequencies)
     names = {
         relation: [
             fragment for fragment in grouped[("name", relation)]
@@ -492,6 +520,7 @@ def is_multi_active(context: dict[str, Any]) -> bool:
 def select_feasible_targets(
     contexts: list[dict[str, Any]],
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
+    document_frequencies: Counter[str],
     selection_seed: str,
 ) -> tuple[
     list[dict[str, Any]],
@@ -504,7 +533,9 @@ def select_feasible_targets(
     for context in contexts:
         if not eligible(context):
             continue
-        name_caps, location_caps = target_capabilities(context, grouped)
+        name_caps, location_caps = target_capabilities(
+            context, grouped, document_frequencies
+        )
         if (
             sum(bool(value) for value in name_caps.values()) < 2
             or not any(location_caps.values())
@@ -573,7 +604,8 @@ def select_feasible_targets(
             continue
         target_values = {value["target_siret"]: baseline(value) for value in selected}
         target_anchors = {
-            value["target_siret"]: distinctive_name_tokens(value) for value in selected
+            value["target_siret"]: distinctive_name_tokens(value, document_frequencies)
+            for value in selected
         }
         name_plan = assign_fragment_plan(
             selected, NAME_QUOTAS, target_values, target_anchors, grouped,
@@ -608,11 +640,16 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         if sha256(path) != plan["sources"][key]["sha256"]:
             raise ValueError(f"source hash mismatch: {key}")
     grouped = group_fragments(rows(fragment_path))
+    contexts = rows(context_path)
+    document_frequencies = name_token_document_frequencies(contexts)
     targets, name_plan, location_plan, _caps = select_feasible_targets(
-        rows(context_path), grouped, args.selection_seed
+        contexts, grouped, document_frequencies, args.selection_seed
     )
     target_values = {value["target_siret"]: baseline(value) for value in targets}
-    target_anchors = {value["target_siret"]: distinctive_name_tokens(value) for value in targets}
+    target_anchors = {
+        value["target_siret"]: distinctive_name_tokens(value, document_frequencies)
+        for value in targets
+    }
     output = []
     used_refs: Counter[str] = Counter()
     for target in targets:
@@ -642,7 +679,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                     for index in retained
                 }
                 protected_anchor = [
-                    value for value in reversed(anchors) if value in retained_words
+                    value for value in anchors if value in retained_words
                 ][:1]
                 if not protected_anchor:
                     raise RuntimeError("TOKEN_SUBSET lacks a retained distinctive anchor")

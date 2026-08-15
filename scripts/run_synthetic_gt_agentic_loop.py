@@ -1234,26 +1234,28 @@ def composite_permutation(source_words: list[str], target_words: list[str]) -> l
     return result if result != list(range(len(source_words))) else None
 
 
+def positioned_punctuation_marks(value: str) -> list[tuple[int, str]]:
+    """Return punctuation with the normalized token boundary it follows."""
+    result: list[tuple[int, str]] = []
+    token_index = -1
+    in_token = False
+    for character in value:
+        if character.isalnum():
+            if not in_token:
+                token_index += 1
+                in_token = True
+        else:
+            if character in PUNCTUATION:
+                result.append((token_index, character))
+            if character.isspace() or character in PUNCTUATION:
+                in_token = False
+    return result
+
+
 def composite_punctuation_edits(source: str, target: str) -> list[dict[str, Any]] | None:
     """Locate removed punctuation by the token boundary it occupied."""
-    def positioned_marks(value: str) -> list[tuple[int, str]]:
-        result: list[tuple[int, str]] = []
-        token_index = -1
-        in_token = False
-        for character in value:
-            if character.isalnum():
-                if not in_token:
-                    token_index += 1
-                    in_token = True
-            else:
-                if character in PUNCTUATION:
-                    result.append((token_index, character))
-                if character.isspace() or character in PUNCTUATION:
-                    in_token = False
-        return result
-
-    source_marks = positioned_marks(source)
-    target_marks = positioned_marks(target)
+    source_marks = positioned_punctuation_marks(source)
+    target_marks = positioned_punctuation_marks(target)
     source_counter = Counter(source_marks)
     target_counter = Counter(target_marks)
     if target_counter - source_counter:
@@ -1265,6 +1267,48 @@ def composite_punctuation_edits(source: str, target: str) -> list[dict[str, Any]
             edits.append({"after_token_index": boundary, "mark": mark})
             remaining[(boundary, mark)] -= 1
     return edits or None
+
+
+def composite_preserves_non_target_punctuation(
+    relation: str,
+    source: str,
+    target: str,
+    operation_parameters: dict[str, Any] | None,
+) -> bool:
+    """Ensure a non-punctuation operator does not hide an extra mark edit."""
+    if relation == "PUNCTUATION_REMOVED":
+        return True
+    parameters = operation_parameters or {}
+    source_marks = positioned_punctuation_marks(source)
+    target_marks = positioned_punctuation_marks(target)
+    if relation in {"TOKEN_SUBSET", "ADDRESS_TOKEN_SUBSET", "LEGAL_FORM_REMOVE"}:
+        retained = parameters.get("retained_positions")
+        if not isinstance(retained, list):
+            return False
+        target_position = {source_position: index for index, source_position in enumerate(retained)}
+        expected: list[tuple[int, str]] = []
+        for boundary, mark in source_marks:
+            if boundary == -1:
+                if 0 in target_position:
+                    expected.append((-1, mark))
+            elif boundary in target_position:
+                expected.append((target_position[boundary], mark))
+        return Counter(expected) == Counter(target_marks)
+    if relation in {"TOKEN_ORDER", "ADDRESS_TYPE_ORDER"}:
+        permutation = parameters.get("permutation")
+        if not isinstance(permutation, list):
+            return False
+        target_position = {source_position: index for index, source_position in enumerate(permutation)}
+        expected = []
+        for boundary, mark in source_marks:
+            if boundary == -1:
+                if 0 not in target_position:
+                    return False
+                expected.append((target_position[0] - 1, mark))
+            elif boundary in target_position:
+                expected.append((target_position[boundary], mark))
+        return Counter(expected) == Counter(target_marks)
+    return Counter(source_marks) == Counter(target_marks)
 
 
 def composite_diacritic_edits(source: str, target: str) -> list[dict[str, Any]] | None:
@@ -1521,6 +1565,10 @@ def composite_change_errors(
             )
             if actual_parameters != fragment.get("operation_parameters"):
                 errors.append(f"{field.upper()}_OPERATOR_PARAMETERS_MISMATCH")
+            if not composite_preserves_non_target_punctuation(
+                expected_relation, source, target, actual_parameters
+            ):
+                errors.append(f"{field.upper()}_UNDECLARED_PUNCTUATION_CHANGE")
             protected = [normalized_surface(value) for value in contract.get(
                 "protected_target_tokens", {}
             ).get(field, [])]

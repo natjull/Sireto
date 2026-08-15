@@ -169,6 +169,10 @@ def field_fragments(
         parameters = operation_parameters(field, relation, source_value, target_value)
         if parameters is None:
             continue
+        if not loop.composite_preserves_non_target_punctuation(
+            relation, source_value, target_value, parameters
+        ):
+            continue
         if field == "address":
             source_digits = [value for value in loop.normalized_words(source_value) if value.isdigit()]
             target_digits = [value for value in loop.normalized_words(target_value) if value.isdigit()]

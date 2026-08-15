@@ -26,6 +26,22 @@ def test_distinctive_tokens_exclude_all_legal_forms() -> None:
     assert selector.distinctive_name_tokens(context) == ["antonio", "costa"]
 
 
+def test_distinctive_tokens_rank_rare_identity_and_exclude_roman_numerals() -> None:
+    context = {
+        "target": {"names": [{
+            "kind": "OFFICIAL_NAME",
+            "value": "ASSOCIATION SAINT MARTIALAISE III GYMNASTIQUE",
+        }]},
+        "internal_context": [],
+    }
+    frequencies = selector.Counter({
+        "saint": 1000, "martialaise": 1, "gymnastique": 100,
+    })
+    assert selector.distinctive_name_tokens(context, frequencies) == [
+        "martialaise", "gymnastique", "saint",
+    ]
+
+
 def test_subset_requires_retained_distinctive_anchor() -> None:
     value = fragment(
         "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
@@ -61,13 +77,13 @@ def test_subset_preserves_linked_compounds_and_rejects_function_word_endings() -
     )
 
 
-def test_subset_requires_last_distinctive_anchor() -> None:
+def test_subset_requires_highest_ranked_distinctive_anchor() -> None:
     drop_last_anchor = fragment(
         "name", "TOKEN_SUBSET", {"source_token_count": 3, "retained_positions": [0, 1]}
     )
     assert not selector.fragment_supports(
         "name", "JEAN MICHEL COLOMBIER", drop_last_anchor,
-        ["jean", "michel", "colombier"],
+        ["colombier", "jean", "michel"],
     )
     ends_with_da = fragment(
         "name", "TOKEN_SUBSET", {"source_token_count": 4, "retained_positions": [0, 1, 2]}
