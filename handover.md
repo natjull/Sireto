@@ -142,6 +142,17 @@ négatif et zéro provenance manquante. Cette calibration mesure 3 variantes
 acceptées par seed sur 8/8 seeds, mais ne prouve pas encore le volume minimal
 20 000 / 60 000 ni la fidélité distributionnelle globale.
 
+L'extension bornée v7 a ensuite traité 32 seeds avec deux shards GENERATOR
+Luna LOW, CRITIC exhaustif et adjudication des deux cas non unanimement
+acceptés. Résultat : 93 `ACCEPT`, 3 `SILVER`, 0 `REJECT`; 30 seeds ont leurs
+3 variantes acceptées. La comparaison à v6 trouve 73 signatures structurelles
+nouvelles sur 93 (78,5 %). Les cartes SIRENE ont fourni 900 hard negatives
+uniques sur les 90 positifs éligibles : 516 `ACTIVE_CLOSED`, 105
+`SAME_SIREN_OTHER_SIRET`, 279 `SHARED_ADDRESS`, avec zéro collision
+positif/négatif. Le palier est classé `CONTINUE`, mais aucun corpus final n'est
+encore promu ; les artefacts et manifests sont sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/`.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
