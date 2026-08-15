@@ -4281,6 +4281,37 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   l'ancre distinctive n'est exigée que pour `TOKEN_SUBSET`, les autres relations
   conservant déjà tout le matériau alphanumérique. Banque régénérée sous hash
   `b43a7b6b2675cf16`, canary v2 sous hash `c5aa6cb7431f31ef`.
+- Verdict du canary v2 : `PIVOT`. Le run
+  `synthetic-gt-composite-v3-canary10-v2` termine à 6 `ACCEPT` / 24 `REJECT` ;
+  les 6 variantes admises sont toutes `EXACT_IDENTIFIABLE` au re-scan
+  full-SIRENE, mais une seule seed conserve 3/3, soit seulement trois couples
+  admissibles. Vingt-et-un rejets sont des rejets preflight seed-level : une
+  variante fautive a entraîné le rejet collatéral de ses deux sœurs. Le critic
+  a également rejeté à tort une permutation canonique de `GOPA-HAIDER` et deux
+  suppressions attestées de `DES` dans une adresse.
+- Pivot d'orchestration : `f89c823` (`fix: retry synthetic GT variants
+  independently`). Le nouveau mode opt-in `per-variant` crée une tâche Luna
+  distincte pour v1/v2/v3, ne retente que le slot fautif et conserve de façon
+  immuable toute sortie déjà validée. Un critic ne peut être loué qu'après
+  trois slots `PASSED`; un slot épuisé reste fail-closed. Les réponses brutes,
+  SHA et task IDs Luna restent rattachés à chaque variante, sans génération ni
+  réparation Python.
+- Le critic reçoit désormais une preuve déterministe hashée par variante :
+  tokenizer canonique, tokens source/cible, relation et paramètres exacts. Sa
+  mission est recentrée sur le réalisme et l'ambiguïté sémantique ; il ne doit
+  plus substituer sa propre tokenisation au preflight.
+- `JOIN_SPLIT` est suspendu. `TOKEN_ORDER` est limité à un échange adjacent ou
+  au déplacement d'une forme juridique explicite. `ADDRESS_TOKEN_SUBSET` ne
+  retire dans ce canary qu'un mot fonctionnel, avec numéro, type de voie et
+  ancre de rue conservés. Le sélecteur conjoint relation+fragment applique les
+  caps avant génération et utilise un flot déterministe reproductible.
+- Le canary v4 préparé contient 10 cibles / 30 contrats, 5 actives et 5
+  fermées, 5 multisites et 1 multi-actif, 45 références train, 29 opérateurs
+  exacts, zéro ajout de marque et zéro combinaison d'opérateurs dupliquée dans
+  une seed. Seed hash : `94104694a929856e`. Les deux générations indépendantes
+  du sélecteur sont byte-identiques. Suite ciblée : 44 tests passants. Seul ce
+  canary peut être lancé ; aucun passage à 30/150/20 000 avant son audit
+  full-SIRENE et un nouveau verdict indépendant.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
