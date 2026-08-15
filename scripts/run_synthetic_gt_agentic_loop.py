@@ -237,8 +237,8 @@ def normalize_seed_input(seed: dict[str, Any]) -> dict[str, Any]:
             "seed_id": f"{source}:{siret}",
             "target_siret": siret,
             "target_siren": str(identity.get("siren", "")),
-            "source_kind": "MAPS_ASSISTED" if source == "MAPS_ASSISTED" else "SIRENE_SYNTHETIC",
-            "oof_fold": identity.get("oof_fold"),
+            "source_kind": source if source in {"SIRENE_ONLY_TRAIN", "MAPS_ASSISTED"} else "SIRENE_SYNTHETIC",
+            "oof_fold": identity.get("oof_fold", -1 if source == "SIRENE_ONLY_TRAIN" else None),
             "legacy_split": "train" if source == "CRM_OK_GT_TRAIN" else "train_synthetic",
             "seed_card": seed["seed_card"],
             "observed_train_profile": seed["observed_train_profile"],
@@ -268,11 +268,14 @@ def validate_seed(seed: dict[str, Any]) -> dict[str, Any]:
     if not valid_siret(siret) or not valid_siren(siren) or siret[:9] != siren:
         raise ValueError(f"invalid SIRET/SIREN relation for seed {seed.get('seed_id')}")
     fold = int(seed["oof_fold"])
-    if fold not in {2, 3, 4}:
+    if seed["source_kind"] == "SIRENE_ONLY_TRAIN":
+        if fold != -1:
+            raise ValueError(f"SIRENE_ONLY_TRAIN requires oof_fold=-1 for seed {seed['seed_id']}")
+    elif fold not in {2, 3, 4}:
         raise ValueError(f"forbidden fold for seed {seed['seed_id']}: {fold}")
     if seed["legacy_split"] not in {"train", "train_synthetic"}:
         raise ValueError(f"forbidden split for seed {seed['seed_id']}")
-    if seed["source_kind"] not in {"SIRENE_SYNTHETIC", "MAPS_ASSISTED"}:
+    if seed["source_kind"] not in {"SIRENE_SYNTHETIC", "SIRENE_ONLY_TRAIN", "MAPS_ASSISTED"}:
         raise ValueError(f"unsupported source kind for seed {seed['seed_id']}")
     if not isinstance(seed["seed_card"], dict) or not isinstance(seed["observed_train_profile"], dict):
         raise ValueError("seed_card and observed_train_profile must be objects")
@@ -745,6 +748,34 @@ def command_submit(args: argparse.Namespace) -> None:
     print(canonical_json({"role": args.role, "submitted": accepted, "worker_id": args.worker_id}))
 
 
+def command_abandon(args: argparse.Namespace) -> None:
+    with connect(args.db) as connection:
+        create_schema(connection)
+        task = connection.execute("SELECT * FROM tasks WHERE task_id=?", (args.task_id,)).fetchone()
+        if task is None:
+            raise ValueError(f"unknown task: {args.task_id}")
+        if task["status"] != "LEASED" or task["role"] != args.role or task["worker_id"] != args.worker_id:
+            raise ValueError("task is not leased by the requested worker and role")
+        seed = connection.execute(
+            "SELECT * FROM seeds WHERE run_id=? AND seed_id=?", (task["run_id"], task["seed_id"])
+        ).fetchone()
+        with connection:
+            connection.execute(
+                "UPDATE tasks SET status='ABANDONED', completed_at=? WHERE task_id=?",
+                (now_ts(), args.task_id),
+            )
+            connection.execute(
+                """UPDATE seeds SET status='READY_SUPERVISOR', lease_role=NULL,
+                   lease_worker=NULL, lease_expires_at=NULL, updated_at=?
+                   WHERE run_id=? AND seed_id=?""",
+                (now_ts(), task["run_id"], seed["seed_id"]),
+            )
+            event(connection, task["run_id"], seed["seed_id"], "GENERATOR_ABANDONED", {
+                "task_id": args.task_id, "reason": args.reason,
+            })
+    print(canonical_json({"task_id": args.task_id, "status": "ABANDONED", "reason": args.reason}))
+
+
 def command_supervise(args: argparse.Namespace) -> None:
     completed = 0
     decisions_counter: Counter[str] = Counter()
@@ -918,6 +949,13 @@ def parser() -> argparse.ArgumentParser:
     submit.add_argument("--input", type=Path, required=True)
     submit.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
     submit.set_defaults(func=command_submit)
+
+    abandon = sub.add_parser("abandon")
+    abandon.add_argument("--task-id", required=True)
+    abandon.add_argument("--role", choices=sorted(PENDING_BY_ROLE), required=True)
+    abandon.add_argument("--worker-id", required=True)
+    abandon.add_argument("--reason", required=True)
+    abandon.set_defaults(func=command_abandon)
 
     supervise = sub.add_parser("supervise")
     supervise.add_argument("--run-id", required=True)
