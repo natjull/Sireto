@@ -123,6 +123,14 @@ et `sirene_micro_hard_negatives_v5.jsonl` avec leurs manifests. Cette
 milestone valide la chaîne de négatifs sur un micro-lot, sans constituer une
 promotion du corpus ni une extension quantitative.
 
+L'audit distributionnel reproductible a été ajouté (`02a47f2`) et exécuté sur
+les exports v3 et v5. Pour v5, les 3 positifs ont trois empreintes uniques,
+100 % de présence nom/adresse/CP/commune, 66,7 % de présence INSEE et les
+familles `ADDRESS_ABBREVIATION`, `ACCENT_PUNCTUATION` et `FIELD_MISSING`.
+Le rapport conserve le profil observé de 7 095 lignes train, ses hashes, et
+confirme `retrieval_inputs_used=false`. Ces statistiques restent un audit de
+micro-lot, pas une preuve de fidélité distributionnelle à l'échelle du corpus.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
