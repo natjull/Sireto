@@ -4355,6 +4355,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   l'initialisation per-variant fail-closed. Seul ce canary de confirmation est
   autorisé avant de statuer sur le pilote 30 ; aucun passage direct à 150 ou
   20 000 n'est autorisé.
+- Résultat v6 : 27 `ACCEPT` / 3 `REJECT`, 29/30 slots passés, 9/10
+  seeds strictes et 27/27 `EXACT_IDENTIFIABLE` au full-SIRENE. Les 47 appels
+  Luna ont réussi au premier essai de transport et toute la provenance est
+  cohérente. L'unique slot épuisé était un faux rejet du validateur : avec
+  deux apostrophes identiques, il attribuait la suppression à la première
+  occurrence au lieu de comparer leurs frontières lexicales. Le micro-rerun
+  isolé après correction passe 3/3 critic et 3/3 full-SIRENE exact.
+- L'audit indépendant strict maintient toutefois `PIVOT` avant le pilote 30 :
+  deux `TOKEN_SUBSET` perdaient aussi l'apostrophe de `PRUD'HOMME` sans la
+  déclarer, et des ancres faibles permettaient `THREE III SARL→III SARL` ou
+  `ASSOCIATION ... GYMNASTIQUE→ASSOCIATION DE GYMNASTIQUE`. Le critic avait
+  accepté les 27 surfaces et ne remplace donc pas ces gardes déterministes.
+- Correctif v7 : `4e0f69b` (`fix: isolate synthetic GT field operations`). Les
+  marques sont comparées par frontière de token et toute opération autre que
+  `PUNCTUATION_REMOVED` doit conserver celles portées par les tokens retenus.
+  L'ancre de nom est maintenant le token officiel le plus rare dans la
+  population SIRENE gelée ; chiffres romains, formes juridiques et concurrents
+  locaux sont exclus. Le quota `TOKEN_SUBSET` baisse de 10 à 6 sur 30.
+- La banque d'inspirations train-only v2 retire 90 fragments multi-opérateurs :
+  1 936 preuves propres sous hash `707928c9aeb2a9f1`, folds 2/3/4 uniquement,
+  sans texte synthétique. Le canary v7 resélectionné contient 30 opérateurs
+  exacts distincts et 45 références, sous hash `c4cc16643917537b`. Deux runs
+  du selector sont byte-identiques, 58 tests passent et les 30 contrats
+  s'initialisent fail-closed. Nouveau canary10 obligatoire avant le pilot30.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
