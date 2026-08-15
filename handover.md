@@ -4234,5 +4234,38 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `synthetic-gt-composite-v2-pilot30-v2`, audit indépendant, 3/3 strict et
   `EXACT_IDENTIFIABLE` sur le snapshot SIRENE complet pour chaque ligne admise.
 
+## GT synthétique — PIVOT opérateurs exacts et canary fragments v3
+
+- Commit : `5018bf1` (`fix: lock synthetic GT field operators`).
+- Le pilote composite v2 est terminé mais reste en quarantaine : 75/90
+  variantes ont été acceptées par l'agentique, 69 sont exactes au re-scan
+  full-SIRENE et seulement 19/30 seeds conservent réellement 3/3, soit 57
+  variantes. Les six ambiguïtés sont cross-SIREN et ne sont pas des
+  équivalences opérationnelles.
+- Les audits indépendants concluent unanimement `PIVOT` avant 150. Le verrou de
+  classe a laissé passer des accents absurdes (`VITAL→VÎTAL`,
+  `VERDUN→VERDÚN`) et une distribution dominée par `TOKEN_SUBSET`. Le critic a
+  aussi accepté les six ambiguïtés ; il n'est donc jamais le gate d'identité.
+- Toute addition de ponctuation ou de diacritique est maintenant interdite
+  fail-closed. Une banque de 2 026 fragments réels par champ, issue seulement
+  des folds 2/3/4, transporte l'opérateur exact : positions conservées,
+  permutation, frontière de marque retirée ou paire de type de voie. Aucun
+  texte n'est créé par le builder et aucun identifiant source n'est publié.
+- Le contexte fusionne désormais tous les canaux de noms SIRENE quel que soit
+  l'ordre d'ingestion, y compris les dénominations légales et noms de personnes
+  physiques. Le preflight peut donc voir les collisions que le pilote v2 avait
+  ratées.
+- L'audit full-SIRENE n'accorde plus `EXACT_IDENTIFIABLE` à un singleton nom ou
+  adresse isolé : seul `G_N_A={target}` est exact. Le statut ledger 3/3 et
+  l'allowlist finale 3/3+exact sont publiés sous deux champs distincts ;
+  l'équivalence opérationnelle exige aussi l'égalité du site officiel.
+- Un canary v3 de 10 cibles/30 variantes est scellé sous hash
+  `97a211558b3abce0` : 5 actives/5 fermées, 6 multisites, 1 multi-actif, 29
+  opérateurs exacts distincts, top opérateur 4, zéro contrat d'ajout de marque.
+  Le sélecteur ne génère aucun CRM ; Luna LOW reste l'unique auteur des sorties.
+- Validation avant lancement : 46 tests ciblés passent. Aucun stage 30, 150 ou
+  epoch 500 n'est autorisé avant 3/3, full-SIRENE et audit indépendant du
+  canary.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
