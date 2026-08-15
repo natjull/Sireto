@@ -4334,6 +4334,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `17b896016dd30199`. Deux sélections indépendantes sont byte-identiques et les
   30 contrats passent l'initialisation fail-closed. Nouveau canary10 obligatoire
   avant toute extension.
+- Résultat v5 : 27 `ACCEPT` / 3 `REJECT`, 29/30 slots passent le preflight,
+  9/10 seeds conservent 3/3 et les 27 `ACCEPT` sont toutes
+  `EXACT_IDENTIFIABLE` au re-scan full-SIRENE. La mécanique, le transport et la
+  provenance sont intègres, mais l'unique slot épuisé recevait un contrat
+  `TOKEN_SUBSET` qui se recanonisait nécessairement en retrait de forme
+  juridique. L'audit de réalisme a aussi isolé des sous-ensembles qui
+  conservaient une particule ou un terme générique au lieu du patronyme ; le
+  lot reste donc en quarantaine malgré son exactitude.
+- Correctif v6 : `44c8303` (`fix: prevalidate synthetic GT name anchors`). Le
+  selector refuse avant Luna tout subset qui ne retire que des formes
+  juridiques, exclut toutes les formes juridiques des ancres distinctives,
+  préserve la dernière vraie ancre du nom et interdit les particules terminales
+  telles que `DA`, `DOS`, `VAN` ou `VON`. La suite ciblée compte 48 tests
+  passants.
+- Le canary v6 de confirmation contient 10 cibles / 30 contrats, 5 actives/5
+  fermées, 7 multisites, 1 multi-actif, 44 références train et 28 opérateurs
+  exacts ; zéro ajout de marque. Deux générations indépendantes sont
+  byte-identiques sous hash `8f1c78af6d53f2aa`. Les 30 contrats passent
+  l'initialisation per-variant fail-closed. Seul ce canary de confirmation est
+  autorisé avant de statuer sur le pilote 30 ; aucun passage direct à 150 ou
+  20 000 n'est autorisé.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
