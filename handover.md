@@ -163,6 +163,20 @@ cartes SIRENE ont produit 1 800 hard negatives uniques sur 180 positifs
 `CONTINUE` conditionnel ; les objectifs 20 000 seeds / 60 000 positifs ne sont
 pas encore atteints.
 
+L'extension v9 a traité 128 seeds disjointes (offset 64, lot 128) avec les
+deux shards GENERATOR Luna LOW, puis CRITIC et adjudication ciblée. Elle
+produit 362 `ACCEPT`, 22 `SILVER`, 0 `REJECT` ; 106 seeds ont trois variantes
+acceptées et 22 en ont deux. Les 362 empreintes sont nouvelles par rapport à
+v8. L'audit distributionnel signale une concentration sur
+`ADDRESS_ABBREVIATION` et `FIELD_MISSING`, à surveiller avant un nouveau
+palier. Les cartes officielles SIRENE comptent 8 596 108 projections pour
+128 seeds ; les 318 positifs issus de 106 seeds complets ont produit 3 180
+hard negatives : 1 317 `ACTIVE_CLOSED`, 594 `SAME_SIREN_OTHER_SIRET` et 1 269
+`SHARED_ADDRESS`, sans collision positif/négatif. Ce palier reste
+`CONTINUE` conditionnel et ne constitue pas le corpus final ; les artefacts
+v9 et leurs manifests sont sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/`.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
