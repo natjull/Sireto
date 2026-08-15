@@ -84,6 +84,15 @@ extension n'est autorisée. Le runtime accepte désormais explicitement
 `SIRENE_ONLY_TRAIN` avec `oof_fold=-1` et fournit une clôture auditable des
 seeds non identifiables, sans inventer de texte (commit `91e775d`).
 
+Le smoke suivant a renforcé l'intake avec une garde stricte contre les valeurs
+SIRENE `[ND]` (`34bf4b1`). Sur 4 seeds désormais identifiables (nom/enseigne,
+numéro/voie, CP et commune), le run
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/sirene_identifiable_export_v3/`
+a produit 3 `ACCEPT` et 9 `REJECT` après critique ciblée et une reprise
+GENERATOR bornée. Le taux de variantes acceptées reste 25 % et le gate de
+trois variantes acceptées par seed n'est franchi que pour 1 seed ; verdict
+`PIVOT_PILOT`, sans extension ni hard negatives promus.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
