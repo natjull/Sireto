@@ -49,6 +49,18 @@ destinée à être acceptée doit conserver au moins deux ancres indépendantes
 et ne peut pas omettre simultanément nom/enseigne et adresse-numéro. Une
 nouvelle itération pilote est requise avant toute extension.
 
+Le pilote v7 a été exécuté avec le prompt renforcé et les deux shards GENERATOR
+Luna LOW déjà loués. Les 8 seeds ont produit 22 variantes `ACCEPT` et 2
+`REJECT`, sans `SILVER`; six seeds seulement disposent de trois variantes
+acceptées. L'export est
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/agentic_pilot/67653eb32d9998cc/export_v7/`.
+Le filtre de complétude a retenu 6 SIRET et 18 positifs pour les hard
+negatives, soit 180 paires : 132 `ACTIVE_CLOSED` et 48
+`SAME_SIREN_OTHER_SIRET`. Les autres familles sont absentes du pool local et
+n'ont pas été fabriquées. Le gate de volume/diversité n'est pas franchi :
+verdict `PIVOT_PILOT`, aucune extension ni promotion. Commit du filtre et de
+ses tests : `730816d`.
+
 *(runtime, schéma v2, prompts, runbook et tests : commit `c786ae2`)*
 
 ### Corpus GT synthétique SIRETO — préenregistrement
