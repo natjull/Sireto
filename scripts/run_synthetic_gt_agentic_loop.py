@@ -17,6 +17,7 @@ import re
 import sqlite3
 import tempfile
 import time
+import unicodedata
 from collections import Counter
 from pathlib import Path
 from typing import Any, Iterable, Sequence
@@ -62,6 +63,17 @@ REQUESTED_FAMILIES_BY_DIMENSION = {
     "orthographic": {"ACCENT_PUNCTUATION", "OCR_LIMITED"},
 }
 VARIANT_BY_DIMENSION = {"name": "v1", "address": "v2", "orthographic": "v3"}
+LEGAL_FORM_TOKENS = {
+    "ASS", "ASSO", "ASSOCIATION", "EARL", "EI", "EIRL", "EURL", "GAEC",
+    "GIE", "SA", "SARL", "SAS", "SASU", "SC", "SCI", "SCP", "SELARL",
+    "SEM", "SNC",
+}
+STREET_TYPE_ABBREVIATIONS = {
+    "R": "RUE", "AV": "AVENUE", "BD": "BOULEVARD", "CH": "CHEMIN",
+    "CHE": "CHEMIN", "IMP": "IMPASSE", "PL": "PLACE", "RTE": "ROUTE",
+    "ALL": "ALLEE", "QU": "QUAI", "RES": "RESIDENCE",
+}
+PUNCTUATION = set("'’.-,()/&")
 
 
 def canonical_json(value: Any) -> str:
@@ -102,6 +114,22 @@ def iter_jsonl_raw(path: Path) -> Iterable[tuple[str, dict[str, Any]]]:
             if not isinstance(value, dict):
                 raise ValueError(f"JSONL object required at {path}:{line_number}")
             yield raw, value
+
+
+def iter_response_raw(path: Path, input_format: str) -> Iterable[tuple[str, dict[str, Any]]]:
+    if input_format == "jsonl":
+        yield from iter_jsonl_raw(path)
+        return
+    raw = path.read_text(encoding="utf-8").strip()
+    if not raw:
+        raise ValueError(f"empty JSON response: {path}")
+    try:
+        value = json.loads(raw)
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid JSON response at {path}: {exc}") from exc
+    if not isinstance(value, dict):
+        raise ValueError(f"JSON object required at {path}")
+    yield raw, value
 
 
 def write_jsonl_atomic(path: Path, rows: Iterable[dict[str, Any]]) -> None:
@@ -302,6 +330,9 @@ def validate_seed(seed: dict[str, Any]) -> dict[str, Any]:
     ):
         raise ValueError("risk_flags must be a list of strings")
     validate_requested_families(seed["seed_id"], seed["seed_card"])
+    validate_profile_evidence(
+        seed["seed_id"], seed["seed_card"], seed["observed_train_profile"]
+    )
     return seed
 
 
@@ -319,6 +350,28 @@ def validate_requested_families(seed_id: str, seed_card: dict[str, Any]) -> None
         if family not in REQUESTED_FAMILIES_BY_DIMENSION[dimension]:
             raise ValueError(
                 f"family {family} is incompatible with dimension {dimension} for seed {seed_id}"
+            )
+
+
+def validate_profile_evidence(
+    seed_id: str,
+    seed_card: dict[str, Any],
+    profile: dict[str, Any],
+) -> None:
+    requested = seed_card.get("requested_families")
+    if not requested:
+        return
+    rows = profile.get("rows")
+    phenomena = profile.get("phenomena")
+    supported = profile.get("supported_families")
+    if not isinstance(rows, int) or rows <= 0:
+        raise ValueError(f"observed train profile has no rows for seed {seed_id}")
+    if not isinstance(phenomena, dict) or not isinstance(supported, list):
+        raise ValueError(f"observed train profile lacks family evidence for seed {seed_id}")
+    for family in requested.values():
+        if family not in supported or not isinstance(phenomena.get(family), int) or phenomena[family] <= 0:
+            raise ValueError(
+                f"family {family} has no observed train evidence for seed {seed_id}"
             )
 
     names = [
@@ -345,6 +398,13 @@ def validate_requested_families(seed_id: str, seed_card: dict[str, Any]) -> None
         raise ValueError(f"ADDRESS_ABBREVIATION requires a street type for seed {seed_id}")
     if requested["address"] == "COMMUNE_VARIANT" and not str(seed_card.get("city", "")).strip():
         raise ValueError(f"COMMUNE_VARIANT requires an official city for seed {seed_id}")
+    for dimension in ("name", "address", "orthographic"):
+        family = requested[dimension]
+        if not source_supports_family(seed_card, dimension, family):
+            raise ValueError(
+                f"source does not support family {family} in dimension {dimension} "
+                f"for seed {seed_id}"
+            )
 
 
 def command_init(args: argparse.Namespace) -> None:
@@ -371,6 +431,10 @@ def command_init(args: argparse.Namespace) -> None:
     seed_ids = [str(row["seed_id"]) for row in rows]
     if len(set(target_sirets)) != len(target_sirets) or len(set(seed_ids)) != len(seed_ids):
         raise ValueError("duplicate seed_id or target_siret")
+    profile_hashes = {digest_json(row["observed_train_profile"]) for row in rows}
+    if len(profile_hashes) != 1:
+        raise ValueError("all seeds in a run must use one immutable observed train profile")
+    policy["observed_train_profile_sha256"] = next(iter(profile_hashes))
 
     with connect(args.db) as connection:
         create_schema(connection)
@@ -429,6 +493,7 @@ def reap_expired(connection: sqlite3.Connection, run_id: str) -> int:
 
 
 def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row) -> dict[str, Any]:
+    seed_card = json.loads(seed["seed_card_json"])
     variants = connection.execute(
         """SELECT variant_id, crm_json FROM variants
            WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
@@ -436,7 +501,9 @@ def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row)
     ).fetchall()
     return {
         "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
-        "seed_card": json.loads(seed["seed_card_json"]),
+        "seed_card": seed_card,
+        "baseline_crm": official_baseline(seed_card),
+        "variant_contract": variant_contract(seed_card),
         "variants": [
             {"variant_id": row["variant_id"], "crm": json.loads(row["crm_json"])} for row in variants
         ],
@@ -444,6 +511,7 @@ def critic_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row)
 
 
 def adjudicator_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3.Row) -> dict[str, Any]:
+    seed_card = json.loads(seed["seed_card_json"])
     variants = connection.execute(
         """SELECT variant_id, crm_json, preflight_json, critic_json, critic_decision
            FROM variants WHERE run_id=? AND seed_id=? ORDER BY variant_id""",
@@ -451,7 +519,9 @@ def adjudicator_input(connection: sqlite3.Connection, run_id: str, seed: sqlite3
     ).fetchall()
     return {
         "seed": {"siret": seed["target_siret"], "siren": seed["target_siren"]},
-        "seed_card": json.loads(seed["seed_card_json"]),
+        "seed_card": seed_card,
+        "baseline_crm": official_baseline(seed_card),
+        "variant_contract": variant_contract(seed_card),
         "variants": [
             {
                 "variant_id": row["variant_id"],
@@ -484,14 +554,8 @@ def make_task(
             "risk_flags": json.loads(seed["risk_flags_json"]),
         }
         if requested:
-            role_input["variant_contract"] = [
-                {
-                    "variant_id": VARIANT_BY_DIMENSION[dimension],
-                    "target_dimension": dimension,
-                    "requested_family": requested[dimension],
-                }
-                for dimension in ("name", "address", "orthographic")
-            ]
+            role_input["baseline_crm"] = official_baseline(seed_card)
+            role_input["variant_contract"] = variant_contract(seed_card)
         if int(seed["attempt"]) > 0:
             previous = connection.execute(
                 """SELECT variant_id, crm_fingerprint, preflight_json FROM variants
@@ -512,9 +576,12 @@ def make_task(
     else:
         role_input = adjudicator_input(connection, run_id, seed)
     input_sha256 = digest_json(role_input)
-    attempt = int(seed["attempt"]) + (1 if role == "GENERATOR" else 0)
+    task_ordinal = int(connection.execute(
+        "SELECT COUNT(*) FROM tasks WHERE run_id=? AND seed_id=? AND role=?",
+        (run_id, seed["seed_id"], role),
+    ).fetchone()[0]) + 1
     task_id = hashlib.sha256(
-        f"{run_id}|{role}|{seed['seed_id']}|{attempt}|{batch_id}".encode()
+        f"{run_id}|{role}|{seed['seed_id']}|{task_ordinal}|{batch_id}".encode()
     ).hexdigest()[:32]
     return {
         "schema_version": SCHEMA_VERSION,
@@ -558,11 +625,11 @@ def command_lease(args: argparse.Namespace) -> None:
             )
             connection.execute(
                 """UPDATE seeds SET status=?, lease_role=?, lease_worker=?,
-                   lease_expires_at=?, attempt=attempt+?, updated_at=?
+                   lease_expires_at=?, updated_at=?
                    WHERE run_id=? AND seed_id=?""",
                 (
                     LEASED_BY_ROLE[role], role, args.worker_id, expiry,
-                    1 if role == "GENERATOR" else 0, now_ts(), args.run_id, seed["seed_id"],
+                    now_ts(), args.run_id, seed["seed_id"],
                 ),
             )
             event(connection, args.run_id, seed["seed_id"], "TASK_LEASED", {
@@ -594,6 +661,177 @@ def comparison_fingerprint(crm: dict[str, str]) -> str:
     return "".join(character for character in joined if character.isalnum())
 
 
+def normalized_words(value: Any) -> list[str]:
+    decomposed = unicodedata.normalize("NFKD", str(value or "").casefold())
+    plain = "".join(character for character in decomposed if not unicodedata.combining(character))
+    return re.findall(r"[a-z0-9]+", plain)
+
+
+def normalized_alnum(value: Any) -> str:
+    return "".join(normalized_words(value))
+
+
+def normalized_surface(value: Any) -> str:
+    return " ".join(str(value or "").strip().casefold().split())
+
+
+def punctuation_marks(value: Any) -> set[str]:
+    return {character for character in str(value or "") if character in PUNCTUATION}
+
+
+def has_diacritic(value: Any) -> bool:
+    return any(unicodedata.combining(character) for character in unicodedata.normalize("NFD", str(value or "")))
+
+
+def edit_distance(left: str, right: str) -> int:
+    previous = list(range(len(right) + 1))
+    for row_index, left_character in enumerate(left, 1):
+        current = [row_index]
+        for column_index, right_character in enumerate(right, 1):
+            current.append(min(
+                current[-1] + 1,
+                previous[column_index] + 1,
+                previous[column_index - 1] + (left_character != right_character),
+            ))
+        previous = current
+    return previous[-1]
+
+
+def official_baseline(seed_card: dict[str, Any]) -> dict[str, str]:
+    names = [str(value).strip() for value in seed_card.get("name_options", []) if str(value).strip()]
+    return {
+        "name": names[0] if names else "",
+        "address": str(seed_card.get("address", "")).strip(),
+        "postcode": str(seed_card.get("postcode", "")).strip(),
+        "city": str(seed_card.get("city", "")).strip(),
+        "insee": str(seed_card.get("insee", "")).strip(),
+    }
+
+
+def orthographic_target_field(seed_card: dict[str, Any], family: str) -> str:
+    baseline = official_baseline(seed_card)
+    if family == "ACCENT_PUNCTUATION":
+        preferred = ["name", "address", "city"]
+        requested = seed_card.get("requested_families", {})
+        if requested.get("name") == "ACCENT_PUNCTUATION":
+            preferred = ["address", "city", "name"]
+        for field in preferred:
+            if has_diacritic(baseline[field]) or punctuation_marks(baseline[field]):
+                return field
+    return "name"
+
+
+def variant_contract(seed_card: dict[str, Any]) -> list[dict[str, Any]]:
+    requested = seed_card.get("requested_families")
+    if not requested:
+        return []
+    targets = {
+        "name": ["name"],
+        "address": ["city"] if requested["address"] == "COMMUNE_VARIANT" else ["address"],
+        "orthographic": [orthographic_target_field(seed_card, requested["orthographic"])],
+    }
+    return [
+        {
+            "variant_id": VARIANT_BY_DIMENSION[dimension],
+            "target_dimension": dimension,
+            "target_fields": targets[dimension],
+            "requested_family": requested[dimension],
+        }
+        for dimension in ("name", "address", "orthographic")
+    ]
+
+
+def source_supports_family(seed_card: dict[str, Any], dimension: str, family: str) -> bool:
+    baseline = official_baseline(seed_card)
+    source = baseline[variant_contract(seed_card)[
+        {"name": 0, "address": 1, "orthographic": 2}[dimension]
+    ]["target_fields"][0]]
+    words = normalized_words(source)
+    if family == "ENSEIGNE_VS_DENOMINATION":
+        names = [normalized_surface(value) for value in seed_card.get("name_options", []) if str(value).strip()]
+        enseignes = [normalized_surface(value) for value in seed_card.get("enseigne_options", []) if str(value).strip()]
+        return bool(names and enseignes and set(names) - set(enseignes) and set(enseignes) - {names[0]})
+    if family == "LEGAL_FORM":
+        return any(word.upper() in LEGAL_FORM_TOKENS for word in words)
+    if family in {"TOKEN_ORDER", "ADDRESS_TOKEN_ORDER"}:
+        return len(words) >= 2
+    if family == "ACRONYM_TOKENIZATION":
+        return any(2 <= len(word) <= 8 for word in words)
+    if family == "ACCENT_PUNCTUATION":
+        return has_diacritic(source) or bool(punctuation_marks(source))
+    if family in {"OCR_LIMITED", "ADDRESS_OCR"}:
+        return len(normalized_alnum(source)) >= 4
+    if family == "ADDRESS_ABBREVIATION":
+        street_type = normalized_surface(seed_card.get("street_type", "")).upper()
+        return bool(street_type and street_type in {word.upper() for word in words})
+    if family == "COMMUNE_VARIANT":
+        return has_diacritic(source) or bool(punctuation_marks(source)) or len(words) >= 2
+    return bool(source)
+
+
+def expanded_street_words(value: Any) -> list[str]:
+    return [STREET_TYPE_ABBREVIATIONS.get(word.upper(), word.upper()) for word in normalized_words(value)]
+
+
+def family_change_errors(
+    family: str,
+    source: str,
+    target: str,
+    seed_card: dict[str, Any],
+) -> list[str]:
+    errors: list[str] = []
+    source_surface, target_surface = normalized_surface(source), normalized_surface(target)
+    source_words, target_words = normalized_words(source), normalized_words(target)
+    source_alnum, target_alnum = normalized_alnum(source), normalized_alnum(target)
+    if source_surface == target_surface:
+        return ["TARGET_FIELD_UNCHANGED"]
+    if family == "ENSEIGNE_VS_DENOMINATION":
+        alternatives = {
+            normalized_surface(value)
+            for value in seed_card.get("enseigne_options", [])
+            if str(value).strip()
+        }
+        if target_surface not in alternatives or target_surface == source_surface:
+            errors.append("NOT_AN_OFFICIAL_ALTERNATE_NAME")
+    elif family == "LEGAL_FORM":
+        source_core = [word for word in source_words if word.upper() not in LEGAL_FORM_TOKENS]
+        target_core = [word for word in target_words if word.upper() not in LEGAL_FORM_TOKENS]
+        source_forms = [word for word in source_words if word.upper() in LEGAL_FORM_TOKENS]
+        target_forms = [word for word in target_words if word.upper() in LEGAL_FORM_TOKENS]
+        if source_core != target_core or source_forms == target_forms:
+            errors.append("LEGAL_FORM_NOT_ACTUALLY_CHANGED")
+    elif family in {"TOKEN_ORDER", "ADDRESS_TOKEN_ORDER"}:
+        if Counter(source_words) != Counter(target_words) or source_words == target_words:
+            errors.append("TOKEN_ORDER_NOT_ACTUALLY_CHANGED")
+    elif family == "ACRONYM_TOKENIZATION":
+        if source_alnum != target_alnum or source_words == target_words:
+            errors.append("ACRONYM_TOKENIZATION_NOT_ACTUALLY_CHANGED")
+    elif family in {"OCR_LIMITED", "ADDRESS_OCR"}:
+        distance = edit_distance(source_alnum, target_alnum)
+        maximum = max(2, int(len(source_alnum) * 0.15))
+        if distance < 1 or distance > maximum:
+            errors.append("OCR_SUBSTITUTION_NOT_LIMITED_OR_ABSENT")
+    elif family == "ACCENT_PUNCTUATION":
+        if source_alnum != target_alnum:
+            errors.append("ACCENT_PUNCTUATION_CHANGED_ALPHANUMERICS")
+        if target_surface == source_surface or normalized_surface(source).upper() == normalized_surface(target).upper():
+            errors.append("ACCENT_PUNCTUATION_CASE_ONLY")
+        if not has_diacritic(source) and not punctuation_marks(source):
+            errors.append("SOURCE_HAS_NO_ACCENT_OR_PUNCTUATION")
+        if punctuation_marks(target) - punctuation_marks(source):
+            errors.append("ACCENT_PUNCTUATION_ADDED_GRATUITOUS_MARK")
+    elif family == "ADDRESS_ABBREVIATION":
+        if expanded_street_words(source) != expanded_street_words(target):
+            errors.append("ADDRESS_ABBREVIATION_CHANGED_CONTENT")
+        abbreviations = set(STREET_TYPE_ABBREVIATIONS)
+        if not ({word.upper() for word in target_words} & abbreviations):
+            errors.append("ADDRESS_TYPE_NOT_ABBREVIATED")
+    elif family == "COMMUNE_VARIANT":
+        if source_alnum != target_alnum:
+            errors.append("COMMUNE_VARIANT_CHANGED_ALPHANUMERICS")
+    return errors
+
+
 def leaked_identifier(crm: dict[str, str], siret: str, siren: str) -> bool:
     joined = " ".join(crm.values())
     if siret in joined or siren in joined:
@@ -604,12 +842,18 @@ def leaked_identifier(crm: dict[str, str], siret: str, siren: str) -> bool:
 def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str, Any]:
     errors: list[str] = []
     fingerprints: list[str] = []
+    seed_card = json.loads(seed["seed_card_json"])
+    baseline = official_baseline(seed_card)
+    contracts = {
+        value["variant_id"]: value for value in variant_contract(seed_card)
+    }
     expected_ids = {"v1", "v2", "v3"}
     observed_ids = {variant["variant_id"] for variant in response["variants"]}
     if observed_ids != expected_ids:
         errors.append("VARIANT_IDS_NOT_EXACT_V1_V2_V3")
     for variant in response["variants"]:
         crm = variant["crm"]
+        contract = contracts.get(variant["variant_id"])
         if not any(crm[field].strip() for field in ("name", "address")):
             errors.append(f"{variant['variant_id']}:NO_NAME_OR_ADDRESS")
         if leaked_identifier(crm, seed["target_siret"], seed["target_siren"]):
@@ -618,6 +862,19 @@ def generator_preflight(response: dict[str, Any], seed: sqlite3.Row) -> dict[str
         if not fingerprint:
             errors.append(f"{variant['variant_id']}:EMPTY_FINGERPRINT")
         fingerprints.append(fingerprint)
+        if contract:
+            observed = variant["corruption_families_observed"]
+            if observed != [contract["requested_family"]]:
+                errors.append(f"{variant['variant_id']}:DECLARED_FAMILY_MISMATCH")
+            target_fields = set(contract["target_fields"])
+            for field in CRM_FIELDS:
+                if field not in target_fields and crm[field].strip() != baseline[field]:
+                    errors.append(f"{variant['variant_id']}:{field.upper()}_CHANGED_OUTSIDE_CONTRACT")
+            for field in target_fields:
+                for reason in family_change_errors(
+                    contract["requested_family"], baseline[field], crm[field], seed_card
+                ):
+                    errors.append(f"{variant['variant_id']}:{reason}")
     if len(set(fingerprints)) != len(fingerprints):
         errors.append("DUPLICATE_OR_COSMETIC_VARIANTS")
     return {"passed": not errors, "errors": sorted(set(errors)), "checked_fields": list(CRM_FIELDS)}
@@ -713,8 +970,9 @@ def store_generator(
     else:
         next_status = "PENDING_CRITIC"
     connection.execute(
-        """UPDATE seeds SET status=?, lease_role=NULL, lease_worker=NULL,
-           lease_expires_at=NULL, updated_at=? WHERE run_id=? AND seed_id=?""",
+        """UPDATE seeds SET status=?, attempt=attempt+1, lease_role=NULL,
+           lease_worker=NULL, lease_expires_at=NULL, updated_at=?
+           WHERE run_id=? AND seed_id=?""",
         (next_status, now_ts(), task["run_id"], seed["seed_id"]),
     )
     event(connection, task["run_id"], seed["seed_id"], "GENERATOR_SUBMITTED", {
@@ -788,7 +1046,7 @@ def command_submit(args: argparse.Namespace) -> None:
     accepted = 0
     with connect(args.db) as connection:
         create_schema(connection)
-        for raw, response in iter_jsonl_raw(args.input):
+        for raw, response in iter_response_raw(args.input, args.input_format):
             errors = sorted(validator.iter_errors(response), key=lambda value: list(value.path))
             if errors:
                 path = ".".join(str(value) for value in errors[0].path)
@@ -1045,6 +1303,7 @@ def parser() -> argparse.ArgumentParser:
     submit.add_argument("--role", choices=sorted(PENDING_BY_ROLE), required=True)
     submit.add_argument("--worker-id", required=True)
     submit.add_argument("--input", type=Path, required=True)
+    submit.add_argument("--input-format", choices=["jsonl", "json"], default="jsonl")
     submit.add_argument("--schema", type=Path, default=DEFAULT_SCHEMA)
     submit.set_defaults(func=command_submit)
 

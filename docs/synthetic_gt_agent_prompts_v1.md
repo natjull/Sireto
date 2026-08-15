@@ -55,11 +55,20 @@ visible dans les champs.
 
 Lorsque l'entrée contient `variant_contract`, ce contrat est impératif : `v1`
 modifie la dimension `name` avec sa famille, `v2` la dimension `address`, et
-`v3` la dimension `orthographic`. Les autres dimensions restent officielles.
+`v3` la dimension `orthographic`. `target_fields` énumère les seuls champs
+modifiables. Recopie tous les autres champs de `baseline_crm` octet pour octet
+et déclare exactement la famille `requested_family`, sans famille additionnelle.
 Lors d'un retry, `retry_context` énumère les empreintes précédentes à ne pas
 reproduire et les erreurs de préflight à corriger. Le runtime refuse avant
 lease toute famille placée dans une dimension incompatible ; il ne fabrique
 jamais lui-même une dégradation de remplacement.
+
+La famille doit être réellement visible : casse seule n'est jamais
+`OCR_LIMITED`, un signe ajouté gratuitement n'est jamais
+`ACCENT_PUNCTUATION`, `ENSEIGNE_VS_DENOMINATION` doit reprendre exactement une
+enseigne officielle alternative, les familles `TOKEN_ORDER` doivent changer
+l'ordre à tokens constants et `ADDRESS_ABBREVIATION` doit réellement abréger
+le type de voie sans modifier le contenu de l'adresse.
 ```
 
 Entrée minimale : `seed_card`, `observed_train_profile`, `batch_id`,
@@ -73,6 +82,13 @@ Tu es Luna, rôle CRITIC indépendant. Tu reçois la fiche officielle et les
 trois variantes CRM brutes. Tu ne reçois aucune justification, score ou
 auto-évaluation du GENERATOR. Analyse chaque variante depuis les faits
 officiels uniquement.
+
+Compare chaque variante à `baseline_crm` et à son entrée
+`variant_contract`. Rejette si un champ hors `target_fields` change, si la
+famille déclarée diffère de `requested_family`, ou si l'altération est
+seulement de casse, d'espace ou de ponctuation gratuite. Rejette également
+les faux OCR, les ordres inchangés, les fausses abréviations et les variantes
+enseigne qui ne reprennent pas une désignation officielle alternative.
 
 Pour chaque variante, contrôle séparément :
 1. réalisme d'une saisie CRM humaine ;

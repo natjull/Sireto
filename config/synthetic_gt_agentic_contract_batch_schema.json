@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "SIRETO agentic seed contract selection",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["selections"],
+  "properties": {
+    "selections": {
+      "type": "array",
+      "minItems": 32,
+      "maxItems": 32,
+      "uniqueItems": true,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["siret", "requested_families"],
+        "properties": {
+          "siret": {"type": "string", "pattern": "^[0-9]{14}$"},
+          "requested_families": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["name", "address", "orthographic"],
+            "properties": {
+              "name": {
+                "enum": [
+                  "ACCENT_PUNCTUATION",
+                  "ACRONYM_TOKENIZATION",
+                  "LEGAL_FORM"
+                ]
+              },
+              "address": {
+                "enum": ["ADDRESS_ABBREVIATION", "COMMUNE_VARIANT"]
+              },
+              "orthographic": {"const": "ACCENT_PUNCTUATION"}
+            }
+          }
+        }
+      }
+    }
+  }
+}

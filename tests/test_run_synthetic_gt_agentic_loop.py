@@ -127,6 +127,8 @@ def test_full_generator_critic_supervisor_cycle_preserves_agent_text(tmp_path: P
     encoded_task = loop.canonical_json(critic_task)
     assert "transformation_summary" not in encoded_task
     assert "corruption_families_observed" not in encoded_task
+    assert critic_task["input"]["baseline_crm"]["name"] == ""
+    assert critic_task["input"]["variant_contract"] == []
     submit(tmp_path, db, "CRITIC", "luna-c1", [review_response(critic_task, "CRITIC")])
 
     loop.main(["--db", str(db), "supervise", "--run-id", run_id])
@@ -180,9 +182,12 @@ def test_abandon_requeues_seed_in_same_role(tmp_path: Path):
         "--role", "GENERATOR", "--worker-id", "luna-g1", "--reason", "worker_failed",
     ])
     with sqlite3.connect(db) as connection:
-        seed_status = connection.execute("SELECT status FROM seeds").fetchone()[0]
+        seed_status, attempt = connection.execute(
+            "SELECT status, attempt FROM seeds"
+        ).fetchone()
         task_status = connection.execute("SELECT status FROM tasks").fetchone()[0]
     assert seed_status == "PENDING_GENERATOR"
+    assert attempt == 0
     assert task_status == "ABANDONED"
     assert lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")
 
@@ -221,21 +226,90 @@ def test_generator_task_carries_variant_contract_and_retry_errors(tmp_path: Path
             "orthographic": "ACCENT_PUNCTUATION",
         },
     })
+    value["observed_train_profile"] = {
+        "rows": 100,
+        "phenomena": {
+            "TOKEN_ORDER": 10,
+            "ADDRESS_ABBREVIATION": 20,
+            "ACCENT_PUNCTUATION": 30,
+        },
+        "supported_families": [
+            "TOKEN_ORDER", "ADDRESS_ABBREVIATION", "ACCENT_PUNCTUATION"
+        ],
+    }
     db, run_id = init_run(tmp_path, [value])
     first = lease(tmp_path, db, run_id, "GENERATOR", "luna-g1")[0]
     assert first["input"]["variant_contract"] == [
-        {"variant_id": "v1", "target_dimension": "name", "requested_family": "TOKEN_ORDER"},
-        {"variant_id": "v2", "target_dimension": "address", "requested_family": "ADDRESS_ABBREVIATION"},
-        {"variant_id": "v3", "target_dimension": "orthographic", "requested_family": "ACCENT_PUNCTUATION"},
+        {"variant_id": "v1", "target_dimension": "name", "target_fields": ["name"], "requested_family": "TOKEN_ORDER"},
+        {"variant_id": "v2", "target_dimension": "address", "target_fields": ["address"], "requested_family": "ADDRESS_ABBREVIATION"},
+        {"variant_id": "v3", "target_dimension": "orthographic", "target_fields": ["name"], "requested_family": "ACCENT_PUNCTUATION"},
     ]
+    assert first["input"]["baseline_crm"] == {
+        "name": "Société des Fleurs",
+        "address": "12 RUE DES LILAS 75001 PARIS",
+        "postcode": "75001",
+        "city": "PARIS",
+        "insee": "75056",
+    }
     response = generator_response(first)
+    for variant, family in zip(response["variants"], (
+        "TOKEN_ORDER", "ADDRESS_ABBREVIATION", "ACCENT_PUNCTUATION"
+    )):
+        variant["corruption_families_observed"] = [family]
     response["variants"][2]["crm"] = dict(response["variants"][0]["crm"])
     submit(tmp_path, db, "GENERATOR", "luna-g1", [response])
     retry = lease(tmp_path, db, run_id, "GENERATOR", "luna-g2")[0]
-    assert retry["input"]["retry_context"]["previous_preflight_errors"] == [
-        "DUPLICATE_OR_COSMETIC_VARIANTS"
+    assert "DUPLICATE_OR_COSMETIC_VARIANTS" in retry["input"]["retry_context"][
+        "previous_preflight_errors"
     ]
     assert len(retry["input"]["retry_context"]["previous_fingerprints_to_avoid"]) == 3
+
+
+def test_family_semantic_checks_reject_false_claims_and_accept_real_changes():
+    card = {
+        "name_options": ["SOCIETE DES FLEURS"],
+        "enseigne_options": ["FLEURS DE PARIS"],
+    }
+    assert loop.family_change_errors("OCR_LIMITED", "SOCIETE", "societe", card) == [
+        "TARGET_FIELD_UNCHANGED"
+    ]
+    assert "ACCENT_PUNCTUATION_ADDED_GRATUITOUS_MARK" in loop.family_change_errors(
+        "ACCENT_PUNCTUATION", "L'ÉTOILE", "L'ÉTOILE.", card
+    )
+    assert loop.family_change_errors(
+        "ENSEIGNE_VS_DENOMINATION", "SOCIETE DES FLEURS", "SOCIETE-DES-FLEURS", card
+    ) == ["NOT_AN_OFFICIAL_ALTERNATE_NAME"]
+    assert loop.family_change_errors("OCR_LIMITED", "SOCIETE", "S0CIETE", card) == []
+    assert loop.family_change_errors("ACCENT_PUNCTUATION", "L'ÉTOILE", "L ETOILE", card) == []
+    assert loop.family_change_errors(
+        "ADDRESS_ABBREVIATION", "12 RUE DES LILAS", "12 R DES LILAS", card
+    ) == []
+    assert loop.family_change_errors(
+        "ENSEIGNE_VS_DENOMINATION", "SOCIETE DES FLEURS", "FLEURS DE PARIS", card
+    ) == []
+
+
+def test_requested_family_requires_nonempty_observed_train_evidence(tmp_path: Path):
+    value = seed()
+    value["seed_card"].update({
+        "name_options": ["Société des Fleurs"],
+        "address": "12 RUE DES LILAS 75001 PARIS",
+        "street_type": "RUE",
+        "requested_families": {
+            "name": "TOKEN_ORDER",
+            "address": "ADDRESS_ABBREVIATION",
+            "orthographic": "ACCENT_PUNCTUATION",
+        },
+    })
+    value["observed_train_profile"] = {
+        "rows": 0,
+        "phenomena": {},
+        "supported_families": [
+            "TOKEN_ORDER", "ADDRESS_ABBREVIATION", "ACCENT_PUNCTUATION"
+        ],
+    }
+    with pytest.raises(ValueError, match="observed train profile has no rows"):
+        init_run(tmp_path, [value])
 
 
 def test_forbidden_fold_and_unsafe_targeted_critic_are_fail_closed(tmp_path: Path):

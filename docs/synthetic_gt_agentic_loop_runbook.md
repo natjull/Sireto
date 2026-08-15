@@ -91,10 +91,41 @@ et les cinq champs CRM produits.
 - aucune réparation du JSON invalide ;
 - doublons exacts ou purement cosmétiques renvoyés au générateur ;
 - familles `name/address/orthographic` validées avant le premier lease ;
-- contrat explicite `v1=name`, `v2=address`, `v3=orthographic` ;
+- baseline CRM officielle et contrat explicite par variante avec
+  `target_fields` ; tous les champs hors cible doivent rester identiques ;
+- vérification déterministe que la famille déclarée produit réellement le
+  changement attendu (OCR, ordre, accent/ponctuation, enseigne, type de voie) ;
 - contexte du préflight précédent transmis au retry, sans réécriture par le code ;
 - deux tentatives maximum par défaut ;
 - un `REJECT` critique ne peut jamais être promu par le superviseur ;
 - seuls les fichiers `accept.jsonl` sont entraînables.
 
 Les fichiers `silver.jsonl` et `reject.jsonl` restent des artefacts d'audit.
+
+## Driver Luna structuré
+
+`scripts/run_synthetic_gt_luna_driver.py` draine un ledger initialisé sans
+autoriser Luna à écrire dans le dépôt ou les artefacts. Chaque tâche est
+envoyée à une session `gpt-5.6-luna` `low`, éphémère et en lecture seule. Un
+schéma dynamique fige `task_id`, `run_id`, `batch_id`, rôle, version de prompt,
+digest d'entrée et seed. Le dernier message structuré est conservé brut puis
+soumis unitairement au runtime.
+
+```bash
+python scripts/run_synthetic_gt_luna_driver.py \
+  --db "$DB" --run-id "$RUN_ID" \
+  --artifacts "$ARTIFACTS" --export "$EXPORT" \
+  --model gpt-5.6-luna --reasoning-effort low --concurrency 2
+```
+
+Un timeout, un JSON invalide ou une erreur de transport abandonne seulement
+la tâche et réinscrit la seed dans son état `PENDING_*`. Une tentative
+GENERATOR métier n'est désormais consommée qu'après soumission valide. Les
+sessions CRITIC sont neuves et ne voient toujours aucune justification du
+générateur.
+
+Avant `init`, `scripts/prepare_synthetic_gt_agentic_contracts.py` peut
+matérialiser les seed cards depuis une sélection de contrats rédigée par Luna.
+Il recopie uniquement les champs officiels, attache un profil train non vide,
+valide la faisabilité des familles et refuse tout SIRET absent de l'intake
+officiel. Il ne choisit aucune famille et ne transforme aucun texte CRM.
