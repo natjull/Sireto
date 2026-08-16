@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from contextlib import redirect_stdout
 from datetime import datetime, timezone
 import hashlib
 import json
@@ -376,17 +377,20 @@ def build(args: argparse.Namespace) -> Path:
         base_candidates_path = temporary / "candidates.parquet"
         writer = CandidateWriter(base_candidates_path)
         try:
-            diagnostics = build_split_candidates(
-                split=SPLIT,
-                benchmark=benchmark,
-                labels=labels_for_candidates,
-                admission=admission,
-                v7_channels=v7,
-                overlay_channels=overlay,
-                v7_store=PartitionedCandidateStore(args.v7_partitions),
-                overlay_store=PartitionedCandidateStore(args.overlay_partitions),
-                writer=writer,
-            )
+            # Keep stdout machine-readable: the CLI prints only the immutable
+            # output path there, while progress remains visible on stderr.
+            with redirect_stdout(sys.stderr):
+                diagnostics = build_split_candidates(
+                    split=SPLIT,
+                    benchmark=benchmark,
+                    labels=labels_for_candidates,
+                    admission=admission,
+                    v7_channels=v7,
+                    overlay_channels=overlay,
+                    v7_store=PartitionedCandidateStore(args.v7_partitions),
+                    overlay_store=PartitionedCandidateStore(args.overlay_partitions),
+                    writer=writer,
+                )
         finally:
             writer.close()
         if any(diagnostics.values()):
