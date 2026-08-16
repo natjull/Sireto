@@ -229,3 +229,19 @@ def test_candidate_bundles_cover_one_to_three_runtime_contracts() -> None:
     }
     bundles = candidate_bundles(value, names, locations, "seed")
     assert {len(bundle) for bundle in bundles} == {1, 2, 3}
+
+
+def test_candidate_bundles_keep_a_single_safe_runtime_contract() -> None:
+    value = {
+        "target_siret": "12345678900000",
+        "target": {"state": "A"},
+        "internal_context": [],
+    }
+    bundles = candidate_bundles(
+        value,
+        {"OFFICIAL_NAME_ALIAS": [{"inspiration_ref": "alias"}]},
+        {("address", "ADDRESS_ABBREVIATE"): [{"inspiration_ref": "addr"}]},
+        "seed",
+    )
+    assert len(bundles) == 1
+    assert len(bundles[0]) == 1

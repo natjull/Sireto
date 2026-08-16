@@ -500,7 +500,7 @@ def candidate_bundles(
         for name_relation, name_values in names.items() if name_values
         for location_key, location_values in locations.items() if location_values
     ]
-    if len(pairs) < 3:
+    if not pairs:
         return []
     # The runtime contract is one to three variants per target.  Keeping only
     # triples strands clean controls late in production when a target has just
