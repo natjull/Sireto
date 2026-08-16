@@ -44,6 +44,68 @@ un bundle immutable `sireto-synthetic-gt-model-features-1` contenant :
 Les SIREN synthétiques doivent être disjoints de tous les SIREN exacts réels,
 y compris les folds 0 et 1. Le préparateur s'arrête avant fit au moindre écart.
 
+### Construction exécutable après la 20 000e promotion
+
+Les commandes suivantes rejouent exactement les deux audits de canaux k=5000
+du retrieval V4.12-L puis l'admission gelée à 100. Elles n'entraînent aucun
+modèle. Les caches et stores sont ceux des runs historiques épinglés.
+
+```bash
+SOURCE=$(python3 scripts/prepare_synthetic_gt_model_retrieval_input.py \
+  --minimum-variants 20000)
+SOURCE_ID=${SOURCE##*/}
+
+V7_CHANNELS=/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/synthetic_gt_v7_channels_${SOURCE_ID}
+OVERLAY_CHANNELS=/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/synthetic_gt_overlay_channels_${SOURCE_ID}
+
+python3 scripts/audit_retrieval_channels.py \
+  --benchmark "$SOURCE/benchmark.parquet" \
+  --benchmark-manifest "$SOURCE/manifest.json" \
+  --partitions-dir data/candidates_v7_all \
+  --output-dir "$V7_CHANNELS" \
+  --cache-dir /Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/tfidf_sparse500_c33b80855f560074 \
+  --split synthetic_train \
+  --cutoffs 50 100 200 500 1000 5000 \
+  --per-channel-k 5000
+
+python3 scripts/audit_retrieval_channels.py \
+  --benchmark "$SOURCE/benchmark.parquet" \
+  --benchmark-manifest "$SOURCE/manifest.json" \
+  --partitions-dir /Volumes/CATNAT_DATA/SIRETO_RECALL100/stores/legacy_closed_overlay_c33b80855f560074_e39fddd \
+  --output-dir "$OVERLAY_CHANNELS" \
+  --cache-dir /Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/tfidf_closed_overlay_c33b80855f560074 \
+  --split synthetic_train \
+  --cutoffs 50 100 200 500 1000 5000 \
+  --per-channel-k 5000
+
+SYNTHETIC_BUNDLE=$(python3 scripts/build_synthetic_gt_model_features.py \
+  --source "$SOURCE" \
+  --v7-channels "$V7_CHANNELS" \
+  --overlay-channels "$OVERLAY_CHANNELS")
+
+printf '%s\n%s\n' "$SOURCE" "$SYNTHETIC_BUNDLE"
+```
+
+Le premier script découvre tous les `P*_promoted/promoted.jsonl`, vérifie
+chaque manifeste de promotion et refuse de démarrer sous 20 000 variantes. Il
+assigne 2/3/4 par hash stable du SIREN, vérifie la disjonction contre tous les
+labels réels et produit le benchmark sans regarder le retrieval.
+
+Le finaliseur vérifie que les deux audits couvrent exactement le corpus et
+applique `select_candidates` avec les poids et quotas gelés. Il construit les
+features candidat, les 129 features BUSINESS et les textes BGE à partir des
+snapshots SIRENE. Le ranker réel publié `BUSINESS_LEARNED/full` intervient
+uniquement pour ordonner les négatifs BGE, jamais pour qualifier ou injecter
+un positif. Un sibling même SIREN avec le même identifiant d'adresse officiel
+est explicitement exclu des hard negatives.
+
+Sur la base des runs historiques (11 837 requêtes), l'extrapolation prudente à
+20 000 variantes est : 35 minutes pour les canaux V7, 21 minutes pour
+l'overlay, puis 10 à 25 minutes pour les features et groupes. Prévoir environ
+6 Go d'artefacts temporaires/finaux ; le SSD externe dispose actuellement de
+plus de 480 Go libres. Le bundle modèle final devrait rester sous 600 Mo, les
+listes de canaux k=5000 représentant l'essentiel du volume.
+
 ## Commandes de la nuit
 
 ```bash
