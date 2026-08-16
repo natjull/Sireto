@@ -4618,6 +4618,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   cumulés opérateur/référence à 3 818/3 754 sous les caps 4 200/4 100. SHA-256
   seed `8dc90749c645a8a5`, manifest `55842f2f96c42880`; les 35 tests ciblés
   passent.
+- Arrondi identitaire terminal après P035 : commit `b4ae409` (`fix: preserve
+  reachable terminal identity balance`). Le registre réel compte 19 329
+  promotions, A/F=9 656/9 673 variantes et 4 965/4 327 identités. Les 671
+  variantes finales imposent exactement 344 actives et 327 fermées. Même avec
+  une identité par variante active et trois variantes par identité fermée, le
+  maximum arithmétique est 5 309/(5 309+4 436)=54,47922 % d'identités actives,
+  juste sous l'ancien plancher 54,5 %. Le plancher est donc borné à 54,45 %;
+  le plafond 59 %, les 10 000/10 000 variantes A/F, le mix E/M/H, tous les
+  caps et toutes les validations restent inchangés. Les 35 tests ciblés
+  passent; un certificat entier et flow exact des 671 variantes terminales
+  demeure obligatoire avant génération.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
