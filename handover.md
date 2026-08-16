@@ -4538,6 +4538,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   inchangés. Tests ciblés : 10 passants. P009 était déjà audité/promu et ses
   artefacts n'ont pas été touchés; la construction lourde est laissée au
   premier audit ultérieur afin de ne pas concurrencer un lot actif.
+- Optimisation de l'audit cache : commit `0c04e2d` (`perf: prune full SIRENE
+  audit qualification`). Le profiling P011 attribue 37,5 s seulement à
+  `query_candidates` sur 3 553 387 lignes et le reste des 363 s aux
+  normalisations et couvertures de spans Python. La requête utilise désormais
+  les couples INSEE+code postal du CRM, avec wildcard uniquement quand le CP
+  manque, et réduit P011 à 2 141 491 lignes (-39,7 %). La matérialisation est
+  streamée, les doubles normalisations sont supprimées et `_span_cover` reçoit
+  un rejet préalable mathématiquement nécessaire. Aucune table ni qualification
+  n'est modifiée. P010 passe d'environ 446 s hors construction à 169,58 s;
+  P011 de 363 s à 144,65 s. Les JSON avant/après sont byte-identiques, SHA-256
+  `b268e01b…` pour P010 et `22eb662e…` pour P011. Les 11 tests ciblés passent,
+  dont une équivalence exhaustive du nouveau rejet sur les petites séquences.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
