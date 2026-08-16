@@ -13,10 +13,13 @@ import argparse
 from collections import Counter, defaultdict
 import hashlib
 import json
+import os
 from pathlib import Path
 import sqlite3
+import stat
 import sys
 from typing import Any, Iterable, Sequence
+import uuid
 
 import duckdb
 
@@ -26,6 +29,63 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from scripts import run_synthetic_gt_agentic_loop as loop  # noqa: E402
+
+
+DEFAULT_OFFICIAL_CACHE_DIRECTORY = Path(
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/"
+    "synthetic_gt_full_sirene_exact"
+)
+OFFICIAL_CACHE_SCHEMA_VERSION = "sireto-full-sirene-official-cache-1"
+OFFICIAL_CACHE_COLUMNS = (
+    ("siret", "VARCHAR", "e.siret"),
+    ("siren", "VARCHAR", "e.siren"),
+    ("insee", "VARCHAR", "e.codeCommuneEtablissement"),
+    ("postcode", "VARCHAR", "e.codePostalEtablissement"),
+    ("number", "VARCHAR", "e.numeroVoieEtablissement"),
+    ("repetition_index", "VARCHAR", "e.indiceRepetitionEtablissement"),
+    ("street_type", "VARCHAR", "e.typeVoieEtablissement"),
+    ("street", "VARCHAR", "e.libelleVoieEtablissement"),
+    ("establishment_usual", "VARCHAR", "e.denominationUsuelleEtablissement"),
+    ("enseigne1", "VARCHAR", "e.enseigne1Etablissement"),
+    ("enseigne2", "VARCHAR", "e.enseigne2Etablissement"),
+    ("enseigne3", "VARCHAR", "e.enseigne3Etablissement"),
+    ("legal_denomination", "VARCHAR", "u.denominationUniteLegale"),
+    ("legal_sigle", "VARCHAR", "u.sigleUniteLegale"),
+    ("legal_usual1", "VARCHAR", "u.denominationUsuelle1UniteLegale"),
+    ("legal_usual2", "VARCHAR", "u.denominationUsuelle2UniteLegale"),
+    ("legal_usual3", "VARCHAR", "u.denominationUsuelle3UniteLegale"),
+    ("legal_last_name", "VARCHAR", "u.nomUniteLegale"),
+    ("legal_usage_name", "VARCHAR", "u.nomUsageUniteLegale"),
+    ("legal_usual_first", "VARCHAR", "u.prenomUsuelUniteLegale"),
+    ("legal_first", "VARCHAR", "u.prenom1UniteLegale"),
+    ("state", "VARCHAR", "e.etatAdministratifEtablissement"),
+)
+
+
+def _canonical_json(value: Any) -> str:
+    return json.dumps(value, ensure_ascii=False, sort_keys=True, separators=(",", ":"))
+
+
+def official_cache_schema_sha256() -> str:
+    payload = {
+        "schema_version": OFFICIAL_CACHE_SCHEMA_VERSION,
+        "columns": OFFICIAL_CACHE_COLUMNS,
+        "join": "establishments LEFT JOIN legal_units ON establishments.siren=legal_units.siren",
+    }
+    return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def official_cache_key(source_hashes: dict[str, str]) -> str:
+    payload = {
+        "schema_version": OFFICIAL_CACHE_SCHEMA_VERSION,
+        "schema_sha256": official_cache_schema_sha256(),
+        "source_hashes": source_hashes,
+    }
+    return hashlib.sha256(_canonical_json(payload).encode("utf-8")).hexdigest()
+
+
+def official_cache_path(cache_directory: Path, source_hashes: dict[str, str]) -> Path:
+    return cache_directory / f"official_{official_cache_key(source_hashes)}.duckdb"
 
 
 def sha256(path: Path) -> str:
@@ -226,47 +286,186 @@ def load_variants(db: Path, run_id: str) -> list[dict[str, Any]]:
     return result
 
 
-def query_candidates(
+def _cache_metadata(source_hashes: dict[str, str], row_count: int) -> dict[str, Any]:
+    return {
+        "schema_version": OFFICIAL_CACHE_SCHEMA_VERSION,
+        "schema_sha256": official_cache_schema_sha256(),
+        "cache_key": official_cache_key(source_hashes),
+        "source_hashes_json": _canonical_json(source_hashes),
+        "row_count": row_count,
+    }
+
+
+def validate_official_cache(
+    cache: Path,
+    source_hashes: dict[str, str],
+    expected_row_count: int | None = None,
+    *,
+    require_read_only: bool = True,
+) -> dict[str, Any]:
+    if not cache.is_file():
+        raise FileNotFoundError(cache)
+    if require_read_only and cache.stat().st_mode & 0o222:
+        raise ValueError(f"official cache is not filesystem read-only: {cache}")
+    connection = duckdb.connect(str(cache), read_only=True)
+    try:
+        tables = {row[0] for row in connection.execute("SHOW TABLES").fetchall()}
+        if tables != {"cache_metadata", "official_candidates"}:
+            raise ValueError(f"unexpected official cache tables: {sorted(tables)}")
+        metadata_row = connection.execute(
+            """SELECT schema_version,schema_sha256,cache_key,
+                      source_hashes_json,row_count
+                 FROM cache_metadata"""
+        ).fetchall()
+        if len(metadata_row) != 1:
+            raise ValueError("official cache must contain exactly one metadata row")
+        keys = (
+            "schema_version", "schema_sha256", "cache_key",
+            "source_hashes_json", "row_count",
+        )
+        metadata = dict(zip(keys, metadata_row[0], strict=True))
+        expected = _cache_metadata(source_hashes, int(metadata["row_count"]))
+        for key in keys[:-1]:
+            if metadata[key] != expected[key]:
+                raise ValueError(f"official cache {key} mismatch")
+        if expected_row_count is not None and int(metadata["row_count"]) != expected_row_count:
+            raise ValueError(
+                "official cache row count mismatch: "
+                f"{metadata['row_count']} != {expected_row_count}"
+            )
+        actual_columns = [
+            (row[1], row[2])
+            for row in connection.execute("PRAGMA table_info('official_candidates')").fetchall()
+        ]
+        expected_columns = [(name, data_type) for name, data_type, _ in OFFICIAL_CACHE_COLUMNS]
+        if actual_columns != expected_columns:
+            raise ValueError("official cache candidate schema mismatch")
+        return {
+            "schema_version": metadata["schema_version"],
+            "schema_sha256": metadata["schema_sha256"],
+            "cache_key": metadata["cache_key"],
+            "row_count": int(metadata["row_count"]),
+        }
+    finally:
+        connection.close()
+
+
+def build_official_cache(
+    cache: Path,
     establishments: Path,
     legal_units: Path,
+    source_hashes: dict[str, str],
+    expected_row_count: int | None,
+    temp_directory: Path,
+) -> None:
+    temp_directory.mkdir(parents=True, exist_ok=True)
+    cache.parent.mkdir(parents=True, exist_ok=True)
+    temporary = cache.parent / f".{cache.name}.building-{os.getpid()}-{uuid.uuid4().hex}"
+    projection = ",\n              ".join(
+        f"CAST({expression} AS {data_type}) AS {name}"
+        for name, data_type, expression in OFFICIAL_CACHE_COLUMNS
+    )
+    connection: duckdb.DuckDBPyConnection | None = None
+    try:
+        connection = duckdb.connect(str(temporary))
+        connection.execute("SET temp_directory = ?", [str(temp_directory)])
+        connection.execute("SET memory_limit = '12GB'")
+        connection.execute("SET threads = 8")
+        connection.execute("SET preserve_insertion_order = false")
+        connection.execute(
+            f"""CREATE TABLE official_candidates AS
+                SELECT {projection}
+                  FROM read_parquet(?) e
+                  LEFT JOIN read_parquet(?) u ON e.siren=u.siren""",
+            [str(establishments), str(legal_units)],
+        )
+        row_count = int(connection.execute("SELECT count(*) FROM official_candidates").fetchone()[0])
+        if expected_row_count is not None and row_count != expected_row_count:
+            raise ValueError(
+                f"built official cache row count mismatch: {row_count} != {expected_row_count}"
+            )
+        connection.execute(
+            "CREATE INDEX official_candidates_insee_idx ON official_candidates(insee)"
+        )
+        connection.execute(
+            """CREATE TABLE cache_metadata(
+                   schema_version VARCHAR NOT NULL,
+                   schema_sha256 VARCHAR NOT NULL,
+                   cache_key VARCHAR NOT NULL,
+                   source_hashes_json VARCHAR NOT NULL,
+                   row_count UBIGINT NOT NULL
+               )"""
+        )
+        metadata = _cache_metadata(source_hashes, row_count)
+        connection.execute(
+            "INSERT INTO cache_metadata VALUES (?,?,?,?,?)",
+            [
+                metadata["schema_version"], metadata["schema_sha256"],
+                metadata["cache_key"], metadata["source_hashes_json"],
+                metadata["row_count"],
+            ],
+        )
+        connection.execute("CHECKPOINT")
+        connection.close()
+        connection = None
+        validate_official_cache(
+            temporary, source_hashes, expected_row_count, require_read_only=False,
+        )
+        temporary.chmod(stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+        try:
+            os.link(temporary, cache)
+        except FileExistsError:
+            validate_official_cache(cache, source_hashes, expected_row_count)
+        else:
+            validate_official_cache(cache, source_hashes, expected_row_count)
+    finally:
+        if connection is not None:
+            connection.close()
+        temporary.unlink(missing_ok=True)
+        Path(f"{temporary}.wal").unlink(missing_ok=True)
+
+
+def ensure_official_cache(
+    cache_directory: Path,
+    establishments: Path,
+    legal_units: Path,
+    source_hashes: dict[str, str],
+    expected_row_count: int | None,
+    temp_directory: Path,
+) -> tuple[Path, dict[str, Any]]:
+    cache = official_cache_path(cache_directory, source_hashes)
+    if cache.exists():
+        return cache, validate_official_cache(cache, source_hashes, expected_row_count)
+    actual_hashes = {
+        "sirene_establishments": sha256(establishments),
+        "sirene_legal_units": sha256(legal_units),
+    }
+    if actual_hashes != source_hashes:
+        raise ValueError(
+            f"SIRENE source hash mismatch: expected {source_hashes}, got {actual_hashes}"
+        )
+    build_official_cache(
+        cache, establishments, legal_units, source_hashes,
+        expected_row_count, temp_directory,
+    )
+    return cache, validate_official_cache(cache, source_hashes, expected_row_count)
+
+
+def query_candidates(
+    cache: Path,
     insee_values: list[str],
     temp_directory: Path,
 ) -> dict[str, list[dict[str, Any]]]:
     temp_directory.mkdir(parents=True, exist_ok=True)
-    connection = duckdb.connect()
+    connection = duckdb.connect(str(cache), read_only=True)
     connection.execute("SET temp_directory = ?", [str(temp_directory)])
     connection.execute("SET memory_limit = '12GB'")
     connection.execute("SET threads = 8")
     connection.execute("SET preserve_insertion_order = false")
-    connection.execute("CREATE TEMP TABLE wanted_insee(insee VARCHAR)")
-    connection.executemany("INSERT INTO wanted_insee VALUES (?)", [(value,) for value in insee_values])
     frame = connection.execute(
-        """SELECT
-              e.siret, e.siren,
-              e.codeCommuneEtablissement AS insee,
-              e.codePostalEtablissement AS postcode,
-              e.numeroVoieEtablissement AS number,
-              e.indiceRepetitionEtablissement AS repetition_index,
-              e.typeVoieEtablissement AS street_type,
-              e.libelleVoieEtablissement AS street,
-              e.denominationUsuelleEtablissement AS establishment_usual,
-              e.enseigne1Etablissement AS enseigne1,
-              e.enseigne2Etablissement AS enseigne2,
-              e.enseigne3Etablissement AS enseigne3,
-              u.denominationUniteLegale AS legal_denomination,
-              u.sigleUniteLegale AS legal_sigle,
-              u.denominationUsuelle1UniteLegale AS legal_usual1,
-              u.denominationUsuelle2UniteLegale AS legal_usual2,
-              u.denominationUsuelle3UniteLegale AS legal_usual3,
-              u.nomUniteLegale AS legal_last_name,
-              u.nomUsageUniteLegale AS legal_usage_name,
-              u.prenomUsuelUniteLegale AS legal_usual_first,
-              u.prenom1UniteLegale AS legal_first,
-              e.etatAdministratifEtablissement AS state
-           FROM read_parquet(?) e
-           JOIN wanted_insee w ON e.codeCommuneEtablissement=w.insee
-           LEFT JOIN read_parquet(?) u ON e.siren=u.siren""",
-        [str(establishments), str(legal_units)],
+        """SELECT * FROM official_candidates
+            WHERE insee IN (SELECT unnest(?::VARCHAR[]))""",
+        [insee_values],
     ).fetchdf()
     connection.close()
     result: dict[str, list[dict[str, Any]]] = defaultdict(list)
@@ -283,18 +482,23 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
     establishments = (args.plan.parent.parent / sources["sirene_establishments"]["path"]).resolve()
     legal_units = (args.plan.parent.parent / sources["sirene_legal_units"]["path"]).resolve()
     source_hashes = {
-        "sirene_establishments": sha256(establishments),
-        "sirene_legal_units": sha256(legal_units),
+        "sirene_establishments": sources["sirene_establishments"]["sha256"],
+        "sirene_legal_units": sources["sirene_legal_units"]["sha256"],
     }
-    for key, actual in source_hashes.items():
-        expected = sources[key]["sha256"]
-        if actual != expected:
-            raise ValueError(f"source hash mismatch for {key}: {actual}")
+    expected_row_count = int(sources["sirene_establishments"]["row_count"])
     variants = load_variants(args.db, args.run_id)
     if not variants:
         raise ValueError("no ACCEPT variants to audit")
+    cache, cache_metadata = ensure_official_cache(
+        args.official_cache_directory,
+        establishments,
+        legal_units,
+        source_hashes,
+        expected_row_count,
+        args.temp_directory,
+    )
     insee_values = sorted({value["crm"]["insee"] for value in variants})
-    candidates = query_candidates(establishments, legal_units, insee_values, args.temp_directory)
+    candidates = query_candidates(cache, insee_values, args.temp_directory)
     audited = []
     for value in variants:
         qualification = qualify_variant(
@@ -326,6 +530,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         "run_id": args.run_id,
         "ledger_sha256": sha256(args.db),
         "source_hashes": source_hashes,
+        "official_cache": {
+            **cache_metadata,
+            "path": str(cache),
+            "opened_read_only": True,
+        },
         "qualification_uses_retrieval_or_model_scores": False,
         "positive_injection": False,
         "geography_query": "exact_insee_and_postcode",
@@ -354,6 +563,12 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--plan", type=Path, default=ROOT / "config/synthetic_gt_corpus_plan.json")
     result.add_argument("--output", type=Path, required=True)
     result.add_argument("--temp-directory", type=Path, default=Path("/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/duckdb_synthetic_gt_full_exact"))
+    result.add_argument(
+        "--official-cache-directory",
+        type=Path,
+        default=DEFAULT_OFFICIAL_CACHE_DIRECTORY,
+        help="Persistent content-addressed read-only cache of official SIRENE columns.",
+    )
     result.set_defaults(func=run)
     return result
 

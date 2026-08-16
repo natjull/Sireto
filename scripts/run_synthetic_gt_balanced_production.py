@@ -27,6 +27,10 @@ DEFAULT_TEMP_ROOT = Path(
     "/Volumes/CATNAT_DATA/SIRETO_RECALL100/tmp/"
     "duckdb_synthetic_gt_full_exact_balanced_v1"
 )
+DEFAULT_AUDIT_CACHE_DIRECTORY = Path(
+    "/Volumes/CATNAT_DATA/SIRETO_RECALL100/cache/"
+    "synthetic_gt_full_sirene_exact"
+)
 
 
 def run(command: list[str]) -> None:
@@ -140,6 +144,7 @@ def ensure_batch(
             "--plan", str(args.corpus_plan),
             "--output", str(paths["audit"]),
             "--temp-directory", str(args.temp_root / batch_id),
+            "--official-cache-directory", str(args.audit_cache_directory),
         ])
 
     promotion_manifest = paths["promoted"] / "manifest.json"
@@ -194,6 +199,11 @@ def parser() -> argparse.ArgumentParser:
         default=ROOT / "config/synthetic_gt_agentic_message_schema_v2.json",
     )
     result.add_argument("--temp-root", type=Path, default=DEFAULT_TEMP_ROOT)
+    result.add_argument(
+        "--audit-cache-directory",
+        type=Path,
+        default=DEFAULT_AUDIT_CACHE_DIRECTORY,
+    )
     result.add_argument("--target", type=int, default=20_000)
     result.add_argument("--batch-target-count", type=int, default=200)
     result.add_argument("--selection-pool-limit", type=int, default=6000)
@@ -215,6 +225,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise ValueError("minimum promotion rate must be in (0, 1]")
     args.output_root.mkdir(parents=True, exist_ok=True)
     args.temp_root.mkdir(parents=True, exist_ok=True)
+    args.audit_cache_directory.mkdir(parents=True, exist_ok=True)
     batch_number = args.start_batch
     completed_batches = 0
     while True:
