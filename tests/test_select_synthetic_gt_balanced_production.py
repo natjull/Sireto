@@ -19,6 +19,8 @@ from scripts.select_synthetic_gt_balanced_production import (
     build_context_index,
     indexed_context_stub,
     read_indexed_contexts,
+    runtime_stable_punctuation_fragment,
+    safe_capabilities,
 )
 
 
@@ -45,6 +47,58 @@ def test_difficulty_combines_scene_and_operator_strength() -> None:
         "relation_tags": ["SAME_SIREN", "SAME_OFFICIAL_ADDRESS"]
     }]), hard_pair) == "HARD"
     assert pair_signature(hard_pair) == "name:TOKEN_ORDER+address:ADDRESS_TOKEN_SUBSET"
+
+
+def test_selector_rejects_only_runtime_unstable_no_space_punctuation_joins() -> None:
+    unsafe = {
+        "field": "name", "relation": "PUNCTUATION_REMOVED", "source_fold": 2,
+        "inspiration_ref": "unsafe",
+        "operation_parameters": {
+            "edits": [{"after_token_index": 0, "mark": "-", "replacement": ""}],
+        },
+    }
+    final_pair = {
+        **unsafe, "inspiration_ref": "final-pair",
+        "operation_parameters": {
+            "edits": [{"after_token_index": 1, "mark": "'", "replacement": ""}],
+        },
+    }
+    space_preserving = {
+        **unsafe, "inspiration_ref": "space",
+        "operation_parameters": {
+            "edits": [{"after_token_index": 0, "mark": "-", "replacement": " "}],
+        },
+    }
+    assert not runtime_stable_punctuation_fragment("JEAN-MARC MERMET", unsafe)
+    assert runtime_stable_punctuation_fragment("BUREAUX D'ORSAY", final_pair)
+    assert runtime_stable_punctuation_fragment("JEAN-MARC MERMET", space_preserving)
+    assert not runtime_stable_punctuation_fragment(
+        "JEAN-MARC MERMET",
+        {**unsafe, "operation_parameters": {"edits": "not-a-list"}},
+    )
+
+    value = {
+        "target_siret": "12345678900012",
+        "context_sha256": "a" * 64,
+        "target": {
+            "state": "A",
+            "names": [{"kind": "OFFICIAL_NAME", "value": "JEAN-MARC MERMET"}],
+            "address": {
+                "number": "1", "repetition_index": "", "street_type": "RUE",
+                "street": "DU TEST", "postcode": "75001", "city": "PARIS",
+                "insee": "75056",
+            },
+        },
+        "qualification": {},
+        "internal_context": [],
+    }
+    names, _locations = safe_capabilities(
+        value,
+        {("name", "PUNCTUATION_REMOVED"): [unsafe]},
+        Counter({"jean": 1, "marc": 1, "mermet": 1}),
+        allowed_name_relations=("PUNCTUATION_REMOVED",),
+    )
+    assert names == {"PUNCTUATION_REMOVED": []}
 
 
 def test_production_usage_reserves_cumulative_caps(tmp_path) -> None:

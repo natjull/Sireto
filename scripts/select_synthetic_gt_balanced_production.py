@@ -297,6 +297,42 @@ def difficulty(
     return "MEDIUM"
 
 
+def runtime_stable_punctuation_fragment(
+    source: str,
+    fragment: dict[str, Any],
+) -> bool:
+    """Reject no-space joins that the frozen runtime cannot re-identify.
+
+    ``PUNCTUATION_REMOVED`` records the original lexical boundary.  Removing
+    an internal mark without a space also removes one target-token boundary.
+    When more than one source token follows that join, the runtime's target
+    boundary index necessarily shifts: an exact surface such as
+    ``JEAN-MARC MERMET -> JEANMARC MERMET`` is reconstructed as a space edit
+    at boundary zero and can never satisfy the frozen parameters.  A join of
+    the final lexical pair remains stable because the shifted boundary is the
+    target suffix.  Leading/trailing mark removal and space-preserving edits
+    are stable as well.
+
+    This is selector-only and fail-closed.  It neither writes CRM text nor
+    relaxes runtime validation; explicit joined groups would require a future
+    contract version.
+    """
+    if fragment.get("relation") != "PUNCTUATION_REMOVED":
+        return True
+    word_count = len(loop.normalized_words(source))
+    edits = fragment.get("operation_parameters", {}).get("edits", [])
+    if not isinstance(edits, list):
+        return False
+    for edit in edits:
+        try:
+            boundary = int(edit.get("after_token_index", -99))
+        except (AttributeError, TypeError, ValueError):
+            return False
+        if edit.get("replacement") == "" and 0 <= boundary < word_count - 2:
+            return False
+    return True
+
+
 def safe_capabilities(
     context: dict[str, Any],
     grouped: dict[tuple[str, str], list[dict[str, Any]]],
@@ -329,6 +365,7 @@ def safe_capabilities(
             value for value in grouped.get((field, relation), [])
             if value.get("operation_parameters", {}).get("source_token_count", source_count)
             == source_count
+            and runtime_stable_punctuation_fragment(source, value)
         ]
         result = [
             value for value in possible
