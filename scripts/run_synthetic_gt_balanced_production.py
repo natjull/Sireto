@@ -74,6 +74,7 @@ def ensure_batch(args: argparse.Namespace, batch_number: int) -> int:
             "--target-count", str(args.batch_target_count),
             "--selection-seed", f"SIRETO-BALANCED-{batch_id}",
             "--production-registry", str(args.registry),
+            "--selection-pool-limit", str(args.selection_pool_limit),
         ])
 
     if not paths["db"].exists():
@@ -104,7 +105,7 @@ def ensure_batch(args: argparse.Namespace, batch_number: int) -> int:
             "--adjudicator-reasoning-effort", "max",
             "--concurrency", str(args.concurrency),
             "--lease-ttl-seconds", "1800",
-            "--agent-timeout-seconds", "600",
+            "--agent-timeout-seconds", "180",
             "--transport-retries", "2",
         ])
 
@@ -173,7 +174,8 @@ def parser() -> argparse.ArgumentParser:
     )
     result.add_argument("--temp-root", type=Path, default=DEFAULT_TEMP_ROOT)
     result.add_argument("--target", type=int, default=20_000)
-    result.add_argument("--batch-target-count", type=int, default=100)
+    result.add_argument("--batch-target-count", type=int, default=200)
+    result.add_argument("--selection-pool-limit", type=int, default=6000)
     result.add_argument("--start-batch", type=int, default=1)
     result.add_argument("--concurrency", type=int, default=64)
     result.add_argument("--minimum-promotion-rate", type=float, default=0.70)
