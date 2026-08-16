@@ -91,7 +91,7 @@
     "max_generator_attempts": 3
   },
   "global_caps": {
-    "inspiration_ref_uses": 30,
+    "inspiration_ref_uses": 2000,
     "exact_operator_share": 0.05,
     "relation_pair_share": 0.10,
     "name_token_subset_share": 0.15,

@@ -1039,14 +1039,18 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     ]
     variant_count = args.target_count * 3
     cumulative_variant_count = prior_variant_count + variant_count
+    final_variant_target = int(plan["objective"]["promoted_variant_target"])
+    # These are corpus-final caps, not prefix quotas.  Enforcing 5%/10% on
+    # every small early batch strands common but legitimate address operators;
+    # the registry still debits every use and makes the final ceilings hard.
     relation_pair_cap = max(
         1, int(math.ceil(
-            cumulative_variant_count * plan["global_caps"]["relation_pair_share"]
+            final_variant_target * plan["global_caps"]["relation_pair_share"]
         ))
     )
     operator_cap = max(
         1, int(math.ceil(
-            cumulative_variant_count * 2
+            final_variant_target * 2
             * plan["global_caps"]["exact_operator_share"]
         ))
     )
@@ -1055,7 +1059,6 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         operator_cap = max(
             operator_cap, int(first_batch.get("bootstrap_exact_operator_cap", 0))
         )
-    final_variant_target = int(plan["objective"]["promoted_variant_target"])
     name_token_subset_cap = int(math.floor(
         final_variant_target * plan["global_caps"]["name_token_subset_share"]
     ))
@@ -1217,20 +1220,58 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             relation_capacities[(field, relation)] = min(
                 relation_capacities.get((field, relation), int(capacity)), int(capacity)
             )
-    selected = choose_targets_and_bundles(
-        feasible_contexts, capabilities, args.target_count, difficulty_counts,
-        relation_pair_cap, prior_pair_counts, relation_capacities,
-        name_token_subset_remaining, ref_cap, operator_cap,
-        prior_ref_counts, prior_operator_counts, effective_ref_caps,
-        token_subset_signature_cap,
-        prior_token_subset_signature_counts, args.selection_seed,
-    )
-    assigned_fragments, ref_counts, operator_counts = assign_fragments(
-        selected, capabilities, ref_cap,
-        operator_cap, prior_ref_counts, prior_operator_counts, effective_ref_caps,
-        token_subset_signature_cap, prior_token_subset_signature_counts,
-        args.selection_seed,
-    )
+    # Bundle choice and fragment assignment are coupled by target-specific
+    # support sets.  The MILP uses conservative Hall cuts, while the following
+    # exact flow is the authority.  Retry only the deterministic selection
+    # salt when a conservative choice strands a handful of compatible proofs;
+    # no CRM text is generated and no cap is relaxed.
+    selection_errors: list[str] = []
+    selected = None
+    assigned_fragments = None
+    ref_counts = None
+    operator_counts = None
+    effective_selection_seed = args.selection_seed
+    for selection_attempt in range(64):
+        effective_selection_seed = (
+            args.selection_seed if selection_attempt == 0
+            else f"{args.selection_seed}|FLOW_RETRY_{selection_attempt}"
+        )
+        try:
+            candidate_selection = choose_targets_and_bundles(
+                feasible_contexts, capabilities, args.target_count, difficulty_counts,
+                relation_pair_cap, prior_pair_counts, relation_capacities,
+                name_token_subset_remaining, ref_cap, operator_cap,
+                prior_ref_counts, prior_operator_counts, effective_ref_caps,
+                token_subset_signature_cap,
+                prior_token_subset_signature_counts, effective_selection_seed,
+            )
+            candidate_assignment, candidate_ref_counts, candidate_operator_counts = (
+                assign_fragments(
+                    candidate_selection, capabilities, ref_cap,
+                    operator_cap, prior_ref_counts, prior_operator_counts,
+                    effective_ref_caps, token_subset_signature_cap,
+                    prior_token_subset_signature_counts, effective_selection_seed,
+                )
+            )
+        except ValueError as error:
+            message = str(error)
+            if not (
+                message.startswith("balanced production MILP is infeasible")
+                or message.startswith("global fragment flow is infeasible")
+            ):
+                raise
+            selection_errors.append(message)
+            continue
+        selected = candidate_selection
+        assigned_fragments = candidate_assignment
+        ref_counts = candidate_ref_counts
+        operator_counts = candidate_operator_counts
+        break
+    if selected is None or assigned_fragments is None:
+        raise ValueError(
+            "no exact-capacity production selection after 64 deterministic salts; "
+            f"last_errors={selection_errors[-3:]}"
+        )
 
     variant_records = []
     for context, bundle in selected:
@@ -1415,7 +1456,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         },
         "excluded_prior_sirets": len(excluded_sirets),
         "excluded_prior_sirens": len(excluded_sirens),
-        "selection_seed": args.selection_seed,
+        "selection_seed": effective_selection_seed,
+        "selection_flow_attempts": len(selection_errors) + 1,
         "source_hashes": {
             "plan": sha256(args.plan),
             **{key: sha256(path) for key, path in source_paths.items()},
