@@ -14,6 +14,7 @@ import hashlib
 import itertools
 import json
 import math
+import os
 from pathlib import Path
 import sys
 from typing import Any, Sequence
@@ -71,6 +72,7 @@ TOKEN_SUBSET_ORG_DESCRIPTORS = {
     "association", "entreprise", "societe", "groupe", "hotel", "garage", "centre",
     "cabinet", "clinique", "ecole", "college", "lycee", "restaurant", "transports",
 }
+CONTEXT_INDEX_SCHEMA = "sireto-balanced-selector-context-index-1"
 
 
 def sha256(path: Path) -> str:
@@ -79,6 +81,12 @@ def sha256(path: Path) -> str:
 
 def rows(path: Path) -> list[dict[str, Any]]:
     return fragments.rows(path)
+
+
+def canonical_digest(value: Any) -> str:
+    return hashlib.sha256(json.dumps(
+        value, ensure_ascii=False, sort_keys=True, separators=(",", ":"),
+    ).encode("utf-8")).hexdigest()
 
 
 def exact_counts(total: int, shares: dict[str, float]) -> dict[str, int]:
@@ -522,6 +530,153 @@ def official_name_alias_fragments(context: dict[str, Any]) -> list[dict[str, Any
     return sorted(result, key=lambda value: value["inspiration_ref"])
 
 
+def context_index_cache_key(source_sha256: str, source_size: int) -> str:
+    """Address an index by both its official input and eligibility semantics."""
+    semantic_sources = [
+        Path(__file__),
+        Path(fragments.__file__),
+        Path(fragments.legacy.__file__),
+        Path(loop.__file__),
+    ]
+    return canonical_digest({
+        "schema_version": CONTEXT_INDEX_SCHEMA,
+        "source_sha256": source_sha256,
+        "source_size": source_size,
+        "semantic_source_hashes": {
+            path.name: sha256(path) for path in semantic_sources
+        },
+    })
+
+
+def context_index_content_digest(
+    entries: Sequence[dict[str, Any]], document_frequencies: Counter[str],
+) -> str:
+    return canonical_digest({
+        "entries": entries,
+        "document_frequencies": dict(sorted(document_frequencies.items())),
+    })
+
+
+def build_context_index(
+    source: Path, source_sha256: str, cache_directory: Path,
+) -> tuple[list[dict[str, Any]], Counter[str]]:
+    """Build a sealed byte-offset index without retaining the 2.4 GiB source.
+
+    Eligibility and global token document frequencies are evaluated by the
+    exact production functions.  Only immutable selection metadata is cached;
+    full contexts are re-read byte-for-byte for the deterministic capability
+    pool.
+    """
+    source_size = source.stat().st_size
+    cache_key = context_index_cache_key(source_sha256, source_size)
+    cache_path = cache_directory / f"{cache_key}.json"
+    if cache_path.exists():
+        try:
+            payload = json.loads(cache_path.read_text(encoding="utf-8"))
+            entries = payload["entries"]
+            document_frequencies = Counter(payload["document_frequencies"])
+            if (
+                payload.get("schema_version") == CONTEXT_INDEX_SCHEMA
+                and payload.get("cache_key") == cache_key
+                and payload.get("source_sha256") == source_sha256
+                and payload.get("source_size") == source_size
+                and payload.get("content_sha256") == context_index_content_digest(
+                    entries, document_frequencies,
+                )
+            ):
+                return entries, document_frequencies
+        except (KeyError, OSError, TypeError, ValueError, json.JSONDecodeError):
+            # A partial/stale derived artifact is never authoritative. Rebuild
+            # it from the already hash-checked official source.
+            pass
+
+    entries: list[dict[str, Any]] = []
+    document_frequencies: Counter[str] = Counter()
+    with source.open("rb") as stream:
+        source_index = 0
+        while True:
+            offset = stream.tell()
+            raw = stream.readline()
+            if not raw:
+                break
+            if not raw.strip():
+                continue
+            context = json.loads(raw)
+            alias_available = bool(official_name_alias_fragments(context))
+            document_frequencies.update(set(loop.normalized_words(
+                fragments.legacy.primary_name(context)
+            )))
+            entries.append({
+                "source_index": source_index,
+                "offset": offset,
+                "length": len(raw),
+                "target_siret": context["target_siret"],
+                "target_siren": context["target_siren"],
+                "state": context["target"]["state"],
+                "regular_eligible": bool(fragments.eligible(context)),
+                "alias_eligible": bool(
+                    alias_available and eligible_for_official_alias(context)
+                ),
+                "alias_available": alias_available,
+                "structural_easy_priority": int(
+                    context["target"]["state"] == "A" and not context_flags(context)
+                ) * 3,
+            })
+            source_index += 1
+    payload = {
+        "schema_version": CONTEXT_INDEX_SCHEMA,
+        "cache_key": cache_key,
+        "source_sha256": source_sha256,
+        "source_size": source_size,
+        "entries": entries,
+        "document_frequencies": dict(sorted(document_frequencies.items())),
+        "content_sha256": context_index_content_digest(
+            entries, document_frequencies,
+        ),
+    }
+    cache_directory.mkdir(parents=True, exist_ok=True)
+    temporary = cache_path.with_name(f".{cache_path.name}.{os.getpid()}.tmp")
+    temporary.write_text(
+        json.dumps(payload, ensure_ascii=False, sort_keys=True, separators=(",", ":")),
+        encoding="utf-8",
+    )
+    os.replace(temporary, cache_path)
+    return entries, document_frequencies
+
+
+def indexed_context_stub(entry: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "target_siret": entry["target_siret"],
+        "target_siren": entry["target_siren"],
+        "target": {"state": entry["state"]},
+        "_context_source_index": entry["source_index"],
+        "_context_offset": entry["offset"],
+        "_context_length": entry["length"],
+    }
+
+
+def read_indexed_contexts(
+    source: Path, selected_stubs: Sequence[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Read selected contexts in source order, then restore pool order."""
+    requested = {
+        int(value["_context_source_index"]): value for value in selected_stubs
+    }
+    loaded: dict[int, dict[str, Any]] = {}
+    with source.open("rb") as stream:
+        for source_index, value in sorted(requested.items()):
+            stream.seek(int(value["_context_offset"]))
+            raw = stream.read(int(value["_context_length"]))
+            context = json.loads(raw)
+            if (
+                context.get("target_siret") != value["target_siret"]
+                or context.get("target_siren") != value["target_siren"]
+            ):
+                raise ValueError("official-context index identity mismatch")
+            loaded[source_index] = context
+    return [loaded[int(value["_context_source_index"])] for value in selected_stubs]
+
+
 def candidate_bundles(
     context: dict[str, Any],
     names: dict[str, list[dict[str, Any]]],
@@ -780,7 +935,8 @@ def choose_targets_and_bundles(
                 for pair in bundle
             )
             for index, (context_index, bundle) in enumerate(options)
-        }, difficulty_counts[level], difficulty_counts[level], "DIFFICULTY")
+        }, difficulty_minimum_additions[level],
+           difficulty_maximum_additions[level], "DIFFICULTY")
     add({
         index: sum(pair[0] == "TOKEN_SUBSET" for pair in bundle)
         for index, (_context_index, bundle) in enumerate(options)
@@ -902,6 +1058,22 @@ def choose_targets_and_bundles(
                 if coefficients:
                     add(coefficients, 0, capacity, f"HALL_{_resource_kind}")
 
+    # Minimize the batch difficulty L-infinity deviation in the same MILP.
+    # The former exact solve + relaxed solve + binary search could consume one
+    # 180-second and several 60-second HiGHS time limits even though all those
+    # solves used the same variables and guards.  A single bounded integer
+    # deviation variable is mathematically equivalent and leaves every final
+    # quota remainder, quality guard, Hall cut and cumulative cap unchanged.
+    tolerance_index = variable_count
+    for level, difficulty_row in difficulty_rows.items():
+        coefficients = dict(constraint_rows[difficulty_row])
+        coefficients[tolerance_index] = -1
+        add(coefficients, -np.inf, difficulty_counts[level], "DIFFICULTY")
+        coefficients = dict(constraint_rows[difficulty_row])
+        coefficients[tolerance_index] = 1
+        add(coefficients, difficulty_counts[level], np.inf, "DIFFICULTY")
+
+    decision_variable_count = variable_count + 1
     matrix_rows: list[int] = []
     matrix_columns: list[int] = []
     matrix_values: list[float] = []
@@ -913,70 +1085,31 @@ def choose_targets_and_bundles(
                 matrix_values.append(coefficient)
     matrix = coo_matrix(
         (matrix_values, (matrix_rows, matrix_columns)),
-        shape=(len(constraint_rows), variable_count),
+        shape=(len(constraint_rows), decision_variable_count),
     ).tocsr()
-    objective = np.asarray([
-        1000.0 + int(hashlib.sha256(
-            f"{selection_seed}|option|{context_by_index[context_index]['target_siret']}|"
-            f"{'|'.join(pair_signature(value) for value in bundle)}".encode()
-        ).hexdigest()[:16], 16) / float(2**64)
-        for context_index, bundle in options
-    ])
-    def solve_with_bounds(
-        lower: Sequence[float], upper: Sequence[float], *, time_limit: int = 180,
-    ) -> Any:
-        return milp(
-            objective,
-            integrality=np.ones(variable_count),
-            bounds=Bounds(np.zeros(variable_count), np.ones(variable_count)),
-            constraints=LinearConstraint(matrix, lower, upper),
-            options={"time_limit": time_limit},
-        )
-
-    solution = solve_with_bounds(minima, maxima)
-    # The corpus-final 20/50/30 mix is the invariant.  Requiring every finite
-    # batch to reproduce it exactly can become impossible after target/cap
-    # exclusions, even though the remaining corpus is feasible.  Prefer exact;
-    # otherwise find the smallest integer L-infinity deviation while never
-    # exceeding any final-quota remainder.  At 20k, the three upper bounds and
-    # the fixed total force the final mix to be exact.
-    difficulty_tolerance = 0
-    if not solution.success or solution.x is None:
-        def bounds_for_tolerance(tolerance: int) -> tuple[list[float], list[float]]:
-            lower = list(minima)
-            upper = list(maxima)
-            for level, row_index in difficulty_rows.items():
-                lower[row_index] = max(
-                    difficulty_minimum_additions[level],
-                    difficulty_counts[level] - tolerance,
-                )
-                upper[row_index] = min(
-                    difficulty_maximum_additions[level],
-                    difficulty_counts[level] + tolerance,
-                )
-                if lower[row_index] > upper[row_index]:
-                    raise ValueError(
-                        f"final difficulty quota exhausted for {level}: "
-                        f"{lower[row_index]}>{upper[row_index]}"
-                    )
-            return lower, upper
-
-        low, high = 0, variant_count
-        high_lower, high_upper = bounds_for_tolerance(high)
-        best = solve_with_bounds(high_lower, high_upper)
-        if best.success and best.x is not None:
-            while low + 1 < high:
-                middle = (low + high) // 2
-                middle_lower, middle_upper = bounds_for_tolerance(middle)
-                candidate = solve_with_bounds(
-                    middle_lower, middle_upper, time_limit=60,
-                )
-                if candidate.success and candidate.x is not None:
-                    high, best = middle, candidate
-                else:
-                    low = middle
-            difficulty_tolerance = high
-            solution = best
+    # One unit of deviation dominates the largest possible target-count change.
+    # Among minimum-deviation solutions, minimize the number of selected targets.
+    # HiGHS is deterministic for this stably ordered matrix; an arbitrary random
+    # tie objective previously forced it to prove a scientifically meaningless
+    # optimum among thousands of otherwise equivalent targets.
+    objective = np.concatenate((
+        np.ones(variable_count),
+        np.asarray([float(maximum_target_count + 1)]),
+    ))
+    solution = milp(
+        objective,
+        integrality=np.ones(decision_variable_count),
+        bounds=Bounds(
+            np.zeros(decision_variable_count),
+            np.concatenate((np.ones(variable_count), [float(variant_count)])),
+        ),
+        constraints=LinearConstraint(matrix, minima, maxima),
+        options={"time_limit": 180},
+    )
+    difficulty_tolerance = (
+        int(round(solution.x[tolerance_index]))
+        if solution.success and solution.x is not None else 0
+    )
     if not solution.success or solution.x is None:
         diagnostic: dict[str, Any] = {
             "contexts_by_state": dict(Counter(
@@ -1053,9 +1186,14 @@ def choose_targets_and_bundles(
                     if value != label
                 ]
                 relaxed = milp(
-                    np.zeros(variable_count),
-                    integrality=np.ones(variable_count),
-                    bounds=Bounds(np.zeros(variable_count), np.ones(variable_count)),
+                    np.zeros(decision_variable_count),
+                    integrality=np.ones(decision_variable_count),
+                    bounds=Bounds(
+                        np.zeros(decision_variable_count),
+                        np.concatenate((
+                            np.ones(variable_count), [float(variant_count)]
+                        )),
+                    ),
                     constraints=LinearConstraint(
                         matrix[keep],
                         np.asarray(minima)[keep], np.asarray(maxima)[keep],
@@ -1078,14 +1216,17 @@ def choose_targets_and_bundles(
                             for pair in bundle
                         )
                         for context_index, bundle in options
-                    ], dtype=float)
+                    ] + [0], dtype=float)
                     endpoints = []
                     for direction in (1.0, -1.0):
                         endpoint = milp(
                             direction * coefficients,
-                            integrality=np.ones(variable_count),
+                            integrality=np.ones(decision_variable_count),
                             bounds=Bounds(
-                                np.zeros(variable_count), np.ones(variable_count)
+                                np.zeros(decision_variable_count),
+                                np.concatenate((
+                                    np.ones(variable_count), [float(variant_count)]
+                                )),
                             ),
                             constraints=LinearConstraint(
                                 matrix[keep], np.asarray(minima)[keep],
@@ -1399,23 +1540,68 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     all_excluded_inputs = [
         *args.exclude_seed_input, *args.prior_counted_seed_input,
     ]
-    all_contexts = rows(source_paths["official_context"])
-    document_frequencies = fragments.name_token_document_frequencies(all_contexts)
     excluded_sirets, excluded_sirens = fragments.excluded_target_ids(all_excluded_inputs)
     excluded_sirets.update(registry_sirets)
     excluded_sirens.update(registry_sirens)
-    contexts = [
-        value for value in all_contexts
-        if value["target_siret"] not in excluded_sirets
-        and value["target_siren"] not in excluded_sirens
-        and (
-            fragments.eligible(value)
-            or (
-                "OFFICIAL_NAME_ALIAS" in allowed_name_relations
-                and eligible_for_official_alias(value)
-            )
+    indexed_contexts = not args.disable_context_index_cache
+    if indexed_contexts:
+        cache_directory = (
+            args.context_index_cache_directory
+            if args.context_index_cache_directory is not None
+            else source_paths["official_context"].parent
+            / ".balanced_selector_context_index"
         )
-    ]
+        context_entries, document_frequencies = build_context_index(
+            source_paths["official_context"],
+            plan["sources"]["official_context"]["sha256"],
+            cache_directory,
+        )
+        eligible_entries = [
+            value for value in context_entries
+            if value["target_siret"] not in excluded_sirets
+            and value["target_siren"] not in excluded_sirens
+            and (
+                value["regular_eligible"]
+                or (
+                    "OFFICIAL_NAME_ALIAS" in allowed_name_relations
+                    and value["alias_eligible"]
+                )
+            )
+        ]
+        contexts = [indexed_context_stub(value) for value in eligible_entries]
+        official_alias_available = {
+            value["target_siret"]: bool(value["alias_available"])
+            for value in eligible_entries
+        }
+        structural_easy_priority = {
+            value["target_siret"]: int(value["structural_easy_priority"])
+            for value in eligible_entries
+        }
+    else:
+        all_contexts = rows(source_paths["official_context"])
+        document_frequencies = fragments.name_token_document_frequencies(all_contexts)
+        contexts = [
+            value for value in all_contexts
+            if value["target_siret"] not in excluded_sirets
+            and value["target_siren"] not in excluded_sirens
+            and (
+                fragments.eligible(value)
+                or (
+                    "OFFICIAL_NAME_ALIAS" in allowed_name_relations
+                    and eligible_for_official_alias(value)
+                )
+            )
+        ]
+        official_alias_available = {
+            value["target_siret"]: bool(official_name_alias_fragments(value))
+            for value in contexts
+        }
+        structural_easy_priority = {
+            value["target_siret"]: (
+                3 if value["target"]["state"] == "A" and not context_flags(value) else 0
+            )
+            for value in contexts
+        }
     cumulative_variant_count = prior_variant_count + variant_count
     final_variant_target = int(plan["objective"]["promoted_variant_target"])
     maximum_unique_targets = int(plan["objective"]["maximum_unique_targets"])
@@ -1484,20 +1670,14 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         args.selection_pool_limit
         if args.selection_pool_limit > 0 else max(3000, variant_count)
     )
-    official_alias_available = {
-        value["target_siret"]: bool(official_name_alias_fragments(value))
-        for value in contexts
-    }
-    structural_easy_priority = {
-        value["target_siret"]: (
-            3 if value["target"]["state"] == "A" and not context_flags(value) else 0
-        )
-        for value in contexts
-    }
-    capability_contexts = stratified_context_pool(
+    capability_pool = stratified_context_pool(
         contexts, capability_pool_limit,
         f"{args.selection_seed}|capability", official_alias_available,
         structural_easy_priority, active_share=2 / 3,
+    )
+    capability_contexts = (
+        read_indexed_contexts(source_paths["official_context"], capability_pool)
+        if indexed_contexts else capability_pool
     )
     for context in capability_contexts:
         names, locations = safe_capabilities(
@@ -1971,6 +2151,17 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--selection-pool-limit", type=int, default=0,
         help="Bound costly capability materialization (0 = max(3000, 3*target-count)).",
+    )
+    result.add_argument(
+        "--context-index-cache-directory", type=Path,
+        help=(
+            "Content-addressed official-context index directory (default: a "
+            "derived cache next to the official-context artifact)."
+        ),
+    )
+    result.add_argument(
+        "--disable-context-index-cache", action="store_true",
+        help="Compatibility/benchmark path: load the full official context in memory.",
     )
     result.add_argument(
         "--diagnose-infeasible", action="store_true",

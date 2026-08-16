@@ -1,6 +1,7 @@
 import json
 from collections import Counter
 
+from scripts import select_synthetic_gt_balanced_production as selector
 from scripts.select_synthetic_gt_balanced_production import (
     difficulty,
     exact_counts,
@@ -15,6 +16,9 @@ from scripts.select_synthetic_gt_balanced_production import (
     maximum_batch_target_additions,
     materializable_relation_pair_count,
     stratified_context_pool,
+    build_context_index,
+    indexed_context_stub,
+    read_indexed_contexts,
 )
 
 
@@ -263,3 +267,59 @@ def test_one_exact_relation_pair_is_a_materializable_capability() -> None:
         {"TOKEN_ORDER": [{"op": 1}], "TOKEN_SUBSET": []},
         {("address", "ADDRESS_ABBREVIATE"): [{"op": 2}]},
     ) == 1
+
+
+def test_context_index_is_sealed_reusable_and_restores_requested_order(
+    tmp_path, monkeypatch,
+) -> None:
+    def official_context(suffix: str, name: str, state: str) -> dict:
+        return {
+            "target_siret": f"123456789000{suffix}",
+            "target_siren": f"12345678{suffix}",
+            "context_sha256": suffix * 64,
+            "target": {
+                "state": state,
+                "names": [{"kind": "OFFICIAL_NAME", "value": name}],
+                "address": {
+                    "number": "1", "repetition_index": "",
+                    "street_type": "RUE", "street": "DU TEST",
+                    "postcode": "75001", "city": "PARIS", "insee": "75056",
+                },
+            },
+            "qualification": {},
+            "internal_context": [],
+        }
+
+    expected = [
+        official_context("1", "ALPHA BETA", "A"),
+        official_context("2", "ALPHA GAMMA", "F"),
+    ]
+    source = tmp_path / "official.jsonl"
+    source.write_text(
+        "".join(json.dumps(value, ensure_ascii=False) + "\n" for value in expected),
+        encoding="utf-8",
+    )
+    monkeypatch.setattr(selector.fragments, "eligible", lambda _value: True)
+    entries, frequencies = build_context_index(
+        source, selector.sha256(source), tmp_path / "cache",
+    )
+    assert [value["target_siret"] for value in entries] == [
+        value["target_siret"] for value in expected
+    ]
+    assert frequencies == {"alpha": 2, "beta": 1, "gamma": 1}
+
+    # A valid hit must not re-run eligibility over the large official source.
+    monkeypatch.setattr(
+        selector.fragments, "eligible",
+        lambda _value: (_ for _ in ()).throw(AssertionError("cache miss")),
+    )
+    cached_entries, cached_frequencies = build_context_index(
+        source, selector.sha256(source), tmp_path / "cache",
+    )
+    assert cached_entries == entries
+    assert cached_frequencies == frequencies
+    reversed_contexts = read_indexed_contexts(
+        source,
+        [indexed_context_stub(value) for value in reversed(cached_entries)],
+    )
+    assert reversed_contexts == list(reversed(expected))
