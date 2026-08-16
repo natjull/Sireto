@@ -4647,6 +4647,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   alias supplémentaires, soit 13 633 cumulés. Le cap alias est donc porté à
   68,2 % (13 640, marge 7); paire 25 %, opérateur 4 200, référence 4 100,
   subset et toutes les validations restent inchangés.
+- Marge d'arrondi après promotion P036 : commit `40f99c7` (`fix: reserve
+  terminal identity rounding margin`). P036 promeut 645/671 variantes et porte
+  le registre à 19 974. Le reliquat exact A/F=19/7 ne peut dépasser
+  5 304/(5 304+4 439)=54,43908 % d'identités actives, même avec une identité
+  par variante active et trois variantes par identité fermée. Le plancher est
+  borné à 54,40 % afin d'absorber les rejets fail-closed terminaux; plafond,
+  états, difficultés, caps et validations restent inchangés.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
