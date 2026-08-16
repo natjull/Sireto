@@ -4527,6 +4527,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `G_N_A`, puis publie par renommage exclusif. Exercé sur le canary v8, il
   promeut exactement les 8 seeds/24 variantes réellement exactes et exclut
   l'ambiguïté `L'HOSPITAL` ainsi que la seed incomplète.
+- Cache d'audit full-SIRENE : commit `de18d52` (`perf: cache official SIRENE
+  audit projection`). Le premier audit sans cache vérifie les SHA-256 des deux
+  parquets gelés, matérialise une unique projection officielle préjointe et
+  indexée par INSEE, puis la publie atomiquement en lecture seule sous une clé
+  dérivée des SHA sources et du schéma SQL. Les lots suivants valident le
+  sceau, le compte de 42 322 035 lignes, les tables et colonnes exactes, puis
+  ouvrent uniquement ce cache en `read_only`; aucune donnée CRM, cible,
+  décision, score ou rang n'y entre. `qualify_variant` et ses gates sont
+  inchangés. Tests ciblés : 10 passants. P009 était déjà audité/promu et ses
+  artefacts n'ont pas été touchés; la construction lourde est laissée au
+  premier audit ultérieur afin de ne pas concurrencer un lot actif.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
