@@ -4602,6 +4602,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `2cfeda71319e4f1e`, et les 35 tests ciblés passent. Le contexte officiel v10
   est scellé sous `f0b0a5645efc62b9`; la banque train-only v4, folds 2/3/4 et
   sans modèle/retrieval, sous `f4a1cefc96514e5b`.
+- Avenant de capacité résiduelle après P032 : commits `b4b61d9` (`fix:
+  preserve reachable final identity balance`) et `8fa2e0d` (`fix: seal
+  residual synthetic capacity avenant`). Le préfixe réel de 17 616 promotions
+  compte A/F=8 802/8 814 variantes et 4 216/4 034 identités. Les rejets
+  fail-closed ont rendu le plan initial couplé 55 % / alias 60 % / paire 20 %
+  infaisable : le diagnostic LP donne seulement 91,56 HARD disponibles sous
+  le mix état-identité alors que 543 restent requis. L'avenant borné conserve
+  exactement E/M/H=20/55/25, A/F=50/50, le plafond identitaire 59 %, max trois
+  variantes/SIRET, tous les caps opérateur/référence/subset et toutes les
+  validations ; seuls le plancher d'identités actives (54,5 %), l'alias (65 %)
+  et la paire (25 %) changent. Le certificat final sans override sélectionne
+  exactement 2 384 variantes résiduelles sur 1 616 identités, A/F=1 198/1 186,
+  E/M/H=440/1 401/543, passe le flow exact au premier essai et borne les maxima
+  cumulés opérateur/référence à 3 818/3 754 sous les caps 4 200/4 100. SHA-256
+  seed `8dc90749c645a8a5`, manifest `55842f2f96c42880`; les 35 tests ciblés
+  passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
