@@ -12,6 +12,7 @@ from scripts.select_synthetic_gt_balanced_production import (
     eligible_for_official_alias,
     adapt_strata_to_easy_capacity,
     candidate_bundles,
+    maximum_batch_target_additions,
     stratified_context_pool,
 )
 
@@ -245,3 +246,12 @@ def test_candidate_bundles_keep_a_single_safe_runtime_contract() -> None:
     )
     assert len(bundles) == 1
     assert len(bundles[0]) == 1
+
+
+def test_unique_target_budget_reserves_three_per_future_target() -> None:
+    assert maximum_batch_target_additions(
+        3_723, 1_335, 600, 20_000, 8_000, 3,
+    ) == 1_439
+    assert maximum_batch_target_additions(
+        19_873, 7_900, 127, 20_000, 8_000, 3,
+    ) == 100

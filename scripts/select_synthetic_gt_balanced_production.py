@@ -154,11 +154,35 @@ def adapt_strata_to_easy_capacity(
     return result
 
 
+def maximum_batch_target_additions(
+    prior_variants: int,
+    prior_targets: int,
+    batch_variants: int,
+    final_variants: int,
+    maximum_targets: int,
+    maximum_variants_per_target: int,
+) -> int:
+    """Reserve enough unique-target slots for the exact corpus residual."""
+    if (
+        min(prior_variants, prior_targets, batch_variants) < 0
+        or final_variants <= 0
+        or maximum_targets <= 0
+        or maximum_variants_per_target <= 0
+        or prior_variants + batch_variants > final_variants
+    ):
+        raise ValueError("invalid unique-target budget inputs")
+    future_minimum_targets = math.ceil(
+        (final_variants - prior_variants - batch_variants)
+        / maximum_variants_per_target
+    )
+    return maximum_targets - prior_targets - future_minimum_targets
+
+
 def registry_usage(
     path: Path,
 ) -> tuple[
     int, Counter[str], Counter[str], Counter[str], Counter[str], Counter[str],
-    Counter[str], set[str], set[str], str,
+    Counter[str], int, set[str], set[str], str,
 ]:
     production_registry = registry_lib.load_registry(path)
     snapshot = registry_lib.snapshot(production_registry)
@@ -172,6 +196,7 @@ def registry_usage(
         Counter(snapshot["difficulty_counts"]),
         Counter(snapshot["augmentation_stratum_counts"]),
         Counter(snapshot["name_token_subset_signature_counts"]),
+        int(snapshot["distinct_target_sirets"]),
         set(snapshot["excluded_target_sirets"]),
         set(snapshot["excluded_target_sirens"]),
         sha256(path),
@@ -635,7 +660,8 @@ def stratified_context_pool(
 def choose_targets_and_bundles(
     contexts: list[dict[str, Any]],
     capabilities: dict[str, tuple[dict[str, Any], dict[tuple[str, str], Any]]],
-    target_count: int,
+    variant_count: int,
+    maximum_target_count: int,
     difficulty_counts: dict[str, int],
     difficulty_minimum_additions: dict[str, int],
     difficulty_maximum_additions: dict[str, int],
@@ -657,7 +683,7 @@ def choose_targets_and_bundles(
     context_by_index: list[dict[str, Any]] = []
     # Authoritative aliases are comparatively rare and are the safe source of
     # easy capacity.  Keep them before deterministic thinning of ordinary rows.
-    pool_limit = max(3000, 3 * target_count)
+    pool_limit = max(3000, variant_count)
     alias_available = {
         value["target_siret"]: bool(
             capabilities[value["target_siret"]][0].get("OFFICIAL_NAME_ALIAS")
@@ -703,7 +729,6 @@ def choose_targets_and_bundles(
         constraint_labels.append(label)
         return len(constraint_rows) - 1
 
-    variant_count = target_count * 3
     add({
         index: len(bundle)
         for index, (_context_index, bundle) in enumerate(options)
@@ -713,20 +738,31 @@ def choose_targets_and_bundles(
         option_by_context[context_index].append(option_index)
     for indexes in option_by_context.values():
         add({index: 1 for index in indexes}, 0, 1, "TARGET_UNIQUENESS")
-    for state in ("A", "F"):
+    add(
+        {index: 1 for index in range(variable_count)},
+        math.ceil(variant_count / 3), maximum_target_count, "TARGET_COUNT",
+    )
+    # Normal batches remain exactly state-balanced.  A tiny terminal residual
+    # must instead be free to fill whichever final difficulty/stratum cells are
+    # still missing; state is not a registered final quota.  This avoids an
+    # impossible last one-to-nineteen rows without changing any quality guard.
+    if variant_count >= 20:
+        state_minimum = variant_count // 2
+        state_maximum = variant_count - state_minimum
+        for state in ("A", "F"):
+            add({
+                index: len(bundle)
+                for index, (context_index, bundle) in enumerate(options)
+                if context_by_index[context_index]["target"]["state"] == state
+            }, state_minimum, state_maximum, "STATE_VARIANTS")
+        # Target weights are normalized by promoted variants downstream.
         add({
-            index: len(bundle)
-            for index, (context_index, bundle) in enumerate(options)
-            if context_by_index[context_index]["target"]["state"] == state
-        }, variant_count // 2, variant_count // 2, "STATE_VARIANTS")
-    # Target weights are normalized by promoted variants downstream.  Preserve
-    # active/closed scene balance as well as the unweighted variant balance.
-    add({
-        index: (
-            1 if context_by_index[context_index]["target"]["state"] == "A" else -1
-        )
-        for index, (context_index, _bundle) in enumerate(options)
-    }, 0, 0, "STATE_TARGETS_BALANCED")
+            index: (
+                1 if context_by_index[context_index]["target"]["state"] == "A" else -1
+            )
+            for index, (context_index, _bundle) in enumerate(options)
+        }, -(variant_count % 2), variant_count % 2,
+           "STATE_TARGETS_BALANCED")
     difficulty_rows: dict[str, int] = {}
     for level in DIFFICULTIES:
         difficulty_rows[level] = add({
@@ -916,7 +952,7 @@ def choose_targets_and_bundles(
                     )
             return lower, upper
 
-        low, high = 0, target_count * 3
+        low, high = 0, variant_count
         high_lower, high_upper = bounds_for_tolerance(high)
         best = solve_with_bounds(high_lower, high_upper)
         if best.success and best.x is not None:
@@ -1065,7 +1101,7 @@ def choose_targets_and_bundles(
     ]
     if sum(len(bundle) for _context, bundle in result) != variant_count:
         raise RuntimeError("MILP returned an incomplete variant selection")
-    if not target_count <= len(result) <= variant_count:
+    if not math.ceil(variant_count / 3) <= len(result) <= variant_count:
         raise RuntimeError("MILP returned an invalid target count")
     if difficulty_tolerance:
         print(json.dumps({
@@ -1304,8 +1340,11 @@ def assign_strata(
 
 
 def build(args: argparse.Namespace) -> dict[str, Any]:
-    if args.target_count <= 0 or args.target_count % 2:
-        raise ValueError("target-count must be a positive even integer")
+    if args.target_count <= 0:
+        raise ValueError("target-count must be positive")
+    if args.variant_count < 0:
+        raise ValueError("variant-count cannot be negative")
+    variant_count = args.variant_count or args.target_count * 3
     plan = json.loads(args.plan.read_text(encoding="utf-8"))
     source_paths = {
         key: Path(value["path"]) for key, value in plan["sources"].items()
@@ -1335,6 +1374,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     prior_token_subset_signature_counts: Counter[str] = Counter()
     registry_sirets: set[str] = set()
     registry_sirens: set[str] = set()
+    prior_distinct_target_count = 0
     registry_hash: str | None = None
     if args.production_registry is not None:
         if args.prior_counted_seed_input:
@@ -1344,8 +1384,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         (
             prior_variant_count, prior_ref_counts, prior_operator_counts,
             prior_pair_counts, prior_difficulty_counts, prior_stratum_counts,
-            prior_token_subset_signature_counts, registry_sirets, registry_sirens,
-            registry_hash,
+            prior_token_subset_signature_counts, prior_distinct_target_count,
+            registry_sirets, registry_sirens, registry_hash,
         ) = registry_usage(args.production_registry)
     all_excluded_inputs = [
         *args.exclude_seed_input, *args.prior_counted_seed_input,
@@ -1367,9 +1407,19 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             )
         )
     ]
-    variant_count = args.target_count * 3
     cumulative_variant_count = prior_variant_count + variant_count
     final_variant_target = int(plan["objective"]["promoted_variant_target"])
+    maximum_unique_targets = int(plan["objective"]["maximum_unique_targets"])
+    maximum_target_count = maximum_batch_target_additions(
+        prior_variant_count, prior_distinct_target_count, variant_count,
+        final_variant_target, maximum_unique_targets,
+        int(plan["objective"]["maximum_variants_per_target"]),
+    )
+    if maximum_target_count < math.ceil(variant_count / 3):
+        raise ValueError(
+            "remaining unique-target budget cannot host this batch while reserving "
+            "three variants per target for the final residual"
+        )
     # These are corpus-final caps, not prefix quotas.  Enforcing 5%/10% on
     # every small early batch strands common but legitimate address operators;
     # the registry still debits every use and makes the final ceilings hard.
@@ -1423,7 +1473,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     support_cache: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     capability_pool_limit = (
         args.selection_pool_limit
-        if args.selection_pool_limit > 0 else max(3000, 3 * args.target_count)
+        if args.selection_pool_limit > 0 else max(3000, variant_count)
     )
     official_alias_available = {
         value["target_siret"]: bool(official_name_alias_fragments(value))
@@ -1627,7 +1677,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         )
         try:
             candidate_selection = choose_targets_and_bundles(
-                feasible_contexts, capabilities, args.target_count, difficulty_counts,
+                feasible_contexts, capabilities, variant_count,
+                maximum_target_count, difficulty_counts,
                 difficulty_minimum_additions, difficulty_maximum_additions,
                 relation_pair_cap, prior_pair_counts, relation_capacities,
                 name_token_subset_remaining, ref_cap, operator_cap,
@@ -1866,7 +1917,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "name_token_subset": name_token_subset_cap,
             "name_token_subset_signature": token_subset_signature_cap,
             "difficulty_hard_prefix": hard_prefix_cap,
+            "unique_targets": maximum_unique_targets,
         },
+        "maximum_batch_target_count": maximum_target_count,
+        "cumulative_planned_unique_targets_upper_bound": (
+            prior_distinct_target_count + len(output)
+        ),
         "excluded_prior_sirets": len(excluded_sirets),
         "excluded_prior_sirens": len(excluded_sirens),
         "selection_seed": effective_selection_seed,
@@ -1901,6 +1957,13 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--output", type=Path, required=True)
     result.add_argument("--batch-id", default="P000")
     result.add_argument("--target-count", type=int, default=150)
+    result.add_argument(
+        "--variant-count", type=int, default=0,
+        help=(
+            "Exact number of contracts to select; zero keeps the historical "
+            "three-per-target-count behavior. Used by residual final batches."
+        ),
+    )
     result.add_argument(
         "--selection-pool-limit", type=int, default=0,
         help="Bound costly capability materialization (0 = max(3000, 3*target-count)).",

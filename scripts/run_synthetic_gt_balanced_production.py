@@ -49,6 +49,14 @@ def checkpoint(db: Path) -> None:
         connection.close()
 
 
+def next_attempted_variants(
+    promoted: int, target: int, batch_target_count: int,
+) -> int:
+    if not 0 <= promoted < target or batch_target_count <= 0:
+        raise ValueError("invalid residual production counts")
+    return min(batch_target_count * 3, target - promoted)
+
+
 def batch_paths(output_root: Path, batch_id: str) -> dict[str, Path]:
     return {
         "seed": output_root / f"{batch_id}_seed_input.jsonl",
@@ -60,7 +68,9 @@ def batch_paths(output_root: Path, batch_id: str) -> dict[str, Path]:
     }
 
 
-def ensure_batch(args: argparse.Namespace, batch_number: int) -> int:
+def ensure_batch(
+    args: argparse.Namespace, batch_number: int, attempted_variants: int,
+) -> int:
     batch_id = f"P{batch_number:03d}"
     run_id = f"synthetic-gt-balanced-v1-{batch_id}"
     paths = batch_paths(args.output_root, batch_id)
@@ -72,10 +82,22 @@ def ensure_batch(args: argparse.Namespace, batch_number: int) -> int:
             "--output", str(paths["seed"]),
             "--batch-id", batch_id,
             "--target-count", str(args.batch_target_count),
+            "--variant-count", str(attempted_variants),
             "--selection-seed", f"SIRETO-BALANCED-{batch_id}",
             "--production-registry", str(args.registry),
             "--selection-pool-limit", str(args.selection_pool_limit),
         ])
+    seed_manifest = paths["seed"].with_suffix(
+        paths["seed"].suffix + ".manifest.json"
+    )
+    if not seed_manifest.exists():
+        raise FileNotFoundError(seed_manifest)
+    planned_variants = int(load_json(seed_manifest).get("planned_variants", -1))
+    if planned_variants != attempted_variants:
+        raise RuntimeError(
+            f"{batch_id} frozen seed plans {planned_variants} variants but the "
+            f"current residual requires {attempted_variants}"
+        )
 
     if not paths["db"].exists():
         run([
@@ -135,10 +157,9 @@ def ensure_batch(args: argparse.Namespace, batch_number: int) -> int:
 
     manifest = load_json(promotion_manifest)
     promoted = int(manifest.get("promoted_variants", 0))
-    attempted = args.batch_target_count * 3
-    if promoted < int(attempted * args.minimum_promotion_rate):
+    if promoted < int(attempted_variants * args.minimum_promotion_rate):
         raise RuntimeError(
-            f"{batch_id} promotion yield {promoted}/{attempted} is below "
+            f"{batch_id} promotion yield {promoted}/{attempted_variants} is below "
             f"{args.minimum_promotion_rate:.1%}"
         )
     run([
@@ -205,7 +226,10 @@ def main(argv: Sequence[str] | None = None) -> None:
         if args.maximum_batches and completed_batches >= args.maximum_batches:
             print(json.dumps({"status": "BOUND_REACHED", "promoted": promoted}, indent=2))
             return
-        ensure_batch(args, batch_number)
+        attempted_variants = next_attempted_variants(
+            promoted, args.target, args.batch_target_count,
+        )
+        ensure_batch(args, batch_number, attempted_variants)
         batch_number += 1
         completed_batches += 1
 
