@@ -307,6 +307,31 @@ def test_candidate_bundles_keep_a_single_safe_runtime_contract() -> None:
     assert len(bundles[0]) == 1
 
 
+def test_candidate_bundles_prune_saturated_global_relation_pairs() -> None:
+    value = {
+        "target_siret": "12345678900000",
+        "target": {"state": "A"},
+        "internal_context": [],
+    }
+    saturated = ("OFFICIAL_NAME_ALIAS", ("address", "ADDRESS_ABBREVIATE"))
+    residual = ("OFFICIAL_NAME_ALIAS", ("city", "PUNCTUATION_REMOVED"))
+    bundles = candidate_bundles(
+        value,
+        {"OFFICIAL_NAME_ALIAS": [{"inspiration_ref": "alias"}]},
+        {
+            saturated[1]: [{"inspiration_ref": "addr"}],
+            residual[1]: [
+                {"inspiration_ref": "city-1"}, {"inspiration_ref": "city-2"}
+            ],
+        },
+        "seed",
+        pair_remaining={saturated: 0, residual: 2},
+    )
+    assert bundles
+    assert all(saturated not in bundle for bundle in bundles)
+    assert max(Counter(bundle)[residual] for bundle in bundles) == 2
+
+
 def test_unique_target_budget_reserves_three_per_future_target() -> None:
     assert maximum_batch_target_additions(
         3_723, 1_335, 600, 20_000, 8_000, 3,

@@ -720,11 +720,14 @@ def candidate_bundles(
     locations: dict[tuple[str, str], list[dict[str, Any]]],
     selection_seed: str,
     limit: int = 24,
+    pair_remaining: dict[tuple[str, tuple[str, str]], int] | None = None,
 ) -> list[tuple[tuple[str, tuple[str, str]], ...]]:
     pairs = [
         (name_relation, location_key)
         for name_relation, name_values in names.items() if name_values
         for location_key, location_values in locations.items() if location_values
+        if pair_remaining is None
+        or pair_remaining.get((name_relation, location_key), 0) > 0
     ]
     if not pairs:
         return []
@@ -740,6 +743,11 @@ def candidate_bundles(
     # Keep several difficulty profiles before deterministic thinning.
     by_profile: dict[tuple[int, int, int], list[Any]] = defaultdict(list)
     for bundle in values:
+        if pair_remaining is not None and any(
+            count > pair_remaining.get(pair, 0)
+            for pair, count in Counter(bundle).items()
+        ):
+            continue
         name_counts = Counter(pair[0] for pair in bundle)
         location_counts = Counter(pair[1] for pair in bundle)
         if name_counts["TOKEN_SUBSET"] > 1:
@@ -879,15 +887,39 @@ def choose_targets_and_bundles(
     prior_token_subset_signature_counts: Counter[str],
     selection_seed: str,
     diagnose_infeasible: bool = False,
+    solver_pool_limit: int | None = None,
 ) -> list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]]:
     options: list[tuple[int, tuple[tuple[str, tuple[str, str]], ...]]] = []
     context_by_index: list[dict[str, Any]] = []
+    pair_remaining = {
+        (name_relation, location_key): max(
+            0,
+            relation_pair_cap
+            - prior_pair_counts[pair_signature((name_relation, location_key))],
+        )
+        for name_relation in SAFE_NAME_RELATIONS
+        for location_key in SAFE_LOCATION_RELATIONS
+    }
     # Authoritative aliases are comparatively rare and are the safe source of
-    # easy capacity.  Keep them before deterministic thinning of ordinary rows.
-    pool_limit = max(3000, variant_count)
+    # easy capacity.  Once a composite pair reaches its final corpus cap it is
+    # mathematically unusable: exclude it before pool ranking and bundle
+    # thinning so saturated alias pairs cannot crowd out residual safe support.
+    pool_limit = (
+        solver_pool_limit
+        if solver_pool_limit is not None and solver_pool_limit > 0
+        else max(3000, variant_count)
+    )
     alias_available = {
-        value["target_siret"]: bool(
-            capabilities[value["target_siret"]][0].get("OFFICIAL_NAME_ALIAS")
+        value["target_siret"]: (
+            bool(capabilities[value["target_siret"]][0].get(
+                "OFFICIAL_NAME_ALIAS"
+            ))
+            and any(
+                pair_remaining.get(("OFFICIAL_NAME_ALIAS", location_key), 0) > 0
+                for location_key, location_values
+                in capabilities[value["target_siret"]][1].items()
+                if location_values
+            )
         )
         for value in contexts
     }
@@ -895,7 +927,8 @@ def choose_targets_and_bundles(
     for value in contexts:
         names, locations = capabilities[value["target_siret"]]
         easy_pairs = sum(
-            difficulty(value, (name_relation, location_key)) == "EASY"
+            pair_remaining.get((name_relation, location_key), 0) > 0
+            and difficulty(value, (name_relation, location_key)) == "EASY"
             for name_relation, name_values in names.items() if name_values
             for location_key, location_values in locations.items() if location_values
         )
@@ -906,7 +939,10 @@ def choose_targets_and_bundles(
     for context in eligible:
         siret = context["target_siret"]
         names, locations = capabilities[siret]
-        bundles = candidate_bundles(context, names, locations, selection_seed)
+        bundles = candidate_bundles(
+            context, names, locations, selection_seed,
+            pair_remaining=pair_remaining,
+        )
         if not bundles:
             continue
         context_index = len(context_by_index)
@@ -1208,7 +1244,8 @@ def choose_targets_and_bundles(
                         difficulty(value, pair) == "EASY" for pair in bundle
                     )
                     for bundle in candidate_bundles(
-                        value, *capabilities[value["target_siret"]], selection_seed
+                        value, *capabilities[value["target_siret"]], selection_seed,
+                        pair_remaining=pair_remaining,
                     )
                 )
             ][:5],
@@ -1906,7 +1943,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 prior_ref_counts, prior_operator_counts, effective_ref_caps,
                 token_subset_signature_cap,
                 prior_token_subset_signature_counts, effective_selection_seed,
-                args.diagnose_infeasible,
+                args.diagnose_infeasible, capability_pool_limit,
             )
             candidate_assignment, candidate_ref_counts, candidate_operator_counts = (
                 assign_fragments(
