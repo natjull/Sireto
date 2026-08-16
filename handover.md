@@ -4639,6 +4639,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   55,5 % `MEDIUM`, 24,5 % `HARD`; les états 10 000/10 000, les bornes
   identitaires, les caps et toutes les validations restent inchangés. Les 35
   tests ciblés passent; le reliquat exact exige désormais E/M/H=124/436/111.
+- Cap d'alias officiel terminal : commit `576bbff` (`fix: reserve terminal
+  official alias capacity`). P035 avait déjà consommé 12 985 des 13 000 alias
+  du cap 65 %. Le diagnostic LP terminal rend `OPTIMAL` en retirant uniquement
+  ce cap, mais reste `INFEASIBLE` si l'on retire seul le cap paire, subset,
+  relation, référence ou opérateur. Un flow exact des 671 lignes utilise 648
+  alias supplémentaires, soit 13 633 cumulés. Le cap alias est donc porté à
+  68,2 % (13 640, marge 7); paire 25 %, opérateur 4 200, référence 4 100,
+  subset et toutes les validations restent inchangés.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
