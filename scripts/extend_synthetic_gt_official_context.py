@@ -275,6 +275,40 @@ def safe_bundle_capacity(
     return max(map(len, bundles), default=0), names, locations
 
 
+def bundle_capacity_profile(
+    context: dict[str, Any], grouped: dict[tuple[str, str], list[dict[str, Any]]],
+    document_frequencies: Counter[str], selection_seed: str,
+    support_cache: dict[tuple[Any, ...], list[dict[str, Any]]],
+) -> dict[str, Any]:
+    """Structural capacities used to target a sealed official extension.
+
+    These are upper bounds over runtime-valid local bundles; the cumulative
+    selector MILP and exact fragment flow remain the authority.  Publishing
+    them makes the extension gate explicit rather than selecting closed targets
+    only by an undifferentiated 1..3 bundle size.
+    """
+    names, locations = production.safe_capabilities(
+        context, grouped, document_frequencies,
+        tuple(production.SAFE_NAME_RELATIONS), support_cache,
+    )
+    bundles = production.candidate_bundles(
+        context, names, locations, selection_seed, limit=64,
+    )
+    pair_support = sorted({
+        production.pair_signature(pair) for bundle in bundles for pair in bundle
+    })
+    return {
+        "safe": max(map(len, bundles), default=0),
+        "hard": max((sum(
+            production.difficulty(context, pair) == "HARD" for pair in bundle
+        ) for bundle in bundles), default=0),
+        "nonalias": max((sum(
+            pair[0] != "OFFICIAL_NAME_ALIAS" for pair in bundle
+        ) for bundle in bundles), default=0),
+        "pair_support": pair_support,
+    }
+
+
 def context_is_simple_and_exact(
     context: dict[str, Any], target_state: str,
 ) -> bool:
@@ -347,32 +381,45 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     ]
     grouped = fragments.group_fragments(jsonl(args.field_inspiration_bank))
     frequencies = baseline_document_frequencies(args.base_context, candidates)
-    audited = []
+    audited: list[tuple[dict[str, Any], dict[str, Any]]] = []
     support_cache: dict[tuple[Any, ...], list[dict[str, Any]]] = {}
     for value in clean_contexts:
-        capacity_function = (
-            easy_capacity if args.target_state == "A" else safe_bundle_capacity
-        )
-        capacity, _names, _locations = capacity_function(
-            value, grouped, frequencies, args.selection_seed, support_cache,
-        )
-        if capacity:
-            audited.append((capacity, value))
+        if args.target_state == "A":
+            capacity, _names, _locations = easy_capacity(
+                value, grouped, frequencies, args.selection_seed, support_cache,
+            )
+            profile = {
+                "safe": capacity, "hard": 0, "nonalias": 0,
+                "pair_support": [],
+            }
+        else:
+            profile = bundle_capacity_profile(
+                value, grouped, frequencies, args.selection_seed, support_cache,
+            )
+        if profile["safe"]:
+            audited.append((profile, value))
     audited.sort(key=lambda item: (
-        -item[0], hashlib.sha256(
+        -item[0]["hard"], -item[0]["nonalias"],
+        -len(item[0]["pair_support"]), -item[0]["safe"], hashlib.sha256(
             f"{args.selection_seed}|{item[1]['target_siret']}".encode()
         ).hexdigest(),
     ))
     chosen = audited[:args.extension_target_limit]
-    extension_contexts = [value for _capacity, value in chosen]
+    extension_contexts = [value for _profile, value in chosen]
     extension_candidates = {
         value["source_siret"]: value for value in candidates
     }
     selected_candidates = [
         extension_candidates[value["target_siret"]] for value in extension_contexts
     ]
-    total_safe_capacity = sum(capacity for capacity, _value in chosen)
-    capacity_counts = Counter(capacity for capacity, _value in chosen)
+    total_safe_capacity = sum(profile["safe"] for profile, _value in chosen)
+    total_hard_capacity = sum(profile["hard"] for profile, _value in chosen)
+    total_nonalias_capacity = sum(profile["nonalias"] for profile, _value in chosen)
+    capacity_counts = Counter(profile["safe"] for profile, _value in chosen)
+    pair_support_counts = Counter(
+        signature for profile, _value in chosen
+        for signature in profile["pair_support"]
+    )
     if len(extension_contexts) < args.minimum_extension_targets:
         raise RuntimeError(
             f"only {len(extension_contexts)} safe extension targets; "
@@ -392,6 +439,16 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             f"capacity_counts={dict(sorted(capacity_counts.items()))}; "
             f"selection={selection_counts}; enriched={len(candidates)}; "
             f"clean={len(clean_contexts)}; safe={len(audited)}"
+        )
+    if total_hard_capacity < args.minimum_hard_capacity:
+        raise RuntimeError(
+            f"only {total_hard_capacity} structural HARD variants; "
+            f"minimum is {args.minimum_hard_capacity}"
+        )
+    if total_nonalias_capacity < args.minimum_nonalias_capacity:
+        raise RuntimeError(
+            f"only {total_nonalias_capacity} structural non-alias variants; "
+            f"minimum is {args.minimum_nonalias_capacity}"
         )
     write_jsonl(args.candidate_output, selected_candidates)
     merge_jsonl(args.base_context, extension_contexts, args.output)
@@ -416,6 +473,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "minimum_extension_targets": args.minimum_extension_targets,
             "minimum_easy_capacity": args.minimum_easy_capacity,
             "minimum_safe_capacity": args.minimum_safe_capacity,
+            "minimum_hard_capacity": args.minimum_hard_capacity,
+            "minimum_nonalias_capacity": args.minimum_nonalias_capacity,
             "target_state": args.target_state,
             "max_llm_context": args.max_llm_context,
         },
@@ -427,6 +486,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         ).items())),
         "safe_capacity": {
             "total_variants": total_safe_capacity,
+            "hard_variant_upper_bound": total_hard_capacity,
+            "nonalias_variant_upper_bound": total_nonalias_capacity,
+            "pair_support_target_counts": dict(sorted(pair_support_counts.items())),
             "targets_by_maximum_safe_variants": dict(sorted(capacity_counts.items())),
             "definition": (
                 "max EASY variants in one runtime-valid 1..3 exact-operator bundle"
@@ -496,6 +558,8 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--minimum-extension-targets", type=int, default=1500)
     result.add_argument("--minimum-easy-capacity", type=int, default=4000)
     result.add_argument("--minimum-safe-capacity", type=int, default=0)
+    result.add_argument("--minimum-hard-capacity", type=int, default=0)
+    result.add_argument("--minimum-nonalias-capacity", type=int, default=0)
     result.add_argument("--target-state", choices=("A", "F"), default="A")
     result.add_argument("--max-llm-context", type=int, default=32)
     result.add_argument(
@@ -514,6 +578,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         raise ValueError("minimum EASY capacity must be positive")
     if args.target_state == "F" and args.minimum_safe_capacity <= 0:
         raise ValueError("minimum safe capacity must be positive for closed targets")
+    if min(args.minimum_hard_capacity, args.minimum_nonalias_capacity) < 0:
+        raise ValueError("targeted structural capacity minima cannot be negative")
     args.func(args)
 
 

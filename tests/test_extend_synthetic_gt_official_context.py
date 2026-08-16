@@ -6,6 +6,7 @@ from scripts import extend_synthetic_gt_official_context as extension
 from scripts.extend_synthetic_gt_official_context import (
     excluded_seed_ids,
     context_is_simple_and_exact,
+    bundle_capacity_profile,
     merge_jsonl,
     safe_bundle_capacity,
     select_snapshot_rows,
@@ -82,3 +83,30 @@ def test_closed_context_allows_only_its_intrinsic_state_flag(monkeypatch) -> Non
         lambda _value: {"CLOSED_TARGET", "SAME_ADDRESS_COMPETITION"},
     )
     assert not context_is_simple_and_exact(context, "F")
+
+
+def test_closed_profile_exposes_hard_nonalias_and_pair_support(monkeypatch) -> None:
+    hard = ("TOKEN_ORDER", ("address", "ADDRESS_TOKEN_SUBSET"))
+    alias = ("OFFICIAL_NAME_ALIAS", ("address", "ADDRESS_ABBREVIATE"))
+    nonalias = ("LEGAL_FORM_REMOVE", ("address", "ADDRESS_ABBREVIATE"))
+    monkeypatch.setattr(
+        extension.production, "safe_capabilities",
+        lambda *_args, **_kwargs: ({}, {}),
+    )
+    monkeypatch.setattr(
+        extension.production, "candidate_bundles",
+        lambda *_args, **_kwargs: [(hard, hard), (alias, nonalias, nonalias)],
+    )
+    profile = bundle_capacity_profile(
+        {"target_siret": "12345678900012", "target": {"state": "F"},
+         "internal_context": []},
+        {}, {}, "seed", {},
+    )
+    assert profile["safe"] == 3
+    assert profile["hard"] == 2
+    assert profile["nonalias"] == 2
+    assert profile["pair_support"] == sorted({
+        extension.production.pair_signature(hard),
+        extension.production.pair_signature(alias),
+        extension.production.pair_signature(nonalias),
+    })

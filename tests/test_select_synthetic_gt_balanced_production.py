@@ -332,6 +332,37 @@ def test_candidate_bundles_prune_saturated_global_relation_pairs() -> None:
     assert max(Counter(bundle)[residual] for bundle in bundles) == 2
 
 
+def test_candidate_bundle_thinning_preserves_alias_and_exact_pair_marginals() -> None:
+    value = {
+        "target_siret": "12345678900000",
+        "target": {"state": "A"},
+        "internal_context": [],
+    }
+    names = {
+        relation: [{"inspiration_ref": f"name-{relation}"}]
+        for relation in (
+            "LEGAL_FORM_REMOVE", "PUNCTUATION_REMOVED", "OFFICIAL_NAME_ALIAS",
+        )
+    }
+    locations = {
+        relation: [{"inspiration_ref": f"location-{index}"}]
+        for index, relation in enumerate((
+            ("address", "ADDRESS_ABBREVIATE"),
+            ("address", "ADDRESS_ALIAS_EXPAND"),
+            ("address", "PUNCTUATION_REMOVED"),
+            ("city", "PUNCTUATION_REMOVED"),
+        ))
+    }
+    bundles = candidate_bundles(value, names, locations, "seed")
+    singleton_pairs = {bundle[0] for bundle in bundles if len(bundle) == 1}
+    assert singleton_pairs == {
+        (name_relation, location_relation)
+        for name_relation in names for location_relation in locations
+    }
+    assert {sum(pair[0] == "OFFICIAL_NAME_ALIAS" for pair in bundle)
+            for bundle in bundles} >= {0, 1, 2, 3}
+
+
 def test_unique_target_budget_reserves_three_per_future_target() -> None:
     assert maximum_batch_target_additions(
         3_723, 1_335, 600, 20_000, 8_000, 3,

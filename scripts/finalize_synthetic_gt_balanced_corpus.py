@@ -60,6 +60,9 @@ def cap_limits(plan: dict[str, Any]) -> dict[str, int]:
         "relation_pair": int(math.ceil(
             target * float(caps["relation_pair_share"])
         )),
+        "official_name_alias": int(math.floor(
+            target * float(caps["official_name_alias_share"])
+        )),
         "name_token_subset": subset,
         "name_token_subset_signature": min(
             int(math.floor(
@@ -116,10 +119,15 @@ def quota_audit(
         count for signature, count in summary["relation_pair_counts"].items()
         if signature.startswith("name:TOKEN_SUBSET+")
     )
+    official_name_alias_count = sum(
+        count for signature, count in summary["relation_pair_counts"].items()
+        if signature.startswith("name:OFFICIAL_NAME_ALIAS+")
+    )
     usage = {
         "inspiration_ref": max(summary["inspiration_ref_counts"].values(), default=0),
         "exact_operator": max(summary["exact_operator_counts"].values(), default=0),
         "relation_pair": max(summary["relation_pair_counts"].values(), default=0),
+        "official_name_alias": official_name_alias_count,
         "name_token_subset": subset_count,
         "name_token_subset_signature": max(
             summary["name_token_subset_signature_counts"].values(), default=0
@@ -154,6 +162,49 @@ def quota_audit(
             remaining / remaining_target_slots
             if remaining_target_slots else (0.0 if not remaining else None)
         ),
+    }
+
+
+def final_state_audit(
+    state_variant_counts: Counter[str],
+    state_target_counts: Counter[str],
+    plan: dict[str, Any],
+) -> dict[str, Any]:
+    """Fail closed on final variant balance and distinct-identity envelope."""
+    target = int(plan["objective"]["promoted_variant_target"])
+    expected_variants = exact_counts(
+        target, plan["corpus_balance"]["state_variants"]
+    )
+    observed_variants = {
+        state: int(state_variant_counts[state]) for state in expected_variants
+    }
+    if observed_variants != expected_variants:
+        raise ValueError(
+            "final state variant quotas are not exact: "
+            f"observed={observed_variants}, expected={expected_variants}"
+        )
+    unexpected_states = set(state_variant_counts) - set(expected_variants)
+    if unexpected_states:
+        raise ValueError(f"unexpected final target states: {sorted(unexpected_states)}")
+    distinct_targets = sum(state_target_counts.values())
+    if distinct_targets <= 0:
+        raise ValueError("final corpus has no target identities")
+    active_share = state_target_counts["A"] / distinct_targets
+    lower, upper = (
+        float(value) for value in
+        plan["corpus_balance"]["target_identity_active_share_bounds"]
+    )
+    if not lower <= active_share <= upper:
+        raise ValueError(
+            "final active target identity share is outside bounds: "
+            f"{active_share:.12f} not in [{lower:.12f}, {upper:.12f}]"
+        )
+    return {
+        "state_variant_counts": observed_variants,
+        "state_variant_targets": expected_variants,
+        "state_target_counts": dict(state_target_counts),
+        "active_target_identity_share": active_share,
+        "active_target_identity_share_bounds": [lower, upper],
     }
 
 
@@ -321,6 +372,8 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
     plan = load_plan(args.plan)
     records: list[dict[str, Any]] = []
     target_counts: Counter[str] = Counter()
+    target_states: dict[str, str] = {}
+    state_variant_counts: Counter[str] = Counter()
     keys: set[tuple[str, str]] = set()
     surfaces: set[tuple[str, str, str, str, str]] = set()
     source_batches: dict[str, Any] = {}
@@ -331,6 +384,7 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
         validated = registry_lib.validate_promoted_batch(
             seed, promoted, promotion_manifest,
         )
+        frozen_states = production.seed_target_states(seed)
         source_batches[batch["batch_id"]] = {
             "seed_input": {"path": str(seed), "sha256": sha256(seed)},
             "promoted": {"path": str(promoted), "sha256": sha256(promoted)},
@@ -350,6 +404,14 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
             keys.add(key)
             surfaces.add(surface)
             target_counts[value["target_siret"]] += 1
+            state = frozen_states[value["target_siret"]]
+            previous_state = target_states.get(value["target_siret"])
+            if previous_state is not None and previous_state != state:
+                raise ValueError(
+                    f"target state changed across batches: {value['target_siret']}"
+                )
+            target_states[value["target_siret"]] = state
+            state_variant_counts[state] += 1
             records.append({
                 **value["promoted"],
                 "balanced_contract": value["contract"],
@@ -365,6 +427,9 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
     maximum_per_target = int(plan["objective"]["maximum_variants_per_target"])
     if max(target_counts.values(), default=0) > maximum_per_target:
         raise ValueError("maximum promoted variants per target exceeded")
+    state_audit = final_state_audit(
+        state_variant_counts, Counter(target_states.values()), plan,
+    )
     records.sort(key=lambda value: (
         value["counting_provenance"]["batch_id"],
         str(value["seed_id"]), str(value["variant_id"]),
@@ -387,6 +452,7 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
             "distinct_keys": len(keys),
             "distinct_target_sirets": len(target_counts),
             "maximum_variants_per_target": max(target_counts.values(), default=0),
+            "state_audit": state_audit,
             "audit": audit_result,
             "gates": {
                 "exactly_20000_independent_variants": len(records) == 20_000,

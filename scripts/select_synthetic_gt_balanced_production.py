@@ -211,6 +211,61 @@ def registry_usage(
     )
 
 
+def seed_target_states(path: Path) -> dict[str, str]:
+    """Read the frozen official state once per target from a seed input."""
+    result: dict[str, str] = {}
+    for value in rows(path):
+        siret = str(value.get("target_siret", ""))
+        state = str(
+            value.get("seed_card", {}).get("official_context", {})
+            .get("target", {}).get("state", "")
+        )
+        if not loop.valid_siret(siret) or state not in {"A", "F"}:
+            raise ValueError(f"invalid frozen target state in {path}: {siret}/{state}")
+        if siret in result and result[siret] != state:
+            raise ValueError(f"inconsistent frozen target state in {path}: {siret}")
+        result[siret] = state
+    return result
+
+
+def seed_state_usage(paths: Sequence[Path]) -> tuple[Counter[str], Counter[str]]:
+    variants: Counter[str] = Counter()
+    target_states: dict[str, str] = {}
+    for path in paths:
+        states = seed_target_states(path)
+        for value in rows(path):
+            siret = str(value["target_siret"])
+            variants[states[siret]] += len(
+                value.get("seed_card", {}).get("composite_contracts", [])
+            )
+        for siret, state in states.items():
+            if siret in target_states and target_states[siret] != state:
+                raise ValueError(f"inconsistent prior target state: {siret}")
+            target_states[siret] = state
+    return variants, Counter(target_states.values())
+
+
+def registry_state_usage(path: Path) -> tuple[Counter[str], Counter[str]]:
+    """Count only exact promoted states without changing the sealed snapshot."""
+    registry = registry_lib.load_registry(path)
+    variants: Counter[str] = Counter()
+    target_states: dict[str, str] = {}
+    for batch in registry["batches"]:
+        seed = Path(batch["seed_input"]["path"])
+        promoted = Path(batch["promoted"]["path"])
+        manifest = Path(batch["promotion_manifest"]["path"])
+        states = seed_target_states(seed)
+        validated = registry_lib.validate_promoted_batch(seed, promoted, manifest)
+        for value in validated["records"]:
+            siret = value["target_siret"]
+            state = states[siret]
+            variants[state] += 1
+            if siret in target_states and target_states[siret] != state:
+                raise ValueError(f"inconsistent registered target state: {siret}")
+            target_states[siret] = state
+    return variants, Counter(target_states.values())
+
+
 def pair_signature(pair: tuple[str, tuple[str, str]]) -> str:
     name_relation, (field, location_relation) = pair
     return f"name:{name_relation}+{field}:{location_relation}"
@@ -719,8 +774,9 @@ def candidate_bundles(
     names: dict[str, list[dict[str, Any]]],
     locations: dict[tuple[str, str], list[dict[str, Any]]],
     selection_seed: str,
-    limit: int = 24,
+    limit: int = 64,
     pair_remaining: dict[tuple[str, tuple[str, str]], int] | None = None,
+    official_name_alias_remaining: int | None = None,
 ) -> list[tuple[tuple[str, tuple[str, str]], ...]]:
     pairs = [
         (name_relation, location_key)
@@ -740,9 +796,20 @@ def candidate_bundles(
         for size in (1, 2, 3)
         for bundle in itertools.combinations_with_replacement(pairs, size)
     ]
-    # Keep several difficulty profiles before deterministic thinning.
-    by_profile: dict[tuple[int, int, int], list[Any]] = defaultdict(list)
+    # Validate the complete local bundle space before deterministic thinning.
+    # The corpus MILP constrains more than difficulty: alias-family and exact
+    # relation-pair caps are cumulative.  Thinning only by E/M/H can erase all
+    # non-alias or all residual support for a pair and create false global
+    # infeasibility.  The feature round-robin below preserves every local
+    # (difficulty, alias-count, exact-pair, multiplicity) marginal.
+    valid: list[tuple[tuple[str, tuple[str, str]], ...]] = []
     for bundle in values:
+        if (
+            official_name_alias_remaining is not None
+            and sum(pair[0] == "OFFICIAL_NAME_ALIAS" for pair in bundle)
+            > official_name_alias_remaining
+        ):
+            continue
         if pair_remaining is not None and any(
             count > pair_remaining.get(pair, 0)
             for pair, count in Counter(bundle).items()
@@ -765,27 +832,38 @@ def candidate_bundles(
         ):
             continue
         counts = Counter(difficulty(context, pair) for pair in bundle)
+        valid.append(bundle)
+    feature_groups: dict[tuple[Any, ...], list[Any]] = defaultdict(list)
+    for bundle in valid:
+        counts = Counter(difficulty(context, pair) for pair in bundle)
         profile = tuple(counts[value] for value in DIFFICULTIES)
-        by_profile[profile].append(bundle)
-    selected_by_profile: dict[tuple[int, int, int], list[Any]] = {}
-    for profile in sorted(by_profile):
-        candidates = sorted(
-            by_profile[profile],
+        alias_count = sum(pair[0] == "OFFICIAL_NAME_ALIAS" for pair in bundle)
+        feature_groups[("PROFILE_ALIAS", profile, alias_count)].append(bundle)
+        for pair, multiplicity in Counter(bundle).items():
+            feature_groups[(
+                "PAIR_SUPPORT", profile, alias_count,
+                pair_signature(pair), multiplicity,
+            )].append(bundle)
+    ordered_groups: dict[tuple[Any, ...], list[Any]] = {}
+    for feature in sorted(feature_groups):
+        ordered_groups[feature] = sorted(
+            feature_groups[feature],
             key=lambda bundle: hashlib.sha256(
                 f"{selection_seed}|bundle|{context['target_siret']}|"
                 f"{'|'.join(pair_signature(value) for value in bundle)}".encode()
             ).hexdigest(),
         )
-        selected_by_profile[profile] = candidates[:4]
-    # Round-robin over difficulty profiles.  A global hash truncation can erase
-    # every EASY-bearing profile even when safe EASY operators exist, creating a
-    # false capacity exhaustion after several batches.
-    selected = []
+    selected: list[Any] = []
+    selected_keys: set[Any] = set()
     for depth in range(4):
-        for profile in sorted(selected_by_profile):
-            candidates = selected_by_profile[profile]
+        for feature in sorted(ordered_groups):
+            candidates = ordered_groups[feature]
             if depth < len(candidates):
-                selected.append(candidates[depth])
+                bundle = candidates[depth]
+                if bundle in selected_keys:
+                    continue
+                selected.append(bundle)
+                selected_keys.add(bundle)
                 if len(selected) >= limit:
                     return selected
     return selected
@@ -871,12 +949,18 @@ def choose_targets_and_bundles(
     capabilities: dict[str, tuple[dict[str, Any], dict[tuple[str, str], Any]]],
     variant_count: int,
     maximum_target_count: int,
+    target_active_share_bounds: tuple[float, float],
+    prior_state_variant_counts: Counter[str],
+    prior_state_target_counts: Counter[str],
+    state_variant_additions: dict[str, int],
+    future_state_variant_counts: dict[str, int],
     difficulty_counts: dict[str, int],
     difficulty_minimum_additions: dict[str, int],
     difficulty_maximum_additions: dict[str, int],
     relation_pair_cap: int,
     prior_pair_counts: Counter[str],
     relation_capacities: dict[tuple[str, str], int],
+    official_name_alias_remaining: int,
     name_token_subset_remaining: int,
     ref_cap: int,
     operator_cap: int,
@@ -887,6 +971,7 @@ def choose_targets_and_bundles(
     prior_token_subset_signature_counts: Counter[str],
     selection_seed: str,
     diagnose_infeasible: bool = False,
+    feasibility_only: bool = False,
     solver_pool_limit: int | None = None,
 ) -> list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]]:
     options: list[tuple[int, tuple[tuple[str, tuple[str, str]], ...]]] = []
@@ -911,6 +996,8 @@ def choose_targets_and_bundles(
     )
     alias_available = {
         value["target_siret"]: (
+            official_name_alias_remaining > 0
+            and
             bool(capabilities[value["target_siret"]][0].get(
                 "OFFICIAL_NAME_ALIAS"
             ))
@@ -935,6 +1022,7 @@ def choose_targets_and_bundles(
         easy_capacity[value["target_siret"]] = min(3, easy_pairs)
     eligible = stratified_context_pool(
         contexts, pool_limit, selection_seed, alias_available, easy_capacity,
+        active_share=target_active_share_bounds[1],
     )
     for context in eligible:
         siret = context["target_siret"]
@@ -942,6 +1030,7 @@ def choose_targets_and_bundles(
         bundles = candidate_bundles(
             context, names, locations, selection_seed,
             pair_remaining=pair_remaining,
+            official_name_alias_remaining=official_name_alias_remaining,
         )
         if not bundles:
             continue
@@ -979,27 +1068,54 @@ def choose_targets_and_bundles(
         {index: 1 for index in range(variable_count)},
         math.ceil(variant_count / 3), maximum_target_count, "TARGET_COUNT",
     )
-    # Normal batches remain exactly state-balanced.  A tiny terminal residual
-    # must instead be free to fill whichever final difficulty/stratum cells are
-    # still missing; state is not a registered final quota.  This avoids an
-    # impossible last one-to-nineteen rows without changing any quality guard.
-    if variant_count >= 20:
-        state_minimum = variant_count // 2
-        state_maximum = variant_count - state_minimum
-        for state in ("A", "F"):
-            add({
-                index: len(bundle)
-                for index, (context_index, bundle) in enumerate(options)
-                if context_by_index[context_index]["target"]["state"] == state
-            }, state_minimum, state_maximum, "STATE_VARIANTS")
-        # Target weights are normalized by promoted variants downstream.
+    # State balance is corpus-final, not batch-local.  Compensate the exact
+    # promoted prefix so the terminal corpus reaches its preregistered totals.
+    for state in ("A", "F"):
+        addition = state_variant_additions[state]
         add({
-            index: (
-                1 if context_by_index[context_index]["target"]["state"] == "A" else -1
-            )
-            for index, (context_index, _bundle) in enumerate(options)
-        }, -(variant_count % 2), variant_count % 2,
-           "STATE_TARGETS_BALANCED")
+            index: len(bundle)
+            for index, (context_index, bundle) in enumerate(options)
+            if context_by_index[context_index]["target"]["state"] == state
+        }, addition, addition, "STATE_VARIANTS")
+
+    # Identity balance is also cumulative.  For an intermediate batch, retain
+    # only prefixes from which the final 55--59% active envelope is reachable,
+    # using the exact remaining state-variant deficits and max three variants
+    # per future identity.  At the terminal residual these reduce to the exact
+    # final linear bounds including all already promoted identities.
+    active_minimum, active_maximum = target_active_share_bounds
+    future_active_max = future_state_variant_counts["A"]
+    future_closed_min = math.ceil(future_state_variant_counts["F"] / 3)
+    # The preregistered 55% and 59% bounds are represented as exact integer
+    # inequalities (9A-11F>=0 and 41A-59F<=0), avoiding floating MILP edges.
+    if (active_minimum, active_maximum) != (0.55, 0.59):
+        raise ValueError("unsupported target identity bounds for exact coefficients")
+    lower_constant = (
+        9 * (prior_state_target_counts["A"] + future_active_max)
+        - 11 * (prior_state_target_counts["F"] + future_closed_min)
+    )
+    add({
+        index: (
+            9
+            if context_by_index[context_index]["target"]["state"] == "A"
+            else -11
+        )
+        for index, (context_index, _bundle) in enumerate(options)
+    }, -lower_constant, np.inf, "STATE_TARGET_SHARE_REACHABLE")
+    future_active_min = math.ceil(future_state_variant_counts["A"] / 3)
+    future_closed_max = future_state_variant_counts["F"]
+    upper_constant = (
+        41 * (prior_state_target_counts["A"] + future_active_min)
+        - 59 * (prior_state_target_counts["F"] + future_closed_max)
+    )
+    add({
+        index: (
+            41
+            if context_by_index[context_index]["target"]["state"] == "A"
+            else -59
+        )
+        for index, (context_index, _bundle) in enumerate(options)
+    }, -np.inf, -upper_constant, "STATE_TARGET_SHARE_REACHABLE")
     difficulty_rows: dict[str, int] = {}
     for level in DIFFICULTIES:
         difficulty_rows[level] = add({
@@ -1014,6 +1130,10 @@ def choose_targets_and_bundles(
         index: sum(pair[0] == "TOKEN_SUBSET" for pair in bundle)
         for index, (_context_index, bundle) in enumerate(options)
     }, 0, name_token_subset_remaining, "TOKEN_SUBSET_CAP")
+    add({
+        index: sum(pair[0] == "OFFICIAL_NAME_ALIAS" for pair in bundle)
+        for index, (_context_index, bundle) in enumerate(options)
+    }, 0, official_name_alias_remaining, "OFFICIAL_NAME_ALIAS_CAP")
     all_pairs = sorted({pair for _context_index, bundle in options for pair in bundle})
     for pair in all_pairs:
         remaining = max(0, relation_pair_cap - prior_pair_counts[pair_signature(pair)])
@@ -1165,10 +1285,18 @@ def choose_targets_and_bundles(
     # HiGHS is deterministic for this stably ordered matrix; an arbitrary random
     # tie objective previously forced it to prove a scientifically meaningless
     # optimum among thousands of otherwise equivalent targets.
-    objective = np.concatenate((
-        np.ones(variable_count),
-        np.asarray([float(maximum_target_count + 1)]),
-    ))
+    if diagnose_infeasible:
+        objective = np.zeros(decision_variable_count)
+    elif feasibility_only:
+        # The quota rows remain exact; minimize the redundant diagnostic
+        # tolerance so a pure-feasibility certificate cannot report an
+        # arbitrary upper-bound value such as ``variant_count``.
+        objective = np.concatenate((np.zeros(variable_count), [1.0]))
+    else:
+        objective = np.concatenate((
+            np.ones(variable_count),
+            np.asarray([float(maximum_target_count + 1)]),
+        ))
     solution = milp(
         objective,
         integrality=np.ones(decision_variable_count),
@@ -1185,6 +1313,16 @@ def choose_targets_and_bundles(
     )
     if not solution.success or solution.x is None:
         diagnostic: dict[str, Any] = {
+            "solver_status": int(solution.status),
+            "solver_message": str(solution.message),
+            "solver_mip_gap": (
+                float(solution.mip_gap)
+                if getattr(solution, "mip_gap", None) is not None else None
+            ),
+            "solver_mip_node_count": (
+                int(solution.mip_node_count)
+                if getattr(solution, "mip_node_count", None) is not None else None
+            ),
             "contexts_by_state": dict(Counter(
                 value["target"]["state"] for value in context_by_index
             )),
@@ -1246,22 +1384,131 @@ def choose_targets_and_bundles(
                     for bundle in candidate_bundles(
                         value, *capabilities[value["target_siret"]], selection_seed,
                         pair_remaining=pair_remaining,
+                        official_name_alias_remaining=official_name_alias_remaining,
                     )
                 )
             ][:5],
         }
         if diagnose_infeasible:
-            feasible_when_dropped = []
-            for label in sorted(
-                set(constraint_labels) - {"TOTAL_VARIANTS", "TARGET_UNIQUENESS"}
-            ):
+            # Diagnose with LP relaxations first.  LP infeasibility is a proof;
+            # unlike a short secondary integer solve it cannot be confused with
+            # a timeout on this 50k+ binary model.  Preserve every solver status
+            # and message rather than reducing unknown outcomes to ``False``.
+            strategic_relaxations = {
+                "NONE": set(),
+                "STATE_SHARE_AND_TARGET_COUNT": {
+                    "STATE_TARGET_SHARE_REACHABLE", "TARGET_COUNT",
+                },
+                "ALL_STATE_AND_TARGET_COUNT": {
+                    "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE", "TARGET_COUNT",
+                },
+                "ALL_MIX": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                },
+                "ALL_FRAGMENT_CAPACITY": {
+                    "RELATION_CAPACITY", "HALL_REF", "HALL_OPERATOR",
+                    "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+                "PAIR_AND_FRAGMENT_CAPACITY": {
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+                "ALL_GLOBAL_CAPS": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+                "ALL_GLOBAL_CAPS_AND_TARGET_COUNT": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE", "TARGET_COUNT",
+                },
+                "ALL_MIX_AND_GLOBAL_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+                "ALL_MIX_GLOBAL_CAPS_AND_TARGET_COUNT": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE", "TARGET_COUNT",
+                },
+                "GLOBAL_CAPS_AND_STATE_SHARE": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                    "STATE_TARGET_SHARE_REACHABLE",
+                },
+                "GLOBAL_CAPS_AND_STATE_VARIANTS": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                    "STATE_VARIANTS",
+                },
+                "GLOBAL_CAPS_AND_DIFFICULTY": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE", "DIFFICULTY",
+                },
+                "GLOBAL_CAPS_STATE_SHARE_AND_VARIANTS": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                    "STATE_TARGET_SHARE_REACHABLE", "STATE_VARIANTS",
+                },
+                "GLOBAL_CAPS_DIFFICULTY_AND_STATE_SHARE": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE", "DIFFICULTY",
+                    "STATE_TARGET_SHARE_REACHABLE",
+                },
+                "GLOBAL_CAPS_DIFFICULTY_AND_STATE_VARIANTS": {
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE", "DIFFICULTY",
+                    "STATE_VARIANTS",
+                },
+                "ALL_MIX_AND_FAMILY_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                },
+                "ALL_MIX_AND_PAIR_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "RELATION_PAIR_CAP",
+                },
+                "ALL_MIX_AND_FRAGMENT_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "RELATION_CAPACITY", "HALL_REF", "HALL_OPERATOR",
+                    "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+                "ALL_MIX_FAMILY_AND_PAIR_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_PAIR_CAP",
+                },
+                "ALL_MIX_FAMILY_AND_FRAGMENT_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                    "RELATION_CAPACITY", "HALL_REF", "HALL_OPERATOR",
+                    "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+                "ALL_MIX_PAIR_AND_FRAGMENT_CAPS": {
+                    "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+                    "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                    "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+                },
+            }
+            relaxation_diagnostics = {}
+            for name, labels in strategic_relaxations.items():
                 keep = [
                     index for index, value in enumerate(constraint_labels)
-                    if value != label
+                    if value not in labels
                 ]
                 relaxed = milp(
                     np.zeros(decision_variable_count),
-                    integrality=np.ones(decision_variable_count),
+                    integrality=np.zeros(decision_variable_count),
                     bounds=Bounds(
                         np.zeros(decision_variable_count),
                         np.concatenate((
@@ -1269,51 +1516,126 @@ def choose_targets_and_bundles(
                         )),
                     ),
                     constraints=LinearConstraint(
-                        matrix[keep],
-                        np.asarray(minima)[keep], np.asarray(maxima)[keep],
+                        matrix[keep], np.asarray(minima)[keep], np.asarray(maxima)[keep],
                     ),
                     options={"time_limit": 30},
                 )
-                if relaxed.success and relaxed.x is not None:
-                    feasible_when_dropped.append(label)
-            diagnostic["feasible_when_constraint_group_dropped"] = feasible_when_dropped
-            if "DIFFICULTY" in feasible_when_dropped:
-                keep = [
+                relaxation_diagnostics[name] = {
+                    "success": bool(relaxed.success),
+                    "status": int(relaxed.status),
+                    "message": str(relaxed.message),
+                    "mip_gap": (
+                        float(relaxed.mip_gap)
+                        if getattr(relaxed, "mip_gap", None) is not None else None
+                    ),
+                }
+            diagnostic["lp_relaxation_diagnostics"] = relaxation_diagnostics
+            lp_bounds = Bounds(
+                np.zeros(decision_variable_count),
+                np.concatenate((
+                    np.ones(variable_count), [float(variant_count)]
+                )),
+            )
+
+            def diagnostic_lp(
+                dropped: set[str], objective_values: np.ndarray,
+            ) -> tuple[Any, list[int]]:
+                kept = [
                     index for index, value in enumerate(constraint_labels)
-                    if value != "DIFFICULTY"
+                    if value not in dropped
                 ]
-                ranges = {}
-                for level in DIFFICULTIES:
-                    coefficients = np.asarray([
-                        sum(
-                            difficulty(context_by_index[context_index], pair) == level
-                            for pair in bundle
-                        )
-                        for context_index, bundle in options
-                    ] + [0], dtype=float)
-                    endpoints = []
-                    for direction in (1.0, -1.0):
-                        endpoint = milp(
-                            direction * coefficients,
-                            integrality=np.ones(decision_variable_count),
-                            bounds=Bounds(
-                                np.zeros(decision_variable_count),
-                                np.concatenate((
-                                    np.ones(variable_count), [float(variant_count)]
-                                )),
-                            ),
-                            constraints=LinearConstraint(
-                                matrix[keep], np.asarray(minima)[keep],
-                                np.asarray(maxima)[keep],
-                            ),
-                            options={"time_limit": 30},
-                        )
-                        endpoints.append(
-                            int(round(coefficients @ endpoint.x))
+                result = milp(
+                    objective_values,
+                    integrality=np.zeros(decision_variable_count),
+                    bounds=lp_bounds,
+                    constraints=LinearConstraint(
+                        matrix[kept], np.asarray(minima)[kept],
+                        np.asarray(maxima)[kept],
+                    ),
+                    options={"time_limit": 30},
+                )
+                return result, kept
+
+            global_cap_labels = {
+                "TOKEN_SUBSET_CAP", "OFFICIAL_NAME_ALIAS_CAP",
+                "RELATION_PAIR_CAP", "RELATION_CAPACITY", "HALL_REF",
+                "HALL_OPERATOR", "HALL_TOKEN_SUBSET_SIGNATURE",
+            }
+            mix_labels = {
+                "DIFFICULTY", "STATE_VARIANTS", "STATE_TARGET_SHARE_REACHABLE",
+            }
+            difficulty_ranges = {}
+            for level in DIFFICULTIES:
+                coefficients = np.asarray([
+                    sum(
+                        difficulty(context_by_index[context_index], pair) == level
+                        for pair in bundle
+                    )
+                    for context_index, bundle in options
+                ] + [0], dtype=float)
+                endpoints = {}
+                for endpoint_name, direction in (("minimum", 1.0), ("maximum", -1.0)):
+                    endpoint, _kept = diagnostic_lp(
+                        global_cap_labels | {"DIFFICULTY"},
+                        direction * coefficients,
+                    )
+                    endpoints[endpoint_name] = {
+                        "status": int(endpoint.status),
+                        "message": str(endpoint.message),
+                        "value": (
+                            float(coefficients @ endpoint.x)
                             if endpoint.success and endpoint.x is not None else None
-                        )
-                    ranges[level] = {"minimum": endpoints[0], "maximum": endpoints[1]}
-                diagnostic["difficulty_feasible_ranges_without_mix"] = ranges
+                        ),
+                    }
+                difficulty_ranges[level] = endpoints
+            diagnostic["lp_difficulty_ranges_without_global_caps"] = difficulty_ranges
+
+            total_coefficients = np.asarray([
+                len(bundle) for _context_index, bundle in options
+            ] + [0], dtype=float)
+            fragment_labels = {
+                "RELATION_CAPACITY", "HALL_REF", "HALL_OPERATOR",
+                "HALL_TOKEN_SUBSET_SIGNATURE",
+            }
+            capacity_scenarios = {
+                "FAMILY_CAPS_ONLY": (
+                    mix_labels | {"TOTAL_VARIANTS", "RELATION_PAIR_CAP"}
+                    | fragment_labels
+                ),
+                "ALIAS_CAP_ONLY": (
+                    mix_labels | {"TOTAL_VARIANTS", "TOKEN_SUBSET_CAP",
+                                  "RELATION_PAIR_CAP"} | fragment_labels
+                ),
+                "TOKEN_SUBSET_CAP_ONLY": (
+                    mix_labels | {"TOTAL_VARIANTS", "OFFICIAL_NAME_ALIAS_CAP",
+                                  "RELATION_PAIR_CAP"} | fragment_labels
+                ),
+                "PAIR_CAPS_ONLY": (
+                    mix_labels | {"TOTAL_VARIANTS", "TOKEN_SUBSET_CAP",
+                                  "OFFICIAL_NAME_ALIAS_CAP"} | fragment_labels
+                ),
+                "FAMILY_AND_PAIR_CAPS": (
+                    mix_labels | {"TOTAL_VARIANTS"} | fragment_labels
+                ),
+                "ALL_GLOBAL_CAPS": mix_labels | {"TOTAL_VARIANTS"},
+            }
+            capacity_bounds = {}
+            for name, dropped in capacity_scenarios.items():
+                endpoint, _kept = diagnostic_lp(dropped, -total_coefficients)
+                maximum = (
+                    float(total_coefficients @ endpoint.x)
+                    if endpoint.success and endpoint.x is not None else None
+                )
+                capacity_bounds[name] = {
+                    "status": int(endpoint.status),
+                    "message": str(endpoint.message),
+                    "maximum_variants_lp": maximum,
+                    "minimum_variant_extension_if_below_target": (
+                        max(0.0, variant_count - maximum)
+                        if maximum is not None else None
+                    ),
+                }
+            diagnostic["lp_total_capacity_by_cap_scenario"] = capacity_bounds
         raise ValueError(
             f"balanced production MILP is infeasible: {solution.message}; "
             f"diagnostic={json.dumps(diagnostic, sort_keys=True)}"
@@ -1596,6 +1918,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     prior_difficulty_counts: Counter[str] = Counter()
     prior_stratum_counts: Counter[str] = Counter()
     prior_token_subset_signature_counts: Counter[str] = Counter()
+    prior_state_variant_counts, prior_state_target_counts = seed_state_usage(
+        args.prior_counted_seed_input
+    )
     registry_sirets: set[str] = set()
     registry_sirens: set[str] = set()
     prior_distinct_target_count = 0
@@ -1611,6 +1936,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             prior_token_subset_signature_counts, prior_distinct_target_count,
             registry_sirets, registry_sirens, registry_hash,
         ) = registry_usage(args.production_registry)
+        prior_state_variant_counts, prior_state_target_counts = (
+            registry_state_usage(args.production_registry)
+        )
     all_excluded_inputs = [
         *args.exclude_seed_input, *args.prior_counted_seed_input,
     ]
@@ -1679,6 +2007,31 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     cumulative_variant_count = prior_variant_count + variant_count
     final_variant_target = int(plan["objective"]["promoted_variant_target"])
     maximum_unique_targets = int(plan["objective"]["maximum_unique_targets"])
+    target_active_share_bounds = tuple(
+        float(value) for value in
+        plan["corpus_balance"]["target_identity_active_share_bounds"]
+    )
+    if (
+        len(target_active_share_bounds) != 2
+        or not 0 <= target_active_share_bounds[0]
+        <= target_active_share_bounds[1] <= 1
+    ):
+        raise ValueError("invalid target identity active-share bounds")
+    final_state_variant_counts = exact_counts(
+        final_variant_target, plan["corpus_balance"]["state_variants"]
+    )
+    state_variant_additions = remaining_quota_counts(
+        variant_count, final_variant_target,
+        plan["corpus_balance"]["state_variants"], prior_state_variant_counts,
+    )
+    future_state_variant_counts = {
+        state: (
+            final_state_variant_counts[state]
+            - prior_state_variant_counts[state]
+            - state_variant_additions[state]
+        )
+        for state in ("A", "F")
+    }
     maximum_target_count = maximum_batch_target_additions(
         prior_variant_count, prior_distinct_target_count, variant_count,
         final_variant_target, maximum_unique_targets,
@@ -1697,12 +2050,29 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             final_variant_target * plan["global_caps"]["relation_pair_share"]
         ))
     )
+    official_name_alias_cap = int(math.floor(
+        final_variant_target
+        * plan["global_caps"]["official_name_alias_share"]
+    ))
+    prior_official_name_alias_count = sum(
+        count for signature, count in prior_pair_counts.items()
+        if signature.startswith("name:OFFICIAL_NAME_ALIAS+")
+    )
+    official_name_alias_remaining = max(
+        0, official_name_alias_cap - prior_official_name_alias_count
+    )
     operator_cap = max(
         1, int(math.ceil(
             final_variant_target * 2
             * plan["global_caps"]["exact_operator_share"]
         ))
     )
+    if args.audit_exact_operator_cap:
+        if not (args.feasibility_only or args.diagnose_infeasible):
+            raise ValueError(
+                "--audit-exact-operator-cap requires a read-only feasibility mode"
+            )
+        operator_cap = int(args.audit_exact_operator_cap)
     first_batch = plan["production"].get("first_batch", {})
     if args.batch_id == first_batch.get("batch_id") and not prior_variant_count:
         operator_cap = max(
@@ -1722,6 +2092,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         )),
     )
     ref_cap = int(plan["global_caps"]["inspiration_ref_uses"])
+    if args.audit_inspiration_ref_cap:
+        if not (args.feasibility_only or args.diagnose_infeasible):
+            raise ValueError(
+                "--audit-inspiration-ref-cap requires a read-only feasibility mode"
+            )
+        ref_cap = int(args.audit_inspiration_ref_cap)
     grouped_all = fragments.group_fragments(rows(source_paths["field_inspiration_bank"]))
     grouped = {
         key: [
@@ -1927,7 +2303,9 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     ref_counts = None
     operator_counts = None
     effective_selection_seed = args.selection_seed
-    selection_attempt_limit = 1 if args.diagnose_infeasible else 64
+    selection_attempt_limit = (
+        1 if args.diagnose_infeasible or args.feasibility_only else 64
+    )
     for selection_attempt in range(selection_attempt_limit):
         effective_selection_seed = (
             args.selection_seed if selection_attempt == 0
@@ -1936,14 +2314,19 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         try:
             candidate_selection = choose_targets_and_bundles(
                 feasible_contexts, capabilities, variant_count,
-                maximum_target_count, difficulty_counts,
+                maximum_target_count, target_active_share_bounds,
+                prior_state_variant_counts, prior_state_target_counts,
+                state_variant_additions, future_state_variant_counts,
+                difficulty_counts,
                 difficulty_minimum_additions, difficulty_maximum_additions,
                 relation_pair_cap, prior_pair_counts, relation_capacities,
+                official_name_alias_remaining,
                 name_token_subset_remaining, ref_cap, operator_cap,
                 prior_ref_counts, prior_operator_counts, effective_ref_caps,
                 token_subset_signature_cap,
                 prior_token_subset_signature_counts, effective_selection_seed,
-                args.diagnose_infeasible, capability_pool_limit,
+                args.diagnose_infeasible, args.feasibility_only,
+                capability_pool_limit,
             )
             candidate_assignment, candidate_ref_counts, candidate_operator_counts = (
                 assign_fragments(
@@ -2125,11 +2508,15 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         "state_counts": dict(Counter(
             row["seed_card"]["official_context"]["target"]["state"] for row in output
         )),
+        "target_identity_active_share_bounds": list(target_active_share_bounds),
         "state_variant_counts": dict(Counter(
             row["seed_card"]["official_context"]["target"]["state"]
             for row in output
             for _contract in row["seed_card"]["composite_contracts"]
         )),
+        "prior_promoted_state_variant_counts": dict(prior_state_variant_counts),
+        "prior_promoted_state_target_counts": dict(prior_state_target_counts),
+        "final_state_variant_targets": final_state_variant_counts,
         "contracts_per_target_counts": dict(Counter(
             len(row["seed_card"]["composite_contracts"]) for row in output
         )),
@@ -2172,6 +2559,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "inspiration_ref": int(plan["global_caps"]["inspiration_ref_uses"]),
             "exact_operator": operator_cap,
             "relation_pair": relation_pair_cap,
+            "official_name_alias": official_name_alias_cap,
             "name_token_subset": name_token_subset_cap,
             "name_token_subset_signature": token_subset_signature_cap,
             "difficulty_hard_prefix": hard_prefix_cap,
@@ -2240,6 +2628,27 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--diagnose-infeasible", action="store_true",
         help="On one selection attempt, identify which constraint group causes infeasibility.",
+    )
+    result.add_argument(
+        "--feasibility-only", action="store_true",
+        help=(
+            "Run one pure-feasibility MILP/flow attempt without the expensive "
+            "infeasibility relaxation cascade."
+        ),
+    )
+    result.add_argument(
+        "--audit-exact-operator-cap", type=int, default=0,
+        help=(
+            "Read-only capacity audit override for the absolute exact-operator "
+            "cap; requires --feasibility-only or --diagnose-infeasible."
+        ),
+    )
+    result.add_argument(
+        "--audit-inspiration-ref-cap", type=int, default=0,
+        help=(
+            "Read-only capacity audit override for the absolute inspiration-ref "
+            "cap; requires --feasibility-only or --diagnose-infeasible."
+        ),
     )
     result.add_argument("--selection-seed", default="SIRETO-BALANCED-P000-V1")
     result.add_argument("--exclude-seed-input", type=Path, action="append", default=[])

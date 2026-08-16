@@ -1,8 +1,13 @@
 from copy import deepcopy
+from collections import Counter
 
 import pytest
 
-from scripts.finalize_synthetic_gt_balanced_corpus import quota_audit
+from scripts.finalize_synthetic_gt_balanced_corpus import (
+    cap_limits,
+    final_state_audit,
+    quota_audit,
+)
 from scripts.select_synthetic_gt_balanced_production import exact_counts
 
 
@@ -14,6 +19,8 @@ def plan() -> dict:
             "maximum_variants_per_target": 3,
         },
         "corpus_balance": {
+            "state_variants": {"A": 0.5, "F": 0.5},
+            "target_identity_active_share_bounds": [0.55, 0.59],
             "difficulty": {"EASY": 0.2, "MEDIUM": 0.5, "HARD": 0.3},
             "augmentation_strata": {
                 "FAIL_BOTH_MODELS": 0.2,
@@ -27,6 +34,7 @@ def plan() -> dict:
             "inspiration_ref_uses": 4,
             "exact_operator_share": 0.2,
             "relation_pair_share": 0.4,
+            "official_name_alias_share": 0.6,
             "name_token_subset_share": 0.3,
             "name_token_subset_signature_share_global": 0.2,
             "name_token_subset_signature_share_within_family": 0.5,
@@ -85,3 +93,39 @@ def test_quota_audit_rejects_cap_overrun() -> None:
     current["inspiration_ref_counts"] = {"ref": 5}
     with pytest.raises(ValueError, match="cumulative cap"):
         quota_audit(current, plan(), require_complete=True)
+
+
+def test_cap_limits_materialize_absolute_operator_and_ref_avenant() -> None:
+    value = plan()
+    value["objective"]["promoted_variant_target"] = 20_000
+    value["global_caps"]["inspiration_ref_uses"] = 4_100
+    value["global_caps"]["exact_operator_share"] = 0.105
+    limits = cap_limits(value)
+    assert limits["inspiration_ref"] == 4_100
+    assert limits["exact_operator"] == 4_200
+
+
+def test_quota_audit_rejects_official_alias_family_overrun() -> None:
+    current = deepcopy(summary(10))
+    current["relation_pair_counts"] = {
+        "name:OFFICIAL_NAME_ALIAS+address:ADDRESS_ABBREVIATE": 4,
+        "name:OFFICIAL_NAME_ALIAS+city:PUNCTUATION_REMOVED": 3,
+    }
+    with pytest.raises(ValueError, match="cumulative cap"):
+        quota_audit(current, plan(), require_complete=True)
+
+
+def test_final_state_audit_requires_exact_variants_and_identity_envelope() -> None:
+    result = final_state_audit(
+        Counter({"A": 5, "F": 5}), Counter({"A": 4, "F": 3}), plan()
+    )
+    assert result["active_target_identity_share"] == 4 / 7
+
+    with pytest.raises(ValueError, match="state variant quotas"):
+        final_state_audit(
+            Counter({"A": 6, "F": 4}), Counter({"A": 4, "F": 3}), plan()
+        )
+    with pytest.raises(ValueError, match="identity share"):
+        final_state_audit(
+            Counter({"A": 5, "F": 5}), Counter({"A": 3, "F": 3}), plan()
+        )
