@@ -309,7 +309,7 @@ def _collect_registered_rows(
 
 
 def _real_rows(
-    crm_path: Path, fold_path: Path,
+    crm_path: Path, fold_path: Path, corpus_plan: dict[str, Any],
 ) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
     crm = pd.read_csv(crm_path, sep=";", dtype=str, keep_default_na=False).reset_index(
         names="query_id"
@@ -321,17 +321,88 @@ def _real_rows(
     if missing := required - set(crm.columns):
         raise ValueError(f"real CRM lacks columns: {sorted(missing)}")
     folds = pd.read_parquet(fold_path)
-    if {"query_id", "oof_fold", "legacy_split"} - set(folds.columns):
+    fold_columns = {"query_id", "siren_component_id", "oof_fold", "legacy_split"}
+    if fold_columns - set(folds.columns):
         raise ValueError("fold assignments lack required columns")
     crm["query_id"] = crm["query_id"].astype(str)
     folds = folds.copy()
     folds["query_id"] = folds["query_id"].astype(str)
     joined = crm.merge(
-        folds[["query_id", "oof_fold", "legacy_split"]],
+        folds[["query_id", "siren_component_id", "oof_fold", "legacy_split"]],
         on="query_id", how="left", validate="one_to_one",
     )
     if joined["oof_fold"].isna().any():
         raise ValueError("real CRM rows are missing fold assignments")
+
+    population = corpus_plan.get("population", {})
+    generator = corpus_plan.get("generator", {})
+    if len(joined) != int(population.get("expected_joined_rows", -1)):
+        raise ValueError("real CRM/fold join differs from the frozen corpus plan")
+
+    # Reconstruct the exact leakage-safe population used by the generator.
+    # Merely selecting folds 2/3/4 is insufficient: a nominal train row must
+    # also be removed when its SIREN or its connected SIREN component occurs
+    # in a forbidden dev/test row.  This derivation must happen before the
+    # allowed split is selected, exactly as in the frozen runtime.
+    forbidden = (
+        joined["oof_fold"].astype("Int64").isin(population["forbidden_oof_folds"])
+        | joined["legacy_split"].isin(population["forbidden_legacy_splits"])
+    )
+    forbidden_components = {
+        str(value).strip()
+        for value in joined.loc[forbidden, "siren_component_id"]
+        if str(value).strip()
+    }
+    forbidden_sirens = {
+        str(value).strip()[:9]
+        for value in joined.loc[forbidden, "gt_siret"]
+        if loop.valid_siret(str(value).strip())
+    }
+
+    allowed = joined[
+        joined["oof_fold"].astype("Int64").isin(generator["allowed_oof_folds"])
+        & joined["legacy_split"].eq(generator["allowed_legacy_split"])
+    ].copy()
+    allowed_sirens = allowed["gt_siret"].astype(str).str.strip().str[:9]
+    allowed = allowed[
+        ~allowed["siren_component_id"].astype(str).str.strip().isin(forbidden_components)
+        & ~allowed_sirens.isin(forbidden_sirens)
+    ].copy()
+
+    expected_by_fold = {
+        int(key): int(value)
+        for key, value in population.get("allowed_by_fold", {}).items()
+    }
+    actual_by_fold = {
+        int(key): int(value)
+        for key, value in allowed["oof_fold"].astype(int).value_counts().sort_index().items()
+    }
+    actual_states = {
+        str(key): int(value)
+        for key, value in allowed["sirene_etat"].value_counts().sort_index().items()
+    }
+    expected_states = {
+        str(key): int(value)
+        for key, value in population.get("expected_target_state_counts", {}).items()
+    }
+    population_checks = {
+        "rows": (len(allowed), int(population.get("allowed_rows", -1))),
+        "components": (
+            allowed["siren_component_id"].astype(str).str.strip().nunique(),
+            int(population.get("allowed_components", -1)),
+        ),
+        "sirens": (
+            allowed["gt_siret"].astype(str).str.strip().str[:9].nunique(),
+            int(population.get("allowed_sirens", -1)),
+        ),
+    }
+    if any(actual != expected for actual, expected in population_checks.values()):
+        raise ValueError(f"strict real train population differs from plan: {population_checks}")
+    if actual_by_fold != expected_by_fold or actual_states != expected_states:
+        raise ValueError(
+            "strict real train distribution differs from plan: "
+            f"folds={actual_by_fold}, states={actual_states}"
+        )
 
     def records(frame: pd.DataFrame) -> list[dict[str, Any]]:
         return [{
@@ -347,11 +418,7 @@ def _real_rows(
             "corruption_families_observed": [],
         } for row in frame.itertuples(index=False)]
 
-    train = joined[
-        joined["oof_fold"].astype(int).isin(TRAIN_FOLDS)
-        & joined["legacy_split"].eq("train")
-    ]
-    return records(joined), records(train)
+    return records(joined), records(allowed)
 
 
 def _state_counts(rows: Iterable[dict[str, Any]], *, synthetic: bool) -> dict[str, int]:
@@ -603,7 +670,7 @@ def run(args: argparse.Namespace) -> Path:
         args.registry, expected_sirene_hashes
     )
     real_all, real_train = _real_rows(
-        source_paths["crm_ok_gt"], source_paths["fold_assignments"]
+        source_paths["crm_ok_gt"], source_paths["fold_assignments"], corpus_plan
     )
     expected_real_all = int(corpus_plan.get("sources", {}).get("crm_ok_gt", {}).get("row_count", -1))
     expected_real_train = int(corpus_plan.get("population", {}).get("allowed_rows", -1))

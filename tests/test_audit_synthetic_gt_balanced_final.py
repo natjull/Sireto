@@ -189,8 +189,14 @@ def _fixture(tmp_path: Path) -> argparse.Namespace:
     ]).to_csv(crm_path, sep=";", index=False)
     folds_path = tmp_path / "folds.parquet"
     pd.DataFrame([
-        {"query_id": "0", "oof_fold": 2, "legacy_split": "train"},
-        {"query_id": "1", "oof_fold": 0, "legacy_split": "train"},
+        {
+            "query_id": "0", "siren_component_id": "987654321",
+            "oof_fold": 2, "legacy_split": "train",
+        },
+        {
+            "query_id": "1", "siren_component_id": "987654322",
+            "oof_fold": 0, "legacy_split": "train",
+        },
     ]).to_parquet(folds_path, index=False)
     corpus_plan_path = tmp_path / "corpus_plan.json"
     _write_json(corpus_plan_path, {
@@ -200,7 +206,17 @@ def _fixture(tmp_path: Path) -> argparse.Namespace:
             "sirene_establishments": {"path": str(sirene_establishments), "sha256": sirene_hashes["sirene_establishments"]},
             "sirene_legal_units": {"path": str(sirene_legal_units), "sha256": sirene_hashes["sirene_legal_units"]},
         },
-        "population": {"allowed_rows": 1},
+        "generator": {"allowed_oof_folds": [2, 3, 4], "allowed_legacy_split": "train"},
+        "population": {
+            "expected_joined_rows": 2,
+            "allowed_rows": 1,
+            "allowed_by_fold": {"2": 1},
+            "allowed_components": 1,
+            "allowed_sirens": 1,
+            "forbidden_oof_folds": [0, 1],
+            "forbidden_legacy_splits": ["dev", "test"],
+            "expected_target_state_counts": {"A": 1},
+        },
     })
     balanced_plan_path = tmp_path / "balanced_plan.json"
     _write_json(balanced_plan_path, {"objective": {"promoted_variant_target": 1}})
@@ -276,6 +292,63 @@ def test_exact_and_operational_views_are_never_merged() -> None:
     assert result["rows_with_operational_equivalent_alternative"] == 2
     assert result["operational_only_rows"] == 1
     assert result["views_are_separate"] is True
+
+
+def test_real_rows_exclude_train_identity_connected_to_forbidden_rows(tmp_path: Path) -> None:
+    crm_path = tmp_path / "crm.csv"
+    pd.DataFrame([
+        {
+            "crm_name": "SAFE", "crm_adresse": "1 RUE A", "crm_cp": "75001",
+            "crm_commune": "PARIS", "crm_insee": "75056",
+            "gt_siret": "11111111100011", "sirene_etat": "A",
+        },
+        {
+            "crm_name": "SIREN LEAK", "crm_adresse": "2 RUE A", "crm_cp": "75001",
+            "crm_commune": "PARIS", "crm_insee": "75056",
+            "gt_siret": "22222222200012", "sirene_etat": "A",
+        },
+        {
+            "crm_name": "COMPONENT LEAK", "crm_adresse": "3 RUE A", "crm_cp": "75001",
+            "crm_commune": "PARIS", "crm_insee": "75056",
+            "gt_siret": "33333333300013", "sirene_etat": "F",
+        },
+        {
+            "crm_name": "DEV SAME SIREN", "crm_adresse": "4 RUE A", "crm_cp": "75001",
+            "crm_commune": "PARIS", "crm_insee": "75056",
+            "gt_siret": "22222222200020", "sirene_etat": "A",
+        },
+        {
+            "crm_name": "TEST SAME COMPONENT", "crm_adresse": "5 RUE A", "crm_cp": "75001",
+            "crm_commune": "PARIS", "crm_insee": "75056",
+            "gt_siret": "44444444400014", "sirene_etat": "F",
+        },
+    ]).to_csv(crm_path, sep=";", index=False)
+    folds_path = tmp_path / "folds.parquet"
+    pd.DataFrame([
+        {"query_id": "0", "siren_component_id": "safe", "oof_fold": 2, "legacy_split": "train"},
+        {"query_id": "1", "siren_component_id": "train-siren", "oof_fold": 2, "legacy_split": "train"},
+        {"query_id": "2", "siren_component_id": "shared", "oof_fold": 3, "legacy_split": "train"},
+        {"query_id": "3", "siren_component_id": "dev", "oof_fold": 0, "legacy_split": "dev"},
+        {"query_id": "4", "siren_component_id": "shared", "oof_fold": 1, "legacy_split": "test"},
+    ]).to_parquet(folds_path, index=False)
+    plan = {
+        "generator": {"allowed_oof_folds": [2, 3, 4], "allowed_legacy_split": "train"},
+        "population": {
+            "expected_joined_rows": 5,
+            "allowed_rows": 1,
+            "allowed_by_fold": {"2": 1},
+            "allowed_components": 1,
+            "allowed_sirens": 1,
+            "forbidden_oof_folds": [0, 1],
+            "forbidden_legacy_splits": ["dev", "test"],
+            "expected_target_state_counts": {"A": 1},
+        },
+    }
+
+    real_all, real_train = audit._real_rows(crm_path, folds_path, plan)
+
+    assert len(real_all) == 5
+    assert [row["query_id"] for row in real_train] == ["0"]
 
 
 def test_final_audit_reuses_sealed_full_sirene_and_includes_real_distribution(tmp_path: Path) -> None:
