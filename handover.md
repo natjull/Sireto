@@ -4550,6 +4550,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   P011 de 363 s à 144,65 s. Les JSON avant/après sont byte-identiques, SHA-256
   `b268e01b…` pour P010 et `22eb662e…` pour P011. Les 11 tests ciblés passent,
   dont une équivalence exhaustive du nouveau rejet sur les petites séquences.
+- Optimisation du sélecteur de production : commit `dba7487` (`perf: cache
+  balanced selector context and solve mix once`). Un index content-addressed
+  scelle les offsets, l'éligibilité et les fréquences documentaires du contexte
+  officiel, puis ne charge que le pool retenu. La recherche exacte puis relaxée
+  en cascade est remplacée par un MILP unique qui minimise lexicographiquement
+  l'écart de difficulté et le nombre de cibles, sans changer les caps, gardes ni
+  contraintes de Hall. Sur le registre P012 gelé, le replay P013 passe de plus
+  de 321 s à 21,41 s cache chaud et 469 Mio de pic RSS ; deux replays sont
+  byte-identiques et les 20 tests ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
