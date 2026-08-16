@@ -502,7 +502,15 @@ def candidate_bundles(
     ]
     if len(pairs) < 3:
         return []
-    values = list(itertools.combinations_with_replacement(pairs, 3))
+    # The runtime contract is one to three variants per target.  Keeping only
+    # triples strands clean controls late in production when a target has just
+    # one or two distinct safe location operators.  Model all legal sizes and
+    # let the corpus-level MILP preserve the exact number of variants.
+    values = [
+        bundle
+        for size in (1, 2, 3)
+        for bundle in itertools.combinations_with_replacement(pairs, size)
+    ]
     # Keep several difficulty profiles before deterministic thinning.
     by_profile: dict[tuple[int, int, int], list[Any]] = defaultdict(list)
     for bundle in values:
@@ -525,7 +533,7 @@ def candidate_bundles(
         counts = Counter(difficulty(context, pair) for pair in bundle)
         profile = tuple(counts[value] for value in DIFFICULTIES)
         by_profile[profile].append(bundle)
-    selected = []
+    selected_by_profile: dict[tuple[int, int, int], list[Any]] = {}
     for profile in sorted(by_profile):
         candidates = sorted(
             by_profile[profile],
@@ -534,14 +542,94 @@ def candidate_bundles(
                 f"{'|'.join(pair_signature(value) for value in bundle)}".encode()
             ).hexdigest(),
         )
-        selected.extend(candidates[:4])
-    return sorted(
-        selected,
-        key=lambda bundle: hashlib.sha256(
-            f"{selection_seed}|thin|{context['target_siret']}|"
-            f"{'|'.join(pair_signature(value) for value in bundle)}".encode()
-        ).hexdigest(),
-    )[:limit]
+        selected_by_profile[profile] = candidates[:4]
+    # Round-robin over difficulty profiles.  A global hash truncation can erase
+    # every EASY-bearing profile even when safe EASY operators exist, creating a
+    # false capacity exhaustion after several batches.
+    selected = []
+    for depth in range(4):
+        for profile in sorted(selected_by_profile):
+            candidates = selected_by_profile[profile]
+            if depth < len(candidates):
+                selected.append(candidates[depth])
+                if len(selected) >= limit:
+                    return selected
+    return selected
+
+
+def stratified_context_pool(
+    contexts: Sequence[dict[str, Any]],
+    limit: int,
+    selection_seed: str,
+    alias_available: dict[str, bool],
+    easy_capacity: dict[str, int] | None = None,
+    active_share: float = 0.5,
+) -> list[dict[str, Any]]:
+    """Preserve state and alias/non-alias coverage before deterministic thinning.
+
+    ``active_share`` only controls the candidate-computation pool.  The MILP
+    keeps the output state mix exact.  A larger active share is useful there
+    because EASY is structurally impossible for closed/same-site challenge
+    scenes, while a large residual closed reserve remains sufficient.
+    """
+    if limit <= 0:
+        return []
+    if not 0.0 <= active_share <= 1.0:
+        raise ValueError("active_share must be between zero and one")
+    easy_capacity = easy_capacity or {}
+
+    def order(value: dict[str, Any]) -> tuple[int, str]:
+        siret = value["target_siret"]
+        return (
+            -int(easy_capacity.get(siret, 0)),
+            hashlib.sha256(
+                f"{selection_seed}|stratified-pool|{siret}".encode()
+            ).hexdigest(),
+        )
+
+    result: list[dict[str, Any]] = []
+    active_limit = int(round(limit * active_share))
+    per_state = {"A": active_limit, "F": limit - active_limit}
+    for state in ("A", "F"):
+        state_values = [
+            value for value in contexts if value["target"]["state"] == state
+        ]
+        state_limit = min(per_state[state], len(state_values))
+        groups = {
+            flag: sorted(
+                [
+                    value for value in state_values
+                    if bool(alias_available.get(value["target_siret"], False)) == flag
+                ],
+                key=order,
+            )
+            for flag in (True, False)
+        }
+        quotas = {True: state_limit // 2, False: state_limit - state_limit // 2}
+        selected: list[dict[str, Any]] = []
+        selected_ids: set[str] = set()
+        for flag in (True, False):
+            for value in groups[flag][:quotas[flag]]:
+                selected.append(value)
+                selected_ids.add(value["target_siret"])
+        if len(selected) < state_limit:
+            remainder = sorted(
+                [
+                    value for value in state_values
+                    if value["target_siret"] not in selected_ids
+                ],
+                key=order,
+            )
+            selected.extend(remainder[:state_limit - len(selected)])
+        result.extend(selected)
+    if len(result) < min(limit, len(contexts)):
+        selected_ids = {value["target_siret"] for value in result}
+        remainder = sorted(
+            [value for value in contexts if value["target_siret"] not in selected_ids],
+            key=order,
+        )
+        result.extend(remainder[:limit - len(result)])
+    return result[:limit]
 
 
 def choose_targets_and_bundles(
@@ -570,15 +658,24 @@ def choose_targets_and_bundles(
     # Authoritative aliases are comparatively rare and are the safe source of
     # easy capacity.  Keep them before deterministic thinning of ordinary rows.
     pool_limit = max(3000, 3 * target_count)
-    eligible = sorted(
-        contexts,
-        key=lambda value: (
-            not bool(capabilities[value["target_siret"]][0].get("OFFICIAL_NAME_ALIAS")),
-            hashlib.sha256(
-                f"{selection_seed}|pool|{value['target_siret']}".encode()
-            ).hexdigest(),
-        ),
-    )[:pool_limit]
+    alias_available = {
+        value["target_siret"]: bool(
+            capabilities[value["target_siret"]][0].get("OFFICIAL_NAME_ALIAS")
+        )
+        for value in contexts
+    }
+    easy_capacity = {}
+    for value in contexts:
+        names, locations = capabilities[value["target_siret"]]
+        easy_pairs = sum(
+            difficulty(value, (name_relation, location_key)) == "EASY"
+            for name_relation, name_values in names.items() if name_values
+            for location_key, location_values in locations.items() if location_values
+        )
+        easy_capacity[value["target_siret"]] = min(3, easy_pairs)
+    eligible = stratified_context_pool(
+        contexts, pool_limit, selection_seed, alias_available, easy_capacity,
+    )
     for context in eligible:
         siret = context["target_siret"]
         names, locations = capabilities[siret]
@@ -606,10 +703,11 @@ def choose_targets_and_bundles(
         constraint_labels.append(label)
         return len(constraint_rows) - 1
 
-    add(
-        {index: 1 for index in range(variable_count)}, target_count, target_count,
-        "TOTAL",
-    )
+    variant_count = target_count * 3
+    add({
+        index: len(bundle)
+        for index, (_context_index, bundle) in enumerate(options)
+    }, variant_count, variant_count, "TOTAL_VARIANTS")
     option_by_context: dict[int, list[int]] = defaultdict(list)
     for option_index, (context_index, _bundle) in enumerate(options):
         option_by_context[context_index].append(option_index)
@@ -617,9 +715,18 @@ def choose_targets_and_bundles(
         add({index: 1 for index in indexes}, 0, 1, "TARGET_UNIQUENESS")
     for state in ("A", "F"):
         add({
-            index: 1 for index, (context_index, _bundle) in enumerate(options)
+            index: len(bundle)
+            for index, (context_index, bundle) in enumerate(options)
             if context_by_index[context_index]["target"]["state"] == state
-        }, target_count // 2, target_count // 2, "STATE")
+        }, variant_count // 2, variant_count // 2, "STATE_VARIANTS")
+    # Target weights are normalized by promoted variants downstream.  Preserve
+    # active/closed scene balance as well as the unweighted variant balance.
+    add({
+        index: (
+            1 if context_by_index[context_index]["target"]["state"] == "A" else -1
+        )
+        for index, (context_index, _bundle) in enumerate(options)
+    }, 0, 0, "STATE_TARGETS_BALANCED")
     difficulty_rows: dict[str, int] = {}
     for level in DIFFICULTIES:
         difficulty_rows[level] = add({
@@ -764,7 +871,7 @@ def choose_targets_and_bundles(
         shape=(len(constraint_rows), variable_count),
     ).tocsr()
     objective = np.asarray([
-        int(hashlib.sha256(
+        1000.0 + int(hashlib.sha256(
             f"{selection_seed}|option|{context_by_index[context_index]['target_siret']}|"
             f"{'|'.join(pair_signature(value) for value in bundle)}".encode()
         ).hexdigest()[:16], 16) / float(2**64)
@@ -834,10 +941,68 @@ def choose_targets_and_bundles(
             "constraint_counts": dict(Counter(constraint_labels)),
             "difficulty_target": difficulty_counts,
             "difficulty_final_remainders": difficulty_maximum_additions,
+            "bundle_profile_counts": dict(Counter(
+                "/".join(str(sum(
+                    difficulty(context_by_index[context_index], pair) == level
+                    for pair in bundle
+                )) for level in DIFFICULTIES)
+                for context_index, bundle in options
+            )),
+            "easy_capability_by_state_and_alias": {
+                f"{state}:{alias}": {
+                    "contexts": sum(
+                        value["target"]["state"] == state
+                        and alias_available[value["target_siret"]] == alias
+                        for value in eligible
+                    ),
+                    "easy_contexts": sum(
+                        value["target"]["state"] == state
+                        and alias_available[value["target_siret"]] == alias
+                        and easy_capacity[value["target_siret"]] > 0
+                        for value in eligible
+                    ),
+                    "easy_variant_upper_bound": sum(
+                        easy_capacity[value["target_siret"]]
+                        for value in eligible
+                        if value["target"]["state"] == state
+                        and alias_available[value["target_siret"]] == alias
+                    ),
+                }
+                for state in ("A", "F") for alias in (True, False)
+            },
+            "easy_bundle_blocker_samples": [
+                {
+                    "target_siret": value["target_siret"],
+                    "name_exact_operator_counts": {
+                        relation: len(fragments)
+                        for relation, fragments in capabilities[
+                            value["target_siret"]
+                        ][0].items() if fragments
+                    },
+                    "location_exact_operator_counts": {
+                        f"{field}:{relation}": len(fragments)
+                        for (field, relation), fragments in capabilities[
+                            value["target_siret"]
+                        ][1].items() if fragments
+                    },
+                }
+                for value in eligible
+                if easy_capacity[value["target_siret"]] > 0
+                and not any(
+                    any(
+                        difficulty(value, pair) == "EASY" for pair in bundle
+                    )
+                    for bundle in candidate_bundles(
+                        value, *capabilities[value["target_siret"]], selection_seed
+                    )
+                )
+            ][:5],
         }
         if diagnose_infeasible:
             feasible_when_dropped = []
-            for label in sorted(set(constraint_labels) - {"TOTAL", "TARGET_UNIQUENESS"}):
+            for label in sorted(
+                set(constraint_labels) - {"TOTAL_VARIANTS", "TARGET_UNIQUENESS"}
+            ):
                 keep = [
                     index for index, value in enumerate(constraint_labels)
                     if value != label
@@ -855,6 +1020,40 @@ def choose_targets_and_bundles(
                 if relaxed.success and relaxed.x is not None:
                     feasible_when_dropped.append(label)
             diagnostic["feasible_when_constraint_group_dropped"] = feasible_when_dropped
+            if "DIFFICULTY" in feasible_when_dropped:
+                keep = [
+                    index for index, value in enumerate(constraint_labels)
+                    if value != "DIFFICULTY"
+                ]
+                ranges = {}
+                for level in DIFFICULTIES:
+                    coefficients = np.asarray([
+                        sum(
+                            difficulty(context_by_index[context_index], pair) == level
+                            for pair in bundle
+                        )
+                        for context_index, bundle in options
+                    ], dtype=float)
+                    endpoints = []
+                    for direction in (1.0, -1.0):
+                        endpoint = milp(
+                            direction * coefficients,
+                            integrality=np.ones(variable_count),
+                            bounds=Bounds(
+                                np.zeros(variable_count), np.ones(variable_count)
+                            ),
+                            constraints=LinearConstraint(
+                                matrix[keep], np.asarray(minima)[keep],
+                                np.asarray(maxima)[keep],
+                            ),
+                            options={"time_limit": 30},
+                        )
+                        endpoints.append(
+                            int(round(coefficients @ endpoint.x))
+                            if endpoint.success and endpoint.x is not None else None
+                        )
+                    ranges[level] = {"minimum": endpoints[0], "maximum": endpoints[1]}
+                diagnostic["difficulty_feasible_ranges_without_mix"] = ranges
         raise ValueError(
             f"balanced production MILP is infeasible: {solution.message}; "
             f"diagnostic={json.dumps(diagnostic, sort_keys=True)}"
@@ -864,8 +1063,10 @@ def choose_targets_and_bundles(
         for index, (context_index, bundle) in enumerate(options)
         if solution.x[index] > 0.5
     ]
-    if len(result) != target_count:
-        raise RuntimeError("MILP returned an incomplete target selection")
+    if sum(len(bundle) for _context, bundle in result) != variant_count:
+        raise RuntimeError("MILP returned an incomplete variant selection")
+    if not target_count <= len(result) <= variant_count:
+        raise RuntimeError("MILP returned an invalid target count")
     if difficulty_tolerance:
         print(json.dumps({
             "difficulty_batch_relaxation": {
@@ -1224,15 +1425,21 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         args.selection_pool_limit
         if args.selection_pool_limit > 0 else max(3000, 3 * args.target_count)
     )
-    capability_contexts = sorted(
-        contexts,
-        key=lambda value: (
-            not bool(official_name_alias_fragments(value)),
-            hashlib.sha256(
-                f"{args.selection_seed}|capability-pool|{value['target_siret']}".encode()
-            ).hexdigest(),
-        ),
-    )[:capability_pool_limit]
+    official_alias_available = {
+        value["target_siret"]: bool(official_name_alias_fragments(value))
+        for value in contexts
+    }
+    structural_easy_priority = {
+        value["target_siret"]: (
+            3 if value["target"]["state"] == "A" and not context_flags(value) else 0
+        )
+        for value in contexts
+    }
+    capability_contexts = stratified_context_pool(
+        contexts, capability_pool_limit,
+        f"{args.selection_seed}|capability", official_alias_available,
+        structural_easy_priority, active_share=2 / 3,
+    )
     for context in capability_contexts:
         names, locations = safe_capabilities(
             context, grouped, document_frequencies, allowed_name_relations,
@@ -1287,6 +1494,26 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             pruned_capabilities[context["target_siret"]] = (names, locations)
             feasible_contexts.append(context)
     capabilities = pruned_capabilities
+    capability_diagnostics: dict[str, dict[str, int]] = {}
+    for context in feasible_contexts:
+        siret = context["target_siret"]
+        names, locations = capabilities[siret]
+        source_kind = (
+            "ALIAS" if names.get("OFFICIAL_NAME_ALIAS") else "NON_ALIAS"
+        )
+        key = f"{context['target']['state']}:{source_kind}"
+        record = capability_diagnostics.setdefault(
+            key, {"contexts": 0, "easy_contexts": 0, "easy_variant_upper_bound": 0}
+        )
+        record["contexts"] += 1
+        easy_pairs = sum(
+            difficulty(context, (name_relation, location_key)) == "EASY"
+            for name_relation, name_values in names.items() if name_values
+            for location_key, location_values in locations.items() if location_values
+        )
+        if easy_pairs:
+            record["easy_contexts"] += 1
+            record["easy_variant_upper_bound"] += min(3, easy_pairs)
 
     difficulty_counts = remaining_quota_counts(
         variant_count, final_variant_target,
@@ -1301,6 +1528,14 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         )
         for level in DIFFICULTIES
     }
+    hard_prefix_cap = int(math.floor(
+        cumulative_variant_count
+        * plan["global_caps"]["difficulty_hard_prefix_share"]
+    ))
+    difficulty_maximum_additions["HARD"] = min(
+        difficulty_maximum_additions["HARD"],
+        max(0, hard_prefix_cap - prior_difficulty_counts["HARD"]),
+    )
     stratum_counts = remaining_quota_counts(
         variant_count, final_variant_target,
         plan["corpus_balance"]["augmentation_strata"], prior_stratum_counts,
@@ -1313,7 +1548,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         key: max(0, final_stratum_counts[key] - prior_stratum_counts[key])
         for key in final_stratum_counts
     }
-    difficulty_minimum_additions = {level: 0 for level in DIFFICULTIES}
+    difficulty_minimum_additions = {
+        level: (
+            ideal_stratum_counts["NEAR_CLEAN_CONTROL"]
+            if level == "EASY" else 0
+        )
+        for level in DIFFICULTIES
+    }
     relation_capacities: dict[tuple[str, str], int] = {}
     prior_name_token_subsets = sum(
         count for signature, count in prior_pair_counts.items()
@@ -1575,6 +1816,15 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         "state_counts": dict(Counter(
             row["seed_card"]["official_context"]["target"]["state"] for row in output
         )),
+        "state_variant_counts": dict(Counter(
+            row["seed_card"]["official_context"]["target"]["state"]
+            for row in output
+            for _contract in row["seed_card"]["composite_contracts"]
+        )),
+        "contracts_per_target_counts": dict(Counter(
+            len(row["seed_card"]["composite_contracts"]) for row in output
+        )),
+        "selection_capability_counts": capability_diagnostics,
         "relation_pair_counts": dict(Counter(
             "+".join(f"{field}:{relation}" for field, relation in sorted(
                 contract["field_relations"].items()
@@ -1615,6 +1865,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             "relation_pair": relation_pair_cap,
             "name_token_subset": name_token_subset_cap,
             "name_token_subset_signature": token_subset_signature_cap,
+            "difficulty_hard_prefix": hard_prefix_cap,
         },
         "excluded_prior_sirets": len(excluded_sirets),
         "excluded_prior_sirens": len(excluded_sirens),

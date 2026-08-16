@@ -98,6 +98,7 @@
     "name_token_subset_signature_share_global": 0.025,
     "name_token_subset_signature_share_within_family": 0.20,
     "name_token_subset_per_target": 1,
+    "difficulty_hard_prefix_share": 0.35,
     "duplicate_surface_count": 0
   },
   "promotion_gates": {

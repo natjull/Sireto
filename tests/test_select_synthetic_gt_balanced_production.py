@@ -1,4 +1,5 @@
 import json
+from collections import Counter
 
 from scripts.select_synthetic_gt_balanced_production import (
     difficulty,
@@ -10,6 +11,8 @@ from scripts.select_synthetic_gt_balanced_production import (
     strict_token_subset_anchor,
     eligible_for_official_alias,
     adapt_strata_to_easy_capacity,
+    candidate_bundles,
+    stratified_context_pool,
 )
 
 
@@ -169,3 +172,60 @@ def test_strata_defer_control_without_exceeding_final_remainders() -> None:
     assert sum(result.values()) == 600
     assert result["NEAR_CLEAN_CONTROL"] == 37
     assert all(result[key] <= maximum[key] for key in result)
+
+
+def test_context_pool_reserves_state_and_non_alias_easy_capacity() -> None:
+    values = []
+    aliases = {}
+    easy = {}
+    for state in ("A", "F"):
+        for is_alias in (True, False):
+            for index in range(10):
+                siret = f"{state}{int(is_alias)}{index:02d}"
+                values.append({"target_siret": siret, "target": {"state": state}})
+                aliases[siret] = is_alias
+                easy[siret] = 3 if state == "A" and not is_alias else 0
+    selected = stratified_context_pool(values, 20, "seed", aliases, easy)
+    counts = Counter(
+        (value["target"]["state"], aliases[value["target_siret"]])
+        for value in selected
+    )
+    assert counts == {("A", True): 5, ("A", False): 5,
+                      ("F", True): 5, ("F", False): 5}
+    assert sum(easy[value["target_siret"]] for value in selected) == 15
+
+
+def test_context_pool_can_oversample_active_candidates_without_losing_alias_mix() -> None:
+    values = []
+    aliases = {}
+    for state in ("A", "F"):
+        for is_alias in (True, False):
+            for index in range(20):
+                siret = f"{state}{int(is_alias)}{index:02d}"
+                values.append({"target_siret": siret, "target": {"state": state}})
+                aliases[siret] = is_alias
+    selected = stratified_context_pool(
+        values, 30, "seed", aliases, active_share=2 / 3,
+    )
+    counts = Counter(
+        (value["target"]["state"], aliases[value["target_siret"]])
+        for value in selected
+    )
+    assert counts == {("A", True): 10, ("A", False): 10,
+                      ("F", True): 5, ("F", False): 5}
+
+
+def test_candidate_bundles_cover_one_to_three_runtime_contracts() -> None:
+    value = {
+        "target_siret": "12345678900000",
+        "target": {"state": "A"},
+        "internal_context": [],
+    }
+    names = {"OFFICIAL_NAME_ALIAS": [{"inspiration_ref": "alias"}]}
+    locations = {
+        ("address", "ADDRESS_ABBREVIATE"): [{"inspiration_ref": "addr"}],
+        ("address", "ADDRESS_ALIAS_EXPAND"): [{"inspiration_ref": "alias-addr"}],
+        ("city", "PUNCTUATION_REMOVED"): [{"inspiration_ref": "city"}],
+    }
+    bundles = candidate_bundles(value, names, locations, "seed")
+    assert {len(bundle) for bundle in bundles} == {1, 2, 3}
