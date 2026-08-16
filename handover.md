@@ -125,6 +125,17 @@ réactiver les subsets nominaux libres ou de relâcher les quotas en silence.
 `a8ce07d`; artefacts P000 :
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1`)*
 
+L'audit final post-production est préparé sans modifier le runner. Il ne peut
+démarrer qu'après 20 000 promotions enregistrées, reconstruit 100 % des
+contrats, provenances et audits full-SIRENE scellés, puis publie séparément
+SIRET exact et équivalence opérationnelle. Sa vue distributionnelle inclut le
+CRM réel complet, les seuls folds train 2/3/4 et l'union disponible. Une seule
+revue de réalisme déterministe, stratifiée et bornée à 200 surfaces produit le
+verdict downstream ; elle ne peut interrompre la génération en cours. Runbook :
+`docs/synthetic_gt_balanced_final_audit.md`.
+
+*(audit final synthétique : commit `98c25fe`)*
+
 ### Évaluation nocturne réel seul vs réel + synthétique — protocole prêt
 
 Le protocole apparié est gelé avant le corpus complet. Il entraîne uniquement
