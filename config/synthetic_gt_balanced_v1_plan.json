@@ -23,8 +23,8 @@
   "corpus_balance": {
     "difficulty": {
       "EASY": 0.20,
-      "MEDIUM": 0.55,
-      "HARD": 0.25
+      "MEDIUM": 0.555,
+      "HARD": 0.245
     },
     "augmentation_strata": {
       "FAIL_BOTH_MODELS": 0.20,
