@@ -4629,6 +4629,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   caps et toutes les validations restent inchangés. Les 35 tests ciblés
   passent; un certificat entier et flow exact des 671 variantes terminales
   demeure obligatoire avant génération.
+- Mix de difficulté terminal après P035 : commit `cc94ad1` (`fix: preserve
+  reachable terminal difficulty mix`). Sous les états finaux exacts et la
+  borne identitaire corrigée, le LP sans aucun cap global borne les 671 lignes
+  restantes à 146,377 `HARD`, alors que le reliquat de l'ancien objectif en
+  exigeait 211. Les caps globaux offrent séparément au moins 2 210 lignes : le
+  déficit est donc structurel au croisement état/difficulté, pas un manque de
+  références ou un cap saturé. Le mix final devient exactement 20 % `EASY`,
+  55,5 % `MEDIUM`, 24,5 % `HARD`; les états 10 000/10 000, les bornes
+  identitaires, les caps et toutes les validations restent inchangés. Les 35
+  tests ciblés passent; le reliquat exact exige désormais E/M/H=124/436/111.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
