@@ -4587,6 +4587,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pool 12 000 : 600 contrats sur 386 cibles, A/F 300/300, difficulté exacte
   128/293/179, zéro nouvelle occurrence des deux paires saturées et SHA-256
   `501987ed53204d7e8`. Les 22 tests ciblés passent.
+- Certificat de complétion du corpus équilibré : commit `ada9ae1` (`feat:
+  certify balanced synthetic corpus completion`). Le plan final conserve
+  exactement 20 % EASY / 55 % MEDIUM / 25 % HARD, 10 000 variantes actives et
+  10 000 fermées, 55–59 % d'identités actives, au plus trois variantes par
+  SIRET, 60 % d'alias et 20 % par paire; le plafond d'identités passe à 11 000
+  afin de réduire la corrélation. L'audit Hall nomme `RUE→R` comme opérateur
+  dominant : 1 778 usages étaient déjà promus sous l'ancien cap 2 000. Le
+  certificat entier + flow sur les 9 960 variantes résiduelles exige au plus
+  4 143 usages cumulés par opérateur et 4 079 par référence; l'avenant scellé
+  garde une marge bornée à 4 200 (10,5 % des 40 000 opérations de champ) et
+  4 100. La paire reste plafonnée à 4 000 et l'alias à 12 000. Le certificat
+  final passe au premier flow sur 5 843 nouvelles identités, SHA seed
+  `2cfeda71319e4f1e`, et les 35 tests ciblés passent. Le contexte officiel v10
+  est scellé sous `f0b0a5645efc62b9`; la banque train-only v4, folds 2/3/4 et
+  sans modèle/retrieval, sous `f4a1cefc96514e5b`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
