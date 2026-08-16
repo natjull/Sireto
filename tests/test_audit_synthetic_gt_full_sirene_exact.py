@@ -1,3 +1,4 @@
+from itertools import product
 from pathlib import Path
 
 import duckdb
@@ -63,6 +64,40 @@ def test_finite_language_allows_whole_token_delete_reorder_and_join_not_letter_a
     assert not audit.whole_token_language("FLEUSR", "MAISON DES FLEURS")
 
 
+def test_span_cover_fast_rejection_is_exhaustively_equivalent_on_small_sequences():
+    def reference(observed_words, official_words):
+        spans = {
+            word: [
+                frozenset(range(start, end))
+                for start in range(len(official_words))
+                for end in range(start + 1, len(official_words) + 1)
+                if "".join(official_words[start:end]) == word
+            ]
+            for word in set(observed_words)
+        }
+        ordered = sorted(observed_words, key=lambda word: len(spans.get(word, [])))
+
+        def visit(index, used):
+            if index == len(ordered):
+                return True
+            return any(
+                not (used & span) and visit(index + 1, used | span)
+                for span in spans.get(ordered[index], [])
+            )
+
+        return visit(0, frozenset())
+
+    vocabulary = ("a", "b", "ab")
+    sequences = [
+        value
+        for length in range(1, 4)
+        for value in product(vocabulary, repeat=length)
+    ]
+    for observed in sequences:
+        for official in sequences:
+            assert audit._span_cover(observed, official) == reference(observed, official)
+
+
 def tiny_official_sources(tmp_path: Path) -> tuple[Path, Path]:
     establishments = tmp_path / "establishments.parquet"
     legal_units = tmp_path / "legal_units.parquet"
@@ -71,6 +106,8 @@ def tiny_official_sources(tmp_path: Path) -> tuple[Path, Path]:
         connection.execute(
             """CREATE TABLE establishments AS SELECT * FROM (VALUES
                 ('55210055400013','552100554','93066','75001','12',NULL,'RUE','DES LILAS',
+                 'MAISON DES FLEURS',NULL,NULL,NULL,'A'),
+                ('55210055400021','552100554','93066','75002','4',NULL,'RUE','DES ROSES',
                  'MAISON DES FLEURS',NULL,NULL,NULL,'A'),
                 ('73282932000074','732829320','75101','75002','8',NULL,'RUE','DE LA PAIX',
                  NULL,'AUTRE ENSEIGNE',NULL,NULL,'F')
@@ -106,12 +143,12 @@ def test_official_cache_is_content_addressed_read_only_and_reused(tmp_path: Path
     cache_directory = tmp_path / "cache"
     temp_directory = tmp_path / "duckdb-temp"
     cache, metadata = audit.ensure_official_cache(
-        cache_directory, establishments, legal_units, source_hashes, 2, temp_directory,
+        cache_directory, establishments, legal_units, source_hashes, 3, temp_directory,
     )
     first_stat = cache.stat()
 
     reused, reused_metadata = audit.ensure_official_cache(
-        cache_directory, establishments, legal_units, source_hashes, 2, temp_directory,
+        cache_directory, establishments, legal_units, source_hashes, 3, temp_directory,
     )
 
     assert reused == cache
@@ -128,11 +165,13 @@ def test_cached_query_contains_only_official_projection_and_preserves_values(tmp
         "sirene_legal_units": audit.sha256(legal_units),
     }
     cache, _ = audit.ensure_official_cache(
-        tmp_path / "cache", establishments, legal_units, source_hashes, 2,
+        tmp_path / "cache", establishments, legal_units, source_hashes, 3,
         tmp_path / "duckdb-temp",
     )
 
-    candidates = audit.query_candidates(cache, ["93066"], tmp_path / "query-temp")
+    candidates = audit.query_candidates(
+        cache, [("93066", "75001")], tmp_path / "query-temp",
+    )
 
     assert set(candidates) == {"93066"}
     assert len(candidates["93066"]) == 1
@@ -140,6 +179,10 @@ def test_cached_query_contains_only_official_projection_and_preserves_values(tmp
     assert row["siret"] == "55210055400013"
     assert row["legal_denomination"] == "MAISON DES FLEURS SAS"
     assert row["enseigne1"] == ""
+    wildcard = audit.query_candidates(
+        cache, [("93066", "")], tmp_path / "query-temp-wildcard",
+    )
+    assert {value["postcode"] for value in wildcard["93066"]} == {"75001", "75002"}
     connection = duckdb.connect(str(cache), read_only=True)
     try:
         tables = {value[0] for value in connection.execute("SHOW TABLES").fetchall()}
@@ -164,10 +207,10 @@ def test_official_cache_rejects_wrong_source_seal(tmp_path: Path):
         "sirene_legal_units": audit.sha256(legal_units),
     }
     cache, _ = audit.ensure_official_cache(
-        tmp_path / "cache", establishments, legal_units, source_hashes, 2,
+        tmp_path / "cache", establishments, legal_units, source_hashes, 3,
         tmp_path / "duckdb-temp",
     )
     wrong = {**source_hashes, "sirene_legal_units": "0" * 64}
 
     with pytest.raises(ValueError, match="mismatch"):
-        audit.validate_official_cache(cache, wrong, 2)
+        audit.validate_official_cache(cache, wrong, 3)

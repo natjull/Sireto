@@ -11,6 +11,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from functools import lru_cache
 import hashlib
 import json
 import os
@@ -128,8 +129,11 @@ def official_names(candidate: dict[str, Any]) -> list[str]:
     return list(dict.fromkeys(value for value in direct if value))
 
 
-def _span_cover(observed_words: list[str], official_words: list[str]) -> bool:
+def _span_cover(observed_words: Sequence[str], official_words: Sequence[str]) -> bool:
     """Match every observed token to a disjoint contiguous official-token span."""
+    joined_official = "".join(official_words)
+    if any(word not in joined_official for word in set(observed_words)):
+        return False
     spans = {
         word: [
             frozenset(range(start, end))
@@ -152,13 +156,14 @@ def _span_cover(observed_words: list[str], official_words: list[str]) -> bool:
     return visit(0, frozenset())
 
 
-def whole_token_language(observed: str, official: str) -> bool:
-    """Finite language: whole-token delete/reorder plus boundary join/split."""
-    observed_words = loop.normalized_words(observed)
-    official_words = loop.normalized_words(official)
+def _whole_token_language_words(
+    observed_words: Sequence[str], official_words: Sequence[str],
+) -> bool:
     if not observed_words or not official_words:
         return False
-    if loop.normalized_alnum(observed) == loop.normalized_alnum(official):
+    # normalized_alnum(value) is exactly the concatenation of
+    # normalized_words(value); do not normalize both strings a second time.
+    if "".join(observed_words) == "".join(official_words):
         return True
     if not (Counter(observed_words) - Counter(official_words)):
         return True
@@ -168,6 +173,29 @@ def whole_token_language(observed: str, official: str) -> bool:
     # consume a contiguous group of observed tokens; unused official tokens are
     # legitimate whole-token deletions.
     return _span_cover(official_words, observed_words) and len(observed_words) <= len(official_words)
+
+
+def _normalized_words(value: str) -> tuple[str, ...]:
+    return tuple(loop.normalized_words(value))
+
+
+@lru_cache(maxsize=65_536)
+def _normalized_alnum(value: str) -> str:
+    return "".join(_normalized_words(value))
+
+
+def _expanded_street_words(value: str) -> tuple[str, ...]:
+    return tuple(
+        loop.STREET_TYPE_ABBREVIATIONS.get(word.upper(), word.upper())
+        for word in _normalized_words(value)
+    )
+
+
+def whole_token_language(observed: str, official: str) -> bool:
+    """Finite language: whole-token delete/reorder plus boundary join/split."""
+    return _whole_token_language_words(
+        _normalized_words(observed), _normalized_words(official),
+    )
 
 
 def name_compatible(crm_name: str, candidate: dict[str, Any]) -> bool:
@@ -180,13 +208,13 @@ def address_compatible(crm_address: str, candidate: dict[str, Any]) -> bool:
     official = official_address(candidate)
     if not crm_address.strip() or not official:
         return False
-    crm_digits = [value for value in loop.normalized_words(crm_address) if value.isdigit()]
-    official_digits = [value for value in loop.normalized_words(official) if value.isdigit()]
+    crm_digits = [value for value in _normalized_words(crm_address) if value.isdigit()]
+    official_digits = [value for value in _normalized_words(official) if value.isdigit()]
     if crm_digits != official_digits:
         return False
-    observed = " ".join(loop.expanded_street_words(crm_address))
-    source = " ".join(loop.expanded_street_words(official))
-    return whole_token_language(observed, source)
+    return _whole_token_language_words(
+        _expanded_street_words(crm_address), _expanded_street_words(official),
+    )
 
 
 def qualify_variant(
@@ -196,10 +224,10 @@ def qualify_variant(
 ) -> dict[str, Any]:
     local = [
         value for value in candidates
-        if loop.normalized_alnum(value.get("insee")) == loop.normalized_alnum(crm["insee"])
+        if _normalized_alnum(str(value.get("insee") or "")) == _normalized_alnum(crm["insee"])
         and (
             not crm["postcode"]
-            or loop.normalized_alnum(value.get("postcode")) == loop.normalized_alnum(crm["postcode"])
+            or _normalized_alnum(str(value.get("postcode") or "")) == _normalized_alnum(crm["postcode"])
         )
     ]
     names = {value["siret"] for value in local if name_compatible(crm["name"], value)}
@@ -224,7 +252,7 @@ def qualify_variant(
     by_siret = {value["siret"]: value for value in local}
     target_candidate = by_siret.get(target_siret)
     target_site = (
-        tuple(loop.expanded_street_words(official_address(target_candidate)))
+        _expanded_street_words(official_address(target_candidate))
         if target_candidate is not None else ()
     )
     operational = sorted(
@@ -232,7 +260,7 @@ def qualify_variant(
         if siret != target_siret
         and siret[:9] == target_siret[:9]
         and address_compatible(crm["address"], by_siret[siret])
-        and tuple(loop.expanded_street_words(official_address(by_siret[siret]))) == target_site
+        and _expanded_street_words(official_address(by_siret[siret])) == target_site
     )
     return {
         "decision": decision,
@@ -453,26 +481,51 @@ def ensure_official_cache(
 
 def query_candidates(
     cache: Path,
-    insee_values: list[str],
+    geography_values: list[tuple[str, str]],
     temp_directory: Path,
 ) -> dict[str, list[dict[str, Any]]]:
     temp_directory.mkdir(parents=True, exist_ok=True)
     connection = duckdb.connect(str(cache), read_only=True)
-    connection.execute("SET temp_directory = ?", [str(temp_directory)])
-    connection.execute("SET memory_limit = '12GB'")
-    connection.execute("SET threads = 8")
-    connection.execute("SET preserve_insertion_order = false")
-    frame = connection.execute(
-        """SELECT * FROM official_candidates
-            WHERE insee IN (SELECT unnest(?::VARCHAR[]))""",
-        [insee_values],
-    ).fetchdf()
-    connection.close()
     result: dict[str, list[dict[str, Any]]] = defaultdict(list)
-    for value in frame.to_dict("records"):
-        row = {key: clean(item) for key, item in value.items()}
-        if loop.valid_siret(row["siret"]):
-            result[row["insee"]].append(row)
+    try:
+        connection.execute("SET temp_directory = ?", [str(temp_directory)])
+        connection.execute("SET memory_limit = '12GB'")
+        connection.execute("SET threads = 8")
+        connection.execute("SET preserve_insertion_order = false")
+        connection.execute(
+            "CREATE TEMP TABLE wanted_geography(insee VARCHAR, postcode_key VARCHAR)"
+        )
+        connection.executemany(
+            "INSERT INTO wanted_geography VALUES (?,?)",
+            [
+                (insee, _normalized_alnum(postcode) if postcode else "")
+                for insee, postcode in geography_values
+            ],
+        )
+        cursor = connection.execute(
+            """SELECT c.*
+                 FROM official_candidates c
+                WHERE EXISTS (
+                    SELECT 1 FROM wanted_geography w
+                     WHERE w.insee=c.insee
+                       AND (
+                           w.postcode_key=''
+                           OR regexp_replace(lower(c.postcode), '[^a-z0-9]', '', 'g')
+                              =w.postcode_key
+                       )
+                )"""
+        )
+        columns = [value[0] for value in cursor.description]
+        while batch := cursor.fetchmany(10_000):
+            for values in batch:
+                row = {
+                    key: clean(item)
+                    for key, item in zip(columns, values, strict=True)
+                }
+                if loop.valid_siret(row["siret"]):
+                    result[row["insee"]].append(row)
+    finally:
+        connection.close()
     return result
 
 
@@ -497,8 +550,11 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         expected_row_count,
         args.temp_directory,
     )
-    insee_values = sorted({value["crm"]["insee"] for value in variants})
-    candidates = query_candidates(cache, insee_values, args.temp_directory)
+    geography_values = sorted({
+        (value["crm"]["insee"], value["crm"]["postcode"])
+        for value in variants
+    })
+    candidates = query_candidates(cache, geography_values, args.temp_directory)
     audited = []
     for value in variants:
         qualification = qualify_variant(
