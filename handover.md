@@ -136,6 +136,25 @@ verdict downstream ; elle ne peut interrompre la génération en cours. Runbook 
 
 *(audit final synthétique : commit `98c25fe`)*
 
+L'audit des batches P015–P018 explique l'essentiel de l'exhaustion croissante
+sans baisse générale de Luna. Le snapshot terminal compte respectivement
+91, 115, 107 et 129 slots épuisés sur 600. Parmi ces 442 slots, 397 portent
+une suppression de ponctuation sans espace à une frontière lexicale située
+avant les deux derniers tokens. La surface exacte retire alors une frontière
+de token avant la fin du nom ; le runtime gelé réindexe la sortie et ne peut
+plus retrouver les paramètres sources. Ces 397 contrats ont tous échoué ;
+hors de cette classe, 1 958 slots passent et 45 seulement s'épuisent.
+
+Le sélecteur refuse désormais cette seule classe non validable avant Luna. Il
+conserve les suppressions avec espace, les marques de bord et la jonction de
+la dernière paire lexicale ; quotas, critic, runtime et qualité ne sont pas
+relâchés. Le MILP doit remplacer ces capacités en gardant états et difficultés,
+ou échouer avant génération. Les 45 autres exhaustions restent 32 erreurs Luna
+ou répétitions et 13 gardes saines d'ambiguïté/contrat. Les 66 tests ciblés du
+sélecteur, des fragments et du runtime passent.
+
+*(filtre fail-closed des jonctions non validables : commit `9922992`)*
+
 ### Évaluation nocturne réel seul vs réel + synthétique — protocole prêt
 
 Le protocole apparié est gelé avant le corpus complet. Il entraîne uniquement
