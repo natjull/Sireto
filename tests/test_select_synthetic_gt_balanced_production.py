@@ -5,6 +5,7 @@ from scripts import select_synthetic_gt_balanced_production as selector
 from scripts.select_synthetic_gt_balanced_production import (
     difficulty,
     exact_counts,
+    identity_share_coefficients,
     pair_signature,
     production_usage,
     remaining_quota_counts,
@@ -37,6 +38,15 @@ def test_exact_counts_preserve_total_and_balance() -> None:
     values = exact_counts(450, {"A": 0.15, "B": 0.15, "C": 0.7})
     assert sum(values.values()) == 450
     assert abs(values["A"] - values["B"]) <= 1
+
+
+def test_identity_share_coefficients_preserve_decimal_bounds_exactly() -> None:
+    assert identity_share_coefficients((0.5499, 0.59)) == (
+        (4501, -5499), (41, -59),
+    )
+    assert identity_share_coefficients((0.55, 0.59)) == (
+        (9, -11), (41, -59),
+    )
 
 
 def test_difficulty_combines_scene_and_operator_strength() -> None:

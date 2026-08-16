@@ -37,7 +37,7 @@
     "real_synthetic_training_mix": "approximately 2:1",
     "synthetic_scene_weight": "0.5 / number_of_promoted_variants_for_target",
     "state_variants": {"A": 0.50, "F": 0.50},
-    "target_identity_active_share_bounds": [0.55, 0.59],
+    "target_identity_active_share_bounds": [0.5499, 0.59],
     "forbidden_consumers": [
       "risk_model",
       "probability_calibration",

@@ -194,7 +194,18 @@ def final_state_audit(
         float(value) for value in
         plan["corpus_balance"]["target_identity_active_share_bounds"]
     )
-    if not lower <= active_share <= upper:
+    (lower_active, lower_closed), (upper_active, upper_closed) = (
+        production.identity_share_coefficients((lower, upper))
+    )
+    lower_margin = (
+        lower_active * state_target_counts["A"]
+        + lower_closed * state_target_counts["F"]
+    )
+    upper_margin = (
+        upper_active * state_target_counts["A"]
+        + upper_closed * state_target_counts["F"]
+    )
+    if lower_margin < 0 or upper_margin > 0:
         raise ValueError(
             "final active target identity share is outside bounds: "
             f"{active_share:.12f} not in [{lower:.12f}, {upper:.12f}]"
@@ -205,6 +216,10 @@ def final_state_audit(
         "state_target_counts": dict(state_target_counts),
         "active_target_identity_share": active_share,
         "active_target_identity_share_bounds": [lower, upper],
+        "active_target_identity_share_integer_margins": {
+            "lower": lower_margin,
+            "upper": upper_margin,
+        },
     }
 
 

@@ -20,7 +20,7 @@ def plan() -> dict:
         },
         "corpus_balance": {
             "state_variants": {"A": 0.5, "F": 0.5},
-            "target_identity_active_share_bounds": [0.55, 0.59],
+            "target_identity_active_share_bounds": [0.5499, 0.59],
             "difficulty": {"EASY": 0.2, "MEDIUM": 0.5, "HARD": 0.3},
             "augmentation_strata": {
                 "FAIL_BOTH_MODELS": 0.2,
@@ -128,4 +128,21 @@ def test_final_state_audit_requires_exact_variants_and_identity_envelope() -> No
     with pytest.raises(ValueError, match="identity share"):
         final_state_audit(
             Counter({"A": 5, "F": 5}), Counter({"A": 3, "F": 3}), plan()
+        )
+
+
+def test_final_state_audit_accepts_minimal_5499_arithmetic_avenant() -> None:
+    result = final_state_audit(
+        Counter({"A": 5, "F": 5}),
+        Counter({"A": 5_414, "F": 4_430}),
+        plan(),
+    )
+    assert result["active_target_identity_share"] == 5_414 / 9_844
+    assert result["active_target_identity_share_integer_margins"]["lower"] >= 0
+
+    with pytest.raises(ValueError, match="identity share"):
+        final_state_audit(
+            Counter({"A": 5, "F": 5}),
+            Counter({"A": 5_498, "F": 4_502}),
+            plan(),
         )

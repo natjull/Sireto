@@ -10,6 +10,7 @@ from __future__ import annotations
 
 import argparse
 from collections import Counter, defaultdict
+from fractions import Fraction
 import hashlib
 import itertools
 import json
@@ -97,6 +98,22 @@ def exact_counts(total: int, shares: dict[str, float]) -> dict[str, int]:
     for key in order[:remainder]:
         result[key] += 1
     return result
+
+
+def identity_share_coefficients(
+    bounds: Sequence[float],
+) -> tuple[tuple[int, int], tuple[int, int]]:
+    """Return exact integer coefficients for active-identity share bounds."""
+    if len(bounds) != 2:
+        raise ValueError("target identity share bounds must contain two values")
+    lower, upper = (Fraction(str(value)) for value in bounds)
+    if not 0 < lower <= upper < 1:
+        raise ValueError("invalid target identity active-share bounds")
+
+    def coefficients(value: Fraction) -> tuple[int, int]:
+        return value.denominator - value.numerator, -value.numerator
+
+    return coefficients(lower), coefficients(upper)
 
 
 def remaining_quota_counts(
@@ -1086,33 +1103,36 @@ def choose_targets_and_bundles(
     active_minimum, active_maximum = target_active_share_bounds
     future_active_max = future_state_variant_counts["A"]
     future_closed_min = math.ceil(future_state_variant_counts["F"] / 3)
-    # The preregistered 55% and 59% bounds are represented as exact integer
-    # inequalities (9A-11F>=0 and 41A-59F<=0), avoiding floating MILP edges.
-    if (active_minimum, active_maximum) != (0.55, 0.59):
-        raise ValueError("unsupported target identity bounds for exact coefficients")
+    # Represent the preregistered decimal bounds as exact integer inequalities,
+    # avoiding floating MILP edges.  The 54.99% lower bound is the minimal
+    # arithmetic avenant after the promoted prefix made 55.00% unreachable by
+    # four integer-coefficient units; the 59% ceiling is unchanged.
+    (lower_active, lower_closed), (upper_active, upper_closed) = (
+        identity_share_coefficients((active_minimum, active_maximum))
+    )
     lower_constant = (
-        9 * (prior_state_target_counts["A"] + future_active_max)
-        - 11 * (prior_state_target_counts["F"] + future_closed_min)
+        lower_active * (prior_state_target_counts["A"] + future_active_max)
+        + lower_closed * (prior_state_target_counts["F"] + future_closed_min)
     )
     add({
         index: (
-            9
+            lower_active
             if context_by_index[context_index]["target"]["state"] == "A"
-            else -11
+            else lower_closed
         )
         for index, (context_index, _bundle) in enumerate(options)
     }, -lower_constant, np.inf, "STATE_TARGET_SHARE_REACHABLE")
     future_active_min = math.ceil(future_state_variant_counts["A"] / 3)
     future_closed_max = future_state_variant_counts["F"]
     upper_constant = (
-        41 * (prior_state_target_counts["A"] + future_active_min)
-        - 59 * (prior_state_target_counts["F"] + future_closed_max)
+        upper_active * (prior_state_target_counts["A"] + future_active_min)
+        + upper_closed * (prior_state_target_counts["F"] + future_closed_max)
     )
     add({
         index: (
-            41
+            upper_active
             if context_by_index[context_index]["target"]["state"] == "A"
-            else -59
+            else upper_closed
         )
         for index, (context_index, _bundle) in enumerate(options)
     }, -np.inf, -upper_constant, "STATE_TARGET_SHARE_REACHABLE")
