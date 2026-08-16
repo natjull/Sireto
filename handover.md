@@ -4654,6 +4654,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   par variante active et trois variantes par identité fermée. Le plancher est
   borné à 54,40 % afin d'absorber les rejets fail-closed terminaux; plafond,
   états, difficultés, caps et validations restent inchangés.
+- Marge de difficulté du reliquat P037 : commit `435bd25` (`fix: reserve
+  terminal hard-case margin`). Après les 645 promotions P036, le reliquat de
+  26 lignes exigeait encore 11 `HARD`, mais le LP sous états et identités
+  finaux en borne au plus 7 même sans caps globaux. Le déplacement terminal de
+  dix lignes fixe donc le corpus à 20 % `EASY`, 55,55 % `MEDIUM` et 24,45 %
+  `HARD`, soit un reliquat E/M/H=4/21/1 avec marge; tous les autres invariants
+  restent inchangés.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
