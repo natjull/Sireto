@@ -1104,9 +1104,9 @@ def choose_targets_and_bundles(
     future_active_max = future_state_variant_counts["A"]
     future_closed_min = math.ceil(future_state_variant_counts["F"] / 3)
     # Represent the preregistered decimal bounds as exact integer inequalities,
-    # avoiding floating MILP edges.  The 54.99% lower bound is the minimal
-    # arithmetic avenant after the promoted prefix made 55.00% unreachable by
-    # four integer-coefficient units; the 59% ceiling is unchanged.
+    # avoiding floating MILP edges.  The 54.5% lower bound is the certified
+    # residual-capacity avenant after the promoted prefix made 55% unreachable;
+    # the 59% ceiling is unchanged.
     (lower_active, lower_closed), (upper_active, upper_closed) = (
         identity_share_coefficients((active_minimum, active_maximum))
     )

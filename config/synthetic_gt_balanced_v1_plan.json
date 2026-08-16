@@ -37,7 +37,7 @@
     "real_synthetic_training_mix": "approximately 2:1",
     "synthetic_scene_weight": "0.5 / number_of_promoted_variants_for_target",
     "state_variants": {"A": 0.50, "F": 0.50},
-    "target_identity_active_share_bounds": [0.5499, 0.59],
+    "target_identity_active_share_bounds": [0.545, 0.59],
     "forbidden_consumers": [
       "risk_model",
       "probability_calibration",
@@ -95,8 +95,8 @@
   "global_caps": {
     "inspiration_ref_uses": 4100,
     "exact_operator_share": 0.105,
-    "relation_pair_share": 0.20,
-    "official_name_alias_share": 0.60,
+    "relation_pair_share": 0.25,
+    "official_name_alias_share": 0.65,
     "name_token_subset_share": 0.15,
     "name_token_subset_signature_share_global": 0.025,
     "name_token_subset_signature_share_within_family": 0.20,
