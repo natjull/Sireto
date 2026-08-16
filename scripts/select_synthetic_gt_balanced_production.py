@@ -125,6 +125,35 @@ def remaining_quota_counts(
     return allocation
 
 
+def adapt_strata_to_easy_capacity(
+    ideal_counts: dict[str, int],
+    maximum_additions: dict[str, int],
+    easy_capacity: int,
+) -> dict[str, int]:
+    """Defer near-clean rows that cannot be hosted by this batch's EASY supply."""
+    result = dict(ideal_counts)
+    control = "NEAR_CLEAN_CONTROL"
+    retained_control = min(result[control], easy_capacity)
+    deficit = result[control] - retained_control
+    result[control] = retained_control
+    if not deficit:
+        return result
+    spare = {
+        key: max(0, maximum_additions[key] - result[key])
+        for key in result if key != control
+    }
+    if sum(spare.values()) < deficit:
+        raise ValueError("final augmentation-stratum remainders cannot absorb control deficit")
+    additions = exact_counts(
+        deficit, {key: value / sum(spare.values()) for key, value in spare.items()}
+    )
+    if any(additions[key] > spare[key] for key in additions):
+        raise RuntimeError("stratum redistribution exceeded a final remainder")
+    for key, value in additions.items():
+        result[key] += value
+    return result
+
+
 def registry_usage(
     path: Path,
 ) -> tuple[
@@ -520,6 +549,8 @@ def choose_targets_and_bundles(
     capabilities: dict[str, tuple[dict[str, Any], dict[tuple[str, str], Any]]],
     target_count: int,
     difficulty_counts: dict[str, int],
+    difficulty_minimum_additions: dict[str, int],
+    difficulty_maximum_additions: dict[str, int],
     relation_pair_cap: int,
     prior_pair_counts: Counter[str],
     relation_capacities: dict[tuple[str, str], int],
@@ -532,6 +563,7 @@ def choose_targets_and_bundles(
     token_subset_signature_cap: int,
     prior_token_subset_signature_counts: Counter[str],
     selection_seed: str,
+    diagnose_infeasible: bool = False,
 ) -> list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]]:
     options: list[tuple[int, tuple[tuple[str, tuple[str, str]], ...]]] = []
     context_by_index: list[dict[str, Any]] = []
@@ -563,42 +595,51 @@ def choose_targets_and_bundles(
     constraint_rows: list[dict[int, float]] = []
     minima: list[float] = []
     maxima: list[float] = []
+    constraint_labels: list[str] = []
 
-    def add(coefficients: dict[int, float], minimum: float, maximum: float) -> None:
+    def add(
+        coefficients: dict[int, float], minimum: float, maximum: float, label: str,
+    ) -> int:
         constraint_rows.append(coefficients)
         minima.append(minimum)
         maxima.append(maximum)
+        constraint_labels.append(label)
+        return len(constraint_rows) - 1
 
-    add({index: 1 for index in range(variable_count)}, target_count, target_count)
+    add(
+        {index: 1 for index in range(variable_count)}, target_count, target_count,
+        "TOTAL",
+    )
     option_by_context: dict[int, list[int]] = defaultdict(list)
     for option_index, (context_index, _bundle) in enumerate(options):
         option_by_context[context_index].append(option_index)
     for indexes in option_by_context.values():
-        add({index: 1 for index in indexes}, 0, 1)
+        add({index: 1 for index in indexes}, 0, 1, "TARGET_UNIQUENESS")
     for state in ("A", "F"):
         add({
             index: 1 for index, (context_index, _bundle) in enumerate(options)
             if context_by_index[context_index]["target"]["state"] == state
-        }, target_count // 2, target_count // 2)
+        }, target_count // 2, target_count // 2, "STATE")
+    difficulty_rows: dict[str, int] = {}
     for level in DIFFICULTIES:
-        add({
+        difficulty_rows[level] = add({
             index: sum(
                 difficulty(context_by_index[context_index], pair) == level
                 for pair in bundle
             )
             for index, (context_index, bundle) in enumerate(options)
-        }, difficulty_counts[level], difficulty_counts[level])
+        }, difficulty_counts[level], difficulty_counts[level], "DIFFICULTY")
     add({
         index: sum(pair[0] == "TOKEN_SUBSET" for pair in bundle)
         for index, (_context_index, bundle) in enumerate(options)
-    }, 0, name_token_subset_remaining)
+    }, 0, name_token_subset_remaining, "TOKEN_SUBSET_CAP")
     all_pairs = sorted({pair for _context_index, bundle in options for pair in bundle})
     for pair in all_pairs:
         remaining = max(0, relation_pair_cap - prior_pair_counts[pair_signature(pair)])
         add({
             index: sum(value == pair for value in bundle)
             for index, (_context_index, bundle) in enumerate(options)
-        }, 0, remaining)
+        }, 0, remaining, "RELATION_PAIR_CAP")
     for (field, relation), capacity in relation_capacities.items():
         add({
             index: sum(
@@ -607,7 +648,7 @@ def choose_targets_and_bundles(
                 for pair in bundle
             )
             for index, (_context_index, bundle) in enumerate(options)
-        }, 0, capacity)
+        }, 0, capacity, "RELATION_CAPACITY")
 
     # Hall-style resource constraints couple target selection to the fragments
     # that are actually compatible with each surface.  Relation-level totals are
@@ -707,7 +748,7 @@ def choose_targets_and_bundles(
                         if demand:
                             coefficients[option_index] = demand
                 if coefficients:
-                    add(coefficients, 0, capacity)
+                    add(coefficients, 0, capacity, f"HALL_{_resource_kind}")
 
     matrix_rows: list[int] = []
     matrix_columns: list[int] = []
@@ -729,15 +770,95 @@ def choose_targets_and_bundles(
         ).hexdigest()[:16], 16) / float(2**64)
         for context_index, bundle in options
     ])
-    solution = milp(
-        objective,
-        integrality=np.ones(variable_count),
-        bounds=Bounds(np.zeros(variable_count), np.ones(variable_count)),
-        constraints=LinearConstraint(matrix, minima, maxima),
-        options={"time_limit": 180},
-    )
+    def solve_with_bounds(
+        lower: Sequence[float], upper: Sequence[float], *, time_limit: int = 180,
+    ) -> Any:
+        return milp(
+            objective,
+            integrality=np.ones(variable_count),
+            bounds=Bounds(np.zeros(variable_count), np.ones(variable_count)),
+            constraints=LinearConstraint(matrix, lower, upper),
+            options={"time_limit": time_limit},
+        )
+
+    solution = solve_with_bounds(minima, maxima)
+    # The corpus-final 20/50/30 mix is the invariant.  Requiring every finite
+    # batch to reproduce it exactly can become impossible after target/cap
+    # exclusions, even though the remaining corpus is feasible.  Prefer exact;
+    # otherwise find the smallest integer L-infinity deviation while never
+    # exceeding any final-quota remainder.  At 20k, the three upper bounds and
+    # the fixed total force the final mix to be exact.
+    difficulty_tolerance = 0
     if not solution.success or solution.x is None:
-        raise ValueError(f"balanced production MILP is infeasible: {solution.message}")
+        def bounds_for_tolerance(tolerance: int) -> tuple[list[float], list[float]]:
+            lower = list(minima)
+            upper = list(maxima)
+            for level, row_index in difficulty_rows.items():
+                lower[row_index] = max(
+                    difficulty_minimum_additions[level],
+                    difficulty_counts[level] - tolerance,
+                )
+                upper[row_index] = min(
+                    difficulty_maximum_additions[level],
+                    difficulty_counts[level] + tolerance,
+                )
+                if lower[row_index] > upper[row_index]:
+                    raise ValueError(
+                        f"final difficulty quota exhausted for {level}: "
+                        f"{lower[row_index]}>{upper[row_index]}"
+                    )
+            return lower, upper
+
+        low, high = 0, target_count * 3
+        high_lower, high_upper = bounds_for_tolerance(high)
+        best = solve_with_bounds(high_lower, high_upper)
+        if best.success and best.x is not None:
+            while low + 1 < high:
+                middle = (low + high) // 2
+                middle_lower, middle_upper = bounds_for_tolerance(middle)
+                candidate = solve_with_bounds(
+                    middle_lower, middle_upper, time_limit=60,
+                )
+                if candidate.success and candidate.x is not None:
+                    high, best = middle, candidate
+                else:
+                    low = middle
+            difficulty_tolerance = high
+            solution = best
+    if not solution.success or solution.x is None:
+        diagnostic: dict[str, Any] = {
+            "contexts_by_state": dict(Counter(
+                value["target"]["state"] for value in context_by_index
+            )),
+            "options": variable_count,
+            "constraint_counts": dict(Counter(constraint_labels)),
+            "difficulty_target": difficulty_counts,
+            "difficulty_final_remainders": difficulty_maximum_additions,
+        }
+        if diagnose_infeasible:
+            feasible_when_dropped = []
+            for label in sorted(set(constraint_labels) - {"TOTAL", "TARGET_UNIQUENESS"}):
+                keep = [
+                    index for index, value in enumerate(constraint_labels)
+                    if value != label
+                ]
+                relaxed = milp(
+                    np.zeros(variable_count),
+                    integrality=np.ones(variable_count),
+                    bounds=Bounds(np.zeros(variable_count), np.ones(variable_count)),
+                    constraints=LinearConstraint(
+                        matrix[keep],
+                        np.asarray(minima)[keep], np.asarray(maxima)[keep],
+                    ),
+                    options={"time_limit": 30},
+                )
+                if relaxed.success and relaxed.x is not None:
+                    feasible_when_dropped.append(label)
+            diagnostic["feasible_when_constraint_group_dropped"] = feasible_when_dropped
+        raise ValueError(
+            f"balanced production MILP is infeasible: {solution.message}; "
+            f"diagnostic={json.dumps(diagnostic, sort_keys=True)}"
+        )
     result = [
         (context_by_index[context_index], bundle)
         for index, (context_index, bundle) in enumerate(options)
@@ -745,6 +866,14 @@ def choose_targets_and_bundles(
     ]
     if len(result) != target_count:
         raise RuntimeError("MILP returned an incomplete target selection")
+    if difficulty_tolerance:
+        print(json.dumps({
+            "difficulty_batch_relaxation": {
+                "ideal": difficulty_counts,
+                "minimum_linf_tolerance": difficulty_tolerance,
+                "final_remainders": difficulty_maximum_additions,
+            }
+        }, sort_keys=True), file=sys.stderr)
     return sorted(result, key=lambda value: value[0]["target_siret"])
 
 
@@ -1163,10 +1292,28 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         variant_count, final_variant_target,
         plan["corpus_balance"]["difficulty"], prior_difficulty_counts,
     )
+    final_difficulty_counts = exact_counts(
+        final_variant_target, plan["corpus_balance"]["difficulty"]
+    )
+    difficulty_maximum_additions = {
+        level: max(
+            0, final_difficulty_counts[level] - prior_difficulty_counts[level]
+        )
+        for level in DIFFICULTIES
+    }
     stratum_counts = remaining_quota_counts(
         variant_count, final_variant_target,
         plan["corpus_balance"]["augmentation_strata"], prior_stratum_counts,
     )
+    ideal_stratum_counts = dict(stratum_counts)
+    final_stratum_counts = exact_counts(
+        final_variant_target, plan["corpus_balance"]["augmentation_strata"]
+    )
+    stratum_maximum_additions = {
+        key: max(0, final_stratum_counts[key] - prior_stratum_counts[key])
+        for key in final_stratum_counts
+    }
+    difficulty_minimum_additions = {level: 0 for level in DIFFICULTIES}
     relation_capacities: dict[tuple[str, str], int] = {}
     prior_name_token_subsets = sum(
         count for signature, count in prior_pair_counts.items()
@@ -1231,7 +1378,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     ref_counts = None
     operator_counts = None
     effective_selection_seed = args.selection_seed
-    for selection_attempt in range(64):
+    selection_attempt_limit = 1 if args.diagnose_infeasible else 64
+    for selection_attempt in range(selection_attempt_limit):
         effective_selection_seed = (
             args.selection_seed if selection_attempt == 0
             else f"{args.selection_seed}|FLOW_RETRY_{selection_attempt}"
@@ -1239,11 +1387,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         try:
             candidate_selection = choose_targets_and_bundles(
                 feasible_contexts, capabilities, args.target_count, difficulty_counts,
+                difficulty_minimum_additions, difficulty_maximum_additions,
                 relation_pair_cap, prior_pair_counts, relation_capacities,
                 name_token_subset_remaining, ref_cap, operator_cap,
                 prior_ref_counts, prior_operator_counts, effective_ref_caps,
                 token_subset_signature_cap,
                 prior_token_subset_signature_counts, effective_selection_seed,
+                args.diagnose_infeasible,
             )
             candidate_assignment, candidate_ref_counts, candidate_operator_counts = (
                 assign_fragments(
@@ -1269,7 +1419,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         break
     if selected is None or assigned_fragments is None:
         raise ValueError(
-            "no exact-capacity production selection after 64 deterministic salts; "
+            f"no exact-capacity production selection after {selection_attempt_limit} "
+            "deterministic salts; "
             f"last_errors={selection_errors[-3:]}"
         )
 
@@ -1283,6 +1434,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 "difficulty": difficulty(context, pair),
                 "archetypes": variant_archetypes(context, pair),
             })
+    actual_difficulty_counts = Counter(
+        value["difficulty"] for value in variant_records
+    )
+    stratum_counts = adapt_strata_to_easy_capacity(
+        ideal_stratum_counts, stratum_maximum_additions,
+        actual_difficulty_counts["EASY"],
+    )
     stratum_assignment = assign_strata(variant_records, stratum_counts, catalog)
 
     output = []
@@ -1402,6 +1560,10 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         "counts_toward_20000_target": True,
         "targets": len(output),
         "planned_variants": variant_count,
+        "ideal_batch_counts": {
+            "difficulty": difficulty_counts,
+            "augmentation_strata": ideal_stratum_counts,
+        },
         "difficulty_counts": dict(Counter(
             contract["difficulty"] for row in output
             for contract in row["seed_card"]["composite_contracts"]
@@ -1491,6 +1653,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument(
         "--selection-pool-limit", type=int, default=0,
         help="Bound costly capability materialization (0 = max(3000, 3*target-count)).",
+    )
+    result.add_argument(
+        "--diagnose-infeasible", action="store_true",
+        help="On one selection attempt, identify which constraint group causes infeasibility.",
     )
     result.add_argument("--selection-seed", default="SIRETO-BALANCED-P000-V1")
     result.add_argument("--exclude-seed-input", type=Path, action="append", default=[])

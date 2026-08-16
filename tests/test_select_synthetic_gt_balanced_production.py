@@ -9,6 +9,7 @@ from scripts.select_synthetic_gt_balanced_production import (
     official_name_alias_fragments,
     strict_token_subset_anchor,
     eligible_for_official_alias,
+    adapt_strata_to_easy_capacity,
 )
 
 
@@ -151,3 +152,20 @@ def test_official_alias_eligibility_does_not_require_long_baseline_name() -> Non
         },
     }
     assert eligible_for_official_alias(value)
+
+
+def test_strata_defer_control_without_exceeding_final_remainders() -> None:
+    ideal = {
+        "FAIL_BOTH_MODELS": 120, "FAIL_XGB_ONLY": 90,
+        "FAIL_BGE_ONLY": 90, "TRAIN_DISTRIBUTION": 240,
+        "NEAR_CLEAN_CONTROL": 60,
+    }
+    maximum = {
+        "FAIL_BOTH_MODELS": 1000, "FAIL_XGB_ONLY": 800,
+        "FAIL_BGE_ONLY": 800, "TRAIN_DISTRIBUTION": 2000,
+        "NEAR_CLEAN_CONTROL": 900,
+    }
+    result = adapt_strata_to_easy_capacity(ideal, maximum, easy_capacity=37)
+    assert sum(result.values()) == 600
+    assert result["NEAR_CLEAN_CONTROL"] == 37
+    assert all(result[key] <= maximum[key] for key in result)
