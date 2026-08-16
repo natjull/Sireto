@@ -349,6 +349,15 @@ def safe_capabilities(
     return names, locations
 
 
+def materializable_relation_pair_count(
+    names: dict[str, list[dict[str, Any]]],
+    locations: dict[tuple[str, str], list[dict[str, Any]]],
+) -> int:
+    return sum(bool(value) for value in names.values()) * sum(
+        bool(value) for value in locations.values()
+    )
+
+
 def distinct_exact_operators(values: Sequence[dict[str, Any]]) -> list[dict[str, Any]]:
     """Keep one deterministic proof per materialized exact operator."""
     by_operator: dict[str, dict[str, Any]] = {}
@@ -1495,15 +1504,12 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             context, grouped, document_frequencies, allowed_name_relations,
             support_cache,
         )
-        if sum(bool(value) for value in names.values()) and sum(
-            bool(value) for value in locations.values()
-        ):
-            pairs = sum(bool(value) for value in names.values()) * sum(
-                bool(value) for value in locations.values()
-            )
-            if pairs >= 3:
-                capabilities[context["target_siret"]] = (names, locations)
-                feasible_contexts.append(context)
+        if materializable_relation_pair_count(names, locations):
+            # Runtime contracts and counted promotion are independently valid
+            # per variant.  Since bundles may contain one to three variants,
+            # one exact name/location pair is sufficient capability.
+            capabilities[context["target_siret"]] = (names, locations)
+            feasible_contexts.append(context)
 
     compatible_train_values = {
         value["inspiration_ref"]: value
@@ -1538,9 +1544,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
             ]
             for key, values in locations.items()
         }
-        if sum(bool(value) for value in names.values()) * sum(
-            bool(value) for value in locations.values()
-        ) >= 3:
+        if materializable_relation_pair_count(names, locations):
             pruned_capabilities[context["target_siret"]] = (names, locations)
             feasible_contexts.append(context)
     capabilities = pruned_capabilities

@@ -13,6 +13,7 @@ from scripts.select_synthetic_gt_balanced_production import (
     adapt_strata_to_easy_capacity,
     candidate_bundles,
     maximum_batch_target_additions,
+    materializable_relation_pair_count,
     stratified_context_pool,
 )
 
@@ -255,3 +256,10 @@ def test_unique_target_budget_reserves_three_per_future_target() -> None:
     assert maximum_batch_target_additions(
         19_873, 7_900, 127, 20_000, 8_000, 3,
     ) == 100
+
+
+def test_one_exact_relation_pair_is_a_materializable_capability() -> None:
+    assert materializable_relation_pair_count(
+        {"TOKEN_ORDER": [{"op": 1}], "TOKEN_SUBSET": []},
+        {("address", "ADDRESS_ABBREVIATE"): [{"op": 2}]},
+    ) == 1

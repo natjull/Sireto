@@ -1,8 +1,14 @@
 import json
 
+import pytest
+
+from scripts import extend_synthetic_gt_official_context as extension
 from scripts.extend_synthetic_gt_official_context import (
     excluded_seed_ids,
+    context_is_simple_and_exact,
     merge_jsonl,
+    safe_bundle_capacity,
+    select_snapshot_rows,
 )
 
 
@@ -34,3 +40,45 @@ def test_merge_jsonl_preserves_base_bytes_and_adds_missing_newline(tmp_path) -> 
     value = output.read_bytes()
     assert value.startswith(base.read_bytes() + b"\n")
     assert value == b'{"base":1}\n{"extension":2}\n'
+
+
+def test_snapshot_selection_rejects_unknown_target_state(tmp_path) -> None:
+    with pytest.raises(ValueError, match="unsupported target state"):
+        select_snapshot_rows(
+            tmp_path / "establishments.parquet",
+            tmp_path / "crm.csv",
+            tmp_path / "context.jsonl",
+            tmp_path / "candidates.jsonl",
+            set(), 10, 10, "seed", tmp_path / "duckdb", "X",
+        )
+
+
+def test_closed_capacity_uses_largest_materializable_bundle(monkeypatch) -> None:
+    monkeypatch.setattr(
+        extension.production, "safe_capabilities",
+        lambda *_args, **_kwargs: ({"name": [{}]}, {("address", "op"): [{}]}),
+    )
+    monkeypatch.setattr(
+        extension.production, "candidate_bundles",
+        lambda *_args, **_kwargs: [(1,), (1, 2, 3), (1, 2)],
+    )
+    capacity, _names, _locations = safe_bundle_capacity(
+        {"target_siret": "12345678900012"}, {}, {}, "seed", {},
+    )
+    assert capacity == 3
+
+
+def test_closed_context_allows_only_its_intrinsic_state_flag(monkeypatch) -> None:
+    context = {
+        "target": {"state": "F"},
+        "qualification": {"pre_generation_exact_eligible": True},
+    }
+    monkeypatch.setattr(
+        extension.production, "context_flags", lambda _value: {"CLOSED_TARGET"},
+    )
+    assert context_is_simple_and_exact(context, "F")
+    monkeypatch.setattr(
+        extension.production, "context_flags",
+        lambda _value: {"CLOSED_TARGET", "SAME_ADDRESS_COMPETITION"},
+    )
+    assert not context_is_simple_and_exact(context, "F")
