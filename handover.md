@@ -4661,6 +4661,34 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   dix lignes fixe donc le corpus à 20 % `EASY`, 55,55 % `MEDIUM` et 24,45 %
   `HARD`, soit un reliquat E/M/H=4/21/1 avec marge; tous les autres invariants
   restent inchangés.
+- Corpus équilibré final : les batches P037 et P038 promeuvent respectivement
+  24 et 2 lignes et portent le registre à exactement 20 000 promotions sur 39
+  lots. Le finaliseur valide 20 000 clés et surfaces CRM distinctes, 9 737
+  SIRET cibles, trois variantes maximum par cible, A/F=10 000/10 000 et le mix
+  exact E/M/H=4 000/11 110/4 890. Les cinq strates atteignent exactement leurs
+  quotas 4 000/3 000/3 000/8 000/2 000. Tous les caps restent respectés;
+  l'alias officiel termine à 13 628/13 640 et la paire la plus utilisée à
+  4 915/5 000. Le corpus consolidé est
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1/final_corpus_v1/promoted_20000.jsonl`,
+  SHA-256 `9e871f0f3c5a19d28a59619c4fd09c87be5d1e75e54296ff41bf34a4dd5cbcc1`;
+  le registre scellé a le SHA-256
+  `c98655b5780118e5c4e1aa3bb6486bd23e2d4cedc871b3422955a785419bb0a0`.
+  L'auditeur final a été corrigé pour reconstruire la population réelle train
+  strictement disjointe : il retire aussi les quatre lignes fold 2 dont le
+  SIREN ou la composante apparaît en dev/test, au lieu de compter naïvement
+  les 7 099 étiquettes train. Les 7 095 lignes gelées, leurs comptes par fold,
+  état, composante et SIREN sont désormais vérifiés fail-closed. Les 15 tests
+  finaliseur/auditeur passent. L'audit déterministe des 20 000 lignes valide
+  toutes les provenances agentiques, les 39 audits full-SIRENE, la disjonction
+  des SIREN et des surfaces avec le réel, et publie l'échantillon stratifié de
+  200 lignes sous
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1/final_audit_sample_v1`.
+  Son statut reste explicitement `PENDING_BOUNDED_REALISM_REVIEW` jusqu'à la
+  revue humaine bornée; le rapport a le SHA-256
+  `d7ac367005300be6369921683155b6d1dbbc372b2ef59b965a37f9034c7e79d0`.
+
+  *(audit de population train strict et publication finale : commit
+  `2b04970`)*
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
