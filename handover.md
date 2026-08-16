@@ -4578,6 +4578,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   contraintes de Hall. Sur le registre P012 gelé, le replay P013 passe de plus
   de 321 s à 21,41 s cache chaud et 469 Mio de pic RSS ; deux replays sont
   byte-identiques et les 20 tests ciblés passent.
+- Planification sur capacité résiduelle : commit `a420976` (`fix: plan balanced
+  batches from residual pair capacity`). Le sélecteur retire désormais avant
+  stratification et thinning toute paire composite ayant atteint son cap final,
+  et borne aussi les répétitions d'un bundle par sa capacité résiduelle. Le pool
+  MILP utilise le pool de capacités demandé au lieu d'une seconde troncature
+  fixe à 3 000. Après le filtre fail-closed `9922992`, P019 est faisable avec un
+  pool 12 000 : 600 contrats sur 386 cibles, A/F 300/300, difficulté exacte
+  128/293/179, zéro nouvelle occurrence des deux paires saturées et SHA-256
+  `501987ed53204d7e8`. Les 22 tests ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
