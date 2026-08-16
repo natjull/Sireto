@@ -142,12 +142,20 @@ bras augmenté. La loss BGE accepte maintenant le poids au niveau de la scène
 groupwise. Les métriques exactes et opérationnelles même-site sont publiées
 séparément. Runbook : `docs/synthetic_augmented_model_eval_runbook.md`.
 
-Le JSONL promu ne suffit pas : avant lancement, le retrieval top 100 gelé doit
-matérialiser le bundle non injecté `sireto-synthetic-gt-model-features-1`
-(features BUSINESS, labels et groupes texte). Aucun entraînement long n'a été
-lancé pendant cette préparation. Cinq tests ciblés passent.
+Le chemin de matérialisation du bundle non injecté
+`sireto-synthetic-gt-model-features-1` est maintenant exécutable. Le premier
+builder agrège les manifests `P*_promoted`, refuse moins de 20 000 variantes,
+vérifie la disjonction de tous les SIREN réels et assigne les folds 2/3/4 avant
+retrieval. Deux replays `audit_retrieval_channels.py` k=5000 alimentent ensuite
+le finaliseur : admission gelée à 100, features BUSINESS, textes et groupes
+BGE. Le ranker réel publié sert uniquement au minage des négatifs ; les
+siblings même SIREN/même identifiant d'adresse sont exclus des hard negatives.
+Les commandes exactes et les budgets temps/disque sont dans le runbook. Aucun
+fit long n'a été lancé pendant cette préparation. Huit tests ciblés passent,
+ainsi que deux smokes réels de projection source/SIRENE.
 
 *(préparation mix, XGBoost, BGE pondéré et comparateurs : commit `541b560`)*
+*(raccord retrieval top100 et bundle BUSINESS/BGE : commit `79b3a3b`)*
 
 ### Corpus GT synthétique — boucle agentique Luna v2
 
