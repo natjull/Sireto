@@ -1548,13 +1548,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         key: max(0, final_stratum_counts[key] - prior_stratum_counts[key])
         for key in final_stratum_counts
     }
-    difficulty_minimum_additions = {
-        level: (
-            ideal_stratum_counts["NEAR_CLEAN_CONTROL"]
-            if level == "EASY" else 0
-        )
-        for level in DIFFICULTIES
-    }
+    # Near-clean controls and EASY share the same scarce active-clean support.
+    # Do not make the ideal *batch* control count a hard lower bound here: late
+    # corpus batches can be one operator short even though the final remainder
+    # is ample.  The L-infinity objective still maximizes attainable EASY toward
+    # its ideal, and adapt_strata_to_easy_capacity defers only the exact shortfall
+    # while keeping every final stratum upper bound inviolate.
+    difficulty_minimum_additions = {level: 0 for level in DIFFICULTIES}
     relation_capacities: dict[tuple[str, str], int] = {}
     prior_name_token_subsets = sum(
         count for signature, count in prior_pair_counts.items()
