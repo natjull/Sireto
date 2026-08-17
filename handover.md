@@ -4930,6 +4930,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le commit `cc0c25a` désactive la préservation inutile de l'ordre d'insertion
   DuckDB afin que les agrégations des historiques officiels puissent déverser
   sur le SSD plutôt que saturer la mémoire du Mac.
+- Le commit `cdf3dd2` matérialise séquentiellement et atomiquement les trois
+  lookups officiels historiques sur le SSD avant leur jointure. Il évite ainsi
+  de maintenir simultanément plus de 160 millions de lignes d'agrégation en
+  mémoire et rend ces projections réutilisables après une interruption.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
