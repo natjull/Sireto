@@ -51,6 +51,21 @@ def test_insee_primary_cp_fallback_and_corsica():
     assert {hit.record.siret for hit in fallback} == {a.siret, b.siret}
 
 
+def test_certified_crm_query_column_names_are_consumed():
+    query = RetrievalQuery.from_mapping(
+        {
+            "crm_name": "Alpha Services",
+            "crm_address": "10 rue des Fleurs",
+            "crm_postcode": "75001",
+            "crm_insee": "75056",
+        }
+    )
+    assert query.name == "ALPHA SERVICES"
+    assert query.address == "10 RUE DES FLEURS"
+    assert query.postcode == "75001"
+    assert query.insee == "75056"
+
+
 def test_official_history_and_bidirectional_one_hop():
     old = _record("11111111100001", name="ANCIEN NOM OFFICIEL", linked_sirets=("22222222200002",))
     new = _record("22222222200002", name="NOUVEAU NOM OFFICIEL", linked_sirets=(old.siret,))

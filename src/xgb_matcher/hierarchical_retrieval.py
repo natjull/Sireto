@@ -171,6 +171,7 @@ class RetrievalQuery:
             ),
             address=normalize_text(
                 row.get("crm_addr")
+                or row.get("crm_address")
                 or row.get("crm_address_raw")
                 or row.get("address")
                 or row.get("adresse")
@@ -182,6 +183,7 @@ class RetrievalQuery:
             postcode=normalize_code(
                 row.get("postcode")
                 or row.get("crm_cp")
+                or row.get("crm_postcode")
                 or row.get("crm_postcode_raw"),
                 5,
             ),
