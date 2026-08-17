@@ -526,7 +526,6 @@ def build_index(args: argparse.Namespace) -> Path:
             SELECT siret, siren, insee, postcode, number, number_suffix, state,
                    is_siege, names, addresses, linked_sirets, payload
             FROM ({selected_scope}) selected_rows
-            ORDER BY siret
         """
         establishment_count = 0
         since_commit = 0
@@ -545,7 +544,6 @@ def build_index(args: argparse.Namespace) -> Path:
                    string_agg(DISTINCT names, ' | ') AS names
             FROM ({selected_scope}) selected_rows
             GROUP BY siren, insee, postcode
-            ORDER BY siren, insee, postcode
         """
         siren_count = 0
         for rows in _stream_query(connection, siren_sql, batch_size=args.batch_size):
