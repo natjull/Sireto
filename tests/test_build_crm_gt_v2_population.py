@@ -33,7 +33,7 @@ def test_unseen_assignment_is_grouped_stable_and_near_70_15_15() -> None:
     assert all(fold == 1 for role, fold in first.values() if role == "PROSPECTIVE_TEST")
 
 
-def test_audit_sample_has_fixed_roles_unique_sirens_and_all_cp_fallbacks() -> None:
+def test_audit_sample_has_fixed_roles_unique_sirens_and_strata_coverage() -> None:
     rows = _rows()
     assignment = assign_unseen(rows, 42)
     rows["split_role"] = rows["target_siren"].map(lambda value: assignment[value][0])
@@ -42,5 +42,16 @@ def test_audit_sample_has_fixed_roles_unique_sirens_and_all_cp_fallbacks() -> No
     assert sample["split_role"].value_counts().to_dict() == {
         "TRAIN": 200, "PROSPECTIVE_DEV": 100, "PROSPECTIVE_TEST": 100,
     }
-    assert set(rows.loc[:2, "target_siren"]).issubset(set(sample["target_siren"]))
+    assert set(rows["loc_match_type"]).issubset(set(sample["loc_match_type"]))
+    assert set(rows["sirene_etat"]).issubset(set(sample["sirene_etat"]))
     assert sample["audit_verdict"].eq("PENDING_INDEPENDENT_REVIEW").all()
+
+
+def test_audit_sample_can_exclude_a_prior_review() -> None:
+    rows = _rows(3000)
+    assignment = assign_unseen(rows, 42)
+    rows["split_role"] = rows["target_siren"].map(lambda value: assignment[value][0])
+    first = audit_sample(rows, 42)
+    second = audit_sample(rows, 20260818, set(first["query_id"]))
+    assert len(second) == 400
+    assert set(first["query_id"]).isdisjoint(second["query_id"])

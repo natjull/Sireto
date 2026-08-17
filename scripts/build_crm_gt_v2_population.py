@@ -98,15 +98,30 @@ def operational_sets(snapshot: Path, rows: pd.DataFrame):
         out[siret] = members[(str(r.siren), key)] if all(key.split("|")) else [siret]
     return out
 
-def audit_sample(rows: pd.DataFrame, seed: int):
+def audit_sample(rows: pd.DataFrame, seed: int, excluded_query_ids: set[str] | None = None):
+    excluded_query_ids = excluded_query_ids or set()
+    rows = rows[~rows.query_id.astype(str).isin(excluded_query_ids)]
     one = rows.assign(_key=rows.apply(lambda r: stable(seed,"AUDIT",r.target_siren,r.query_id),axis=1)).sort_values("_key").drop_duplicates("target_siren")
-    targets={"TRAIN":200,"PROSPECTIVE_DEV":100,"PROSPECTIVE_TEST":100}; selected=[]; used=set()
-    mandatory=one[one.loc_match_type.eq("CP_FALLBACK_INSEE_MISSING")]
-    selected += mandatory.index.tolist(); used |= set(mandatory.target_siren)
+    targets={"TRAIN":200,"PROSPECTIVE_DEV":100,"PROSPECTIVE_TEST":100}; selected=[]
     for role,n in targets.items():
-        have=int(mandatory.split_role.eq(role).sum())
-        pool=one[one.split_role.eq(role)&~one.target_siren.isin(used)].sort_values(["sirene_etat","loc_match_type","_key"])
-        chosen=pool.iloc[:n-have]; selected += chosen.index.tolist(); used |= set(chosen.target_siren)
+        pool=one[one.split_role.eq(role)].copy()
+        pool["_stratum"] = pool.sirene_etat.astype(str) + "|" + pool.loc_match_type.astype(str)
+        sizes = pool["_stratum"].value_counts().sort_index()
+        if len(pool) < n: raise AssertionError(f"Insufficient audit population for {role}")
+        raw = sizes * n / len(pool)
+        allocation = raw.astype(int)
+        if n >= len(sizes):
+            allocation = allocation.clip(lower=1)
+        while int(allocation.sum()) > n:
+            candidates = [key for key in allocation.index if allocation[key] > 1]
+            key = min(candidates, key=lambda value: (raw[value] - allocation[value], stable(seed, role, value)))
+            allocation[key] -= 1
+        while int(allocation.sum()) < n:
+            candidates = [key for key in allocation.index if allocation[key] < sizes[key]]
+            key = max(candidates, key=lambda value: (raw[value] - allocation[value], -stable(seed, role, value)))
+            allocation[key] += 1
+        for stratum, count in allocation.items():
+            selected += pool[pool._stratum.eq(stratum)].sort_values("_key").iloc[:int(count)].index.tolist()
     sample=one.loc[selected].drop(columns="_key").copy()
     if len(sample)!=400 or sample.target_siren.duplicated().any(): raise AssertionError("Audit sample failed")
     sample["audit_verdict"]="PENDING_INDEPENDENT_REVIEW"; sample["audit_reason"]=""
@@ -156,9 +171,14 @@ def build(args):
     if fold_frame.groupby("siren_component_id").oof_fold.nunique().max()!=1: raise AssertionError("Component leakage")
     old=pd.read_csv(args.existing_crm,sep=";",dtype=str,keep_default_na=False)
     core=["crm_name","crm_cp","crm_insee","crm_id","crm_commune","gt_siret","crm_adresse","SITE_CLI_COMMUNE","sirene_insee","sirene_cp","sirene_etat","loc_match_type"]
-    crm=pd.concat([old[core],new[core]],ignore_index=True); audit=audit_sample(eligible,args.seed)
-    identity={"schema_version":SCHEMA_VERSION,"seed":args.seed,"split_ratio":[70,15,15],"audit_size":400,"builder_sha256":sha256(Path(__file__)),
+    excluded_query_ids: set[str] = set()
+    if args.audit_exclude_sample:
+        excluded_query_ids = set(pd.read_csv(args.audit_exclude_sample, dtype=str, keep_default_na=False).query_id)
+    crm=pd.concat([old[core],new[core]],ignore_index=True); audit=audit_sample(eligible,args.audit_seed,excluded_query_ids)
+    identity={"schema_version":SCHEMA_VERSION,"seed":args.seed,"audit_seed":args.audit_seed,"split_ratio":[70,15,15],"audit_size":400,"builder_sha256":sha256(Path(__file__)),
       "inputs":{"base":sha256(args.base_population/"manifest.json"),"new":sha256(args.new_increment),"crm":sha256(args.existing_crm),"sirene":sha256(args.sirene)}}
+    if args.audit_exclude_sample:
+        identity["inputs"]["audit_exclude_sample"] = sha256(args.audit_exclude_sample)
     bid=hashlib.sha256(json.dumps(identity,sort_keys=True).encode()).hexdigest()[:16]; dest=args.output_root/bid
     if dest.exists(): return dest
     args.output_root.mkdir(parents=True,exist_ok=True); tmp=Path(tempfile.mkdtemp(prefix=f".{bid}.",dir=args.output_root))
@@ -177,6 +197,8 @@ def build(args):
 def main():
     p=argparse.ArgumentParser()
     for name in ("base_population","new_increment","existing_crm","sirene","output_root"): p.add_argument("--"+name.replace("_","-"),type=Path,required=True)
-    p.add_argument("--seed",type=int,default=42); p.add_argument("--expected-new-rows",type=int,default=20209)
+    p.add_argument("--seed",type=int,default=42); p.add_argument("--audit-seed",type=int,default=42)
+    p.add_argument("--audit-exclude-sample",type=Path)
+    p.add_argument("--expected-new-rows",type=int,default=20209)
     print(build(p.parse_args()))
 if __name__=="__main__": main()
