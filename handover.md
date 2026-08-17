@@ -4940,6 +4940,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le commit `6a9af1a` branche explicitement les colonnes certifiées
   `crm_address` et `crm_postcode` dans la requête hiérarchique, avec un test de
   régression sur le schéma exact de la population CRM v2.
+- Le commit `c1ec1f6` extrait le numéro de voie placé en tête de l'adresse CRM
+  lorsque la source ne fournit pas de colonne numéro séparée. Le tri des sites
+  d'un SIREN applique donc réellement le contrat numéro/adresse avant le statut
+  de siège sur les benchmarks CRM commerciaux; les 9 tests ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
