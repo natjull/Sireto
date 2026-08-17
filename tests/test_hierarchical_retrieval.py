@@ -62,6 +62,7 @@ def test_certified_crm_query_column_names_are_consumed():
     )
     assert query.name == "ALPHA SERVICES"
     assert query.address == "10 RUE DES FLEURS"
+    assert query.number == "10"
     assert query.postcode == "75001"
     assert query.insee == "75056"
 

@@ -23,6 +23,7 @@ from typing import Any, Iterable, Mapping, Protocol, Sequence
 
 _SPACE_RE = re.compile(r"\s+")
 _NON_ALNUM_RE = re.compile(r"[^A-Z0-9]+")
+_LEADING_STREET_NUMBER_RE = re.compile(r"^(\d{1,5})(?:\s|$)")
 
 
 def normalize_text(value: Any) -> str:
@@ -41,6 +42,11 @@ def normalize_code(value: Any, width: int) -> str:
 def normalize_insee(value: Any) -> str:
     """Normalize INSEE without destroying Corsican 2A/2B commune codes."""
     return re.sub(r"[^0-9A-Z]", "", str(value or "").upper())
+
+
+def _leading_street_number(address: str) -> str:
+    match = _LEADING_STREET_NUMBER_RE.match(address)
+    return match.group(1) if match else ""
 
 
 def parse_bool(value: Any, default: bool = False) -> bool:
@@ -161,6 +167,14 @@ class RetrievalQuery:
 
     @classmethod
     def from_mapping(cls, row: Mapping[str, Any]) -> "RetrievalQuery":
+        address = normalize_text(
+            row.get("crm_addr")
+            or row.get("crm_address")
+            or row.get("crm_address_raw")
+            or row.get("address")
+            or row.get("adresse")
+            or ""
+        )
         return cls(
             name=normalize_text(
                 row.get("crm_name")
@@ -169,16 +183,12 @@ class RetrievalQuery:
                 or row.get("nom")
                 or ""
             ),
-            address=normalize_text(
-                row.get("crm_addr")
-                or row.get("crm_address")
-                or row.get("crm_address_raw")
-                or row.get("address")
-                or row.get("adresse")
-                or ""
-            ),
+            address=address,
             number=normalize_text(
-                row.get("numeroVoie") or row.get("number") or row.get("numero") or ""
+                row.get("numeroVoie")
+                or row.get("number")
+                or row.get("numero")
+                or _leading_street_number(address)
             ),
             postcode=normalize_code(
                 row.get("postcode")
