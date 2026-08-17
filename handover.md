@@ -4927,6 +4927,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le commit `f046817` lie l'identité content-addressée de l'index au SHA-256
   du builder lui-même, afin qu'une modification du code ne puisse pas réutiliser
   silencieusement un index construit par une version antérieure.
+- Le commit `cc0c25a` désactive la préservation inutile de l'ordre d'insertion
+  DuckDB afin que les agrégations des historiques officiels puissent déverser
+  sur le SSD plutôt que saturer la mémoire du Mac.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
