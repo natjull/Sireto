@@ -4921,7 +4921,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Tantivy 0.25.1 est déclaré; l'évaluation bornée publie séparément Recall@100
   exact/opérationnel, maximum observé et latences p50/p95/p99 dans un JSON
   scellé. Ne pas ouvrir le fold test avant gel et gate dev.
-- Validation livrée : 8 tests ciblés en moins d'une seconde, dont deux vrais builds/requêtes
+- Validation livrée : 9 tests ciblés en moins d'une seconde, dont deux vrais builds/requêtes
   Tantivy sur fixtures; `py_compile` et les deux entrées CLI passent. Aucun
   build national, entraînement, téléchargement massif ou test final lancé.
 - Le commit `f046817` lie l'identité content-addressée de l'index au SHA-256
@@ -4937,6 +4937,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Le commit `45f5557` supprime les tris globaux inutiles des 43,9 millions de
   documents SIRET et des documents SIREN agrégés : les résultats sont désormais
   transmis à Tantivy en flux au lieu d'être matérialisés avant la première ligne.
+- Le commit `6a9af1a` branche explicitement les colonnes certifiées
+  `crm_address` et `crm_postcode` dans la requête hiérarchique, avec un test de
+  régression sur le schéma exact de la population CRM v2.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
