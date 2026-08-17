@@ -4921,7 +4921,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Tantivy 0.25.1 est déclaré; l'évaluation bornée publie séparément Recall@100
   exact/opérationnel, maximum observé et latences p50/p95/p99 dans un JSON
   scellé. Ne pas ouvrir le fold test avant gel et gate dev.
-- Validation livrée : 9 tests ciblés en 0,86 s, dont deux vrais builds/requêtes
+- Validation livrée : 8 tests ciblés en moins d'une seconde, dont deux vrais builds/requêtes
   Tantivy sur fixtures; `py_compile` et les deux entrées CLI passent. Aucun
   build national, entraînement, téléchargement massif ou test final lancé.
 
