@@ -12,7 +12,10 @@ from scripts.manage_synthetic_gt_balanced_registry import (
     sha256,
     snapshot,
 )
-from scripts.select_synthetic_gt_balanced_production import registry_state_usage
+from scripts.select_synthetic_gt_balanced_production import (
+    registry_state_usage,
+    registry_target_usage,
+)
 
 
 def write_jsonl(path: Path, values: list[dict]) -> None:
@@ -95,6 +98,11 @@ def test_registry_counts_only_promoted_exact_contracts(tmp_path) -> None:
     assert current["augmentation_stratum_counts"] == {"NEAR_CLEAN_CONTROL": 1}
     assert current["distinct_target_sirets"] == 1
     assert len(current["inspiration_ref_counts"]) == 2
+    target_counts, target_pairs = registry_target_usage(registry_path)
+    assert target_counts == Counter({"12345678900012": 1})
+    assert target_pairs["12345678900012"] == {
+        ("LEGAL_FORM_REMOVE", ("address", "ADDRESS_ABBREVIATE"))
+    }
 
     # Registration is idempotent after a crash/retry.
     assert register(args)["summary"] == current

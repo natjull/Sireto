@@ -80,7 +80,7 @@ def ensure_batch(
     paths = batch_paths(args.output_root, batch_id)
 
     if not paths["seed"].exists():
-        run([
+        selector_command = [
             sys.executable, "scripts/select_synthetic_gt_balanced_production.py",
             "--plan", str(args.selection_plan),
             "--output", str(paths["seed"]),
@@ -90,7 +90,10 @@ def ensure_batch(
             "--selection-seed", f"SIRETO-BALANCED-{batch_id}",
             "--production-registry", str(args.registry),
             "--selection-pool-limit", str(args.selection_pool_limit),
-        ])
+        ]
+        if args.allow_existing_target_reuse:
+            selector_command.append("--allow-existing-target-reuse")
+        run(selector_command)
     seed_manifest = paths["seed"].with_suffix(
         paths["seed"].suffix + ".manifest.json"
     )
@@ -210,6 +213,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--start-batch", type=int, default=1)
     result.add_argument("--concurrency", type=int, default=64)
     result.add_argument("--minimum-promotion-rate", type=float, default=0.70)
+    result.add_argument(
+        "--allow-existing-target-reuse", action="store_true",
+        help="Allow bounded terminal reuse of a promoted target below its max-three cap.",
+    )
     result.add_argument(
         "--maximum-batches", type=int, default=0,
         help="Optional safety bound; zero means continue until the target.",

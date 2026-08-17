@@ -286,6 +286,36 @@ def registry_state_usage(path: Path) -> tuple[Counter[str], Counter[str]]:
     return variants, Counter(target_states.values())
 
 
+def registry_target_usage(
+    path: Path,
+) -> tuple[Counter[str], dict[str, set[tuple[str, tuple[str, str]]]]]:
+    """Return safe promoted slots and used relation pairs for bounded reuse."""
+    registry = registry_lib.load_registry(path)
+    quarantined = registry_lib.quarantine_records(registry)
+    counts: Counter[str] = Counter()
+    pairs: dict[str, set[tuple[str, tuple[str, str]]]] = defaultdict(set)
+    for batch in registry["batches"]:
+        validated = registry_lib.validate_promoted_batch(
+            Path(batch["seed_input"]["path"]),
+            Path(batch["promoted"]["path"]),
+            Path(batch["promotion_manifest"]["path"]),
+        )
+        for value in validated["records"]:
+            if value["key"] in quarantined:
+                continue
+            siret = str(value["target_siret"])
+            relations = value["contract"]["field_relations"]
+            location = [
+                (str(field), str(relation))
+                for field, relation in relations.items() if field != "name"
+            ]
+            if len(location) != 1:
+                raise ValueError(f"invalid registered relation pair: {relations}")
+            counts[siret] += 1
+            pairs[siret].add((str(relations["name"]), location[0]))
+    return counts, pairs
+
+
 def pair_signature(pair: tuple[str, tuple[str, str]]) -> str:
     name_relation, (field, location_relation) = pair
     return f"name:{name_relation}+{field}:{location_relation}"
@@ -990,10 +1020,14 @@ def choose_targets_and_bundles(
     token_subset_signature_cap: int,
     prior_token_subset_signature_counts: Counter[str],
     selection_seed: str,
+    prior_target_variant_counts: Counter[str] | None = None,
+    prior_target_pairs: dict[str, set[tuple[str, tuple[str, str]]]] | None = None,
     diagnose_infeasible: bool = False,
     feasibility_only: bool = False,
     solver_pool_limit: int | None = None,
 ) -> list[tuple[dict[str, Any], tuple[tuple[str, tuple[str, str]], ...]]]:
+    prior_target_variant_counts = prior_target_variant_counts or Counter()
+    prior_target_pairs = prior_target_pairs or {}
     options: list[tuple[int, tuple[tuple[str, tuple[str, str]], ...]]] = []
     context_by_index: list[dict[str, Any]] = []
     pair_remaining = {
@@ -1052,6 +1086,14 @@ def choose_targets_and_bundles(
             pair_remaining=pair_remaining,
             official_name_alias_remaining=official_name_alias_remaining,
         )
+        if siret in prior_target_variant_counts:
+            remaining_slots = 3 - prior_target_variant_counts[siret]
+            used_pairs = prior_target_pairs.get(siret, set())
+            bundles = [
+                bundle for bundle in bundles
+                if len(bundle) <= remaining_slots
+                and not any(pair in used_pairs for pair in bundle)
+            ]
         if not bundles:
             continue
         context_index = len(context_by_index)
@@ -1085,8 +1127,15 @@ def choose_targets_and_bundles(
     for indexes in option_by_context.values():
         add({index: 1 for index in indexes}, 0, 1, "TARGET_UNIQUENESS")
     add(
-        {index: 1 for index in range(variable_count)},
-        math.ceil(variant_count / 3), maximum_target_count, "TARGET_COUNT",
+        {
+            index: int(
+                context_by_index[context_index]["target_siret"]
+                not in prior_target_variant_counts
+            )
+            for index, (context_index, _bundle) in enumerate(options)
+        },
+        0 if prior_target_variant_counts else math.ceil(variant_count / 3),
+        maximum_target_count, "TARGET_COUNT",
     )
     # State balance is corpus-final, not batch-local.  Compensate the exact
     # promoted prefix so the terminal corpus reaches its preregistered totals.
@@ -1119,9 +1168,12 @@ def choose_targets_and_bundles(
     )
     add({
         index: (
-            lower_active
-            if context_by_index[context_index]["target"]["state"] == "A"
-            else lower_closed
+            0 if context_by_index[context_index]["target_siret"]
+            in prior_target_variant_counts else (
+                lower_active
+                if context_by_index[context_index]["target"]["state"] == "A"
+                else lower_closed
+            )
         )
         for index, (context_index, _bundle) in enumerate(options)
     }, -lower_constant, np.inf, "STATE_TARGET_SHARE_REACHABLE")
@@ -1133,9 +1185,12 @@ def choose_targets_and_bundles(
     )
     add({
         index: (
-            upper_active
-            if context_by_index[context_index]["target"]["state"] == "A"
-            else upper_closed
+            0 if context_by_index[context_index]["target_siret"]
+            in prior_target_variant_counts else (
+                upper_active
+                if context_by_index[context_index]["target"]["state"] == "A"
+                else upper_closed
+            )
         )
         for index, (context_index, _bundle) in enumerate(options)
     }, -np.inf, -upper_constant, "STATE_TARGET_SHARE_REACHABLE")
@@ -1947,6 +2002,8 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
     registry_sirets: set[str] = set()
     registry_sirens: set[str] = set()
     prior_distinct_target_count = 0
+    prior_target_variant_counts: Counter[str] = Counter()
+    prior_target_pairs: dict[str, set[tuple[str, tuple[str, str]]]] = {}
     registry_hash: str | None = None
     if args.production_registry is not None:
         if args.prior_counted_seed_input:
@@ -1962,6 +2019,23 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         prior_state_variant_counts, prior_state_target_counts = (
             registry_state_usage(args.production_registry)
         )
+        if args.allow_existing_target_reuse:
+            prior_target_variant_counts, prior_target_pairs = registry_target_usage(
+                args.production_registry
+            )
+            maximum_per_target = int(
+                plan["objective"]["maximum_variants_per_target"]
+            )
+            prior_target_variant_counts = Counter({
+                siret: count for siret, count in prior_target_variant_counts.items()
+                if count < maximum_per_target
+            })
+            prior_target_pairs = {
+                siret: prior_target_pairs[siret]
+                for siret in prior_target_variant_counts
+            }
+    elif args.allow_existing_target_reuse:
+        raise ValueError("existing-target reuse requires --production-registry")
     all_excluded_inputs = [
         *args.exclude_seed_input, *args.prior_counted_seed_input,
     ]
@@ -1983,8 +2057,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         )
         eligible_entries = [
             value for value in context_entries
-            if value["target_siret"] not in excluded_sirets
-            and value["target_siren"] not in excluded_sirens
+            if (
+                value["target_siret"] in prior_target_variant_counts
+                or (
+                    value["target_siret"] not in excluded_sirets
+                    and value["target_siren"] not in excluded_sirens
+                )
+            )
             and (
                 value["regular_eligible"]
                 or (
@@ -2007,8 +2086,13 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         document_frequencies = fragments.name_token_document_frequencies(all_contexts)
         contexts = [
             value for value in all_contexts
-            if value["target_siret"] not in excluded_sirets
-            and value["target_siren"] not in excluded_sirens
+            if (
+                value["target_siret"] in prior_target_variant_counts
+                or (
+                    value["target_siret"] not in excluded_sirets
+                    and value["target_siren"] not in excluded_sirens
+                )
+            )
             and (
                 fragments.eligible(value)
                 or (
@@ -2348,6 +2432,7 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
                 prior_ref_counts, prior_operator_counts, effective_ref_caps,
                 token_subset_signature_cap,
                 prior_token_subset_signature_counts, effective_selection_seed,
+                prior_target_variant_counts, prior_target_pairs,
                 args.diagnose_infeasible, args.feasibility_only,
                 capability_pool_limit,
             )
@@ -2590,7 +2675,14 @@ def build(args: argparse.Namespace) -> dict[str, Any]:
         },
         "maximum_batch_target_count": maximum_target_count,
         "cumulative_planned_unique_targets_upper_bound": (
-            prior_distinct_target_count + len(output)
+            prior_distinct_target_count + sum(
+                str(value["target_siret"]) not in prior_target_variant_counts
+                for value in output
+            )
+        ),
+        "reused_existing_targets": sum(
+            str(value["target_siret"]) in prior_target_variant_counts
+            for value in output
         ),
         "excluded_prior_sirets": len(excluded_sirets),
         "excluded_prior_sirens": len(excluded_sirens),
@@ -2688,6 +2780,13 @@ def parser() -> argparse.ArgumentParser:
             "Sealed balanced-production registry. Only its full-SIRENE exact "
             "promotions reserve cumulative quotas and caps; every registered target "
             "SIRET/SIREN is excluded from later batches."
+        ),
+    )
+    result.add_argument(
+        "--allow-existing-target-reuse", action="store_true",
+        help=(
+            "Terminal recovery only: permit another safe relation pair on an "
+            "already promoted target with fewer than the maximum three variants."
         ),
     )
     result.set_defaults(func=build)
