@@ -4944,6 +4944,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   lorsque la source ne fournit pas de colonne numéro séparée. Le tri des sites
   d'un SIREN applique donc réellement le contrat numéro/adresse avant le statut
   de siège sur les benchmarks CRM commerciaux; les 9 tests ciblés passent.
+- Le premier build national a terminé les 43,9 millions de documents SIRET,
+  puis l'agrégat global SIREN a dépassé le plafond DuckDB de 3 Gio avant sa
+  première sortie. Le commit `9d5aa87` matérialise désormais cet agrégat
+  content-addressé avant toute écriture Tantivy : un échec précoce reste
+  réutilisable et ne peut plus supprimer une passe SIRET achevée. Les 9 tests
+  ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
