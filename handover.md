@@ -4924,6 +4924,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Validation livrée : 8 tests ciblés en moins d'une seconde, dont deux vrais builds/requêtes
   Tantivy sur fixtures; `py_compile` et les deux entrées CLI passent. Aucun
   build national, entraînement, téléchargement massif ou test final lancé.
+- Le commit `f046817` lie l'identité content-addressée de l'index au SHA-256
+  du builder lui-même, afin qu'une modification du code ne puisse pas réutiliser
+  silencieusement un index construit par une version antérieure.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
