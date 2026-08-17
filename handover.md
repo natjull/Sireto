@@ -187,6 +187,34 @@ ainsi que deux smokes réels de projection source/SIRENE.
 *(préparation mix, XGBoost, BGE pondéré et comparateurs : commit `541b560`)*
 *(raccord retrieval top100 et bundle BUSINESS/BGE : commit `79b3a3b`)*
 
+L'expérience préenregistrée est terminée sur le fold 0 réel, sans ouvrir le
+fold 1 ni le test. Le corpus final scellé contient exactement 20 000 surfaces
+et 9 737 SIRET (`final_corpus_v1/promoted_20000.jsonl`, SHA-256
+`9e871f0f3c5a19d28a59619c4fd09c87be5d1e75e54296ff41bf34a4dd5cbcc1`).
+La revue humaine bornée de réalisme reste `PENDING_BOUNDED_REVIEW`; les gates
+déterministes et full-SIRENE sont complets. Le snapshot retrieval
+`6281c9d1470f3913` et le bundle `9f99de01516dde9a` restent sans injection :
+8 430/20 000 vérités sont naturellement présentes dans l'admission top100.
+Le mix `71ceda354734fb7a` retient 8 192 scènes réelles et 4 096 synthétiques,
+pondérées `0.5/k` et limitées aux folds train 2/3/4.
+
+XGBoost rend `STOP_SYNTHETIC_AUGMENTATION_XGB` : 2 435/2 797 exacts pour le
+bras réel seul contre 2 430/2 797 pour le bras augmenté ; la vue opérationnelle
+passe de 2 451 à 2 446. Les corrections/régressions appariées sont 14/19.
+L'actif perd 5 exacts, le fermé et le difficile restent inchangés. Artefact :
+`synthetic_augmented_xgb_v1/bf439dfbad1584c5`, 55 s murales.
+
+BGE rend `STOP_SYNTHETIC_AUGMENTATION_BGE` : 2 400/2 797 exacts pour le
+contrôle réel publié contre 2 403/2 797 pour le bras augmenté, sous le gate de
++10 ; la vue opérationnelle reste à 2 418/2 797. L'actif gagne 7 exacts, le
+fermé en perd 4 et le difficile reste à 32/38. Les corrections/régressions
+appariées sont 56/53. Artefacts : `synthetic_augmented_bge_v1/47ac65d7f3f4fbf0`
+et `synthetic_augmented_bge_comparison_v1/b01dc7d33958f72f`. Fit : 4 h 15 min
+38 s ; scoring : 2 h 55 min 54 s ; pic RSS : environ 3,33 Gio. Aucun risk
+model, calibration ou seuil AUTO n'a été entraîné. Rapport complet :
+`docs/synthetic_augmented_model_eval_results.md`. Le correctif qui garde la
+sortie CLI du builder lisible par l'orchestrateur est `07b288a`.
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
