@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import hashlib
 import json
+from pathlib import Path
 
 import pandas as pd
 
@@ -9,7 +11,10 @@ from scripts.build_synthetic_gt_model_features import (
     _admission,
     _select_negative_indices,
 )
-from scripts.prepare_synthetic_gt_model_retrieval_input import _stable_train_fold
+from scripts.prepare_synthetic_gt_model_retrieval_input import (
+    _read_promoted,
+    _stable_train_fold,
+)
 
 
 def test_synthetic_fold_is_siren_stable_and_train_only() -> None:
@@ -17,6 +22,36 @@ def test_synthetic_fold_is_siren_stable_and_train_only() -> None:
     assert _stable_train_fold("123456789") in {2, 3, 4}
     observed = {_stable_train_fold(f"{value:09d}") for value in range(100)}
     assert observed == {2, 3, 4}
+
+
+def test_final_corpus_manifest_can_be_used_as_promoted_source(tmp_path: Path) -> None:
+    row = {
+        "final_decision": "ACCEPT",
+        "full_sirene_qualification": {
+            "decision": "EXACT_IDENTIFIABLE",
+            "target_naturally_returned": True,
+        },
+        "variant_contract_sha256": "a" * 64,
+        "target_siret": "12345678900001",
+        "target_siren": "123456789",
+        "crm": {"name": "EXEMPLE", "address": "1 RUE TEST"},
+        "difficulty": "MEDIUM",
+        "augmentation_stratum": "TRAIN_DISTRIBUTION",
+        "source_kind": "SYNTHETIC_GT",
+    }
+    promoted = tmp_path / "promoted_20000.jsonl"
+    promoted.write_text(json.dumps(row, sort_keys=True) + "\n", encoding="utf-8")
+    digest = hashlib.sha256(promoted.read_bytes()).hexdigest()
+    (tmp_path / "manifest.json").write_text(
+        json.dumps({"rows": 1, "files": {promoted.name: digest}}),
+        encoding="utf-8",
+    )
+
+    frame, sources = _read_promoted([promoted])
+
+    assert frame["variant_contract_sha256"].tolist() == ["a" * 64]
+    assert sources[0]["sha256"] == digest
+    assert sources[0]["rows"] == 1
 
 
 def _channel_row(query_id: str, values: dict[str, list[str]]) -> dict[str, str]:

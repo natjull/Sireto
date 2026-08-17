@@ -65,7 +65,18 @@ def _read_promoted(paths: list[Path]) -> tuple[pd.DataFrame, list[dict[str, Any]
         manifest_path = path.with_name("manifest.json")
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         observed = file_sha256(path)
-        if manifest.get("promoted_sha256") != observed:
+        expected_sha256 = manifest.get("promoted_sha256")
+        expected_rows = manifest.get("promoted_variants")
+        if expected_sha256 is None:
+            # The balanced finalizer publishes a single, audited corpus with a
+            # different manifest envelope from the per-batch promotion
+            # manifests.  Accept it only through its explicit filename hash
+            # and final row count; this lets model builds bind directly to the
+            # cleaned final corpus instead of rediscovering superseded batch
+            # promotions.
+            expected_sha256 = manifest.get("files", {}).get(path.name)
+            expected_rows = manifest.get("rows")
+        if expected_sha256 != observed:
             raise ValueError(f"Promoted hash mismatch: {path}")
         count = 0
         with path.open(encoding="utf-8") as stream:
@@ -82,7 +93,7 @@ def _read_promoted(paths: list[Path]) -> tuple[pd.DataFrame, list[dict[str, Any]
                     raise ValueError(f"Injected/absent promoted target: {path}:{line_number}")
                 rows.append(row)
                 count += 1
-        if count != int(manifest.get("promoted_variants", -1)):
+        if count != int(expected_rows if expected_rows is not None else -1):
             raise ValueError(f"Promoted row count mismatch: {path}")
         sources.append(
             {
