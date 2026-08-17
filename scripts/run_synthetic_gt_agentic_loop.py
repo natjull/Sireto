@@ -1475,6 +1475,23 @@ def broken_address_subset_elision(
 
 def asymmetric_acronym(source: str, target: str) -> bool:
     """Detect partial punctuation removal inside a clearly dotted acronym."""
+    # A terminal mark before an adjacent lexical word is also a component
+    # boundary.  Removing it without inserting a separator is asymmetric even
+    # when every mark inside the acronym was consistently replaced by spaces:
+    # ``L.I.D.E.FINANCES`` must not become ``L I D EFINANCES``.
+    for match in re.finditer(
+        r"(?<!\w)((?:[A-Z]\s*[.\-/]\s*){3,})(?=[A-Z])", source,
+    ):
+        letters = re.findall(r"[A-Z]", match.group(1))
+        following = source[match.end():match.end() + 1]
+        if len(letters) < 3 or not following:
+            continue
+        expression = "".join(
+            re.escape(letter) + r"[^\w]*" for letter in letters
+        ) + rf"(?P<boundary>[^\w]*){re.escape(following)}"
+        target_match = re.search(expression, target.upper())
+        if target_match is not None and not target_match.group("boundary"):
+            return True
     source_candidates = re.finditer(
         r"(?<!\w)([A-Z](?:\s*[.\-/]\s*[A-Z]){2,})(?:[.\-/])?(?!\w)",
         source,

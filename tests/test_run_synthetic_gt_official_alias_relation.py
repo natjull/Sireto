@@ -186,6 +186,28 @@ def test_final_surface_quality_rejects_double_space_broken_elision_and_acronym()
     assert "BROKEN_DE_L_ELISION" in errors
 
 
+def test_final_surface_quality_rejects_acronym_soldered_to_following_word() -> None:
+    baseline = {
+        "name": "L.I.D.E.FINANCES", "address": "134 AV DE PARIS",
+        "postcode": "79000", "city": "NIORT", "insee": "79191",
+    }
+    crm_value = {
+        **baseline,
+        "name": "L I D EFINANCES",
+        "address": "134 AVENUE DE PARIS",
+    }
+    contract = {
+        "field_relations": {
+            "name": "PUNCTUATION_REMOVED", "address": "ADDRESS_ALIAS_EXPAND",
+        },
+        "field_inspirations": {},
+    }
+    errors = loop.final_surface_quality_errors(
+        baseline, crm_value, contract, {"street_number": "134", "street_type": "AV"},
+    )
+    assert "NAME_ASYMMETRIC_ACRONYM" in errors
+
+
 def test_official_alias_proof_exposes_authoritative_byte_match_to_critic() -> None:
     card = seed()["seed_card"]
     proof = loop.deterministic_variant_proof(
