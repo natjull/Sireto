@@ -38,6 +38,17 @@ le holdout consommé par de futures données CRM.
 
 *(contrat d'utilisation commun aux familles de modèles : commit `803ee37`)*
 
+Le retrieval a ensuite été rejoué sur les 3 510 lignes du développement
+prospectif, avec partitions SIRENE courantes, 100 candidats maximum et aucune
+injection. La couverture et la présence du SIRET dans le pool géographique sont
+de 100 %, mais le Recall@100 exact/opérationnel n'est que de 3 279/3 510
+(93,42 %). L'oracle lexical @5000 atteint 3 448/3 510 (98,23 %). Verdict :
+`PIVOT_RETRIEVAL`; aucun modèle aval n'est entraîné avant le gate de 99,0 %.
+Résultats et artefacts : `docs/crm_gt_v2_retrieval_results.md`.
+
+*(benchmark exact + opérationnel et évaluateur : commits `33a9568`,
+`018c7d1`)*
+
 ### Nouvel apport CRM — tri géographique SIRET du 17 août 2026
 
 Le fichier VPS `plateforme_new_data_to_cure.csv` a été copié via Tailscale
