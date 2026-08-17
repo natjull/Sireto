@@ -46,6 +46,7 @@ def build(preliminary: Path, output_root: Path) -> Path:
 
     labels = pd.read_parquet(preliminary / "labels.parquet")
     fresh = labels["data_origin"].eq("REAL_CRM_20260817")
+    historical = labels["data_origin"].eq("REAL_CRM_HISTORICAL")
     if not fresh.any():
         raise ValueError("No REAL_CRM_20260817 labels")
     if not labels.loc[fresh, "exact_metric_eligible"].astype(bool).all():
@@ -58,9 +59,25 @@ def build(preliminary: Path, output_root: Path) -> Path:
     labels.loc[fresh, "label_audit_status"] = (
         "PROVENANCE_CONFIRMED_COMMERCIAL_ENTRY_GEO_GUARDED"
     )
+    labels.loc[historical, "label_source"] = "HISTORICAL_HUMAN_ENTERED_CRM"
+    labels.loc[historical, "validator"] = "HISTORICAL_CRM_LABEL_CONTRACT"
+    labels.loc[historical, "reliability"] = "HIGH_HUMAN_ENTERED_CRM"
+    labels.loc[historical, "label_is_human_validated"] = True
+    labels.loc[historical, "label_audit_status"] = (
+        "PROVENANCE_CONFIRMED_HISTORICAL_HUMAN_CRM"
+    )
+    labels["human_label_provenance"] = labels["data_origin"].map(
+        {
+            "REAL_CRM_20260817": "COMMERCIAL_ASSISTANT_SITE_CREATION_20260817",
+            "REAL_CRM_HISTORICAL": "HISTORICAL_CRM_SIRET_ENTRY",
+        }
+    )
+    if labels["human_label_provenance"].isna().any():
+        raise ValueError("Unexpected non-CRM label in commercial population")
 
     identity = {
         "schema_version": SCHEMA_VERSION,
+        "builder_sha256": sha256(Path(__file__)),
         "preliminary_manifest_sha256": sha256(source_manifest_path),
         "label_contract": {
             "source": "SIRET_ENTERED_BY_COMMERCIAL_ASSISTANT_AT_CRM_SITE_CREATION",
@@ -91,6 +108,7 @@ def build(preliminary: Path, output_root: Path) -> Path:
     fresh_labels = labels[fresh]
     counts = {
         "model_population_rows": len(labels),
+        "historical_human_gt_rows": int(historical.sum()),
         "fresh_commercial_gt_rows": len(fresh_labels),
         "fresh_train_rows": int(fresh_labels["split_role"].eq("TRAIN").sum()),
         "fresh_prospective_dev_rows": int(
