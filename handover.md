@@ -2,7 +2,7 @@
 
 ## Etat des lieux
 
-### Population prospective CRM GT v2 — build gelé, audit en attente
+### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
 `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_gt_v2_population/6fb3e7ca96dbfa9a/`.
@@ -11,9 +11,18 @@ modèle contient 37 218 scènes, dont 20 121 nouvelles éligibles. Les composant
 historiques sont conservés, les SIREN inédits sont répartis 70/15/15 par
 composante, et 88 lignes liées à des conflits historiques multi-fold sont
 quarantainées. La qualification ne consomme aucun retrieval. L'échantillon
-indépendant de 400 labels est scellé mais reste `PENDING_INDEPENDENT_REVIEW`.
+indépendant de 400 labels demeure un diagnostic de suspicion, pas un oracle
+d'étiquettes : le SIRET a été saisi par l'assistant commercial lors de la
+création du site. Les 20 121 lignes géographiquement cohérentes sont donc
+admises comme GT humain sous existence SIRENE + garde INSEE/CP. La population
+certifiée est publiée sous
+`crm_gt_v2_commercial_certified_population/73328b7611f37a06/`. Le rebuild des
+partitions conserve désormais aussi tous les établissements fermés, sans
+cutoff arbitraire à dix ans.
 
 *(builder, split prospectif et tests : commit `09f27f1`)*
+*(certification de provenance commerciale : commit `43d1e14`; correction des
+partitions fermées : commit `1a7cfea`)*
 
 ### Nouvel apport CRM — tri géographique SIRET du 17 août 2026
 
