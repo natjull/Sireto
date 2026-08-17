@@ -5,7 +5,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 import hashlib
 import json
+from pathlib import Path
 from typing import Any, Dict, Optional, Tuple
+
+
+def load_hierarchical_retrieval_config(path: Path | str):
+    """Load the isolated opt-in retriever without changing legacy defaults."""
+    from .hierarchical_retrieval import HierarchicalRetrievalConfig
+
+    return HierarchicalRetrievalConfig.load(path)
 
 
 @dataclass(frozen=True)
@@ -310,4 +318,5 @@ class RetrievalSignatureV1:
 __all__ = [
     "RetrievalConfigV1",
     "RetrievalSignatureV1",
+    "load_hierarchical_retrieval_config",
 ]

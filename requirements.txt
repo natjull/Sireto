@@ -16,3 +16,6 @@ sentence-transformers
 transformers
 huggingface-hub
 torch
+
+# Hierarchical production sparse retrieval (tests retain an in-memory backend)
+tantivy==0.25.1
