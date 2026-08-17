@@ -4934,6 +4934,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   lookups officiels historiques sur le SSD avant leur jointure. Il évite ainsi
   de maintenir simultanément plus de 160 millions de lignes d'agrégation en
   mémoire et rend ces projections réutilisables après une interruption.
+- Le commit `45f5557` supprime les tris globaux inutiles des 43,9 millions de
+  documents SIRET et des documents SIREN agrégés : les résultats sont désormais
+  transmis à Tantivy en flux au lieu d'être matérialisés avant la première ligne.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
