@@ -2,6 +2,19 @@
 
 ## Etat des lieux
 
+### Population prospective CRM GT v2 — build gelé, audit en attente
+
+Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_gt_v2_population/6fb3e7ca96dbfa9a/`.
+Le fichier publié `crm_ok_gt_v2.csv` contient 37 263 lignes ; la population
+modèle contient 37 218 scènes, dont 20 121 nouvelles éligibles. Les composants
+historiques sont conservés, les SIREN inédits sont répartis 70/15/15 par
+composante, et 88 lignes liées à des conflits historiques multi-fold sont
+quarantainées. La qualification ne consomme aucun retrieval. L'échantillon
+indépendant de 400 labels est scellé mais reste `PENDING_INDEPENDENT_REVIEW`.
+
+*(builder, split prospectif et tests : commit `09f27f1`)*
+
 ### Nouvel apport CRM — tri géographique SIRET du 17 août 2026
 
 Le fichier VPS `plateforme_new_data_to_cure.csv` a été copié via Tailscale
