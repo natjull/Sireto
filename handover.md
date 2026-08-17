@@ -16,13 +16,17 @@ d'étiquettes : le SIRET a été saisi par l'assistant commercial lors de la
 création du site. Les 20 121 lignes géographiquement cohérentes sont donc
 admises comme GT humain sous existence SIRENE + garde INSEE/CP. La population
 certifiée est publiée sous
-`crm_gt_v2_commercial_certified_population/73328b7611f37a06/`. Le rebuild des
+`crm_gt_v2_commercial_certified_population/4b07f3b3d245358e/`. Les 37 218
+labels, historiques comme nouveaux, portent désormais explicitement leur
+provenance CRM humaine. Le rebuild des
 partitions conserve désormais aussi tous les établissements fermés, sans
 cutoff arbitraire à dix ans.
 
 *(builder, split prospectif et tests : commit `09f27f1`)*
 *(certification de provenance commerciale : commit `43d1e14`; correction des
 partitions fermées : commit `1a7cfea`)*
+*(provenance humaine explicite sur les 37 218 labels : commit `852ae30`; vues
+retrieval exacte et opérationnelle : commit `018c7d1`)*
 
 Le contrat commun XGBoost/BGE/CamemBERT/fusion est gelé dans
 `docs/crm_gt_model_usage_contract.md` : folds 2/3/4 pour l'apprentissage

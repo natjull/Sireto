@@ -2,7 +2,7 @@
 
 ## Population de référence
 
-La population `crm_gt_v2_commercial_certified_population/73328b7611f37a06`
+La population `crm_gt_v2_commercial_certified_population/4b07f3b3d245358e`
 contient **37 218 labels humains** : 17 097 historiques et 20 121 nouveaux.
 Le SIRET a été saisi dans le CRM par un assistant commercial lors de la
 création du site. Il reste la vérité SIRET exacte d'origine. Les contrôles
