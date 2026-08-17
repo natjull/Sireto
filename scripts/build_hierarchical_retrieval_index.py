@@ -463,6 +463,10 @@ def build_index(args: argparse.Namespace) -> Path:
         connection = duckdb.connect()
         connection.execute(f"SET memory_limit='{args.duckdb_memory_limit}'")
         connection.execute(f"SET threads={args.duckdb_threads}")
+        # The official history contains more than 160M rows. Preserving source
+        # order forces concurrent hash aggregates to retain too much state and
+        # prevents DuckDB from spilling efficiently on memory-constrained Macs.
+        connection.execute("SET preserve_insertion_order=false")
         connection.execute(f"SET temp_directory='{_sql_path(args.temp_directory)}'")
         optional_joins = _prepare_optional_views(
             connection,
