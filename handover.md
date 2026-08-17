@@ -4845,5 +4845,33 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   *(audit de population train strict et publication finale : commit
   `2b04970`)*
 
+## Ground truth CRM prospectif assaini — 17 août 2026
+
+- Le tri géographique brut des 20 209 nouvelles lignes CRM est conservé comme
+  diagnostic, mais ne constitue plus un label exact : sa revue indépendante
+  initiale a trouvé 233 `PASS`, 82 `BORDERLINE` et 85 faux labels certains sur
+  400. Aucun retrieval, score ou rang n'a été utilisé pour cette qualification.
+- Le commit `6e3c242` ajoute une admission fail-closed identité + site : preuve
+  nominale officielle stricte, INSEE et code postal exacts, voie fortement
+  concordante, numéro et suffixe BIS/B/TER préservés, puis unicité du SIRET
+  soutenu parmi tous les établissements SIRENE au même site officiel. Le scan
+  exhaustif admet 4 129/20 209 lignes, met 503 collisions de site en quarantaine
+  et rejette 15 577 lignes sans preuve directe suffisante. Une ligne admise est
+  ensuite exclue par conflit de composante historique.
+- La population candidate content-addressée
+  `crm_gt_v2_sanitized_population/388725422e1e561e` conserve strictement les
+  folds/composantes du build prospectif initial et maintient toutes les nouvelles
+  lignes à poids/éligibilité zéro jusqu'au gate. Son nouvel échantillon est
+  disjoint des 400 diagnostics, SIREN-unique, 200 TRAIN/100 DEV/100 TEST et
+  stratifié par état : 337 actifs et 63 fermés.
+- La revue indépendante fraîche passe : 395 `PASS`, 5 `BORDERLINE`, zéro faux
+  certain, SHA-256 `d29735327c0908fdc6327ddadd761944a610315e91f999dfd313e6caf515e57d`.
+  Les cinq borderline restent `UNRESOLVED`, poids zéro. La population certifiée
+  est `crm_gt_v2_certified_population/70624cbc18ec84bd` : 4 123 nouvelles scènes
+  exactes (2 591 TRAIN, 751 prospective DEV, 781 prospective TEST), aucun statut
+  pending et aucune fuite de composante. Les 16 080 lignes non admises restent
+  disponibles uniquement en quarantaine d'évidence ou pour une future vue
+  opérationnelle/weak supervision, jamais comme ground truth exact.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
