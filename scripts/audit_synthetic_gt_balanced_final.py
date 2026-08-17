@@ -540,12 +540,16 @@ def _allocate(cells: dict[tuple[str, ...], list[dict[str, Any]]], total: int) ->
 
 def stratified_realism_sample(
     rows: list[dict[str, Any]], sample_size: int, salt: str,
+    excluded_seed_ids: set[str] | None = None,
 ) -> tuple[list[dict[str, Any]], list[str]]:
     if sample_size <= 0:
         raise ValueError("realism sample size must be positive")
     rows_by_seed: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    excluded_seed_ids = excluded_seed_ids or set()
     for row in rows:
-        rows_by_seed[str(row["seed_id"])].append(row)
+        seed_id = str(row["seed_id"])
+        if seed_id not in excluded_seed_ids:
+            rows_by_seed[seed_id].append(row)
     representatives = [
         min(values, key=lambda row: _stable_digest(
             salt, "SEED_REPRESENTATIVE", row["batch_id"], row["seed_id"],
@@ -600,6 +604,34 @@ def stratified_realism_sample(
             "transformation_summary": row.get("transformation_summary", ""),
         })
     return sample, dimensions
+
+
+def excluded_realism_seeds(path: Path | None) -> tuple[set[str], dict[str, Any]]:
+    if path is None:
+        return set(), {
+            "excluded_prior_sample_rows": 0,
+            "excluded_prior_sample_seed_ids": 0,
+            "excluded_prior_sample_sha256": None,
+        }
+    rows = _jsonl(path)
+    seed_ids: set[str] = set()
+    sample_ids: set[str] = set()
+    for row in rows:
+        if row.get("schema_version") != SAMPLE_SCHEMA_VERSION:
+            raise ValueError("excluded realism sample has unsupported schema")
+        sample_id = str(row.get("sample_id", ""))
+        seed_id = str(row.get("seed_id", ""))
+        if not HEX64.fullmatch(sample_id) or not seed_id:
+            raise ValueError("excluded realism sample has an invalid row identity")
+        if sample_id in sample_ids:
+            raise ValueError("excluded realism sample contains duplicate sample IDs")
+        sample_ids.add(sample_id)
+        seed_ids.add(seed_id)
+    return seed_ids, {
+        "excluded_prior_sample_rows": len(rows),
+        "excluded_prior_sample_seed_ids": len(seed_ids),
+        "excluded_prior_sample_sha256": registry_lib.sha256(path),
+    }
 
 
 def realism_review_summary(
@@ -693,8 +725,11 @@ def run(args: argparse.Namespace) -> Path:
     expected_real_train = int(corpus_plan.get("population", {}).get("allowed_rows", -1))
     if len(real_all) != expected_real_all or len(real_train) != expected_real_train:
         raise ValueError("real dataset counts differ from frozen corpus plan")
+    excluded_seed_ids, exclusion_provenance = excluded_realism_seeds(
+        getattr(args, "exclude_realism_sample", None)
+    )
     sample, dimensions = stratified_realism_sample(
-        synthetic, args.realism_sample_size, args.realism_salt
+        synthetic, args.realism_sample_size, args.realism_salt, excluded_seed_ids
     )
     reviews = _jsonl(args.realism_review) if args.realism_review else None
     realism = realism_review_summary(sample, reviews)
@@ -735,6 +770,10 @@ def run(args: argparse.Namespace) -> Path:
             "sample_salt": args.realism_salt,
             "stratification_dimensions": dimensions,
             "one_surface_per_seed": len({row["seed_id"] for row in sample}) == len(sample),
+            "disjoint_from_prior_sample": not bool(
+                {row["seed_id"] for row in sample} & excluded_seed_ids
+            ),
+            **exclusion_provenance,
             "populated_strata_covered": len({
                 tuple(str(row[name]) for name in dimensions) for row in sample
             }),
@@ -787,6 +826,10 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--corpus-plan", type=Path, default=DEFAULT_CORPUS_PLAN)
     result.add_argument("--balanced-plan", type=Path, default=DEFAULT_BALANCED_PLAN)
     result.add_argument("--realism-review", type=Path)
+    result.add_argument(
+        "--exclude-realism-sample", type=Path,
+        help="Prior sealed sample whose seed IDs must not be selected again.",
+    )
     result.add_argument("--realism-sample-size", type=int, default=200)
     result.add_argument("--realism-salt", default="SIRETO_BALANCED_FINAL_REALISM_V1")
     result.add_argument("--output", type=Path, required=True)

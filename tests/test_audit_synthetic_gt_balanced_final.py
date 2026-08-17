@@ -280,6 +280,26 @@ def test_stratified_sample_keeps_only_one_surface_per_seed() -> None:
     assert len({row["seed_id"] for row in sample}) == 2
 
 
+def test_stratified_sample_excludes_every_seed_from_prior_sample(tmp_path: Path) -> None:
+    prior_path = tmp_path / "prior.jsonl"
+    _write_jsonl(prior_path, [{
+        "schema_version": audit.SAMPLE_SCHEMA_VERSION,
+        "sample_id": "a" * 64,
+        "seed_id": "seed-1",
+    }])
+    excluded, provenance = audit.excluded_realism_seeds(prior_path)
+    rows = [
+        _sample_row(1, "EASY", "TRAIN", "ALIAS", "ABBREVIATE"),
+        _sample_row(2, "EASY", "TRAIN", "ALIAS", "SUBSET"),
+        _sample_row(3, "HARD", "FAIL", "ORDER", "SUBSET"),
+    ]
+    sample, _ = audit.stratified_realism_sample(rows, 2, "fresh-v2", excluded)
+    assert {row["seed_id"] for row in sample} == {"seed-2", "seed-3"}
+    assert provenance["excluded_prior_sample_rows"] == 1
+    assert provenance["excluded_prior_sample_seed_ids"] == 1
+    assert provenance["excluded_prior_sample_sha256"] == registry_lib.sha256(prior_path)
+
+
 def test_realism_review_is_exact_and_pauses_only_at_two_certain() -> None:
     sample = [{"sample_id": "a"}, {"sample_id": "b"}, {"sample_id": "c"}]
     reviews = [
