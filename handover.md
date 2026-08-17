@@ -24,6 +24,16 @@ cutoff arbitraire à dix ans.
 *(certification de provenance commerciale : commit `43d1e14`; correction des
 partitions fermées : commit `1a7cfea`)*
 
+Le contrat commun XGBoost/BGE/CamemBERT/fusion est gelé dans
+`docs/crm_gt_model_usage_contract.md` : folds 2/3/4 pour l'apprentissage
+(23 587 lignes), fold 0 pour le développement prospectif (7 009), fold 1 fermé
+pour le test final (6 622). Le fusionset ne reçoit que des scores out-of-fold.
+Après l'évaluation finale, le modèle de production peut être refitté sur
+train+dev, puis éventuellement sur les 37 218 labels à condition de remplacer
+le holdout consommé par de futures données CRM.
+
+*(contrat d'utilisation commun aux familles de modèles : commit `803ee37`)*
+
 ### Nouvel apport CRM — tri géographique SIRET du 17 août 2026
 
 Le fichier VPS `plateforme_new_data_to_cure.csv` a été copié via Tailscale
