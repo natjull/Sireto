@@ -302,9 +302,9 @@ def _query_etab_ul(
     closed_clause = ""
     if not include_closed_establishments:
         closed_clause = "AND (e.etatAdministratifEtablissement IS NULL OR e.etatAdministratifEtablissement != 'F')"
-    else:
-        # Optimisation : Exclure systématiquement les établissements fermés depuis plus de 10 ans (avant 2016)
-        closed_clause = "AND (e.etatAdministratifEtablissement IS NULL OR e.etatAdministratifEtablissement != 'F' OR (e.etatAdministratifEtablissement = 'F' AND CAST(e.dateDebut AS DATE) >= DATE '2016-01-01'))"
+    # When closed establishments are requested, retain all of them.  A ten-year
+    # cutoff silently removes valid historical CRM labels and contradicts the
+    # command-line contract ("include all").
     query = f"""
         SELECT
             e.siret AS siret,
