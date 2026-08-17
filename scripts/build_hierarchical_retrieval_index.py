@@ -17,7 +17,7 @@ from pathlib import Path
 import shutil
 import sys
 import tempfile
-from typing import Any, Iterable
+from typing import Any, Iterable, Mapping
 
 import duckdb
 
@@ -74,12 +74,39 @@ def _string_agg_expression(columns: set[str], names: Iterable[str]) -> str:
     return f"concat_ws(' ', {values})"
 
 
+def _materialize_aggregate(
+    connection: duckdb.DuckDBPyConnection,
+    *,
+    cache_path: Path,
+    sql: str,
+) -> Path:
+    """Build one large official lookup at a time and publish it atomically."""
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
+    if cache_path.is_file():
+        connection.execute(f"SELECT * FROM {_relation(cache_path)} LIMIT 1").fetchone()
+        return cache_path
+    partial = cache_path.with_name(f"{cache_path.stem}.partial.parquet")
+    partial.unlink(missing_ok=True)
+    try:
+        connection.execute(
+            f"COPY ({sql}) TO '{_sql_path(partial)}' "
+            "(FORMAT PARQUET, COMPRESSION ZSTD)"
+        )
+        partial.replace(cache_path)
+    except Exception:
+        partial.unlink(missing_ok=True)
+        raise
+    return cache_path
+
+
 def _prepare_optional_views(
     connection: duckdb.DuckDBPyConnection,
     *,
     establishment_history: Path | None,
     legal_unit_history: Path | None,
     successions: Path | None,
+    preaggregate_root: Path,
+    source_sha256: Mapping[str, str],
 ) -> tuple[str, str, str]:
     establishment_join = ""
     legal_join = ""
@@ -108,17 +135,19 @@ def _prepare_optional_views(
                 "complementAdresseEtablissement",
             ],
         )
-        connection.execute(
-            f"""
-            CREATE TEMP VIEW establishment_history_agg AS
+        aggregate = _materialize_aggregate(
+            connection,
+            cache_path=preaggregate_root
+            / f"establishment-history-{source_sha256['establishments_history'][:16]}.parquet",
+            sql=f"""
             SELECT CAST({siret} AS VARCHAR) AS siret,
                    string_agg(DISTINCT nullif(trim({name}), ''), ' | ') AS historical_names,
                    string_agg(DISTINCT nullif(trim({address}), ''), ' | ') AS historical_addresses
             FROM {_relation(establishment_history)}
             GROUP BY 1
-            """
+            """,
         )
-        establishment_join = "LEFT JOIN establishment_history_agg eh USING (siret)"
+        establishment_join = f"LEFT JOIN {_relation(aggregate)} eh USING (siret)"
     if legal_unit_history:
         columns = _columns(connection, legal_unit_history)
         siren = _first(columns, ["siren", "sirenUniteLegale"])
@@ -137,16 +166,18 @@ def _prepare_optional_views(
                 "prenomUsuelUniteLegale",
             ],
         )
-        connection.execute(
-            f"""
-            CREATE TEMP VIEW legal_unit_history_agg AS
+        aggregate = _materialize_aggregate(
+            connection,
+            cache_path=preaggregate_root
+            / f"legal-unit-history-{source_sha256['legal_units_history'][:16]}.parquet",
+            sql=f"""
             SELECT CAST({siren} AS VARCHAR) AS siren,
                    string_agg(DISTINCT nullif(trim({name}), ''), ' | ') AS historical_legal_names
             FROM {_relation(legal_unit_history)}
             GROUP BY 1
-            """
+            """,
         )
-        legal_join = "LEFT JOIN legal_unit_history_agg lh USING (siren)"
+        legal_join = f"LEFT JOIN {_relation(aggregate)} lh USING (siren)"
     if successions:
         columns = _columns(connection, successions)
         predecessor = _first(
@@ -160,9 +191,11 @@ def _prepare_optional_views(
         if not predecessor or not successor:
             raise ValueError("successions input lacks predecessor/successor SIRET columns")
         # Links are indexed in both directions. Runtime follows exactly one hop.
-        connection.execute(
-            f"""
-            CREATE TEMP VIEW succession_links AS
+        aggregate = _materialize_aggregate(
+            connection,
+            cache_path=preaggregate_root
+            / f"successions-{source_sha256['successions'][:16]}.parquet",
+            sql=f"""
             SELECT siret, string_agg(DISTINCT linked_siret, ' ') AS linked_sirets
             FROM (
                 SELECT CAST({predecessor} AS VARCHAR) siret,
@@ -175,9 +208,9 @@ def _prepare_optional_views(
             )
             WHERE length(siret) = 14 AND length(linked_siret) = 14
             GROUP BY 1
-            """
+            """,
         )
-        succession_join = "LEFT JOIN succession_links sl USING (siret)"
+        succession_join = f"LEFT JOIN {_relation(aggregate)} sl USING (siret)"
     return establishment_join, legal_join, succession_join
 
 
@@ -473,6 +506,13 @@ def build_index(args: argparse.Namespace) -> Path:
             establishment_history=args.establishments_history,
             legal_unit_history=args.legal_units_history,
             successions=args.successions,
+            preaggregate_root=args.temp_directory
+            / "hierarchical_retrieval_preaggregates",
+            source_sha256={
+                role: metadata["sha256"]
+                for role, metadata in source_meta.items()
+                if metadata is not None
+            },
         )
         _create_current_view(
             connection, args.establishments, args.legal_units, optional_joins
