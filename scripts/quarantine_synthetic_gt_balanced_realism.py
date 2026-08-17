@@ -55,13 +55,20 @@ def scan(args: argparse.Namespace) -> dict[str, Any]:
     if registry.get("summary") != snapshot:
         raise ValueError("registry summary differs from sealed reconstruction")
 
-    records: list[dict[str, Any]] = []
+    records: list[dict[str, Any]] = [dict(value) for value in prior_quarantine.values()]
+    new_records: list[dict[str, Any]] = []
     reasons: Counter[str] = Counter()
     batches: Counter[str] = Counter()
     difficulty: Counter[str] = Counter()
     strata: Counter[str] = Counter()
     states: Counter[str] = Counter()
     scanned = 0
+    for record in records:
+        batches[str(record.get("batch_id", ""))] += 1
+        difficulty[str(record.get("difficulty", ""))] += 1
+        strata[str(record.get("augmentation_stratum", ""))] += 1
+        states[str(record.get("target_state", ""))] += 1
+        reasons.update(record.get("reason_codes", []))
     for batch in sorted(registry["batches"], key=lambda value: value["batch_id"]):
         seed_path = Path(batch["seed_input"]["path"])
         promoted_path = Path(batch["promoted"]["path"])
@@ -108,6 +115,7 @@ def scan(args: argparse.Namespace) -> dict[str, Any]:
                 "quarantined": True,
             }
             records.append(record)
+            new_records.append(record)
             batches[record["batch_id"]] += 1
             difficulty[record["difficulty"]] += 1
             strata[record["augmentation_stratum"]] += 1
@@ -137,6 +145,7 @@ def scan(args: argparse.Namespace) -> dict[str, Any]:
             "report_sha256": registry.get("quarantine", {}).get("sha256"),
         },
         "scanned_rows": scanned,
+        "new_quarantined_rows": len(new_records),
         "quarantined_rows": len(records),
         "counts": {
             "reason_codes": dict(sorted(reasons.items())),
@@ -155,6 +164,7 @@ def scan(args: argparse.Namespace) -> dict[str, Any]:
     print(json.dumps({
         "output": str(args.output),
         "scanned_rows": scanned,
+        "new_quarantined_rows": len(new_records),
         "quarantined_rows": len(records),
         "counts": report["counts"],
     }, ensure_ascii=False, sort_keys=True, indent=2))

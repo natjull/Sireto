@@ -151,3 +151,53 @@ def test_quarantine_overlay_removes_only_bound_exact_keys(tmp_path) -> None:
     report_path.write_text(json.dumps({**report, "quarantined_rows": 0}), encoding="utf-8")
     with pytest.raises(ValueError, match="changed"):
         snapshot(derived)
+
+
+def test_quarantine_overlay_can_be_replaced_only_by_cumulative_superset(
+    tmp_path: Path,
+) -> None:
+    seed, promoted, manifest, registry_path = fixture(tmp_path)
+    register(type("Args", (), {
+        "registry": registry_path, "target": 20_000, "batch_id": "P000",
+        "seed_input": seed, "promoted": promoted, "promotion_manifest": manifest,
+    })())
+    record = {
+        "seed_id": "P000:12345678900012", "variant_id": "v1",
+        "quarantined": True, "reason_codes": ["STREET_TYPE_COMPONENT_LOCK"],
+    }
+    first_report = tmp_path / "quarantine-v1.json"
+    first_report.write_text(json.dumps({
+        "schema_version": "sireto-synthetic-gt-balanced-realism-quarantine-1",
+        "source_registry": {"sha256": sha256(registry_path)},
+        "quarantined_rows": 1, "records": [record],
+    }), encoding="utf-8")
+    derived_path = tmp_path / "registry-v2.json"
+    quarantine(type("Args", (), {
+        "source_registry": registry_path, "report": first_report,
+        "output_registry": derived_path,
+    })())
+
+    cumulative_report = tmp_path / "quarantine-v2.json"
+    cumulative_report.write_text(json.dumps({
+        "schema_version": "sireto-synthetic-gt-balanced-realism-quarantine-1",
+        "source_registry": {"sha256": sha256(derived_path)},
+        "quarantined_rows": 1, "records": [record],
+    }), encoding="utf-8")
+    cumulative_path = tmp_path / "registry-v3.json"
+    cumulative = quarantine(type("Args", (), {
+        "source_registry": derived_path, "report": cumulative_report,
+        "output_registry": cumulative_path,
+    })())
+    assert cumulative["summary"]["quarantined_variants"] == 1
+
+    incomplete_report = tmp_path / "quarantine-incomplete.json"
+    incomplete_report.write_text(json.dumps({
+        "schema_version": "sireto-synthetic-gt-balanced-realism-quarantine-1",
+        "source_registry": {"sha256": sha256(cumulative_path)},
+        "quarantined_rows": 0, "records": [],
+    }), encoding="utf-8")
+    with pytest.raises(ValueError, match="omits prior keys"):
+        quarantine(type("Args", (), {
+            "source_registry": cumulative_path, "report": incomplete_report,
+            "output_registry": tmp_path / "registry-v4.json",
+        })())

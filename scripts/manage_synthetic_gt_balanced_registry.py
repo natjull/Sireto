@@ -376,8 +376,7 @@ def quarantine(args: argparse.Namespace) -> dict[str, Any]:
     if args.output_registry.exists():
         raise FileExistsError(args.output_registry)
     registry = load_registry(args.source_registry)
-    if registry.get("quarantine"):
-        raise ValueError("source registry already has a quarantine overlay")
+    prior_quarantine = quarantine_records(registry)
     if registry.get("summary") != snapshot(registry):
         raise ValueError("source registry summary differs from sealed reconstruction")
     report = json.loads(args.report.read_text(encoding="utf-8"))
@@ -386,6 +385,17 @@ def quarantine(args: argparse.Namespace) -> dict[str, Any]:
     source = report.get("source_registry", {})
     if source.get("sha256") != sha256(args.source_registry):
         raise ValueError("quarantine report is not bound to the source registry")
+    report_records = {
+        (str(value.get("seed_id", "")), str(value.get("variant_id", ""))): value
+        for value in report.get("records", [])
+    }
+    if len(report_records) != len(report.get("records", [])):
+        raise ValueError("quarantine report contains duplicate keys")
+    if missing := set(prior_quarantine) - set(report_records):
+        raise ValueError(
+            "replacement quarantine report omits prior keys: "
+            f"{sorted(missing)[:5]}"
+        )
     registry["quarantine"] = {
         "path": str(args.report.resolve()),
         "sha256": sha256(args.report),
