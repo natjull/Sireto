@@ -44,6 +44,9 @@ def main() -> None:
         raise FileExistsError(args.output_dir)
     benchmark = pd.read_parquet(args.source / "benchmark.parquet")
     benchmark = benchmark[benchmark["split"].eq(args.split)].copy()
+    benchmark_by_query = benchmark.assign(
+        query_id=benchmark["query_id"].astype(str)
+    ).set_index("query_id")
     v7 = _load(args.v7, args.source / "manifest.json", args.split)
     overlay = _load(args.overlay, args.source / "manifest.json", args.split)
     if list(v7["query_id"].astype(str)) != list(overlay["query_id"].astype(str)):
@@ -59,11 +62,26 @@ def main() -> None:
             oracle.update(v7_lists[name][:5000])
             oracle.update(overlay_lists[name][:5000])
         truth = str(row["ground_truth_siret"])
+        acceptable = set(
+            json.loads(
+                str(
+                    benchmark_by_query.loc[
+                        str(row["query_id"]), "acceptable_sirets_operational"
+                    ]
+                )
+            )
+        )
+        acceptable.add(truth)
         records.append({
             "query_id": str(row["query_id"]), "ground_truth_siret": truth,
             "ground_truth_state": str(row["ground_truth_state"]),
             "candidate_count": len(selected), "oracle_hit": truth in oracle,
             "hit_at_100": truth in selected,
+            "oracle_hit_operational": bool(acceptable.intersection(oracle)),
+            "hit_at_100_operational": bool(acceptable.intersection(selected)),
+            "acceptable_sirets_operational_json": json.dumps(
+                sorted(acceptable), separators=(",", ":")
+            ),
             "candidate_sirets_json": json.dumps(selected, separators=(",", ":")),
         })
     raw = pd.DataFrame(records)
@@ -81,9 +99,15 @@ def main() -> None:
             "successes": len(raw), "total": len(preliminary_dev), "rate": qualification_coverage,
         },
         "recall_at_100_exact": _metric(raw["hit_at_100"]),
+        "recall_at_100_operational": _metric(raw["hit_at_100_operational"]),
         "oracle_recall_at_5000": _metric(raw["oracle_hit"]),
+        "oracle_recall_at_5000_operational": _metric(raw["oracle_hit_operational"]),
         "recall_by_state": {
             state: _metric(group["hit_at_100"])
+            for state, group in raw.groupby("ground_truth_state")
+        },
+        "recall_operational_by_state": {
+            state: _metric(group["hit_at_100_operational"])
             for state, group in raw.groupby("ground_truth_state")
         },
         "candidate_count_max": int(raw["candidate_count"].max()),

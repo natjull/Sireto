@@ -22,6 +22,7 @@ def test_build_binds_commercial_population_contract_and_partitions(tmp_path):
             "query_id": ["q1"], "data_origin": ["REAL_CRM_20260817"],
             "exact_metric_eligible": [True], "ground_truth_siret": ["12345678900001"],
             "ground_truth_siren": ["123456789"], "ground_truth_state": ["A"],
+            "acceptable_sirets_operational": ['["12345678900001"]'],
         }
     ).to_parquet(population / "labels.parquet", index=False)
     outputs = {
@@ -49,6 +50,7 @@ def test_build_binds_commercial_population_contract_and_partitions(tmp_path):
     manifest = json.loads((destination / "manifest.json").read_text())
     assert len(benchmark) == 1
     assert benchmark.loc[0, "split"] == "crm_prospective_dev"
+    assert benchmark.loc[0, "acceptable_sirets_operational"] == '["12345678900001"]'
     assert manifest["query_count"] == 1
     assert manifest["positive_injection"] is False
     assert manifest["build_identity"]["retrieval_contract_sha256"] == file_sha256(contract)

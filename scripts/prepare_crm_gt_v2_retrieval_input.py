@@ -19,7 +19,7 @@ from src.xgb_matcher.v9_dataset import file_sha256
 from scripts.freeze_v9_closed_benchmark import directory_tree_sha256
 
 
-SCHEMA_VERSION = "sireto-crm-gt-v2-retrieval-input-1"
+SCHEMA_VERSION = "sireto-crm-gt-v2-retrieval-input-2"
 SPLITS = {
     "TRAIN": "crm_train",
     "PROSPECTIVE_DEV": "crm_prospective_dev",
@@ -42,7 +42,10 @@ def build(args: argparse.Namespace) -> Path:
     ].copy()
     frame = queries.merge(
         labels[
-            ["query_id", "ground_truth_siret", "ground_truth_siren", "ground_truth_state"]
+            [
+                "query_id", "ground_truth_siret", "ground_truth_siren",
+                "ground_truth_state", "acceptable_sirets_operational",
+            ]
         ],
         on="query_id",
         validate="one_to_one",
@@ -55,12 +58,14 @@ def build(args: argparse.Namespace) -> Path:
         [
             "query_id", "crm_name", "crm_address", "crm_city", "postcode", "insee",
             "reference_date", "split", "ground_truth_siret", "ground_truth_siren",
-            "ground_truth_state", "location_match_type", "oof_fold",
+            "ground_truth_state", "acceptable_sirets_operational",
+            "location_match_type", "oof_fold",
         ]
     ].sort_values("query_id", kind="mergesort")
     partition_fingerprint = directory_tree_sha256(args.partitions_dir)
     identity = {
         "schema_version": SCHEMA_VERSION,
+        "builder_sha256": file_sha256(Path(__file__)),
         "population_manifest_sha256": file_sha256(args.population / "manifest.json"),
         "retrieval_contract_sha256": file_sha256(args.retrieval_contract),
         "partitions_sha256": partition_fingerprint["sha256"],
