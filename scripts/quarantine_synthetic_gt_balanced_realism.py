@@ -127,7 +127,7 @@ def scan(args: argparse.Namespace) -> dict[str, Any]:
     records.sort(key=lambda value: (value["batch_id"], value["seed_id"], value["variant_id"]))
     report = {
         "schema_version": SCHEMA_VERSION,
-        "status": "QUARANTINE_REQUIRED" if records else "PASS",
+        "status": "QUARANTINE_REQUIRED" if new_records else "PASS",
         "source_registry": {
             "path": str(args.registry.resolve()),
             "sha256": registry_lib.sha256(args.registry),
