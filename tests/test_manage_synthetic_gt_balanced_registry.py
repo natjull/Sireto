@@ -1,5 +1,6 @@
 import hashlib
 import json
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -11,6 +12,7 @@ from scripts.manage_synthetic_gt_balanced_registry import (
     sha256,
     snapshot,
 )
+from scripts.select_synthetic_gt_balanced_production import registry_state_usage
 
 
 def write_jsonl(path: Path, values: list[dict]) -> None:
@@ -38,7 +40,9 @@ def fixture(tmp_path: Path):
     write_jsonl(seed, [{
         "seed_id": "P000:12345678900012",
         "target_siret": "12345678900012", "target_siren": "123456789",
-        "seed_card": {"composite_contracts": [{
+        "seed_card": {
+            "official_context": {"target": {"state": "A"}},
+            "composite_contracts": [{
             "variant_id": "v1", "difficulty": "EASY",
             "augmentation_stratum": "NEAR_CLEAN_CONTROL",
             "field_relations": {
@@ -134,6 +138,7 @@ def test_quarantine_overlay_removes_only_bound_exact_keys(tmp_path) -> None:
     assert derived["summary"]["quarantined_variants"] == 1
     assert derived["summary"]["excluded_target_sirets"] == ["12345678900012"]
     assert derived["summary"]["batch_counts"] == {"P000": 0}
+    assert registry_state_usage(derived_path) == (Counter(), Counter())
 
     report_path.write_text(json.dumps({**report, "quarantined_rows": 0}), encoding="utf-8")
     with pytest.raises(ValueError, match="changed"):

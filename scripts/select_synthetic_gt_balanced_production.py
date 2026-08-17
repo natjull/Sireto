@@ -265,6 +265,7 @@ def seed_state_usage(paths: Sequence[Path]) -> tuple[Counter[str], Counter[str]]
 def registry_state_usage(path: Path) -> tuple[Counter[str], Counter[str]]:
     """Count only exact promoted states without changing the sealed snapshot."""
     registry = registry_lib.load_registry(path)
+    quarantined = registry_lib.quarantine_records(registry)
     variants: Counter[str] = Counter()
     target_states: dict[str, str] = {}
     for batch in registry["batches"]:
@@ -274,6 +275,8 @@ def registry_state_usage(path: Path) -> tuple[Counter[str], Counter[str]]:
         states = seed_target_states(seed)
         validated = registry_lib.validate_promoted_batch(seed, promoted, manifest)
         for value in validated["records"]:
+            if value["key"] in quarantined:
+                continue
             siret = value["target_siret"]
             state = states[siret]
             variants[state] += 1
