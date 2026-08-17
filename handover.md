@@ -4907,5 +4907,23 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   disponibles uniquement en quarantaine d'évidence ou pour une future vue
   opérationnelle/weak supervision, jamais comme ground truth exact.
 
+## Retrieval hiérarchique sparse open-set — 17 août 2026
+
+- Le commit `47e1e34` ajoute, sans modifier le moteur historique par défaut, un
+  retrieval Tantivy explicitement opt-in : filtre INSEE puis fallback CP,
+  BM25/exact/q-grams, documents agrégés `(INSEE, SIREN)`, expansion top-5
+  limitée à 32 sites, succession officielle à un saut et sortie déterministe
+  plafonnée à 100 candidats. Il ne consomme aucun alias ni label CRM.
+- Le builder DuckDB parcourt les snapshots nationaux en flux et produit un
+  index adressé par le contenu. Les historiques établissement/unité légale et
+  les successions sont absents localement : un build courant reste possible
+  avec `temporal_complete=false`, mais le runtime de production le refuse.
+  Tantivy 0.25.1 est déclaré; l'évaluation bornée publie séparément Recall@100
+  exact/opérationnel, maximum observé et latences p50/p95/p99 dans un JSON
+  scellé. Ne pas ouvrir le fold test avant gel et gate dev.
+- Validation livrée : 9 tests ciblés en 0,86 s, dont deux vrais builds/requêtes
+  Tantivy sur fixtures; `py_compile` et les deux entrées CLI passent. Aucun
+  build national, entraînement, téléchargement massif ou test final lancé.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
