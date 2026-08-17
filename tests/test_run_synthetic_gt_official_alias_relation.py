@@ -128,6 +128,64 @@ def test_official_alias_allows_only_the_byte_exact_bound_sirene_value() -> None:
     assert any("NAME_RELATION_MISMATCH:OFFICIAL_NAME_ALIAS" in value for value in errors)
 
 
+@pytest.mark.parametrize(
+    ("source", "target", "street_type", "expected"),
+    [
+        (
+            "2 RTE DE ROUTE DE LA LEUQUEUE", "2 RTE DE RTE DE LA LEUQUEUE", "RTE",
+            "STREET_TYPE_COMPONENT_LOCK",
+        ),
+        (
+            "636 RTE CHE DES GAYS", "636 RTE CHEMIN DES GAYS", "RTE",
+            "STREET_TYPE_COMPONENT_LOCK",
+        ),
+        ("12 ROUTE DES LILAS", "12 RTE DES LILAS", "ROUTE", None),
+        ("34 GRANDE RUE DES STUARTS", "34 GRANDE R DES STUARTS", "GRANDE RUE", None),
+    ],
+)
+def test_street_alias_is_bound_to_unique_primary_type(
+    source: str, target: str, street_type: str, expected: str | None,
+) -> None:
+    errors = loop.street_alias_structure_errors(
+        source, target, {
+            "street_number": source.split()[0], "street_type": street_type,
+            "official_context": {"target": {"address": {
+                "number": source.split()[0], "repetition_index": "",
+                "street_type": street_type,
+            }}},
+        },
+    )
+    if expected is None:
+        assert errors == []
+    else:
+        assert expected in errors
+
+
+def test_final_surface_quality_rejects_double_space_broken_elision_and_acronym() -> None:
+    contract = {
+        "field_relations": {
+            "name": "PUNCTUATION_REMOVED", "address": "ADDRESS_TOKEN_SUBSET",
+        },
+        "field_inspirations": {"address": {"operation_parameters": {
+            "source_token_count": 5, "retained_positions": [0, 1, 2, 4],
+        }}},
+    }
+    baseline = {
+        "name": "A.B.C SERVICES", "address": "1 RUE DE L'ÉTOILE",
+        "postcode": "75001", "city": "SAINT-DENIS", "insee": "75056",
+    }
+    crm_value = {
+        "name": "AB.C  SERVICES", "address": "1 RUE DE ÉTOILE",
+        "postcode": "75001", "city": "SAINT DENIS", "insee": "75056",
+    }
+    errors = loop.final_surface_quality_errors(
+        baseline, crm_value, contract, {"street_number": "1", "street_type": "RUE"},
+    )
+    assert "NAME_DOUBLE_SPACE" in errors
+    assert "NAME_ASYMMETRIC_ACRONYM" in errors
+    assert "BROKEN_DE_L_ELISION" in errors
+
+
 def test_official_alias_proof_exposes_authoritative_byte_match_to_critic() -> None:
     card = seed()["seed_card"]
     proof = loop.deterministic_variant_proof(

@@ -385,6 +385,7 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
         args.registry, args.plan, require_complete=True,
     )
     plan = load_plan(args.plan)
+    quarantined = registry_lib.quarantine_records(registry)
     records: list[dict[str, Any]] = []
     target_counts: Counter[str] = Counter()
     target_states: dict[str, str] = {}
@@ -410,6 +411,8 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
         }
         for value in validated["records"]:
             key = value["key"]
+            if key in quarantined:
+                continue
             crm = value["promoted"]["crm"]
             surface = tuple(str(crm.get(field, "")) for field in (
                 "name", "address", "postcode", "city", "insee"
@@ -480,10 +483,12 @@ def finalize(args: argparse.Namespace) -> dict[str, Any]:
                 "positive_injection": False,
                 "qualification_uses_retrieval_or_model_scores": False,
                 "text_generation_by_finalizer": False,
+                "quarantined_v1_rows_excluded": len(quarantined),
             },
             "source_hashes": {
                 "registry": sha256(args.registry),
                 "plan": sha256(args.plan),
+                "quarantine_report": registry.get("quarantine", {}).get("sha256"),
             },
             "source_batches": source_batches,
             "files": {"promoted_20000.jsonl": sha256(data_path)},

@@ -75,6 +75,10 @@ STREET_TYPE_ABBREVIATIONS = {
     "CHE": "CHEMIN", "CHEM": "CHEMIN", "IMP": "IMPASSE", "PL": "PLACE", "RTE": "ROUTE",
     "ALL": "ALLEE", "QU": "QUAI", "RES": "RESIDENCE",
 }
+STREET_TYPE_LEXEMES = frozenset(
+    {value.upper() for value in STREET_TYPE_ABBREVIATIONS}
+    | {value.upper() for value in STREET_TYPE_ABBREVIATIONS.values()}
+)
 PUNCTUATION = set("'’.-,()/&")
 COMPOSITE_FAMILY = "OBSERVED_COMPOSITE_ANALOGY"
 OFFICIAL_NAME_ALIAS_RELATION = "OFFICIAL_NAME_ALIAS"
@@ -1374,6 +1378,153 @@ def address_alias_relation(source: str, target: str) -> str | None:
     return next(iter(directions)) if changed == 1 and len(directions) == 1 else None
 
 
+def street_alias_structure_errors(
+    source: str, target: str, seed_card: dict[str, Any],
+) -> list[str]:
+    """Reject formally equivalent but structurally implausible street aliases.
+
+    SIRENE splits an address into house number, repetition index, one official
+    street-type component and a street-name suffix.  The component can contain
+    more than one token (``VIEUX CHEMIN`` or ``GRANDE RUE``), while the suffix
+    can legitimately contain another type-looking token.  Bind the one alias
+    edit to the official component instead of guessing from a global regex.
+    """
+    source_words = normalized_words(source)
+    target_words = normalized_words(target)
+    if len(source_words) != len(target_words):
+        return ["ADDRESS_ALIAS_TOKEN_COUNT_CHANGED"]
+    changed = [
+        index for index, (left, right) in enumerate(
+            zip(source_words, target_words, strict=True)
+        ) if left.upper() != right.upper()
+    ]
+    official_address = (
+        seed_card.get("official_context", {}).get("target", {}).get("address", {})
+    )
+    number = normalized_words(
+        official_address.get("number", seed_card.get("street_number", ""))
+    )
+    repetition = normalized_words(official_address.get("repetition_index", ""))
+    declared_type = normalized_words(
+        official_address.get("street_type", seed_card.get("street_type", ""))
+    )
+    component_start = len(number) + len(repetition)
+    expected_prefix = number + repetition + declared_type
+    component_end = component_start + len(declared_type)
+    if (
+        not declared_type
+        or source_words[:component_end] != expected_prefix
+        or len(changed) != 1
+        or not component_start <= changed[0] < component_end
+    ):
+        return ["STREET_TYPE_COMPONENT_LOCK"]
+    return []
+
+
+def _fold_letters(value: str) -> str:
+    return "".join(
+        character.casefold()
+        for character in unicodedata.normalize("NFD", value)
+        if not unicodedata.combining(character) and character.isalnum()
+    )
+
+
+def broken_address_subset_elision(
+    source: str, target: str, contract: dict[str, Any],
+) -> bool:
+    """Detect a token-subset contract that removes only ``L'`` from ``DE L'X``.
+
+    Tokenization deliberately separates the clitic as ``de, l, x``.  The
+    exact retained positions are stronger evidence than a surface regex: the
+    gate fails only when the contract retains both neighbours while deleting
+    the middle clitic, and the generated surface materialises ``de x``.
+    """
+    if contract.get("field_relations", {}).get("address") != "ADDRESS_TOKEN_SUBSET":
+        return False
+    fragment = contract.get("field_inspirations", {}).get("address", {})
+    parameters = fragment.get("operation_parameters", {})
+    retained = parameters.get("retained_positions")
+    source_words = normalized_words(source)
+    target_words = normalized_words(target)
+    if (
+        not isinstance(retained, list)
+        or any(not isinstance(index, int) for index in retained)
+        or parameters.get("source_token_count") != len(source_words)
+    ):
+        return False
+    retained_positions = set(retained)
+    if not re.search(r"\bDE\s+L['’]", source, re.IGNORECASE):
+        return False
+    for index in range(len(source_words) - 2):
+        lexical = source_words[index + 2]
+        if not (
+            source_words[index:index + 2] == ["de", "l"]
+            and index in retained_positions
+            and index + 1 not in retained_positions
+            and index + 2 in retained_positions
+        ):
+            continue
+        if any(
+            word in {"de", "du", "des"}
+            and following == lexical
+            for word, following in zip(target_words, target_words[1:])
+        ):
+            return True
+    return False
+
+
+def asymmetric_acronym(source: str, target: str) -> bool:
+    """Detect partial punctuation removal inside a clearly dotted acronym."""
+    source_candidates = re.finditer(
+        r"(?<!\w)([A-Z](?:\s*[.\-/]\s*[A-Z]){2,})(?:[.\-/])?(?!\w)",
+        source,
+    )
+    compact_target = _fold_letters(target)
+    for match in source_candidates:
+        letters = _fold_letters(match.group(1))
+        if len(letters) < 3 or letters not in compact_target:
+            continue
+        # Locate the same acronym letters in the target while retaining the
+        # raw separators between consecutive letters.
+        expression = "".join(
+            re.escape(letter) + (r"(?P<s%d>[^\w]*)" % index if index < len(letters) - 1 else "")
+            for index, letter in enumerate(letters.upper())
+        )
+        target_match = re.search(expression, target.upper())
+        if target_match is None:
+            continue
+        separators = [target_match.group(f"s{index}") for index in range(len(letters) - 1)]
+        punctuated = [bool(re.search(r"[.\-/]", value)) for value in separators]
+        if any(punctuated) and not all(punctuated):
+            return True
+    return False
+
+
+def final_surface_quality_errors(
+    baseline: dict[str, str], crm: dict[str, str], contract: dict[str, Any],
+    seed_card: dict[str, Any],
+) -> list[str]:
+    """Post-generation realism gates shared by preflight and corpus scans."""
+    errors: list[str] = []
+    for field in CRM_FIELDS:
+        source = str(baseline.get(field, ""))
+        target = str(crm.get(field, ""))
+        if re.search(r" {2,}", target):
+            errors.append(f"{field.upper()}_DOUBLE_SPACE")
+        if asymmetric_acronym(source, target):
+            errors.append(f"{field.upper()}_ASYMMETRIC_ACRONYM")
+    if broken_address_subset_elision(
+        baseline["address"], crm["address"], contract,
+    ):
+        errors.append("BROKEN_DE_L_ELISION")
+    location_relation = contract.get("field_relations", {}).get("address")
+    if location_relation in {"ADDRESS_ABBREVIATE", "ADDRESS_ALIAS_EXPAND"}:
+        errors.extend(street_alias_structure_errors(
+            baseline["address"], crm["address"], seed_card,
+        ))
+    return sorted(set(errors))
+
+
 def _composite_mark_relation(source: str, target: str) -> str | None:
     source_punctuation = Counter(character for character in source if character in PUNCTUATION)
     target_punctuation = Counter(character for character in target if character in PUNCTUATION)
@@ -1881,7 +2032,8 @@ def composite_change_errors(
         elif field == "city":
             if normalized_alnum(source) != normalized_alnum(target):
                 errors.append("CITY_ALPHANUMERICS_CHANGED")
-    return errors
+    errors.extend(final_surface_quality_errors(baseline, crm, contract, seed_card))
+    return sorted(set(errors))
 
 
 def candidate_address(candidate: dict[str, Any]) -> str:

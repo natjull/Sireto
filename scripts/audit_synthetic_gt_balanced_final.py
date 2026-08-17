@@ -206,6 +206,7 @@ def _collect_registered_rows(
     expected_sirene_hashes: dict[str, str],
 ) -> tuple[dict[str, Any], list[dict[str, Any]], dict[str, Any]]:
     registry = registry_lib.load_registry(registry_path)
+    quarantined = registry_lib.quarantine_records(registry)
     reconstructed = registry_lib.snapshot(registry)
     if registry.get("summary") != reconstructed:
         raise ValueError("registry summary differs from sealed batch reconstruction")
@@ -251,6 +252,7 @@ def _collect_registered_rows(
         if len(audit_rows) != len(full_audit.get("rows", [])):
             raise ValueError(f"duplicate full-SIRENE keys for {batch['batch_id']}")
         seeds = {str(value["seed_id"]): value for value in _jsonl(seed_input)}
+        accepted_from_batch = 0
         for record in validated["records"]:
             promoted = record["promoted"]
             key = record["key"]
@@ -279,7 +281,10 @@ def _collect_registered_rows(
             seed = seeds.get(key[0])
             if seed is None:
                 raise ValueError(f"missing frozen seed: {key[0]}")
+            if key in quarantined:
+                continue
             location_field, location_relation = _location_relation(contract)
+            accepted_from_batch += 1
             all_rows.append({
                 **promoted,
                 "batch_id": str(batch["batch_id"]),
@@ -294,7 +299,7 @@ def _collect_registered_rows(
             "run_id": str(batch.get("run_id", "")),
             "ledger_sha256": source_hashes["db"],
             "full_sirene_audit_sha256": source_hashes["full_audit"],
-            "promoted_rows": len(validated["records"]),
+            "promoted_rows": accepted_from_batch,
         })
     if len(all_rows) != int(reconstructed["promoted_variants"]):
         raise ValueError("collected row count differs from reconstructed registry")
@@ -305,6 +310,8 @@ def _collect_registered_rows(
         "validated_rows": len(all_rows),
         "valid_contract_provenance_rows": len(all_rows),
         "valid_agentic_provenance_rows": len(all_rows),
+        "quarantined_v1_rows_excluded": len(quarantined),
+        "quarantine_report_sha256": registry.get("quarantine", {}).get("sha256"),
     }
 
 
@@ -536,7 +543,17 @@ def stratified_realism_sample(
 ) -> tuple[list[dict[str, Any]], list[str]]:
     if sample_size <= 0:
         raise ValueError("realism sample size must be positive")
-    sample_size = min(sample_size, len(rows))
+    rows_by_seed: dict[str, list[dict[str, Any]]] = defaultdict(list)
+    for row in rows:
+        rows_by_seed[str(row["seed_id"])].append(row)
+    representatives = [
+        min(values, key=lambda row: _stable_digest(
+            salt, "SEED_REPRESENTATIVE", row["batch_id"], row["seed_id"],
+            row["variant_id"],
+        ))
+        for values in rows_by_seed.values()
+    ]
+    sample_size = min(sample_size, len(representatives))
     fine_dimensions = [
         "difficulty", "augmentation_stratum", "name_relation", "location_relation",
     ]
@@ -545,10 +562,10 @@ def stratified_realism_sample(
     def key(row: dict[str, Any], dimensions: list[str]) -> tuple[str, ...]:
         return tuple(str(row.get(name, "")) for name in dimensions)
 
-    fine_count = len({key(row, fine_dimensions) for row in rows})
+    fine_count = len({key(row, fine_dimensions) for row in representatives})
     dimensions = fine_dimensions if fine_count <= sample_size else coarse_dimensions
     cells: dict[tuple[str, ...], list[dict[str, Any]]] = defaultdict(list)
-    for row in rows:
+    for row in representatives:
         cells[key(row, dimensions)].append(row)
     for values in cells.values():
         values.sort(key=lambda row: _stable_digest(
@@ -717,6 +734,7 @@ def run(args: argparse.Namespace) -> Path:
             ).hexdigest(),
             "sample_salt": args.realism_salt,
             "stratification_dimensions": dimensions,
+            "one_surface_per_seed": len({row["seed_id"] for row in sample}) == len(sample),
             "populated_strata_covered": len({
                 tuple(str(row[name]) for name in dimensions) for row in sample
             }),

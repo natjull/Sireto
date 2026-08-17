@@ -19,6 +19,7 @@ from typing import Any, Sequence
 
 
 SCHEMA_VERSION = "sireto-synthetic-gt-balanced-registry-1"
+QUARANTINE_SCHEMA_VERSION = "sireto-synthetic-gt-balanced-realism-quarantine-1"
 
 
 def sha256(path: Path) -> str:
@@ -62,12 +63,13 @@ def atomic_json(path: Path, value: dict[str, Any]) -> None:
 def empty_registry(target: int) -> dict[str, Any]:
     if target <= 0:
         raise ValueError("target must be positive")
-    return {
+    result = {
         "schema_version": SCHEMA_VERSION,
         "promoted_variant_target": target,
         "batches": [],
         "summary": {},
     }
+    return result
 
 
 def load_registry(path: Path, *, target: int | None = None) -> dict[str, Any]:
@@ -99,6 +101,41 @@ def contract_index(seed_input: Path) -> dict[tuple[str, str], dict[str, Any]]:
                 "target_siren": str(row.get("target_siren", "")),
             }
     return result
+
+
+def quarantine_records(registry: dict[str, Any]) -> dict[tuple[str, str], dict[str, Any]]:
+    """Load and verify the optional immutable realism-quarantine overlay."""
+    descriptor = registry.get("quarantine")
+    if descriptor is None:
+        return {}
+    if not isinstance(descriptor, dict):
+        raise ValueError("invalid registry quarantine descriptor")
+    path = Path(str(descriptor.get("path", "")))
+    if not path.is_file() or sha256(path) != descriptor.get("sha256"):
+        raise ValueError("registered quarantine report changed")
+    report = json.loads(path.read_text(encoding="utf-8"))
+    if report.get("schema_version") != QUARANTINE_SCHEMA_VERSION:
+        raise ValueError("unsupported realism quarantine report")
+    records: dict[tuple[str, str], dict[str, Any]] = {}
+    for value in report.get("records", []):
+        key = (str(value.get("seed_id", "")), str(value.get("variant_id", "")))
+        reasons = value.get("reason_codes")
+        if (
+            not all(key)
+            or key in records
+            or value.get("quarantined") is not True
+            or not isinstance(reasons, list)
+            or not reasons
+            or not all(isinstance(reason, str) and reason for reason in reasons)
+        ):
+            raise ValueError(f"invalid or duplicate quarantine record: {key}")
+        records[key] = value
+    if (
+        len(records) != int(report.get("quarantined_rows", -1))
+        or len(records) != int(descriptor.get("rows", -1))
+    ):
+        raise ValueError("quarantine record count differs from descriptor")
+    return records
 
 
 def validate_promoted_batch(
@@ -156,13 +193,14 @@ def validate_promoted_batch(
         records.append({**frozen, "key": key, "promoted": row})
     if len(records) != int(manifest.get("promoted_variants", -1)):
         raise ValueError("promoted row count differs from promotion manifest")
-    return {
+    result = {
         "records": records,
         "seed_input_sha256": sha256(seed_input),
         "promoted_sha256": sha256(promoted),
         "promotion_manifest_sha256": sha256(promotion_manifest),
         "run_id": manifest.get("run_id"),
     }
+    return result
 
 
 def pair_signature(relations: dict[str, str]) -> str:
@@ -195,6 +233,7 @@ def token_subset_signature(fragment: dict[str, Any]) -> str | None:
 
 
 def snapshot(registry: dict[str, Any]) -> dict[str, Any]:
+    quarantined = quarantine_records(registry)
     ref_counts: Counter[str] = Counter()
     operator_counts: Counter[str] = Counter()
     pair_counts: Counter[str] = Counter()
@@ -208,6 +247,9 @@ def snapshot(registry: dict[str, Any]) -> dict[str, Any]:
     keys: set[tuple[str, str]] = set()
     surfaces: set[tuple[str, str, str, str, str]] = set()
     batch_counts: dict[str, int] = {}
+    raw_keys: set[tuple[str, str]] = set()
+    raw_surfaces: set[tuple[str, str, str, str, str]] = set()
+    quarantine_reason_counts: Counter[str] = Counter()
     for batch in registry["batches"]:
         seed_input = Path(batch["seed_input"]["path"])
         promoted = Path(batch["promoted"]["path"])
@@ -226,17 +268,25 @@ def snapshot(registry: dict[str, Any]) -> dict[str, Any]:
         )
         if len(validated["records"]) != int(batch["promoted_variants"]):
             raise ValueError(f"registered batch count changed: {batch['batch_id']}")
-        batch_counts[batch["batch_id"]] = len(validated["records"])
+        safe_batch_count = 0
         for value in validated["records"]:
             key = value["key"]
             crm = value["promoted"]["crm"]
             surface = tuple(str(crm.get(field, "")) for field in (
                 "name", "address", "postcode", "city", "insee"
             ))
+            if key in raw_keys or surface in raw_surfaces:
+                raise ValueError(f"duplicate raw counted key or surface across batches: {key}")
+            raw_keys.add(key)
+            raw_surfaces.add(surface)
+            if key in quarantined:
+                quarantine_reason_counts.update(quarantined[key]["reason_codes"])
+                continue
             if key in keys or surface in surfaces:
                 raise ValueError(f"duplicate counted key or surface across batches: {key}")
             keys.add(key)
             surfaces.add(surface)
+            safe_batch_count += 1
             target_sirets.add(value["target_siret"])
             target_sirens.add(value["target_siren"])
             contract = value["contract"]
@@ -249,9 +299,15 @@ def snapshot(registry: dict[str, Any]) -> dict[str, Any]:
                 signature = token_subset_signature(fragment)
                 if signature is not None:
                     token_subset_signature_counts[signature] += 1
+        batch_counts[batch["batch_id"]] = safe_batch_count
+    missing_quarantine = set(quarantined) - raw_keys
+    if missing_quarantine:
+        raise ValueError(
+            f"quarantine keys are absent from sealed batches: {sorted(missing_quarantine)[:5]}"
+        )
     promoted_variants = len(keys)
     target = int(registry["promoted_variant_target"])
-    return {
+    result = {
         "promoted_variants": promoted_variants,
         "remaining_variants": max(0, target - promoted_variants),
         "completion_ratio": promoted_variants / target,
@@ -271,6 +327,13 @@ def snapshot(registry: dict[str, Any]) -> dict[str, Any]:
             sorted(token_subset_signature_counts.items())
         ),
     }
+    if quarantined:
+        result.update({
+            "quarantined_variants": len(quarantined),
+            "quarantine_reason_counts": dict(sorted(quarantine_reason_counts.items())),
+            "quarantine_report_sha256": str(registry["quarantine"]["sha256"]),
+        })
+    return result
 
 
 def register(args: argparse.Namespace) -> dict[str, Any]:
@@ -309,6 +372,36 @@ def status(args: argparse.Namespace) -> dict[str, Any]:
     return current
 
 
+def quarantine(args: argparse.Namespace) -> dict[str, Any]:
+    if args.output_registry.exists():
+        raise FileExistsError(args.output_registry)
+    registry = load_registry(args.source_registry)
+    if registry.get("quarantine"):
+        raise ValueError("source registry already has a quarantine overlay")
+    if registry.get("summary") != snapshot(registry):
+        raise ValueError("source registry summary differs from sealed reconstruction")
+    report = json.loads(args.report.read_text(encoding="utf-8"))
+    if report.get("schema_version") != QUARANTINE_SCHEMA_VERSION:
+        raise ValueError("unsupported realism quarantine report")
+    source = report.get("source_registry", {})
+    if source.get("sha256") != sha256(args.source_registry):
+        raise ValueError("quarantine report is not bound to the source registry")
+    registry["quarantine"] = {
+        "path": str(args.report.resolve()),
+        "sha256": sha256(args.report),
+        "rows": int(report.get("quarantined_rows", -1)),
+        "source_registry": {
+            "path": str(args.source_registry.resolve()),
+            "sha256": sha256(args.source_registry),
+        },
+        "text_mutation": False,
+    }
+    registry["summary"] = snapshot(registry)
+    atomic_json(args.output_registry, registry)
+    print(json.dumps(registry["summary"], ensure_ascii=False, sort_keys=True, indent=2))
+    return registry
+
+
 def parser() -> argparse.ArgumentParser:
     result = argparse.ArgumentParser(description=__doc__)
     subparsers = result.add_subparsers(dest="command", required=True)
@@ -323,6 +416,11 @@ def parser() -> argparse.ArgumentParser:
     status_parser = subparsers.add_parser("status")
     status_parser.add_argument("--registry", type=Path, required=True)
     status_parser.set_defaults(func=status)
+    quarantine_parser = subparsers.add_parser("quarantine")
+    quarantine_parser.add_argument("--source-registry", type=Path, required=True)
+    quarantine_parser.add_argument("--report", type=Path, required=True)
+    quarantine_parser.add_argument("--output-registry", type=Path, required=True)
+    quarantine_parser.set_defaults(func=quarantine)
     return result
 
 

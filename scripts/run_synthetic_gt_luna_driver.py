@@ -137,8 +137,11 @@ from the inspiration. Reproduce each contract field_relations class exactly:
 - ADDRESS_TOKEN_SUBSET: delete only the token positions specified by the fragment, preserving the
   house number and the order of all retained address tokens;
 - LEGAL_FORM_REMOVE: remove only the explicit legal-form token;
-- ADDRESS_ABBREVIATE: change only the full official street type to the exact listed alias;
-- ADDRESS_ALIAS_EXPAND: expand only the exact official street-type alias to its canonical form;
+- ADDRESS_ABBREVIATE: change only the first full official street type after the house number to
+  the exact listed alias; never mutate a type-like word inside the street-name suffix;
+- ADDRESS_ALIAS_EXPAND: expand only the first official street-type alias after the house number;
+  never mutate a type-like word inside the street-name suffix. Such a suffix word may legitimately
+  exist and must remain byte-identical;
 - ADDRESS_TYPE_ORDER: move only the street-type token; preserve internal street-name order;
 - PUNCTUATION_REMOVED: remove only the exact attested mark at the exact boundary and reproduce
   its exact replacement separator (one space or an empty join); DIACRITIC_REMOVED removes only
@@ -151,6 +154,7 @@ alphanumeric material. Never add punctuation or a diacritic. Preserve every prot
 all address digits, especially the house number, and
 preserve postcode and INSEE. Make all three complete CRM fingerprints distinct. Read
 retry_context and correct every listed error. The validator will reject, never repair, your text.
+Never emit doubled spaces, a broken `DE L'...` elision, or a partially punctuated acronym.
 Return only the structured JSON response with exact envelope constants.""",
     "CRITIC": """You are the independent SIRETO composite CRITIC. You did not see the generator
 rationale. For each v1/v2/v3, compare baseline_crm, the generated CRM, its exact contract, its real

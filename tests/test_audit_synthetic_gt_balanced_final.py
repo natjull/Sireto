@@ -263,6 +263,21 @@ def test_stratified_sample_is_bounded_deterministic_and_covers_fine_cells() -> N
         (row["difficulty"], row["augmentation_stratum"], row["name_relation"], row["location_relation"])
         for row in first
     }) == 4
+    assert len({row["seed_id"] for row in first}) == len(first)
+
+
+def test_stratified_sample_keeps_only_one_surface_per_seed() -> None:
+    rows = [
+        _sample_row(1, "EASY", "TRAIN", "ALIAS", "ABBREVIATE"),
+        {
+            **_sample_row(2, "EASY", "TRAIN", "ALIAS", "SUBSET"),
+            "seed_id": "seed-1", "variant_id": "v2",
+        },
+        _sample_row(3, "HARD", "FAIL", "ORDER", "SUBSET"),
+    ]
+    sample, _ = audit.stratified_realism_sample(rows, 3, "fresh-v2")
+    assert len(sample) == 2
+    assert len({row["seed_id"] for row in sample}) == 2
 
 
 def test_realism_review_is_exact_and_pauses_only_at_two_certain() -> None:

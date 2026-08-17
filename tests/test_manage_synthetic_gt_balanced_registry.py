@@ -6,6 +6,7 @@ import pytest
 
 from scripts.manage_synthetic_gt_balanced_registry import (
     empty_registry,
+    quarantine,
     register,
     sha256,
     snapshot,
@@ -105,3 +106,35 @@ def test_registry_rejects_mutated_promoted_artifact(tmp_path) -> None:
     promoted.write_text(promoted.read_text() + "\n", encoding="utf-8")
     with pytest.raises(ValueError, match="registered artifact changed"):
         snapshot(json.loads(registry_path.read_text()))
+
+
+def test_quarantine_overlay_removes_only_bound_exact_keys(tmp_path) -> None:
+    seed, promoted, manifest, registry_path = fixture(tmp_path)
+    register(type("Args", (), {
+        "registry": registry_path, "target": 20_000, "batch_id": "P000",
+        "seed_input": seed, "promoted": promoted, "promotion_manifest": manifest,
+    })())
+    report_path = tmp_path / "quarantine.json"
+    report = {
+        "schema_version": "sireto-synthetic-gt-balanced-realism-quarantine-1",
+        "source_registry": {"sha256": sha256(registry_path)},
+        "quarantined_rows": 1,
+        "records": [{
+            "seed_id": "P000:12345678900012", "variant_id": "v1",
+            "quarantined": True, "reason_codes": ["STREET_TYPE_COMPONENT_LOCK"],
+        }],
+    }
+    report_path.write_text(json.dumps(report), encoding="utf-8")
+    derived_path = tmp_path / "registry-v2.json"
+    derived = quarantine(type("Args", (), {
+        "source_registry": registry_path, "report": report_path,
+        "output_registry": derived_path,
+    })())
+    assert derived["summary"]["promoted_variants"] == 0
+    assert derived["summary"]["quarantined_variants"] == 1
+    assert derived["summary"]["excluded_target_sirets"] == ["12345678900012"]
+    assert derived["summary"]["batch_counts"] == {"P000": 0}
+
+    report_path.write_text(json.dumps({**report, "quarantined_rows": 0}), encoding="utf-8")
+    with pytest.raises(ValueError, match="changed"):
+        snapshot(derived)
