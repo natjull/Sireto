@@ -215,6 +215,64 @@ model, calibration ou seuil AUTO n'a été entraîné. Rapport complet :
 `docs/synthetic_augmented_model_eval_results.md`. Le correctif qui garde la
 sortie CLI du builder lisible par l'orchestrateur est `07b288a`.
 
+### Corpus GT synthétique corrigé — v2 final scellé
+
+Le corpus `final_corpus_v1` est définitivement en quarantaine : sa première
+revue bornée avait trouvé 2 faux réalistes certains sur 200. Le runtime et le
+scanner partagé rejettent désormais sans réparer le texte les mutations de
+type de voie hors composant officiel, les élisions `DE L'` cassées, les doubles
+espaces et les acronymes asymétriques, y compris la soudure de la dernière
+initiale au mot suivant. Le scan cumulatif a mis en quarantaine 453 lignes :
+48 verrous de composant de voie, 326 élisions, 58 acronymes, 9 doubles espaces
+d'adresse et 13 de nom, avec un recouvrement entre raisons.
+
+Les remplacements ont été écrits uniquement par Luna dans les batches
+`P039`–`P043`, critiqués puis qualifiés full-SIRENE exacts avant promotion.
+Quatre remplacements intermédiaires de `P039` ont eux-mêmes été repris par la
+quarantaine cumulative ; le registre terminal compense exactement toutes les
+lignes exclues. Le rescan final examine 20 000 lignes sûres et ne trouve aucune
+nouvelle violation déterministe (`new_quarantined_rows=0`, statut `PASS`).
+
+Le corpus publié atomiquement contient exactement 20 000 surfaces distinctes
+et 9 869 SIRET, zéro doublon, zéro injection positive et uniquement des
+promotions `G_N_A` full-SIRENE exactes. Les quotas finaux sont exacts : 4 000
+`EASY`, 11 110 `MEDIUM`, 4 890 `HARD`; 3 000 `FAIL_BGE_ONLY`, 4 000
+`FAIL_BOTH_MODELS`, 3 000 `FAIL_XGB_ONLY`, 2 000 `NEAR_CLEAN_CONTROL` et
+8 000 `TRAIN_DISTRIBUTION`. Les états sont 10 000 actifs / 10 000 fermés, avec
+5 369/4 500 identités et 54,403 % d'identités actives. Tous les caps globaux
+sont respectés.
+
+Artefacts scellés sous
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/synthetic_gt_corpus/balanced_v1` :
+
+- registre `production_registry_v3_final.json`, SHA-256
+  `267e4043f67a1b37db8ff5176532cdd0f8ed754a719ec56bd1cbb3a152f138b4` ;
+- quarantaine cumulative
+  `v2_realism_quarantine_cumulative_with_acronyms.json`, SHA-256
+  `060b49ec0cfdfa4e95c09662848e2a207fb1016c9327e06443a7a129f865666d` ;
+- rescan `v2_realism_final_rescan.json`, SHA-256
+  `b9ce068bf607fda6c670f1af2b65294cc399646ad80451df963508869d069935` ;
+- corpus `final_corpus_v2/promoted_20000.jsonl`, SHA-256
+  `1d370e51512bbd5d574072c046e49486eb40df753c20c6243ab3095d4d3f45ce` ;
+- manifeste final `final_corpus_v2/manifest.json`, SHA-256
+  `bee805770f4dd822a2e066f8d041dce0a5e7b4f7cef60feeba881c1ec92a17a8`.
+
+La seconde revue indépendante porte sur 200 seeds nouvelles, une surface par
+seed, sans aucun recouvrement avec les 400 lignes des deux échantillons
+précédents. Elle rend 199 `PASS`, 0 `BORDERLINE` et 1
+`CERTAIN_FALSE_REALISM` (`DE L ARBRE` devenu `DE ARBRE`). Le verdict final
+préenregistré reste `PASS`, car le seuil de pause est 2 faux certains sur 200 ;
+ce cas reste explicitement publié dans l'audit, pas masqué. Rapport
+`final_audit_v2/report.json`, SHA-256
+`e12cf9256643d2b20107492562a771c67dcc6403f3467fc5a039f4c094f5d5e0` ;
+revue SHA-256
+`012e51c9f168fbb3b4c858473d678a1682dc0ca7b41b5108c700c1e12de5fd37`.
+
+*(gates et quarantaine initiale : `e64764f`; comptage post-quarantaine :
+`c5cc118`; réutilisation terminale sûre : `d2c3189`; échantillon frais :
+`46fe47e`; soudure d'acronyme : `5dadcc7`; quarantaines cumulatives :
+`b88520f`, `4dfc2e6`; exclusions multi-échantillons : `fd1be49`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime
