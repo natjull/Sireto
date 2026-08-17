@@ -522,6 +522,23 @@ def build_index(args: argparse.Namespace) -> Path:
             if args.smoke_limit
             else "SELECT * FROM index_rows"
         )
+        # Materialize the global SIREN aggregate before writing any Tantivy
+        # document.  Executing this hash aggregate after the 43.9M SIRET pass
+        # can otherwise fail at the memory limit and discard an hour-long
+        # staging index.  The content-addressed projection is reusable after
+        # interruption and the subsequent index pass is a simple stream.
+        siren_projection = _materialize_aggregate(
+            connection,
+            cache_path=args.temp_directory
+            / "hierarchical_retrieval_preaggregates"
+            / f"siren-documents-{build_hash[:16]}.parquet",
+            sql=f"""
+                SELECT siren, insee, postcode,
+                       string_agg(DISTINCT names, ' | ') AS names
+                FROM ({selected_scope}) selected_rows
+                GROUP BY siren, insee, postcode
+            """,
+        )
         establishment_sql = f"""
             SELECT siret, siren, insee, postcode, number, number_suffix, state,
                    is_siege, names, addresses, linked_sirets, payload
@@ -539,12 +556,7 @@ def build_index(args: argparse.Namespace) -> Path:
                 since_commit = 0
 
         # True aggregate documents avoid a top-SIRET bias in SIREN retrieval.
-        siren_sql = f"""
-            SELECT siren, insee, postcode,
-                   string_agg(DISTINCT names, ' | ') AS names
-            FROM ({selected_scope}) selected_rows
-            GROUP BY siren, insee, postcode
-        """
+        siren_sql = f"SELECT siren, insee, postcode, names FROM {_relation(siren_projection)}"
         siren_count = 0
         for rows in _stream_query(connection, siren_sql, batch_size=args.batch_size):
             for row in rows:
