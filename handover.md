@@ -2,6 +2,32 @@
 
 ## Etat des lieux
 
+### Nouvel apport CRM — tri géographique SIRET du 17 août 2026
+
+Le fichier VPS `plateforme_new_data_to_cure.csv` a été copié via Tailscale
+SSH sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_new_data_20260817/source/`.
+Ses 14 954 776 octets et son SHA-256
+`829cee816839bd7c24962127e2d35784923bc0d0c5ecbe12ce34e45a1439f7da`
+ont été vérifiés avant traitement. Le tri est indépendant des modèles et joint
+les SIRET au snapshot SIRENE gelé
+`c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845`.
+
+Sur 131 749 lignes, 43 284 renseignent un SIRET. Après déduplication par
+service, 20 725 services passent le garde géographique strict : INSEE exact,
+ou CP exact uniquement si l'INSEE CRM manque. Les 312 CP exacts qui
+contredisent explicitement l'INSEE sont isolés en revue. La déduplication
+globale avec `crm_ok_gt` et le rejet des surfaces CRM portant plusieurs SIRET
+laissent 20 209 couples nouveaux, uniques et non ambigus, couvrant 16 659
+SIRET. Parmi eux, 1 472 appartiennent déjà à une composante train folds 2/3/4;
+les SIREN nouveaux restent `UNSEEN_SIREN_NEEDS_ASSIGNMENT` et les composantes
+dev/test ou folds 0/1 sont quarantainées. `data/crm_ok_gt.csv` reste inchangé.
+
+Artefacts et manifeste reproductible :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_new_data_20260817/location_triage_v1/`.
+Le replay donne les mêmes hashes pour les sept sorties.
+
+*(tri géographique et garde anti-fuite : commit `ce6f47a`)*
+
 ### Politique métier — équivalence opérationnelle même SIREN / même site
 
 La décision métier du 15 août 2026 distingue désormais la justesse SIRET
