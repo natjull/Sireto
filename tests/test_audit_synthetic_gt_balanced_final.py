@@ -300,6 +300,26 @@ def test_stratified_sample_excludes_every_seed_from_prior_sample(tmp_path: Path)
     assert provenance["excluded_prior_sample_sha256"] == registry_lib.sha256(prior_path)
 
 
+def test_excluded_realism_seeds_combines_multiple_prior_samples(tmp_path: Path) -> None:
+    paths = []
+    for index in range(2):
+        path = tmp_path / f"prior-{index}.jsonl"
+        _write_jsonl(path, [{
+            "schema_version": audit.SAMPLE_SCHEMA_VERSION,
+            "sample_id": str(index + 1) * 64,
+            "seed_id": f"seed-{index}",
+        }])
+        paths.append(path)
+    excluded, provenance = audit.excluded_realism_seeds(paths)
+    assert excluded == {"seed-0", "seed-1"}
+    assert provenance["excluded_prior_sample_rows"] == 2
+    assert provenance["excluded_prior_sample_seed_ids"] == 2
+    assert provenance["excluded_prior_sample_sha256"] is None
+    assert [value["sha256"] for value in provenance["excluded_prior_samples"]] == [
+        registry_lib.sha256(path) for path in paths
+    ]
+
+
 def test_realism_review_is_exact_and_pauses_only_at_two_certain() -> None:
     sample = [{"sample_id": "a"}, {"sample_id": "b"}, {"sample_id": "c"}]
     reviews = [

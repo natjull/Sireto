@@ -606,31 +606,47 @@ def stratified_realism_sample(
     return sample, dimensions
 
 
-def excluded_realism_seeds(path: Path | None) -> tuple[set[str], dict[str, Any]]:
-    if path is None:
+def excluded_realism_seeds(
+    paths: Path | Sequence[Path] | None,
+) -> tuple[set[str], dict[str, Any]]:
+    if paths is None:
         return set(), {
             "excluded_prior_sample_rows": 0,
             "excluded_prior_sample_seed_ids": 0,
             "excluded_prior_sample_sha256": None,
+            "excluded_prior_samples": [],
         }
-    rows = _jsonl(path)
+    normalized_paths = [paths] if isinstance(paths, Path) else list(paths)
     seed_ids: set[str] = set()
     sample_ids: set[str] = set()
-    for row in rows:
-        if row.get("schema_version") != SAMPLE_SCHEMA_VERSION:
-            raise ValueError("excluded realism sample has unsupported schema")
-        sample_id = str(row.get("sample_id", ""))
-        seed_id = str(row.get("seed_id", ""))
-        if not HEX64.fullmatch(sample_id) or not seed_id:
-            raise ValueError("excluded realism sample has an invalid row identity")
-        if sample_id in sample_ids:
-            raise ValueError("excluded realism sample contains duplicate sample IDs")
-        sample_ids.add(sample_id)
-        seed_ids.add(seed_id)
+    row_count = 0
+    descriptors = []
+    for path in normalized_paths:
+        rows = _jsonl(path)
+        descriptors.append({
+            "path": str(path.resolve()),
+            "sha256": registry_lib.sha256(path),
+            "rows": len(rows),
+        })
+        row_count += len(rows)
+        for row in rows:
+            if row.get("schema_version") != SAMPLE_SCHEMA_VERSION:
+                raise ValueError("excluded realism sample has unsupported schema")
+            sample_id = str(row.get("sample_id", ""))
+            seed_id = str(row.get("seed_id", ""))
+            if not HEX64.fullmatch(sample_id) or not seed_id:
+                raise ValueError("excluded realism sample has an invalid row identity")
+            if sample_id in sample_ids:
+                raise ValueError("excluded realism samples contain duplicate sample IDs")
+            sample_ids.add(sample_id)
+            seed_ids.add(seed_id)
     return seed_ids, {
-        "excluded_prior_sample_rows": len(rows),
+        "excluded_prior_sample_rows": row_count,
         "excluded_prior_sample_seed_ids": len(seed_ids),
-        "excluded_prior_sample_sha256": registry_lib.sha256(path),
+        "excluded_prior_sample_sha256": (
+            descriptors[0]["sha256"] if len(descriptors) == 1 else None
+        ),
+        "excluded_prior_samples": descriptors,
     }
 
 
@@ -827,7 +843,7 @@ def parser() -> argparse.ArgumentParser:
     result.add_argument("--balanced-plan", type=Path, default=DEFAULT_BALANCED_PLAN)
     result.add_argument("--realism-review", type=Path)
     result.add_argument(
-        "--exclude-realism-sample", type=Path,
+        "--exclude-realism-sample", type=Path, action="append",
         help="Prior sealed sample whose seed IDs must not be selected again.",
     )
     result.add_argument("--realism-sample-size", type=int, default=200)
