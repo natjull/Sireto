@@ -429,6 +429,7 @@ def build_index(args: argparse.Namespace) -> Path:
     retrieval_config_sha256 = sha256_file(args.retrieval_config)
     identity = {
         "schema_version": SCHEMA_VERSION,
+        "builder_sha256": sha256_file(Path(__file__).resolve()),
         "source_content": {
             role: (
                 {"sha256": metadata["sha256"], "size_bytes": metadata["size_bytes"]}
