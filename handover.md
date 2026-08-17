@@ -273,6 +273,36 @@ revue SHA-256
 `46fe47e`; soudure d'acronyme : `5dadcc7`; quarantaines cumulatives :
 `b88520f`, `4dfc2e6`; exclusions multi-échantillons : `fd1be49`)*
 
+### Rerun XGBoost sur le corpus corrigé v2
+
+L'audit delta retrouve 86 scènes retirées parmi les 4 096 scènes synthétiques
+de l'ancien mix ; les deux faux réalistes certains de la première revue
+humaine n'étaient pas sélectionnés. Le préparateur est désormais lié
+directement au manifeste du corpus final audité au lieu de redécouvrir des
+promotions de batch supersédées. La source v2 est `799bf5b289a0e943`, les
+replays complets sans injection sont
+`synthetic_gt_v7_channels_799bf5b289a0e943` et
+`synthetic_gt_overlay_channels_799bf5b289a0e943`, tous deux sans mismatch.
+
+Le bundle `aa30dbeecaadd8d0` retrouve naturellement 8 472/20 000 vérités dans
+le top100, contient 861 739 lignes candidat et conserve
+`positive_injection=false`. Le mix `34decc91a18ad5f7` contient toujours 8 192
+scènes réelles et 4 096 synthétiques pondérées `0.5/k`; 3 995 scènes
+synthétiques sont communes au mix v1 et 101 changent.
+
+Le rerun fold0 `synthetic_augmented_xgb_v1/5f9a4228ff4ab939` confirme
+`STOP_SYNTHETIC_AUGMENTATION_XGB` : le contrôle reste à 2 435/2 797 exacts,
+le bras v2 tombe à 2 424, soit -11. La vue opérationnelle passe de 2 451 à
+2 440 ; l'actif perd dix cas, le fermé un, le difficile reste à 32/38. Les
+corrections/régressions appariées sont 11/22. Fold1, test, risk model,
+calibration et seuils AUTO restent fermés. BGE n'est pas relancé : XGBoost ne
+révèle aucune surprise favorable et son ancien `STOP` manquait simultanément
+quatre gates pour une contamination d'environ 0,21 % du poids total.
+
+Rapport détaillé : `docs/synthetic_augmented_model_eval_results.md`.
+
+*(raccord explicite au corpus final audité : commit `302bb25`)*
+
 ### Corpus GT synthétique — boucle agentique Luna v2
 
 La génération mécanique Python est retirée du chemin autorisé. Le runtime

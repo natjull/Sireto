@@ -16,6 +16,58 @@ sélectionnés. Le résultat ne remet pas en cause la valeur du corpus comme
 réservoir d'expériences futures ; il refuse seulement les deux recettes
 préenregistrées `XGBoost + 0.5/k` et `BGE groupwise + 0.5/k`.
 
+## Addendum — rerun XGBoost sur le corpus corrigé v2
+
+Le 17 août 2026, XGBoost a été rejoué intégralement depuis le corpus corrigé
+`final_corpus_v2/promoted_20000.jsonl`, SHA-256
+`1d370e51512bbd5d574072c046e49486eb40df753c20c6243ab3095d4d3f45ce`.
+Le chevauchement avec l'ancien mix n'était pas nul : 86 des 4 096 scènes
+synthétiques v1 sélectionnées avaient été retirées. Les 4 010 autres lignes
+étaient byte-identiques entre v1 et v2. Les deux faux réalistes certains qui
+avaient déclenché la revue humaine n'appartenaient toutefois pas à l'ancien
+mix. Le rapport de quarantaine compte 453 lignes parce qu'il inclut 449 lignes
+du corpus final v1 et quatre premiers remplacements `P039` rejetés à leur tour.
+
+Le raccord au modèle accepte maintenant explicitement le manifeste du corpus
+final audité, en vérifiant son hash de fichier et son compte de lignes. La
+source content-addressée est `799bf5b289a0e943`. Les deux replays ont été
+recalculés sur les 20 000 requêtes : V7 sous
+`synthetic_gt_v7_channels_799bf5b289a0e943` en 875,75 s et overlay sous
+`synthetic_gt_overlay_channels_799bf5b289a0e943` en 542,96 s, sans mismatch.
+Seuls les index TF-IDF historiques immuables ont été réutilisés ; aucune sortie
+de scène v1 ne l'a été pour les nouvelles lignes.
+
+Le bundle v2 `aa30dbeecaadd8d0` contient 861 739 lignes candidat. La vérité est
+naturellement présente dans l'admission top100 pour 8 472/20 000 scènes
+(42,36 %), contre 8 430 en v1. Il publie 135 552 paires BGE sur 8 472 groupes,
+avec `candidate_ceiling=100` et `positive_injection=false`. Le mix
+`34decc91a18ad5f7` conserve 8 192 scènes réelles et sélectionne 4 096 scènes
+synthétiques avec la même pondération `0.5/k`. Il partage 3 995 scènes avec le
+mix v1 et en remplace 101. Fold 1 et test restent fermés.
+
+| Segment | Réel seul exact | Réel + synthétique v2 exact | Écart |
+|---|---:|---:|---:|
+| Tous | 2 435/2 797 (87,058 %) | 2 424/2 797 (86,664 %) | -11 |
+| Difficile | 32/38 (84,211 %) | 32/38 (84,211 %) | 0 |
+| Actif | 2 184/2 391 (91,343 %) | 2 174/2 391 (90,924 %) | -10 |
+| Fermé | 251/406 (61,823 %) | 250/406 (61,576 %) | -1 |
+
+La vue opérationnelle passe elle aussi de 2 451 à 2 440, soit -11. La matrice
+appariée compte 11 corrections propres au synthétique contre 22 régressions.
+Le verdict reste donc `STOP_SYNTHETIC_AUGMENTATION_XGB`, plus nettement qu'en
+v1. L'artefact est `synthetic_augmented_xgb_v1/5f9a4228ff4ab939`; les fits ont
+pris 16,36 s pour le contrôle et 25,28 s pour le bras augmenté. Le gate exact
+global, le gate difficile et le gain minimal échouent. Aucun risk model,
+calibrateur ni seuil AUTO n'a été entraîné.
+
+BGE n'a pas été réentraîné. Le nettoyage ne renverse pas XGBoost et la
+contamination v1 représentait seulement 19,0 unités de poids, soit 1,82 % du
+poids synthétique et environ 0,21 % du poids total des scènes. Le BGE v1
+restait simultanément à 49 réponses du gate exact absolu, neuf du gate fermé,
+une du gate difficile et sept du gain minimal. Un nouveau run de plus de sept
+heures n'est donc pas proportionné ; son `STOP` reste une preuve directionnelle
+v1, pas une certification byte-invariante sur v2.
+
 ## Corpus et protocole gelés
 
 Le corpus final contient exactement 20 000 surfaces CRM distinctes associées
