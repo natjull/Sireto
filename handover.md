@@ -5219,6 +5219,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   mais le dossier SIREN v3 et l'index national final restent à reconstruire avec
   un build RNE publié et `temporal_complete=true` avant l'unique fit 2/3/4 et
   l'évaluation dev0.
+- Le commit `d249531` ajoute une reprise atomique du staging national RNE déjà
+  scanné. Le Parquet conservé contient 50 720 789 preuves valides et seulement
+  1 018 sujets multi-observations : les singletons sont copiés en DuckDB et
+  seuls ces groupes passent dans le résolveur Python. Le staging source n'est
+  jamais muté. Le manifeste signale explicitement que la quarantaine de scan
+  interrompue n'avait pas de footer Parquet et n'est donc pas consommée; cela
+  ne peut pas ajouter de preuve, puisque seule la population acceptée staged
+  alimente l'artefact récupéré. 42 tests ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
