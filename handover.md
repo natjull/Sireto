@@ -5110,6 +5110,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   contrôlés par taille et SHA-256 avant ingestion; les fichiers non JSON sont
   ignorés et les membres chiffrés refusés. Cette voie alimente les mêmes
   Parquet de preuves puis le même dossier SIREN que les incréments API.
+- Le commit `e949e3d` impose une sélection explicite des payloads d'un stock
+  bulk multi-archives. Les formalités peuvent ainsi alimenter les preuves
+  nom/adresse RNE sans interpréter par erreur les comptes annuels comme des
+  formalités; les comptes restent disponibles pour une projection financière
+  séparée du dossier SIREN.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
