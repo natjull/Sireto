@@ -81,13 +81,21 @@ p95 atteint en outre 9,35 s sur ce sous-ensemble volontairement difficile.
 Il n'ajoute donc aucun candidat prouvé à l'oracle et n'est pas retenu comme
 rescue dans cette version.
 
+Une unique profondeur sparse 5 000 sur les mêmes 37 scènes retrouve en revanche
+quatre SIRET réellement nouveaux : un à la fois en rangs nom mot/caractère
+480/690, deux en adresse caractère 2 113/4 418, et un en adresse mot 952.
+L'oracle combiné atteint alors 3 477/3 510 = **99,060 %**. Cette profondeur a
+coûté 136 s sur 37 scènes (environ 3,68 s/scène) et les rangs restent très au-delà
+de 100 : elle prouve que la génération peut franchir 99 %, mais pas qu'une
+admission déterministe rapide sait encore conserver ces quatre candidats.
+
 Le problème restant n'est donc ni un alias à mémoriser ni un simple changement
 de quota. Il faut :
 
 1. conserver l'union sparse historique + historique officiel hiérarchique ;
-2. ajouter un signal candidat réellement nouveau — priorité aux données
-   officielles temporelles ou à une métrique caractère entity-level — et
-   exiger un gain d'oracle avant toute fusion ;
+2. limiter la profondeur 5 000 aux scènes sparse incertaines et calibrer sur
+   train/dev une fusion score-level déterministe capable de promouvoir au moins
+   deux des quatre rescues sans évincer les succès existants ;
 3. apprendre ou calibrer sur train/dev une fusion de retrieval qui sélectionne
    100 candidats dans cette union sans évincer les succès sparse ;
 4. republier exact et opérationnel, puis ouvrir le test une seule fois seulement
@@ -105,3 +113,5 @@ de quota. Il faut :
   `evaluations/hierarchical_retrieval_v1/diagnostics/legacy_misses_231_internal_oracle.json`
 - Diagnostic dense des 37 invisibles :
   `evaluations/hierarchical_retrieval_v1/diagnostics/dense_rescue_37/global_siren_hybrid100`
+- Rangs sparse profonds des 37 invisibles :
+  `evaluations/hierarchical_retrieval_v1/diagnostics/dense_rescue_37/deep_hierarchical_ranks.json`

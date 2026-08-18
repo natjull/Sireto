@@ -4969,6 +4969,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   retrouve zéro. Avec p95 9,35 s, il n'apporte aucun nouveau candidat prouvé et
   n'est pas retenu comme rescue. L'oracle réel reste 3 473/3 510 = 98,946 %;
   il faut un nouveau signal temporel/caractère avant de travailler l'admission.
+- Une profondeur sparse 5 000 sur ces mêmes 37 scènes retrouve finalement quatre
+  vérités nouvelles (rangs 480/690, 2 113, 4 418 et 952 selon les canaux). L'oracle
+  combiné franchit 99 % à 3 477/3 510 = 99,060 %, mais au coût de 136 s pour 37
+  scènes et avec des rangs très au-delà de 100. Le prochain problème est donc
+  strictement borné : trigger d'incertitude + fusion score-level train/dev,
+  sans dense, sans alias et sans ouverture du test.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
