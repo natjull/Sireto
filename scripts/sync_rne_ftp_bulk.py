@@ -12,6 +12,7 @@ from pathlib import Path, PurePosixPath
 import shutil
 import sys
 from typing import Any
+import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
@@ -91,11 +92,18 @@ def _download_resumable(
 ) -> None:
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     offset = destination.stat().st_size if destination.exists() else 0
-    if offset > expected_size:
+    if destination.suffix.lower() == ".zip" and offset >= expected_size:
+        try:
+            with zipfile.ZipFile(destination) as archive:
+                if archive.testzip() is None:
+                    return
+        except (OSError, zipfile.BadZipFile):
+            pass
+    elif offset > expected_size:
         raise OfficialSyncError(
-            f"partial RNE file exceeds remote size: {destination.name}"
+            f"partial RNE file exceeds advertised remote size: {destination.name}"
         )
-    if offset == expected_size:
+    if offset == expected_size and destination.suffix.lower() != ".zip":
         return
     mode = "ab" if offset else "wb"
     with destination.open(mode) as output:
@@ -108,9 +116,17 @@ def _download_resumable(
         output.flush()
         os.fsync(output.fileno())
     actual = destination.stat().st_size
-    if actual != expected_size:
+    zip_complete = False
+    if destination.suffix.lower() == ".zip" and actual >= expected_size:
+        try:
+            with zipfile.ZipFile(destination) as archive:
+                zip_complete = archive.testzip() is None
+        except (OSError, zipfile.BadZipFile):
+            zip_complete = False
+    if actual != expected_size and not zip_complete:
         raise OfficialSyncError(
-            f"RNE bulk transfer incomplete for {destination.name}: {actual}/{expected_size}"
+            f"RNE bulk transfer incomplete for {destination.name}: "
+            f"{actual}/{expected_size} advertised bytes"
         )
 
 
@@ -141,12 +157,13 @@ def main() -> int:
         credentials = Credentials.from_keychain_payload(secret, username=args.account)
         client = _connect(args.host, args.port, credentials)
         remote = _remote_metadata(client, remote_paths)
+        advertised_remote = [dict(item) for item in remote]
         identity = {
             "schema_version": "sireto-rne-ftp-bulk-manifest-v1",
             "source": "rne-ftp-bulk",
             "host": args.host,
             "port": args.port,
-            "remote": remote,
+            "remote": advertised_remote,
             "plaintext_explicitly_authorized": True,
             "credential_material_recorded": False,
         }
@@ -172,12 +189,15 @@ def main() -> int:
             )
         for item in remote:
             partial = stage / item["name"]
+            advertised_size = int(item["size_bytes"])
             _download_resumable(
                 client,
                 remote_path=item["remote_path"],
                 destination=partial,
-                expected_size=int(item["size_bytes"]),
+                expected_size=advertised_size,
             )
+            item["advertised_size_bytes"] = advertised_size
+            item["size_bytes"] = partial.stat().st_size
             item["sha256"] = sha256_file(partial)
             print(
                 json.dumps(
@@ -192,7 +212,7 @@ def main() -> int:
             )
         manifest = {
             **identity,
-            "remote": remote,
+            "observed_payload": remote,
             "payload": [
                 {
                     "name": item["name"],

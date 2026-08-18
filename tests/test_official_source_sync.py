@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from types import SimpleNamespace
 from urllib.parse import parse_qs, urlparse
+import io
+import zipfile
 
 import pytest
 
@@ -19,6 +21,7 @@ from src.xgb_matcher.official_source_sync import (
     sync_bodacc,
     sync_rne,
 )
+from scripts.sync_rne_ftp_bulk import _download_resumable
 
 
 PLACEHOLDER_SECRET = b"fixture-password"
@@ -321,6 +324,26 @@ def test_rne_plain_ftp_requires_explicit_opt_in_and_records_scope(tmp_path: Path
     assert manifest["provenance"]["plain_ftp_allowed"] is True
     assert manifest["provenance"]["credential_material_recorded"] is False
     assert PLACEHOLDER_SECRET.decode() not in json.dumps(manifest)
+
+
+def test_rne_bulk_accepts_valid_zip_when_ftp_size_is_stale(tmp_path: Path):
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("stock_000001.json", '[{"siren":"123456789"}]')
+    payload = buffer.getvalue()
+
+    class FakeFtp:
+        def retrbinary(self, _command, callback, **_kwargs):
+            callback(payload)
+
+    destination = tmp_path / "stock.zip"
+    _download_resumable(
+        FakeFtp(),
+        remote_path="/stock.zip",
+        destination=destination,
+        expected_size=len(payload) - 7,
+    )
+    assert destination.read_bytes() == payload
 
 
 def test_rne_insecure_ftps_diagnostic_is_preserved_and_no_partial_publish(tmp_path: Path):
