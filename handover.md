@@ -5135,6 +5135,20 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   retrieval/fusion et des modèles, champs texte séparés par source, données
   personnelles et pièces jointes interdites, modèles toujours gelés jusqu'au
   gate retrieval.
+- Le bulk FTP réel est scellé sous
+  `official_sync/rne-ftp-bulk/6882485c77a98d8f` : formalités
+  15 135 148 871 octets, SHA-256 `87daf4d13eef5c8610d77cf9d245deb0922c84db5ae95aa62af1e03906c76218`;
+  comptes annuels 4 298 343 268 octets, SHA-256
+  `518c4d0b314726a331e538385085abc5d68f42945dedb427e6200a588d370321`.
+  Le stock contient 5 470 membres formalités (177 361 078 320 octets
+  décompressés) et 1 437 membres comptes (33 383 777 529 octets). Un smoke
+  réel sur la première formalité a produit une preuve SIREN et six preuves
+  SIRET explicites, sans quarantaine.
+- Le commit `7336467` met fail-closed en quarantaine les membres comptes dont
+  le tableau JSON source est tronqué ou mal formé, sans conserver leur contenu
+  et sans admettre les records partiels. Les builds nationaux formalités et
+  métadonnées de comptes sont lancés en streaming; ils ne constituent ni un
+  gate modèle ni une ouverture de fold.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
