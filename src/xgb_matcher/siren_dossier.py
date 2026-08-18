@@ -134,6 +134,39 @@ def _copy(connection: duckdb.DuckDBPyConnection, query: str, output: Path) -> in
     return int(connection.execute(f"SELECT count(*) FROM read_parquet('{escaped}')").fetchone()[0])
 
 
+def _copy_union_parts(
+    connection: duckdb.DuckDBPyConnection,
+    queries: Sequence[str],
+    output: Path,
+    *,
+    part_prefix: str,
+) -> int:
+    """Materialize large nested sources separately, then concatenate flat rows.
+
+    DuckDB may retain the decompressed list/struct state of every member of a
+    ``read_parquet([...])`` during an UNNEST.  On national RNE+BODACC inputs
+    that can trigger macOS jetsam even when the final COPY itself is streaming.
+    Per-source parts bound that state; the final flat Parquet union is cheap and
+    preserves the exact additive row semantics.
+    """
+    parts: list[Path] = []
+    try:
+        for index, query in enumerate(queries):
+            part = output.parent / f".{part_prefix}-{index:03d}.parquet"
+            _copy(connection, query, part)
+            parts.append(part)
+        readers = _parquet_list(parts)
+        count = _copy(
+            connection,
+            f"SELECT * FROM read_parquet({readers}, union_by_name=true)",
+            output,
+        )
+        return count
+    finally:
+        for part in parts:
+            part.unlink(missing_ok=True)
+
+
 def build_siren_dossier(
     inputs: SirenDossierInputs,
     *,
@@ -191,8 +224,12 @@ def build_siren_dossier(
         connection.execute(f"SET temp_directory='{_sql_path(spill)}'")
         establishments = f"read_parquet('{_sql_path(inputs.sirene_establishments)}')"
         legal_units = f"read_parquet('{_sql_path(inputs.sirene_legal_units)}')"
-        evidence = f"read_parquet({_parquet_list(inputs.official_evidence)}, union_by_name=true)"
-        relations = f"read_parquet({_parquet_list(inputs.official_relations)}, union_by_name=true)"
+        evidence_readers = [
+            f"read_parquet('{_sql_path(path)}')" for path in inputs.official_evidence
+        ]
+        relation_readers = [
+            f"read_parquet('{_sql_path(path)}')" for path in inputs.official_relations
+        ]
         accounts = (
             f"read_parquet({_parquet_list(inputs.rne_account_deposits)}, union_by_name=true)"
             if inputs.rne_account_deposits
@@ -273,70 +310,90 @@ def build_siren_dossier(
                 ("denominationUsuelleEtablissement", "USUAL"),
             )
         )
-        counts["name_evidence"] = _copy(
-            connection,
+        # Canonical official layers have already resolved source-level
+        # duplicates. Keep source observations additive here; the typed
+        # portfolio performs semantic subject/role/value deduplication after
+        # applying its bounded caps. Each nested official source is flattened
+        # independently to keep peak RAM bounded on the national build.
+        name_queries = [f"{sirene_legal_names} UNION ALL {sirene_site_names}"]
+        name_queries.extend(
             f"""
-            -- Canonical official layers have already resolved source-level
-            -- duplicates.  Keep source observations additive here; the typed
-            -- retrieval portfolio performs its semantic subject/role/value
-            -- deduplication after applying its bounded caps.  A global
-            -- DISTINCT over national nested evidence needlessly spills tens
-            -- of gigabytes and does not merge cross-source provenance.
-            SELECT * FROM (
-              {sirene_legal_names}
-              UNION ALL
-              {sirene_site_names}
-              UNION ALL
-              SELECT e.siren::VARCHAR, coalesce(e.siret, '')::VARCHAR,
-                     e.subject_kind::VARCHAR, e.source::VARCHAR,
-                     n.kind::VARCHAR, n.raw_value::VARCHAR,
-                     n.normalized_value::VARCHAR,
-                     try_cast(e.valid_from AS DATE), try_cast(e.valid_to AS DATE),
-                     e.is_current::BOOLEAN, e.evidence_id::VARCHAR,
-                     e.source_record_id::VARCHAR, try_cast(e.observed_at AS DATE),
-                     e.source_priority::SMALLINT
-              FROM {evidence} e, unnest(e.names) AS item(n)
-              WHERE coalesce(n.normalized_value, '') <> ''
-            )
-            """,
+            SELECT e.siren::VARCHAR AS siren,
+                   coalesce(e.siret, '')::VARCHAR AS siret,
+                   e.subject_kind::VARCHAR AS subject_kind,
+                   e.source::VARCHAR AS source,
+                   n.kind::VARCHAR AS name_kind,
+                   n.raw_value::VARCHAR AS raw_value,
+                   n.normalized_value::VARCHAR AS normalized_value,
+                   try_cast(e.valid_from AS DATE) AS valid_from,
+                   try_cast(e.valid_to AS DATE) AS valid_to,
+                   e.is_current::BOOLEAN AS is_current,
+                   e.evidence_id::VARCHAR AS evidence_id,
+                   e.source_record_id::VARCHAR AS source_record_id,
+                   try_cast(e.observed_at AS DATE) AS observed_at,
+                   e.source_priority::SMALLINT AS source_priority
+            FROM {reader} e, unnest(e.names) AS item(n)
+            WHERE coalesce(n.normalized_value, '') <> ''
+            """
+            for reader in evidence_readers
+        )
+        counts["name_evidence"] = _copy_union_parts(
+            connection,
+            name_queries,
             stage / "name_evidence.parquet",
+            part_prefix="name-evidence-part",
         )
-        counts["address_evidence"] = _copy(
-            connection,
+
+        address_queries = [
             f"""
-            SELECT * FROM (
-              SELECT siren::VARCHAR siren, siret::VARCHAR siret, 'SIRET' subject_kind,
-                     'SIRENE_CURRENT' AS \"source\",
-                     {current_address}::VARCHAR raw_value,
-                     {_normalized(current_address)} normalized_value,
-                     coalesce(codePostalEtablissement, '')::VARCHAR postcode,
-                     coalesce(codeCommuneEtablissement, '')::VARCHAR insee,
-                     coalesce(numeroVoieEtablissement, '')::VARCHAR street_number,
-                     coalesce(indiceRepetitionEtablissement, '')::VARCHAR street_number_suffix,
-                     NULL::DATE valid_from, NULL::DATE valid_to, true is_current,
-                     ''::VARCHAR evidence_id, ''::VARCHAR source_record_id,
-                     NULL::DATE observed_at, 400::SMALLINT source_priority
-              FROM {establishments}
-              WHERE {_normalized(current_address)} <> ''
-              UNION ALL
-              SELECT e.siren::VARCHAR, coalesce(e.siret, '')::VARCHAR,
-                     e.subject_kind::VARCHAR, e.source::VARCHAR,
-                     a.raw_value::VARCHAR, a.normalized_value::VARCHAR,
-                     a.postcode::VARCHAR, a.insee::VARCHAR,
-                     a.number::VARCHAR, a.number_suffix::VARCHAR,
-                     try_cast(e.valid_from AS DATE), try_cast(e.valid_to AS DATE),
-                     e.is_current::BOOLEAN, e.evidence_id::VARCHAR,
-                     e.source_record_id::VARCHAR, try_cast(e.observed_at AS DATE),
-                     e.source_priority::SMALLINT
-              FROM {evidence} e, unnest(e.addresses) AS item(a)
-              WHERE coalesce(a.normalized_value, '') <> ''
-                 OR coalesce(a.postcode, '') <> '' OR coalesce(a.insee, '') <> ''
-            )
-            """,
-            stage / "address_evidence.parquet",
+            SELECT siren::VARCHAR siren, siret::VARCHAR siret, 'SIRET' subject_kind,
+                   'SIRENE_CURRENT' AS \"source\",
+                   {current_address}::VARCHAR raw_value,
+                   {_normalized(current_address)} normalized_value,
+                   coalesce(codePostalEtablissement, '')::VARCHAR postcode,
+                   coalesce(codeCommuneEtablissement, '')::VARCHAR insee,
+                   coalesce(numeroVoieEtablissement, '')::VARCHAR street_number,
+                   coalesce(indiceRepetitionEtablissement, '')::VARCHAR street_number_suffix,
+                   NULL::DATE valid_from, NULL::DATE valid_to, true is_current,
+                   ''::VARCHAR evidence_id, ''::VARCHAR source_record_id,
+                   NULL::DATE observed_at, 400::SMALLINT source_priority
+            FROM {establishments}
+            WHERE {_normalized(current_address)} <> ''
+            """
+        ]
+        address_queries.extend(
+            f"""
+            SELECT e.siren::VARCHAR AS siren,
+                   coalesce(e.siret, '')::VARCHAR AS siret,
+                   e.subject_kind::VARCHAR AS subject_kind,
+                   e.source::VARCHAR AS source,
+                   a.raw_value::VARCHAR AS raw_value,
+                   a.normalized_value::VARCHAR AS normalized_value,
+                   a.postcode::VARCHAR AS postcode,
+                   a.insee::VARCHAR AS insee,
+                   a.number::VARCHAR AS street_number,
+                   a.number_suffix::VARCHAR AS street_number_suffix,
+                   try_cast(e.valid_from AS DATE) AS valid_from,
+                   try_cast(e.valid_to AS DATE) AS valid_to,
+                   e.is_current::BOOLEAN AS is_current,
+                   e.evidence_id::VARCHAR AS evidence_id,
+                   e.source_record_id::VARCHAR AS source_record_id,
+                   try_cast(e.observed_at AS DATE) AS observed_at,
+                   e.source_priority::SMALLINT AS source_priority
+            FROM {reader} e, unnest(e.addresses) AS item(a)
+            WHERE coalesce(a.normalized_value, '') <> ''
+               OR coalesce(a.postcode, '') <> '' OR coalesce(a.insee, '') <> ''
+            """
+            for reader in evidence_readers
         )
-        counts["entity_evidence"] = _copy(
+        counts["address_evidence"] = _copy_union_parts(
             connection,
+            address_queries,
+            stage / "address_evidence.parquet",
+            part_prefix="address-evidence-part",
+        )
+
+        entity_queries = [
             f"""
             SELECT evidence_id::VARCHAR evidence_id,
                    source_record_id::VARCHAR source_record_id,
@@ -347,13 +404,18 @@ def build_siren_dossier(
                    try_cast(valid_from AS DATE) valid_from,try_cast(valid_to AS DATE) valid_to,
                    try_cast(observed_at AS DATE) observed_at,is_current::BOOLEAN is_current,
                    source_priority::SMALLINT source_priority
-            FROM {evidence}
+            FROM {reader}
             WHERE regexp_full_match(siren::VARCHAR, '[0-9]{{9}}')
-            """,
-            stage / "entity_evidence.parquet",
-        )
-        counts["relations"] = _copy(
+            """
+            for reader in evidence_readers
+        ]
+        counts["entity_evidence"] = _copy_union_parts(
             connection,
+            entity_queries,
+            stage / "entity_evidence.parquet",
+            part_prefix="entity-evidence-part",
+        )
+        relation_queries = [
             f"""
             SELECT relation_id::VARCHAR relation_id, source::VARCHAR AS \"source\",
                    source_record_id::VARCHAR source_record_id,
@@ -363,9 +425,15 @@ def build_siren_dossier(
                    try_cast(effective_date AS DATE) effective_date,
                    try_cast(observed_at AS DATE) observed_at,
                    source_priority::SMALLINT source_priority
-            FROM {relations}
-            """,
+            FROM {reader}
+            """
+            for reader in relation_readers
+        ]
+        counts["relations"] = _copy_union_parts(
+            connection,
+            relation_queries,
             stage / "relations.parquet",
+            part_prefix="relation-part",
         )
         account_query = (
             f"""
