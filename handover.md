@@ -5104,6 +5104,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `comptes_annuels_NIVEAU1` (4 298 343 268 octets). Leur téléchargement bulk
   est reprenable et doit alimenter un nouveau build du dossier SIREN; l'API
   Formalités v4 est désormais réservée aux incréments ultérieurs.
+- Le commit `3b61415` permet au canoniseur de preuves de consommer directement
+  les archives ZIP bulk RNE, membre JSON par membre JSON, sans extraction
+  préalable du stock national. Le manifeste bulk et chaque archive sont
+  contrôlés par taille et SHA-256 avant ingestion; les fichiers non JSON sont
+  ignorés et les membres chiffrés refusés. Cette voie alimente les mêmes
+  Parquet de preuves puis le même dossier SIREN que les incréments API.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
