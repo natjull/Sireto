@@ -53,6 +53,23 @@ class FakeHttpTransport:
         return self.pages.pop(0)
 
 
+class FakeRneApiTransport:
+    def __init__(self, pages):
+        self.pages = list(pages)
+        self.login_calls = []
+        self.diff_calls = []
+        self.token = bytearray()
+
+    def login(self, **kwargs):
+        self.login_calls.append(dict(kwargs))
+        self.token = bytearray(b"fixture-bearer")
+        return self.token
+
+    def fetch_diff(self, **kwargs):
+        self.diff_calls.append(dict(kwargs))
+        return self.pages.pop(0)
+
+
 def _rne_config(tmp_path: Path) -> RneSyncConfig:
     known_hosts = tmp_path / "known_hosts"
     known_hosts.write_text("fixture host key\n", encoding="utf-8")
@@ -64,6 +81,22 @@ def _rne_config(tmp_path: Path) -> RneSyncConfig:
             "files": [
                 {"name": "snapshot.zip", "sftp_path": "/secure/snapshot.zip", "ftps_path": "/tls/snapshot.zip"}
             ],
+        }
+    )
+
+
+def _rne_api_config() -> RneSyncConfig:
+    return RneSyncConfig.from_dict(
+        {
+            "keychain": {
+                "service": "fixture.service",
+                "account": "fixture-account",
+            },
+            "api": {
+                "from": "2026-08-16",
+                "to": "2026-08-17",
+                "page_size": 2,
+            },
         }
     )
 
@@ -140,6 +173,71 @@ def test_rne_prefers_sftp_seals_atomically_and_zeroizes_secret(tmp_path: Path):
     assert PLACEHOLDER_SECRET.decode() not in serialized
     assert "fixture-account" not in serialized
     assert not list((tmp_path / "store").glob(".rne-stage-*"))
+
+
+def test_rne_https_api_diff_uses_bearer_cursor_and_seals_jsonl(tmp_path: Path):
+    secret = bytearray(PLACEHOLDER_SECRET)
+    api = FakeRneApiTransport(
+        [
+            ([{"siren": "123456789"}, {"siren": "987654321"}], "987654321"),
+            ([{"siren": "111222333"}], ""),
+        ]
+    )
+    output = sync_rne(
+        config=_rne_api_config(),
+        output_root=tmp_path / "store",
+        keychain_reader=lambda _locator: secret,
+        rne_api=api,
+    )
+    rows = [
+        json.loads(line)
+        for line in (output / "rne-formalites-diff.jsonl").read_text().splitlines()
+    ]
+    assert [row["siren"] for row in rows] == [
+        "123456789",
+        "987654321",
+        "111222333",
+    ]
+    assert len(api.login_calls) == 1
+    assert [call["search_after"] for call in api.diff_calls] == ["", "987654321"]
+    assert api.diff_calls[0]["from_date"] == "2026-08-16"
+    assert api.diff_calls[0]["to_date"] == "2026-08-17"
+    assert secret == bytearray(len(PLACEHOLDER_SECRET))
+    assert api.token == bytearray(len(b"fixture-bearer"))
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    provenance = manifest["provenance"]
+    assert provenance["protocol_by_file"] == {
+        "rne-formalites-diff.jsonl": "https-rne-formalites-v4-diff"
+    }
+    assert provenance["records"] == 3
+    assert provenance["from_exclusive"] == "2026-08-16"
+    assert provenance["to_inclusive"] == "2026-08-17"
+    assert "fixture-account" not in json.dumps(manifest)
+
+
+def test_rne_api_fails_closed_on_unapproved_host_or_missing_cursor(tmp_path: Path):
+    with pytest.raises(OfficialSyncError, match="allow-listed"):
+        RneSyncConfig.from_dict(
+            {
+                "keychain": {"service": "fixture", "account": "fixture"},
+                "api": {
+                    "login_url": "https://example.invalid/api/sso/login",
+                    "from": "2026-08-16",
+                    "to": "2026-08-17",
+                },
+            }
+        )
+    api = FakeRneApiTransport(
+        [([{"siren": "123456789"}, {"siren": "987654321"}], "")]
+    )
+    with pytest.raises(OfficialSyncError, match="without pagination-search-after"):
+        sync_rne(
+            config=_rne_api_config(),
+            output_root=tmp_path / "store",
+            keychain_reader=lambda _locator: bytearray(PLACEHOLDER_SECRET),
+            rne_api=api,
+        )
+    assert not (tmp_path / "store" / "rne").exists()
 
 
 def test_rne_falls_back_to_ftps_and_is_content_addressed(tmp_path: Path):

@@ -633,6 +633,7 @@ def _canonicalize_sirene_succession(
 
 _RNE_SIREN = [
     "siren",
+    "content.personneMorale.identite.entreprise.siren",
     "identite.entreprise.siren",
     "entreprise.siren",
     "company.siren",
@@ -647,6 +648,17 @@ _RNE_SIRET = [
 ]
 _RNE_NAMES = (
     ("denomination", OfficialNameKind.LEGAL),
+    ("content.personneMorale.identite.entreprise.denomination", OfficialNameKind.LEGAL),
+    ("content.personneMorale.identite.entreprise.nomCommercial", OfficialNameKind.TRADE),
+    ("content.personneMorale.identite.description.sigle", OfficialNameKind.TRADE),
+    (
+        "content.personnePhysique.identite.entrepreneur.descriptionPersonne.nom",
+        OfficialNameKind.LEGAL,
+    ),
+    (
+        "content.personnePhysique.identite.entrepreneur.descriptionPersonne.nomUsage",
+        OfficialNameKind.USUAL,
+    ),
     ("identite.entreprise.denomination", OfficialNameKind.LEGAL),
     ("entreprise.denomination", OfficialNameKind.LEGAL),
     ("nomCommercial", OfficialNameKind.TRADE),
@@ -662,6 +674,26 @@ def _canonicalize_rne(
     record_id: str,
     fingerprint: str,
 ) -> CanonicalizedRecord:
+    commercial_reuse = _first(
+        record,
+        ["diffusionCommerciale", "content.diffusionCommerciale"],
+        None,
+    )
+    insee_reuse = str(
+        _first(record, ["diffusionINSEE", "content.diffusionINSEE"], "") or ""
+    ).upper()
+    if _bool(commercial_reuse) is False or insee_reuse == "N":
+        return CanonicalizedRecord(
+            quarantine=(
+                _quarantine(
+                    spec,
+                    record_id,
+                    QuarantineReason.OFFICIAL_REUSE_OPPOSITION,
+                    "RNE REUSE OR DIFFUSION OPPOSITION",
+                    fingerprint,
+                ),
+            )
+        )
     siret = normalize_siret(_first(record, _RNE_SIRET))
     siren = normalize_siren(_first(record, _RNE_SIREN) or siret[:9])
     if not siren:
@@ -680,13 +712,52 @@ def _canonicalize_rne(
         )
     addresses = _address(
         record,
-        number_paths=["adresse.numeroVoie", "adresse.numVoie", "etablissement.adresse.numeroVoie"],
-        suffix_paths=["adresse.indiceRepetition", "etablissement.adresse.indiceRepetition"],
-        street_type_paths=["adresse.typeVoie", "etablissement.adresse.typeVoie"],
-        street_paths=["adresse.voie", "adresse.libelleVoie", "etablissement.adresse.libelleVoie"],
-        complement_paths=["adresse.complement", "etablissement.adresse.complement"],
-        postcode_paths=["codePostal", "adresse.codePostal", "etablissement.adresse.codePostal"],
-        insee_paths=["codeCommune", "adresse.codeCommune", "etablissement.adresse.codeCommune"],
+        number_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.numVoie",
+            "content.personnePhysique.adresseEntreprise.adresse.numVoie",
+            "adresse.numeroVoie",
+            "adresse.numVoie",
+            "etablissement.adresse.numeroVoie",
+        ],
+        suffix_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.indiceRepetition",
+            "content.personnePhysique.adresseEntreprise.adresse.indiceRepetition",
+            "adresse.indiceRepetition",
+            "etablissement.adresse.indiceRepetition",
+        ],
+        street_type_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.typeVoie",
+            "content.personnePhysique.adresseEntreprise.adresse.typeVoie",
+            "adresse.typeVoie",
+            "etablissement.adresse.typeVoie",
+        ],
+        street_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.voie",
+            "content.personnePhysique.adresseEntreprise.adresse.voie",
+            "adresse.voie",
+            "adresse.libelleVoie",
+            "etablissement.adresse.libelleVoie",
+        ],
+        complement_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.complementLocalisation",
+            "content.personnePhysique.adresseEntreprise.adresse.complementLocalisation",
+            "adresse.complement",
+            "etablissement.adresse.complement",
+        ],
+        postcode_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.codePostal",
+            "content.personnePhysique.adresseEntreprise.adresse.codePostal",
+            "codePostal",
+            "adresse.codePostal",
+            "etablissement.adresse.codePostal",
+        ],
+        insee_paths=[
+            "content.personneMorale.adresseEntreprise.adresse.codeInseeCommune",
+            "content.personnePhysique.adresseEntreprise.adresse.codeInseeCommune",
+            "codeCommune",
+            "adresse.codeCommune",
+            "etablissement.adresse.codeCommune",
+        ],
         full_paths=["adresseComplete", "adresse.adresseComplete", "etablissement.adresse.adresseComplete"],
     )
     try:

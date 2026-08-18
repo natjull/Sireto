@@ -116,6 +116,58 @@ def test_canonical_schema_keeps_raw_and_normalized_but_has_no_sensitive_fields()
     }
 
 
+def test_rne_formalites_v4_content_paths_and_reuse_opposition(tmp_path: Path):
+    record = {
+        "siren": "123456789",
+        "diffusionCommerciale": True,
+        "diffusionINSEE": "O",
+        "content": {
+            "personneMorale": {
+                "identite": {
+                    "entreprise": {
+                        "siren": "123456789",
+                        "denomination": "Institut National Exemple",
+                        "nomCommercial": "INPI EXEMPLE",
+                    },
+                    "description": {"sigle": "INE"},
+                },
+                "adresseEntreprise": {
+                    "adresse": {
+                        "numVoie": "15",
+                        "typeVoie": "RUE",
+                        "voie": "DES MINIMES",
+                        "codePostal": "92400",
+                        "codeInseeCommune": "92026",
+                    }
+                },
+            }
+        },
+    }
+    spec = _spec(
+        tmp_path / "rne-api.jsonl",
+        OfficialSource.RNE,
+        SnapshotRole.RNE_RECORDS,
+    )
+    accepted = canonicalize_snapshot_record(spec, record, ordinal=1)
+    assert len(accepted.evidence) == 1
+    evidence = accepted.evidence[0]
+    assert {item.normalized_value for item in evidence.names} == {
+        "INSTITUT NATIONAL EXEMPLE",
+        "INPI EXEMPLE",
+        "INE",
+    }
+    assert evidence.addresses[0].normalized_value == "15 RUE DES MINIMES"
+    assert evidence.addresses[0].insee == "92026"
+
+    opposed = canonicalize_snapshot_record(
+        spec,
+        {**record, "diffusionCommerciale": "false"},
+        ordinal=2,
+    )
+    assert opposed.evidence == ()
+    assert opposed.quarantine[0].reason is QuarantineReason.OFFICIAL_REUSE_OPPOSITION
+
+
 def test_duplicate_precedence_keeps_latest_observation():
     common = dict(
         source=OfficialSource.RNE,

@@ -13,7 +13,9 @@ jamais le label exact.
 ## Sources autorisées
 
 - snapshots SIRENE courants, historiques et liens de succession déjà scellés ;
-- JSON publics du RNE acquis par SFTP, FTPS ou HTTPS authentifié ;
+- JSON publics du RNE acquis en priorité par l'API Formalités v4 HTTPS
+  (`/api/sso/login`, Bearer, `/api/companies/diff`, curseur
+  `pagination-search-after`), ou par SFTP/FTPS authentifié ;
 - annonces BODACC A/B acquises depuis les interfaces officielles DILA HTTPS,
   FTPS ou Opendatasoft v2.1.
 
@@ -21,6 +23,9 @@ Le FTP et HTTP en clair sont interdits. Les secrets sont lus depuis le Trousseau
 macOS et ne figurent dans aucun argument, environnement, log ou manifeste.
 PDF, comptes annuels, bénéficiaires effectifs, dirigeants et texte intégral des
 annonces sont hors périmètre.
+
+Les enregistrements portant `diffusionCommerciale=false` ou
+`diffusionINSEE=N` sont placés en quarantaine et ne sont jamais indexés.
 
 ## Preuves et relations
 

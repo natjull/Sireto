@@ -9,6 +9,7 @@ Tests inject transport fixtures and never access the network or the Keychain.
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import date
 import ftplib
 import hashlib
 import json
@@ -31,6 +32,12 @@ DEFAULT_BODACC_ODS_V21_URL = (
     "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/"
     "datasets/annonces-commerciales/records"
 )
+DEFAULT_RNE_LOGIN_URL = "https://registre-national-entreprises.inpi.fr/api/sso/login"
+DEFAULT_RNE_DIFF_URL = "https://registre-national-entreprises.inpi.fr/api/companies/diff"
+_ALLOWED_RNE_API_HOSTS = {
+    "registre-national-entreprises.inpi.fr",
+    "registre-national-entreprises-pprod.inpi.fr",
+}
 
 
 def canonical_json(value: Any) -> bytes:
@@ -305,6 +312,117 @@ class HttpsTransport:
         return value
 
 
+class RneApiTransport(Protocol):
+    def login(self, *, url: str, credentials: Credentials) -> bytearray: ...
+
+    def fetch_diff(
+        self,
+        *,
+        url: str,
+        token: bytearray,
+        from_date: str,
+        to_date: str,
+        page_size: int,
+        search_after: str,
+    ) -> tuple[Sequence[Mapping[str, Any]], str]: ...
+
+
+def _validate_rne_api_url(url: str) -> None:
+    _validate_public_url(url, schemes={"https"})
+    if (urlparse(url).hostname or "").lower() not in _ALLOWED_RNE_API_HOSTS:
+        raise OfficialSyncError("RNE API host is not an allow-listed official INPI host")
+
+
+class RneHttpsApiTransport:
+    """Official INPI Formalites v4 HTTPS API transport."""
+
+    user_agent = "SIRETO-official-source-sync/1"
+
+    def login(self, *, url: str, credentials: Credentials) -> bytearray:
+        _validate_rne_api_url(url)
+        body = json.dumps(
+            {"username": credentials.username, "password": credentials.password},
+            separators=(",", ":"),
+        ).encode("utf-8")
+        request = Request(
+            url,
+            data=body,
+            method="POST",
+            headers={
+                "Content-Type": "application/json",
+                "Accept": "application/json",
+                "User-Agent": self.user_agent,
+            },
+        )
+        try:
+            with urlopen(
+                request, timeout=120, context=ssl.create_default_context()
+            ) as response:
+                payload = json.load(response)
+        except Exception as exc:
+            raise OfficialSyncError("RNE HTTPS API authentication failed") from exc
+        if not isinstance(payload, Mapping):
+            raise OfficialSyncError("RNE HTTPS API login returned malformed JSON")
+        token = str(payload.get("token") or "")
+        if not token:
+            raise OfficialSyncError("RNE HTTPS API login returned no bearer token")
+        return bytearray(token.encode("utf-8"))
+
+    def fetch_diff(
+        self,
+        *,
+        url: str,
+        token: bytearray,
+        from_date: str,
+        to_date: str,
+        page_size: int,
+        search_after: str,
+    ) -> tuple[Sequence[Mapping[str, Any]], str]:
+        _validate_rne_api_url(url)
+        parsed = urlparse(url)
+        query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+        query.update({"pageSize": str(page_size), "from": from_date, "to": to_date})
+        if search_after:
+            query["searchAfter"] = search_after
+        request_url = urlunparse(parsed._replace(query=urlencode(query)))
+        request = Request(
+            request_url,
+            headers={
+                "Authorization": f"Bearer {bytes(token).decode('utf-8')}",
+                "Accept": "application/json",
+                "User-Agent": self.user_agent,
+            },
+        )
+        try:
+            with urlopen(
+                request, timeout=120, context=ssl.create_default_context()
+            ) as response:
+                payload = json.load(response)
+                next_search_after = str(
+                    response.headers.get("pagination-search-after") or ""
+                ).strip()
+        except Exception as exc:
+            raise OfficialSyncError("RNE HTTPS API differential request failed") from exc
+        if isinstance(payload, list):
+            records = payload
+        elif isinstance(payload, Mapping):
+            records = next(
+                (
+                    payload[key]
+                    for key in ("results", "companies", "formalities", "items", "data")
+                    if isinstance(payload.get(key), list)
+                ),
+                None,
+            )
+            if records is None and "content" in payload:
+                records = [payload]
+        else:
+            records = None
+        if records is None or any(not isinstance(item, Mapping) for item in records):
+            raise OfficialSyncError("RNE HTTPS API differential response is malformed")
+        return tuple(records), next_search_after
+
+
 def _fsync_path(path: Path) -> None:
     descriptor = os.open(path, os.O_RDONLY)
     try:
@@ -382,21 +500,65 @@ class RneFile:
 
 
 @dataclass(frozen=True)
+class RneApiConfig:
+    login_url: str
+    diff_url: str
+    from_date: str
+    to_date: str
+    output_name: str = "rne-formalites-diff.jsonl"
+    page_size: int = 100
+    maximum_pages: int = 1_000_000
+
+    @classmethod
+    def from_dict(cls, raw: Mapping[str, Any]) -> "RneApiConfig":
+        config = cls(
+            login_url=str(raw.get("login_url") or DEFAULT_RNE_LOGIN_URL),
+            diff_url=str(raw.get("diff_url") or DEFAULT_RNE_DIFF_URL),
+            from_date=str(raw.get("from") or ""),
+            to_date=str(raw.get("to") or ""),
+            output_name=_safe_filename(
+                str(raw.get("output_name") or "rne-formalites-diff.jsonl")
+            ),
+            page_size=int(raw.get("page_size", 100)),
+            maximum_pages=int(raw.get("maximum_pages", 1_000_000)),
+        )
+        _validate_rne_api_url(config.login_url)
+        _validate_rne_api_url(config.diff_url)
+        if not config.from_date or not config.to_date:
+            raise OfficialSyncError("RNE API differential from/to dates are required")
+        try:
+            from_day = date.fromisoformat(config.from_date)
+            to_day = date.fromisoformat(config.to_date)
+        except ValueError as exc:
+            raise OfficialSyncError("RNE API differential dates must use YYYY-MM-DD") from exc
+        if from_day >= to_day:
+            raise OfficialSyncError("RNE API differential from must precede to")
+        if not 1 <= config.page_size <= 100:
+            raise OfficialSyncError("RNE API page_size must be between 1 and 100")
+        if config.maximum_pages < 1:
+            raise OfficialSyncError("RNE API maximum_pages must be positive")
+        return config
+
+
+@dataclass(frozen=True)
 class RneSyncConfig:
     keychain: KeychainLocator
-    sftp_host: str
-    sftp_port: int
-    known_hosts: Path
-    ftps_host: str
-    ftps_port: int
-    files: tuple[RneFile, ...]
+    api: RneApiConfig | None = None
+    sftp_host: str = ""
+    sftp_port: int = 22
+    known_hosts: Path = Path()
+    ftps_host: str = ""
+    ftps_port: int = 21
+    files: tuple[RneFile, ...] = ()
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RneSyncConfig":
         _reject_inline_secrets(raw)
         keychain, sftp, ftps = raw.get("keychain", {}), raw.get("sftp", {}), raw.get("ftps", {})
+        api_raw = raw.get("api")
         config = cls(
             keychain=KeychainLocator(str(keychain.get("service") or ""), str(keychain.get("account") or "")),
+            api=(RneApiConfig.from_dict(api_raw) if isinstance(api_raw, Mapping) else None),
             sftp_host=str(sftp.get("host") or ""),
             sftp_port=int(sftp.get("port", 22)),
             known_hosts=Path(str(sftp.get("known_hosts") or "")),
@@ -404,10 +566,16 @@ class RneSyncConfig:
             ftps_port=int(ftps.get("port", 21)),
             files=tuple(RneFile.from_dict(item) for item in raw.get("files", [])),
         )
-        _validate_host(config.sftp_host)
-        _validate_host(config.ftps_host)
-        if not config.files or any(not item.sftp_path or not item.ftps_path for item in config.files):
-            raise OfficialSyncError("RNE file list and both secure remote paths are required")
+        if config.api is None:
+            _validate_host(config.sftp_host)
+            _validate_host(config.ftps_host)
+        if config.api is None and (
+            not config.files
+            or any(not item.sftp_path or not item.ftps_path for item in config.files)
+        ):
+            raise OfficialSyncError(
+                "RNE API config or file list with both secure remote paths is required"
+            )
         if len({item.name for item in config.files}) != len(config.files):
             raise OfficialSyncError("RNE output filenames must be unique")
         return config
@@ -420,55 +588,106 @@ def sync_rne(
     keychain_reader: Callable[[KeychainLocator], bytearray] = read_keychain_secret,
     sftp: FileTransport | None = None,
     ftps: FileTransport | None = None,
+    rne_api: RneApiTransport | None = None,
 ) -> Path:
     output_root.mkdir(parents=True, exist_ok=True, mode=0o700)
     stage = Path(tempfile.mkdtemp(prefix=".rne-stage-", dir=output_root))
     os.chmod(stage, 0o700)
     secret = bytearray()
+    bearer = bytearray()
     protocols: dict[str, str] = {}
     try:
         secret = keychain_reader(config.keychain)
         credentials = Credentials.from_keychain_payload(
             secret, username=config.keychain.account
         )
-        sftp_transport = sftp or SftpTransport()
-        ftps_transport = ftps or FtpsTransport()
-        for item in config.files:
-            destination = stage / item.name
-            try:
-                sftp_transport.download(
-                    host=config.sftp_host,
-                    port=config.sftp_port,
-                    remote_path=item.sftp_path,
-                    destination=destination,
-                    credentials=credentials,
-                    known_hosts=config.known_hosts,
-                )
-                protocols[item.name] = "sftp"
-            except Exception:
-                destination.unlink(missing_ok=True)
+        if config.api is not None:
+            api_transport = rne_api or RneHttpsApiTransport()
+            bearer = api_transport.login(
+                url=config.api.login_url, credentials=credentials
+            )
+            destination = stage / config.api.output_name
+            search_after = ""
+            seen_cursors: set[str] = set()
+            record_count = 0
+            with destination.open("wb") as output:
+                for _page in range(config.api.maximum_pages):
+                    records, next_search_after = api_transport.fetch_diff(
+                        url=config.api.diff_url,
+                        token=bearer,
+                        from_date=config.api.from_date,
+                        to_date=config.api.to_date,
+                        page_size=config.api.page_size,
+                        search_after=search_after,
+                    )
+                    for record in records:
+                        output.write(canonical_json(record))
+                        record_count += 1
+                    if not next_search_after:
+                        if len(records) >= config.api.page_size:
+                            raise OfficialSyncError(
+                                "RNE API returned a full page without pagination-search-after"
+                            )
+                        break
+                    if next_search_after in seen_cursors:
+                        raise OfficialSyncError("RNE API pagination cursor repeated")
+                    seen_cursors.add(next_search_after)
+                    search_after = next_search_after
+                else:
+                    raise OfficialSyncError("RNE API maximum_pages safety limit reached")
+            os.chmod(destination, 0o600)
+            protocols[config.api.output_name] = "https-rne-formalites-v4-diff"
+            payload_names = [config.api.output_name]
+            api_provenance: Mapping[str, Any] = {
+                "api_login_url": config.api.login_url,
+                "api_diff_url": config.api.diff_url,
+                "from_exclusive": config.api.from_date,
+                "to_inclusive": config.api.to_date,
+                "page_size": config.api.page_size,
+                "records": record_count,
+                "pagination": "pagination-search-after",
+            }
+        else:
+            sftp_transport = sftp or SftpTransport()
+            ftps_transport = ftps or FtpsTransport()
+            for item in config.files:
+                destination = stage / item.name
                 try:
-                    ftps_transport.download(
-                        host=config.ftps_host,
-                        port=config.ftps_port,
-                        remote_path=item.ftps_path,
+                    sftp_transport.download(
+                        host=config.sftp_host,
+                        port=config.sftp_port,
+                        remote_path=item.sftp_path,
                         destination=destination,
                         credentials=credentials,
+                        known_hosts=config.known_hosts,
                     )
-                    protocols[item.name] = "ftps"
-                except Exception as exc:
+                    protocols[item.name] = "sftp"
+                except Exception:
                     destination.unlink(missing_ok=True)
-                    if "INSECURE_FTP_UNSUPPORTED" in str(exc):
+                    try:
+                        ftps_transport.download(
+                            host=config.ftps_host,
+                            port=config.ftps_port,
+                            remote_path=item.ftps_path,
+                            destination=destination,
+                            credentials=credentials,
+                        )
+                        protocols[item.name] = "ftps"
+                    except Exception as exc:
+                        destination.unlink(missing_ok=True)
+                        if "INSECURE_FTP_UNSUPPORTED" in str(exc):
+                            raise OfficialSyncError(
+                                "INSECURE_FTP_UNSUPPORTED: RNE server offers plaintext FTP only; credentials not sent"
+                            ) from exc
                         raise OfficialSyncError(
-                            "INSECURE_FTP_UNSUPPORTED: RNE server offers plaintext FTP only; credentials not sent"
+                            f"RNE secure transfer failed for {item.name}; SFTP and FTPS unavailable"
                         ) from exc
-                    raise OfficialSyncError(
-                        f"RNE secure transfer failed for {item.name}; SFTP and FTPS unavailable"
-                    ) from exc
-            if not destination.is_file():
-                raise OfficialSyncError(f"RNE transport produced no file for {item.name}")
-            os.chmod(destination, 0o600)
-        payload = _payload_metadata(stage, (item.name for item in config.files))
+                if not destination.is_file():
+                    raise OfficialSyncError(f"RNE transport produced no file for {item.name}")
+                os.chmod(destination, 0o600)
+            payload_names = [item.name for item in config.files]
+            api_provenance = {}
+        payload = _payload_metadata(stage, payload_names)
         return publish_content_addressed(
             stage=stage,
             output_root=output_root,
@@ -478,6 +697,7 @@ def sync_rne(
                 "protocol_by_file": protocols,
                 "sftp_host": config.sftp_host,
                 "ftps_host": config.ftps_host,
+                **api_provenance,
                 "keychain_locator_sha256": hashlib.sha256(
                     canonical_json(
                         {
@@ -497,6 +717,8 @@ def sync_rne(
     finally:
         for index in range(len(secret)):
             secret[index] = 0
+        for index in range(len(bearer)):
+            bearer[index] = 0
 
 
 @dataclass(frozen=True)
@@ -768,6 +990,8 @@ __all__ = [
     "KeychainLocator",
     "OfficialSyncError",
     "RneSyncConfig",
+    "RneApiConfig",
+    "RneHttpsApiTransport",
     "SftpTransport",
     "load_json_config",
     "initialize_keychain_secret",

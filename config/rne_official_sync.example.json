@@ -3,20 +3,12 @@
     "service": "com.sireto.rne-official",
     "account": "CHANGE_ME_INPI_USERNAME"
   },
-  "sftp": {
-    "host": "registre-national-entreprises.inpi.fr",
-    "port": 9222,
-    "known_hosts": "/Users/CHANGE_ME/.ssh/known_hosts"
-  },
-  "ftps": {
-    "host": "CHANGE_ME_FTPS_HOST",
-    "port": 21
-  },
-  "files": [
-    {
-      "name": "rne-formalites-public.jsonl.gz",
-      "sftp_path": "/CHANGE_ME/rne-formalites-public.jsonl.gz",
-      "ftps_path": "/CHANGE_ME/rne-formalites-public.jsonl.gz"
-    }
-  ]
+  "api": {
+    "login_url": "https://registre-national-entreprises.inpi.fr/api/sso/login",
+    "diff_url": "https://registre-national-entreprises.inpi.fr/api/companies/diff",
+    "from": "CHANGE_ME_EXCLUSIVE_YYYY-MM-DD",
+    "to": "CHANGE_ME_INCLUSIVE_YYYY-MM-DD",
+    "page_size": 100,
+    "output_name": "rne-formalites-diff.jsonl"
+  }
 }

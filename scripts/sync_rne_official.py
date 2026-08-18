@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Securely synchronize configured official RNE files (SFTP, then FTPS)."""
+"""Synchronize RNE through the official HTTPS API or secure file transports."""
 
 from __future__ import annotations
 
