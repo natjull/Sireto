@@ -276,7 +276,13 @@ def build_siren_dossier(
         counts["name_evidence"] = _copy(
             connection,
             f"""
-            SELECT DISTINCT * FROM (
+            -- Canonical official layers have already resolved source-level
+            -- duplicates.  Keep source observations additive here; the typed
+            -- retrieval portfolio performs its semantic subject/role/value
+            -- deduplication after applying its bounded caps.  A global
+            -- DISTINCT over national nested evidence needlessly spills tens
+            -- of gigabytes and does not merge cross-source provenance.
+            SELECT * FROM (
               {sirene_legal_names}
               UNION ALL
               {sirene_site_names}
@@ -298,7 +304,7 @@ def build_siren_dossier(
         counts["address_evidence"] = _copy(
             connection,
             f"""
-            SELECT DISTINCT * FROM (
+            SELECT * FROM (
               SELECT siren::VARCHAR siren, siret::VARCHAR siret, 'SIRET' subject_kind,
                      'SIRENE_CURRENT' AS \"source\",
                      {current_address}::VARCHAR raw_value,
@@ -332,7 +338,7 @@ def build_siren_dossier(
         counts["entity_evidence"] = _copy(
             connection,
             f"""
-            SELECT DISTINCT evidence_id::VARCHAR evidence_id,
+            SELECT evidence_id::VARCHAR evidence_id,
                    source_record_id::VARCHAR source_record_id,
                    source::VARCHAR AS "source",siren::VARCHAR siren,
                    coalesce(siret,'')::VARCHAR siret,subject_kind::VARCHAR subject_kind,
@@ -349,7 +355,7 @@ def build_siren_dossier(
         counts["relations"] = _copy(
             connection,
             f"""
-            SELECT DISTINCT relation_id::VARCHAR relation_id, source::VARCHAR AS \"source\",
+            SELECT relation_id::VARCHAR relation_id, source::VARCHAR AS \"source\",
                    source_record_id::VARCHAR source_record_id,
                    relation_type::VARCHAR relation_type,
                    from_kind::VARCHAR from_kind, from_identifier::VARCHAR from_identifier,
