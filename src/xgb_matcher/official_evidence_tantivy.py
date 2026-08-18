@@ -13,6 +13,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import tempfile
 from typing import Any, Iterator, Mapping, Sequence
@@ -29,6 +30,7 @@ from .hierarchical_retrieval import (
 
 
 OFFICIAL_EVIDENCE_INDEX_SCHEMA_VERSION = "sireto-official-evidence-index-v1"
+_DUCKDB_MEMORY_LIMIT = re.compile(r"^[1-9][0-9]*(?:\.[0-9]+)?(?:KB|MB|GB|TB)$", re.I)
 
 
 @dataclass(frozen=True)
@@ -200,6 +202,8 @@ def iter_official_evidence_documents(
     *,
     batch_size: int = 4096,
     connection: duckdb.DuckDBPyConnection | None = None,
+    duckdb_temp_directory: Path | str | None = None,
+    duckdb_memory_limit: str | None = None,
 ) -> Iterator[OfficialEvidenceIndexDocument]:
     """Stream normalized overlay documents, grouping on disk through DuckDB."""
     evidence_path = Path(evidence_path)
@@ -209,6 +213,18 @@ def iter_official_evidence_documents(
     owns_connection = connection is None
     connection = connection or duckdb.connect()
     connection.execute("SET preserve_insertion_order=false")
+    if duckdb_temp_directory is not None:
+        temp_directory = Path(duckdb_temp_directory)
+        temp_directory.mkdir(parents=True, exist_ok=True)
+        connection.execute(
+            f"SET temp_directory='{_sql_path(temp_directory)}'"
+        )
+    if duckdb_memory_limit is not None:
+        if not _DUCKDB_MEMORY_LIMIT.fullmatch(duckdb_memory_limit.strip()):
+            raise ValueError("invalid DuckDB memory limit")
+        connection.execute(
+            f"SET memory_limit='{duckdb_memory_limit.strip().upper()}'"
+        )
     ctes = _projection_ctes(evidence_path, relation_path)
     siret_sql = ctes + """
         SELECT 'siret' AS document_type,
@@ -377,6 +393,8 @@ def build_official_evidence_tantivy_overlay(
     writer_threads: int = 4,
     commit_every: int = 250_000,
     batch_size: int = 4096,
+    duckdb_temp_directory: Path | str | None = None,
+    duckdb_memory_limit: str | None = None,
 ) -> Path:
     """Build a content-addressed overlay; the national base index is untouched."""
     try:
@@ -400,6 +418,8 @@ def build_official_evidence_tantivy_overlay(
             "writer_threads": writer_threads,
             "commit_every": commit_every,
             "batch_size": batch_size,
+            "duckdb_memory_limit": duckdb_memory_limit,
+            "duckdb_spill_enabled": duckdb_temp_directory is not None,
         },
     }
     build_hash = hashlib.sha256(
@@ -433,7 +453,11 @@ def build_official_evidence_tantivy_overlay(
         siret_count = 0
         siren_count = 0
         for document in iter_official_evidence_documents(
-            evidence_path, relation_path, batch_size=batch_size
+            evidence_path,
+            relation_path,
+            batch_size=batch_size,
+            duckdb_temp_directory=duckdb_temp_directory,
+            duckdb_memory_limit=duckdb_memory_limit,
         ):
             _add_tantivy_document(writer, tantivy, document)
             count += 1
