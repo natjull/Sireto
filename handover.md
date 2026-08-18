@@ -4950,6 +4950,19 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   content-addressé avant toute écriture Tantivy : un échec précoce reste
   réutilisable et ne peut plus supprimer une passe SIRET achevée. Les 9 tests
   ciblés passent.
+- Le build national final `096dd81d4102bdcd` est publié : 83 064 260 documents,
+  historiques et successions complets, aucun label CRM. Le commit `0638c3b`
+  rend les requêtes CRM robustes aux mots réservés Tantivy, supprime le fan-out
+  pathologique des pseudo-termes `g3/g4/g5`, parallélise les canaux et réserve
+  les q-grams au rescue. Les 9 tests ciblés passent.
+- Évaluation dev, sans positif injecté et avec un maximum observé de 100 :
+  commercial humain 3 301/3 510 = 94,046 % (baseline 93,419 %), p50/p95/p99
+  166/635/1 020 ms; prospectif certifié identité+site 748/751 = 99,601 %.
+  Le diagnostic montre 121 anciens échecs récupérés mais 99 anciens succès
+  évincés. L'oracle combiné sparse historique + hiérarchique atteint seulement
+  3 473/3 510 = 98,946 %, deux cas sous le gate avant admission. Verdict
+  `PIVOT`; fold test maintenu fermé. Rapport :
+  `docs/hierarchical_retrieval_v1_results.md`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
