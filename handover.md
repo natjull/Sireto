@@ -5283,6 +5283,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   threads explicites, consignés dans le manifeste mais sans effet sur le contenu
   sémantique. Le smoke réel avec `1GB/2 threads` passe et les 40 tests ciblés
   dossier/retrieval/admission passent en 5,16 s.
+- Le commit `a24bb08` rend cette matérialisation nationale redémarrable sans
+  risque : un manifeste final compatible et ses trois Parquet sont validés puis
+  réutilisés, tandis qu'une publication incomplète ou incompatible échoue
+  explicitement. Cette propriété permet au superviseur macOS de maintenir le
+  calcul long sans pouvoir écraser un build terminé; 25 tests ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
