@@ -5241,6 +5241,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sortie correcte; la nouvelle recette évite de retenir simultanément les deux
   énormes sources imbriquées. Les alias de colonnes sont figés avant l'union et
   42 tests ciblés confirment la stricte équivalence des vues consommateurs.
+- Un smoke réel post-`be33b11`, sans donnée inventée, est scellé sous
+  `smokes/dossier_v3_actual_rne_bodacc_v1` sur le volume : 983 établissements,
+  5 733 preuves RNE/BODACC, 91 relations, 1 577 noms de portefeuille et un index
+  Tantivy content-addressé `d33234e639b78a92`. La requête RNE
+  `PIERRE DE JAUMONT JAUMONT PIERRE DE SOLEIL` retrouve naturellement
+  `30263842400028` au rang 1 en 17 ms via exact site-name, BM25 field-aware,
+  q-grams, adresse exacte et expansion SIREN. Le candidat porte les provenances
+  BODACC/RNE/SIRENE_CURRENT; le manifeste confirme `positive_injection=false`,
+  `synthetic_rows=0`, union max 2 000 et `temporal_complete=true`. Ce contrôle
+  est un smoke technique, pas une métrique Recall ni une ouverture du fold 0.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
