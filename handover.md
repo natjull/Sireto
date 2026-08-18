@@ -5251,6 +5251,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   BODACC/RNE/SIRENE_CURRENT; le manifeste confirme `positive_injection=false`,
   `synthetic_rows=0`, union max 2 000 et `temporal_complete=true`. Ce contrôle
   est un smoke technique, pas une métrique Recall ni une ouverture du fold 0.
+- La matérialisation nationale v3 est désormais publiée sous
+  `sources/siren_dossier_v3/01eb624cca97c6f3` (build complet en 66 minutes,
+  20 Go). Le manifeste scellé contient 43 896 818 établissements,
+  29 922 486 dossiers SIREN, 162 537 492 preuves de nom, 142 096 607 preuves
+  d'adresse, 104 819 102 observations d'entité et 692 010 relations BODACC
+  structurées. Les preuves restent séparées par source : noms BODACC/RNE/
+  SIRENE_CURRENT = 49 272 362 / 30 974 865 / 82 290 265 et adresses =
+  48 168 986 / 50 666 131 / 43 261 490. Aucun SIRET/SIREN invalide n'a été
+  détecté; la résolution stricte adresse+géographie publie 38 186 392 sites
+  uniques et conserve 211 010 cas ambigus sans attribution.
+- Le smoke post-publication, construit depuis ce dossier national et non depuis
+  une fixture, est scellé sous `smokes/dossier_v3_national_smoke_documents` et
+  `indices/hierarchical_v3_national_smoke/3be273936b9f971b` : 1 000 documents
+  SIRET, 946 documents `(INSEE,SIREN)` et 1 214 noms typés. La requête réelle
+  RNE `HOTEL L EQUIPE` rappelle `00554211300013` au rang 1 en 13,8 ms avec
+  enseigne exacte, adresse exacte, BM25 field-aware, q-grams et expansion
+  hiérarchique. Aucune donnée CRM, aucun positif injecté, aucun fold modèle n'a
+  été ouvert. L'index national v1 historique de 98 Go est conservé; avec
+  environ 113 Go libres, la construction du nouvel index national complet ne
+  doit pas être lancée en doublon avant décision explicite de remplacement ou
+  libération d'espace.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
