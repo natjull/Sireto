@@ -73,12 +73,21 @@ contrat : historique 2 495/2 565 (97,271 %), V2 exact 2 343/2 400
 - Étendre les SIREN lexicaux de top-5 à top-20 ne sauve aucun des 37 cas absents
   des deux générateurs.
 
+Un diagnostic dense générique, exécuté uniquement sur ces 37 cas avec l'index
+MiniLM global V9 déjà existant, retrouve le bon SIREN dans 5 cas. Pour chacun,
+le store officiel contient bien le SIRET exact dans les 2 à 30 sites déroulés.
+L'oracle de génération combiné atteint donc au moins 3 478/3 510 = **99,088 %**.
+La fusion RRF V9 historique ne conserve cependant aucun de ces cinq SIRET dans
+son top-100 et sa latence p95 atteint 9,35 s sur ce sous-ensemble volontairement
+difficile. Cela valide le dense comme rescue conditionnel, pas comme fusion
+symétrique ni comme chemin systématique.
+
 Le problème restant n'est donc ni un alias à mémoriser ni un simple changement
 de quota. Il faut :
 
 1. conserver l'union sparse historique + historique officiel hiérarchique ;
-2. ajouter un canal métrique généraliste de secours, non remplaçant, pour obtenir
-   au moins quelques candidats réellement nouveaux ;
+2. exécuter le dense global uniquement sur les scènes sparse incertaines et
+   dérouler de façon bornée les sites locaux de ses quelques SIREN de tête ;
 3. apprendre ou calibrer sur train/dev une fusion de retrieval qui sélectionne
    100 candidats dans cette union sans évincer les succès sparse ;
 4. republier exact et opérationnel, puis ouvrir le test une seule fois seulement
@@ -94,4 +103,5 @@ de quota. Il faut :
   `90a61d4f264a26ff876cb330a8b7579e556ac9c0cd35551630efee12e0f6d5b1`
 - Diagnostic des 231 échecs historiques :
   `evaluations/hierarchical_retrieval_v1/diagnostics/legacy_misses_231_internal_oracle.json`
-
+- Diagnostic dense des 37 invisibles :
+  `evaluations/hierarchical_retrieval_v1/diagnostics/dense_rescue_37/global_siren_hybrid100`

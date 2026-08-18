@@ -4963,6 +4963,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   3 473/3 510 = 98,946 %, deux cas sous le gate avant admission. Verdict
   `PIVOT`; fold test maintenu fermé. Rapport :
   `docs/hierarchical_retrieval_v1_results.md`.
+- Le rescue dense global V9 a été rejoué uniquement sur les 37 scènes dev
+  absentes des deux oracles sparse. Il retrouve 5 bons SIREN et le store
+  officiel contient le SIRET exact pour les cinq expansions (2 à 30 sites).
+  L'oracle combiné monte donc à 3 478/3 510 = 99,088 %. La RRF V9 évince
+  néanmoins les cinq SIRET exacts et coûte p95 9,35 s sur ce sous-ensemble :
+  dense validé seulement comme rescue conditionnel, admission score-level à
+  construire sur train/dev avant toute ouverture du test.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
