@@ -389,9 +389,8 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
-def build_official_evidence_tantivy_overlay(
-    evidence_path: Path | str,
-    relation_path: Path | str,
+def build_official_evidence_tantivy_overlay_layers(
+    layers: Sequence[tuple[Path | str, Path | str]],
     output_root: Path | str,
     *,
     writer_heap_bytes: int = 256_000_000,
@@ -402,23 +401,30 @@ def build_official_evidence_tantivy_overlay(
     duckdb_memory_limit: str | None = None,
     duckdb_threads: int | None = None,
 ) -> Path:
-    """Build a content-addressed overlay; the national base index is untouched."""
+    """Build one overlay from independently canonicalized temporal layers."""
     try:
         import tantivy  # type: ignore
     except ImportError as error:
         raise RuntimeError("official evidence overlay requires tantivy==0.25.1") from error
-    evidence_path = Path(evidence_path)
-    relation_path = Path(relation_path)
+    canonical_layers = [(Path(evidence), Path(relation)) for evidence, relation in layers]
+    if not canonical_layers:
+        raise ValueError("at least one canonical official-evidence layer is required")
+    for evidence_path, relation_path in canonical_layers:
+        if not evidence_path.is_file() or not relation_path.is_file():
+            raise FileNotFoundError("canonical evidence and relation Parquets are required")
     output_root = Path(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
-    source_sha256 = {
-        "official_evidence": _sha256_file(evidence_path),
-        "official_relation": _sha256_file(relation_path),
-    }
+    source_layers = [
+        {
+            "official_evidence": _sha256_file(evidence_path),
+            "official_relation": _sha256_file(relation_path),
+        }
+        for evidence_path, relation_path in canonical_layers
+    ]
     identity = {
         "schema_version": OFFICIAL_EVIDENCE_INDEX_SCHEMA_VERSION,
         "builder_sha256": _sha256_file(Path(__file__).resolve()),
-        "source_sha256": source_sha256,
+        "source_sha256": source_layers,
         "config": {
             "writer_heap_bytes": writer_heap_bytes,
             "writer_threads": writer_threads,
@@ -459,20 +465,26 @@ def build_official_evidence_tantivy_overlay(
         count = 0
         siret_count = 0
         siren_count = 0
-        for document in iter_official_evidence_documents(
-            evidence_path,
-            relation_path,
-            batch_size=batch_size,
-            duckdb_temp_directory=duckdb_temp_directory,
-            duckdb_memory_limit=duckdb_memory_limit,
-            duckdb_threads=duckdb_threads,
-        ):
-            _add_tantivy_document(writer, tantivy, document)
-            count += 1
-            siret_count += int(document.document_type == "siret")
-            siren_count += int(document.document_type == "siren")
-            if count % commit_every == 0:
-                writer.commit()
+        for layer_index, (evidence_path, relation_path) in enumerate(canonical_layers):
+            layer_temp_directory = (
+                Path(duckdb_temp_directory) / f"layer-{layer_index:03d}"
+                if duckdb_temp_directory is not None
+                else None
+            )
+            for document in iter_official_evidence_documents(
+                evidence_path,
+                relation_path,
+                batch_size=batch_size,
+                duckdb_temp_directory=layer_temp_directory,
+                duckdb_memory_limit=duckdb_memory_limit,
+                duckdb_threads=duckdb_threads,
+            ):
+                _add_tantivy_document(writer, tantivy, document)
+                count += 1
+                siret_count += int(document.document_type == "siret")
+                siren_count += int(document.document_type == "siren")
+                if count % commit_every == 0:
+                    writer.commit()
         writer.commit()
         index.reload()
         manifest = {
@@ -483,16 +495,22 @@ def build_official_evidence_tantivy_overlay(
             "base_index_modified": False,
             "contains_crm_labels": False,
             "raw_values_indexed": False,
-            "sources": {
-                "official_evidence": {
-                    "path": str(evidence_path.resolve()),
-                    "sha256": source_sha256["official_evidence"],
-                },
-                "official_relation": {
-                    "path": str(relation_path.resolve()),
-                    "sha256": source_sha256["official_relation"],
-                },
-            },
+            "sources": [
+                {
+                    "official_evidence": {
+                        "path": str(evidence_path.resolve()),
+                        "sha256": source_sha256["official_evidence"],
+                    },
+                    "official_relation": {
+                        "path": str(relation_path.resolve()),
+                        "sha256": source_sha256["official_relation"],
+                    },
+                }
+                for (evidence_path, relation_path), source_sha256 in zip(
+                    canonical_layers, source_layers, strict=True
+                )
+            ],
+            "temporal_layers": len(canonical_layers),
             "num_documents": count,
             "num_establishment_documents": siret_count,
             "num_siren_documents": siren_count,
@@ -518,6 +536,18 @@ def build_official_evidence_tantivy_overlay(
     except Exception:
         shutil.rmtree(stage, ignore_errors=True)
         raise
+
+
+def build_official_evidence_tantivy_overlay(
+    evidence_path: Path | str,
+    relation_path: Path | str,
+    output_root: Path | str,
+    **kwargs: Any,
+) -> Path:
+    """Backward-compatible single-layer overlay builder."""
+    return build_official_evidence_tantivy_overlay_layers(
+        [(evidence_path, relation_path)], output_root, **kwargs
+    )
 
 
 def _fsync_directory(path: Path) -> None:

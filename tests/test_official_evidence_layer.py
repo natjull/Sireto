@@ -42,6 +42,7 @@ from src.xgb_matcher.official_evidence_retrieval import (
 from src.xgb_matcher.official_evidence_tantivy import (
     OfficialEvidenceTantivyBackend,
     build_official_evidence_tantivy_overlay,
+    build_official_evidence_tantivy_overlay_layers,
 )
 from src.xgb_matcher.retrieval_ltr_admission import (
     AdmissionConfig,
@@ -462,6 +463,30 @@ def test_overlay_is_content_addressed_and_base_backend_compatible(tmp_path: Path
     assert backend.by_siret("12345678900011").linked_sirets == (
         "12345678900029",
     )
+
+
+def test_temporal_layers_share_one_tantivy_overlay(tmp_path: Path):
+    canonical, single = _build_complete_fixture(tmp_path)
+    layered = build_official_evidence_tantivy_overlay_layers(
+        [
+            (canonical.evidence_path, canonical.relation_path),
+            (canonical.evidence_path, canonical.relation_path),
+        ],
+        tmp_path / "layered_indices",
+        writer_heap_bytes=30_000_000,
+        writer_threads=1,
+        commit_every=10,
+        batch_size=2,
+        duckdb_temp_directory=tmp_path / "layered_spill",
+        duckdb_memory_limit="256MB",
+        duckdb_threads=1,
+    )
+    single_manifest = json.loads((single / "manifest.json").read_text())
+    layered_manifest = json.loads((layered / "manifest.json").read_text())
+    assert layered_manifest["temporal_layers"] == 2
+    assert len(layered_manifest["sources"]) == 2
+    assert layered_manifest["num_documents"] == 2 * single_manifest["num_documents"]
+    assert OfficialEvidenceTantivyBackend(layered).by_siret("12345678900011")
 
 
 def _record(
