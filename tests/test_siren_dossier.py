@@ -21,8 +21,10 @@ from src.xgb_matcher.official_evidence import (
 from src.xgb_matcher.siren_dossier import (
     SirenDossierInputs,
     build_siren_dossier,
+    materialize_dossier_retrieval_documents,
     open_siren_dossier,
     project_dossier_candidate_features,
+    project_dossier_fusion_text,
 )
 
 
@@ -136,3 +138,26 @@ def test_projects_shared_model_features_without_ids_as_feature_values(tmp_path: 
     assert row["official_insee_agreement"] == 1
     assert row["exact_external_site_resolution_count"] == 1
     assert row["candidate_relation_count"] == 1
+
+
+def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_path: Path):
+    result = build_siren_dossier(_write_fixture(tmp_path), output_root=tmp_path / "out", memory_limit="1GB")
+    documents = tmp_path / "documents"
+    assert materialize_dossier_retrieval_documents(
+        dossier_dir=result.output_dir, output_dir=documents
+    ) == {"siret_documents": 2, "siren_documents": 1}
+    rows = pq.read_table(documents / "retrieval_siret_documents.parquet").to_pylist()
+    assert any("ALPHA TECHNOLOGIES" in row["name_text"] for row in rows)
+    candidates_path = tmp_path / "candidate_ids.parquet"
+    fusion_path = tmp_path / "fusion.parquet"
+    pq.write_table(
+        pa.Table.from_pylist([{"query_id": "q1", "candidate_siret": "12345678900011"}]),
+        candidates_path,
+    )
+    count = project_dossier_fusion_text(
+        dossier_dir=result.output_dir, candidates_path=candidates_path, output_path=fusion_path
+    )
+    fusion = pq.read_table(fusion_path).to_pylist()
+    assert count == len(fusion) > 2
+    assert {row["field"] for row in fusion} == {"NAME", "ADDRESS"}
+    assert {row["source"] for row in fusion}.issuperset({"SIRENE_CURRENT", "RNE"})

@@ -544,12 +544,107 @@ def project_dossier_candidate_features(
     return count
 
 
+def materialize_dossier_retrieval_documents(
+    *, dossier_dir: Path, output_dir: Path
+) -> Mapping[str, int]:
+    """Materialize direct-site and hierarchical-SIREN retrieval documents."""
+    dossier_dir = Path(dossier_dir)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    connection = open_siren_dossier(dossier_dir)
+    site_query = """
+      WITH parent_names AS (
+        SELECT siren, string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) name_values
+        FROM name_evidence WHERE subject_kind='SIREN' GROUP BY siren
+      ), site_names AS (
+        SELECT siret, string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) name_values
+        FROM name_evidence WHERE subject_kind='SIRET' GROUP BY siret
+      ), historical_addresses AS (
+        SELECT siret, string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) address_values
+        FROM address_evidence WHERE subject_kind='SIRET' AND NOT is_current GROUP BY siret
+      )
+      SELECT e.siret document_id,e.siren,'SIRET' document_kind,e.insee,e.postcode,
+             e.administrative_state,e.is_headquarters,
+             concat_ws(' | ',sn.name_values,pn.name_values) name_text,
+             e.current_address_normalized address_text,
+             coalesce(ha.address_values,'') historical_address_text
+      FROM establishments e LEFT JOIN parent_names pn USING(siren)
+      LEFT JOIN site_names sn USING(siret) LEFT JOIN historical_addresses ha USING(siret)
+    """
+    siren_query = """
+      WITH names AS (
+        SELECT siren,string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) name_text
+        FROM name_evidence GROUP BY siren
+      ), addresses AS (
+        SELECT siren,string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) address_text
+        FROM address_evidence GROUP BY siren
+      ), geos AS (
+        SELECT siren,string_agg(DISTINCT insee, ' ' ORDER BY insee) FILTER(WHERE insee<>'') insee_values,
+               string_agg(DISTINCT postcode, ' ' ORDER BY postcode) FILTER(WHERE postcode<>'') postcode_values
+        FROM establishments GROUP BY siren
+      )
+      SELECT u.siren document_id,u.siren,'SIREN' document_kind,
+             coalesce(g.insee_values,'') insee,coalesce(g.postcode_values,'') postcode,
+             u.administrative_state,false is_headquarters,
+             coalesce(n.name_text,'') name_text,coalesce(a.address_text,'') address_text,
+             '' historical_address_text
+      FROM legal_units u LEFT JOIN names n USING(siren)
+      LEFT JOIN addresses a USING(siren) LEFT JOIN geos g USING(siren)
+    """
+    counts = {
+        "siret_documents": _copy(connection, site_query, output_dir / "retrieval_siret_documents.parquet"),
+        "siren_documents": _copy(connection, siren_query, output_dir / "retrieval_siren_documents.parquet"),
+    }
+    connection.close()
+    (output_dir / "manifest.json").write_bytes(
+        canonical_json(
+            {
+                "schema_version": "sireto-siren-dossier-retrieval-documents-v1",
+                "dossier_manifest_sha256": sha256_file(dossier_dir / "manifest.json"),
+                "counts": counts,
+                "fields_separate": True,
+                "maximum_candidates_contract": 100,
+            }
+        )
+    )
+    return counts
+
+
+def project_dossier_fusion_text(
+    *, dossier_dir: Path, candidates_path: Path, output_path: Path
+) -> int:
+    """Emit source-separated text evidence for BGE/CamemBERT/fusion models."""
+    connection = open_siren_dossier(dossier_dir)
+    candidates = _sql_path(Path(candidates_path))
+    query = f"""
+      WITH candidates AS (
+        SELECT DISTINCT query_id::VARCHAR query_id,candidate_siret::VARCHAR candidate_siret,
+               left(candidate_siret::VARCHAR,9) candidate_siren
+        FROM read_parquet('{candidates}')
+      )
+      SELECT c.query_id,c.candidate_siret,'NAME' field,n.source,n.name_kind evidence_kind,
+             n.raw_value text_value,n.normalized_value,n.valid_from,n.valid_to,n.is_current
+      FROM candidates c JOIN name_evidence n ON n.siren=c.candidate_siren
+       AND (n.siret='' OR n.siret=c.candidate_siret)
+      UNION ALL
+      SELECT c.query_id,c.candidate_siret,'ADDRESS',a.source,'ADDRESS',
+             a.raw_value,a.normalized_value,a.valid_from,a.valid_to,a.is_current
+      FROM candidates c JOIN address_evidence a ON a.siren=c.candidate_siren
+       AND (a.siret='' OR a.siret=c.candidate_siret)
+    """
+    count = _copy(connection, query, Path(output_path))
+    connection.close()
+    return count
+
+
 __all__ = [
     "SIREN_DOSSIER_FEATURE_SCHEMA_VERSION",
     "SIREN_DOSSIER_SCHEMA_VERSION",
     "SirenDossierBuild",
     "SirenDossierInputs",
     "build_siren_dossier",
+    "materialize_dossier_retrieval_documents",
     "open_siren_dossier",
     "project_dossier_candidate_features",
+    "project_dossier_fusion_text",
 ]

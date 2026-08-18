@@ -1,0 +1,32 @@
+{
+  "schema_version": "sireto-siren-dossier-consumers-v1",
+  "activation": "OPT_IN_UNTIL_RETRIEVAL_GATE",
+  "retrieval": {
+    "documents": ["SIRET_DIRECT_SITE", "SIREN_HIERARCHICAL"],
+    "fields": ["name_text", "address_text", "historical_address_text", "insee", "postcode"],
+    "preserve_field_boundaries": true,
+    "maximum_final_candidates": 100
+  },
+  "ranker": {
+    "join_key": ["query_id", "candidate_siret"],
+    "projection": "sireto-siren-dossier-features-v1",
+    "identifiers_are_model_features": false
+  },
+  "decider": {
+    "join_key": ["query_id", "candidate_siret"],
+    "uses": ["source_consensus", "site_resolution", "temporal_evidence", "relations"],
+    "model_scores_are_computed_downstream": true
+  },
+  "risk": {
+    "grain": "QUERY_SCENE",
+    "aggregates_candidate_projection": true,
+    "uses": ["site_count", "source_disagreement", "temporal_conflict", "site_ambiguity"]
+  },
+  "neural_and_fusion": {
+    "format": "LONG_SOURCE_SEPARATED_TEXT",
+    "fields": ["NAME", "ADDRESS"],
+    "source_mask_required": true,
+    "blind_concatenation_forbidden": true,
+    "same_siren_other_site_negative_policy": "EXCLUDE_IF_SAME_PHYSICAL_SITE"
+  }
+}
