@@ -5055,5 +5055,36 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   historique, puis l'union train 2/3/4 et l'unique évaluation dev 0 prévue par
   le contrat.
 
+## Dossier SIREN Parquet/DuckDB + backfill RNE — 18 août 2026
+
+- Le commit `38d62c2` remplace le téléchargement RNE mono-intervalle par un
+  backfill historique partitionné, reprenable et scellé par manifeste. Le
+  receipt vérifie le SHA-256 de chaque partition déjà publiée avant de la
+  sauter. Le commit `da2fde7` écrit les partitions API en JSONL gzip
+  déterministe et `36b02f3` impose un plancher de 64 Gio libres avant toute
+  nouvelle partition. Le run réel 2000-01-01 -> 2026-08-18 est lancé en 1 390
+  fenêtres de sept jours; aucune donnée déjà scellée ne sera rejouée après une
+  interruption.
+- Le commit `148a0ce` introduit le store content-addressé « dossier SIREN ».
+  Son data plane est constitué de Parquet séparés pour unités légales, sites
+  SIRET, preuves de noms, preuves d'adresses, relations structurées, résolution
+  prudente adresse-SIREN vers site unique et synthèse du dossier. Un catalogue
+  DuckDB portable lie ces fichiers sans les dupliquer. BODACC/RNE restent des
+  preuves sourcées et datées; ils ne créent jamais automatiquement une identité
+  SIRET, un label ou un score modèle.
+- Le commit `29c773c` expose des projections opt-in communes : documents
+  retrieval directs SIRET et hiérarchiques SIREN, features officielles
+  `(query_id,candidate_siret)` pour ranker/decider/risk, et textes longs séparés
+  par champ/source pour BGE, CamemBERT et fusion. Les identifiants restent des
+  clés d'audit, pas des features. Les anciens modèles demeurent gelés jusqu'au
+  gate retrieval actif (couverture >=80 %, Recall@100 exact >=99 %, max100).
+  Le build national initial SIRENE courant + BODACC 2008-2026 + RNE quotidien
+  est en cours sur `/Volumes/CATNAT_DATA`; il sera reconstruit sous un nouvel ID
+  lorsque le backfill RNE complet sera disponible.
+- Les commits antérieurs `aa3bccd`, `0a9b49b`, `58c2f6a` et `ff00ad4`
+  documentent respectivement le spill disque de l'overlay officiel, la borne
+  des workers DuckDB, l'indexation incrémentale des couches temporelles et la
+  correction des folds du retrieval commercial. Le fold 1 reste fermé.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
