@@ -5190,6 +5190,35 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   documents SIREN en 4 s, puis construit un index Tantivy de 1 946 documents.
   Sur un cas réel où deux sites partagent `TAHITI PERLES CREATIONS`, le nom
   rappelle les deux sites et l'adresse exacte place le bon SIRET au rang 1.
+- Le commit `e9aa29f` termine la revue neuve end-to-end du retrieval typé. Le
+  chemin actif n'utilise plus le top100/RRF du retriever hiérarchique : Tantivy
+  produit une union label-blind d'au plus 2 000 SIRET et l'unique LambdaMART
+  retrieval-specific réalise l'admission protégée à 100. Les canaux exposent
+  exacts nom/adresse, numéro exact non protégé, BM25 par rôle, canal BM25
+  field-aware gelé, q-grams 3–5, historique/support, expansion SIREN et relation
+  BODACC structurée à un saut. Le modèle ne reçoit aucun SIRET/SIREN/ID
+  d'annonce/alias CRM comme feature.
+- Le même commit publie les champs indexés SIRENE/RNE/BODACC séparément et les
+  identifiants de preuve dans le payload d'audit, impose un manifeste de
+  candidats reliant SHA-256/config/index content-addressé, refuse en production
+  `temporal_complete=false`, conserve les équivalents même-SIREN/même-site hors
+  négatifs et ajoute le refit production post-`GO` sur folds 0..4 sans remplacer
+  les métriques officielles pré-refit. Le fold 1 demeure fermé.
+- Validation de `e9aa29f` : 41 tests ciblés passent en 3,16 s, py_compile et les
+  CLI passent. Un smoke réel v3 a matérialisé 1 000 SIRET/946 SIREN puis l'index
+  content-addressé `hierarchical_v3_smoke/8317d02c56ca3587`. Sur
+  `TAHITI PERLES CREATIONS`, l'union brute conserve les deux sites homonymes et
+  expose pour le bon site `address_exact`, `number_exact`, q-grams, BM25
+  field-aware et hiérarchie; le Parquet LTR scellé le classe d'abord par preuves
+  exactes label-blind. Ce smoke n'est pas une mesure Recall@100.
+- Le build RNE national v2 lancé avant ce milestone s'est arrêté pendant la
+  résolution de précédence après 50 720 789 preuves staged (4,5 Go), sans
+  publier de manifeste; le staging incomplet est conservé sous
+  `tmp/rne_bulk_formalities_20260304_v2`. Il ne doit pas être consommé. Les ZIP
+  bulk RNE et l'historique BODACC scellés sont suffisants pour l'architecture,
+  mais le dossier SIREN v3 et l'index national final restent à reconstruire avec
+  un build RNE publié et `temporal_complete=true` avant l'unique fit 2/3/4 et
+  l'évaluation dev0.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
