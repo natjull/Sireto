@@ -5234,6 +5234,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   restent additives et le portefeuille retrieval conserve sa déduplication
   sémantique bornée par sujet, rôle et valeur. Les documents/features consommateurs
   gardent donc la même sémantique sans ce tri national inutile. 42 tests passent.
+- Le commit `be33b11` borne aussi la décompression des colonnes imbriquées :
+  SIRENE, BODACC et RNE sont aplatis dans des Parquets source-spécifiques, puis
+  concaténés seulement une fois devenus plats. Le run national monolithique
+  avait été interrompu par macOS `jetsam` pendant les adresses malgré une
+  sortie correcte; la nouvelle recette évite de retenir simultanément les deux
+  énormes sources imbriquées. Les alias de colonnes sont figés avant l'union et
+  42 tests ciblés confirment la stricte équivalence des vues consommateurs.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
