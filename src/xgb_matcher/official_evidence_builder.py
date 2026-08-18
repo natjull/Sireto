@@ -1622,6 +1622,244 @@ def _stream_ordered_groups(
         yield group
 
 
+def _parquet_row_count(path: Path) -> int | None:
+    """Return a Parquet row count, or ``None`` for an incomplete artifact."""
+    try:
+        return int(pq.ParquetFile(path).metadata.num_rows)
+    except (OSError, pa.ArrowInvalid):
+        return None
+
+
+def finalize_official_evidence_staging(
+    staging_dir: Path | str,
+    output_dir: Path | str,
+    *,
+    specs: Sequence[SnapshotSpec],
+    work_dir: Path | str | None = None,
+    batch_size: int = 8192,
+) -> OfficialEvidenceBuildResult:
+    """Recover a completed source scan without replaying a national archive.
+
+    A source scan is the expensive part of the RNE bulk ingestion.  This
+    entrypoint accepts only a complete, schema-valid ``staged_evidence``
+    Parquet and resolves precedence into a new atomic output.  The staging
+    directory is never mutated.
+
+    Subjects represented by one row are copied in SQL.  Only the comparatively
+    rare multi-row subjects cross the Python precedence resolver.  This keeps
+    the result identical to :func:`resolve_evidence_precedence` without
+    iterating tens of millions of singleton groups in Python.
+
+    A scan-time quarantine whose Parquet footer was not published is ignored
+    fail-closed and called out in the manifest.  It cannot add evidence; the
+    accepted staging remains the sole source for the recovered artifact.
+    """
+    staging_dir = Path(staging_dir).resolve()
+    staged_evidence = staging_dir / "staged_evidence.parquet"
+    staged_relations = staging_dir / "staged_relations.parquet"
+    source_quarantine = staging_dir / "quarantine.parquet"
+    evidence_rows = _parquet_row_count(staged_evidence)
+    relation_rows = _parquet_row_count(staged_relations)
+    if evidence_rows is None:
+        raise ValueError(f"invalid staged evidence parquet: {staged_evidence}")
+    if relation_rows is None:
+        raise ValueError(f"invalid staged relation parquet: {staged_relations}")
+
+    output_dir = Path(output_dir)
+    if output_dir.exists():
+        raise FileExistsError(f"official evidence output already exists: {output_dir}")
+    output_dir.parent.mkdir(parents=True, exist_ok=True)
+    build_parent = Path(work_dir) if work_dir else output_dir.parent
+    build_parent.mkdir(parents=True, exist_ok=True)
+    temporary = Path(
+        tempfile.mkdtemp(prefix=f".{output_dir.name}.recovering-", dir=build_parent)
+    )
+    connection: duckdb.DuckDBPyConnection | None = None
+    try:
+        connection = duckdb.connect(str(temporary / "precedence.duckdb"))
+        connection.execute("SET preserve_insertion_order=false")
+        connection.execute("SET threads=4")
+        connection.execute("SET memory_limit='12GB'")
+        connection.execute(f"SET temp_directory='{str(temporary).replace(chr(39), chr(39) * 2)}'")
+        escaped_stage = str(staged_evidence).replace("'", "''")
+        connection.execute(
+            f"""
+            CREATE TEMP TABLE duplicate_subjects AS
+            SELECT subject_kind, subject_id
+            FROM read_parquet('{escaped_stage}')
+            GROUP BY subject_kind, subject_id
+            HAVING count(*) > 1
+            """
+        )
+        duplicate_subjects = int(
+            connection.execute("SELECT count(*) FROM duplicate_subjects").fetchone()[0]
+        )
+        singleton_path = temporary / "singleton_evidence.parquet"
+        duplicate_input_path = temporary / "duplicate_evidence.parquet"
+        connection.execute(
+            f"""
+            COPY (
+              SELECT s.*
+              FROM read_parquet('{escaped_stage}') s
+              ANTI JOIN duplicate_subjects d
+                ON s.subject_kind=d.subject_kind AND s.subject_id=d.subject_id
+            ) TO '{str(singleton_path).replace(chr(39), chr(39) * 2)}'
+            (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)
+            """
+        )
+        connection.execute(
+            f"""
+            COPY (
+              SELECT s.*
+              FROM read_parquet('{escaped_stage}') s
+              JOIN duplicate_subjects d
+                ON s.subject_kind=d.subject_kind AND s.subject_id=d.subject_id
+            ) TO '{str(duplicate_input_path).replace(chr(39), chr(39) * 2)}'
+            (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)
+            """
+        )
+
+        resolved_path = temporary / "resolved_duplicate_evidence.parquet"
+        conflict_path = temporary / "precedence_quarantine.parquet"
+        resolved_sink = _ParquetSink(
+            resolved_path, official_evidence_arrow_schema(), batch_size
+        )
+        conflict_sink = _ParquetSink(
+            conflict_path, official_quarantine_arrow_schema(), batch_size
+        )
+        for group in _stream_ordered_groups(
+            connection,
+            duplicate_input_path,
+            key_columns=["subject_kind", "subject_id"],
+            order_suffix=(
+                "source_priority DESC, observed_at DESC NULLS LAST, evidence_id"
+            ),
+            batch_size=batch_size,
+        ):
+            accepted, conflicts = resolve_evidence_precedence(
+                [_row_to_evidence(row) for row in group]
+            )
+            for item in accepted:
+                resolved_sink.add(item.to_dict())
+            for item in conflicts:
+                conflict_sink.add(item.to_dict())
+        resolved_sink.close()
+        conflict_sink.close()
+
+        evidence_output = temporary / "official_evidence.parquet"
+        evidence_inputs = ",".join(
+            "'" + str(path).replace("'", "''") + "'"
+            for path in (singleton_path, resolved_path)
+        )
+        connection.execute(
+            f"""
+            COPY (
+              SELECT * FROM read_parquet([{evidence_inputs}], union_by_name=true)
+            ) TO '{str(evidence_output).replace(chr(39), chr(39) * 2)}'
+            (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)
+            """
+        )
+
+        relation_output = temporary / "official_relation.parquet"
+        shutil.copy2(staged_relations, relation_output)
+        valid_source_quarantine_rows = _parquet_row_count(source_quarantine)
+        quarantine_output = temporary / "quarantine.parquet"
+        quarantine_inputs = [conflict_path]
+        if valid_source_quarantine_rows is not None:
+            quarantine_inputs.insert(0, source_quarantine)
+        quarantine_sql = ",".join(
+            "'" + str(path).replace("'", "''") + "'"
+            for path in quarantine_inputs
+        )
+        connection.execute(
+            f"""
+            COPY (
+              SELECT * FROM read_parquet([{quarantine_sql}], union_by_name=true)
+            ) TO '{str(quarantine_output).replace(chr(39), chr(39) * 2)}'
+            (FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)
+            """
+        )
+        connection.close()
+        connection = None
+        (temporary / "precedence.duckdb").unlink(missing_ok=True)
+        singleton_path.unlink(missing_ok=True)
+        duplicate_input_path.unlink(missing_ok=True)
+        resolved_path.unlink(missing_ok=True)
+        conflict_path.unlink(missing_ok=True)
+
+        accepted_evidence = int(pq.ParquetFile(evidence_output).metadata.num_rows)
+        accepted_relations = int(pq.ParquetFile(relation_output).metadata.num_rows)
+        quarantined_records = int(pq.ParquetFile(quarantine_output).metadata.num_rows)
+        manifest = {
+            "schema_version": BUILDER_SCHEMA_VERSION,
+            "contracts": {
+                "official_evidence": OFFICIAL_EVIDENCE_SCHEMA_VERSION,
+                "official_relation": OFFICIAL_RELATION_SCHEMA_VERSION,
+                "quarantine": OFFICIAL_QUARANTINE_SCHEMA_VERSION,
+            },
+            "counts": {
+                "input_records": None,
+                "staged_evidence": evidence_rows,
+                "duplicate_subjects": duplicate_subjects,
+                "accepted_evidence": accepted_evidence,
+                "accepted_relations": accepted_relations,
+                "quarantined_records": quarantined_records,
+            },
+            "sources": [
+                {
+                    "path": str(spec.path.resolve()),
+                    "source": spec.source.value,
+                    "role": spec.role.value,
+                    "size_bytes": spec.path.stat().st_size,
+                }
+                for spec in specs
+            ],
+            "precedence": {
+                "SIRENE_CURRENT": 500,
+                "SIRENE_SUCCESSION": 500,
+                "SIRENE_HISTORY": 400,
+                "RNE": 300,
+                "BODACC": 200,
+            },
+            "exclusions": [
+                "beneficial_owners",
+                "directors",
+                "bodacc_full_text",
+                "relations_inferred_from_text",
+                "crm_labels",
+            ],
+            "streaming": True,
+            "recovery": {
+                "from_completed_staging": True,
+                "staging_preserved": True,
+                "scan_quarantine_complete": valid_source_quarantine_rows is not None,
+                "scan_quarantine_rows": valid_source_quarantine_rows,
+                "accepted_staging_only": True,
+            },
+        }
+        (temporary / "manifest.json").write_text(
+            json.dumps(manifest, ensure_ascii=False, sort_keys=True, indent=2) + "\n",
+            encoding="utf-8",
+        )
+        temporary.replace(output_dir)
+        return OfficialEvidenceBuildResult(
+            output_dir=output_dir,
+            evidence_path=output_dir / "official_evidence.parquet",
+            relation_path=output_dir / "official_relation.parquet",
+            quarantine_path=output_dir / "quarantine.parquet",
+            manifest_path=output_dir / "manifest.json",
+            input_records=0,
+            accepted_evidence=accepted_evidence,
+            accepted_relations=accepted_relations,
+            quarantined_records=quarantined_records,
+        )
+    except Exception:
+        if connection is not None:
+            connection.close()
+        shutil.rmtree(temporary, ignore_errors=True)
+        raise
+
+
 def build_official_evidence_layer(
     specs: Sequence[SnapshotSpec],
     output_dir: Path | str,

@@ -32,6 +32,7 @@ from src.xgb_matcher.official_evidence_builder import (
     SnapshotSpec,
     build_official_evidence_layer,
     canonicalize_snapshot_record,
+    finalize_official_evidence_staging,
     resolve_evidence_precedence,
     snapshot_specs_from_sync_manifest,
     stream_snapshot_rows,
@@ -471,6 +472,72 @@ def test_streaming_builder_applies_precedence_and_quarantines_geo(tmp_path: Path
         item["reason"] for item in quarantine
     } == {"LOWER_PRECEDENCE_CURRENT_GEO_CONFLICT"}
     assert "raw_record" not in pq.ParquetFile(result.quarantine_path).schema.names
+
+
+def test_completed_staging_can_be_recovered_without_replaying_source(tmp_path: Path):
+    staging = tmp_path / "interrupted"
+    staging.mkdir()
+    common = dict(
+        source=OfficialSource.RNE,
+        subject_kind=OfficialSubjectKind.SIRET,
+        siren="123456789",
+        siret="12345678900011",
+        names=(OfficialName("Étoile", OfficialNameKind.LEGAL),),
+    )
+    old = OfficialEvidence(
+        **common, source_record_id="old", observed_at="2026-08-01"
+    )
+    new = OfficialEvidence(
+        **common, source_record_id="new", observed_at="2026-08-18"
+    )
+    singleton = OfficialEvidence(
+        source=OfficialSource.RNE,
+        source_record_id="single",
+        subject_kind=OfficialSubjectKind.SIREN,
+        siren="987654321",
+        names=(OfficialName("Orion", OfficialNameKind.LEGAL),),
+    )
+    pq.write_table(
+        pa.Table.from_pylist(
+            [old.to_dict(), new.to_dict(), singleton.to_dict()],
+            schema=official_evidence_arrow_schema(),
+        ),
+        staging / "staged_evidence.parquet",
+    )
+    pq.write_table(
+        pa.Table.from_pylist([], schema=official_relation_arrow_schema()),
+        staging / "staged_relations.parquet",
+    )
+    # Simulate the exact failure mode of an interrupted Parquet writer: the
+    # accepted staging is complete, while the scan quarantine has no footer.
+    (staging / "quarantine.parquet").write_bytes(b"PAR1")
+    source = tmp_path / "source.jsonl"
+    source.write_text("{}\n", encoding="utf-8")
+    result = finalize_official_evidence_staging(
+        staging,
+        tmp_path / "recovered",
+        specs=(
+            _spec(source, OfficialSource.RNE, SnapshotRole.RNE_RECORDS),
+        ),
+        batch_size=1,
+    )
+    evidence = pq.read_table(result.evidence_path).to_pylist()
+    assert {row["source_record_id"] for row in evidence} == {"new", "single"}
+    quarantine = pq.read_table(result.quarantine_path).to_pylist()
+    assert [row["reason"] for row in quarantine] == [
+        "DUPLICATE_LOWER_PRECEDENCE"
+    ]
+    manifest = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    assert manifest["counts"]["staged_evidence"] == 3
+    assert manifest["counts"]["duplicate_subjects"] == 1
+    assert manifest["recovery"] == {
+        "accepted_staging_only": True,
+        "from_completed_staging": True,
+        "scan_quarantine_complete": False,
+        "scan_quarantine_rows": None,
+        "staging_preserved": True,
+    }
+    assert (staging / "staged_evidence.parquet").is_file()
 
 
 def _build_complete_fixture(tmp_path: Path):
