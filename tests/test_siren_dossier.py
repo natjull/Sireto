@@ -106,6 +106,7 @@ def test_builds_dossier_resolves_only_unique_exact_sites_and_catalog(tmp_path: P
     result = build_siren_dossier(_write_fixture(tmp_path), output_root=tmp_path / "out", memory_limit="1GB")
     assert result.counts["legal_units"] == 1
     assert result.counts["establishments"] == 2
+    assert result.counts["entity_evidence"] == 2
     assert result.counts["address_site_resolution"] == 2
     manifest = json.loads(result.manifest_path.read_text())
     assert manifest["policy"]["bodacc_siren_address_auto_identity"] is False
@@ -140,16 +141,30 @@ def test_projects_shared_model_features_without_ids_as_feature_values(tmp_path: 
     assert row["official_insee_agreement"] == 1
     assert row["exact_external_site_resolution_count"] == 1
     assert row["candidate_relation_count"] == 1
+    assert row["max_current_legal_name_jw"] > 0
+    assert row["max_rne_name_jw"] == 1
+    assert row["current_entity_source_count"] == 1
 
 
 def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_path: Path):
     result = build_siren_dossier(_write_fixture(tmp_path), output_root=tmp_path / "out", memory_limit="1GB")
     documents = tmp_path / "documents"
-    assert materialize_dossier_retrieval_documents(
+    counts = materialize_dossier_retrieval_documents(
         dossier_dir=result.output_dir, output_dir=documents
-    ) == {"siret_documents": 2, "siren_documents": 1}
+    )
+    assert counts == {"name_portfolio": 6, "siret_documents": 2, "siren_documents": 2}
     rows = pq.read_table(documents / "retrieval_siret_documents.parquet").to_pylist()
-    assert any("ALPHA TECHNOLOGIES" in row["name_text"] for row in rows)
+    assert any("ALPHA TECHNOLOGIES" in row["trade_current_names"] for row in rows)
+    assert all("name_text" not in row for row in rows)
+    portfolio = pq.read_table(documents / "retrieval_name_portfolio.parquet").to_pylist()
+    assert {row["name_role"] for row in portfolio} == {
+        "LEGAL_CURRENT", "TRADE_CURRENT", "SITE_CURRENT", "SUPPORTING"
+    }
+    manifest = json.loads((documents / "manifest.json").read_text())
+    assert manifest["schema_version"] == "sireto-siren-dossier-retrieval-documents-v2"
+    assert manifest["blind_name_concatenation"] is False
+    assert manifest["current_exact_only"] is True
+    assert all(row["linked_sirens"] == "987654321" for row in rows)
     candidates_path = tmp_path / "candidate_ids.parquet"
     fusion_path = tmp_path / "fusion.parquet"
     pq.write_table(
@@ -163,6 +178,9 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
     assert count == len(fusion) > 2
     assert {row["field"] for row in fusion} == {"NAME", "ADDRESS"}
     assert {row["source"] for row in fusion}.issuperset({"SIRENE_CURRENT", "RNE"})
+    assert {row["evidence_role"] for row in fusion}.issuperset(
+        {"LEGAL_CURRENT", "TRADE_CURRENT", "SITE_CURRENT"}
+    )
 
 
 def test_dossier_v2_keeps_rne_accounts_siren_level_and_held_out(tmp_path: Path):

@@ -102,6 +102,9 @@ class HierarchicalRetrievalConfig:
     direct_slots: int = 60
     hierarchical_slots: int = 30
     character_rescue_slots: int = 10
+    typed_name_portfolio: bool = False
+    historical_name_top_k: int = 100
+    supporting_name_top_k: int = 50
 
     def __post_init__(self) -> None:
         if self.max_candidates < 1 or self.max_candidates > 100:
@@ -151,6 +154,9 @@ class HierarchicalRetrievalConfig:
             direct_slots=int(allocation.get("direct", 60)),
             hierarchical_slots=int(allocation.get("hierarchical", 30)),
             character_rescue_slots=int(allocation.get("character_rescue", 10)),
+            typed_name_portfolio=bool(analysis.get("typed_name_portfolio", False)),
+            historical_name_top_k=int(limits.get("historical_name_top_k", 100)),
+            supporting_name_top_k=int(limits.get("supporting_name_top_k", 50)),
         )
 
     @classmethod
@@ -212,20 +218,44 @@ class IndexedEstablishment:
     postcode: str
     names: tuple[str, ...]
     addresses: tuple[str, ...]
+    legal_names: tuple[str, ...] = ()
+    trade_names: tuple[str, ...] = ()
+    site_names: tuple[str, ...] = ()
+    historical_names: tuple[str, ...] = ()
+    supporting_names: tuple[str, ...] = ()
+    historical_addresses: tuple[str, ...] = ()
+    supporting_addresses: tuple[str, ...] = ()
     number: str = ""
     active: bool = True
     is_siege: bool = False
     linked_sirets: tuple[str, ...] = ()
+    linked_sirens: tuple[str, ...] = ()
     payload: Mapping[str, Any] = field(default_factory=dict, compare=False)
 
     @classmethod
     def from_mapping(cls, raw: Mapping[str, Any]) -> "IndexedEstablishment":
-        names = raw.get("names") or []
-        addresses = raw.get("addresses") or []
-        if isinstance(names, str):
-            names = [names]
-        if isinstance(addresses, str):
-            addresses = [addresses]
+        def values(key: str) -> tuple[str, ...]:
+            raw_values = raw.get(key) or []
+            if isinstance(raw_values, str):
+                raw_values = raw_values.split("|")
+            return tuple(dict.fromkeys(filter(None, map(normalize_text, raw_values))))
+
+        def identifiers(value: Any, width: int) -> tuple[str, ...]:
+            if isinstance(value, str):
+                value = value.replace("|", " ").split()
+            return tuple(sorted({normalize_code(item, width) for item in (value or []) if item}))
+
+        legal_names = values("legal_names") or values("legal_current_names")
+        trade_names = values("trade_names") or values("trade_current_names")
+        site_names = values("site_names") or values("site_current_names")
+        historical_names = values("historical_names")
+        supporting_names = values("supporting_names")
+        names = values("names") or tuple(
+            dict.fromkeys(legal_names + trade_names + site_names + historical_names + supporting_names)
+        )
+        addresses = values("addresses") or values("current_address_text")
+        historical_addresses = values("historical_addresses") or values("historical_address_text")
+        supporting_addresses = values("supporting_addresses") or values("supporting_address_text")
         siret = normalize_code(raw.get("siret"), 14)
         siren = normalize_code(raw.get("siren") or siret[:9], 9)
         return cls(
@@ -233,8 +263,15 @@ class IndexedEstablishment:
             siren=siren,
             insee=normalize_insee(raw.get("insee")),
             postcode=normalize_code(raw.get("postcode"), 5),
-            names=tuple(dict.fromkeys(filter(None, map(normalize_text, names)))),
-            addresses=tuple(dict.fromkeys(filter(None, map(normalize_text, addresses)))),
+            names=names,
+            addresses=addresses,
+            legal_names=legal_names,
+            trade_names=trade_names,
+            site_names=site_names,
+            historical_names=historical_names,
+            supporting_names=supporting_names,
+            historical_addresses=historical_addresses,
+            supporting_addresses=supporting_addresses,
             number=normalize_text(raw.get("number") or raw.get("numeroVoie")),
             active=(
                 str(raw.get("state") or raw.get("etat_admin") or "A").upper() != "F"
@@ -247,17 +284,10 @@ class IndexedEstablishment:
                 else raw.get("etablissementSiege"),
                 False,
             ),
-            linked_sirets=tuple(
-                sorted(
-                    normalize_code(value, 14)
-                    for value in (
-                        raw.get("linked_sirets")
-                        or raw.get("successor_sirets")
-                        or []
-                    )
-                    if value
-                )
+            linked_sirets=identifiers(
+                raw.get("linked_sirets") or raw.get("successor_sirets"), 14
             ),
+            linked_sirens=identifiers(raw.get("linked_sirens"), 9),
             payload=dict(raw),
         )
 
@@ -340,6 +370,32 @@ class InMemoryBackend:
     def _score(self, record: IndexedEstablishment, query: RetrievalQuery, channel: str) -> float:
         names = record.names or ("",)
         addresses = record.addresses or ("",)
+        typed_names = {
+            "legal_name_word": record.legal_names,
+            "trade_name_word": record.trade_names,
+            "site_name_word": record.site_names,
+            "historical_name_word": record.historical_names,
+            "supporting_name_word": record.supporting_names,
+        }
+        typed_exact = {
+            "legal_name_exact": record.legal_names,
+            "trade_name_exact": record.trade_names,
+            "site_name_exact": record.site_names,
+        }
+        if channel in typed_names:
+            return max((_overlap(query.name, name) for name in typed_names[channel]), default=0.0)
+        if channel in typed_exact:
+            return 1.0 if query.name and query.name in typed_exact[channel] else 0.0
+        if channel == "current_name_char":
+            current = record.legal_names + record.trade_names + record.site_names
+            return max(
+                (_char_overlap(query.name, name, self.minimum, self.maximum) for name in current),
+                default=0.0,
+            )
+        if channel == "historical_address_word":
+            return max((_overlap(query.address, value) for value in record.historical_addresses), default=0.0)
+        if channel == "supporting_address_word":
+            return max((_overlap(query.address, value) for value in record.supporting_addresses), default=0.0)
         if channel == "name_word":
             return max(_overlap(query.name, name) for name in names)
         if channel == "name_char":
@@ -443,11 +499,21 @@ class TantivyBackend:
                 "postcode": self._first(document, "postcode"),
                 "names": all_values("names"),
                 "addresses": all_values("addresses"),
+                "legal_names": all_values("legal_names"),
+                "trade_names": all_values("trade_names"),
+                "site_names": all_values("site_names"),
+                "historical_names": all_values("historical_names"),
+                "supporting_names": all_values("supporting_names"),
+                "historical_addresses": all_values("historical_addresses"),
+                "supporting_addresses": all_values("supporting_addresses"),
                 "number": self._first(document, "number"),
                 "state": self._first(document, "state", "A"),
                 "is_siege": str(self._first(document, "is_siege", "0")) == "1",
                 "linked_sirets": str(
                     self._first(document, "linked_sirets", "")
+                ).split(),
+                "linked_sirens": str(
+                    self._first(document, "linked_sirens", "")
                 ).split(),
             }
         )
@@ -591,14 +657,28 @@ class TantivyBackend:
             "address_char": (("address_ngrams",), " ".join(character_ngrams(query.address)), False),
             "name_exact": (("names_exact",), query.name, True),
             "address_exact": (("addresses_exact",), query.address, True),
+            "legal_name_word": (("legal_names",), query.name, False),
+            "trade_name_word": (("trade_names",), query.name, False),
+            "site_name_word": (("site_names",), query.name, False),
+            "historical_name_word": (("historical_names",), query.name, False),
+            "supporting_name_word": (("supporting_names",), query.name, False),
+            "legal_name_exact": (("legal_names_exact",), query.name, True),
+            "trade_name_exact": (("trade_names_exact",), query.name, True),
+            "site_name_exact": (("site_names_exact",), query.name, True),
+            "historical_address_word": (("historical_addresses",), query.address, False),
+            "supporting_address_word": (("supporting_addresses",), query.address, False),
+            "current_name_char": (("current_name_ngrams",), " ".join(character_ngrams(query.name)), False),
         }
         if channel not in fields_and_text:
             raise ValueError(f"unknown retrieval channel: {channel}")
         fields, text, exact = fields_and_text[channel]
-        if channel in {"name_char", "address_char"}:
+        if channel in {"name_char", "address_char", "current_name_char"}:
             parsed = self._combined_query(
                 query,
-                self._character_query(fields[0], query.name if channel == "name_char" else query.address),
+                self._character_query(
+                    fields[0],
+                    query.name if channel in {"name_char", "current_name_char"} else query.address,
+                ),
                 document_type="siret",
             )
             result = self.searcher.search(parsed, limit=limit)
@@ -614,8 +694,13 @@ class TantivyBackend:
         return sorted(hits, key=lambda hit: (-hit.score, hit.record.siret))
 
     def search_sirens(self, query: RetrievalQuery, limit: int) -> list[tuple[str, float]]:
+        siren_fields = (
+            ["legal_names", "trade_names", "site_names"]
+            if self.manifest.get("typed_name_portfolio")
+            else ["names"]
+        )
         lexical, _lexical_errors = self.index.parse_query_lenient(
-            query.name, default_field_names=["names"]
+            query.name, default_field_names=siren_fields
         )
         # SIREN expansion is a small hierarchical rescue channel.  Its old
         # character disjunction dominated latency on the 39M geo/SIREN docs;
@@ -708,18 +793,26 @@ class HierarchicalSiretRetriever:
             raise RuntimeError("hierarchical retrieval is disabled; explicit opt-in is required")
         self.backend = backend
         self.config = config
-        self._search_pool = ThreadPoolExecutor(max_workers=7)
+        self._search_pool = ThreadPoolExecutor(max_workers=12)
 
     def retrieve(self, row: RetrievalQuery | Mapping[str, Any]) -> list[RetrievalCandidate]:
         query = row if isinstance(row, RetrievalQuery) else RetrievalQuery.from_mapping(row)
         if not query.insee and not query.postcode:
             return []
 
+        primary_channels = (
+            [
+                "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact",
+                "legal_name_word", "trade_name_word", "site_name_word", "address_word",
+            ]
+            if self.config.typed_name_portfolio
+            else ["name_exact", "address_exact", "name_word", "address_word"]
+        )
         primary_futures = {
             channel: self._search_pool.submit(
                 self.backend.search, query, channel, self.config.direct_top_k
             )
-            for channel in ["name_exact", "address_exact", "name_word", "address_word"]
+            for channel in primary_channels
         }
         siren_future = self._search_pool.submit(
             self.backend.search_sirens, query, self.config.siren_top_k
@@ -730,17 +823,35 @@ class HierarchicalSiretRetriever:
         # Character retrieval is a rescue path.  Exact official evidence makes
         # it redundant on the easy majority and skipping it materially lowers
         # latency without hiding hard cases from the lexical/hierarchical path.
-        if channels["name_exact"] or channels["address_exact"]:
-            channels["name_char"] = []
-            channels["address_char"] = []
+        exact_channels = (
+            ["legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact"]
+            if self.config.typed_name_portfolio else ["name_exact", "address_exact"]
+        )
+        has_exact_current = any(channels.get(channel) for channel in exact_channels)
+        if has_exact_current:
+            for channel in (
+                ["current_name_char", "address_char", "historical_name_word",
+                 "supporting_name_word", "historical_address_word", "supporting_address_word"]
+                if self.config.typed_name_portfolio else ["name_char", "address_char"]
+            ):
+                channels[channel] = []
         else:
+            rescue_limits = (
+                {
+                    "current_name_char": self.config.name_char_top_k,
+                    "address_char": self.config.address_char_top_k,
+                    "historical_name_word": self.config.historical_name_top_k,
+                    "supporting_name_word": self.config.supporting_name_top_k,
+                    "historical_address_word": self.config.historical_name_top_k,
+                    "supporting_address_word": self.config.supporting_name_top_k,
+                }
+                if self.config.typed_name_portfolio
+                else {"name_char": self.config.name_char_top_k,
+                      "address_char": self.config.address_char_top_k}
+            )
             char_futures = {
-                "name_char": self._search_pool.submit(
-                    self.backend.search, query, "name_char", self.config.name_char_top_k
-                ),
-                "address_char": self._search_pool.submit(
-                    self.backend.search, query, "address_char", self.config.address_char_top_k
-                ),
+                channel: self._search_pool.submit(self.backend.search, query, channel, limit)
+                for channel, limit in rescue_limits.items()
             }
             channels.update(
                 {channel: future.result() for channel, future in char_futures.items()}
@@ -766,6 +877,11 @@ class HierarchicalSiretRetriever:
                     or (not query.insee and query.postcode and record.postcode == query.postcode)
                 ):
                     succession.append(BackendHit(record, hit.score * 0.9))
+            for linked_siren in hit.record.linked_sirens:
+                for record in self.backend.sites_for_siren(
+                    linked_siren, query, min(8, self.config.sites_per_siren)
+                ):
+                    succession.append(BackendHit(record, hit.score * 0.85))
         channels["official_successor"] = succession
         channels["hierarchical"] = hierarchical
 
@@ -778,7 +894,15 @@ class HierarchicalSiretRetriever:
                     continue
                 records.setdefault(hit.record.siret, hit.record)
                 sources[hit.record.siret].add(source)
-                weight = 2.0 if source in {"name_exact", "address_exact"} else 1.0
+                if source in set(exact_channels):
+                    weight = 2.0
+                elif source in {
+                    "historical_name_word", "supporting_name_word",
+                    "historical_address_word", "supporting_address_word",
+                }:
+                    weight = 0.6
+                else:
+                    weight = 1.0
                 rrf_scores[hit.record.siret] += weight / (self.config.rrf_k + rank)
         if len(records) > self.config.union_cap:
             def ranked_for(source_names: set[str]) -> list[str]:
@@ -795,11 +919,13 @@ class HierarchicalSiretRetriever:
             reserved_set: set[str] = set()
             for source_names, count in [
                 (
-                    {"name_exact", "address_exact", "name_word", "address_word", "official_successor"},
+                    set(primary_channels) | {"official_successor"},
                     self.config.direct_slots,
                 ),
                 ({"hierarchical"}, self.config.hierarchical_slots),
-                ({"name_char", "address_char"}, self.config.character_rescue_slots),
+                ({"name_char", "current_name_char", "address_char", "historical_name_word",
+                  "supporting_name_word", "historical_address_word", "supporting_address_word"},
+                 self.config.character_rescue_slots),
             ]:
                 added = 0
                 for siret in ranked_for(source_names):
@@ -825,8 +951,10 @@ class HierarchicalSiretRetriever:
                 {siret: value for siret, value in sources.items() if siret in retained},
             )
 
-        direct_sources = {"name_exact", "address_exact", "name_word", "address_word", "official_successor"}
-        char_sources = {"name_char", "address_char"}
+        direct_sources = set(primary_channels) | {"official_successor"}
+        char_sources = {"name_char", "current_name_char", "address_char",
+                        "historical_name_word", "supporting_name_word",
+                        "historical_address_word", "supporting_address_word"}
         buckets = {
             "direct": [siret for siret in records if sources[siret] & direct_sources],
             "hierarchical": [siret for siret in records if "hierarchical" in sources[siret]],

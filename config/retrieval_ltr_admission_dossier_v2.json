@@ -1,0 +1,42 @@
+{
+  "schema_version": "sireto-retrieval-ltr-admission-v1",
+  "policy_id": "typed-official-portfolio-lambdamart-top100-v2",
+  "folds": {"train": [2, 3, 4], "dev": 0, "test": 1},
+  "limits": {
+    "internal_union_cap": 2000,
+    "max_training_candidates_per_query": 512,
+    "max_candidates": 100,
+    "exact_protection_slots": 20,
+    "consensus_protection_slots": 20
+  },
+  "channels": [
+    "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact",
+    "legal_name_word", "trade_name_word", "site_name_word", "address_word",
+    "current_name_char", "address_char", "historical_name_word",
+    "historical_address_word", "supporting_name_word", "supporting_address_word",
+    "hierarchical", "official_successor"
+  ],
+  "exact_channels": [
+    "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact"
+  ],
+  "consensus_min_channels": 2,
+  "xgboost": {
+    "objective": "rank:ndcg", "eval_metric": "ndcg@100", "tree_method": "hist",
+    "n_estimators": 240, "learning_rate": 0.05, "max_depth": 6,
+    "min_child_weight": 5.0, "subsample": 1.0, "colsample_bytree": 1.0,
+    "reg_alpha": 0.1, "reg_lambda": 10.0, "random_state": 20260818,
+    "n_jobs": 0, "lambdarank_pair_method": "topk",
+    "lambdarank_num_pair_per_sample": 32
+  },
+  "gates": {
+    "minimum_identifiable_coverage": 0.8,
+    "minimum_exact_recall_at_100": 0.99,
+    "minimum_exact_oracle_recall": 0.993,
+    "maximum_end_to_end_p95_ms": 1000.0,
+    "maximum_end_to_end_p99_ms": 2000.0
+  },
+  "forbidden": {
+    "synthetic_markers": ["synthetic", "synthétique"],
+    "dense_channel_markers": ["dense", "embedding", "vector", "bge", "colbert", "splade"]
+  }
+}

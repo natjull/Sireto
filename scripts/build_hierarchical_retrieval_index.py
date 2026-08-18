@@ -33,7 +33,7 @@ from src.xgb_matcher.hierarchical_retrieval import (  # noqa: E402
 )
 
 
-SCHEMA_VERSION = "sireto-hierarchical-index-v1"
+SCHEMA_VERSION = "sireto-hierarchical-index-v2"
 
 
 def sha256_file(path: Path) -> str:
@@ -299,9 +299,23 @@ def _schema(tantivy: Any) -> Any:
         builder.add_text_field(
             field_name, stored=True, tokenizer_name="raw", index_option="basic"
         )
-    for field_name in ["names", "addresses", "name_ngrams", "address_ngrams"]:
-        builder.add_text_field(field_name, stored=field_name in {"names", "addresses"})
-    for field_name in ["names_exact", "addresses_exact"]:
+    for field_name in [
+        "names", "addresses", "name_ngrams", "address_ngrams",
+        "legal_names", "trade_names", "site_names", "historical_names", "supporting_names",
+        "historical_addresses", "supporting_addresses", "current_name_ngrams",
+    ]:
+        builder.add_text_field(
+            field_name,
+            stored=field_name in {
+                "names", "addresses", "legal_names", "trade_names", "site_names",
+                "historical_names", "supporting_names", "historical_addresses",
+                "supporting_addresses",
+            },
+        )
+    for field_name in [
+        "names_exact", "addresses_exact", "legal_names_exact",
+        "trade_names_exact", "site_names_exact",
+    ]:
         builder.add_text_field(
             field_name, stored=False, tokenizer_name="raw", index_option="basic"
         )
@@ -310,6 +324,7 @@ def _schema(tantivy: Any) -> Any:
         "state",
         "is_siege",
         "linked_sirets",
+        "linked_sirens",
         "payload",
     ]:
         builder.add_text_field(field_name, stored=True, tokenizer_name="raw", index_option="basic")
@@ -408,6 +423,90 @@ def _add_siren_document(
     writer.add_document(document)
 
 
+def _add_dossier_document(writer: Any, tantivy: Any, row: tuple[Any, ...]) -> None:
+    (
+        document_id, siren, document_kind, insee, postcode, number, number_suffix,
+        state, is_siege, legal_raw, trade_raw, site_raw, historical_raw,
+        supporting_raw, current_address_raw, historical_address_raw,
+        supporting_address_raw, linked_sirets, linked_sirens,
+    ) = row
+    legal = _split_values(legal_raw)
+    trade = _split_values(trade_raw)
+    site = _split_values(site_raw)
+    historical = _split_values(historical_raw)
+    supporting = _split_values(supporting_raw)
+    current_addresses = _split_values(current_address_raw)
+    historical_addresses = _split_values(historical_address_raw)
+    supporting_addresses = _split_values(supporting_address_raw)
+    current_names = tuple(dict.fromkeys(legal + trade + site))
+    all_names = tuple(dict.fromkeys(current_names + historical + supporting))
+    all_addresses = tuple(
+        dict.fromkeys(current_addresses + historical_addresses + supporting_addresses)
+    )
+    kind = str(document_kind or "SIRET").lower()
+    siret = normalize_code(document_id, 14) if kind == "siret" else ""
+    scalar = {
+        "document_type": kind,
+        "siret": siret,
+        "siren": normalize_code(siren or str(document_id)[:9], 9),
+        "insee": normalize_insee(insee),
+        "postcode": normalize_code(postcode, 5),
+        "number": normalize_text(number),
+        "state": str(state or "A").upper(),
+        "is_siege": "1" if bool(is_siege) else "0",
+        "linked_sirets": str(linked_sirets or ""),
+        "linked_sirens": str(linked_sirens or ""),
+    }
+    scalar["payload"] = json.dumps(
+        {
+            **scalar,
+            "number_suffix": normalize_text(number_suffix),
+            "names": list(all_names),
+            "addresses": list(all_addresses),
+            "legal_names": list(legal),
+            "trade_names": list(trade),
+            "site_names": list(site),
+            "historical_names": list(historical),
+            "supporting_names": list(supporting),
+        },
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    document = tantivy.Document()
+    for key, value in scalar.items():
+        document.add_text(key, value)
+    typed = {
+        "legal_names": legal,
+        "trade_names": trade,
+        "site_names": site,
+        "historical_names": historical,
+        "supporting_names": supporting,
+        "historical_addresses": historical_addresses,
+        "supporting_addresses": supporting_addresses,
+    }
+    for field_name, values in typed.items():
+        for value in values:
+            document.add_text(field_name, value)
+    for field_name, values in {
+        "legal_names_exact": legal,
+        "trade_names_exact": trade,
+        "site_names_exact": site,
+    }.items():
+        for value in values:
+            document.add_text(field_name, value)
+    for value in all_names:
+        document.add_text("names", value)
+    for value in current_names:
+        document.add_text("current_name_ngrams", " ".join(character_ngrams(value)))
+    for value in current_addresses:
+        document.add_text("addresses", value)
+        document.add_text("addresses_exact", value)
+        document.add_text("address_ngrams", " ".join(character_ngrams(value)))
+    for value in historical_addresses + supporting_addresses:
+        document.add_text("addresses", value)
+    writer.add_document(document)
+
+
 def _stream_query(
     connection: duckdb.DuckDBPyConnection,
     sql: str,
@@ -431,16 +530,32 @@ def build_index(args: argparse.Namespace) -> Path:
             "in the selected Python environment before running this script."
         ) from exc
 
-    sources = {
-        "establishments_current": args.establishments,
-        "legal_units_current": args.legal_units,
-        "establishments_history": args.establishments_history,
-        "legal_units_history": args.legal_units_history,
-        "successions": args.successions,
-    }
-    for role in ["establishments_current", "legal_units_current"]:
-        if not sources[role] or not sources[role].is_file():
-            raise FileNotFoundError(f"missing required source {role}: {sources[role]}")
+    dossier_documents = getattr(args, "dossier_documents", None)
+    if dossier_documents:
+        dossier_documents = Path(dossier_documents)
+        dossier_manifest = dossier_documents / "manifest.json"
+        if not dossier_manifest.is_file():
+            raise FileNotFoundError(f"missing dossier retrieval manifest: {dossier_manifest}")
+        dossier_metadata = json.loads(dossier_manifest.read_text(encoding="utf-8"))
+        if dossier_metadata.get("schema_version") != "sireto-siren-dossier-retrieval-documents-v2":
+            raise ValueError("dossier retrieval documents must use the typed v2 schema")
+        sources = {
+            "dossier_manifest": dossier_manifest,
+            "dossier_siret_documents": dossier_documents / "retrieval_siret_documents.parquet",
+            "dossier_siren_documents": dossier_documents / "retrieval_siren_documents.parquet",
+            "dossier_name_portfolio": dossier_documents / "retrieval_name_portfolio.parquet",
+        }
+    else:
+        sources = {
+            "establishments_current": args.establishments,
+            "legal_units_current": args.legal_units,
+            "establishments_history": args.establishments_history,
+            "legal_units_history": args.legal_units_history,
+            "successions": args.successions,
+        }
+        for role in ["establishments_current", "legal_units_current"]:
+            if not sources[role] or not sources[role].is_file():
+                raise FileNotFoundError(f"missing required source {role}: {sources[role]}")
     for role, path in sources.items():
         if path is not None and not path.is_file():
             raise FileNotFoundError(f"missing source {role}: {path}")
@@ -473,6 +588,7 @@ def build_index(args: argparse.Namespace) -> Path:
         },
         "retrieval_config_sha256": retrieval_config_sha256,
         "smoke_limit": args.smoke_limit,
+        "typed_name_portfolio": bool(dossier_documents),
     }
     build_hash = hashlib.sha256(
         json.dumps(identity, sort_keys=True, separators=(",", ":")).encode("utf-8")
@@ -501,80 +617,80 @@ def build_index(args: argparse.Namespace) -> Path:
         # prevents DuckDB from spilling efficiently on memory-constrained Macs.
         connection.execute("SET preserve_insertion_order=false")
         connection.execute(f"SET temp_directory='{_sql_path(args.temp_directory)}'")
-        optional_joins = _prepare_optional_views(
-            connection,
-            establishment_history=args.establishments_history,
-            legal_unit_history=args.legal_units_history,
-            successions=args.successions,
-            preaggregate_root=args.temp_directory
-            / "hierarchical_retrieval_preaggregates",
-            source_sha256={
-                role: metadata["sha256"]
-                for role, metadata in source_meta.items()
-                if metadata is not None
-            },
-        )
-        _create_current_view(
-            connection, args.establishments, args.legal_units, optional_joins
-        )
-        selected_scope = (
-            f"SELECT * FROM index_rows ORDER BY siret LIMIT {args.smoke_limit}"
-            if args.smoke_limit
-            else "SELECT * FROM index_rows"
-        )
-        # Materialize the global SIREN aggregate before writing any Tantivy
-        # document.  Executing this hash aggregate after the 43.9M SIRET pass
-        # can otherwise fail at the memory limit and discard an hour-long
-        # staging index.  The content-addressed projection is reusable after
-        # interruption and the subsequent index pass is a simple stream.
-        siren_projection = _materialize_aggregate(
-            connection,
-            cache_path=args.temp_directory
-            / "hierarchical_retrieval_preaggregates"
-            / f"siren-documents-{build_hash[:16]}.parquet",
-            sql=f"""
-                SELECT siren, insee, postcode,
-                       string_agg(DISTINCT names, ' | ') AS names
+        if dossier_documents:
+            document_columns = """
+                document_id,siren,document_kind,insee,postcode,number,number_suffix,
+                administrative_state,is_headquarters,legal_current_names,
+                trade_current_names,site_current_names,historical_names,supporting_names,
+                current_address_text,historical_address_text,supporting_address_text,
+                linked_sirets,linked_sirens
+            """
+            site_relation = _relation(sources["dossier_siret_documents"])
+            siren_relation = _relation(sources["dossier_siren_documents"])
+            establishment_sql = (
+                f"SELECT {document_columns} FROM {site_relation} ORDER BY document_id "
+                + (f"LIMIT {args.smoke_limit}" if args.smoke_limit else "")
+            )
+            siren_sql = (
+                f"SELECT {document_columns} FROM {siren_relation} ORDER BY document_id,insee,postcode "
+                + (f"LIMIT {args.smoke_limit}" if args.smoke_limit else "")
+            )
+        else:
+            optional_joins = _prepare_optional_views(
+                connection,
+                establishment_history=args.establishments_history,
+                legal_unit_history=args.legal_units_history,
+                successions=args.successions,
+                preaggregate_root=args.temp_directory / "hierarchical_retrieval_preaggregates",
+                source_sha256={
+                    role: metadata["sha256"] for role, metadata in source_meta.items()
+                    if metadata is not None
+                },
+            )
+            _create_current_view(connection, args.establishments, args.legal_units, optional_joins)
+            selected_scope = (
+                f"SELECT * FROM index_rows ORDER BY siret LIMIT {args.smoke_limit}"
+                if args.smoke_limit else "SELECT * FROM index_rows"
+            )
+            siren_projection = _materialize_aggregate(
+                connection,
+                cache_path=args.temp_directory / "hierarchical_retrieval_preaggregates"
+                / f"siren-documents-{build_hash[:16]}.parquet",
+                sql=f"""
+                    SELECT siren, insee, postcode,string_agg(DISTINCT names, ' | ') AS names
+                    FROM ({selected_scope}) selected_rows GROUP BY siren,insee,postcode
+                """,
+            )
+            establishment_sql = f"""
+                SELECT siret,siren,insee,postcode,number,number_suffix,state,is_siege,
+                       names,addresses,linked_sirets,payload
                 FROM ({selected_scope}) selected_rows
-                GROUP BY siren, insee, postcode
-            """,
-        )
-        establishment_sql = f"""
-            SELECT siret, siren, insee, postcode, number, number_suffix, state,
-                   is_siege, names, addresses, linked_sirets, payload
-            FROM ({selected_scope}) selected_rows
-        """
+            """
+            siren_sql = f"SELECT siren,insee,postcode,names FROM {_relation(siren_projection)}"
         establishment_count = 0
         since_commit = 0
         for rows in _stream_query(connection, establishment_sql, batch_size=args.batch_size):
             for row in rows:
-                _add_document(writer, tantivy, row)
+                (_add_dossier_document if dossier_documents else _add_document)(writer, tantivy, row)
             establishment_count += len(rows)
             since_commit += len(rows)
             if since_commit >= args.commit_every:
                 writer.commit()
                 since_commit = 0
 
-        # True aggregate documents avoid a top-SIRET bias in SIREN retrieval.
-        siren_sql = f"SELECT siren, insee, postcode, names FROM {_relation(siren_projection)}"
         siren_count = 0
         for rows in _stream_query(connection, siren_sql, batch_size=args.batch_size):
             for row in rows:
-                _add_siren_document(writer, tantivy, row)
+                (_add_dossier_document if dossier_documents else _add_siren_document)(writer, tantivy, row)
             siren_count += len(rows)
         writer.commit()
         index.reload()
         connection.close()
 
-        missing_roles = [
-            role
-            for role in [
-                "establishments_history",
-                "legal_units_history",
-                "successions",
-            ]
+        missing_roles = ([] if dossier_documents else [
+            role for role in ["establishments_history", "legal_units_history", "successions"]
             if sources[role] is None
-        ]
+        ])
         manifest = {
             **identity,
             "sources": source_meta,
@@ -587,8 +703,12 @@ def build_index(args: argparse.Namespace) -> Path:
             "num_establishment_documents": establishment_count,
             "num_siren_documents": siren_count,
             "num_documents": establishment_count + siren_count,
-            "temporal_complete": not missing_roles,
+            "temporal_complete": (
+                bool(dossier_metadata.get("temporal_complete"))
+                if dossier_documents else not missing_roles
+            ),
             "missing_optional_roles": missing_roles,
+            "typed_name_portfolio": bool(dossier_documents),
             "contains_crm_labels": False,
             "limits": {
                 "batch_size": args.batch_size,
@@ -607,8 +727,10 @@ def build_index(args: argparse.Namespace) -> Path:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--establishments", type=Path, required=True)
-    parser.add_argument("--legal-units", type=Path, required=True)
+    source = parser.add_argument_group("source (choose dossier v2 or raw SIRENE)")
+    source.add_argument("--dossier-documents", type=Path)
+    source.add_argument("--establishments", type=Path)
+    source.add_argument("--legal-units", type=Path)
     parser.add_argument("--establishments-history", type=Path)
     parser.add_argument("--legal-units-history", type=Path)
     parser.add_argument("--successions", type=Path)

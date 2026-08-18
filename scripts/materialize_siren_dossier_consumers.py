@@ -23,13 +23,18 @@ def main() -> int:
     retrieval = sub.add_parser("retrieval")
     retrieval.add_argument("--dossier", type=Path, required=True)
     retrieval.add_argument("--output-dir", type=Path, required=True)
+    retrieval.add_argument("--name-portfolio-policy", type=Path)
     fusion = sub.add_parser("fusion-text")
     fusion.add_argument("--dossier", type=Path, required=True)
     fusion.add_argument("--candidates", type=Path, required=True)
     fusion.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "retrieval":
-        print(materialize_dossier_retrieval_documents(dossier_dir=args.dossier, output_dir=args.output_dir))
+        print(materialize_dossier_retrieval_documents(
+            dossier_dir=args.dossier,
+            output_dir=args.output_dir,
+            name_portfolio_policy=args.name_portfolio_policy,
+        ))
     else:
         print(project_dossier_fusion_text(dossier_dir=args.dossier, candidates_path=args.candidates, output_path=args.output))
     return 0

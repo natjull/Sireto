@@ -23,9 +23,11 @@ from .official_source_sync import canonical_json, sha256_file
 
 
 SIREN_DOSSIER_SCHEMA_VERSION_V1 = "sireto-siren-dossier-v1"
-SIREN_DOSSIER_SCHEMA_VERSION = "sireto-siren-dossier-v2"
+SIREN_DOSSIER_SCHEMA_VERSION_V2 = "sireto-siren-dossier-v2"
+SIREN_DOSSIER_SCHEMA_VERSION = "sireto-siren-dossier-v3"
 SUPPORTED_SIREN_DOSSIER_SCHEMA_VERSIONS = {
     SIREN_DOSSIER_SCHEMA_VERSION_V1,
+    SIREN_DOSSIER_SCHEMA_VERSION_V2,
     SIREN_DOSSIER_SCHEMA_VERSION,
 }
 SIREN_DOSSIER_FEATURE_SCHEMA_VERSION = "sireto-siren-dossier-features-v1"
@@ -90,6 +92,7 @@ _DOSSIER_TABLE_FILES = (
     ("establishments", "establishments.parquet"),
     ("name_evidence", "name_evidence.parquet"),
     ("address_evidence", "address_evidence.parquet"),
+    ("entity_evidence", "entity_evidence.parquet"),
     ("address_site_resolution", "address_site_resolution.parquet"),
     ("official_relations", "relations.parquet"),
     ("rne_account_deposits", "rne_account_deposits.parquet"),
@@ -326,6 +329,23 @@ def build_siren_dossier(
             """,
             stage / "address_evidence.parquet",
         )
+        counts["entity_evidence"] = _copy(
+            connection,
+            f"""
+            SELECT DISTINCT evidence_id::VARCHAR evidence_id,
+                   source_record_id::VARCHAR source_record_id,
+                   source::VARCHAR AS "source",siren::VARCHAR siren,
+                   coalesce(siret,'')::VARCHAR siret,subject_kind::VARCHAR subject_kind,
+                   coalesce(administrative_state,'')::VARCHAR administrative_state,
+                   is_headquarters::BOOLEAN is_headquarters,
+                   try_cast(valid_from AS DATE) valid_from,try_cast(valid_to AS DATE) valid_to,
+                   try_cast(observed_at AS DATE) observed_at,is_current::BOOLEAN is_current,
+                   source_priority::SMALLINT source_priority
+            FROM {evidence}
+            WHERE regexp_full_match(siren::VARCHAR, '[0-9]{{9}}')
+            """,
+            stage / "entity_evidence.parquet",
+        )
         counts["relations"] = _copy(
             connection,
             f"""
@@ -386,6 +406,7 @@ def build_siren_dossier(
         sites_path = _sql_path(stage / "establishments.parquet")
         relations_path = _sql_path(stage / "relations.parquet")
         accounts_path = _sql_path(stage / "rne_account_deposits.parquet")
+        entity_path = _sql_path(stage / "entity_evidence.parquet")
         counts["address_site_resolution"] = _copy(
             connection,
             f"""
@@ -450,6 +471,14 @@ def build_siren_dossier(
                      max(filing_date) rne_latest_account_filing_date,
                      max(closing_date) rne_latest_account_closing_date
               FROM read_parquet('{accounts_path}') GROUP BY siren
+            ), entity AS (
+              SELECT siren,count(*)::INTEGER official_entity_evidence_count,
+                     count(DISTINCT source)::INTEGER official_entity_source_count,
+                     count(*) FILTER(WHERE is_current)::INTEGER current_entity_evidence_count,
+                     count(DISTINCT administrative_state) FILTER(
+                       WHERE is_current AND administrative_state<>'')::INTEGER current_state_variant_count,
+                     max(observed_at) latest_official_observed_at
+              FROM read_parquet('{entity_path}') GROUP BY siren
             )
             SELECT u.siren, u.administrative_state, u.creation_date, u.legal_category,
                    u.main_activity, u.enterprise_category, u.headquarters_nic,
@@ -468,11 +497,17 @@ def build_siren_dossier(
                    ,coalesce(ac.rne_public_account_period_count,0) rne_public_account_period_count
                    ,coalesce(ac.rne_confidential_account_period_count,0) rne_confidential_account_period_count
                    ,ac.rne_latest_account_filing_date, ac.rne_latest_account_closing_date
+                   ,coalesce(en.official_entity_evidence_count,0) official_entity_evidence_count
+                   ,coalesce(en.official_entity_source_count,0) official_entity_source_count
+                   ,coalesce(en.current_entity_evidence_count,0) current_entity_evidence_count
+                   ,coalesce(en.current_state_variant_count,0) current_state_variant_count
+                   ,en.latest_official_observed_at
             FROM read_parquet('{_sql_path(stage / 'legal_units.parquet')}') u
             LEFT JOIN sites s USING(siren) LEFT JOIN names n USING(siren)
             LEFT JOIN addresses a USING(siren) LEFT JOIN links l USING(siren)
             LEFT JOIN resolved r USING(siren)
             LEFT JOIN accounts ac USING(siren)
+            LEFT JOIN entity en USING(siren)
             """,
             stage / "siren_summary.parquet",
         )
@@ -511,9 +546,9 @@ def build_siren_dossier(
             "files": files,
             "consumer_contract": {
                 "retrieval": ["name_evidence", "address_evidence", "address_site_resolution", "official_relations"],
-                "ranker": ["establishments", "siren_summary", "name_evidence", "address_evidence"],
-                "decider": ["siren_summary", "address_site_resolution", "official_relations"],
-                "risk": ["siren_summary", "address_site_resolution", "official_relations"],
+                "ranker": ["establishments", "siren_summary", "name_evidence", "address_evidence", "entity_evidence"],
+                "decider": ["siren_summary", "address_site_resolution", "official_relations", "entity_evidence"],
+                "risk": ["siren_summary", "address_site_resolution", "official_relations", "entity_evidence"],
                 "fusion_text": ["name_evidence", "address_evidence"],
                 "held_out_structured": ["rne_account_deposits"],
             },
@@ -555,11 +590,20 @@ def project_dossier_candidate_features(
     insee = "coalesce(c.crm_insee, '')" if "crm_insee" in columns else "''"
     postcode = "coalesce(c.crm_postcode, '')" if "crm_postcode" in columns else "''"
     sites = _sql_path(dossier_dir / "establishments.parquet")
+    legal_units = _sql_path(dossier_dir / "legal_units.parquet")
     summary = _sql_path(dossier_dir / "siren_summary.parquet")
     names = _sql_path(dossier_dir / "name_evidence.parquet")
     addresses = _sql_path(dossier_dir / "address_evidence.parquet")
     resolutions = _sql_path(dossier_dir / "address_site_resolution.parquet")
     relations = _sql_path(dossier_dir / "relations.parquet")
+    entity_path = dossier_dir / "entity_evidence.parquet"
+    entity_relation = (
+        f"read_parquet('{_sql_path(entity_path)}')"
+        if entity_path.is_file()
+        else "(SELECT ''::VARCHAR siren,''::VARCHAR siret,''::VARCHAR source,"
+             "''::VARCHAR administrative_state,NULL::BOOLEAN is_headquarters,"
+             "false::BOOLEAN is_current,NULL::DATE observed_at WHERE false)"
+    )
     candidates = _sql_path(Path(candidates_path))
     query = f"""
       WITH base AS (
@@ -572,24 +616,67 @@ def project_dossier_candidate_features(
         SELECT b.query_id, b.candidate_siret,
           max(CASE WHEN b.crm_name_norm<>'' THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_official_name_jw,
           max(CASE WHEN b.crm_name_norm=n.normalized_value AND b.crm_name_norm<>'' THEN 1 ELSE 0 END) exact_official_name,
+          max(CASE WHEN n.subject_kind='SIREN' AND n.name_kind='LEGAL' AND n.is_current
+                    AND n.source<>'BODACC' AND b.crm_name_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_current_legal_name_jw,
+          max(CASE WHEN n.subject_kind='SIREN' AND n.name_kind<>'LEGAL' AND n.is_current
+                    AND n.source<>'BODACC' AND b.crm_name_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_current_trade_name_jw,
+          max(CASE WHEN n.subject_kind='SIRET' AND n.siret=b.candidate_siret AND n.is_current
+                    AND n.source<>'BODACC' AND b.crm_name_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_current_site_name_jw,
+          max(CASE WHEN (NOT n.is_current OR n.source='SIRENE_HISTORY' OR n.name_kind='HISTORICAL')
+                    AND b.crm_name_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_historical_name_jw,
+          max(CASE WHEN n.source='RNE' AND b.crm_name_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_rne_name_jw,
+          max(CASE WHEN n.source='BODACC' AND b.crm_name_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_name_norm,n.normalized_value) ELSE 0 END) max_bodacc_name_jw,
+          max(CASE WHEN n.subject_kind='SIREN' AND n.name_kind='LEGAL' AND n.is_current
+                    AND n.source<>'BODACC' AND b.crm_name_norm=n.normalized_value AND b.crm_name_norm<>''
+                   THEN 1 ELSE 0 END) exact_current_legal_name,
+          max(CASE WHEN n.subject_kind='SIRET' AND n.siret=b.candidate_siret AND n.is_current
+                    AND n.source<>'BODACC' AND b.crm_name_norm=n.normalized_value AND b.crm_name_norm<>''
+                   THEN 1 ELSE 0 END) exact_current_site_name,
           count(DISTINCT n.source)::INTEGER official_name_source_count,
-          count(*) FILTER (WHERE NOT n.is_current)::INTEGER historical_name_count
+          count(*) FILTER (WHERE NOT n.is_current)::INTEGER historical_name_count,
+          count(DISTINCT n.normalized_value) FILTER(WHERE n.is_current)::INTEGER current_name_variant_count,
+          max(consensus.source_count)::INTEGER matched_name_max_source_consensus
         FROM base b LEFT JOIN read_parquet('{names}') n
           ON n.siren=b.candidate_siren AND (n.siret='' OR n.siret=b.candidate_siret)
+        LEFT JOIN (
+          SELECT siren,siret,normalized_value,count(DISTINCT source)::INTEGER source_count
+          FROM read_parquet('{names}') GROUP BY siren,siret,normalized_value
+        ) consensus ON consensus.siren=n.siren AND consensus.siret=n.siret
+          AND consensus.normalized_value=n.normalized_value
         GROUP BY b.query_id,b.candidate_siret
       ), address_features AS (
         SELECT b.query_id,b.candidate_siret,
           max(CASE WHEN b.crm_address_norm<>'' THEN jaro_winkler_similarity(b.crm_address_norm,a.normalized_value) ELSE 0 END) max_official_address_jw,
           max(CASE WHEN b.crm_address_norm=a.normalized_value AND b.crm_address_norm<>'' THEN 1 ELSE 0 END) exact_official_address,
+          max(CASE WHEN a.subject_kind='SIRET' AND a.siret=b.candidate_siret AND a.source='SIRENE_CURRENT'
+                    AND b.crm_address_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_address_norm,a.normalized_value) ELSE 0 END) max_current_site_address_jw,
+          max(CASE WHEN NOT a.is_current AND b.crm_address_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_address_norm,a.normalized_value) ELSE 0 END) max_historical_address_jw,
+          max(CASE WHEN a.source='RNE' AND b.crm_address_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_address_norm,a.normalized_value) ELSE 0 END) max_rne_address_jw,
+          max(CASE WHEN a.source='BODACC' AND b.crm_address_norm<>''
+                   THEN jaro_winkler_similarity(b.crm_address_norm,a.normalized_value) ELSE 0 END) max_bodacc_address_jw,
           max(CASE WHEN b.crm_insee_value<>'' AND b.crm_insee_value=a.insee THEN 1 ELSE 0 END) official_insee_agreement,
           max(CASE WHEN b.crm_postcode_value<>'' AND b.crm_postcode_value=a.postcode THEN 1 ELSE 0 END) official_postcode_agreement,
           count(DISTINCT a.source)::INTEGER official_address_source_count,
-          count(*) FILTER (WHERE NOT a.is_current)::INTEGER historical_address_count
+          count(*) FILTER (WHERE NOT a.is_current)::INTEGER historical_address_count,
+          count(DISTINCT a.normalized_value) FILTER(WHERE a.is_current)::INTEGER current_address_variant_count
         FROM base b LEFT JOIN read_parquet('{addresses}') a
           ON a.siren=b.candidate_siren AND (a.siret='' OR a.siret=b.candidate_siret)
         GROUP BY b.query_id,b.candidate_siret
       ), relation_features AS (
-        SELECT b.query_id,b.candidate_siret,count(DISTINCT r.relation_id)::INTEGER candidate_relation_count
+        SELECT b.query_id,b.candidate_siret,count(DISTINCT r.relation_id)::INTEGER candidate_relation_count,
+          count(DISTINCT r.relation_id) FILTER(WHERE r.relation_type IN
+            ('ESTABLISHMENT_SUCCESSION','LEGAL_UNIT_SUCCESSION'))::INTEGER succession_relation_count,
+          count(DISTINCT r.relation_id) FILTER(WHERE r.relation_type='ASSET_TRANSFER')::INTEGER asset_transfer_relation_count,
+          count(DISTINCT r.source)::INTEGER relation_source_count
         FROM base b LEFT JOIN read_parquet('{relations}') r
           ON (r.from_kind='SIREN' AND r.from_identifier=b.candidate_siren)
           OR (r.to_kind='SIREN' AND r.to_identifier=b.candidate_siren)
@@ -602,23 +689,51 @@ def project_dossier_candidate_features(
           count(*) FILTER (WHERE x.resolution_status='AMBIGUOUS_EXACT_SITE')::INTEGER ambiguous_external_site_resolution_count
         FROM base b LEFT JOIN read_parquet('{resolutions}') x ON x.siren=b.candidate_siren
         GROUP BY b.query_id,b.candidate_siret
+      ), entity_features AS (
+        SELECT b.query_id,b.candidate_siret,
+          count(DISTINCT e.source) FILTER(WHERE e.is_current)::INTEGER current_entity_source_count,
+          count(DISTINCT e.source) FILTER(
+            WHERE e.is_current AND e.administrative_state<>''
+              AND e.administrative_state<>s.administrative_state)::INTEGER administrative_state_conflict_source_count,
+          count(DISTINCT e.source) FILTER(
+            WHERE e.is_current AND e.is_headquarters IS NOT NULL
+              AND e.is_headquarters=s.is_headquarters)::INTEGER headquarters_consensus_source_count,
+          max(e.observed_at) latest_entity_evidence_observed_at
+        FROM base b JOIN read_parquet('{sites}') s ON s.siret=b.candidate_siret
+        LEFT JOIN {entity_relation} e ON e.siren=b.candidate_siren
+          AND (e.siret='' OR e.siret=b.candidate_siret)
+        GROUP BY b.query_id,b.candidate_siret
       )
       SELECT b.query_id,b.candidate_siret,b.candidate_siren,
         s.administrative_state candidate_administrative_state,s.is_headquarters,
+        s.creation_date candidate_creation_date,s.current_period_start candidate_period_start,
+        s.main_activity candidate_main_activity,u.legal_category,u.main_activity legal_unit_main_activity,
+        u.enterprise_category,u.creation_date legal_unit_creation_date,
         d.site_count,d.active_site_count,d.insee_count,d.postcode_count,
         d.name_evidence_count,d.name_source_count,d.distinct_name_count,
         d.address_evidence_count,d.address_source_count,d.distinct_address_count,
         d.relation_count,d.resolved_external_site_count,d.ambiguous_external_site_count,
         n.max_official_name_jw,n.exact_official_name,n.official_name_source_count,n.historical_name_count,
+        n.max_current_legal_name_jw,n.max_current_trade_name_jw,n.max_current_site_name_jw,
+        n.max_historical_name_jw,n.max_rne_name_jw,n.max_bodacc_name_jw,
+        n.exact_current_legal_name,n.exact_current_site_name,
+        n.current_name_variant_count,n.matched_name_max_source_consensus,
         a.max_official_address_jw,a.exact_official_address,a.official_insee_agreement,a.official_postcode_agreement,
         a.official_address_source_count,a.historical_address_count,
-        r.candidate_relation_count,x.exact_external_site_resolution_count,x.ambiguous_external_site_resolution_count
+        a.max_current_site_address_jw,a.max_historical_address_jw,a.max_rne_address_jw,a.max_bodacc_address_jw,
+        a.current_address_variant_count,
+        r.candidate_relation_count,r.succession_relation_count,r.asset_transfer_relation_count,r.relation_source_count,
+        x.exact_external_site_resolution_count,x.ambiguous_external_site_resolution_count,
+        z.current_entity_source_count,z.administrative_state_conflict_source_count,
+        z.headquarters_consensus_source_count,z.latest_entity_evidence_observed_at
       FROM base b JOIN read_parquet('{sites}') s ON s.siret=b.candidate_siret
+      JOIN read_parquet('{legal_units}') u ON u.siren=b.candidate_siren
       JOIN read_parquet('{summary}') d ON d.siren=b.candidate_siren
       JOIN name_features n USING(query_id,candidate_siret)
       JOIN address_features a USING(query_id,candidate_siret)
       JOIN relation_features r USING(query_id,candidate_siret)
       JOIN resolution_features x USING(query_id,candidate_siret)
+      JOIN entity_features z USING(query_id,candidate_siret)
     """
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
@@ -628,64 +743,245 @@ def project_dossier_candidate_features(
 
 
 def materialize_dossier_retrieval_documents(
-    *, dossier_dir: Path, output_dir: Path
+    *,
+    dossier_dir: Path,
+    output_dir: Path,
+    name_portfolio_policy: Path | None = None,
 ) -> Mapping[str, int]:
-    """Materialize direct-site and hierarchical-SIREN retrieval documents."""
+    """Materialize bounded, typed SIRET and SIREN retrieval documents.
+
+    National RNE/BODACC history makes an unbounded bag of names actively
+    harmful: large SIREN receive more terms and present-day identity gets mixed
+    with weak historical evidence.  V2 preserves five semantic roles and caps
+    them deterministically before anything reaches an index.
+    """
     dossier_dir = Path(dossier_dir)
     output_dir = Path(output_dir)
     output_dir.mkdir(parents=True, exist_ok=True)
+    policy_path = Path(name_portfolio_policy) if name_portfolio_policy else (
+        Path(__file__).resolve().parents[2] / "config" / "siren_name_portfolio_v1.json"
+    )
+    policy = json.loads(policy_path.read_text(encoding="utf-8"))
+    if policy.get("schema_version") != "sireto-siren-name-portfolio-v1":
+        raise ValueError("unsupported SIREN name portfolio policy")
+    roles = policy["roles"]
+
+    def cap(role: str, grain: str) -> int:
+        value = roles[role].get(f"maximum_per_{grain}")
+        return int(value or roles[role].get("maximum_per_siren") or 0)
+
     connection = open_siren_dossier(dossier_dir)
+    portfolio_query = f"""
+      WITH classified AS (
+        SELECT siren,siret,subject_kind,source,name_kind,raw_value,normalized_value,
+               valid_from,valid_to,is_current,evidence_id,source_record_id,
+               observed_at,source_priority,
+          CASE
+            WHEN source='BODACC' THEN 'SUPPORTING'
+            WHEN NOT is_current OR source='SIRENE_HISTORY' OR name_kind='HISTORICAL'
+              THEN 'HISTORICAL'
+            WHEN subject_kind='SIRET' THEN 'SITE_CURRENT'
+            WHEN name_kind='LEGAL' THEN 'LEGAL_CURRENT'
+            ELSE 'TRADE_CURRENT'
+          END name_role
+        FROM name_evidence WHERE normalized_value<>''
+      ), deduplicated AS (
+        SELECT siren,siret,subject_kind,name_role,normalized_value,
+               min(raw_value) raw_value,
+               string_agg(DISTINCT source, '|' ORDER BY source) sources,
+               count(DISTINCT source)::INTEGER source_count,
+               max(source_priority)::SMALLINT source_priority,
+               max(is_current) is_current,max(valid_from) valid_from,
+               max(valid_to) valid_to,max(observed_at) observed_at,
+               min(evidence_id) evidence_id,min(source_record_id) source_record_id
+        FROM classified
+        GROUP BY siren,siret,subject_kind,name_role,normalized_value
+      ), ranked AS (
+        SELECT *,
+          row_number() OVER (
+            PARTITION BY subject_kind,CASE WHEN subject_kind='SIRET' THEN siret ELSE siren END,name_role
+            ORDER BY is_current DESC,source_priority DESC,source_count DESC,
+                     valid_from DESC NULLS LAST,observed_at DESC NULLS LAST,normalized_value
+          ) subject_rank,
+          row_number() OVER (
+            PARTITION BY siren,name_role
+            ORDER BY is_current DESC,source_priority DESC,source_count DESC,
+                     valid_from DESC NULLS LAST,observed_at DESC NULLS LAST,normalized_value,siret
+          ) siren_rank
+        FROM deduplicated
+      )
+      SELECT *,
+        CASE name_role
+          WHEN 'LEGAL_CURRENT' THEN subject_rank<={cap('LEGAL_CURRENT', 'siren')}
+          WHEN 'TRADE_CURRENT' THEN subject_rank<={cap('TRADE_CURRENT', 'siren')}
+          WHEN 'SITE_CURRENT' THEN subject_rank<={cap('SITE_CURRENT', 'siret')}
+          WHEN 'HISTORICAL' THEN subject_rank<=CASE WHEN subject_kind='SIRET'
+            THEN {cap('HISTORICAL', 'siret')} ELSE {cap('HISTORICAL', 'siren')} END
+          WHEN 'SUPPORTING' THEN subject_rank<=CASE WHEN subject_kind='SIRET'
+            THEN {cap('SUPPORTING', 'siret')} ELSE {cap('SUPPORTING', 'siren')} END
+          ELSE false END selected_for_subject,
+        CASE name_role
+          WHEN 'LEGAL_CURRENT' THEN siren_rank<={cap('LEGAL_CURRENT', 'siren')}
+          WHEN 'TRADE_CURRENT' THEN siren_rank<={cap('TRADE_CURRENT', 'siren')}
+          WHEN 'SITE_CURRENT' THEN siren_rank<={cap('SITE_CURRENT', 'siren')}
+          WHEN 'HISTORICAL' THEN siren_rank<={cap('HISTORICAL', 'siren')}
+          WHEN 'SUPPORTING' THEN siren_rank<={cap('SUPPORTING', 'siren')}
+          ELSE false END selected_for_siren
+      FROM ranked
+    """
+    portfolio_path = output_dir / "retrieval_name_portfolio.parquet"
+    portfolio_count = _copy(connection, portfolio_query, portfolio_path)
+    portfolio = _sql_path(portfolio_path)
+
     site_query = """
       WITH parent_names AS (
-        SELECT siren, string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) name_values
-        FROM name_evidence WHERE subject_kind='SIREN' GROUP BY siren
+        SELECT siren,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='LEGAL_CURRENT' AND selected_for_siren) legal_current_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='TRADE_CURRENT' AND selected_for_siren) trade_current_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='HISTORICAL' AND selected_for_siren) historical_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
+        FROM read_parquet('__PORTFOLIO__') WHERE subject_kind='SIREN' GROUP BY siren
       ), site_names AS (
-        SELECT siret, string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) name_values
-        FROM name_evidence WHERE subject_kind='SIRET' GROUP BY siret
+        SELECT siret,
+          string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+            FILTER(WHERE name_role='SITE_CURRENT' AND selected_for_subject) site_current_names,
+          string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+            FILTER(WHERE name_role='HISTORICAL' AND selected_for_subject) historical_names,
+          string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+            FILTER(WHERE name_role='SUPPORTING' AND selected_for_subject) supporting_names
+        FROM read_parquet('__PORTFOLIO__') WHERE subject_kind='SIRET' GROUP BY siret
       ), historical_addresses AS (
-        SELECT siret, string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) address_values
-        FROM address_evidence WHERE subject_kind='SIRET' AND NOT is_current GROUP BY siret
+        SELECT siret,string_agg(normalized_value, ' | ' ORDER BY evidence_rank) historical_address_text
+        FROM (
+          SELECT siret,normalized_value,row_number() OVER (
+            PARTITION BY siret ORDER BY source_priority DESC,valid_from DESC NULLS LAST,
+              observed_at DESC NULLS LAST,normalized_value) evidence_rank
+          FROM (SELECT DISTINCT siret,normalized_value,source_priority,valid_from,observed_at
+                FROM address_evidence
+                WHERE subject_kind='SIRET' AND NOT is_current AND normalized_value<>'')
+        ) WHERE evidence_rank<=8 GROUP BY siret
+      ), supporting_addresses AS (
+        SELECT siret,string_agg(normalized_value, ' | ' ORDER BY evidence_rank) supporting_address_text
+        FROM (
+          SELECT siret,normalized_value,row_number() OVER (
+            PARTITION BY siret ORDER BY source_priority DESC,observed_at DESC NULLS LAST,normalized_value) evidence_rank
+          FROM (SELECT DISTINCT siret,normalized_value,source_priority,observed_at
+                FROM address_evidence
+                WHERE subject_kind='SIRET' AND source IN ('RNE','BODACC')
+                  AND normalized_value<>'')
+        ) WHERE evidence_rank<=6 GROUP BY siret
+      ), siret_links AS (
+        SELECT identifier siret,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirets
+        FROM (
+          SELECT from_identifier identifier,to_identifier linked_identifier FROM official_relations
+          WHERE from_kind='SIRET' AND to_kind='SIRET'
+          UNION ALL
+          SELECT to_identifier,from_identifier FROM official_relations
+          WHERE from_kind='SIRET' AND to_kind='SIRET'
+        ) WHERE length(identifier)=14 AND length(linked_identifier)=14 GROUP BY identifier
+      ), siren_links AS (
+        SELECT identifier siren,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirens
+        FROM (
+          SELECT from_identifier identifier,to_identifier linked_identifier FROM official_relations
+          WHERE from_kind='SIREN' AND to_kind='SIREN'
+          UNION ALL
+          SELECT to_identifier,from_identifier FROM official_relations
+          WHERE from_kind='SIREN' AND to_kind='SIREN'
+        ) WHERE length(identifier)=9 AND length(linked_identifier)=9 GROUP BY identifier
       )
       SELECT e.siret document_id,e.siren,'SIRET' document_kind,e.insee,e.postcode,
+             e.street_number number,e.street_number_suffix number_suffix,
              e.administrative_state,e.is_headquarters,
-             concat_ws(' | ',sn.name_values,pn.name_values) name_text,
-             e.current_address_normalized address_text,
-             coalesce(ha.address_values,'') historical_address_text
+             coalesce(pn.legal_current_names,'') legal_current_names,
+             coalesce(pn.trade_current_names,'') trade_current_names,
+             coalesce(sn.site_current_names,'') site_current_names,
+             concat_ws(' | ',sn.historical_names,pn.historical_names) historical_names,
+             concat_ws(' | ',sn.supporting_names,pn.supporting_names) supporting_names,
+             e.current_address_normalized current_address_text,
+             coalesce(ha.historical_address_text,'') historical_address_text,
+             coalesce(sa.supporting_address_text,'') supporting_address_text,
+             coalesce(x.linked_sirets,'') linked_sirets,
+             coalesce(y.linked_sirens,'') linked_sirens
       FROM establishments e LEFT JOIN parent_names pn USING(siren)
       LEFT JOIN site_names sn USING(siret) LEFT JOIN historical_addresses ha USING(siret)
-    """
+      LEFT JOIN supporting_addresses sa USING(siret) LEFT JOIN siret_links x USING(siret)
+      LEFT JOIN siren_links y USING(siren)
+    """.replace("__PORTFOLIO__", portfolio)
     siren_query = """
       WITH names AS (
-        SELECT siren,string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) name_text
-        FROM name_evidence GROUP BY siren
-      ), addresses AS (
-        SELECT siren,string_agg(DISTINCT normalized_value, ' | ' ORDER BY normalized_value) address_text
-        FROM address_evidence GROUP BY siren
+        SELECT siren,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='LEGAL_CURRENT' AND selected_for_siren) legal_current_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='TRADE_CURRENT' AND selected_for_siren) trade_current_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='SITE_CURRENT' AND selected_for_siren) site_current_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='HISTORICAL' AND selected_for_siren) historical_names,
+          string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
+        FROM read_parquet('__PORTFOLIO__') GROUP BY siren
       ), geos AS (
-        SELECT siren,string_agg(DISTINCT insee, ' ' ORDER BY insee) FILTER(WHERE insee<>'') insee_values,
-               string_agg(DISTINCT postcode, ' ' ORDER BY postcode) FILTER(WHERE postcode<>'') postcode_values
-        FROM establishments GROUP BY siren
+        SELECT DISTINCT siren,insee,postcode FROM establishments
+        WHERE insee<>'' OR postcode<>''
+      ), siren_links AS (
+        SELECT identifier siren,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirens
+        FROM (
+          SELECT from_identifier identifier,to_identifier linked_identifier FROM official_relations
+          WHERE from_kind='SIREN' AND to_kind='SIREN'
+          UNION ALL SELECT to_identifier,from_identifier FROM official_relations
+          WHERE from_kind='SIREN' AND to_kind='SIREN'
+        ) WHERE length(identifier)=9 AND length(linked_identifier)=9 GROUP BY identifier
       )
       SELECT u.siren document_id,u.siren,'SIREN' document_kind,
-             coalesce(g.insee_values,'') insee,coalesce(g.postcode_values,'') postcode,
-             u.administrative_state,false is_headquarters,
-             coalesce(n.name_text,'') name_text,coalesce(a.address_text,'') address_text,
-             '' historical_address_text
-      FROM legal_units u LEFT JOIN names n USING(siren)
-      LEFT JOIN addresses a USING(siren) LEFT JOIN geos g USING(siren)
-    """
+             coalesce(g.insee,'') insee,coalesce(g.postcode,'') postcode,
+             '' number,'' number_suffix,u.administrative_state,false is_headquarters,
+             coalesce(n.legal_current_names,'') legal_current_names,
+             coalesce(n.trade_current_names,'') trade_current_names,
+             coalesce(n.site_current_names,'') site_current_names,
+             coalesce(n.historical_names,'') historical_names,
+             coalesce(n.supporting_names,'') supporting_names,
+             '' current_address_text,'' historical_address_text,'' supporting_address_text,
+             '' linked_sirets,coalesce(x.linked_sirens,'') linked_sirens
+      FROM legal_units u LEFT JOIN names n USING(siren) JOIN geos g USING(siren)
+      LEFT JOIN siren_links x USING(siren)
+    """.replace("__PORTFOLIO__", portfolio)
     counts = {
+        "name_portfolio": portfolio_count,
         "siret_documents": _copy(connection, site_query, output_dir / "retrieval_siret_documents.parquet"),
         "siren_documents": _copy(connection, siren_query, output_dir / "retrieval_siren_documents.parquet"),
     }
+    source_counts = {
+        str(source): int(count)
+        for source, count in connection.execute(
+            """
+            SELECT source,sum(row_count)::BIGINT FROM (
+              SELECT source,count(*) row_count FROM name_evidence GROUP BY source
+              UNION ALL SELECT source,count(*) FROM address_evidence GROUP BY source
+              UNION ALL SELECT source,count(*) FROM official_relations GROUP BY source
+            ) GROUP BY source ORDER BY source
+            """
+        ).fetchall()
+    }
+    temporal_complete = {"SIRENE_CURRENT", "RNE", "BODACC"}.issubset(source_counts)
     connection.close()
     (output_dir / "manifest.json").write_bytes(
         canonical_json(
             {
-                "schema_version": "sireto-siren-dossier-retrieval-documents-v1",
+                "schema_version": "sireto-siren-dossier-retrieval-documents-v2",
                 "dossier_manifest_sha256": sha256_file(dossier_dir / "manifest.json"),
+                "name_portfolio_policy_sha256": sha256_file(policy_path),
                 "counts": counts,
                 "fields_separate": True,
+                "blind_name_concatenation": False,
+                "current_exact_only": True,
+                "historical_and_supporting_rescue_only": True,
+                "official_source_counts": source_counts,
+                "temporal_complete": temporal_complete,
                 "maximum_candidates_contract": 100,
             }
         )
@@ -696,7 +992,7 @@ def materialize_dossier_retrieval_documents(
 def project_dossier_fusion_text(
     *, dossier_dir: Path, candidates_path: Path, output_path: Path
 ) -> int:
-    """Emit source-separated text evidence for BGE/CamemBERT/fusion models."""
+    """Emit bounded source/role-separated evidence for neural/fusion models."""
     connection = open_siren_dossier(dossier_dir)
     candidates = _sql_path(Path(candidates_path))
     query = f"""
@@ -704,16 +1000,48 @@ def project_dossier_fusion_text(
         SELECT DISTINCT query_id::VARCHAR query_id,candidate_siret::VARCHAR candidate_siret,
                left(candidate_siret::VARCHAR,9) candidate_siren
         FROM read_parquet('{candidates}')
+      ), name_rows AS (
+        SELECT c.query_id,c.candidate_siret,'NAME' field,n.source,n.name_kind evidence_kind,
+               CASE WHEN n.source='BODACC' THEN 'SUPPORTING'
+                    WHEN NOT n.is_current OR n.source='SIRENE_HISTORY' OR n.name_kind='HISTORICAL' THEN 'HISTORICAL'
+                    WHEN n.subject_kind='SIRET' THEN 'SITE_CURRENT'
+                    WHEN n.name_kind='LEGAL' THEN 'LEGAL_CURRENT'
+                    ELSE 'TRADE_CURRENT' END evidence_role,
+               n.raw_value text_value,n.normalized_value,n.valid_from,n.valid_to,n.is_current,
+               n.observed_at,n.source_priority,n.evidence_id,n.source_record_id,
+               row_number() OVER (
+                 PARTITION BY c.query_id,c.candidate_siret,
+                   CASE WHEN n.source='BODACC' THEN 'SUPPORTING'
+                        WHEN NOT n.is_current OR n.source='SIRENE_HISTORY' OR n.name_kind='HISTORICAL' THEN 'HISTORICAL'
+                        WHEN n.subject_kind='SIRET' THEN 'SITE_CURRENT'
+                        WHEN n.name_kind='LEGAL' THEN 'LEGAL_CURRENT' ELSE 'TRADE_CURRENT' END
+                 ORDER BY n.is_current DESC,n.source_priority DESC,n.valid_from DESC NULLS LAST,
+                          n.observed_at DESC NULLS LAST,n.normalized_value
+               ) evidence_rank
+        FROM candidates c JOIN name_evidence n ON n.siren=c.candidate_siren
+         AND (n.siret='' OR n.siret=c.candidate_siret)
+      ), address_rows AS (
+        SELECT c.query_id,c.candidate_siret,'ADDRESS' field,a.source,'ADDRESS' evidence_kind,
+               CASE WHEN a.source='SIRENE_CURRENT' AND a.siret=c.candidate_siret THEN 'SITE_CURRENT'
+                    WHEN NOT a.is_current THEN 'HISTORICAL' ELSE 'SUPPORTING' END evidence_role,
+               a.raw_value text_value,a.normalized_value,a.valid_from,a.valid_to,a.is_current,
+               a.observed_at,a.source_priority,a.evidence_id,a.source_record_id,
+               row_number() OVER (
+                 PARTITION BY c.query_id,c.candidate_siret,
+                   CASE WHEN a.source='SIRENE_CURRENT' AND a.siret=c.candidate_siret THEN 'SITE_CURRENT'
+                        WHEN NOT a.is_current THEN 'HISTORICAL' ELSE 'SUPPORTING' END
+                 ORDER BY a.is_current DESC,a.source_priority DESC,a.valid_from DESC NULLS LAST,
+                          a.observed_at DESC NULLS LAST,a.normalized_value
+               ) evidence_rank
+        FROM candidates c JOIN address_evidence a ON a.siren=c.candidate_siren
+         AND (a.siret='' OR a.siret=c.candidate_siret)
       )
-      SELECT c.query_id,c.candidate_siret,'NAME' field,n.source,n.name_kind evidence_kind,
-             n.raw_value text_value,n.normalized_value,n.valid_from,n.valid_to,n.is_current
-      FROM candidates c JOIN name_evidence n ON n.siren=c.candidate_siren
-       AND (n.siret='' OR n.siret=c.candidate_siret)
+      SELECT * FROM name_rows WHERE evidence_rank<=CASE evidence_role
+        WHEN 'LEGAL_CURRENT' THEN 4 WHEN 'TRADE_CURRENT' THEN 8
+        WHEN 'SITE_CURRENT' THEN 6 WHEN 'HISTORICAL' THEN 12 ELSE 6 END
       UNION ALL
-      SELECT c.query_id,c.candidate_siret,'ADDRESS',a.source,'ADDRESS',
-             a.raw_value,a.normalized_value,a.valid_from,a.valid_to,a.is_current
-      FROM candidates c JOIN address_evidence a ON a.siren=c.candidate_siren
-       AND (a.siret='' OR a.siret=c.candidate_siret)
+      SELECT * FROM address_rows WHERE evidence_rank<=CASE evidence_role
+        WHEN 'SITE_CURRENT' THEN 2 WHEN 'HISTORICAL' THEN 8 ELSE 6 END
     """
     count = _copy(connection, query, Path(output_path))
     connection.close()

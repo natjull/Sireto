@@ -245,3 +245,61 @@ def test_builder_indexes_official_history_and_successions(tmp_path: Path):
     assert [hit.record.siret for hit in old_name_hits] == ["12345678900001"]
     assert backend.by_siret("12345678900001").linked_sirets == ("12345678900002",)
     assert backend.by_siret("12345678900002").linked_sirets == ("12345678900001",)
+
+
+def test_typed_dossier_portfolio_keeps_history_as_rescue_only(tmp_path: Path):
+    documents = tmp_path / "documents"
+    documents.mkdir()
+    common = {
+        "document_id": "12345678900001", "siren": "123456789",
+        "document_kind": "SIRET", "insee": "75056", "postcode": "75001",
+        "number": "10", "number_suffix": "", "administrative_state": "A",
+        "is_headquarters": True, "legal_current_names": "ALPHA GROUPE",
+        "trade_current_names": "ALPHA", "site_current_names": "ALPHA PARIS",
+        "historical_names": "ANCIENNE ALPHA", "supporting_names": "ALPHA BODACC",
+        "current_address_text": "10 RUE DES FLEURS",
+        "historical_address_text": "8 RUE DES FLEURS",
+        "supporting_address_text": "10 R DES FLEURS",
+        "linked_sirets": "", "linked_sirens": "",
+    }
+    pq.write_table(pa.Table.from_pylist([common]), documents / "retrieval_siret_documents.parquet")
+    pq.write_table(
+        pa.Table.from_pylist([{**common, "document_id": "123456789", "document_kind": "SIREN",
+                               "number": "", "number_suffix": "", "is_headquarters": False,
+                               "current_address_text": "", "historical_address_text": "",
+                               "supporting_address_text": ""}]),
+        documents / "retrieval_siren_documents.parquet",
+    )
+    pq.write_table(pa.Table.from_pylist([{"siren": "123456789"}]),
+                   documents / "retrieval_name_portfolio.parquet")
+    (documents / "manifest.json").write_text(json.dumps({
+        "schema_version": "sireto-siren-dossier-retrieval-documents-v2",
+        "temporal_complete": True,
+    }))
+    temp_directory = tmp_path / "duckdb_tmp"
+    temp_directory.mkdir()
+    output = build_index(Namespace(
+        dossier_documents=documents, establishments=None, legal_units=None,
+        retrieval_config=Path("config/retrieval_hierarchical_v2.json"),
+        establishments_history=None, legal_units_history=None, successions=None,
+        output_root=tmp_path / "indices", temp_directory=temp_directory,
+        batch_size=2, commit_every=10, writer_heap_bytes=30_000_000,
+        writer_threads=1, duckdb_memory_limit="1GB", duckdb_threads=1, smoke_limit=None,
+    ))
+    manifest = json.loads((output / "manifest.json").read_text())
+    assert manifest["typed_name_portfolio"] is True
+    backend = TantivyBackend(output)
+    current = backend.search(RetrievalQuery(name="ALPHA PARIS", insee="75056"),
+                             "site_name_exact", 10)
+    assert [hit.record.siret for hit in current] == ["12345678900001"]
+    assert backend.search(RetrievalQuery(name="ANCIENNE ALPHA", insee="75056"),
+                          "site_name_exact", 10) == []
+    historical = backend.search(RetrievalQuery(name="ANCIENNE ALPHA", insee="75056"),
+                                "historical_name_word", 10)
+    assert [hit.record.siret for hit in historical] == ["12345678900001"]
+    retriever = HierarchicalSiretRetriever(
+        backend, HierarchicalRetrievalConfig.load("config/retrieval_hierarchical_v2.json")
+    )
+    candidates = retriever.retrieve(RetrievalQuery(name="ANCIENNE ALPHA", insee="75056"))
+    assert candidates[0].siret == "12345678900001"
+    assert "historical_name_word" in candidates[0].sources

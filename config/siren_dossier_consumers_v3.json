@@ -1,0 +1,52 @@
+{
+  "schema_version": "sireto-siren-dossier-consumers-v3",
+  "activation": "OPT_IN_UNTIL_RETRIEVAL_GATE",
+  "authority": {
+    "current_identity_and_state": "SIRENE",
+    "additional_dated_evidence": ["RNE", "BODACC"],
+    "automatic_label_correction": false
+  },
+  "retrieval": {
+    "documents": ["SIRET_DIRECT_SITE", "SIREN_HIERARCHICAL"],
+    "name_portfolio_policy": "config/siren_name_portfolio_v1.json",
+    "fields": [
+      "legal_current_names", "trade_current_names", "site_current_names",
+      "historical_names", "supporting_names", "current_address_text",
+      "historical_address_text", "supporting_address_text", "insee", "postcode"
+    ],
+    "sources": ["SIRENE_CURRENT", "SIRENE_HISTORY", "RNE", "BODACC"],
+    "preserve_field_and_source_boundaries": true,
+    "historical_values_are_capped_by_recency_and_priority": true,
+    "current_exact_names_are_protected": true,
+    "historical_and_bodacc_names_are_rescue_only": true,
+    "explicit_relations_are_one_hop_only": true,
+    "annual_accounts_enabled": false,
+    "maximum_final_candidates": 100
+  },
+  "ranker_decider_risk": {
+    "join_key": ["query_id", "candidate_siret"],
+    "identifiers_are_model_features": false,
+    "source_specific_name_and_address_features": true,
+    "source_consensus_and_conflict_features": true,
+    "explicit_relation_features": true,
+    "rne_account_deposits_status": "HELD_OUT_STRUCTURED",
+    "frozen_until_retrieval_gate": true
+  },
+  "neural_and_fusion": {
+    "format": "LONG_SOURCE_ROLE_SEPARATED_BOUNDED_TEXT",
+    "fields": ["NAME", "ADDRESS"],
+    "source_mask_required": true,
+    "role_mask_required": true,
+    "annual_accounts_enabled": false,
+    "free_text_and_personal_data_forbidden": true,
+    "blind_concatenation_forbidden": true,
+    "same_siren_other_site_negative_policy": "EXCLUDE_IF_SAME_PHYSICAL_SITE"
+  },
+  "privacy": {
+    "excluded": [
+      "beneficial_owners", "physical_person_representatives", "birth_data",
+      "email", "telephone", "signature", "iban", "attachments",
+      "free_text_observations", "annual_account_cells"
+    ]
+  }
+}

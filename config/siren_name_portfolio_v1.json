@@ -1,0 +1,54 @@
+{
+  "schema_version": "sireto-siren-name-portfolio-v1",
+  "policy_id": "official-typed-bounded-name-portfolio-v1",
+  "authority": {
+    "current_identity": "SIRENE_CURRENT",
+    "additional_official_evidence": ["RNE", "SIRENE_HISTORY", "BODACC"],
+    "crm_aliases_allowed": false
+  },
+  "roles": {
+    "LEGAL_CURRENT": {
+      "maximum_per_siren": 4,
+      "exact_protected": true
+    },
+    "TRADE_CURRENT": {
+      "maximum_per_siren": 8,
+      "exact_protected": true
+    },
+    "SITE_CURRENT": {
+      "maximum_per_siret": 6,
+      "maximum_per_siren": 12,
+      "exact_protected": true
+    },
+    "HISTORICAL": {
+      "maximum_per_siret": 6,
+      "maximum_per_siren": 12,
+      "exact_protected": false
+    },
+    "SUPPORTING": {
+      "maximum_per_siret": 4,
+      "maximum_per_siren": 6,
+      "exact_protected": false
+    }
+  },
+  "selection_order": [
+    "is_current_desc",
+    "source_priority_desc",
+    "source_consensus_desc",
+    "valid_from_desc",
+    "observed_at_desc",
+    "normalized_value_asc"
+  ],
+  "retrieval": {
+    "fields": [
+      "legal_current_names",
+      "trade_current_names",
+      "site_current_names",
+      "historical_names",
+      "supporting_names"
+    ],
+    "current_exact_only": true,
+    "historical_and_supporting_are_rescue_only": true,
+    "preserve_source_and_role_in_features": true
+  }
+}

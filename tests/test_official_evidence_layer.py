@@ -267,6 +267,43 @@ def test_rne_bulk_expands_principal_and_other_establishments(tmp_path: Path):
     assert by_subject["12345678900029"].addresses[0].postcode == "69001"
 
 
+def test_rne_exploitation_branch_preserves_trade_name_and_address(tmp_path: Path):
+    record = {
+        "id": "bulk-exploitation",
+        "formality": {
+            "siren": "123456789",
+            "content": {
+                "exploitation": {
+                    "nomCommercial": "ATELIER DU PORT",
+                    "adresseEntreprise": {"adresse": {
+                        "numVoie": "7", "typeVoie": "QUAI", "voie": "DU PORT",
+                        "codePostal": "13002", "codeInseeCommune": "13055",
+                    }},
+                    "etablissementPrincipal": {
+                        "descriptionEtablissement": {
+                            "siret": "12345678900011", "nomExploitation": "ATELIER MARSEILLE",
+                            "indicateurEtablissementPrincipal": True,
+                        },
+                        "adresse": {
+                            "numVoie": "7", "typeVoie": "QUAI", "voie": "DU PORT",
+                            "codePostal": "13002", "codeInseeCommune": "13055",
+                        },
+                    },
+                }
+            },
+        },
+    }
+    result = canonicalize_snapshot_record(
+        _spec(tmp_path / "bulk.zip", OfficialSource.RNE, SnapshotRole.RNE_RECORDS),
+        record,
+        ordinal=1,
+    )
+    by_subject = {item.subject_id: item for item in result.evidence}
+    assert {name.raw_value for name in by_subject["123456789"].names} == {"ATELIER DU PORT"}
+    assert by_subject["123456789"].addresses[0].insee == "13055"
+    assert by_subject["12345678900011"].names[0].raw_value == "ATELIER MARSEILLE"
+
+
 def test_duplicate_precedence_keeps_latest_observation():
     common = dict(
         source=OfficialSource.RNE,

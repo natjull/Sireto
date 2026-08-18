@@ -1,0 +1,39 @@
+{
+  "schema_version": "sireto-hierarchical-retrieval-v2",
+  "enabled": true,
+  "backend": "tantivy",
+  "require_tantivy_in_production": true,
+  "geography": {
+    "primary": "insee",
+    "fallback": "postcode"
+  },
+  "limits": {
+    "max_candidates": 100,
+    "union_cap": 1000,
+    "direct_top_k": 300,
+    "name_char_top_k": 150,
+    "address_char_top_k": 150,
+    "historical_name_top_k": 100,
+    "supporting_name_top_k": 50,
+    "siren_top_k": 5,
+    "sites_per_siren": 32
+  },
+  "analysis": {
+    "typed_name_portfolio": true,
+    "char_ngram_min": 3,
+    "char_ngram_max": 5,
+    "include_closed": true,
+    "include_official_history": true,
+    "include_official_successions": true,
+    "current_exact_only": true,
+    "historical_and_supporting_rescue_only": true
+  },
+  "fusion": {
+    "rrf_k": 60,
+    "allocation": {
+      "direct": 60,
+      "hierarchical": 30,
+      "character_rescue": 10
+    }
+  }
+}
