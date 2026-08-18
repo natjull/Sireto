@@ -783,15 +783,39 @@ def materialize_dossier_retrieval_documents(
         "CREATE TEMP VIEW retrieval_siren_scope AS "
         "SELECT DISTINCT siren FROM retrieval_establishment_scope"
     )
+    name_columns = {row[0] for row in connection.execute("DESCRIBE name_evidence").fetchall()}
+    address_columns = {row[0] for row in connection.execute("DESCRIBE address_evidence").fetchall()}
+    priority_expression = (
+        "CASE source WHEN 'SIRENE_CURRENT' THEN 400 WHEN 'SIRENE_HISTORY' THEN 350 "
+        "WHEN 'RNE' THEN 300 WHEN 'BODACC' THEN 200 ELSE 100 END::SMALLINT"
+    )
+    name_extras = []
+    for column, expression in {
+        "evidence_id": "''::VARCHAR",
+        "source_record_id": "''::VARCHAR",
+        "observed_at": "NULL::DATE",
+        "source_priority": priority_expression,
+    }.items():
+        if column not in name_columns:
+            name_extras.append(f"{expression} AS {column}")
+    address_extras = []
+    for column, expression in {
+        "observed_at": "NULL::DATE",
+        "source_priority": priority_expression,
+    }.items():
+        if column not in address_columns:
+            address_extras.append(f"{expression} AS {column}")
+    name_extra_sql = ("," + ",".join(name_extras)) if name_extras else ""
+    address_extra_sql = ("," + ",".join(address_extras)) if address_extras else ""
     connection.execute(
-        """CREATE TEMP VIEW retrieval_name_scope AS
-        SELECT n.* FROM name_evidence n JOIN retrieval_siren_scope s USING(siren)
+        f"""CREATE TEMP VIEW retrieval_name_scope AS
+        SELECT n.* {name_extra_sql} FROM name_evidence n JOIN retrieval_siren_scope s USING(siren)
         WHERE n.subject_kind='SIREN' OR n.siret IN
           (SELECT siret FROM retrieval_establishment_scope)"""
     )
     connection.execute(
-        """CREATE TEMP VIEW retrieval_address_scope AS
-        SELECT a.* FROM address_evidence a JOIN retrieval_siren_scope s USING(siren)
+        f"""CREATE TEMP VIEW retrieval_address_scope AS
+        SELECT a.* {address_extra_sql} FROM address_evidence a JOIN retrieval_siren_scope s USING(siren)
         WHERE a.subject_kind='SIREN' OR a.siret IN
           (SELECT siret FROM retrieval_establishment_scope)"""
     )
