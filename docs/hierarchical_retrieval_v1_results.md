@@ -73,21 +73,21 @@ contrat : historique 2 495/2 565 (97,271 %), V2 exact 2 343/2 400
 - Étendre les SIREN lexicaux de top-5 à top-20 ne sauve aucun des 37 cas absents
   des deux générateurs.
 
-Un diagnostic dense générique, exécuté uniquement sur ces 37 cas avec l'index
-MiniLM global V9 déjà existant, retrouve le bon SIREN dans 5 cas. Pour chacun,
-le store officiel contient bien le SIRET exact dans les 2 à 30 sites déroulés.
-L'oracle de génération combiné atteint donc au moins 3 478/3 510 = **99,088 %**.
-La fusion RRF V9 historique ne conserve cependant aucun de ces cinq SIRET dans
-son top-100 et sa latence p95 atteint 9,35 s sur ce sous-ensemble volontairement
-difficile. Cela valide le dense comme rescue conditionnel, pas comme fusion
-symétrique ni comme chemin systématique.
+Un diagnostic dense générique a ensuite été exécuté uniquement sur ces 37 cas
+avec l'index MiniLM global V9 déjà existant. Le résultat hybride contient cinq
+bons SIREN, mais une interrogation séparée du canal dense top-50 montre qu'ils
+proviennent tous du sparse local : **le dense seul en retrouve zéro**. Sa latence
+p95 atteint en outre 9,35 s sur ce sous-ensemble volontairement difficile.
+Il n'ajoute donc aucun candidat prouvé à l'oracle et n'est pas retenu comme
+rescue dans cette version.
 
 Le problème restant n'est donc ni un alias à mémoriser ni un simple changement
 de quota. Il faut :
 
 1. conserver l'union sparse historique + historique officiel hiérarchique ;
-2. exécuter le dense global uniquement sur les scènes sparse incertaines et
-   dérouler de façon bornée les sites locaux de ses quelques SIREN de tête ;
+2. ajouter un signal candidat réellement nouveau — priorité aux données
+   officielles temporelles ou à une métrique caractère entity-level — et
+   exiger un gain d'oracle avant toute fusion ;
 3. apprendre ou calibrer sur train/dev une fusion de retrieval qui sélectionne
    100 candidats dans cette union sans évincer les succès sparse ;
 4. republier exact et opérationnel, puis ouvrir le test une seule fois seulement
