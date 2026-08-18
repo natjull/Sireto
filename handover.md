@@ -5013,6 +5013,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   snapshots, construire l'overlay, entraîner sur 2/3/4 puis ouvrir une seule
   évaluation dev 0. Le test reste fermé tant que tous les gates dev ne passent
   pas.
+- La documentation INPI Formalités v4 fournie le 18 août lève le blocage
+  transport sans réutiliser le FTP. Le commit `f21198d` implémente le login
+  HTTPS officiel `/api/sso/login`, le jeton Bearer, le flux différentiel
+  `/api/companies/diff`, le curseur de réponse `pagination-search-after` et les
+  bornes documentées `from` exclusive / `to` inclusive. Le jeton et le secret
+  sont effacés après exécution; aucun credential n'entre dans un manifeste.
+  Le parseur RNE couvre désormais les chemins JSON `content.personneMorale` et
+  `content.personnePhysique` de la documentation. Il met fail-closed en
+  quarantaine `diffusionCommerciale=false` et `diffusionINSEE=N`. Les 43 tests
+  retrieval officiels passent. L'endpoint TLS de production répond, mais le
+  Trousseau `com.sireto.rne-official` n'est pas encore initialisé : aucune
+  authentification ni synchronisation RNE réelle n'a donc été lancée.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
