@@ -5064,7 +5064,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   déterministe et `36b02f3` impose un plancher de 64 Gio libres avant toute
   nouvelle partition. Le run réel 2000-01-01 -> 2026-08-18 est lancé en 1 390
   fenêtres de sept jours; aucune donnée déjà scellée ne sera rejouée après une
-  interruption.
+  interruption. Après un refus de connexion INPI sur la septième fenêtre, le
+  commit `e3e1443` ajoute six tentatives réseau par partition avec attente
+  exponentielle; la reprise repart du dernier manifeste valide.
 - Le commit `148a0ce` introduit le store content-addressé « dossier SIREN ».
   Son data plane est constitué de Parquet séparés pour unités légales, sites
   SIRET, preuves de noms, preuves d'adresses, relations structurées, résolution
