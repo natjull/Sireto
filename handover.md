@@ -5022,9 +5022,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Le parseur RNE couvre désormais les chemins JSON `content.personneMorale` et
   `content.personnePhysique` de la documentation. Il met fail-closed en
   quarantaine `diffusionCommerciale=false` et `diffusionINSEE=N`. Les 43 tests
-  retrieval officiels passent. L'endpoint TLS de production répond, mais le
-  Trousseau `com.sireto.rne-official` n'est pas encore initialisé : aucune
-  authentification ni synchronisation RNE réelle n'a donc été lancée.
+  retrieval officiels passent. L'endpoint TLS de production répondait, mais le
+  Trousseau `com.sireto.rne-official` n'était pas encore initialisé à ce jalon :
+  aucune authentification ni synchronisation RNE réelle n'avait alors été lancée.
+- L'accès API a ensuite été initialisé dans le Trousseau et la première
+  synchronisation réelle a abouti : intervalle du 17 août exclus au 18 août
+  inclus, 16 771 formalités, 171 549 863 octets, payload SHA-256
+  `72ba7661fcaf84e4fc96623c2bc390ff0c4c20ee3c5a1023b934e762932ab794`,
+  manifest `6fad4c6d7136e5b2`. Le commit `299bf3f` couvre l'enveloppe live
+  supplémentaire `company.formality` observée dans ce flux. La canonisation
+  ciblée SIRENE+RNE produit 5 885 preuves RNE autorisées, met en quarantaine
+  10 860 oppositions de réutilisation, 96 conflits géographiques de précédence
+  et 26 enregistrements vides. L'overlay
+  `official_evidence_overlay_v1/8c2178602fca3a3b` contient 21 048 documents,
+  pèse 46 MiB, n'a pas modifié l'index national et ne contient ni label CRM ni
+  valeur brute. Son manifest a le SHA-256
+  `2f40ed20ddeb8a861c5492c291724e0bcb0a4223c35e91b4fa18c57aa9cc75ab`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
