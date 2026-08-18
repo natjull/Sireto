@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+import zipfile
 
 import pandas as pd
 import pyarrow as pa
@@ -32,6 +33,8 @@ from src.xgb_matcher.official_evidence_builder import (
     build_official_evidence_layer,
     canonicalize_snapshot_record,
     resolve_evidence_precedence,
+    snapshot_specs_from_sync_manifest,
+    stream_snapshot_rows,
 )
 from src.xgb_matcher.official_evidence_retrieval import (
     LTR_CHANNELS,
@@ -57,6 +60,35 @@ def _spec(path: Path, source: OfficialSource, role: SnapshotRole) -> SnapshotSpe
 def _write_parquet(path: Path, rows: list[dict]) -> Path:
     pq.write_table(pa.Table.from_pylist(rows), path)
     return path
+
+
+def test_rne_bulk_manifest_streams_json_members_from_zip(tmp_path: Path):
+    archive = tmp_path / "stock_RNE_formalites.zip"
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+        output.writestr("stock_000001.json", json.dumps([{"siren": "123456789"}]))
+        output.writestr("stock_000002.jsonl", '{"siren":"987654321"}\n')
+        output.writestr("notice.txt", "ignored")
+    import hashlib
+
+    manifest = {
+        "source": "rne-ftp-bulk",
+        "payload": [
+            {
+                "name": archive.name,
+                "size_bytes": archive.stat().st_size,
+                "sha256": hashlib.sha256(archive.read_bytes()).hexdigest(),
+            }
+        ],
+        "provenance": {"snapshot_date": "2026-03-04"},
+    }
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    specs = snapshot_specs_from_sync_manifest(manifest_path)
+    assert specs[0].source is OfficialSource.RNE
+    assert [row["siren"] for row in stream_snapshot_rows(specs[0])] == [
+        "123456789",
+        "987654321",
+    ]
 
 
 def _sirene_establishment(

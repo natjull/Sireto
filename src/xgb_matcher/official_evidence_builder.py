@@ -13,10 +13,12 @@ from dataclasses import dataclass
 from enum import Enum
 import gzip
 import hashlib
+import io
 import json
 from pathlib import Path
 import shutil
 import tempfile
+import zipfile
 from typing import Any, Iterable, Iterator, Mapping, Sequence
 
 import duckdb
@@ -136,7 +138,7 @@ def snapshot_specs_from_sync_manifest(
     manifest_path = Path(manifest_path)
     raw = json.loads(manifest_path.read_text(encoding="utf-8"))
     source_name = str(raw.get("source") or "").upper()
-    if source_name == "RNE":
+    if source_name in {"RNE", "RNE-FTP-BULK"}:
         source = OfficialSource.RNE
         default_role = SnapshotRole.RNE_RECORDS
     elif source_name == "BODACC":
@@ -152,7 +154,10 @@ def snapshot_specs_from_sync_manifest(
         or raw.get("created_at")
     )
     specs: list[SnapshotSpec] = []
-    for item in raw.get("payload") or []:
+    payload_items = raw.get("payload") or (
+        raw.get("remote") if source_name == "RNE-FTP-BULK" else []
+    )
+    for item in payload_items:
         path = manifest_path.parent / str(item.get("name") or "")
         if not path.is_file():
             raise FileNotFoundError(f"manifest payload is missing: {path}")
@@ -238,6 +243,45 @@ def stream_snapshot_rows(spec: SnapshotSpec) -> Iterator[Mapping[str, Any]]:
         if isinstance(value, list):
             yield from value
             return
+    if suffix == ".zip":
+        with zipfile.ZipFile(spec.path) as archive:
+            for info in archive.infolist():
+                if info.is_dir() or info.filename.startswith("__MACOSX/"):
+                    continue
+                member_suffix = Path(info.filename).suffix.lower()
+                if member_suffix not in {".json", ".jsonl", ".ndjson"}:
+                    continue
+                if info.flag_bits & 0x1:
+                    raise ValueError(f"encrypted ZIP member is unsupported: {info.filename}")
+                with archive.open(info) as binary, io.TextIOWrapper(
+                    binary, encoding="utf-8-sig", newline=""
+                ) as stream:
+                    if member_suffix in {".jsonl", ".ndjson"}:
+                        for line_number, line in enumerate(stream, start=1):
+                            if not line.strip():
+                                continue
+                            value = json.loads(line)
+                            if not isinstance(value, Mapping):
+                                raise ValueError(
+                                    f"{spec.path}!{info.filename}:{line_number} is not a JSON object"
+                                )
+                            yield value
+                        continue
+                    value = json.load(stream)
+                    if isinstance(value, Mapping):
+                        for key in ("records", "results", "items", "formalites"):
+                            if isinstance(value.get(key), list):
+                                yield from value[key]
+                                break
+                        else:
+                            yield value
+                    elif isinstance(value, list):
+                        yield from value
+                    else:
+                        raise ValueError(
+                            f"{spec.path}!{info.filename} is not a JSON object or array"
+                        )
+        return
     raise ValueError(f"unsupported snapshot format: {spec.path}")
 
 

@@ -188,7 +188,20 @@ def main() -> int:
                 ),
                 flush=True,
             )
-        manifest = {**identity, "remote": remote, "build_id": build_id, "complete": True}
+        manifest = {
+            **identity,
+            "remote": remote,
+            "payload": [
+                {
+                    "name": item["name"],
+                    "size_bytes": item["size_bytes"],
+                    "sha256": item["sha256"],
+                }
+                for item in remote
+            ],
+            "build_id": build_id,
+            "complete": True,
+        }
         (stage / "manifest.json").write_bytes(canonical_json(manifest))
         os.chmod(stage / "manifest.json", 0o600)
         for item in remote:
