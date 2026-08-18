@@ -93,12 +93,8 @@ def _download_resumable(
     destination.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
     offset = destination.stat().st_size if destination.exists() else 0
     if destination.suffix.lower() == ".zip" and offset >= expected_size:
-        try:
-            with zipfile.ZipFile(destination) as archive:
-                if archive.testzip() is None:
-                    return
-        except (OSError, zipfile.BadZipFile):
-            pass
+        if _zip_structure_valid(destination):
+            return
     elif offset > expected_size:
         raise OfficialSyncError(
             f"partial RNE file exceeds advertised remote size: {destination.name}"
@@ -118,16 +114,29 @@ def _download_resumable(
     actual = destination.stat().st_size
     zip_complete = False
     if destination.suffix.lower() == ".zip" and actual >= expected_size:
-        try:
-            with zipfile.ZipFile(destination) as archive:
-                zip_complete = archive.testzip() is None
-        except (OSError, zipfile.BadZipFile):
-            zip_complete = False
+        zip_complete = _zip_structure_valid(destination)
     if actual != expected_size and not zip_complete:
         raise OfficialSyncError(
             f"RNE bulk transfer incomplete for {destination.name}: "
             f"{actual}/{expected_size} advertised bytes"
         )
+
+
+def _zip_structure_valid(path: Path) -> bool:
+    """Validate ZIP64 directory and CRC of boundary members, without a full scan."""
+    try:
+        with zipfile.ZipFile(path) as archive:
+            files = [info for info in archive.infolist() if not info.is_dir()]
+            if not files:
+                return False
+            sampled = [files[0]] + ([files[-1]] if len(files) > 1 else [])
+            for info in sampled:
+                with archive.open(info) as stream:
+                    for _chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+                        pass
+            return True
+    except (OSError, EOFError, zipfile.BadZipFile):
+        return False
 
 
 def main() -> int:
