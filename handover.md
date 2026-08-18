@@ -5094,6 +5094,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   documentent respectivement le spill disque de l'overlay officiel, la borne
   des workers DuckDB, l'indexation incrémentale des couches temporelles et la
   correction des folds du retrieval commercial. Le fold 1 reste fermé.
+- Le backfill API hebdomadaire a été arrêté après vérification des limites et
+  de la disponibilité temporelle réelle du RNE. Le commit `51e94fa` ajoute à
+  la place un chemin bulk FTP reprenable, explicitement opt-in et limité à la
+  source INPI `www.inpi.net`. Le défaut reste sécurisé pour les autres
+  sources; le secret demeure dans le Trousseau et n'est jamais écrit dans les
+  manifests. L'inventaire réel du 18 août contient les stocks récents
+  `formalites_NIVEAU1` (15 135 148 871 octets) et
+  `comptes_annuels_NIVEAU1` (4 298 343 268 octets). Leur téléchargement bulk
+  est reprenable et doit alimenter un nouveau build du dossier SIREN; l'API
+  Formalités v4 est désormais réservée aux incréments ultérieurs.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
