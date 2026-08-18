@@ -5128,6 +5128,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   au grain SIREN (pas les cellules de liasse ni des données personnelles) et
   reste `held_out_structured`: aucun modèle ou retrieval ne la consomme avant
   addendum et ablation train/dev. SIRENE demeure l'autorité de l'état courant.
+- Le commit `7807b23` borne la validation des gros ZIP RNE au répertoire
+  ZIP64 et aux CRC des membres de frontière, puis conserve le SHA-256 intégral;
+  il évite une décompression de contrôle de plusieurs heures. Le commit
+  `1567f59` gèle la politique consommateurs v2 : comptes annuels exclus du
+  retrieval/fusion et des modèles, champs texte séparés par source, données
+  personnelles et pièces jointes interdites, modèles toujours gelés jusqu'au
+  gate retrieval.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
