@@ -5272,6 +5272,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   environ 113 Go libres, la construction du nouvel index national complet ne
   doit pas être lancée en doublon avant décision explicite de remplacement ou
   libération d'espace.
+- Après autorisation explicite, l'ancien index national v1 de 98 Go a été
+  retiré pour libérer l'espace du nouvel index. Son manifeste SHA-256
+  `521d8cbb...`, son schéma Tantivy et sa configuration sont conservés sous
+  `archives/retired_indexes/hierarchical_retrieval_v1_096dd81d4102bdcd`; les
+  sources scellées permettent sa reconstruction. Le volume externe dispose
+  désormais d'environ 211 Go libres.
+- Le commit `3a3cac0` borne la matérialisation nationale des documents retrieval
+  avec un répertoire temporaire externe, une limite mémoire et un nombre de
+  threads explicites, consignés dans le manifeste mais sans effet sur le contenu
+  sémantique. Le smoke réel avec `1GB/2 threads` passe et les 40 tests ciblés
+  dossier/retrieval/admission passent en 5,16 s.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
