@@ -3,6 +3,8 @@
   "end_inclusive": "CHANGE_ME_TODAY_YYYY-MM-DD",
   "partition_days": 7,
   "minimum_free_bytes": 68719476736,
+  "maximum_partition_attempts": 6,
+  "retry_initial_seconds": 5,
   "sync": {
     "keychain": {
       "service": "com.sireto.rne-official",

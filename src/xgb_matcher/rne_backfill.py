@@ -16,6 +16,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
+import time
 from typing import Any, Callable, Iterable, Mapping
 
 from .official_source_sync import RneSyncConfig, canonical_json, sha256_file, sync_rne
@@ -41,6 +42,8 @@ class RneBackfillConfig:
     end_inclusive: str
     partition_days: int = 7
     minimum_free_bytes: int = 64 * 1024**3
+    maximum_partition_attempts: int = 6
+    retry_initial_seconds: float = 5.0
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RneBackfillConfig":
@@ -65,7 +68,16 @@ class RneBackfillConfig:
         minimum_free_bytes = int(raw.get("minimum_free_bytes", 64 * 1024**3))
         if minimum_free_bytes < 1024**3:
             raise ValueError("minimum_free_bytes must be at least 1 GiB")
-        return cls(sync, start, end, partition_days, minimum_free_bytes)
+        maximum_partition_attempts = int(raw.get("maximum_partition_attempts", 6))
+        retry_initial_seconds = float(raw.get("retry_initial_seconds", 5.0))
+        if maximum_partition_attempts < 1:
+            raise ValueError("maximum_partition_attempts must be positive")
+        if retry_initial_seconds < 0:
+            raise ValueError("retry_initial_seconds cannot be negative")
+        return cls(
+            sync, start, end, partition_days, minimum_free_bytes,
+            maximum_partition_attempts, retry_initial_seconds,
+        )
 
 
 def plan_rne_backfill(config: RneBackfillConfig) -> tuple[RneBackfillPartition, ...]:
@@ -118,6 +130,7 @@ def run_rne_backfill(
     receipt_path: Path,
     sync_function: Callable[..., Path] = sync_rne,
     progress: Callable[[str], None] | None = None,
+    sleep: Callable[[float], None] = time.sleep,
 ) -> Path:
     """Seal every missing partition and update a resumable receipt.
 
@@ -155,9 +168,27 @@ def run_rne_backfill(
             to_date=partition.to_inclusive,
             output_name=f"rne-formalites-{partition.partition_id}.jsonl.gz",
         )
-        output = sync_function(
-            config=replace(config.sync, api=api), output_root=output_root
-        )
+        last_error: Exception | None = None
+        output: Path | None = None
+        for attempt in range(1, config.maximum_partition_attempts + 1):
+            try:
+                output = sync_function(
+                    config=replace(config.sync, api=api), output_root=output_root
+                )
+                break
+            except Exception as error:
+                last_error = error
+                if attempt == config.maximum_partition_attempts:
+                    raise
+                delay = config.retry_initial_seconds * (2 ** (attempt - 1))
+                if progress:
+                    progress(
+                        f"RNE RETRY {partition.partition_id} attempt={attempt + 1} "
+                        f"delay_seconds={delay:g}"
+                    )
+                sleep(delay)
+        if output is None:
+            raise RuntimeError("RNE partition produced no output") from last_error
         manifest_path = output / "manifest.json"
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         provenance = manifest.get("provenance") or {}
@@ -181,6 +212,7 @@ def run_rne_backfill(
             "end_inclusive": config.end_inclusive,
             "partition_days": config.partition_days,
             "minimum_free_bytes": config.minimum_free_bytes,
+            "maximum_partition_attempts": config.maximum_partition_attempts,
             "planned_partition_count": len(planned),
             "completed_partition_count": len(completed),
             "complete": len(completed) == len(planned),

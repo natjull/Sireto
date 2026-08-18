@@ -90,3 +90,44 @@ def test_backfill_refuses_to_cross_disk_safety_floor(tmp_path: Path):
             RneBackfillConfig.from_dict(raw), output_root=tmp_path,
             receipt_path=tmp_path / "receipt.json", sync_function=lambda **_: tmp_path,
         )
+
+
+def test_backfill_retries_only_unsealed_partition(tmp_path: Path):
+    raw = {
+        "start_exclusive": "2026-08-01", "end_inclusive": "2026-08-02",
+        "partition_days": 1, "minimum_free_bytes": 1024**3,
+        "maximum_partition_attempts": 3, "retry_initial_seconds": 0.25,
+        "sync": {
+            "keychain": {"service": "fixture", "account": "fixture"},
+            "api": {"from": "2026-08-01", "to": "2026-08-02"},
+        },
+    }
+    calls = 0
+    sleeps = []
+
+    def flaky(*, config, output_root):
+        nonlocal calls
+        calls += 1
+        if calls == 1:
+            raise ConnectionError("fixture")
+        output = output_root / "rne" / "sealed"
+        output.mkdir(parents=True)
+        (output / "manifest.json").write_bytes(
+            canonical_json({
+                "build_id": "sealed",
+                "provenance": {
+                    "from_exclusive": config.api.from_date,
+                    "to_inclusive": config.api.to_date,
+                    "records": 1,
+                },
+            })
+        )
+        return output
+
+    run_rne_backfill(
+        RneBackfillConfig.from_dict(raw), output_root=tmp_path / "store",
+        receipt_path=tmp_path / "receipt.json", sync_function=flaky,
+        sleep=sleeps.append,
+    )
+    assert calls == 2
+    assert sleeps == [0.25]
