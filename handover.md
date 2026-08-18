@@ -5288,6 +5288,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   réutilisés, tandis qu'une publication incomplète ou incompatible échoue
   explicitement. Cette propriété permet au superviseur macOS de maintenir le
   calcul long sans pouvoir écraser un build terminé; 25 tests ciblés passent.
+- Le commit `1cd48ca` publie l'entrée retrieval réellement conforme au contrat
+  des 37 218 labels humains, sous
+  `datasets/crm_gt_v3_retrieval_input_all_human/35e5038d1e7e492c` : 23 587
+  lignes train (folds 2/3/4), 7 009 dev (fold 0) et 6 622 test (fold 1).
+  Les 33 825 labels exacts sont explicitement identifiables; les 3 393
+  historiques AMBIGUOUS/UNRESOLVED comptent dans la couverture mais ne sont
+  pas transformés en positifs. `development.parquet` exclut physiquement le
+  fold 1; `test_locked.parquet` est scellé mais reste fermé.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
