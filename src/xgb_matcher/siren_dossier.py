@@ -22,7 +22,12 @@ import duckdb
 from .official_source_sync import canonical_json, sha256_file
 
 
-SIREN_DOSSIER_SCHEMA_VERSION = "sireto-siren-dossier-v1"
+SIREN_DOSSIER_SCHEMA_VERSION_V1 = "sireto-siren-dossier-v1"
+SIREN_DOSSIER_SCHEMA_VERSION = "sireto-siren-dossier-v2"
+SUPPORTED_SIREN_DOSSIER_SCHEMA_VERSIONS = {
+    SIREN_DOSSIER_SCHEMA_VERSION_V1,
+    SIREN_DOSSIER_SCHEMA_VERSION,
+}
 SIREN_DOSSIER_FEATURE_SCHEMA_VERSION = "sireto-siren-dossier-features-v1"
 
 
@@ -40,7 +45,7 @@ def _normalized(expression: str) -> str:
 def _input_identity(path: Path) -> dict[str, Any]:
     path = path.resolve()
     return {
-        "path": str(path),
+        "name": path.name,
         "size_bytes": path.stat().st_size,
         "sha256": sha256_file(path),
     }
@@ -52,17 +57,20 @@ class SirenDossierInputs:
     sirene_legal_units: Path
     official_evidence: tuple[Path, ...]
     official_relations: tuple[Path, ...]
+    rne_account_deposits: tuple[Path, ...] = ()
 
     def __post_init__(self) -> None:
         object.__setattr__(self, "sirene_establishments", Path(self.sirene_establishments))
         object.__setattr__(self, "sirene_legal_units", Path(self.sirene_legal_units))
         object.__setattr__(self, "official_evidence", tuple(Path(p) for p in self.official_evidence))
         object.__setattr__(self, "official_relations", tuple(Path(p) for p in self.official_relations))
+        object.__setattr__(self, "rne_account_deposits", tuple(Path(p) for p in self.rne_account_deposits))
         for path in (
             self.sirene_establishments,
             self.sirene_legal_units,
             *self.official_evidence,
             *self.official_relations,
+            *self.rne_account_deposits,
         ):
             if not path.is_file():
                 raise FileNotFoundError(path)
@@ -84,6 +92,7 @@ _DOSSIER_TABLE_FILES = (
     ("address_evidence", "address_evidence.parquet"),
     ("address_site_resolution", "address_site_resolution.parquet"),
     ("official_relations", "relations.parquet"),
+    ("rne_account_deposits", "rne_account_deposits.parquet"),
     ("siren_summary", "siren_summary.parquet"),
 )
 
@@ -136,6 +145,7 @@ def build_siren_dossier(
         "sirene_legal_units": _input_identity(inputs.sirene_legal_units),
         "official_evidence": [_input_identity(p) for p in inputs.official_evidence],
         "official_relations": [_input_identity(p) for p in inputs.official_relations],
+        "rne_account_deposits": [_input_identity(p) for p in inputs.rne_account_deposits],
     }
     identity = {
         "schema_version": SIREN_DOSSIER_SCHEMA_VERSION,
@@ -147,6 +157,8 @@ def build_siren_dossier(
             "site_resolution": "UNIQUE_EXACT_NORMALIZED_ADDRESS_AND_GEO_ONLY",
             "crm_labels_present": False,
             "model_scores_present": False,
+            "rne_accounts_level": "SIREN_ONLY",
+            "rne_account_model_use_enabled": False,
         },
     }
     build_id = hashlib.sha256(canonical_json(identity)).hexdigest()
@@ -178,6 +190,11 @@ def build_siren_dossier(
         legal_units = f"read_parquet('{_sql_path(inputs.sirene_legal_units)}')"
         evidence = f"read_parquet({_parquet_list(inputs.official_evidence)}, union_by_name=true)"
         relations = f"read_parquet({_parquet_list(inputs.official_relations)}, union_by_name=true)"
+        accounts = (
+            f"read_parquet({_parquet_list(inputs.rne_account_deposits)}, union_by_name=true)"
+            if inputs.rne_account_deposits
+            else None
+        )
 
         counts["legal_units"] = _copy(
             connection,
@@ -228,6 +245,7 @@ def build_siren_dossier(
             f"SELECT siren::VARCHAR siren, ''::VARCHAR siret, 'SIREN' subject_kind, "
             f"'SIRENE_CURRENT' AS \"source\", '{kind}' AS name_kind, {column}::VARCHAR raw_value, "
             f"{_normalized(column)} normalized_value, NULL::DATE valid_from, NULL::DATE valid_to, true is_current "
+            f",''::VARCHAR evidence_id, ''::VARCHAR source_record_id, NULL::DATE observed_at, 400::SMALLINT source_priority "
             f"FROM {legal_units} WHERE coalesce({column}::VARCHAR, '') <> ''"
             for column, kind in (
                 ("denominationUniteLegale", "LEGAL"),
@@ -243,6 +261,7 @@ def build_siren_dossier(
             f"SELECT siren::VARCHAR siren, siret::VARCHAR siret, 'SIRET' subject_kind, "
             f"'SIRENE_CURRENT' AS \"source\", '{kind}' AS name_kind, {column}::VARCHAR raw_value, "
             f"{_normalized(column)} normalized_value, NULL::DATE valid_from, NULL::DATE valid_to, true is_current "
+            f",''::VARCHAR evidence_id, ''::VARCHAR source_record_id, NULL::DATE observed_at, 400::SMALLINT source_priority "
             f"FROM {establishments} WHERE coalesce({column}::VARCHAR, '') <> ''"
             for column, kind in (
                 ("enseigne1Etablissement", "SIGN"),
@@ -264,7 +283,9 @@ def build_siren_dossier(
                      n.kind::VARCHAR, n.raw_value::VARCHAR,
                      n.normalized_value::VARCHAR,
                      try_cast(e.valid_from AS DATE), try_cast(e.valid_to AS DATE),
-                     e.is_current::BOOLEAN
+                     e.is_current::BOOLEAN, e.evidence_id::VARCHAR,
+                     e.source_record_id::VARCHAR, try_cast(e.observed_at AS DATE),
+                     e.source_priority::SMALLINT
               FROM {evidence} e, unnest(e.names) AS item(n)
               WHERE coalesce(n.normalized_value, '') <> ''
             )
@@ -283,7 +304,9 @@ def build_siren_dossier(
                      coalesce(codeCommuneEtablissement, '')::VARCHAR insee,
                      coalesce(numeroVoieEtablissement, '')::VARCHAR street_number,
                      coalesce(indiceRepetitionEtablissement, '')::VARCHAR street_number_suffix,
-                     NULL::DATE valid_from, NULL::DATE valid_to, true is_current
+                     NULL::DATE valid_from, NULL::DATE valid_to, true is_current,
+                     ''::VARCHAR evidence_id, ''::VARCHAR source_record_id,
+                     NULL::DATE observed_at, 400::SMALLINT source_priority
               FROM {establishments}
               WHERE {_normalized(current_address)} <> ''
               UNION ALL
@@ -293,7 +316,9 @@ def build_siren_dossier(
                      a.postcode::VARCHAR, a.insee::VARCHAR,
                      a.number::VARCHAR, a.number_suffix::VARCHAR,
                      try_cast(e.valid_from AS DATE), try_cast(e.valid_to AS DATE),
-                     e.is_current::BOOLEAN
+                     e.is_current::BOOLEAN, e.evidence_id::VARCHAR,
+                     e.source_record_id::VARCHAR, try_cast(e.observed_at AS DATE),
+                     e.source_priority::SMALLINT
               FROM {evidence} e, unnest(e.addresses) AS item(a)
               WHERE coalesce(a.normalized_value, '') <> ''
                  OR coalesce(a.postcode, '') <> '' OR coalesce(a.insee, '') <> ''
@@ -305,18 +330,62 @@ def build_siren_dossier(
             connection,
             f"""
             SELECT DISTINCT relation_id::VARCHAR relation_id, source::VARCHAR AS \"source\",
+                   source_record_id::VARCHAR source_record_id,
                    relation_type::VARCHAR relation_type,
                    from_kind::VARCHAR from_kind, from_identifier::VARCHAR from_identifier,
                    to_kind::VARCHAR to_kind, to_identifier::VARCHAR to_identifier,
-                   try_cast(effective_date AS DATE) effective_date
+                   try_cast(effective_date AS DATE) effective_date,
+                   try_cast(observed_at AS DATE) observed_at,
+                   source_priority::SMALLINT source_priority
             FROM {relations}
             """,
             stage / "relations.parquet",
+        )
+        account_query = (
+            f"""
+            SELECT DISTINCT source_record_uid::VARCHAR source_record_uid,
+                   snapshot_id::VARCHAR snapshot_id,
+                   archive_member::VARCHAR archive_member,
+                   source_record_ordinal::BIGINT source_record_ordinal,
+                   filing_id::VARCHAR filing_id, siren::VARCHAR siren,
+                   denomination::VARCHAR denomination,
+                   try_cast(filing_date AS DATE) filing_date,
+                   try_cast(closing_date AS DATE) closing_date,
+                   try_cast(previous_closing_date AS DATE) previous_closing_date,
+                   updated_at::VARCHAR updated_at,
+                   chronology_number::VARCHAR chronology_number,
+                   confidentiality::VARCHAR confidentiality,
+                   is_public::BOOLEAN is_public, is_deleted::BOOLEAN is_deleted,
+                   account_type::VARCHAR account_type, currency::VARCHAR currency,
+                   try_cast(duration_months AS SMALLINT) duration_months,
+                   activity_code::VARCHAR activity_code,
+                   structured_accounts_present::BOOLEAN structured_accounts_present
+            FROM {accounts}
+            WHERE regexp_full_match(siren::VARCHAR, '[0-9]{{9}}')
+            """
+            if accounts
+            else """
+            SELECT ''::VARCHAR source_record_uid, ''::VARCHAR snapshot_id,
+                   ''::VARCHAR archive_member, 0::BIGINT source_record_ordinal,
+                   ''::VARCHAR filing_id, ''::VARCHAR siren,
+                   ''::VARCHAR denomination, NULL::DATE filing_date,
+                   NULL::DATE closing_date, NULL::DATE previous_closing_date,
+                   ''::VARCHAR updated_at, ''::VARCHAR chronology_number,
+                   ''::VARCHAR confidentiality, false::BOOLEAN is_public,
+                   false::BOOLEAN is_deleted, ''::VARCHAR account_type,
+                   ''::VARCHAR currency, NULL::SMALLINT duration_months,
+                   ''::VARCHAR activity_code,
+                   false::BOOLEAN structured_accounts_present WHERE false
+            """
+        )
+        counts["rne_account_deposits"] = _copy(
+            connection, account_query, stage / "rne_account_deposits.parquet"
         )
         names_path = _sql_path(stage / "name_evidence.parquet")
         addresses_path = _sql_path(stage / "address_evidence.parquet")
         sites_path = _sql_path(stage / "establishments.parquet")
         relations_path = _sql_path(stage / "relations.parquet")
+        accounts_path = _sql_path(stage / "rne_account_deposits.parquet")
         counts["address_site_resolution"] = _copy(
             connection,
             f"""
@@ -373,6 +442,14 @@ def build_siren_dossier(
               SELECT siren, count(*) FILTER (WHERE resolution_status='UNIQUE_EXACT_SITE')::INTEGER resolved_external_site_count,
                      count(*) FILTER (WHERE resolution_status='AMBIGUOUS_EXACT_SITE')::INTEGER ambiguous_external_site_count
               FROM read_parquet('{resolution_path}') GROUP BY siren
+            ), accounts AS (
+              SELECT siren,
+                     count(*)::INTEGER rne_account_deposit_count,
+                     count(*) FILTER (WHERE is_public AND NOT is_deleted)::INTEGER rne_public_account_period_count,
+                     count(*) FILTER (WHERE NOT is_public AND NOT is_deleted)::INTEGER rne_confidential_account_period_count,
+                     max(filing_date) rne_latest_account_filing_date,
+                     max(closing_date) rne_latest_account_closing_date
+              FROM read_parquet('{accounts_path}') GROUP BY siren
             )
             SELECT u.siren, u.administrative_state, u.creation_date, u.legal_category,
                    u.main_activity, u.enterprise_category, u.headquarters_nic,
@@ -387,10 +464,15 @@ def build_siren_dossier(
                    coalesce(l.relation_count,0) relation_count,
                    coalesce(r.resolved_external_site_count,0) resolved_external_site_count,
                    coalesce(r.ambiguous_external_site_count,0) ambiguous_external_site_count
+                   ,coalesce(ac.rne_account_deposit_count,0) rne_account_deposit_count
+                   ,coalesce(ac.rne_public_account_period_count,0) rne_public_account_period_count
+                   ,coalesce(ac.rne_confidential_account_period_count,0) rne_confidential_account_period_count
+                   ,ac.rne_latest_account_filing_date, ac.rne_latest_account_closing_date
             FROM read_parquet('{_sql_path(stage / 'legal_units.parquet')}') u
             LEFT JOIN sites s USING(siren) LEFT JOIN names n USING(siren)
             LEFT JOIN addresses a USING(siren) LEFT JOIN links l USING(siren)
             LEFT JOIN resolved r USING(siren)
+            LEFT JOIN accounts ac USING(siren)
             """,
             stage / "siren_summary.parquet",
         )
@@ -433,6 +515,7 @@ def build_siren_dossier(
                 "decider": ["siren_summary", "address_site_resolution", "official_relations"],
                 "risk": ["siren_summary", "address_site_resolution", "official_relations"],
                 "fusion_text": ["name_evidence", "address_evidence"],
+                "held_out_structured": ["rne_account_deposits"],
             },
         }
         (stage / "manifest.json").write_bytes(canonical_json(manifest))
@@ -455,7 +538,7 @@ def project_dossier_candidate_features(
     """
     dossier_dir = Path(dossier_dir)
     manifest = json.loads((dossier_dir / "manifest.json").read_text(encoding="utf-8"))
-    if manifest.get("schema_version") != SIREN_DOSSIER_SCHEMA_VERSION:
+    if manifest.get("schema_version") not in SUPPORTED_SIREN_DOSSIER_SCHEMA_VERSIONS:
         raise ValueError("incompatible SIREN dossier")
     connection = duckdb.connect()
     columns = {

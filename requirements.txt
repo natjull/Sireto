@@ -4,6 +4,7 @@ jsonschema>=4.20
 scikit-learn
 pandas
 pyarrow
+ijson>=3.3,<4
 xgboost
 scipy
 joblib

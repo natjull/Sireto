@@ -24,6 +24,7 @@ from typing import Any, Iterable, Iterator, Mapping, Sequence
 import duckdb
 import pyarrow as pa
 import pyarrow.parquet as pq
+import ijson
 
 from .official_evidence import (
     OFFICIAL_EVIDENCE_SCHEMA_VERSION,
@@ -262,10 +263,12 @@ def stream_snapshot_rows(spec: SnapshotSpec) -> Iterator[Mapping[str, Any]]:
                     continue
                 if info.flag_bits & 0x1:
                     raise ValueError(f"encrypted ZIP member is unsupported: {info.filename}")
-                with archive.open(info) as binary, io.TextIOWrapper(
-                    binary, encoding="utf-8-sig", newline=""
-                ) as stream:
+                with archive.open(info) as binary:
+                    buffered = io.BufferedReader(binary)
                     if member_suffix in {".jsonl", ".ndjson"}:
+                        stream = io.TextIOWrapper(
+                            buffered, encoding="utf-8-sig", newline=""
+                        )
                         for line_number, line in enumerate(stream, start=1):
                             if not line.strip():
                                 continue
@@ -276,6 +279,20 @@ def stream_snapshot_rows(spec: SnapshotSpec) -> Iterator[Mapping[str, Any]]:
                                 )
                             yield value
                         continue
+                    prefix = buffered.peek(4096).lstrip(b"\xef\xbb\xbf \t\r\n")
+                    if prefix.startswith(b"["):
+                        for ordinal, value in enumerate(
+                            ijson.items(buffered, "item"), start=1
+                        ):
+                            if not isinstance(value, Mapping):
+                                raise ValueError(
+                                    f"{spec.path}!{info.filename}:{ordinal} is not a JSON object"
+                                )
+                            yield value
+                        continue
+                    stream = io.TextIOWrapper(
+                        buffered, encoding="utf-8-sig", newline=""
+                    )
                     value = json.load(stream)
                     if isinstance(value, Mapping):
                         for key in ("records", "results", "items", "formalites"):
@@ -688,6 +705,7 @@ def _canonicalize_sirene_succession(
 
 _RNE_SIREN = [
     "siren",
+    "formality.siren",
     "content.personneMorale.identite.entreprise.siren",
     "identite.entreprise.siren",
     "entreprise.siren",
@@ -700,6 +718,8 @@ _RNE_SIRET = [
     "etablissementPrincipal.siret",
     "etablissementPrincipal.descriptionEtablissement.siret",
     "formality.content.personneMorale.etablissementPrincipal.descriptionEtablissement.siret",
+    "formality.content.personnePhysique.etablissementPrincipal.descriptionEtablissement.siret",
+    "formality.content.exploitation.etablissementPrincipal.descriptionEtablissement.siret",
 ]
 _RNE_NAMES = (
     ("denomination", OfficialNameKind.LEGAL),
@@ -742,6 +762,93 @@ _RNE_NAMES = (
     ("etablissement.enseigne", OfficialNameKind.SIGN),
 )
 
+_RNE_PERSON_BRANCHES = (
+    "formality.content.personneMorale",
+    "formality.content.personnePhysique",
+    "formality.content.exploitation",
+    "content.personneMorale",
+    "content.personnePhysique",
+    "content.exploitation",
+)
+
+_RNE_SITE_NAMES = (
+    ("descriptionEtablissement.enseigne", OfficialNameKind.SIGN),
+    ("descriptionEtablissement.nomCommercial", OfficialNameKind.TRADE),
+    ("descriptionEtablissement.nomExploitation", OfficialNameKind.USUAL),
+    ("enseigne", OfficialNameKind.SIGN),
+    ("nomCommercial", OfficialNameKind.TRADE),
+)
+
+
+def _rne_site_entries(record: Mapping[str, Any]) -> list[Mapping[str, Any]]:
+    entries: list[Mapping[str, Any]] = []
+    for prefix in _RNE_PERSON_BRANCHES:
+        person = _first(record, [prefix], None)
+        if not isinstance(person, Mapping):
+            continue
+        for key in ("etablissementPrincipal", "etablissementModifie"):
+            value = person.get(key)
+            if isinstance(value, Mapping):
+                entries.append(value)
+        others = person.get("autresEtablissements")
+        if isinstance(others, list):
+            entries.extend(item for item in others if isinstance(item, Mapping))
+    return entries
+
+
+def _canonicalize_rne_site(
+    *,
+    spec: SnapshotSpec,
+    entry: Mapping[str, Any],
+    siren: str,
+    record_id: str,
+) -> OfficialEvidence | None:
+    siret = normalize_siret(
+        _first(entry, ["descriptionEtablissement.siret", "siret"], "")
+    )
+    if not siret or not siret.startswith(siren):
+        return None
+    addresses = _address(
+        entry,
+        number_paths=["adresse.numVoie", "adresse.numeroVoie"],
+        suffix_paths=["adresse.indiceRepetition"],
+        street_type_paths=["adresse.typeVoie"],
+        street_paths=["adresse.voie", "adresse.libelleVoie"],
+        complement_paths=["adresse.complementLocalisation", "adresse.complement"],
+        postcode_paths=["adresse.codePostal"],
+        insee_paths=["adresse.codeInseeCommune", "adresse.codeCommune"],
+        full_paths=["adresse.adresseComplete"],
+    )
+    description = _first(entry, ["descriptionEtablissement"], {})
+    description = description if isinstance(description, Mapping) else {}
+    closed_at = _first(
+        entry,
+        [
+            "descriptionEtablissement.dateEffetFermeture",
+            "dateEffetFermeture",
+            "dateFermeture",
+        ],
+        None,
+    )
+    try:
+        return OfficialEvidence(
+            source=OfficialSource.RNE,
+            source_record_id=f"{record_id}:site:{siret}",
+            subject_kind=OfficialSubjectKind.SIRET,
+            siren=siren,
+            siret=siret,
+            names=_names(entry, _RNE_SITE_NAMES),
+            addresses=addresses,
+            administrative_state=("F" if closed_at else "A"),
+            is_headquarters=_bool(description.get("indicateurEtablissementPrincipal")),
+            valid_from=_first(entry, ["dateDebut", "dateEffet", "dateCreation"], None),
+            valid_to=closed_at,
+            observed_at=spec.observed_at,
+            is_current=not bool(closed_at),
+        )
+    except ValueError:
+        return None
+
 
 def _canonicalize_rne(
     spec: SnapshotSpec,
@@ -781,6 +888,7 @@ def _canonicalize_rne(
                 ),
             )
         )
+    site_entries = _rne_site_entries(record)
     siret = normalize_siret(_first(record, _RNE_SIRET))
     siren = normalize_siren(_first(record, _RNE_SIREN) or siret[:9])
     if not siren:
@@ -861,13 +969,18 @@ def _canonicalize_rne(
         ],
         full_paths=["adresseComplete", "adresse.adresseComplete", "etablissement.adresse.adresseComplete"],
     )
+    evidence_values: list[OfficialEvidence] = []
     try:
-        evidence = OfficialEvidence(
+        evidence_values.append(OfficialEvidence(
             source=OfficialSource.RNE,
             source_record_id=record_id,
-            subject_kind=(OfficialSubjectKind.SIRET if siret else OfficialSubjectKind.SIREN),
+            subject_kind=(
+                OfficialSubjectKind.SIRET
+                if siret and not site_entries
+                else OfficialSubjectKind.SIREN
+            ),
             siren=siren,
-            siret=siret,
+            siret=(siret if siret and not site_entries else ""),
             names=_names(record, _RNE_NAMES),
             addresses=addresses,
             administrative_state=str(
@@ -880,7 +993,7 @@ def _canonicalize_rne(
             valid_to=_first(record, ["dateFin", "dateCessation"], None),
             observed_at=spec.observed_at,
             is_current=not bool(_first(record, ["dateFin", "dateCessation"], None)),
-        )
+        ))
     except ValueError:
         return CanonicalizedRecord(
             quarantine=(
@@ -893,7 +1006,16 @@ def _canonicalize_rne(
                 ),
             )
         )
-    return CanonicalizedRecord(evidence=(evidence,))
+    seen_sites: set[str] = set()
+    for entry in site_entries:
+        site = _canonicalize_rne_site(
+            spec=spec, entry=entry, siren=siren, record_id=record_id
+        )
+        if site is None or site.siret in seen_sites:
+            continue
+        seen_sites.add(site.siret)
+        evidence_values.append(site)
+    return CanonicalizedRecord(evidence=tuple(evidence_values))
 
 
 _BODACC_SIREN = [

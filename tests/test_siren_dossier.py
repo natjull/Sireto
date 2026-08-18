@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
 
 import duckdb
@@ -26,6 +27,7 @@ from src.xgb_matcher.siren_dossier import (
     project_dossier_candidate_features,
     project_dossier_fusion_text,
 )
+from src.xgb_matcher.rne_accounts import ACCOUNT_DEPOSIT_SCHEMA
 
 
 def _write_fixture(tmp_path: Path) -> SirenDossierInputs:
@@ -161,3 +163,45 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
     assert count == len(fusion) > 2
     assert {row["field"] for row in fusion} == {"NAME", "ADDRESS"}
     assert {row["source"] for row in fusion}.issuperset({"SIRENE_CURRENT", "RNE"})
+
+
+def test_dossier_v2_keeps_rne_accounts_siren_level_and_held_out(tmp_path: Path):
+    base = _write_fixture(tmp_path)
+    accounts_path = tmp_path / "account_deposits.parquet"
+    pq.write_table(
+        pa.Table.from_pylist(
+            [
+                {
+                    "source_record_uid": "u1", "snapshot_id": "s1",
+                    "archive_member": "stock.json", "source_record_ordinal": 1,
+                    "filing_id": "f1", "siren": "123456789",
+                    "denomination": "ALPHA", "filing_date": date(2026, 3, 20),
+                    "closing_date": date(2025, 12, 31), "previous_closing_date": date(2024, 12, 31),
+                    "updated_at": "2026-03-20", "chronology_number": "1",
+                    "confidentiality": "Public", "is_public": True,
+                    "is_deleted": False, "account_type": "C", "currency": "EUR",
+                    "duration_months": 12, "activity_code": "6201Z",
+                    "structured_accounts_present": True,
+                }
+            ],
+            schema=ACCOUNT_DEPOSIT_SCHEMA,
+        ),
+        accounts_path,
+    )
+    inputs = SirenDossierInputs(
+        base.sirene_establishments,
+        base.sirene_legal_units,
+        base.official_evidence,
+        base.official_relations,
+        (accounts_path,),
+    )
+    result = build_siren_dossier(inputs, output_root=tmp_path / "out", memory_limit="1GB")
+    connection = open_siren_dossier(result.output_dir)
+    assert connection.execute("select count(*) from rne_account_deposits").fetchone()[0] == 1
+    assert connection.execute(
+        "select rne_public_account_period_count from siren_summary"
+    ).fetchone()[0] == 1
+    connection.close()
+    manifest = json.loads(result.manifest_path.read_text())
+    assert manifest["policy"]["rne_account_model_use_enabled"] is False
+    assert manifest["consumer_contract"]["held_out_structured"] == ["rne_account_deposits"]

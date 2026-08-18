@@ -20,6 +20,7 @@ def main() -> int:
     parser.add_argument("--sirene-legal-units", type=Path, required=True)
     parser.add_argument("--official-evidence", type=Path, action="append", required=True)
     parser.add_argument("--official-relations", type=Path, action="append", required=True)
+    parser.add_argument("--rne-account-deposits", type=Path, action="append", default=[])
     parser.add_argument("--output-root", type=Path, required=True)
     parser.add_argument("--temp-directory", type=Path)
     parser.add_argument("--threads", type=int, default=4)
@@ -31,6 +32,7 @@ def main() -> int:
             args.sirene_legal_units,
             tuple(args.official_evidence),
             tuple(args.official_relations),
+            tuple(args.rne_account_deposits),
         ),
         output_root=args.output_root,
         temp_directory=args.temp_directory,

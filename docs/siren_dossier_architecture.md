@@ -1,4 +1,4 @@
-# Dossier SIREN officiel — architecture Parquet/DuckDB
+# Dossier SIREN officiel v2 — architecture Parquet/DuckDB
 
 Le dossier SIREN est la couche canonique commune à tous les outils SIRETO. Il
 ne remplace pas les sources brutes : il les projette sous forme de preuves
@@ -11,22 +11,35 @@ officielles dédupliquées, datées et traçables.
 - `establishments.parquet` : les SIRET rattachés à leur SIREN, leur état et
   leur site courant ;
 - `name_evidence.parquet` : noms légaux, usuels, enseignes et noms historiques,
-  avec source et intervalle de validité ;
+  avec source, identifiant de preuve/record, priorité, date d'observation et
+  intervalle de validité ;
 - `address_evidence.parquet` : adresses courantes et historiques, avec source,
-  géographie et intervalle de validité ;
+  géographie, provenance du record, date d'observation et intervalle de
+  validité ;
 - `address_site_resolution.parquet` : résolution prudente d'une adresse portée
   au niveau SIREN vers un SIRET uniquement si l'adresse et la géographie
   correspondent à un site unique ;
-- `relations.parquet` : successions et cessions structurées ;
+- `relations.parquet` : successions et cessions structurées, reliées au record
+  officiel qui les porte ;
+- `rne_account_deposits.parquet` : dépôts de comptes au grain SIREN, dates,
+  type, devise, confidentialité et présence d'un bilan structuré. Les cellules
+  détaillées de liasse ne sont pas intégrées à ce stade ;
 - `siren_summary.parquet` : agrégats descriptifs sans label ni score modèle ;
 - `dossier.duckdb` : catalogue portable des Parquet immuables. À l'ouverture,
   le helper crée des vues temporaires vers les fichiers frères ; aucun chemin
   absolu de la machine de build n'est persisté.
 
-Le répertoire est content-addressé par les SHA-256 de toutes ses entrées.
+Le répertoire est content-addressé par les SHA-256, tailles et rôles de toutes
+ses entrées, sans dépendre des chemins absolus de la machine.
 BODACC ne crée jamais automatiquement une identité SIRET : une adresse BODACC
 portée par un SIREN reste une preuve SIREN tant qu'un site unique n'est pas
 établi. Les dirigeants, bénéficiaires effectifs et textes libres sont exclus.
+
+Le stock RNE formalités est lu directement dans son ZIP, tableau JSON en
+streaming. Une formalité produit une preuve SIREN pour l'entreprise puis des
+preuves SIRET distinctes pour l'établissement principal, l'établissement
+modifié et chaque autre établissement explicitement identifié. SIRENE reste
+l'autorité d'existence et d'état courant; RNE ajoute des preuves datées.
 
 ## Utilisation par les modèles
 
@@ -42,6 +55,11 @@ La projection commune est indexée par `(query_id, candidate_siret)` :
   sources, temporalité et ambiguïtés ;
 - **BGE/CamemBERT/fusion** : vues textuelles séparées par champ et source avec
   masques de provenance. On ne concatène pas aveuglément tout le dossier.
+
+Les comptes annuels sont `held_out_structured` dans le manifest v2 : ils sont
+stockés et auditables, mais exclus du retrieval, des textes de fusion et des
+features modèles tant qu'un addendum de politique et une ablation train/dev ne
+les autorisent pas. Ils ne sont jamais attribués à un SIRET.
 
 Les anciens modèles et bundles restent gelés. Le nouveau chemin est opt-in
 jusqu'au gate retrieval ; ranker, decider, risk et fusion ne sont pas réentraînés

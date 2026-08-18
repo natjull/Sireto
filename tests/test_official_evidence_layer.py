@@ -215,6 +215,58 @@ def test_rne_formalites_v4_content_paths_and_reuse_opposition(tmp_path: Path):
     assert opposed.quarantine[0].reason is QuarantineReason.OFFICIAL_REUSE_OPPOSITION
 
 
+def test_rne_bulk_expands_principal_and_other_establishments(tmp_path: Path):
+    record = {
+        "id": "bulk-1",
+        "formality": {
+            "siren": "123456789",
+            "content": {
+                "personnePhysique": {
+                    "adresseEntreprise": {
+                        "adresse": {
+                            "numVoie": "10", "typeVoie": "RUE", "voie": "DE LA PAIX",
+                            "codePostal": "75001", "codeInseeCommune": "75056",
+                        }
+                    },
+                    "etablissementPrincipal": {
+                        "descriptionEtablissement": {
+                            "siret": "12345678900011", "enseigne": "ALPHA PARIS",
+                            "indicateurEtablissementPrincipal": True,
+                        },
+                        "adresse": {
+                            "numVoie": "10", "typeVoie": "RUE", "voie": "DE LA PAIX",
+                            "codePostal": "75001", "codeInseeCommune": "75056",
+                        },
+                    },
+                    "autresEtablissements": [
+                        {
+                            "descriptionEtablissement": {
+                                "siret": "12345678900029", "enseigne": "ALPHA LYON",
+                                "dateEffetFermeture": "2024-01-01",
+                            },
+                            "adresse": {
+                                "numVoie": "2", "typeVoie": "RUE", "voie": "DES FLEURS",
+                                "codePostal": "69001", "codeInseeCommune": "69123",
+                            },
+                        }
+                    ],
+                }
+            },
+        },
+    }
+    result = canonicalize_snapshot_record(
+        _spec(tmp_path / "bulk.zip", OfficialSource.RNE, SnapshotRole.RNE_RECORDS),
+        record,
+        ordinal=1,
+    )
+    by_subject = {item.subject_id: item for item in result.evidence}
+    assert set(by_subject) == {"123456789", "12345678900011", "12345678900029"}
+    assert by_subject["12345678900011"].names[0].raw_value == "ALPHA PARIS"
+    assert by_subject["12345678900011"].is_headquarters is True
+    assert by_subject["12345678900029"].administrative_state == "F"
+    assert by_subject["12345678900029"].addresses[0].postcode == "69001"
+
+
 def test_duplicate_precedence_keeps_latest_observation():
     common = dict(
         source=OfficialSource.RNE,
