@@ -78,26 +78,42 @@ class RneAccountDepositsBuild:
     count: int
 
 
-def _iter_zip_records(path: Path) -> Iterator[tuple[str, int, Mapping[str, Any]]]:
+def _iter_zip_records(
+    path: Path, *, invalid_members: list[dict[str, str]] | None = None
+) -> Iterator[tuple[str, int, Mapping[str, Any]]]:
     with zipfile.ZipFile(path) as archive:
         for info in archive.infolist():
             if info.is_dir() or Path(info.filename).suffix.lower() != ".json":
                 continue
             if info.flag_bits & 0x1:
                 raise ValueError(f"encrypted RNE account member: {info.filename}")
-            with archive.open(info) as binary:
-                buffered = io.BufferedReader(binary)
-                prefix = buffered.peek(4096).lstrip(b"\xef\xbb\xbf \t\r\n")
-                if not prefix.startswith(b"["):
+            try:
+                # Validate the complete source member before emitting any row;
+                # a truncated JSON array must not contribute partial deposits.
+                with archive.open(info) as binary:
+                    buffered = io.BufferedReader(binary)
+                    prefix = buffered.peek(4096).lstrip(b"\xef\xbb\xbf \t\r\n")
+                    if not prefix.startswith(b"["):
+                        raise ValueError("ROOT_NOT_ARRAY")
+                    for record in ijson.items(buffered, "item"):
+                        if not isinstance(record, Mapping):
+                            raise ValueError("RECORD_NOT_OBJECT")
+                with archive.open(info) as binary:
+                    for ordinal, record in enumerate(
+                        ijson.items(io.BufferedReader(binary), "item"), start=1
+                    ):
+                        yield info.filename, ordinal, record
+            except (ijson.JSONError, UnicodeError, ValueError) as exc:
+                if invalid_members is None:
                     raise ValueError(
-                        f"RNE account member is not a root JSON array: {info.filename}"
-                    )
-                for ordinal, record in enumerate(ijson.items(buffered, "item"), start=1):
-                    if not isinstance(record, Mapping):
-                        raise ValueError(
-                            f"RNE account member record is not an object: {info.filename}:{ordinal}"
-                        )
-                    yield info.filename, ordinal, record
+                        f"invalid RNE account JSON member: {info.filename}"
+                    ) from exc
+                invalid_members.append(
+                    {
+                        "archive_member": info.filename,
+                        "reason": type(exc).__name__,
+                    }
+                )
 
 
 def _canonical_row(
@@ -182,8 +198,11 @@ def build_rne_account_deposits(
     writer = pq.ParquetWriter(stage / "account_deposits.parquet", ACCOUNT_DEPOSIT_SCHEMA, compression="zstd")
     count = 0
     rows: list[dict[str, Any]] = []
+    invalid_members: list[dict[str, str]] = []
     try:
-        for member, ordinal, record in _iter_zip_records(archive):
+        for member, ordinal, record in _iter_zip_records(
+            archive, invalid_members=invalid_members
+        ):
             row = _canonical_row(record, snapshot_id=snapshot_id, member=member, ordinal=ordinal)
             if row is None:
                 continue
@@ -201,6 +220,8 @@ def build_rne_account_deposits(
             **identity,
             "build_id": build_id,
             "count": count,
+            "invalid_member_count": len(invalid_members),
+            "invalid_members": invalid_members,
             "output": {"name": output.name, "size_bytes": output.stat().st_size, "sha256": sha256_file(output)},
         }
         (stage / "manifest.json").write_bytes(canonical_json(result_manifest))

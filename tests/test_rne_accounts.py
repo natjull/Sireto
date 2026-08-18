@@ -51,3 +51,25 @@ def test_rne_account_deposits_are_siren_level_and_privacy_minimal(tmp_path: Path
     assert "turnover" not in rows[0]
     saved = json.loads(result.manifest_path.read_text(encoding="utf-8"))
     assert saved["policy"]["model_use_enabled"] is False
+
+
+def test_rne_account_deposits_quarantine_invalid_json_member(tmp_path: Path):
+    archive = tmp_path / "accounts.zip"
+    valid = {"id": "f1", "siren": "123456789", "confidentiality": "Confidentiel"}
+    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_DEFLATED) as output:
+        output.writestr("stock_000001.json", json.dumps([valid]))
+        output.writestr("stock_000002.json", '[{"siren":"987654321"}')
+    digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+    manifest = {"build_id": "s", "payload": [{"name": archive.name, "sha256": digest}]}
+    manifest_path = tmp_path / "manifest.json"
+    manifest_path.write_text(json.dumps(manifest), encoding="utf-8")
+    result = build_rne_account_deposits(
+        manifest_path=manifest_path,
+        payload_name=archive.name,
+        output_root=tmp_path / "output",
+        batch_size=1,
+    )
+    saved = json.loads(result.manifest_path.read_text(encoding="utf-8"))
+    assert saved["count"] == 1
+    assert saved["invalid_member_count"] == 1
+    assert saved["invalid_members"][0]["archive_member"] == "stock_000002.json"
