@@ -2,6 +2,7 @@
   "start_exclusive": "2000-01-01",
   "end_inclusive": "CHANGE_ME_TODAY_YYYY-MM-DD",
   "partition_days": 7,
+  "minimum_free_bytes": 68719476736,
   "sync": {
     "keychain": {
       "service": "com.sireto.rne-official",

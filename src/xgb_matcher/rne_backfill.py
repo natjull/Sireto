@@ -14,6 +14,7 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import shutil
 import tempfile
 from typing import Any, Callable, Iterable, Mapping
 
@@ -39,6 +40,7 @@ class RneBackfillConfig:
     start_exclusive: str
     end_inclusive: str
     partition_days: int = 7
+    minimum_free_bytes: int = 64 * 1024**3
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RneBackfillConfig":
@@ -60,7 +62,10 @@ class RneBackfillConfig:
         partition_days = int(raw.get("partition_days", 7))
         if not 1 <= partition_days <= 31:
             raise ValueError("partition_days must be between 1 and 31")
-        return cls(sync, start, end, partition_days)
+        minimum_free_bytes = int(raw.get("minimum_free_bytes", 64 * 1024**3))
+        if minimum_free_bytes < 1024**3:
+            raise ValueError("minimum_free_bytes must be at least 1 GiB")
+        return cls(sync, start, end, partition_days, minimum_free_bytes)
 
 
 def plan_rne_backfill(config: RneBackfillConfig) -> tuple[RneBackfillPartition, ...]:
@@ -119,6 +124,7 @@ def run_rne_backfill(
     A partition is considered complete only when its source manifest exists,
     has the expected interval and its manifest digest matches the receipt.
     """
+    output_root.mkdir(parents=True, exist_ok=True)
     receipt = _load_receipt(receipt_path)
     completed = {
         str(item.get("partition_id")): item
@@ -135,6 +141,12 @@ def run_rne_backfill(
             if sha256_file(manifest_path) != str(existing.get("manifest_sha256") or ""):
                 raise ValueError(f"sealed RNE partition digest mismatch: {manifest_path}")
             continue
+        free_bytes = shutil.disk_usage(output_root).free
+        if free_bytes < config.minimum_free_bytes:
+            raise OSError(
+                "RNE backfill stopped before partition: free-space safety floor "
+                f"({free_bytes} < {config.minimum_free_bytes})"
+            )
         if progress:
             progress(f"RNE {index}/{len(planned)} {partition.partition_id}")
         api = replace(
@@ -168,6 +180,7 @@ def run_rne_backfill(
             "start_exclusive": config.start_exclusive,
             "end_inclusive": config.end_inclusive,
             "partition_days": config.partition_days,
+            "minimum_free_bytes": config.minimum_free_bytes,
             "planned_partition_count": len(planned),
             "completed_partition_count": len(completed),
             "complete": len(completed) == len(planned),

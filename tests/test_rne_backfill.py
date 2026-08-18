@@ -73,3 +73,20 @@ def test_backfill_receipt_is_resumable_and_checks_manifests(tmp_path: Path):
     assert value["complete"] is True
     assert value["completed_partition_count"] == 3
     assert sum(item["records"] for item in value["partitions"]) == 9
+
+
+def test_backfill_refuses_to_cross_disk_safety_floor(tmp_path: Path):
+    raw = {
+        "start_exclusive": "2026-08-01", "end_inclusive": "2026-08-02",
+        "partition_days": 1, "minimum_free_bytes": 10**18,
+        "sync": {
+            "keychain": {"service": "fixture", "account": "fixture"},
+            "api": {"from": "2026-08-01", "to": "2026-08-02"},
+        },
+    }
+    import pytest
+    with pytest.raises(OSError, match="free-space safety floor"):
+        run_rne_backfill(
+            RneBackfillConfig.from_dict(raw), output_root=tmp_path,
+            receipt_path=tmp_path / "receipt.json", sync_function=lambda **_: tmp_path,
+        )
