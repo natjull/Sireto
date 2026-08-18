@@ -183,6 +183,20 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
     )
 
 
+def test_materialization_supports_a_bounded_real_smoke_scope(tmp_path: Path):
+    result = build_siren_dossier(
+        _write_fixture(tmp_path), output_root=tmp_path / "out", memory_limit="1GB"
+    )
+    documents = tmp_path / "smoke-documents"
+    counts = materialize_dossier_retrieval_documents(
+        dossier_dir=result.output_dir, output_dir=documents, document_limit=1
+    )
+    assert counts["siret_documents"] == 1
+    assert counts["siren_documents"] == 1
+    manifest = json.loads((documents / "manifest.json").read_text())
+    assert manifest["document_limit"] == 1
+
+
 def test_dossier_v2_keeps_rne_accounts_siren_level_and_held_out(tmp_path: Path):
     base = _write_fixture(tmp_path)
     accounts_path = tmp_path / "account_deposits.parquet"

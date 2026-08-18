@@ -24,6 +24,7 @@ def main() -> int:
     retrieval.add_argument("--dossier", type=Path, required=True)
     retrieval.add_argument("--output-dir", type=Path, required=True)
     retrieval.add_argument("--name-portfolio-policy", type=Path)
+    retrieval.add_argument("--document-limit", type=int)
     fusion = sub.add_parser("fusion-text")
     fusion.add_argument("--dossier", type=Path, required=True)
     fusion.add_argument("--candidates", type=Path, required=True)
@@ -34,6 +35,7 @@ def main() -> int:
             dossier_dir=args.dossier,
             output_dir=args.output_dir,
             name_portfolio_policy=args.name_portfolio_policy,
+            document_limit=args.document_limit,
         ))
     else:
         print(project_dossier_fusion_text(dossier_dir=args.dossier, candidates_path=args.candidates, output_path=args.output))

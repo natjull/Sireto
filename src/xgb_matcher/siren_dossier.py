@@ -747,6 +747,7 @@ def materialize_dossier_retrieval_documents(
     dossier_dir: Path,
     output_dir: Path,
     name_portfolio_policy: Path | None = None,
+    document_limit: int | None = None,
 ) -> Mapping[str, int]:
     """Materialize bounded, typed SIRET and SIREN retrieval documents.
 
@@ -771,6 +772,37 @@ def materialize_dossier_retrieval_documents(
         return int(value or roles[role].get("maximum_per_siren") or 0)
 
     connection = open_siren_dossier(dossier_dir)
+    if document_limit is not None and document_limit < 1:
+        raise ValueError("document_limit must be positive")
+    scope_limit = f"LIMIT {int(document_limit)}" if document_limit else ""
+    connection.execute(
+        f"CREATE TEMP VIEW retrieval_establishment_scope AS "
+        f"SELECT * FROM establishments ORDER BY siret {scope_limit}"
+    )
+    connection.execute(
+        "CREATE TEMP VIEW retrieval_siren_scope AS "
+        "SELECT DISTINCT siren FROM retrieval_establishment_scope"
+    )
+    connection.execute(
+        """CREATE TEMP VIEW retrieval_name_scope AS
+        SELECT n.* FROM name_evidence n JOIN retrieval_siren_scope s USING(siren)
+        WHERE n.subject_kind='SIREN' OR n.siret IN
+          (SELECT siret FROM retrieval_establishment_scope)"""
+    )
+    connection.execute(
+        """CREATE TEMP VIEW retrieval_address_scope AS
+        SELECT a.* FROM address_evidence a JOIN retrieval_siren_scope s USING(siren)
+        WHERE a.subject_kind='SIREN' OR a.siret IN
+          (SELECT siret FROM retrieval_establishment_scope)"""
+    )
+    connection.execute(
+        """CREATE TEMP VIEW retrieval_relation_scope AS
+        SELECT r.* FROM official_relations r
+        WHERE (r.from_kind='SIREN' AND r.from_identifier IN (SELECT siren FROM retrieval_siren_scope))
+           OR (r.to_kind='SIREN' AND r.to_identifier IN (SELECT siren FROM retrieval_siren_scope))
+           OR (r.from_kind='SIRET' AND r.from_identifier IN (SELECT siret FROM retrieval_establishment_scope))
+           OR (r.to_kind='SIRET' AND r.to_identifier IN (SELECT siret FROM retrieval_establishment_scope))"""
+    )
     portfolio_query = f"""
       WITH classified AS (
         SELECT siren,siret,subject_kind,source,name_kind,raw_value,normalized_value,
@@ -784,7 +816,7 @@ def materialize_dossier_retrieval_documents(
             WHEN name_kind='LEGAL' THEN 'LEGAL_CURRENT'
             ELSE 'TRADE_CURRENT'
           END name_role
-        FROM name_evidence WHERE normalized_value<>''
+        FROM retrieval_name_scope WHERE normalized_value<>''
       ), deduplicated AS (
         SELECT siren,siret,subject_kind,name_role,normalized_value,
                min(raw_value) raw_value,
@@ -861,7 +893,7 @@ def materialize_dossier_retrieval_documents(
             PARTITION BY siret ORDER BY source_priority DESC,valid_from DESC NULLS LAST,
               observed_at DESC NULLS LAST,normalized_value) evidence_rank
           FROM (SELECT DISTINCT siret,normalized_value,source_priority,valid_from,observed_at
-                FROM address_evidence
+                FROM retrieval_address_scope
                 WHERE subject_kind='SIRET' AND NOT is_current AND normalized_value<>'')
         ) WHERE evidence_rank<=8 GROUP BY siret
       ), supporting_addresses AS (
@@ -870,26 +902,26 @@ def materialize_dossier_retrieval_documents(
           SELECT siret,normalized_value,row_number() OVER (
             PARTITION BY siret ORDER BY source_priority DESC,observed_at DESC NULLS LAST,normalized_value) evidence_rank
           FROM (SELECT DISTINCT siret,normalized_value,source_priority,observed_at
-                FROM address_evidence
+                FROM retrieval_address_scope
                 WHERE subject_kind='SIRET' AND source IN ('RNE','BODACC')
                   AND normalized_value<>'')
         ) WHERE evidence_rank<=6 GROUP BY siret
       ), siret_links AS (
         SELECT identifier siret,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirets
         FROM (
-          SELECT from_identifier identifier,to_identifier linked_identifier FROM official_relations
+          SELECT from_identifier identifier,to_identifier linked_identifier FROM retrieval_relation_scope
           WHERE from_kind='SIRET' AND to_kind='SIRET'
           UNION ALL
-          SELECT to_identifier,from_identifier FROM official_relations
+          SELECT to_identifier,from_identifier FROM retrieval_relation_scope
           WHERE from_kind='SIRET' AND to_kind='SIRET'
         ) WHERE length(identifier)=14 AND length(linked_identifier)=14 GROUP BY identifier
       ), siren_links AS (
         SELECT identifier siren,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirens
         FROM (
-          SELECT from_identifier identifier,to_identifier linked_identifier FROM official_relations
+          SELECT from_identifier identifier,to_identifier linked_identifier FROM retrieval_relation_scope
           WHERE from_kind='SIREN' AND to_kind='SIREN'
           UNION ALL
-          SELECT to_identifier,from_identifier FROM official_relations
+          SELECT to_identifier,from_identifier FROM retrieval_relation_scope
           WHERE from_kind='SIREN' AND to_kind='SIREN'
         ) WHERE length(identifier)=9 AND length(linked_identifier)=9 GROUP BY identifier
       )
@@ -906,7 +938,7 @@ def materialize_dossier_retrieval_documents(
              coalesce(sa.supporting_address_text,'') supporting_address_text,
              coalesce(x.linked_sirets,'') linked_sirets,
              coalesce(y.linked_sirens,'') linked_sirens
-      FROM establishments e LEFT JOIN parent_names pn USING(siren)
+      FROM retrieval_establishment_scope e LEFT JOIN parent_names pn USING(siren)
       LEFT JOIN site_names sn USING(siret) LEFT JOIN historical_addresses ha USING(siret)
       LEFT JOIN supporting_addresses sa USING(siret) LEFT JOIN siret_links x USING(siret)
       LEFT JOIN siren_links y USING(siren)
@@ -926,14 +958,14 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
         FROM read_parquet('__PORTFOLIO__') GROUP BY siren
       ), geos AS (
-        SELECT DISTINCT siren,insee,postcode FROM establishments
+        SELECT DISTINCT siren,insee,postcode FROM retrieval_establishment_scope
         WHERE insee<>'' OR postcode<>''
       ), siren_links AS (
         SELECT identifier siren,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirens
         FROM (
-          SELECT from_identifier identifier,to_identifier linked_identifier FROM official_relations
+          SELECT from_identifier identifier,to_identifier linked_identifier FROM retrieval_relation_scope
           WHERE from_kind='SIREN' AND to_kind='SIREN'
-          UNION ALL SELECT to_identifier,from_identifier FROM official_relations
+          UNION ALL SELECT to_identifier,from_identifier FROM retrieval_relation_scope
           WHERE from_kind='SIREN' AND to_kind='SIREN'
         ) WHERE length(identifier)=9 AND length(linked_identifier)=9 GROUP BY identifier
       )
@@ -960,9 +992,9 @@ def materialize_dossier_retrieval_documents(
         for source, count in connection.execute(
             """
             SELECT source,sum(row_count)::BIGINT FROM (
-              SELECT source,count(*) row_count FROM name_evidence GROUP BY source
-              UNION ALL SELECT source,count(*) FROM address_evidence GROUP BY source
-              UNION ALL SELECT source,count(*) FROM official_relations GROUP BY source
+              SELECT source,count(*) row_count FROM retrieval_name_scope GROUP BY source
+              UNION ALL SELECT source,count(*) FROM retrieval_address_scope GROUP BY source
+              UNION ALL SELECT source,count(*) FROM retrieval_relation_scope GROUP BY source
             ) GROUP BY source ORDER BY source
             """
         ).fetchall()
@@ -983,6 +1015,7 @@ def materialize_dossier_retrieval_documents(
                 "official_source_counts": source_counts,
                 "temporal_complete": temporal_complete,
                 "maximum_candidates_contract": 100,
+                "document_limit": document_limit,
             }
         )
     )

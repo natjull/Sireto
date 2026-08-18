@@ -18,15 +18,18 @@ et limiter la sortie finale à 100 candidats.
 
 ## Exécution
 
-1. Matérialiser une seule fois les documents typés :
+1. Matérialiser d'abord un périmètre technique de 1 000 SIRET :
 
    ```bash
    python scripts/materialize_siren_dossier_consumers.py retrieval \
      --dossier <SIREN_DOSSIER_V3> \
-     --output-dir <TYPED_RETRIEVAL_DOCUMENTS>
+     --output-dir <TYPED_RETRIEVAL_SMOKE_DOCUMENTS> \
+     --document-limit 1000
    ```
 
-2. Construire l'index Tantivy content-addressé :
+2. Construire l'index Tantivy de smoke avec `--smoke-limit 1000`, puis vérifier
+   les champs et le plafond. Si le smoke passe, rematérialiser sans
+   `--document-limit` et construire une seule fois l'index national :
 
    ```bash
    python scripts/build_hierarchical_retrieval_index.py \
@@ -35,9 +38,8 @@ et limiter la sortie finale à 100 candidats.
      --output-root /Volumes/CATNAT_DATA/SIRETO_RECALL100/indices/hierarchical_v2
    ```
 
-3. Faire un smoke de 1 000 documents pendant que le build national est encore
-   absent. Ce smoke vérifie uniquement schéma, champs exacts actuels, rescue
-   historique, filtre géographique et plafond 100 ; il n'est pas un benchmark.
+3. Le smoke vérifie uniquement schéma, champs exacts actuels, rescue historique,
+   filtre géographique et plafond 100 ; il n'est pas un benchmark.
 
 4. Produire l'union train 2/3/4 et dev 0, maximum interne 2 000, avec les
    canaux déclarés dans `config/retrieval_ltr_admission_dossier_v2.json`.
