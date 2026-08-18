@@ -5038,6 +5038,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pèse 46 MiB, n'a pas modifié l'index national et ne contient ni label CRM ni
   valeur brute. Son manifest a le SHA-256
   `2f40ed20ddeb8a861c5492c291724e0bcb0a4223c35e91b4fa18c57aa9cc75ab`.
+- Le commit `369e1ad` ferme le dernier défaut observé sur l'incrément BODACC :
+  les livres A/B/C peuvent être partitionnés et le curseur
+  `dateparution + numeroannonce` est comparé numériquement, avec littéral date
+  Opendatasoft explicite. Le sync réel de la parution `20260156` contient
+  exactement 20 291 annonces (A 3 829, B 4 749, C 11 713), publiées dans trois
+  artefacts content-addressés sans secret. La couche combinée quotidienne
+  `official_2026-08-18_v2` compte 43 873 preuves et 151 relations structurées;
+  elle exclut toujours dirigeants, bénéficiaires effectifs, texte BODACC et
+  labels CRM. L'overlay séparé
+  `official_evidence_overlay_v2/338cd52006a9c30f` contient 39 959 documents
+  pour 69 MiB, n'a pas modifié l'index national et son manifest a le SHA-256
+  `0b17954785d7442623b6dc25909280fcc327367cc393a7c0fe88b383c2d632fb`.
+  Les 44 tests ciblés retrieval officiel/LTR passent; aucun fold test n'a été
+  ouvert. Le prochain jalon n'est plus l'acquisition mais le backfill officiel
+  historique, puis l'union train 2/3/4 et l'unique évaluation dev 0 prévue par
+  le contrat.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
