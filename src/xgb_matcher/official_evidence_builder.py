@@ -285,6 +285,8 @@ def _source_record_id(record: Mapping[str, Any], fallback: str) -> str:
             "numero_annonce",
             "formalites.id",
             "formality.id",
+            "company.id",
+            "company.formality.id",
             "metadata.id",
         ],
     )
@@ -649,14 +651,34 @@ _RNE_SIRET = [
 _RNE_NAMES = (
     ("denomination", OfficialNameKind.LEGAL),
     ("content.personneMorale.identite.entreprise.denomination", OfficialNameKind.LEGAL),
+    (
+        "formality.content.personneMorale.identite.entreprise.denomination",
+        OfficialNameKind.LEGAL,
+    ),
     ("content.personneMorale.identite.entreprise.nomCommercial", OfficialNameKind.TRADE),
+    (
+        "formality.content.personneMorale.identite.entreprise.nomCommercial",
+        OfficialNameKind.TRADE,
+    ),
     ("content.personneMorale.identite.description.sigle", OfficialNameKind.TRADE),
+    (
+        "formality.content.personneMorale.identite.description.sigle",
+        OfficialNameKind.TRADE,
+    ),
     (
         "content.personnePhysique.identite.entrepreneur.descriptionPersonne.nom",
         OfficialNameKind.LEGAL,
     ),
     (
+        "formality.content.personnePhysique.identite.entrepreneur.descriptionPersonne.nom",
+        OfficialNameKind.LEGAL,
+    ),
+    (
         "content.personnePhysique.identite.entrepreneur.descriptionPersonne.nomUsage",
+        OfficialNameKind.USUAL,
+    ),
+    (
+        "formality.content.personnePhysique.identite.entrepreneur.descriptionPersonne.nomUsage",
         OfficialNameKind.USUAL,
     ),
     ("identite.entreprise.denomination", OfficialNameKind.LEGAL),
@@ -674,13 +696,25 @@ def _canonicalize_rne(
     record_id: str,
     fingerprint: str,
 ) -> CanonicalizedRecord:
+    company = record.get("company")
+    if isinstance(company, Mapping):
+        record = company
     commercial_reuse = _first(
         record,
-        ["diffusionCommerciale", "content.diffusionCommerciale"],
+        [
+            "diffusionCommerciale",
+            "content.diffusionCommerciale",
+            "formality.diffusionCommerciale",
+        ],
         None,
     )
     insee_reuse = str(
-        _first(record, ["diffusionINSEE", "content.diffusionINSEE"], "") or ""
+        _first(
+            record,
+            ["diffusionINSEE", "content.diffusionINSEE", "formality.diffusionINSEE"],
+            "",
+        )
+        or ""
     ).upper()
     if _bool(commercial_reuse) is False or insee_reuse == "N":
         return CanonicalizedRecord(
@@ -713,6 +747,8 @@ def _canonicalize_rne(
     addresses = _address(
         record,
         number_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.numVoie",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.numVoie",
             "content.personneMorale.adresseEntreprise.adresse.numVoie",
             "content.personnePhysique.adresseEntreprise.adresse.numVoie",
             "adresse.numeroVoie",
@@ -720,18 +756,24 @@ def _canonicalize_rne(
             "etablissement.adresse.numeroVoie",
         ],
         suffix_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.indiceRepetition",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.indiceRepetition",
             "content.personneMorale.adresseEntreprise.adresse.indiceRepetition",
             "content.personnePhysique.adresseEntreprise.adresse.indiceRepetition",
             "adresse.indiceRepetition",
             "etablissement.adresse.indiceRepetition",
         ],
         street_type_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.typeVoie",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.typeVoie",
             "content.personneMorale.adresseEntreprise.adresse.typeVoie",
             "content.personnePhysique.adresseEntreprise.adresse.typeVoie",
             "adresse.typeVoie",
             "etablissement.adresse.typeVoie",
         ],
         street_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.voie",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.voie",
             "content.personneMorale.adresseEntreprise.adresse.voie",
             "content.personnePhysique.adresseEntreprise.adresse.voie",
             "adresse.voie",
@@ -739,12 +781,16 @@ def _canonicalize_rne(
             "etablissement.adresse.libelleVoie",
         ],
         complement_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.complementLocalisation",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.complementLocalisation",
             "content.personneMorale.adresseEntreprise.adresse.complementLocalisation",
             "content.personnePhysique.adresseEntreprise.adresse.complementLocalisation",
             "adresse.complement",
             "etablissement.adresse.complement",
         ],
         postcode_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.codePostal",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.codePostal",
             "content.personneMorale.adresseEntreprise.adresse.codePostal",
             "content.personnePhysique.adresseEntreprise.adresse.codePostal",
             "codePostal",
@@ -752,6 +798,8 @@ def _canonicalize_rne(
             "etablissement.adresse.codePostal",
         ],
         insee_paths=[
+            "formality.content.personneMorale.adresseEntreprise.adresse.codeInseeCommune",
+            "formality.content.personnePhysique.adresseEntreprise.adresse.codeInseeCommune",
             "content.personneMorale.adresseEntreprise.adresse.codeInseeCommune",
             "content.personnePhysique.adresseEntreprise.adresse.codeInseeCommune",
             "codeCommune",

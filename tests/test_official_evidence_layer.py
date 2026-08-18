@@ -117,8 +117,7 @@ def test_canonical_schema_keeps_raw_and_normalized_but_has_no_sensitive_fields()
 
 
 def test_rne_formalites_v4_content_paths_and_reuse_opposition(tmp_path: Path):
-    record = {
-        "siren": "123456789",
+    formality = {
         "diffusionCommerciale": True,
         "diffusionINSEE": "O",
         "content": {
@@ -143,6 +142,13 @@ def test_rne_formalites_v4_content_paths_and_reuse_opposition(tmp_path: Path):
             }
         },
     }
+    record = {
+        "company": {
+            "id": "company-123456789",
+            "siren": "123456789",
+            "formality": formality,
+        }
+    }
     spec = _spec(
         tmp_path / "rne-api.jsonl",
         OfficialSource.RNE,
@@ -161,7 +167,12 @@ def test_rne_formalites_v4_content_paths_and_reuse_opposition(tmp_path: Path):
 
     opposed = canonicalize_snapshot_record(
         spec,
-        {**record, "diffusionCommerciale": "false"},
+        {
+            "company": {
+                **record["company"],
+                "formality": {**formality, "diffusionCommerciale": "false"},
+            }
+        },
         ordinal=2,
     )
     assert opposed.evidence == ()
