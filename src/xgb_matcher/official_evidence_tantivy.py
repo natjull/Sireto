@@ -204,6 +204,7 @@ def iter_official_evidence_documents(
     connection: duckdb.DuckDBPyConnection | None = None,
     duckdb_temp_directory: Path | str | None = None,
     duckdb_memory_limit: str | None = None,
+    duckdb_threads: int | None = None,
 ) -> Iterator[OfficialEvidenceIndexDocument]:
     """Stream normalized overlay documents, grouping on disk through DuckDB."""
     evidence_path = Path(evidence_path)
@@ -225,6 +226,10 @@ def iter_official_evidence_documents(
         connection.execute(
             f"SET memory_limit='{duckdb_memory_limit.strip().upper()}'"
         )
+    if duckdb_threads is not None:
+        if duckdb_threads < 1 or duckdb_threads > 32:
+            raise ValueError("DuckDB threads must be between 1 and 32")
+        connection.execute(f"SET threads={duckdb_threads}")
     ctes = _projection_ctes(evidence_path, relation_path)
     siret_sql = ctes + """
         SELECT 'siret' AS document_type,
@@ -395,6 +400,7 @@ def build_official_evidence_tantivy_overlay(
     batch_size: int = 4096,
     duckdb_temp_directory: Path | str | None = None,
     duckdb_memory_limit: str | None = None,
+    duckdb_threads: int | None = None,
 ) -> Path:
     """Build a content-addressed overlay; the national base index is untouched."""
     try:
@@ -420,6 +426,7 @@ def build_official_evidence_tantivy_overlay(
             "batch_size": batch_size,
             "duckdb_memory_limit": duckdb_memory_limit,
             "duckdb_spill_enabled": duckdb_temp_directory is not None,
+            "duckdb_threads": duckdb_threads,
         },
     }
     build_hash = hashlib.sha256(
@@ -458,6 +465,7 @@ def build_official_evidence_tantivy_overlay(
             batch_size=batch_size,
             duckdb_temp_directory=duckdb_temp_directory,
             duckdb_memory_limit=duckdb_memory_limit,
+            duckdb_threads=duckdb_threads,
         ):
             _add_tantivy_document(writer, tantivy, document)
             count += 1

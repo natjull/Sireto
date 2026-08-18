@@ -419,6 +419,7 @@ def _build_complete_fixture(tmp_path: Path):
         batch_size=2,
         duckdb_temp_directory=tmp_path / "duckdb_spill",
         duckdb_memory_limit="256MB",
+        duckdb_threads=1,
     )
     return canonical, overlay
 
@@ -438,6 +439,7 @@ def test_overlay_is_content_addressed_and_base_backend_compatible(tmp_path: Path
         batch_size=2,
         duckdb_temp_directory=tmp_path / "duckdb_spill",
         duckdb_memory_limit="256MB",
+        duckdb_threads=1,
     ) == overlay
 
     backend = OfficialEvidenceTantivyBackend(overlay)

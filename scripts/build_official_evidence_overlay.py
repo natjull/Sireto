@@ -28,6 +28,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--batch-size", type=int, default=4096)
     parser.add_argument("--duckdb-temp-directory", type=Path)
     parser.add_argument("--duckdb-memory-limit")
+    parser.add_argument("--duckdb-threads", type=int)
     return parser.parse_args()
 
 
@@ -43,6 +44,7 @@ def main() -> None:
         batch_size=args.batch_size,
         duckdb_temp_directory=args.duckdb_temp_directory,
         duckdb_memory_limit=args.duckdb_memory_limit,
+        duckdb_threads=args.duckdb_threads,
     )
     print(output)
 
