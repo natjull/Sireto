@@ -844,6 +844,36 @@ def materialize_dossier_retrieval_documents(
         raise ValueError("unsupported SIREN name portfolio policy")
     roles = policy["roles"]
 
+    # A national materialization takes hours and is commonly supervised by a
+    # keep-alive launcher.  Make a completed publication safely restartable:
+    # the manifest is written last, so its presence means that all three
+    # artifacts were published.  Refuse stale/mismatched outputs instead of
+    # silently reusing them.
+    published_manifest = output_dir / "manifest.json"
+    if published_manifest.is_file():
+        manifest = json.loads(published_manifest.read_text(encoding="utf-8"))
+        expected_files = (
+            output_dir / "retrieval_name_portfolio.parquet",
+            output_dir / "retrieval_siret_documents.parquet",
+            output_dir / "retrieval_siren_documents.parquet",
+        )
+        compatible = (
+            manifest.get("schema_version") == "sireto-siren-dossier-retrieval-documents-v3"
+            and manifest.get("dossier_manifest_sha256")
+            == sha256_file(dossier_dir / "manifest.json")
+            and manifest.get("name_portfolio_policy_sha256") == sha256_file(policy_path)
+            and manifest.get("document_limit") == document_limit
+            and all(path.is_file() for path in expected_files)
+        )
+        if not compatible:
+            raise ValueError("existing retrieval document publication is incompatible")
+        counts = manifest.get("counts")
+        if not isinstance(counts, dict) or set(counts) != {
+            "name_portfolio", "siret_documents", "siren_documents"
+        }:
+            raise ValueError("existing retrieval document publication has invalid counts")
+        return {str(key): int(value) for key, value in counts.items()}
+
     def cap(role: str, grain: str) -> int:
         value = roles[role].get(f"maximum_per_{grain}")
         return int(value or roles[role].get("maximum_per_siren") or 0)

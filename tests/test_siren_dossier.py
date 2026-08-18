@@ -166,6 +166,9 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
     assert manifest["blind_name_concatenation"] is False
     assert manifest["current_exact_only"] is True
     assert all(row["linked_sirens"] == "987654321" for row in rows)
+    assert materialize_dossier_retrieval_documents(
+        dossier_dir=result.output_dir, output_dir=documents
+    ) == counts
     candidates_path = tmp_path / "candidate_ids.parquet"
     fusion_path = tmp_path / "fusion.parquet"
     pq.write_table(
