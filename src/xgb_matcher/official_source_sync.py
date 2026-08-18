@@ -11,6 +11,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 import ftplib
+import gzip
 import hashlib
 import json
 import os
@@ -610,7 +611,14 @@ def sync_rne(
             search_after = ""
             seen_cursors: set[str] = set()
             record_count = 0
-            with destination.open("wb") as output:
+            output_context = (
+                gzip.GzipFile(
+                    filename=destination, mode="wb", compresslevel=6, mtime=0
+                )
+                if destination.name.endswith(".gz")
+                else destination.open("wb")
+            )
+            with output_context as output:
                 for _page in range(config.api.maximum_pages):
                     records, next_search_after = api_transport.fetch_diff(
                         url=config.api.diff_url,

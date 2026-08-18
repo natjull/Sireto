@@ -215,6 +215,31 @@ def test_rne_https_api_diff_uses_bearer_cursor_and_seals_jsonl(tmp_path: Path):
     assert "fixture-account" not in json.dumps(manifest)
 
 
+def test_rne_https_api_can_seal_deterministic_gzip_jsonl(tmp_path: Path):
+    import gzip
+
+    config = RneSyncConfig.from_dict(
+        {
+            "keychain": {"service": "fixture.service", "account": "fixture-account"},
+            "api": {
+                "from": "2026-08-16",
+                "to": "2026-08-17",
+                "page_size": 2,
+                "output_name": "rne.jsonl.gz",
+            },
+        }
+    )
+    api = FakeRneApiTransport([([{"siren": "123456789"}], "")])
+    output = sync_rne(
+        config=config,
+        output_root=tmp_path / "store",
+        keychain_reader=lambda _locator: bytearray(PLACEHOLDER_SECRET),
+        rne_api=api,
+    )
+    with gzip.open(output / "rne.jsonl.gz", "rt", encoding="utf-8") as stream:
+        assert json.loads(stream.readline()) == {"siren": "123456789"}
+
+
 def test_rne_api_fails_closed_on_unapproved_host_or_missing_cursor(tmp_path: Path):
     with pytest.raises(OfficialSyncError, match="allow-listed"):
         RneSyncConfig.from_dict(

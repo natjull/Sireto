@@ -14,7 +14,7 @@
       "to": "2000-01-02",
       "page_size": 100,
       "maximum_pages": 1000000,
-      "output_name": "rne-formalites-placeholder.jsonl"
+      "output_name": "rne-formalites-placeholder.jsonl.gz"
     }
   }
 }

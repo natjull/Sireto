@@ -141,7 +141,7 @@ def run_rne_backfill(
             config.sync.api,
             from_date=partition.from_exclusive,
             to_date=partition.to_inclusive,
-            output_name=f"rne-formalites-{partition.partition_id}.jsonl",
+            output_name=f"rne-formalites-{partition.partition_id}.jsonl.gz",
         )
         output = sync_function(
             config=replace(config.sync, api=api), output_root=output_root
