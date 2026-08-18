@@ -741,6 +741,9 @@ class OdsIncrementalConfig:
     tie_break_field: str = "id"
     since_tie_break: str = ""
     page_size: int = 100
+    partition_where: str = ""
+    tie_break_type: str = "text"
+    watermark_type: str = "text"
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "OdsIncrementalConfig":
@@ -755,6 +758,15 @@ class OdsIncrementalConfig:
         page_size = int(raw.get("page_size", 100))
         if page_size < 1 or page_size > 100:
             raise OfficialSyncError("Opendatasoft page_size must be between 1 and 100")
+        partition_where = str(raw.get("partition_where") or "").strip()
+        tie_break_type = str(raw.get("tie_break_type") or "text").lower()
+        watermark_type = str(raw.get("watermark_type") or "text").lower()
+        if tie_break_type not in {"text", "integer"}:
+            raise OfficialSyncError("BODACC tie_break_type must be text or integer")
+        if watermark_type not in {"text", "date"}:
+            raise OfficialSyncError("BODACC watermark_type must be text or date")
+        if any(character in partition_where for character in (";", "\n", "\r")):
+            raise OfficialSyncError("BODACC partition_where contains forbidden separators")
         return cls(
             url=url,
             watermark_field=field,
@@ -762,6 +774,9 @@ class OdsIncrementalConfig:
             tie_break_field=tie_break_field,
             since_tie_break=str(raw.get("since_tie_break") or ""),
             page_size=page_size,
+            partition_where=partition_where,
+            tie_break_type=tie_break_type,
+            watermark_type=watermark_type,
         )
 
 
@@ -817,17 +832,33 @@ def _ods_url(
 ) -> str:
     parsed = urlparse(config.url)
     query = dict(parse_qsl(parsed.query, keep_blank_values=True))
+    cursor_where = ""
     if after_watermark:
         escaped_watermark = _ods_literal(after_watermark)
+        watermark_literal = (
+            f"date'{escaped_watermark}'"
+            if config.watermark_type == "date"
+            else f"'{escaped_watermark}'"
+        )
         if after_tie_break:
-            escaped_tie_break = _ods_literal(after_tie_break)
-            query["where"] = (
-                f"{config.watermark_field} > '{escaped_watermark}' OR "
-                f"({config.watermark_field} = '{escaped_watermark}' AND "
-                f"{config.tie_break_field} > '{escaped_tie_break}')"
+            if config.tie_break_type == "integer":
+                if not str(after_tie_break).isdigit():
+                    raise OfficialSyncError("BODACC integer cursor is not numeric")
+                tie_literal = str(int(after_tie_break))
+            else:
+                tie_literal = f"'{_ods_literal(after_tie_break)}'"
+            cursor_where = (
+                f"{config.watermark_field} > {watermark_literal} OR "
+                f"({config.watermark_field} = {watermark_literal} AND "
+                f"{config.tie_break_field} > {tie_literal})"
             )
         else:
-            query["where"] = f"{config.watermark_field} > '{escaped_watermark}'"
+            cursor_where = f"{config.watermark_field} > {watermark_literal}"
+    where_parts = [value for value in (config.partition_where, cursor_where) if value]
+    if len(where_parts) == 1:
+        query["where"] = where_parts[0]
+    elif where_parts:
+        query["where"] = " AND ".join(f"({value})" for value in where_parts)
     query["order_by"] = f"{config.watermark_field},{config.tie_break_field}"
     query["limit"] = str(config.page_size)
     return urlunparse(parsed._replace(query=urlencode(query)))
@@ -836,6 +867,17 @@ def _ods_url(
 class JsonHttpTransport(Protocol):
     def download(self, *, url: str, destination: Path) -> None: ...
     def get_json(self, *, url: str) -> Mapping[str, Any]: ...
+
+
+def _ods_cursor_key(
+    config: OdsIncrementalConfig, watermark: str, tie_break: str
+) -> tuple[str, str | int]:
+    if config.tie_break_type == "integer":
+        try:
+            return watermark, int(tie_break or 0)
+        except ValueError as exc:
+            raise OfficialSyncError("BODACC integer cursor is not numeric") from exc
+    return watermark, tie_break
 
 
 def sync_bodacc(
@@ -902,7 +944,11 @@ def sync_bodacc(
                     rows = response.get("results")
                     if not isinstance(rows, list):
                         raise OfficialSyncError("Opendatasoft response has no results array")
-                    previous_cursor = (next_watermark or "", next_tie_break or "")
+                    previous_cursor = _ods_cursor_key(
+                        config.incremental,
+                        next_watermark or "",
+                        next_tie_break or "",
+                    )
                     for row in rows:
                         if not isinstance(row, Mapping):
                             raise OfficialSyncError("Opendatasoft result row is not an object")
@@ -914,7 +960,13 @@ def sync_bodacc(
                                 "Opendatasoft result lacks incremental cursor fields"
                             )
                         cursor = (str(value), str(tie_break))
-                        if cursor <= (next_watermark or "", next_tie_break or ""):
+                        if _ods_cursor_key(
+                            config.incremental, *cursor
+                        ) <= _ods_cursor_key(
+                            config.incremental,
+                            next_watermark or "",
+                            next_tie_break or "",
+                        ):
                             raise OfficialSyncError(
                                 "Opendatasoft incremental cursor did not advance"
                             )
@@ -922,7 +974,11 @@ def sync_bodacc(
                     incremental_rows += len(rows)
                     if len(rows) < config.incremental.page_size:
                         break
-                    if (next_watermark or "", next_tie_break or "") <= previous_cursor:
+                    if _ods_cursor_key(
+                        config.incremental,
+                        next_watermark or "",
+                        next_tie_break or "",
+                    ) <= previous_cursor:
                         raise OfficialSyncError(
                             "Opendatasoft pagination made no forward progress"
                         )

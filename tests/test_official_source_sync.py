@@ -304,6 +304,7 @@ def test_bodacc_https_backfill_and_opendatasoft_v21_increment_are_sealed(tmp_pat
             "backfill": [{"name": "archive.zip", "url": archive_url}],
             "incremental": {
                 "watermark_field": "dateparution",
+                "watermark_type": "date",
                 "since": "2026-08-01",
                 "page_size": 2,
             },
@@ -325,10 +326,11 @@ def test_bodacc_https_backfill_and_opendatasoft_v21_increment_are_sealed(tmp_pat
     assert len(http.json_calls) == 2
     first_query = parse_qs(urlparse(http.json_calls[0]).query)
     second_query = parse_qs(urlparse(http.json_calls[1]).query)
-    assert first_query["where"] == ["dateparution > '2026-08-01'"]
+    assert first_query["where"] == ["dateparution > date'2026-08-01'"]
     assert first_query["order_by"] == ["dateparution,id"]
     assert second_query["where"] == [
-        "dateparution > '2026-08-03' OR (dateparution = '2026-08-03' AND id > 'b')"
+        "dateparution > date'2026-08-03' OR "
+        "(dateparution = date'2026-08-03' AND id > 'b')"
     ]
     manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
     assert manifest["source"] == "bodacc"
@@ -337,6 +339,44 @@ def test_bodacc_https_backfill_and_opendatasoft_v21_increment_are_sealed(tmp_pat
     assert manifest["provenance"]["next_tie_break"] == "c"
     assert manifest["provenance"]["plain_ftp_allowed"] is False
     assert not list((tmp_path / "store").glob(".bodacc-stage-*"))
+
+
+def test_bodacc_partitioned_integer_cursor_advances_naturally(tmp_path: Path):
+    config = BodaccSyncConfig.from_dict(
+        {
+            "incremental": {
+                "watermark_field": "dateparution",
+                "watermark_type": "date",
+                "since": "2026-08-17",
+                "tie_break_field": "numeroannonce",
+                "tie_break_type": "integer",
+                "partition_where": "publicationavis = 'C' AND parution = '20260156'",
+                "page_size": 2,
+            }
+        }
+    )
+    http = FakeHttpTransport(
+        pages=[
+            {
+                "results": [
+                    {"id": "C9", "dateparution": "2026-08-18", "numeroannonce": 9},
+                    {"id": "C10", "dateparution": "2026-08-18", "numeroannonce": 10},
+                ]
+            },
+            {
+                "results": [
+                    {"id": "C11", "dateparution": "2026-08-18", "numeroannonce": 11}
+                ]
+            },
+        ]
+    )
+    output = sync_bodacc(config=config, output_root=tmp_path / "store", https=http)
+    rows = [json.loads(line) for line in (output / "incremental.jsonl").read_text().splitlines()]
+    assert [row["numeroannonce"] for row in rows] == [9, 10, 11]
+    second_query = parse_qs(urlparse(http.json_calls[1]).query)
+    assert "numeroannonce > 10" in second_query["where"][0]
+    assert "dateparution = date'2026-08-18'" in second_query["where"][0]
+    assert "publicationavis = 'C'" in second_query["where"][0]
 
 
 def test_bodacc_failure_leaves_no_published_or_partial_artifact(tmp_path: Path):
