@@ -5180,6 +5180,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `official_evidence/rne_bulk_formalities_20260304_v2`. Après publication, il
   faut construire le dossier v3, matérialiser les documents typés, faire un
   smoke de 1 000 documents puis le build national unique.
+- Le commit `2b26f6b` ajoute un scope `--document-limit` au matérialiseur : le
+  smoke réel ne balaie plus les 44 millions de sites avant de construire son
+  index de 1 000 documents. Les mêmes requêtes et caps sont utilisés; seule la
+  population technique est bornée. Le run v2 relancé est chaîné vers ce smoke.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
