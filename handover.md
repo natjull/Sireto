@@ -5184,6 +5184,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   smoke réel ne balaie plus les 44 millions de sites avant de construire son
   index de 1 000 documents. Les mêmes requêtes et caps sont utilisés; seule la
   population technique est bornée. Le run v2 relancé est chaîné vers ce smoke.
+- Le commit `21bbae6` conserve la compatibilité de lecture des dossiers v1 qui
+  ne portaient pas encore `evidence_id`, `observed_at` et `source_priority`.
+  Le smoke national v1 a matérialisé 1 000 SIRET, 1 153 noms typés et 946
+  documents SIREN en 4 s, puis construit un index Tantivy de 1 946 documents.
+  Sur un cas réel où deux sites partagent `TAHITI PERLES CREATIONS`, le nom
+  rappelle les deux sites et l'adresse exacte place le bon SIRET au rang 1.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
