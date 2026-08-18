@@ -5115,6 +5115,19 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   nom/adresse RNE sans interpréter par erreur les comptes annuels comme des
   formalités; les comptes restent disponibles pour une projection financière
   séparée du dossier SIREN.
+- Les commits `e733a76` et `ce41bf1` rendent la reprise FTP robuste aux erreurs
+  et au `SIZE` erroné observé sur le serveur INPI : la provenance conserve la
+  taille annoncée, tandis que la publication repose sur la taille réellement
+  reçue, l'intégrité ZIP complète et le SHA-256.
+- Le commit `6c34c31` introduit le dossier SIREN v2. Les tableaux JSON des ZIP
+  sont lus avec `ijson`; une formalité RNE est développée en preuve SIREN et
+  en preuves SIRET pour le site principal/modifié et les autres sites
+  explicitement identifiés. Les Parquet nom/adresse/relation conservent les
+  identifiants de preuve/record, date d'observation et priorité. Une table
+  séparée `rne_account_deposits` stocke uniquement les métadonnées publiques
+  au grain SIREN (pas les cellules de liasse ni des données personnelles) et
+  reste `held_out_structured`: aucun modèle ou retrieval ne la consomme avant
+  addendum et ablation train/dev. SIRENE demeure l'autorité de l'état courant.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
