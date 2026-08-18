@@ -294,6 +294,35 @@ def test_rne_plain_ftp_and_inline_secrets_are_rejected_before_transfer(tmp_path:
         RneSyncConfig.from_dict({"password": "prohibited-fixture"})
 
 
+def test_rne_plain_ftp_requires_explicit_opt_in_and_records_scope(tmp_path: Path):
+    base = {
+        "keychain": {"service": "fixture.service", "account": "fixture-account"},
+        "ftp": {"host": "plain.invalid", "port": 21},
+        "files": [{"name": "snapshot.zip", "ftp_path": "/snapshot.zip"}],
+    }
+    with pytest.raises(OfficialSyncError, match="explicit allow_insecure_plaintext"):
+        RneSyncConfig.from_dict(base)
+
+    base["ftp"]["allow_insecure_plaintext"] = True
+    config = RneSyncConfig.from_dict(base)
+    ftp = FakeFileTransport({"/snapshot.zip": b"rne-bulk-fixture"})
+    output = sync_rne(
+        config=config,
+        output_root=tmp_path / "store",
+        keychain_reader=lambda _locator: bytearray(PLACEHOLDER_SECRET),
+        ftp=ftp,
+    )
+    assert (output / "snapshot.zip").read_bytes() == b"rne-bulk-fixture"
+    assert ftp.calls[0]["host"] == "plain.invalid"
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["provenance"]["protocol_by_file"] == {
+        "snapshot.zip": "ftp-plaintext-explicit-opt-in"
+    }
+    assert manifest["provenance"]["plain_ftp_allowed"] is True
+    assert manifest["provenance"]["credential_material_recorded"] is False
+    assert PLACEHOLDER_SECRET.decode() not in json.dumps(manifest)
+
+
 def test_rne_insecure_ftps_diagnostic_is_preserved_and_no_partial_publish(tmp_path: Path):
     config = _rne_config(tmp_path)
     sftp = FakeFileTransport(failure=OfficialSyncError("fixture unavailable"))

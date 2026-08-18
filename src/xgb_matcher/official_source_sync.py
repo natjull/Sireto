@@ -289,6 +289,116 @@ class FtpsTransport:
                 client.close()
 
 
+class PlainFtpTransport:
+    """Explicitly-authorized plaintext FTP transport for the INPI bulk server.
+
+    This transport is never selected implicitly.  The caller must set the
+    source-scoped ``allow_insecure_plaintext`` flag in ``RneSyncConfig``.
+    Credentials are still supplied from Keychain and are never serialized.
+    """
+
+    def _connect(
+        self, *, host: str, port: int, credentials: Credentials | None
+    ) -> ftplib.FTP:
+        client = ftplib.FTP(timeout=120)
+        try:
+            client.connect(host=host, port=port)
+            if credentials is None:
+                client.login()
+            else:
+                client.login(user=credentials.username, passwd=credentials.password)
+            client.set_pasv(True)
+            return client
+        except Exception as exc:
+            try:
+                client.close()
+            except Exception:
+                pass
+            raise OfficialSyncError("plaintext FTP connection failed") from exc
+
+    def list_directory(
+        self,
+        *,
+        host: str,
+        port: int,
+        remote_path: str,
+        credentials: Credentials | None,
+    ) -> list[dict[str, Any]]:
+        client = self._connect(host=host, port=port, credentials=credentials)
+        try:
+            client.cwd(remote_path or "/")
+            entries: list[dict[str, Any]] = []
+            try:
+                for name, facts in client.mlsd():
+                    if name in {".", ".."}:
+                        continue
+                    entries.append(
+                        {
+                            "name": name,
+                            "type": str(facts.get("type") or "unknown"),
+                            "size_bytes": int(facts["size"]) if facts.get("size") else None,
+                            "modified": str(facts.get("modify") or ""),
+                        }
+                    )
+            except (ftplib.error_perm, NotImplementedError):
+                for value in client.nlst():
+                    name = PurePosixPath(value).name
+                    if name in {".", ".."}:
+                        continue
+                    size: int | None = None
+                    modified = ""
+                    try:
+                        size = client.size(value)
+                    except ftplib.all_errors:
+                        pass
+                    try:
+                        modified = client.sendcmd(f"MDTM {value}").removeprefix("213 ").strip()
+                    except ftplib.all_errors:
+                        pass
+                    entries.append(
+                        {
+                            "name": name,
+                            "type": "file" if size is not None else "unknown",
+                            "size_bytes": size,
+                            "modified": modified,
+                        }
+                    )
+            return sorted(entries, key=lambda item: str(item["name"]))
+        except Exception as exc:
+            raise OfficialSyncError("plaintext FTP directory listing failed") from exc
+        finally:
+            try:
+                client.quit()
+            except Exception:
+                client.close()
+
+    def download(
+        self,
+        *,
+        host: str,
+        port: int,
+        remote_path: str,
+        destination: Path,
+        credentials: Credentials | None,
+        known_hosts: Path | None = None,
+    ) -> None:
+        del known_hosts
+        client = self._connect(host=host, port=port, credentials=credentials)
+        try:
+            with destination.open("wb") as output:
+                client.retrbinary(
+                    f"RETR {remote_path}", output.write, blocksize=1024 * 1024
+                )
+        except Exception as exc:
+            destination.unlink(missing_ok=True)
+            raise OfficialSyncError("plaintext FTP transfer failed") from exc
+        finally:
+            try:
+                client.quit()
+            except Exception:
+                client.close()
+
+
 class HttpsTransport:
     def download(self, *, url: str, destination: Path) -> None:
         _validate_public_url(url, schemes={"https"})
@@ -490,6 +600,7 @@ class RneFile:
     name: str
     sftp_path: str
     ftps_path: str
+    ftp_path: str
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RneFile":
@@ -497,6 +608,7 @@ class RneFile:
             name=_safe_filename(str(raw.get("name") or "")),
             sftp_path=str(raw.get("sftp_path") or ""),
             ftps_path=str(raw.get("ftps_path") or ""),
+            ftp_path=str(raw.get("ftp_path") or ""),
         )
 
 
@@ -550,12 +662,20 @@ class RneSyncConfig:
     known_hosts: Path = Path()
     ftps_host: str = ""
     ftps_port: int = 21
+    ftp_host: str = ""
+    ftp_port: int = 21
+    allow_insecure_plaintext: bool = False
     files: tuple[RneFile, ...] = ()
 
     @classmethod
     def from_dict(cls, raw: Mapping[str, Any]) -> "RneSyncConfig":
         _reject_inline_secrets(raw)
-        keychain, sftp, ftps = raw.get("keychain", {}), raw.get("sftp", {}), raw.get("ftps", {})
+        keychain, sftp, ftps, ftp = (
+            raw.get("keychain", {}),
+            raw.get("sftp", {}),
+            raw.get("ftps", {}),
+            raw.get("ftp", {}),
+        )
         api_raw = raw.get("api")
         config = cls(
             keychain=KeychainLocator(str(keychain.get("service") or ""), str(keychain.get("account") or "")),
@@ -565,18 +685,41 @@ class RneSyncConfig:
             known_hosts=Path(str(sftp.get("known_hosts") or "")),
             ftps_host=str(ftps.get("host") or ""),
             ftps_port=int(ftps.get("port", 21)),
+            ftp_host=str(ftp.get("host") or ""),
+            ftp_port=int(ftp.get("port", 21)),
+            allow_insecure_plaintext=bool(ftp.get("allow_insecure_plaintext", False)),
             files=tuple(RneFile.from_dict(item) for item in raw.get("files", [])),
         )
         if config.api is None:
-            _validate_host(config.sftp_host)
-            _validate_host(config.ftps_host)
-        if config.api is None and (
-            not config.files
-            or any(not item.sftp_path or not item.ftps_path for item in config.files)
-        ):
-            raise OfficialSyncError(
-                "RNE API config or file list with both secure remote paths is required"
+            for host in (config.sftp_host, config.ftps_host, config.ftp_host):
+                if host:
+                    _validate_host(host)
+            if config.ftp_host and not config.allow_insecure_plaintext:
+                raise OfficialSyncError(
+                    "unencrypted FTP requires explicit allow_insecure_plaintext=true"
+                )
+            if config.allow_insecure_plaintext and not config.ftp_host:
+                raise OfficialSyncError("plaintext FTP opt-in requires an FTP host")
+            configured = bool(
+                config.sftp_host or config.ftps_host or config.ftp_host
             )
+            if not configured or not config.files:
+                raise OfficialSyncError(
+                    "RNE API config or file list with a configured transport is required"
+                )
+            for item in config.files:
+                if not any(
+                    (
+                        config.sftp_host and item.sftp_path,
+                        config.ftps_host and item.ftps_path,
+                        config.ftp_host
+                        and config.allow_insecure_plaintext
+                        and item.ftp_path,
+                    )
+                ):
+                    raise OfficialSyncError(
+                        f"RNE file {item.name} has no path for a configured transport"
+                    )
         if len({item.name for item in config.files}) != len(config.files):
             raise OfficialSyncError("RNE output filenames must be unique")
         return config
@@ -589,6 +732,7 @@ def sync_rne(
     keychain_reader: Callable[[KeychainLocator], bytearray] = read_keychain_secret,
     sftp: FileTransport | None = None,
     ftps: FileTransport | None = None,
+    ftp: FileTransport | None = None,
     rne_api: RneApiTransport | None = None,
 ) -> Path:
     output_root.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -658,38 +802,41 @@ def sync_rne(
         else:
             sftp_transport = sftp or SftpTransport()
             ftps_transport = ftps or FtpsTransport()
+            ftp_transport = ftp or PlainFtpTransport()
             for item in config.files:
                 destination = stage / item.name
-                try:
-                    sftp_transport.download(
-                        host=config.sftp_host,
-                        port=config.sftp_port,
-                        remote_path=item.sftp_path,
-                        destination=destination,
-                        credentials=credentials,
-                        known_hosts=config.known_hosts,
-                    )
-                    protocols[item.name] = "sftp"
-                except Exception:
-                    destination.unlink(missing_ok=True)
+                errors: list[Exception] = []
+                attempts: list[tuple[str, FileTransport, str, int, str, Path | None]] = []
+                if config.sftp_host and item.sftp_path:
+                    attempts.append(("sftp", sftp_transport, config.sftp_host, config.sftp_port, item.sftp_path, config.known_hosts))
+                if config.ftps_host and item.ftps_path:
+                    attempts.append(("ftps", ftps_transport, config.ftps_host, config.ftps_port, item.ftps_path, None))
+                if config.ftp_host and config.allow_insecure_plaintext and item.ftp_path:
+                    attempts.append(("ftp-plaintext-explicit-opt-in", ftp_transport, config.ftp_host, config.ftp_port, item.ftp_path, None))
+                for protocol, transport, host, port, remote_path, known_hosts in attempts:
                     try:
-                        ftps_transport.download(
-                            host=config.ftps_host,
-                            port=config.ftps_port,
-                            remote_path=item.ftps_path,
+                        transport.download(
+                            host=host,
+                            port=port,
+                            remote_path=remote_path,
                             destination=destination,
                             credentials=credentials,
+                            known_hosts=known_hosts,
                         )
-                        protocols[item.name] = "ftps"
+                        protocols[item.name] = protocol
+                        break
                     except Exception as exc:
                         destination.unlink(missing_ok=True)
-                        if "INSECURE_FTP_UNSUPPORTED" in str(exc):
-                            raise OfficialSyncError(
-                                "INSECURE_FTP_UNSUPPORTED: RNE server offers plaintext FTP only; credentials not sent"
-                            ) from exc
+                        errors.append(exc)
+                else:
+                    diagnostic = errors[-1] if errors else OfficialSyncError("no transport attempt")
+                    if "INSECURE_FTP_UNSUPPORTED" in str(diagnostic):
                         raise OfficialSyncError(
-                            f"RNE secure transfer failed for {item.name}; SFTP and FTPS unavailable"
-                        ) from exc
+                            "INSECURE_FTP_UNSUPPORTED: RNE server offers plaintext FTP only; explicit opt-in not configured"
+                        ) from diagnostic
+                    raise OfficialSyncError(
+                        f"RNE transfer failed for {item.name} on all configured transports"
+                    ) from diagnostic
                 if not destination.is_file():
                     raise OfficialSyncError(f"RNE transport produced no file for {item.name}")
                 os.chmod(destination, 0o600)
@@ -705,6 +852,7 @@ def sync_rne(
                 "protocol_by_file": protocols,
                 "sftp_host": config.sftp_host,
                 "ftps_host": config.ftps_host,
+                "ftp_host": config.ftp_host,
                 **api_provenance,
                 "keychain_locator_sha256": hashlib.sha256(
                     canonical_json(
@@ -715,7 +863,12 @@ def sync_rne(
                     )
                 ).hexdigest(),
                 "credential_material_recorded": False,
-                "plain_ftp_allowed": False,
+                "plain_ftp_allowed": config.allow_insecure_plaintext,
+                "plaintext_scope": (
+                    "configured RNE source only"
+                    if config.allow_insecure_plaintext
+                    else "none"
+                ),
             },
         )
     except Exception:

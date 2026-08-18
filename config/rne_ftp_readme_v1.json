@@ -1,0 +1,17 @@
+{
+  "keychain": {
+    "service": "com.sireto.rne-ftp",
+    "account": "rneinpiro"
+  },
+  "ftp": {
+    "host": "www.inpi.net",
+    "port": 21,
+    "allow_insecure_plaintext": true
+  },
+  "files": [
+    {
+      "name": "readme.txt",
+      "ftp_path": "/readme.txt"
+    }
+  ]
+}
