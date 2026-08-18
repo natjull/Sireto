@@ -5150,5 +5150,36 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   métadonnées de comptes sont lancés en streaming; ils ne constituent ni un
   gate modèle ni une ouverture de fold.
 
+## Retrieval dossier typé — 18 août 2026
+
+- Le commit `2f81a9d` remplace le bag de noms non borné par un portefeuille
+  officiel typé : noms légaux actuels, noms commerciaux actuels, enseignes de
+  site, historique et preuves de support. Les caps, l'ordre de priorité et les
+  champs exacts autorisés sont gelés dans
+  `config/siren_name_portfolio_v1.json`. Les noms/adresses historiques et
+  BODACC sont rescue-only et ne peuvent pas devenir des exacts protégés.
+- Le même commit introduit le dossier SIREN v3 avec `entity_evidence`, des
+  features source-spécifiques SIRENE/RNE/BODACC, consensus/conflits, fraîcheur,
+  état/siège, résolution de site et relations structurées. Les textes
+  BGE/CamemBERT sont désormais longs, sourcés, typés et plafonnés; les comptes
+  RNE restent entièrement held-out.
+- L'index Tantivy v2 accepte directement les documents du dossier v3. Il
+  recherche les champs actuels séparément, utilise q-grams et historique en
+  rescue, développe les cinq meilleurs SIREN vers au plus 32 sites locaux et
+  suit une succession/cession officielle sur un seul saut. Le plafond final
+  reste 100. L'admission fixe est décrite par
+  `config/retrieval_ltr_admission_dossier_v2.json` et le runbook par
+  `docs/retrieval_dossier_v2_execution_plan.md`.
+- Validation locale du commit : 38 tests ciblés dossier, retrieval Tantivy,
+  preuves officielles, admission LTR et comptes RNE passent en 2,51 s; aucun
+  fold 1 ni modèle gelé n'a été ouvert.
+- Le premier build RNE formalités lancé avant `2f81a9d` a été arrêté après
+  1,8 Go de staging pour éviter une projection incohérente; son staging est
+  conservé sous `tmp/rne_bulk_formalities_20260304/aborted-pre-2f81a9d-20260818T1605`.
+  Le build v2 a été relancé avec le commit courant vers
+  `official_evidence/rne_bulk_formalities_20260304_v2`. Après publication, il
+  faut construire le dossier v3, matérialiser les documents typés, faire un
+  smoke de 1 000 documents puis le build national unique.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
