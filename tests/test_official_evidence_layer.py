@@ -671,7 +671,7 @@ def test_union_maps_channels_and_geo_guards_siret_relations():
     )
     candidates = {item.siret: item for item in result.candidates}
     assert "12345678900029" in candidates
-    assert "official_successor" in candidates["12345678900029"].channels
+    assert "bodacc_relation" in candidates["12345678900029"].channels
     assert "12345678900037" not in candidates
     source_channels = candidates["12345678900011"].channels
     assert "rne_name" in source_channels
@@ -720,6 +720,11 @@ def test_builder_overlay_union_parquet_is_ltr_consumable(tmp_path: Path):
         batch_size=2,
     )
     table = pq.read_table(output)
+    manifest = json.loads(
+        output.with_suffix(output.suffix + ".manifest.json").read_text()
+    )
+    assert manifest["maximum_union_candidates"] == 20
+    assert manifest["positive_injection"] is False
     columns = set(table.column_names)
     required = {
         "fold",
@@ -753,3 +758,46 @@ def test_builder_overlay_union_parquet_is_ltr_consumable(tmp_path: Path):
     assert union.iloc[0]["gt_siret"] == "12345678900011"
     assert bool(union.iloc[0]["identifiable_exact"]) is True
     assert union.iloc[0]["source_rne_name"] == 1
+
+
+def test_typed_union_is_not_pretruncated_to_top100():
+    records = [
+        IndexedEstablishment(
+            siret=f"{500000000 + index:09d}00001",
+            siren=f"{500000000 + index:09d}",
+            insee="75056",
+            postcode="75001",
+            names=("ALPHA SERVICE",),
+            addresses=(f"{index + 1} RUE DES TESTS",),
+            legal_names=("ALPHA SERVICE",),
+            number=str(index + 1),
+            payload={"official_evidence_sources": ["SIRENE_CURRENT"]},
+        )
+        for index in range(130)
+    ]
+    retriever = OfficialEvidenceRetriever(
+        InMemoryBackend(records),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=200,
+            exact_limit=200,
+            word_limit=200,
+            character_limit=200,
+            historical_limit=50,
+            supporting_limit=50,
+            siren_limit=5,
+            sites_per_siren=3,
+            relation_seed_limit=50,
+            relation_limit=50,
+            search_workers=2,
+            typed_portfolio=True,
+        ),
+    )
+    result = retriever.retrieve(
+        RetrievalQuery(name="ALPHA SERVICE", insee="75056", postcode="75001")
+    )
+    assert len(result.candidates) == 130
+    assert all("legal_name_exact" in candidate.channels for candidate in result.candidates)
+    assert all(
+        "SIRENE_CURRENT" in candidate.official_evidence_sources
+        for candidate in result.candidates
+    )

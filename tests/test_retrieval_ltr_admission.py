@@ -127,6 +127,20 @@ def test_feature_contract_has_no_identifiers_and_includes_overlay(
     assert "bodacc_address" not in config.exact_channels
 
 
+def test_typed_dossier_contract_uses_single_union_and_source_features() -> None:
+    typed = AdmissionConfig.load("config/retrieval_ltr_admission_dossier_v2.json")
+    assert typed.internal_union_cap == 2000
+    assert typed.max_candidates == 100
+    assert "fielded_name_bm25" in typed.channels
+    assert "number_exact" in typed.channels
+    assert "number_exact" not in typed.exact_channels
+    assert "bodacc_relation" in typed.channels
+    features = feature_order(typed)
+    assert "official_source_registry_current" in features
+    assert "official_source_rne" in features
+    assert "official_source_bodacc" in features
+
+
 def test_per_channel_columns_can_supply_overlay_provenance(
     config: AdmissionConfig,
 ) -> None:

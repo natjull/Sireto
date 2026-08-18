@@ -87,11 +87,13 @@ consensus et date, puis plafonnées par rôle :
 - `SUPPORTING` : 4 par SIRET et 6 par SIREN.
 
 Seuls les trois rôles actuels alimentent les champs exacts. Les noms et
-adresses historiques ainsi que les preuves BODACC sont des canaux de rescue :
-ils disposent au total de 10 places réservées et ne peuvent pas évincer le
-noyau actuel. Les relations explicites de succession/cession sont suivies sur
-un saut seulement, puis à nouveau filtrées par INSEE/CP et ordonnées par
-adresse avant le statut de siège.
+adresses historiques ainsi que les preuves BODACC sont des canaux de rescue.
+Tantivy fournit une union brute bornée à 2 000 : il ne réserve plus de places
+et ne fabrique plus de top100. L'admission LambdaMART protège ensuite les
+exacts actuels et les consensus avant de compléter déterministiquement jusqu'à
+100. Les relations BODACC structurées de succession/cession sont suivies sur
+un saut seulement, puis filtrées par INSEE/CP et ordonnées par adresse avant le
+statut de siège.
 
 ## Features officielles supplémentaires
 

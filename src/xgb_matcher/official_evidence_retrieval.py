@@ -8,7 +8,8 @@ with a hard internal-union cap of 2,000 and no RRF or model-derived fusion.
 from __future__ import annotations
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
+import hashlib
 import json
 import math
 from pathlib import Path
@@ -27,7 +28,7 @@ from .hierarchical_retrieval import (
 from .official_evidence_tantivy import OfficialEvidenceTantivyBackend
 
 
-OFFICIAL_EVIDENCE_UNION_SCHEMA_VERSION = "sireto-official-evidence-union-v1"
+OFFICIAL_EVIDENCE_UNION_SCHEMA_VERSION = "sireto-official-evidence-union-v2"
 
 
 class SirenRelationBackend(Protocol):
@@ -40,11 +41,22 @@ class OfficialEvidenceRetrievalConfig:
     exact_limit: int = 500
     word_limit: int = 1000
     character_limit: int = 1000
+    historical_limit: int = 500
+    supporting_limit: int = 250
     siren_limit: int = 10
     sites_per_siren: int = 32
     relation_seed_limit: int = 500
     relation_limit: int = 500
     search_workers: int = 12
+    require_temporal_complete: bool = True
+    typed_portfolio: bool | None = None
+    fielded_name_boosts: Mapping[str, float] = field(
+        default_factory=lambda: {
+            "legal_names": 1.25,
+            "trade_names": 1.50,
+            "site_names": 1.75,
+        }
+    )
 
     def __post_init__(self) -> None:
         if not 1 <= self.max_union_candidates <= 2000:
@@ -55,6 +67,8 @@ class OfficialEvidenceRetrievalConfig:
             "exact_limit",
             "word_limit",
             "character_limit",
+            "historical_limit",
+            "supporting_limit",
             "siren_limit",
             "relation_seed_limit",
             "relation_limit",
@@ -62,6 +76,38 @@ class OfficialEvidenceRetrievalConfig:
         ):
             if getattr(self, name) < 1:
                 raise ValueError(f"{name} must be positive")
+
+    @classmethod
+    def from_mapping(cls, raw: Mapping[str, Any]) -> "OfficialEvidenceRetrievalConfig":
+        retrieval = raw.get("retrieval") or raw
+        return cls(
+            max_union_candidates=int(retrieval.get("max_union_candidates", 2000)),
+            exact_limit=int(retrieval.get("exact_limit", 500)),
+            word_limit=int(retrieval.get("word_limit", 1000)),
+            character_limit=int(retrieval.get("character_limit", 1000)),
+            historical_limit=int(retrieval.get("historical_limit", 500)),
+            supporting_limit=int(retrieval.get("supporting_limit", 250)),
+            siren_limit=int(retrieval.get("siren_limit", 5)),
+            sites_per_siren=int(retrieval.get("sites_per_siren", 32)),
+            relation_seed_limit=int(retrieval.get("relation_seed_limit", 500)),
+            relation_limit=int(retrieval.get("relation_limit", 500)),
+            search_workers=int(retrieval.get("search_workers", 12)),
+            require_temporal_complete=bool(
+                retrieval.get("require_temporal_complete", True)
+            ),
+            typed_portfolio=(
+                bool(retrieval["typed_portfolio"])
+                if "typed_portfolio" in retrieval else None
+            ),
+            fielded_name_boosts=dict(
+                retrieval.get("fielded_name_boosts")
+                or {"legal_names": 1.25, "trade_names": 1.50, "site_names": 1.75}
+            ),
+        )
+
+    @classmethod
+    def load(cls, path: Path | str) -> "OfficialEvidenceRetrievalConfig":
+        return cls.from_mapping(json.loads(Path(path).read_text(encoding="utf-8")))
 
 
 @dataclass(frozen=True)
@@ -196,6 +242,19 @@ class _MutableCandidate:
 
 
 _CHANNEL_PRIORITY: Mapping[str, int] = {
+    "legal_name_exact": 0,
+    "trade_name_exact": 0,
+    "site_name_exact": 0,
+    "number_exact": 1,
+    "fielded_name_bm25": 2,
+    "legal_name_word": 2,
+    "trade_name_word": 2,
+    "site_name_word": 2,
+    "current_name_char": 4,
+    "historical_name_word": 5,
+    "historical_address_word": 5,
+    "supporting_name_word": 6,
+    "supporting_address_word": 6,
     "name_exact": 0,
     "address_exact": 1,
     "name_word": 2,
@@ -215,6 +274,19 @@ _CHANNEL_PRIORITY: Mapping[str, int] = {
 }
 
 LTR_CHANNELS: tuple[str, ...] = (
+    "legal_name_exact",
+    "trade_name_exact",
+    "site_name_exact",
+    "number_exact",
+    "fielded_name_bm25",
+    "legal_name_word",
+    "trade_name_word",
+    "site_name_word",
+    "current_name_char",
+    "historical_name_word",
+    "historical_address_word",
+    "supporting_name_word",
+    "supporting_address_word",
     "name_exact",
     "address_exact",
     "name_word",
@@ -278,6 +350,12 @@ class OfficialEvidenceRetriever:
             [("base", base_backend)]
             + ([ ("official_overlay", overlay_backend) ] if overlay_backend else [])
         )
+        base_manifest = getattr(base_backend, "manifest", {}) or {}
+        self.typed_portfolio = (
+            bool(self.config.typed_portfolio)
+            if self.config.typed_portfolio is not None
+            else bool(base_manifest.get("typed_name_portfolio"))
+        )
 
     @classmethod
     def from_index_paths(
@@ -286,14 +364,26 @@ class OfficialEvidenceRetriever:
         overlay_index_path: Path | str | None = None,
         config: OfficialEvidenceRetrievalConfig | None = None,
     ) -> "OfficialEvidenceRetriever":
+        resolved_config = config or OfficialEvidenceRetrievalConfig()
+        base_backend = TantivyBackend(
+            base_index_path,
+            fielded_name_boosts=resolved_config.fielded_name_boosts,
+        )
+        if (
+            resolved_config.require_temporal_complete
+            and base_backend.manifest.get("temporal_complete") is not True
+        ):
+            raise RuntimeError(
+                "Official retrieval requires a temporally complete SIRENE/RNE/BODACC index"
+            )
         return cls(
-            TantivyBackend(base_index_path),
+            base_backend,
             (
                 OfficialEvidenceTantivyBackend(overlay_index_path)
                 if overlay_index_path
                 else None
             ),
-            config,
+            resolved_config,
         )
 
     def retrieve(
@@ -307,15 +397,35 @@ class OfficialEvidenceRetriever:
             )
         candidates: dict[str, _MutableCandidate] = {}
         direct_jobs: list[tuple[str, RetrievalBackend, str, int]] = []
+        typed_channels = (
+            ("legal_name_exact", self.config.exact_limit),
+            ("trade_name_exact", self.config.exact_limit),
+            ("site_name_exact", self.config.exact_limit),
+            ("address_exact", self.config.exact_limit),
+            ("number_exact", self.config.exact_limit),
+            ("fielded_name_bm25", self.config.word_limit),
+            ("legal_name_word", self.config.word_limit),
+            ("trade_name_word", self.config.word_limit),
+            ("site_name_word", self.config.word_limit),
+            ("address_word", self.config.word_limit),
+            ("current_name_char", self.config.character_limit),
+            ("address_char", self.config.character_limit),
+            ("historical_name_word", self.config.historical_limit),
+            ("historical_address_word", self.config.historical_limit),
+            ("supporting_name_word", self.config.supporting_limit),
+            ("supporting_address_word", self.config.supporting_limit),
+        )
+        legacy_channels = (
+            ("name_exact", self.config.exact_limit),
+            ("address_exact", self.config.exact_limit),
+            ("name_word", self.config.word_limit),
+            ("address_word", self.config.word_limit),
+            ("name_char", self.config.character_limit),
+            ("address_char", self.config.character_limit),
+        )
         for backend_name, backend in self.backends:
-            for channel, limit in (
-                ("name_exact", self.config.exact_limit),
-                ("address_exact", self.config.exact_limit),
-                ("name_word", self.config.word_limit),
-                ("address_word", self.config.word_limit),
-                ("name_char", self.config.character_limit),
-                ("address_char", self.config.character_limit),
-            ):
+            backend_typed = backend_name == "base" and self.typed_portfolio
+            for channel, limit in typed_channels if backend_typed else legacy_channels:
                 direct_jobs.append((backend_name, backend, channel, limit))
 
         # Search calls are independent and Tantivy searchers are immutable.
@@ -333,14 +443,8 @@ class OfficialEvidenceRetriever:
 
         # Registration order is fixed even though searches completed in parallel.
         for backend_name, _backend in self.backends:
-            for channel in (
-                "name_exact",
-                "address_exact",
-                "name_word",
-                "address_word",
-                "name_char",
-                "address_char",
-            ):
+            backend_typed = backend_name == "base" and self.typed_portfolio
+            for channel, _limit in typed_channels if backend_typed else legacy_channels:
                 for rank, hit in enumerate(
                     direct_results[(backend_name, channel)], start=1
                 ):
@@ -478,10 +582,18 @@ class OfficialEvidenceRetriever:
             postcode=record.postcode,
             names=tuple(sorted(mutable.names or set(record.names))),
             addresses=tuple(sorted(mutable.addresses or set(record.addresses))),
+            legal_names=record.legal_names,
+            trade_names=record.trade_names,
+            site_names=record.site_names,
+            historical_names=record.historical_names,
+            supporting_names=record.supporting_names,
+            historical_addresses=record.historical_addresses,
+            supporting_addresses=record.supporting_addresses,
             number=record.number,
             active=record.active,
             is_siege=record.is_siege,
             linked_sirets=record.linked_sirets,
+            linked_sirens=record.linked_sirens,
             payload=payload,
         )
 
@@ -516,8 +628,8 @@ class OfficialEvidenceRetriever:
                     candidates,
                     target,
                     OfficialEvidenceSignal(
-                        source="official_relation:siret",
-                        channel="official_successor",
+                        source="BODACC:structured_siret_relation",
+                        channel="bodacc_relation",
                         rank=relation_rank,
                         score=0.0,
                         parent_identifier=source_siret,
@@ -607,6 +719,7 @@ def official_evidence_union_arrow_schema() -> pa.Schema:
             ("pool_size", pa.int64()),
             ("mega_base_pool", pa.bool_()),
             ("unseen_siren", pa.bool_()),
+            ("new_site_known_siren", pa.bool_()),
             ("is_synthetic", pa.bool_()),
             ("crm_name", pa.string()),
             ("crm_address", pa.string()),
@@ -802,6 +915,11 @@ def _query_metadata(row: Mapping[str, Any]) -> dict[str, Any]:
         "unseen_siren": _optional_bool(
             _first_metadata(row, ["unseen_siren", "is_unseen_siren"])
         ),
+        "new_site_known_siren": _optional_bool(
+            _first_metadata(
+                row, ["new_site_known_siren", "is_new_site_known_siren"]
+            )
+        ),
         "is_synthetic": _optional_bool(_first_metadata(row, ["is_synthetic"])),
         "crm_name": query.name,
         "crm_address": query.address,
@@ -830,25 +948,73 @@ def retrieve_official_evidence_union_to_parquet(
 ) -> Path:
     """Stream one candidate row per query/SIRET for the admission stage."""
     output_path = Path(output_path)
+    manifest_path = output_path.with_suffix(output_path.suffix + ".manifest.json")
     if output_path.exists():
         raise FileExistsError(output_path)
+    if manifest_path.exists():
+        raise FileExistsError(manifest_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     schema = official_evidence_union_arrow_schema()
     writer = pq.ParquetWriter(output_path, schema, compression="zstd")
     buffered: list[Mapping[str, Any]] = []
+    query_count = 0
+    candidate_count = 0
+    empty_query_count = 0
     try:
         for ordinal, row in enumerate(rows):
+            query_count += 1
             query_id = str(row.get(query_id_field) or ordinal)
             result = retriever.retrieve(row)
             buffered.extend(result.candidate_rows(query_id, _query_metadata(row)))
+            candidate_count += len(result.candidates)
+            empty_query_count += int(not result.candidates)
             if len(buffered) >= batch_size:
                 writer.write_table(pa.Table.from_pylist(buffered, schema=schema))
                 buffered.clear()
         if buffered:
             writer.write_table(pa.Table.from_pylist(buffered, schema=schema))
         writer.close()
+        digest = hashlib.sha256()
+        with output_path.open("rb") as stream:
+            for chunk in iter(lambda: stream.read(8 * 1024 * 1024), b""):
+                digest.update(chunk)
+        backend_manifests = []
+        for backend_name, backend in retriever.backends:
+            manifest = getattr(backend, "manifest", None)
+            index_path = getattr(backend, "index_path", None)
+            backend_manifests.append(
+                {
+                    "backend": backend_name,
+                    "index_path": str(Path(index_path).resolve()) if index_path else None,
+                    "build_hash": manifest.get("build_hash") if manifest else None,
+                    "schema_version": manifest.get("schema_version") if manifest else None,
+                    "temporal_complete": manifest.get("temporal_complete") if manifest else None,
+                }
+            )
+        manifest_path.write_text(
+            json.dumps(
+                {
+                    "schema_version": "sireto-official-evidence-union-manifest-v2",
+                    "candidate_parquet": output_path.name,
+                    "candidate_parquet_sha256": digest.hexdigest(),
+                    "query_count": query_count,
+                    "candidate_count": candidate_count,
+                    "empty_query_count": empty_query_count,
+                    "maximum_union_candidates": retriever.config.max_union_candidates,
+                    "positive_injection": False,
+                    "synthetic_rows": 0,
+                    "retrieval_config": asdict(retriever.config),
+                    "official_indices": backend_manifests,
+                },
+                indent=2,
+                sort_keys=True,
+            )
+            + "\n",
+            encoding="utf-8",
+        )
         return output_path
     except Exception:
         writer.close()
         output_path.unlink(missing_ok=True)
+        manifest_path.unlink(missing_ok=True)
         raise

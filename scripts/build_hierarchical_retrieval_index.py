@@ -33,7 +33,7 @@ from src.xgb_matcher.hierarchical_retrieval import (  # noqa: E402
 )
 
 
-SCHEMA_VERSION = "sireto-hierarchical-index-v2"
+SCHEMA_VERSION = "sireto-hierarchical-index-v3"
 
 
 def sha256_file(path: Path) -> str:
@@ -303,13 +303,16 @@ def _schema(tantivy: Any) -> Any:
         "names", "addresses", "name_ngrams", "address_ngrams",
         "legal_names", "trade_names", "site_names", "historical_names", "supporting_names",
         "historical_addresses", "supporting_addresses", "current_name_ngrams",
+        "sirene_names", "rne_names", "bodacc_names",
+        "sirene_addresses", "rne_addresses", "bodacc_addresses",
     ]:
         builder.add_text_field(
             field_name,
             stored=field_name in {
                 "names", "addresses", "legal_names", "trade_names", "site_names",
                 "historical_names", "supporting_names", "historical_addresses",
-                "supporting_addresses",
+                "supporting_addresses", "sirene_names", "rne_names", "bodacc_names",
+                "sirene_addresses", "rne_addresses", "bodacc_addresses",
             },
         )
     for field_name in [
@@ -325,6 +328,8 @@ def _schema(tantivy: Any) -> Any:
         "is_siege",
         "linked_sirets",
         "linked_sirens",
+        "official_evidence_ids",
+        "official_evidence_sources",
         "payload",
     ]:
         builder.add_text_field(field_name, stored=True, tokenizer_name="raw", index_option="basic")
@@ -428,7 +433,9 @@ def _add_dossier_document(writer: Any, tantivy: Any, row: tuple[Any, ...]) -> No
         document_id, siren, document_kind, insee, postcode, number, number_suffix,
         state, is_siege, legal_raw, trade_raw, site_raw, historical_raw,
         supporting_raw, current_address_raw, historical_address_raw,
-        supporting_address_raw, linked_sirets, linked_sirens,
+        supporting_address_raw, sirene_names_raw, rne_names_raw, bodacc_names_raw,
+        sirene_addresses_raw, rne_addresses_raw, bodacc_addresses_raw,
+        official_evidence_ids, official_evidence_sources, linked_sirets, linked_sirens,
     ) = row
     legal = _split_values(legal_raw)
     trade = _split_values(trade_raw)
@@ -438,6 +445,16 @@ def _add_dossier_document(writer: Any, tantivy: Any, row: tuple[Any, ...]) -> No
     current_addresses = _split_values(current_address_raw)
     historical_addresses = _split_values(historical_address_raw)
     supporting_addresses = _split_values(supporting_address_raw)
+    source_names = {
+        "sirene_names": _split_values(sirene_names_raw),
+        "rne_names": _split_values(rne_names_raw),
+        "bodacc_names": _split_values(bodacc_names_raw),
+    }
+    source_addresses = {
+        "sirene_addresses": _split_values(sirene_addresses_raw),
+        "rne_addresses": _split_values(rne_addresses_raw),
+        "bodacc_addresses": _split_values(bodacc_addresses_raw),
+    }
     current_names = tuple(dict.fromkeys(legal + trade + site))
     all_names = tuple(dict.fromkeys(current_names + historical + supporting))
     all_addresses = tuple(
@@ -456,6 +473,8 @@ def _add_dossier_document(writer: Any, tantivy: Any, row: tuple[Any, ...]) -> No
         "is_siege": "1" if bool(is_siege) else "0",
         "linked_sirets": str(linked_sirets or ""),
         "linked_sirens": str(linked_sirens or ""),
+        "official_evidence_ids": str(official_evidence_ids or ""),
+        "official_evidence_sources": str(official_evidence_sources or ""),
     }
     scalar["payload"] = json.dumps(
         {
@@ -468,6 +487,8 @@ def _add_dossier_document(writer: Any, tantivy: Any, row: tuple[Any, ...]) -> No
             "site_names": list(site),
             "historical_names": list(historical),
             "supporting_names": list(supporting),
+            "official_evidence_ids": sorted(set(str(official_evidence_ids or "").replace("|", " ").split())),
+            "official_evidence_sources": sorted(set(str(official_evidence_sources or "").replace("|", " ").split())),
         },
         sort_keys=True,
         separators=(",", ":"),
@@ -485,6 +506,9 @@ def _add_dossier_document(writer: Any, tantivy: Any, row: tuple[Any, ...]) -> No
         "supporting_addresses": supporting_addresses,
     }
     for field_name, values in typed.items():
+        for value in values:
+            document.add_text(field_name, value)
+    for field_name, values in {**source_names, **source_addresses}.items():
         for value in values:
             document.add_text(field_name, value)
     for field_name, values in {
@@ -537,8 +561,11 @@ def build_index(args: argparse.Namespace) -> Path:
         if not dossier_manifest.is_file():
             raise FileNotFoundError(f"missing dossier retrieval manifest: {dossier_manifest}")
         dossier_metadata = json.loads(dossier_manifest.read_text(encoding="utf-8"))
-        if dossier_metadata.get("schema_version") != "sireto-siren-dossier-retrieval-documents-v2":
-            raise ValueError("dossier retrieval documents must use the typed v2 schema")
+        if dossier_metadata.get("schema_version") not in {
+            "sireto-siren-dossier-retrieval-documents-v2",
+            "sireto-siren-dossier-retrieval-documents-v3",
+        }:
+            raise ValueError("dossier retrieval documents must use a typed v2/v3 schema")
         sources = {
             "dossier_manifest": dossier_manifest,
             "dossier_siret_documents": dossier_documents / "retrieval_siret_documents.parquet",
@@ -618,15 +645,28 @@ def build_index(args: argparse.Namespace) -> Path:
         connection.execute("SET preserve_insertion_order=false")
         connection.execute(f"SET temp_directory='{_sql_path(args.temp_directory)}'")
         if dossier_documents:
-            document_columns = """
-                document_id,siren,document_kind,insee,postcode,number,number_suffix,
-                administrative_state,is_headquarters,legal_current_names,
-                trade_current_names,site_current_names,historical_names,supporting_names,
-                current_address_text,historical_address_text,supporting_address_text,
-                linked_sirets,linked_sirens
-            """
             site_relation = _relation(sources["dossier_siret_documents"])
             siren_relation = _relation(sources["dossier_siren_documents"])
+            available = _columns(connection, sources["dossier_siret_documents"])
+            required_columns = [
+                "document_id", "siren", "document_kind", "insee", "postcode", "number",
+                "number_suffix", "administrative_state", "is_headquarters",
+                "legal_current_names", "trade_current_names", "site_current_names",
+                "historical_names", "supporting_names", "current_address_text",
+                "historical_address_text", "supporting_address_text",
+            ]
+            optional_columns = [
+                "sirene_names", "rne_names", "bodacc_names", "sirene_addresses",
+                "rne_addresses", "bodacc_addresses", "official_evidence_ids",
+                "official_evidence_sources", "linked_sirets", "linked_sirens",
+            ]
+            document_columns = ",".join(
+                required_columns
+                + [
+                    name if name in available else f"'' AS {name}"
+                    for name in optional_columns
+                ]
+            )
             establishment_sql = (
                 f"SELECT {document_columns} FROM {site_relation} ORDER BY document_id "
                 + (f"LIMIT {args.smoke_limit}" if args.smoke_limit else "")
@@ -709,6 +749,9 @@ def build_index(args: argparse.Namespace) -> Path:
             ),
             "missing_optional_roles": missing_roles,
             "typed_name_portfolio": bool(dossier_documents),
+            "source_separated_evidence": bool(
+                dossier_documents and dossier_metadata.get("sources_separate")
+            ),
             "contains_crm_labels": False,
             "limits": {
                 "batch_size": args.batch_size,

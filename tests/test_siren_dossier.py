@@ -161,7 +161,8 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
         "LEGAL_CURRENT", "TRADE_CURRENT", "SITE_CURRENT", "SUPPORTING"
     }
     manifest = json.loads((documents / "manifest.json").read_text())
-    assert manifest["schema_version"] == "sireto-siren-dossier-retrieval-documents-v2"
+    assert manifest["schema_version"] == "sireto-siren-dossier-retrieval-documents-v3"
+    assert manifest["sources_separate"] is True
     assert manifest["blind_name_concatenation"] is False
     assert manifest["current_exact_only"] is True
     assert all(row["linked_sirens"] == "987654321" for row in rows)

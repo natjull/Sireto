@@ -297,6 +297,16 @@ def test_typed_dossier_portfolio_keeps_history_as_rescue_only(tmp_path: Path):
     historical = backend.search(RetrievalQuery(name="ANCIENNE ALPHA", insee="75056"),
                                 "historical_name_word", 10)
     assert [hit.record.siret for hit in historical] == ["12345678900001"]
+    assert backend.search(
+        RetrievalQuery(name="ALPHA PARIS", insee="75056"),
+        "fielded_name_bm25",
+        10,
+    )[0].record.siret == "12345678900001"
+    assert backend.search(
+        RetrievalQuery(name="ALPHA", number="10", insee="75056"),
+        "number_exact",
+        10,
+    )[0].record.siret == "12345678900001"
     retriever = HierarchicalSiretRetriever(
         backend, HierarchicalRetrievalConfig.load("config/retrieval_hierarchical_v2.json")
     )

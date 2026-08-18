@@ -800,6 +800,8 @@ def materialize_dossier_retrieval_documents(
             name_extras.append(f"{expression} AS {column}")
     address_extras = []
     for column, expression in {
+        "evidence_id": "''::VARCHAR",
+        "source_record_id": "''::VARCHAR",
         "observed_at": "NULL::DATE",
         "source_priority": priority_expression,
     }.items():
@@ -900,6 +902,12 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='HISTORICAL' AND selected_for_siren) historical_names,
           string_agg(normalized_value, ' | ' ORDER BY siren_rank)
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
+          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE selected_for_siren AND sources LIKE '%SIRENE%') sirene_names
+          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE selected_for_siren AND sources LIKE '%RNE%') rne_names
+          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE selected_for_siren AND sources LIKE '%BODACC%') bodacc_names
         FROM read_parquet('__PORTFOLIO__') WHERE subject_kind='SIREN' GROUP BY siren
       ), site_names AS (
         SELECT siret,
@@ -909,6 +917,12 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='HISTORICAL' AND selected_for_subject) historical_names,
           string_agg(normalized_value, ' | ' ORDER BY subject_rank)
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_subject) supporting_names
+          ,string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+            FILTER(WHERE selected_for_subject AND sources LIKE '%SIRENE%') sirene_names
+          ,string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+            FILTER(WHERE selected_for_subject AND sources LIKE '%RNE%') rne_names
+          ,string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+            FILTER(WHERE selected_for_subject AND sources LIKE '%BODACC%') bodacc_names
         FROM read_parquet('__PORTFOLIO__') WHERE subject_kind='SIRET' GROUP BY siret
       ), historical_addresses AS (
         SELECT siret,string_agg(normalized_value, ' | ' ORDER BY evidence_rank) historical_address_text
@@ -930,23 +944,50 @@ def materialize_dossier_retrieval_documents(
                 WHERE subject_kind='SIRET' AND source IN ('RNE','BODACC')
                   AND normalized_value<>'')
         ) WHERE evidence_rank<=6 GROUP BY siret
+      ), source_addresses AS (
+        SELECT siret,
+          string_agg(normalized_value, ' | ' ORDER BY source_priority DESC,normalized_value)
+            FILTER(WHERE source LIKE 'SIRENE%') sirene_addresses,
+          string_agg(normalized_value, ' | ' ORDER BY source_priority DESC,normalized_value)
+            FILTER(WHERE source='RNE') rne_addresses,
+          string_agg(normalized_value, ' | ' ORDER BY source_priority DESC,normalized_value)
+            FILTER(WHERE source='BODACC') bodacc_addresses,
+          string_agg(DISTINCT source, '|' ORDER BY source) address_sources,
+          string_agg(DISTINCT evidence_id, '|' ORDER BY evidence_id)
+            FILTER(WHERE evidence_id<>'') address_evidence_ids
+        FROM (
+          SELECT *,row_number() OVER (
+            PARTITION BY siret,source ORDER BY is_current DESC,source_priority DESC,
+              observed_at DESC NULLS LAST,normalized_value) source_rank
+          FROM retrieval_address_scope
+          WHERE subject_kind='SIRET' AND normalized_value<>''
+        ) WHERE source_rank<=8 GROUP BY siret
+      ), name_proofs AS (
+        SELECT e.siret,
+          string_agg(DISTINCT p.sources, '|' ORDER BY p.sources) name_sources,
+          string_agg(DISTINCT p.evidence_id, '|' ORDER BY p.evidence_id)
+            FILTER(WHERE p.evidence_id<>'') name_evidence_ids
+        FROM retrieval_establishment_scope e JOIN read_parquet('__PORTFOLIO__') p
+          ON p.siren=e.siren AND (p.subject_kind='SIREN' OR p.siret=e.siret)
+        WHERE p.selected_for_subject OR p.selected_for_siren
+        GROUP BY e.siret
       ), siret_links AS (
         SELECT identifier siret,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirets
         FROM (
           SELECT from_identifier identifier,to_identifier linked_identifier FROM retrieval_relation_scope
-          WHERE from_kind='SIRET' AND to_kind='SIRET'
+          WHERE source='BODACC' AND from_kind='SIRET' AND to_kind='SIRET'
           UNION ALL
           SELECT to_identifier,from_identifier FROM retrieval_relation_scope
-          WHERE from_kind='SIRET' AND to_kind='SIRET'
+          WHERE source='BODACC' AND from_kind='SIRET' AND to_kind='SIRET'
         ) WHERE length(identifier)=14 AND length(linked_identifier)=14 GROUP BY identifier
       ), siren_links AS (
         SELECT identifier siren,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirens
         FROM (
           SELECT from_identifier identifier,to_identifier linked_identifier FROM retrieval_relation_scope
-          WHERE from_kind='SIREN' AND to_kind='SIREN'
+          WHERE source='BODACC' AND from_kind='SIREN' AND to_kind='SIREN'
           UNION ALL
           SELECT to_identifier,from_identifier FROM retrieval_relation_scope
-          WHERE from_kind='SIREN' AND to_kind='SIREN'
+          WHERE source='BODACC' AND from_kind='SIREN' AND to_kind='SIREN'
         ) WHERE length(identifier)=9 AND length(linked_identifier)=9 GROUP BY identifier
       )
       SELECT e.siret document_id,e.siren,'SIRET' document_kind,e.insee,e.postcode,
@@ -957,14 +998,23 @@ def materialize_dossier_retrieval_documents(
              coalesce(sn.site_current_names,'') site_current_names,
              concat_ws(' | ',sn.historical_names,pn.historical_names) historical_names,
              concat_ws(' | ',sn.supporting_names,pn.supporting_names) supporting_names,
+             concat_ws(' | ',sn.sirene_names,pn.sirene_names) sirene_names,
+             concat_ws(' | ',sn.rne_names,pn.rne_names) rne_names,
+             concat_ws(' | ',sn.bodacc_names,pn.bodacc_names) bodacc_names,
              e.current_address_normalized current_address_text,
              coalesce(ha.historical_address_text,'') historical_address_text,
              coalesce(sa.supporting_address_text,'') supporting_address_text,
+             coalesce(za.sirene_addresses,'') sirene_addresses,
+             coalesce(za.rne_addresses,'') rne_addresses,
+             coalesce(za.bodacc_addresses,'') bodacc_addresses,
+             concat_ws('|',np.name_evidence_ids,za.address_evidence_ids) official_evidence_ids,
+             concat_ws('|',np.name_sources,za.address_sources) official_evidence_sources,
              coalesce(x.linked_sirets,'') linked_sirets,
              coalesce(y.linked_sirens,'') linked_sirens
       FROM retrieval_establishment_scope e LEFT JOIN parent_names pn USING(siren)
       LEFT JOIN site_names sn USING(siret) LEFT JOIN historical_addresses ha USING(siret)
       LEFT JOIN supporting_addresses sa USING(siret) LEFT JOIN siret_links x USING(siret)
+      LEFT JOIN source_addresses za USING(siret) LEFT JOIN name_proofs np USING(siret)
       LEFT JOIN siren_links y USING(siren)
     """.replace("__PORTFOLIO__", portfolio)
     siren_query = """
@@ -980,6 +1030,16 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='HISTORICAL' AND selected_for_siren) historical_names,
           string_agg(normalized_value, ' | ' ORDER BY siren_rank)
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
+          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE selected_for_siren AND sources LIKE '%SIRENE%') sirene_names
+          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE selected_for_siren AND sources LIKE '%RNE%') rne_names
+          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+            FILTER(WHERE selected_for_siren AND sources LIKE '%BODACC%') bodacc_names
+          ,string_agg(DISTINCT sources, '|' ORDER BY sources)
+            FILTER(WHERE selected_for_siren) official_evidence_sources
+          ,string_agg(DISTINCT evidence_id, '|' ORDER BY evidence_id)
+            FILTER(WHERE selected_for_siren AND evidence_id<>'') official_evidence_ids
         FROM read_parquet('__PORTFOLIO__') GROUP BY siren
       ), geos AS (
         SELECT DISTINCT siren,insee,postcode FROM retrieval_establishment_scope
@@ -988,9 +1048,9 @@ def materialize_dossier_retrieval_documents(
         SELECT identifier siren,string_agg(DISTINCT linked_identifier, ' ' ORDER BY linked_identifier) linked_sirens
         FROM (
           SELECT from_identifier identifier,to_identifier linked_identifier FROM retrieval_relation_scope
-          WHERE from_kind='SIREN' AND to_kind='SIREN'
+          WHERE source='BODACC' AND from_kind='SIREN' AND to_kind='SIREN'
           UNION ALL SELECT to_identifier,from_identifier FROM retrieval_relation_scope
-          WHERE from_kind='SIREN' AND to_kind='SIREN'
+          WHERE source='BODACC' AND from_kind='SIREN' AND to_kind='SIREN'
         ) WHERE length(identifier)=9 AND length(linked_identifier)=9 GROUP BY identifier
       )
       SELECT u.siren document_id,u.siren,'SIREN' document_kind,
@@ -1001,7 +1061,13 @@ def materialize_dossier_retrieval_documents(
              coalesce(n.site_current_names,'') site_current_names,
              coalesce(n.historical_names,'') historical_names,
              coalesce(n.supporting_names,'') supporting_names,
+             coalesce(n.sirene_names,'') sirene_names,
+             coalesce(n.rne_names,'') rne_names,
+             coalesce(n.bodacc_names,'') bodacc_names,
              '' current_address_text,'' historical_address_text,'' supporting_address_text,
+             '' sirene_addresses,'' rne_addresses,'' bodacc_addresses,
+             coalesce(n.official_evidence_ids,'') official_evidence_ids,
+             coalesce(n.official_evidence_sources,'') official_evidence_sources,
              '' linked_sirets,coalesce(x.linked_sirens,'') linked_sirens
       FROM legal_units u LEFT JOIN names n USING(siren) JOIN geos g USING(siren)
       LEFT JOIN siren_links x USING(siren)
@@ -1028,11 +1094,13 @@ def materialize_dossier_retrieval_documents(
     (output_dir / "manifest.json").write_bytes(
         canonical_json(
             {
-                "schema_version": "sireto-siren-dossier-retrieval-documents-v2",
+                "schema_version": "sireto-siren-dossier-retrieval-documents-v3",
                 "dossier_manifest_sha256": sha256_file(dossier_dir / "manifest.json"),
                 "name_portfolio_policy_sha256": sha256_file(policy_path),
                 "counts": counts,
                 "fields_separate": True,
+                "sources_separate": True,
+                "official_provenance_embedded": True,
                 "blind_name_concatenation": False,
                 "current_exact_only": True,
                 "historical_and_supporting_rescue_only": True,

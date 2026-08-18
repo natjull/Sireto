@@ -29,13 +29,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--base-index", type=Path, required=True)
     parser.add_argument("--overlay-index", type=Path)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument(
+        "--config",
+        type=Path,
+        default=ROOT / "config" / "retrieval_ltr_admission_dossier_v2.json",
+        help="Single preregistered retrieval/admission configuration.",
+    )
     parser.add_argument("--query-id-field", default="query_id")
-    parser.add_argument("--max-union-candidates", type=int, default=2000)
-    parser.add_argument("--exact-limit", type=int, default=500)
-    parser.add_argument("--word-limit", type=int, default=1000)
-    parser.add_argument("--character-limit", type=int, default=1000)
-    parser.add_argument("--siren-limit", type=int, default=10)
-    parser.add_argument("--sites-per-siren", type=int, default=32)
     parser.add_argument("--batch-size", type=int, default=4096)
     return parser.parse_args()
 
@@ -56,14 +56,7 @@ def _rows(path: Path, batch_size: int) -> Iterator[Mapping[str, Any]]:
 
 def main() -> None:
     args = parse_args()
-    config = OfficialEvidenceRetrievalConfig(
-        max_union_candidates=args.max_union_candidates,
-        exact_limit=args.exact_limit,
-        word_limit=args.word_limit,
-        character_limit=args.character_limit,
-        siren_limit=args.siren_limit,
-        sites_per_siren=args.sites_per_siren,
-    )
+    config = OfficialEvidenceRetrievalConfig.load(args.config)
     retriever = OfficialEvidenceRetriever.from_index_paths(
         args.base_index, args.overlay_index, config
     )

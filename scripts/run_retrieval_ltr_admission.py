@@ -24,7 +24,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from src.xgb_matcher.retrieval_ltr_admission import (  # noqa: E402
     AdmissionConfig,
-    DEFAULT_CONFIG_PATH,
     SCHEMA_VERSION,
     build_internal_union,
     evaluate_outcomes,
@@ -34,8 +33,13 @@ from src.xgb_matcher.retrieval_ltr_admission import (  # noqa: E402
 )
 
 
-RUN_SCHEMA_VERSION = "sireto-retrieval-ltr-run-v1"
+RUN_SCHEMA_VERSION = "sireto-retrieval-ltr-run-v2"
 TEST_AUTH_SCHEMA_VERSION = "sireto-retrieval-ltr-test-authorization-v1"
+FROZEN_CONFIG_PATH = (
+    Path(__file__).resolve().parents[1]
+    / "config"
+    / "retrieval_ltr_admission_dossier_v2.json"
+)
 MappingLike = dict[str, Any]
 
 
@@ -60,7 +64,7 @@ def _write_json(path: Path, payload: MappingLike) -> None:
 
 def _load_unique_config(path: Path) -> AdmissionConfig:
     selected = AdmissionConfig.load(path)
-    frozen = AdmissionConfig.load(DEFAULT_CONFIG_PATH)
+    frozen = AdmissionConfig.load(FROZEN_CONFIG_PATH)
     if dict(selected.raw) != dict(frozen.raw):
         raise ValueError("Only the single checked-in retrieval LTR config is allowed")
     return selected
@@ -120,6 +124,18 @@ def build_union_command(args: argparse.Namespace) -> Path:
     else:  # pragma: no cover - argparse guards this
         raise ValueError("Unsupported build scope")
     # There is intentionally no test scope here.
+    retrieval_manifest_path = args.candidates.with_suffix(
+        args.candidates.suffix + ".manifest.json"
+    )
+    if not retrieval_manifest_path.is_file():
+        raise FileNotFoundError(
+            f"Missing official retrieval manifest: {retrieval_manifest_path}"
+        )
+    retrieval_manifest = _read_json(retrieval_manifest_path)
+    if retrieval_manifest.get("candidate_parquet_sha256") != file_sha256(args.candidates):
+        raise ValueError("Official retrieval candidate hash mismatch")
+    if retrieval_manifest.get("positive_injection") is not False:
+        raise ValueError("Official retrieval manifest does not prove zero injection")
     raw = _read_filtered_parquet(args.candidates, folds)
     union, diagnostics = build_internal_union(raw, config, allowed_folds=folds)
     if config.test_fold in set(union["fold"].astype(int)):
@@ -137,7 +153,10 @@ def build_union_command(args: argparse.Namespace) -> Path:
             test_opened=False,
         ),
         "opened_folds": sorted(set(union["fold"].astype(int))),
-        "inputs": {str(args.candidates.resolve()): file_sha256(args.candidates)},
+        "inputs": {
+            str(args.candidates.resolve()): file_sha256(args.candidates),
+            str(retrieval_manifest_path.resolve()): file_sha256(retrieval_manifest_path),
+        },
         "outputs": {
             union_path.name: file_sha256(union_path),
             diagnostics_path.name: file_sha256(diagnostics_path),
@@ -320,6 +339,7 @@ def _evaluate_and_write(
     outcomes_path = output_dir / "query_outcomes.parquet"
     lists_path = output_dir / "candidate_lists.parquet"
     summary_path = output_dir / "summary.json"
+    evaluation_union_path = output_dir / "evaluation_union.parquet"
     selected.to_parquet(selected_path, index=False, compression="zstd")
     outcomes.to_parquet(outcomes_path, index=False, compression="zstd")
     _candidate_lists(selected).to_parquet(lists_path, index=False, compression="zstd")
@@ -330,6 +350,9 @@ def _evaluate_and_write(
         lists_path.name: file_sha256(lists_path),
         summary_path.name: file_sha256(summary_path),
     }
+    if split == "test":
+        union.to_parquet(evaluation_union_path, index=False, compression="zstd")
+        outputs[evaluation_union_path.name] = file_sha256(evaluation_union_path)
     if split == "test":
         marker_path = output_dir / "ONE_SHOT_CONSUMED.json"
         _write_json(
@@ -448,6 +471,73 @@ def evaluate_command(args: argparse.Namespace) -> Path:
     )
 
 
+def refit_command(args: argparse.Namespace) -> Path:
+    """Refit the frozen recipe on all human folds after an official test GO."""
+    config = _load_unique_config(args.config)
+    test_manifest = _verify_manifest_output(args.test_evaluation_dir / "summary.json")
+    summary = _read_json(args.test_evaluation_dir / "summary.json")
+    if test_manifest.get("test_opened") is not True or summary.get("test_opened") is not True:
+        raise ValueError("Production refit requires an official one-shot test evaluation")
+    if test_manifest.get("verdict") != "GO" or summary.get("verdict") != "GO":
+        raise ValueError("Production refit is forbidden unless the official test verdict is GO")
+
+    development_manifest = _verify_manifest_output(args.development_union)
+    test_union_manifest = _verify_manifest_output(args.test_union)
+    if development_manifest.get("test_opened") is not False:
+        raise ValueError("Development union provenance is invalid")
+    if test_union_manifest.get("test_opened") is not True:
+        raise ValueError("Test union provenance must come from the one-shot evaluation")
+    development = pd.read_parquet(args.development_union)
+    test = pd.read_parquet(args.test_union)
+    combined = pd.concat([development, test], ignore_index=True)
+    observed = set(combined["fold"].astype(int))
+    if observed != {0, 1, 2, 3, 4}:
+        raise ValueError(f"Production refit requires folds 0..4; observed {sorted(observed)}")
+    model, diagnostics = train_ranker(
+        combined, config, allowed_folds=(0, 1, 2, 3, 4)
+    )
+
+    _new_output(args.output_dir)
+    model_path = args.output_dir / "production_ranker.json"
+    metadata_path = args.output_dir / "metadata.json"
+    model.save_model(model_path)
+    metadata = {
+        "schema_version": RUN_SCHEMA_VERSION,
+        "policy_id": config.policy_id,
+        "artifact_role": "PRODUCTION_REFIT_NOT_AN_EVALUATION_RESULT",
+        "official_result_manifest": str(
+            (args.test_evaluation_dir / "manifest.json").resolve()
+        ),
+        "feature_order": feature_order(config),
+        "train_folds": [0, 1, 2, 3, 4],
+        "human_label_query_count": int(combined["query_id"].nunique()),
+        "synthetic_rows": 0,
+        "training": diagnostics,
+        "config_sha256": file_sha256(args.config),
+    }
+    _write_json(metadata_path, metadata)
+    manifest = {
+        **_manifest_base(
+            command="refit:production", config_path=args.config, test_opened=True
+        ),
+        "official_test_verdict": "GO",
+        "official_metrics_unchanged": True,
+        "inputs": {
+            str(args.development_union.resolve()): file_sha256(args.development_union),
+            str(args.test_union.resolve()): file_sha256(args.test_union),
+            str((args.test_evaluation_dir / "summary.json").resolve()): file_sha256(
+                args.test_evaluation_dir / "summary.json"
+            ),
+        },
+        "outputs": {
+            model_path.name: file_sha256(model_path),
+            metadata_path.name: file_sha256(metadata_path),
+        },
+    }
+    _write_json(args.output_dir / "manifest.json", manifest)
+    return args.output_dir
+
+
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(description=__doc__)
     commands = root.add_subparsers(dest="command", required=True)
@@ -456,13 +546,13 @@ def parser() -> argparse.ArgumentParser:
     build.add_argument("--candidates", type=Path, required=True)
     build.add_argument("--output-dir", type=Path, required=True)
     build.add_argument("--scope", choices=("train", "development"), default="development")
-    build.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    build.add_argument("--config", type=Path, default=FROZEN_CONFIG_PATH)
     build.set_defaults(handler=build_union_command)
 
     train = commands.add_parser("train", help="Fit the frozen rank:ndcg policy on 2/3/4")
     train.add_argument("--union", type=Path, required=True)
     train.add_argument("--output-dir", type=Path, required=True)
-    train.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    train.add_argument("--config", type=Path, default=FROZEN_CONFIG_PATH)
     train.set_defaults(handler=train_command)
 
     evaluate = commands.add_parser("evaluate", help="Evaluate dev or authorized test once")
@@ -471,10 +561,20 @@ def parser() -> argparse.ArgumentParser:
     evaluate.add_argument("--candidates", type=Path)
     evaluate.add_argument("--model-dir", type=Path, required=True)
     evaluate.add_argument("--output-dir", type=Path, required=True)
-    evaluate.add_argument("--config", type=Path, default=DEFAULT_CONFIG_PATH)
+    evaluate.add_argument("--config", type=Path, default=FROZEN_CONFIG_PATH)
     evaluate.add_argument("--open-test", action="store_true")
     evaluate.add_argument("--authorization", type=Path)
     evaluate.set_defaults(handler=evaluate_command)
+
+    refit = commands.add_parser(
+        "refit", help="After test GO, fit the frozen recipe on all human folds"
+    )
+    refit.add_argument("--development-union", type=Path, required=True)
+    refit.add_argument("--test-union", type=Path, required=True)
+    refit.add_argument("--test-evaluation-dir", type=Path, required=True)
+    refit.add_argument("--output-dir", type=Path, required=True)
+    refit.add_argument("--config", type=Path, default=FROZEN_CONFIG_PATH)
+    refit.set_defaults(handler=refit_command)
     return root
 
 

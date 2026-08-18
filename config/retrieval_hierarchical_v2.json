@@ -9,7 +9,7 @@
   },
   "limits": {
     "max_candidates": 100,
-    "union_cap": 1000,
+    "union_cap": 2000,
     "direct_top_k": 300,
     "name_char_top_k": 150,
     "address_char_top_k": 150,
@@ -26,7 +26,12 @@
     "include_official_history": true,
     "include_official_successions": true,
     "current_exact_only": true,
-    "historical_and_supporting_rescue_only": true
+    "historical_and_supporting_rescue_only": true,
+    "fielded_name_boosts": {
+      "legal_names": 1.25,
+      "trade_names": 1.5,
+      "site_names": 1.75
+    }
   },
   "fusion": {
     "rrf_k": 60,

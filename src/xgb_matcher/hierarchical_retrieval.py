@@ -109,8 +109,8 @@ class HierarchicalRetrievalConfig:
     def __post_init__(self) -> None:
         if self.max_candidates < 1 or self.max_candidates > 100:
             raise ValueError("max_candidates must be between 1 and 100")
-        if self.union_cap < self.max_candidates or self.union_cap > 1000:
-            raise ValueError("union_cap must be between max_candidates and 1000")
+        if self.union_cap < self.max_candidates or self.union_cap > 2000:
+            raise ValueError("union_cap must be between max_candidates and 2000")
         if self.siren_top_k not in {3, 5}:
             raise ValueError("siren_top_k must be 3 or 5")
         if self.sites_per_siren < 1 or self.sites_per_siren > 32:
@@ -386,6 +386,14 @@ class InMemoryBackend:
             return max((_overlap(query.name, name) for name in typed_names[channel]), default=0.0)
         if channel in typed_exact:
             return 1.0 if query.name and query.name in typed_exact[channel] else 0.0
+        if channel == "fielded_name_bm25":
+            return max(
+                max((_overlap(query.name, name) for name in record.legal_names), default=0.0) * 1.25,
+                max((_overlap(query.name, name) for name in record.trade_names), default=0.0) * 1.50,
+                max((_overlap(query.name, name) for name in record.site_names), default=0.0) * 1.75,
+            )
+        if channel == "number_exact":
+            return 1.0 if query.number and query.number == record.number else 0.0
         if channel == "current_name_char":
             current = record.legal_names + record.trade_names + record.site_names
             return max(
@@ -443,6 +451,15 @@ class InMemoryBackend:
         rows.sort(key=lambda record: _site_sort_key(record, query))
         return rows[:limit]
 
+    def linked_sirens(self, siren: str, limit: int = 256) -> tuple[str, ...]:
+        normalized = normalize_code(siren, 9)
+        linked = {
+            value
+            for record in self._by_siren.get(normalized, [])
+            for value in record.linked_sirens
+        }
+        return tuple(sorted(linked))[:limit]
+
     def by_siret(self, siret: str) -> IndexedEstablishment | None:
         return self._by_siret.get(normalize_code(siret, 14))
 
@@ -450,7 +467,12 @@ class InMemoryBackend:
 class TantivyBackend:
     """Thin adapter over a content-addressed Tantivy index."""
 
-    def __init__(self, index_path: Path | str) -> None:
+    def __init__(
+        self,
+        index_path: Path | str,
+        *,
+        fielded_name_boosts: Mapping[str, float] | None = None,
+    ) -> None:
         try:
             import tantivy  # type: ignore
         except ImportError as exc:
@@ -469,6 +491,10 @@ class TantivyBackend:
         )
         self.index.reload()
         self.searcher = self.index.searcher()
+        self.fielded_name_boosts = dict(
+            fielded_name_boosts
+            or {"legal_names": 1.25, "trade_names": 1.50, "site_names": 1.75}
+        )
         self._insee_exists: dict[str, bool] = {}
 
     @staticmethod
@@ -649,6 +675,29 @@ class TantivyBackend:
             ]
         )
 
+    def _fielded_name_query(self, text: str) -> Any:
+        """Field-aware BM25 disjunction with fixed, manifest-pinned boosts.
+
+        Tantivy scores each field with BM25 before applying the boost.  Keeping
+        the three component scores as a dedicated retrieval channel avoids the
+        length bias of the historical concatenated name bag; LambdaMART still
+        receives every individual field channel separately.
+        """
+        if not text:
+            return self._tantivy.Query.empty_query()
+        clauses = []
+        for field, boost in sorted(self.fielded_name_boosts.items()):
+            parsed, _errors = self.index.parse_query_lenient(
+                text, default_field_names=[field], conjunction_by_default=False
+            )
+            clauses.append(
+                (
+                    self._tantivy.Occur.Should,
+                    self._tantivy.Query.boost_query(parsed, float(boost)),
+                )
+            )
+        return self._tantivy.Query.boolean_query(clauses)
+
     def search(self, query: RetrievalQuery, channel: str, limit: int) -> list[BackendHit]:
         fields_and_text = {
             "name_word": (("names",), query.name, False),
@@ -665,14 +714,27 @@ class TantivyBackend:
             "legal_name_exact": (("legal_names_exact",), query.name, True),
             "trade_name_exact": (("trade_names_exact",), query.name, True),
             "site_name_exact": (("site_names_exact",), query.name, True),
+            "number_exact": (("number",), query.number, True),
             "historical_address_word": (("historical_addresses",), query.address, False),
             "supporting_address_word": (("supporting_addresses",), query.address, False),
             "current_name_char": (("current_name_ngrams",), " ".join(character_ngrams(query.name)), False),
         }
-        if channel not in fields_and_text:
+        if channel == "fielded_name_bm25":
+            parsed = self._combined_query(
+                query, self._fielded_name_query(query.name), document_type="siret"
+            )
+            result = self.searcher.search(parsed, limit=limit)
+            rows = [
+                (float(score), self.searcher.doc(address).to_dict())
+                for score, address in result.hits
+            ]
+        elif channel not in fields_and_text:
             raise ValueError(f"unknown retrieval channel: {channel}")
-        fields, text, exact = fields_and_text[channel]
-        if channel in {"name_char", "address_char", "current_name_char"}:
+        else:
+            fields, text, exact = fields_and_text[channel]
+        if channel == "fielded_name_bm25":
+            pass
+        elif channel in {"name_char", "address_char", "current_name_char"}:
             parsed = self._combined_query(
                 query,
                 self._character_query(
@@ -746,6 +808,35 @@ class TantivyBackend:
             )
         rows = list({row.siret: row for row in rows}.values())
         return sorted(rows, key=lambda record: _site_sort_key(record, query))[:limit]
+
+    def linked_sirens(self, siren: str, limit: int = 256) -> tuple[str, ...]:
+        """Return only structured one-hop links stored on SIREN documents."""
+        normalized = normalize_code(siren, 9)
+        parsed = self._tantivy.Query.boolean_query(
+            [
+                (
+                    self._tantivy.Occur.Must,
+                    self._tantivy.Query.term_query(
+                        self.index.schema, "document_type", "siren", "basic"
+                    ),
+                ),
+                (
+                    self._tantivy.Occur.Must,
+                    self._tantivy.Query.term_query(
+                        self.index.schema, "siren", normalized, "basic"
+                    ),
+                ),
+            ]
+        )
+        linked: set[str] = set()
+        for _score, address in self.searcher.search(parsed, limit=64).hits:
+            document = self.searcher.doc(address).to_dict()
+            linked.update(
+                normalize_code(value, 9)
+                for value in str(self._first(document, "linked_sirens", "")).split()
+                if value
+            )
+        return tuple(sorted(linked))[:limit]
 
     def by_siret(self, siret: str) -> IndexedEstablishment | None:
         parsed = self._tantivy.Query.term_query(

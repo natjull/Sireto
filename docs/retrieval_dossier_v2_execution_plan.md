@@ -39,10 +39,26 @@ et limiter la sortie finale à 100 candidats.
    ```
 
 3. Le smoke vérifie uniquement schéma, champs exacts actuels, rescue historique,
-   filtre géographique et plafond 100 ; il n'est pas un benchmark.
+   filtre géographique, provenance et union brute ; il n'est pas un benchmark.
 
-4. Produire l'union train 2/3/4 et dev 0, maximum interne 2 000, avec les
-   canaux déclarés dans `config/retrieval_ltr_admission_dossier_v2.json`.
+4. Produire une seule union label-blind de maximum 2 000 candidats. Tantivy ne
+   produit plus de top100 et aucun RRF ne précède le modèle. Les champs légaux,
+   commerciaux et de site fournissent chacun leur score BM25, plus un canal
+   field-aware aux boosts gelés. LambdaMART reçoit également exacts, numéro,
+   q-grams, historique, provenance et expansion SIREN :
+
+   ```bash
+   python scripts/retrieve_official_evidence_union.py \
+     --input <QUALIFIED_HUMAN_QUERIES_0_2_3_4> \
+     --base-index <CONTENT_ADDRESSED_TANTIVY_V3> \
+     --output <RAW_UNION_PARQUET> \
+     --config config/retrieval_ltr_admission_dossier_v2.json
+
+   python scripts/run_retrieval_ltr_admission.py build-union \
+     --candidates <RAW_UNION_PARQUET> \
+     --output-dir <SEALED_DEVELOPMENT_UNION> \
+     --scope development
+   ```
 
 5. Entraîner une fois LambdaMART sur 2/3/4, puis évaluer une fois sur dev 0.
    Publier ensemble couverture identifiable, Recall@100 exact/opérationnel,
@@ -58,3 +74,25 @@ et limiter la sortie finale à 100 candidats.
 Le fold 1 n'est ouvert qu'après gel du retrieval et de l'admission. Il n'y a ni
 grille de modèles ni succession de canaris : un smoke technique, un fit train,
 une évaluation dev, puis une décision.
+
+Après un `GO` test, la sous-commande `refit` consomme l'union développement et
+l'union test déjà scellée, puis ajuste la même recette sur les cinq folds. Cet
+artefact est marqué `PRODUCTION_REFIT_NOT_AN_EVALUATION_RESULT`; il ne remplace
+jamais les métriques officielles du modèle pré-refit.
+
+## Décisions d'architecture issues de la revue neuve
+
+- Le moteur ne prétend pas implémenter la formule BM25F au sens strict :
+  Tantivy calcule BM25 séparément par champ. Un canal field-aware applique les
+  trois boosts préenregistrés, et LambdaMART reçoit aussi chaque score élémentaire.
+  Cette solution conserve davantage d'information qu'un champ concaténé.
+- Le numéro exact est un signal dédié, mais ne constitue jamais à lui seul une
+  preuve exacte protégée.
+- Seuls nom/adresse actuels exacts et consensus multicanal reçoivent une
+  protection d'admission. L'historique et BODACC restent rescue-only.
+- Les relations suivies sont exclusivement des relations BODACC structurées,
+  sur un seul saut, puis filtrées par INSEE ou par CP de secours. Aucun texte
+  d'annonce ni identifiant d'annonce n'entre dans les features.
+- Le Parquet d'union possède un manifeste obligatoire liant son SHA-256, la
+  configuration et les manifests content-addressés des index officiels.
+- Le chemin production refuse un index dont `temporal_complete` n'est pas vrai.

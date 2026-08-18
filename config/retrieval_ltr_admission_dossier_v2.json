@@ -10,11 +10,12 @@
     "consensus_protection_slots": 20
   },
   "channels": [
-    "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact",
+    "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact", "number_exact",
+    "fielded_name_bm25",
     "legal_name_word", "trade_name_word", "site_name_word", "address_word",
     "current_name_char", "address_char", "historical_name_word",
     "historical_address_word", "supporting_name_word", "supporting_address_word",
-    "hierarchical", "official_successor"
+    "hierarchical", "official_successor", "bodacc_relation"
   ],
   "exact_channels": [
     "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact"
@@ -38,5 +39,24 @@
   "forbidden": {
     "synthetic_markers": ["synthetic", "synthétique"],
     "dense_channel_markers": ["dense", "embedding", "vector", "bge", "colbert", "splade"]
+  },
+  "retrieval": {
+    "require_temporal_complete": true,
+    "max_union_candidates": 2000,
+    "exact_limit": 500,
+    "word_limit": 1000,
+    "character_limit": 1000,
+    "historical_limit": 500,
+    "supporting_limit": 250,
+    "siren_limit": 5,
+    "sites_per_siren": 32,
+    "relation_seed_limit": 500,
+    "relation_limit": 500,
+    "search_workers": 12,
+    "fielded_name_boosts": {
+      "legal_names": 1.25,
+      "trade_names": 1.5,
+      "site_names": 1.75
+    }
   }
 }

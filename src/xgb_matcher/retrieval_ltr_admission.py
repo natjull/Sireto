@@ -60,6 +60,14 @@ BASE_FEATURES = (
     "insee_match",
     "candidate_active",
     "candidate_is_siege",
+    "official_source_count",
+    "official_source_registry_current",
+    "official_source_rne",
+    "official_source_bodacc",
+    "current_signal_count",
+    "historical_signal_count",
+    "supporting_signal_count",
+    "relation_signal_count",
 )
 _ID_TOKENS = ("query_id", "siret", "siren")
 _SPACE_RE = re.compile(r"\s+")
@@ -415,6 +423,8 @@ def validate_candidate_input(
             "mega_base_pool",
             "unseen_siren",
             "is_unseen_siren",
+            "new_site_known_siren",
+            "is_new_site_known_siren",
         )
         if column in frame.columns
     )
@@ -511,6 +521,11 @@ def _base_candidate(
         _first_value(row, ("state", "candidate_state", "etatAdministratifEtablissement"))
         or "A"
     ).upper()
+    raw_evidence_sources = {
+        normalize_text(value)
+        for value in _parse_values(row.get("official_evidence_sources"))
+        if normalize_text(value)
+    }
     return {
         "siret": siret,
         "siren": siren,
@@ -529,6 +544,7 @@ def _base_candidate(
             _first_value(row, ("is_siege", "candidate_is_siege", "etablissementSiege"))
         ),
         "explicit_site_key": _first_value(row, ("site_key", "address_id", "official_site_key")),
+        "official_evidence_sources": raw_evidence_sources,
     }
 
 
@@ -546,6 +562,11 @@ def _merge_candidate_hit(
     candidate["retrieval_score"] = max(candidate["retrieval_score"], score)
     candidate["candidate_names"].update(_candidate_names(row))
     candidate["candidate_addresses"].update(_candidate_addresses(row))
+    candidate["official_evidence_sources"].update(
+        normalize_text(value)
+        for value in _parse_values(row.get("official_evidence_sources"))
+        if normalize_text(value)
+    )
     for channel in sources:
         channel_rank = _positive_rank(_per_channel_value(row, channel, "rank"))
         if channel_rank is None:
@@ -664,6 +685,16 @@ def _query_metadata(group: pd.DataFrame) -> dict[str, Any]:
         "unseen_siren": _as_bool(
             _first_value(row, ("unseen_siren", "is_unseen_siren")), default=False
         ),
+        "new_site_known_siren_available": any(
+            column in group.columns
+            for column in ("new_site_known_siren", "is_new_site_known_siren")
+        ),
+        "new_site_known_siren": _as_bool(
+            _first_value(
+                row, ("new_site_known_siren", "is_new_site_known_siren")
+            ),
+            default=False,
+        ),
     }
 
 
@@ -682,6 +713,15 @@ def _materialize_candidate(
     if not math.isfinite(score):
         score = 0.0
     exact_count = len(sources.intersection(config.exact_channels))
+    evidence_sources = set(candidate["official_evidence_sources"])
+    current_channels = {
+        "legal_name_exact", "trade_name_exact", "site_name_exact", "address_exact",
+        "number_exact", "fielded_name_bm25", "legal_name_word", "trade_name_word",
+        "site_name_word", "address_word", "current_name_char", "address_char",
+    }
+    historical_channels = {"historical_name_word", "historical_address_word"}
+    supporting_channels = {"supporting_name_word", "supporting_address_word"}
+    relation_channels = {"official_successor", "bodacc_relation"}
     row: dict[str, Any] = {
         **metadata,
         "candidate_siret": candidate["siret"],
@@ -740,6 +780,16 @@ def _materialize_candidate(
         ),
         "candidate_active": int(candidate["candidate_state"] != "F"),
         "candidate_is_siege": int(candidate["candidate_is_siege"]),
+        "official_source_count": len(evidence_sources),
+        "official_source_registry_current": int(
+            any(value.startswith("SIRENE") for value in evidence_sources)
+        ),
+        "official_source_rne": int("RNE" in evidence_sources),
+        "official_source_bodacc": int("BODACC" in evidence_sources),
+        "current_signal_count": len(sources & current_channels),
+        "historical_signal_count": len(sources & historical_channels),
+        "supporting_signal_count": len(sources & supporting_channels),
+        "relation_signal_count": len(sources & relation_channels),
     }
     for channel in config.channels:
         channel_rank = candidate["channel_ranks"].get(channel)
@@ -870,9 +920,11 @@ def operational_sirets_for_group(group: pd.DataFrame) -> set[str]:
 def prepare_training_rows(
     union: pd.DataFrame,
     config: AdmissionConfig,
+    *,
+    allowed_folds: Iterable[int] | None = None,
 ) -> tuple[pd.DataFrame, dict[str, Any]]:
     """Build exact ranking groups and remove operational siblings as negatives."""
-    expected_folds = set(config.train_folds)
+    expected_folds = set(allowed_folds or config.train_folds)
     observed = set(union["fold"].astype(int))
     if not observed.issubset(expected_folds):
         raise ValueError("Non-training folds reached LambdaMART fit preparation")
@@ -943,10 +995,15 @@ def prepare_training_rows(
 def train_ranker(
     union: pd.DataFrame,
     config: AdmissionConfig,
+    *,
+    allowed_folds: Iterable[int] | None = None,
 ) -> tuple[xgb.XGBRanker, dict[str, Any]]:
     """Fit the single frozen LambdaMART configuration on folds 2/3/4 only."""
     started = time.perf_counter()
-    training, diagnostics = prepare_training_rows(union, config)
+    fitted_folds = tuple(sorted(set(allowed_folds or config.train_folds)))
+    training, diagnostics = prepare_training_rows(
+        union, config, allowed_folds=fitted_folds
+    )
     features = feature_order(config)
     assert_feature_order_is_identifier_free(features)
     qid = training["query_id"].astype("category").cat.codes.to_numpy(dtype=np.int64)
@@ -961,7 +1018,7 @@ def train_ranker(
     )
     diagnostics = {
         **diagnostics,
-        "train_folds": list(config.train_folds),
+        "train_folds": list(fitted_folds),
         "feature_order": features,
         "xgboost": config.xgb_params,
         "training_latency_ms": (time.perf_counter() - started) * 1000.0,
@@ -1082,6 +1139,12 @@ def score_and_select(
                 "unseen_siren": _as_bool(group.iloc[0].get("unseen_siren")),
                 "unseen_siren_available": _as_bool(
                     group.iloc[0].get("unseen_siren_available")
+                ),
+                "new_site_known_siren": _as_bool(
+                    group.iloc[0].get("new_site_known_siren")
+                ),
+                "new_site_known_siren_available": _as_bool(
+                    group.iloc[0].get("new_site_known_siren_available")
                 ),
             }
         )
@@ -1364,6 +1427,15 @@ def evaluate_outcomes(
         unseen = outcomes["unseen_siren"].fillna(False).astype(bool)
         add_segment("unseen_siren=true", unseen)
         add_segment("unseen_siren=false", ~unseen)
+    if (
+        "new_site_known_siren" in outcomes.columns
+        and outcomes.get(
+            "new_site_known_siren_available", pd.Series(False, index=outcomes.index)
+        ).fillna(False).astype(bool).all()
+    ):
+        new_site = outcomes["new_site_known_siren"].fillna(False).astype(bool)
+        add_segment("new_site_known_siren=true", new_site)
+        add_segment("new_site_known_siren=false", ~new_site)
 
     return {
         "schema_version": SCHEMA_VERSION,
