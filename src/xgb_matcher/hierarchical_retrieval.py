@@ -12,6 +12,7 @@ unless the caller opts into the test backend explicitly.
 from __future__ import annotations
 
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 import json
 import math
@@ -532,7 +533,13 @@ class TantivyBackend:
                 self.index.schema, fields[0], text, "basic"
             )
         else:
-            text_query = self.index.parse_query(
+            # CRM values are data, not Tantivy query syntax.  In particular,
+            # perfectly legitimate names can end in reserved words such as
+            # "OR" (for example "HOTEL DE LA COTE D OR").  The strict parser
+            # raises on those inputs and can abort an entire evaluation or
+            # production batch.  Lenient parsing preserves the usable lexical
+            # terms while treating malformed syntax as data-quality noise.
+            text_query, _parse_errors = self.index.parse_query_lenient(
                 text,
                 default_field_names=list(fields),
                 conjunction_by_default=False,
@@ -543,6 +550,38 @@ class TantivyBackend:
             (float(score), self.searcher.doc(address).to_dict())
             for score, address in result.hits
         ]
+
+    def _character_query(self, field: str, text: str) -> Any:
+        """Build the n-gram query without the analyzer's shared G3/G4/G5 tokens.
+
+        The v1 index stores encoded values such as ``G3_484F54`` with the
+        default analyzer.  Tantivy consequently indexes both ``g3`` and the
+        hexadecimal payload.  Feeding the encoded strings back through the
+        query parser adds the ultra-common ``g3``/``g4``/``g5`` terms and turns
+        every character lookup into a near-global scan.  Querying only the
+        hexadecimal term preserves the actual n-gram signal and avoids that
+        pathological fan-out without rebuilding the frozen national index.
+        """
+        payload_terms = sorted(
+            {
+                gram.split("_", 1)[1].lower()
+                for gram in character_ngrams(text)
+                if "_" in gram
+            }
+        )
+        if not payload_terms:
+            return self._tantivy.Query.empty_query()
+        return self._tantivy.Query.boolean_query(
+            [
+                (
+                    self._tantivy.Occur.Should,
+                    self._tantivy.Query.term_query(
+                        self.index.schema, field, term, "basic"
+                    ),
+                )
+                for term in payload_terms
+            ]
+        )
 
     def search(self, query: RetrievalQuery, channel: str, limit: int) -> list[BackendHit]:
         fields_and_text = {
@@ -556,24 +595,33 @@ class TantivyBackend:
         if channel not in fields_and_text:
             raise ValueError(f"unknown retrieval channel: {channel}")
         fields, text, exact = fields_and_text[channel]
-        hits = [
-            BackendHit(self._record(document), score)
-            for score, document in self._query(
+        if channel in {"name_char", "address_char"}:
+            parsed = self._combined_query(
+                query,
+                self._character_query(fields[0], query.name if channel == "name_char" else query.address),
+                document_type="siret",
+            )
+            result = self.searcher.search(parsed, limit=limit)
+            rows = [
+                (float(score), self.searcher.doc(address).to_dict())
+                for score, address in result.hits
+            ]
+        else:
+            rows = self._query(
                 query, fields, text, limit, exact=exact, document_type="siret"
             )
-        ]
+        hits = [BackendHit(self._record(document), score) for score, document in rows]
         return sorted(hits, key=lambda hit: (-hit.score, hit.record.siret))
 
     def search_sirens(self, query: RetrievalQuery, limit: int) -> list[tuple[str, float]]:
-        lexical = self.index.parse_query(query.name, default_field_names=["names"])
-        character = self.index.parse_query(
-            " ".join(character_ngrams(query.name)),
-            default_field_names=["name_ngrams"],
+        lexical, _lexical_errors = self.index.parse_query_lenient(
+            query.name, default_field_names=["names"]
         )
-        text_query = self._tantivy.Query.disjunction_max_query(
-            [lexical, character], tie_breaker=0.1
-        )
-        parsed = self._combined_query(query, text_query, document_type="siren")
+        # SIREN expansion is a small hierarchical rescue channel.  Its old
+        # character disjunction dominated latency on the 39M geo/SIREN docs;
+        # direct SIRET character rescue remains available below, while SIREN
+        # heads use the much cheaper lexical evidence.
+        parsed = self._combined_query(query, lexical, document_type="siren")
         result = self.searcher.search(parsed, limit=limit)
         hits = [
             (float(score), self.searcher.doc(address).to_dict())
@@ -600,7 +648,7 @@ class TantivyBackend:
             for _score, address in result.hits
         ]
         if query.address:
-            address_query = self.index.parse_query(
+            address_query, _address_errors = self.index.parse_query_lenient(
                 query.address, default_field_names=["addresses"]
             )
             address_parsed = self._combined_query(
@@ -660,23 +708,46 @@ class HierarchicalSiretRetriever:
             raise RuntimeError("hierarchical retrieval is disabled; explicit opt-in is required")
         self.backend = backend
         self.config = config
+        self._search_pool = ThreadPoolExecutor(max_workers=7)
 
     def retrieve(self, row: RetrievalQuery | Mapping[str, Any]) -> list[RetrievalCandidate]:
         query = row if isinstance(row, RetrievalQuery) else RetrievalQuery.from_mapping(row)
         if not query.insee and not query.postcode:
             return []
 
-        channels: dict[str, list[BackendHit]] = {
-            "name_exact": self.backend.search(query, "name_exact", self.config.direct_top_k),
-            "address_exact": self.backend.search(query, "address_exact", self.config.direct_top_k),
-            "name_word": self.backend.search(query, "name_word", self.config.direct_top_k),
-            "address_word": self.backend.search(query, "address_word", self.config.direct_top_k),
-            "name_char": self.backend.search(query, "name_char", self.config.name_char_top_k),
-            "address_char": self.backend.search(query, "address_char", self.config.address_char_top_k),
+        primary_futures = {
+            channel: self._search_pool.submit(
+                self.backend.search, query, channel, self.config.direct_top_k
+            )
+            for channel in ["name_exact", "address_exact", "name_word", "address_word"]
         }
+        siren_future = self._search_pool.submit(
+            self.backend.search_sirens, query, self.config.siren_top_k
+        )
+        channels: dict[str, list[BackendHit]] = {
+            channel: future.result() for channel, future in primary_futures.items()
+        }
+        # Character retrieval is a rescue path.  Exact official evidence makes
+        # it redundant on the easy majority and skipping it materially lowers
+        # latency without hiding hard cases from the lexical/hierarchical path.
+        if channels["name_exact"] or channels["address_exact"]:
+            channels["name_char"] = []
+            channels["address_char"] = []
+        else:
+            char_futures = {
+                "name_char": self._search_pool.submit(
+                    self.backend.search, query, "name_char", self.config.name_char_top_k
+                ),
+                "address_char": self._search_pool.submit(
+                    self.backend.search, query, "address_char", self.config.address_char_top_k
+                ),
+            }
+            channels.update(
+                {channel: future.result() for channel, future in char_futures.items()}
+            )
         hierarchical: list[BackendHit] = []
         for siren_rank, (siren, siren_score) in enumerate(
-            self.backend.search_sirens(query, self.config.siren_top_k), start=1
+            siren_future.result(), start=1
         ):
             for site_rank, record in enumerate(
                 self.backend.sites_for_siren(siren, query, self.config.sites_per_siren), start=1

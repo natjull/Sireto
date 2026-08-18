@@ -77,7 +77,7 @@ def main() -> None:
     evaluated = 0
     candidate_counts: list[int] = []
     latencies_ms: list[float] = []
-    for row in frame.to_dict(orient="records"):
+    for row_number, row in enumerate(frame.to_dict(orient="records"), start=1):
         exact = normalize_code(
             _first(row, ["gt_siret", "ground_truth_siret", "siret_gt"]), 14
         )
@@ -101,6 +101,13 @@ def main() -> None:
         operational_hits += int(bool(candidate_sirets & acceptable))
         candidate_counts.append(len(candidates))
         evaluated += 1
+        if row_number % 100 == 0:
+            elapsed_s = sum(latencies_ms) / 1000.0
+            print(
+                f"progress={row_number}/{len(frame)} exact_hits={exact_hits} "
+                f"query_time_s={elapsed_s:.1f}",
+                flush=True,
+            )
 
     if not evaluated:
         raise RuntimeError("input contains no usable exact GT SIRET")
