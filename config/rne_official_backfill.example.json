@@ -1,0 +1,20 @@
+{
+  "start_exclusive": "2000-01-01",
+  "end_inclusive": "CHANGE_ME_TODAY_YYYY-MM-DD",
+  "partition_days": 7,
+  "sync": {
+    "keychain": {
+      "service": "com.sireto.rne-official",
+      "account": "CHANGE_ME_INPI_USERNAME"
+    },
+    "api": {
+      "login_url": "https://registre-national-entreprises.inpi.fr/api/sso/login",
+      "diff_url": "https://registre-national-entreprises.inpi.fr/api/companies/diff",
+      "from": "2000-01-01",
+      "to": "2000-01-02",
+      "page_size": 100,
+      "maximum_pages": 1000000,
+      "output_name": "rne-formalites-placeholder.jsonl"
+    }
+  }
+}
