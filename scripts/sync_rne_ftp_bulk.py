@@ -26,6 +26,8 @@ from src.xgb_matcher.official_source_sync import (  # noqa: E402
     sha256_file,
 )
 
+FTP_SYNC_ERRORS = (OfficialSyncError, OSError, *ftplib.all_errors)
+
 
 def _safe_remote_name(value: str) -> str:
     path = PurePosixPath(value)
@@ -216,7 +218,7 @@ def main() -> int:
             os.close(descriptor)
         print(final)
         return 0
-    except (OfficialSyncError, ftplib.all_errors, OSError) as exc:
+    except FTP_SYNC_ERRORS as exc:
         print(f"RNE bulk sync failed: {exc}", file=sys.stderr)
         return 2
     finally:
