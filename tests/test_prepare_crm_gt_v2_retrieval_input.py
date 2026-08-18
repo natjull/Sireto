@@ -23,6 +23,9 @@ def test_build_binds_commercial_population_contract_and_partitions(tmp_path):
             "exact_metric_eligible": [True], "ground_truth_siret": ["12345678900001"],
             "ground_truth_siren": ["123456789"], "ground_truth_state": ["A"],
             "acceptable_sirets_operational": ['["12345678900001"]'],
+            "historical_ground_truth_siret": ["12345678900001"],
+            "historical_ground_truth_siren": ["123456789"],
+            "label_kind": ["MATCH_EXACT"], "label_is_human_validated": [True],
         }
     ).to_parquet(population / "labels.parquet", index=False)
     outputs = {
@@ -54,3 +57,26 @@ def test_build_binds_commercial_population_contract_and_partitions(tmp_path):
     assert manifest["query_count"] == 1
     assert manifest["positive_injection"] is False
     assert manifest["build_identity"]["retrieval_contract_sha256"] == file_sha256(contract)
+
+    full_destination = build(
+        Namespace(
+            population=population,
+            retrieval_contract=contract,
+            partitions_dir=partitions,
+            output_root=tmp_path / "full-output",
+            scope="all_human",
+        )
+    )
+    full = pd.read_parquet(full_destination / "benchmark.parquet")
+    development = pd.read_parquet(full_destination / "development.parquet")
+    test_locked = pd.read_parquet(full_destination / "test_locked.parquet")
+    full_manifest = json.loads((full_destination / "manifest.json").read_text())
+    assert len(full) == 1
+    assert bool(full.loc[0, "identifiable_exact"])
+    assert bool(full.loc[0, "v2_exact"])
+    assert bool(full.loc[0, "v3_exact"])
+    assert not bool(full.loc[0, "is_synthetic"])
+    assert set(development["oof_fold"]) == {0}
+    assert test_locked.empty
+    assert full_manifest["build_identity"]["population_scope"] == "all_human"
+    assert full_manifest["test_locked"] is True
