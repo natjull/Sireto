@@ -4976,5 +4976,43 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   strictement borné : trigger d'incertitude + fusion score-level train/dev,
   sans dense, sans alias et sans ouverture du test.
 
+## Retrieval officiel RNE/BODACC + admission LambdaMART — 18 août 2026
+
+- Le commit `cc4d81c` ajoute les acquisitions officielles immuables. RNE est
+  accepté uniquement par SFTP avec `known_hosts`, FTPS après `AUTH TLS`, ou
+  HTTPS authentifié; le secret reste dans le Trousseau macOS et n'apparaît ni
+  dans les arguments, ni dans les logs, ni dans les manifests. BODACC supporte
+  le backfill officiel et l'incrément Opendatasoft v2.1 par curseur date+ID.
+  Les publications sont content-addressées, hashées et renommées atomiquement.
+  Le serveur `www.inpi.net:21` fourni pour le RNE n'annonce pas TLS : il a été
+  sondé sans authentification puis refusé fail-closed; aucun identifiant n'a été
+  envoyé en FTP clair. Un accès INPI SFTP/FTPS/HTTPS est requis pour le sync RNE
+  réel. L'API BODACC v2.1 a été vérifiée sur une réponse réelle sans texte libre.
+- Le commit `1207384` construit une couche canonique SIRENE/RNE/BODACC avec
+  valeurs officielles brutes et normalisées, précédence SIRENE, conflits en
+  quarantaine et seules relations structurées SIRET/SIREN. Dirigeants,
+  bénéficiaires effectifs et texte intégral BODACC restent exclus. L'overlay
+  Tantivy est séparé de l'index national de 98 Go, content-addressé et jetable;
+  il ne contient ni label CRM ni valeur brute. L'union hiérarchique exporte au
+  plus 2 000 candidats avec rang/score/provenance pour 13 canaux, métadonnées
+  de qualification, latence et garde géographique sur les successions.
+- Le commit `b66c5bb` ajoute l'admission unique LambdaMART `rank:ndcg` : folds
+  2/3/4 pour l'entraînement, fold 0 pour le développement, protections exactes
+  et consensus, plafond absolu de 100 et exclusion des équivalents même
+  SIREN/même site des négatifs. Les identifiants ne sont pas des features; le
+  dense et le synthétique sont refusés. Les rapports publient historique/V2/V3,
+  exact/opérationnel, couverture, oracle et latences. Les gates gelés sont
+  couverture >=80 %, oracle >=99,3 %, Recall@100 exact >=99 %, p95 <=1 s et
+  p99 <=2 s. Le fold 1 nécessite une autorisation hashée consommée une seule
+  fois avant lecture.
+- Validation bornée : 40 tests ciblés passent, dont un vrai build Tantivy et un
+  E2E `builder -> overlay -> union Parquet -> build_internal_union`; le parseur
+  BODACC imbriqué est aussi confronté à une réponse API réelle. Aucun build
+  national enrichi, entraînement réel, dev réel ou fold 1 n'a été lancé. La
+  prochaine exécution est : obtenir le transport RNE sécurisé, synchroniser les
+  snapshots, construire l'overlay, entraîner sur 2/3/4 puis ouvrir une seule
+  évaluation dev 0. Le test reste fermé tant que tous les gates dev ne passent
+  pas.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
