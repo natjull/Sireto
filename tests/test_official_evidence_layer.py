@@ -89,6 +89,9 @@ def test_rne_bulk_manifest_streams_json_members_from_zip(tmp_path: Path):
         "123456789",
         "987654321",
     ]
+    assert snapshot_specs_from_sync_manifest(
+        manifest_path, payload_names={archive.name}
+    ) == specs
 
 
 def _sirene_establishment(

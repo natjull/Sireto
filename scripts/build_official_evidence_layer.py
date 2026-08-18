@@ -29,6 +29,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--sirene-legal-unit-history", type=Path)
     parser.add_argument("--sirene-successions", type=Path)
     parser.add_argument("--rne-manifest", type=Path, action="append", default=[])
+    parser.add_argument(
+        "--rne-payload-name",
+        action="append",
+        default=[],
+        help="Select named RNE payloads (e.g. formalities but not annual accounts).",
+    )
     parser.add_argument("--bodacc-manifest", type=Path, action="append", default=[])
     parser.add_argument("--output-dir", type=Path, required=True)
     parser.add_argument("--work-dir", type=Path)
@@ -77,7 +83,10 @@ def main() -> None:
     for manifest in args.rne_manifest:
         specs.extend(
             snapshot_specs_from_sync_manifest(
-                manifest, role=SnapshotRole.RNE_RECORDS, batch_size=args.batch_size
+                manifest,
+                role=SnapshotRole.RNE_RECORDS,
+                batch_size=args.batch_size,
+                payload_names=(set(args.rne_payload_name) or None),
             )
         )
     for manifest in args.bodacc_manifest:

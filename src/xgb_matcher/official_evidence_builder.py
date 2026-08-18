@@ -129,6 +129,7 @@ def snapshot_specs_from_sync_manifest(
     *,
     role: SnapshotRole | str | None = None,
     batch_size: int = 16_384,
+    payload_names: set[str] | None = None,
 ) -> tuple[SnapshotSpec, ...]:
     """Resolve the immutable payloads emitted by ``official_source_sync``.
 
@@ -154,11 +155,16 @@ def snapshot_specs_from_sync_manifest(
         or raw.get("created_at")
     )
     specs: list[SnapshotSpec] = []
+    found_names: set[str] = set()
     payload_items = raw.get("payload") or (
         raw.get("remote") if source_name == "RNE-FTP-BULK" else []
     )
     for item in payload_items:
-        path = manifest_path.parent / str(item.get("name") or "")
+        item_name = str(item.get("name") or "")
+        if payload_names is not None and item_name not in payload_names:
+            continue
+        found_names.add(item_name)
+        path = manifest_path.parent / item_name
         if not path.is_file():
             raise FileNotFoundError(f"manifest payload is missing: {path}")
         expected_size = item.get("size_bytes")
@@ -176,6 +182,9 @@ def snapshot_specs_from_sync_manifest(
                 batch_size=batch_size,
             )
         )
+    if payload_names is not None and found_names != payload_names:
+        missing = sorted(payload_names - found_names)
+        raise ValueError(f"official-source manifest payload selection missing: {missing}")
     if not specs:
         raise ValueError("official-source manifest has no payload")
     return tuple(specs)
