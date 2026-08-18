@@ -5081,8 +5081,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   clés d'audit, pas des features. Les anciens modèles demeurent gelés jusqu'au
   gate retrieval actif (couverture >=80 %, Recall@100 exact >=99 %, max100).
   Le build national initial SIRENE courant + BODACC 2008-2026 + RNE quotidien
-  est en cours sur `/Volumes/CATNAT_DATA`; il sera reconstruit sous un nouvel ID
-  lorsque le backfill RNE complet sera disponible.
+  est publié sous `siren_dossier_v1/e4196b1eed7199b6` : 29 922 486 SIREN,
+  43 896 818 SIRET, 107 996 779 preuves de noms, 88 230 482 preuves
+  d'adresses, 24 114 279 résolutions de sites et 692 010 relations. Un smoke
+  réel de 500 candidats/5 scènes a projeté exactement 500 lignes, dont 366 avec
+  plusieurs sources de noms, 258 avec site externe résolu et 77 avec relation.
+  Il sera reconstruit sous un nouvel ID lorsque le backfill RNE complet sera
+  disponible. Le backfill conserve six fenêtres vides 2000 déjà scellées; la
+  septième attend la remise en service du port HTTPS INPI, actuellement refusé
+  avant authentification.
 - Les commits antérieurs `aa3bccd`, `0a9b49b`, `58c2f6a` et `ff00ad4`
   documentent respectivement le spill disque de l'overlay officiel, la borne
   des workers DuckDB, l'indexation incrémentale des couches temporelles et la
