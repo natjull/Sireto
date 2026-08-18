@@ -577,7 +577,8 @@ def test_builder_overlay_union_parquet_is_ltr_consumable(tmp_path: Path):
         [
             {
                 "query_id": "q-1",
-                "fold": 0,
+                "oof_fold": 0,
+                "split": "crm_prospective_dev",
                 "ground_truth_siret": "12345678900011",
                 "ground_truth_state": "A",
                 "crm_name": "Nouveau Nom RNE",

@@ -758,7 +758,9 @@ def _query_metadata(row: Mapping[str, Any]) -> dict[str, Any]:
         )
     )
     selected = {
-        "fold": _required_fold(_first_metadata(row, ["fold", "split", "partition"])),
+        "fold": _required_fold(
+            _first_metadata(row, ["fold", "oof_fold", "partition", "split"])
+        ),
         "gt_siret": ground_truth_siret,
         "ground_truth_siret": ground_truth_siret,
         "ground_truth_siren": ground_truth_siren,
