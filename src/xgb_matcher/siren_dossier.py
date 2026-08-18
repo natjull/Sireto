@@ -822,6 +822,9 @@ def materialize_dossier_retrieval_documents(
     output_dir: Path,
     name_portfolio_policy: Path | None = None,
     document_limit: int | None = None,
+    temp_directory: Path | None = None,
+    memory_limit: str | None = None,
+    threads: int | None = None,
 ) -> Mapping[str, int]:
     """Materialize bounded, typed SIRET and SIREN retrieval documents.
 
@@ -846,6 +849,14 @@ def materialize_dossier_retrieval_documents(
         return int(value or roles[role].get("maximum_per_siren") or 0)
 
     connection = open_siren_dossier(dossier_dir)
+    if temp_directory is not None:
+        temp_directory = Path(temp_directory)
+        temp_directory.mkdir(parents=True, exist_ok=True)
+        connection.execute(f"SET temp_directory='{_sql_path(temp_directory)}'")
+    if memory_limit is not None:
+        connection.execute(f"SET memory_limit='{str(memory_limit).replace("'", "''")}'")
+    if threads is not None:
+        connection.execute(f"SET threads={max(1, int(threads))}")
     if document_limit is not None and document_limit < 1:
         raise ValueError("document_limit must be positive")
     scope_limit = f"LIMIT {int(document_limit)}" if document_limit else ""
@@ -1182,6 +1193,11 @@ def materialize_dossier_retrieval_documents(
                 "temporal_complete": temporal_complete,
                 "maximum_candidates_contract": 100,
                 "document_limit": document_limit,
+                "resource_limits": {
+                    "memory_limit": memory_limit,
+                    "threads": threads,
+                    "external_temp_directory": temp_directory is not None,
+                },
             }
         )
     )
