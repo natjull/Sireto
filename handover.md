@@ -5227,6 +5227,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   interrompue n'avait pas de footer Parquet et n'est donc pas consommée; cela
   ne peut pas ajouter de preuve, puisque seule la population acceptée staged
   alimente l'artefact récupéré. 42 tests ciblés passent.
+- Le commit `43205a3` retire les `DISTINCT` globaux redondants du stockage brut
+  du dossier v3. Le premier essai national avait échoué proprement, sans
+  publication, après 60 Go de spill DuckDB et 12 Go de RAM sur plus de 150 M
+  de faits imbriqués. RNE/BODACC sont déjà canonisés par source; les observations
+  restent additives et le portefeuille retrieval conserve sa déduplication
+  sémantique bornée par sujet, rôle et valeur. Les documents/features consommateurs
+  gardent donc la même sémantique sans ce tri national inutile. 42 tests passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
