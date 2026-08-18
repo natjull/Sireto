@@ -1,0 +1,11 @@
+{
+  "backfill": [],
+  "incremental": {
+    "url": "https://bodacc-datadila.opendatasoft.com/api/explore/v2.1/catalog/datasets/annonces-commerciales/records",
+    "watermark_field": "dateparution",
+    "tie_break_field": "id",
+    "since": "2026-08-01",
+    "since_tie_break": "",
+    "page_size": 100
+  }
+}
