@@ -881,6 +881,10 @@ def materialize_dossier_retrieval_documents(
         return int(value or roles[role].get("maximum_per_siren") or 0)
 
     connection = open_siren_dossier(dossier_dir)
+    # Every semantic window and aggregation below declares its own order.
+    # Retaining the physical input order only forces DuckDB to keep large hash
+    # aggregate state in memory and can OOM on dense national prefixes.
+    connection.execute("SET preserve_insertion_order=false")
     if temp_directory is not None:
         temp_directory = Path(temp_directory)
         temp_directory.mkdir(parents=True, exist_ok=True)
@@ -1028,11 +1032,11 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='HISTORICAL' AND selected_for_siren) historical_names,
           string_agg(normalized_value, ' | ' ORDER BY siren_rank)
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
-          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,siren_rank,normalized_value,siret)
             FILTER(WHERE selected_for_siren AND sources LIKE '%SIRENE%') sirene_names
-          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,siren_rank,normalized_value,siret)
             FILTER(WHERE selected_for_siren AND sources LIKE '%RNE%') rne_names
-          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,siren_rank,normalized_value,siret)
             FILTER(WHERE selected_for_siren AND sources LIKE '%BODACC%') bodacc_names
         FROM read_parquet('__PORTFOLIO__') WHERE subject_kind='SIREN' GROUP BY siren
       ), site_names AS (
@@ -1043,11 +1047,11 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='HISTORICAL' AND selected_for_subject) historical_names,
           string_agg(normalized_value, ' | ' ORDER BY subject_rank)
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_subject) supporting_names
-          ,string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,subject_rank,normalized_value)
             FILTER(WHERE selected_for_subject AND sources LIKE '%SIRENE%') sirene_names
-          ,string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,subject_rank,normalized_value)
             FILTER(WHERE selected_for_subject AND sources LIKE '%RNE%') rne_names
-          ,string_agg(normalized_value, ' | ' ORDER BY subject_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,subject_rank,normalized_value)
             FILTER(WHERE selected_for_subject AND sources LIKE '%BODACC%') bodacc_names
         FROM read_parquet('__PORTFOLIO__') WHERE subject_kind='SIRET' GROUP BY siret
       ), historical_addresses AS (
@@ -1156,11 +1160,11 @@ def materialize_dossier_retrieval_documents(
             FILTER(WHERE name_role='HISTORICAL' AND selected_for_siren) historical_names,
           string_agg(normalized_value, ' | ' ORDER BY siren_rank)
             FILTER(WHERE name_role='SUPPORTING' AND selected_for_siren) supporting_names
-          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,siren_rank,normalized_value,siret)
             FILTER(WHERE selected_for_siren AND sources LIKE '%SIRENE%') sirene_names
-          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,siren_rank,normalized_value,siret)
             FILTER(WHERE selected_for_siren AND sources LIKE '%RNE%') rne_names
-          ,string_agg(normalized_value, ' | ' ORDER BY siren_rank)
+          ,string_agg(normalized_value, ' | ' ORDER BY name_role,siren_rank,normalized_value,siret)
             FILTER(WHERE selected_for_siren AND sources LIKE '%BODACC%') bodacc_names
           ,string_agg(DISTINCT sources, '|' ORDER BY sources)
             FILTER(WHERE selected_for_siren) official_evidence_sources
