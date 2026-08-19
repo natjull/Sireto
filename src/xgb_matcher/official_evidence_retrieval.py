@@ -47,6 +47,7 @@ class OfficialEvidenceRetrievalConfig:
     sites_per_siren: int = 32
     relation_seed_limit: int = 500
     relation_limit: int = 500
+    balanced_prefix_per_channel: int = 32
     search_workers: int = 12
     require_temporal_complete: bool = True
     typed_portfolio: bool | None = None
@@ -72,6 +73,7 @@ class OfficialEvidenceRetrievalConfig:
             "siren_limit",
             "relation_seed_limit",
             "relation_limit",
+            "balanced_prefix_per_channel",
             "search_workers",
         ):
             if getattr(self, name) < 1:
@@ -91,6 +93,9 @@ class OfficialEvidenceRetrievalConfig:
             sites_per_siren=int(retrieval.get("sites_per_siren", 32)),
             relation_seed_limit=int(retrieval.get("relation_seed_limit", 500)),
             relation_limit=int(retrieval.get("relation_limit", 500)),
+            balanced_prefix_per_channel=int(
+                retrieval.get("balanced_prefix_per_channel", 32)
+            ),
             search_workers=int(retrieval.get("search_workers", 12)),
             require_temporal_complete=bool(
                 retrieval.get("require_temporal_complete", True)
@@ -509,7 +514,8 @@ class OfficialEvidenceRetriever:
         self._expand_siren_relations(query, siren_hits, candidates)
 
         ordered = sorted(
-            candidates.items(), key=lambda item: self._union_sort_key(item[0], item[1])
+            candidates.items(),
+            key=lambda item: self._balanced_union_sort_key(item[0], item[1]),
         )
         raw_union_size = len(ordered)
         selected = ordered[: self.config.max_union_candidates]
@@ -610,7 +616,8 @@ class OfficialEvidenceRetriever:
         candidates: dict[str, _MutableCandidate],
     ) -> None:
         seeds = sorted(
-            candidates.items(), key=lambda item: self._union_sort_key(item[0], item[1])
+            candidates.items(),
+            key=lambda item: self._balanced_union_sort_key(item[0], item[1]),
         )[: self.config.relation_seed_limit]
         relation_rank = 0
         seen_pairs: set[tuple[str, str]] = set()
@@ -680,21 +687,83 @@ class OfficialEvidenceRetriever:
                             if relation_rank >= self.config.relation_limit:
                                 return
 
-    @staticmethod
-    def _union_sort_key(
-        siret: str, mutable: _MutableCandidate
-    ) -> tuple[int, int, int, str]:
-        best = min(
-            (
-                _CHANNEL_PRIORITY[signal.channel],
-                signal.rank,
+    def _channel_depth(self, channel: str) -> int:
+        if channel in {
+            "legal_name_exact",
+            "trade_name_exact",
+            "site_name_exact",
+            "name_exact",
+            "address_exact",
+            "number_exact",
+        }:
+            return self.config.exact_limit
+        if channel in {
+            "fielded_name_bm25",
+            "legal_name_word",
+            "trade_name_word",
+            "site_name_word",
+            "name_word",
+            "address_word",
+        }:
+            return self.config.word_limit
+        if channel in {
+            "current_name_char",
+            "name_char",
+            "address_char",
+            "rne_name",
+            "rne_address",
+            "bodacc_name",
+            "bodacc_address",
+        }:
+            # Source-specific overlay channels combine exact, word and
+            # character searches.  The largest configured direct depth is the
+            # conservative denominator for their ranks.
+            return max(
+                self.config.exact_limit,
+                self.config.word_limit,
+                self.config.character_limit,
             )
+        if channel in {"historical_name_word", "historical_address_word"}:
+            return self.config.historical_limit
+        if channel in {"supporting_name_word", "supporting_address_word"}:
+            return self.config.supporting_limit
+        if channel == "hierarchical":
+            return max(1, self.config.siren_limit * self.config.sites_per_siren)
+        if channel in {"official_successor", "bodacc_relation"}:
+            return self.config.relation_limit
+        return self.config.max_union_candidates
+
+    def _balanced_union_sort_key(
+        self, siret: str, mutable: _MutableCandidate
+    ) -> tuple[int, float, int, int, str]:
+        exact_channels = {
+            "legal_name_exact",
+            "trade_name_exact",
+            "site_name_exact",
+            "name_exact",
+            "address_exact",
+        }
+        has_exact = any(
+            signal.channel in exact_channels for signal in mutable.signals
+        )
+        has_preserved_prefix = any(
+            signal.rank <= self.config.balanced_prefix_per_channel
             for signal in mutable.signals
         )
-        # Raw BM25 scores are not comparable across fields/indices and are not
-        # fused here.  The deterministic order only makes the bounded artifact
-        # stable; admission gets every per-signal value separately.
-        return (best[0], best[1], -len(mutable.signals), siret)
+        best_fraction = min(
+            signal.rank / max(1, self._channel_depth(signal.channel))
+            for signal in mutable.signals
+        )
+        best_rank = min(signal.rank for signal in mutable.signals)
+        channel_count = len({signal.channel for signal in mutable.signals})
+        # The previous order compared a hard channel priority before rank.  In
+        # large communes that allowed thousands of name hits to evict even a
+        # top-10 address hit.  Exact evidence remains protected, then a fixed
+        # prefix from every channel is preserved, and the rest is compared by
+        # rank relative to the depth requested from that channel.  Raw BM25
+        # scores are deliberately not mixed across fields or indices.
+        bucket = 0 if has_exact else (1 if has_preserved_prefix else 2)
+        return (bucket, best_fraction, -channel_count, best_rank, siret)
 
 
 def official_evidence_union_arrow_schema() -> pa.Schema:

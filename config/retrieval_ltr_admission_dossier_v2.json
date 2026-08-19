@@ -52,6 +52,7 @@
     "sites_per_siren": 32,
     "relation_seed_limit": 500,
     "relation_limit": 500,
+    "balanced_prefix_per_channel": 32,
     "search_workers": 12,
     "fielded_name_boosts": {
       "legal_names": 1.25,

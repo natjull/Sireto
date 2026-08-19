@@ -9,6 +9,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from src.xgb_matcher.hierarchical_retrieval import (
+    BackendHit,
     HierarchicalRetrievalConfig,
     InMemoryBackend,
     IndexedEstablishment,
@@ -868,3 +869,79 @@ def test_typed_union_is_not_pretruncated_to_top100():
         "SIRENE_CURRENT" in candidate.official_evidence_sources
         for candidate in result.candidates
     )
+
+
+def test_bounded_union_preserves_top_address_channel_against_name_starvation():
+    name_records = [
+        IndexedEstablishment(
+            siret=f"{600000000 + index:09d}00001",
+            siren=f"{600000000 + index:09d}",
+            insee="75056",
+            postcode="75001",
+            names=("ALPHA SERVICE",),
+            addresses=(f"{index + 20} RUE DES TESTS",),
+            legal_names=("ALPHA SERVICE",),
+        )
+        for index in range(20)
+    ]
+    address_target = IndexedEstablishment(
+        siret="77777777700011",
+        siren="777777777",
+        insee="75056",
+        postcode="75001",
+        names=("SOCIETE SANS RAPPORT",),
+        addresses=("10 RUE DES FLEURS",),
+        legal_names=("SOCIETE SANS RAPPORT",),
+    )
+
+    class StarvationBackend:
+        manifest = {"typed_name_portfolio": True, "temporal_complete": True}
+
+        def search(self, _query, channel, limit):
+            if channel == "legal_name_word":
+                return [BackendHit(record, 1.0) for record in name_records[:limit]]
+            if channel == "address_char":
+                return [BackendHit(address_target, 1.0)]
+            return []
+
+        def search_sirens(self, _query, _limit):
+            return []
+
+        def sites_for_siren(self, _siren, _query, _limit):
+            return []
+
+        def by_siret(self, siret):
+            return address_target if siret == address_target.siret else None
+
+    result = OfficialEvidenceRetriever(
+        StarvationBackend(),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=5,
+            exact_limit=5,
+            word_limit=20,
+            character_limit=100,
+            historical_limit=5,
+            supporting_limit=5,
+            siren_limit=1,
+            sites_per_siren=1,
+            relation_seed_limit=5,
+            relation_limit=5,
+            balanced_prefix_per_channel=4,
+            search_workers=2,
+            typed_portfolio=True,
+        ),
+    ).retrieve(
+        RetrievalQuery(
+            name="ALPHA SERVICE",
+            address="10 RUE DES FLEURS",
+            insee="75056",
+            postcode="75001",
+        )
+    )
+    assert len(result.candidates) == 5
+    assert address_target.siret in {candidate.siret for candidate in result.candidates}
+    target = next(
+        candidate for candidate in result.candidates
+        if candidate.siret == address_target.siret
+    )
+    assert "address_char" in target.channels
