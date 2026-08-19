@@ -5322,6 +5322,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   seul ordre de priorité des canaux nom. Le plafond absolu, la déterminisme et
   l'absence de score inter-index non calibré restent inchangés; 26 tests
   retrieval/admission passent.
+- Le commit `00f6616` corrige le contrat de complétude temporelle des documents
+  retrieval. Un manifeste n'est désormais `temporal_complete=true` que si les
+  cinq familles `SIRENE_CURRENT`, `SIRENE_HISTORY`, `SIRENE_SUCCESSION`, `RNE`
+  et `BODACC` sont réellement présentes avec au moins une preuve. Les sources
+  requises et manquantes sont publiées explicitement; le dossier national
+  courant ne peut donc plus masquer l'absence des historiques et successions.
+  Les 23 tests ciblés dossier/preuves officielles passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
