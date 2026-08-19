@@ -5336,6 +5336,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   indexation, sans modifier les preuves ni les relations. Un test compare les
   cardinalités et la récupération SIRET du build global et du build préfixé;
   34 tests dossier/evidence/admission passent.
+- Le commit `1daf893` ajoute l'évaluation scellée de l'oracle de l'union brute
+  sur le seul fold 0. Elle refuse tout autre fold, distingue explicitement
+  l'oracle du simple rang brut top 100 (qui n'est pas l'admission LambdaMART),
+  publie exact/opérationnel, couverture, plafond et latences, puis n'autorise
+  l'entraînement que si l'oracle exact atteint 99,3 %. Le test ciblé et les
+  régressions evidence/admission passent (28 tests).
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
