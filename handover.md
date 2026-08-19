@@ -5315,6 +5315,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   agrégations de noms par source. Cela borne la mémoire des préfixes denses
   sans introduire de non-déterminisme entre projection globale et checkpoints;
   les 27 tests dossier/retrieval/admission passent.
+- Le commit `847aea4` corrige l'affamement des canaux dans l'union interne
+  bornée à 2 000 : les exacts restent protégés, un préfixe fixe de chaque canal
+  est conservé, puis les rangs sont comparés relativement à leur profondeur de
+  recherche. Un top adresse/historique ne peut ainsi plus être évincé par le
+  seul ordre de priorité des canaux nom. Le plafond absolu, la déterminisme et
+  l'absence de score inter-index non calibré restent inchangés; 26 tests
+  retrieval/admission passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
