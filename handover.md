@@ -5310,6 +5310,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   checkpoints `0/1/2` sont ainsi conservés, toute tranche incomplète est
   nettoyée avant reprise et le plan final reste une partition disjointe de
   l'univers SIREN.
+- Le commit `48a9c6c` désactive la conservation de l'ordre physique DuckDB
+  pendant la projection nationale et rend explicite l'ordre secondaire des
+  agrégations de noms par source. Cela borne la mémoire des préfixes denses
+  sans introduire de non-déterminisme entre projection globale et checkpoints;
+  les 27 tests dossier/retrieval/admission passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
