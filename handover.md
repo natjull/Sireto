@@ -5304,6 +5304,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   les fichiers finaux gardent exactement le même schéma et un test compare
   byte-logiquement les trois tables globales/partitionnées. Un redémarrage ne
   recalcule désormais que le préfixe incomplet; 27 tests ciblés passent.
+- Le préfixe national `3` restait trop asymétrique (pic observé 10,4 Go RSS).
+  Le commit `e384cb8` permet de reprendre les préfixes à un chiffre déjà
+  scellés et de subdiviser uniquement le résiduel en `30…39`, etc. Les
+  checkpoints `0/1/2` sont ainsi conservés, toute tranche incomplète est
+  nettoyée avant reprise et le plan final reste une partition disjointe de
+  l'univers SIREN.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
