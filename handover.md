@@ -5329,6 +5329,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   requises et manquantes sont publiées explicitement; le dossier national
   courant ne peut donc plus masquer l'absence des historiques et successions.
   Les 23 tests ciblés dossier/preuves officielles passent.
+- Le commit `93c8609` rend la construction de l'overlay Tantivy officiel
+  partitionnable par un ou deux chiffres de SIREN. Le premier build national
+  RNE/BODACC avait échoué proprement à la limite DuckDB de 8 Go; chaque
+  partition agrège désormais exactement le même sous-ensemble disjoint avant
+  indexation, sans modifier les preuves ni les relations. Un test compare les
+  cardinalités et la récupération SIRET du build global et du build préfixé;
+  34 tests dossier/evidence/admission passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
