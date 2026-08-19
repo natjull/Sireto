@@ -681,6 +681,28 @@ def test_temporal_layers_share_one_tantivy_overlay(tmp_path: Path):
     assert OfficialEvidenceTantivyBackend(layered).by_siret("12345678900011")
 
 
+def test_overlay_partitioned_by_siren_prefix_matches_global_counts(tmp_path: Path):
+    canonical, single = _build_complete_fixture(tmp_path)
+    partitioned = build_official_evidence_tantivy_overlay(
+        canonical.evidence_path,
+        canonical.relation_path,
+        tmp_path / "partitioned_indices",
+        writer_heap_bytes=30_000_000,
+        writer_threads=1,
+        commit_every=10,
+        batch_size=2,
+        duckdb_temp_directory=tmp_path / "partitioned_spill",
+        duckdb_memory_limit="256MB",
+        duckdb_threads=1,
+        duckdb_partition_prefix_digits=1,
+    )
+    single_manifest = json.loads((single / "manifest.json").read_text())
+    partitioned_manifest = json.loads((partitioned / "manifest.json").read_text())
+    assert partitioned_manifest["num_documents"] == single_manifest["num_documents"]
+    assert partitioned_manifest["config"]["duckdb_partition_prefix_digits"] == 1
+    assert OfficialEvidenceTantivyBackend(partitioned).by_siret("12345678900011")
+
+
 def _record(
     siret: str,
     *,

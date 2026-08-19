@@ -105,12 +105,24 @@ def _tuple_strings(value: Any) -> tuple[str, ...]:
     return tuple(sorted({str(item) for item in values if item not in (None, "")}))
 
 
-def _projection_ctes(evidence_path: Path, relation_path: Path) -> str:
+def _projection_ctes(
+    evidence_path: Path,
+    relation_path: Path,
+    *,
+    siren_prefix: str | None = None,
+) -> str:
     evidence = _sql_path(evidence_path)
     relation = _sql_path(relation_path)
+    if siren_prefix is not None and not re.fullmatch(r"[0-9]{1,2}", siren_prefix):
+        raise ValueError("SIREN partition prefix must contain one or two digits")
+    evidence_filter = (
+        ""
+        if siren_prefix is None
+        else f" WHERE starts_with(siren, '{siren_prefix}')"
+    )
     return f"""
         WITH evidence AS (
-            SELECT * FROM read_parquet('{evidence}')
+            SELECT * FROM read_parquet('{evidence}'){evidence_filter}
         ),
         relation AS (
             SELECT * FROM read_parquet('{relation}')
@@ -205,6 +217,7 @@ def iter_official_evidence_documents(
     duckdb_temp_directory: Path | str | None = None,
     duckdb_memory_limit: str | None = None,
     duckdb_threads: int | None = None,
+    siren_prefix: str | None = None,
 ) -> Iterator[OfficialEvidenceIndexDocument]:
     """Stream normalized overlay documents, grouping on disk through DuckDB."""
     evidence_path = Path(evidence_path)
@@ -230,7 +243,9 @@ def iter_official_evidence_documents(
         if duckdb_threads < 1 or duckdb_threads > 32:
             raise ValueError("DuckDB threads must be between 1 and 32")
         connection.execute(f"SET threads={duckdb_threads}")
-    ctes = _projection_ctes(evidence_path, relation_path)
+    ctes = _projection_ctes(
+        evidence_path, relation_path, siren_prefix=siren_prefix
+    )
     siret_sql = ctes + """
         SELECT 'siret' AS document_type,
                address.siret, address.siren, address.insee, address.postcode,
@@ -400,6 +415,7 @@ def build_official_evidence_tantivy_overlay_layers(
     duckdb_temp_directory: Path | str | None = None,
     duckdb_memory_limit: str | None = None,
     duckdb_threads: int | None = None,
+    duckdb_partition_prefix_digits: int = 0,
 ) -> Path:
     """Build one overlay from independently canonicalized temporal layers."""
     try:
@@ -412,6 +428,8 @@ def build_official_evidence_tantivy_overlay_layers(
     for evidence_path, relation_path in canonical_layers:
         if not evidence_path.is_file() or not relation_path.is_file():
             raise FileNotFoundError("canonical evidence and relation Parquets are required")
+    if duckdb_partition_prefix_digits not in {0, 1, 2}:
+        raise ValueError("DuckDB partition prefix digits must be 0, 1 or 2")
     output_root = Path(output_root)
     output_root.mkdir(parents=True, exist_ok=True)
     source_layers = [
@@ -433,6 +451,7 @@ def build_official_evidence_tantivy_overlay_layers(
             "duckdb_memory_limit": duckdb_memory_limit,
             "duckdb_spill_enabled": duckdb_temp_directory is not None,
             "duckdb_threads": duckdb_threads,
+            "duckdb_partition_prefix_digits": duckdb_partition_prefix_digits,
         },
     }
     build_hash = hashlib.sha256(
@@ -466,25 +485,38 @@ def build_official_evidence_tantivy_overlay_layers(
         siret_count = 0
         siren_count = 0
         for layer_index, (evidence_path, relation_path) in enumerate(canonical_layers):
-            layer_temp_directory = (
-                Path(duckdb_temp_directory) / f"layer-{layer_index:03d}"
-                if duckdb_temp_directory is not None
-                else None
+            prefixes: tuple[str | None, ...] = (
+                (None,)
+                if duckdb_partition_prefix_digits == 0
+                else tuple(
+                    f"{value:0{duckdb_partition_prefix_digits}d}"
+                    for value in range(10**duckdb_partition_prefix_digits)
+                )
             )
-            for document in iter_official_evidence_documents(
-                evidence_path,
-                relation_path,
-                batch_size=batch_size,
-                duckdb_temp_directory=layer_temp_directory,
-                duckdb_memory_limit=duckdb_memory_limit,
-                duckdb_threads=duckdb_threads,
-            ):
-                _add_tantivy_document(writer, tantivy, document)
-                count += 1
-                siret_count += int(document.document_type == "siret")
-                siren_count += int(document.document_type == "siren")
-                if count % commit_every == 0:
-                    writer.commit()
+            for prefix in prefixes:
+                partition_name = prefix if prefix is not None else "all"
+                layer_temp_directory = (
+                    Path(duckdb_temp_directory)
+                    / f"layer-{layer_index:03d}"
+                    / f"prefix-{partition_name}"
+                    if duckdb_temp_directory is not None
+                    else None
+                )
+                for document in iter_official_evidence_documents(
+                    evidence_path,
+                    relation_path,
+                    batch_size=batch_size,
+                    duckdb_temp_directory=layer_temp_directory,
+                    duckdb_memory_limit=duckdb_memory_limit,
+                    duckdb_threads=duckdb_threads,
+                    siren_prefix=prefix,
+                ):
+                    _add_tantivy_document(writer, tantivy, document)
+                    count += 1
+                    siret_count += int(document.document_type == "siret")
+                    siren_count += int(document.document_type == "siren")
+                    if count % commit_every == 0:
+                        writer.commit()
         writer.commit()
         index.reload()
         manifest = {

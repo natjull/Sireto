@@ -31,6 +31,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--duckdb-temp-directory", type=Path)
     parser.add_argument("--duckdb-memory-limit")
     parser.add_argument("--duckdb-threads", type=int)
+    parser.add_argument(
+        "--duckdb-partition-prefix-digits",
+        type=int,
+        choices=(0, 1, 2),
+        default=0,
+        help="Partition national aggregations by the first 1-2 SIREN digits.",
+    )
     return parser.parse_args()
 
 
@@ -44,6 +51,7 @@ def main() -> None:
         duckdb_temp_directory=args.duckdb_temp_directory,
         duckdb_memory_limit=args.duckdb_memory_limit,
         duckdb_threads=args.duckdb_threads,
+        duckdb_partition_prefix_digits=args.duckdb_partition_prefix_digits,
     )
     if args.canonical_layer:
         if args.official_evidence is not None or args.official_relations is not None:
