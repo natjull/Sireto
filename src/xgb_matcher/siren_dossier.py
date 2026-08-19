@@ -825,6 +825,7 @@ def materialize_dossier_retrieval_documents(
     temp_directory: Path | None = None,
     memory_limit: str | None = None,
     threads: int | None = None,
+    siren_prefix: str | None = None,
 ) -> Mapping[str, int]:
     """Materialize bounded, typed SIRET and SIREN retrieval documents.
 
@@ -863,6 +864,7 @@ def materialize_dossier_retrieval_documents(
             == sha256_file(dossier_dir / "manifest.json")
             and manifest.get("name_portfolio_policy_sha256") == sha256_file(policy_path)
             and manifest.get("document_limit") == document_limit
+            and manifest.get("siren_prefix") == siren_prefix
             and all(path.is_file() for path in expected_files)
         )
         if not compatible:
@@ -889,10 +891,19 @@ def materialize_dossier_retrieval_documents(
         connection.execute(f"SET threads={max(1, int(threads))}")
     if document_limit is not None and document_limit < 1:
         raise ValueError("document_limit must be positive")
+    if siren_prefix is not None:
+        if document_limit is not None:
+            raise ValueError("siren_prefix and document_limit are mutually exclusive")
+        if not siren_prefix.isdigit() or not 1 <= len(siren_prefix) <= 3:
+            raise ValueError("siren_prefix must contain one to three digits")
     scope_limit = f"LIMIT {int(document_limit)}" if document_limit else ""
+    scope_filter = (
+        f"WHERE left(siren,{len(siren_prefix)})='{siren_prefix}'"
+        if siren_prefix is not None else ""
+    )
     connection.execute(
         f"CREATE TEMP VIEW retrieval_establishment_scope AS "
-        f"SELECT * FROM establishments ORDER BY siret {scope_limit}"
+        f"SELECT * FROM establishments {scope_filter} ORDER BY siret {scope_limit}"
     )
     connection.execute(
         "CREATE TEMP VIEW retrieval_siren_scope AS "
@@ -1223,6 +1234,7 @@ def materialize_dossier_retrieval_documents(
                 "temporal_complete": temporal_complete,
                 "maximum_candidates_contract": 100,
                 "document_limit": document_limit,
+                "siren_prefix": siren_prefix,
                 "resource_limits": {
                     "memory_limit": memory_limit,
                     "threads": threads,
@@ -1231,6 +1243,150 @@ def materialize_dossier_retrieval_documents(
             }
         )
     )
+    return counts
+
+
+def materialize_dossier_retrieval_documents_partitioned(
+    *,
+    dossier_dir: Path,
+    output_dir: Path,
+    name_portfolio_policy: Path | None = None,
+    prefix_digits: int = 1,
+    temp_directory: Path | None = None,
+    memory_limit: str | None = None,
+    threads: int | None = None,
+) -> Mapping[str, int]:
+    """Checkpoint the national projection by SIREN prefix, then concatenate.
+
+    The grouping/windowing required by the typed name portfolio is local to a
+    SIREN.  Prefix partitions are therefore exactly equivalent to the global
+    query while bounding DuckDB state and making every completed prefix
+    restartable.  The three public Parquet files and their manifest retain the
+    same consumer schema as the monolithic materialization.
+    """
+    if prefix_digits not in {1, 2}:
+        raise ValueError("prefix_digits must be 1 or 2")
+    dossier_dir = Path(dossier_dir)
+    output_dir = Path(output_dir)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    policy_path = Path(name_portfolio_policy) if name_portfolio_policy else (
+        Path(__file__).resolve().parents[2] / "config" / "siren_name_portfolio_v1.json"
+    )
+    final_manifest = output_dir / "manifest.json"
+    if final_manifest.is_file():
+        return materialize_dossier_retrieval_documents(
+            dossier_dir=dossier_dir,
+            output_dir=output_dir,
+            name_portfolio_policy=policy_path,
+            temp_directory=temp_directory,
+            memory_limit=memory_limit,
+            threads=threads,
+        )
+
+    parts_root = output_dir / ".partition_parts"
+    parts_root.mkdir(parents=True, exist_ok=True)
+    partition_temp_root = (
+        Path(temp_directory) / "partitioned"
+        if temp_directory is not None else output_dir / ".partition_temp"
+    )
+    filenames = {
+        "name_portfolio": "retrieval_name_portfolio.parquet",
+        "siret_documents": "retrieval_siret_documents.parquet",
+        "siren_documents": "retrieval_siren_documents.parquet",
+    }
+    part_paths: dict[str, list[Path]] = {key: [] for key in filenames}
+    counts = {key: 0 for key in filenames}
+    prefixes = [str(value).zfill(prefix_digits) for value in range(10**prefix_digits)]
+    for prefix in prefixes:
+        part_dir = parts_root / f"prefix={prefix}"
+        if part_dir.exists() and not (part_dir / "manifest.json").is_file():
+            shutil.rmtree(part_dir)
+        part_counts = materialize_dossier_retrieval_documents(
+            dossier_dir=dossier_dir,
+            output_dir=part_dir,
+            name_portfolio_policy=policy_path,
+            temp_directory=partition_temp_root / f"prefix={prefix}",
+            memory_limit=memory_limit,
+            threads=threads,
+            siren_prefix=prefix,
+        )
+        for key, filename in filenames.items():
+            counts[key] += int(part_counts[key])
+            part_paths[key].append(part_dir / filename)
+
+    connection = duckdb.connect()
+    if temp_directory is not None:
+        Path(temp_directory).mkdir(parents=True, exist_ok=True)
+        connection.execute(f"SET temp_directory='{_sql_path(Path(temp_directory))}'")
+    if memory_limit is not None:
+        connection.execute(f"SET memory_limit='{str(memory_limit).replace("'", "''")}'")
+    if threads is not None:
+        connection.execute(f"SET threads={max(1, int(threads))}")
+    for key, filename in filenames.items():
+        partial = output_dir / f".{filename}.partial"
+        partial.unlink(missing_ok=True)
+        readers = _parquet_list(part_paths[key])
+        combined_count = _copy(
+            connection,
+            f"SELECT * FROM read_parquet({readers}, union_by_name=true, hive_partitioning=false)",
+            partial,
+        )
+        if combined_count != counts[key]:
+            raise RuntimeError(f"partition count mismatch for {filename}")
+        partial.replace(output_dir / filename)
+    connection.close()
+
+    source_connection = open_siren_dossier(dossier_dir)
+    source_counts = {
+        str(source): int(count)
+        for source, count in source_connection.execute(
+            """
+            SELECT source,sum(row_count)::BIGINT FROM (
+              SELECT source,count(*) row_count FROM name_evidence GROUP BY source
+              UNION ALL SELECT source,count(*) FROM address_evidence GROUP BY source
+              UNION ALL SELECT source,count(*) FROM official_relations GROUP BY source
+            ) GROUP BY source ORDER BY source
+            """
+        ).fetchall()
+    }
+    source_connection.close()
+    final_manifest.write_bytes(
+        canonical_json(
+            {
+                "schema_version": "sireto-siren-dossier-retrieval-documents-v3",
+                "dossier_manifest_sha256": sha256_file(dossier_dir / "manifest.json"),
+                "name_portfolio_policy_sha256": sha256_file(policy_path),
+                "counts": counts,
+                "fields_separate": True,
+                "sources_separate": True,
+                "official_provenance_embedded": True,
+                "blind_name_concatenation": False,
+                "current_exact_only": True,
+                "historical_and_supporting_rescue_only": True,
+                "official_source_counts": source_counts,
+                "temporal_complete": {"SIRENE_CURRENT", "RNE", "BODACC"}.issubset(
+                    source_counts
+                ),
+                "maximum_candidates_contract": 100,
+                "document_limit": None,
+                "siren_prefix": None,
+                "partitioning": {
+                    "strategy": "SIREN_PREFIX",
+                    "prefix_digits": prefix_digits,
+                    "partition_count": len(prefixes),
+                    "checkpointed": True,
+                    "parts_retained": False,
+                },
+                "resource_limits": {
+                    "memory_limit": memory_limit,
+                    "threads": threads,
+                    "external_temp_directory": temp_directory is not None,
+                },
+            }
+        )
+    )
+    shutil.rmtree(parts_root)
+    shutil.rmtree(partition_temp_root, ignore_errors=True)
     return counts
 
 
@@ -1300,6 +1456,7 @@ __all__ = [
     "SirenDossierInputs",
     "build_siren_dossier",
     "materialize_dossier_retrieval_documents",
+    "materialize_dossier_retrieval_documents_partitioned",
     "open_siren_dossier",
     "project_dossier_candidate_features",
     "project_dossier_fusion_text",

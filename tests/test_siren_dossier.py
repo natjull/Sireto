@@ -5,6 +5,7 @@ from datetime import date
 from pathlib import Path
 
 import duckdb
+import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
@@ -23,6 +24,7 @@ from src.xgb_matcher.siren_dossier import (
     SirenDossierInputs,
     build_siren_dossier,
     materialize_dossier_retrieval_documents,
+    materialize_dossier_retrieval_documents_partitioned,
     open_siren_dossier,
     project_dossier_candidate_features,
     project_dossier_fusion_text,
@@ -199,6 +201,55 @@ def test_materialization_supports_a_bounded_real_smoke_scope(tmp_path: Path):
     assert counts["siren_documents"] == 1
     manifest = json.loads((documents / "manifest.json").read_text())
     assert manifest["document_limit"] == 1
+
+
+def test_partitioned_retrieval_materialization_matches_global_and_restarts(tmp_path: Path):
+    result = build_siren_dossier(
+        _write_fixture(tmp_path), output_root=tmp_path / "out", memory_limit="1GB"
+    )
+    global_dir = tmp_path / "global"
+    partitioned_dir = tmp_path / "partitioned"
+    expected = materialize_dossier_retrieval_documents(
+        dossier_dir=result.output_dir, output_dir=global_dir
+    )
+    actual = materialize_dossier_retrieval_documents_partitioned(
+        dossier_dir=result.output_dir,
+        output_dir=partitioned_dir,
+        prefix_digits=1,
+        temp_directory=tmp_path / "partition-temp",
+        memory_limit="512MB",
+        threads=1,
+    )
+    assert actual == expected
+    for filename, sort_columns in (
+        ("retrieval_name_portfolio.parquet", ["siren", "siret", "name_role", "normalized_value"]),
+        ("retrieval_siret_documents.parquet", ["document_id"]),
+        ("retrieval_siren_documents.parquet", ["document_id", "insee", "postcode"]),
+    ):
+        global_rows = pq.read_table(global_dir / filename).to_pandas().sort_values(sort_columns)
+        partitioned_rows = pq.read_table(partitioned_dir / filename).to_pandas().sort_values(
+            sort_columns
+        )
+        pd.testing.assert_frame_equal(
+            global_rows.reset_index(drop=True), partitioned_rows.reset_index(drop=True)
+        )
+    manifest = json.loads((partitioned_dir / "manifest.json").read_text())
+    assert manifest["partitioning"] == {
+        "strategy": "SIREN_PREFIX",
+        "prefix_digits": 1,
+        "partition_count": 10,
+        "checkpointed": True,
+        "parts_retained": False,
+    }
+    assert not (partitioned_dir / ".partition_parts").exists()
+    assert materialize_dossier_retrieval_documents_partitioned(
+        dossier_dir=result.output_dir,
+        output_dir=partitioned_dir,
+        prefix_digits=1,
+        temp_directory=tmp_path / "partition-temp",
+        memory_limit="512MB",
+        threads=1,
+    ) == expected
 
 
 def test_dossier_v2_keeps_rne_accounts_siren_level_and_held_out(tmp_path: Path):

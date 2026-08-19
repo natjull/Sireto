@@ -13,6 +13,7 @@ if str(ROOT) not in sys.path:
 
 from src.xgb_matcher.siren_dossier import (  # noqa: E402
     materialize_dossier_retrieval_documents,
+    materialize_dossier_retrieval_documents_partitioned,
     project_dossier_fusion_text,
 )
 
@@ -28,21 +29,38 @@ def main() -> int:
     retrieval.add_argument("--temp-directory", type=Path)
     retrieval.add_argument("--memory-limit")
     retrieval.add_argument("--threads", type=int)
+    retrieval.add_argument(
+        "--partition-prefix-digits",
+        type=int,
+        choices=[1, 2],
+        help="Checkpoint the national build by one or two leading SIREN digits.",
+    )
     fusion = sub.add_parser("fusion-text")
     fusion.add_argument("--dossier", type=Path, required=True)
     fusion.add_argument("--candidates", type=Path, required=True)
     fusion.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     if args.command == "retrieval":
-        print(materialize_dossier_retrieval_documents(
-            dossier_dir=args.dossier,
-            output_dir=args.output_dir,
-            name_portfolio_policy=args.name_portfolio_policy,
-            document_limit=args.document_limit,
-            temp_directory=args.temp_directory,
-            memory_limit=args.memory_limit,
-            threads=args.threads,
-        ))
+        common = {
+            "dossier_dir": args.dossier,
+            "output_dir": args.output_dir,
+            "name_portfolio_policy": args.name_portfolio_policy,
+            "temp_directory": args.temp_directory,
+            "memory_limit": args.memory_limit,
+            "threads": args.threads,
+        }
+        if args.partition_prefix_digits is not None:
+            if args.document_limit is not None:
+                parser.error("--partition-prefix-digits and --document-limit are exclusive")
+            print(materialize_dossier_retrieval_documents_partitioned(
+                **common,
+                prefix_digits=args.partition_prefix_digits,
+            ))
+        else:
+            print(materialize_dossier_retrieval_documents(
+                **common,
+                document_limit=args.document_limit,
+            ))
     else:
         print(project_dossier_fusion_text(dossier_dir=args.dossier, candidates_path=args.candidates, output_path=args.output))
     return 0
