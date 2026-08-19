@@ -31,6 +31,26 @@ SUPPORTED_SIREN_DOSSIER_SCHEMA_VERSIONS = {
     SIREN_DOSSIER_SCHEMA_VERSION,
 }
 SIREN_DOSSIER_FEATURE_SCHEMA_VERSION = "sireto-siren-dossier-features-v1"
+REQUIRED_TEMPORAL_OFFICIAL_SOURCES = frozenset(
+    {
+        "SIRENE_CURRENT",
+        "SIRENE_HISTORY",
+        "SIRENE_SUCCESSION",
+        "RNE",
+        "BODACC",
+    }
+)
+
+
+def temporal_source_status(source_counts: Mapping[str, int]) -> dict[str, Any]:
+    """Describe whether a dossier really contains every temporal source family."""
+    present = {str(source) for source, count in source_counts.items() if int(count) > 0}
+    missing = sorted(REQUIRED_TEMPORAL_OFFICIAL_SOURCES - present)
+    return {
+        "required_temporal_sources": sorted(REQUIRED_TEMPORAL_OFFICIAL_SOURCES),
+        "missing_temporal_sources": missing,
+        "temporal_complete": not missing,
+    }
 
 
 def _sql_path(path: Path) -> str:
@@ -1219,7 +1239,7 @@ def materialize_dossier_retrieval_documents(
             """
         ).fetchall()
     }
-    temporal_complete = {"SIRENE_CURRENT", "RNE", "BODACC"}.issubset(source_counts)
+    temporal_status = temporal_source_status(source_counts)
     connection.close()
     (output_dir / "manifest.json").write_bytes(
         canonical_json(
@@ -1235,7 +1255,7 @@ def materialize_dossier_retrieval_documents(
                 "current_exact_only": True,
                 "historical_and_supporting_rescue_only": True,
                 "official_source_counts": source_counts,
-                "temporal_complete": temporal_complete,
+                **temporal_status,
                 "maximum_candidates_contract": 100,
                 "document_limit": document_limit,
                 "siren_prefix": siren_prefix,
@@ -1382,9 +1402,7 @@ def materialize_dossier_retrieval_documents_partitioned(
                 "current_exact_only": True,
                 "historical_and_supporting_rescue_only": True,
                 "official_source_counts": source_counts,
-                "temporal_complete": {"SIRENE_CURRENT", "RNE", "BODACC"}.issubset(
-                    source_counts
-                ),
+                **temporal_source_status(source_counts),
                 "maximum_candidates_contract": 100,
                 "document_limit": None,
                 "siren_prefix": None,

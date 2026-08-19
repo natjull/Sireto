@@ -28,6 +28,7 @@ from src.xgb_matcher.siren_dossier import (
     open_siren_dossier,
     project_dossier_candidate_features,
     project_dossier_fusion_text,
+    temporal_source_status,
 )
 from src.xgb_matcher.rne_accounts import ACCOUNT_DEPOSIT_SCHEMA
 
@@ -167,6 +168,11 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
     assert manifest["sources_separate"] is True
     assert manifest["blind_name_concatenation"] is False
     assert manifest["current_exact_only"] is True
+    assert manifest["temporal_complete"] is False
+    assert manifest["missing_temporal_sources"] == [
+        "SIRENE_HISTORY",
+        "SIRENE_SUCCESSION",
+    ]
     assert all(row["linked_sirens"] == "987654321" for row in rows)
     assert materialize_dossier_retrieval_documents(
         dossier_dir=result.output_dir, output_dir=documents
@@ -187,6 +193,25 @@ def test_materializes_hierarchical_retrieval_and_source_separated_fusion(tmp_pat
     assert {row["evidence_role"] for row in fusion}.issuperset(
         {"LEGAL_CURRENT", "TRADE_CURRENT", "SITE_CURRENT"}
     )
+
+
+def test_temporal_status_requires_history_and_successions():
+    incomplete = temporal_source_status(
+        {"SIRENE_CURRENT": 10, "SIRENE_HISTORY": 4, "RNE": 3, "BODACC": 2}
+    )
+    assert incomplete["temporal_complete"] is False
+    assert incomplete["missing_temporal_sources"] == ["SIRENE_SUCCESSION"]
+    complete = temporal_source_status(
+        {
+            "SIRENE_CURRENT": 10,
+            "SIRENE_HISTORY": 4,
+            "SIRENE_SUCCESSION": 1,
+            "RNE": 3,
+            "BODACC": 2,
+        }
+    )
+    assert complete["temporal_complete"] is True
+    assert complete["missing_temporal_sources"] == []
 
 
 def test_materialization_supports_a_bounded_real_smoke_scope(tmp_path: Path):
