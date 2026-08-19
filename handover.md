@@ -5296,6 +5296,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   historiques AMBIGUOUS/UNRESOLVED comptent dans la couverture mais ne sont
   pas transformés en positifs. `development.parquet` exclut physiquement le
   fold 1; `test_locked.parquet` est scellé mais reste fermé.
+- Le premier essai national monolithique de projection des documents a été
+  rejeté après des redémarrages macOS répétés : le tri global de 162,5 M de
+  preuves de nom n'avait publié aucun Parquet après la nuit. Le commit
+  `8652bec` remplace ce chemin pour la production par 10 checkpoints exacts
+  sur le premier chiffre du SIREN. Les fenêtres restent locales au même SIREN,
+  les fichiers finaux gardent exactement le même schéma et un test compare
+  byte-logiquement les trois tables globales/partitionnées. Un redémarrage ne
+  recalcule désormais que le préfixe incomplet; 27 tests ciblés passent.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
