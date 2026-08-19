@@ -1285,6 +1285,9 @@ def materialize_dossier_retrieval_documents_partitioned(
 
     parts_root = output_dir / ".partition_parts"
     parts_root.mkdir(parents=True, exist_ok=True)
+    for candidate in parts_root.glob("prefix=*"):
+        if candidate.is_dir() and not (candidate / "manifest.json").is_file():
+            shutil.rmtree(candidate)
     partition_temp_root = (
         Path(temp_directory) / "partitioned"
         if temp_directory is not None else output_dir / ".partition_temp"
@@ -1296,7 +1299,18 @@ def materialize_dossier_retrieval_documents_partitioned(
     }
     part_paths: dict[str, list[Path]] = {key: [] for key in filenames}
     counts = {key: 0 for key in filenames}
-    prefixes = [str(value).zfill(prefix_digits) for value in range(10**prefix_digits)]
+    reused_coarser_prefixes: list[str] = []
+    if prefix_digits == 2:
+        prefixes = []
+        for first_digit in map(str, range(10)):
+            coarse = parts_root / f"prefix={first_digit}"
+            if (coarse / "manifest.json").is_file():
+                prefixes.append(first_digit)
+                reused_coarser_prefixes.append(first_digit)
+            else:
+                prefixes.extend(f"{first_digit}{second}" for second in range(10))
+    else:
+        prefixes = [str(value).zfill(prefix_digits) for value in range(10**prefix_digits)]
     for prefix in prefixes:
         part_dir = parts_root / f"prefix={prefix}"
         if part_dir.exists() and not (part_dir / "manifest.json").is_file():
@@ -1376,6 +1390,7 @@ def materialize_dossier_retrieval_documents_partitioned(
                     "partition_count": len(prefixes),
                     "checkpointed": True,
                     "parts_retained": False,
+                    "reused_coarser_prefixes": reused_coarser_prefixes,
                 },
                 "resource_limits": {
                     "memory_limit": memory_limit,

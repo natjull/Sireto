@@ -240,6 +240,7 @@ def test_partitioned_retrieval_materialization_matches_global_and_restarts(tmp_p
         "partition_count": 10,
         "checkpointed": True,
         "parts_retained": False,
+        "reused_coarser_prefixes": [],
     }
     assert not (partitioned_dir / ".partition_parts").exists()
     assert materialize_dossier_retrieval_documents_partitioned(
