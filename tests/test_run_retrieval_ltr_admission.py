@@ -71,10 +71,24 @@ def _development_frame() -> pd.DataFrame:
     return pd.DataFrame(rows)
 
 
+def _write_official_candidates(frame: pd.DataFrame, path: Path) -> None:
+    frame.to_parquet(path, index=False)
+    path.with_suffix(path.suffix + ".manifest.json").write_text(
+        json.dumps(
+            {
+                "candidate_parquet_sha256": file_sha256(path),
+                "positive_injection": False,
+                "test_opened": False,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+
 def test_build_union_cli_manifest_proves_test_was_not_opened(tmp_path: Path) -> None:
     source = tmp_path / "candidates.parquet"
     output = tmp_path / "union"
-    _candidate_frame().to_parquet(source, index=False)
+    _write_official_candidates(_candidate_frame(), source)
     args = argparse.Namespace(
         candidates=source,
         output_dir=output,
@@ -157,7 +171,7 @@ def test_fixture_cli_development_path_never_opens_test(tmp_path: Path) -> None:
     union_dir = tmp_path / "union"
     model_dir = tmp_path / "model"
     evaluation_dir = tmp_path / "dev_evaluation"
-    _development_frame().to_parquet(candidates, index=False)
+    _write_official_candidates(_development_frame(), candidates)
 
     build_union_command(
         argparse.Namespace(
