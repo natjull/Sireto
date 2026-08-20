@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from unittest.mock import patch
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -141,10 +142,22 @@ def test_temporal_overlay_is_rescue_not_exact_and_exports_features(tmp_path: Pat
         ),
     ])
     retriever = OfficialEvidenceRetriever(
-        base, config=OfficialEvidenceRetrievalConfig(require_temporal_complete=False),
+        base, config=OfficialEvidenceRetrievalConfig(
+            require_temporal_complete=False,
+            historical_limit=7,
+        ),
         temporal_overlay_backend=temporal,
     )
-    result = retriever.retrieve({"name": "ANCIENNE ENSEIGNE", "address": "12 RUE DES FLEURS", "insee": "75101"})
+    with patch.object(temporal, "search", wraps=temporal.search) as temporal_search:
+        result = retriever.retrieve({
+            "name": "ANCIENNE ENSEIGNE",
+            "address": "12 RUE DES FLEURS",
+            "insee": "75101",
+        })
+    assert {call.args[1] for call in temporal_search.call_args_list} == {
+        "name_exact", "name_word", "name_char",
+    }
+    assert {call.args[2] for call in temporal_search.call_args_list} == {7}
     candidate = next(item for item in result.candidates if item.siret == "12345678900011")
     assert "historical_name_word" in candidate.channels
     assert "name_exact" not in candidate.channels

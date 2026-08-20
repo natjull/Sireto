@@ -464,12 +464,17 @@ class OfficialEvidenceRetriever:
             ("name_char", self.config.character_limit),
             ("address_char", self.config.character_limit),
         )
+        temporal_channels = (
+            ("name_exact", self.config.historical_limit),
+            ("name_word", self.config.historical_limit),
+            ("name_char", self.config.historical_limit),
+        )
         for backend_name, backend in self.backends:
             backend_typed = backend_name == "base" and self.typed_portfolio
             backend_channels = (
                 typed_channels if backend_typed else
-                tuple(item for item in legacy_channels if item[0].startswith("name"))
-                if backend_name == "sirene_temporal" else legacy_channels
+                temporal_channels if backend_name == "sirene_temporal" else
+                legacy_channels
             )
             for channel, limit in backend_channels:
                 direct_jobs.append((backend_name, backend, channel, limit))
@@ -492,8 +497,8 @@ class OfficialEvidenceRetriever:
             backend_typed = backend_name == "base" and self.typed_portfolio
             backend_channels = (
                 typed_channels if backend_typed else
-                tuple(item for item in legacy_channels if item[0].startswith("name"))
-                if backend_name == "sirene_temporal" else legacy_channels
+                temporal_channels if backend_name == "sirene_temporal" else
+                legacy_channels
             )
             for channel, _limit in backend_channels:
                 for rank, hit in enumerate(
