@@ -5356,6 +5356,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `00578096000026` par exact/BM25/q-grams sans indexer sa géographie comme une
   adresse historique. La recette LambdaMART temporelle, les features aval et
   le runbook sont scellés; fold1 et les modèles aval restent fermés.
+- Les commits `bc104d0`, `35fe01a` et `2c057a9` figent la recette temporelle
+  unique, imposent les manifests officiels sans injection et rendent le gate
+  des familles de sources global plutôt que faux par préfixe. Les commits
+  `1d1c090`, `f5f7028` et `b6bfac5` rendent tous les endpoints de succession
+  recherchables, conservent leur direction prédécesseur/successeur et
+  versionnent l'index correspondant. Le commit `61168c6` corrige enfin le
+  runtime pour appliquer aux trois recherches temporelles la profondeur
+  historique préenregistrée de 500, au lieu des limites génériques de 1 000.
+  Les 43 tests ciblés retrieval/dossier/admission passent.
+- La projection nationale est scellée sous
+  `sources/sirene_temporal_v1` : 273 796 identités historiques SIRET,
+  4 025 541 observations historiques SIREN géolocalisées et 9 727 541 liens de
+  succession. Son index
+  `indices/sirene_temporal_v1/506bb98cfdcccfbe` pèse 15 Go et contient
+  19 750 392 documents, sans labels CRM ni données synthétiques.
+- Le replay fold 0 unique ajoute 52 vérités sans aucune perte : oracle exact
+  6 231/6 307 (98,7950 %) contre 6 179 (97,9705 %), et rang brut top100
+  6 038 contre 5 939. Les gains proviennent principalement de 37 expansions
+  ancien nom SIREN vers sites et 14 liens de succession. Le gate oracle 99,3 %
+  échoue encore de 32 hits et le p95 vaut 1 533 ms, au-dessus du SLO 1 000 ms.
+  Verdict **`PIVOT_ORACLE_BELOW_99_3`** : aucun LambdaMART/modèle aval n'est
+  entraîné et fold1 reste fermé. Parmi les 76 misses, 30 portent déjà un autre
+  site du bon SIREN ; 29 vérités seraient dans les 32 sites locaux si les
+  candidats SIRET directs promouvaient aussi leur SIREN pour expansion. Le
+  diagnostic complet et les artefacts sont consignés dans
+  `docs/sirene_temporal_retrieval_results.md`.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
