@@ -29,7 +29,7 @@ import xgboost as xgb
 
 SCHEMA_VERSION = "sireto-retrieval-ltr-admission-v1"
 DEFAULT_CONFIG_PATH = (
-    Path(__file__).resolve().parents[2] / "config/retrieval_ltr_admission_v1.json"
+    Path(__file__).resolve().parents[2] / "config/retrieval_ltr_admission_temporal_v3.json"
 )
 MINIMUM_INPUT_COLUMNS = {
     "query_id",
@@ -64,6 +64,9 @@ BASE_FEATURES = (
     "official_source_registry_current",
     "official_source_rne",
     "official_source_bodacc",
+    "official_source_history",
+    "official_source_successor",
+    "candidate_geo_scaffold",
     "current_signal_count",
     "historical_signal_count",
     "supporting_signal_count",
@@ -545,6 +548,7 @@ def _base_candidate(
         ),
         "explicit_site_key": _first_value(row, ("site_key", "address_id", "official_site_key")),
         "official_evidence_sources": raw_evidence_sources,
+        "candidate_geo_scaffold": _as_bool(row.get("candidate_geo_scaffold"), default=False),
     }
 
 
@@ -566,6 +570,9 @@ def _merge_candidate_hit(
         normalize_text(value)
         for value in _parse_values(row.get("official_evidence_sources"))
         if normalize_text(value)
+    )
+    candidate["candidate_geo_scaffold"] = candidate["candidate_geo_scaffold"] or _as_bool(
+        row.get("candidate_geo_scaffold"), default=False
     )
     for channel in sources:
         channel_rank = _positive_rank(_per_channel_value(row, channel, "rank"))
@@ -786,6 +793,9 @@ def _materialize_candidate(
         ),
         "official_source_rne": int("RNE" in evidence_sources),
         "official_source_bodacc": int("BODACC" in evidence_sources),
+        "official_source_history": int("SIRENE HISTORY" in evidence_sources),
+        "official_source_successor": int("SIRENE SUCCESSION" in evidence_sources),
+        "candidate_geo_scaffold": int(candidate["candidate_geo_scaffold"]),
         "current_signal_count": len(sources & current_channels),
         "historical_signal_count": len(sources & historical_channels),
         "supporting_signal_count": len(sources & supporting_channels),

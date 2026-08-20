@@ -1,0 +1,56 @@
+{
+  "schema_version": "sireto-retrieval-ltr-admission-v1",
+  "policy_id": "typed-official-temporal-lambdamart-top100-v3",
+  "folds": {"train": [2, 3, 4], "dev": 0, "test": 1},
+  "limits": {
+    "internal_union_cap": 2000,
+    "max_training_candidates_per_query": 512,
+    "max_candidates": 100,
+    "exact_protection_slots": 20,
+    "consensus_protection_slots": 20
+  },
+  "channels": [
+    "legal_name_exact", "trade_name_exact", "site_name_exact", "name_exact", "address_exact", "number_exact",
+    "fielded_name_bm25", "legal_name_word", "trade_name_word", "site_name_word", "address_word",
+    "current_name_char", "address_char", "historical_name_word", "historical_address_word",
+    "supporting_name_word", "supporting_address_word", "hierarchical", "official_successor",
+    "rne_name", "rne_address", "bodacc_name", "bodacc_address", "bodacc_relation"
+  ],
+  "exact_channels": ["legal_name_exact", "trade_name_exact", "site_name_exact", "name_exact", "address_exact"],
+  "consensus_min_channels": 2,
+  "xgboost": {
+    "objective": "rank:ndcg", "eval_metric": "ndcg@100", "tree_method": "hist",
+    "n_estimators": 240, "learning_rate": 0.05, "max_depth": 6,
+    "min_child_weight": 5.0, "subsample": 1.0, "colsample_bytree": 1.0,
+    "reg_alpha": 0.1, "reg_lambda": 10.0, "random_state": 20260818,
+    "n_jobs": 0, "lambdarank_pair_method": "topk", "lambdarank_num_pair_per_sample": 32
+  },
+  "gates": {
+    "minimum_identifiable_coverage": 0.8,
+    "minimum_exact_recall_at_100": 0.99,
+    "minimum_exact_oracle_recall": 0.993,
+    "maximum_end_to_end_p95_ms": 1000.0,
+    "maximum_end_to_end_p99_ms": 2000.0
+  },
+  "forbidden": {
+    "synthetic_markers": ["synthetic", "synthétique"],
+    "dense_channel_markers": ["dense", "embedding", "vector", "bge", "colbert", "splade"]
+  },
+  "retrieval": {
+    "require_temporal_complete": true,
+    "require_temporal_overlay": true,
+    "max_union_candidates": 2000,
+    "exact_limit": 500,
+    "word_limit": 1000,
+    "character_limit": 1000,
+    "historical_limit": 500,
+    "supporting_limit": 250,
+    "siren_limit": 5,
+    "sites_per_siren": 32,
+    "relation_seed_limit": 500,
+    "relation_limit": 500,
+    "balanced_prefix_per_channel": 32,
+    "search_workers": 12,
+    "fielded_name_boosts": {"legal_names": 1.25, "trade_names": 1.5, "site_names": 1.75}
+  }
+}

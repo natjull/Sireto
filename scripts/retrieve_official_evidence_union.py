@@ -28,6 +28,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--base-index", type=Path, required=True)
     parser.add_argument("--overlay-index", type=Path)
+    parser.add_argument(
+        "--temporal-overlay-index",
+        type=Path,
+        help="Separate SIRENE history/succession rescue overlay.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--config",
@@ -58,7 +63,10 @@ def main() -> None:
     args = parse_args()
     config = OfficialEvidenceRetrievalConfig.load(args.config)
     retriever = OfficialEvidenceRetriever.from_index_paths(
-        args.base_index, args.overlay_index, config
+        args.base_index,
+        args.overlay_index,
+        config,
+        temporal_overlay_index_path=args.temporal_overlay_index,
     )
     output = retrieve_official_evidence_union_to_parquet(
         retriever,

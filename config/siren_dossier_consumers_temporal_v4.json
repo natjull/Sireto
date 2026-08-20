@@ -1,0 +1,40 @@
+{
+  "schema_version": "sireto-siren-dossier-consumers-temporal-v4",
+  "join_keys": ["query_id", "candidate_siret"],
+  "identifiers_are_model_features": false,
+  "retrieval": {
+    "indexed": ["historical_siret_names", "historical_siren_names"],
+    "stored_only": ["geo_scaffold_address", "valid_from", "valid_to", "evidence_ids"],
+    "relation_max_hops": 1,
+    "historical_exact_protected": false
+  },
+  "ranker": [
+    "temporal_siret_name_count", "temporal_siret_name_jw", "temporal_siret_name_exact",
+    "temporal_siren_name_count", "temporal_siren_name_jw", "temporal_siren_name_exact",
+    "succession_out_count", "succession_in_count", "succession_economic_continuity",
+    "succession_transfer_headquarters", "succession_cross_siren"
+  ],
+  "decider": [
+    "temporal_siret_name_exact", "temporal_siren_name_exact",
+    "succession_economic_continuity", "succession_transfer_headquarters",
+    "succession_cross_siren", "succession_latest_effective_date"
+  ],
+  "risk": {
+    "candidate_features": [
+      "temporal_siret_name_count", "temporal_siren_name_count",
+      "succession_out_count", "succession_in_count", "succession_cross_siren"
+    ],
+    "scene_aggregations": ["max", "sum", "top1_minus_top2", "count_positive"]
+  },
+  "neural_fusion": {
+    "field": "temporal_fusion_text",
+    "typed_sections": ["SIRENE_HISTORY_SIRET", "SIRENE_HISTORY_SIREN"],
+    "max_siret_names": 6,
+    "max_siren_names": 12,
+    "relations_as_text": false
+  },
+  "held_out": [
+    "annual_account_values", "directors", "beneficial_owners", "personal_contacts",
+    "bodacc_free_text", "rne_free_text", "pdf_text", "crm_aliases", "synthetic_rows"
+  ]
+}

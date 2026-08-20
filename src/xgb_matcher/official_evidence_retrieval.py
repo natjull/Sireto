@@ -50,6 +50,7 @@ class OfficialEvidenceRetrievalConfig:
     balanced_prefix_per_channel: int = 32
     search_workers: int = 12
     require_temporal_complete: bool = True
+    require_temporal_overlay: bool = False
     typed_portfolio: bool | None = None
     fielded_name_boosts: Mapping[str, float] = field(
         default_factory=lambda: {
@@ -99,6 +100,9 @@ class OfficialEvidenceRetrievalConfig:
             search_workers=int(retrieval.get("search_workers", 12)),
             require_temporal_complete=bool(
                 retrieval.get("require_temporal_complete", True)
+            ),
+            require_temporal_overlay=bool(
+                retrieval.get("require_temporal_overlay", False)
             ),
             typed_portfolio=(
                 bool(retrieval["typed_portfolio"])
@@ -193,6 +197,9 @@ class OfficialEvidenceCandidate:
             "candidate_number": self.record.number,
             "candidate_state": "A" if self.record.active else "F",
             "candidate_is_siege": self.record.is_siege,
+            "candidate_geo_scaffold": bool(self.record.payload.get("geo_scaffold", False)),
+            "temporal_valid_from": str(self.record.payload.get("temporal_valid_from") or ""),
+            "temporal_valid_to": str(self.record.payload.get("temporal_valid_to") or ""),
             "retrieval_source": "+".join(self.sources),
             "retrieval_rank": self.union_rank,
             "retrieval_score": best_signal.score,
@@ -244,6 +251,11 @@ class _MutableCandidate:
     addresses: set[str] = field(default_factory=set)
     evidence_ids: set[str] = field(default_factory=set)
     evidence_sources: set[str] = field(default_factory=set)
+    temporal_valid_from: set[str] = field(default_factory=set)
+    temporal_valid_to: set[str] = field(default_factory=set)
+    geo_scaffold: bool = False
+    linked_sirets: set[str] = field(default_factory=set)
+    linked_sirens: set[str] = field(default_factory=set)
 
 
 _CHANNEL_PRIORITY: Mapping[str, int] = {
@@ -313,6 +325,12 @@ def _mapped_direct_channels(
     channel: str,
     record: IndexedEstablishment,
 ) -> tuple[tuple[str, str], ...]:
+    if backend_name == "sirene_temporal":
+        # Historical exact lexical equality is valuable recall evidence but is
+        # deliberately not an exact-protected current-identity signal.
+        if channel.startswith("name"):
+            return (("historical_name_word", f"sirene_temporal:{channel}"),)
+        return ()
     if backend_name != "official_overlay":
         return ((channel, f"{backend_name}:{channel}"),)
     raw_sources = record.payload.get("official_evidence_sources") or []
@@ -349,11 +367,13 @@ class OfficialEvidenceRetriever:
         base_backend: RetrievalBackend,
         overlay_backend: RetrievalBackend | None = None,
         config: OfficialEvidenceRetrievalConfig | None = None,
+        temporal_overlay_backend: RetrievalBackend | None = None,
     ) -> None:
         self.config = config or OfficialEvidenceRetrievalConfig()
         self.backends: tuple[tuple[str, RetrievalBackend], ...] = tuple(
             [("base", base_backend)]
             + ([ ("official_overlay", overlay_backend) ] if overlay_backend else [])
+            + ([ ("sirene_temporal", temporal_overlay_backend) ] if temporal_overlay_backend else [])
         )
         base_manifest = getattr(base_backend, "manifest", {}) or {}
         self.typed_portfolio = (
@@ -368,27 +388,41 @@ class OfficialEvidenceRetriever:
         base_index_path: Path | str,
         overlay_index_path: Path | str | None = None,
         config: OfficialEvidenceRetrievalConfig | None = None,
+        temporal_overlay_index_path: Path | str | None = None,
     ) -> "OfficialEvidenceRetriever":
         resolved_config = config or OfficialEvidenceRetrievalConfig()
         base_backend = TantivyBackend(
             base_index_path,
             fielded_name_boosts=resolved_config.fielded_name_boosts,
         )
-        if (
-            resolved_config.require_temporal_complete
-            and base_backend.manifest.get("temporal_complete") is not True
-        ):
-            raise RuntimeError(
-                "Official retrieval requires a temporally complete SIRENE/RNE/BODACC index"
-            )
+        overlay_backend = (
+            OfficialEvidenceTantivyBackend(overlay_index_path)
+            if overlay_index_path else None
+        )
+        temporal_backend = (
+            OfficialEvidenceTantivyBackend(temporal_overlay_index_path)
+            if temporal_overlay_index_path else None
+        )
+        if resolved_config.require_temporal_overlay and temporal_backend is None:
+            raise RuntimeError("Official retrieval requires the SIRENE temporal rescue overlay")
+        if resolved_config.require_temporal_complete:
+            missing = set(base_backend.manifest.get("missing_temporal_sources") or [])
+            if temporal_backend is not None:
+                temporal_manifest = temporal_backend.manifest
+                if int(temporal_manifest.get("num_documents") or 0) <= 0:
+                    raise RuntimeError("SIRENE temporal overlay contains zero documents")
+                if temporal_manifest.get("overlay_kind") != "SIRENE_TEMPORAL_RESCUE":
+                    raise RuntimeError("Unexpected temporal overlay kind")
+                missing -= {"SIRENE_HISTORY", "SIRENE_SUCCESSION"}
+            if base_backend.manifest.get("temporal_complete") is not True and missing:
+                raise RuntimeError(
+                    "Official retrieval still lacks temporal sources: " + ",".join(sorted(missing))
+                )
         return cls(
             base_backend,
-            (
-                OfficialEvidenceTantivyBackend(overlay_index_path)
-                if overlay_index_path
-                else None
-            ),
+            overlay_backend,
             resolved_config,
+            temporal_backend,
         )
 
     def retrieve(
@@ -430,7 +464,12 @@ class OfficialEvidenceRetriever:
         )
         for backend_name, backend in self.backends:
             backend_typed = backend_name == "base" and self.typed_portfolio
-            for channel, limit in typed_channels if backend_typed else legacy_channels:
+            backend_channels = (
+                typed_channels if backend_typed else
+                tuple(item for item in legacy_channels if item[0].startswith("name"))
+                if backend_name == "sirene_temporal" else legacy_channels
+            )
+            for channel, limit in backend_channels:
                 direct_jobs.append((backend_name, backend, channel, limit))
 
         # Search calls are independent and Tantivy searchers are immutable.
@@ -449,7 +488,12 @@ class OfficialEvidenceRetriever:
         # Registration order is fixed even though searches completed in parallel.
         for backend_name, _backend in self.backends:
             backend_typed = backend_name == "base" and self.typed_portfolio
-            for channel, _limit in typed_channels if backend_typed else legacy_channels:
+            backend_channels = (
+                typed_channels if backend_typed else
+                tuple(item for item in legacy_channels if item[0].startswith("name"))
+                if backend_name == "sirene_temporal" else legacy_channels
+            )
+            for channel, _limit in backend_channels:
                 for rank, hit in enumerate(
                     direct_results[(backend_name, channel)], start=1
                 ):
@@ -567,6 +611,13 @@ class OfficialEvidenceRetriever:
             evidence_sources = [evidence_sources]
         candidate.evidence_ids.update(str(item) for item in evidence_ids if item)
         candidate.evidence_sources.update(str(item) for item in evidence_sources if item)
+        if record.payload.get("temporal_valid_from"):
+            candidate.temporal_valid_from.add(str(record.payload["temporal_valid_from"]))
+        if record.payload.get("temporal_valid_to"):
+            candidate.temporal_valid_to.add(str(record.payload["temporal_valid_to"]))
+        candidate.geo_scaffold = candidate.geo_scaffold or bool(record.payload.get("geo_scaffold"))
+        candidate.linked_sirets.update(record.linked_sirets)
+        candidate.linked_sirens.update(record.linked_sirens)
         if signal not in candidate.signals:
             candidate.signals.append(signal)
         # Registration is deliberately base-first.  Never let a later overlay
@@ -580,6 +631,9 @@ class OfficialEvidenceRetriever:
             **record.payload,
             "official_evidence_ids": sorted(mutable.evidence_ids),
             "official_evidence_sources": sorted(mutable.evidence_sources),
+            "temporal_valid_from": min(mutable.temporal_valid_from, default=""),
+            "temporal_valid_to": max(mutable.temporal_valid_to, default=""),
+            "geo_scaffold": mutable.geo_scaffold,
         }
         return IndexedEstablishment(
             siret=record.siret,
@@ -598,8 +652,8 @@ class OfficialEvidenceRetriever:
             number=record.number,
             active=record.active,
             is_siege=record.is_siege,
-            linked_sirets=record.linked_sirets,
-            linked_sirens=record.linked_sirens,
+            linked_sirets=tuple(sorted(set(record.linked_sirets) | mutable.linked_sirets)),
+            linked_sirens=tuple(sorted(set(record.linked_sirens) | mutable.linked_sirens)),
             payload=payload,
         )
 
@@ -622,7 +676,8 @@ class OfficialEvidenceRetriever:
         relation_rank = 0
         seen_pairs: set[tuple[str, str]] = set()
         for source_siret, mutable in seeds:
-            for target_siret in mutable.record.linked_sirets:
+            linked_sirets = set(mutable.record.linked_sirets) | mutable.linked_sirets
+            for target_siret in sorted(linked_sirets):
                 pair = (source_siret, target_siret)
                 if pair in seen_pairs or source_siret == target_siret:
                     continue
@@ -630,13 +685,20 @@ class OfficialEvidenceRetriever:
                 target = self._lookup_siret(target_siret)
                 if target is None or not _record_matches_query_geo(target, query):
                     continue
+                is_sirene_successor = "SIRENE_SUCCESSION" in {
+                    str(value).upper() for value in mutable.evidence_sources
+                }
                 relation_rank += 1
                 self._register(
                     candidates,
                     target,
                     OfficialEvidenceSignal(
-                        source="BODACC:structured_siret_relation",
-                        channel="bodacc_relation",
+                        source=(
+                            "SIRENE_SUCCESSION:structured_siret_relation"
+                            if is_sirene_successor
+                            else "BODACC:structured_siret_relation"
+                        ),
+                        channel=("official_successor" if is_sirene_successor else "bodacc_relation"),
                         rank=relation_rank,
                         score=0.0,
                         parent_identifier=source_siret,
@@ -829,6 +891,9 @@ def official_evidence_union_arrow_schema() -> pa.Schema:
             ("candidate_number", pa.string()),
             ("candidate_state", pa.string()),
             ("candidate_is_siege", pa.bool_()),
+            ("candidate_geo_scaffold", pa.bool_()),
+            ("temporal_valid_from", pa.string()),
+            ("temporal_valid_to", pa.string()),
             ("retrieval_source", pa.string()),
             ("retrieval_rank", pa.int32()),
             ("retrieval_score", pa.float64()),
