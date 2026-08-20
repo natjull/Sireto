@@ -128,6 +128,8 @@ def test_temporal_overlay_is_rescue_not_exact_and_exports_features(tmp_path: Pat
     temporal = OfficialEvidenceTantivyBackend(index_dir)
     assert temporal.linked_sirets("12345678900011") == ("12345678900029",)
     assert temporal.linked_sirets("12345678900029") == ("12345678900011",)
+    assert temporal.linked_siret_relations("12345678900011") == (("12345678900029", "SUCCESSOR"),)
+    assert temporal.linked_siret_relations("12345678900029") == (("12345678900011", "PREDECESSOR"),)
     base = InMemoryBackend([
         IndexedEstablishment(
             siret="12345678900011", siren="123456789", insee="75101", postcode="75001",
@@ -147,6 +149,11 @@ def test_temporal_overlay_is_rescue_not_exact_and_exports_features(tmp_path: Pat
     assert "historical_name_word" in candidate.channels
     assert "name_exact" not in candidate.channels
     assert "official_successor" in {signal.channel for item in result.candidates for signal in item.signals}
+    successor_signal = next(
+        signal for item in result.candidates for signal in item.signals
+        if signal.channel == "official_successor"
+    )
+    assert successor_signal.relation_direction in {"PREDECESSOR", "SUCCESSOR"}
 
     candidates = _write(tmp_path / "candidates.parquet", [{
         "query_id": "q1", "candidate_siret": "12345678900011", "candidate_siren": "123456789",

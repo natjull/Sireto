@@ -75,11 +75,12 @@ def iter_temporal_documents(projection_dirs: Sequence[Path | str]) -> Iterator[d
                   SELECT * FROM read_parquet('{_sql_path(siret_path)}')
                   QUALIFY row_number() OVER(PARTITION BY siret ORDER BY valid_to DESC NULLS LAST,valid_from DESC NULLS LAST,normalized_name)<=6
                 ), links AS (
-                  SELECT identifier,list_sort(list_distinct(list(linked))) linked_sirets
+                  SELECT identifier,list_sort(list_distinct(list(linked))) linked_sirets,
+                         list_sort(list_distinct(list(direction||':'||linked))) linked_siret_edges
                   FROM (
-                    SELECT predecessor_siret identifier,successor_siret linked FROM read_parquet('{_sql_path(relation_path)}')
+                    SELECT predecessor_siret identifier,successor_siret linked,'SUCCESSOR' direction FROM read_parquet('{_sql_path(relation_path)}')
                     UNION ALL
-                    SELECT successor_siret,predecessor_siret FROM read_parquet('{_sql_path(relation_path)}')
+                    SELECT successor_siret,predecessor_siret,'PREDECESSOR' FROM read_parquet('{_sql_path(relation_path)}')
                   ) GROUP BY identifier
                 )
                 SELECT 'siret' document_type,h.siret,h.siren,h.insee,h.postcode,h.number,h.number_suffix,
@@ -87,11 +88,12 @@ def iter_temporal_documents(projection_dirs: Sequence[Path | str]) -> Iterator[d
                        list_sort(list_distinct(list(h.normalized_name))) AS name_values,
                        list_sort(list_distinct(list(h.geo_scaffold_address))) AS geo_scaffold_addresses,
                        coalesce(l.linked_sirets,[]) AS linked_sirets,
+                       coalesce(l.linked_siret_edges,[]) AS linked_siret_edges,
                        list_sort(list_distinct(list(h.evidence_id))) AS evidence_ids,
                        min(h.valid_from) AS valid_from,max(h.valid_to) AS valid_to
                 FROM history h LEFT JOIN links l ON l.identifier=h.siret
                 GROUP BY h.siret,h.siren,h.insee,h.postcode,h.number,h.number_suffix,
-                         h.current_state,h.is_headquarters,l.linked_sirets
+                         h.current_state,h.is_headquarters,l.linked_sirets,l.linked_siret_edges
                 ORDER BY h.siret
                 """
             )
@@ -105,7 +107,7 @@ def iter_temporal_documents(projection_dirs: Sequence[Path | str]) -> Iterator[d
                 SELECT 'siren' document_type,'' siret,siren,insee,postcode,'' number,'' number_suffix,
                        current_state state,false is_headquarters,
                        list_sort(list_distinct(list(normalized_name))) AS name_values,
-                       [] AS geo_scaffold_addresses,[] AS linked_sirets,
+                       [] AS geo_scaffold_addresses,[] AS linked_sirets,[] AS linked_siret_edges,
                        list_sort(list_distinct(list(evidence_id))) AS evidence_ids,
                        min(valid_from) AS valid_from,max(valid_to) AS valid_to
                 FROM history
@@ -122,13 +124,14 @@ def iter_temporal_documents(projection_dirs: Sequence[Path | str]) -> Iterator[d
                        cast([] AS VARCHAR[]) AS name_values,
                        cast([] AS VARCHAR[]) AS geo_scaffold_addresses,
                        list_sort(list_distinct(list(linked))) AS linked_sirets,
+                       list_sort(list_distinct(list(direction||':'||linked))) AS linked_siret_edges,
                        list_sort(list_distinct(list(relation_id))) AS evidence_ids,
                        min(effective_date) AS valid_from,max(effective_date) AS valid_to
                 FROM (
-                  SELECT predecessor_siret AS identifier,successor_siret AS linked,relation_id,effective_date
+                  SELECT predecessor_siret AS identifier,successor_siret AS linked,'SUCCESSOR' AS direction,relation_id,effective_date
                   FROM read_parquet('{_sql_path(relation_path)}')
                   UNION ALL
-                  SELECT successor_siret,predecessor_siret,relation_id,effective_date
+                  SELECT successor_siret,predecessor_siret,'PREDECESSOR',relation_id,effective_date
                   FROM read_parquet('{_sql_path(relation_path)}')
                 )
                 GROUP BY identifier ORDER BY identifier
@@ -159,6 +162,7 @@ def _add_document(writer: Any, tantivy: Any, row: Mapping[str, Any]) -> None:
         "addresses": list(geo_addresses), "geo_scaffold": bool(geo_addresses),
         "geo_scaffold_source": "SIRENE_CURRENT_ESTABLISHMENT" if geo_addresses else "",
         "linked_sirets": list(row["linked_sirets"] or []),
+        "official_succession_edges": list(row["linked_siret_edges"] or []),
         "official_evidence_ids": list(row["evidence_ids"] or []),
         "official_evidence_sources": evidence_sources,
         "temporal_valid_from": str(row["valid_from"] or ""),

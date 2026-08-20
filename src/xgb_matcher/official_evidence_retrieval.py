@@ -128,6 +128,7 @@ class OfficialEvidenceSignal:
     parent_identifier: str = ""
     parent_rank: int | None = None
     site_rank: int | None = None
+    relation_direction: str = ""
 
     def to_dict(self) -> dict[str, Any]:
         return {
@@ -138,6 +139,7 @@ class OfficialEvidenceSignal:
             "parent_identifier": self.parent_identifier,
             "parent_rank": self.parent_rank,
             "site_rank": self.site_rank,
+            "relation_direction": self.relation_direction,
         }
 
 
@@ -676,14 +678,19 @@ class OfficialEvidenceRetriever:
         relation_rank = 0
         seen_pairs: set[tuple[str, str]] = set()
         for source_siret, mutable in seeds:
-            linked_by_source: dict[str, set[str]] = {}
+            linked_by_source: dict[str, set[tuple[str, str]]] = {}
             for target in set(mutable.record.linked_sirets) | mutable.linked_sirets:
-                linked_by_source.setdefault(target, set()).add("record")
+                linked_by_source.setdefault(target, set()).add(("record", ""))
             for backend_name, backend in self.backends:
+                relation_method = getattr(backend, "linked_siret_relations", None)
+                if callable(relation_method):
+                    for target, direction in relation_method(source_siret):
+                        linked_by_source.setdefault(target, set()).add((backend_name, direction))
+                    continue
                 linked_method = getattr(backend, "linked_sirets", None)
                 if callable(linked_method):
                     for target in linked_method(source_siret):
-                        linked_by_source.setdefault(target, set()).add(backend_name)
+                        linked_by_source.setdefault(target, set()).add((backend_name, ""))
             for target_siret in sorted(linked_by_source):
                 pair = (source_siret, target_siret)
                 if pair in seen_pairs or source_siret == target_siret:
@@ -692,7 +699,8 @@ class OfficialEvidenceRetriever:
                 target = self._lookup_siret(target_siret)
                 if target is None or not _record_matches_query_geo(target, query):
                     continue
-                relation_sources = linked_by_source[target_siret]
+                relation_sources = {item[0] for item in linked_by_source[target_siret]}
+                directions = {item[1] for item in linked_by_source[target_siret] if item[1]}
                 is_sirene_successor = "sirene_temporal" in relation_sources or (
                     "SIRENE_SUCCESSION" in {str(value).upper() for value in mutable.evidence_sources}
                 )
@@ -710,6 +718,7 @@ class OfficialEvidenceRetriever:
                         rank=relation_rank,
                         score=0.0,
                         parent_identifier=source_siret,
+                        relation_direction=(next(iter(directions)) if len(directions) == 1 else "BOTH" if directions else ""),
                     ),
                 )
                 if relation_rank >= self.config.relation_limit:
@@ -886,6 +895,7 @@ def official_evidence_union_arrow_schema() -> pa.Schema:
                             ("parent_identifier", pa.string()),
                             ("parent_rank", pa.int32()),
                             ("site_rank", pa.int32()),
+                            ("relation_direction", pa.string()),
                         ]
                     )
                 ),

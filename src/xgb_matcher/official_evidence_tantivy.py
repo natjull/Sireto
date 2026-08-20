@@ -651,3 +651,28 @@ class OfficialEvidenceTantivyBackend(TantivyBackend):
             )
         linked.discard(normalized)
         return tuple(sorted(linked))[:limit]
+
+    def linked_siret_relations(
+        self, siret: str, limit: int = 256
+    ) -> tuple[tuple[str, str], ...]:
+        """Return linked SIRETs with PREDECESSOR/SUCCESSOR direction when stored."""
+        normalized = normalize_code(siret, 14)
+        parsed = self._tantivy.Query.term_query(
+            self.index.schema, "siret", normalized, "basic"
+        )
+        output: set[tuple[str, str]] = set()
+        for _score, address in self.searcher.search(parsed, limit=64).hits:
+            document = self.searcher.doc(address).to_dict()
+            payload_raw = self._first(document, "payload", "{}")
+            try:
+                payload = json.loads(payload_raw)
+            except (TypeError, json.JSONDecodeError):
+                payload = {}
+            for edge in payload.get("official_succession_edges") or []:
+                direction, separator, target = str(edge).partition(":")
+                target = normalize_code(target, 14) if separator else ""
+                if target and target != normalized and direction in {"PREDECESSOR", "SUCCESSOR"}:
+                    output.add((target, direction))
+        if output:
+            return tuple(sorted(output))[:limit]
+        return tuple((target, "") for target in self.linked_sirets(normalized, limit))
