@@ -17,7 +17,7 @@ from .official_evidence_tantivy import official_evidence_tantivy_schema
 from .sirene_temporal import SIRENE_TEMPORAL_SCHEMA_VERSION
 
 
-SIRENE_TEMPORAL_INDEX_SCHEMA_VERSION = "sireto-sirene-temporal-index-v1"
+SIRENE_TEMPORAL_INDEX_SCHEMA_VERSION = "sireto-sirene-temporal-index-v2"
 
 
 def _sql_path(path: Path) -> str:
