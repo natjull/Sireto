@@ -106,6 +106,22 @@ def test_missing_real_field_fails_before_build(tmp_path: Path) -> None:
         temporal_preflight(bad, siren_prefix="12")
 
 
+def test_partition_may_have_no_relation_but_global_smoke_remains_strict(tmp_path: Path) -> None:
+    inputs = _inputs(tmp_path)
+    # Preserve the empty Parquet schema, unlike an empty from_pylist table.
+    pq.write_table(pq.read_table(inputs.successions).slice(0, 0), tmp_path / "succ-empty.parquet")
+    partition_inputs = SireneTemporalInputs(
+        inputs.establishment_history, inputs.legal_unit_history, tmp_path / "succ-empty.parquet",
+        inputs.establishments, inputs.legal_units,
+    )
+    report = temporal_preflight(inputs, siren_prefix="12")
+    build = build_temporal_projection(
+        partition_inputs, tmp_path / "projection-empty-relation", siren_prefix="12",
+        preflight_report=report, require_all_families=False,
+    )
+    assert build.counts["succession_edges"] == 0
+
+
 def test_temporal_overlay_is_rescue_not_exact_and_exports_features(tmp_path: Path) -> None:
     build = build_temporal_projection(_inputs(tmp_path), tmp_path / "projection", siren_prefix="12")
     index_dir = build_temporal_tantivy_overlay([build.output_dir], tmp_path / "index")

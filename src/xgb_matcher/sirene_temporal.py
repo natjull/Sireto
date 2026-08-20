@@ -269,6 +269,7 @@ def build_temporal_projection(
     duckdb_memory_limit: str = "8GB",
     duckdb_threads: int = 4,
     preflight_report: Mapping[str, Any] | None = None,
+    require_all_families: bool = True,
 ) -> SireneTemporalBuild:
     """Build truthful temporal sidecars; never mutate dossier v3."""
     preflight_prefix = siren_prefix or "00"
@@ -413,7 +414,7 @@ def build_temporal_projection(
             "historical_siren_identity": connection.execute(f"SELECT count(*) FROM read_parquet('{siren_out}')").fetchone()[0],
             "succession_edges": connection.execute(f"SELECT count(*) FROM read_parquet('{relation_out}')").fetchone()[0],
         }
-        if any(int(value) == 0 for value in counts.values()):
+        if require_all_families and any(int(value) == 0 for value in counts.values()):
             raise RuntimeError(f"temporal projection emitted an empty required family: {counts}")
         manifest = {
             **identity,
@@ -462,6 +463,7 @@ def build_all_temporal_projections(
             inputs, output_root, siren_prefix=f"{value:02d}",
             duckdb_memory_limit=duckdb_memory_limit, duckdb_threads=duckdb_threads,
             preflight_report=preflight,
+            require_all_families=False,
         )
         for value in range(100)
     )
@@ -478,6 +480,8 @@ def build_all_temporal_projections(
         },
         "preflight": preflight,
     }
+    if any(int(value) == 0 for value in manifest["counts"].values()):
+        raise RuntimeError(f"national temporal projection has an empty required family: {manifest['counts']}")
     payload = (json.dumps(manifest, sort_keys=True, indent=2)+"\n").encode()
     (root / "prefix_set_manifest.json").write_bytes(payload)
     (root / "prefix_set_manifest.sha256").write_text(hashlib.sha256(payload).hexdigest()+"\n", encoding="ascii")
