@@ -5383,5 +5383,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   diagnostic complet et les artefacts sont consignés dans
   `docs/sirene_temporal_retrieval_results.md`.
 
+*(rapport du replay temporel et verdict PIVOT : commit `40997dc`)*
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
