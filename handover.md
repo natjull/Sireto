@@ -5342,6 +5342,20 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   publie exact/opérationnel, couverture, plafond et latences, puis n'autorise
   l'entraînement que si l'oracle exact atteint 99,3 %. Le test ciblé et les
   régressions evidence/admission passent (28 tests).
+- Le commit `5b9dedd` corrige l'intégration des historiques SIRENE après audit
+  des schémas réels. `StockEtablissementHistorique` n'est plus supposé porter
+  des adresses : les anciens noms SIRET utilisent une adresse courante marquée
+  `geo_scaffold` et non indexée, les anciens noms d'unité légale restent au
+  grain `(INSEE,SIREN)`, et les 9,7 M liens de succession restent dirigés et
+  bornés à un saut. Un préflight réel bloque désormais toute famille vide ou
+  perte de jointure supérieure à 5 %. Sur le préfixe `00`, il a observé 2 405
+  noms SIRET (100 % joints), 17 851 noms SIREN (17 828 joints) et 1 879 liens.
+  Le smoke publié sous `sources/sirene_temporal_v1_smoke/5f7dc310dd123537`
+  pèse 164 Ko et son index `indices/sirene_temporal_v1_smoke/b9f252b234f5499b`
+  contient 597 documents. L'ancien nom réel `HOTEL ROYAL THALASSO` rappelle
+  `00578096000026` par exact/BM25/q-grams sans indexer sa géographie comme une
+  adresse historique. La recette LambdaMART temporelle, les features aval et
+  le runbook sont scellés; fold1 et les modèles aval restent fermés.
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
