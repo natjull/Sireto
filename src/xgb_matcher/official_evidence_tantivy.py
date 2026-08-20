@@ -634,3 +634,20 @@ class OfficialEvidenceTantivyBackend(TantivyBackend):
             linked.update(str(value or "").split())
         linked.discard(siren)
         return tuple(sorted(linked))
+
+    def linked_sirets(self, siret: str, limit: int = 256) -> tuple[str, ...]:
+        """Aggregate one-hop SIRET links across every overlay document."""
+        normalized = normalize_code(siret, 14)
+        parsed = self._tantivy.Query.term_query(
+            self.index.schema, "siret", normalized, "basic"
+        )
+        linked: set[str] = set()
+        for _score, address in self.searcher.search(parsed, limit=64).hits:
+            document = self.searcher.doc(address).to_dict()
+            linked.update(
+                normalize_code(value, 14)
+                for value in str(self._first(document, "linked_sirets", "")).split()
+                if value
+            )
+        linked.discard(normalized)
+        return tuple(sorted(linked))[:limit]

@@ -114,6 +114,27 @@ def iter_temporal_documents(projection_dirs: Sequence[Path | str]) -> Iterator[d
                 """
             )
             yield from _rows(siren_cursor)
+            relation_cursor = connection.execute(
+                f"""
+                SELECT 'siret' AS document_type,identifier AS siret,substr(identifier,1,9) AS siren,
+                       '' AS insee,'' AS postcode,'' AS number,'' AS number_suffix,
+                       'A' AS state,false AS is_headquarters,
+                       cast([] AS VARCHAR[]) AS name_values,
+                       cast([] AS VARCHAR[]) AS geo_scaffold_addresses,
+                       list_sort(list_distinct(list(linked))) AS linked_sirets,
+                       list_sort(list_distinct(list(relation_id))) AS evidence_ids,
+                       min(effective_date) AS valid_from,max(effective_date) AS valid_to
+                FROM (
+                  SELECT predecessor_siret AS identifier,successor_siret AS linked,relation_id,effective_date
+                  FROM read_parquet('{_sql_path(relation_path)}')
+                  UNION ALL
+                  SELECT successor_siret,predecessor_siret,relation_id,effective_date
+                  FROM read_parquet('{_sql_path(relation_path)}')
+                )
+                GROUP BY identifier ORDER BY identifier
+                """
+            )
+            yield from _rows(relation_cursor)
     finally:
         connection.close()
 
@@ -124,7 +145,7 @@ def _add_document(writer: Any, tantivy: Any, row: Mapping[str, Any]) -> None:
     geo_addresses = tuple(
         dict.fromkeys(normalize_text(item) for item in row["geo_scaffold_addresses"] if item)
     )
-    evidence_sources = ["SIRENE_HISTORY"]
+    evidence_sources = ["SIRENE_HISTORY"] if names else []
     if row["linked_sirets"]:
         evidence_sources.append("SIRENE_SUCCESSION")
     payload = {
@@ -135,8 +156,8 @@ def _add_document(writer: Any, tantivy: Any, row: Mapping[str, Any]) -> None:
         "names": list(names), "historical_names": list(names),
         # Stored for candidate comparison, deliberately not added to the indexed
         # ``addresses`` field because it is not a historical address observation.
-        "addresses": list(geo_addresses), "geo_scaffold": True,
-        "geo_scaffold_source": "SIRENE_CURRENT_ESTABLISHMENT",
+        "addresses": list(geo_addresses), "geo_scaffold": bool(geo_addresses),
+        "geo_scaffold_source": "SIRENE_CURRENT_ESTABLISHMENT" if geo_addresses else "",
         "linked_sirets": list(row["linked_sirets"] or []),
         "official_evidence_ids": list(row["evidence_ids"] or []),
         "official_evidence_sources": evidence_sources,

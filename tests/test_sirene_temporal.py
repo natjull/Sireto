@@ -126,6 +126,8 @@ def test_temporal_overlay_is_rescue_not_exact_and_exports_features(tmp_path: Pat
     build = build_temporal_projection(_inputs(tmp_path), tmp_path / "projection", siren_prefix="12")
     index_dir = build_temporal_tantivy_overlay([build.output_dir], tmp_path / "index")
     temporal = OfficialEvidenceTantivyBackend(index_dir)
+    assert temporal.linked_sirets("12345678900011") == ("12345678900029",)
+    assert temporal.linked_sirets("12345678900029") == ("12345678900011",)
     base = InMemoryBackend([
         IndexedEstablishment(
             siret="12345678900011", siren="123456789", insee="75101", postcode="75001",

@@ -676,8 +676,15 @@ class OfficialEvidenceRetriever:
         relation_rank = 0
         seen_pairs: set[tuple[str, str]] = set()
         for source_siret, mutable in seeds:
-            linked_sirets = set(mutable.record.linked_sirets) | mutable.linked_sirets
-            for target_siret in sorted(linked_sirets):
+            linked_by_source: dict[str, set[str]] = {}
+            for target in set(mutable.record.linked_sirets) | mutable.linked_sirets:
+                linked_by_source.setdefault(target, set()).add("record")
+            for backend_name, backend in self.backends:
+                linked_method = getattr(backend, "linked_sirets", None)
+                if callable(linked_method):
+                    for target in linked_method(source_siret):
+                        linked_by_source.setdefault(target, set()).add(backend_name)
+            for target_siret in sorted(linked_by_source):
                 pair = (source_siret, target_siret)
                 if pair in seen_pairs or source_siret == target_siret:
                     continue
@@ -685,9 +692,10 @@ class OfficialEvidenceRetriever:
                 target = self._lookup_siret(target_siret)
                 if target is None or not _record_matches_query_geo(target, query):
                     continue
-                is_sirene_successor = "SIRENE_SUCCESSION" in {
-                    str(value).upper() for value in mutable.evidence_sources
-                }
+                relation_sources = linked_by_source[target_siret]
+                is_sirene_successor = "sirene_temporal" in relation_sources or (
+                    "SIRENE_SUCCESSION" in {str(value).upper() for value in mutable.evidence_sources}
+                )
                 relation_rank += 1
                 self._register(
                     candidates,
