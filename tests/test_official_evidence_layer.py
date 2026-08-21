@@ -891,6 +891,43 @@ def test_distinct_site_consensus_expands_parent_without_parent_name_hit():
     assert signal.parent_rank == 1
 
 
+def test_multiple_sector_overlays_contribute_without_rebuilding_prior_index():
+    health = _record("12345678900011")
+    sport = _record("98765432100029")
+    retriever = OfficialEvidenceRetriever(
+        InMemoryBackend([]),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=20,
+            exact_limit=10,
+            word_limit=10,
+            character_limit=10,
+            historical_limit=10,
+            supporting_limit=10,
+            siren_limit=2,
+            parent_siren_limit=4,
+            direct_parent_seed_limit=10,
+            sites_per_siren=3,
+            relation_seed_limit=10,
+            relation_limit=10,
+            search_workers=2,
+        ),
+        sector_official_backend=InMemoryBackend([health]),
+        sector_official_backends=(InMemoryBackend([sport]),),
+    )
+    result = retriever.retrieve(
+        RetrievalQuery(
+            name="NOUVEAU NOM RNE",
+            address="10 RUE DES FLEURS",
+            insee="75056",
+            postcode="75001",
+        )
+    )
+    candidates = {candidate.siret: candidate for candidate in result.candidates}
+    assert {health.siret, sport.siret}.issubset(candidates)
+    assert "sector_name" in candidates[health.siret].channels
+    assert "sector_name" in candidates[sport.siret].channels
+
+
 def test_operational_same_site_is_materialized_when_exact_is_not_retrieved():
     sibling = _record("12345678900029")
     retriever = OfficialEvidenceRetriever(

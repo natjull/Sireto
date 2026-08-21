@@ -41,7 +41,9 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--sector-official-index",
         type=Path,
-        help="Separate FINESS/UAI/DINUM structured evidence overlay.",
+        action="append",
+        default=[],
+        help="Repeatable structured sector-evidence overlay path.",
     )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(

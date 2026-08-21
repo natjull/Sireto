@@ -402,7 +402,7 @@ def _mapped_direct_channels(
         if channel.startswith("name"):
             return (("historical_name_word", f"sirene_temporal:{channel}"),)
         return ()
-    if backend_name == "sector_official":
+    if backend_name.startswith("sector_official"):
         family = "name" if channel.startswith("name") else "address"
         return ((f"sector_{family}", f"sector_official:{channel}"),)
     if backend_name != "official_overlay":
@@ -444,6 +444,7 @@ class OfficialEvidenceRetriever:
         temporal_overlay_backend: RetrievalBackend | None = None,
         legal_entity_role_backend: RetrievalBackend | None = None,
         sector_official_backend: RetrievalBackend | None = None,
+        sector_official_backends: Sequence[RetrievalBackend] = (),
     ) -> None:
         self.config = config or OfficialEvidenceRetrievalConfig()
         self.backends: tuple[tuple[str, RetrievalBackend], ...] = tuple(
@@ -452,6 +453,10 @@ class OfficialEvidenceRetriever:
             + ([ ("sirene_temporal", temporal_overlay_backend) ] if temporal_overlay_backend else [])
             + ([ ("legal_entity_roles", legal_entity_role_backend) ] if legal_entity_role_backend else [])
             + ([ ("sector_official", sector_official_backend) ] if sector_official_backend else [])
+            + [
+                (f"sector_official:{index}", backend)
+                for index, backend in enumerate(sector_official_backends, start=1)
+            ]
         )
         base_manifest = getattr(base_backend, "manifest", {}) or {}
         self.typed_portfolio = (
@@ -474,7 +479,7 @@ class OfficialEvidenceRetriever:
         config: OfficialEvidenceRetrievalConfig | None = None,
         temporal_overlay_index_path: Path | str | None = None,
         legal_entity_role_index_path: Path | str | None = None,
-        sector_official_index_path: Path | str | None = None,
+        sector_official_index_path: Path | str | Sequence[Path | str] | None = None,
     ) -> "OfficialEvidenceRetriever":
         resolved_config = config or OfficialEvidenceRetrievalConfig()
         base_backend = TantivyBackend(
@@ -493,9 +498,12 @@ class OfficialEvidenceRetriever:
             LegalEntityRoleTantivyBackend(legal_entity_role_index_path)
             if legal_entity_role_index_path else None
         )
-        sector_backend = (
-            OfficialSectorTantivyBackend(sector_official_index_path)
-            if sector_official_index_path else None
+        if isinstance(sector_official_index_path, (str, Path)):
+            sector_paths = (sector_official_index_path,)
+        else:
+            sector_paths = tuple(sector_official_index_path or ())
+        sector_backends = tuple(
+            OfficialSectorTantivyBackend(path) for path in sector_paths
         )
         if resolved_config.require_temporal_overlay and temporal_backend is None:
             raise RuntimeError("Official retrieval requires the SIRENE temporal rescue overlay")
@@ -518,7 +526,8 @@ class OfficialEvidenceRetriever:
             resolved_config,
             temporal_backend,
             role_backend,
-            sector_backend,
+            sector_backends[0] if sector_backends else None,
+            sector_backends[1:],
         )
 
     def retrieve(
@@ -745,7 +754,7 @@ class OfficialEvidenceRetriever:
                                     else "legal_entity_role_name"
                                     if siren_backend_name == "legal_entity_roles"
                                     else "sector_parent"
-                                    if siren_backend_name == "sector_official"
+                                    if siren_backend_name.startswith("sector_official")
                                     else "hierarchical"
                                 ),
                                 rank=site_expansion_rank,
