@@ -67,6 +67,19 @@ def test_certified_crm_query_column_names_are_consumed():
     assert query.insee == "75056"
 
 
+def test_siret_prefix_is_parent_and_reported_manager_is_preserved_as_link():
+    record = IndexedEstablishment.from_mapping(
+        {
+            "siret": "77568109100192",
+            "siren": "313872418",
+            "names": ["EQUIPEMENT MUNICIPAL"],
+            "insee": "75056",
+        }
+    )
+    assert record.siren == "775681091"
+    assert record.linked_sirens == ("313872418",)
+
+
 def test_official_history_and_bidirectional_one_hop():
     old = _record("11111111100001", name="ANCIEN NOM OFFICIEL", linked_sirets=("22222222200002",))
     new = _record("22222222200002", name="NOUVEAU NOM OFFICIEL", linked_sirets=(old.siret,))

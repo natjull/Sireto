@@ -257,7 +257,16 @@ class IndexedEstablishment:
         historical_addresses = values("historical_addresses") or values("historical_address_text")
         supporting_addresses = values("supporting_addresses") or values("supporting_address_text")
         siret = normalize_code(raw.get("siret"), 14)
-        siren = normalize_code(raw.get("siren") or siret[:9], 9)
+        reported_siren = normalize_code(raw.get("siren") or siret[:9], 9)
+        # A structured SIRET is the authority for its legal-unit prefix.  Some
+        # sector datasets publish the facility SIRET next to the managing
+        # body's SIREN; that is a useful relationship, but it is not the
+        # facility's parent identity.  Preserve it as a linked SIREN instead
+        # of emitting an internally impossible SIRET/SIREN pair.
+        siren = siret[:9] if len(siret) == 14 else reported_siren
+        linked_sirens = set(identifiers(raw.get("linked_sirens"), 9))
+        if reported_siren and reported_siren != siren:
+            linked_sirens.add(reported_siren)
         return cls(
             siret=siret,
             siren=siren,
@@ -287,7 +296,7 @@ class IndexedEstablishment:
             linked_sirets=identifiers(
                 raw.get("linked_sirets") or raw.get("successor_sirets"), 14
             ),
-            linked_sirens=identifiers(raw.get("linked_sirens"), 9),
+            linked_sirens=tuple(sorted(linked_sirens)),
             payload=dict(raw),
         )
 
