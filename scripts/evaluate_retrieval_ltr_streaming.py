@@ -140,19 +140,32 @@ def evaluate(args: argparse.Namespace) -> Path:
     writer = pq.ParquetWriter(selected_path, SELECTED_SCHEMA, compression="zstd")
     outcomes: list[pd.DataFrame] = []
     query_count = 0
+    raw_groups: list[pd.DataFrame] = []
+
+    def flush() -> None:
+        nonlocal query_count
+        if not raw_groups:
+            return
+        raw_batch = pd.concat(raw_groups, ignore_index=True)
+        union, _diagnostics = build_internal_union(
+            raw_batch, config, allowed_folds=[config.dev_fold]
+        )
+        selected, outcome, _query_latency = score_and_select(model, union, config)
+        writer.write_table(_selected_table(selected))
+        outcomes.append(outcome)
+        query_count += int(raw_batch["query_id"].astype(str).nunique())
+        raw_groups.clear()
+
     try:
         for raw_group in iter_complete_query_frames(
             args.candidates, batch_size=args.batch_size
         ):
             if set(pd.to_numeric(raw_group["fold"]).astype(int)) != {config.dev_fold}:
                 raise ValueError("Streaming development input opened a non-dev fold")
-            union, _diagnostics = build_internal_union(
-                raw_group, config, allowed_folds=[config.dev_fold]
-            )
-            selected, outcome, _query_latency = score_and_select(model, union, config)
-            writer.write_table(_selected_table(selected))
-            outcomes.append(outcome)
-            query_count += 1
+            raw_groups.append(raw_group)
+            if len(raw_groups) >= args.query_batch_size:
+                flush()
+        flush()
     finally:
         writer.close()
     outcome_frame = pd.concat(outcomes, ignore_index=True)
@@ -242,6 +255,7 @@ def parse_args() -> argparse.Namespace:
         default=ROOT / "config/retrieval_ltr_admission_official_v6.json",
     )
     parser.add_argument("--batch-size", type=int, default=131_072)
+    parser.add_argument("--query-batch-size", type=int, default=64)
     return parser.parse_args()
 
 
