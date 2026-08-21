@@ -27,6 +27,7 @@ from .hierarchical_retrieval import (
 )
 from .official_evidence_tantivy import OfficialEvidenceTantivyBackend
 from .rne_legal_entity_roles import LegalEntityRoleTantivyBackend
+from .official_sector_evidence import OfficialSectorTantivyBackend
 
 
 OFFICIAL_EVIDENCE_UNION_SCHEMA_VERSION = "sireto-official-evidence-union-v2"
@@ -306,6 +307,9 @@ _CHANNEL_PRIORITY: Mapping[str, int] = {
     "hierarchical": 6,
     "direct_parent_expansion": 6,
     "legal_entity_role_name": 6,
+    "sector_name": 2,
+    "sector_address": 3,
+    "sector_parent": 6,
     "official_successor": 7,
     "bodacc_relation": 8,
 }
@@ -337,6 +341,9 @@ LTR_CHANNELS: tuple[str, ...] = (
     "hierarchical",
     "direct_parent_expansion",
     "legal_entity_role_name",
+    "sector_name",
+    "sector_address",
+    "sector_parent",
     "official_successor",
     "bodacc_relation",
 )
@@ -353,6 +360,9 @@ def _mapped_direct_channels(
         if channel.startswith("name"):
             return (("historical_name_word", f"sirene_temporal:{channel}"),)
         return ()
+    if backend_name == "sector_official":
+        family = "name" if channel.startswith("name") else "address"
+        return ((f"sector_{family}", f"sector_official:{channel}"),)
     if backend_name != "official_overlay":
         return ((channel, f"{backend_name}:{channel}"),)
     raw_sources = record.payload.get("official_evidence_sources") or []
@@ -391,6 +401,7 @@ class OfficialEvidenceRetriever:
         config: OfficialEvidenceRetrievalConfig | None = None,
         temporal_overlay_backend: RetrievalBackend | None = None,
         legal_entity_role_backend: RetrievalBackend | None = None,
+        sector_official_backend: RetrievalBackend | None = None,
     ) -> None:
         self.config = config or OfficialEvidenceRetrievalConfig()
         self.backends: tuple[tuple[str, RetrievalBackend], ...] = tuple(
@@ -398,6 +409,7 @@ class OfficialEvidenceRetriever:
             + ([ ("official_overlay", overlay_backend) ] if overlay_backend else [])
             + ([ ("sirene_temporal", temporal_overlay_backend) ] if temporal_overlay_backend else [])
             + ([ ("legal_entity_roles", legal_entity_role_backend) ] if legal_entity_role_backend else [])
+            + ([ ("sector_official", sector_official_backend) ] if sector_official_backend else [])
         )
         base_manifest = getattr(base_backend, "manifest", {}) or {}
         self.typed_portfolio = (
@@ -414,6 +426,7 @@ class OfficialEvidenceRetriever:
         config: OfficialEvidenceRetrievalConfig | None = None,
         temporal_overlay_index_path: Path | str | None = None,
         legal_entity_role_index_path: Path | str | None = None,
+        sector_official_index_path: Path | str | None = None,
     ) -> "OfficialEvidenceRetriever":
         resolved_config = config or OfficialEvidenceRetrievalConfig()
         base_backend = TantivyBackend(
@@ -431,6 +444,10 @@ class OfficialEvidenceRetriever:
         role_backend = (
             LegalEntityRoleTantivyBackend(legal_entity_role_index_path)
             if legal_entity_role_index_path else None
+        )
+        sector_backend = (
+            OfficialSectorTantivyBackend(sector_official_index_path)
+            if sector_official_index_path else None
         )
         if resolved_config.require_temporal_overlay and temporal_backend is None:
             raise RuntimeError("Official retrieval requires the SIRENE temporal rescue overlay")
@@ -453,6 +470,7 @@ class OfficialEvidenceRetriever:
             resolved_config,
             temporal_backend,
             role_backend,
+            sector_backend,
         )
 
     def retrieve(
@@ -621,6 +639,8 @@ class OfficialEvidenceRetriever:
                                     if siren_backend_name == "direct_siret"
                                     else "legal_entity_role_name"
                                     if siren_backend_name == "legal_entity_roles"
+                                    else "sector_parent"
+                                    if siren_backend_name == "sector_official"
                                     else "hierarchical"
                                 ),
                                 rank=site_expansion_rank,
@@ -909,6 +929,8 @@ class OfficialEvidenceRetriever:
             "rne_address",
             "bodacc_name",
             "bodacc_address",
+            "sector_name",
+            "sector_address",
         }:
             # Source-specific overlay channels combine exact, word and
             # character searches.  The largest configured direct depth is the
@@ -926,6 +948,7 @@ class OfficialEvidenceRetriever:
             "hierarchical",
             "direct_parent_expansion",
             "legal_entity_role_name",
+            "sector_parent",
         }:
             return max(
                 1,
