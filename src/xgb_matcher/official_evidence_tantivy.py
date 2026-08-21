@@ -50,6 +50,9 @@ class OfficialEvidenceIndexDocument:
     linked_sirens: tuple[str, ...]
     evidence_ids: tuple[str, ...]
     evidence_sources: tuple[str, ...]
+    temporal_valid_from: str = ""
+    temporal_valid_to: str = ""
+    temporal_observed_at: str = ""
 
     def __post_init__(self) -> None:
         if self.document_type not in {"siret", "siren"}:
@@ -71,6 +74,9 @@ class OfficialEvidenceIndexDocument:
             "official_evidence_ids": list(self.evidence_ids),
             "official_evidence_sources": list(self.evidence_sources),
             "official_linked_sirens": list(self.linked_sirens),
+            "temporal_valid_from": self.temporal_valid_from,
+            "temporal_valid_to": self.temporal_valid_to,
+            "temporal_observed_at": self.temporal_observed_at,
             "official_overlay": True,
         }
 
@@ -134,7 +140,10 @@ def _projection_ctes(
                    list_distinct(list(evidence_id)) AS evidence_ids,
                    list_distinct(list(source)) AS evidence_sources,
                    arg_max(administrative_state, source_priority)
-                       FILTER (WHERE administrative_state <> '') AS state
+                       FILTER (WHERE administrative_state <> '') AS state,
+                   min(valid_from) FILTER (WHERE valid_from <> '') AS valid_from,
+                   max(valid_to) FILTER (WHERE valid_to <> '') AS valid_to,
+                   max(observed_at) FILTER (WHERE observed_at <> '') AS observed_at
             FROM evidence
             WHERE subject_kind = 'SIREN'
             GROUP BY siren
@@ -148,30 +157,44 @@ def _projection_ctes(
                    arg_max(administrative_state, source_priority)
                        FILTER (WHERE administrative_state <> '') AS state,
                    arg_max(is_headquarters, source_priority)
-                       FILTER (WHERE is_headquarters IS NOT NULL) AS is_headquarters
+                       FILTER (WHERE is_headquarters IS NOT NULL) AS is_headquarters,
+                   min(valid_from) FILTER (WHERE valid_from <> '') AS valid_from,
+                   max(valid_to) FILTER (WHERE valid_to <> '') AS valid_to,
+                   max(observed_at) FILTER (WHERE observed_at <> '') AS observed_at
             FROM evidence
             WHERE subject_kind = 'SIRET'
             GROUP BY siret
         ),
         siret_address AS (
-            SELECT DISTINCT siret, siren,
+            SELECT siret, siren,
                    item.unnest.normalized_value AS address,
                    item.unnest.insee AS insee,
                    item.unnest.postcode AS postcode,
                    item.unnest.number AS number,
-                   item.unnest.number_suffix AS number_suffix
+                   item.unnest.number_suffix AS number_suffix,
+                   min(valid_from) FILTER (WHERE valid_from <> '') AS valid_from,
+                   max(valid_to) FILTER (WHERE valid_to <> '') AS valid_to,
+                   max(observed_at) FILTER (WHERE observed_at <> '') AS observed_at
             FROM evidence, unnest(addresses) item
             WHERE subject_kind = 'SIRET'
               AND (item.unnest.insee <> '' OR item.unnest.postcode <> '')
+            GROUP BY siret, siren, item.unnest.normalized_value,
+                     item.unnest.insee, item.unnest.postcode,
+                     item.unnest.number, item.unnest.number_suffix
         ),
         siren_address AS (
-            SELECT DISTINCT siren,
+            SELECT siren,
                    item.unnest.normalized_value AS address,
                    item.unnest.insee AS insee,
-                   item.unnest.postcode AS postcode
+                   item.unnest.postcode AS postcode,
+                   min(valid_from) FILTER (WHERE valid_from <> '') AS valid_from,
+                   max(valid_to) FILTER (WHERE valid_to <> '') AS valid_to,
+                   max(observed_at) FILTER (WHERE observed_at <> '') AS observed_at
             FROM evidence, unnest(addresses) item
             WHERE subject_kind = 'SIREN'
               AND (item.unnest.insee <> '' OR item.unnest.postcode <> '')
+            GROUP BY siren, item.unnest.normalized_value,
+                     item.unnest.insee, item.unnest.postcode
         ),
         siret_links AS (
             SELECT identifier,
@@ -260,7 +283,10 @@ def iter_official_evidence_documents(
                list_distinct(list_concat(coalesce(meta.evidence_ids, []),
                                          coalesce(legal.evidence_ids, []))) AS evidence_ids,
                list_distinct(list_concat(coalesce(meta.evidence_sources, []),
-                                         coalesce(legal.evidence_sources, []))) AS evidence_sources
+                                         coalesce(legal.evidence_sources, []))) AS evidence_sources,
+               least(address.valid_from, meta.valid_from, legal.valid_from) AS temporal_valid_from,
+               greatest(address.valid_to, meta.valid_to, legal.valid_to) AS temporal_valid_to,
+               greatest(address.observed_at, meta.observed_at, legal.observed_at) AS temporal_observed_at
         FROM siret_address address
         JOIN siret_meta meta USING (siret, siren)
         LEFT JOIN siren_meta legal USING (siren)
@@ -288,17 +314,25 @@ def iter_official_evidence_documents(
                    list_distinct(list_concat(coalesce(site.evidence_ids, []),
                                              coalesce(legal.evidence_ids, []))) AS evidence_ids,
                    list_distinct(list_concat(coalesce(site.evidence_sources, []),
-                                             coalesce(legal.evidence_sources, []))) AS evidence_sources
+                                             coalesce(legal.evidence_sources, []))) AS evidence_sources,
+                   min(least(address.valid_from, site.valid_from, legal.valid_from)) AS temporal_valid_from,
+                   max(greatest(address.valid_to, site.valid_to, legal.valid_to)) AS temporal_valid_to,
+                   max(greatest(address.observed_at, site.observed_at, legal.observed_at)) AS temporal_observed_at
             FROM (
-                SELECT siren, insee, postcode, address FROM siret_address
+                SELECT siren, insee, postcode, address,
+                       valid_from, valid_to, observed_at FROM siret_address
                 UNION ALL
-                SELECT siren, insee, postcode, address FROM siren_address
+                SELECT siren, insee, postcode, address,
+                       valid_from, valid_to, observed_at FROM siren_address
             ) address
             LEFT JOIN (
                 SELECT siren,
                        list_distinct(flatten(list(names))) AS names,
                        list_distinct(flatten(list(evidence_ids))) AS evidence_ids,
-                       list_distinct(flatten(list(evidence_sources))) AS evidence_sources
+                       list_distinct(flatten(list(evidence_sources))) AS evidence_sources,
+                       min(valid_from) AS valid_from,
+                       max(valid_to) AS valid_to,
+                       max(observed_at) AS observed_at
                 FROM siret_meta GROUP BY siren
             ) site USING (siren)
             LEFT JOIN siren_meta legal USING (siren)
@@ -334,6 +368,9 @@ def _document_from_row(row: Mapping[str, Any]) -> OfficialEvidenceIndexDocument:
         linked_sirens=_tuple_strings(row.get("linked_sirens")),
         evidence_ids=_tuple_strings(row.get("evidence_ids")),
         evidence_sources=_tuple_strings(row.get("evidence_sources")),
+        temporal_valid_from=str(row.get("temporal_valid_from") or ""),
+        temporal_valid_to=str(row.get("temporal_valid_to") or ""),
+        temporal_observed_at=str(row.get("temporal_observed_at") or ""),
     )
 
 
