@@ -38,7 +38,7 @@ TEST_AUTH_SCHEMA_VERSION = "sireto-retrieval-ltr-test-authorization-v1"
 FROZEN_CONFIG_PATH = (
     Path(__file__).resolve().parents[1]
     / "config"
-    / "retrieval_ltr_admission_temporal_v3.json"
+    / "retrieval_ltr_admission_official_v6.json"
 )
 MappingLike = dict[str, Any]
 

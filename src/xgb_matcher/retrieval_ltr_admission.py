@@ -29,7 +29,7 @@ import xgboost as xgb
 
 SCHEMA_VERSION = "sireto-retrieval-ltr-admission-v1"
 DEFAULT_CONFIG_PATH = (
-    Path(__file__).resolve().parents[2] / "config/retrieval_ltr_admission_temporal_v3.json"
+    Path(__file__).resolve().parents[2] / "config/retrieval_ltr_admission_official_v6.json"
 )
 MINIMUM_INPUT_COLUMNS = {
     "query_id",
