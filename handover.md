@@ -5465,5 +5465,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 
 *(rapport du retrieval open data v5 : commit `075a29c`)*
 
+- Le commit `4f36ea6` corrige l'apprentissage de l'admission : après
+  présélection des hard negatives, les rangs de l'union source sont restaurés
+  au lieu d'être renumérotés artificiellement de 1 à 512. La recette
+  LambdaMART fortement régularisée a été choisie uniquement par validation
+  croisée sur les folds 2/3/4; fold0 n'a pas servi au choix de variante.
+- Le commit `7261f83` ajoute la qualification sélective v4 calculée avant
+  retrieval à partir du CRM et du Parquet dossier SIRET officiel. Aucun hit,
+  rang, score ou candidat de retrieval n'entre dans cette qualification. Les
+  seuils figés donnent 80,5401 % de couverture sur train.
+- Sur fold0, la qualification v4 conserve 5 700/7 009 lignes (81,3240 %).
+  L'oracle vaut 5 698/5 700 (99,9649 %) et l'admission top100 conserve
+  5 649/5 700 SIRET exacts, soit **99,1053 %**; le plafond observé est 100.
+  Le gate Recall@100 est donc franchi. Fold1 reste fermé car la génération
+  amont de l'union mesure encore p95 5,931 s / p99 13,851 s, malgré une
+  admission p95 8,38 ms. Verdict global `PIVOT_LATENCY_AFTER_RECALL_GO`.
+  Détails et hashes : `docs/retrieval_selective_v10_results.md`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
