@@ -928,6 +928,48 @@ def test_multiple_sector_overlays_contribute_without_rebuilding_prior_index():
     assert "sector_name" in candidates[sport.siret].channels
 
 
+def test_multiple_official_overlays_keep_source_specific_channels():
+    rne = _record(
+        "12345678900011",
+        payload={"official_evidence_sources": ["RNE"]},
+    )
+    bodacc = _record(
+        "98765432100029",
+        payload={"official_evidence_sources": ["BODACC"]},
+    )
+    retriever = OfficialEvidenceRetriever(
+        InMemoryBackend([]),
+        InMemoryBackend([rne]),
+        OfficialEvidenceRetrievalConfig(
+            max_union_candidates=20,
+            exact_limit=10,
+            word_limit=10,
+            character_limit=10,
+            historical_limit=10,
+            supporting_limit=10,
+            siren_limit=2,
+            parent_siren_limit=4,
+            direct_parent_seed_limit=10,
+            sites_per_siren=3,
+            relation_seed_limit=10,
+            relation_limit=10,
+            search_workers=2,
+        ),
+        overlay_backends=(InMemoryBackend([bodacc]),),
+    )
+    result = retriever.retrieve(
+        RetrievalQuery(
+            name="NOUVEAU NOM RNE",
+            address="10 RUE DES FLEURS",
+            insee="75056",
+            postcode="75001",
+        )
+    )
+    candidates = {candidate.siret: candidate for candidate in result.candidates}
+    assert "rne_name" in candidates[rne.siret].channels
+    assert "bodacc_name" in candidates[bodacc.siret].channels
+
+
 def test_operational_same_site_is_materialized_when_exact_is_not_retrieved():
     sibling = _record("12345678900029")
     retriever = OfficialEvidenceRetriever(

@@ -27,7 +27,13 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--input", type=Path, required=True)
     parser.add_argument("--base-index", type=Path, required=True)
-    parser.add_argument("--overlay-index", type=Path)
+    parser.add_argument(
+        "--overlay-index",
+        type=Path,
+        action="append",
+        default=[],
+        help="Repeatable RNE/BODACC official-evidence overlay path.",
+    )
     parser.add_argument(
         "--temporal-overlay-index",
         type=Path,

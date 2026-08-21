@@ -405,7 +405,7 @@ def _mapped_direct_channels(
     if backend_name.startswith("sector_official"):
         family = "name" if channel.startswith("name") else "address"
         return ((f"sector_{family}", f"sector_official:{channel}"),)
-    if backend_name != "official_overlay":
+    if not backend_name.startswith("official_overlay"):
         return ((channel, f"{backend_name}:{channel}"),)
     raw_sources = record.payload.get("official_evidence_sources") or []
     if isinstance(raw_sources, str):
@@ -445,11 +445,16 @@ class OfficialEvidenceRetriever:
         legal_entity_role_backend: RetrievalBackend | None = None,
         sector_official_backend: RetrievalBackend | None = None,
         sector_official_backends: Sequence[RetrievalBackend] = (),
+        overlay_backends: Sequence[RetrievalBackend] = (),
     ) -> None:
         self.config = config or OfficialEvidenceRetrievalConfig()
         self.backends: tuple[tuple[str, RetrievalBackend], ...] = tuple(
             [("base", base_backend)]
             + ([ ("official_overlay", overlay_backend) ] if overlay_backend else [])
+            + [
+                (f"official_overlay:{index}", backend)
+                for index, backend in enumerate(overlay_backends, start=1)
+            ]
             + ([ ("sirene_temporal", temporal_overlay_backend) ] if temporal_overlay_backend else [])
             + ([ ("legal_entity_roles", legal_entity_role_backend) ] if legal_entity_role_backend else [])
             + ([ ("sector_official", sector_official_backend) ] if sector_official_backend else [])
@@ -475,7 +480,7 @@ class OfficialEvidenceRetriever:
     def from_index_paths(
         cls,
         base_index_path: Path | str,
-        overlay_index_path: Path | str | None = None,
+        overlay_index_path: Path | str | Sequence[Path | str] | None = None,
         config: OfficialEvidenceRetrievalConfig | None = None,
         temporal_overlay_index_path: Path | str | None = None,
         legal_entity_role_index_path: Path | str | None = None,
@@ -486,9 +491,12 @@ class OfficialEvidenceRetriever:
             base_index_path,
             fielded_name_boosts=resolved_config.fielded_name_boosts,
         )
-        overlay_backend = (
-            OfficialEvidenceTantivyBackend(overlay_index_path)
-            if overlay_index_path else None
+        if isinstance(overlay_index_path, (str, Path)):
+            overlay_paths = (overlay_index_path,)
+        else:
+            overlay_paths = tuple(overlay_index_path or ())
+        overlay_backends = tuple(
+            OfficialEvidenceTantivyBackend(path) for path in overlay_paths
         )
         temporal_backend = (
             OfficialEvidenceTantivyBackend(temporal_overlay_index_path)
@@ -522,12 +530,13 @@ class OfficialEvidenceRetriever:
                 )
         return cls(
             base_backend,
-            overlay_backend,
+            overlay_backends[0] if overlay_backends else None,
             resolved_config,
             temporal_backend,
             role_backend,
             sector_backends[0] if sector_backends else None,
             sector_backends[1:],
+            overlay_backends[1:],
         )
 
     def retrieve(

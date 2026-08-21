@@ -16,7 +16,7 @@
     "current_name_char", "address_char", "historical_name_word", "historical_address_word",
     "supporting_name_word", "supporting_address_word", "hierarchical", "direct_parent_expansion",
     "consensus_parent_expansion", "legal_entity_role_name", "sector_name", "sector_address", "sector_parent",
-    "official_successor", "rne_name", "rne_address", "bodacc_name", "bodacc_address", "bodacc_relation"
+    "contrastive_siren_rescue", "official_successor", "rne_name", "rne_address", "bodacc_name", "bodacc_address", "bodacc_relation"
   ],
   "exact_channels": ["legal_name_exact", "trade_name_exact", "site_name_exact", "name_exact", "address_exact"],
   "consensus_min_channels": 2,
