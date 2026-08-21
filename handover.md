@@ -5422,6 +5422,19 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sont pas protégés artificiellement dans le top 100 final. Le gate oracle de
   la configuration v5 est relevé à 99,5 %, les folds et le plafond top100 sont
   inchangés, et 31 tests retrieval/admission passent.
+- Le commit `09fb54c` transforme le stock national du dossier SIREN v3 en
+  couches temporelles RNE et BODACC séparées, sans rebâtir l'index SIRENE.
+  Chaque sujet conserve au plus 16 noms et 16 adresses, choisis par état
+  courant, récence et priorité de source; les dates de validité/observation et
+  la provenance restent dans le payload d'audit. Le build est
+  content-addressé, partitionnable par préfixe SIREN et reprend l'overlay
+  Tantivy existant.
+- Le commit `d8ad733` étend les preuves sectorielles structurées à Data ES et
+  aux snapshots de l'API Association. Une ligne sans SIREN/SIRET officiel est
+  rejetée; les objets/observations associatifs et tout texte web sont exclus.
+  Les adaptateurs existants FINESS/UAI/DINUM restent inchangés et l'extracteur
+  publie désormais la source, son hash et l'adaptateur utilisé. Les tests
+  retrieval/evidence/admission cumulés passent (34 tests).
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
