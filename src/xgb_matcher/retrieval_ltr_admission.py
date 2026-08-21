@@ -102,6 +102,8 @@ class AdmissionConfig:
             raise ValueError("Only LambdaMART rank:ndcg is allowed")
         if self.exact_slots + self.consensus_slots > self.max_candidates:
             raise ValueError("Protection slots exceed the output ceiling")
+        if not 0 <= self.consensus_parent_union_slots <= self.internal_union_cap:
+            raise ValueError("Consensus-parent union slots exceed the internal cap")
         if not set(self.exact_channels).issubset(self.channels):
             raise ValueError("Exact channels must be declared retrieval channels")
         assert_feature_order_is_identifier_free(feature_order(self))
@@ -141,6 +143,10 @@ class AdmissionConfig:
     @property
     def consensus_slots(self) -> int:
         return int(self.raw["limits"]["consensus_protection_slots"])
+
+    @property
+    def consensus_parent_union_slots(self) -> int:
+        return int(self.raw["limits"].get("consensus_parent_union_slots", 0))
 
     @property
     def channels(self) -> tuple[str, ...]:
@@ -857,7 +863,50 @@ def build_internal_union(
         ]
         materialized.sort(key=_union_sort_key)
         before_counts.append(len(materialized))
-        kept = materialized[: config.internal_union_cap]
+        kept: list[dict[str, Any]] = []
+        kept_sirets: set[str] = set()
+
+        # Preserve hard lexical/consensus evidence first.  Then reserve a
+        # bounded part of the 2,000-candidate union for the label-blind
+        # SIREN-consensus expansion.  This prevents large-commune lexical
+        # tails from erasing the very rescue candidates the new hierarchy
+        # generated, without protecting them in the final top 100.
+        for row in materialized:
+            if not (
+                int(row["is_exact_protected"])
+                or int(row["is_consensus_protected"])
+            ):
+                continue
+            if len(kept) >= config.internal_union_cap:
+                break
+            kept.append(row)
+            kept_sirets.add(str(row["candidate_siret"]))
+
+        consensus_parent_kept = 0
+        if len(kept) < config.internal_union_cap:
+            for row in materialized:
+                siret = str(row["candidate_siret"])
+                if siret in kept_sirets:
+                    continue
+                if int(row.get("source_consensus_parent_expansion", 0)) != 1:
+                    continue
+                if consensus_parent_kept >= config.consensus_parent_union_slots:
+                    break
+                kept.append(row)
+                kept_sirets.add(siret)
+                consensus_parent_kept += 1
+                if len(kept) >= config.internal_union_cap:
+                    break
+
+        if len(kept) < config.internal_union_cap:
+            for row in materialized:
+                siret = str(row["candidate_siret"])
+                if siret in kept_sirets:
+                    continue
+                kept.append(row)
+                kept_sirets.add(siret)
+                if len(kept) >= config.internal_union_cap:
+                    break
         elapsed = (time.perf_counter() - started) * 1000.0
         latencies.append(elapsed)
         for position, row in enumerate(kept, start=1):

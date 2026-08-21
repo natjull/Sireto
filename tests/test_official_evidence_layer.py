@@ -828,6 +828,69 @@ def test_direct_siret_promotes_parent_siren_and_expands_local_sites():
     assert signal.parent_identifier == "123456789"
 
 
+def test_distinct_site_consensus_expands_parent_without_parent_name_hit():
+    first = _record("12345678900011")
+    second = _record("12345678900029")
+    rescued = _record("12345678900037")
+
+    class ConsensusOnlyBackend(InMemoryBackend):
+        def search_sirens(self, _query, _limit):
+            return []
+
+        def search(self, _query, channel, _limit):
+            if channel == "name_word":
+                return [BackendHit(first, 0.9), BackendHit(second, 0.8)]
+            return []
+
+        def sites_for_siren(self, siren, _query, limit):
+            if siren == "123456789":
+                return [first, second, rescued][:limit]
+            return []
+
+    result = OfficialEvidenceRetriever(
+        ConsensusOnlyBackend([first, second, rescued]),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=20,
+            exact_limit=10,
+            word_limit=10,
+            character_limit=10,
+            historical_limit=10,
+            supporting_limit=10,
+            siren_limit=1,
+            enable_consensus_parent_expansion=True,
+            parent_siren_limit=4,
+            direct_parent_seed_limit=10,
+            consensus_parent_min_sirets=2,
+            consensus_parent_limit=2,
+            consensus_sites_per_siren=64,
+            consensus_candidate_budget=20,
+            sites_per_siren=3,
+            relation_seed_limit=10,
+            relation_limit=10,
+            search_workers=2,
+        ),
+    ).retrieve(
+        RetrievalQuery(
+            name="ENSEIGNE LOCALE",
+            address="10 RUE DES FLEURS",
+            insee="75056",
+            postcode="75001",
+        )
+    )
+
+    rescued_candidate = next(
+        candidate for candidate in result.candidates if candidate.siret == rescued.siret
+    )
+    signal = next(
+        value
+        for value in rescued_candidate.signals
+        if value.channel == "consensus_parent_expansion"
+    )
+    assert signal.parent_identifier == "123456789"
+    assert signal.parent_support_count == 2
+    assert signal.parent_rank == 1
+
+
 def test_operational_same_site_is_materialized_when_exact_is_not_retrieved():
     sibling = _record("12345678900029")
     retriever = OfficialEvidenceRetriever(

@@ -107,6 +107,33 @@ def test_union_cap_is_label_blind_and_protects_exact_and_consensus(
     assert diagnostics["positive_injection"] is False
 
 
+def test_v5_union_reserves_consensus_parent_rescues() -> None:
+    config = AdmissionConfig.load("config/retrieval_ltr_admission_official_v5.json")
+    gt = _siret(999999999, 1)
+    rows = [
+        _candidate(
+            query_id="q-consensus-parent-cap",
+            fold=0,
+            candidate_siret=_siret(100000000 + index, 1),
+            gt_siret=gt,
+            source="name_word",
+            rank=index,
+        )
+        for index in range(1, 2006)
+    ]
+    rescued = rows[-1]
+    rescued["retrieval_source"] = "consensus_parent_expansion"
+
+    union, _ = build_internal_union(
+        pd.DataFrame(rows), config, allowed_folds=[0]
+    )
+
+    assert len(union) == 2000
+    assert rescued["siret"] in set(union["candidate_siret"])
+    retained = union.loc[union["candidate_siret"].eq(rescued["siret"])].iloc[0]
+    assert retained["source_consensus_parent_expansion"] == 1
+
+
 def test_feature_contract_has_no_identifiers_and_includes_overlay(
     config: AdmissionConfig,
 ) -> None:

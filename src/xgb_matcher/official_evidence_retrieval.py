@@ -30,7 +30,7 @@ from .rne_legal_entity_roles import LegalEntityRoleTantivyBackend
 from .official_sector_evidence import OfficialSectorTantivyBackend
 
 
-OFFICIAL_EVIDENCE_UNION_SCHEMA_VERSION = "sireto-official-evidence-union-v2"
+OFFICIAL_EVIDENCE_UNION_SCHEMA_VERSION = "sireto-official-evidence-union-v3"
 
 
 class SirenRelationBackend(Protocol):
@@ -47,10 +47,15 @@ class OfficialEvidenceRetrievalConfig:
     supporting_limit: int = 250
     siren_limit: int = 10
     enable_direct_parent_expansion: bool = False
+    enable_consensus_parent_expansion: bool = False
     parent_siren_limit: int = 48
     direct_parent_limit: int = 32
     direct_parent_seed_limit: int = 2000
     sites_per_siren: int = 32
+    consensus_parent_min_sirets: int = 2
+    consensus_parent_limit: int = 20
+    consensus_sites_per_siren: int = 64
+    consensus_candidate_budget: int = 700
     relation_seed_limit: int = 500
     relation_limit: int = 500
     balanced_prefix_per_channel: int = 32
@@ -71,6 +76,21 @@ class OfficialEvidenceRetrievalConfig:
             raise ValueError("max_union_candidates must be between 1 and 2000")
         if not 1 <= self.sites_per_siren <= 32:
             raise ValueError("sites_per_siren must be between 1 and 32")
+        if not 2 <= self.consensus_parent_min_sirets <= 32:
+            raise ValueError("consensus_parent_min_sirets must be between 2 and 32")
+        if not 1 <= self.consensus_sites_per_siren <= 256:
+            raise ValueError("consensus_sites_per_siren must be between 1 and 256")
+        if not 1 <= self.consensus_candidate_budget <= 2000:
+            raise ValueError(
+                "consensus_candidate_budget must be between 1 and 2000"
+            )
+        if (
+            self.enable_consensus_parent_expansion
+            and self.consensus_candidate_budget > self.max_union_candidates
+        ):
+            raise ValueError(
+                "enabled consensus_candidate_budget must fit within max_union_candidates"
+            )
         for name in (
             "exact_limit",
             "word_limit",
@@ -81,6 +101,7 @@ class OfficialEvidenceRetrievalConfig:
             "parent_siren_limit",
             "direct_parent_limit",
             "direct_parent_seed_limit",
+            "consensus_parent_limit",
             "relation_seed_limit",
             "relation_limit",
             "balanced_prefix_per_channel",
@@ -103,12 +124,27 @@ class OfficialEvidenceRetrievalConfig:
             enable_direct_parent_expansion=bool(
                 retrieval.get("enable_direct_parent_expansion", False)
             ),
+            enable_consensus_parent_expansion=bool(
+                retrieval.get("enable_consensus_parent_expansion", False)
+            ),
             parent_siren_limit=int(retrieval.get("parent_siren_limit", 48)),
             direct_parent_limit=int(retrieval.get("direct_parent_limit", 32)),
             direct_parent_seed_limit=int(
                 retrieval.get("direct_parent_seed_limit", 2000)
             ),
             sites_per_siren=int(retrieval.get("sites_per_siren", 32)),
+            consensus_parent_min_sirets=int(
+                retrieval.get("consensus_parent_min_sirets", 2)
+            ),
+            consensus_parent_limit=int(
+                retrieval.get("consensus_parent_limit", 20)
+            ),
+            consensus_sites_per_siren=int(
+                retrieval.get("consensus_sites_per_siren", 64)
+            ),
+            consensus_candidate_budget=int(
+                retrieval.get("consensus_candidate_budget", 700)
+            ),
             relation_seed_limit=int(retrieval.get("relation_seed_limit", 500)),
             relation_limit=int(retrieval.get("relation_limit", 500)),
             balanced_prefix_per_channel=int(
@@ -144,6 +180,7 @@ class OfficialEvidenceSignal:
     score: float
     parent_identifier: str = ""
     parent_rank: int | None = None
+    parent_support_count: int | None = None
     site_rank: int | None = None
     relation_direction: str = ""
 
@@ -155,6 +192,7 @@ class OfficialEvidenceSignal:
             "score": self.score,
             "parent_identifier": self.parent_identifier,
             "parent_rank": self.parent_rank,
+            "parent_support_count": self.parent_support_count,
             "site_rank": self.site_rank,
             "relation_direction": self.relation_direction,
         }
@@ -306,6 +344,7 @@ _CHANNEL_PRIORITY: Mapping[str, int] = {
     "bodacc_address": 3,
     "hierarchical": 6,
     "direct_parent_expansion": 6,
+    "consensus_parent_expansion": 6,
     "legal_entity_role_name": 6,
     "sector_name": 2,
     "sector_address": 3,
@@ -341,6 +380,7 @@ LTR_CHANNELS: tuple[str, ...] = (
     "bodacc_address",
     "hierarchical",
     "direct_parent_expansion",
+    "consensus_parent_expansion",
     "legal_entity_role_name",
     "sector_name",
     "sector_address",
@@ -609,13 +649,54 @@ class OfficialEvidenceRetriever:
                 if direct_parent_rank >= self.config.direct_parent_limit:
                     break
 
+        # Repeated retrieval of distinct sites belonging to one parent is
+        # label-blind evidence that the parent itself is relevant.  The old
+        # round-robin effectively emitted one site per SIREN and discarded
+        # this signal.  Rank parents by support count, then by the earliest
+        # deterministic site evidence; identifiers only break exact ties.
+        consensus_parent_support: dict[str, int] = {}
+        if self.config.enable_consensus_parent_expansion:
+            parent_sites: dict[str, set[str]] = {}
+            parent_first_rank: dict[str, int] = {}
+            ranked_direct = sorted(
+                candidates.items(),
+                key=lambda item: self._direct_parent_sort_key(
+                    query, item[0], item[1]
+                ),
+            )[: self.config.direct_parent_seed_limit]
+            for direct_rank, (siret, mutable) in enumerate(ranked_direct, start=1):
+                siren = mutable.record.siren
+                if not siren:
+                    continue
+                parent_sites.setdefault(siren, set()).add(siret)
+                parent_first_rank.setdefault(siren, direct_rank)
+            eligible_parents = sorted(
+                (
+                    (siren, len(sirets), parent_first_rank[siren])
+                    for siren, sirets in parent_sites.items()
+                    if len(sirets) >= self.config.consensus_parent_min_sirets
+                ),
+                key=lambda item: (-item[1], item[2], item[0]),
+            )[: self.config.consensus_parent_limit]
+            for parent_rank, (siren, support_count, _first_rank) in enumerate(
+                eligible_parents, start=1
+            ):
+                consensus_parent_support[siren] = support_count
+                siren_hits.setdefault(siren, []).append(
+                    ("consensus_sirets", parent_rank, float(support_count))
+                )
+
         site_expansion_rank = 0
         ordered_parents = sorted(
             siren_hits,
             key=lambda value: (
                 min(
                     (
-                        0 if item[0] == "direct_siret" else 1,
+                        0
+                        if item[0] == "direct_siret"
+                        else 1
+                        if item[0] == "consensus_sirets"
+                        else 2,
                         item[1],
                     )
                     for item in siren_hits[value]
@@ -623,15 +704,30 @@ class OfficialEvidenceRetriever:
                 value,
             ),
         )[: self.config.parent_siren_limit]
+        consensus_expanded_sirets: set[str] = set()
         for siren in ordered_parents:
             for siren_backend_name, parent_rank, parent_score in sorted(
                 siren_hits[siren], key=lambda item: (item[1], item[0])
             ):
                 for site_backend_name, site_backend in self.backends:
+                    site_limit = (
+                        self.config.consensus_sites_per_siren
+                        if siren_backend_name == "consensus_sirets"
+                        else self.config.sites_per_siren
+                    )
                     sites = site_backend.sites_for_siren(
-                        siren, query, self.config.sites_per_siren
+                        siren, query, site_limit
                     )
                     for site_rank, site in enumerate(sites, start=1):
+                        if siren_backend_name == "consensus_sirets":
+                            if site.siret in consensus_expanded_sirets:
+                                continue
+                            if (
+                                len(consensus_expanded_sirets)
+                                >= self.config.consensus_candidate_budget
+                            ):
+                                break
+                            consensus_expanded_sirets.add(site.siret)
                         site_expansion_rank += 1
                         self._register(
                             candidates,
@@ -644,6 +740,8 @@ class OfficialEvidenceRetriever:
                                 channel=(
                                     "direct_parent_expansion"
                                     if siren_backend_name == "direct_siret"
+                                    else "consensus_parent_expansion"
+                                    if siren_backend_name == "consensus_sirets"
                                     else "legal_entity_role_name"
                                     if siren_backend_name == "legal_entity_roles"
                                     else "sector_parent"
@@ -654,6 +752,11 @@ class OfficialEvidenceRetriever:
                                 score=parent_score,
                                 parent_identifier=siren,
                                 parent_rank=parent_rank,
+                                parent_support_count=(
+                                    consensus_parent_support.get(siren)
+                                    if siren_backend_name == "consensus_sirets"
+                                    else None
+                                ),
                                 site_rank=site_rank,
                             ),
                         )
@@ -962,6 +1065,8 @@ class OfficialEvidenceRetriever:
                 1,
                 self.config.parent_siren_limit * self.config.sites_per_siren,
             )
+        if channel == "consensus_parent_expansion":
+            return self.config.consensus_candidate_budget
         if channel in {"official_successor", "bodacc_relation"}:
             return self.config.relation_limit
         return self.config.max_union_candidates
