@@ -1109,12 +1109,14 @@ def test_builder_overlay_union_parquet_is_ltr_consumable(tmp_path: Path):
         ],
         tmp_path / "union.parquet",
         batch_size=2,
+        query_workers=2,
     )
     table = pq.read_table(output)
     manifest = json.loads(
         output.with_suffix(output.suffix + ".manifest.json").read_text()
     )
     assert manifest["maximum_union_candidates"] == 20
+    assert manifest["query_workers"] == 2
     assert manifest["positive_injection"] is False
     columns = set(table.column_names)
     required = {

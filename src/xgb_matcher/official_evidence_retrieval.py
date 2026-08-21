@@ -1477,8 +1477,11 @@ def retrieve_official_evidence_union_to_parquet(
     *,
     query_id_field: str = "query_id",
     batch_size: int = 4096,
+    query_workers: int = 1,
 ) -> Path:
     """Stream one candidate row per query/SIRET for the admission stage."""
+    if query_workers < 1:
+        raise ValueError("query_workers must be >= 1")
     output_path = Path(output_path)
     manifest_path = output_path.with_suffix(output_path.suffix + ".manifest.json")
     if output_path.exists():
@@ -1492,20 +1495,55 @@ def retrieve_official_evidence_union_to_parquet(
     query_count = 0
     candidate_count = 0
     empty_query_count = 0
+
+    def retrieve_one(
+        item: tuple[int, Mapping[str, Any]],
+    ) -> tuple[list[Mapping[str, Any]], int]:
+        ordinal, row = item
+        query_id = str(row.get(query_id_field) or ordinal)
+        result = retriever.retrieve(row)
+        operational = retriever.operational_sirets(row)
+        return (
+            result.candidate_rows(
+                query_id,
+                _query_metadata(row, operational),
+            ),
+            len(result.candidates),
+        )
+
+    def ordered_results() -> Iterable[tuple[list[Mapping[str, Any]], int]]:
+        indexed_rows = enumerate(rows)
+        if query_workers == 1:
+            for item in indexed_rows:
+                yield retrieve_one(item)
+            return
+        # Keep only a tiny, bounded number of complete candidate lists in
+        # memory.  Futures are consumed in submission order, so the Parquet
+        # output stays deterministic even though Tantivy queries overlap.
+        with ThreadPoolExecutor(
+            max_workers=query_workers,
+            thread_name_prefix="official-query",
+        ) as query_pool:
+            pending = []
+            for _ in range(query_workers * 2):
+                try:
+                    pending.append(query_pool.submit(retrieve_one, next(indexed_rows)))
+                except StopIteration:
+                    break
+            while pending:
+                future = pending.pop(0)
+                yield future.result()
+                try:
+                    pending.append(query_pool.submit(retrieve_one, next(indexed_rows)))
+                except StopIteration:
+                    pass
+
     try:
-        for ordinal, row in enumerate(rows):
+        for candidate_rows, result_count in ordered_results():
             query_count += 1
-            query_id = str(row.get(query_id_field) or ordinal)
-            result = retriever.retrieve(row)
-            operational = retriever.operational_sirets(row)
-            buffered.extend(
-                result.candidate_rows(
-                    query_id,
-                    _query_metadata(row, operational),
-                )
-            )
-            candidate_count += len(result.candidates)
-            empty_query_count += int(not result.candidates)
+            buffered.extend(candidate_rows)
+            candidate_count += result_count
+            empty_query_count += int(result_count == 0)
             if len(buffered) >= batch_size:
                 writer.write_table(pa.Table.from_pylist(buffered, schema=schema))
                 buffered.clear()
@@ -1539,6 +1577,7 @@ def retrieve_official_evidence_union_to_parquet(
                     "candidate_count": candidate_count,
                     "empty_query_count": empty_query_count,
                     "maximum_union_candidates": retriever.config.max_union_candidates,
+                    "query_workers": query_workers,
                     "positive_injection": False,
                     "synthetic_rows": 0,
                     "retrieval_config": asdict(retriever.config),

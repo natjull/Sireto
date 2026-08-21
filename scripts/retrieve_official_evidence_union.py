@@ -60,6 +60,12 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--query-id-field", default="query_id")
     parser.add_argument("--batch-size", type=int, default=4096)
+    parser.add_argument(
+        "--query-workers",
+        type=int,
+        default=1,
+        help="Bounded query-level concurrency; output order remains deterministic.",
+    )
     return parser.parse_args()
 
 
@@ -94,6 +100,7 @@ def main() -> None:
         args.output,
         query_id_field=args.query_id_field,
         batch_size=args.batch_size,
+        query_workers=args.query_workers,
     )
     print(output)
 
