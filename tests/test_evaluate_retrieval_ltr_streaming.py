@@ -9,6 +9,7 @@ from scripts.evaluate_retrieval_ltr_streaming import iter_complete_query_frames
 from scripts.train_retrieval_ltr_streaming import (
     _contiguous_qid,
     presample_hard_candidates,
+    restore_source_union_rank,
 )
 from src.xgb_matcher.retrieval_ltr_admission import AdmissionConfig
 
@@ -79,3 +80,62 @@ def test_hard_negative_presample_spans_channels_and_keeps_natural_truth() -> Non
         f"{11:014d}",
         f"{19:014d}",
     }
+
+
+def test_hard_negative_presample_preserves_full_union_rank() -> None:
+    config = AdmissionConfig.load("config/retrieval_ltr_admission_official_v6.json")
+    frame = pd.DataFrame(
+        {
+            "query_id": ["q"] * 6,
+            "siret": [f"{index:014d}" for index in range(5)]
+            + ["99999999900001"],
+            "gt_siret": ["99999999900001"] * 6,
+            "union_rank": [1, 2, 3, 4, 5, 1500],
+            "name_word_rank": [1, 2, 3, 4, 5, 1500],
+        }
+    )
+
+    sampled = presample_hard_candidates(
+        frame, config, cap=4, union_head=2, channel_head=2
+    )
+
+    truth = sampled.loc[sampled["siret"].eq("99999999900001")].iloc[0]
+    assert int(truth["union_rank"]) == 1500
+
+
+def test_hard_negative_presample_accepts_built_union_candidate_column() -> None:
+    config = AdmissionConfig.load("config/retrieval_ltr_admission_official_v6.json")
+    frame = pd.DataFrame(
+        {
+            "query_id": ["q"] * 4,
+            "candidate_siret": ["1", "2", "3", "truth"],
+            "gt_siret": ["truth"] * 4,
+            "union_rank": [1, 2, 3, 1400],
+            "name_word_rank": [1, 2, 3, 1400],
+        }
+    )
+
+    sampled = presample_hard_candidates(
+        frame, config, cap=3, union_head=1, channel_head=1
+    )
+
+    assert "truth" in set(sampled["candidate_siret"])
+    assert int(sampled.loc[sampled["candidate_siret"].eq("truth"), "union_rank"].iloc[0]) == 1400
+
+
+def test_restore_source_union_rank_reverses_sample_compression() -> None:
+    built = pd.DataFrame(
+        {
+            "upstream_union_rank": [1, 400, 1500],
+            "union_rank": [1, 2, 3],
+            "union_rank_reciprocal": [1.0, 0.5, 1.0 / 3.0],
+            "union_rank_log_inverse": [1.0, 1.0, 0.5],
+        }
+    )
+
+    restored = restore_source_union_rank(built)
+
+    assert restored["union_rank"].tolist() == [1, 400, 1500]
+    assert restored["union_rank_reciprocal"].tolist() == pytest.approx(
+        [1.0, 1.0 / 400.0, 1.0 / 1500.0]
+    )

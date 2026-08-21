@@ -7,6 +7,7 @@ import argparse
 from datetime import datetime, timezone
 import hashlib
 import json
+import math
 from pathlib import Path
 import sys
 
@@ -43,16 +44,23 @@ def presample_hard_candidates(
     union_head: int,
     channel_head: int,
 ) -> pd.DataFrame:
-    """Keep a label-blind cross-channel hard-negative pool plus the natural truth.
+    """Keep cross-channel hard negatives plus the natural truth from a source union.
 
     The positive is never injected: it is retained only when it already exists
     in the source union.  Every negative is selected without consulting labels.
+    The original rank is later restored from ``upstream_union_rank`` after the
+    sampled candidates are materialized.
     """
     if cap <= 0 or len(group) <= cap:
         return group.reset_index(drop=True)
     if union_head < 1 or channel_head < 1 or cap < union_head:
         raise ValueError("Invalid hard-negative presample limits")
     working = group.reset_index(drop=True).copy()
+    candidate_column = (
+        "candidate_siret" if "candidate_siret" in working.columns else "siret"
+    )
+    if candidate_column not in working.columns:
+        raise ValueError("Hard-negative presample has no candidate SIRET column")
     selected: set[int] = set()
     union_rank = pd.to_numeric(working.get("union_rank"), errors="coerce")
     selected.update(union_rank.nsmallest(union_head).index.tolist())
@@ -73,14 +81,18 @@ def presample_hard_candidates(
         if channel in config.exact_channels:
             exact_count = exact_count.add(present.astype(np.int16), fill_value=0)
     gt_siret = str(working.iloc[0].get("gt_siret") or "")
-    natural_positive = working.index[working["siret"].astype(str).eq(gt_siret)]
+    natural_positive = working.index[
+        working[candidate_column].astype(str).eq(gt_siret)
+    ]
     selected.update(natural_positive.tolist())
     candidates = working.loc[sorted(selected)].copy()
     candidates["__exact_count"] = exact_count.loc[candidates.index]
     candidates["__channel_count"] = channel_count.loc[candidates.index]
     candidates["__best_channel_rank"] = channel_best.loc[candidates.index]
     candidates["__union_rank"] = union_rank.loc[candidates.index]
-    candidates["__natural_positive"] = candidates["siret"].astype(str).eq(gt_siret)
+    candidates["__natural_positive"] = candidates[candidate_column].astype(str).eq(
+        gt_siret
+    )
     candidates = candidates.sort_values(
         [
             "__natural_positive",
@@ -88,7 +100,7 @@ def presample_hard_candidates(
             "__channel_count",
             "__best_channel_rank",
             "__union_rank",
-            "siret",
+            candidate_column,
         ],
         ascending=[False, False, False, True, True, True],
         kind="stable",
@@ -102,6 +114,22 @@ def presample_hard_candidates(
             "__natural_positive",
         ]
     ).sort_index().reset_index(drop=True)
+
+
+def restore_source_union_rank(union: pd.DataFrame) -> pd.DataFrame:
+    """Restore full-union rank features after label-aware row subsampling."""
+    if "upstream_union_rank" not in union.columns:
+        raise ValueError("Built training union lost upstream_union_rank")
+    ranks = pd.to_numeric(union["upstream_union_rank"], errors="coerce")
+    if ranks.isna().any() or ranks.lt(1).any():
+        raise ValueError("Built training union has invalid upstream ranks")
+    restored = union.copy()
+    restored["union_rank"] = ranks.astype(np.int32)
+    restored["union_rank_reciprocal"] = 1.0 / ranks
+    restored["union_rank_log_inverse"] = ranks.map(
+        lambda rank: 1.0 / math.log2(max(2.0, float(rank) + 1.0))
+    )
+    return restored
 
 
 def sha256_file(path: Path) -> str:
@@ -166,6 +194,7 @@ def prepare(args: argparse.Namespace) -> Path:
         union, _union_diagnostics = build_internal_union(
             raw_batch, config, allowed_folds=config.train_folds
         )
+        union = restore_source_union_rank(union)
         training, diagnostics = prepare_training_rows(
             union, config, allowed_folds=config.train_folds
         )
@@ -226,6 +255,7 @@ def prepare(args: argparse.Namespace) -> Path:
             "channel_head": args.hard_negative_channel_head,
             "rows_before": presample_rows_before,
             "rows_after": presample_rows_after,
+            "source_union_rank_restored_after_presample": True,
             "label_blind_negatives": True,
             "natural_positive_only_if_present": True,
         },
