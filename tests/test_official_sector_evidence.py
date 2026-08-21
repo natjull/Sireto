@@ -18,7 +18,7 @@ def test_sector_extractors_require_structured_identifiers(tmp_path:Path)->None:
 def test_data_es_and_association_require_structured_business_ids(tmp_path:Path)->None:
     sports=tmp_path/"data-es.csv"
     sports.write_text(
-        "equip_numero;equip_nom;inst_nom;inst_siret;inst_adresse;inst_com_insee;inst_cp\n"
+        "Numéro de l'équipement sportif;Nom de l'équipement sportif;Nom de l'installation sportive;SIRET Installation;Adresse;Commune INSEE;Code Postal\n"
         "E1;GYMNASE ANNEXE;COMPLEXE SPORTIF;12345678900011;10 RUE DES SPORTS;75056;75001\n"
         "E2;TERRAIN SANS ID;STADE;;20 RUE TEST;75056;75002\n",
         encoding="utf-8",

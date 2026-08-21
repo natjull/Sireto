@@ -213,11 +213,13 @@ def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
         installation_name = _first(
             row,
             "nom_installation", "installation_nom", "inst_nom", "nom_du_lieu",
-            "nom_installation_sportive", "libelle_installation",
+            "nom_installation_sportive", "nom_de_l_installation_sportive",
+            "libelle_installation",
         )
         equipment_name = _first(
             row,
             "nom_equipement", "equipement_nom", "equip_nom", "libelle_equipement",
+            "nom_de_l_equipement_sportif",
         )
         name = equipment_name or installation_name
         address = _first(
@@ -229,18 +231,19 @@ def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
             source="DATA_ES",
             source_record_id=_first(
                 row, "numero_equipement", "equip_numero", "numero_installation",
+                "numero_de_l_equipement_sportif", "numero_de_l_installation_sportive",
                 "inst_numero", "id_equipement", "id_installation",
             ),
             siret=identifier,
             siren=parent,
             name=name,
             address=address,
-            insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune"),
+            insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune", "commune_insee"),
             postcode=_first(row, "code_postal", "postcode", "inst_cp", "installation_cp"),
             number=_first(row, "numero_voie", "adresse_numero", "inst_num_voie"),
-            active=str(_first(row, "etat", "statut", "etat_installation") or "A").upper()
-            not in {"F", "I", "FERME", "FERMEE", "INACTIF", "INACTIVE"},
-            observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation"))[:10],
+            active=str(_first(row, "etat", "statut", "etat_installation", "installation_hors_service") or "A").upper()
+            not in {"F", "I", "OUI", "TRUE", "1", "FERME", "FERMEE", "INACTIF", "INACTIVE"},
+            observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation", "mise_a_jour_de_la_fiche_equipement"))[:10],
         )
         if value:
             yield value
@@ -249,16 +252,16 @@ def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
         if installation_name and normalize_text(installation_name) != normalize_text(name):
             parent_value = _evidence(
                 source="DATA_ES",
-                source_record_id=str(_first(row, "numero_installation", "inst_numero")) + "|INSTALLATION",
+                source_record_id=str(_first(row, "numero_installation", "numero_de_l_installation_sportive", "inst_numero")) + "|INSTALLATION",
                 siret=identifier,
                 siren=parent,
                 name=installation_name,
                 address=address,
-                insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune"),
+                insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune", "commune_insee"),
                 postcode=_first(row, "code_postal", "postcode", "inst_cp", "installation_cp"),
                 number=_first(row, "numero_voie", "adresse_numero", "inst_num_voie"),
                 active=True,
-                observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation"))[:10],
+                observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation", "mise_a_jour_de_la_fiche_equipement"))[:10],
             )
             if parent_value:
                 yield parent_value
