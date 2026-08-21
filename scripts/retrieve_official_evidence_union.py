@@ -33,6 +33,11 @@ def parse_args() -> argparse.Namespace:
         type=Path,
         help="Separate SIRENE history/succession rescue overlay.",
     )
+    parser.add_argument(
+        "--legal-entity-role-index",
+        type=Path,
+        help="Separate RNE person-morale role SIREN overlay.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument(
         "--config",
@@ -67,6 +72,7 @@ def main() -> None:
         args.overlay_index,
         config,
         temporal_overlay_index_path=args.temporal_overlay_index,
+        legal_entity_role_index_path=args.legal_entity_role_index,
     )
     output = retrieve_official_evidence_union_to_parquet(
         retriever,

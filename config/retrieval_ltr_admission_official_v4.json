@@ -13,7 +13,7 @@
     "legal_name_exact", "trade_name_exact", "site_name_exact", "name_exact", "address_exact", "number_exact",
     "fielded_name_bm25", "legal_name_word", "trade_name_word", "site_name_word", "address_word",
     "current_name_char", "address_char", "historical_name_word", "historical_address_word",
-    "supporting_name_word", "supporting_address_word", "hierarchical", "direct_parent_expansion", "official_successor",
+    "supporting_name_word", "supporting_address_word", "hierarchical", "direct_parent_expansion", "legal_entity_role_name", "official_successor",
     "rne_name", "rne_address", "bodacc_name", "bodacc_address", "bodacc_relation"
   ],
   "exact_channels": ["legal_name_exact", "trade_name_exact", "site_name_exact", "name_exact", "address_exact"],

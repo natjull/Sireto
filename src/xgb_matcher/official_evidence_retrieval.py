@@ -26,6 +26,7 @@ from .hierarchical_retrieval import (
     TantivyBackend,
 )
 from .official_evidence_tantivy import OfficialEvidenceTantivyBackend
+from .rne_legal_entity_roles import LegalEntityRoleTantivyBackend
 
 
 OFFICIAL_EVIDENCE_UNION_SCHEMA_VERSION = "sireto-official-evidence-union-v2"
@@ -304,6 +305,7 @@ _CHANNEL_PRIORITY: Mapping[str, int] = {
     "bodacc_address": 3,
     "hierarchical": 6,
     "direct_parent_expansion": 6,
+    "legal_entity_role_name": 6,
     "official_successor": 7,
     "bodacc_relation": 8,
 }
@@ -334,6 +336,7 @@ LTR_CHANNELS: tuple[str, ...] = (
     "bodacc_address",
     "hierarchical",
     "direct_parent_expansion",
+    "legal_entity_role_name",
     "official_successor",
     "bodacc_relation",
 )
@@ -387,12 +390,14 @@ class OfficialEvidenceRetriever:
         overlay_backend: RetrievalBackend | None = None,
         config: OfficialEvidenceRetrievalConfig | None = None,
         temporal_overlay_backend: RetrievalBackend | None = None,
+        legal_entity_role_backend: RetrievalBackend | None = None,
     ) -> None:
         self.config = config or OfficialEvidenceRetrievalConfig()
         self.backends: tuple[tuple[str, RetrievalBackend], ...] = tuple(
             [("base", base_backend)]
             + ([ ("official_overlay", overlay_backend) ] if overlay_backend else [])
             + ([ ("sirene_temporal", temporal_overlay_backend) ] if temporal_overlay_backend else [])
+            + ([ ("legal_entity_roles", legal_entity_role_backend) ] if legal_entity_role_backend else [])
         )
         base_manifest = getattr(base_backend, "manifest", {}) or {}
         self.typed_portfolio = (
@@ -408,6 +413,7 @@ class OfficialEvidenceRetriever:
         overlay_index_path: Path | str | None = None,
         config: OfficialEvidenceRetrievalConfig | None = None,
         temporal_overlay_index_path: Path | str | None = None,
+        legal_entity_role_index_path: Path | str | None = None,
     ) -> "OfficialEvidenceRetriever":
         resolved_config = config or OfficialEvidenceRetrievalConfig()
         base_backend = TantivyBackend(
@@ -421,6 +427,10 @@ class OfficialEvidenceRetriever:
         temporal_backend = (
             OfficialEvidenceTantivyBackend(temporal_overlay_index_path)
             if temporal_overlay_index_path else None
+        )
+        role_backend = (
+            LegalEntityRoleTantivyBackend(legal_entity_role_index_path)
+            if legal_entity_role_index_path else None
         )
         if resolved_config.require_temporal_overlay and temporal_backend is None:
             raise RuntimeError("Official retrieval requires the SIRENE temporal rescue overlay")
@@ -442,6 +452,7 @@ class OfficialEvidenceRetriever:
             overlay_backend,
             resolved_config,
             temporal_backend,
+            role_backend,
         )
 
     def retrieve(
@@ -487,6 +498,8 @@ class OfficialEvidenceRetriever:
             ("name_char", self.config.historical_limit),
         )
         for backend_name, backend in self.backends:
+            if backend_name == "legal_entity_roles":
+                continue
             backend_typed = backend_name == "base" and self.typed_portfolio
             backend_channels = (
                 typed_channels if backend_typed else
@@ -511,6 +524,8 @@ class OfficialEvidenceRetriever:
 
         # Registration order is fixed even though searches completed in parallel.
         for backend_name, _backend in self.backends:
+            if backend_name == "legal_entity_roles":
+                continue
             backend_typed = backend_name == "base" and self.typed_portfolio
             backend_channels = (
                 typed_channels if backend_typed else
@@ -604,6 +619,8 @@ class OfficialEvidenceRetriever:
                                 channel=(
                                     "direct_parent_expansion"
                                     if siren_backend_name == "direct_siret"
+                                    else "legal_entity_role_name"
+                                    if siren_backend_name == "legal_entity_roles"
                                     else "hierarchical"
                                 ),
                                 rank=site_expansion_rank,
@@ -905,7 +922,11 @@ class OfficialEvidenceRetriever:
             return self.config.historical_limit
         if channel in {"supporting_name_word", "supporting_address_word"}:
             return self.config.supporting_limit
-        if channel in {"hierarchical", "direct_parent_expansion"}:
+        if channel in {
+            "hierarchical",
+            "direct_parent_expansion",
+            "legal_entity_role_name",
+        }:
             return max(
                 1,
                 self.config.parent_siren_limit * self.config.sites_per_siren,
