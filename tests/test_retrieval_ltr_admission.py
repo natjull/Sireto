@@ -107,6 +107,39 @@ def test_union_cap_is_label_blind_and_protects_exact_and_consensus(
     assert diagnostics["positive_injection"] is False
 
 
+def test_internal_union_preserves_upstream_label_blind_order(
+    config: AdmissionConfig,
+) -> None:
+    truth = _siret(999999998, 1)
+    first = _candidate(
+        query_id="q-upstream",
+        fold=0,
+        candidate_siret=_siret(123000001, 1),
+        gt_siret=truth,
+        source="direct_parent_expansion",
+        rank=500,
+    )
+    second = _candidate(
+        query_id="q-upstream",
+        fold=0,
+        candidate_siret=_siret(123000002, 1),
+        gt_siret=truth,
+        source="name_exact",
+        rank=1,
+    )
+    first["union_rank"] = 1
+    second["union_rank"] = 2
+
+    union, _ = build_internal_union(
+        pd.DataFrame([second, first]), config, allowed_folds=[0]
+    )
+
+    assert union.sort_values("union_rank")["candidate_siret"].tolist() == [
+        first["siret"],
+        second["siret"],
+    ]
+
+
 def test_v5_union_reserves_consensus_parent_rescues() -> None:
     config = AdmissionConfig.load("config/retrieval_ltr_admission_official_v5.json")
     gt = _siret(999999999, 1)

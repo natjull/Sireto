@@ -100,7 +100,10 @@ class AdmissionConfig:
             raise ValueError("The absolute output ceiling must be 100")
         if self.xgb_params.get("objective") != "rank:ndcg":
             raise ValueError("Only LambdaMART rank:ndcg is allowed")
-        if self.exact_slots + self.consensus_slots > self.max_candidates:
+        if (
+            self.union_prefix_slots + self.exact_slots + self.consensus_slots
+            > self.max_candidates
+        ):
             raise ValueError("Protection slots exceed the output ceiling")
         if not 0 <= self.consensus_parent_union_slots <= self.internal_union_cap:
             raise ValueError("Consensus-parent union slots exceed the internal cap")
@@ -139,6 +142,10 @@ class AdmissionConfig:
     @property
     def exact_slots(self) -> int:
         return int(self.raw["limits"]["exact_protection_slots"])
+
+    @property
+    def union_prefix_slots(self) -> int:
+        return int(self.raw["limits"].get("union_prefix_protection_slots", 0))
 
     @property
     def consensus_slots(self) -> int:
@@ -539,6 +546,7 @@ def _base_candidate(
         "siret": siret,
         "siren": siren,
         "sources": set(),
+        "upstream_union_rank": 2_147_483_647,
         "retrieval_rank": 2_147_483_647,
         "retrieval_score": -math.inf,
         "channel_ranks": {},
@@ -565,6 +573,11 @@ def _merge_candidate_hit(
 ) -> None:
     sources = _channel_sources(row, config)
     candidate["sources"].update(sources)
+    upstream_union_rank = _positive_rank(row.get("union_rank"))
+    if upstream_union_rank is not None:
+        candidate["upstream_union_rank"] = min(
+            candidate["upstream_union_rank"], upstream_union_rank
+        )
     rank = _positive_rank(row.get("retrieval_rank"))
     if rank is not None:
         candidate["retrieval_rank"] = min(candidate["retrieval_rank"], rank)
@@ -740,6 +753,7 @@ def _materialize_candidate(
         "candidate_siret": candidate["siret"],
         "candidate_siren": candidate["siren"],
         "retrieval_source": "+".join(sorted(sources)),
+        "upstream_union_rank": int(candidate["upstream_union_rank"]),
         "retrieval_rank": rank,
         "retrieval_score": score,
         "retrieval_channel_count": len(sources),
@@ -822,8 +836,9 @@ def _materialize_candidate(
 
 
 def _union_sort_key(row: Mapping[str, Any]) -> tuple[Any, ...]:
-    """A label-blind cap: exact and multi-channel evidence survive first."""
+    """Preserve an upstream label-blind union before using local fallbacks."""
     return (
+        int(row.get("upstream_union_rank", 2_147_483_647)),
         -int(row["is_exact_protected"]),
         -int(row["exact_signal_count"]),
         -int(row["is_consensus_protected"]),
@@ -866,12 +881,23 @@ def build_internal_union(
         kept: list[dict[str, Any]] = []
         kept_sirets: set[str] = set()
 
+        has_upstream_union = all(
+            int(row["upstream_union_rank"]) < 2_147_483_647
+            for row in materialized
+        )
+        if has_upstream_union:
+            # The official retriever already emitted one deduplicated,
+            # label-blind, capped row per SIRET.  A second protection pass
+            # here used to scramble that order and erase hierarchy rescues.
+            kept = materialized[: config.internal_union_cap]
+            kept_sirets = {str(row["candidate_siret"]) for row in kept}
+
         # Preserve hard lexical/consensus evidence first.  Then reserve a
         # bounded part of the 2,000-candidate union for the label-blind
         # SIREN-consensus expansion.  This prevents large-commune lexical
         # tails from erasing the very rescue candidates the new hierarchy
         # generated, without protecting them in the final top 100.
-        for row in materialized:
+        for row in materialized if not has_upstream_union else ():
             if not (
                 int(row["is_exact_protected"])
                 or int(row["is_consensus_protected"])
@@ -1087,21 +1113,34 @@ def train_ranker(
 
 
 def protected_top100(group: pd.DataFrame, config: AdmissionConfig) -> pd.DataFrame:
-    """Reserve exact/consensus evidence, then fill by LambdaMART score."""
+    """Preserve the deterministic recall core, then fill by LambdaMART."""
     if group["candidate_siret"].duplicated().any():
         raise ValueError("Duplicate candidates reached final admission")
     score_order = ["ltr_score", "retrieval_channel_count", "union_rank", "candidate_siret"]
     score_ascending = [False, False, True, True]
-    exact = group[group["is_exact_protected"].eq(1)].sort_values(
+    prefix = group.sort_values(
+        ["union_rank", "candidate_siret"], ascending=[True, True], kind="stable"
+    ).head(config.union_prefix_slots)
+    selected_indices: list[int] = list(prefix.index)
+    selected_set = set(selected_indices)
+    exact = group[
+        group["is_exact_protected"].eq(1) & ~group.index.isin(selected_set)
+    ].sort_values(
         ["exact_signal_count", *score_order],
         ascending=[False, *score_ascending],
         kind="stable",
     )
-    selected_indices: list[int] = list(exact.head(config.exact_slots).index)
-    selected_set = set(selected_indices)
+    exact_indices = list(exact.head(config.exact_slots).index)
+    selected_indices.extend(exact_indices)
+    selected_set.update(exact_indices)
     consensus = group[
         group["is_consensus_protected"].eq(1) & ~group.index.isin(selected_set)
-    ].sort_values(score_order, ascending=score_ascending, kind="stable")
+    ]
+    consensus = consensus.sort_values(
+        ["union_rank", *score_order],
+        ascending=[True, *score_ascending],
+        kind="stable",
+    )
     consensus_indices = list(consensus.head(config.consensus_slots).index)
     selected_indices.extend(consensus_indices)
     selected_set.update(consensus_indices)
