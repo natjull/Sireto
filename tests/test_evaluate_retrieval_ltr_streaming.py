@@ -3,8 +3,10 @@ from __future__ import annotations
 from pathlib import Path
 
 import pandas as pd
+import pytest
 
 from scripts.evaluate_retrieval_ltr_streaming import iter_complete_query_frames
+from scripts.train_retrieval_ltr_streaming import _contiguous_qid
 
 
 def test_query_iterator_preserves_groups_across_arrow_batches(tmp_path: Path) -> None:
@@ -34,3 +36,15 @@ def test_query_iterator_rejects_non_contiguous_queries(tmp_path: Path) -> None:
         assert "Non-contiguous" in str(error)
     else:  # pragma: no cover
         raise AssertionError("non-contiguous queries must fail closed")
+
+
+def test_contiguous_qid_is_stable_and_rejects_reappearing_groups() -> None:
+    assert _contiguous_qid(pd.Series(["a", "a", "b", "c", "c"])).tolist() == [
+        0,
+        0,
+        1,
+        2,
+        2,
+    ]
+    with pytest.raises(ValueError, match="not contiguous"):
+        _contiguous_qid(pd.Series(["a", "b", "a"]))
