@@ -310,6 +310,7 @@ _CHANNEL_PRIORITY: Mapping[str, int] = {
     "sector_name": 2,
     "sector_address": 3,
     "sector_parent": 6,
+    "contrastive_siren_rescue": 6,
     "official_successor": 7,
     "bodacc_relation": 8,
 }
@@ -344,6 +345,7 @@ LTR_CHANNELS: tuple[str, ...] = (
     "sector_name",
     "sector_address",
     "sector_parent",
+    "contrastive_siren_rescue",
     "official_successor",
     "bodacc_relation",
 )
@@ -954,6 +956,7 @@ class OfficialEvidenceRetriever:
             "direct_parent_expansion",
             "legal_entity_role_name",
             "sector_parent",
+            "contrastive_siren_rescue",
         }:
             return max(
                 1,
