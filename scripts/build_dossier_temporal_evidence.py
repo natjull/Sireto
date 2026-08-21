@@ -24,6 +24,7 @@ def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dossier", type=Path, required=True)
     parser.add_argument("--layer-output-root", type=Path, required=True)
+    parser.add_argument("--name-portfolio", type=Path)
     parser.add_argument("--index-output-root", type=Path)
     parser.add_argument("--max-names", type=int, default=16)
     parser.add_argument("--max-addresses", type=int, default=16)
@@ -42,6 +43,7 @@ def main() -> None:
     layers = materialize_dossier_temporal_layers(
         args.dossier,
         args.layer_output_root,
+        name_portfolio_path=args.name_portfolio,
         max_names=args.max_names,
         max_addresses=args.max_addresses,
         duckdb_temp_directory=args.duckdb_temp_directory,

@@ -63,39 +63,60 @@ def _projection_sql(
     *,
     name_path: Path,
     address_path: Path,
+    portfolio_path: Path | None,
     source: str,
     max_names: int,
     max_addresses: int,
 ) -> str:
     names = _sql_path(name_path)
     addresses = _sql_path(address_path)
+    indexed_names_sql = (
+        f"""SELECT subject_kind, siren, siret, normalized_value
+            FROM read_parquet('{_sql_path(portfolio_path)}')
+            WHERE (subject_kind = 'SIRET' AND selected_for_subject)
+               OR (subject_kind = 'SIREN' AND selected_for_siren)"""
+        if portfolio_path is not None
+        else f"""SELECT DISTINCT subject_kind, siren, siret, normalized_value
+                 FROM read_parquet('{names}')
+                 WHERE source = 'SIRENE_CURRENT' AND normalized_value <> ''"""
+    )
     empty_names = "[]::STRUCT(raw_value VARCHAR, normalized_value VARCHAR, kind VARCHAR)[]"
     return f"""
-        WITH current_names AS (
-            SELECT DISTINCT subject_kind, siren, siret, normalized_value
-            FROM read_parquet('{names}')
-            WHERE source = 'SIRENE_CURRENT' AND normalized_value <> ''
+        WITH indexed_names AS (
+            {indexed_names_sql}
         ),
         alternate_name_subjects AS (
             SELECT DISTINCT candidate.subject_kind, candidate.siren, candidate.siret
             FROM read_parquet('{names}') candidate
-            ANTI JOIN current_names current
+            ANTI JOIN indexed_names current
               USING (subject_kind, siren, siret, normalized_value)
             WHERE candidate.source = '{source}'
               AND candidate.normalized_value <> ''
         ),
-        current_addresses AS (
-            SELECT DISTINCT subject_kind, siren, siret, normalized_value
+        source_address_variants AS (
+            SELECT subject_kind, siren, siret, normalized_value,
+                   bool_or(coalesce(is_current, false)) AS is_current,
+                   max(observed_at) AS observed_at,
+                   max(valid_from) AS valid_from,
+                   max(source_priority) AS source_priority
             FROM read_parquet('{addresses}')
-            WHERE source = 'SIRENE_CURRENT' AND normalized_value <> ''
+            WHERE source = '{source}' AND normalized_value <> ''
+            GROUP BY subject_kind, siren, siret, normalized_value
+        ),
+        source_address_ranked AS (
+            SELECT *, row_number() OVER (
+                PARTITION BY subject_kind,
+                             CASE WHEN subject_kind = 'SIRET' THEN siret ELSE siren END
+                ORDER BY is_current DESC, observed_at DESC NULLS LAST,
+                         valid_from DESC NULLS LAST, source_priority DESC,
+                         normalized_value
+            ) AS source_rank
+            FROM source_address_variants
         ),
         alternate_address_subjects AS (
-            SELECT DISTINCT candidate.subject_kind, candidate.siren, candidate.siret
-            FROM read_parquet('{addresses}') candidate
-            ANTI JOIN current_addresses current
-              USING (subject_kind, siren, siret, normalized_value)
-            WHERE candidate.source = '{source}'
-              AND candidate.normalized_value <> ''
+            SELECT DISTINCT subject_kind, siren, siret
+            FROM source_address_ranked
+            WHERE source_rank > 8 AND source_rank <= 24
         ),
         affected_direct AS (
             SELECT * FROM alternate_name_subjects
@@ -115,9 +136,12 @@ def _projection_sql(
                    min(valid_from) AS valid_from,
                    max(valid_to) AS valid_to,
                    max(observed_at) AS observed_at,
-                   max(source_priority) AS source_priority
+                   max(source_priority) AS source_priority,
+                   bool_or(indexed.normalized_value IS NOT NULL) AS is_indexed
             FROM read_parquet('{names}') candidate
             SEMI JOIN affected USING (subject_kind, siren, siret)
+            LEFT JOIN indexed_names indexed
+              USING (subject_kind, siren, siret, normalized_value)
             WHERE candidate.source = '{source}'
               AND normalized_value <> ''
               AND length(siren) = 9
@@ -129,7 +153,7 @@ def _projection_sql(
             SELECT *, row_number() OVER (
                 PARTITION BY subject_kind,
                              CASE WHEN subject_kind = 'SIRET' THEN siret ELSE siren END
-                ORDER BY is_current DESC, observed_at DESC NULLS LAST,
+                ORDER BY is_indexed ASC, is_current DESC, observed_at DESC NULLS LAST,
                          valid_from DESC NULLS LAST, source_priority DESC,
                          normalized_value
             ) AS evidence_rank
@@ -253,6 +277,7 @@ def materialize_dossier_temporal_layers(
     dossier_path: Path | str,
     output_root: Path | str,
     *,
+    name_portfolio_path: Path | str | None = None,
     max_names: int = 16,
     max_addresses: int = 16,
     duckdb_temp_directory: Path | str | None = None,
@@ -270,13 +295,19 @@ def materialize_dossier_temporal_layers(
     address_path = dossier_path / "address_evidence.parquet"
     relation_path = dossier_path / "relations.parquet"
     manifest_path = dossier_path / "manifest.json"
+    portfolio_path = Path(name_portfolio_path) if name_portfolio_path else None
     for path in (name_path, address_path, relation_path, manifest_path):
         if not path.is_file():
             raise FileNotFoundError(path)
+    if portfolio_path is not None and not portfolio_path.is_file():
+        raise FileNotFoundError(portfolio_path)
     identity: dict[str, Any] = {
         "schema_version": DOSSIER_TEMPORAL_LAYER_SCHEMA_VERSION,
         "builder_sha256": _sha256_file(Path(__file__).resolve()),
         "dossier_manifest_sha256": _sha256_file(manifest_path),
+        "name_portfolio_sha256": (
+            _sha256_file(portfolio_path) if portfolio_path is not None else None
+        ),
         "sources": list(_SOURCES),
         "max_names": max_names,
         "max_addresses": max_addresses,
@@ -310,6 +341,7 @@ def materialize_dossier_temporal_layers(
             projection = _projection_sql(
                 name_path=name_path,
                 address_path=address_path,
+                portfolio_path=portfolio_path,
                 source=source,
                 max_names=max_names,
                 max_addresses=max_addresses,
