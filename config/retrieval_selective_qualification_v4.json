@@ -1,0 +1,47 @@
+{
+  "schema_version": "sireto-retrieval-selective-qualification-policy-v1",
+  "policy_id": "direct-evidence-v4-joint-moderate",
+  "train_folds": [2, 3, 4],
+  "development_fold": 0,
+  "minimum_train_coverage": 0.8,
+  "strong_name": {
+    "jaro_winkler_minimum": 0.85,
+    "token_jaccard_minimum": 0.5,
+    "containment_jaro_winkler_minimum": 0.75
+  },
+  "strong_address": {
+    "jaro_winkler_minimum": 0.9,
+    "require_compatible_number": true
+  },
+  "moderate_joint": {
+    "name_jaro_winkler_minimum": 0.55,
+    "name_token_jaccard_minimum": 0.1,
+    "address_jaro_winkler_minimum": 0.5,
+    "require_compatible_number": true
+  },
+  "allowed_official_name_fields": [
+    "legal_current_names",
+    "trade_current_names",
+    "site_current_names",
+    "historical_names",
+    "supporting_names",
+    "sirene_names",
+    "rne_names",
+    "bodacc_names"
+  ],
+  "allowed_official_address_fields": [
+    "current_address_text",
+    "historical_address_text",
+    "supporting_address_text",
+    "sirene_addresses",
+    "rne_addresses",
+    "bodacc_addresses"
+  ],
+  "forbidden_inputs": [
+    "retrieval_hit",
+    "retrieval_rank",
+    "retrieval_score",
+    "model_score",
+    "selected_candidates"
+  ]
+}
