@@ -15,6 +15,7 @@ import os
 from pathlib import Path
 import tempfile
 from typing import Any, Iterable, Iterator, Mapping
+import unicodedata
 
 import duckdb
 import pyarrow as pa
@@ -137,6 +138,188 @@ def iter_finess(path: Path) -> Iterator[dict[str, Any]]:
 def _csv_rows(path: Path, delimiter: str) -> Iterator[Mapping[str, Any]]:
     with path.open("r", encoding="utf-8-sig", newline="") as stream:
         yield from csv.DictReader(stream, delimiter=delimiter)
+
+
+def _normalized_key(value: Any) -> str:
+    text = unicodedata.normalize("NFKD", str(value or ""))
+    ascii_text = "".join(character for character in text if not unicodedata.combining(character))
+    return "_".join(normalize_text(ascii_text).lower().split())
+
+
+def _normalized_row(row: Mapping[str, Any]) -> dict[str, Any]:
+    return {_normalized_key(key): value for key, value in row.items()}
+
+
+def _first(row: Mapping[str, Any], *keys: str) -> Any:
+    normalized = _normalized_row(row)
+    for key in keys:
+        value = normalized.get(_normalized_key(key))
+        if value not in (None, "", [], {}):
+            return value
+    return ""
+
+
+def _iter_records(path: Path) -> Iterator[Mapping[str, Any]]:
+    suffixes = "".join(path.suffixes).lower()
+    if suffixes.endswith(".parquet"):
+        parquet = pq.ParquetFile(path)
+        for batch in parquet.iter_batches(batch_size=8192):
+            yield from batch.to_pylist()
+        return
+    if suffixes.endswith((".jsonl", ".ndjson")):
+        with path.open("r", encoding="utf-8-sig") as stream:
+            for line in stream:
+                if line.strip():
+                    value = json.loads(line)
+                    if isinstance(value, Mapping):
+                        yield value
+        return
+    if suffixes.endswith((".json", ".json.gz")):
+        try:
+            import ijson  # type: ignore
+        except ImportError as exc:
+            raise RuntimeError("JSON sector snapshots require ijson") from exc
+        opener = gzip.open if suffixes.endswith(".gz") else open
+        with opener(path, "rb") as stream:
+            prefix = "item"
+            for value in ijson.items(stream, prefix):
+                if isinstance(value, Mapping):
+                    yield value
+        return
+    with path.open("r", encoding="utf-8-sig", newline="") as stream:
+        sample = stream.read(64 * 1024)
+        stream.seek(0)
+        try:
+            delimiter = csv.Sniffer().sniff(sample, delimiters=",;\t|").delimiter
+        except csv.Error:
+            delimiter = ";"
+        yield from csv.DictReader(stream, delimiter=delimiter)
+
+
+def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
+    """Yield sports facilities only when Data ES publishes a structured ID."""
+    for raw in _iter_records(path):
+        row = _normalized_row(raw)
+        siret = _first(
+            row,
+            "siret", "installation_siret", "inst_siret", "siret_installation",
+            "siret_proprietaire", "proprio_siret", "caracteristiques_administratives_siret",
+        )
+        siren = _first(row, "siren", "installation_siren", "inst_siren", "proprio_siren")
+        identifier = normalize_code(siret, 14)
+        parent = normalize_code(siren or identifier[:9], 9)
+        if len(identifier) != 14 and len(parent) != 9:
+            continue
+        installation_name = _first(
+            row,
+            "nom_installation", "installation_nom", "inst_nom", "nom_du_lieu",
+            "nom_installation_sportive", "libelle_installation",
+        )
+        equipment_name = _first(
+            row,
+            "nom_equipement", "equipement_nom", "equip_nom", "libelle_equipement",
+        )
+        name = equipment_name or installation_name
+        address = _first(
+            row,
+            "adresse", "installation_adresse", "inst_adresse", "adresse_installation",
+            "adresse_complete", "adresse_complete_de_l_installation",
+        )
+        value = _evidence(
+            source="DATA_ES",
+            source_record_id=_first(
+                row, "numero_equipement", "equip_numero", "numero_installation",
+                "inst_numero", "id_equipement", "id_installation",
+            ),
+            siret=identifier,
+            siren=parent,
+            name=name,
+            address=address,
+            insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune"),
+            postcode=_first(row, "code_postal", "postcode", "inst_cp", "installation_cp"),
+            number=_first(row, "numero_voie", "adresse_numero", "inst_num_voie"),
+            active=str(_first(row, "etat", "statut", "etat_installation") or "A").upper()
+            not in {"F", "I", "FERME", "FERMEE", "INACTIF", "INACTIVE"},
+            observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation"))[:10],
+        )
+        if value:
+            yield value
+        # Keep the installation label as a second auditable observation when
+        # it differs from the individual equipment name.
+        if installation_name and normalize_text(installation_name) != normalize_text(name):
+            parent_value = _evidence(
+                source="DATA_ES",
+                source_record_id=str(_first(row, "numero_installation", "inst_numero")) + "|INSTALLATION",
+                siret=identifier,
+                siren=parent,
+                name=installation_name,
+                address=address,
+                insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune"),
+                postcode=_first(row, "code_postal", "postcode", "inst_cp", "installation_cp"),
+                number=_first(row, "numero_voie", "adresse_numero", "inst_num_voie"),
+                active=True,
+                observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation"))[:10],
+            )
+            if parent_value:
+                yield parent_value
+
+
+def _association_payload(record: Mapping[str, Any]) -> Mapping[str, Any]:
+    data = record.get("data")
+    return data if isinstance(data, Mapping) else record
+
+
+def iter_associations(path: Path) -> Iterator[dict[str, Any]]:
+    """Project API Association snapshots without indexing free-text objects."""
+    for record in _iter_records(path):
+        payload = _association_payload(record)
+        siren = _first(payload, "siren", "numero_siren")
+        headquarters_siret = _first(payload, "siret_siege", "siret", "numero_siret")
+        title = _first(payload, "titre", "nom", "denomination", "titre_court")
+        address = payload.get("adresse_siege") or payload.get("adresse") or {}
+        if not isinstance(address, Mapping):
+            address = {"adresse": address}
+        legal = _evidence(
+            source="API_ASSOCIATION",
+            source_record_id=_first(payload, "rna", "id", "numero_rna") or siren,
+            siret=headquarters_siret,
+            siren=siren,
+            name=title,
+            address=_first(address, "adresse", "libelle", "voie", "adresse_complete"),
+            insee=_first(address, "code_insee", "insee", "code_commune"),
+            postcode=_first(address, "code_postal", "postcode"),
+            number=_first(address, "numero_voie", "numero"),
+            active=str(_first(payload, "active", "etat", "statut") or "A").upper()
+            not in {"F", "DISSOUTE", "DISSOLUTION", "INACTIVE"},
+            observed_at=str(_first(payload, "date_mise_a_jour", "updated_at", "date_maj"))[:10],
+        )
+        if legal:
+            yield legal
+        establishments = payload.get("etablissements") or payload.get("sites") or []
+        if isinstance(establishments, Mapping):
+            establishments = [establishments]
+        for ordinal, raw_site in enumerate(establishments):
+            if not isinstance(raw_site, Mapping):
+                continue
+            site_address = raw_site.get("adresse") or {}
+            if not isinstance(site_address, Mapping):
+                site_address = {"adresse": site_address}
+            site = _evidence(
+                source="API_ASSOCIATION",
+                source_record_id=f"{_first(payload, 'rna', 'id', 'numero_rna')}|SITE|{ordinal}",
+                siret=_first(raw_site, "siret", "numero_siret"),
+                siren=siren,
+                name=_first(raw_site, "nom", "enseigne", "denomination") or title,
+                address=_first(site_address, "adresse", "libelle", "voie", "adresse_complete"),
+                insee=_first(site_address, "code_insee", "insee", "code_commune"),
+                postcode=_first(site_address, "code_postal", "postcode"),
+                number=_first(site_address, "numero_voie", "numero"),
+                active=str(_first(raw_site, "active", "etat", "statut") or "A").upper()
+                not in {"F", "FERME", "FERMEE", "INACTIF", "INACTIVE"},
+                observed_at=str(_first(payload, "date_mise_a_jour", "updated_at", "date_maj"))[:10],
+            )
+            if site and site["subject_kind"] == "SIRET":
+                yield site
 
 
 def iter_education(path: Path) -> Iterator[dict[str, Any]]:
