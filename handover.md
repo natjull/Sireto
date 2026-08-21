@@ -5413,5 +5413,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 
 *(rapport du replay temporel et verdict PIVOT : commit `40997dc`)*
 
+- Le commit `5ede263` ouvre la recette retrieval open-data v5 sans consommer
+  un nouveau replay dev. Il transforme la présence d'au moins deux SIRET
+  distincts d'un même SIREN dans l'union brute en expansion parentale
+  label-blind : au plus 20 SIREN, 64 sites locaux par parent et 700 candidats
+  au total. Ces candidats disposent d'un canal et d'un support-count propres;
+  700 places leur sont réservées dans l'union interne de 2 000, mais ils ne
+  sont pas protégés artificiellement dans le top 100 final. Le gate oracle de
+  la configuration v5 est relevé à 99,5 %, les folds et le plafond top100 sont
+  inchangés, et 31 tests retrieval/admission passent.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
