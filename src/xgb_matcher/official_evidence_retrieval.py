@@ -44,6 +44,10 @@ class OfficialEvidenceRetrievalConfig:
     historical_limit: int = 500
     supporting_limit: int = 250
     siren_limit: int = 10
+    enable_direct_parent_expansion: bool = False
+    parent_siren_limit: int = 48
+    direct_parent_limit: int = 32
+    direct_parent_seed_limit: int = 2000
     sites_per_siren: int = 32
     relation_seed_limit: int = 500
     relation_limit: int = 500
@@ -72,6 +76,9 @@ class OfficialEvidenceRetrievalConfig:
             "historical_limit",
             "supporting_limit",
             "siren_limit",
+            "parent_siren_limit",
+            "direct_parent_limit",
+            "direct_parent_seed_limit",
             "relation_seed_limit",
             "relation_limit",
             "balanced_prefix_per_channel",
@@ -91,6 +98,14 @@ class OfficialEvidenceRetrievalConfig:
             historical_limit=int(retrieval.get("historical_limit", 500)),
             supporting_limit=int(retrieval.get("supporting_limit", 250)),
             siren_limit=int(retrieval.get("siren_limit", 5)),
+            enable_direct_parent_expansion=bool(
+                retrieval.get("enable_direct_parent_expansion", False)
+            ),
+            parent_siren_limit=int(retrieval.get("parent_siren_limit", 48)),
+            direct_parent_limit=int(retrieval.get("direct_parent_limit", 32)),
+            direct_parent_seed_limit=int(
+                retrieval.get("direct_parent_seed_limit", 2000)
+            ),
             sites_per_siren=int(retrieval.get("sites_per_siren", 32)),
             relation_seed_limit=int(retrieval.get("relation_seed_limit", 500)),
             relation_limit=int(retrieval.get("relation_limit", 500)),
@@ -288,6 +303,7 @@ _CHANNEL_PRIORITY: Mapping[str, int] = {
     "bodacc_name": 2,
     "bodacc_address": 3,
     "hierarchical": 6,
+    "direct_parent_expansion": 6,
     "official_successor": 7,
     "bodacc_relation": 8,
 }
@@ -317,6 +333,7 @@ LTR_CHANNELS: tuple[str, ...] = (
     "bodacc_name",
     "bodacc_address",
     "hierarchical",
+    "direct_parent_expansion",
     "official_successor",
     "bodacc_relation",
 )
@@ -527,14 +544,46 @@ class OfficialEvidenceRetriever:
                     (backend_name, rank, float(score))
                 )
 
+        # A direct SIRET is deterministic evidence for its parent SIREN.  Rank
+        # these parents from label-blind site evidence before expanding their
+        # local establishments.  Previously only dedicated parent documents
+        # could seed expansion, even when another establishment of the right
+        # SIREN already matched the CRM address exactly.
+        if self.config.enable_direct_parent_expansion:
+            direct_parent_rank = 0
+            seen_direct_parents: set[str] = set()
+            for _siret, mutable in sorted(
+                candidates.items(),
+                key=lambda item: self._direct_parent_sort_key(
+                    query, item[0], item[1]
+                ),
+            )[: self.config.direct_parent_seed_limit]:
+                siren = mutable.record.siren
+                if not siren or siren in seen_direct_parents:
+                    continue
+                seen_direct_parents.add(siren)
+                direct_parent_rank += 1
+                siren_hits.setdefault(siren, []).append(
+                    ("direct_siret", direct_parent_rank, 1.0 / direct_parent_rank)
+                )
+                if direct_parent_rank >= self.config.direct_parent_limit:
+                    break
+
         site_expansion_rank = 0
-        for siren in sorted(
+        ordered_parents = sorted(
             siren_hits,
             key=lambda value: (
-                min(item[1] for item in siren_hits[value]),
+                min(
+                    (
+                        0 if item[0] == "direct_siret" else 1,
+                        item[1],
+                    )
+                    for item in siren_hits[value]
+                ),
                 value,
             ),
-        ):
+        )[: self.config.parent_siren_limit]
+        for siren in ordered_parents:
             for siren_backend_name, parent_rank, parent_score in sorted(
                 siren_hits[siren], key=lambda item: (item[1], item[0])
             ):
@@ -552,7 +601,11 @@ class OfficialEvidenceRetriever:
                                     f"{siren_backend_name}:siren->"
                                     f"{site_backend_name}:site"
                                 ),
-                                channel="hierarchical",
+                                channel=(
+                                    "direct_parent_expansion"
+                                    if siren_backend_name == "direct_siret"
+                                    else "hierarchical"
+                                ),
                                 rank=site_expansion_rank,
                                 score=parent_score,
                                 parent_identifier=siren,
@@ -598,6 +651,47 @@ class OfficialEvidenceRetriever:
             union_truncated=raw_union_size > len(output),
             retrieval_latency_ms=(time.perf_counter() - started) * 1000.0,
         )
+
+    def operational_sirets(
+        self, row: RetrievalQuery | Mapping[str, Any], *, limit: int = 256
+    ) -> tuple[str, ...]:
+        """Materialize strict same-SIREN/same-CRM-site labels without retrieval scores.
+
+        This is a deterministic official lookup keyed by the human SIRET's
+        parent SIREN.  It never changes the exact label or candidate union and
+        does not inspect retrieval ranks/hits.  In particular it still works
+        when the exact SIRET is absent from the candidate set.
+        """
+        if isinstance(row, RetrievalQuery):
+            return ()
+        query = RetrievalQuery.from_mapping(row)
+        exact = "".join(
+            character
+            for character in str(
+                _first_metadata(row, ["ground_truth_siret", "gt_siret", "siret_gt"])
+                or ""
+            )
+            if character.isdigit()
+        )
+        if len(exact) != 14 or not query.address:
+            return (exact,) if len(exact) == 14 else ()
+        accepted = {exact}
+        seen: set[str] = set()
+        for _backend_name, backend in self.backends:
+            for record in backend.sites_for_siren(exact[:9], query, limit):
+                if record.siret in seen:
+                    continue
+                seen.add(record.siret)
+                if record.siren != exact[:9] or not _record_matches_query_geo(
+                    record, query
+                ):
+                    continue
+                if query.number and record.number and query.number != record.number:
+                    continue
+                if query.address not in set(record.addresses):
+                    continue
+                accepted.add(record.siret)
+        return tuple(sorted(accepted))
 
     @staticmethod
     def _register(
@@ -811,8 +905,11 @@ class OfficialEvidenceRetriever:
             return self.config.historical_limit
         if channel in {"supporting_name_word", "supporting_address_word"}:
             return self.config.supporting_limit
-        if channel == "hierarchical":
-            return max(1, self.config.siren_limit * self.config.sites_per_siren)
+        if channel in {"hierarchical", "direct_parent_expansion"}:
+            return max(
+                1,
+                self.config.parent_siren_limit * self.config.sites_per_siren,
+            )
         if channel in {"official_successor", "bodacc_relation"}:
             return self.config.relation_limit
         return self.config.max_union_candidates
@@ -848,6 +945,44 @@ class OfficialEvidenceRetriever:
         # scores are deliberately not mixed across fields or indices.
         bucket = 0 if has_exact else (1 if has_preserved_prefix else 2)
         return (bucket, best_fraction, -channel_count, best_rank, siret)
+
+    def _direct_parent_sort_key(
+        self,
+        query: RetrievalQuery,
+        siret: str,
+        mutable: _MutableCandidate,
+    ) -> tuple[int, int, int, int, float, int, str]:
+        record = mutable.record
+        addresses = (
+            set(record.addresses)
+            | set(record.historical_addresses)
+            | set(record.supporting_addresses)
+        )
+        exact_address = bool(query.address and query.address in addresses)
+        exact_number = bool(query.number and query.number == record.number)
+        exact_geo = bool(
+            (query.insee and record.insee == query.insee)
+            or (
+                not query.insee
+                and query.postcode
+                and record.postcode == query.postcode
+            )
+        )
+        channels = {signal.channel for signal in mutable.signals}
+        best_fraction = min(
+            signal.rank / max(1, self._channel_depth(signal.channel))
+            for signal in mutable.signals
+        )
+        best_rank = min(signal.rank for signal in mutable.signals)
+        return (
+            -int(exact_address),
+            -int(exact_number),
+            -int(exact_geo),
+            -len(channels),
+            best_fraction,
+            best_rank,
+            siret,
+        )
 
 
 def official_evidence_union_arrow_schema() -> pa.Schema:
@@ -996,7 +1131,10 @@ def _operational_sirets(value: Any) -> list[str]:
     )
 
 
-def _query_metadata(row: Mapping[str, Any]) -> dict[str, Any]:
+def _query_metadata(
+    row: Mapping[str, Any],
+    operational_override: Sequence[str] | None = None,
+) -> dict[str, Any]:
     query = RetrievalQuery.from_mapping(row)
     ground_truth_siret = str(
         _first_metadata(row, ["ground_truth_siret", "gt_siret", "siret_gt"]) or ""
@@ -1005,16 +1143,22 @@ def _query_metadata(row: Mapping[str, Any]) -> dict[str, Any]:
         _first_metadata(row, ["ground_truth_siren", "gt_siren", "siren_gt"])
         or ground_truth_siret[:9]
     )
-    operational = _operational_sirets(
-        _first_metadata(
-            row,
-            [
-                "acceptable_sirets_operational",
-                "acceptable_sirets_operational_json",
-                "operational_sirets",
-            ],
+    operational = _operational_sirets(operational_override)
+    operational.extend(
+        value
+        for value in _operational_sirets(
+            _first_metadata(
+                row,
+                [
+                    "acceptable_sirets_operational",
+                    "acceptable_sirets_operational_json",
+                    "operational_sirets",
+                ],
+            )
         )
+        if value not in operational
     )
+    operational.sort()
     identifiable = _optional_bool(
         _first_metadata(
             row,
@@ -1122,7 +1266,13 @@ def retrieve_official_evidence_union_to_parquet(
             query_count += 1
             query_id = str(row.get(query_id_field) or ordinal)
             result = retriever.retrieve(row)
-            buffered.extend(result.candidate_rows(query_id, _query_metadata(row)))
+            operational = retriever.operational_sirets(row)
+            buffered.extend(
+                result.candidate_rows(
+                    query_id,
+                    _query_metadata(row, operational),
+                )
+            )
             candidate_count += len(result.candidates)
             empty_query_count += int(not result.candidates)
             if len(buffered) >= batch_size:

@@ -769,6 +769,98 @@ def test_union_maps_channels_and_geo_guards_siret_relations():
     assert "hierarchical" in source_channels
 
 
+def test_direct_siret_promotes_parent_siren_and_expands_local_sites():
+    seed = _record(
+        "12345678900011",
+        payload={"names": ["ENSEIGNE LOCALE"]},
+    )
+    target = _record("12345678900029")
+
+    class DirectOnlyBackend(InMemoryBackend):
+        def search_sirens(self, _query, _limit):
+            return []
+
+        def search(self, query, channel, limit):
+            if channel == "name_exact":
+                return [BackendHit(seed, 1.0)]
+            return []
+
+        def sites_for_siren(self, siren, query, limit):
+            if siren == "123456789":
+                return [target][:limit]
+            return []
+
+    result = OfficialEvidenceRetriever(
+        DirectOnlyBackend([seed, target]),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=20,
+            exact_limit=10,
+            word_limit=10,
+            character_limit=10,
+            historical_limit=10,
+            supporting_limit=10,
+            siren_limit=1,
+            enable_direct_parent_expansion=True,
+            parent_siren_limit=4,
+            direct_parent_seed_limit=10,
+            sites_per_siren=3,
+            relation_seed_limit=10,
+            relation_limit=10,
+            search_workers=2,
+        ),
+    ).retrieve(
+        RetrievalQuery(
+            name="ENSEIGNE LOCALE",
+            address="10 RUE DES FLEURS",
+            insee="75056",
+            postcode="75001",
+        )
+    )
+    candidates = {candidate.siret: candidate for candidate in result.candidates}
+    assert target.siret in candidates
+    promoted = candidates[target.siret]
+    assert "direct_parent_expansion" in promoted.channels
+    signal = next(
+        item
+        for item in promoted.signals
+        if item.channel == "direct_parent_expansion"
+    )
+    assert signal.parent_identifier == "123456789"
+
+
+def test_operational_same_site_is_materialized_when_exact_is_not_retrieved():
+    sibling = _record("12345678900029")
+    retriever = OfficialEvidenceRetriever(
+        InMemoryBackend([sibling]),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=20,
+            exact_limit=10,
+            word_limit=10,
+            character_limit=10,
+            historical_limit=10,
+            supporting_limit=10,
+            siren_limit=1,
+            parent_siren_limit=4,
+            direct_parent_seed_limit=10,
+            sites_per_siren=3,
+            relation_seed_limit=10,
+            relation_limit=10,
+            search_workers=2,
+        ),
+    )
+    row = {
+        "ground_truth_siret": "12345678900011",
+        "crm_name": "ENSEIGNE LOCALE",
+        "crm_address": "10 rue des Fleurs",
+        "crm_postcode": "75001",
+        "crm_insee": "75056",
+    }
+    assert retriever.operational_sirets(row) == (
+        "12345678900011",
+        "12345678900029",
+    )
+
+
 def test_builder_overlay_union_parquet_is_ltr_consumable(tmp_path: Path):
     _canonical, overlay = _build_complete_fixture(tmp_path)
     retriever = OfficialEvidenceRetriever(
