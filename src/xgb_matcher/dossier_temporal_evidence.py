@@ -71,7 +71,44 @@ def _projection_sql(
     addresses = _sql_path(address_path)
     empty_names = "[]::STRUCT(raw_value VARCHAR, normalized_value VARCHAR, kind VARCHAR)[]"
     return f"""
-        WITH name_dedup AS (
+        WITH current_names AS (
+            SELECT DISTINCT subject_kind, siren, siret, normalized_value
+            FROM read_parquet('{names}')
+            WHERE source = 'SIRENE_CURRENT' AND normalized_value <> ''
+        ),
+        alternate_name_subjects AS (
+            SELECT DISTINCT candidate.subject_kind, candidate.siren, candidate.siret
+            FROM read_parquet('{names}') candidate
+            ANTI JOIN current_names current
+              USING (subject_kind, siren, siret, normalized_value)
+            WHERE candidate.source = '{source}'
+              AND candidate.normalized_value <> ''
+        ),
+        current_addresses AS (
+            SELECT DISTINCT subject_kind, siren, siret, normalized_value
+            FROM read_parquet('{addresses}')
+            WHERE source = 'SIRENE_CURRENT' AND normalized_value <> ''
+        ),
+        alternate_address_subjects AS (
+            SELECT DISTINCT candidate.subject_kind, candidate.siren, candidate.siret
+            FROM read_parquet('{addresses}') candidate
+            ANTI JOIN current_addresses current
+              USING (subject_kind, siren, siret, normalized_value)
+            WHERE candidate.source = '{source}'
+              AND candidate.normalized_value <> ''
+        ),
+        affected_direct AS (
+            SELECT * FROM alternate_name_subjects
+            UNION
+            SELECT * FROM alternate_address_subjects
+        ),
+        affected AS (
+            SELECT * FROM affected_direct
+            UNION
+            SELECT 'SIREN' AS subject_kind, siren, '' AS siret
+            FROM affected_direct WHERE subject_kind = 'SIRET'
+        ),
+        name_dedup AS (
             SELECT siren, siret, subject_kind, normalized_value,
                    arg_max(name_kind, source_priority) AS name_kind,
                    bool_or(coalesce(is_current, false)) AS is_current,
@@ -79,8 +116,9 @@ def _projection_sql(
                    max(valid_to) AS valid_to,
                    max(observed_at) AS observed_at,
                    max(source_priority) AS source_priority
-            FROM read_parquet('{names}')
-            WHERE source = '{source}'
+            FROM read_parquet('{names}') candidate
+            SEMI JOIN affected USING (subject_kind, siren, siret)
+            WHERE candidate.source = '{source}'
               AND normalized_value <> ''
               AND length(siren) = 9
               AND subject_kind IN ('SIREN', 'SIRET')
@@ -124,8 +162,9 @@ def _projection_sql(
                    max(valid_to) AS valid_to,
                    max(observed_at) AS observed_at,
                    max(source_priority) AS source_priority
-            FROM read_parquet('{addresses}')
-            WHERE source = '{source}'
+            FROM read_parquet('{addresses}') candidate
+            SEMI JOIN affected USING (subject_kind, siren, siret)
+            WHERE candidate.source = '{source}'
               AND normalized_value <> ''
               AND length(siren) = 9
               AND subject_kind IN ('SIREN', 'SIRET')
