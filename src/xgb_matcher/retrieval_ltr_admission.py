@@ -44,6 +44,8 @@ MINIMUM_INPUT_COLUMNS = {
     "crm_postcode",
 }
 BASE_FEATURES = (
+    "union_rank_reciprocal",
+    "union_rank_log_inverse",
     "retrieval_rank_reciprocal",
     "retrieval_rank_log_inverse",
     "retrieval_score",
@@ -937,6 +939,8 @@ def build_internal_union(
         latencies.append(elapsed)
         for position, row in enumerate(kept, start=1):
             row["union_rank"] = position
+            row["union_rank_reciprocal"] = 1.0 / position
+            row["union_rank_log_inverse"] = 1.0 / math.log2(max(2, position + 1))
             row["union_latency_ms"] = elapsed
             records.append(row)
     output = pd.DataFrame(records)

@@ -138,6 +138,11 @@ def test_internal_union_preserves_upstream_label_blind_order(
         first["siret"],
         second["siret"],
     ]
+    ordered = union.sort_values("union_rank")
+    assert ordered["union_rank_reciprocal"].tolist() == [1.0, 0.5]
+    assert ordered["union_rank_log_inverse"].iloc[0] > ordered[
+        "union_rank_log_inverse"
+    ].iloc[1]
 
 
 def test_v5_union_reserves_consensus_parent_rescues() -> None:
@@ -171,6 +176,8 @@ def test_feature_contract_has_no_identifiers_and_includes_overlay(
     config: AdmissionConfig,
 ) -> None:
     features = feature_order(config)
+    assert "union_rank_reciprocal" in features
+    assert "union_rank_log_inverse" in features
     assert not any(
         "siret" in feature or "siren" in feature or "query_id" in feature
         for feature in features

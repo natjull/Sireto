@@ -6,9 +6,8 @@
     "internal_union_cap": 2000,
     "max_training_candidates_per_query": 128,
     "max_candidates": 100,
-    "union_prefix_protection_slots": 80,
-    "exact_protection_slots": 10,
-    "consensus_protection_slots": 10,
+    "exact_protection_slots": 20,
+    "consensus_protection_slots": 20,
     "consensus_parent_union_slots": 700
   },
   "channels": [
