@@ -159,6 +159,14 @@ def _first(row: Mapping[str, Any], *keys: str) -> Any:
     return ""
 
 
+def _first_normalized(row: Mapping[str, Any], *keys: str) -> Any:
+    for key in keys:
+        value = row.get(_normalized_key(key))
+        if value not in (None, "", [], {}):
+            return value
+    return ""
+
+
 def _iter_records(path: Path) -> Iterator[Mapping[str, Any]]:
     suffixes = "".join(path.suffixes).lower()
     if suffixes.endswith(".parquet"):
@@ -200,37 +208,34 @@ def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
     """Yield sports facilities only when Data ES publishes a structured ID."""
     for raw in _iter_records(path):
         row = _normalized_row(raw)
-        siret = _first(
-            row,
+        first = lambda *keys: _first_normalized(row, *keys)
+        siret = first(
             "siret", "installation_siret", "inst_siret", "siret_installation",
             "siret_proprietaire", "proprio_siret", "caracteristiques_administratives_siret",
         )
-        siren = _first(row, "siren", "installation_siren", "inst_siren", "proprio_siren")
+        siren = first("siren", "installation_siren", "inst_siren", "proprio_siren")
         identifier = normalize_code(siret, 14)
         parent = normalize_code(siren or identifier[:9], 9)
         if len(identifier) != 14 and len(parent) != 9:
             continue
-        installation_name = _first(
-            row,
+        installation_name = first(
             "nom_installation", "installation_nom", "inst_nom", "nom_du_lieu",
             "nom_installation_sportive", "nom_de_l_installation_sportive",
             "libelle_installation",
         )
-        equipment_name = _first(
-            row,
+        equipment_name = first(
             "nom_equipement", "equipement_nom", "equip_nom", "libelle_equipement",
             "nom_de_l_equipement_sportif",
         )
         name = equipment_name or installation_name
-        address = _first(
-            row,
+        address = first(
             "adresse", "installation_adresse", "inst_adresse", "adresse_installation",
             "adresse_complete", "adresse_complete_de_l_installation",
         )
         value = _evidence(
             source="DATA_ES",
-            source_record_id=_first(
-                row, "numero_equipement", "equip_numero", "numero_installation",
+            source_record_id=first(
+                "numero_equipement", "equip_numero", "numero_installation",
                 "numero_de_l_equipement_sportif", "numero_de_l_installation_sportive",
                 "inst_numero", "id_equipement", "id_installation",
             ),
@@ -238,12 +243,12 @@ def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
             siren=parent,
             name=name,
             address=address,
-            insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune", "commune_insee"),
-            postcode=_first(row, "code_postal", "postcode", "inst_cp", "installation_cp"),
-            number=_first(row, "numero_voie", "adresse_numero", "inst_num_voie"),
-            active=str(_first(row, "etat", "statut", "etat_installation", "installation_hors_service") or "A").upper()
+            insee=first("code_insee", "insee", "inst_com_insee", "code_commune", "commune_insee"),
+            postcode=first("code_postal", "postcode", "inst_cp", "installation_cp"),
+            number=first("numero_voie", "adresse_numero", "inst_num_voie"),
+            active=str(first("etat", "statut", "etat_installation", "installation_hors_service") or "A").upper()
             not in {"F", "I", "OUI", "TRUE", "1", "FERME", "FERMEE", "INACTIF", "INACTIVE"},
-            observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation", "mise_a_jour_de_la_fiche_equipement"))[:10],
+            observed_at=str(first("date_mise_a_jour", "date_maj", "date_actualisation", "mise_a_jour_de_la_fiche_equipement"))[:10],
         )
         if value:
             yield value
@@ -252,16 +257,16 @@ def iter_data_es(path: Path) -> Iterator[dict[str, Any]]:
         if installation_name and normalize_text(installation_name) != normalize_text(name):
             parent_value = _evidence(
                 source="DATA_ES",
-                source_record_id=str(_first(row, "numero_installation", "numero_de_l_installation_sportive", "inst_numero")) + "|INSTALLATION",
+                source_record_id=str(first("numero_installation", "numero_de_l_installation_sportive", "inst_numero")) + "|INSTALLATION",
                 siret=identifier,
                 siren=parent,
                 name=installation_name,
                 address=address,
-                insee=_first(row, "code_insee", "insee", "inst_com_insee", "code_commune", "commune_insee"),
-                postcode=_first(row, "code_postal", "postcode", "inst_cp", "installation_cp"),
-                number=_first(row, "numero_voie", "adresse_numero", "inst_num_voie"),
+                insee=first("code_insee", "insee", "inst_com_insee", "code_commune", "commune_insee"),
+                postcode=first("code_postal", "postcode", "inst_cp", "installation_cp"),
+                number=first("numero_voie", "adresse_numero", "inst_num_voie"),
                 active=True,
-                observed_at=str(_first(row, "date_mise_a_jour", "date_maj", "date_actualisation", "mise_a_jour_de_la_fiche_equipement"))[:10],
+                observed_at=str(first("date_mise_a_jour", "date_maj", "date_actualisation", "mise_a_jour_de_la_fiche_equipement"))[:10],
             )
             if parent_value:
                 yield parent_value
