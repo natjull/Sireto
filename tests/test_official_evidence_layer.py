@@ -891,6 +891,73 @@ def test_distinct_site_consensus_expands_parent_without_parent_name_hit():
     assert signal.parent_rank == 1
 
 
+def test_consensus_budget_is_round_robin_across_parents():
+    a1 = _record("12345678900011")
+    a2 = _record("12345678900029")
+    a3 = _record("12345678900037")
+    b1 = _record("98765432100011")
+    b2 = _record("98765432100029")
+    rescued = _record("98765432100037")
+
+    class TwoParentBackend(InMemoryBackend):
+        def search_sirens(self, _query, _limit):
+            return []
+
+        def search(self, _query, channel, _limit):
+            if channel == "name_word":
+                return [
+                    BackendHit(a1, 0.9),
+                    BackendHit(a2, 0.8),
+                    BackendHit(b1, 0.7),
+                    BackendHit(b2, 0.6),
+                ]
+            return []
+
+        def sites_for_siren(self, siren, _query, limit):
+            if siren == "123456789":
+                return [a1, a2, a3][:limit]
+            if siren == "987654321":
+                return [b1, rescued, b2][:limit]
+            return []
+
+    result = OfficialEvidenceRetriever(
+        TwoParentBackend([a1, a2, a3, b1, b2, rescued]),
+        config=OfficialEvidenceRetrievalConfig(
+            max_union_candidates=20,
+            exact_limit=10,
+            word_limit=10,
+            character_limit=10,
+            historical_limit=10,
+            supporting_limit=10,
+            siren_limit=1,
+            enable_consensus_parent_expansion=True,
+            parent_siren_limit=4,
+            direct_parent_seed_limit=10,
+            consensus_parent_min_sirets=2,
+            consensus_parent_limit=2,
+            consensus_sites_per_siren=64,
+            consensus_candidate_budget=4,
+            sites_per_siren=3,
+            relation_seed_limit=10,
+            relation_limit=10,
+            search_workers=2,
+        ),
+    ).retrieve(
+        RetrievalQuery(
+            name="ENSEIGNE LOCALE",
+            address="10 RUE DES FLEURS",
+            insee="75056",
+            postcode="75001",
+        )
+    )
+
+    candidate = next(value for value in result.candidates if value.siret == rescued.siret)
+    assert any(
+        signal.channel == "consensus_parent_expansion"
+        for signal in candidate.signals
+    )
+
+
 def test_multiple_sector_overlays_contribute_without_rebuilding_prior_index():
     health = _record("12345678900011")
     sport = _record("98765432100029")

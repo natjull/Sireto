@@ -722,30 +722,48 @@ class OfficialEvidenceRetriever:
                 value,
             ),
         )[: self.config.parent_siren_limit]
-        consensus_expanded_sirets: set[str] = set()
+        consensus_site_queues: list[
+            tuple[
+                int,
+                str,
+                float,
+                list[list[tuple[str, int, IndexedEstablishment]]],
+            ]
+        ] = []
         for siren in ordered_parents:
             for siren_backend_name, parent_rank, parent_score in sorted(
                 siren_hits[siren], key=lambda item: (item[1], item[0])
             ):
-                for site_backend_name, site_backend in self.backends:
-                    site_limit = (
-                        self.config.consensus_sites_per_siren
-                        if siren_backend_name == "consensus_sirets"
-                        else self.config.sites_per_siren
+                if siren_backend_name == "consensus_sirets":
+                    # Build one queue per parent and consume those queues in
+                    # round-robin below.  A sequential global budget lets the
+                    # first large parent exhaust all 700 slots and silently
+                    # starves later consensus parents.
+                    occurrences_by_siret: dict[
+                        str, list[tuple[str, int, IndexedEstablishment]]
+                    ] = {}
+                    for site_backend_name, site_backend in self.backends:
+                        sites = site_backend.sites_for_siren(
+                            siren, query, self.config.consensus_sites_per_siren
+                        )
+                        for site_rank, site in enumerate(sites, start=1):
+                            occurrences_by_siret.setdefault(site.siret, []).append(
+                                (site_backend_name, site_rank, site)
+                            )
+                    consensus_site_queues.append(
+                        (
+                            parent_rank,
+                            siren,
+                            parent_score,
+                            list(occurrences_by_siret.values()),
+                        )
                     )
+                    continue
+                for site_backend_name, site_backend in self.backends:
                     sites = site_backend.sites_for_siren(
-                        siren, query, site_limit
+                        siren, query, self.config.sites_per_siren
                     )
                     for site_rank, site in enumerate(sites, start=1):
-                        if siren_backend_name == "consensus_sirets":
-                            if site.siret in consensus_expanded_sirets:
-                                continue
-                            if (
-                                len(consensus_expanded_sirets)
-                                >= self.config.consensus_candidate_budget
-                            ):
-                                break
-                            consensus_expanded_sirets.add(site.siret)
                         site_expansion_rank += 1
                         self._register(
                             candidates,
@@ -771,13 +789,51 @@ class OfficialEvidenceRetriever:
                                 parent_identifier=siren,
                                 parent_rank=parent_rank,
                                 parent_support_count=(
-                                    consensus_parent_support.get(siren)
-                                    if siren_backend_name == "consensus_sirets"
-                                    else None
+                                    None
                                 ),
                                 site_rank=site_rank,
                             ),
                         )
+
+        consensus_site_queues.sort(key=lambda item: (item[0], item[1]))
+        queue_positions = [0] * len(consensus_site_queues)
+        consensus_selected = 0
+        while (
+            consensus_selected < self.config.consensus_candidate_budget
+            and any(
+                position < len(queue[3])
+                for position, queue in zip(
+                    queue_positions, consensus_site_queues, strict=True
+                )
+            )
+        ):
+            for queue_index, (parent_rank, siren, parent_score, queue) in enumerate(
+                consensus_site_queues
+            ):
+                position = queue_positions[queue_index]
+                if position >= len(queue):
+                    continue
+                occurrences = queue[position]
+                queue_positions[queue_index] += 1
+                consensus_selected += 1
+                site_expansion_rank += 1
+                for site_backend_name, site_rank, site in occurrences:
+                    self._register(
+                        candidates,
+                        site,
+                        OfficialEvidenceSignal(
+                            source=f"consensus_sirets:siren->{site_backend_name}:site",
+                            channel="consensus_parent_expansion",
+                            rank=site_expansion_rank,
+                            score=parent_score,
+                            parent_identifier=siren,
+                            parent_rank=parent_rank,
+                            parent_support_count=consensus_parent_support.get(siren),
+                            site_rank=site_rank,
+                        ),
+                    )
+                if consensus_selected >= self.config.consensus_candidate_budget:
+                    break
 
         self._expand_establishment_relations(query, candidates)
         self._expand_siren_relations(query, siren_hits, candidates)
