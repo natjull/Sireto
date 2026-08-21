@@ -5435,6 +5435,35 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Les adaptateurs existants FINESS/UAI/DINUM restent inchangés et l'extracteur
   publie désormais la source, son hash et l'adaptateur utilisé. Les tests
   retrieval/evidence/admission cumulés passent (34 tests).
+- Les commits `89e4ef7` et `daf7f48` alignent l'adaptateur sur le schéma CSV
+  Data ES réellement publié et parcourent ses 316 Mo une seule fois malgré sa
+  largeur. Le build national contient 498 020 preuves structurées et l'index
+  `official_sector_data_es_v1/37ea905013a83660` contient 41 062 SIRET pour
+  192 Mo. Le commit `cbd7e26` permet de composer cet index avec FINESS/UAI/DINUM
+  sans reconstruire ni remplacer l'overlay sectoriel précédent.
+- Les commits `1426b13` et `fea2576` limitent la couche temporelle RNE/BODACC
+  aux preuves omises par le portefeuille retrieval courant, au lieu de
+  réindexer des dizaines de millions d'observations déjà représentées. La
+  projection `dossier_temporal_tail_v1/25c00c36f9352dfd` contient 88 528
+  preuves RNE et 101 017 BODACC; son overlay
+  `dossier_temporal_tail_v1/66f38cc146c51da6` contient 230 501 documents et
+  pèse 351 Mo.
+- Le commit `36ad0c3` rend les overlays RNE/BODACC répétables dans le CLI et
+  le retriever, tout en conservant leurs canaux source-spécifiques. Le commit
+  `eb5a7e3` corrige ensuite l'affamement du budget consensus : les 700 sites
+  sont distribués en round-robin déterministe entre parents au lieu d'être
+  consommés par le premier gros SIREN. Les 34 tests retrieval/admission passent.
+- Le replay borné des 76 échecs temporels retrouve 30 vérités en union avec le
+  rescue contrastif existant. L'oracle final vaut 6 261/6 307, soit 99,2707 %,
+  sous le gate v5 de 99,5 % (6 276 hits). Les 46 absents restants comprennent
+  27 scènes sans aucun token commun, ni dans le nom ni dans l'adresse courante;
+  la couche temporelle complémentaire ne récupère aucune vérité marginale.
+  La latence sur ce sous-ensemble difficile vaut p50 1,018 s, p95 3,227 s et
+  p99 9,199 s. Verdict **`PIVOT_ORACLE_BELOW_99_5`** : aucun LambdaMART n'est
+  entraîné, les modèles aval restent gelés et fold1 reste fermé. Rapport,
+  hashes et exemples : `docs/official_retrieval_open_data_v5_results.md`.
+
+*(rapport du retrieval open data v5 : commit `075a29c`)*
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
