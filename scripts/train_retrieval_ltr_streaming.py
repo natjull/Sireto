@@ -85,6 +85,29 @@ def prepare(args: argparse.Namespace) -> Path:
         args.output, _feature_schema(config), compression="zstd"
     )
     queries = rows = positives = missing_positive = same_site_excluded = 0
+    raw_groups: list[pd.DataFrame] = []
+
+    def flush() -> None:
+        nonlocal queries, rows, positives, missing_positive, same_site_excluded
+        if not raw_groups:
+            return
+        raw_batch = pd.concat(raw_groups, ignore_index=True)
+        union, _union_diagnostics = build_internal_union(
+            raw_batch, config, allowed_folds=config.train_folds
+        )
+        training, diagnostics = prepare_training_rows(
+            union, config, allowed_folds=config.train_folds
+        )
+        writer.write_table(_feature_table(training, config))
+        queries += int(raw_batch["query_id"].astype(str).nunique())
+        rows += len(training)
+        positives += int(training["ltr_label"].sum())
+        missing_positive += int(diagnostics["queries_missing_natural_positive"])
+        same_site_excluded += int(
+            diagnostics["same_siren_same_site_negatives_excluded"]
+        )
+        raw_groups.clear()
+
     try:
         for raw_group in iter_complete_query_frames(
             args.candidates, batch_size=args.batch_size
@@ -92,27 +115,10 @@ def prepare(args: argparse.Namespace) -> Path:
             folds = set(pd.to_numeric(raw_group["fold"]).astype(int))
             if len(folds) != 1 or not folds.issubset(set(config.train_folds)):
                 raise ValueError(f"Forbidden training fold group: {sorted(folds)}")
-            union, _union_diagnostics = build_internal_union(
-                raw_group, config, allowed_folds=config.train_folds
-            )
-            try:
-                training, diagnostics = prepare_training_rows(
-                    union, config, allowed_folds=config.train_folds
-                )
-            except ValueError as error:
-                if "No trainable ranking groups" not in str(error):
-                    raise
-                missing_positive += 1
-                queries += 1
-                continue
-            writer.write_table(_feature_table(training, config))
-            queries += 1
-            rows += len(training)
-            positives += int(training["ltr_label"].sum())
-            missing_positive += int(diagnostics["queries_missing_natural_positive"])
-            same_site_excluded += int(
-                diagnostics["same_siren_same_site_negatives_excluded"]
-            )
+            raw_groups.append(raw_group)
+            if len(raw_groups) >= args.query_batch_size:
+                flush()
+        flush()
     finally:
         writer.close()
     output_manifest = {
@@ -233,6 +239,7 @@ def parse_args() -> argparse.Namespace:
         default=ROOT / "config/retrieval_ltr_admission_official_v6.json",
     )
     prepare_parser.add_argument("--batch-size", type=int, default=131_072)
+    prepare_parser.add_argument("--query-batch-size", type=int, default=128)
     train_parser = subparsers.add_parser("train")
     train_parser.add_argument("--features", type=Path, required=True)
     train_parser.add_argument("--output-dir", type=Path, required=True)
