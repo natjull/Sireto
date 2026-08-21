@@ -49,6 +49,34 @@ Résultats et artefacts : `docs/crm_gt_v2_retrieval_results.md`.
 *(benchmark exact + opérationnel et évaluateur : commits `33a9568`,
 `018c7d1`)*
 
+### Retrieval officiel v4 — étapes 1 à 6 closes par PIVOT
+
+La nouvelle génération hiérarchique valorise désormais, sans alias CRM ni
+identifiant comme feature, quatre familles de preuves structurées : expansion
+SIRET direct vers le SIREN et ses sites locaux, successions SIRENE, référentiels
+sectoriels FINESS/UAI/DINUM, et personnes morales liées issues du RNE. Le
+retriever réutilise des workers persistants afin d'éviter de rouvrir les index
+Tantivy à chaque requête.
+
+Sur les 6 307 scènes fold 0 exactes identifiables, l'oracle temporel précédent
+contenait 6 231 vérités. Les nouveaux canaux officiels récupèrent 25 des 76
+absentes. L'étape 6 ajoute un rescue contrastif SIREN, entraîné sur 21 262
+scènes humaines des seuls folds 2/3/4 avec 13 980 SIREN sans recouvrement fold
+0, MiniLM multilingue gelé et adaptateur linéaire sans SIREN/SIRET dans les
+features. Il récupère 2 vérités supplémentaires; l'exploration exhaustive des
+50 meilleurs SIREN sur les 49 derniers cas n'en ajoute aucune.
+
+Le plafond final observé est donc 6 258/6 307, soit 99,2231 %. Le gate oracle
+préenregistré à 99,3 % exige 6 263 hits : verdict
+`PIVOT_ORACLE_BELOW_99_3`, à cinq vérités près. Fold 1 reste fermé; aucun
+LambdaMART, ranker, decider, risk ou accepteur n'est entraîné. Rapport et
+hashes : `docs/official_retrieval_v4_step6_results.md`.
+
+*(expansion parent/sites : commit `7d4c515`; rôles RNE personnes morales :
+commit `ffc7e8e`; preuves FINESS/UAI/DINUM : commit `1038396`; workers de
+recherche persistants : commit `587d981`; rescue contrastif : commit
+`8541ef8`; rapport et verdict : commit `14cac23`)*
+
 ### Nouvel apport CRM — tri géographique SIRET du 17 août 2026
 
 Le fichier VPS `plateforme_new_data_to_cure.csv` a été copié via Tailscale
