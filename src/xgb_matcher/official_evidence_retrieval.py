@@ -417,6 +417,12 @@ class OfficialEvidenceRetriever:
             if self.config.typed_portfolio is not None
             else bool(base_manifest.get("typed_name_portfolio"))
         )
+        # Reuse workers across queries.  Creating and destroying a pool for
+        # every CRM row added measurable tail latency and allocator churn.
+        self._search_pool = ThreadPoolExecutor(
+            max_workers=self.config.search_workers,
+            thread_name_prefix="official-retrieval",
+        )
 
     @classmethod
     def from_index_paths(
@@ -528,17 +534,16 @@ class OfficialEvidenceRetriever:
                 direct_jobs.append((backend_name, backend, channel, limit))
 
         # Search calls are independent and Tantivy searchers are immutable.
-        with ThreadPoolExecutor(max_workers=self.config.search_workers) as pool:
-            futures = {
-                pool.submit(backend.search, query, channel, limit): (
-                    backend_name,
-                    channel,
-                )
-                for backend_name, backend, channel, limit in direct_jobs
-            }
-            direct_results: dict[tuple[str, str], Any] = {}
-            for future in as_completed(futures):
-                direct_results[futures[future]] = future.result()
+        futures = {
+            self._search_pool.submit(backend.search, query, channel, limit): (
+                backend_name,
+                channel,
+            )
+            for backend_name, backend, channel, limit in direct_jobs
+        }
+        direct_results: dict[tuple[str, str], Any] = {}
+        for future in as_completed(futures):
+            direct_results[futures[future]] = future.result()
 
         # Registration order is fixed even though searches completed in parallel.
         for backend_name, _backend in self.backends:
