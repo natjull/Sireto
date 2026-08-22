@@ -413,6 +413,9 @@ class RetrievalSidecarReader:
         self._siren_geo_cached = lru_cache(maxsize=cache_size)(
             self._siren_geo_uncached
         )
+        self._sirens_geo_cached = lru_cache(maxsize=max(64, cache_size // 8))(
+            self._sirens_geo_uncached
+        )
         self._closed = False
 
     def __enter__(self) -> "RetrievalSidecarReader":
@@ -676,6 +679,139 @@ class RetrievalSidecarReader:
             _validate_cap(max_sites),
         )
 
+    def _sirens_geo_uncached(
+        self,
+        sirens: tuple[str, ...],
+        insee: str,
+        postcode: str,
+        address: str,
+        street_number: str,
+        street: str,
+        include_active: bool,
+        include_closed: bool,
+        max_sites_per_siren: int,
+    ) -> tuple[tuple[str, SiteQueryResult], ...]:
+        source = _sql_path(self._local_path)
+        filters = ["siren IN (SELECT unnest(?))"]
+        where_parameters: list[Any] = [list(sirens)]
+        if insee:
+            filters.append("insee=?")
+            where_parameters.append(insee)
+        elif postcode:
+            filters.append("postcode=?")
+            where_parameters.append(postcode)
+        states: list[str] = []
+        if include_active:
+            states.append("A")
+        if include_closed:
+            states.append("F")
+        if len(states) == 1:
+            filters.append("administrative_state=?")
+            where_parameters.append(states[0])
+        elif len(states) == 2:
+            filters.append("administrative_state IN ('A','F')")
+        else:
+            return tuple(
+                (
+                    siren,
+                    SiteQueryResult(
+                        (), "SIREN_GEO_BATCH", 0, max_sites_per_siren, False
+                    ),
+                )
+                for siren in sirens
+            )
+        ranking_parameters = [
+            address,
+            address,
+            street_number,
+            street_number,
+            street,
+            street,
+        ]
+        sql = f"""
+            WITH ranked AS (
+                SELECT {_SITE_COLUMNS},
+                       count(*) OVER (PARTITION BY siren) AS total_count,
+                       row_number() OVER (
+                           PARTITION BY siren ORDER BY
+                           CASE WHEN ?<>'' THEN jaro_winkler_similarity(
+                               current_address_normalized, ?) ELSE 0 END DESC,
+                           CASE WHEN ?<>'' AND street_number=? THEN 1 ELSE 0 END DESC,
+                           CASE WHEN ?<>'' AND street_normalized=? THEN 1 ELSE 0 END DESC,
+                           CASE WHEN administrative_state='A' THEN 1 ELSE 0 END DESC,
+                           is_headquarters DESC, siret
+                       ) AS site_rank
+                FROM read_parquet('{source}')
+                WHERE {' AND '.join(filters)}
+            )
+            SELECT {_SITE_COLUMNS}, total_count
+            FROM ranked WHERE site_rank <= ?
+            ORDER BY siren, site_rank
+        """
+        rows = self._connection.execute(
+            sql,
+            ranking_parameters + where_parameters + [max_sites_per_siren],
+        ).fetchall()
+        grouped: dict[str, list[LocalSite]] = {siren: [] for siren in sirens}
+        totals = {siren: 0 for siren in sirens}
+        for row in rows:
+            site = _site_from_row(row)
+            grouped[site.siren].append(site)
+            totals[site.siren] = int(row[10])
+        return tuple(
+            (
+                siren,
+                SiteQueryResult(
+                    tuple(grouped[siren]),
+                    "SIREN_GEO_BATCH",
+                    totals[siren],
+                    max_sites_per_siren,
+                    totals[siren] > max_sites_per_siren,
+                ),
+            )
+            for siren in sirens
+        )
+
+    def sites_by_sirens_geo(
+        self,
+        *,
+        sirens: tuple[str, ...] | list[str],
+        insee: str = "",
+        postcode: str = "",
+        address: str = "",
+        street_number: str = "",
+        street: str = "",
+        include_active: bool = True,
+        include_closed: bool = True,
+        max_sites_per_siren: int = MAX_QUERY_SITES,
+    ) -> dict[str, SiteQueryResult]:
+        """Expand many parents with one Parquet scan and stable site ordering."""
+        self._ensure_open()
+        if not insee and not postcode:
+            raise ValueError("sites_by_sirens_geo requires INSEE or postcode")
+        normalized_sirens = tuple(
+            dict.fromkeys(
+                _normalize_identifier(value, 9, label="SIREN") for value in sirens
+            )
+        )
+        if not normalized_sirens:
+            return {}
+        if len(normalized_sirens) > 512:
+            raise ValueError("sites_by_sirens_geo accepts at most 512 parents")
+        return dict(
+            self._sirens_geo_cached(
+                normalized_sirens,
+                _normalize_insee(insee) if insee else "",
+                _normalize_optional_postcode(postcode),
+                _normalize_text(address),
+                _normalize_text(street_number),
+                _normalize_text(street),
+                bool(include_active),
+                bool(include_closed),
+                _validate_cap(max_sites_per_siren),
+            )
+        )
+
     def cache_info(self) -> dict[str, Any]:
         """Expose aggregate cache counters without exposing the SQL handle."""
         return {
@@ -683,6 +819,7 @@ class RetrievalSidecarReader:
             "exact_geo_cell": self._exact_cell_cached.cache_info(),
             "number_cell": self._number_cell_cached.cache_info(),
             "siren_geo": self._siren_geo_cached.cache_info(),
+            "sirens_geo": self._sirens_geo_cached.cache_info(),
         }
 
     def close(self) -> None:
@@ -692,6 +829,7 @@ class RetrievalSidecarReader:
         self._exact_cell_cached.cache_clear()
         self._number_cell_cached.cache_clear()
         self._siren_geo_cached.cache_clear()
+        self._sirens_geo_cached.cache_clear()
         self._connection.close()
         self._closed = True
 

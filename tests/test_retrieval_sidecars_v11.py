@@ -240,6 +240,23 @@ def test_siren_geo_keeps_active_and_closed_and_orders_address_before_hq(tmp_path
         assert result.sites[0].active is False
         assert result.sites[1].is_headquarters is True
 
+        batch = reader.sites_by_sirens_geo(
+            sirens=["200000001", "200000002"],
+            insee="69381",
+            address="12 rue beta",
+            street_number="12",
+            street="RUE BETA",
+            max_sites_per_siren=3,
+        )
+        assert list(batch) == ["200000001", "200000002"]
+        assert [site.siret for site in batch["200000001"].sites] == [
+            "20000000100029",
+            "20000000100011",
+        ]
+        assert [site.siret for site in batch["200000002"].sites] == [
+            "20000000200013"
+        ]
+
         active_only = reader.sites_by_siren_geo(
             siren="200000001",
             insee="69381",

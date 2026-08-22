@@ -197,6 +197,8 @@ def _exact_projection(frame: pd.DataFrame) -> pd.DataFrame:
         "is_synthetic",
         "unseen_siren",
         "new_site_known_siren",
+        "pool_size",
+        "mega_base_pool",
     ]
     columns = [column for column in preferred if column in frame.columns]
     return frame[columns].sort_values("query_id", kind="mergesort").reset_index(drop=True)

@@ -540,8 +540,26 @@ class OfficialEvidenceRetriever:
         )
 
     def retrieve(
-        self, row: RetrievalQuery | Mapping[str, Any]
+        self,
+        row: RetrievalQuery | Mapping[str, Any],
+        *,
+        candidate_cap: int | None = None,
     ) -> OfficialEvidenceRetrievalResult:
+        """Retrieve a deterministic candidate prefix.
+
+        Production callers use the configured cap (at most 2,000).  Retrieval
+        v11 may request a larger *reference-only* prefix, capped at 10,000, so
+        its label-blind pre-cap selector can replace the historical heuristic
+        truncation.  The legacy call signature and configured output remain
+        unchanged.
+        """
+        selected_cap = (
+            self.config.max_union_candidates
+            if candidate_cap is None
+            else int(candidate_cap)
+        )
+        if not 1 <= selected_cap <= 10_000:
+            raise ValueError("candidate_cap must be between 1 and 10000")
         started = time.perf_counter()
         query = row if isinstance(row, RetrievalQuery) else RetrievalQuery.from_mapping(row)
         if not query.insee and not query.postcode:
@@ -843,7 +861,7 @@ class OfficialEvidenceRetriever:
             key=lambda item: self._balanced_union_sort_key(item[0], item[1]),
         )
         raw_union_size = len(ordered)
-        selected = ordered[: self.config.max_union_candidates]
+        selected = ordered[:selected_cap]
         output = tuple(
             OfficialEvidenceCandidate(
                 union_rank=rank,
