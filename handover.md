@@ -5482,5 +5482,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   admission p95 8,38 ms. Verdict global `PIVOT_LATENCY_AFTER_RECALL_GO`.
   Détails et hashes : `docs/retrieval_selective_v10_results.md`.
 
+- **RÉTRACTATION PRIORITAIRE — le commit `1a95bcd` annule la conclusion GO
+  ci-dessus sans effacer son historique.** Le résultat 5 649/5 700 =
+  99,1053 % a été obtenu sur un sous-ensemble construit après plusieurs
+  lectures de fold0; il porte désormais le statut
+  `RETROSPECTIVE_SELECTIVE_DIAGNOSTIC_INVALID_FOR_PRIMARY_GATE`. Les métriques
+  principales corrigées sont : tous les labels humains utilisables
+  6 654/7 005 = 94,9893 %; ancien périmètre exact 6 085/6 307 = 96,4801 %;
+  sous-ensemble post-hoc 5 649/5 700 = 99,1053 %, diagnostic secondaire non
+  admissible au gate. Les 7 009 scènes comprennent quatre lignes ambiguës sans
+  aucun SIRET historique exploitable; les 702 lignes hors ancien périmètre et
+  les 607 lignes retirées ensuite ne sont pas des labels humains moins
+  valides. La qualification v4 consulte le SIRET humain et son dossier
+  officiel : elle reste un audit rétrospectif, jamais un routeur de production.
+  L'affirmation antérieure « seuils choisis uniquement sur folds 2/3/4 » est
+  explicitement corrigée dans le rapport, qui consigne les lectures v8, v9,
+  v10 puis les essais post-hoc sur fold0. Aucun nouveau GO/PASS n'est annoncé;
+  fold1, test et modèles aval restent fermés jusqu'à une stratégie
+  préenregistrée et approuvée.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
