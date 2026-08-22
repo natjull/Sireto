@@ -52,6 +52,17 @@ SIREN. Fold 0 reste diagnostique et fold 1 fermé.
 
 *(admission hiérarchique nested OOF et tests : commit `ef6f400`)*
 
+L'exécution nationale est shardée par fold puis recombinée avec contrôle des
+hashes, de la disjonction des folds et du plafond de 2 000. Le schéma Arrow est
+désormais explicite afin qu'un canal vide dans le premier batch puisse être
+rempli plus tard sans casser le writer. Pour maîtriser la mémoire, le fit seul
+utilise l'échantillon préenregistré de 128 candidats naturels par requête ; le
+positif n'est jamais injecté et toutes les validations outer OOF parcourent les
+unions complètes. Les manifests scellent les octets de configuration réellement
+chargés au démarrage du job.
+
+*(exécution shardée, sérialisation stable et OOF streaming : commit `7b3a35f`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
