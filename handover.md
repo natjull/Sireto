@@ -19,6 +19,16 @@ Le code de génération production ne peut pas accéder à ces colonnes label.
 
 *(builder all-human v11 et tests : commit `2c91903`)*
 
+Les sidecars v11 matérialisent désormais deux projections officielles,
+content-addressées et sans label : cellules géographiques par établissement et
+sites locaux par SIREN. Ils conservent actifs et fermés, servent toute petite
+commune quand elle tient dans le budget, puis bornent les grandes communes par
+`INSEE+CP+numéro+voie` et `INSEE+CP+numéro`. L'expansion SIREN classe l'accord
+d'adresse avant le statut de siège et reste plafonnée par le budget global de
+2 000 candidats.
+
+*(sidecars géographiques/SIREN v11 et tests : commit `c911e5e`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
