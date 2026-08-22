@@ -63,6 +63,14 @@ chargés au démarrage du job.
 
 *(exécution shardée, sérialisation stable et OOF streaming : commit `7b3a35f`)*
 
+Le CLI impose maintenant un gate oracle OOF séparé avant tout fit : il parcourt
+les unions complètes naturelles folds 2/3/4, publie les quatre lignes
+explicatives et conclut uniquement `ORACLE_GATE_PASS` ou `PIVOT_ORACLE`. Aucun
+modèle d'admission n'est instancié par cette étape et les manifests prouvent que
+fold 0 et fold 1 sont restés fermés.
+
+*(gate oracle OOF pré-admission : commit `11f6815`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
