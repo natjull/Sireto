@@ -12,6 +12,7 @@ import pytest
 import src.xgb_matcher.retrieval_hierarchical_admission_v11 as v11
 from scripts.run_retrieval_hierarchical_admission_v11 import (
     _fit_sample,
+    run_oracle,
     run_oof,
     sha256_file,
 )
@@ -188,6 +189,45 @@ def test_streaming_oof_scores_full_candidate_groups(tmp_path: Path) -> None:
     ] == 7
     selected = pd.read_parquet(output / "selected_candidates.parquet")
     assert selected.groupby("query_id").size().eq(7).all()
+
+
+def test_oracle_gate_runs_before_any_admission_fit(tmp_path: Path) -> None:
+    config = tiny_config()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(config.raw), encoding="utf-8")
+    candidates = tmp_path / "candidates.parquet"
+    make_union(queries_per_fold=1, candidates_per_query=7).sort_values(
+        ["query_id", "union_rank"]
+    ).to_parquet(candidates, index=False)
+    candidates.with_suffix(".parquet.manifest.json").write_text(
+        json.dumps(
+            {
+                "candidate_parquet_sha256": sha256_file(candidates),
+                "positive_injection": False,
+                "maximum_union_candidates": 7,
+                "labels_attached_after_retrieval": True,
+                "all_label_queries_have_natural_candidates": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "oracle"
+    run_oracle(
+        argparse.Namespace(
+            candidates=candidates,
+            output_dir=output,
+            config=config_path,
+            query_batch_size=2,
+        )
+    )
+
+    summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+    assert summary["run_kind"] == "OOF_ORACLE_BEFORE_ADMISSION"
+    assert summary["admission_model_fit"] is False
+    assert summary["query_count"] == 3
+    manifest = json.loads((output / "manifest.json").read_text(encoding="utf-8"))
+    assert manifest["fold0_opened"] is False
+    assert manifest["fold1_opened"] is False
 
 
 def test_label_blind_preparation_rejects_human_labels() -> None:

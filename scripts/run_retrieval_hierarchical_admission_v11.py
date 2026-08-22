@@ -343,6 +343,77 @@ def run_oof(args: argparse.Namespace) -> Path:
     return args.output_dir
 
 
+def run_oracle(args: argparse.Namespace) -> Path:
+    """Evaluate the complete natural union before any admission model is fit."""
+    config = HierarchicalAdmissionConfig.load(args.config)
+    source_manifest_path, _ = verify_candidate_manifest(
+        args.candidates, require_labels_attached=True
+    )
+    _prepare_output(args.output_dir)
+    groups: list[pd.DataFrame] = []
+    outcome_chunks: list[pd.DataFrame] = []
+
+    def flush() -> None:
+        if not groups:
+            return
+        canonical = canonicalize_union(
+            pd.concat(groups, ignore_index=True),
+            config,
+            labels_allowed=True,
+            require_labels=True,
+        )
+        selected = canonical.iloc[0:0].copy()
+        outcomes, _ = evaluate_all_human(canonical, selected, config)
+        outcome_chunks.append(outcomes)
+        groups.clear()
+
+    for group in iter_complete_query_frames(args.candidates, batch_size=131_072):
+        if int(group.iloc[0]["fold"]) not in config.train_folds:
+            raise ValueError("Oracle evaluation opened a non-training fold")
+        groups.append(group)
+        if len(groups) >= args.query_batch_size:
+            flush()
+    flush()
+    if not outcome_chunks:
+        raise ValueError("Oracle evaluation produced no outcomes")
+    outcomes = pd.concat(outcome_chunks, ignore_index=True)
+    summary = summarize_outcomes(outcomes, config)
+    oracle_gate = summary["gates"]["oracle_at_2000"]
+    summary["run_kind"] = "OOF_ORACLE_BEFORE_ADMISSION"
+    summary["admission_model_fit"] = False
+    summary["fold0_opened"] = False
+    summary["fold1_opened"] = False
+    summary["verdict"] = (
+        "ORACLE_GATE_PASS" if oracle_gate["passed"] else "PIVOT_ORACLE"
+    )
+    outcomes_path = args.output_dir / "query_outcomes.parquet"
+    summary_path = args.output_dir / "summary.json"
+    outcomes.to_parquet(outcomes_path, index=False, compression="zstd")
+    _write_json(summary_path, summary)
+    _write_json(
+        args.output_dir / "manifest.json",
+        {
+            "schema_version": SCHEMA_VERSION,
+            "run_kind": "OOF_ORACLE_BEFORE_ADMISSION",
+            "policy_id": config.policy_id,
+            "source_candidates_sha256": sha256_file(args.candidates),
+            "source_manifest_sha256": sha256_file(source_manifest_path),
+            "config_sha256": sha256_file(args.config),
+            "opened_folds": list(config.train_folds),
+            "fold0_opened": False,
+            "fold1_opened": False,
+            "admission_model_fit": False,
+            "positive_injection": False,
+            "outputs": {
+                outcomes_path.name: sha256_file(outcomes_path),
+                summary_path.name: sha256_file(summary_path),
+            },
+            "verdict": summary["verdict"],
+        },
+    )
+    return args.output_dir
+
+
 def _save_models(
     models: HierarchicalModels,
     output_dir: Path,
@@ -462,12 +533,14 @@ def run_predict(args: argparse.Namespace) -> Path:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
-    for command in ("oof", "fit"):
+    for command in ("oracle", "oof", "fit"):
         subparser = subparsers.add_parser(command)
         subparser.add_argument("--candidates", type=Path, required=True)
         subparser.add_argument("--output-dir", type=Path, required=True)
         subparser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
-        if command == "oof":
+        if command == "oracle":
+            subparser.add_argument("--query-batch-size", type=int, default=32)
+        elif command == "oof":
             subparser.add_argument("--fit-query-batch-size", type=int, default=64)
             subparser.add_argument(
                 "--validation-query-batch-size", type=int, default=32
@@ -482,7 +555,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
-    if args.command == "oof":
+    if args.command == "oracle":
+        output = run_oracle(args)
+    elif args.command == "oof":
         output = run_oof(args)
     elif args.command == "fit":
         output = run_fit(args)
