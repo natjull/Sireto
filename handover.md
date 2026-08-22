@@ -71,6 +71,14 @@ fold 0 et fold 1 sont restés fermés.
 
 *(gate oracle OOF pré-admission : commit `11f6815`)*
 
+Le profileur runtime choisit 512 requêtes folds 2/3/4 par hash salé sans
+consulter les labels, réexécute le retrieval chaud et exige la parité exacte de
+la liste ordonnée des candidats avec l'artefact de référence. Il publie les
+latences p50/p95/p99 et conclut séparément `RUNTIME_GATE_PASS` ou
+`PIVOT_LATENCY`; il ne peut ouvrir ni fold 0 ni fold 1.
+
+*(profil runtime et preuve de parité : commit `1357705`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
