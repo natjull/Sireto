@@ -1,14 +1,17 @@
-# Directive active — Retrieval sélectif SIRET Recall@100
+# Directive active — Retrieval all-human v11 SIRET Recall@100
 
 La directive ci-dessous prévaut sur les descriptions historiques V6, V7 et V8
 conservées plus bas à titre de référence.
 
 Objectif actif : concevoir et valider, sans GPU loué ni dépense externe, un
-retrieval qui conserve le bon SIRET dans au moins 99,0 % des requêtes où le
-SIRET exact est identifiable, avec un plafond absolu de 100 candidats et une
-couverture identifiable d'au moins 80,0 %.
+retrieval qui conserve le SIRET humain dans au moins 99,0 % de toutes les
+requêtes disposant d'un SIRET humain exploitable, avec un plafond absolu de
+100 candidats. Les statuts `MATCH_EXACT`, `AMBIGUOUS`, `UNRESOLVED`, V2 et V3
+sont des segments d'audit et ne peuvent plus retirer une ligne du dénominateur
+principal.
 
-Contrat détaillé : `docs/retrieval_selective_recall100_contract.md`.
+Contrat détaillé : `docs/retrieval_all_human_v11_contract.md`. Le contrat
+sélectif précédent et sa rétractation restent conservés comme historique.
 
 Politique métier complémentaire active :
 `docs/siret_operational_equivalence_policy.md`. Elle considère comme correcte
@@ -19,20 +22,27 @@ et opérationnelle doivent toujours être publiées séparément.
 
 Ordre obligatoire :
 
-1. qualifier V2/V3 sans utiliser les résultats du retrieval ;
-2. mesurer séparément couverture et Recall@100 sur le périmètre exact ;
-3. geler politique, retrieval et admission sur train/dev ;
-4. franchir couverture >=80,0 % et Recall@100 SIRET >=99,0 % sur dev ;
-5. exécuter une seule évaluation finale sur test ;
-6. conclure explicitement `GO`, `PIVOT` ou `STOP`.
+1. préserver tous les labels humains exploitables et publier les absences ;
+2. développer uniquement en OOF sur les folds 2/3/4, unions complètes ;
+3. franchir Recall@2000 >=99,5 % avant tout gate d'admission ;
+4. franchir Recall@100 OOF >=99,2 %, Wilson 95 % >=99,0 % et les SLO ;
+5. geler politique, retrieval, admission et hashes ;
+6. ouvrir le fold 1 une seule fois après autorisation explicite ;
+7. conclure explicitement `GO`, `PIVOT_ORACLE`, `PIVOT_ADMISSION`,
+   `PIVOT_LATENCY` ou `STOP`.
 
 Contraintes non négociables :
 
-- métriques principales : couverture identifiable et Recall SIRET exact ;
+- métrique principale : Recall SIRET humain exact sur tous les labels humains
+  exploitables ;
+- fold 0 consommé et strictement diagnostique, jamais décisionnel ;
+- fold 1 fermé jusqu'à une autorisation one-shot hashée ;
 - une vérité absente du pool est une erreur end-to-end ;
+- 2 000 candidats est le plafond absolu de l'union interne ;
 - 100 candidats est un plafond absolu, jamais une moyenne ;
 - aucun positif injecté dans une évaluation ;
-- aucune qualification ne peut utiliser un hit, un rang ou un score modèle ;
+- aucun statut de qualification ne peut filtrer le dénominateur principal ;
+- aucun alias CRM, identifiant SIREN/SIRET ou donnée synthétique comme feature ;
 - les métriques historique, V2 et V3 sont toujours publiées ensemble ;
 - ranker, decider, risk model et accepteur gelés jusqu'au gate retrieval ;
 - aucun résultat présenté comme SOTA ou garanti sans preuve suffisante ;

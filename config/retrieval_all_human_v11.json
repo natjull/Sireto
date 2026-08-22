@@ -1,0 +1,66 @@
+{
+  "schema_version": "sireto-retrieval-all-human-v11-config-1",
+  "policy_id": "retrieval-v11-all-human-exact-primary",
+  "folds": {
+    "train": [2, 3, 4],
+    "development_diagnostic": 0,
+    "test_locked": 1
+  },
+  "labels": {
+    "exact_target_field": "human_ground_truth_siret",
+    "precedence": [
+      "ground_truth_siret",
+      "historical_ground_truth_siret"
+    ],
+    "valid_siret_pattern": "^[0-9]{14}$",
+    "only_exclusion": "NO_VALID_CURRENT_OR_HISTORICAL_HUMAN_SIRET",
+    "qualification_fields_may_filter_primary_population": false,
+    "operational_labels_separate_from_exact_benchmark": true
+  },
+  "retrieval": {
+    "raw_reference_cap": 10000,
+    "maximum_internal_candidates": 2000,
+    "maximum_final_candidates": 100,
+    "parent_candidate_budget": 700,
+    "parent_siren_limit": 64,
+    "relation_seed_limit": 32,
+    "anchor_protection_slots": 20,
+    "consensus_protection_slots": 20,
+    "maximum_final_sites_per_siren": 3,
+    "conditional_contrastive_rescue": {
+      "enabled": true,
+      "maximum_executions_per_query": 1,
+      "condition": "SPARSE_PARENT_SUPPORT_INSUFFICIENT",
+      "unconditional_execution": false
+    },
+    "positive_injection": false,
+    "crm_alias_lookup": false,
+    "synthetic_labels": false,
+    "paid_web_sources": false
+  },
+  "development": {
+    "variant_selection_folds": [2, 3, 4],
+    "fold0_reads_before_freeze": 0,
+    "fold0_role": "DIAGNOSTIC_ONLY_NOT_A_GATE",
+    "fold0_required_before_fold1": false,
+    "fold0_may_select_variant_or_threshold": false,
+    "automatic_threshold_tuning": false
+  },
+  "gates": {
+    "minimum_oof_oracle_recall_at_2000": 0.995,
+    "minimum_oof_exact_recall_at_100": 0.992,
+    "minimum_oof_exact_recall_at_100_wilson95_lower": 0.99,
+    "minimum_each_outer_fold_exact_recall_at_100": 0.988,
+    "maximum_internal_candidates": 2000,
+    "maximum_final_candidates": 100,
+    "maximum_warm_p95_ms": 1000,
+    "maximum_warm_p99_ms": 2000
+  },
+  "reporting": {
+    "primary_denominator": "ALL_USABLE_HUMAN_LABELS",
+    "publish_counts_and_rates": true,
+    "publish_per_fold_missing_label_lists": true,
+    "publish_exact_and_operational_separately": true,
+    "publish_active_closed_origin_and_geography_segments": true
+  }
+}
