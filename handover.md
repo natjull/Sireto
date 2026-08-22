@@ -5501,5 +5501,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fold1, test et modèles aval restent fermés jusqu'à une stratégie
   préenregistrée et approuvée.
 
+## Retrieval all-human v11 — 22 août 2026
+
+- Le commit `00ef9df` préenregistre le nouveau contrat all-human v11 et rend
+  cette directive active dans `AGENTS.md`, sans effacer le diagnostic v10
+  rétracté. Le SIRET humain courant, sinon historique, devient la vérité exacte
+  principale; `MATCH_EXACT`, `AMBIGUOUS`, `UNRESOLVED`, V2 et V3 ne peuvent
+  plus retirer une ligne du dénominateur.
+- La recette est développée uniquement en OOF sur les folds 2/3/4. Les gates
+  gelés sont oracle@2000 >=99,5 %, Recall@100 >=99,2 %, borne Wilson95 >=99,0
+  %, aucun outer fold <98,8 %, p95 <=1 s et p99 <=2 s. Fold0 reste uniquement
+  diagnostique et fold1 demeure fermé derrière l'autorisation one-shot.
+- Le benchmark exact et les équivalences opérationnelles seront physiquement
+  séparés; aucun label, alias CRM, identifiant ou donnée synthétique n'entre
+  dans le chemin production. Le code et les sidecars v11 restent à livrer dans
+  des milestones isolés avant toute exécution OOF.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
