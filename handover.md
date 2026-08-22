@@ -29,6 +29,29 @@ d'adresse avant le statut de siège et reste plafonnée par le budget global de
 
 *(sidecars géographiques/SIREN v11 et tests : commit `c911e5e`)*
 
+Le moteur SIREN-first v11 compose maintenant le préfixe officiel large, les
+cellules géographiques et une expansion locale round-robin de 700 sites, puis
+publie une union déterministe de 2 000 SIRET. Le retrieval est physiquement
+séparé de la jointure label-side ; aucune vérité humaine ni équivalence
+opérationnelle n'entre dans la génération. L'expansion de plusieurs parents
+est batchée en un scan Parquet, sans modifier les candidats ni leur ordre.
+L'artefact national sidecar `de762d80b7d61d35` contient 43 526 286
+établissements géocodables dans chacune de ses deux projections (1,7 Gio).
+
+*(union SIREN-first, export label-blind et vectorisation : commit `0f2ae41`)*
+
+L'admission v11 utilise une configuration unique et deux LambdaMART : parent
+SIREN puis site SIRET. Les scores parent servant au second modèle sont produits
+en inner OOF ; l'évaluation décisionnelle est un outer OOF complet sur folds
+2/3/4 et score toutes les unions naturelles jusqu'à 2 000 candidats. Les
+équivalents opérationnels proviennent exclusivement du sidecar label, ne sont
+pas des négatifs exacts et restent une métrique secondaire. Une adresse exacte
+seule n'est jamais protégée ; les consensus protégés couvrent des SIREN
+distincts ; aucun remplissage arbitraire ne contourne le cap de trois sites par
+SIREN. Fold 0 reste diagnostique et fold 1 fermé.
+
+*(admission hiérarchique nested OOF et tests : commit `ef6f400`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
