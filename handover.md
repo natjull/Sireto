@@ -79,6 +79,13 @@ latences p50/p95/p99 et conclut séparément `RUNTIME_GATE_PASS` ou
 
 *(profil runtime et preuve de parité : commit `1357705`)*
 
+Le résultat géographique conserve maintenant le cardinal exact du bloc INSEE
+avant cap dans chaque ligne candidate. Le segment obligatoire « mégapole » est
+donc calculé label-blind sur `pool_size >= 100000`, au lieu de tomber
+silencieusement à faux lorsque le benchmark source ne portait pas ce champ.
+
+*(cardinal géographique et segment mégapole : commit `ae203cd`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
