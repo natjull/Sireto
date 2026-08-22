@@ -64,6 +64,76 @@ SAFE_QUERY_METADATA = (
     "mega_base_pool",
 )
 
+_STRING_LIST_COLUMNS = frozenset(
+    {
+        "sources",
+        "channels",
+        "official_evidence_ids",
+        "official_evidence_sources",
+        "candidate_names",
+        "candidate_addresses",
+    }
+)
+_BOOLEAN_COLUMNS = frozenset(
+    {
+        "unseen_siren",
+        "new_site_known_siren",
+        "mega_base_pool",
+        "candidate_is_siege",
+        "union_truncated",
+        "candidate_present",
+    }
+)
+_INTEGER_COLUMNS = frozenset(
+    {
+        "oof_fold",
+        "fold",
+        "pool_size",
+        "union_rank",
+        "retrieval_rank",
+        "raw_union_size",
+    }
+)
+_SIGNAL_TYPE = pa.list_(
+    pa.struct(
+        [
+            pa.field("source", pa.string()),
+            pa.field("channel", pa.string()),
+            pa.field("rank", pa.int64()),
+            pa.field("score", pa.float64()),
+            pa.field("parent_identifier", pa.string()),
+            pa.field("parent_rank", pa.int64()),
+            pa.field("parent_support_count", pa.int64()),
+            pa.field("site_rank", pa.int64()),
+            pa.field("relation_direction", pa.string()),
+        ]
+    )
+)
+
+
+def _candidate_schema(row: Mapping[str, Any]) -> pa.Schema:
+    """Return a stable schema even when the first batch has empty channels.
+
+    Arrow otherwise infers ``null`` for a channel absent from every row in the
+    first write batch, making the Parquet writer reject a later numeric value.
+    """
+    fields: list[pa.Field] = []
+    for name in row:
+        if name == "signals":
+            dtype = _SIGNAL_TYPE
+        elif name in _STRING_LIST_COLUMNS:
+            dtype = pa.list_(pa.string())
+        elif name in _BOOLEAN_COLUMNS:
+            dtype = pa.bool_()
+        elif name in _INTEGER_COLUMNS or name.endswith("_rank"):
+            dtype = pa.int64()
+        elif name.endswith("_score") or name == "retrieval_latency_ms":
+            dtype = pa.float64()
+        else:
+            dtype = pa.string()
+        fields.append(pa.field(name, dtype))
+    return pa.schema(fields)
+
 
 def sha256_file(path: Path) -> str:
     digest = hashlib.sha256()
@@ -128,13 +198,20 @@ def retrieve(args: argparse.Namespace) -> Path:
     if temporary.exists():
         raise FileExistsError(temporary)
 
+    # Pin the exact bytes loaded by this process.  The manifest must never hash
+    # a config that changed while a long retrieval run was in progress.
+    loaded_config_sha256 = sha256_file(args.config)
+    loaded_official_config_sha256 = sha256_file(args.official_config)
     v11_config = RetrievalV11Config.load(args.config)
+    if not 1 <= int(args.search_workers) <= 16:
+        raise ValueError("search_workers must be between 1 and 16")
     official_config = OfficialEvidenceRetrievalConfig.load(args.official_config)
     official_config = replace(
         official_config,
         enable_direct_parent_expansion=False,
         enable_consensus_parent_expansion=False,
         relation_seed_limit=v11_config.relation_seed_limit,
+        search_workers=int(args.search_workers),
     )
     official = OfficialEvidenceRetriever.from_index_paths(
         args.base_index,
@@ -168,17 +245,15 @@ def retrieve(args: argparse.Namespace) -> Path:
                 buffer.extend(rows)
                 if len(buffer) < args.write_batch_rows:
                     continue
-                table = pa.Table.from_pylist(
-                    buffer, schema=writer.schema if writer else None
-                )
+                schema = writer.schema if writer else _candidate_schema(buffer[0])
+                table = pa.Table.from_pylist(buffer, schema=schema)
                 if writer is None:
                     writer = pq.ParquetWriter(temporary, table.schema, compression="zstd")
                 writer.write_table(table)
                 buffer.clear()
             if buffer:
-                table = pa.Table.from_pylist(
-                    buffer, schema=writer.schema if writer else None
-                )
+                schema = writer.schema if writer else _candidate_schema(buffer[0])
+                table = pa.Table.from_pylist(buffer, schema=schema)
                 if writer is None:
                     writer = pq.ParquetWriter(temporary, table.schema, compression="zstd")
                 writer.write_table(table)
@@ -199,8 +274,8 @@ def retrieve(args: argparse.Namespace) -> Path:
             "source_manifest_sha256": (
                 sha256_file(input_manifest) if input_manifest.is_file() else None
             ),
-            "config_sha256": sha256_file(args.config),
-            "official_config_sha256": sha256_file(args.official_config),
+            "config_sha256": loaded_config_sha256,
+            "official_config_sha256": loaded_official_config_sha256,
             "sidecar_manifest_sha256": sha256_file(args.sidecars / "manifest.json"),
             "folds": sorted(folds),
             "queries": query_count,
@@ -303,6 +378,89 @@ def attach_labels(args: argparse.Namespace) -> Path:
     return output
 
 
+def combine(args: argparse.Namespace) -> Path:
+    inputs = tuple(path.resolve() for path in args.input)
+    if len(inputs) < 2:
+        raise ValueError("combine requires at least two candidate shards")
+    manifests = [
+        json.loads(_manifest_path(path).read_text(encoding="utf-8"))
+        for path in inputs
+    ]
+    stable_keys = (
+        "schema_version",
+        "candidate_schema_version",
+        "source_input_sha256",
+        "config_sha256",
+        "official_config_sha256",
+        "sidecar_manifest_sha256",
+        "positive_injection",
+        "human_labels_opened_by_retrieval",
+    )
+    for key in stable_keys:
+        if len({json.dumps(manifest.get(key), sort_keys=True) for manifest in manifests}) != 1:
+            raise ValueError(f"candidate shards disagree on {key}")
+    for path, manifest in zip(inputs, manifests):
+        if manifest.get("candidate_parquet_sha256") != sha256_file(path):
+            raise ValueError(f"candidate shard hash mismatch: {path}")
+        if manifest.get("positive_injection") is not False:
+            raise ValueError("candidate shard does not prove zero injection")
+    folds = [int(value) for manifest in manifests for value in manifest.get("folds", [])]
+    if len(folds) != len(set(folds)):
+        raise ValueError("candidate shards have overlapping folds")
+    output = args.output.resolve()
+    manifest_path = _manifest_path(output)
+    if output.exists() or manifest_path.exists():
+        raise FileExistsError(output if output.exists() else manifest_path)
+    output.parent.mkdir(parents=True, exist_ok=True)
+    temporary = output.with_suffix(output.suffix + ".tmp")
+    input_sql = ",".join(f"'{_sql_path(path)}'" for path in inputs)
+    connection = duckdb.connect()
+    try:
+        connection.execute(
+            f"COPY (SELECT * FROM read_parquet([{input_sql}]) "
+            "ORDER BY query_id, union_rank) "
+            f"TO '{_sql_path(temporary)}' "
+            "(FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)"
+        )
+        counts = connection.execute(
+            f"SELECT count(*), count(DISTINCT query_id), "
+            "max(n), count(*)-count(DISTINCT query_id||':'||siret) "
+            "FROM (SELECT *, count(*) OVER (PARTITION BY query_id) n "
+            f"FROM read_parquet('{_sql_path(temporary)}'))"
+        ).fetchone()
+    finally:
+        connection.close()
+    if int(counts[3]) != 0:
+        temporary.unlink(missing_ok=True)
+        raise ValueError("combined shards contain duplicate query/SIRET candidates")
+    if int(counts[2] or 0) > 2_000:
+        temporary.unlink(missing_ok=True)
+        raise AssertionError("combined v11 union exceeds 2,000 candidates")
+    os.replace(temporary, output)
+    _write_manifest(
+        manifest_path,
+        {
+            **{key: manifests[0].get(key) for key in stable_keys},
+            "run_kind": "LABEL_BLIND_RETRIEVAL_COMBINED",
+            "candidate_parquet_sha256": sha256_file(output),
+            "source_shards": [
+                {
+                    "path": str(path),
+                    "sha256": sha256_file(path),
+                    "manifest_sha256": sha256_file(_manifest_path(path)),
+                }
+                for path in inputs
+            ],
+            "folds": sorted(folds),
+            "queries": int(counts[1]),
+            "candidate_rows": int(counts[0]),
+            "empty_queries": sum(int(item.get("empty_queries", 0)) for item in manifests),
+            "maximum_union_candidates": int(counts[2] or 0),
+        },
+    )
+    return output
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     subparsers = parser.add_subparsers(dest="command", required=True)
@@ -320,17 +478,26 @@ def parse_args() -> argparse.Namespace:
     retrieval.add_argument("--folds", default="2,3,4")
     retrieval.add_argument("--batch-size", type=int, default=512)
     retrieval.add_argument("--write-batch-rows", type=int, default=8192)
+    retrieval.add_argument("--search-workers", type=int, default=4)
     labels = subparsers.add_parser("attach-labels")
     labels.add_argument("--candidates", type=Path, required=True)
     labels.add_argument("--labels", type=Path, required=True)
     labels.add_argument("--operational-labels", type=Path, required=True)
     labels.add_argument("--output", type=Path, required=True)
+    combined = subparsers.add_parser("combine")
+    combined.add_argument("--input", type=Path, action="append", required=True)
+    combined.add_argument("--output", type=Path, required=True)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    output = retrieve(args) if args.command == "retrieve" else attach_labels(args)
+    if args.command == "retrieve":
+        output = retrieve(args)
+    elif args.command == "attach-labels":
+        output = attach_labels(args)
+    else:
+        output = combine(args)
     print(output)
 
 

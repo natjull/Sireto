@@ -11,7 +11,10 @@ from pathlib import Path
 import sys
 from typing import Any
 
+import numpy as np
 import pandas as pd
+import pyarrow as pa
+import pyarrow.parquet as pq
 import xgboost as xgb
 
 
@@ -25,9 +28,18 @@ from src.xgb_matcher.retrieval_hierarchical_admission_v11 import (  # noqa: E402
     PARENT_FEATURES,
     SCHEMA_VERSION,
     SIRET_FEATURES,
+    canonicalize_union,
+    evaluate_all_human,
+    fit_outer_oof_models,
     fit_hierarchical_models,
     outer_oof_evaluate,
     predict_top100,
+    score_canonical_candidates,
+    select_top100,
+    summarize_outcomes,
+)
+from scripts.evaluate_retrieval_ltr_streaming import (  # noqa: E402
+    iter_complete_query_frames,
 )
 
 
@@ -85,18 +97,228 @@ def _prepare_output(path: Path) -> None:
     path.mkdir(parents=True)
 
 
+def _natural_positive_mask(group: pd.DataFrame) -> pd.Series:
+    truth = str(group.iloc[0].get("human_ground_truth_siret") or "")
+    candidate_column = "siret" if "siret" in group else "candidate_siret"
+    return group[candidate_column].astype(str).eq(truth)
+
+
+def _fit_sample(group: pd.DataFrame, config: HierarchicalAdmissionConfig) -> pd.DataFrame:
+    sampling = config.fit_candidate_sampling
+    cap = int(sampling["maximum_candidates_per_query"])
+    if len(group) <= cap:
+        return group
+    union_head = int(sampling["union_head"])
+    channel_head = int(sampling["channel_head"])
+    selected: set[int] = set(
+        pd.to_numeric(group["union_rank"], errors="coerce")
+        .nsmallest(union_head)
+        .index.tolist()
+    )
+    channel_selected: set[int] = set()
+    for column in group.columns:
+        if not column.endswith("_rank") or column in {"union_rank", "retrieval_rank"}:
+            continue
+        ranks = pd.to_numeric(group[column], errors="coerce")
+        channel_selected.update(ranks.dropna().nsmallest(channel_head).index.tolist())
+    selected.update(channel_selected)
+    positive = set(group.index[_natural_positive_mask(group)].tolist())
+    selected.update(positive)
+    if len(selected) < cap:
+        fill = (
+            pd.to_numeric(group["union_rank"], errors="coerce")
+            .drop(index=list(selected), errors="ignore")
+            .nsmallest(cap - len(selected))
+        )
+        selected.update(fill.index.tolist())
+    candidates = group.loc[sorted(selected)].copy()
+    candidates["__positive"] = candidates.index.isin(positive)
+    candidates["__channel_head"] = candidates.index.isin(channel_selected)
+    candidates["__rank"] = pd.to_numeric(
+        candidates["union_rank"], errors="coerce"
+    ).fillna(2_147_483_647)
+    candidates = candidates.sort_values(
+        ["__positive", "__channel_head", "__rank"],
+        ascending=[False, False, True],
+        kind="stable",
+    ).head(cap)
+    return candidates.drop(
+        columns=["__positive", "__channel_head", "__rank"]
+    ).sort_values("union_rank", kind="stable")
+
+
+def _load_fit_sample(
+    path: Path, config: HierarchicalAdmissionConfig, *, query_batch_size: int
+) -> tuple[pd.DataFrame, dict[str, int]]:
+    chunks: list[pd.DataFrame] = []
+    groups: list[pd.DataFrame] = []
+    before = after = queries = positives = 0
+
+    def flush() -> None:
+        nonlocal positives
+        if not groups:
+            return
+        canonical = canonicalize_union(
+            pd.concat(groups, ignore_index=True),
+            config,
+            labels_allowed=True,
+            require_labels=True,
+        )
+        positives += int(
+            canonical["candidate_siret"].eq(canonical["human_siret"]).sum()
+        )
+        chunks.append(canonical)
+        groups.clear()
+
+    for group in iter_complete_query_frames(path, batch_size=131_072):
+        fold = int(group.iloc[0]["fold"])
+        if fold not in config.train_folds:
+            raise ValueError("Fit sample opened a non-training fold")
+        queries += 1
+        before += len(group)
+        sampled = _fit_sample(group, config)
+        after += len(sampled)
+        groups.append(sampled)
+        if len(groups) >= query_batch_size:
+            flush()
+    flush()
+    if not chunks:
+        raise ValueError("No sampled training candidates")
+    return pd.concat(chunks, ignore_index=True), {
+        "queries": queries,
+        "rows_before": before,
+        "rows_after": after,
+        "natural_positives_retained": positives,
+    }
+
+
+def _selected_projection(frame: pd.DataFrame) -> pd.DataFrame:
+    columns = [
+        "query_id",
+        "fold",
+        "candidate_siret",
+        "candidate_parent",
+        "union_rank",
+        "selected_rank",
+        "final_score",
+        "parent_rank",
+        "site_rank",
+        "selection_reason",
+        "channels_json",
+        "official_evidence_ids_json",
+        "official_evidence_sources_json",
+    ]
+    return frame[columns].copy()
+
+
+def _stream_outer_validation(
+    path: Path,
+    models: MappingLike,
+    config: HierarchicalAdmissionConfig,
+    selected_path: Path,
+    *,
+    query_batch_size: int,
+) -> tuple[pd.DataFrame, dict[str, Any]]:
+    writer: pq.ParquetWriter | None = None
+    groups: list[pd.DataFrame] = []
+    outcome_chunks: list[pd.DataFrame] = []
+    fold_queries = {fold: 0 for fold in config.train_folds}
+    max_union = 0
+
+    def flush() -> None:
+        nonlocal writer, max_union
+        if not groups:
+            return
+        canonical = canonicalize_union(
+            pd.concat(groups, ignore_index=True),
+            config,
+            labels_allowed=True,
+            require_labels=True,
+        )
+        selected_parts: list[pd.DataFrame] = []
+        for fold in config.train_folds:
+            validation = canonical[canonical["fold"].eq(fold)].copy()
+            if validation.empty:
+                continue
+            fold_queries[fold] += int(validation["query_id"].nunique())
+            max_union = max(max_union, int(validation.groupby("query_id").size().max()))
+            blind = validation.copy()
+            blind["human_siret"] = ""
+            selected = select_top100(
+                score_canonical_candidates(models[fold], blind), config
+            )
+            outcomes, _ = evaluate_all_human(validation, selected, config)
+            outcome_chunks.append(outcomes)
+            selected_parts.append(_selected_projection(selected))
+        if selected_parts:
+            table = pa.Table.from_pandas(
+                pd.concat(selected_parts, ignore_index=True),
+                schema=writer.schema if writer else None,
+                preserve_index=False,
+            )
+            if writer is None:
+                writer = pq.ParquetWriter(selected_path, table.schema, compression="zstd")
+            writer.write_table(table)
+        groups.clear()
+
+    try:
+        for group in iter_complete_query_frames(path, batch_size=131_072):
+            groups.append(group)
+            if len(groups) >= query_batch_size:
+                flush()
+        flush()
+    finally:
+        if writer is not None:
+            writer.close()
+    if writer is None or not outcome_chunks:
+        raise ValueError("Streaming OOF produced no validation output")
+    return pd.concat(outcome_chunks, ignore_index=True), {
+        "queries_by_fold": {str(key): value for key, value in fold_queries.items()},
+        "maximum_validation_union": max_union,
+        "validation_candidate_sampling": False,
+    }
+
+
 def run_oof(args: argparse.Namespace) -> Path:
     config = HierarchicalAdmissionConfig.load(args.config)
     source_manifest_path, _ = verify_candidate_manifest(
         args.candidates, require_labels_attached=True
     )
     _prepare_output(args.output_dir)
-    frame = pd.read_parquet(args.candidates)
-    selected, outcomes, summary = outer_oof_evaluate(frame, config)
     selected_path = args.output_dir / "selected_candidates.parquet"
     outcomes_path = args.output_dir / "query_outcomes.parquet"
     summary_path = args.output_dir / "summary.json"
-    selected.to_parquet(selected_path, index=False, compression="zstd")
+    sampled, sample_diagnostics = _load_fit_sample(
+        args.candidates,
+        config,
+        query_batch_size=args.fit_query_batch_size,
+    )
+    models, model_diagnostics = fit_outer_oof_models(sampled, config)
+    model_paths: list[Path] = []
+    for fold, fold_models in models.items():
+        parent_path = args.output_dir / f"fold{fold}_parent_ranker.json"
+        siret_path = args.output_dir / f"fold{fold}_siret_ranker.json"
+        fold_models.parent.save_model(parent_path)
+        fold_models.siret.save_model(siret_path)
+        model_paths.extend((parent_path, siret_path))
+    del sampled
+    outcomes, stream_diagnostics = _stream_outer_validation(
+        args.candidates,
+        models,
+        config,
+        selected_path,
+        query_batch_size=args.validation_query_batch_size,
+    )
+    summary = summarize_outcomes(outcomes, config)
+    summary["nested_oof"] = {
+        "outer_folds": list(config.train_folds),
+        "model_diagnostics": model_diagnostics,
+        "fit_sample": sample_diagnostics,
+        "stream_validation": stream_diagnostics,
+        "fold0_opened": False,
+        "fold1_opened": False,
+        "validation_candidate_sampling": False,
+    }
     outcomes.to_parquet(outcomes_path, index=False, compression="zstd")
     _write_json(summary_path, summary)
     manifest = {
@@ -113,7 +335,7 @@ def run_oof(args: argparse.Namespace) -> Path:
         "positive_injection": False,
         "outputs": {
             path.name: sha256_file(path)
-            for path in (selected_path, outcomes_path, summary_path)
+            for path in (selected_path, outcomes_path, summary_path, *model_paths)
         },
         "verdict": summary["verdict"],
     }
@@ -245,6 +467,11 @@ def parse_args() -> argparse.Namespace:
         subparser.add_argument("--candidates", type=Path, required=True)
         subparser.add_argument("--output-dir", type=Path, required=True)
         subparser.add_argument("--config", type=Path, default=DEFAULT_CONFIG)
+        if command == "oof":
+            subparser.add_argument("--fit-query-batch-size", type=int, default=64)
+            subparser.add_argument(
+                "--validation-query-batch-size", type=int, default=32
+            )
     predict = subparsers.add_parser("predict")
     predict.add_argument("--candidates", type=Path, required=True)
     predict.add_argument("--model-dir", type=Path, required=True)

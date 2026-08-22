@@ -1,12 +1,20 @@
 from __future__ import annotations
 
 from copy import deepcopy
+import argparse
+import json
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
 
 import src.xgb_matcher.retrieval_hierarchical_admission_v11 as v11
+from scripts.run_retrieval_hierarchical_admission_v11 import (
+    _fit_sample,
+    run_oof,
+    sha256_file,
+)
 
 
 def tiny_config() -> v11.HierarchicalAdmissionConfig:
@@ -112,6 +120,74 @@ def test_contract_has_identifier_free_features_and_fixed_limits() -> None:
     assert config.max_candidates == 100
     assert (config.anchor_slots, config.consensus_slots) == (20, 20)
     assert config.max_unprotected_per_parent == 3
+
+
+def test_fit_sampling_retains_only_a_natural_positive_and_never_samples_validation() -> None:
+    config = tiny_config()
+    truth = "99999999900001"
+    rows = pd.DataFrame(
+        [
+            {
+                "query_id": "q",
+                "union_rank": rank,
+                "siret": truth if rank == 200 else f"{rank:09d}00001",
+                "human_ground_truth_siret": truth,
+                "name_word_rank": rank,
+            }
+            for rank in range(1, 201)
+        ]
+    )
+    sampled = _fit_sample(rows, config)
+    assert len(sampled) == 128
+    assert truth in set(sampled["siret"])
+    assert set(config.fit_candidate_sampling) == {
+        "maximum_candidates_per_query",
+        "union_head",
+        "channel_head",
+        "retain_natural_positive_if_present",
+        "validation_sampling",
+    }
+    assert config.fit_candidate_sampling["validation_sampling"] is False
+
+
+def test_streaming_oof_scores_full_candidate_groups(tmp_path: Path) -> None:
+    config = tiny_config()
+    config_path = tmp_path / "config.json"
+    config_path.write_text(json.dumps(config.raw), encoding="utf-8")
+    candidates = tmp_path / "candidates.parquet"
+    make_union(queries_per_fold=2, candidates_per_query=7).sort_values(
+        ["query_id", "union_rank"]
+    ).to_parquet(candidates, index=False)
+    candidates.with_suffix(".parquet.manifest.json").write_text(
+        json.dumps(
+            {
+                "candidate_parquet_sha256": sha256_file(candidates),
+                "positive_injection": False,
+                "maximum_union_candidates": 7,
+                "labels_attached_after_retrieval": True,
+                "all_label_queries_have_natural_candidates": True,
+            }
+        ),
+        encoding="utf-8",
+    )
+    output = tmp_path / "oof"
+    run_oof(
+        argparse.Namespace(
+            candidates=candidates,
+            output_dir=output,
+            config=config_path,
+            fit_query_batch_size=2,
+            validation_query_batch_size=2,
+        )
+    )
+
+    summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
+    assert summary["query_count"] == 6
+    assert summary["nested_oof"]["stream_validation"][
+        "maximum_validation_union"
+    ] == 7
+    selected = pd.read_parquet(output / "selected_candidates.parquet")
+    assert selected.groupby("query_id").size().eq(7).all()
 
 
 def test_label_blind_preparation_rejects_human_labels() -> None:

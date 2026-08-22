@@ -62,6 +62,13 @@
     ],
     "consensus_min_channels": 2,
     "same_siren_same_site_exact_negative": false,
+    "fit_candidate_sampling": {
+      "maximum_candidates_per_query": 128,
+      "union_head": 96,
+      "channel_head": 2,
+      "retain_natural_positive_if_present": true,
+      "validation_sampling": false
+    },
     "xgboost": {
       "parent": {
         "objective": "rank:ndcg",

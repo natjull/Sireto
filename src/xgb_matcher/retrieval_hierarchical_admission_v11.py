@@ -181,6 +181,13 @@ class HierarchicalAdmissionConfig:
                     ],
                     "consensus_min_channels": 2,
                     "same_siren_same_site_exact_negative": False,
+                    "fit_candidate_sampling": {
+                        "maximum_candidates_per_query": 128,
+                        "union_head": 96,
+                        "channel_head": 2,
+                        "retain_natural_positive_if_present": True,
+                        "validation_sampling": False,
+                    },
                     "xgboost": {
                         "parent": _default_xgb(20260831),
                         "siret": _default_xgb(20260901),
@@ -221,6 +228,15 @@ class HierarchicalAdmissionConfig:
             raise ValueError("v11 validation must score the complete candidate union")
         if admission.get("same_siren_same_site_exact_negative") is not False:
             raise ValueError("Operational same-site siblings cannot be exact negatives")
+        sampling = admission.get("fit_candidate_sampling") or {}
+        if sampling != {
+            "maximum_candidates_per_query": 128,
+            "union_head": 96,
+            "channel_head": 2,
+            "retain_natural_positive_if_present": True,
+            "validation_sampling": False,
+        }:
+            raise ValueError("v11 fit-only candidate sampling contract drift")
         if not self.anchor_name_channels or not self.anchor_address_channels:
             raise ValueError("v11 anchors require separate name and address channels")
         if set(self.anchor_name_channels) & set(self.anchor_address_channels):
@@ -310,6 +326,10 @@ class HierarchicalAdmissionConfig:
 
     def xgb_params(self, level: str) -> dict[str, Any]:
         return dict(self.raw["admission"]["xgboost"][level])
+
+    @property
+    def fit_candidate_sampling(self) -> Mapping[str, Any]:
+        return dict(self.raw["admission"]["fit_candidate_sampling"])
 
     @property
     def human_label_columns(self) -> tuple[str, ...]:
@@ -1274,7 +1294,15 @@ def evaluate_all_human(
             }
         )
     frame = pd.DataFrame(outcomes)
+    return frame, summarize_outcomes(frame, config)
 
+
+def summarize_outcomes(
+    frame: pd.DataFrame, config: HierarchicalAdmissionConfig
+) -> dict[str, Any]:
+    """Aggregate complete all-human query outcomes without changing population."""
+    if frame.empty:
+        raise ValueError("Cannot summarize an empty all-human outcome set")
     def metrics_for(part: pd.DataFrame) -> dict[str, Any]:
         total = len(part)
         return {
@@ -1382,7 +1410,39 @@ def evaluate_all_human(
             "PASS_OOF_GATES" if all(value["passed"] for value in gates.values()) else "PIVOT"
         ),
     }
-    return frame, summary
+    return summary
+
+
+def fit_outer_oof_models(
+    sampled_candidates: pd.DataFrame,
+    config: HierarchicalAdmissionConfig,
+) -> tuple[dict[int, HierarchicalModels], dict[str, Any]]:
+    """Fit the three outer models from a preregistered fit-only sample."""
+    observed = set(int(value) for value in sampled_candidates["fold"].unique())
+    if observed != set(config.train_folds):
+        raise ValueError("Outer fit sample must contain exactly folds 2/3/4")
+    models: dict[int, HierarchicalModels] = {}
+    diagnostics: dict[str, Any] = {}
+    for heldout in config.train_folds:
+        fit_folds = tuple(fold for fold in config.train_folds if fold != heldout)
+        outer_train = sampled_candidates[
+            sampled_candidates["fold"].isin(fit_folds)
+        ].copy()
+        inner_parent = inner_oof_parent_scores(outer_train, fit_folds, config)
+        siret_model, siret_diag = fit_siret_ranker(inner_parent, config)
+        parent_model, parent_diag = fit_parent_ranker(outer_train, config)
+        models[heldout] = HierarchicalModels(
+            parent=parent_model,
+            siret=siret_model,
+            diagnostics={
+                "fit_folds": list(fit_folds),
+                "parent": parent_diag,
+                "siret": siret_diag,
+                "inner_parent_scores": "OOF_ONLY",
+            },
+        )
+        diagnostics[str(heldout)] = dict(models[heldout].diagnostics)
+    return models, diagnostics
 
 
 def outer_oof_evaluate(
@@ -1467,6 +1527,7 @@ __all__ = [
     "canonicalize_union",
     "evaluate_all_human",
     "fit_hierarchical_models",
+    "fit_outer_oof_models",
     "fit_parent_ranker",
     "fit_siret_ranker",
     "inner_oof_parent_scores",
@@ -1474,4 +1535,5 @@ __all__ = [
     "predict_top100",
     "score_canonical_candidates",
     "select_top100",
+    "summarize_outcomes",
 ]
