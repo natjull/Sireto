@@ -2,6 +2,23 @@
 
 ## Etat des lieux
 
+### Retrieval all-human v11 — contrat et benchmark immuable
+
+Le nouveau chemin v11 remplace le gate sélectif rétracté. Sa métrique
+principale conserve tous les labels CRM humains ayant un SIRET exploitable,
+sans filtrer `AMBIGUOUS`, `UNRESOLVED` ni les dossiers difficiles. Le contrat
+et la configuration uniques sont préenregistrés dans
+`docs/retrieval_all_human_v11_contract.md` et
+`config/retrieval_all_human_v11.json` (commit `00ef9df`).
+
+Le builder du benchmark sépare physiquement les labels exacts des équivalents
+opérationnels, publie les SIRET humains manquants par fold et scelle fold 1
+sans l'évaluer. Sur la population courante, 37 193/37 218 scènes possèdent un
+SIRET humain exploitable ; fold 0 en compte 7 005 et fold 1 en compte 6 617.
+Le code de génération production ne peut pas accéder à ces colonnes label.
+
+*(builder all-human v11 et tests : commit `2c91903`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
