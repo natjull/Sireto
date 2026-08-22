@@ -133,6 +133,8 @@ def test_retrieval_is_label_blind_and_keeps_active_and_closed() -> None:
     assert len(serialized) == 2
     assert all("ground_truth_siret" not in row for row in serialized)
     assert any(row["geo_insee_census_rank"] is not None for row in serialized)
+    assert {row["pool_size"] for row in serialized} == {2}
+    assert {row["mega_base_pool"] for row in serialized} == {False}
 
 
 def test_parent_round_robin_prevents_chain_monopoly() -> None:

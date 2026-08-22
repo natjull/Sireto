@@ -196,6 +196,13 @@ class RetrievalV11Result:
                     "retrieval_rank": candidate.union_rank,
                     "retrieval_score": float(best.score),
                     **channel_values,
+                    "pool_size": int(
+                        self.strategy_counts.get("geographic_pool_size") or 0
+                    ),
+                    "mega_base_pool": int(
+                        self.strategy_counts.get("geographic_pool_size") or 0
+                    )
+                    >= 100_000,
                     "raw_union_size": self.raw_reference_count,
                     "union_truncated": self.raw_reference_truncated,
                     "retrieval_latency_ms": self.retrieval_latency_ms,
@@ -321,9 +328,9 @@ class AllHumanV11Retriever:
         self,
         query: RetrievalQuery,
         references: dict[str, _Reference],
-    ) -> tuple[str, int]:
+    ) -> tuple[str, int, int]:
         if not query.insee:
-            return "NO_INSEE", 0
+            return "NO_INSEE", 0, 0
         result = self.sidecars.geo_candidates(
             insee=query.insee,
             postcode=query.postcode,
@@ -337,7 +344,7 @@ class AllHumanV11Retriever:
             "NUMBER_CELL": "geo_number_cell",
         }.get(result.strategy)
         if channel is None:
-            return result.strategy, 0
+            return result.strategy, 0, result.matched_count
         for rank, site in enumerate(result.sites, start=1):
             self._register_signal(
                 references,
@@ -351,7 +358,7 @@ class AllHumanV11Retriever:
                     site_rank=rank,
                 ),
             )
-        return result.strategy, len(result.sites)
+        return result.strategy, len(result.sites), result.matched_count
 
     def _parent_order(self, references: Mapping[str, _Reference]) -> list[str]:
         by_parent: dict[str, list[_Reference]] = {}
@@ -497,7 +504,9 @@ class AllHumanV11Retriever:
         references: dict[str, _Reference] = {}
         self._merge_official(references, official_result.candidates)
         geo_started = time.perf_counter()
-        geo_strategy, geo_count = self._add_geographic_candidates(query, references)
+        geo_strategy, geo_count, geo_pool_size = self._add_geographic_candidates(
+            query, references
+        )
         geo_ms = (time.perf_counter() - geo_started) * 1000.0
         parent_started = time.perf_counter()
         parent_count = self._expand_parents(query, references)
@@ -548,6 +557,7 @@ class AllHumanV11Retriever:
             strategy_counts={
                 "official_reference_prefix": len(official_result.candidates),
                 "geographic_candidates": geo_count,
+                "geographic_pool_size": geo_pool_size,
                 "parent_expansion_emissions": parent_count,
                 "selected": len(candidates),
                 "geo_strategy": geo_strategy,
