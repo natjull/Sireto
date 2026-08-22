@@ -46,6 +46,59 @@
     "fold0_may_select_variant_or_threshold": false,
     "automatic_threshold_tuning": false
   },
+  "admission": {
+    "architecture": "PARENT_LAMBDAMART_THEN_SIRET_LAMBDAMART",
+    "parent_scores_for_siret_training": "NESTED_INNER_OOF_ONLY",
+    "validation_candidate_sampling": false,
+    "anchor_name_channels": [
+      "legal_name_exact",
+      "trade_name_exact",
+      "site_name_exact",
+      "name_exact"
+    ],
+    "anchor_address_channels": [
+      "address_exact",
+      "geo_exact_cell"
+    ],
+    "consensus_min_channels": 2,
+    "same_siren_same_site_exact_negative": false,
+    "xgboost": {
+      "parent": {
+        "objective": "rank:ndcg",
+        "eval_metric": "ndcg@100",
+        "tree_method": "hist",
+        "n_estimators": 180,
+        "learning_rate": 0.04,
+        "max_depth": 4,
+        "min_child_weight": 25.0,
+        "subsample": 1.0,
+        "colsample_bytree": 0.85,
+        "reg_alpha": 1.0,
+        "reg_lambda": 75.0,
+        "random_state": 20260831,
+        "n_jobs": 0,
+        "lambdarank_pair_method": "topk",
+        "lambdarank_num_pair_per_sample": 64
+      },
+      "siret": {
+        "objective": "rank:ndcg",
+        "eval_metric": "ndcg@100",
+        "tree_method": "hist",
+        "n_estimators": 180,
+        "learning_rate": 0.04,
+        "max_depth": 4,
+        "min_child_weight": 25.0,
+        "subsample": 1.0,
+        "colsample_bytree": 0.85,
+        "reg_alpha": 1.0,
+        "reg_lambda": 75.0,
+        "random_state": 20260901,
+        "n_jobs": 0,
+        "lambdarank_pair_method": "topk",
+        "lambdarank_num_pair_per_sample": 64
+      }
+    }
+  },
   "gates": {
     "minimum_oof_oracle_recall_at_2000": 0.995,
     "minimum_oof_exact_recall_at_100": 0.992,
