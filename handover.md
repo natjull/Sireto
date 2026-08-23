@@ -95,6 +95,14 @@ trois shards OOF sources restent immuables.
 
 *(consolidation nationale v11 streamée : commit `f0d3472`)*
 
+La jointure label-side OOF suit la même discipline mémoire : les 23 571 labels
+exacts et équivalences opérationnelles sont chargés comme sidecars scellés,
+puis ajoutés aux batches Arrow sans tri ni fenêtre nationale DuckDB. Elle
+exige l'égalité exacte des ensembles de `query_id`, conserve l'ordre et les
+candidats de l'union label-blind, et refuse toute requête sans label.
+
+*(jointure label-side v11 streamée : commit `dbfb17c`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
