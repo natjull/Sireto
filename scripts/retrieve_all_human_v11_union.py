@@ -313,47 +313,102 @@ def attach_labels(args: argparse.Namespace) -> Path:
         raise ValueError("candidate source has invalid folds")
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
+    if temporary.exists():
+        raise FileExistsError(temporary)
     connection = duckdb.connect()
     try:
-        candidate_queries = int(
-            connection.execute(
-                f"SELECT count(DISTINCT query_id) FROM read_parquet('{_sql_path(candidates)}')"
-            ).fetchone()[0]
-        )
         fold_sql = ",".join(str(value) for value in folds)
-        label_queries = int(
-            connection.execute(
-                f"SELECT count(*) FROM read_parquet('{_sql_path(labels)}') "
-                f"WHERE oof_fold IN ({fold_sql})"
-            ).fetchone()[0]
-        )
-        if candidate_queries != label_queries or candidate_queries != int(
-            source_manifest.get("queries", -1)
-        ):
-            raise ValueError(
-                "Every all-human label query must have a natural candidate union; "
-                "empty queries cannot be silently removed from the denominator"
+        label_rows = connection.execute(
+            "SELECT query_id, human_ground_truth_siret, human_ground_truth_source "
+            f"FROM read_parquet('{_sql_path(labels)}') "
+            f"WHERE oof_fold IN ({fold_sql})"
+        ).fetchall()
+        operational_rows = connection.execute(
+            "SELECT query_id, acceptable_sirets_operational_json "
+            f"FROM read_parquet('{_sql_path(operational)}')"
+        ).fetchall()
+        manifest_maximum = source_manifest.get("maximum_union_candidates")
+        fallback_maximum = (
+            int(
+                connection.execute(
+                    "SELECT max(n) FROM (SELECT query_id, count(*) n "
+                    f"FROM read_parquet('{_sql_path(candidates)}') GROUP BY query_id)"
+                ).fetchone()[0]
+                or 0
             )
-        connection.execute(
-            "COPY ("
-            "SELECT c.*, l.human_ground_truth_siret, l.human_ground_truth_source, "
-            "o.acceptable_sirets_operational_json "
-            f"FROM read_parquet('{_sql_path(candidates)}') c "
-            f"JOIN read_parquet('{_sql_path(labels)}') l USING(query_id) "
-            f"LEFT JOIN read_parquet('{_sql_path(operational)}') o USING(query_id) "
-            "ORDER BY c.query_id, c.union_rank"
-            f") TO '{_sql_path(temporary)}' "
-            "(FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)"
+            if manifest_maximum is None
+            else 0
         )
-        counts = connection.execute(
-            "SELECT count(*), count(DISTINCT query_id), max(n) FROM ("
-            "SELECT query_id, count(*) OVER (PARTITION BY query_id) n "
-            "FROM read_parquet(?) WHERE human_ground_truth_siret IS NOT NULL) t",
-            [str(temporary)],
-        ).fetchone()
     finally:
         connection.close()
-    if int(counts[2] or 0) > 2_000:
+
+    label_map = {
+        str(query_id): (str(target), str(source))
+        for query_id, target, source in label_rows
+    }
+    if len(label_map) != len(label_rows):
+        raise ValueError("exact label sidecar contains duplicate query ids")
+    operational_map = {
+        str(query_id): str(acceptable or "[]")
+        for query_id, acceptable in operational_rows
+    }
+    if len(operational_map) != len(operational_rows):
+        raise ValueError("operational label sidecar contains duplicate query ids")
+    expected_queries = int(source_manifest.get("queries", -1))
+    if len(label_map) != expected_queries:
+        raise ValueError(
+            "Every all-human label query must have a natural candidate union; "
+            "empty queries cannot be silently removed from the denominator"
+        )
+
+    writer: pq.ParquetWriter | None = None
+    candidate_rows = 0
+    candidate_queries: set[str] = set()
+    try:
+        parquet = pq.ParquetFile(candidates)
+        for batch in parquet.iter_batches(batch_size=65_536):
+            table = pa.Table.from_batches([batch], schema=parquet.schema_arrow)
+            query_ids = [str(value) for value in table.column("query_id").to_pylist()]
+            missing = {query_id for query_id in query_ids if query_id not in label_map}
+            if missing:
+                raise ValueError("candidate union contains a query without a human label")
+            candidate_queries.update(query_ids)
+            table = table.append_column(
+                "human_ground_truth_siret",
+                pa.array([label_map[query_id][0] for query_id in query_ids], pa.string()),
+            )
+            table = table.append_column(
+                "human_ground_truth_source",
+                pa.array([label_map[query_id][1] for query_id in query_ids], pa.string()),
+            )
+            table = table.append_column(
+                "acceptable_sirets_operational_json",
+                pa.array(
+                    [operational_map.get(query_id, "[]") for query_id in query_ids],
+                    pa.string(),
+                ),
+            )
+            if writer is None:
+                writer = pq.ParquetWriter(temporary, table.schema, compression="zstd")
+            writer.write_table(table, row_group_size=65_536)
+            candidate_rows += batch.num_rows
+        if writer is None:
+            raise ValueError("label attachment produced no candidate rows")
+        writer.close()
+        writer = None
+    except Exception:
+        if writer is not None:
+            writer.close()
+        temporary.unlink(missing_ok=True)
+        raise
+
+    if candidate_queries != set(label_map):
+        temporary.unlink(missing_ok=True)
+        raise ValueError("label sidecar and candidate union query sets differ")
+    maximum_candidates = int(
+        fallback_maximum if manifest_maximum is None else manifest_maximum
+    )
+    if maximum_candidates > 2_000:
         temporary.unlink(missing_ok=True)
         raise AssertionError("label attachment changed the v11 union cap")
     os.replace(temporary, output)
@@ -367,9 +422,9 @@ def attach_labels(args: argparse.Namespace) -> Path:
             "source_candidate_manifest_sha256": sha256_file(source_manifest_path),
             "exact_labels_sha256": sha256_file(labels),
             "operational_labels_sha256": sha256_file(operational),
-            "candidate_rows": int(counts[0]),
-            "queries": int(counts[1]),
-            "maximum_union_candidates": int(counts[2] or 0),
+            "candidate_rows": candidate_rows,
+            "queries": len(candidate_queries),
+            "maximum_union_candidates": maximum_candidates,
             "positive_injection": False,
             "labels_attached_after_retrieval": True,
             "all_label_queries_have_natural_candidates": True,
