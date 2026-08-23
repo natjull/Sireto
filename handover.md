@@ -103,6 +103,21 @@ candidats de l'union label-blind, et refuse toute requête sans label.
 
 *(jointure label-side v11 streamée : commit `dbfb17c`)*
 
+Le premier passage du gate oracle a révélé une non-conformité d'exécution et
+ne constitue pas le verdict scientifique v11 : après avoir produit les lanes
+géographiques et d'expansion parent, le sélecteur appliquait un second
+round-robin global par SIREN qui pouvait les éliminer. L'audit all-human a
+montré que 2 515/2 524 vérités alors absentes existaient bien dans le sidecar
+au bon INSEE, et que 2 295 avaient déjà un autre site du bon SIREN dans
+l'union. Le sélecteur conserve désormais, dans cet ordre, le recensement ou la
+cellule géographique bornée, les ancres conjointes et les émissions du budget
+parent, avant de compléter équitablement les places restantes. Le rescue
+contrastif n'a pas été consommé, aucun modèle n'a été entraîné et folds 0/1
+sont restés fermés. Les unions OOF doivent être reconstruites avant tout
+nouveau gate.
+
+*(préservation des lanes géographiques et parent v11 : commit `b265713`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
