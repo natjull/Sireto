@@ -86,6 +86,15 @@ silencieusement à faux lorsque le benchmark source ne portait pas ce champ.
 
 *(cardinal géographique et segment mégapole : commit `ae203cd`)*
 
+La consolidation nationale des shards n'effectue plus de tri DuckDB global :
+ce chemin matérialisait environ 41,5 millions de lignes larges et a été tué par
+l'OS sur le Mac 24 Gio. Elle valide désormais les groupes `query_id` sur une
+projection étroite puis concatène les row groups Arrow en streaming, avec
+contrôle des schémas, cardinalités, folds disjoints et plafond de 2 000. Les
+trois shards OOF sources restent immuables.
+
+*(consolidation nationale v11 streamée : commit `f0d3472`)*
+
 ### Population prospective CRM GT v2 — provenance commerciale certifiée
 
 Le nouvel apport CRM a été fusionné sans modifier `data/crm_ok_gt.csv` dans
