@@ -491,6 +491,95 @@ class AllHumanV11Retriever:
                 break
         return selected
 
+    @staticmethod
+    def _signal_rank(reference: _Reference, channels: set[str]) -> int:
+        return min(
+            (
+                int(signal.rank)
+                for signal in reference.signals
+                if signal.channel in channels
+            ),
+            default=10**9,
+        )
+
+    def _select_contract_union(
+        self, references: Mapping[str, _Reference]
+    ) -> tuple[list[_Reference], dict[str, int]]:
+        """Preserve the preregistered geographic and parent-expansion lanes.
+
+        Both lanes are already bounded before this method.  A second global
+        SIREN round-robin must not silently discard the complete geographic
+        census/cell or the sites emitted by the 700-place parent budget.
+        """
+        selected: list[_Reference] = []
+        selected_ids: set[str] = set()
+        counts = {
+            "geo_reserved": 0,
+            "anchor_reserved": 0,
+            "parent_reserved": 0,
+            "fair_fill": 0,
+        }
+
+        def append(reference: _Reference, lane: str) -> None:
+            if len(selected) >= self.config.internal_cap:
+                return
+            if reference.siret in selected_ids:
+                return
+            selected.append(reference)
+            selected_ids.add(reference.siret)
+            counts[lane] += 1
+
+        geo_channels = {"geo_insee_census", "geo_exact_cell", "geo_number_cell"}
+        geo = sorted(
+            (
+                reference
+                for reference in references.values()
+                if reference.channels & geo_channels
+            ),
+            key=lambda reference: (
+                self._signal_rank(reference, geo_channels),
+                _reference_priority(reference),
+                reference.siret,
+            ),
+        )
+        for reference in geo:
+            append(reference, "geo_reserved")
+
+        anchors = sorted(
+            (reference for reference in references.values() if _joint_anchor(reference)),
+            key=_reference_priority,
+        )
+        for reference in anchors:
+            append(reference, "anchor_reserved")
+
+        parent_channel = {"v11_parent_expansion"}
+        parents = sorted(
+            (
+                reference
+                for reference in references.values()
+                if reference.channels & parent_channel
+            ),
+            key=lambda reference: (
+                self._signal_rank(reference, parent_channel),
+                _reference_priority(reference),
+                reference.siret,
+            ),
+        )
+        for reference in parents:
+            append(reference, "parent_reserved")
+
+        if len(selected) < self.config.internal_cap:
+            remainder = {
+                siret: reference
+                for siret, reference in references.items()
+                if siret not in selected_ids
+            }
+            for reference in self._fair_select(
+                remainder, self.config.internal_cap - len(selected)
+            ):
+                append(reference, "fair_fill")
+        return selected, counts
+
     def retrieve(self, row: Mapping[str, Any] | RetrievalQuery) -> RetrievalV11Result:
         started = time.perf_counter()
         query = row if isinstance(row, RetrievalQuery) else RetrievalQuery.from_mapping(row)
@@ -524,7 +613,7 @@ class AllHumanV11Retriever:
                 )
             }
         selection_started = time.perf_counter()
-        selected = self._fair_select(references, self.config.internal_cap)
+        selected, selection_counts = self._select_contract_union(references)
         candidates: list[OfficialEvidenceCandidate] = []
         for rank, reference in enumerate(selected, start=1):
             record = reference.record or self._canonical_backend.by_siret(reference.siret)
@@ -559,6 +648,7 @@ class AllHumanV11Retriever:
                 "geographic_candidates": geo_count,
                 "geographic_pool_size": geo_pool_size,
                 "parent_expansion_emissions": parent_count,
+                **selection_counts,
                 "selected": len(candidates),
                 "geo_strategy": geo_strategy,
                 "official_ms": official_ms,

@@ -107,6 +107,15 @@ class _Sidecars:
         return SiteQueryResult(matches[:cap], "SIREN_GEO", len(matches), cap, len(matches) > cap)
 
 
+@dataclass
+class _ParentOnlySidecars(_Sidecars):
+    def geo_candidates(self, **kwargs: object) -> SiteQueryResult:
+        cap = int(kwargs["max_sites"])
+        return SiteQueryResult(
+            (), "INSUFFICIENT_LARGE_COMMUNE_GEO", 50_000, cap, True
+        )
+
+
 def test_retrieval_is_label_blind_and_keeps_active_and_closed() -> None:
     official_record = _record("11111111100001")
     closed_site = _site("22222222200002", state="F")
@@ -164,6 +173,71 @@ def test_parent_round_robin_prevents_chain_monopoly() -> None:
     assert len(result.candidates) == 6
     assert {item.siren for item in result.candidates} == {"111111111", "222222222"}
     assert result.strategy_counts["selected"] == 6
+
+
+def test_complete_geo_census_survives_final_union_cap() -> None:
+    geo_sites = tuple(_site(f"999999999{index:05d}") for index in range(1, 5))
+    official_records = [_record(f"{index:09d}00001") for index in range(1, 9)]
+    retriever = AllHumanV11Retriever(
+        _Official(official_records),
+        _Sidecars(geo_sites),
+        RetrievalV11Config(
+            raw_reference_cap=20,
+            internal_cap=6,
+            parent_candidate_budget=2,
+            parent_siren_limit=2,
+        ),
+    )
+
+    result = retriever.retrieve(
+        {
+            "crm_name": "ALPHA",
+            "crm_address": "10 RUE DE LA PAIX",
+            "crm_insee": "75056",
+            "crm_cp": "75001",
+        }
+    )
+
+    selected = {candidate.siret for candidate in result.candidates}
+    assert {site.siret for site in geo_sites}.issubset(selected)
+    assert result.strategy_counts["geo_reserved"] == 4
+
+
+def test_parent_expansion_budget_survives_final_union_round_robin() -> None:
+    parent_sites = (
+        _site("11111111100001"),
+        _site("11111111100002", state="F"),
+        _site("22222222200001"),
+        _site("22222222200002", state="F"),
+    )
+    official_records = [
+        _record("11111111100001"),
+        _record("22222222200001"),
+        *[_record(f"{index:09d}00001") for index in range(3, 9)],
+    ]
+    retriever = AllHumanV11Retriever(
+        _Official(official_records),
+        _ParentOnlySidecars(parent_sites),
+        RetrievalV11Config(
+            raw_reference_cap=20,
+            internal_cap=6,
+            parent_candidate_budget=4,
+            parent_siren_limit=2,
+        ),
+    )
+
+    result = retriever.retrieve(
+        {
+            "crm_name": "ALPHA",
+            "crm_address": "10 RUE DE LA PAIX",
+            "crm_insee": "75056",
+            "crm_cp": "75001",
+        }
+    )
+
+    selected = {candidate.siret for candidate in result.candidates}
+    assert {site.siret for site in parent_sites}.issubset(selected)
+    assert result.strategy_counts["parent_reserved"] == 4
 
 
 def test_v11_config_rejects_invalid_caps() -> None:
