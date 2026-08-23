@@ -413,29 +413,75 @@ def combine(args: argparse.Namespace) -> Path:
         raise FileExistsError(output if output.exists() else manifest_path)
     output.parent.mkdir(parents=True, exist_ok=True)
     temporary = output.with_suffix(output.suffix + ".tmp")
-    input_sql = ",".join(f"'{_sql_path(path)}'" for path in inputs)
+    if temporary.exists():
+        raise FileExistsError(temporary)
+
+    # Do not ORDER BY the national union in DuckDB.  The three retrieval
+    # shards are already deterministically ordered and have disjoint folds;
+    # sorting ~40M wide rows caused a multi-gigabyte materialisation and an
+    # OS OOM kill on the 24 GiB production Mac.  Validate the only global key
+    # we need (query_id) from the narrow column, then append Arrow batches.
+    query_ids: set[str] = set()
+    observed_queries = 0
+    observed_max_candidates = 0
     connection = duckdb.connect()
     try:
-        connection.execute(
-            f"COPY (SELECT * FROM read_parquet([{input_sql}]) "
-            "ORDER BY query_id, union_rank) "
-            f"TO '{_sql_path(temporary)}' "
-            "(FORMAT PARQUET, COMPRESSION ZSTD, ROW_GROUP_SIZE 65536)"
-        )
-        counts = connection.execute(
-            f"SELECT count(*), count(DISTINCT query_id), "
-            "max(n), count(*)-count(DISTINCT query_id||':'||siret) "
-            "FROM (SELECT *, count(*) OVER (PARTITION BY query_id) n "
-            f"FROM read_parquet('{_sql_path(temporary)}'))"
-        ).fetchone()
+        for path, manifest in zip(inputs, manifests):
+            rows = connection.execute(
+                f"SELECT query_id, count(*) AS n "
+                f"FROM read_parquet('{_sql_path(path)}') GROUP BY query_id"
+            ).fetchall()
+            shard_ids = {str(row[0]) for row in rows}
+            if len(shard_ids) != len(rows):
+                raise AssertionError("candidate shard contains duplicate query groups")
+            overlap = query_ids.intersection(shard_ids)
+            if overlap:
+                raise ValueError("candidate shards contain overlapping query ids")
+            query_ids.update(shard_ids)
+            observed_queries += len(rows)
+            observed_max_candidates = max(
+                observed_max_candidates, max((int(row[1]) for row in rows), default=0)
+            )
+            if len(rows) != int(manifest.get("queries", -1)):
+                raise ValueError(f"candidate shard query count mismatch: {path}")
     finally:
         connection.close()
-    if int(counts[3]) != 0:
-        temporary.unlink(missing_ok=True)
-        raise ValueError("combined shards contain duplicate query/SIRET candidates")
-    if int(counts[2] or 0) > 2_000:
-        temporary.unlink(missing_ok=True)
+
+    if observed_max_candidates > 2_000:
         raise AssertionError("combined v11 union exceeds 2,000 candidates")
+
+    writer: pq.ParquetWriter | None = None
+    candidate_rows = 0
+    try:
+        for path in inputs:
+            parquet = pq.ParquetFile(path)
+            if writer is None:
+                writer = pq.ParquetWriter(
+                    temporary, parquet.schema_arrow, compression="zstd"
+                )
+            elif parquet.schema_arrow != writer.schema:
+                raise ValueError(f"candidate shard schema mismatch: {path}")
+            for batch in parquet.iter_batches(batch_size=65_536):
+                table = pa.Table.from_batches([batch], schema=writer.schema)
+                writer.write_table(table, row_group_size=65_536)
+                candidate_rows += batch.num_rows
+        if writer is None:
+            raise ValueError("combine produced no candidate rows")
+        writer.close()
+        writer = None
+    except Exception:
+        if writer is not None:
+            writer.close()
+        temporary.unlink(missing_ok=True)
+        raise
+
+    expected_rows = sum(
+        int(item.get("candidate_rows", pq.ParquetFile(path).metadata.num_rows))
+        for path, item in zip(inputs, manifests)
+    )
+    if candidate_rows != expected_rows:
+        temporary.unlink(missing_ok=True)
+        raise ValueError("combined candidate row count mismatch")
     os.replace(temporary, output)
     _write_manifest(
         manifest_path,
@@ -452,10 +498,10 @@ def combine(args: argparse.Namespace) -> Path:
                 for path in inputs
             ],
             "folds": sorted(folds),
-            "queries": int(counts[1]),
-            "candidate_rows": int(counts[0]),
+            "queries": observed_queries,
+            "candidate_rows": candidate_rows,
             "empty_queries": sum(int(item.get("empty_queries", 0)) for item in manifests),
-            "maximum_union_candidates": int(counts[2] or 0),
+            "maximum_union_candidates": observed_max_candidates,
         },
     )
     return output
