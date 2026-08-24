@@ -65,17 +65,28 @@ uniquement lorsqu’il est démontré qu’il est écrasé sans être consommé.
 prédiction batch remplace la prédiction singleton seulement si ses sorties
 sont bit-identiques avec les six modèles réels.
 
-## 3. Gate de parité avant OOF national
+## 3. Gates de parité autour de l’OOF national
+
+Avant le fit, le reader mmap doit d’abord être comparé au reader
+Parquet/DuckDB historique sur 64 cas label-blind scellés : lignes source,
+cardinalités, sites et ordre doivent être byte-identiques.
 
 Sur les 512 requêtes scellées par le ledger v12, ancien et nouvel exécuteurs
-doivent produire, pour chacun des trois contextes :
+doivent ensuite produire, pour chacun des trois contextes, en phase
+**PREFIT** :
 
 - les mêmes parents, scores et rangs ;
 - les mêmes SIRET du Master, rangs, canaux et payloads officiels ;
 - le même ordre d’expansion et le même hydration rank diagnostique ;
 - les mêmes 319 valeurs de features SIRET en `float32` ;
 - les mêmes identifiants et le même ordre des lignes de fit ;
-- les mêmes PreRank@500 et top100, byte pour byte.
+
+Cette preuve PREFIT est requise pour autoriser le fit OOF, mais ne peut
+émettre aucun `READY`. Après production des trois modèles site, une phase
+**POSTFIT**, sans aucun refit, compare les PreRank@500 et top100 byte pour
+byte. Son manifeste doit épingler les hashes exacts des trois modèles et du
+manifeste OOF. Un certifier séparé joint ces artefacts ; l’exécuteur OOF ne
+peut pas consommer une parité POSTFIT provenant d’un run antérieur.
 
 Le lookup sidecar mutualisé est comparé aux trois lookups indépendants. Un test
 de perturbation vérifie qu’une modification d’un modèle outer n’affecte aucun

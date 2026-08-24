@@ -39,12 +39,24 @@
   "parity_gate": {
     "query_count": 512,
     "sample_source": "SEALED_V12_RUNTIME_QUERY_SAMPLE",
-    "parent_scores": "BIT_IDENTICAL",
-    "master_candidates_and_ranks": "BYTE_IDENTICAL",
-    "site_features_float32": "BIT_IDENTICAL",
-    "fit_row_ids_and_order": "BYTE_IDENTICAL",
-    "prerank500": "BYTE_IDENTICAL",
-    "top100": "BYTE_IDENTICAL",
+    "reader_parity": {
+      "phase": "BEFORE_PREFIT",
+      "case_count": 64,
+      "historical_parquet_reader_vs_mmap": "BYTE_IDENTICAL"
+    },
+    "prefit": {
+      "phase": "BEFORE_OOF_FIT",
+      "parent_scores": "BIT_IDENTICAL",
+      "master_candidates_and_ranks": "BYTE_IDENTICAL",
+      "site_features_float32": "BIT_IDENTICAL",
+      "fit_row_ids_and_order": "BYTE_IDENTICAL"
+    },
+    "postfit": {
+      "phase": "AFTER_OOF_FIT_NO_REFIT",
+      "site_model_hashes_must_match_oof": true,
+      "prerank500": "BYTE_IDENTICAL",
+      "top100": "BYTE_IDENTICAL"
+    },
     "stop_on_any_divergence": true
   },
   "resources": {
