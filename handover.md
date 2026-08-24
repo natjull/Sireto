@@ -2,6 +2,26 @@
 
 ## Etat des lieux
 
+### Retrieval all-human v13 — exécution physique cache-neutre préenregistrée
+
+Le `STOP_NO_PARALLEL_WORKER_AUTHORIZED` du benchmark v12 reste immuable. La
+révision v13 ne change aucune donnée, aucun candidat, aucune feature, aucun
+modèle, aucun fold ni aucun seuil de Recall. Elle remplace uniquement la
+matérialisation physique : trois acteurs build bornés aux folds 2/3/4,
+fragments Parquet ordonnés utilisés directement par les fits et le replay,
+PreRank500 compact réhydratable depuis le spool, et aucune copie `merged`.
+
+Le prochain benchmark est gelé avant exécution : un seul W3 frais sur les 512
+requêtes scellées, comparé au W1 v12 content-addressé. Le gate I/O porte sur
+les 116 colonnes et 368 row-groups logiques réellement couverts
+(2 696 076 099 octets compressés), pas sur les compteurs disque sensibles au
+cache macOS. W3 devra rester sous 872,267 s, 14 Gio de RAM machine, zéro
+swapout et 20 Gio projetés, tout en reproduisant exactement les projections
+fonctionnelles W1. Aucun benchmark v13 ni OOF national n'a encore été lancé.
+
+*(addendum, configuration et tests du préenregistrement v13 : commit
+`7e3370f`)*
+
 ### Retrieval all-human v12 — exécution fold-fused shardée prête à mesurer
 
 Le chemin OOF v12 a été remplacé physiquement, sans modifier sa recette
