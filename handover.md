@@ -37,6 +37,33 @@ erreur de transcription vers le SHA-256 réel à 64 caractères
 L'artefact W1 et le STOP v12 n'ont pas été modifiés; aucun benchmark v13
 n'avait encore été lancé au moment de la correction.
 
+Le commit `db1df27` durcit ensuite le préenregistrement physique avant toute
+nouvelle mesure. Le benchmark W3 possède désormais son preflight cache-neutre,
+ses projections W1 et son unique marqueur consommable; les chemins injectables
+de test ne peuvent publier ni `PASS` ni autorisation. Les 16 racines logiques
+incluent le bridge PREFIT, les 319 features et le payload complet du top500
+avant compaction. Le contrat gèle aussi 368 row-groups / 2 696 076 099 octets
+projetés pour le sample et 635 / 4 646 932 145 pour le national.
+
+Le commit `41b8eed` livre le runtime transactionnel zéro-copie correspondant.
+Chaque acteur build journalise les row-groups effectivement décodés sur un
+cache miss; leurs ledgers sont réconciliés avec le footer Parquet avant fit.
+Les trois fits restent séquentiels, chaque replay n'ouvre que son modèle outer,
+le PreRank500 ne conserve que sept colonnes et les sept familles de datasets
+sont lues directement par fragments, sans copie `merged`. Le chemin national
+utilise un stage relogeable, une promotion atomique et un `STOP` durable sur
+toute panne, y compris juste après la création `O_EXCL` du marqueur; aucun retry
+silencieux n'est possible.
+
+Validation avant gel : 225 tests retrieval v12/v13 passent, sans échec;
+`py_compile`, les CLI, le loader de configuration et `git diff --check` passent.
+Les SHA finaux sont `40c75e669289147ecf3b3c89ad37f9ef0f8e289cc092868ec26de10d0e15bf0d`
+pour la configuration, `8e45590dd035f9eb3e30238efc3c73256c8acf9d77e6e934d50e05befc81d9be`
+pour l'addendum et `24841ade82512f1ca8966e8c680b7a0fe2034005c8e2805215fed77c3768a02a`
+pour les 15 fichiers d'implémentation. Les 16 racines W1 ont été recalculées
+sur les artefacts réels en lecture seule. Aucun output, marqueur, benchmark W3,
+fold 0/1, OOF national ou autorisation n'existait encore à ce jalon.
+
 ### Retrieval all-human v12 — exécution fold-fused shardée prête à mesurer
 
 Le chemin OOF v12 a été remplacé physiquement, sans modifier sa recette
