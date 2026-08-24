@@ -16,7 +16,7 @@ import os
 from pathlib import Path
 import shutil
 import tempfile
-from typing import Any, Mapping, Sequence
+from typing import Any, Callable, Mapping, Sequence
 
 import pyarrow.parquet as pq
 
@@ -39,6 +39,11 @@ from .retrieval_fold_fused_fragment_outputs_v13 import (
     prerank500_full_payload_merkle_from_parquet_v13,
     replay_fragment_v13,
     seal_compact_replay_dataset_v13,
+)
+from .retrieval_fold_fused_logical_hash_provider_v14 import (
+    LogicalTableHashProvider,
+    V13_LOGICAL_HASH_PROVIDER,
+    logical_hash_lineage_record,
 )
 from .retrieval_fold_fused_oof_v12 import (
     ExistingV12SelectionAdapter,
@@ -408,6 +413,7 @@ def _compute_w1_functional_projection(
     expected_prefit_parity_manifest_sha256: str,
     expected_prefit_lineage: Mapping[str, str],
     sample_query_ids: Sequence[str],
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> tuple[dict[str, str], list[Mapping[str, Any]]]:
     if sha256_file(anchor.trial_manifest_path) != anchor.trial_manifest_sha256:
         raise PhysicalBenchmarkInvariantErrorV13("immutable W1 trial bytes drifted")
@@ -512,11 +518,14 @@ def _compute_w1_functional_projection(
         record = _w1_input_record(train[str(outer)], label=f"train outer{outer}")
         inputs.append({"role": f"train_outer{outer}", **record})
         train_views[outer] = logical_train_view_from_parquet_v13(
-            [Path(str(record["path"]))], outer
+            [Path(str(record["path"]))],
+            outer,
+            logical_hash_provider=logical_hash_provider,
         )
     inputs.append({"role": "heldout_spool", **heldout_record})
     heldout_view = logical_heldout_view_from_parquet_v13(
-        [Path(str(heldout_record["path"]))]
+        [Path(str(heldout_record["path"]))],
+        logical_hash_provider=logical_hash_provider,
     )
     model_sha: dict[int, str] = {}
     for outer in TRAIN_FOLDS:
@@ -546,18 +555,18 @@ def _compute_w1_functional_projection(
         "prefit_bridge_logical": prefit_bridge_logical,
         "site_feature_values": feature_merkle,
         "prerank500_common": logical_output_merkle_from_parquet_v13(
-            [output_paths["top500"]], "top500"
+            [output_paths["top500"]], "top500", logical_hash_provider
         ),
         "prerank500_full_payload": (
             prerank500_full_payload_merkle_from_parquet_v13(
-                [output_paths["top500"]]
+                [output_paths["top500"]], logical_hash_provider
             )
         ),
         "top100_full": logical_output_merkle_from_parquet_v13(
-            [output_paths["top100"]], "top100"
+            [output_paths["top100"]], "top100", logical_hash_provider
         ),
         "outcomes": logical_output_merkle_from_parquet_v13(
-            [output_paths["outcomes"]], "outcomes"
+            [output_paths["outcomes"]], "outcomes", logical_hash_provider
         ),
     }
     return (
@@ -579,6 +588,7 @@ def build_immutable_w1_functional_projection_v13(
     expected_prefit_parity_manifest_sha256: str,
     expected_prefit_lineage: Mapping[str, str],
     sample_query_ids: Sequence[str],
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> ImmutableW1FunctionalProjectionV13:
     """Project, but never rerun, the exact sealed W1 scientific artifacts."""
 
@@ -593,6 +603,7 @@ def build_immutable_w1_functional_projection_v13(
         ),
         expected_prefit_lineage=expected_prefit_lineage,
         sample_query_ids=sample_query_ids,
+        logical_hash_provider=logical_hash_provider,
     )
     identity = {
         "anchor_trial_sha256": anchor.trial_manifest_sha256,
@@ -757,7 +768,14 @@ def load_immutable_w1_functional_projection_v13(
     )
 
 
-def build_worker_entrypoint_v13(job: Mapping[str, Any]) -> str:
+def build_worker_entrypoint_v13(
+    job: Mapping[str, Any],
+    *,
+    physical_config_loader: Callable[[Path], Mapping[str, Any]] = load_physical_config_v13,
+    physical_config_relative_path: str = (
+        "config/retrieval_all_human_v13_physical_execution.json"
+    ),
+) -> str:
     """Run v12 science and seal every actual source row-group cache miss."""
 
     if job.get("phase") != "BUILD" or not isinstance(job.get("common"), Mapping):
@@ -768,8 +786,8 @@ def build_worker_entrypoint_v13(job: Mapping[str, Any]) -> str:
     if not isinstance(paths, Mapping):
         raise FoldFusedInvariantError("v13 build job lacks runtime paths")
     workspace_root = Path(str(paths.get("workspace_root") or "")).resolve()
-    config = load_physical_config_v13(
-        workspace_root / "config/retrieval_all_human_v13_physical_execution.json"
+    config = physical_config_loader(
+        workspace_root / physical_config_relative_path
     )
     projection = config["cache_neutral_io_gate"]["source_extent"][
         "production_projection"
@@ -798,7 +816,11 @@ def build_worker_entrypoint_v13(job: Mapping[str, Any]) -> str:
     return manifest
 
 
-def replay_worker_entrypoint_v13(job: Mapping[str, Any]) -> str:
+def replay_worker_entrypoint_v13(
+    job: Mapping[str, Any],
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
+) -> str:
     """Replay one fold-owned fragment without opening generation authorities."""
 
     if job.get("phase") != "REPLAY" or not isinstance(job.get("common"), Mapping):
@@ -873,6 +895,7 @@ def replay_worker_entrypoint_v13(job: Mapping[str, Any]) -> str:
         caps=caps,
         row_group_target=int(job.get("row_group_target", DEFAULT_ROW_GROUP_TARGET)),
         relocation_root=relocation_root,
+        logical_hash_provider=logical_hash_provider,
     )
     # The shared subprocess launcher requires a historical ``manifest.json``.
     # The compact manifest is a sibling and the coordinator loads it explicitly.
@@ -889,6 +912,7 @@ def _replay_jobs_v13(
     lineage: Mapping[str, str],
     output: Path,
     execution_phase: str = "PHYSICAL_V13_W3_COMPACT_REPLAY_512",
+    physical_config_sha256: str = CONFIG_SHA256,
 ) -> tuple[WorkerJobV12, ...]:
     return tuple(
         WorkerJobV12(
@@ -912,7 +936,7 @@ def _replay_jobs_v13(
                 "row_group_target": DEFAULT_ROW_GROUP_TARGET,
                 "execution_evidence": {
                     "phase": execution_phase,
-                    "physical_config_sha256": CONFIG_SHA256,
+                    "physical_config_sha256": physical_config_sha256,
                 },
             },
         )
@@ -927,8 +951,12 @@ def _w3_logical_digests(
     build_artifacts: Sequence[ShardBuildArtifactV12],
     sample_query_ids: Sequence[str],
     expected_prefit_parity_manifest_sha256: str,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> dict[str, str]:
-    parity = build_logical_parity_digests_v13(build)
+    parity = build_logical_parity_digests_v13(
+        build, logical_hash_provider=logical_hash_provider
+    )
     canonical_query_sequence = tuple(
         query_id for spec in build.specs for query_id in spec.query_ids
     )
@@ -1010,6 +1038,7 @@ def _write_trial_evidence_v13(
     replay: Any,
     canonical: Any,
     sharded_execution_plan_sha256: str,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Path:
     implementation_sha, implementation_files = v13_implementation_lineage(
         workspace_root
@@ -1019,9 +1048,7 @@ def _write_trial_evidence_v13(
             "trial evidence implementation differs from actor lineage"
         )
     path = output / "evidence" / "trial_evidence.json"
-    _atomic_json(
-        path,
-        {
+    evidence = {
             "schema_version": TRIAL_EVIDENCE_SCHEMA_VERSION,
             "lineage": dict(lineage),
             "implementation_files": list(implementation_files),
@@ -1057,8 +1084,12 @@ def _write_trial_evidence_v13(
                     replay.prerank500_full_payload_logical_merkle_root
                 ),
             },
-        },
-    )
+        }
+    if logical_hash_provider.revision != 13:
+        evidence["logical_hash_provider"] = logical_hash_lineage_record(
+            logical_hash_provider
+        )
+    _atomic_json(path, evidence)
     return path
 
 
@@ -1091,6 +1122,10 @@ def load_and_validate_build_row_group_ledgers_v13(
     expected_unique_row_groups: int | None = None,
     expected_logical_compressed_bytes: int | None = None,
     enforce_gate_totals: bool = True,
+    physical_config_loader: Callable[[Path], Mapping[str, Any]] = load_physical_config_v13,
+    physical_config_relative_path: str = (
+        "config/retrieval_all_human_v13_physical_execution.json"
+    ),
 ) -> ActualRowGroupLedgerSetV13:
     """Strictly reconcile actual build reads before fit/replay can continue."""
 
@@ -1098,9 +1133,9 @@ def load_and_validate_build_row_group_ledgers_v13(
         raise PhysicalBenchmarkInvariantErrorV13(
             "v13 actual-read proof requires exactly three build actors"
         )
-    config = load_physical_config_v13(
+    config = physical_config_loader(
         Path(prepared.runtime_payload["paths"]["workspace_root"])
-        / "config/retrieval_all_human_v13_physical_execution.json"
+        / physical_config_relative_path
     )
     source_extent = config["cache_neutral_io_gate"]["source_extent"]
     projection = source_extent["production_projection"]
@@ -1159,6 +1194,12 @@ def _write_w3_wrapper_v13(
     replay: Any,
     evidence_path: Path,
     row_group_ledgers: ActualRowGroupLedgerSetV13,
+    physical_config_loader: Callable[[Path], Mapping[str, Any]] = load_physical_config_v13,
+    physical_config_relative_path: str = (
+        "config/retrieval_all_human_v13_physical_execution.json"
+    ),
+    wrapper_schema_version: str = "sireto-retrieval-v13-sharded-run-1",
+    wrapper_run_kind: str = "PHYSICAL_BENCHMARK_W3_V13",
 ) -> Path:
     manifest_path = output / "manifest.json"
     family_paths = {
@@ -1246,17 +1287,17 @@ def _write_w3_wrapper_v13(
         raise PhysicalBenchmarkInvariantErrorV13(
             "v13 wrapper requires exactly seven canonical datasets"
         )
-    config = load_physical_config_v13(
+    config = physical_config_loader(
         Path(prepared.runtime_payload["paths"]["workspace_root"])
-        / "config/retrieval_all_human_v13_physical_execution.json"
+        / physical_config_relative_path
     )
     projection_sha = config["cache_neutral_io_gate"]["source_extent"][
         "production_projection"
     ]["sha256"]
     source_path = Path(prepared.scene_cache.source).resolve()
     wrapper: dict[str, Any] = {
-        "schema_version": "sireto-retrieval-v13-sharded-run-1",
-        "run_kind": "PHYSICAL_BENCHMARK_W3_V13",
+        "schema_version": wrapper_schema_version,
+        "run_kind": wrapper_run_kind,
         "query_count": SAMPLE_QUERY_COUNT,
         "worker_count": 3,
         "fold0_opened": False,
@@ -1301,6 +1342,16 @@ def finish_fragment_w3_trial_v13(
     anchor: ImmutableW1AnchorV13,
     workspace_root: Path,
     w1_functional_projection: ImmutableW1FunctionalProjectionV13,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
+    physical_config_loader: Callable[[Path], Mapping[str, Any]] = load_physical_config_v13,
+    physical_config_relative_path: str = (
+        "config/retrieval_all_human_v13_physical_execution.json"
+    ),
+    physical_config_sha256: str = CONFIG_SHA256,
+    replay_entrypoint: str = REPLAY_ENTRYPOINT_V13,
+    wrapper_schema_version: str = "sireto-retrieval-v13-sharded-run-1",
+    wrapper_run_kind: str = "PHYSICAL_BENCHMARK_W3_V13",
+    functional_projection_loader: Callable[..., Any] | None = None,
 ) -> FragmentW3TrialProductV13:
     """Finish build -> sequential fit -> compact replay -> exact wrapper."""
 
@@ -1323,9 +1374,13 @@ def finish_fragment_w3_trial_v13(
         build_artifacts,
         output / "build_fragment_dataset",
         relocation_root=output,
+        logical_hash_provider=logical_hash_provider,
     )
     build = load_build_fragment_dataset_v13(
-        build.manifest_path, verify_hashes=True, verify_logical=True
+        build.manifest_path,
+        verify_hashes=True,
+        verify_logical=True,
+        logical_hash_provider=logical_hash_provider,
     )
     row_group_ledgers = load_and_validate_build_row_group_ledgers_v13(
         prepared=prepared,
@@ -1333,12 +1388,19 @@ def finish_fragment_w3_trial_v13(
         build_artifacts=build_artifacts,
         lineage=lineage,
         enforce_gate_totals=False,
+        physical_config_loader=physical_config_loader,
+        physical_config_relative_path=physical_config_relative_path,
     )
     backend = XGBoostFragmentedSiteLambdaMARTBackendV13(
         params=prepared.admission.xgb_params("site"),
         output_dir=output / "site_models",
+        logical_hash_provider=logical_hash_provider,
     )
-    models = fit_site_models_sequential_from_fragments_v13(backend, build)
+    models = fit_site_models_sequential_from_fragments_v13(
+        backend,
+        build,
+        logical_hash_provider=logical_hash_provider,
+    )
     replay_jobs = _replay_jobs_v13(
         prepared=prepared,
         specs=specs,
@@ -1347,15 +1409,17 @@ def finish_fragment_w3_trial_v13(
         heldout_merkle=build.heldout_logical_merkle_root,
         lineage=lineage,
         output=output,
+        physical_config_sha256=physical_config_sha256,
     )
     scientific_manifests = spawn_manifest_workers_v12(
-        REPLAY_ENTRYPOINT_V13, replay_jobs, max_workers=3
+        replay_entrypoint, replay_jobs, max_workers=3
     )
     replay_fragments = tuple(
         load_compact_replay_fragment_v13(
             path.parent / "compact_fragment_manifest.json",
             verify_hashes=True,
             verify_logical=True,
+            logical_hash_provider=logical_hash_provider,
         )
         for path in scientific_manifests
     )
@@ -1363,9 +1427,13 @@ def finish_fragment_w3_trial_v13(
         replay_fragments,
         output / "compact_replay_dataset",
         relocation_root=output,
+        logical_hash_provider=logical_hash_provider,
     )
     replay = load_compact_replay_dataset_v13(
-        replay.manifest_path, verify_hashes=True, verify_logical=True
+        replay.manifest_path,
+        verify_hashes=True,
+        verify_logical=True,
+        logical_hash_provider=logical_hash_provider,
     )
     canonical = seal_zero_copy_canonical_run_v13(
         build,
@@ -1373,9 +1441,13 @@ def finish_fragment_w3_trial_v13(
         models,
         output / "canonical_datasets",
         relocation_root=output,
+        logical_hash_provider=logical_hash_provider,
     )
     canonical = load_zero_copy_canonical_run_v13(
-        canonical.manifest_path, verify_hashes=True, verify_logical=True
+        canonical.manifest_path,
+        verify_hashes=True,
+        verify_logical=True,
+        logical_hash_provider=logical_hash_provider,
     )
     logical = _w3_logical_digests(
         build,
@@ -1384,6 +1456,7 @@ def finish_fragment_w3_trial_v13(
         build_artifacts,
         prepared.sample_query_ids,
         prepared.prefit_parity_manifest_sha256,
+        logical_hash_provider=logical_hash_provider,
     )
     evidence_path = _write_trial_evidence_v13(
         output=output,
@@ -1396,6 +1469,7 @@ def finish_fragment_w3_trial_v13(
         sharded_execution_plan_sha256=(
             prepared.sharded_execution_plan_sha256
         ),
+        logical_hash_provider=logical_hash_provider,
     )
     wrapper = _write_w3_wrapper_v13(
         output=output,
@@ -1407,6 +1481,10 @@ def finish_fragment_w3_trial_v13(
         replay=replay,
         evidence_path=evidence_path,
         row_group_ledgers=row_group_ledgers,
+        physical_config_loader=physical_config_loader,
+        physical_config_relative_path=physical_config_relative_path,
+        wrapper_schema_version=wrapper_schema_version,
+        wrapper_run_kind=wrapper_run_kind,
     )
     # The in-timer reload verifies every sealed fragment/inventory/Merkle, but
     # deliberately does not recompute 319 features.  The benchmark runner does
@@ -1418,6 +1496,12 @@ def finish_fragment_w3_trial_v13(
         expected_anchor_trial_sha256=anchor.trial_manifest_sha256,
         verify_logical=True,
         verify_rehydration=False,
+        expected_wrapper_schema_version=wrapper_schema_version,
+        expected_wrapper_run_kind=wrapper_run_kind,
+        physical_config_loader=physical_config_loader,
+        physical_config_relative_path=physical_config_relative_path,
+        logical_hash_provider=logical_hash_provider,
+        functional_projection_loader=functional_projection_loader,
     )
 
 

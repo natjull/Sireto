@@ -44,6 +44,10 @@ from .retrieval_fold_fused_oof_v12 import (
     TrainMatrixArtifact,
     sha256_file,
 )
+from .retrieval_fold_fused_logical_hash_provider_v14 import (
+    LogicalTableHashProvider,
+    V13_LOGICAL_HASH_PROVIDER,
+)
 from .retrieval_fold_fused_relocatable_paths_v13 import (
     relocatable_record_path_v13,
 )
@@ -569,6 +573,7 @@ def _scan_train_outer(
     fragments: Sequence[FragmentFileV13],
     global_positions: Mapping[str, int],
     global_folds: Mapping[str, int],
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> tuple[
     tuple[str, ...],
     str,
@@ -616,7 +621,7 @@ def _scan_train_outer(
                     "query_id": query_id,
                     "fold": fold,
                     "row_count": table.num_rows,
-                    "table_sha256": logical_table_sha256_v13(table),
+                    "table_sha256": logical_hash_provider.table_sha256(table),
                 }
             )
             local_count += 1
@@ -641,6 +646,7 @@ def _scan_train_outer(
 def _scan_heldout(
     fragments: Sequence[FragmentFileV13],
     specs: Sequence[ShardSpecV12],
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> tuple[str, str, tuple[Mapping[str, Any], ...]]:
     schema_sha: str | None = None
     observed: list[tuple[str, int]] = []
@@ -677,7 +683,7 @@ def _scan_heldout(
                     "query_id": current[0],
                     "fold": current[1],
                     "row_count": table.num_rows,
-                    "table_sha256": logical_table_sha256_v13(table),
+                    "table_sha256": logical_hash_provider.table_sha256(table),
                 }
             )
         if tuple(shard_sequence) != tuple(
@@ -694,6 +700,7 @@ def seal_build_fragment_dataset_v13(
     output_dir: Path,
     *,
     relocation_root: Path | None = None,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> BuildFragmentDatasetV13:
     """Publish an immutable manifest over existing worker files, without copy."""
 
@@ -771,7 +778,7 @@ def seal_build_fragment_dataset_v13(
             physical_leaves.append(_fragment_leaf_record(fragment))
 
     heldout_schema, heldout_logical_root, _heldout_leaves = _scan_heldout(
-        heldout, specs
+        heldout, specs, logical_hash_provider
     )
     train: dict[int, TrainOuterDatasetV13] = {}
     train_manifest: dict[str, Any] = {}
@@ -785,7 +792,11 @@ def seal_build_fragment_dataset_v13(
             fit_folds,
             _leaves,
         ) = _scan_train_outer(
-            outer, fragments, global_positions, global_folds
+            outer,
+            fragments,
+            global_positions,
+            global_folds,
+            logical_hash_provider,
         )
         feature_schema_sha = _sha256_json(list(feature_names))
         dataset = TrainOuterDatasetV13(
@@ -904,6 +915,7 @@ def load_build_fragment_dataset_v13(
     *,
     verify_hashes: bool = True,
     verify_logical: bool = True,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> BuildFragmentDatasetV13:
     """Strict loader; optional logical scan may be skipped after preflight."""
 
@@ -1058,7 +1070,9 @@ def load_build_fragment_dataset_v13(
     heldout_schema = str(heldout_raw.get("parquet_schema_sha256") or "")
     heldout_logical = str(heldout_raw.get("logical_merkle_root") or "")
     if verify_logical:
-        observed_schema, observed_logical, _ = _scan_heldout(heldout, specs)
+        observed_schema, observed_logical, _ = _scan_heldout(
+            heldout, specs, logical_hash_provider
+        )
         if observed_schema != heldout_schema or observed_logical != heldout_logical:
             raise FoldFusedInvariantError("v13 heldout logical Merkle/schema drift")
         positions = {
@@ -1068,7 +1082,11 @@ def load_build_fragment_dataset_v13(
         folds = dict(global_sequence)
         for outer in TRAIN_FOLDS:
             names, schema, groups, logical, fit_folds, _ = _scan_train_outer(
-                outer, train[outer].fragments, positions, folds
+                outer,
+                train[outer].fragments,
+                positions,
+                folds,
+                logical_hash_provider,
             )
             expected = train[outer]
             if (
@@ -1126,6 +1144,8 @@ def load_build_fragment_dataset_v13(
 def load_fragmented_train_arrays_v13(
     dataset: BuildFragmentDatasetV13,
     outer_fold: int,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> FragmentedTrainArraysV13:
     """Load one outer matrix directly from ordered fragments into RAM once."""
 
@@ -1162,7 +1182,7 @@ def load_fragmented_train_arrays_v13(
                     "query_id": query_id,
                     "fold": fold,
                     "row_count": count,
-                    "table_sha256": logical_table_sha256_v13(table),
+                    "table_sha256": logical_hash_provider.table_sha256(table),
                 }
             )
             row_start = stop
@@ -1189,11 +1209,23 @@ def load_fragmented_train_arrays_v13(
 class XGBoostFragmentedSiteLambdaMARTBackendV13:
     """Frozen XGBRanker recipe fitted from fragment-backed arrays."""
 
-    def __init__(self, *, params: Mapping[str, Any], output_dir: Path) -> None:
+    def __init__(
+        self,
+        *,
+        params: Mapping[str, Any],
+        output_dir: Path,
+        logical_hash_provider: LogicalTableHashProvider = (
+            V13_LOGICAL_HASH_PROVIDER
+        ),
+    ) -> None:
         self.params = dict(params)
         self.output_dir = Path(output_dir).resolve()
         self.output_dir.mkdir(parents=True, exist_ok=True)
         self.recipe_sha256 = _sha256_json(self.params)
+        # ``table_sha256`` validates the sealed singleton on first use.  Keep
+        # the provider explicit on the backend so v14 cannot silently fall
+        # back to the historical masked-NULL digest during fit.
+        self.logical_hash_provider = logical_hash_provider
 
     def fit(
         self,
@@ -1202,7 +1234,11 @@ class XGBoostFragmentedSiteLambdaMARTBackendV13:
     ) -> FittedSiteModel:
         import xgboost as xgb
 
-        arrays = load_fragmented_train_arrays_v13(dataset, outer_fold)
+        arrays = load_fragmented_train_arrays_v13(
+            dataset,
+            outer_fold,
+            logical_hash_provider=self.logical_hash_provider,
+        )
         model = xgb.XGBRanker(**self.params)
         model.fit(arrays.values, arrays.labels, qid=arrays.qid, verbose=False)
         path = self.output_dir / f"fold{outer_fold}_site_ranker.json"
@@ -1225,11 +1261,18 @@ class XGBoostFragmentedSiteLambdaMARTBackendV13:
 def fit_site_models_sequential_from_fragments_v13(
     backend: Any,
     dataset: BuildFragmentDatasetV13,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Mapping[int, FittedSiteModel]:
     """Fit outer 2/3/4 sequentially so only one large matrix is resident."""
 
     models: dict[int, FittedSiteModel] = {}
     for outer in TRAIN_FOLDS:
+        backend_provider = getattr(backend, "logical_hash_provider", None)
+        if backend_provider is not None and backend_provider is not logical_hash_provider:
+            raise FoldFusedInvariantError(
+                "sequential fit logical hash provider drifted"
+            )
         model = backend.fit(dataset, outer)
         if (
             model.outer_fold != outer
@@ -1250,6 +1293,8 @@ def fit_site_models_sequential_from_fragments_v13(
 
 def iter_heldout_query_tables_v13(
     dataset: BuildFragmentDatasetV13,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Iterable[pa.Table]:
     """Yield held-out query tables in the exact logical monolithic order."""
 
@@ -1282,7 +1327,7 @@ def iter_heldout_query_tables_v13(
                     "query_id": current[0],
                     "fold": current[1],
                     "row_count": table.num_rows,
-                    "table_sha256": logical_table_sha256_v13(table),
+                    "table_sha256": logical_hash_provider.table_sha256(table),
                 }
             )
             yield table
@@ -1303,6 +1348,7 @@ def iter_heldout_contexts_from_fragments_v13(
     dataset: BuildFragmentDatasetV13,
     *,
     payload_factory: Callable[[tuple[Mapping[str, Any], ...]], Any] | None = None,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Iterable[MasterContext]:
     """Reconstruct exact v12 Master contexts without a merged heldout spool."""
 
@@ -1310,7 +1356,9 @@ def iter_heldout_contexts_from_fragments_v13(
         from .retrieval_fold_fused_runtime_v12 import _MasterPayload
 
         payload_factory = _MasterPayload
-    for table in iter_heldout_query_tables_v13(dataset):
+    for table in iter_heldout_query_tables_v13(
+        dataset, logical_hash_provider=logical_hash_provider
+    ):
         rows = tuple(table.to_pylist())
         query_id = str(rows[0]["query_id"])
         fold = int(rows[0]["fold"])
@@ -1332,6 +1380,8 @@ def iter_heldout_contexts_from_fragments_v13(
 def logical_train_view_from_parquet_v13(
     paths: Sequence[Path],
     outer_fold: int,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Mapping[str, Any]:
     """Compute a layout-independent train digest for v12 or v13 Parquets."""
 
@@ -1393,7 +1443,7 @@ def logical_train_view_from_parquet_v13(
                         "query_id": query_id,
                         "fold": fold,
                         "row_count": table.num_rows,
-                        "table_sha256": logical_table_sha256_v13(table),
+                        "table_sha256": logical_hash_provider.table_sha256(table),
                     }
                 )
                 start = stop
@@ -1412,6 +1462,8 @@ def logical_train_view_from_parquet_v13(
 
 def logical_heldout_view_from_parquet_v13(
     paths: Sequence[Path],
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Mapping[str, Any]:
     """Compute a layout-independent heldout digest across ordered files."""
 
@@ -1452,7 +1504,7 @@ def logical_heldout_view_from_parquet_v13(
                     "query_id": query_id,
                     "fold": fold,
                     "row_count": table.num_rows,
-                    "table_sha256": logical_table_sha256_v13(table),
+                    "table_sha256": logical_hash_provider.table_sha256(table),
                 }
             )
     assert schema_sha is not None
@@ -1467,17 +1519,22 @@ def logical_heldout_view_from_parquet_v13(
 
 def build_logical_parity_digests_v13(
     dataset: BuildFragmentDatasetV13,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Mapping[str, Any]:
     """Stable bridge digests comparable with a monolithic W1 v12 run."""
 
     train = {
         str(outer): logical_train_view_from_parquet_v13(
-            [value.path for value in dataset.train[outer].fragments], outer
+            [value.path for value in dataset.train[outer].fragments],
+            outer,
+            logical_hash_provider=logical_hash_provider,
         )
         for outer in TRAIN_FOLDS
     }
     heldout = logical_heldout_view_from_parquet_v13(
-        [value.path for value in dataset.heldout_fragments]
+        [value.path for value in dataset.heldout_fragments],
+        logical_hash_provider=logical_hash_provider,
     )
     return {
         "train_matrix": {

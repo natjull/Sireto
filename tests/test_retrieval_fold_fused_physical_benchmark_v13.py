@@ -592,12 +592,14 @@ def test_top500_full_payload_root_is_differentially_rehydrated(
     monkeypatch.setattr(
         fragments,
         "iter_heldout_contexts_from_fragments_v13",
-        lambda _build: iter((context,)),
+        lambda _build, *_args, **_kwargs: iter((context,)),
     )
     monkeypatch.setattr(
         outputs,
         "iter_compact_output_query_tables_v13",
-        lambda _replay, family: iter((compact if family == "top500" else full,)),
+        lambda _replay, family, *_args, **_kwargs: iter(
+            (compact if family == "top500" else full,)
+        ),
     )
     replay = SimpleNamespace(
         feature_values_logical_merkle_root=feature_root,

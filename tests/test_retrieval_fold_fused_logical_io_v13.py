@@ -692,6 +692,7 @@ def test_runtime_wrapper_is_consumed_without_schema_adaptation(
         replay=SimpleNamespace(manifest_path=replay_path),
         evidence_path=evidence_path,
         row_group_ledgers=actual_reads,
+        physical_config_loader=runtime.load_physical_config_v13,
     )
     raw = json.loads(wrapper.read_text(encoding="utf-8"))
     children = {
@@ -1083,3 +1084,50 @@ def test_cli_defaults_are_bound_to_current_preregistered_config() -> None:
     assert args.physical_config == DEFAULT_PHYSICAL_CONFIG
     assert args.physical_config_sha256 == DEFAULT_PHYSICAL_CONFIG_SHA256
     assert sha256_file(DEFAULT_PHYSICAL_CONFIG) == DEFAULT_PHYSICAL_CONFIG_SHA256
+
+
+def test_v14_config_guards_roundtrip_build_then_strict_load(tmp_path: Path) -> None:
+    """The generic I/O engine must use explicit v14 guards, never v13 defaults."""
+
+    fixture = _baseline_fixture(tmp_path)
+    config_path = Path(fixture["config"])
+    config = json.loads(config_path.read_text(encoding="utf-8"))
+    config["schema_version"] = "sireto-retrieval-v14-physical-execution-1"
+    config["status"] = "PREREGISTERED_V14_PHYSICAL_BENCHMARK_NOT_RUN"
+    config["revision_scope"] = "PHYSICAL_HASH_PROTOCOL_ONLY"
+    config.pop("logical_recipe_changes")
+    config["scientific_contract_changed"] = False
+    config["cache_neutral_io_gate"]["source_extent"]["production_projection"][
+        "drift_policy"
+    ] = "STOP_V14_IO_BEFORE_W3"
+    config_sha = _write_json(config_path, config)
+    kwargs = {
+        "expected_config_schema_version": (
+            "sireto-retrieval-v14-physical-execution-1"
+        ),
+        "expected_config_status": (
+            "PREREGISTERED_V14_PHYSICAL_BENCHMARK_NOT_RUN"
+        ),
+        "expected_projection_drift_policy": "STOP_V14_IO_BEFORE_W3",
+        "expected_revision_scope": "PHYSICAL_HASH_PROTOCOL_ONLY",
+        "expected_recipe_guard_field": "scientific_contract_changed",
+    }
+    built = build_immutable_w1_io_projection_v13(
+        physical_config_path=config_path,
+        physical_config_sha256=config_sha,
+        output_root=tmp_path / "projection-v14",
+        **kwargs,
+    )
+    reopened, _raw, _rows, _baseline = load_immutable_w1_io_projection_v13(
+        built.manifest_path,
+        expected_manifest_sha256=built.manifest_sha256,
+        verify_source_hash=False,
+        **kwargs,
+    )
+    assert reopened == built
+    with pytest.raises(LogicalIOInvariantError):
+        load_immutable_w1_io_projection_v13(
+            built.manifest_path,
+            expected_manifest_sha256=built.manifest_sha256,
+            verify_source_hash=False,
+        )

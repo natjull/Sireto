@@ -460,14 +460,22 @@ def _touch(
     return tuple(extents[position] for position in sorted(selected))
 
 
-def _strict_config(path: Path, expected_sha256: str) -> tuple[Path, Mapping[str, Any]]:
+def _strict_config(
+    path: Path,
+    expected_sha256: str,
+    *,
+    expected_schema_version: str = PHYSICAL_CONFIG_SCHEMA_VERSION,
+    expected_status: str = "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN",
+    expected_revision_scope: str = "PHYSICAL_ONLY",
+    expected_recipe_guard_field: str = "logical_recipe_changes",
+) -> tuple[Path, Mapping[str, Any]]:
     config_path = _require_file(path, expected_sha256, label="v13 physical config")
     config = _read_json(config_path, label="v13 physical config")
     if (
-        config.get("schema_version") != PHYSICAL_CONFIG_SCHEMA_VERSION
-        or config.get("status") != "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN"
-        or config.get("revision_scope") != "PHYSICAL_ONLY"
-        or config.get("logical_recipe_changes") is not False
+        config.get("schema_version") != expected_schema_version
+        or config.get("status") != expected_status
+        or config.get("revision_scope") != expected_revision_scope
+        or config.get(expected_recipe_guard_field) is not False
         or config.get("national_oof_allowed") is not False
     ):
         raise LogicalIOInvariantError("v13 physical config is not the preregistered authority")
@@ -479,8 +487,20 @@ def _baseline_from_config(
     physical_config_sha256: str,
     *,
     verify_source_hash: bool,
+    expected_config_schema_version: str = PHYSICAL_CONFIG_SCHEMA_VERSION,
+    expected_config_status: str = "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN",
+    expected_projection_drift_policy: str = "STOP_V13_IO_BEFORE_W3",
+    expected_revision_scope: str = "PHYSICAL_ONLY",
+    expected_recipe_guard_field: str = "logical_recipe_changes",
 ) -> _Baseline:
-    config_path, config = _strict_config(physical_config_path, physical_config_sha256)
+    config_path, config = _strict_config(
+        physical_config_path,
+        physical_config_sha256,
+        expected_schema_version=expected_config_schema_version,
+        expected_status=expected_config_status,
+        expected_revision_scope=expected_revision_scope,
+        expected_recipe_guard_field=expected_recipe_guard_field,
+    )
     frozen = config.get("immutable_v12_stop")
     authority = (config.get("authorities") or {}).get("v12_sharded_plan") or {}
     gate = config.get("cache_neutral_io_gate") or {}
@@ -598,7 +618,7 @@ def _baseline_from_config(
         or int(projection_pin.get("projected_column_count", -1)) != len(projection)
         or projection_pin.get("columns") != list(projection)
         or projection_pin.get("sha256") != projection_sha
-        or projection_pin.get("drift_policy") != "STOP_V13_IO_BEFORE_W3"
+        or projection_pin.get("drift_policy") != expected_projection_drift_policy
     ):
         raise LogicalIOInvariantError("preregistered production projection drifted")
     if source_rows != expected_rows or len(extents) != expected_groups:
@@ -746,6 +766,11 @@ def build_immutable_w1_io_projection_v13(
     physical_config_sha256: str,
     output_root: Path,
     verify_source_hash: bool = False,
+    expected_config_schema_version: str = PHYSICAL_CONFIG_SCHEMA_VERSION,
+    expected_config_status: str = "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN",
+    expected_projection_drift_policy: str = "STOP_V13_IO_BEFORE_W3",
+    expected_revision_scope: str = "PHYSICAL_ONLY",
+    expected_recipe_guard_field: str = "logical_recipe_changes",
 ) -> ImmutableW1IOProjectionV13:
     """Project pinned W1 metadata without executing W1 or warming source pages.
 
@@ -762,6 +787,11 @@ def build_immutable_w1_io_projection_v13(
         physical_config_path,
         physical_config_sha256,
         verify_source_hash=verify_source_hash,
+        expected_config_schema_version=expected_config_schema_version,
+        expected_config_status=expected_config_status,
+        expected_projection_drift_policy=expected_projection_drift_policy,
+        expected_revision_scope=expected_revision_scope,
+        expected_recipe_guard_field=expected_recipe_guard_field,
     )
     logical_rows_sha = _sha256_json(list(baseline.rows))
     identity = {
@@ -840,6 +870,11 @@ def load_immutable_w1_io_projection_v13(
     *,
     expected_manifest_sha256: str,
     verify_source_hash: bool = False,
+    expected_config_schema_version: str = PHYSICAL_CONFIG_SCHEMA_VERSION,
+    expected_config_status: str = "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN",
+    expected_projection_drift_policy: str = "STOP_V13_IO_BEFORE_W3",
+    expected_revision_scope: str = "PHYSICAL_ONLY",
+    expected_recipe_guard_field: str = "logical_recipe_changes",
 ) -> tuple[ImmutableW1IOProjectionV13, Mapping[str, Any], tuple[dict[str, Any], ...], _Baseline]:
     """Reload the W1 projection without warming source data by default.
 
@@ -879,6 +914,11 @@ def load_immutable_w1_io_projection_v13(
         Path(str(config_record.get("path") or "")),
         str(config_record.get("sha256") or ""),
         verify_source_hash=verify_source_hash,
+        expected_config_schema_version=expected_config_schema_version,
+        expected_config_status=expected_config_status,
+        expected_projection_drift_policy=expected_projection_drift_policy,
+        expected_revision_scope=expected_revision_scope,
+        expected_recipe_guard_field=expected_recipe_guard_field,
     )
     ledger_path = _resolve_child(path.parent, artifact_record.get("path"), label="W1 extent ledger")
     if (
@@ -1069,6 +1109,8 @@ def _load_w3(
     expected_sha256: str,
     *,
     baseline: _Baseline,
+    expected_wrapper_schema_version: str = W3_RUN_SCHEMA_VERSION,
+    expected_wrapper_run_kind: str = "PHYSICAL_BENCHMARK_W3_V13",
 ) -> tuple[
     Mapping[str, Any],
     tuple[Mapping[str, Any], ...],
@@ -1083,8 +1125,8 @@ def _load_w3(
     digests = raw.get("logical_digests")
     if (
         set(raw) != _W3_KEYS
-        or raw.get("schema_version") != W3_RUN_SCHEMA_VERSION
-        or raw.get("run_kind") != "PHYSICAL_BENCHMARK_W3_V13"
+        or raw.get("schema_version") != expected_wrapper_schema_version
+        or raw.get("run_kind") != expected_wrapper_run_kind
         or raw.get("query_count") != 512
         or raw.get("worker_count") != 3
         or raw.get("fold0_opened") is not False
@@ -1219,6 +1261,13 @@ def compare_w3_to_immutable_w1_io_v13(
     w3_run_manifest_sha256: str,
     output_root: Path,
     verify_source_hash: bool = True,
+    expected_config_schema_version: str = PHYSICAL_CONFIG_SCHEMA_VERSION,
+    expected_config_status: str = "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN",
+    expected_projection_drift_policy: str = "STOP_V13_IO_BEFORE_W3",
+    expected_wrapper_schema_version: str = W3_RUN_SCHEMA_VERSION,
+    expected_wrapper_run_kind: str = "PHYSICAL_BENCHMARK_W3_V13",
+    expected_revision_scope: str = "PHYSICAL_ONLY",
+    expected_recipe_guard_field: str = "logical_recipe_changes",
 ) -> LogicalIOGateArtifactV13:
     """Seal the cache-neutral I/O verdict for one fresh W3-only run."""
 
@@ -1226,10 +1275,19 @@ def compare_w3_to_immutable_w1_io_v13(
         w1_projection_manifest_path,
         expected_manifest_sha256=w1_projection_manifest_sha256,
         verify_source_hash=verify_source_hash,
+        expected_config_schema_version=expected_config_schema_version,
+        expected_config_status=expected_config_status,
+        expected_projection_drift_policy=expected_projection_drift_policy,
+        expected_revision_scope=expected_revision_scope,
+        expected_recipe_guard_field=expected_recipe_guard_field,
     )
     w3_path = _require_file(w3_run_manifest_path, w3_run_manifest_sha256, label="fresh v13 W3 manifest")
     w3, specs, ranges_by_actor, materialized_w3, actual_reads = _load_w3(
-        w3_path, w3_run_manifest_sha256, baseline=baseline
+        w3_path,
+        w3_run_manifest_sha256,
+        baseline=baseline,
+        expected_wrapper_schema_version=expected_wrapper_schema_version,
+        expected_wrapper_run_kind=expected_wrapper_run_kind,
     )
     extents, projection, projection_sha, rows, metadata_sha = _projected_extents(
         baseline.source_path
@@ -1405,6 +1463,15 @@ def load_logical_io_gate_v13(
     *,
     expected_manifest_sha256: str,
     verify_source_hash: bool = True,
+    expected_config_schema_version: str = PHYSICAL_CONFIG_SCHEMA_VERSION,
+    expected_config_status: str = (
+        "PREREGISTERED_V13_PHYSICAL_BENCHMARK_NOT_RUN"
+    ),
+    expected_projection_drift_policy: str = "STOP_V13_IO_BEFORE_W3",
+    expected_wrapper_schema_version: str = W3_RUN_SCHEMA_VERSION,
+    expected_wrapper_run_kind: str = "PHYSICAL_BENCHMARK_W3_V13",
+    expected_revision_scope: str = "PHYSICAL_ONLY",
+    expected_recipe_guard_field: str = "logical_recipe_changes",
 ) -> LogicalIOGateArtifactV13:
     """Strictly reload and independently reproduce a final W1/W3 I/O gate."""
 
@@ -1457,6 +1524,13 @@ def load_logical_io_gate_v13(
             w3_run_manifest_sha256=str(w3_record["sha256"]),
             output_root=Path(temporary),
             verify_source_hash=verify_source_hash,
+            expected_config_schema_version=expected_config_schema_version,
+            expected_config_status=expected_config_status,
+            expected_projection_drift_policy=expected_projection_drift_policy,
+            expected_wrapper_schema_version=expected_wrapper_schema_version,
+            expected_wrapper_run_kind=expected_wrapper_run_kind,
+            expected_revision_scope=expected_revision_scope,
+            expected_recipe_guard_field=expected_recipe_guard_field,
         )
         if (
             reproduced.manifest_path.read_bytes() != path.read_bytes()

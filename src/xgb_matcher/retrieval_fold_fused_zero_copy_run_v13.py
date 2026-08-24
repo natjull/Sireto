@@ -25,6 +25,10 @@ from .retrieval_fold_fused_fragment_outputs_v13 import (
     load_compact_replay_dataset_v13,
     model_set_logical_sha256_v13,
 )
+from .retrieval_fold_fused_logical_hash_provider_v14 import (
+    LogicalTableHashProvider,
+    V13_LOGICAL_HASH_PROVIDER,
+)
 from .retrieval_fold_fused_oof_v12 import (
     FittedSiteModel,
     FoldFusedInvariantError,
@@ -374,6 +378,7 @@ def seal_zero_copy_canonical_run_v13(
     output_dir: Path,
     *,
     relocation_root: Path | None = None,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> ZeroCopyCanonicalRunV13:
     """Seal the exact seven canonical families; never create merged data files."""
 
@@ -394,7 +399,9 @@ def seal_zero_copy_canonical_run_v13(
         raise FileExistsError(output)
     output.mkdir(parents=True)
     leaves = _family_leaves(build, replay, models)
-    parity = build_logical_parity_digests_v13(build)
+    parity = build_logical_parity_digests_v13(
+        build, logical_hash_provider=logical_hash_provider
+    )
     logical = {
         **{
             f"train_outer{outer}": _sha256_json(
@@ -588,6 +595,7 @@ def load_zero_copy_canonical_run_v13(
     *,
     verify_hashes: bool = True,
     verify_logical: bool = True,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> ZeroCopyCanonicalRunV13:
     """Strictly reopen all seven datasets and the deduplicated inventory."""
 
@@ -636,6 +644,7 @@ def load_zero_copy_canonical_run_v13(
             source_path,
             verify_hashes=verify_hashes,
             verify_logical=verify_logical,
+            logical_hash_provider=logical_hash_provider,
         )
         if loaded.manifest_sha256 != digest:
             raise FoldFusedInvariantError("v13 canonical source identity drift")
@@ -809,7 +818,9 @@ def load_zero_copy_canonical_run_v13(
             "v13 global inventory is not exactly seven families plus three models"
         )
     parity = {
-        **build_logical_parity_digests_v13(build),
+        **build_logical_parity_digests_v13(
+            build, logical_hash_provider=logical_hash_provider
+        ),
         "model_by_outer": _sha256_json(
             [
                 {

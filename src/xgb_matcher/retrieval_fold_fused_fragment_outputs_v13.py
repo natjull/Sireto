@@ -27,6 +27,10 @@ from .retrieval_fold_fused_fragment_dataset_v13 import (
     logical_table_sha256_v13,
     merkle_root_v13,
 )
+from .retrieval_fold_fused_logical_hash_provider_v14 import (
+    LogicalTableHashProvider,
+    V13_LOGICAL_HASH_PROVIDER,
+)
 from .retrieval_fold_fused_oof_v12 import (
     ArtifactRecord,
     ExecutionCaps,
@@ -204,7 +208,10 @@ def feature_batch_logical_leaf_v13(
     }
 
 
-def prerank500_full_payload_leaf_v13(table: pa.Table) -> Mapping[str, Any]:
+def prerank500_full_payload_leaf_v13(
+    table: pa.Table,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
+) -> Mapping[str, Any]:
     """Seal one pre-compaction PreRank500 table including full payload."""
 
     canonical = pa.Table.from_arrays(table.columns, schema=TOP100_SCHEMA)
@@ -219,7 +226,7 @@ def prerank500_full_payload_leaf_v13(table: pa.Table) -> Mapping[str, Any]:
         "query_id": next(iter(query_ids)),
         "fold": next(iter(folds)),
         "row_count": canonical.num_rows,
-        "table_sha256": logical_table_sha256_v13(canonical),
+        "table_sha256": logical_hash_provider.table_sha256(canonical),
     }
 
 
@@ -386,10 +393,12 @@ class BufferedCompactOOFOutputStoreV13:
         output_dir: Path,
         *,
         row_group_target: int = DEFAULT_ROW_GROUP_TARGET,
+        logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
     ) -> None:
         self.output_dir = Path(output_dir).resolve()
         self.output_dir.mkdir(parents=True, exist_ok=False)
         self.row_group_target = int(row_group_target)
+        self.logical_hash_provider = logical_hash_provider
         if self.row_group_target < 500:
             raise FoldFusedInvariantError("output row-group target must fit one top500")
         self.paths = {
@@ -468,7 +477,7 @@ class BufferedCompactOOFOutputStoreV13:
                 "query_id": query_id,
                 "fold": fold,
                 "row_count": table.num_rows,
-                "table_sha256": logical_table_sha256_v13(canonical),
+                "table_sha256": self.logical_hash_provider.table_sha256(canonical),
             }
         )
 
@@ -519,7 +528,9 @@ class BufferedCompactOOFOutputStoreV13:
             include_payload=True,
         )
         self.prerank500_full_payload_logical_leaves.append(
-            prerank500_full_payload_leaf_v13(top500_full)
+            prerank500_full_payload_leaf_v13(
+                top500_full, self.logical_hash_provider
+            )
         )
         top500 = self._ranking_table(
             context,
@@ -603,12 +614,14 @@ class CompactParquetOOFOutputStoreV13:
         shard_id: str,
         shard_ordinal: int,
         row_group_target: int = DEFAULT_ROW_GROUP_TARGET,
+        logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
     ) -> None:
         self.shard_id = str(shard_id)
         self.shard_ordinal = int(shard_ordinal)
         self.delegate = BufferedCompactOOFOutputStoreV13(
             output_dir,
             row_group_target=row_group_target,
+            logical_hash_provider=logical_hash_provider,
         )
         self.compact_outputs: Mapping[str, CompactOutputFileV13] | None = None
         self.feature_values_logical_leaves: tuple[Mapping[str, Any], ...] = ()
@@ -709,6 +722,7 @@ def replay_fragment_v13(
     payload_factory: Any | None = None,
     row_group_target: int = DEFAULT_ROW_GROUP_TARGET,
     relocation_root: Path | None = None,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> CompactReplayFragmentArtifactV13:
     """Run the frozen v12 replay with only a compact physical sink swapped."""
 
@@ -732,6 +746,7 @@ def replay_fragment_v13(
             shard_id=spec.shard_id,
             shard_ordinal=spec.shard_ordinal,
             row_group_target=row_group_target,
+            logical_hash_provider=logical_hash_provider,
         )
         store_box["value"] = value
         return value
@@ -901,6 +916,7 @@ def _iter_output_query_tables(
 
 def _scan_output_file(
     record: CompactOutputFileV13,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> tuple[list[tuple[str, int]], list[Mapping[str, Any]]]:
     parquet = pq.ParquetFile(record.path)
     if (
@@ -922,7 +938,7 @@ def _scan_output_file(
                 "query_id": query_id,
                 "fold": fold,
                 "row_count": table.num_rows,
-                "table_sha256": logical_table_sha256_v13(table),
+                "table_sha256": logical_hash_provider.table_sha256(table),
             }
         )
     if (
@@ -940,6 +956,7 @@ def _load_output_record(
     *,
     verify_hashes: bool,
     verify_logical: bool,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> CompactOutputFileV13:
     path = _resolve_path(root, value.get("path"))
     record = CompactOutputFileV13(
@@ -963,7 +980,7 @@ def _load_output_record(
     ):
         raise FoldFusedInvariantError("compact output hash/size drift")
     if verify_logical:
-        _scan_output_file(record)
+        _scan_output_file(record, logical_hash_provider)
     return record
 
 
@@ -972,6 +989,7 @@ def load_compact_replay_fragment_v13(
     *,
     verify_hashes: bool = True,
     verify_logical: bool = True,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> CompactReplayFragmentArtifactV13:
     manifest_path = Path(path).resolve()
     if manifest_path.is_dir():
@@ -1017,6 +1035,7 @@ def load_compact_replay_fragment_v13(
             manifest_path.parent,
             verify_hashes=verify_hashes,
             verify_logical=verify_logical,
+            logical_hash_provider=logical_hash_provider,
         )
         for name, record in outputs_raw.items()
     }
@@ -1148,9 +1167,13 @@ def load_compact_replay_fragment_v13(
 
 def _ordered_replays(
     artifacts: Sequence[CompactReplayFragmentArtifactV13],
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> tuple[CompactReplayFragmentArtifactV13, ...]:
     strict = tuple(
-        load_compact_replay_fragment_v13(value.manifest_path)
+        load_compact_replay_fragment_v13(
+            value.manifest_path,
+            logical_hash_provider=logical_hash_provider,
+        )
         for value in artifacts
     )
     ordered = tuple(sorted(strict, key=lambda value: value.spec.shard_ordinal))
@@ -1180,10 +1203,11 @@ def seal_compact_replay_dataset_v13(
     output_dir: Path,
     *,
     relocation_root: Path | None = None,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> CompactReplayDatasetV13:
     """Seal ordered worker outputs as one logical dataset, without merge."""
 
-    ordered = _ordered_replays(artifacts)
+    ordered = _ordered_replays(artifacts, logical_hash_provider)
     output = Path(output_dir).resolve()
     if output.exists():
         raise FileExistsError(output)
@@ -1221,7 +1245,9 @@ def seal_compact_replay_dataset_v13(
         sequence: list[tuple[str, int]] = []
         leaves: list[Mapping[str, Any]] = []
         for fragment in fragments:
-            current_sequence, current_leaves = _scan_output_file(fragment)
+            current_sequence, current_leaves = _scan_output_file(
+                fragment, logical_hash_provider
+            )
             sequence.extend(current_sequence)
             leaves.extend(current_leaves)
         if tuple(sequence) != global_sequence:
@@ -1332,6 +1358,7 @@ def seal_compact_replay_dataset_v13(
 def iter_compact_output_query_tables_v13(
     dataset: CompactReplayDatasetV13,
     name: str,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Iterable[pa.Table]:
     """Stream one compact family in global monolithic query order."""
 
@@ -1350,7 +1377,7 @@ def iter_compact_output_query_tables_v13(
                     "query_id": query_id,
                     "fold": fold,
                     "row_count": table.num_rows,
-                    "table_sha256": logical_table_sha256_v13(table),
+                    "table_sha256": logical_hash_provider.table_sha256(table),
                 }
             )
             yield table
@@ -1364,16 +1391,22 @@ def iter_compact_output_query_tables_v13(
 
 def iter_compact_outcomes_v13(
     dataset: CompactReplayDatasetV13,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Iterable[QueryOutcome]:
-    for table in iter_compact_output_query_tables_v13(dataset, "outcomes"):
+    for table in iter_compact_output_query_tables_v13(
+        dataset, "outcomes", logical_hash_provider
+    ):
         yield _outcome_from_row_v12(table.to_pylist()[0])
 
 
 def aggregate_compact_replay_gates_v13(
     dataset: CompactReplayDatasetV13,
     gates: GateThresholds = GateThresholds(),
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Mapping[str, Any]:
-    return aggregate_sharded_gates_v12(tuple(iter_compact_outcomes_v13(dataset)), gates)
+    return aggregate_sharded_gates_v12(
+        tuple(iter_compact_outcomes_v13(dataset, logical_hash_provider)), gates
+    )
 
 
 def load_compact_replay_dataset_v13(
@@ -1381,6 +1414,7 @@ def load_compact_replay_dataset_v13(
     *,
     verify_hashes: bool = True,
     verify_logical: bool = True,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> CompactReplayDatasetV13:
     manifest_path = Path(path).resolve()
     if manifest_path.is_dir():
@@ -1425,6 +1459,7 @@ def load_compact_replay_dataset_v13(
             source,
             verify_hashes=verify_hashes,
             verify_logical=verify_logical,
+            logical_hash_provider=logical_hash_provider,
         )
         if (
             loaded.spec != spec
@@ -1433,7 +1468,7 @@ def load_compact_replay_dataset_v13(
         ):
             raise FoldFusedInvariantError("compact replay source identity drift")
         fragments.append(loaded)
-    ordered = _ordered_replays(fragments)
+    ordered = _ordered_replays(fragments, logical_hash_provider)
     lineage = dict(ordered[0].lineage)
     model_sha: dict[int, str] = {}
     for artifact in ordered:
@@ -1466,7 +1501,9 @@ def load_compact_replay_dataset_v13(
         leaves: list[Mapping[str, Any]] = []
         sequence: list[tuple[str, int]] = []
         for value in values:
-            part_sequence, part_leaves = _scan_output_file(value)
+            part_sequence, part_leaves = _scan_output_file(
+                value, logical_hash_provider
+            )
             sequence.extend(part_sequence)
             leaves.extend(part_leaves)
         if tuple(sequence) != global_sequence:
@@ -1538,6 +1575,7 @@ def load_compact_replay_dataset_v13(
 def logical_output_merkle_from_parquet_v13(
     paths: Sequence[Path],
     name: str,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> str:
     """Layout-independent digest for v12 merged or v13 fragment outputs.
 
@@ -1584,7 +1622,7 @@ def logical_output_merkle_from_parquet_v13(
                         "query_id": query_id,
                         "fold": fold,
                         "row_count": table.num_rows,
-                        "table_sha256": logical_table_sha256_v13(table),
+                        "table_sha256": logical_hash_provider.table_sha256(table),
                     }
                 )
                 start = stop
@@ -1593,6 +1631,7 @@ def logical_output_merkle_from_parquet_v13(
 
 def prerank500_full_payload_merkle_from_parquet_v13(
     paths: Sequence[Path],
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> str:
     """Digest historical PreRank500 rows including payload/proof JSON."""
 
@@ -1622,7 +1661,11 @@ def prerank500_full_payload_merkle_from_parquet_v13(
                 global_seen.add(query_id)
                 source = row_group_table.slice(start, stop - start)
                 table = pa.Table.from_arrays(source.columns, schema=TOP100_SCHEMA)
-                leaves.append(prerank500_full_payload_leaf_v13(table))
+                leaves.append(
+                    prerank500_full_payload_leaf_v13(
+                        table, logical_hash_provider
+                    )
+                )
                 start = stop
     return merkle_root_v13(leaves)
 
@@ -1630,6 +1673,8 @@ def prerank500_full_payload_merkle_from_parquet_v13(
 def rehydrate_top500_row_v13(
     compact_row: Mapping[str, Any],
     heldout_dataset: BuildFragmentDatasetV13,
+    *,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> Mapping[str, Any]:
     """Resolve the frozen natural key ``(query_id, candidate_siret)``.
 
@@ -1641,7 +1686,9 @@ def rehydrate_top500_row_v13(
     query_id = str(compact_row.get("query_id") or "")
     candidate_siret = str(compact_row.get("candidate_siret") or "")
     matches: list[Mapping[str, Any]] = []
-    for table in iter_heldout_query_tables_v13(heldout_dataset):
+    for table in iter_heldout_query_tables_v13(
+        heldout_dataset, logical_hash_provider=logical_hash_provider
+    ):
         if str(table["query_id"][0].as_py()) != query_id:
             continue
         matches.extend(

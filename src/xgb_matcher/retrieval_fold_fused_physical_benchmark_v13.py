@@ -48,6 +48,11 @@ from .retrieval_fold_fused_sharded_preflight_v12 import (
     prepare_sharded_execution_v12,
     require_external_sharded_output_v12,
 )
+from .retrieval_fold_fused_logical_hash_provider_v14 import (
+    LogicalTableHashProvider,
+    V13_LOGICAL_HASH_PROVIDER,
+    logical_hash_lineage_record,
+)
 
 
 SCHEMA_VERSION = "sireto-retrieval-v13-physical-benchmark-1"
@@ -1088,6 +1093,7 @@ def _validate_compact_rehydration_v13(
     replay: Any,
     *,
     feature_context: Any,
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
 ) -> tuple[int, str]:
     """Differentially replay top500 features/proofs from the heldout source."""
 
@@ -1106,9 +1112,15 @@ def _validate_compact_rehydration_v13(
 
     digest = hashlib.sha256()
     rows = 0
-    compact_iterator = iter_compact_output_query_tables_v13(replay, "top500")
-    top100_iterator = iter_compact_output_query_tables_v13(replay, "top100")
-    context_iterator = iter_heldout_contexts_from_fragments_v13(build)
+    compact_iterator = iter_compact_output_query_tables_v13(
+        replay, "top500", logical_hash_provider
+    )
+    top100_iterator = iter_compact_output_query_tables_v13(
+        replay, "top100", logical_hash_provider
+    )
+    context_iterator = iter_heldout_contexts_from_fragments_v13(
+        build, logical_hash_provider=logical_hash_provider
+    )
     feature_leaves: list[Mapping[str, Any]] = []
     payload_leaves: list[Mapping[str, Any]] = []
     for compact, top100, context in zip_longest(
@@ -1209,7 +1221,8 @@ def _validate_compact_rehydration_v13(
             )
         payload_leaves.append(
             prerank500_full_payload_leaf_v13(
-                pa.Table.from_pylist(payload_records, schema=TOP100_SCHEMA)
+                pa.Table.from_pylist(payload_records, schema=TOP100_SCHEMA),
+                logical_hash_provider,
             )
         )
         for top100_row in top100_rows:
@@ -1270,6 +1283,14 @@ def load_fragment_w3_trial_product_v13(
     expected_anchor_trial_sha256: str | None = None,
     verify_logical: bool = True,
     verify_rehydration: bool = True,
+    expected_wrapper_schema_version: str = "sireto-retrieval-v13-sharded-run-1",
+    expected_wrapper_run_kind: str = "PHYSICAL_BENCHMARK_W3_V13",
+    physical_config_loader: Callable[[Path], Mapping[str, Any]] = load_physical_config_v13,
+    physical_config_relative_path: str = (
+        "config/retrieval_all_human_v13_physical_execution.json"
+    ),
+    logical_hash_provider: LogicalTableHashProvider = V13_LOGICAL_HASH_PROVIDER,
+    functional_projection_loader: Callable[..., Any] | None = None,
 ) -> FragmentW3TrialProductV13:
     """Strictly reopen a W3 wrapper and derive every benchmark-facing fact."""
 
@@ -1284,8 +1305,8 @@ def load_fragment_w3_trial_product_v13(
     logical_raw = raw.get("logical_digests")
     if (
         set(raw) != _W3_RUN_KEYS
-        or raw.get("schema_version") != "sireto-retrieval-v13-sharded-run-1"
-        or raw.get("run_kind") != "PHYSICAL_BENCHMARK_W3_V13"
+        or raw.get("schema_version") != expected_wrapper_schema_version
+        or raw.get("run_kind") != expected_wrapper_run_kind
         or raw.get("query_count") != SAMPLE_QUERY_COUNT
         or raw.get("worker_count") != 3
         or raw.get("fold0_opened") is not False
@@ -1384,11 +1405,19 @@ def load_fragment_w3_trial_product_v13(
         "zero_copy_canonical_run",
         "compact_rehydration",
     }
+    if logical_hash_provider.revision != 13:
+        evidence_keys.add("logical_hash_provider")
     if set(evidence) != evidence_keys or evidence.get("schema_version") != TRIAL_EVIDENCE_SCHEMA_VERSION:
         raise PhysicalBenchmarkInvariantErrorV13("v13 trial evidence contract drifted")
     lineage = {
         str(key): str(value) for key, value in dict(evidence.get("lineage") or {}).items()
     }
+    if logical_hash_provider.revision != 13 and evidence.get(
+        "logical_hash_provider"
+    ) != logical_hash_lineage_record(logical_hash_provider):
+        raise PhysicalBenchmarkInvariantErrorV13(
+            "v14 logical hash provider evidence drifted"
+        )
     current_implementation, current_files = v13_implementation_lineage(workspace_root)
     scientific_lineage = {
         key: value
@@ -1447,9 +1476,9 @@ def load_fragment_w3_trial_product_v13(
                 raise RowGroupLedgerInvariantErrorV13(
                     "actual-read ledger is not exactly inventory-bound"
                 )
-        physical_config = load_physical_config_v13(
+        physical_config = physical_config_loader(
             Path(workspace_root).resolve()
-            / "config/retrieval_all_human_v13_physical_execution.json"
+            / physical_config_relative_path
         )
         source_extent = physical_config["cache_neutral_io_gate"][
             "source_extent"
@@ -1516,20 +1545,32 @@ def load_fragment_w3_trial_product_v13(
     from .retrieval_fold_fused_zero_copy_run_v13 import (
         load_zero_copy_canonical_run_v13,
     )
-    from .retrieval_fold_fused_fragment_runtime_v13 import (
-        load_immutable_w1_functional_projection_v13,
-    )
+    if functional_projection_loader is None:
+        from .retrieval_fold_fused_fragment_runtime_v13 import (
+            load_immutable_w1_functional_projection_v13,
+        )
+
+        functional_projection_loader = load_immutable_w1_functional_projection_v13
 
     build = load_build_fragment_dataset_v13(
-        build_path, verify_hashes=True, verify_logical=verify_logical
+        build_path,
+        verify_hashes=True,
+        verify_logical=verify_logical,
+        logical_hash_provider=logical_hash_provider,
     )
     replay = load_compact_replay_dataset_v13(
-        replay_path, verify_hashes=True, verify_logical=verify_logical
+        replay_path,
+        verify_hashes=True,
+        verify_logical=verify_logical,
+        logical_hash_provider=logical_hash_provider,
     )
     canonical = load_zero_copy_canonical_run_v13(
-        canonical_path, verify_hashes=True, verify_logical=verify_logical
+        canonical_path,
+        verify_hashes=True,
+        verify_logical=verify_logical,
+        logical_hash_provider=logical_hash_provider,
     )
-    projection = load_immutable_w1_functional_projection_v13(
+    projection = functional_projection_loader(
         projection_path,
         expected_manifest_sha256=projection_sha,
         expected_anchor_trial_sha256=expected_anchor_trial_sha256,
@@ -1617,6 +1658,7 @@ def load_fragment_w3_trial_product_v13(
             build,
             replay,
             feature_context=_ReplayFeatureContextV12(admission),
+            logical_hash_provider=logical_hash_provider,
         )
         if observed_rows != declared_top500_rows:
             raise PhysicalBenchmarkInvariantErrorV13(
@@ -2633,6 +2675,7 @@ def _build_jobs_v13(
     lineage: Mapping[str, str],
     miniature_fit: bool = True,
     execution_phase: str = "PHYSICAL_V13_W3_ONLY_BENCHMARK_512",
+    physical_config_sha256: str = CONFIG_SHA256,
 ) -> tuple[WorkerJobV12, ...]:
     return tuple(
         WorkerJobV12(
@@ -2650,7 +2693,7 @@ def _build_jobs_v13(
                 "miniature_fit": bool(miniature_fit),
                 "execution_evidence": {
                     "phase": execution_phase,
-                    "physical_config_sha256": CONFIG_SHA256,
+                    "physical_config_sha256": physical_config_sha256,
                     "sharded_execution_plan_sha256": (
                         prepared.sharded_execution_plan_sha256
                     ),
