@@ -22,6 +22,14 @@ fonctionnelles W1. Aucun benchmark v13 ni OOF national n'a encore été lancé.
 *(addendum, configuration et tests du préenregistrement v13 : commit
 `7e3370f`)*
 
+L'amendement préexécution `77838a1` réduit le PreRank500 à ses sept colonnes
+historiques (`query_id`, `fold`, SIRET, parent, rang, score et raison). Aucun
+hash de fragment ni pointeur n'est répété sur les millions de lignes : la
+réhydratation d'audit utilise la clé naturelle unique `(query_id, SIRET)` et
+la racine Merkle du dataset heldout, scellée une seule fois dans le manifeste.
+Le score reste en `float64` pour préserver la référence byte-for-byte. Cette
+correction a été préenregistrée et testée avant toute mesure v13.
+
 ### Retrieval all-human v12 — exécution fold-fused shardée prête à mesurer
 
 Le chemin OOF v12 a été remplacé physiquement, sans modifier sa recette
