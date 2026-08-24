@@ -30,6 +30,13 @@ la racine Merkle du dataset heldout, scellée une seule fois dans le manifeste.
 Le score reste en `float64` pour préserver la référence byte-for-byte. Cette
 correction a été préenregistrée et testée avant toute mesure v13.
 
+Le préflight réel a ensuite détecté que le SHA du manifeste W1 avait été
+recopié avec 63 caractères. Le commit `ee30390` corrige uniquement cette
+erreur de transcription vers le SHA-256 réel à 64 caractères
+`67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a74`.
+L'artefact W1 et le STOP v12 n'ont pas été modifiés; aucun benchmark v13
+n'avait encore été lancé au moment de la correction.
+
 ### Retrieval all-human v12 — exécution fold-fused shardée prête à mesurer
 
 Le chemin OOF v12 a été remplacé physiquement, sans modifier sa recette
