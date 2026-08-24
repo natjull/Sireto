@@ -1,6 +1,44 @@
-# SIRETO Handover - 24 Août 2026
+# SIRETO Handover - 25 Août 2026
 
 ## Etat des lieux
+
+### Retrieval all-human v14 — architecture rapide gelée, essai unique non lancé
+
+Le commit `e53f4ce` livre une révision physique distincte qui conserve
+strictement la science v12 : mêmes sources, 512 requêtes, folds 2/3/4,
+candidats, 319 features, modèles, caps et gates. La tentative v13 reste un
+`STOP` terminal et aucun de ses fragments n'est repris. V14 corrige seulement
+la preuve logique : les valeurs NULL Arrow sont canonisées avant hash, ce qui
+rend le digest indépendant des offsets, chunks, padding et octets masqués sans
+modifier un seul bit valide.
+
+Le moteur rapide reste à trois acteurs build persistants, datasets fragmentés
+zéro-copie, fits séquentiels et trois acteurs replay mono-modèle. Le top500 est
+compact puis réhydraté une seule fois hors chronomètre; les 16 racines logiques,
+les row-groups réellement lus et l'inventaire complet sont scellés. Le chemin
+national possède une autorisation v14 stricte, un stage content-addressé, une
+promotion atomique, un rollback et un `STOP` durable après `O_EXCL`. Avant et
+après consommation d'un marqueur, le runtime recroise SceneIR et son index,
+l'échantillon ordonné, les IDs nationaux, admission/cascade/executor/caps,
+plan/PREFIT, lineage et payload runtime exacts.
+
+Le hash NULL-canonique a été vérifié sur les artefacts réels : les neuf
+surfaces outcomes/top100/top500 sont égales W1/W3 requête par requête et le
+heldout complet (902 163 lignes, 115 colonnes) est identique. La matrice locale
+compte 265 tests verts; l'audit indépendant élargi en compte 296, sans échec,
+avec P0=0 et P1=0. `py_compile`, les deux CLI, le loader de configuration et
+`git diff --check` passent. Les pins sont : configuration
+`d39b347c971720a9e166c52bd2b5424544f56370108c7a76c52f5fe0df2d0b1c`,
+contrat `1c0aeaa1e147ba8d725e4a034a21dbb288405281b815f3e0a0a399591cc72427`
+et implémentation v14
+`866a8d6e7b79c20a40a078d53e3fadd6eea28cf99903847fb0db89268177c6eb`
+pour 16 fichiers.
+
+Aucun output, projection canonique, stage, marqueur, benchmark v14,
+autorisation ou OOF national v14 n'a été créé. La prochaine action est donc
+une décision utilisateur explicite : autoriser ou non l'unique W3 frais de
+512 requêtes. Seul un `PASS_V14_PHYSICAL_BENCHMARK` pourra publier
+l'autorisation nationale; tout échec produit un `STOP` sans retry automatique.
 
 ### Retrieval all-human v13 — exécution physique cache-neutre préenregistrée
 
