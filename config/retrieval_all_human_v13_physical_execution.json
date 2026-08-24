@@ -37,7 +37,7 @@
     },
     "v13_physical_addendum": {
       "path": "docs/retrieval_all_human_v13_physical_execution_addendum.md",
-      "sha256": "858fa166fd4c84c00d85bd13a2e08f15978d75eb8d6e2cf41a67e49dbc7d60dd"
+      "sha256": "a43dee636c3136dd0d3302cb52a1f58233d159f442238489b43f1f0a3be3f808"
     }
   },
   "immutable_v12_stop": {
@@ -50,7 +50,7 @@
     "code_commit": "ca4c4f3",
     "w1_trial": {
       "relative_manifest_path": "trial_w1/manifest.json",
-      "manifest_sha256": "67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a4",
+      "manifest_sha256": "67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a74",
       "query_count": 512,
       "folds": [
         2,

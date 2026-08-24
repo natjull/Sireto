@@ -81,7 +81,7 @@ def test_v12_stop_and_w1_baseline_are_immutable_and_exactly_anchored() -> None:
 
     w1 = stop["w1_trial"]
     assert w1["manifest_sha256"] == (
-        "67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a4"
+        "67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a74"
     )
     assert w1["query_count"] == 512
     assert w1["folds"] == [2, 3, 4]

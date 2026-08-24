@@ -88,7 +88,7 @@ réexécute pas W1 : sa référence est le trial W1 déjà scellé dans le manif
 v12 SHA-256
 `2269b8925a9ca5aa3b4215fc3f3ec30fccc6c59d8ace1d4165ba12daa0bb5242`,
 dont le sous-manifeste W1 a le SHA-256
-`67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a4`.
+`67d37417237d0e93b933c95759699e871d5b3a825cb4a03deeed470391a36a74`.
 Son temps mur immuable est 1 918,9878759580315 s.
 
 W3 exécute une seule fois les trois partitions simultanément avec les acteurs
