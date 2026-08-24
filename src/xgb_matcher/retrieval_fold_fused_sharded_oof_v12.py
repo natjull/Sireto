@@ -877,6 +877,7 @@ def build_shard_v12(
     caps: ExecutionCaps = ExecutionCaps(),
     maximum_spool_bytes: int = 20 * 1024**3,
     prefit_bridge_sink: Any | None = None,
+    train_store_factory: Callable[[Path], Any] = ParquetCompactTrainingStore,
 ) -> ShardBuildArtifactV12:
     """Build exact train contributions and heldout spool for one shard.
 
@@ -889,7 +890,15 @@ def build_shard_v12(
     if output.exists():
         raise FileExistsError(output)
     output.mkdir(parents=True)
-    train_store = ParquetCompactTrainingStore(output / "train")
+    # V12 keeps its historical one-query-per-row-group sink by default.  A
+    # physical-only executor may inject a schema-compatible buffered sink;
+    # generation, sampling, features, labels and group order remain here.
+    train_store = train_store_factory(output / "train")
+    if any(
+        not callable(getattr(train_store, method, None))
+        for method in ("append", "seal_outer")
+    ):
+        raise FoldFusedInvariantError("train store contract drifted")
     heldout_store = ParquetHeldoutMasterSpoolV12(
         output / "heldout",
         config=admission_config,
@@ -1943,6 +1952,7 @@ def replay_shard_v12(
     build_manifest_sha256: str,
     caps: ExecutionCaps = ExecutionCaps(),
     payload_factory: Callable[[tuple[Mapping[str, Any], ...]], Any] | None = None,
+    output_store_factory: Callable[[Path], Any] = ParquetOOFOutputStore,
 ) -> ShardReplayArtifactV12:
     """Replay one label-blind heldout shard with its exact outer models."""
 
@@ -1953,7 +1963,16 @@ def replay_shard_v12(
     if output.exists():
         raise FileExistsError(output)
     output.mkdir(parents=True)
-    store = ParquetOOFOutputStore(output / "outputs")
+    # V12 keeps its historical Parquet sink by default.  A physical-only
+    # executor may inject a schema-compatible sink (for example a compact,
+    # buffered PreRank500 writer) without duplicating any generation,
+    # scoring, selection or label-side evaluation logic.
+    store = output_store_factory(output / "outputs")
+    if any(
+        not callable(getattr(store, method, None))
+        for method in ("append_rankings", "append_outcome", "seal")
+    ):
+        raise FoldFusedInvariantError("replay output store contract drifted")
     outcomes: list[QueryOutcome] = []
     observed: list[tuple[str, int]] = []
     feature_names: tuple[str, ...] | None = None

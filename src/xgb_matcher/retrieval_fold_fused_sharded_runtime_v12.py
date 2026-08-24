@@ -321,7 +321,11 @@ def _require_output(path: Any, *, scratch_root: Path) -> Path:
     return output
 
 
-def build_worker_entrypoint_v12(job: Mapping[str, Any]) -> str:
+def build_worker_entrypoint_v12(
+    job: Mapping[str, Any],
+    *,
+    train_store_factory: Any | None = None,
+) -> str:
     """Spawn entrypoint: build one exact train/spool shard from real inputs."""
 
     if job.get("phase") != "BUILD" or not isinstance(job.get("common"), Mapping):
@@ -388,6 +392,11 @@ def build_worker_entrypoint_v12(job: Mapping[str, Any]) -> str:
             label_ledger_sha256=ledger.ledger_sha256,
             label_ledger_manifest_sha256=ledger.manifest_sha256,
         )
+        build_kwargs = (
+            {"train_store_factory": train_store_factory}
+            if train_store_factory is not None
+            else {}
+        )
         artifact = build_shard_v12(
             spec,
             source=SceneIRShardSourceV12(cache, spec),
@@ -405,6 +414,7 @@ def build_worker_entrypoint_v12(job: Mapping[str, Any]) -> str:
             caps=caps,
             maximum_spool_bytes=maximum_spool_bytes,
             prefit_bridge_sink=bridge_sink,
+            **build_kwargs,
         )
     return str(artifact.manifest_path)
 
