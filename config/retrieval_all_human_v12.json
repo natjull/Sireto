@@ -1,0 +1,358 @@
+{
+  "schema_version": "sireto-retrieval-all-human-v12-config-1",
+  "policy_id": "retrieval-v12-all-human-top100-first",
+  "status": "PREREGISTERED_NOT_EXECUTED",
+  "contract_path": "docs/retrieval_all_human_v12_contract.md",
+  "folds": {
+    "outer_oof": [2, 3, 4],
+    "development_contaminated": 0,
+    "test_locked": 1,
+    "fold0_role": "HISTORICAL_DIAGNOSTIC_ONLY_NOT_READ_BY_V12",
+    "fold1_role": "ONE_SHOT_ONLY_AFTER_EXPLICIT_AUTHORIZATION"
+  },
+  "labels": {
+    "exact_target_field": "human_ground_truth_siret",
+    "precedence": [
+      "ground_truth_siret",
+      "historical_ground_truth_siret"
+    ],
+    "valid_siret_pattern": "^[0-9]{14}$",
+    "only_exclusion": "NO_VALID_CURRENT_OR_HISTORICAL_HUMAN_SIRET",
+    "qualification_fields_may_filter_primary_population": false,
+    "operational_labels_separate_from_exact_benchmark": true,
+    "operational_equivalence_mode": "EXACT_ONLY_PENDING_SEALED_SAME_SITE_EVIDENCE"
+  },
+  "architecture": {
+    "name": "SIREN_FIRST_ADAPTIVE_500_THEN_RESCUE_2000_TO_TOP100",
+    "normal_shortlist_siret_cap": 500,
+    "rescue_lightweight_siret_reference_cap": 2000,
+    "master_siret_reference_cap": 2000,
+    "maximum_hydrated_sirets": 500,
+    "maximum_final_sirets": 100,
+    "parent_shortlist_cap": 64,
+    "relation_seed_limit": 32,
+    "relation_hops": 1,
+    "selection_budget": "GLOBAL_LEARNED_PARENT_SITE_ALLOCATION",
+    "hard_sites_per_siren_cap": null,
+    "fixed_anchor_slots": 0,
+    "fixed_consensus_slots": 0,
+    "diversity_policy": "SOFT_PENALTY_ONLY"
+  },
+  "retrieval": {
+    "siren_first": true,
+    "cascade": {
+      "small_insee_threshold": 100,
+      "parent_expansion_budget": 700,
+      "max_sites_per_parent": 2000,
+      "relation_reference_budget": 64,
+      "rrf_constant": 60.0,
+      "conditional_rescue": {
+        "parent_budget": 16,
+        "parent_reserve": 8,
+        "minimum_name_parents": 12,
+        "minimum_strong_parents": 2
+      }
+    },
+    "geography_priority": [
+      "INSEE",
+      "POSTCODE_CITY_FALLBACK"
+    ],
+    "normal_path": [
+      "DIRECT_SIRET_OFFICIAL_SEARCH",
+      "SIREN_DOSSIER_SEARCH",
+      "EXACT_OR_NUMBER_ADDRESS_CELLS",
+      "LOCAL_SITE_EXPANSION",
+      "PRERANK_TO_500"
+    ],
+    "conditional_rescue": {
+      "enabled": false,
+      "implementation_status": "DEFERRED_UNTIL_INITIAL_OFFICIAL_STACK_OOF_IS_FROZEN_AND_MASTER_HEADROOM_IS_BELOW_TARGET",
+      "gate_eligible_in_initial_oof": false,
+      "maximum_executions_per_query": 1,
+      "trigger": "INNER_OOF_FROZEN_LABEL_BLIND_EVIDENCE_SUFFICIENCY",
+      "maximum_lightweight_siret_references": 2000,
+      "maximum_hydrated_sirets_after_rescue": 500,
+      "channels": [
+        "CONTRASTIVE_SIREN",
+        "SIRENE_HISTORICAL",
+        "RNE_TEMPORAL",
+        "BODACC_TEMPORAL",
+        "OFFICIAL_STRUCTURED_RELATION_ONE_HOP"
+      ],
+      "automatic_retry": false
+    },
+    "positive_injection": false,
+    "crm_alias_lookup": false,
+    "synthetic_labels": false,
+    "paid_or_private_web_sources": false
+  },
+  "admission": {
+    "architecture": "PARENT_RANKER_THEN_SITE_RANKER_THEN_GLOBAL_SET_ALLOCATION",
+    "site_ranker_scope": "FULL_MASTER_UP_TO_2000",
+    "prerank_definition": "TOP500_OF_THE_SINGLE_SITE_RANKER",
+    "heuristic_hydration_rank_role": "FEATURE_AND_DIAGNOSTIC_ONLY",
+    "parent_scores_for_site_training": "INNER_OOF_ONLY",
+    "router_targets_and_thresholds": "INNER_OOF_ONLY",
+    "outer_validation_candidate_sampling": false,
+    "fit_sampling_may_change_evaluation_population": false,
+    "channels": [
+      "legal_name_exact",
+      "trade_name_exact",
+      "site_name_exact",
+      "number_exact",
+      "fielded_name_bm25",
+      "legal_name_word",
+      "trade_name_word",
+      "site_name_word",
+      "current_name_char",
+      "historical_name_word",
+      "historical_address_word",
+      "supporting_name_word",
+      "supporting_address_word",
+      "name_exact",
+      "address_exact",
+      "name_word",
+      "address_word",
+      "name_char",
+      "address_char",
+      "rne_name",
+      "rne_address",
+      "bodacc_name",
+      "bodacc_address",
+      "hierarchical",
+      "direct_parent_expansion",
+      "consensus_parent_expansion",
+      "legal_entity_role_name",
+      "sector_name",
+      "sector_address",
+      "sector_parent",
+      "contrastive_siren_rescue",
+      "v12_conditional_siren_rescue",
+      "official_successor",
+      "bodacc_relation",
+      "geo_insee_census",
+      "geo_exact_cell",
+      "geo_number_cell",
+      "v11_parent_expansion",
+      "v12_parent_local_expansion",
+      "v12_rescue_local_expansion"
+    ],
+    "channel_families": {
+      "current_name": [
+        "legal_name_exact",
+        "trade_name_exact",
+        "site_name_exact",
+        "fielded_name_bm25",
+        "legal_name_word",
+        "trade_name_word",
+        "site_name_word",
+        "current_name_char",
+        "name_exact",
+        "name_word",
+        "name_char"
+      ],
+      "current_address": [
+        "number_exact",
+        "address_exact",
+        "address_word",
+        "address_char"
+      ],
+      "historical_official": [
+        "historical_name_word",
+        "historical_address_word",
+        "supporting_name_word",
+        "supporting_address_word"
+      ],
+      "rne": [
+        "rne_name",
+        "rne_address",
+        "legal_entity_role_name"
+      ],
+      "bodacc": [
+        "bodacc_name",
+        "bodacc_address",
+        "bodacc_relation"
+      ],
+      "geographic_cell": [
+        "geo_insee_census",
+        "geo_exact_cell",
+        "geo_number_cell"
+      ],
+      "parent_sparse": [
+        "hierarchical",
+        "direct_parent_expansion",
+        "consensus_parent_expansion",
+        "v11_parent_expansion",
+        "v12_parent_local_expansion",
+        "v12_rescue_local_expansion",
+        "contrastive_siren_rescue",
+        "v12_conditional_siren_rescue"
+      ],
+      "official_relation": [
+        "official_successor"
+      ],
+      "sector_official": [
+        "sector_name",
+        "sector_address",
+        "sector_parent"
+      ]
+    },
+    "independent_consensus_min_families": 2,
+    "parent_rrf_constant": 60.0,
+    "temporal_reference_date": "2026-08-24",
+    "fit_candidate_sampling": {
+      "maximum_candidates_per_query": 128,
+      "union_head": 64,
+      "channel_head": 4,
+      "retain_natural_positive_if_present": true
+    },
+    "selection": {
+      "parent_probability_weight": 0.2,
+      "repeat_parent_penalty": 0.035
+    },
+    "xgboost": {
+      "parent": {
+        "objective": "rank:ndcg",
+        "eval_metric": "ndcg@100",
+        "tree_method": "hist",
+        "n_estimators": 180,
+        "learning_rate": 0.04,
+        "max_depth": 4,
+        "min_child_weight": 25.0,
+        "subsample": 1.0,
+        "colsample_bytree": 0.85,
+        "reg_alpha": 1.0,
+        "reg_lambda": 75.0,
+        "random_state": 20260912,
+        "n_jobs": 0,
+        "lambdarank_pair_method": "topk",
+        "lambdarank_num_pair_per_sample": 64
+      },
+      "site": {
+        "objective": "rank:ndcg",
+        "eval_metric": "ndcg@100",
+        "tree_method": "hist",
+        "n_estimators": 180,
+        "learning_rate": 0.04,
+        "max_depth": 4,
+        "min_child_weight": 25.0,
+        "subsample": 1.0,
+        "colsample_bytree": 0.85,
+        "reg_alpha": 1.0,
+        "reg_lambda": 75.0,
+        "random_state": 20260913,
+        "n_jobs": 0,
+        "lambdarank_pair_method": "topk",
+        "lambdarank_num_pair_per_sample": 64
+      }
+    },
+    "features": {
+      "channel_specific_normalized_ranks_and_scores": true,
+      "fielded_name_and_address_agreements": true,
+      "independent_official_source_consensus": true,
+      "parent_and_within_parent_ranks": true,
+      "state_and_temporal_distance": true,
+      "structured_relation_direction_and_age": true,
+      "identifiers_forbidden": [
+        "query_id",
+        "SIRET",
+        "SIREN",
+        "announcement_id",
+        "CRM_alias"
+      ]
+    }
+  },
+  "development": {
+    "single_recipe": true,
+    "variant_grid": false,
+    "automatic_threshold_tuning": false,
+    "outer_validation_folds": [2, 3, 4],
+    "outer_validation_fold_excluded_from_every_fit": true,
+    "inner_oof_required_for_learned_intermediate_scores": true,
+    "contrastive_validation_group_key": "SIREN",
+    "fold0_reads": 0,
+    "fold1_reads_before_explicit_authorization": 0,
+    "positive_injection": false
+  },
+  "gates": {
+    "master_exact_recall_at_2000": {
+      "minimum": 0.995,
+      "role": "DIAGNOSTIC_CEILING_AND_HEADROOM_TARGET",
+      "decision_blocking": false,
+      "below_target_status": "MASTER_HEADROOM_BELOW_TARGET"
+    },
+    "prerank_exact_recall_at_500": {
+      "minimum": 0.994,
+      "role": "GENERATION_ENGINEERING_GATE",
+      "decision_blocking": true,
+      "failure_verdict": "PIVOT_GENERATION"
+    },
+    "product_exact_recall_at_100": {
+      "minimum": 0.992,
+      "wilson95_lower_minimum": 0.99,
+      "minimum_each_outer_fold": 0.988,
+      "role": "PRIMARY_PRODUCT_GATE",
+      "decision_blocking": true,
+      "failure_verdict": "PIVOT_ADMISSION"
+    },
+    "candidate_ceilings": {
+      "master_references": 2000,
+      "prerank_and_hydrated_sirets": 500,
+      "published_sirets": 100,
+      "decision_blocking": true
+    },
+    "warm_end_to_end_latency_ms": {
+      "p95_maximum": 1000,
+      "p99_maximum": 2000,
+      "decision_blocking": true,
+      "failure_verdict": "PIVOT_LATENCY"
+    },
+    "official_catalog_loss_taxonomy": {
+      "required": true,
+      "failure_verdict": "STOP"
+    }
+  },
+  "reporting": {
+    "primary_denominator": "ALL_USABLE_HUMAN_LABELS",
+    "publish_counts_and_rates": true,
+    "publish_exact_and_operational_separately": true,
+    "operational_equivalence_mode": "EXACT_ONLY_PENDING_SEALED_SAME_SITE_EVIDENCE",
+    "publish_natural_recall_curve_at": [100, 200, 500, 1000, 2000],
+    "recall_curve_is_a_variant_grid": false,
+    "publish_rescue_rate_and_base_rescue_latency": "ONLY_AFTER_A_SEPARATELY_PREREGISTERED_GATE_ELIGIBLE_RESCUE_RUN",
+    "publish_segments": [
+      "fold",
+      "active_closed",
+      "crm_origin",
+      "seen_unseen_siren",
+      "known_new_site",
+      "megapolis",
+      "label_kind",
+      "qualification",
+      "qualification_v2",
+      "qualification_v3"
+    ],
+    "exclusive_failure_taxonomy": [
+      "OFFICIAL_CATALOG_ABSENT",
+      "PARENT_NOT_RETRIEVED",
+      "SITE_NOT_EXPANDED",
+      "EVICTED_MASTER_TO_500",
+      "EVICTED_500_TO_100"
+    ]
+  },
+  "decision": {
+    "passing_verdict": "READY_FOR_FOLD1",
+    "integrity_failure_verdict": "STOP",
+    "fold1_open_requires_explicit_authorization": true,
+    "freeze_before_fold1": [
+      "config",
+      "code",
+      "official_snapshot_manifests",
+      "indexes",
+      "sidecars",
+      "models",
+      "router_thresholds",
+      "artifact_hashes"
+    ]
+  }
+}

@@ -1,17 +1,21 @@
-# Directive active — Retrieval all-human v11 SIRET Recall@100
+# Directive active — Retrieval all-human v12 top100-first
 
 La directive ci-dessous prévaut sur les descriptions historiques V6, V7 et V8
 conservées plus bas à titre de référence.
 
-Objectif actif : concevoir et valider, sans GPU loué ni dépense externe, un
-retrieval qui conserve le SIRET humain dans au moins 99,0 % de toutes les
-requêtes disposant d'un SIRET humain exploitable, avec un plafond absolu de
-100 candidats. Les statuts `MATCH_EXACT`, `AMBIGUOUS`, `UNRESOLVED`, V2 et V3
-sont des segments d'audit et ne peuvent plus retirer une ligne du dénominateur
-principal.
+Objectif actif : concevoir et valider, sans GPU loué ni dépense externe, une
+cascade SIREN -> sites qui conserve le SIRET humain exact dans au moins 99,2 %
+de toutes les requêtes disposant d'un SIRET humain exploitable, avec un plafond
+absolu de 100 candidats. Un LambdaMART SIRET score au plus 2 000 références
+légères, son top500 définit le préclassement et l'hydratation riche, puis la
+même preuve parent/site alimente la sortie top100. Les 2 000 restent un filet
+de génération et une mesure de plafond, jamais la sortie produit. Les statuts `MATCH_EXACT`, `AMBIGUOUS`,
+`UNRESOLVED`, V2 et V3 restent des segments d'audit et ne peuvent retirer une
+ligne du dénominateur principal.
 
-Contrat détaillé : `docs/retrieval_all_human_v11_contract.md`. Le contrat
-sélectif précédent et sa rétractation restent conservés comme historique.
+Contrat détaillé : `docs/retrieval_all_human_v12_contract.md`. Les contrats
+v11 et sélectif précédent, ainsi que la rétractation, restent conservés comme
+historique.
 
 Politique métier complémentaire active :
 `docs/siret_operational_equivalence_policy.md`. Elle considère comme correcte
@@ -23,13 +27,14 @@ et opérationnelle doivent toujours être publiées séparément.
 Ordre obligatoire :
 
 1. préserver tous les labels humains exploitables et publier les absences ;
-2. développer uniquement en OOF sur les folds 2/3/4, unions complètes ;
-3. franchir Recall@2000 >=99,5 % avant tout gate d'admission ;
+2. développer une recette unique uniquement en OOF sur les folds 2/3/4 ;
+3. mesurer Master@2000, puis franchir PreRank@500 >=99,4 % ;
 4. franchir Recall@100 OOF >=99,2 %, Wilson 95 % >=99,0 % et les SLO ;
-5. geler politique, retrieval, admission et hashes ;
-6. ouvrir le fold 1 une seule fois après autorisation explicite ;
-7. conclure explicitement `GO`, `PIVOT_ORACLE`, `PIVOT_ADMISSION`,
-   `PIVOT_LATENCY` ou `STOP`.
+5. attribuer chaque perte à génération, expansion, préclassement ou admission ;
+6. geler politique, retrieval, admission et hashes ;
+7. ouvrir le fold 1 une seule fois après autorisation explicite ;
+8. conclure explicitement `READY_FOR_FOLD1`, `PIVOT_GENERATION`,
+   `PIVOT_ADMISSION`, `PIVOT_LATENCY` ou `STOP`.
 
 Contraintes non négociables :
 
@@ -38,12 +43,17 @@ Contraintes non négociables :
 - fold 0 consommé et strictement diagnostique, jamais décisionnel ;
 - fold 1 fermé jusqu'à une autorisation one-shot hashée ;
 - une vérité absente du pool est une erreur end-to-end ;
-- 2 000 candidats est le plafond absolu de l'union interne ;
+- 2 000 références légères est le plafond master/rescue ;
+- 500 SIRET est le plafond du préclassement et de l'hydratation riche ;
 - 100 candidats est un plafond absolu, jamais une moyenne ;
 - aucun positif injecté dans une évaluation ;
 - aucun statut de qualification ne peut filtrer le dénominateur principal ;
 - aucun alias CRM, identifiant SIREN/SIRET ou donnée synthétique comme feature ;
 - les métriques historique, V2 et V3 sont toujours publiées ensemble ;
+- l'attribution exhaustive des pertes exige un sidecar officiel label-side
+  scellé ; son absence impose `STOP`, jamais un `READY_FOR_FOLD1` ;
+- fold 0 reste contaminé et ne peut être lu par le développement v12 ;
+- fold 1 reste fermé jusqu'à une autorisation one-shot explicite ;
 - ranker, decider, risk model et accepteur gelés jusqu'au gate retrieval ;
 - aucun résultat présenté comme SOTA ou garanti sans preuve suffisante ;
 - Mac M4 Pro et `/Volumes/CATNAT_DATA` comme seules ressources de calcul ;
