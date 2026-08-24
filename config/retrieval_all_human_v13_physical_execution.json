@@ -37,7 +37,7 @@
     },
     "v13_physical_addendum": {
       "path": "docs/retrieval_all_human_v13_physical_execution_addendum.md",
-      "sha256": "a43dee636c3136dd0d3302cb52a1f58233d159f442238489b43f1f0a3be3f808"
+      "sha256": "8e45590dd035f9eb3e30238efc3c73256c8acf9d77e6e934d50e05befc81d9be"
     }
   },
   "immutable_v12_stop": {
@@ -172,6 +172,7 @@
       "opens_scene_ir": false,
       "opens_official_sidecars": false,
       "opens_parent_models": false,
+      "model_scope_per_actor": "EXACTLY_ONE_OUTER_MODEL_EQUAL_TO_OWNED_FOLD",
       "full_master_scored": true,
       "validation_sampling": false
     }
@@ -200,7 +201,12 @@
       "train_fragment_may_be_referenced_by_two_views": true,
       "physical_fragment_counted_once_even_if_referenced_by_two_views": true,
       "unique_count_key": "CANONICAL_RELATIVE_PATH_AND_FILE_SHA256",
-      "hardlinks_forbidden": true
+      "hardlinks_forbidden": true,
+      "actual_row_group_ledger_manifest_and_rows_required_per_build_actor": true,
+      "actual_row_group_ledger_roles": [
+        "actual_row_group_ledger_manifest",
+        "actual_row_group_ledger_rows"
+      ]
     },
     "fold_order": [
       2,
@@ -291,7 +297,10 @@
       "feature_values_persisted": false,
       "feature_values_replayed_from": "CONTENT_ADDRESSED_HELDOUT_DATASET_NATURAL_KEY_AND_FROZEN_CONFIG",
       "feature_values_logical_digest_sealed": true,
-      "audit_rehydration_must_be_exact": true
+      "audit_rehydration_must_be_exact": true,
+      "full_payload_logical_digest_sealed_before_compaction": true,
+      "full_payload_must_equal_immutable_w1": true,
+      "independent_rehydration_timing": "EXACTLY_ONCE_AFTER_W3_RESOURCE_TIMER"
     },
     "top100": {
       "maximum_rows_per_query": 100,
@@ -301,6 +310,21 @@
   },
   "cache_neutral_io_gate": {
     "decision_metric": "LOGICAL_SOURCE_EXTENTS_AND_DECLARED_MATERIALIZED_BYTES",
+    "pre_w3_source_validation": {
+      "full_source_hash_allowed": false,
+      "owned_by_authorization_capable_runner": true,
+      "generic_prepared_input_allowed": false,
+      "verify_source_hash_argument": false,
+      "immutable_w1_projections_built_and_strictly_reloaded_before_marker": true,
+      "required_checks": [
+        "SEALED_SOURCE_MANIFEST_SHA256",
+        "SCENE_IR_INDEX_SHA256_SCHEMA_AND_CARDINALITY",
+        "SOURCE_PARQUET_EXISTS_NONEMPTY_AND_FOOTER_READABLE",
+        "SOURCE_PARQUET_ROW_COUNT_EQUALS_SCENE_IR_MANIFEST",
+        "SOURCE_QUERY_AND_FOLD_COLUMNS_PRESENT"
+      ],
+      "full_source_hash_timing": "POST_W3_ONLY_IN_LOGICAL_IO_COMPARISON"
+    },
     "source_extent": {
       "scope": "SOURCE_CANDIDATE_PARQUET",
       "production_projection": {
@@ -446,13 +470,20 @@
         "row_group"
       ],
       "bytes_metric": "PARQUET_METADATA_COMPRESSED_SIZE_OF_PROJECTED_COLUMN_CHUNKS",
+      "observation_source": "ACTUAL_SCENE_IR_READ_ROW_GROUP_CACHE_MISS_CALLBACK_AFTER_SUCCESSFUL_DECODE",
+      "theoretical_source_range_reconstruction_can_satisfy_gate": false,
+      "actual_read_ledger_required_per_build_actor": true,
+      "actual_read_ledger_count": 3,
+      "actual_read_ledger_inventoried": true,
       "unique_once_within_actor": true,
       "pairwise_disjoint_between_w3_actors": true,
       "w3_union_must_equal_immutable_w1_projection": true,
       "projection_must_equal": true,
       "logical_amplification_maximum": 1.0,
       "sealed_sample_expected_unique_row_groups": 368,
-      "sealed_sample_expected_logical_compressed_bytes": 2696076099
+      "sealed_sample_expected_logical_compressed_bytes": 2696076099,
+      "national_expected_unique_row_groups": 635,
+      "national_expected_logical_compressed_bytes": 4646932145
     },
     "materialized": {
       "baseline_w1_bytes": 464378945,
@@ -495,6 +526,7 @@
       "miniature_site_models",
       "site_scores",
       "prerank500_compact_columns",
+      "prerank500_full_payload_and_proofs",
       "top100_full_payload_and_reasons",
       "outcomes_and_global_aggregates"
     ],
@@ -510,6 +542,17 @@
       3
     ],
     "fresh_trial_count": 1,
+    "canonical_output_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_fold_fused_physical_benchmark_v13_w3",
+    "attempt_consumed_marker_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/.retrieval_v13_w3_attempt_consumed.json",
+    "attempt_marker_creation": "ATOMIC_O_EXCL_BEFORE_MEASURED_CALLBACK",
+    "direct_w3_execution_requires_validated_marker_capability": true,
+    "authorization_capable_entrypoint_owns_preflight_and_w1_projections": true,
+    "authorization_capable_callbacks_allowed": false,
+    "generic_prepared_or_projection_injection_allowed": false,
+    "implementation_lineage_capture": "BEFORE_ATTEMPT_MARKER_AND_CALLBACK",
+    "authorization_loader_recomputes_all_physical_gates": true,
+    "any_pass_stop_or_exception_consumes_attempt": true,
+    "second_attempt_or_other_output_forbidden": true,
     "rerun_w1_allowed": false,
     "w2_allowed": false,
     "cache_purge_allowed": false,
@@ -533,6 +576,10 @@
     "quality_metrics_decision_blocking": false,
     "required_negative_tests": [
       "scientific_authority_drift_rejected",
+      "noncanonical_output_rejected_before_attempt",
+      "existing_attempt_marker_rejected_before_callback",
+      "failed_callback_still_consumes_one_shot_attempt",
+      "pre_w3_full_source_hash_rejected",
       "fold0_or_fold1_rejected",
       "positive_injection_rejected",
       "wrong_fold_actor_rejected",
@@ -545,9 +592,19 @@
       "merged_file_rejected",
       "full_payload_outside_top100_rejected",
       "compact_evidence_loss_rejected",
+      "prerank500_full_payload_digest_drift_rejected",
+      "independent_rehydration_runs_exactly_once_after_timer",
+      "callback_exception_publishes_durable_stop",
+      "post_o_excl_marker_failure_publishes_durable_stop",
+      "single_outer_model_per_replay_actor_enforced",
+      "national_identity_and_authorized_lineage_drift_rejected",
       "source_extent_overlap_rejected",
       "source_extent_union_drift_rejected",
       "source_projection_drift_rejected",
+      "actual_row_group_ledger_missing_rejected",
+      "actual_row_group_ledger_extra_group_rejected",
+      "actual_row_group_ledger_duplicate_or_order_drift_rejected",
+      "actual_row_group_ledger_projection_drift_rejected",
       "undeclared_materialized_file_counted_and_rejected",
       "materialized_ratio_above_1_15_rejected",
       "logical_projection_parity_drift_rejected",
@@ -560,6 +617,42 @@
     "failure_status_prefix": "STOP_V13_",
     "pass_can_directly_launch_national_oof": false,
     "separate_content_addressed_national_authorization_required": true
+  },
+  "national_execution_protocol": {
+    "status": "LOCKED_PENDING_SEPARATE_AUTHORIZATION",
+    "canonical_output_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_fold_fused_national_oof_v13",
+    "attempt_consumed_marker_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/.retrieval_v13_national_attempt_consumed.json",
+    "stage_directory_prefix": ".retrieval_fold_fused_national_oof_v13.stage-",
+    "stage_identity": "SHA256_CONFIG_AUTH_BENCHMARK_IMPLEMENTATION_SOURCE_PLAN_PREFIT_OUTPUT",
+    "attempt_marker_creation": "ATOMIC_O_EXCL_BEFORE_STAGE_OR_WORKER",
+    "success_promotion": "ATOMIC_RENAME_SAME_FILESYSTEM",
+    "stage_retained_on_failure": true,
+    "exception_status": "STOP_NATIONAL_EXECUTION_EXCEPTION",
+    "automatic_retry_allowed": false,
+    "alternate_output_allowed": false,
+    "fit_resource_guard": {
+      "phase": "AFTER_BUILD_ACTORS_JOIN_BEFORE_FIRST_SITE_FIT",
+      "live_build_actor_count_required": 0,
+      "fit_parallelism": 1,
+      "outer_fit_order": [2, 3, 4],
+      "gc_between_outer_fits": true,
+      "memory_used_maximum_source": "benchmark_512.maximum_w3_peak_machine_used_memory_bytes",
+      "memory_available_required_formula": "MACHINE_TOTAL_BYTES_MINUS_MEMORY_USED_MAXIMUM_BYTES",
+      "swapout_delta_bytes_required": 0,
+      "measurement_seconds": 5.0,
+      "failure_status": "STOP_V13_NATIONAL_PREFIT_RESOURCE_GUARD"
+    },
+    "required_negative_tests": [
+      "alternate_national_output_rejected",
+      "existing_national_marker_rejected",
+      "prior_failed_stage_rejects_retry",
+      "post_o_excl_marker_failure_publishes_durable_stop",
+      "execution_exception_publishes_durable_stop",
+      "failed_stage_is_not_promoted",
+      "absolute_or_escaping_internal_manifest_path_rejected",
+      "post_build_memory_or_swap_guard_rejected",
+      "promoted_tree_strictly_reopens_after_atomic_rename"
+    ]
   },
   "scientific_invariants": {
     "master_recall_at_2000": 0.995,

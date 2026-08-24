@@ -401,7 +401,7 @@ def test_benchmark_is_one_fresh_w3_against_immutable_w1_with_frozen_gates() -> N
     assert benchmark["quality_metrics_decision_blocking"] is False
     assert benchmark["pass_can_directly_launch_national_oof"] is False
     assert benchmark["separate_content_addressed_national_authorization_required"] is True
-    assert len(benchmark["required_negative_tests"]) == 23
+    assert len(benchmark["required_negative_tests"]) == 37
 
 
 def test_scientific_gates_caps_and_models_are_unchanged_from_v12() -> None:

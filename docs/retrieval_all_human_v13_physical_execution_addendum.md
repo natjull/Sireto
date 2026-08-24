@@ -105,10 +105,20 @@ comparées aux racines physiques de l’ancien format avec fichiers fusionnés. 
 projection couvre au minimum : population et ordre global, parent scores,
 Master et rangs, statistiques Master, lignes et groupes de fit, 319 features,
 labels et poids, spools heldout, trois modèles miniatures, scores site, champs
-fonctionnels communs du PreRank500, contenu complet top100, raisons de
-sélection, outcomes et agrégats. La suppression du payload redondant du
-PreRank500 n’est autorisée que hors projection fonctionnelle. La parité entre
+fonctionnels communs du PreRank500, payload et preuves complets du PreRank500
+avant compaction, contenu complet top100, raisons de sélection, outcomes et
+agrégats. La suppression du payload redondant du PreRank500 n’est autorisée
+que dans sa représentation physique compacte : une racine logique séparée
+`prerank500_full_payload` doit rester identique au W1 immuable. La parité entre
 deux exécutions du seul nouveau format ne pourrait pas remplacer ce bridge.
+
+L’ordre canonique des 512 requêtes est celui des outputs W1/SceneIR scellés,
+cross-validé entre `heldout_spool`, `top500`, `top100` et `outcomes` : fold2,
+puis fold3, puis fold4 dans leur ordre de scène. Le fichier sample ne sert qu’à vérifier l’égalité de la
+population ; son éventuel ordre de hash ne peut jamais ordonner une racine.
+Cette même séquence canonique ordonne notamment `prefit_bridge_logical`,
+`site_feature_values` et les projections de sortie. Une permutation change la
+racine et impose `STOP_V13_PARITY`.
 
 Une différence donne `STOP_V13_PARITY`. Il n’y a ni tolérance numérique, ni
 tri réparateur, ni relance automatique. L’usage d’une baseline cross-run est
@@ -169,15 +179,24 @@ millions de lignes. La clé naturelle `(query_id, candidate_siret)` doit être
 unique dans une requête et rejoint le dataset heldout dont la racine Merkle
 content-addressée est scellée une seule fois dans le manifeste. Les 319
 features sont rejouables depuis ce dataset et la configuration scellée ; leur
-digest logique complet est conservé par le benchmark. Le payload officiel
-complet, avec détail des preuves et provenances, n’est sérialisé que pour le
-top100.
+digest logique complet est conservé par le benchmark. Avant suppression du
+payload PreRank500 de la représentation physique, chaque acteur scelle une
+feuille par requête sur la table Arrow complète de schéma top100 : les sept
+colonnes communes plus le `payload_json` canonique. La racine globale
+`prerank500_full_payload` doit égaler celle extraite du top500 W1 immuable. Le
+payload officiel complet, avec détail des preuves et provenances, n’est
+sérialisé que pour le top100.
 
 Cette compaction est post-score et ne peut donc changer un score, un rang, une
-raison ou un candidat. Une réhydratation d’audit du top500 à partir de la clé
-naturelle, du dataset heldout scellé et de la configuration scellée doit
-reproduire exactement les 319 features et les mêmes preuves ; son contrôle
-fait partie des tests négatifs du benchmark.
+raison ou un candidat. Pendant le callback chronométré, le replay scelle les
+digests des 319 features et du payload complet déjà présents en mémoire ; il
+ne les recalcule pas. Après l’arrêt du chronomètre W3, le certifieur effectue
+exactement une réhydratation indépendante du top500 à partir de la clé
+naturelle, du dataset heldout scellé et de la configuration scellée. Elle doit
+reproduire bit pour bit les 319 features, le payload et les mêmes preuves ; sa
+racine doit être égale à la fois à la racine W3 scellée avant compaction et à
+la racine W1 immuable. Une reconstruction dans le callback ou une deuxième
+reconstruction fausserait le gate de temps et est interdite.
 
 ## 6. Gate I/O cache-neutre
 
@@ -185,10 +204,28 @@ Les compteurs `proc_pid_rusage`, `psutil` et disque machine dépendent de l’é
 du cache et de l’activité extérieure. Ils restent publiés comme diagnostics,
 mais ne peuvent ni autoriser ni rejeter W3.
 
+Le preflight v13 précédant le chronomètre ne lit et ne hashe jamais les 4,7 Gio
+du Parquet candidat. Il contrôle néanmoins le hash du manifeste source, le
+hash, le schéma et la cardinalité de l’index SceneIR, l’existence et la taille
+non nulle du Parquet, son footer, son nombre de lignes et la présence des
+colonnes requête/fold. Le SHA-256 intégral du Parquet candidat est recalculé
+obligatoirement par la comparaison I/O **après** l’arrêt du chronomètre W3.
+Cette séparation empêche le preflight de réchauffer artificiellement le cache
+de la source ; une validation intégrale avant W3 invalide le benchmark.
+
+L’entrypoint capable de publier une autorisation possède lui-même ce preflight
+et appelle l’API scellée avec `verify_source_hash=False`. Il n’accepte ni objet
+`Prepared` construit par l’appelant, ni projection W1 fournie de l’extérieur.
+Il construit puis recharge strictement, avant le marqueur one-shot, les
+projections fonctionnelle et I/O W1 dans leurs répertoires content-addressés.
+Les callbacks injectables restent réservés au harness de test : même lorsque
+tous leurs contrôles sont vrais, ils publient
+`STOP_V13_UNTRUSTED_EXECUTION_HOOKS` et ne peuvent créer aucune autorisation.
+
 Le gate dur utilise deux quantités déterministes :
 
-1. **lecture logique source** : chaque acteur publie les extents du Parquet
-   candidat réellement nécessaires, identifiés par
+1. **lecture logique source** : chaque acteur publie les row-groups du Parquet
+   candidat qu'il a effectivement décodés, identifiés par
    `(source_sha256, row_group, projection_sha256)`. Un extent est compté une
    seule fois par acteur, avec les octets compressés des column chunks projetés
    lus dans les métadonnées Parquet ;
@@ -197,7 +234,17 @@ Le gate dur utilise deux quantités déterministes :
    temporaires, logs et fichiers non déclarés sont également comptés, afin
    d’empêcher une écriture hors bilan.
 
-Les trois ledgers W3 doivent être deux à deux disjoints sur la clé source
+Cette preuve n'est jamais reconstruite depuis les seules plages du shard.
+`SceneIRCache.iter_selected_scenes` émet un événement uniquement après le
+succès d'un vrai `read_row_group` et uniquement lors d'un cache-miss. Chaque
+acteur scelle l'ordre de lecture, l'ordinal, les bornes et le nombre de lignes,
+les 116 colonnes et leur hash de projection, les octets compressés, le hash
+source, le hash du manifeste source, le build SceneIR, le shard et la lignée
+d'exécution. Son manifeste et son Parquet de lignes sont tous deux requis dans
+l'inventaire. Un ledger absent, supplémentaire, dupliqué, hors ordre ou dont
+la projection dérive impose `STOP_V13_IO`.
+
+Les trois ledgers W3 effectivement observés doivent être deux à deux disjoints sur la clé source
 `(source_sha256, row_group)` et leur union doit être exactement égale à la
 projection du ledger W1 immuable. Le nombre d’extents, leur projection et le
 total d’octets logiques doivent être identiques entre W1 et W3 : amplification
@@ -223,11 +270,39 @@ row-groups et 2 696 076 099 octets compressés du Parquet candidat. Cette valeur
 est une vérification d’identité du sample, pas une mesure de performance et pas
 un résultat v13.
 
+Le run national publie et inventorie les mêmes trois ledgers réels. Ses shards
+exhaustifs doivent couvrir exactement les 635 row-groups de la source, sans
+chevauchement, pour 4 646 932 145 octets compressés sur les mêmes 116 colonnes.
+La validation de ces ledgers intervient après la sortie des trois acteurs build
+et avant tout scellement de dataset, fit LambdaMART ou replay.
+
 ## 7. Benchmark physique unique et gates
 
 Un seul benchmark W3 est autorisé sur les 512 requêtes scellées, contre la
 baseline W1 immuable décrite en section 3. Aucun nouveau W1, W2, ordre alterné,
 purge du cache, canary ou essai supplémentaire n’est prévu.
+L’unique destination admissible est
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_fold_fused_physical_benchmark_v13_w3`.
+Avant d’entrer dans le callback chronométré, le lanceur crée atomiquement avec
+`O_EXCL` le marqueur sibling
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/.retrieval_v13_w3_attempt_consumed.json`.
+Un marqueur déjà présent ou toute autre destination sont refusés avant le
+calcul. Une fois le marqueur créé, un PASS, un STOP ou une exception consomme
+irrévocablement l’essai : aucune relance automatique ou manuelle sous une autre
+destination n’est admissible dans ce contrat.
+Le hash de l’implémentation et la liste de ses fichiers sont figés avant la
+création du marqueur. Une exception utilise cette preuve pré-marquage pour
+publier son STOP durable, même si des fichiers dérivent pendant le callback.
+L’API de build W3 refuse également tout appel direct : elle exige le chemin,
+le hash et le payload exacts de ce marqueur déjà consommé, ainsi que le chemin
+canonique `.../retrieval_fold_fused_physical_benchmark_v13_w3/trial_w3`.
+Une exception après consommation doit laisser dans la destination canonique
+un manifeste durable `STOP_V13_EXECUTION_EXCEPTION` liant le chemin et le hash
+du marqueur, la configuration, le hash d’implémentation et la phase échouée ;
+aucune autorisation nationale ne peut alors être publiée.
+Cette obligation commence dès que le processus a obtenu `O_EXCL` : une panne
+d’écriture, de `fsync`, de hash ou de contrôle du marqueur après sa création
+publie elle aussi le STOP durable et interdit toute nouvelle tentative.
 Le résultat n’autorise l’OOF national que si tous les contrôles suivants
 passent simultanément :
 
@@ -248,11 +323,56 @@ Les lectures/écritures process et machine, CPU et page faults sont enregistrés
 pour diagnostic seulement. Ils n’apparaissent dans aucune expression de gate.
 Les métriques de Recall éventuellement calculées pour vérifier la parité sont
 non décisionnelles et ne peuvent être utilisées pour modifier la recette.
+L’empreinte d’environnement héritée de v12 scelle l’implémentation et la
+version Python, le système et l’architecture génériques, ainsi que les versions
+des dépendances critiques. Elle ne scelle pas la release/build exacte de macOS
+ni les variables de threads BLAS/OpenMP (`OMP_NUM_THREADS`,
+`OPENBLAS_NUM_THREADS`, `MKL_NUM_THREADS`, `VECLIB_MAXIMUM_THREADS`). Le
+benchmark ne constitue donc pas une preuve de reproductibilité entre machines
+ou environnements différents ; cette limite est explicite et non décisionnelle.
 
 Le benchmark doit publier soit `PASS_V13_PHYSICAL_BENCHMARK`, soit un seul
 verdict `STOP_V13_*` explicite. Même en cas de PASS, l’OOF national ne peut être
 lancé que par une autorisation distincte content-addressée. Avant ce nouveau
 manifeste et cette autorisation, l’état reste `NO_READY`.
+
+Le loader de cette autorisation ne croit jamais les booléens `checks` du
+rapport. Il rouvre le W1 immuable, le produit W3, la preuve I/O et les métriques
+de ressources, recalcule le speed-up, les seuils RAM/swap/wall/stockage, les
+ratios I/O et le verdict avec la même précédence, puis exige l’égalité exacte
+avec le rapport. Toute substitution rehashée d’un temps, d’un pic RAM, du
+swap, du stockage ou d’un ratio logique est donc rejetée.
+
+### Publication nationale transactionnelle
+
+L’autorisation nationale distincte ne peut viser qu’une destination :
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_fold_fused_national_oof_v13`.
+Avant tout worker, le lanceur consomme avec `O_EXCL` le marqueur sibling
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/.retrieval_v13_national_attempt_consumed.json`.
+Son identité lie configuration, autorisation, benchmark physique,
+implémentation, source, plan sharded, PREFIT et destination. Le calcul écrit
+ensuite dans un stage sibling content-addressé
+`.retrieval_fold_fused_national_oof_v13.stage-<SHA256>`. Une autre destination,
+un marqueur ou un stage antérieur interdisent toute relance automatique.
+
+Tous les chemins entre fragments, spools, modèles et manifests internes sont
+relatifs à ce même arbre et vérifiés sous sa racine ; les autorités externes
+restent des records absolus dédiés du manifeste national. Après scellement,
+inventaire récursif et relecture, le stage complet est promu par un unique
+`rename` atomique sur le même filesystem. Une erreur, y compris pendant la
+promotion ou la relecture finale, remet l’arbre au stage et publie
+`STOP_NATIONAL_EXECUTION_EXCEPTION` avec la preuve d’implémentation capturée
+avant le marqueur. Le stage n’est ni supprimé ni réessayé.
+
+Après extinction et `join` des trois acteurs build, immédiatement avant le
+premier fit, une seconde garde scellée vérifie zéro acteur build vivant, un
+fit à la fois dans l’ordre 2/3/4, collecte mémoire entre les outer fits, delta
+de swapout nul et RAM disponible suffisante. Cette garde photographie l’état
+pré-fit ; elle ne prétend pas mesurer le pic mémoire pendant les fits. Aucun
+seuil nouveau n’est ajouté : sa marge minimale disponible vaut
+`RAM_machine_totale - 14 Gio`, dérivée du plafond du benchmark. Le pic réel du
+run national restera une métrique du profil runtime scellé. Un échec produit
+`STOP_V13_NATIONAL_PREFIT_RESOURCE_GUARD`, sans fallback W1/W2 ni relance.
 
 ## 8. Tests négatifs obligatoires
 
@@ -262,6 +382,17 @@ compression divergente, racine Merkle sans inventaire de feuilles, inversion
 d’une vue train, fichier `merged_*`, payload riche hors top100, perte de preuve
 compacte, extent source partagé entre acteurs, union W3 différente de W1,
 double comptage d’un extent dans un acteur, projection de colonnes différente,
+ledger réel absent, row-group observé supplémentaire, doublon ou ordre de
+lecture altéré,
 écriture non déclarée, ratio matérialisé supérieur à 1,15, parité altérée,
 RAM ou swap dépassés, speed-up insuffisant, stockage supérieur à 20 Gio,
-fold 0/1 ouvert, injection positive et dérive d’une autorité scientifique.
+fold 0/1 ouvert, injection positive, plus d’un modèle outer ouvert par acteur
+de replay, réhydratation dans le chronomètre ou répétée, racine payload
+PreRank500 différente, autorisation/lineage national substitué et dérive d’une
+autorité scientifique. S’ajoutent pour le run national : sortie alternative,
+marqueur ou stage déjà présent, chemin interne absolu ou échappant à la racine,
+mémoire/swap pré-fit insuffisant, exception sans STOP durable, promotion d’un
+stage en échec et arbre impossible à rouvrir après le `rename` atomique.
+Une faute postérieure à l’obtention de `O_EXCL`, mais antérieure au retour du
+writer de marqueur, doit également laisser le marqueur et un STOP durable, tant
+pour le benchmark W3 que pour le run national.
