@@ -64,6 +64,44 @@ pour les 15 fichiers d'implémentation. Les 16 racines W1 ont été recalculées
 sur les artefacts réels en lecture seule. Aucun output, marqueur, benchmark W3,
 fold 0/1, OOF national ou autorisation n'existait encore à ce jalon.
 
+#### Tombstone terminal après l'unique tentative W3 v13
+
+La tentative one-shot exécutée après le runtime `41b8eed` et son handover de
+gel `91a18cf` est désormais terminale. Le marqueur consommé, en `0444`, a le
+SHA `927707c05c82d3f775d887ddf44f7f018f62bce3b5463e6830f0b64878b5b028`.
+Le manifeste externe conclut `STOP_V13_EXECUTION_EXCEPTION` pendant
+`MEASURED_W3_CALLBACK_OR_POSTCHECK`, avec
+`FoldFusedInvariantError: compact output logical content drift`; son SHA est
+`4bc15ca54f5bc8aeda211c4aa1c5982c5db94fe0b4bf13a9823a6125a6fba4b9`.
+La tentative n'est pas rejouable, ses outputs ne sont pas réutilisables pour
+une autre tentative et aucune autorisation n'a été publiée. Fold 0/1 sont
+restés fermés, sans injection positive ni OOF national.
+
+L'inventaire read-only scelle exactement 47 fichiers et 155 819 481 octets,
+SHA canonique
+`4b45d3e0793b23a43ae9419cdb669bf9ce96b11828b6e9fc5f51f80f70d1a7e2`,
+Merkle
+`34c87618e17fafe3347ebf840a059d4100107090c925c14da03fc66cc1effad9`.
+Le diagnostic borne l'écart aux buffers physiques offset/validity de deux
+slices nullable des outcomes fold 2 ; ce constat n'efface ni ne requalifie le
+STOP. Le rapport opposable est
+`docs/retrieval_all_human_v13_physical_benchmark_results.md`; l'outil
+`scripts/build_retrieval_v13_stop_receipt.py` construit un receipt exhaustif
+et content-addressé. Le receipt `005fb19823721480ca0b23205f041fed04f23d03577e3344e071cf44e6fdc6ac`,
+publié avant le pin complet inventory/Merkle/modes, est conservé sans mutation
+comme `DRAFT_SUPERSEDED_NON_AUTHORITY` et ne peut être référencé par une
+future exécution. Son manifeste externe, conservé en `0444`, a le SHA
+`821c30e289cc79ac8cf89499d82e530ead22b333942153498a36ede951aaccec`.
+Le builder durci a le SHA
+`9ace1c727e142512a22ec3e2ee45f0212b98c5f940bfa366770f86838eae7e5f`
+et produit le receipt final
+`bdcba90d29bd7da0e84fb805936fe0f99f8518ce9661a30751412c005f6d6799`.
+Son manifeste terminal publié est
+`/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v13_stop_receipt/bdcba90d29bd7da0/manifest.json`,
+mode `0444`, SHA
+`5cb886338693e7198b34fbed7ea3987e6fff68fdb2b1abee9a4091ea6d8269ca`.
+Il est l'autorité terminale v13, pas une autorisation de relance.
+
 ### Retrieval all-human v12 — exécution fold-fused shardée prête à mesurer
 
 Le chemin OOF v12 a été remplacé physiquement, sans modifier sa recette
