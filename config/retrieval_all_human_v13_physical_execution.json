@@ -37,7 +37,7 @@
     },
     "v13_physical_addendum": {
       "path": "docs/retrieval_all_human_v13_physical_execution_addendum.md",
-      "sha256": "d39814eff55a9f0f65bd9cad4ed60aa1ff4a76b777307fa8e76d0eaac9524972"
+      "sha256": "858fa166fd4c84c00d85bd13a2e08f15978d75eb8d6e2cf41a67e49dbc7d60dd"
     }
   },
   "immutable_v12_stop": {
@@ -272,21 +272,24 @@
       "maximum_rows_per_query": 500,
       "full_payload_persisted": false,
       "required_compact_fields": [
-        "query_ordinal",
-        "scene_fold",
         "query_id",
+        "fold",
         "candidate_siret",
         "candidate_parent",
-        "selected_rank",
-        "site_score_float32",
-        "selection_reason",
-        "heldout_spool_fragment_sha256",
-        "heldout_spool_row_ordinal",
-        "heldout_spool_join_key_sha256"
+        "rank",
+        "site_score",
+        "selection_reason"
       ],
+      "audit_join_key": [
+        "query_id",
+        "candidate_siret"
+      ],
+      "audit_join_unique_within_query": true,
+      "heldout_dataset_merkle_root_sealed_in_manifest": true,
+      "row_level_hash_repetition_forbidden": true,
       "json_payload_forbidden": true,
       "feature_values_persisted": false,
-      "feature_values_replayed_from": "CONTENT_ADDRESSED_HELDOUT_SPOOL_JOIN_KEY_AND_FROZEN_CONFIG",
+      "feature_values_replayed_from": "CONTENT_ADDRESSED_HELDOUT_DATASET_NATURAL_KEY_AND_FROZEN_CONFIG",
       "feature_values_logical_digest_sealed": true,
       "audit_rehydration_must_be_exact": true
     },

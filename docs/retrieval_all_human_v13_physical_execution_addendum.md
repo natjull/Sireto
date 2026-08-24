@@ -161,19 +161,23 @@ le calcul, mais ne sont plus répétées dans un payload JSON persistant pour
 chaque ligne du PreRank500.
 
 Le fragment PreRank500 compact ne duplique pas les 319 features. Il conserve
-uniquement l’identité et le fold de la requête, le SIRET, son parent, le rang,
-le score site `float32`, la raison de sélection et une join key
-content-addressée vers la ligne correspondante du spool heldout. Les 319
-features sont rejouables depuis ce spool et la configuration scellée ; leur
+exactement les sept colonnes historiques nécessaires au résultat :
+`query_id`, `fold`, `candidate_siret`, `candidate_parent`, `rank`,
+`site_score` (`float64`, afin de préserver les bytes de la référence) et
+`selection_reason`. Il ne répète aucun hash ni pointeur de spool sur les
+millions de lignes. La clé naturelle `(query_id, candidate_siret)` doit être
+unique dans une requête et rejoint le dataset heldout dont la racine Merkle
+content-addressée est scellée une seule fois dans le manifeste. Les 319
+features sont rejouables depuis ce dataset et la configuration scellée ; leur
 digest logique complet est conservé par le benchmark. Le payload officiel
 complet, avec détail des preuves et provenances, n’est sérialisé que pour le
 top100.
 
 Cette compaction est post-score et ne peut donc changer un score, un rang, une
-raison ou un candidat. Une réhydratation d’audit du top500 à partir de la join
-key, du spool et de la configuration scellés doit reproduire exactement les
-319 features et les mêmes preuves ; son contrôle fait partie des tests
-négatifs du benchmark.
+raison ou un candidat. Une réhydratation d’audit du top500 à partir de la clé
+naturelle, du dataset heldout scellé et de la configuration scellée doit
+reproduire exactement les 319 features et les mêmes preuves ; son contrôle
+fait partie des tests négatifs du benchmark.
 
 ## 6. Gate I/O cache-neutre
 

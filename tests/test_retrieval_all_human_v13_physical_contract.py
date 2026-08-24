@@ -262,21 +262,21 @@ def test_prerank500_is_compact_and_replayable_while_top100_keeps_full_payload() 
     assert compact["feature_values_persisted"] is False
     assert compact["feature_values_logical_digest_sealed"] is True
     assert compact["feature_values_replayed_from"] == (
-        "CONTENT_ADDRESSED_HELDOUT_SPOOL_JOIN_KEY_AND_FROZEN_CONFIG"
+        "CONTENT_ADDRESSED_HELDOUT_DATASET_NATURAL_KEY_AND_FROZEN_CONFIG"
     )
     assert compact["required_compact_fields"] == [
-        "query_ordinal",
-        "scene_fold",
         "query_id",
+        "fold",
         "candidate_siret",
         "candidate_parent",
-        "selected_rank",
-        "site_score_float32",
+        "rank",
+        "site_score",
         "selection_reason",
-        "heldout_spool_fragment_sha256",
-        "heldout_spool_row_ordinal",
-        "heldout_spool_join_key_sha256",
     ]
+    assert compact["audit_join_key"] == ["query_id", "candidate_siret"]
+    assert compact["audit_join_unique_within_query"] is True
+    assert compact["heldout_dataset_merkle_root_sealed_in_manifest"] is True
+    assert compact["row_level_hash_repetition_forbidden"] is True
     assert all(
         "feature_values" not in field and "payload" not in field
         for field in compact["required_compact_fields"]
