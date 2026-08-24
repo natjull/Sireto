@@ -1,6 +1,71 @@
-# SIRETO Handover - 31 Juillet 2026
+# SIRETO Handover - 24 Août 2026
 
 ## Etat des lieux
+
+### Retrieval all-human v12 top100-first — implémentation prête, non exécutée
+
+La trajectoire active est désormais v12. Elle ne retire aucun dossier humain
+difficile du dénominateur : le SIRET courant, sinon le SIRET historique, reste
+la vérité exacte ; seule l'absence des deux est exclue et publiée. Fold 0 reste
+contaminé et non décisionnel, fold 1 reste fermé. Le contrat préenregistré fixe
+une recette unique sur folds 2/3/4 : Master léger au plus 2 000, PreRank appris
+au plus 500, sortie produit au plus 100. La cible Master@2000 est diagnostique ;
+les gates décisionnels sont PreRank@500 >=99,4 %, Recall@100 >=99,2 %, borne
+Wilson 95 % >=99,0 %, chaque fold >=98,8 %, puis p95 <=1 s et p99 <=2 s.
+
+La politique opérationnelle est volontairement `EXACT_ONLY` dans ce premier
+cycle : les siblings du même SIREN ne sont ni comptés corrects ni neutralisés
+tant qu'une preuve same-site scellée n'existe pas. Le ledger all-human scelle
+aussi la présence du GT dans le catalogue officiel pour attribuer toutes les
+pertes, ainsi qu'un échantillon runtime label-blind de 512 requêtes. Une
+requête sans aucun candidat reste explicitement dans le dénominateur.
+
+*(contrat, configuration et directive active v12 : commit `a970912`)*
+
+Le chemin implémenté est une cascade SIREN-first : validation stricte du vrai
+manifeste v11 national combiné et de ses trois shards, agrégation parent avant
+expansion, cellules géographiques et relations officielles à un saut, puis
+Master déterministe <=2 000. Six modèles parent scellent le nested OOF ; leur
+ledger, snapshot V11 et sidecars sont reliés par hash aux trois cascades outer.
+Un unique LambdaMART SIRET score ensuite tout le Master, définit réellement le
+PreRank@500 appris et alimente l'allocation top100. L'ancien shortlist
+d'hydratation n'est plus qu'une feature et un diagnostic. Aucun SIRET, SIREN,
+alias CRM ni identifiant d'annonce n'entre dans les features ; aucun positif
+n'est injecté.
+
+La chaîne runtime est elle aussi exécutable et fail-closed : une projection
+Arrow ne matérialise que les champs CRM autorisés, puis le profiler chauffe et
+rejoue réellement 512 requêtes sur le Mac M4 Pro à travers génération,
+cascade, features, LambdaMART et top100. La sortie doit être byte-identique à
+l'OOF scellé avant publication des latences. Le profil peut ensuite être
+appliqué au verdict sans refit ni nouveau scoring. La détection du M4 Pro passe
+par la seule ligne `Chip/Puce` de `system_profiler` ; aucun serial, UUID ou dump
+matériel n'est conservé.
+
+*(cascade, admission nested OOF, ledger, profiler et tests : commit `78c85c2`)*
+
+Validation de code : 97 tests v12+non-régression v11 passent, compilation
+Python, cinq CLI, JSON, whitespace et détection locale `Apple M4 Pro` passent.
+L'audit scientifique conclut `PASS_WITH_LIMITATIONS`, sans P0/P1 ouvert. Il a
+également vérifié le manifeste national réel : 23 571 requêtes, 41 590 480
+références, cap 2 000, folds 2/3/4 et trois shards.
+
+Limite essentielle : **aucun OOF réel ni profil runtime réel n'a encore été
+exécuté**. Aucun Recall, aucune latence et aucun `READY_FOR_FOLD1` ne sont donc
+annoncés. Le rescue contrastif reste différé ; `fit`/`predict` production et
+le refit restent fermés ; fold 1 n'a pas été ouvert.
+
+Prochaine exécution, sans modifier la recette :
+
+1. bâtir le ledger v12 avec le catalogue officiel et sa projection runtime ;
+2. produire la cascade pass-A bootstrap label-blind, puis `fit-parent-oof` ;
+3. rejouer les trois cascades `outer2`, `outer3`, `outer4` avec le bundle des
+   six modèles parent ;
+4. lancer `oof`, qui score les Master complets et publie PreRank@500/top100 ;
+5. si les recalls passent, exécuter le profiler chaud 512 requêtes puis
+   `apply-runtime-profile` ;
+6. seulement en cas de `READY_FOR_FOLD1`, demander l'autorisation one-shot
+   avant toute ouverture du fold 1.
 
 ### Retrieval all-human v11 — contrat et benchmark immuable
 
