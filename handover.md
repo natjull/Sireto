@@ -33,21 +33,28 @@ un bucket `UNKNOWN` et reste dans le dénominateur global.
 
 Validation de code : 116 tests `retrieval_fold_fused_*` passent ; compilation
 Python, les deux CLI et `git diff --check` passent. Aucun OOF national, aucun
-Recall et aucune latence nouvelle ne sont encore annoncés ; fold 0 reste
-diagnostique et fold 1 fermé.
+Recall et aucune latence nationale nouvelle ne sont encore annoncés ; fold 0
+reste diagnostique et fold 1 fermé.
 
 *(moteur shardé exact, benchmark physique, resource guard, certifieur et tests :
 commit `ca4c4f3`)*
 
-Prochaine exécution figée :
+Le benchmark physique réel 512 a ensuite exécuté W3, W1 puis W2 et conclu
+`STOP_NO_PARALLEL_WORKER_AUTHORIZED`. Les huit digests W1/W2/W3 sont
+identiques. W3 atteint 2,826x, reste sous 14 Gio de RAM machine et ne swappe
+pas, mais échoue au ratio I/O process froid/chaud (5,411 >1,15). W2 passe la
+parité, la RAM, l'I/O et le swap, mais n'atteint que 1,442x pour un seuil de
+1,7x. Aucun fichier d'autorisation n'a été publié et l'OOF national n'a pas été
+lancé. Le verdict et le manifeste sont conservés sans requalification
+rétroactive.
 
-1. lancer le benchmark physique réel sur les 512 requêtes scellées ;
-2. vérifier la parité PREFIT, W1/W3 puis W1/W2 si nécessaire, le stockage et
-   les ressources ;
-3. seulement si une autorisation W3 ou W2 est publiée, lancer l'OOF national
-   folds 2/3/4 ;
-4. publier les recalls globaux et segmentés, puis le POSTFIT et le profil
-   runtime avant tout verdict ou toute demande d'ouverture de fold 1.
+*(résultat du benchmark physique et verdict STOP : commit `909109c`)*
+
+Prochaine étape : préenregistrer une évolution strictement physique qui
+neutralise le biais de cache de la mesure I/O et améliore l'occupation de deux
+workers ou supprime les copies worker+merged. Elle devra refaire un benchmark
+scellé et obtenir une nouvelle autorisation avant tout OOF national. Aucun
+seuil Recall, candidat, feature, modèle, label ou fold ne peut changer.
 
 ### Retrieval all-human v12 top100-first — implémentation prête, non exécutée
 
