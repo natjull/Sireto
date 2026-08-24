@@ -21,7 +21,7 @@ from pathlib import Path
 import re
 import shutil
 import tempfile
-from typing import Any, Iterator, Mapping, Sequence
+from typing import Any, Callable, Iterator, Mapping, Sequence
 
 import pyarrow as pa
 import pyarrow.parquet as pq
@@ -50,6 +50,40 @@ _INDEX_SCHEMA = pa.schema(
         pa.field("row_count", pa.int32(), nullable=False),
     ]
 )
+
+
+@dataclass(frozen=True)
+class SceneIRRowGroupReadEvent:
+    """One Parquet row group that was actually decoded by a selective read.
+
+    The event is emitted *after* ``ParquetFile.read_row_group`` succeeds and
+    only when the one-row-group cache misses.  It therefore describes physical
+    reads rather than row groups inferred later from sealed query ranges.
+    """
+
+    source_path: str
+    source_candidate_sha256: str
+    source_manifest_sha256: str
+    scene_ir_build_id: str
+    source_row_group_count: int
+    source_row_group: int
+    row_start: int
+    row_stop: int
+    row_count: int
+    projected_columns: tuple[str, ...]
+    projection_sha256: str
+    projected_compressed_bytes: int
+
+
+def _projection_sha256(columns: Sequence[str]) -> str:
+    payload = json.dumps(
+        [str(value) for value in columns],
+        sort_keys=True,
+        ensure_ascii=False,
+        separators=(",", ":"),
+        allow_nan=False,
+    ).encode("utf-8")
+    return hashlib.sha256(payload).hexdigest()
 
 
 def sha256_file(path: Path) -> str:
@@ -725,6 +759,7 @@ class SceneIRCache:
         query_ids: Sequence[str],
         *,
         columns: Sequence[str] | None = None,
+        row_group_observer: Callable[[SceneIRRowGroupReadEvent], None] | None = None,
     ) -> Iterator[SceneIR]:
         """Read sealed query ranges without scanning the complete candidate file.
 
@@ -748,6 +783,9 @@ class SceneIRCache:
 
         parquet = pq.ParquetFile(self.source)
         available = parquet.schema_arrow.names
+        source_column_indexes = {
+            name: position for position, name in enumerate(available)
+        }
         safe = production_projection(available)
         if columns is None:
             selected_columns = list(safe)
@@ -770,6 +808,7 @@ class SceneIRCache:
             raise ValueError("SceneIR projection requires query_id")
         if "fold" not in selected_columns and "oof_fold" in available:
             selected_columns.append("oof_fold")
+        projection_sha256 = _projection_sha256(selected_columns)
 
         row_group_starts: list[int] = []
         absolute = 0
@@ -792,6 +831,39 @@ class SceneIRCache:
                     cached_table = parquet.read_row_group(
                         row_group, columns=selected_columns
                     )
+                    if row_group_observer is not None:
+                        metadata = parquet.metadata.row_group(row_group)
+                        projected_bytes = sum(
+                            int(
+                                metadata.column(source_column_indexes[name])
+                                .total_compressed_size
+                            )
+                            for name in selected_columns
+                        )
+                        row_start = row_group_starts[row_group]
+                        row_count = int(metadata.num_rows)
+                        row_group_observer(
+                            SceneIRRowGroupReadEvent(
+                                source_path=str(self.source),
+                                source_candidate_sha256=str(
+                                    self.manifest.get("source_candidate_sha256") or ""
+                                ),
+                                source_manifest_sha256=str(
+                                    self.manifest.get("source_manifest_sha256") or ""
+                                ),
+                                scene_ir_build_id=str(
+                                    self.manifest.get("build_id") or ""
+                                ),
+                                source_row_group_count=parquet.num_row_groups,
+                                source_row_group=row_group,
+                                row_start=row_start,
+                                row_stop=row_start + row_count,
+                                row_count=row_count,
+                                projected_columns=tuple(selected_columns),
+                                projection_sha256=projection_sha256,
+                                projected_compressed_bytes=projected_bytes,
+                            )
+                        )
                     cached_group = row_group
                 assert cached_table is not None
                 local = position - row_group_starts[row_group]
@@ -828,5 +900,6 @@ __all__ = [
     "SceneIR",
     "SceneIRBuild",
     "SceneIRCache",
+    "SceneIRRowGroupReadEvent",
     "build_scene_ir_cache",
 ]

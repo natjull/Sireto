@@ -42,6 +42,9 @@ from .retrieval_fold_fused_oof_v12 import (
     TRAIN_FOLDS,
     sha256_file,
 )
+from .retrieval_fold_fused_relocatable_paths_v13 import (
+    relocatable_record_path_v13,
+)
 from .retrieval_fold_fused_sharded_oof_v12 import (
     ShardSpecV12,
     _iter_heldout_contexts_v12,
@@ -53,6 +56,7 @@ from .retrieval_fold_fused_sharded_oof_v12 import (
     _validate_statistics_v12,
     aggregate_sharded_gates_v12,
     fitted_site_model_records_v12,
+    load_shard_replay_manifest_v12,
     replay_shard_v12,
 )
 
@@ -158,7 +162,13 @@ def feature_batch_logical_leaf_v13(
     context: MasterContext,
     features: FeatureBatch,
 ) -> Mapping[str, Any]:
-    """Seal all 319 float32 values and their exact candidate row identities."""
+    """Seal the exact historical PREFIT ``_feature_digest`` for one query.
+
+    The v12 PREFIT authority hashes candidate SIRETs, parent SIRENs, the
+    ordered feature-name schema and the C-order float32 bytes.  The newline in
+    the JSON identity is intentional: it is part of the historical digest and
+    therefore of the non-circular W1 -> W3 bridge.
+    """
 
     values = np.ascontiguousarray(features.values, dtype=np.float32)
     if (
@@ -169,17 +179,47 @@ def feature_batch_logical_leaf_v13(
         or features.candidate_parents != context.candidate_parents
     ):
         raise FoldFusedInvariantError("feature digest requires the complete ordered Master")
+    identity = (
+        json.dumps(
+            {
+                "candidate_sirets": list(features.candidate_sirets),
+                "candidate_parents": list(features.candidate_parents),
+                "feature_names": list(features.feature_names),
+            },
+            sort_keys=True,
+            ensure_ascii=False,
+            separators=(",", ":"),
+            allow_nan=False,
+        )
+        + "\n"
+    ).encode("utf-8")
+    digest = hashlib.sha256()
+    digest.update(identity)
+    digest.update(values.view(np.uint32).tobytes(order="C"))
     return {
         "kind": "site_feature_values",
         "query_id": context.query_id,
         "fold": context.scene_fold,
-        "row_count": len(values),
-        "feature_schema_sha256": _sha256_json(list(features.feature_names)),
-        "candidate_order_sha256": _sha256_json(
-            list(zip(features.candidate_sirets, features.candidate_parents, strict=True))
-        ),
-        "statistics_sha256": features.statistics_sha256,
-        "float32_c_order_sha256": hashlib.sha256(values.tobytes(order="C")).hexdigest(),
+        "fused_features_sha256": digest.hexdigest(),
+    }
+
+
+def prerank500_full_payload_leaf_v13(table: pa.Table) -> Mapping[str, Any]:
+    """Seal one pre-compaction PreRank500 table including full payload."""
+
+    canonical = pa.Table.from_arrays(table.columns, schema=TOP100_SCHEMA)
+    if not 1 <= canonical.num_rows <= OUTPUT_CAPS["top500"]:
+        raise FoldFusedInvariantError("full-payload PreRank500 escaped its cap")
+    query_ids = {str(value) for value in canonical["query_id"].to_pylist()}
+    folds = {int(value) for value in canonical["fold"].to_pylist()}
+    if len(query_ids) != 1 or len(folds) != 1:
+        raise FoldFusedInvariantError("full-payload PreRank500 mixes queries")
+    return {
+        "kind": "prerank500_full_payload",
+        "query_id": next(iter(query_ids)),
+        "fold": next(iter(folds)),
+        "row_count": canonical.num_rows,
+        "table_sha256": logical_table_sha256_v13(canonical),
     }
 
 
@@ -200,6 +240,18 @@ def _relative_or_absolute(path: Path, root: Path) -> str:
         return str(resolved.relative_to(root.resolve()))
     except ValueError:
         return str(resolved)
+
+
+def _record_path_v13(
+    path: Path,
+    root: Path,
+    relocation_root: Path | None,
+) -> str:
+    if relocation_root is None:
+        return _relative_or_absolute(path, root)
+    return relocatable_record_path_v13(
+        path, record_root=root, run_root=relocation_root
+    )
 
 
 def _resolve_path(root: Path, value: Any) -> Path:
@@ -262,6 +314,8 @@ class CompactReplayFragmentArtifactV13:
     model_sha256: Mapping[int, str]
     feature_values_logical_leaves: tuple[Mapping[str, Any], ...]
     feature_values_logical_merkle_root: str
+    prerank500_full_payload_logical_leaves: tuple[Mapping[str, Any], ...]
+    prerank500_full_payload_logical_merkle_root: str
 
     def __post_init__(self) -> None:
         if (
@@ -271,10 +325,15 @@ class CompactReplayFragmentArtifactV13:
             or not _valid_sha256(self.build_manifest_sha256)
             or not _valid_sha256(self.heldout_dataset_merkle_root)
             or set(self.outputs) != set(OUTPUT_SCHEMAS)
-            or set(self.model_sha256) != set(TRAIN_FOLDS)
+            or set(self.model_sha256) != set(self.spec.folds)
             or len(self.outcomes) != self.spec.query_count
             or len(self.feature_values_logical_leaves) != self.spec.query_count
             or not _valid_sha256(self.feature_values_logical_merkle_root)
+            or len(self.prerank500_full_payload_logical_leaves)
+            != self.spec.query_count
+            or not _valid_sha256(
+                self.prerank500_full_payload_logical_merkle_root
+            )
         ):
             raise FoldFusedInvariantError("invalid compact replay fragment artifact")
 
@@ -295,6 +354,7 @@ class CompactReplayDatasetV13:
     build_manifest_sha256: tuple[str, ...]
     heldout_dataset_merkle_root: str
     feature_values_logical_merkle_root: str
+    prerank500_full_payload_logical_merkle_root: str
 
     def __post_init__(self) -> None:
         if (
@@ -304,6 +364,9 @@ class CompactReplayDatasetV13:
             or not _valid_sha256(self.physical_merkle_root)
             or not _valid_sha256(self.heldout_dataset_merkle_root)
             or not _valid_sha256(self.feature_values_logical_merkle_root)
+            or not _valid_sha256(
+                self.prerank500_full_payload_logical_merkle_root
+            )
             or set(self.outputs) != set(OUTPUT_SCHEMAS)
             or set(self.logical_merkle_root) != set(OUTPUT_SCHEMAS)
             or not all(_valid_sha256(value) for value in self.logical_merkle_root.values())
@@ -335,7 +398,15 @@ class BufferedCompactOOFOutputStoreV13:
             "outcomes": self.output_dir / "oof_query_outcomes.parquet",
         }
         self._writers = {
-            name: pq.ParquetWriter(path, OUTPUT_SCHEMAS[name], compression="zstd")
+            name: pq.ParquetWriter(
+                path,
+                OUTPUT_SCHEMAS[name],
+                compression="zstd",
+                compression_level=3,
+                use_dictionary=True,
+                write_statistics=True,
+                data_page_version="1.0",
+            )
             for name, path in self.paths.items()
         }
         self._buffers: dict[str, list[pa.Table]] = {
@@ -352,6 +423,7 @@ class BufferedCompactOOFOutputStoreV13:
         }
         self._sealed = False
         self.feature_values_logical_leaves: list[Mapping[str, Any]] = []
+        self.prerank500_full_payload_logical_leaves: list[Mapping[str, Any]] = []
 
     def _flush(self, name: str) -> None:
         values = self._buffers[name]
@@ -437,6 +509,17 @@ class BufferedCompactOOFOutputStoreV13:
     ) -> None:
         self.feature_values_logical_leaves.append(
             feature_batch_logical_leaf_v13(context, features)
+        )
+        top500_full = self._ranking_table(
+            context,
+            features,
+            scores,
+            selection.prerank_indices,
+            ("site_lambdamart_prerank",) * len(selection.prerank_indices),
+            include_payload=True,
+        )
+        self.prerank500_full_payload_logical_leaves.append(
+            prerank500_full_payload_leaf_v13(top500_full)
         )
         top500 = self._ranking_table(
             context,
@@ -530,6 +613,10 @@ class CompactParquetOOFOutputStoreV13:
         self.compact_outputs: Mapping[str, CompactOutputFileV13] | None = None
         self.feature_values_logical_leaves: tuple[Mapping[str, Any], ...] = ()
         self.feature_values_logical_merkle_root: str | None = None
+        self.prerank500_full_payload_logical_leaves: tuple[
+            Mapping[str, Any], ...
+        ] = ()
+        self.prerank500_full_payload_logical_merkle_root: str | None = None
 
     def append_rankings(
         self,
@@ -554,18 +641,28 @@ class CompactParquetOOFOutputStoreV13:
         self.feature_values_logical_merkle_root = merkle_root_v13(
             self.feature_values_logical_leaves
         )
+        self.prerank500_full_payload_logical_leaves = tuple(
+            self.delegate.prerank500_full_payload_logical_leaves
+        )
+        self.prerank500_full_payload_logical_merkle_root = merkle_root_v13(
+            self.prerank500_full_payload_logical_leaves
+        )
         return {
             name: ArtifactRecord(value.path, value.sha256, value.row_count)
             for name, value in compact.items()
         }
 
 
-def _output_record(value: CompactOutputFileV13, root: Path) -> dict[str, Any]:
+def _output_record(
+    value: CompactOutputFileV13,
+    root: Path,
+    relocation_root: Path | None = None,
+) -> dict[str, Any]:
     return {
         "name": value.name,
         "shard_id": value.shard_id,
         "shard_ordinal": value.shard_ordinal,
-        "path": _relative_or_absolute(value.path, root),
+        "path": _record_path_v13(value.path, root, relocation_root),
         "sha256": value.sha256,
         "size_bytes": value.size_bytes,
         "row_count": value.row_count,
@@ -611,6 +708,7 @@ def replay_fragment_v13(
     caps: ExecutionCaps = ExecutionCaps(),
     payload_factory: Any | None = None,
     row_group_target: int = DEFAULT_ROW_GROUP_TARGET,
+    relocation_root: Path | None = None,
 ) -> CompactReplayFragmentArtifactV13:
     """Run the frozen v12 replay with only a compact physical sink swapped."""
 
@@ -620,7 +718,7 @@ def replay_fragment_v13(
         or any(not _valid_sha256(value) for value in lineage_value.values())
         or not _valid_sha256(build_manifest_sha256)
         or not _valid_sha256(heldout_dataset_merkle_root)
-        or set(models) != set(TRAIN_FOLDS)
+        or set(models) != set(spec.folds)
     ):
         raise FoldFusedInvariantError("compact replay lacks sealed lineage/models")
     output = Path(output_dir).resolve()
@@ -652,17 +750,20 @@ def replay_fragment_v13(
         caps=caps,
         payload_factory=payload_factory,
         output_store_factory=output_store_factory,
+        fold_owned_model_scope=True,
+        relocation_root=relocation_root,
     )
     store = store_box.get("value")
     if (
         store is None
         or store.compact_outputs is None
         or store.feature_values_logical_merkle_root is None
+        or store.prerank500_full_payload_logical_merkle_root is None
     ):
         raise FoldFusedInvariantError("v12 replay did not seal compact outputs")
     outputs = store.compact_outputs
     outcomes = scientific.outcomes
-    model_sha = {outer: models[outer].sha256 for outer in TRAIN_FOLDS}
+    model_sha = {outer: models[outer].sha256 for outer in spec.folds}
     identity = {
         "engine_id": ENGINE_ID,
         "spec_sha256": spec.digest,
@@ -677,6 +778,9 @@ def replay_fragment_v13(
         },
         "feature_values_logical_merkle_root": (
             store.feature_values_logical_merkle_root
+        ),
+        "prerank500_full_payload_logical_merkle_root": (
+            store.prerank500_full_payload_logical_merkle_root
         ),
     }
     fragment_id = _sha256_json(identity)
@@ -695,7 +799,12 @@ def replay_fragment_v13(
         "build_manifest_sha256": build_manifest_sha256,
         "heldout_sha256": heldout.sha256,
         "heldout_dataset_merkle_root": heldout_dataset_merkle_root,
-        "model_by_outer": fitted_site_model_records_v12(models),
+        "model_by_outer": fitted_site_model_records_v12(
+            models,
+            required_folds=spec.folds,
+            root=output if relocation_root is not None else None,
+            relocation_root=relocation_root,
+        ),
         "query_count": len(outcomes),
         "query_sequence_sha256": spec.query_sequence_sha256,
         "row_group_target": int(row_group_target),
@@ -705,12 +814,21 @@ def replay_fragment_v13(
         "feature_values_logical_merkle_root": (
             store.feature_values_logical_merkle_root
         ),
+        "prerank500_full_payload_logical_leaves": list(
+            store.prerank500_full_payload_logical_leaves
+        ),
+        "prerank500_full_payload_logical_merkle_root": (
+            store.prerank500_full_payload_logical_merkle_root
+        ),
         "scientific_replay_manifest": {
-            "path": _relative_or_absolute(scientific.manifest_path, output),
+            "path": _record_path_v13(
+                scientific.manifest_path, output, relocation_root
+            ),
             "sha256": scientific.manifest_sha256,
         },
         "outputs": {
-            name: _output_record(value, output) for name, value in outputs.items()
+            name: _output_record(value, output, relocation_root)
+            for name, value in outputs.items()
         },
     }
     manifest_path = output / "compact_fragment_manifest.json"
@@ -731,6 +849,12 @@ def replay_fragment_v13(
         feature_values_logical_leaves=store.feature_values_logical_leaves,
         feature_values_logical_merkle_root=(
             store.feature_values_logical_merkle_root
+        ),
+        prerank500_full_payload_logical_leaves=(
+            store.prerank500_full_payload_logical_leaves
+        ),
+        prerank500_full_payload_logical_merkle_root=(
+            store.prerank500_full_payload_logical_merkle_root
         ),
     )
 
@@ -913,17 +1037,23 @@ def load_compact_replay_fragment_v13(
         raise FoldFusedInvariantError("compact replay outcome sequence drift")
     model_records = raw.get("model_by_outer")
     if not isinstance(model_records, Mapping) or set(model_records) != {
-        str(value) for value in TRAIN_FOLDS
+        str(value) for value in spec.folds
     }:
         raise FoldFusedInvariantError("compact replay model records incomplete")
     model_sha = {
         outer: str(model_records[str(outer)].get("sha256") or "")
-        for outer in TRAIN_FOLDS
+        for outer in spec.folds
     }
     if any(not _valid_sha256(value) for value in model_sha.values()):
         raise FoldFusedInvariantError("compact replay model hashes invalid")
     feature_leaves_raw = raw.get("feature_values_logical_leaves")
     feature_root = str(raw.get("feature_values_logical_merkle_root") or "")
+    payload_leaves_raw = raw.get(
+        "prerank500_full_payload_logical_leaves"
+    )
+    payload_root = str(
+        raw.get("prerank500_full_payload_logical_merkle_root") or ""
+    )
     if (
         not isinstance(feature_leaves_raw, list)
         or len(feature_leaves_raw) != spec.query_count
@@ -934,8 +1064,19 @@ def load_compact_replay_fragment_v13(
             for value in feature_leaves_raw
         )
         != expected_sequence
+        or not isinstance(payload_leaves_raw, list)
+        or len(payload_leaves_raw) != spec.query_count
+        or not _valid_sha256(payload_root)
+        or merkle_root_v13(payload_leaves_raw) != payload_root
+        or tuple(
+            (str(value.get("query_id") or ""), int(value.get("fold", -1)))
+            for value in payload_leaves_raw
+        )
+        != expected_sequence
     ):
-        raise FoldFusedInvariantError("compact replay feature-value digest drift")
+        raise FoldFusedInvariantError(
+            "compact replay feature/payload digest drift"
+        )
     scientific_record = raw.get("scientific_replay_manifest")
     if not isinstance(scientific_record, Mapping):
         raise FoldFusedInvariantError("compact replay scientific manifest missing")
@@ -949,6 +1090,23 @@ def load_compact_replay_fragment_v13(
         or (verify_hashes and sha256_file(scientific_path) != scientific_sha)
     ):
         raise FoldFusedInvariantError("compact replay scientific manifest drift")
+    scientific = load_shard_replay_manifest_v12(
+        scientific_path, verify_hashes=verify_hashes
+    )
+    if (
+        scientific.spec != spec
+        or scientific.build_manifest_sha256 != build_sha
+        or dict(scientific.lineage) != lineage
+        or {
+            name: scientific.outputs[name].sha256 for name in OUTPUT_SCHEMAS
+        }
+        != {name: outputs[name].sha256 for name in OUTPUT_SCHEMAS}
+        or dict(scientific.digests.get("model_by_outer") or {})
+        != {str(key): value for key, value in model_sha.items()}
+    ):
+        raise FoldFusedInvariantError(
+            "compact/scientific mono-model replay roundtrip drifted"
+        )
     expected_identity = {
         "engine_id": ENGINE_ID,
         "spec_sha256": spec.digest,
@@ -962,6 +1120,7 @@ def load_compact_replay_fragment_v13(
             name: value.logical_merkle_root for name, value in outputs.items()
         },
         "feature_values_logical_merkle_root": feature_root,
+        "prerank500_full_payload_logical_merkle_root": payload_root,
     }
     if dict(identity) != expected_identity:
         raise FoldFusedInvariantError("compact replay fragment identity drift")
@@ -980,6 +1139,10 @@ def load_compact_replay_fragment_v13(
         model_sha256=model_sha,
         feature_values_logical_leaves=tuple(dict(value) for value in feature_leaves_raw),
         feature_values_logical_merkle_root=feature_root,
+        prerank500_full_payload_logical_leaves=tuple(
+            dict(value) for value in payload_leaves_raw
+        ),
+        prerank500_full_payload_logical_merkle_root=payload_root,
     )
 
 
@@ -994,7 +1157,6 @@ def _ordered_replays(
     if not ordered:
         raise FoldFusedInvariantError("no compact replay fragments supplied")
     lineage = dict(ordered[0].lineage)
-    model_sha = dict(ordered[0].model_sha256)
     heldout_merkle = ordered[0].heldout_dataset_merkle_root
     stop = 0
     seen: set[str] = set()
@@ -1003,7 +1165,7 @@ def _ordered_replays(
             value.spec.shard_ordinal != ordinal
             or value.spec.sequence_start != stop
             or dict(value.lineage) != lineage
-            or dict(value.model_sha256) != model_sha
+            or set(value.model_sha256) != set(value.spec.folds)
             or value.heldout_dataset_merkle_root != heldout_merkle
             or seen.intersection(value.spec.query_ids)
         ):
@@ -1016,6 +1178,8 @@ def _ordered_replays(
 def seal_compact_replay_dataset_v13(
     artifacts: Sequence[CompactReplayFragmentArtifactV13],
     output_dir: Path,
+    *,
+    relocation_root: Path | None = None,
 ) -> CompactReplayDatasetV13:
     """Seal ordered worker outputs as one logical dataset, without merge."""
 
@@ -1026,7 +1190,18 @@ def seal_compact_replay_dataset_v13(
     output.mkdir(parents=True)
     specs = tuple(value.spec for value in ordered)
     lineage = dict(ordered[0].lineage)
-    model_sha = dict(ordered[0].model_sha256)
+    model_sha: dict[int, str] = {}
+    for artifact in ordered:
+        for outer, digest in artifact.model_sha256.items():
+            if outer in model_sha and model_sha[outer] != digest:
+                raise FoldFusedInvariantError(
+                    "compact replay model hash differs across fold fragments"
+                )
+            model_sha[outer] = digest
+    if set(model_sha) != set(TRAIN_FOLDS):
+        raise FoldFusedInvariantError(
+            "compact replay fragments do not cover three outer models"
+        )
     heldout_dataset_merkle = ordered[0].heldout_dataset_merkle_root
     global_sequence = tuple(
         (query_id, fold)
@@ -1058,6 +1233,12 @@ def seal_compact_replay_dataset_v13(
         for value in artifact.feature_values_logical_leaves
     )
     feature_root = merkle_root_v13(feature_leaves)
+    payload_leaves = tuple(
+        value
+        for artifact in ordered
+        for value in artifact.prerank500_full_payload_logical_leaves
+    )
+    payload_root = merkle_root_v13(payload_leaves)
     physical_root = merkle_root_v13(physical_leaves)
     identity = {
         "engine_id": ENGINE_ID,
@@ -1075,6 +1256,7 @@ def seal_compact_replay_dataset_v13(
         "heldout_dataset_merkle_root": heldout_dataset_merkle,
         "logical_merkle_root": logical_roots,
         "feature_values_logical_merkle_root": feature_root,
+        "prerank500_full_payload_logical_merkle_root": payload_root,
         "physical_merkle_root": physical_root,
     }
     dataset_id = _sha256_json(identity)
@@ -1093,7 +1275,9 @@ def seal_compact_replay_dataset_v13(
         "specs": [value.as_manifest() for value in specs],
         "ordered_fragment_manifests": [
             {
-                "path": _relative_or_absolute(value.manifest_path, output),
+                "path": _record_path_v13(
+                    value.manifest_path, output, relocation_root
+                ),
                 "sha256": value.manifest_sha256,
                 "fragment_id": value.fragment_id,
             }
@@ -1108,7 +1292,10 @@ def seal_compact_replay_dataset_v13(
         "heldout_dataset_merkle_root": heldout_dataset_merkle,
         "outputs": {
             name: {
-                "fragments": [_output_record(value, output) for value in fragments],
+                "fragments": [
+                    _output_record(value, output, relocation_root)
+                    for value in fragments
+                ],
                 "rows": sum(value.row_count for value in fragments),
                 "fragment_count": len(fragments),
                 "logical_merkle_root": logical_roots[name],
@@ -1116,6 +1303,7 @@ def seal_compact_replay_dataset_v13(
             for name, fragments in outputs.items()
         },
         "feature_values_logical_merkle_root": feature_root,
+        "prerank500_full_payload_logical_merkle_root": payload_root,
         "physical_merkle_root": physical_root,
     }
     manifest_path = output / "manifest.json"
@@ -1137,6 +1325,7 @@ def seal_compact_replay_dataset_v13(
         ),
         heldout_dataset_merkle_root=heldout_dataset_merkle,
         feature_values_logical_merkle_root=feature_root,
+        prerank500_full_payload_logical_merkle_root=payload_root,
     )
 
 
@@ -1246,7 +1435,18 @@ def load_compact_replay_dataset_v13(
         fragments.append(loaded)
     ordered = _ordered_replays(fragments)
     lineage = dict(ordered[0].lineage)
-    model_sha = dict(ordered[0].model_sha256)
+    model_sha: dict[int, str] = {}
+    for artifact in ordered:
+        for outer, digest in artifact.model_sha256.items():
+            if outer in model_sha and model_sha[outer] != digest:
+                raise FoldFusedInvariantError(
+                    "compact replay model hash differs across fold fragments"
+                )
+            model_sha[outer] = digest
+    if set(model_sha) != set(TRAIN_FOLDS):
+        raise FoldFusedInvariantError(
+            "compact replay dataset lacks one outer model"
+        )
     heldout_dataset_merkle = ordered[0].heldout_dataset_merkle_root
     outputs = {
         name: tuple(value.outputs[name] for value in ordered)
@@ -1278,6 +1478,12 @@ def load_compact_replay_dataset_v13(
         for value in artifact.feature_values_logical_leaves
     )
     feature_root = merkle_root_v13(feature_leaves)
+    payload_leaves = tuple(
+        value
+        for artifact in ordered
+        for value in artifact.prerank500_full_payload_logical_leaves
+    )
+    payload_root = merkle_root_v13(payload_leaves)
     physical_root = merkle_root_v13(physical_leaves)
     expected_identity = {
         "engine_id": ENGINE_ID,
@@ -1295,10 +1501,19 @@ def load_compact_replay_dataset_v13(
         "heldout_dataset_merkle_root": heldout_dataset_merkle,
         "logical_merkle_root": logical_roots,
         "feature_values_logical_merkle_root": feature_root,
+        "prerank500_full_payload_logical_merkle_root": payload_root,
         "physical_merkle_root": physical_root,
     }
     if dict(identity) != expected_identity:
         raise FoldFusedInvariantError("compact replay dataset identity/Merkle drift")
+    if (
+        raw.get("feature_values_logical_merkle_root") != feature_root
+        or raw.get("prerank500_full_payload_logical_merkle_root")
+        != payload_root
+    ):
+        raise FoldFusedInvariantError(
+            "compact replay dataset feature/payload root drift"
+        )
     return CompactReplayDatasetV13(
         manifest_path=manifest_path,
         manifest_sha256=sha256_file(manifest_path),
@@ -1316,6 +1531,7 @@ def load_compact_replay_dataset_v13(
         ),
         heldout_dataset_merkle_root=heldout_dataset_merkle,
         feature_values_logical_merkle_root=feature_root,
+        prerank500_full_payload_logical_merkle_root=payload_root,
     )
 
 
@@ -1371,6 +1587,42 @@ def logical_output_merkle_from_parquet_v13(
                         "table_sha256": logical_table_sha256_v13(table),
                     }
                 )
+                start = stop
+    return merkle_root_v13(leaves)
+
+
+def prerank500_full_payload_merkle_from_parquet_v13(
+    paths: Sequence[Path],
+) -> str:
+    """Digest historical PreRank500 rows including payload/proof JSON."""
+
+    leaves: list[Mapping[str, Any]] = []
+    global_seen: set[str] = set()
+    columns = TOP100_SCHEMA.names
+    for path in paths:
+        parquet = pq.ParquetFile(path)
+        missing = set(columns) - set(parquet.schema_arrow.names)
+        if missing:
+            raise FoldFusedInvariantError(
+                f"top500 payload columns missing: {sorted(missing)}"
+            )
+        for row_group in range(parquet.num_row_groups):
+            row_group_table = parquet.read_row_group(row_group, columns=columns)
+            query_values = row_group_table["query_id"].to_pylist()
+            start = 0
+            while start < len(query_values):
+                query_id = str(query_values[start])
+                stop = start + 1
+                while stop < len(query_values) and str(query_values[stop]) == query_id:
+                    stop += 1
+                if query_id in global_seen:
+                    raise FoldFusedInvariantError(
+                        "full-payload top500 query split/duplicate"
+                    )
+                global_seen.add(query_id)
+                source = row_group_table.slice(start, stop - start)
+                table = pa.Table.from_arrays(source.columns, schema=TOP100_SCHEMA)
+                leaves.append(prerank500_full_payload_leaf_v13(table))
                 start = stop
     return merkle_root_v13(leaves)
 
@@ -1445,6 +1697,8 @@ __all__ = [
     "load_compact_replay_dataset_v13",
     "load_compact_replay_fragment_v13",
     "logical_output_merkle_from_parquet_v13",
+    "prerank500_full_payload_leaf_v13",
+    "prerank500_full_payload_merkle_from_parquet_v13",
     "model_set_logical_sha256_v13",
     "replay_fragment_v13",
     "rehydrate_top500_row_v13",

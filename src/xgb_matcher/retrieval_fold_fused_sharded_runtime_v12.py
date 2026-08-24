@@ -325,6 +325,7 @@ def build_worker_entrypoint_v12(
     job: Mapping[str, Any],
     *,
     train_store_factory: Any | None = None,
+    row_group_observer: Any | None = None,
 ) -> str:
     """Spawn entrypoint: build one exact train/spool shard from real inputs."""
 
@@ -399,7 +400,11 @@ def build_worker_entrypoint_v12(
         )
         artifact = build_shard_v12(
             spec,
-            source=SceneIRShardSourceV12(cache, spec),
+            source=SceneIRShardSourceV12(
+                cache,
+                spec,
+                row_group_observer=row_group_observer,
+            ),
             labels=ledger,
             contexts=FoldFusedContextAdapterV12(
                 sidecars=sidecars,

@@ -17,7 +17,7 @@ DEFAULT_PHYSICAL_CONFIG = (
     ROOT / "config" / "retrieval_all_human_v13_physical_execution.json"
 )
 DEFAULT_PHYSICAL_CONFIG_SHA256 = (
-    "be3445c9ef377e9090043856f2c886e3005eac38b9b665542fc6cfeac4429f46"
+    "40c75e669289147ecf3b3c89ad37f9ef0f8e289cc092868ec26de10d0e15bf0d"
 )
 
 from src.xgb_matcher.retrieval_fold_fused_logical_io_v13 import (  # noqa: E402

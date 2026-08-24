@@ -31,6 +31,9 @@ from .retrieval_fold_fused_oof_v12 import (
     TRAIN_FOLDS,
     sha256_file,
 )
+from .retrieval_fold_fused_relocatable_paths_v13 import (
+    relocatable_record_path_v13,
+)
 
 
 SCHEMA_VERSION = "sireto-retrieval-v13-zero-copy-canonical-run-1"
@@ -88,6 +91,18 @@ def _relative_or_absolute(path: Path, root: Path) -> str:
         return str(resolved.relative_to(root.resolve()))
     except ValueError:
         return str(resolved)
+
+
+def _record_path_v13(
+    path: Path,
+    root: Path,
+    relocation_root: Path | None,
+) -> str:
+    if relocation_root is None:
+        return _relative_or_absolute(path, root)
+    return relocatable_record_path_v13(
+        path, record_root=root, run_root=relocation_root
+    )
 
 
 def _resolve_path(root: Path, value: Any) -> Path:
@@ -179,14 +194,18 @@ class ZeroCopyCanonicalRunV13:
             raise FoldFusedInvariantError("invalid v13 canonical run manifest")
 
 
-def _leaf_record(value: ArtifactLeafV13, root: Path) -> dict[str, Any]:
+def _leaf_record(
+    value: ArtifactLeafV13,
+    root: Path,
+    relocation_root: Path | None = None,
+) -> dict[str, Any]:
     return {
         "family": value.family,
         "fold_view": value.fold_view,
         "fragment_ordinal": value.fragment_ordinal,
         "query_start": value.query_start,
         "query_stop": value.query_stop,
-        "path": _relative_or_absolute(value.path, root),
+        "path": _record_path_v13(value.path, root, relocation_root),
         "sha256": value.sha256,
         "size_bytes": value.size_bytes,
         "rows": value.rows,
@@ -304,8 +323,11 @@ def _write_family_manifest(
     leaves: Sequence[ArtifactLeafV13],
     logical_digest: str,
     output: Path,
+    relocation_root: Path | None = None,
 ) -> DatasetManifestV13:
-    records = [_leaf_record(value, output) for value in leaves]
+    records = [
+        _leaf_record(value, output, relocation_root) for value in leaves
+    ]
     identity_records = [_leaf_identity(value) for value in leaves]
     merkle = merkle_root_v13(identity_records)
     identity = {
@@ -350,6 +372,8 @@ def seal_zero_copy_canonical_run_v13(
     replay: CompactReplayDatasetV13,
     models: Mapping[int, FittedSiteModel],
     output_dir: Path,
+    *,
+    relocation_root: Path | None = None,
 ) -> ZeroCopyCanonicalRunV13:
     """Seal the exact seven canonical families; never create merged data files."""
 
@@ -388,7 +412,11 @@ def seal_zero_copy_canonical_run_v13(
     }
     datasets = {
         family: _write_family_manifest(
-            family, leaves[family], logical[family], output
+            family,
+            leaves[family],
+            logical[family],
+            output,
+            relocation_root,
         )
         for family in CANONICAL_FAMILIES
     }
@@ -417,7 +445,9 @@ def seal_zero_copy_canonical_run_v13(
             inventory.append(leaf)
     dataset_records = {
         family: {
-            "path": _relative_or_absolute(value.path, output),
+            "path": _record_path_v13(
+                value.path, output, relocation_root
+            ),
             "sha256": value.sha256,
             "size_bytes": value.size_bytes,
             "merkle_root": value.merkle_root,
@@ -481,11 +511,15 @@ def seal_zero_copy_canonical_run_v13(
         "merged_files_created": False,
         "source_manifests": {
             "build": {
-                "path": _relative_or_absolute(build.manifest_path, output),
+                "path": _record_path_v13(
+                    build.manifest_path, output, relocation_root
+                ),
                 "sha256": build.manifest_sha256,
             },
             "replay": {
-                "path": _relative_or_absolute(replay.manifest_path, output),
+                "path": _record_path_v13(
+                    replay.manifest_path, output, relocation_root
+                ),
                 "sha256": replay.manifest_sha256,
             },
         },
@@ -494,12 +528,17 @@ def seal_zero_copy_canonical_run_v13(
         "models": [
             {
                 **record,
-                "path": _relative_or_absolute(models[record["outer_fold"]].path, output),
+                "path": _record_path_v13(
+                    models[record["outer_fold"]].path,
+                    output,
+                    relocation_root,
+                ),
             }
             for record in model_identity_records
         ],
         "artifact_inventory": [
-            _leaf_record(value, output) for value in inventory
+            _leaf_record(value, output, relocation_root)
+            for value in inventory
         ],
     }
     manifest_path = output / "manifest.json"

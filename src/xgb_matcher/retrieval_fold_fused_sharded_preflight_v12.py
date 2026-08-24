@@ -117,6 +117,7 @@ def prepare_sharded_execution_v12(
     executor_config: Path,
     prefit_parity_manifest: Path,
     sharded_execution_plan: Path,
+    verify_source_hash: bool = True,
 ) -> PreparedShardedExecutionV12:
     """Validate every sealed authority once, outside measured W1/W2/W3."""
 
@@ -142,7 +143,26 @@ def prepare_sharded_execution_v12(
         or len(site_feature_names(admission)) != 319
     ):
         raise FoldFusedInvariantError("sharded preflight scientific recipe drifted")
-    cache = SceneIRCache(scene_ir, verify_source_hash=True)
+    if type(verify_source_hash) is not bool:
+        raise FoldFusedInvariantError("source-hash preflight policy must be boolean")
+    cache = SceneIRCache(scene_ir, verify_source_hash=verify_source_hash)
+    # A cache-neutral physical benchmark may defer the 4.7-GiB full hash until
+    # its post-timing logical-I/O gate.  It still validates the sealed manifest,
+    # SceneIR index, Parquet footer, row count and non-empty physical file here.
+    if not verify_source_hash:
+        source_parquet = pq.ParquetFile(cache.source)
+        if (
+            cache.source.stat().st_size <= 0
+            or source_parquet.metadata.num_rows
+            != int(cache.manifest.get("candidate_rows", -1))
+            or "query_id" not in source_parquet.schema_arrow.names
+            or not {"fold", "oof_fold"}.intersection(
+                source_parquet.schema_arrow.names
+            )
+        ):
+            raise FoldFusedInvariantError(
+                "cache-neutral SceneIR source footer/cardinality drifted"
+            )
     ledger = StrictV12LabelLedger.load(labels, config_path=scientific_config)
     reconcile_scene_ir_and_labels_v12(cache, ledger)
     sample_ids, sample_sha = _sealed_sample_ids_v12(query_sample, ledger=ledger)

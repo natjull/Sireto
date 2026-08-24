@@ -25,6 +25,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Mapping, Sequence
+import gc
 import hashlib
 import json
 import math
@@ -42,6 +43,9 @@ from .retrieval_fold_fused_oof_v12 import (
     TRAIN_FOLDS,
     TrainMatrixArtifact,
     sha256_file,
+)
+from .retrieval_fold_fused_relocatable_paths_v13 import (
+    relocatable_record_path_v13,
 )
 from .retrieval_fold_fused_sharded_oof_v12 import (
     ShardBuildArtifactV12,
@@ -114,6 +118,18 @@ def _relative_or_absolute(path: Path, root: Path) -> str:
         return str(resolved.relative_to(root.resolve()))
     except ValueError:
         return str(resolved)
+
+
+def _record_path_v13(
+    path: Path,
+    root: Path,
+    relocation_root: Path | None,
+) -> str:
+    if relocation_root is None:
+        return _relative_or_absolute(path, root)
+    return relocatable_record_path_v13(
+        path, record_root=root, run_root=relocation_root
+    )
 
 
 def _resolve_path(root: Path, value: Any) -> Path:
@@ -482,14 +498,16 @@ def _ordered_strict_builds(
 
 
 def _fragment_record(
-    value: FragmentFileV13, root: Path
+    value: FragmentFileV13,
+    root: Path,
+    relocation_root: Path | None = None,
 ) -> dict[str, Any]:
     return {
         "kind": value.kind,
         "shard_id": value.shard_id,
         "shard_ordinal": value.shard_ordinal,
         "outer_fold": value.outer_fold,
-        "path": _relative_or_absolute(value.path, root),
+        "path": _record_path_v13(value.path, root, relocation_root),
         "sha256": value.sha256,
         "size_bytes": value.size_bytes,
         "row_count": value.row_count,
@@ -674,6 +692,8 @@ def _scan_heldout(
 def seal_build_fragment_dataset_v13(
     artifacts: Sequence[ShardBuildArtifactV12],
     output_dir: Path,
+    *,
+    relocation_root: Path | None = None,
 ) -> BuildFragmentDatasetV13:
     """Publish an immutable manifest over existing worker files, without copy."""
 
@@ -784,7 +804,8 @@ def seal_build_fragment_dataset_v13(
         train_manifest[str(outer)] = {
             "outer_fold": outer,
             "fragments": [
-                _fragment_record(value, output) for value in dataset.fragments
+                _fragment_record(value, output, relocation_root)
+                for value in dataset.fragments
             ],
             "row_count": dataset.row_count,
             "query_count": dataset.query_count,
@@ -832,7 +853,9 @@ def seal_build_fragment_dataset_v13(
         "specs": [value.as_manifest() for value in specs],
         "ordered_build_manifests": [
             {
-                "path": _relative_or_absolute(value.manifest_path, output),
+                "path": _record_path_v13(
+                    value.manifest_path, output, relocation_root
+                ),
                 "sha256": value.manifest_sha256,
                 "build_id": value.build_id,
             }
@@ -842,7 +865,10 @@ def seal_build_fragment_dataset_v13(
         "heldout_row_count": sum(value.row_count for value in heldout),
         "query_sequence_sha256": query_sequence_sha,
         "heldout": {
-            "fragments": [_fragment_record(value, output) for value in heldout],
+            "fragments": [
+                _fragment_record(value, output, relocation_root)
+                for value in heldout
+            ],
             "schema_sha256": ordered[0].heldout_master.schema_sha256,
             "parquet_schema_sha256": heldout_schema,
             "logical_merkle_root": heldout_logical_root,
@@ -1213,6 +1239,10 @@ def fit_site_models_sequential_from_fragments_v13(
         ):
             raise FoldFusedInvariantError("v13 sequential model identity drift")
         models[outer] = model
+        # The next outer fit rereads its fragments and does not reuse the
+        # previous XGBoost matrices.  Force reclamation between outers so the
+        # three sequential fits cannot retain a hidden cumulative RSS tail.
+        gc.collect()
     if len({value.recipe_sha256 for value in models.values()}) != 1:
         raise FoldFusedInvariantError("v13 site models mix frozen recipes")
     return models

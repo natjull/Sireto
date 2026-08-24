@@ -147,6 +147,38 @@ def _relative_or_absolute(path: Path, root: Path) -> str:
         return str(resolved)
 
 
+def _relocatable_internal_path_v12(
+    path: Path,
+    *,
+    record_root: Path,
+    relocation_root: Path,
+) -> str:
+    """Encode a v13 run-internal path without changing the v12 default.
+
+    The optional v13 physical executor promotes a complete staging directory
+    with one atomic rename.  Absolute sibling paths would retain the staging
+    prefix.  This hook is deliberately fail-closed and is only used when the
+    caller supplies the common immutable run root.
+    """
+
+    sealed_root = Path(relocation_root).resolve()
+    base = Path(record_root).resolve()
+    target = Path(path).resolve()
+    try:
+        base.relative_to(sealed_root)
+        target.relative_to(sealed_root)
+    except ValueError as error:
+        raise FoldFusedInvariantError(
+            "relocatable replay path escaped the sealed run root"
+        ) from error
+    value = os.path.relpath(target, start=base)
+    if Path(value).is_absolute() or (base / value).resolve() != target:
+        raise FoldFusedInvariantError(
+            "relocatable replay path failed to round-trip"
+        )
+    return value
+
+
 def _resolve_record_path(root: Path, value: Any) -> Path:
     path = Path(str(value or ""))
     if not path.is_absolute():
@@ -513,21 +545,37 @@ def heldout_master_record_v12(
     artifact: HeldoutMasterArtifact,
     *,
     root: Path | None = None,
+    relocation_root: Path | None = None,
 ) -> dict[str, Any]:
     """Serialize every field needed for strict replay reconstruction."""
 
     base = Path(root).resolve() if root is not None else None
     path = Path(artifact.path).resolve()
     manifest_path = Path(artifact.manifest_path).resolve()
+    if relocation_root is not None and base is None:
+        raise FoldFusedInvariantError(
+            "relocatable heldout record requires its manifest root"
+        )
+    encode = (
+        (
+            lambda value: _relocatable_internal_path_v12(
+                value,
+                record_root=base,
+                relocation_root=relocation_root,
+            )
+        )
+        if relocation_root is not None
+        else (
+            lambda value: (
+                _relative_or_absolute(value, base)
+                if base is not None
+                else str(value)
+            )
+        )
+    )
     return {
-        "path": (
-            _relative_or_absolute(path, base) if base is not None else str(path)
-        ),
-        "manifest_path": (
-            _relative_or_absolute(manifest_path, base)
-            if base is not None
-            else str(manifest_path)
-        ),
+        "path": encode(path),
+        "manifest_path": encode(manifest_path),
         "sha256": artifact.sha256,
         "manifest_sha256": artifact.manifest_sha256,
         "row_count": int(artifact.row_count),
@@ -633,15 +681,34 @@ def load_heldout_master_record_v12(
 
 def fitted_site_model_records_v12(
     models: Mapping[int, FittedSiteModel],
+    *,
+    required_folds: Sequence[int] = TRAIN_FOLDS,
+    root: Path | None = None,
+    relocation_root: Path | None = None,
 ) -> dict[str, dict[str, Any]]:
-    """Serialize three fitted models with recipe and feature-schema seals."""
+    """Serialize the required fitted models with recipe/feature-schema seals.
 
-    if set(models) != set(TRAIN_FOLDS):
-        raise FoldFusedInvariantError("site model record requires outers 2/3/4")
+    The default preserves the v12 three-model contract.  A physical executor
+    may explicitly scope a fold-owned replay actor to its single heldout model.
+    """
+
+    folds = tuple(int(value) for value in required_folds)
+    base = Path(root).resolve() if root is not None else None
+    if relocation_root is not None and base is None:
+        raise FoldFusedInvariantError(
+            "relocatable model records require their manifest root"
+        )
+    if (
+        not folds
+        or len(set(folds)) != len(folds)
+        or set(folds) - set(TRAIN_FOLDS)
+        or set(models) != set(folds)
+    ):
+        raise FoldFusedInvariantError("site model record fold scope drifted")
     output: dict[str, dict[str, Any]] = {}
     recipes: set[str] = set()
     feature_schemas: set[str] = set()
-    for outer in TRAIN_FOLDS:
+    for outer in folds:
         model = models[outer]
         path = Path(model.path).resolve()
         feature_schema = _feature_names_sha256_v12(model.feature_names)
@@ -655,9 +722,18 @@ def fitted_site_model_records_v12(
             raise FoldFusedInvariantError("fitted site model identity/hash drift")
         recipes.add(model.recipe_sha256)
         feature_schemas.add(feature_schema)
+        record_path = (
+            _relocatable_internal_path_v12(
+                path,
+                record_root=base,
+                relocation_root=relocation_root,
+            )
+            if relocation_root is not None
+            else str(path)
+        )
         output[str(outer)] = {
             "outer_fold": outer,
-            "path": str(path),
+            "path": record_path,
             "sha256": model.sha256,
             "size_bytes": path.stat().st_size,
             "recipe_sha256": model.recipe_sha256,
@@ -675,16 +751,23 @@ def load_fitted_site_model_records_v12(
     handle_loader: Callable[[Path, int], Any],
     root: Path | None = None,
     verify_hashes: bool = True,
+    required_folds: Sequence[int] = TRAIN_FOLDS,
 ) -> dict[int, FittedSiteModel]:
-    """Strictly reconstruct three models without sharing a live XGBoost object."""
+    """Strictly reconstruct the requested models without sharing handles."""
 
-    if set(records) != {str(value) for value in TRAIN_FOLDS}:
-        raise FoldFusedInvariantError("site replay needs exactly three outer models")
+    folds = tuple(int(value) for value in required_folds)
+    if (
+        not folds
+        or len(set(folds)) != len(folds)
+        or set(folds) - set(TRAIN_FOLDS)
+        or set(records) != {str(value) for value in folds}
+    ):
+        raise FoldFusedInvariantError("site replay model fold scope drifted")
     base = Path(root).resolve() if root is not None else Path.cwd().resolve()
     output: dict[int, FittedSiteModel] = {}
     recipes: set[str] = set()
     schemas: set[str] = set()
-    for outer in TRAIN_FOLDS:
+    for outer in folds:
         record = records[str(outer)]
         if not isinstance(record, Mapping) or int(record.get("outer_fold", -1)) != outer:
             raise FoldFusedInvariantError("invalid outer site model record")
@@ -775,17 +858,34 @@ class ShardedRunArtifactV12:
 class SceneIRShardSourceV12:
     """Expose one :class:`ShardSpecV12` through the existing SceneSource API."""
 
-    def __init__(self, cache: Any, spec: ShardSpecV12) -> None:
+    def __init__(
+        self,
+        cache: Any,
+        spec: ShardSpecV12,
+        *,
+        row_group_observer: Any | None = None,
+    ) -> None:
         if not callable(getattr(cache, "iter_selected_scenes", None)):
             raise TypeError("sharded source requires SceneIR selective ranges")
+        if row_group_observer is not None and not callable(row_group_observer):
+            raise TypeError("SceneIR row-group observer must be callable")
         self.cache = cache
         self.spec = spec
+        self.row_group_observer = row_group_observer
 
     def iter_scenes(self, *, folds: tuple[int, ...]) -> Iterable[SceneRecord]:
         if tuple(folds) != TRAIN_FOLDS:
             raise FoldFusedInvariantError("sharded SceneIR source refuses fold 0/1")
         observed: list[tuple[str, int]] = []
-        for scene in self.cache.iter_selected_scenes(self.spec.query_ids):
+        scenes = (
+            self.cache.iter_selected_scenes(self.spec.query_ids)
+            if self.row_group_observer is None
+            else self.cache.iter_selected_scenes(
+                self.spec.query_ids,
+                row_group_observer=self.row_group_observer,
+            )
+        )
+        for scene in scenes:
             if int(scene.fold) not in _ALLOWED_FOLDS:
                 raise FoldFusedInvariantError("SceneIR shard opened fold 0/1")
             observed.append((str(scene.query_id), int(scene.fold)))
@@ -1953,13 +2053,29 @@ def replay_shard_v12(
     caps: ExecutionCaps = ExecutionCaps(),
     payload_factory: Callable[[tuple[Mapping[str, Any], ...]], Any] | None = None,
     output_store_factory: Callable[[Path], Any] = ParquetOOFOutputStore,
+    fold_owned_model_scope: bool = False,
+    relocation_root: Path | None = None,
 ) -> ShardReplayArtifactV12:
     """Replay one label-blind heldout shard with its exact outer models."""
 
     lineage_value = _validate_lineage(lineage)
-    if not _valid_sha256(build_manifest_sha256) or set(models) != set(TRAIN_FOLDS):
+    required_model_folds = (
+        tuple(spec.folds) if fold_owned_model_scope else tuple(TRAIN_FOLDS)
+    )
+    if (
+        not _valid_sha256(build_manifest_sha256)
+        or set(models) != set(required_model_folds)
+    ):
         raise FoldFusedInvariantError("replay lacks sealed build/three site models")
     output = Path(output_dir).resolve()
+    if relocation_root is not None:
+        sealed_root = Path(relocation_root).resolve()
+        try:
+            output.relative_to(sealed_root)
+        except ValueError as error:
+            raise FoldFusedInvariantError(
+                "relocatable replay output escaped the sealed run root"
+            ) from error
     if output.exists():
         raise FileExistsError(output)
     output.mkdir(parents=True)
@@ -2028,7 +2144,7 @@ def replay_shard_v12(
         "outcomes": outputs["outcomes"].sha256,
         "heldout_spool": heldout.sha256,
         "model_by_outer": {
-            str(outer): models[outer].sha256 for outer in TRAIN_FOLDS
+            str(outer): models[outer].sha256 for outer in required_model_folds
         },
     }
     replay_identity = {
@@ -2055,8 +2171,17 @@ def replay_shard_v12(
         "positive_injection": False,
         "query_count": len(outcomes),
         "query_sequence_sha256": _sequence_sha256(observed),
-        "heldout_master": heldout_master_record_v12(heldout),
-        "model_by_outer": fitted_site_model_records_v12(models),
+        "heldout_master": heldout_master_record_v12(
+            heldout,
+            root=output if relocation_root is not None else None,
+            relocation_root=relocation_root,
+        ),
+        "model_by_outer": fitted_site_model_records_v12(
+            models,
+            required_folds=required_model_folds,
+            root=output if relocation_root is not None else None,
+            relocation_root=relocation_root,
+        ),
         "outputs": {
             name: {
                 "path": _relative_or_absolute(record.path, output),
@@ -2161,6 +2286,13 @@ def load_shard_replay_manifest_v12(
     model_records = raw.get("model_by_outer")
     if not isinstance(heldout_raw, Mapping) or not isinstance(model_records, Mapping):
         raise FoldFusedInvariantError("shard replay inputs are not sealed")
+    model_record_folds = {int(value) for value in model_records}
+    if model_record_folds == set(TRAIN_FOLDS):
+        required_model_folds = tuple(TRAIN_FOLDS)
+    elif len(spec.folds) == 1 and model_record_folds == set(spec.folds):
+        required_model_folds = tuple(spec.folds)
+    else:
+        raise FoldFusedInvariantError("shard replay model scope drifted")
     heldout = load_heldout_master_record_v12(
         heldout_raw,
         root=root,
@@ -2171,6 +2303,7 @@ def load_shard_replay_manifest_v12(
         handle_loader=lambda _path, _outer: None,
         root=root,
         verify_hashes=verify_hashes,
+        required_folds=required_model_folds,
     )
     if (
         heldout.query_count != spec.query_count
@@ -2206,7 +2339,7 @@ def load_shard_replay_manifest_v12(
         "outcomes": outputs["outcomes"].sha256,
         "heldout_spool": heldout.sha256,
         "model_by_outer": {
-            str(outer): models[outer].sha256 for outer in TRAIN_FOLDS
+            str(outer): models[outer].sha256 for outer in required_model_folds
         },
     }
     if not isinstance(digests, Mapping) or dict(digests) != expected_digests:

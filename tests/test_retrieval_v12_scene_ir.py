@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from pathlib import Path
 
 import pyarrow as pa
@@ -244,6 +245,45 @@ def test_scene_ir_selective_reader_returns_only_sealed_ranges_label_blind(
                 ["q2"], columns=["query_id", "ground_truth_siret"]
             )
         )
+
+
+def test_scene_ir_selective_observer_reports_only_real_row_group_cache_misses(
+    tmp_path: Path,
+) -> None:
+    source, source_manifest, rows = _source(tmp_path)
+    build = build_scene_ir_cache(
+        source=source,
+        source_manifest=source_manifest,
+        output_root=tmp_path / "external-cache",
+        batch_size=2,
+    )
+    events = []
+    scenes = list(
+        SceneIRCache(build.output_dir).iter_selected_scenes(
+            ["q3", "q4"], row_group_observer=events.append
+        )
+    )
+    assert [scene.query_id for scene in scenes] == ["q3", "q4"]
+    # q3 and the first half of q4 share row group 1.  It is decoded once;
+    # q4 then opens row group 2.  The observer is not a range reconstruction.
+    assert [event.source_row_group for event in events] == [1, 2]
+    assert [(event.row_start, event.row_stop, event.row_count) for event in events] == [
+        (2, 4, 2),
+        (4, 5, 1),
+    ]
+    columns = tuple(production_projection(pa.Table.from_pylist(rows).column_names))
+    projection_sha = hashlib.sha256(
+        json.dumps(
+            list(columns),
+            ensure_ascii=False,
+            sort_keys=True,
+            separators=(",", ":"),
+            allow_nan=False,
+        ).encode("utf-8")
+    ).hexdigest()
+    assert all(event.projected_columns == columns for event in events)
+    assert all(event.projection_sha256 == projection_sha for event in events)
+    assert all(event.projected_compressed_bytes > 0 for event in events)
 
 
 def test_scene_ir_refuses_forbidden_projection_and_workspace_output(

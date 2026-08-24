@@ -30,6 +30,13 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from .retrieval_fold_fused_oof_v12 import sha256_file
+from .retrieval_fold_fused_row_group_ledger_v13 import (
+    ROW_GROUP_LEDGER_RECORD_KEYS,
+    ActualRowGroupLedgerSetV13,
+    RowGroupLedgerInvariantErrorV13,
+    load_actor_row_group_ledger_records_v13,
+    validate_actual_row_group_ledger_set_v13,
+)
 from .retrieval_top100_cascade_v12 import production_projection
 
 
@@ -49,6 +56,24 @@ CANONICAL_DATASET_KEYS = (
     "train_outer4",
     "heldout_spool",
     "prerank500_compact",
+    "top100_full",
+    "outcomes",
+)
+REQUIRED_LOGICAL_DIGEST_KEYS = (
+    "heldout_spool",
+    "train_outer2",
+    "train_outer3",
+    "train_outer4",
+    "query_groups_outer2",
+    "query_groups_outer3",
+    "query_groups_outer4",
+    "model_outer2",
+    "model_outer3",
+    "model_outer4",
+    "prefit_bridge_logical",
+    "site_feature_values",
+    "prerank500_common",
+    "prerank500_full_payload",
     "top100_full",
     "outcomes",
 )
@@ -482,6 +507,13 @@ def _baseline_from_config(
     )
     if (
         benchmark.get("schema_version") != V12_BENCHMARK_SCHEMA_VERSION
+        or benchmark.get("status") != "STOP_NO_PARALLEL_WORKER_AUTHORIZED"
+        or benchmark.get("selected_worker_count") != 0
+        or benchmark.get("query_count") != 512
+        or benchmark.get("folds") != list(ALLOWED_FOLDS)
+        or benchmark.get("fold0_opened") is not False
+        or benchmark.get("fold1_opened") is not False
+        or benchmark.get("positive_injection") is not False
         or frozen.get("verdict") != "STOP_NO_PARALLEL_WORKER_AUTHORIZED"
         or frozen.get("reinterpretation_forbidden") is not True
         or frozen.get("replacement_forbidden") is not True
@@ -511,6 +543,8 @@ def _baseline_from_config(
         w1.get("schema_version") != V12_SHARDED_RUN_SCHEMA_VERSION
         or w1.get("run_kind") != "PHYSICAL_BENCHMARK_MINIATURE"
         or w1.get("status") != "EXECUTED_NO_READY_CLAIM"
+        or w1.get("query_count") != 512
+        or w1.get("folds") != list(ALLOWED_FOLDS)
         or w1.get("worker_count") != 1
         or w1.get("shard_count") != 1
         or w1.get("fold0_opened") is not False
@@ -908,6 +942,7 @@ _W3_KEYS = {
     "positive_injection",
     "source_candidate",
     "source_specs",
+    "source_row_group_ledgers",
     "canonical_datasets",
     "artifact_inventory",
     "materialized_output_bytes",
@@ -973,6 +1008,8 @@ def _validate_w3_tree(
     inventory_by_path: dict[str, Mapping[str, Any]] = {}
     inode_sizes: dict[tuple[int, int], int] = {}
     root_stat = path.stat()
+    if int(root_stat.st_nlink) != 1:
+        raise LogicalIOInvariantError("W3 root manifest is a forbidden hardlink")
     root_inode = (int(root_stat.st_dev), int(root_stat.st_ino))
     for position, record in enumerate(inventory):
         if (
@@ -1032,7 +1069,13 @@ def _load_w3(
     expected_sha256: str,
     *,
     baseline: _Baseline,
-) -> tuple[Mapping[str, Any], tuple[Mapping[str, Any], ...], tuple[tuple[tuple[int, int], ...], ...], int]:
+) -> tuple[
+    Mapping[str, Any],
+    tuple[Mapping[str, Any], ...],
+    tuple[tuple[tuple[int, int], ...], ...],
+    int,
+    ActualRowGroupLedgerSetV13,
+]:
     manifest_path = _require_file(path, expected_sha256, label="fresh v13 W3 manifest")
     raw = _read_json(manifest_path, label="fresh v13 W3 manifest")
     source = raw.get("source_candidate")
@@ -1056,7 +1099,7 @@ def _load_w3(
         or not isinstance(specs_raw, list)
         or len(specs_raw) != 3
         or not isinstance(digests, Mapping)
-        or not digests
+        or set(digests) != set(REQUIRED_LOGICAL_DIGEST_KEYS)
         or any(not isinstance(key, str) or not key or not _valid_sha256(value) for key, value in digests.items())
     ):
         raise LogicalIOInvariantError("fresh v13 W3 wrapper contract drifted")
@@ -1097,7 +1140,75 @@ def _load_w3(
             "fresh W3 source ordinal sequence differs from immutable W1"
         )
     actual_total, _ = _validate_w3_tree(manifest_path, raw)
-    return raw, tuple(specs), tuple(ranges), actual_total
+    ledger_records = raw.get("source_row_group_ledgers")
+    try:
+        artifacts = load_actor_row_group_ledger_records_v13(
+            ledger_records, root=manifest_path.parent
+        )
+        inventory_by_path = {
+            str(value["path"]): value for value in raw["artifact_inventory"]
+        }
+        for record in ledger_records:
+            if set(record) != set(ROW_GROUP_LEDGER_RECORD_KEYS):
+                raise RowGroupLedgerInvariantErrorV13(
+                    "W3 actual-read wrapper record fields drifted"
+                )
+            manifest_inventory = inventory_by_path.get(
+                str(record["manifest_path"])
+            )
+            parquet_inventory = inventory_by_path.get(
+                str(record["parquet_path"])
+            )
+            if (
+                manifest_inventory is None
+                or manifest_inventory.get("role")
+                != "actual_row_group_ledger_manifest"
+                or manifest_inventory.get("family") != "source_read_ledgers"
+                or manifest_inventory.get("sha256")
+                != record["manifest_sha256"]
+                or manifest_inventory.get("size_bytes")
+                != record["manifest_size_bytes"]
+                or parquet_inventory is None
+                or parquet_inventory.get("role")
+                != "actual_row_group_ledger_rows"
+                or parquet_inventory.get("family") != "source_read_ledgers"
+                or parquet_inventory.get("sha256")
+                != record["parquet_sha256"]
+                or parquet_inventory.get("size_bytes")
+                != record["parquet_size_bytes"]
+            ):
+                raise RowGroupLedgerInvariantErrorV13(
+                    "W3 actual-read ledger is not inventory-bound"
+                )
+        lineages = {
+            artifact.execution_lineage_sha256 for artifact in artifacts
+        }
+        if len(lineages) != 1:
+            raise RowGroupLedgerInvariantErrorV13(
+                "W3 actual-read ledgers mix execution lineages"
+            )
+        actual_reads = validate_actual_row_group_ledger_set_v13(
+            [
+                (artifact.manifest_path, artifact.manifest_sha256)
+                for artifact in artifacts
+            ],
+            expected_specs=specs,
+            source_path=baseline.source_path,
+            expected_source_candidate_sha256=baseline.source_sha256,
+            expected_projection_columns=baseline.projection_columns,
+            expected_projection_sha256=baseline.projection_sha256,
+            expected_sharded_execution_plan_sha256=baseline.plan_sha256,
+            expected_execution_lineage=artifacts[0].execution_lineage,
+            expected_unique_row_groups=baseline.expected_extent_count,
+            expected_logical_compressed_bytes=baseline.expected_logical_bytes,
+            verify_source_hash=False,
+            enforce_gate_totals=False,
+        )
+    except (KeyError, TypeError, RowGroupLedgerInvariantErrorV13) as error:
+        raise LogicalIOInvariantError(
+            "fresh W3 actual row-group ledgers drifted"
+        ) from error
+    return raw, tuple(specs), tuple(ranges), actual_total, actual_reads
 
 
 def compare_w3_to_immutable_w1_io_v13(
@@ -1117,7 +1228,7 @@ def compare_w3_to_immutable_w1_io_v13(
         verify_source_hash=verify_source_hash,
     )
     w3_path = _require_file(w3_run_manifest_path, w3_run_manifest_sha256, label="fresh v13 W3 manifest")
-    w3, specs, ranges_by_actor, materialized_w3 = _load_w3(
+    w3, specs, ranges_by_actor, materialized_w3, actual_reads = _load_w3(
         w3_path, w3_run_manifest_sha256, baseline=baseline
     )
     extents, projection, projection_sha, rows, metadata_sha = _projected_extents(
@@ -1133,9 +1244,15 @@ def compare_w3_to_immutable_w1_io_v13(
     actor_groups: list[frozenset[int]] = []
     w3_rows: list[dict[str, Any]] = []
     per_actor: list[dict[str, Any]] = []
-    for ordinal, (spec, ranges) in enumerate(zip(specs, ranges_by_actor, strict=True)):
-        touched = _touch(ranges, extents)
-        groups = frozenset(extent.ordinal for extent in touched)
+    extents_by_ordinal = {extent.ordinal: extent for extent in extents}
+    for ordinal, (spec, artifact) in enumerate(
+        zip(specs, actual_reads.artifacts, strict=True)
+    ):
+        groups = frozenset(artifact.row_group_ordinals)
+        touched = tuple(
+            extents_by_ordinal[group]
+            for group in artifact.row_group_ordinals
+        )
         actor_groups.append(groups)
         logical_bytes = sum(extent.projected_compressed_bytes for extent in touched)
         per_actor.append(
@@ -1173,6 +1290,8 @@ def compare_w3_to_immutable_w1_io_v13(
     logical_ratio = logical_w3 / logical_w1
     materialized_ratio = materialized_w3 / baseline.materialized_output_bytes
     checks = {
+        "actual_row_group_ledgers_present_and_valid": True,
+        "actual_cache_miss_order_sealed": True,
         "source_sha256_identical": True,
         "projection_columns_identical": True,
         "projection_sha256_identical": True,
@@ -1239,11 +1358,20 @@ def compare_w3_to_immutable_w1_io_v13(
             "extent_set_sha256": _sha256_json(sorted(w1_groups)),
         },
         "w3": {
+            "actual_row_group_ledger_manifest_sha256": [
+                artifact.manifest_sha256
+                for artifact in actual_reads.artifacts
+            ],
+            "actual_row_group_union_sha256": actual_reads.union_sha256,
             "per_actor": per_actor,
             "per_actor_unique_extent_count_sum": w3_reference_count,
             "union_unique_extent_count": len(w3_union),
             "inter_actor_duplicate_extent_references": w3_reference_count - len(w3_union),
             "logical_compressed_bytes": logical_w3,
+            "declared_materialized_output_bytes": int(
+                w3["materialized_output_bytes"]
+            ),
+            "actual_tree_materialized_bytes": materialized_w3,
             "materialized_output_bytes": materialized_w3,
             "extent_set_sha256": _sha256_json(sorted(w3_union)),
             "logical_digests": dict(w3["logical_digests"]),
@@ -1357,6 +1485,7 @@ __all__ = [
     "ImmutableW1IOProjectionV13",
     "LogicalIOGateArtifactV13",
     "LogicalIOInvariantError",
+    "REQUIRED_LOGICAL_DIGEST_KEYS",
     "W1_PROJECTION_SCHEMA_VERSION",
     "W3_RUN_SCHEMA_VERSION",
     "build_immutable_w1_io_projection_v13",

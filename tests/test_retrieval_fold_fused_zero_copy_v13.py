@@ -46,6 +46,7 @@ from src.xgb_matcher.retrieval_fold_fused_fragment_outputs_v13 import (
     replay_fragment_v13,
     seal_compact_replay_dataset_v13,
 )
+from src.xgb_matcher import retrieval_fold_fused_fragment_outputs_v13 as compact_outputs
 from src.xgb_matcher.retrieval_fold_fused_oof_v12 import (
     CompactTrainBatch,
     ExecutionCaps,
@@ -216,6 +217,29 @@ def test_train_reader_accepts_buffered_multiquery_row_groups(tmp_path: Path) -> 
     ) == source_view
 
 
+def test_compact_output_writer_uses_frozen_parquet_encoding(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    calls: list[dict[str, object]] = []
+
+    class Writer:
+        def __init__(self, _path: Path, _schema: pa.Schema, **kwargs: object) -> None:
+            calls.append(kwargs)
+
+    monkeypatch.setattr(compact_outputs.pq, "ParquetWriter", Writer)
+    compact_outputs.BufferedCompactOOFOutputStoreV13(tmp_path / "compact")
+
+    assert calls == [
+        {
+            "compression": "zstd",
+            "compression_level": 3,
+            "use_dictionary": True,
+            "write_statistics": True,
+            "data_page_version": "1.0",
+        }
+    ] * 3
+
+
 def test_build_shard_injects_buffered_train_sink_without_science_change(
     tmp_path: Path,
 ) -> None:
@@ -304,10 +328,37 @@ def test_compact_replay_matches_v12_and_natural_join_rehydrates(
     models = fit_site_models_sequential_v12(
         _Backend(tmp_path / "models"), merged_train
     )
+    first_spec = w3_specs[0]
+    first_build = w3[0]
+    truth = {query_id: value.human_siret for query_id, value in labels.items()}
+    replay_common = {
+        "heldout": first_build.heldout_master,
+        "labels": _Ledger(labels, []),
+        "contexts": _Contexts(truth, []),
+        "model_backend": _Backend(tmp_path / "model_scope_score"),
+        "selector": _Selector(),
+        "lineage": _lineage(),
+        "build_manifest_sha256": first_build.manifest_sha256,
+        "heldout_dataset_merkle_root": build_dataset.heldout_logical_merkle_root,
+        "caps": ExecutionCaps(fit_sample=4),
+    }
+    with pytest.raises(FoldFusedInvariantError, match="model|fold"):
+        replay_fragment_v13(
+            first_spec,
+            models={2: models[2], 3: models[3]},
+            output_dir=tmp_path / "extra_model_replay",
+            **replay_common,
+        )
+    with pytest.raises(FoldFusedInvariantError, match="model|fold"):
+        replay_fragment_v13(
+            first_spec,
+            models={3: models[3]},
+            output_dir=tmp_path / "wrong_model_replay",
+            **replay_common,
+        )
     baseline = _replay(
         w1_spec, w1, tmp_path / "baseline_replay", labels, models
     )
-    truth = {query_id: value.human_siret for query_id, value in labels.items()}
     compact = tuple(
         replay_fragment_v13(
             spec,
@@ -315,7 +366,7 @@ def test_compact_replay_matches_v12_and_natural_join_rehydrates(
             labels=_Ledger(labels, []),
             contexts=_Contexts(truth, []),
             model_backend=_Backend(tmp_path / f"score_{ordinal}"),
-            models=models,
+            models={spec.folds[0]: models[spec.folds[0]]},
             selector=_Selector(),
             output_dir=tmp_path / f"compact_replay_{ordinal}",
             lineage=_lineage(),
@@ -430,6 +481,85 @@ def test_compact_replay_matches_v12_and_natural_join_rehydrates(
     forged_path.write_text(json.dumps(forged), encoding="utf-8")
     with pytest.raises(FoldFusedInvariantError, match="exactly"):
         load_zero_copy_canonical_run_v13(forged_path)
+
+
+def test_complete_fragment_tree_reopens_after_atomic_root_rename(
+    tmp_path: Path,
+) -> None:
+    stage = tmp_path / ".national-stage"
+    _, _, labels, _w1_spec, _w1, w3_specs, w3 = _build_w1_w3(stage)
+    build_dataset = seal_build_fragment_dataset_v13(
+        w3,
+        stage / "build_dataset",
+        relocation_root=stage,
+    )
+    train = merge_training_shards_v12(
+        w3, stage / "train_for_site_models"
+    )
+    models = fit_site_models_sequential_v12(
+        _Backend(stage / "models"), train
+    )
+    truth = {
+        query_id: value.human_siret for query_id, value in labels.items()
+    }
+    compact = tuple(
+        replay_fragment_v13(
+            spec,
+            heldout=build.heldout_master,
+            labels=_Ledger(labels, []),
+            contexts=_Contexts(truth, []),
+            model_backend=_Backend(stage / f"score_{ordinal}"),
+            models={spec.folds[0]: models[spec.folds[0]]},
+            selector=_Selector(),
+            output_dir=stage / "replay_workers" / f"fold{spec.folds[0]}",
+            lineage=_lineage(),
+            build_manifest_sha256=build.manifest_sha256,
+            heldout_dataset_merkle_root=(
+                build_dataset.heldout_logical_merkle_root
+            ),
+            caps=ExecutionCaps(fit_sample=4),
+            row_group_target=500,
+            relocation_root=stage,
+        )
+        for ordinal, (spec, build) in enumerate(
+            zip(w3_specs, w3, strict=True)
+        )
+    )
+    replay_dataset = seal_compact_replay_dataset_v13(
+        compact,
+        stage / "replay_dataset",
+        relocation_root=stage,
+    )
+    canonical = seal_zero_copy_canonical_run_v13(
+        build_dataset,
+        replay_dataset,
+        models,
+        stage / "canonical",
+        relocation_root=stage,
+    )
+    expected = (
+        build_dataset.dataset_id,
+        replay_dataset.dataset_id,
+        canonical.run_id,
+    )
+
+    promoted = tmp_path / "national"
+    stage.rename(promoted)
+    loaded_build = load_build_fragment_dataset_v13(
+        promoted / "build_dataset" / "manifest.json"
+    )
+    loaded_replay = load_compact_replay_dataset_v13(
+        promoted / "replay_dataset" / "manifest.json"
+    )
+    loaded_canonical = load_zero_copy_canonical_run_v13(
+        promoted / "canonical" / "manifest.json"
+    )
+    assert (
+        loaded_build.dataset_id,
+        loaded_replay.dataset_id,
+        loaded_canonical.run_id,
+    ) == expected
+    assert not stage.exists()
 
 
 def test_manifest_tamper_order_and_fragment_hash_fail_closed(tmp_path: Path) -> None:
