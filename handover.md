@@ -2,6 +2,53 @@
 
 ## Etat des lieux
 
+### Retrieval all-human v12 — exécution fold-fused shardée prête à mesurer
+
+Le chemin OOF v12 a été remplacé physiquement, sans modifier sa recette
+scientifique, par un compilateur fold-fused réparti sur les trois blocs
+contigus naturels folds 2/3/4. Une scène est compilée une seule fois, les trois
+contextes nested OOF sont scorés par matrices, les expansions officielles sont
+mutualisées puis masquées par contexte, et les trois LambdaMART site restent
+entraînés séquentiellement. Le replay heldout réutilise un spool scellé : il ne
+rouvre ni SceneIR ni les sidecars. Les caps Master 2 000, PreRank 500 et produit
+100, les 319 features, les modèles, l'ordre des groupes et tous les
+dénominateurs sont inchangés.
+
+L'exécution nationale conserve toujours trois shards fixes ; le benchmark
+réel sur les 512 requêtes scellées autorise au maximum trois workers, avec
+fallback déterministe à deux selon la RAM et les swapouts du Mac. Un worker
+unique ne peut plus être présenté comme une autorisation. La preuve physique
+relie directement le nouveau moteur au PREFIT historique sur les scores
+parent, les Master, les 319 features et les lignes de fit, puis exige une
+parité byte-for-byte entre W1 et W3/W2. Le certifieur rouvre les manifests des
+trois workers build et replay, recalcule les gates depuis les outcomes et
+refuse toute exécution partielle, tout manifeste forgé ou toute ouverture des
+folds 0/1.
+
+Les résultats publient désormais, sans aucun filtrage, Master@2000,
+PreRank@500, Recall@100 exact et opérationnel ainsi que la taxonomie des pertes
+pour actif/fermé, origine CRM, SIREN vu/inédit, site connu/nouveau, mégapole,
+qualification, type de label, V2 et V3. Toute métadonnée absente apparaît dans
+un bucket `UNKNOWN` et reste dans le dénominateur global.
+
+Validation de code : 116 tests `retrieval_fold_fused_*` passent ; compilation
+Python, les deux CLI et `git diff --check` passent. Aucun OOF national, aucun
+Recall et aucune latence nouvelle ne sont encore annoncés ; fold 0 reste
+diagnostique et fold 1 fermé.
+
+*(moteur shardé exact, benchmark physique, resource guard, certifieur et tests :
+commit `ca4c4f3`)*
+
+Prochaine exécution figée :
+
+1. lancer le benchmark physique réel sur les 512 requêtes scellées ;
+2. vérifier la parité PREFIT, W1/W3 puis W1/W2 si nécessaire, le stockage et
+   les ressources ;
+3. seulement si une autorisation W3 ou W2 est publiée, lancer l'OOF national
+   folds 2/3/4 ;
+4. publier les recalls globaux et segmentés, puis le POSTFIT et le profil
+   runtime avant tout verdict ou toute demande d'ouverture de fold 1.
+
 ### Retrieval all-human v12 top100-first — implémentation prête, non exécutée
 
 La trajectoire active est désormais v12. Elle ne retire aucun dossier humain
