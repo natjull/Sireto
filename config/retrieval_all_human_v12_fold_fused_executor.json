@@ -1,0 +1,56 @@
+{
+  "schema_version": "sireto-retrieval-v12-fold-fused-executor-1",
+  "status": "PREREGISTERED_NOT_EXECUTED",
+  "engine_id": "FOLD_FUSED_CROSSFIT_COMPILER_V12_1",
+  "scientific_config_path": "config/retrieval_all_human_v12.json",
+  "scientific_config_sha256": "a1471e2678d0d5803e9af2bc414e9088a50411b10ddbca4eb74ca25cc3aae957",
+  "scientific_contract_path": "docs/retrieval_all_human_v12_contract.md",
+  "scientific_contract_sha256": "329b46287f1bc6dce361ba9147887e55eae8437d72c9e0b64488417f5d39e789",
+  "execution_addendum_path": "docs/retrieval_all_human_v12_fold_fused_execution_addendum.md",
+  "logical_recipe_changes": false,
+  "source_folds": [2, 3, 4],
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "scene_ir": {
+    "label_blind": true,
+    "content_addressed": true,
+    "format": "ARROW_IPC_ZSTD",
+    "system_disk_allowed": false
+  },
+  "parent_scoring": {
+    "feature_dtype": "float32",
+    "prediction_mode": "BATCH_OR_INPLACE_PREDICT",
+    "maximum_rows_per_prediction_block": 262144,
+    "singleton_batch_scores_must_be_bit_identical": true,
+    "post_expansion_rescore": false
+  },
+  "official_site_lookup": {
+    "evaluation_mode": "ONE_BATCHED_PARENT_LOOKUP_PER_QUERY_THEN_CONTEXT_MASK",
+    "serving_mode": "MMAP_SIREN_TO_SITE_OFFSETS",
+    "context_isolation_required": true,
+    "reader_parity_required": true
+  },
+  "fit_materialization": {
+    "maximum_parent_rows_per_query": 128,
+    "maximum_site_rows_per_query_per_training_context": 128,
+    "full_master_statistics_before_sampling": true,
+    "validation_master_sampling": false
+  },
+  "parity_gate": {
+    "query_count": 512,
+    "sample_source": "SEALED_V12_RUNTIME_QUERY_SAMPLE",
+    "parent_scores": "BIT_IDENTICAL",
+    "master_candidates_and_ranks": "BYTE_IDENTICAL",
+    "site_features_float32": "BIT_IDENTICAL",
+    "fit_row_ids_and_order": "BYTE_IDENTICAL",
+    "prerank500": "BYTE_IDENTICAL",
+    "top100": "BYTE_IDENTICAL",
+    "stop_on_any_divergence": true
+  },
+  "resources": {
+    "scratch_root": "/Volumes/CATNAT_DATA",
+    "maximum_temporary_gib": 20,
+    "target_oof_hours_min": 2,
+    "target_oof_hours_max": 4
+  }
+}
