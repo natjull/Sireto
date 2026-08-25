@@ -1,0 +1,47 @@
+{
+  "schema_version": "sireto-master-v15-feasibility-config-1",
+  "policy_id": "master2000-official-parent-rrf-site-rescue-v15",
+  "scope": "MASTER_AT_2000_ONLY_BOUNDED_FEASIBILITY",
+  "folds": [2, 3, 4],
+  "recipe": {
+    "base_prefix": 1750,
+    "rescue_budget": 250,
+    "final_cap": 2000,
+    "backend_parent_limit": 64,
+    "parent_cap": 512,
+    "rrf_k": 60,
+    "site_depth": 16
+  },
+  "cohort": {
+    "all_top1750_misses": 522,
+    "misses_by_fold": {"2": 182, "3": 175, "4": 165},
+    "deterministic_controls": 512,
+    "controls_by_fold": {"2": 171, "3": 171, "4": 170},
+    "control_selection": "LOWEST_SHA256_QUERY_ID_WITHIN_EACH_FOLD"
+  },
+  "gates": {
+    "minimum_rescues_by_fold": {"2": 155, "3": 148, "4": 138},
+    "minimum_projected_master_recall": 0.995,
+    "preserved_controls": 512,
+    "sensitivity_requires_global_and_each_fold": 0.995
+  },
+  "sensitivities": [
+    {"parent_cap": 384, "rescue_budget": 225, "site_depth": 16},
+    {"parent_cap": 512, "rescue_budget": 200, "site_depth": 8}
+  ],
+  "resources": {"maximum_wall_seconds": 2700, "maximum_peak_rss_gib": 14, "maximum_swapout_pages": 0},
+  "authorities": {
+    "raw_union": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/retrieval_all_human_v11/raw_union_train234.parquet", "sha256": "c7d5c9b90bc2da515dbe05bef362331765ddb653f38823b06dd2505caed98d13"},
+    "raw_union_manifest": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/retrieval_all_human_v11/raw_union_train234.parquet.manifest.json", "sha256": "f5e5ac58c3a90da90ac71a8a1abb2fe94dd1dedf3df29375b0021d2fb4987256"},
+    "label_ledger": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet", "sha256": "24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720"},
+    "scene_ir": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v12_scene_ir/7590ca67ffa3dc5c", "manifest_sha256": "67c997399a286343c69efe8516be6a14f36fa19f91732e7bac615f8abcebc191"},
+    "sidecars": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_sidecars_v11/de762d80b7d61d35", "manifest_sha256": "d883cf76e4c935b715570176db2a1275b6e4184bb0554d9c44132fe6c2b98a22"},
+    "official_config": {"path": "config/retrieval_ltr_admission_dossier_v2.json", "sha256": "a4d1c12500b5c1841d0344164a42ea587aa968acb0d985046d0b711b10efb315"},
+    "base_index": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354", "manifest_sha256": "9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e"},
+    "overlay_indices": [
+      {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/official_evidence_overlay_v1/8c2178602fca3a3b", "manifest_sha256": "2f40ed20ddeb8a861c5492c291724e0bcb0a4223c35e91b4fa18c57aa9cc75ab"},
+      {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/official_evidence_overlay_v2/338cd52006a9c30f", "manifest_sha256": "0b17954785d7442623b6dc25909280fcc327367cc393a7c0fe88b383c2d632fb"}
+    ]
+  },
+  "forbidden": ["truth_in_generator", "positive_injection", "posthoc_recipe_change", "fold0", "fold1", "top500", "top100", "site_lambdamart"]
+}
