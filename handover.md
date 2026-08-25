@@ -5901,5 +5901,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   dans le chemin production. Le code et les sidecars v11 restent à livrer dans
   des milestones isolés avant toute exécution OOF.
 
+## Retrieval all-human v14 — 25 août 2026
+
+- Le commit `46f3b05` consigne l'unique exécution OOF nationale v14 sur les
+  23 571 requêtes des folds 2/3/4. Le runner et une seconde réouverture stricte
+  terminent sans divergence; fold0/fold1 restent fermés, aucun positif n'est
+  injecté et les caps 2000/500/100 sont respectés.
+- Master@2000 vaut 22 826/23 571 = 96,8393 %, PreRank@500 vaut
+  22 394/23 571 = 95,0066 % et le Recall@100 SIRET exact vaut
+  **21 974/23 571 = 93,2247 %**, Wilson95 [92,8968 % ; 93,5386 %]. Les trois
+  folds sont compris entre 92,7953 % et 93,6455 %, tous sous le minimum 98,8 %.
+- Les 1 597 pertes sont 525 `SITE_NOT_EXPANDED`, 432
+  `EVICTED_MASTER_TO_500`, 420 `EVICTED_500_TO_100`, 219
+  `PARENT_NOT_RETRIEVED` et une `OFFICIAL_CATALOG_ABSENT`. Le pool Master perd
+  donc déjà 745 vérités : un simple tuning LambdaMART ne peut pas atteindre le
+  gate 99,2 %.
+- Verdict projet **`PIVOT_RECALL_BELOW_GATE`**. Le statut machine reste
+  `EXECUTED_NO_READY_CLAIM`/`NO_READY_DECISION` car POSTFIT et latence ne sont
+  pas évalués, mais ces contrôles ne peuvent pas inverser l'échec Recall. Aucun
+  test final ni modèle aval ne doit être lancé. Rapport complet :
+  `docs/retrieval_all_human_v14_national_oof_results.md`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
