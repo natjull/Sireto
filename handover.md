@@ -5922,5 +5922,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   test final ni modèle aval ne doit être lancé. Rapport complet :
   `docs/retrieval_all_human_v14_national_oof_results.md`.
 
+## Faisabilité Master@2000 v15 — 26 août 2026
+
+- Le commit `87cebc3` préenregistre et implémente un pilote strictement borné
+  au Master@2000 : base v11 top1750, fusion RRF `k=60` de parents officiels,
+  maximum 512 parents, 16 sites par parent, 250 rescues et plafond absolu
+  2 000. Le générateur ne voit que `query_id`/`fold`; labels et évaluation sont
+  physiquement séparés. Les 23 tests ciblés v11/v15/SceneIR/sidecars passent.
+- L'unique pilote sur 522 misses + 512 contrôles termine en 325,736 s, pic RSS
+  3,14 Gio et zéro swapout. Les 512 contrôles restent présents, mais seulement
+  98 misses sont récupérées (31/32/35 par fold), soit un Master projeté de
+  **23 147/23 571 = 98,2012 %**, très sous le gate 99,5 %. Les deux
+  sensibilités préenregistrées échouent également.
+- Le bon SIREN parent n'est retrouvé que pour 103/522 misses; le bon SIRET est
+  ensuite émis pour 98/103 de ces parents. Le goulot est donc le retrieval
+  parent. Verdict terminal **`PIVOT_PARENT_RETRIEVAL`** : pas de run national,
+  top500, top100 ou LambdaMART site sous cette recette. Le commit `be0a8c8`
+  scelle le rapport et les hashes des trois artefacts dans
+  `docs/retrieval_all_human_v15_master_feasibility_results.md`.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
