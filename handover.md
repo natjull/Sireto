@@ -2,7 +2,7 @@
 
 ## Etat des lieux
 
-### Retrieval all-human v14 — architecture rapide gelée, essai unique non lancé
+### Retrieval all-human v14 — PASS physique, national autorisé non lancé
 
 Le commit `e53f4ce` livre une révision physique distincte qui conserve
 strictement la science v12 : mêmes sources, 512 requêtes, folds 2/3/4,
@@ -34,11 +34,22 @@ et implémentation v14
 `866a8d6e7b79c20a40a078d53e3fadd6eea28cf99903847fb0db89268177c6eb`
 pour 16 fichiers.
 
-Aucun output, projection canonique, stage, marqueur, benchmark v14,
-autorisation ou OOF national v14 n'a été créé. La prochaine action est donc
-une décision utilisateur explicite : autoriser ou non l'unique W3 frais de
-512 requêtes. Seul un `PASS_V14_PHYSICAL_BENCHMARK` pourra publier
-l'autorisation nationale; tout échec produit un `STOP` sans retry automatique.
+L'unique W3 v14 a ensuite été explicitement autorisé et conclut
+**`PASS_V14_PHYSICAL_BENCHMARK`**. Le temps mesuré vaut 739,521 s
+(12 min 19,5 s), contre 1 918,988 s pour W1, soit 2,5949x plus rapide. Le pic
+RAM machine vaut 11,941 Gio, le swapout 0, la projection de stockage national
+6,694 Gio et les 368 row-groups sont disjoints avec une amplification logique
+de 1,0. Les 16 racines W1/W3 et la réhydratation indépendante sont exactes;
+les neuf gates passent.
+
+Le commit `41fbffa` consigne le rapport complet et les autorités publiées. Le
+manifeste benchmark a le SHA
+`d3e05b59f42aa534803573ac8423232d4b6231f4ccb60b96df063aee1fd90774`.
+L'autorisation nationale, rouverte par le loader strict, a le SHA
+`0684d350afa717a74644647f7ce7e6b43d81943e28e77e5b76d5df0c4539cfe6`
+et le scope `NATIONAL_OOF_FOLDS_2_3_4_V14_ONLY`. Elle ne déclenche aucun run
+automatique. L'OOF national de 23 571 requêtes reste la prochaine décision
+utilisateur distincte; fold 0/1 et les métriques finales restent fermés.
 
 ### Retrieval all-human v13 — exécution physique cache-neutre préenregistrée
 
