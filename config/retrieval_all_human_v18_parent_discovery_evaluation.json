@@ -1,0 +1,86 @@
+{
+  "schema_version": "sireto-parent-discovery-v18-evaluation-config-1",
+  "policy_id": "siret-first-official-parent-discovery-v18-development-evaluation",
+  "scope": "TRUTH_SIDE_DEVELOPMENT_EVALUATION_ONLY",
+  "cohort": {
+    "query_count": 1034,
+    "top1750_misses": 522,
+    "deterministic_controls": 512
+  },
+  "primary_variant": "V18_ALL",
+  "variants": {
+    "V17_BASE": ["v17_union"],
+    "V17_PLUS_LEGACY_SITE_POOL": ["v17_union", "legacy_site_pool"],
+    "V17_PLUS_STRUCTURED_RELATIONS": [
+      "v17_union",
+      "legacy_site_pool",
+      "rne_subject_to_related",
+      "bodacc_asset_transfer",
+      "sirene_economic_continuity"
+    ],
+    "V18_SIRET_NATIVE": [
+      "siret_fielded_name_bm25",
+      "siret_site_name_word",
+      "siret_trade_name_word",
+      "siret_historical_name_word",
+      "siret_supporting_name_word",
+      "siret_address_word",
+      "siret_historical_address_word",
+      "siret_supporting_address_word",
+      "siret_address_char",
+      "siret_current_name_char"
+    ],
+    "V18_ALL": [
+      "v17_union",
+      "legacy_site_pool",
+      "rne_subject_to_related",
+      "bodacc_asset_transfer",
+      "sirene_economic_continuity",
+      "siret_fielded_name_bm25",
+      "siret_site_name_word",
+      "siret_trade_name_word",
+      "siret_historical_name_word",
+      "siret_supporting_name_word",
+      "siret_address_word",
+      "siret_historical_address_word",
+      "siret_supporting_address_word",
+      "siret_address_char",
+      "siret_current_name_char"
+    ]
+  },
+  "gates": {
+    "national_denominator": 23571,
+    "sealed_baseline_master_exact_hits": 23049,
+    "raw_hits_for_master_99_2": 334,
+    "raw_hits_for_master_99_5": 405,
+    "raw_hits_for_master_99_7": 452,
+    "confidence_parent_hits": 464,
+    "confidence_parent_hits_by_fold": {"2": 160, "3": 158, "4": 146},
+    "origins_required": ["REAL_CRM_20260817", "REAL_CRM_HISTORICAL"],
+    "origin_recall_is_diagnostic": true,
+    "fold1_final_test_locked": true,
+    "external_shadow_test_required_for_cross_crm_claim": true
+  },
+  "evaluation_authorities": {
+    "generation_config": {
+      "path": "config/retrieval_all_human_v18_parent_discovery_generation.json",
+      "sha256": "e270a60d520d7c7be7928988382ce91fc8f326c7bc1541a7c53eff0ce1aa80e6"
+    },
+    "cohort_labels": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_cohort/72896b6f70d7c9eb/cohort_labels.parquet",
+      "sha256": "c5de5a1656e2dbe8d82905af70052f460e722e2a08987b4b2367f3d64e11bf90"
+    },
+    "label_ledger": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet",
+      "sha256": "24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720"
+    }
+  },
+  "claims": {
+    "folds_2_3_4_are_development": true,
+    "same_crm_entity_generalization_only": true,
+    "cross_crm_generalization": false,
+    "master_projection_is_oracle_only": true,
+    "parent_selection_is_not_evaluated": true,
+    "exact_and_operational_are_not_substituted": true
+  }
+}

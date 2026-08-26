@@ -1,0 +1,120 @@
+{
+  "schema_version": "sireto-parent-discovery-v18-generation-config-1",
+  "policy_id": "siret-first-official-parent-discovery-v18",
+  "scope": "DEVELOPMENT_RAW_PARENT_UNION_ONLY",
+  "cohort": {
+    "query_count": 1034,
+    "top1750_misses": 522,
+    "deterministic_controls": 512,
+    "queries_sha256": "f9125a7ed7b7c45c18035f675f13c3a75f5261737d86e47f57b44a766997ab48"
+  },
+  "siret_channels": [
+    {"name": "siret_fielded_name_bm25", "backend_channel": "fielded_name_bm25", "limit": 512},
+    {"name": "siret_site_name_word", "backend_channel": "site_name_word", "limit": 512},
+    {"name": "siret_trade_name_word", "backend_channel": "trade_name_word", "limit": 512},
+    {"name": "siret_historical_name_word", "backend_channel": "historical_name_word", "limit": 512},
+    {"name": "siret_supporting_name_word", "backend_channel": "supporting_name_word", "limit": 512},
+    {"name": "siret_address_word", "backend_channel": "address_word", "limit": 512},
+    {"name": "siret_historical_address_word", "backend_channel": "historical_address_word", "limit": 512},
+    {"name": "siret_supporting_address_word", "backend_channel": "supporting_address_word", "limit": 512},
+    {"name": "siret_address_char", "backend_channel": "address_char", "limit": 512},
+    {"name": "siret_current_name_char", "backend_channel": "current_name_char", "limit": 512}
+  ],
+  "recipe": {
+    "legacy_site_pool_parent_projection": "STORED_OFFICIAL_SIREN_FIELD_ONLY",
+    "legacy_site_pool_limit": 2000,
+    "rne_seed_parent_count": 8,
+    "rne_relation_cap": 64,
+    "bodacc_seed_parent_count": 32,
+    "bodacc_relation_cap": 64,
+    "succession_seed_siret_count": 250,
+    "succession_relation_cap": 256,
+    "succession_requires_economic_continuity": true,
+    "parent_selection_cap": null,
+    "site_expansion": false,
+    "rrf": false,
+    "model": null
+  },
+  "resources": {
+    "search_workers": 12,
+    "query_chunk_size": 16,
+    "duckdb_threads": 8,
+    "duckdb_memory_gib": 8,
+    "maximum_wall_seconds": 1800,
+    "maximum_peak_rss_gib": 14,
+    "maximum_swapout_pages": 0
+  },
+  "generation_authorities": {
+    "queries": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_cohort/72896b6f70d7c9eb/queries.parquet",
+      "sha256": "f9125a7ed7b7c45c18035f675f13c3a75f5261737d86e47f57b44a766997ab48"
+    },
+    "scene_ir": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v12_scene_ir/7590ca67ffa3dc5c",
+      "manifest_sha256": "67c997399a286343c69efe8516be6a14f36fa19f91732e7bac615f8abcebc191"
+    },
+    "raw_union": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/retrieval_all_human_v11/raw_union_train234.parquet",
+      "sha256": "c7d5c9b90bc2da515dbe05bef362331765ddb653f38823b06dd2505caed98d13"
+    },
+    "raw_union_manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/experiments/retrieval_all_human_v11/raw_union_train234.parquet.manifest.json",
+      "sha256": "f5e5ac58c3a90da90ac71a8a1abb2fe94dd1dedf3df29375b0021d2fb4987256"
+    },
+    "v17_generation_manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_site_inventory_v17_generation/69ddd52660b41f68/manifest.json",
+      "sha256": "94f0715c37d1b3d8229c667205cac8a3062b85666d1d63d9a399bbfdc119965f"
+    },
+    "v17_parent_presence": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_site_inventory_v17_generation/69ddd52660b41f68/parent_presence.parquet",
+      "sha256": "33eb631e459259d8872046402fbf8eb3e795f12c51c8da8e82bc15d901d0e617"
+    },
+    "v17_parent_candidates": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_site_inventory_v17_generation/69ddd52660b41f68/parent_candidates.parquet",
+      "sha256": "3581045fffcfa72c9b56e8a5b7f0377b5cef63c10dfb412cb0953fde7d6e912b"
+    },
+    "hierarchical_index": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354",
+      "manifest_sha256": "9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e"
+    },
+    "rne_roles": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/rne_legal_entity_roles_v1/legal_entity_roles.parquet",
+      "sha256": "e626cdf17395693411375d41c6848fcf6085d62ce3c66d08cf1388a0d42457b1"
+    },
+    "rne_roles_manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/rne_legal_entity_roles_v1/legal_entity_roles.parquet.manifest.json",
+      "sha256": "18e0499f2d16d7a895f27c4a201bcb216e5498c5eda4cf2e5c47e1a2c430bf49"
+    },
+    "bodacc_relations": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/relations.parquet",
+      "sha256": "3516e4080fbf4332fd8d289c982903ba858219cec4b891c105d1cfb7c9059ab5"
+    },
+    "bodacc_manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json",
+      "sha256": "6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"
+    },
+    "temporal_sources": {
+      "index_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indices/sirene_temporal_v1/506bb98cfdcccfbe",
+      "manifest_sha256": "e460f1dd33c6b8984d8cdf0164c0add02c26cbadef44edd5adfcd75e09390e80",
+      "source_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene_temporal_v1",
+      "expected_file_count": 100
+    }
+  },
+  "forbidden": [
+    "truth_in_generator",
+    "cohort_kind_in_generator",
+    "ground_truth_siret_in_generator",
+    "siret_prefix_as_parent",
+    "positive_injection",
+    "query_specific_rule",
+    "crm_alias_dictionary",
+    "posthoc_channel_change",
+    "parent_selection",
+    "site_expansion",
+    "lambdamart",
+    "fold0",
+    "fold1",
+    "national_run",
+    "external_generalization_claim"
+  ]
+}
