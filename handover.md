@@ -5962,5 +5962,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   linéaire pour 1 034 requêtes. Aucun artefact officiel externe n'est encore
   écrit; l'exécution complète reste derrière le checkpoint ressources.
 
+## Side quest géographique v16 — 26 août 2026
+
+- Le commit `156ae20b` préenregistre et implémente un workbench géographique
+  borné sur la même cohorte v15, sans ouvrir fold0/fold1. Le générateur ne voit
+  que `query_id`/`fold`; les GT et la construction `X/y` restent dans un
+  évaluateur truth-side séparé avec apprentissage XGBoost OOF tournant sur les
+  folds 2/3/4. SIRET, SIREN, query_id et fold sont interdits comme features.
+- La BAN nationale locale du 14 août 2026 est utilisée uniquement pour
+  résoudre l'adresse CRM. Son contrat `score_eligible=false` est propagé :
+  absence BAN et distance ne sont jamais des rejets, la qualité déclarée
+  (certification, source/type de position, similarité de voie) devient une
+  incertitude souple et aucune coordonnée BAN brute n'est persistée. Les X/Y
+  établissements viennent du snapshot SIRENE officiel Lambert-93.
+- Le workbench publie les features des candidats v15, jusqu'à 512 voisins
+  SIRENE par requête et 512 parents distincts. L'évaluation séparée publie
+  exact voisin@250/512, parent oracle@128/512, rangs distance et modèle OOF,
+  rescues nouveaux et segments BAN faible/certifiée, sans filtrer les requêtes
+  BAN non résolues du dénominateur.
+- Les 9 tests ciblés et la compilation passent. Le préflight local d'une
+  requête est `NON_DECISIONAL_PREFLIGHT` : 1,713 s, RSS 0,93 Gio, zéro swapout,
+  1 619 candidats v15 enrichis, 512 voisins et 512 parents. Son manifeste est
+  `/private/tmp/sireto_geo_v16_preflight_20260826_a/manifest.json`, SHA-256
+  `a0afe061af89ddb06520158e379740662f8b8068b936f377c34f14b8361c8b16`.
+  Aucun artefact officiel externe n'est encore écrit; un préflight externe
+  1..16 reste obligatoire avant le pilote complet.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
