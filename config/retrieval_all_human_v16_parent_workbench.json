@@ -1,0 +1,82 @@
+{
+  "schema_version": "sireto-parent-v16-native-workbench-config-1",
+  "policy_id": "native-siren-multichannel-parent-retrieval-v16",
+  "scope": "PARENT_SIREN_ONLY_BOUNDED_WORKBENCH",
+  "folds": [2, 3, 4],
+  "channels": [
+    {"name":"base_legal_exact","backend":"base","family":"BASE","mode":"exact","fields":["legal_names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"base_trade_exact","backend":"base","family":"BASE","mode":"exact","fields":["trade_names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"base_site_exact","backend":"base","family":"BASE","mode":"exact","fields":["site_names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"base_name_word","backend":"base","family":"BASE","mode":"word","fields":["legal_names","trade_names","site_names"],"query_value":"name","limit":128,"weight":1.0},
+    {"name":"base_name_char","backend":"base","family":"BASE","mode":"char","fields":["current_name_ngrams"],"query_value":"name","limit":128,"weight":0.75},
+    {"name":"base_address_exact","backend":"base","family":"BASE","mode":"exact","fields":["addresses_exact"],"query_value":"address","limit":128,"weight":1.0},
+    {"name":"base_address_word","backend":"base","family":"BASE","mode":"word","fields":["addresses"],"query_value":"address","limit":128,"weight":0.75},
+
+    {"name":"rne_overlay_name_exact","backend":"overlay_rne","family":"OFFICIAL_OVERLAY","mode":"exact","fields":["names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"rne_overlay_name_word","backend":"overlay_rne","family":"OFFICIAL_OVERLAY","mode":"word","fields":["names"],"query_value":"name","limit":128,"weight":1.0},
+    {"name":"rne_overlay_name_char","backend":"overlay_rne","family":"OFFICIAL_OVERLAY","mode":"char","fields":["name_ngrams"],"query_value":"name","limit":128,"weight":0.75},
+    {"name":"rne_overlay_address_word","backend":"overlay_rne","family":"OFFICIAL_OVERLAY","mode":"word","fields":["addresses"],"query_value":"address","limit":128,"weight":0.75},
+
+    {"name":"official_overlay_name_exact","backend":"overlay_official","family":"OFFICIAL_OVERLAY","mode":"exact","fields":["names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"official_overlay_name_word","backend":"overlay_official","family":"OFFICIAL_OVERLAY","mode":"word","fields":["names"],"query_value":"name","limit":128,"weight":1.0},
+    {"name":"official_overlay_name_char","backend":"overlay_official","family":"OFFICIAL_OVERLAY","mode":"char","fields":["name_ngrams"],"query_value":"name","limit":128,"weight":0.75},
+    {"name":"official_overlay_address_word","backend":"overlay_official","family":"OFFICIAL_OVERLAY","mode":"word","fields":["addresses"],"query_value":"address","limit":128,"weight":0.75},
+
+    {"name":"temporal_name_exact","backend":"temporal","family":"TEMPORAL","mode":"exact","fields":["names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"temporal_name_word","backend":"temporal","family":"TEMPORAL","mode":"word","fields":["names"],"query_value":"name","limit":128,"weight":1.0},
+    {"name":"temporal_name_char","backend":"temporal","family":"TEMPORAL","mode":"char","fields":["name_ngrams"],"query_value":"name","limit":128,"weight":0.75},
+
+    {"name":"role_name_exact","backend":"roles","family":"LEGAL_ENTITY_ROLE","mode":"exact","fields":["names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"role_name_word","backend":"roles","family":"LEGAL_ENTITY_ROLE","mode":"word","fields":["names"],"query_value":"name","limit":128,"weight":1.0},
+    {"name":"role_name_char","backend":"roles","family":"LEGAL_ENTITY_ROLE","mode":"char","fields":["name_ngrams"],"query_value":"name","limit":128,"weight":0.75},
+
+    {"name":"sector_name_exact","backend":"sector","family":"SECTOR","mode":"exact","fields":["names_exact"],"query_value":"name","limit":128,"weight":1.5},
+    {"name":"sector_name_word","backend":"sector","family":"SECTOR","mode":"word","fields":["names"],"query_value":"name","limit":128,"weight":1.0},
+    {"name":"sector_name_char","backend":"sector","family":"SECTOR","mode":"char","fields":["name_ngrams"],"query_value":"name","limit":128,"weight":0.75},
+    {"name":"sector_address_exact","backend":"sector","family":"SECTOR","mode":"exact","fields":["addresses_exact"],"query_value":"address","limit":128,"weight":1.0},
+    {"name":"sector_address_word","backend":"sector","family":"SECTOR","mode":"word","fields":["addresses"],"query_value":"address","limit":128,"weight":0.75}
+  ],
+  "ablations": [
+    {"name":"V15_EQUIVALENT_NATIVE_WORD","channels":["base_name_word","rne_overlay_name_word","official_overlay_name_word"]},
+    {"name":"BASE_NATIVE_MULTICHANNEL","channels":["base_legal_exact","base_trade_exact","base_site_exact","base_name_word","base_name_char","base_address_exact","base_address_word"]},
+    {"name":"BASE_PLUS_OFFICIAL","channels":["base_legal_exact","base_trade_exact","base_site_exact","base_name_word","base_name_char","base_address_exact","base_address_word","rne_overlay_name_exact","rne_overlay_name_word","rne_overlay_name_char","rne_overlay_address_word","official_overlay_name_exact","official_overlay_name_word","official_overlay_name_char","official_overlay_address_word"]},
+    {"name":"ALL_NATIVE_LEXICAL","channels":["base_name_word","rne_overlay_name_word","official_overlay_name_word","temporal_name_word","role_name_word","sector_name_word","sector_address_word"]},
+    {"name":"BASE_OFFICIAL_PLUS_TEMPORAL","channels":["base_legal_exact","base_trade_exact","base_site_exact","base_name_word","base_name_char","base_address_exact","base_address_word","rne_overlay_name_exact","rne_overlay_name_word","rne_overlay_name_char","rne_overlay_address_word","official_overlay_name_exact","official_overlay_name_word","official_overlay_name_char","official_overlay_address_word","temporal_name_exact","temporal_name_word","temporal_name_char"]},
+    {"name":"BASE_OFFICIAL_PLUS_ROLES","channels":["base_legal_exact","base_trade_exact","base_site_exact","base_name_word","base_name_char","base_address_exact","base_address_word","rne_overlay_name_exact","rne_overlay_name_word","rne_overlay_name_char","rne_overlay_address_word","official_overlay_name_exact","official_overlay_name_word","official_overlay_name_char","official_overlay_address_word","role_name_exact","role_name_word","role_name_char"]},
+    {"name":"BASE_OFFICIAL_PLUS_SECTOR","channels":["base_legal_exact","base_trade_exact","base_site_exact","base_name_word","base_name_char","base_address_exact","base_address_word","rne_overlay_name_exact","rne_overlay_name_word","rne_overlay_name_char","rne_overlay_address_word","official_overlay_name_exact","official_overlay_name_word","official_overlay_name_char","official_overlay_address_word","sector_name_exact","sector_name_word","sector_name_char","sector_address_exact","sector_address_word"]},
+    {"name":"ALL_NATIVE_MULTICHANNEL","channels":["base_legal_exact","base_trade_exact","base_site_exact","base_name_word","base_name_char","base_address_exact","base_address_word","rne_overlay_name_exact","rne_overlay_name_word","rne_overlay_name_char","rne_overlay_address_word","official_overlay_name_exact","official_overlay_name_word","official_overlay_name_char","official_overlay_address_word","temporal_name_exact","temporal_name_word","temporal_name_char","role_name_exact","role_name_word","role_name_char","sector_name_exact","sector_name_word","sector_name_char","sector_address_exact","sector_address_word"]}
+  ],
+  "evaluation": {
+    "cutoffs": [8, 16, 32, 64, 128, 250, 384, 512],
+    "primary_ablation": "ALL_NATIVE_MULTICHANNEL"
+  },
+  "gates": {
+    "hard_kill_parent_hits_at_512_by_fold": {"2": 155, "3": 148, "4": 138},
+    "confidence_parent_hits_at_512": 464,
+    "confidence_parent_hits_at_512_by_fold": {"2": 160, "3": 158, "4": 146},
+    "minimum_promising_absolute_gain": 100,
+    "rationale": "Hard-kill below the site-rescue minima 155/148/138. Confidence requires 160/158/146=464 native parents at rank<=512 before any parent-to-site experiment."
+  },
+  "resources": {
+    "search_workers": 12,
+    "maximum_wall_seconds": 1800,
+    "maximum_peak_rss_gib": 14,
+    "maximum_swapout_pages": 0
+  },
+  "authorities": {
+    "cohort_queries": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_cohort/72896b6f70d7c9eb/queries.parquet","sha256":"f9125a7ed7b7c45c18035f675f13c3a75f5261737d86e47f57b44a766997ab48"},
+    "cohort_manifest": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_cohort/72896b6f70d7c9eb/manifest.json","sha256":"9ac986a50295c67ed202581bacd79b1fe58bacc6126c3963552d6fc0870411d3"},
+    "cohort_labels": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_cohort/72896b6f70d7c9eb/cohort_labels.parquet","sha256":"c5de5a1656e2dbe8d82905af70052f460e722e2a08987b4b2367f3d64e11bf90"},
+    "scene_ir": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v12_scene_ir/7590ca67ffa3dc5c","manifest_sha256":"67c997399a286343c69efe8516be6a14f36fa19f91732e7bac615f8abcebc191"},
+    "v15_parents": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_generation/f900d9f9a1772cc4/parents.parquet","sha256":"bbc7a69e681b3bf621f7fef2d32094711878cff21233f38897977a1901c4b917"},
+    "backends": {
+      "base": {"kind":"base","path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354","manifest_sha256":"9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e"},
+      "overlay_rne": {"kind":"official_overlay","path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/official_evidence_overlay_v1/8c2178602fca3a3b","manifest_sha256":"2f40ed20ddeb8a861c5492c291724e0bcb0a4223c35e91b4fa18c57aa9cc75ab"},
+      "overlay_official": {"kind":"official_overlay","path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/official_evidence_overlay_v2/338cd52006a9c30f","manifest_sha256":"0b17954785d7442623b6dc25909280fcc327367cc393a7c0fe88b383c2d632fb"},
+      "temporal": {"kind":"temporal","path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indices/sirene_temporal_v1/506bb98cfdcccfbe","manifest_sha256":"e460f1dd33c6b8984d8cdf0164c0add02c26cbadef44edd5adfcd75e09390e80"},
+      "roles": {"kind":"legal_entity_roles","path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indices/rne_legal_entity_roles_v1/df8ab6e0e46aaae0","manifest_sha256":"19377ffbc692d2ee33ed2bf7cd4030a6956399d1812fe950e880f2609712b40d"},
+      "sector": {"kind":"sector","path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/indices/official_sector_v1/7f2994f0441c55d3","manifest_sha256":"1a34c3955bc3380b9391a15b52ce2e55dad85cce9c948e9c2fb7e4c9b297304b"}
+    }
+  },
+  "forbidden": ["siret_prefix_as_parent", "truth_in_generator", "positive_injection", "fold0", "fold1", "posthoc_channel_change", "top500", "top100", "site_lambdamart"]
+}
