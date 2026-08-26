@@ -6059,5 +6059,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   avant toute revendication cross-CRM. Aucun run Master/site/national n'est
   lancé.
 
+## Fusion parent@2000 v19 — 27 août 2026
+
+- Le commit `1b07155f` fige et implémente le workbench v19 : 36 features
+  label-blind de provenance/rang, baseline RRF `k=60`, cap strict 2 000 et
+  trois LambdaMART externes F2←F3+F4, F3←F2+F4, F4←F2+F3. Aucun
+  identifiant n'est une feature, aucun positif n'est injecté, et fold0/fold1
+  restent fermés. Les 25 tests v16–v19 ciblés passent.
+- La matérialisation label-blind contient 2 580 005 couples requête-parent et
+  termine en 1,497 s, RSS 2,64 Go, zéro swap. Manifeste SHA-256
+  `9494ea0ed499290057e894d3a2889bc88ec07947d177af1d0f64a0a3d312b12c`.
+- La fusion RRF fixe conserve **374/522** bons parents à 2 000
+  (143/123/108), les **512/512 contrôles**, 286 cas récents et 88 historiques.
+  Projection oracle Master : **23 423/23 571 = 99,3721 %**. Elle franchit le
+  palier 99,2 % mais pas 99,5 % ni le niveau de confiance 464.
+- LambdaMART OOF échoue franchement : 241/522 et 471/512 contrôles. Le
+  manifeste officiel garde donc `STOP_PARENT_2000_CONTROL_REGRESSION`; aucun
+  retuning post-résultat n'est autorisé. L'expérience termine en 8,865 s,
+  RSS 2,30 Go, zéro swap, manifeste SHA-256
+  `da566a6e2696616a03ec086e9d626df6955ab49f0f0698bd8e0d5a0927aaddc1`.
+- Le commit `c9b8f79c` scelle le rapport
+  `docs/retrieval_all_human_v19_parent_fusion_results.md`. La trajectoire
+  suivante part exclusivement du RRF fixe : transformer au plus 2 000 parents
+  en au plus 2 000 SIRET avec quotas/scoring site label-blind, sur le workbench
+  1 034 avant toute confirmation. Aucun run national n'est autorisé et un
+  shadow set externe reste requis pour une revendication cross-CRM.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
