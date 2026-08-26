@@ -1,0 +1,56 @@
+{
+  "schema_version": "sireto-retrieval-geo-v16-config-1",
+  "policy_id": "ban-soft-geo-diagnostic-v16",
+  "scope": "BOUNDED_GEO_SIDEQUEST_DIAGNOSTIC_ONLY",
+  "folds": [2, 3, 4],
+  "cohort": {
+    "query_count": 1034,
+    "top1750_misses": 522,
+    "deterministic_controls": 512
+  },
+  "recipe": {
+    "ban_resolution": "SAME_INSEE_OR_POSTCODE_EXACT_NUMBER_BEST_STREET_JARO_WINKLER",
+    "ban_is_soft_feature_only": true,
+    "ban_absence_is_never_negative": true,
+    "geo_neighbor_cap": 512,
+    "distance": "EUCLIDEAN_LAMBERT93_METRES"
+  },
+  "oof_model": {
+    "held_out_folds": [2, 3, 4],
+    "feature_identifiers_forbidden": ["query_id", "siret", "siren", "fold"],
+    "maximum_training_rows_per_query": 256,
+    "seed": 16026,
+    "n_estimators": 160,
+    "max_depth": 5,
+    "learning_rate": 0.05
+  },
+  "resources": {
+    "duckdb_threads": 8,
+    "maximum_wall_seconds": 2700,
+    "maximum_peak_rss_gib": 14,
+    "maximum_swapout_pages": 0
+  },
+  "authorities": {
+    "queries_sha256": "f9125a7ed7b7c45c18035f675f13c3a75f5261737d86e47f57b44a766997ab48",
+    "v15_candidates_path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_generation/f900d9f9a1772cc4/candidates.parquet",
+    "v15_candidates_sha256": "c3b9c6f96f81ea43dffe7fb74c9ebe866cba318da78c68ca8863f1e84f1df000",
+    "scene_ir_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v12_scene_ir/7590ca67ffa3dc5c",
+    "scene_ir_manifest_sha256": "67c997399a286343c69efe8516be6a14f36fa19f91732e7bac615f8abcebc191",
+    "sirene_snapshot_path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/StockEtablissement_utf8.parquet",
+    "sirene_snapshot_sha256": "c91180cc5bae86948dd57d752c9bae45e58cc64653e99d5a9357664b67300845",
+    "ban_silver_path": "/Volumes/CATNAT_DATA/oubusiness/silver/ban_addresses_2026-08-14_semantics-v1.parquet",
+    "ban_silver_sha256": "48f9e3d4f9bbb47dd5e8bd55bc5f76a75e2e6a8ff1c4821026ba858f6e40247f",
+    "ban_catalog_path": "/Volumes/CATNAT_DATA/oubusiness/catalog/ban_semantic_2026-08-14_semantics-v1.json",
+    "ban_catalog_sha256": "c939ed9d199449135b98a3702bb758da9b61c3bd10b1a6cc3dca2930c271f445"
+  },
+  "forbidden": [
+    "truth_in_generator",
+    "positive_injection",
+    "hard_distance_gate",
+    "ban_absence_as_negative",
+    "production_scoring_from_ban",
+    "fold0",
+    "fold1",
+    "identifier_features"
+  ]
+}
