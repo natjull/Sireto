@@ -5941,5 +5941,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   scelle le rapport et les hashes des trois artefacts dans
   `docs/retrieval_all_human_v15_master_feasibility_results.md`.
 
+## Workbench parent SIREN v16 — 26 août 2026
+
+- Le commit `ca29977c` préenregistre et implémente le workbench parent v16 sur
+  la cohorte v15 scellée (522 misses + 512 contrôles, folds 2/3/4). Les 26
+  canaux interrogent uniquement des documents `document_type=siren` dans le
+  dossier national, les overlays officiels, l'historique SIRENE, les rôles RNE
+  et les sources sectorielles. Aucun SIRET n'est tronqué; X est généré et
+  scellé sans vérité avant l'évaluation Y séparée.
+- Le candidat équilibré, le RRF, chaque canal et l'union oracle publieront
+  Recall parent @8/16/32/64/128/250/384/512 et MRR. Hard kill si un fold est
+  sous 155/148/138 à parent@512; niveau de confiance 160/158/146=464 avant
+  toute expansion site. Les manifests, types d'overlay et champs sont contrôlés
+  fail-closed.
+- Les 16 tests ciblés v15/v16/SceneIR passent. Le préflight final 4 requêtes
+  est scellé dans `/private/tmp/sireto-parent-v16-final-preflight.LOxJVS/output`
+  (SHA manifest `8114acd307a204dec07d2e53b2c937c792296e1cc5cc18c6318dc9f18e0d225c`),
+  RSS 1,42 Gio et zéro swapout. Le préflight ETA 16 requêtes prend 8,414 s,
+  RSS 2,35 Gio et zéro swapout, soit environ 9,1 minutes par extrapolation
+  linéaire pour 1 034 requêtes. Aucun artefact officiel externe n'est encore
+  écrit; l'exécution complète reste derrière le checkpoint ressources.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
