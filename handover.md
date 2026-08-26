@@ -6032,5 +6032,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   `docs/retrieval_all_human_v17_site_inventory_oracle_results.md` et le verdict
   **`PIVOT_PARENT_DISCOVERY`**. Aucun LambdaMART ni run national n'est lancé.
 
+## Découverte parent SIRET-first v18 — 26 août 2026
+
+- Le commit `c4569bc4` ajoute le workbench label-blind v18, ses contrats,
+  configurations, tests et le rapport
+  `docs/retrieval_all_human_v18_parent_discovery_results.md`. Il exploite le
+  SIREN officiel porté par les documents SIRET, des recherches SIRET-native et
+  des relations RNE/BODACC/SIRENE bornées. Il n'ouvre ni fold0 ni fold1, ne
+  tronque jamais un SIRET pour produire un SIREN et sépare strictement
+  génération et évaluation truth-side.
+- La génération officielle des 1 034 requêtes termine en 685,126 s, pic RSS
+  13,50 Gio et zéro swapout. Son manifeste SHA-256 est
+  `b7bd849e033ad3c34a107eef9c16e5922591985bb59cd3968ae8d3dde6d51b33`.
+  Les 20 tests v16/v17/v18 ciblés passent.
+- Le pool brut v18 retrouve 389/522 bons parents, contre 329 pour l'union brute
+  v17 : 148/130/111 par fold, avec +39 rescues sur l'origine CRM récente et
+  +21 sur l'historique. La projection oracle Master est
+  **23 438/23 571 = 99,4357 %**. Verdict
+  **`PASS_MASTER_99_2_RAW_FEASIBILITY_ONLY`**; 99,5 %, le niveau de confiance
+  464 et les minima par fold restent non franchis.
+- Le pool brut médian contient 2 522 parents (p95 3 773,5), donc le plafond
+  Master@2000 n'est pas encore satisfait. L'étape suivante est une fusion OOF
+  plafonnée à 2 000, apprise uniquement dans des inner-splits groupés par
+  SIREN sur folds2/3/4 ou comparée à une fusion déterministe
+  préenregistrée. Fold1 reste fermé et un shadow set externe reste obligatoire
+  avant toute revendication cross-CRM. Aucun run Master/site/national n'est
+  lancé.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
