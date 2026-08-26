@@ -6007,5 +6007,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Master/site/national; le prochain sprint doit ajouter des familles de
   découverte SIREN avant tout LambdaMART.
 
+## Oracle exhaustif SIREN → tous les SIRET v17 — 26 août 2026
+
+- Le commit `a37bab43` préenregistre et implémente les étapes 1 à 3 v17 :
+  découverte parent par texte/géographie/adresse des établissements, trois
+  fusions déterministes à 512 parents, puis développement sans profondeur de
+  tous les SIRET officiels. Les labels exacts et opérationnels restent dans un
+  évaluateur séparé; fold0/fold1, positif injecté, BAN comme preuve même-site,
+  LambdaMART et national sont interdits.
+- La génération complète label-blind émet 24 376 136 lignes site en 41,630 s,
+  RSS 12,14 Go et zéro swap. Les comptes source/émis sont égaux pour chaque
+  couple requête/SIREN. Manifeste SHA
+  `94f0715c37d1b3d8229c667205cac8a3062b85666d1d63d9a399bbfdc119965f`.
+- Le canal adresse retrouve 47 bons parents parmi les 522 pertes, mais seuls
+  13 sont nouveaux relativement au texte+géo. L'union brute atteint 329
+  parents; la variante primaire à 512 en atteint 309 (125/98/86), très sous le
+  gate 464 et 160/158/146.
+- Les 309 parents sélectionnés donnent 309 rescues exacts après expansion
+  exhaustive. La politique même-site identifie 58 requêtes avec équivalents,
+  dont 25 successeurs actifs, mais ne change pas l'oracle de présence car le
+  SIRET exact est également émis. Projection Master primaire :
+  **23 358/23 571 = 99,0963 %**; même l'union brute irréaliste plafonne à
+  99,1812 %. Le commit `87639bd8` scelle le rapport
+  `docs/retrieval_all_human_v17_site_inventory_oracle_results.md` et le verdict
+  **`PIVOT_PARENT_DISCOVERY`**. Aucun LambdaMART ni run national n'est lancé.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
