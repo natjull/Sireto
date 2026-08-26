@@ -5988,5 +5988,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Aucun artefact officiel externe n'est encore écrit; un préflight externe
   1..16 reste obligatoire avant le pilote complet.
 
+## Résultat parent + géographie v16 — 26 août 2026
+
+- Le commit `8895bc27` scelle les exécutions complètes et le verdict dans
+  `docs/retrieval_all_human_v16_parent_geo_results.md`. La génération parent
+  termine en 128,695 s, 12,19 Go RSS et zéro swap; elle retrouve 258/522 bons
+  parents à 512 (108/82/68), contre 103/522 pour v15, mais reste très sous le
+  niveau de confiance 160/158/146.
+- La génération géographique label-blind termine en 15,493 s, 10,20 Go RSS et
+  zéro swap. La BAN résout 866/1 034 requêtes; le modèle OOF passe de 293
+  exacts@100 par distance brute à 304, et apporte 47 rescues SIRET nouveaux
+  sur les pertes v15. La BAN reste `score_eligible=false`, sans filtre distance
+  ni interprétation négative de son absence.
+- L'oracle d'union texte+géo ne contient le bon parent que pour 316/522 pertes,
+  soit 128/104/84 par fold. Même avec une expansion site parfaite, sa borne
+  supérieure Master est 23 365/23 571 = 99,1260 %, sous 99,2 % et sous le gate
+  Master@2000 99,5 %. Verdict **`PIVOT_PARENT_DISCOVERY`** : aucun long run
+  Master/site/national; le prochain sprint doit ajouter des familles de
+  découverte SIREN avant tout LambdaMART.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
