@@ -1,0 +1,101 @@
+{
+  "schema_version": "sireto-retrieval-v17-site-inventory-oracle-config-1",
+  "policy_id": "all-sirets-address-first-parent-oracle-v17",
+  "scope": "BOUNDED_STEPS_1_TO_3_ONLY",
+  "folds": [2, 3, 4],
+  "cohort": {
+    "query_count": 1034,
+    "top1750_misses": 522,
+    "deterministic_controls": 512,
+    "queries_sha256": "f9125a7ed7b7c45c18035f675f13c3a75f5261737d86e47f57b44a766997ab48"
+  },
+  "recipe": {
+    "parent_cap": 512,
+    "rrf_k": 60,
+    "address_street_similarity_minimum": 0.84,
+    "address_channel_cap": 512,
+    "all_sites_per_selected_parent": true,
+    "pre_score_site_cap": null,
+    "primary_variant": "BALANCED_TEXT256_ADDRESS160_GEO96",
+    "variants": {
+      "BALANCED_TEXT256_ADDRESS160_GEO96": {
+        "text_quota": 256,
+        "address_quota": 160,
+        "geo_quota": 96
+      },
+      "ADDRESS_HEAVY_TEXT192_ADDRESS224_GEO96": {
+        "text_quota": 192,
+        "address_quota": 224,
+        "geo_quota": 96
+      },
+      "RRF_TEXT_ADDRESS_GEO": {
+        "text_weight": 1.0,
+        "address_weight": 1.5,
+        "geo_weight": 0.75
+      }
+    },
+    "operational_same_site": {
+      "same_siren_required": true,
+      "street_number_required": true,
+      "street_number_suffix_required_when_present": true,
+      "normalized_street_exact_required": true,
+      "same_insee_or_postcode_required": true,
+      "ban_distance_is_not_proof": true
+    }
+  },
+  "gates": {
+    "raw_union_parent_hits_at_512_minimum": 464,
+    "primary_parent_hits_at_512_minimum": 464,
+    "primary_parent_hits_at_512_by_fold": {
+      "2": 160,
+      "3": 158,
+      "4": 146
+    },
+    "minimum_projected_master_exact_recall": 0.995,
+    "oracle_confidence_projected_master_exact_recall": 0.997,
+    "national_denominator": 23571,
+    "sealed_baseline_master_exact_hits": 23049,
+    "preserved_controls": 512
+  },
+  "resources": {
+    "duckdb_threads": 8,
+    "maximum_wall_seconds": 2700,
+    "maximum_peak_rss_gib": 14,
+    "maximum_swapout_pages": 0
+  },
+  "authorities": {
+    "cohort_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_cohort/72896b6f70d7c9eb",
+    "cohort_manifest_sha256": "9ac986a50295c67ed202581bacd79b1fe58bacc6126c3963552d6fc0870411d3",
+    "scene_ir_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v12_scene_ir/7590ca67ffa3dc5c",
+    "scene_ir_manifest_sha256": "67c997399a286343c69efe8516be6a14f36fa19f91732e7bac615f8abcebc191",
+    "v15_generation_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_master_v15_feasibility_generation/f900d9f9a1772cc4",
+    "v15_generation_manifest_sha256": "9d62891d89eb96bc007694426a19b9df70037b6b725709baf030fcc7b6808012",
+    "v15_candidates_sha256": "c3b9c6f96f81ea43dffe7fb74c9ebe866cba318da78c68ca8863f1e84f1df000",
+    "v16_parent_config_path": "config/retrieval_all_human_v16_parent_workbench.json",
+    "v16_parent_config_sha256": "2b30b5edb8d2170fd9d7984e503450234cc285e926f2cc5e56e928d586b6cc01",
+    "v16_parent_generation_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_parent_v16_workbench_generation/3946aae4798b0ef9",
+    "v16_parent_generation_manifest_sha256": "97566d4d336b790dd248c62f56cbde16a87227aad30c6c67e7b9d4bb45210b83",
+    "v16_parent_signals_sha256": "67f55b00a912857b84033a2e57804376f69df51fe7a1c0b32260e287e942b2a5",
+    "v16_geo_generation_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_geo_v16_generation/15b3d8c774edd5a7",
+    "v16_geo_generation_manifest_sha256": "2cbfb03c15fd82d0e57c72ece37ac23513dc429df857280ca8f7a2030b9694ff",
+    "v16_geo_parent_sha256": "3c56bbfa7f5cb0a7db5334ada5e8937b6e53acc88306c00d9aaee43c73a956b0",
+    "sidecar_dir": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_sidecars_v11/de762d80b7d61d35",
+    "sidecar_manifest_sha256": "d883cf76e4c935b715570176db2a1275b6e4184bb0554d9c44132fe6c2b98a22",
+    "siren_local_sites_sha256": "5d967a0b2bb3fc38138601b5bb80ab997bc7d10afc85c7544e65558ab146ad60",
+    "operational_policy_path": "docs/siret_operational_equivalence_policy.md",
+    "operational_policy_sha256": "51690a7e163e95497b3df34fb0b5df6847a3b81e8b86b06c1c1440ab3be2b16b"
+  },
+  "forbidden": [
+    "truth_in_generator",
+    "positive_injection",
+    "siret_truncation_as_parent_discovery",
+    "pre_score_site_cap",
+    "operational_metric_substitutes_exact",
+    "ban_distance_as_same_site_proof",
+    "posthoc_variant",
+    "fold0",
+    "fold1",
+    "lambdamart",
+    "national_run"
+  ]
+}
