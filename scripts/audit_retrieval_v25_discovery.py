@@ -82,7 +82,7 @@ def main(output):
           (SELECT count(*) FROM source_sites s WHERE s.siren=l.gt_siren) official_sites,
           (SELECT count(*) FROM source_names n WHERE n.siren=l.gt_siren AND n.normalized_value<>'') official_names,
           (SELECT count(*) FROM source_names n WHERE n.siren=l.gt_siren AND n.normalized_value<>'' AND n.selected_for_subject) selected_names
-          FROM labels l JOIN official_loss o USING(query_id,fold,gt_siren,gt_siret)''').to_arrow_table()
+          FROM labels l JOIN official_loss o USING(query_id,fold,gt_siren,gt_siret)''').fetch_arrow_table()
         c.close()
         byid = {r['query_id']: r for r in table.to_pylist()}
         backend = TantivyBackend(indexroot); tv = backend._tantivy
