@@ -6192,5 +6192,50 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   reste nécessaire avant toute revendication cross-CRM. Ce jeu externe est
   actuellement manquant et doit rester annoncé comme tel.
 
+## V22 — suppression des places réservées — 9 septembre 2026
+
+- Autorisation utilisateur « suis ton feeling » après proposition d'ouvrir
+  les 2000 places à la concurrence. Le commit `a71865b7` préenregistre et
+  implémente une seule recette : même réservoir et mêmes scores v21, top2000
+  global, plus de préfixe top1750 automatiquement conservé. « Ancien/nouveau »
+  désigne la provenance de génération, pas l'âge ni la qualité d'une entreprise.
+  Aucun nouveau poids, feature ou modèle appris; aucun réglage après résultat.
+- Résultat : **262/522 difficiles** contre 216, **511/512 contrôles** contre
+  512, **773/1034 exacts** contre 728. **46 gains et une régression**, soit
+  +45 nets. La régression est un contrôle historique fold4 UNRESOLVED et reste
+  une erreur pleinement comptée. Gains/pertes par fold : 16/0, 17/0, 13/1;
+  par origine : récent 39/0, historique 7/1. Exact et opérationnel totalisent
+  désormais 773; opérationnel : 44 gains et une perte relativement à v21.
+- Attribution officielle : 132 parents absents, 3 sites non développés,
+  125 évictions vers 2000 (124 difficiles +1 contrôle), 1 catalogue absent.
+  Le réservoir reste identique, avec 386 exacts difficiles. Le Master compte
+  toujours 1 973 172 références, plafond absolu 2000, aucun positif injecté.
+  234 101 références anciennement protégées sont remplacées sur 844 requêtes.
+- **Toute projection `23049 + rescues` est désormais interdite** : les
+  anciens hits ne sont plus garantis. Les 512 contrôles ne permettent pas
+  d'estimer les régressions nationales. Le manifeste publie
+  `national_projection: null`. Le +45 sur ce panel connu ne prouve ni un
+  recall national, ni une généralisation cross-CRM, ni PreRank500/Recall100.
+- Le commit `d760e9bb` scelle
+  `docs/retrieval_v22_global_budget_results.md`. Configuration SHA-256
+  `f9a73fa4db0ce00e1d45720225c9021a44dce6487e28146fc64f324e78cfde09`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`, génération
+  `retrieval_v22_global_generation/f9a73fa4db0ce00e/manifest.json`, SHA
+  `2855b3e20d06e2d6639f4c89fa38e8fbe836936479d7dd49ff69caaf395b3a34`;
+  évaluation `retrieval_v22_global_evaluation/f9a73fa4db0ce00e/manifest.json`,
+  SHA `0cf74394b75c452281f416813054482e91edfea00ae984def6dbc73a0972bf94`.
+- 35 tests passent. Recalcul indépendant depuis le ledger : 773 exacts,
+  transitions appariées, caps, pool naturel, scores identiques à v21,
+  préflight reproductible et hashes vérifiés. Sélection 1,170 s /1,65 Gio,
+  évaluation 0,305 s /0,50 Gio, zéro swapout. Ces temps excluent le coût de
+  génération amont et les hashes préalables; temporaires sur CATNAT.
+- Verdict **`PIVOT_GENERATION`**, pas de promotion. Prochaine orientation :
+  preuve conjointe nom entreprise/adresse site et parent appris OOF, pas un
+  nouveau quota réglé sur les erreurs connues. Ce modèle n'a pas encore été
+  construit. Le futur LambdaMART SIRET reste limité à 2000 références; les
+  132 parents absents restent un problème distinct. Aucun national, fold0 ou
+  fold1 ouvert, aucun modèle aval dégelé. La garde de généralisation v21 reste
+  obligatoire, avec export réellement nouveau avant toute revendication.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
