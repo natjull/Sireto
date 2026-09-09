@@ -1,0 +1,18 @@
+{
+  "schema": "sireto-v23-joint-parent-1",
+  "recipe": "OOF_PARENT_OFFICIAL_NAMES_JOINT_SITE_GLOBAL2000",
+  "source_generation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v21_membership/177f6e1c35b10f85-canonical-external/manifest.json", "sha256": "6115d0cec5ec054d6e4af991f11f280383329cee5da4f1f32017a18120a52bc7"},
+  "baseline_evaluation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v22_global_evaluation/f9a73fa4db0ce00e/manifest.json", "sha256": "0cf74394b75c452281f416813054482e91edfea00ae984def6dbc73a0972bf94"},
+  "v18_config": {"path": "config/retrieval_all_human_v18_parent_discovery_generation.json", "sha256": "e270a60d520d7c7be7928988382ce91fc8f326c7bc1541a7c53eff0ce1aa80e6"},
+  "names": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_retrieval_v3_full/retrieval_name_portfolio.parquet", "sha256": "89f7d4815959c0e5ce6111f4520debd51f2ad3f673fd0a341d372e5d0d49a454"},
+  "sites": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_sidecars_v11/de762d80b7d61d35/siren_local_sites.parquet", "sha256": "5d967a0b2bb3fc38138601b5bb80ab997bc7d10afc85c7544e65558ab146ad60"},
+  "model": {"objective": "rank:pairwise", "n_estimators": 240, "learning_rate": 0.05, "max_depth": 6, "min_child_weight": 1.0, "subsample": 0.9, "colsample_bytree": 0.9, "reg_lambda": 1.0, "reg_alpha": 0.0, "tree_method": "hist", "n_jobs": 4, "random_state": 20260827},
+  "sampler": "HEAD256_PLUS_STRATIFIED_TAIL256",
+  "outer_folds": [2,3,4],
+  "single_fold_inner_models": true,
+  "score": "direct_rrf + 1/(60+oof_parent_dense_rank+joint_site_dense_rank) when a local site is available",
+  "master_cap": 2000,
+  "reserved_prefix": 0,
+  "national_projection_allowed": false,
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
