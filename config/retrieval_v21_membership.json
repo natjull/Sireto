@@ -1,0 +1,28 @@
+{
+  "schema": "sireto-v21-membership-1",
+  "recipe": "ALL_PARENT_MEMBERSHIP_DEDUP_DENSE_RANK_V20_SCORE",
+  "baseline_generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v20_master/3ccb3e44a19a1769/manifest.json",
+    "sha256": "02be8082bd5e54f6c74b2025ea391cc5ce138ed85afb0b9e1d01ee2bde6445e4"
+  },
+  "baseline_evaluation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v20_master_eval/3ccb3e44a19a1769/manifest.json",
+    "sha256": "87cf5cd94b20411b56f82d30c62f43e7eb52c13928ff51d5be040f659caac3ae"
+  },
+  "source_config": {
+    "path": "config/retrieval_v20_evidence_workbench.json",
+    "sha256": "3ccb3e44a19a1769f1b555acb1e3e26eab94e9d902c442120fb0051274ad6899"
+  },
+  "scope": "REUSED_DEVELOPMENT_PANEL_NOT_UNSEEN_VALIDATION",
+  "expected_queries": 1034,
+  "master_cap": 2000,
+  "protected_prefix": 1750,
+  "rrf_k": 60,
+  "learned_components": false,
+  "new_weights_or_thresholds": false,
+  "external_validation_available": false,
+  "cross_crm_claim_allowed": false,
+  "national_run_allowed": false,
+  "ready_for_fold1_allowed": false,
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
