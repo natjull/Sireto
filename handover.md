@@ -6085,5 +6085,56 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   1 034 avant toute confirmation. Aucun run national n'est autorisé et un
   shadow set externe reste requis pour une revendication cross-CRM.
 
+## Diagnostic sampling et Master SIRET v20 — 9 septembre 2026
+
+- Le commit `353c63ea` préenregistre et implémente deux expériences séparées :
+  comparaison appariée du sampling v19 en validation interne groupée SIREN,
+  et génération label-blind d'un vrai Master plafonné à **2000 SIRET**, avec
+  préfixe top1750 intégralement protégé. Configuration SHA-256
+  `3ccb3e44a19a1769f1b555acb1e3e26eab94e9d902c442120fb0051274ad6899`.
+  Les 16 tests ciblés v18/v19/v20 passent. Aucun réglage post-résultat.
+- À modèle/features/volume d'apprentissage identiques, remplacer les 512
+  premiers négatifs par 256 premiers +256 représentants de queue fait passer
+  les hits parent@2000 difficiles internes de 22→35, 18→34 et 23→35. Les
+  contrôles passent de 65/69, 70/78, 61/65 à tous conservés. Le défaut de
+  distribution des négatifs explique une grande partie de l'échec historique;
+  cela ne démontre pas une supériorité au RRF. Les validations internes se
+  recouvrent et ne peuvent être additionnées comme indépendantes.
+- Correction d'interprétation v19 : le rang `v17_union` historique était
+  fabriqué par tri des SIREN. L'absence d'identifiant explicite dans les
+  features ne suffisait donc pas à garantir leur conformité. Ce rang est
+  conservé uniquement dans l'audit causal apparié; ses six modèles sont
+  **inéligibles** à une nouvelle recette. Le Master v20 n'utilise pas ce rang.
+  Les résultats et modèles historiques ne sont pas réécrits ni promus.
+- Le Master exact récupère **213/522 pertes** et garde **512/512 contrôles**,
+  soit 725/1034 exacts sur ce workbench enrichi en erreurs, 727 opérationnels.
+  Il contient 1 957 117 couples requête/SIRET, maximum strict 2000 par requête.
+  Projection conditionnelle uniquement : 23 262/23 571 = **98,6891 %**.
+  Le 99,3721 % v19 était un oracle parent, pas un Master SIRET mesuré.
+- L'attribution officielle scellée explique les 309 pertes : 132 parents
+  absents, 64 sites non développés, 112 évictions au passage réservoir→2000,
+  1 SIRET absent du catalogue. Le réservoir contient 325/522 exacts difficiles,
+  soit une borne conditionnelle 99,1642 %, insuffisante même avec admission
+  parfaite. Les vues exactes/opérationnelles, historique, V2/V3, origines et
+  folds sont publiées; les qualifications V2/V3 de ces lignes sont vides.
+- Diagnostic secondaire : 61 non-expansions correspondent à des parents
+  présents uniquement dans v17. Leurs sites sont géographiquement compatibles,
+  mais l'exclusion du canal entier a supprimé une présence valide en plus du
+  rang artificiel. Prochaine recette à préenregistrer : conserver cette
+  appartenance sans ce rang, puis revoir l'allocation déterministe des places
+  entre preuves directes et siblings. Sur les 112 évictions, 91 sont des
+  siblings sans preuve directe. Aucun rescoring rétrospectif n'a été effectué.
+- Les phases officielles consomment 18,817 s / 2,55 Gio (sampling),
+  10,236 s / 5,13 Gio (Master), 2,463 s / 1,56 Gio (évaluation), zéro swapout.
+  Ces temps excluent la validation préalable des hashes, et ne sont pas des
+  mesures de latence produit. Les hashes et les résultats ont été revérifiés.
+- Le commit `88b6afe7` scelle le rapport
+  `docs/retrieval_v20_evidence_workbench_results.md` et les références aux
+  manifestes sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`.
+  Verdict **`PIVOT_GENERATION`** : ni PreRank500 ni Recall100 mesurés, aucun
+  fold0/fold1 ni national ouvert, aucun modèle aval dégelé. Avant de dépenser
+  sur le préclassement, la génération doit apporter une marge crédible vers
+  les 381 rescues minimum correspondant conditionnellement à 99,4 %.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
