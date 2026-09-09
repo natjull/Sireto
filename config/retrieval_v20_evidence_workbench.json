@@ -1,0 +1,45 @@
+{
+  "schema": "sireto-v20-evidence-workbench-1",
+  "scope": "DEVELOPMENT_ONLY",
+  "source_configs": {
+    "v19": {"path": "config/retrieval_all_human_v19_parent_fusion.json", "sha256": "dc0461ac2ea01f7b82c56580798841e4ef5ce9630f8b3e2c7c950fdb3995ae65"},
+    "v18": {"path": "config/retrieval_all_human_v18_parent_discovery_generation.json", "sha256": "e270a60d520d7c7be7928988382ce91fc8f326c7bc1541a7c53eff0ce1aa80e6"}
+  },
+  "feature_manifest": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_parent_v19_features/dc0461ac2ea01f7b/manifest.json", "sha256": "9494ea0ed499290057e894d3a2889bc88ec07947d177af1d0f64a0a3d312b12c"},
+  "sites": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_sidecars_v11/de762d80b7d61d35/siren_local_sites.parquet", "sha256": "5d967a0b2bb3fc38138601b5bb80ab997bc7d10afc85c7544e65558ab146ad60"},
+  "audit": {
+    "outer_folds": [2, 3, 4],
+    "inner_validation": "SHA256(v20-inner|GT_SIREN) mod 5 == 0",
+    "negative_methods": ["HISTORICAL_HEAD512", "HEAD256_PLUS_STRATIFIED_TAIL256"],
+    "historical_features_for_causal_comparison_only": true,
+    "model_params": "UNCHANGED_V19",
+    "retrain_on_outer_labels": false,
+    "select_production_model": false
+  },
+  "master": {
+    "cap_sirets": 2000,
+    "protected_baseline_prefix": 1750,
+    "rrf_k": 60,
+    "v17_identifier_sorted_rank_weight": 0,
+    "parent_evidence": "ALL_V18_CHANNELS_EXCEPT_V17_UNION_RANK",
+    "sibling_expansion": "SAME_INSEE_OR_POSTCODE_OF_CRM_FROM_ALL_SUPPORTED_PARENTS",
+    "global_rescue_order": ["sum_of_direct_site_RRF_and_address_rank_RRF_desc", "direct_site_RRF_desc", "parent_RRF_desc", "siret_asc_tie_only"],
+    "address_order_within_parent": ["joint_number_suffix_street_desc", "same_insee_desc", "number_desc", "suffix_desc", "street_similarity_desc", "active_desc", "siret_asc_tie_only"],
+    "address_RRF": "1/(60+parent_rank+site_address_rank)",
+    "new_site_model_trained": false,
+    "rich_hydration": false,
+    "witness_preservation": "SOURCE_SIRET_AND_CHANNEL_REMAIN_ATTACHED_TO_EACH_DIRECT_SITE"
+  },
+  "evaluation": {
+    "primary": "EXACT_SIRET_MASTER_AT_2000_ON_1034",
+    "national_projection": "CONDITIONAL_BASE_PREFIX_PRESERVED_PLUS_RESCUES_NOT_A_MEASURED_NATIONAL_RECALL",
+    "baseline_national_hits": 23049,
+    "national_denominator": 23571,
+    "qualification_is_segment_only": true,
+    "operational": "EXACT_PLUS_SAME_SIREN_STRICT_CRM_SITE_SEALED_LABEL_SIDE",
+    "full_loss_sidecar_required": true,
+    "ready_for_fold1_allowed": false,
+    "national_run_allowed": false
+  },
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0, "duckdb_memory": "4GB", "threads": 4}
+}
