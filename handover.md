@@ -6136,5 +6136,61 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sur le préclassement, la génération doit apporter une marge crédible vers
   les 381 rescues minimum correspondant conditionnellement à 99,4 %.
 
+## V21 — correction structurelle et exigence de généralisation — 9 septembre 2026
+
+- Directive utilisateur renforcée : choisir des règles généralisables, sans
+  surajuster le retrieval au CRM de développement. Le commit `04c2d070`
+  préenregistre une seule correction, pas une grille : garder l'appartenance
+  de tous les parents sans rang v17 dérivé des identifiants; dédupliquer les
+  preuves d'un canal et donner le même rang de score aux preuves ex-aequo.
+  Formule, plafonds et critères v20 inchangés, aucun nouveau poids ni fit.
+- Le commit `ae197652` corrige uniquement le stockage temporaire : la première
+  tentative complète avait échoué avant résultat, faute d'espace interne.
+  Le spill est désormais explicite sur CATNAT, borné à 12 Gio. Le répertoire
+  `retrieval_v21_membership/177f6e1c35b10f85` demeure incomplet/non admissible;
+  aucun nettoyage général ni fichier utilisateur supprimé. Le Mac interne
+  reste presque plein; utiliser CATNAT aussi pour les temporaires des tests.
+- Le commit `e677a6e6` fixe l'ordre d'agrégation flottante et d'export après
+  un contrôle sans labels : écarts <=2,78e-17 entre préflights, sans changement
+  de sélection. **28 tests passent**, dont les invariances aux identifiants,
+  lignes, doublons, colonnes interdites et parallélisme. Le préflight final
+  et les mêmes 16 requêtes dans le run complet ont des scores/sélections
+  strictement identiques. Ces propriétés portent sur l'agrégation nouvelle,
+  pas sur une preuve de qualité cross-CRM.
+- Résultat exact Master2000 : **216/522** pertes récupérées, contre 213 en
+  v20; **512/512 contrôles**, **728/1034 exacts**, 730 opérationnels, trois
+  nouveaux hits et aucune régression. Les trois gains sont tous dans le CRM
+  récent (folds 3:+2 et 4:+1); historique et fold2 inchangés. Aucun réglage
+  n'a suivi cette mesure. Tous les segments historique/V2/V3/états/origines
+  sont publiés, sans exclusion de qualifications.
+- Les 61 sites auparavant non développés sont maintenant dans le réservoir :
+  trois hits et 58 nouvelles évictions. Attribution finale : 132 parents
+  absents, 3 sites non développés, 170 évictions vers 2000, 1 catalogue absent.
+  Le réservoir contient **386/522** exacts difficiles; sa borne conditionnelle
+  99,4230 % ne laisse que cinq cas de marge à 99,4 %. Le Master réalisé ne
+  projette conditionnellement que **98,7018 %**, pas un résultat national.
+- Le commit `acc16bc2` scelle
+  `docs/retrieval_v21_membership_results.md`. Configuration SHA-256
+  `177f6e1c35b10f8572e55179890732571962e8f38f3fa088df1f4e3c7293c41b`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`, génération officielle
+  `retrieval_v21_membership/177f6e1c35b10f85-canonical-external/manifest.json`,
+  SHA `6115d0cec5ec054d6e4af991f11f280383329cee5da4f1f32017a18120a52bc7`;
+  évaluation `retrieval_v21_membership_eval/177f6e1c35b10f85/manifest.json`,
+  SHA `6023dccb031a3007bfd322107d6c5deeb89e23ece0516880cfac78b358461292`.
+  Génération 16,379 s / 5,39 Gio, évaluation 0,537 s / 1,32 Gio, zéro swapout;
+  temps de validation préalable des hashes exclus, pas des SLO produit.
+- Verdict **`PIVOT_GENERATION`**. Prochaine question : allocation des places
+  du Master par preuves génériques, sans apprendre sur les résultats externes
+  réutilisés. Pas de nouveau réglage improvisé sur les 170 évictions. Un futur
+  LambdaMART SIRET reste plafonné à 2000 et ne peut réparer ses entrées absentes.
+  Pas de PreRank500/Recall100 établi, pas de national, fold0/fold1 fermés.
+- **Garde de généralisation persistante :** ces 1034 dossiers sont consommés
+  pour le développement, même en les redécoupant. Aucune recette, même sans
+  paramètres appris, n'y acquiert une validation indépendante. Un export
+  réellement nouveau, scellé, non sélectionné par le succès du retrieval,
+  avec audit des doublons entreprises/sites et une évaluation sans retuning,
+  reste nécessaire avant toute revendication cross-CRM. Ce jeu externe est
+  actuellement manquant et doit rester annoncé comme tel.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
