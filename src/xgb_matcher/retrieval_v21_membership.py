@@ -62,7 +62,7 @@ def build_tables(c):
         SELECT query_id,fold,siren,channel,min(channel_rank) r FROM signals
         WHERE channel<>'v17_union' GROUP BY ALL
       ), support AS (
-        SELECT query_id,fold,siren,sum(1.0/(60+r)) parent_rrf FROM ranked GROUP BY ALL
+        SELECT query_id,fold,siren,sum(1.0/(60+r) ORDER BY channel) parent_rrf FROM ranked GROUP BY query_id,fold,siren
       ), membership AS (
         SELECT query_id,fold,siren FROM signals UNION SELECT query_id,fold,siren FROM raw
       )
@@ -77,7 +77,7 @@ def build_tables(c):
     if c.execute('SELECT count(*) FROM witnesses w JOIN sites s USING(siret) WHERE w.siren<>s.siren').fetchone()[0]:
         raise ValueError('Source SIRET/official parent mismatch')
     c.execute('''CREATE TEMP TABLE direct AS
-      SELECT query_id,fold,siren,siret,sum(1.0/(60+r)) direct_rrf,count(*) direct_channels
+      SELECT query_id,fold,siren,siret,sum(1.0/(60+r) ORDER BY channel) direct_rrf,count(*) direct_channels
       FROM (SELECT query_id,fold,siren,siret,channel,min(channel_rank) r FROM witnesses GROUP BY ALL)
       GROUP BY query_id,fold,siren,siret''')
     c.execute('''CREATE TEMP TABLE address_sites AS

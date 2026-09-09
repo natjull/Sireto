@@ -46,7 +46,8 @@ def run(config_path, output, preflight=None):
         build_tables(c)
         tables = {'queries': 'q', 'candidates': 'candidates', 'master': 'master', 'witnesses': 'witnesses'}
         for name, table in tables.items():
-            order = 'query_id,candidate_rank' if table == 'master' else 'query_id'
+            order = {'master':'query_id,candidate_rank','q':'query_id',
+                     'candidates':'query_id,siret','witnesses':'query_id,siret,channel,channel_rank'}[table]
             c.execute(f'COPY (SELECT * FROM {table} ORDER BY {order}) TO {sql_path(output/(name+".parquet"))} (FORMAT PARQUET,COMPRESSION ZSTD)')
         counts = {t: c.execute(f'SELECT count(*) FROM {t}').fetchone()[0] for t in ('q','parents','address_sites','candidates','master')}
         c.close()

@@ -78,6 +78,18 @@ def test_queries_do_not_influence_each_other():
     assert rows==snapshot(a);c.close()
 
 
+def test_multichannel_float_aggregation_is_order_and_thread_invariant():
+    rows=fixture()
+    rows['signals'] += [{**rows['signals'][0], 'channel':f'channel_{i:03d}', 'channel_rank':i*i+1} for i in range(80)]
+    snapshots=[]
+    for threads in (1,4):
+        rows['signals'].reverse()
+        c=db(rows);c.execute(f'SET threads={threads}');build_tables(c)
+        snapshots.append(c.execute('SELECT siret,parent_rrf,direct_rrf,rescue_score FROM master ORDER BY siret').fetchall())
+        c.close()
+    assert snapshots[0]==snapshots[1]
+
+
 @pytest.mark.parametrize('missing_field',['crm_street','crm_number'])
 def test_missing_address_does_not_create_joint_evidence(missing_field):
     rows=fixture();rows['q'][0][missing_field]=''
