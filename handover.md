@@ -6237,5 +6237,64 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fold1 ouvert, aucun modèle aval dégelé. La garde de généralisation v21 reste
   obligatoire, avec export réellement nouveau avant toute revendication.
 
+## V23 — parent appris et preuve conjointe nom/site — 9 septembre 2026
+
+- Le commit `7ba9b699` fige avant les exécutions complètes une recette avec
+  noms officiels actuels LEGAL_CURRENT/TRADE_CURRENT au SIREN, SITE_CURRENT
+  au SIRET, 16 features de similarité nom/adresse/provenance/manques et six
+  LambdaMART parent. Aucun nom propre d'un site transféré à ses siblings pour
+  fabriquer une preuve conjointe. Le réservoir v21 reste inchangé, et le
+  Master n'a toujours aucun préfixe protégé. Aucun modèle SIRET ne score le
+  grand réservoir, aucun modèle aval dégelé.
+- Trois modèles externes F2←F3+F4, F3←F2+F4, F4←F2+F3 produisent seuls le
+  Master. Trois fits sur un fold chacun produisent les scores inner-OOF
+  disponibles pour les contextes internes. Paramètres fixes, négatifs naturels
+  head256+queue256, aucun tuning après résultat ni positif injecté. Les fits
+  externes ont 581/600/619 groupes entraînables; les autres requêtes restent
+  au dénominateur. Les SIREN humains sont disjoints entre train/cible; cela ne
+  signifie pas que toutes les identités des candidats négatifs le sont.
+- Résultat : **310/522 difficiles**, contre 262; **512/512 contrôles**, contre
+  511; **822/1034 exacts**, contre 773; **824 opérationnels**. **78 gains et
+  29 régressions exactes : +49 nets**. Les 29 pertes appartiennent aux difficiles,
+  et ne sont pas masquées par les contrôles. Gains/pertes par fold : 44/11,
+  20/10, 14/8; récent 55/21, historique 23/8. Tous les segments sont publiés,
+  y compris historique/V2/V3, qualifications vides et états.
+- Attribution officielle : **132 parents absents, 3 sites non développés,
+  76 évictions vers 2000, 1 absent du catalogue**. Sur les 76 évictions, le
+  parent est classé 11–100 pour 8 dossiers, 101–500 pour 35, >500 pour 33;
+  aucun n'est top10. Le bon parent est présent pour 900/1034 requêtes et classé
+  top10/100/500/2000 pour 587/746/845/897. Ce ne sont pas des recalls SIRET.
+- Diagnostic secondaire : aucun nom manquant dans les 29 régressions, mais
+  18 n'ont aucun token commun entre nom CRM et noms actuels parent/site.
+  Cela suggère d'examiner les preuves nominales faibles/historiques et les
+  désaccords avec le retrieval; cela ne justifie ni correction de label ni
+  liste d'exceptions. Aucun retuning ou choix oracle v22/v23 n'a été effectué.
+- 43 tests passent. Recalcul indépendant : 822 exacts, pool naturel/cap,
+  features identiques entre préflight et mêmes requêtes du complet, six splits
+  et prédictions vérifiés, scores du Master issus des seuls modèles externes,
+  hashes vérifiés. Un alias SQL a été corrigé pendant le préflight, avant le
+  commit scientifique et avant toute mesure de qualité. L'extraction complète
+  prend 12,386 s /4,39 Gio, les six fits+OOF+Master 27,669 s /4,09 Gio,
+  l'évaluation 0,191 s /0,74 Gio, zéro swapout. Temps de validation des hashes
+  exclus; pas de SLO produit mesuré. Temporaires sur CATNAT.
+- Le commit `8e298f3c` scelle
+  `docs/retrieval_v23_joint_parent_results.md`. Configuration SHA-256
+  `bb12058773f80d6f5d7ff3ba7b0fc03d1b2a4eb5e95911b5deb7b33580746d69`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`, features
+  `retrieval_v23_features/bb12058773f80d6f/manifest.json`, SHA
+  `dcfffcdcc9f5d34db0d88c5039674090a2ed8911b8242b38d31f39d5c887adbe`;
+  modèles/Master `retrieval_v23_oof_master/bb12058773f80d6f/manifest.json`, SHA
+  `ac4b279be0f30fbee5cfe7fc0c205c31b9cf50fcc23351795ceb55423e05de81`;
+  évaluation `retrieval_v23_evaluation/bb12058773f80d6f/manifest.json`, SHA
+  `ca3400c50e3520d6974ac0abab49d80e17b27832bbbbaafaeb447abb5902010e`.
+- Verdict **`PIVOT_GENERATION`**. L'approche progresse mais 29 régressions
+  interdisent de présenter le gain comme une amélioration sans pertes. Aucun
+  national, aucune projection nationale, aucun PreRank500/Recall100/Wilson/SLO
+  établi, fold0/fold1 fermés. OOF ne rend pas vierge le panel réutilisé pour
+  choisir les stratégies; le CRM indépendant scellé reste nécessaire. Suite
+  proposée : preuves nominales faibles et désaccord modèle/retrieval, recette
+  préenregistrée et calibration seulement interne; les 132 parents absents
+  restent un chantier de découverte séparé.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
