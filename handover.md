@@ -6296,5 +6296,57 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   préenregistrée et calibration seulement interne; les 132 parents absents
   restent un chantier de découverte séparé.
 
+## V24 — fusion inner-OOF : un gain net insuffisant — 9 septembre 2026
+
+- Le commit `af3ba922` fige avant le run complet le protocole, la configuration,
+  la calibration parent convexe et le mélange des preuves site v22/v23.
+  Un poids par fold externe, obtenu seulement des prédictions inner-OOF des
+  deux autres folds : aucun entraînement sur le fold calibré ou externe,
+  aucune grille, aucun quota/exemple particulier et aucune nouvelle source.
+  Poids appris F2/F3/F4 : 0,763233 /0,782522 /0,794573; calibration sur
+  581/600/619 positifs parent naturels; 100/88/80 requêtes non calibrables
+  restent au dénominateur d'évaluation. Réservoir v21 et modèles v23 inchangés.
+- Résultat **311/522 difficiles, 512/512 contrôles, 823/1034 exacts,
+  825 opérationnels**. **6 gains /5 pertes contre v23 : +1 net seulement**.
+  Les six gains récupèrent six des 29 régressions v23 contre v22, mais cinq
+  réussites de v23 sont perdues. Contre v22 : 73 gains /23 pertes. Folds :
+  3/3, 3/2, 0/0; récent 3/2, historique 3/3. Aucun segment masqué; V2/V3
+  vides publiés explicitement. Exact et opérationnel restent distincts.
+- Attribution officielle complète : **132 parents absents, 3 sites non
+  développés, 75 évictions, 1 absent du catalogue**. Recalcul indépendant :
+  **898 vérités sur 1034 seulement dans le réservoir naturel**. Un meilleur
+  classement seul ne pourrait donc récupérer les 136 absentes. Ce plafond
+  est celui du panel biaisé, jamais une estimation nationale.
+- 53 tests passent (suites v19 fusion, v20 à v24), dont perturbation des labels
+  cibles sans changement de calibration, splits, optimum, naturalité,
+  ex-aequo/ordre, cap et non-doublement de preuve directe. Préflight technique
+  sans labels sur16 requêtes, poids0,5 non évalué en qualité. Audit indépendant
+  de toutes les probabilités de calibration, six splits, poids, Master complet,
+  ledger exact/opérationnel, naturalité, attribution et hashes : PASS.
+  Master 1 973 172 lignes, maximum2000; aucun modèle SIRET sur le réservoir.
+- Calcul calibration+Master : 10,797 s /4,66 Gio; évaluation 0,209 s /0,79 Gio;
+  audit 2,743 s /1,90 Gio; zéro swapout, CATNAT uniquement. Hashes préalables
+  exclus des durées : pas des SLO produit. Aucun nettoyage de fichier utilisateur.
+- Le commit `a044a365` scelle le script d'audit reproductible et
+  `docs/retrieval_v24_nested_fusion_results.md`. Configuration SHA
+  `78d37b7cdebea46be1576114fa62b7481d691fc0e8a2220d392d1f370a742704`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`, suffixe
+  `78d37b7cdebea46b/manifest.json` : génération `retrieval_v24_generation`, SHA
+  `fdbe26c8f24394f6b0099a42f0735eb9ed4b21d9b2c4d4364732fb68c0a37961`;
+  évaluation `retrieval_v24_evaluation`, SHA
+  `cac499c5b326cff564c2d9a30305308272a1d5f34de5d8ff86e89754dd191bdb`;
+  audit `retrieval_v24_independent_audit`, SHA
+  `4bf61d778b5733fec87aad262acba9e1c08423ddbeef076825943b36ab5ce781`.
+- Verdict **`PIVOT_GENERATION`**, aucune promotion de v24; v23 reste référence
+  de recherche, pas produit validé. Aucun retuning après résultat. Prochaine
+  priorité proposée, **non exécutée** : audit des parents absents distinguant
+  absence de preuve officielle, représentation non indexée et preuve indexée
+  non atteinte. La v18 a déjà essayé noms/sites/historiques/relations/successions;
+  ne pas les présenter comme nouveaux. Inclure contrôles/folds/origines, puis
+  préenregistrer une correction structurelle unique sans alias CRM ni injection.
+  Aucun national, aucune projection, aucun gate500/100/Wilson/SLO établi,
+  fold0/fold1 fermés, aval gelé. Panel réutilisé; export indépendant obligatoire
+  avant affirmation cross-CRM. Pas de promesse d'atteindre99,2 %.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
