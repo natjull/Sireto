@@ -6348,5 +6348,70 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fold0/fold1 fermés, aval gelé. Panel réutilisé; export indépendant obligatoire
   avant affirmation cross-CRM. Pas de promesse d'atteindre99,2 %.
 
+## V25 — audit découverte et rejet du canal numéro — 9 septembre 2026
+
+- `80c7db77` préenregistre l'audit label-side sur les1034 requêtes; `a77cd307`
+  corrige uniquement l'appel Arrow DuckDB, avant diagnostic final. Le premier
+  répertoire incomplet `retrieval_v25_discovery_audit/protocol-80c7db77` n'est
+  pas admissible. Le run réussi `arrowfix` reste strictement label-side :
+  ses recherches par identifiant humain ne sont jamais des candidats.
+- Sur les **132 parents absents des preuves**, tous sont indexés dans la
+  géographie effective. **88** correspondent à au moins un canal textuel SIRET
+  v18 reconstitué (82 adresse-caractères,50 adresse-mots,31 nom-caractères,
+  comptes non additifs), **44** à aucun de ces dix canaux. Tous132 ont le SIRET
+  exact indexé localement. L'existence de noms officiels ne prouve pas que
+  chaque alias utile est indexé. Les88 ne sont pas des rescues naturels :
+  leurs rangs libres restent inconnus. Aucune divergence INSEE/CP entre
+  champs CRM et projection historique observée sur1034 requêtes.
+- `2318898f` fige avant le run complet une seule correction additive : numéro
+  exact obligatoire ET adresse-caractères, géographie inchangée, maximum512
+  SIRET, quatre workers. Pas de GT/diagnostic dans le générateur.935 requêtes
+  éligibles,857 avec résultats;258113 signaux,40431 nouvelles paires requête/site.
+  **Zéro bon parent nouveau, zéro SIRET exact nouveau**, zéro perte dans l'union.
+  Union exploratoire3 940575 références : **900 parents,898 exacts,898
+  opérationnels**, inchangés. Canal seul360 parents/280 exacts/324 opérationnels;
+  parmi522 difficiles54/20/32. Tous les segments, V2/V3 vides compris, publiés.
+- Audit indépendant expliquant le plafond : parmi132 absents,119 requêtes
+  ont numéro+adresse; seulement **2** parents possèdent un site local au numéro
+  demandé dans les documents indexés, **1** pour le SIRET exact. Sur tous522
+  difficiles :477 éligibles,67 accords parent-local,24 accords SIRET exact;
+  contrôles :458/310/260. Ce désaccord ne prouve pas une erreur de label et
+  n'autorise ni correction, ni exclusion. Le plafond de compatibilité aurait
+  dû être mesuré avant ce pilote; le reprendre avant les prochaines hypothèses.
+- 57 tests passent. Préflight16 sans labels identique au complet. Vérification
+  de tous les signaux contre les documents sources scellés : identités,
+  numéro/géographie; recalcul ledger exact/opérationnel, union et attribution.
+  Attribution réservoir :898 hits,133 parents absents du réservoir,2 sites
+  absents malgré parent matérialisé,1 catalogue. Ne pas confondre avec132
+  parents absents **des preuves** /3 sites non développés : un parent présent
+  dans les signaux n'a aucun site dans le réservoir. Aucun Master recalculé.
+- Calculs hors hashes : audit188,291 s/8,62 Gio; préflight8,238 s/1,27 Gio;
+  génération121,132 s/7,59 Gio; évaluation0,895 s/1,15 Gio; audit final1,448 s/
+  1,56 Gio. Zéro swapout, Mac/CATNAT, aucun coût externe. Indexmeta SHA et
+  inventaire tailles/mtime stables; pas de rehash complet des octets Tantivy.
+- `ff998891` scelle l'audit reproductible des résultats et
+  `docs/retrieval_v25_discovery_results.md`. Configuration SHA
+  `2c11d2553743ea1e43f7c71b6a56f242c6018626e3818096fcf3391ab163ddf6`.
+  Racine `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/` :
+  `retrieval_v25_discovery_audit/arrowfix/manifest.json`, SHA
+  `e6b7b842b6e77cffa90e7e7f2b2b0190c119158424167405e181c046bf2adb83`;
+  sous suffixe `2c11d2553743ea1e/manifest.json`, génération
+  `retrieval_v25_conjunctive_generation`, SHA
+  `a9c1fd746977ed3294761660aa8d29c8058f5479c90af1ee171cd9e49517597a`;
+  évaluation `retrieval_v25_conjunctive_evaluation`, SHA
+  `d1421100dbac579c4f2e76de297c033b22cf5cf8cadd5ad059614268b47b78d6`;
+  audit final `retrieval_v25_result_audit`, SHA
+  `5b460fdfe6b0e6c39b8111dde7cc6469b2308fd6f3ff2d8308619cb87fa08baf`.
+- Verdict **`PIVOT_GENERATION`**. Canal numéro écarté, pas d'intégration ni
+  retuning. V23 reste référence de recherche; v24 non promue. Suite proposée,
+  non exécutée : audit du contenu des noms officiels (parent+tous sites) versus
+  aliases réellement indexés, current/historical séparés et contrôles inclus.
+  Les documents SIREN agrègent déjà des noms de sites globalement sélectionnés;
+  ne pas présenter cela ou les noms historiques comme inédit. Distinguer une
+  perte d'alias de l'absence réelle de preuve nominale avant un nouveau canal.
+  Aucun numéro/géo durci, aucun label retiré, aucun national/projection,
+  gate2000/500/100/Wilson/SLO ou dégel aval; folds0/1 fermés. Panel réutilisé,
+  export indépendant toujours nécessaire avant revendication cross-CRM.
+
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
