@@ -1,0 +1,17 @@
+{
+  "schema": "sireto-v24-nested-fusion-1",
+  "recipe": "INNER_PARENT_RANK_LIKELIHOOD_MIXTURE_THEN_SITE_SCORE_FUSION",
+  "source_generation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v21_membership/177f6e1c35b10f85-canonical-external/manifest.json", "sha256": "6115d0cec5ec054d6e4af991f11f280383329cee5da4f1f32017a18120a52bc7"},
+  "features": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_features/bb12058773f80d6f/manifest.json", "sha256": "dcfffcdcc9f5d34db0d88c5039674090a2ed8911b8242b38d31f39d5c887adbe"},
+  "models": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_oof_master/bb12058773f80d6f/manifest.json", "sha256": "ac4b279be0f30fbee5cfe7fc0c205c31b9cf50fcc23351795ceb55423e05de81"},
+  "baseline_evaluation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_evaluation/bb12058773f80d6f/manifest.json", "sha256": "ca3400c50e3520d6974ac0abab49d80e17b27832bbbbaafaeb447abb5902010e"},
+  "outer_folds": [2,3,4],
+  "rank_constant": 60,
+  "log_barrier": 0.01,
+  "bisection_iterations": 80,
+  "master_cap": 2000,
+  "reserved_prefix": 0,
+  "national_projection_allowed": false,
+  "fold1_allowed": false,
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
