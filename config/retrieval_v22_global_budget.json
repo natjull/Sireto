@@ -1,0 +1,12 @@
+{
+  "schema": "sireto-v22-global-budget-1",
+  "recipe": "V21_SCORE_GLOBAL_TOP2000_NO_RESERVED_PREFIX",
+  "master_cap": 2000,
+  "reserved_prefix": 0,
+  "source_generation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v21_membership/177f6e1c35b10f85-canonical-external/manifest.json", "sha256": "6115d0cec5ec054d6e4af991f11f280383329cee5da4f1f32017a18120a52bc7"},
+  "baseline_evaluation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v21_membership_eval/177f6e1c35b10f85/manifest.json", "sha256": "6023dccb031a3007bfd322107d6c5deeb89e23ece0516880cfac78b358461292"},
+  "national_projection_allowed": false,
+  "fold1_allowed": false,
+  "external_generalization_claim_allowed": false,
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
