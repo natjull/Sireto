@@ -1,0 +1,15 @@
+{
+  "schema": "sireto-v25-conjunctive-1",
+  "recipe": "ADDITIVE_NUMBER_MUST_ADDRESS_CHAR_SIRET_DISCOVERY",
+  "source_config": {"path": "config/retrieval_all_human_v18_parent_discovery_generation.json", "sha256": "e270a60d520d7c7be7928988382ce91fc8f326c7bc1541a7c53eff0ce1aa80e6"},
+  "baseline_generation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v21_membership/177f6e1c35b10f85-canonical-external/manifest.json", "sha256": "6115d0cec5ec054d6e4af991f11f280383329cee5da4f1f32017a18120a52bc7"},
+  "baseline_evaluation": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_evaluation/bb12058773f80d6f/manifest.json", "sha256": "ca3400c50e3520d6974ac0abab49d80e17b27832bbbbaafaeb447abb5902010e"},
+  "site_cap_per_query": 512,
+  "workers": 4,
+  "query_fields": ["name", "address", "number", "postcode", "insee"],
+  "folds": [2,3,4],
+  "site_expansion": false,
+  "master_selection": false,
+  "national_run": false,
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
