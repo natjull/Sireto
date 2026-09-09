@@ -9,7 +9,7 @@ import duckdb
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.xgb_matcher.retrieval_v20_workbench import Budget, record, write_json, sql_path
-from src.xgb_matcher.retrieval_v21_membership import load_config, manifest_files, implementation
+from src.xgb_matcher.retrieval_v21_membership import load_config, manifest_files, implementation, open_workbench_db
 
 
 def summarize(df):
@@ -76,7 +76,7 @@ def run(config_path, generation, output):
         raise ValueError('Truth authority')
     output = Path(output); output.mkdir(parents=True, exist_ok=False)
     with Budget(config['resources']) as budget:
-        c = duckdb.connect(); c.execute("SET memory_limit='4GB'"); c.execute('SET threads=4')
+        c = open_workbench_db(output)
         for name, path in [('q',gf['queries.parquet']),('master',gf['master.parquet']),
                            ('candidates',gf['candidates.parquet']),('official_loss',bf['official_loss_sidecar.parquet']),
                            ('acceptable',bf['acceptable_operational.parquet'])]:

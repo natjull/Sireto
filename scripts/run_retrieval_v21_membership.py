@@ -10,7 +10,7 @@ import duckdb
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from src.xgb_matcher.retrieval_v20_workbench import Budget, record, verify, write_json, sql_path
 from src.xgb_matcher.retrieval_v20_workbench import load_config as load_v20
-from src.xgb_matcher.retrieval_v21_membership import load_config, manifest_files, build_tables, implementation
+from src.xgb_matcher.retrieval_v21_membership import load_config, manifest_files, build_tables, implementation, open_workbench_db
 
 
 def run(config_path, output, preflight=None):
@@ -28,7 +28,7 @@ def run(config_path, output, preflight=None):
         raise ValueError('Preflight must be 1..16')
     output = Path(output); output.mkdir(parents=True, exist_ok=False)
     with Budget(config['resources']) as budget:
-        c = duckdb.connect(); c.execute("SET memory_limit='4GB'"); c.execute('SET threads=4')
+        c = open_workbench_db(output)
         c.execute('''CREATE TEMP TABLE q AS SELECT query_id,fold,crm_number,crm_suffix,
           crm_street,crm_postcode,crm_insee FROM read_parquet(?) ORDER BY fold,query_id LIMIT ?''',
           [str(files['queries.parquet']), preflight or config['expected_queries']])

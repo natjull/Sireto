@@ -4,7 +4,7 @@ import duckdb
 import pyarrow as pa
 import pytest
 
-from src.xgb_matcher.retrieval_v21_membership import build_tables
+from src.xgb_matcher.retrieval_v21_membership import build_tables, open_workbench_db
 from scripts.evaluate_retrieval_v21_membership import evaluate_tables, summarize
 
 
@@ -101,6 +101,13 @@ def test_forbidden_fold_fails_closed():
     rows=fixture();rows['q'][0]['fold']=1
     c=db(rows)
     with pytest.raises(ValueError,match='Forbidden fold'):build_tables(c)
+    c.close()
+
+
+def test_spill_is_on_the_explicit_output_volume_and_bounded(tmp_path):
+    c=open_workbench_db(tmp_path)
+    assert c.execute("SELECT current_setting('temp_directory')").fetchone()[0]==str(tmp_path/'_duckdb_spill')
+    assert c.execute("SELECT current_setting('max_temp_directory_size')").fetchone()[0]=='12.0 GiB'
     c.close()
 
 

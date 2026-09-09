@@ -2,7 +2,9 @@
 import json
 from pathlib import Path
 
-from .retrieval_v20_workbench import ROOT, record, verify
+import duckdb
+
+from .retrieval_v20_workbench import ROOT, record, verify, sql_path
 
 
 def load_config(path):
@@ -31,6 +33,18 @@ def manifest_files(authority):
     if any(p.parent.resolve() != path.parent.resolve() for p in files.values()):
         raise ValueError('External manifest artifact')
     return m, files
+
+
+def open_workbench_db(output):
+    """Spill only beside this run's artifacts, never into the workspace disk."""
+    spill = Path(output)/'_duckdb_spill'
+    spill.mkdir(exist_ok=False)
+    c = duckdb.connect()
+    c.execute("SET memory_limit='4GB'")
+    c.execute('SET threads=4')
+    c.execute(f'SET temp_directory={sql_path(spill)}')
+    c.execute("SET max_temp_directory_size='12GiB'")
+    return c
 
 
 def build_tables(c):
