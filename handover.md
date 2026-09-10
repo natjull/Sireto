@@ -6464,4 +6464,65 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Aucun national, gate 2000/500/100/Wilson/SLO, garantie cross-CRM ou dégel aval.
 
 ---
+## 10 septembre 2026 — v27 : causes géographiques et import des noms établis
+
+- `fb28a1fd` fige les audits et tests; `1c526ca5` adapte uniquement l'exécution
+  du replay géo après manque de mémoire; `7ce18a73` publie le rapport
+  `docs/retrieval_v27_upstream_audit_results.md` et la réconciliation
+  `scripts/audit_retrieval_v27_results.py`. Aucun nouveau canal, candidat,
+  modèle, label ou Recall. Tous1034, folds2/3/4, historique/V2/V3 conservés;
+  exact/opérationnel v24 inchangés823/825. V24 non promue, v23 référence.
+- Les12 parents absents mais à≤500 m sont tous locaux : **10 éliminés au
+  top512 parents**, **2 avant le top4096 sites**. Aucun plus proche site
+  exclu par la commune. Pour les10, rangs parent618–3465; le rang exact des
+  deux au-delà4096 n'est pas mesuré. Distances154,4–493,4 m. Les512 parents
+  conservés sont tous plus proches ou à égalité de distance. Le code v16
+  donne priorité à la distance; numéro/voie ne jouent qu'après, surtout en
+  cas d'ex aequo. Aucun rayon ou plafond ajusté aux douze labels.
+- Causes géo sur1034 :457 présents,168 BAN non résolues,132 sans site parent
+  à coordonnées valides,34 frontière de commune,147 cap4096,96 cap512.
+  Parmi132 parents absents multicanal :30 BAN non résolues,31 coordonnées
+  absentes,7 frontière,47 cap4096,17 cap512. Ce n'est pas l'attribution
+  end-to-end des pertes multicanal. Les inconnues ne sont pas des distances.
+- Champs SIRENE courants autorisés, fichiers bruts→dossier→portfolio :
+  zéro perte sur1093 paires champ/valeur/sujet UL et26679 sites. RNE canonique
+  →dossier→portfolio : zéro perte sur2023 paires valeur/sujet/type (contrôle
+  structurel, pas de similarité CRM ni réexport de valeurs RNE personnelles).
+  Historique SIRENE absent des inputs du dossier, pas une perte silencieuse
+  de l'import courant. Huit égalités CRM historiques absentes du portfolio,
+  dont5 contrôles/3 difficultés,6 HIT et2 évictions Master; aucune parmi132
+  parents absents. **8/8 déjà présents dans les projections sources scellées
+  du canal temporel v16/v18** : pas une nouvelle source de huit rescues.
+- Limite persistante : brut RNE→canonique non audité exhaustivement sur la
+  population. ZIP15,1 Go /177,4 Go décompressés /5470 membres, sans index
+  membre-SIREN retrouvé; aucun scan intégral déclenché. Les noms de personnes
+  SIRENE ne font pas partie de l'allowlist de cet audit de similarité.
+- 76 tests passent. Vérificateur distinct : SHA, ledger folds2/3/4, égalité
+  préflight16/complet, exact set equality du replay v16 (hors choix témoin
+  SIRET ex aequo), présence parent,512 voisins devant les12 absents,
+  couverture courante et provenance temporelle8/8. Verdict
+  `PASS_V27_OUTPUT_RECONCILIATION`. Pas de géocodeur indépendant ni d'audit
+  du brut RNE. Aucun X/Y brut exporté; les replays ne rejoignent aucun pool.
+- Premier complet géo DuckDB4 Go en OOM : répertoire
+  `retrieval_v27_geo/f6f0ed019069defc` incomplet/non admissible. Rejeu distinct
+  sous8 Go/deux threads, sans changement scientifique :41,565 s /RSS8,88 Gio;
+  noms14,983 s /RSS0,63 Gio; zéro swapout. Temps hors rehash des sources,
+  pas des SLO produit. Mac/CATNAT seulement. Préflights admis `preflight16-final`
+  dans chaque audit; essais techniques précédents écartés.
+- Config SHA `f6f0ed019069defc4c208654853a2f6e1ae351e4bb91377a046c877e3790e790`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/` :
+  `retrieval_v27_names/f6f0ed019069defc/manifest.json`, SHA
+  `130b4e119870aa18b196e40f2c0db8494d18cb890141e994c6c10a150dc2d234`;
+  `retrieval_v27_geo/f6f0ed019069defc-memory8/manifest.json`, SHA
+  `201c6a05c31cdd8d1a747545eea7f03a285edde46bed5d25f4a155a2d8a18504`.
+- Verdict **`PIVOT_GENERATION`**. Suite proposée non exécutée : vérifier les
+  indices nom/adresse réellement discriminants dans les voisins naturels,
+  puis préenregistrer une sélection avant coupe moins dominée par la distance,
+  OOF2/3/4, contrôles et budgets constants. Un reclassement après génération
+  ne récupérera pas les deux exclus avant4096. Pas d'augmentation opportuniste
+  de rayon/cap, d'alias CRM, de positif injecté ou de correction de label.
+  Aucun national/gate2000/500/100/Wilson/SLO, dégel aval, garantie99,2% ou
+  revendication cross-CRM; folds0/1 fermés.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
