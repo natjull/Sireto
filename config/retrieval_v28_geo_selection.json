@@ -1,0 +1,20 @@
+{
+  "schema": "sireto-v28-geo-selection-1",
+  "recipe": "SINGLE_OOF_PARENT_RANKER_BEFORE_GEO_TOP512",
+  "folds": [2,3,4],
+  "site_pool_cap": 4096,
+  "parent_cap": 512,
+  "new_geographic_candidates": false,
+  "production_activation": false,
+  "sampler": "HEAD256_PLUS_STRATIFIED_TAIL256",
+  "v18_config": {"path": "config/retrieval_all_human_v18_parent_discovery_generation.json", "sha256": "e270a60d520d7c7be7928988382ce91fc8f326c7bc1541a7c53eff0ce1aa80e6"},
+  "geo_config": {"path": "config/retrieval_geo_v16_sidequest.json", "sha256": "15b3d8c774edd5a741fb92e34c3ce0ec455bd20aa43964668422857c626247c7"},
+  "model_config": {"path": "config/retrieval_v23_joint_parent.json", "sha256": "bb12058773f80d6f5d7ff3ba7b0fc03d1b2a4eb5e95911b5deb7b33580746d69"},
+  "current_ul": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet", "sha256": "fdbc02abbe47339c7fbe56728667868ff42d938da8b213aa4276ad266751b30e"},
+  "current_sites": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet", "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"},
+  "baseline_geo": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_geo_v16_generation/15b3d8c774edd5a7/manifest.json", "sha256": "2cbfb03c15fd82d0e57c72ece37ac23513dc429df857280ca8f7a2030b9694ff"},
+  "truth_audit": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v27_geo/f6f0ed019069defc-memory8/manifest.json", "sha256": "201c6a05c31cdd8d1a747545eea7f03a285edde46bed5d25f4a155a2d8a18504"},
+  "official_loss_sidecar": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v20_master_eval/3ccb3e44a19a1769/official_loss_sidecar.parquet", "sha256": "77653fb8022f897faf2843dfe40d6fb7d50088d87a83f7dcd18799a7332e012d"},
+  "operational_sidecar": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v20_master_eval/3ccb3e44a19a1769/acceptable_operational.parquet", "sha256": "04df2fdc94d590befa43ba8a1f14bb586c3bb3a3b2e6e9845cece1dca412a431"},
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
