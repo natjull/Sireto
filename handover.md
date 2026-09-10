@@ -6414,4 +6414,54 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   export indépendant toujours nécessaire avant revendication cross-CRM.
 
 ---
+## 10 septembre 2026 — v26 : audits noms officiels et géographie terminés
+
+- `f6cb9919` préenregistre et livre les deux audits label-side sur les 1034
+  requêtes folds 2/3/4; `ab0e22f3` livre leur réconciliation reproductible et
+  `docs/retrieval_v26_evidence_audit_results.md`. Aucun nouveau candidat,
+  modèle, label ou Recall mesuré. Exact/opérationnel antérieurs v24 restent
+  823/825; v24 non promue, v23 référence de recherche. Folds 0/1 fermés.
+- Noms : quatre rôles primaires du portfolio officiel comparés aux documents
+  globaux et locaux, puis à 10 018 documents réellement lus dans l'index.
+  Aucune omission globale d'un nom du portfolio; égalité des ensembles locaux
+  par type/rôle avec Tantivy. Une égalité nominale CRM perdue au filtre local,
+  trois intersections de tokens perdues, aucune parmi les 132 parents absents.
+  Chez ces 132, tous ont des noms, zéro égalité exacte CRM et seulement trois
+  intersections de mots. Ce n'est pas un audit exhaustif des sources brutes
+  en amont du portfolio ni une preuve de bon classement par le moteur.
+- Géo : BAN v16 inchangée, 60 507 paires couvrant tous les sites du parent
+  humain dans le stock officiel, sans plafond ni frontière de commune côté
+  audit. BAN résolue 866 (550 non faibles, 316 faibles), 168 non résolues.
+  Distance parent disponible 734, exact 664; un autre site est plus proche
+  dans 231 cas, sans remettre en cause les labels. Aucun X/Y brut exporté.
+  Parmi 132 parents absents : 71 distances parent disponibles, 61 inconnues;
+  0/0/3/12 parents à 50/100/250/500 m. Même nombre pour les SIRET exacts :
+  aucun plafond supplémentaire à ces seuils grâce aux autres sites sur ce
+  segment. À 500 m, neuf BAN non faibles, onze voies normalisées différentes;
+  ni même bâtiment ni rues adjacentes établis. Aucun de ces douze parents
+  n'était remonté par le canal géo v16 : cause précise encore à attribuer.
+- 71 tests passent. Vérificateur distinct : hashes, labels ledger bornés,
+  inventaire complet des sites contre le stock, agrégats et témoins de
+  distances, égalité préflight 16/complet; `PASS_V26_OUTPUT_RECONCILIATION`.
+  Pas de seconde implémentation indépendante du géocodeur. Audits hors
+  rehash sources : géo 9,376 s / 628 260 864 octets RSS; noms 22,487 s /
+  941 408 256 octets RSS; zéro swapout. Mac/CATNAT, aucun coût externe.
+- Configuration SHA
+  `5c845b51f346e54c624140b5b2357b2244a223136f7e7d6f62a9eb9779401737`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`, manifestes :
+  `retrieval_v26_geo/5c845b51f346e54c/manifest.json`, SHA
+  `0e50b9b49267bf2712368b0d6ccdf0439e47969e7bbe82643ca63abce0b4e3d8`;
+  `retrieval_v26_names/5c845b51f346e54c/manifest.json`, SHA
+  `1a6e7ea9522e0e09ca9d1a9012e24abf2ea842a2f84ae3896768e33430b3883e`.
+  Les deux premiers préflights noms incomplets sont exclus; `preflight16-sqlfix`
+  est le préflight noms réussi. Indexmeta/inventaire stables, pas de rehash
+  intégral de Tantivy. Segments historique, V2/V3 et autres dans les manifestes.
+- Verdict **`PIVOT_GENERATION`**. Suite proposée non exécutée : attribuer les
+  exclusions géographiques des douze proches, puis vérifier les champs de
+  noms autorisés et leur extraction **en amont du portfolio** (sources locales
+  SIRENE/RNE, normalisation CRM). Pas de nouveau rayon ajusté aux labels,
+  d'alias CRM, d'injection positive ou d'équivalence fondée sur la distance.
+  Aucun national, gate 2000/500/100/Wilson/SLO, garantie cross-CRM ou dégel aval.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
