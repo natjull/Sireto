@@ -72,8 +72,9 @@ def test_refuses_wider_channel(backend):
     with pytest.raises(ValueError):search(backend,RetrievalQuery('ALPHA','BLEUE'),513)
 
 
-def test_literal_sql_and_no_fit():
-    tree=ast.parse(Path('scripts/retrieval_v30_joint_search.py').read_text())
+@pytest.mark.parametrize('filename',['scripts/retrieval_v30_joint_search.py','scripts/audit_retrieval_v30_results.py'])
+def test_literal_sql_and_no_fit(filename):
+    tree=ast.parse(Path(filename).read_text())
     for n in ast.walk(tree):
         if isinstance(n,ast.Call) and isinstance(n.func,ast.Attribute):
             assert n.func.attr!='fit'
