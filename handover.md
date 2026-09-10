@@ -6581,4 +6581,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   réutilisé et statuts historiques/V2/V3 toujours publiés séparément.
 
 ---
+## 10 septembre 2026 — consultation Claude demandée, bloquée par authentification
+
+- `82dc5004` conserve le dossier de consultation dans
+  `docs/retrieval_claude_opus_review_request.md` et son statut dans
+  `docs/retrieval_claude_opus_review_status.md`. Revue demandée par
+  l'utilisateur avant un nouveau test retrieval, incluant la stratégie
+  anciens/nouveaux candidats et les résultats v21 à v28.
+- Tentative avec Claude Code 2.1.143, `claude -p --model claude-opus-5
+  --effort xhigh`, sans outils, MCP, hooks ni accès projet par outils;
+  dossier agrégé sans lignes CRM brutes. Échec OAuth expiré (401), zéro
+  jeton et coût déclaré nul : aucun avis reçu, disponibilité effective
+  d'Opus 5 non vérifiée. Aucun modèle de remplacement ni nouveau run.
+  Reconnexion utilisateur requise via `claude auth login --claudeai`.
+- Correction du résumé précédent : il existe des gains Master de recherche,
+  pas une amélioration produit validée. La suppression de la réservation
+  des 1750 anciens candidats apporte 728→773 exacts en v22 (+45 net);
+  v23 atteint 822 (+49 net), v24 823 sans promotion. « Ancien/nouveau »
+  désigne la provenance de génération, pas l'âge des établissements.
+  Ces résultats du panel réutilisé ne prouvent ni Recall@100 ni généralisation.
+- Verdict scientifique inchangé `PIVOT_GENERATION`. Consultation en attente
+  de reconnexion; aucun changement de recette, aucun dégel aval, folds 0/1
+  fermés. Documents uniquement, aucun test de calcul relancé.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
