@@ -6763,4 +6763,29 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Folds 0/1 fermés, aval gelé. Aucun calcul en cours.
 
 ---
+## 10 septembre 2026 — consultation Claude sur le rejeu proche production
+
+- `01274e87` conserve mandat, avis brut et contre-examen dans
+  `docs/retrieval_claude_production_replay_{request,raw,assessment}.md`.
+  Demande utilisateur explicite; Opus5 confirmé, effort demandé xhigh,
+  code/documents fournis, outils/MCP/hooks désactivés, aucun CRM brut transmis.
+  Appel réussi 122,34 s; coût CLI indicatif 0,35673725 USD, auxiliaire Haiku
+  inclus, pas une preuve de facturation en plus de l'abonnement.
+- Recommandation retenue : un rejeu apparié v23/v30, modèles parent gelés,
+  toute population évaluable2/3/4, calculs communs partagés et lots bornés.
+  Préconditions : recomptage/isolation, reconstructibilité depuis entrée CRM,
+  parité et dimensionnement courts. Aucun runner complet créé ni run lancé.
+- Limites code confirmées : workbench1034, anciens signaux/réservoirs rechargés,
+  SceneIR préexistante, garde target_query_ids empêchant l'extension immédiate.
+  La disponibilité à l'arrivée de tous les champs/artefacts reste à prouver;
+  ce n'est pas une fuite établie ni l'absence prouvée de composants réutilisables.
+- Rejet des affirmations de Claude : recall93–97% prédit sans preuve,
+  panel comme borne basse, exclusions de violations OOF du dénominateur,
+  quelques% de surcoût, froid/mémoire/pouvoir statistique affirmés sans mesure,
+  Master99,5% transformé en gate autonome. Contrats et garde all-human inchangés.
+- 80,17% reste le recall exact du panel, pas celui de production. Pas de
+  nouveau résultat, refit, variante, national ou500/100. Folds0/1 fermés,
+  aval gelé; PIVOT_GENERATION inchangé. Aucun calcul en cours.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
