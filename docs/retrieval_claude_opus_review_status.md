@@ -1,10 +1,16 @@
-# Consultation Claude demandée — en attente de reconnexion
+# Consultation Claude demandée — avis reçu après reconnexion
 
 10 septembre 2026. L'utilisateur demande un avis via `claude -p`, modèle
 Claude Opus 5, effort extra high, avant un nouveau run de retrieval, avec
 reprise explicite de la piste anciens/nouveaux candidats.
 
-## Tentative effectuée
+**Mise à jour :** la seconde tentative après reconnexion a réussi, avec
+`claude-opus-5` confirmé dans `modelUsage`, effort demandé `xhigh`.
+Synthèse et examen critique : `docs/retrieval_claude_opus_review_received.md`.
+Aucun nouveau run de retrieval. Le blocage ci-dessous est conservé comme
+historique de la première tentative, il n'est plus actif.
+
+## Première tentative — historique
 
 - CLI installé : Claude Code2.1.143. `--effort xhigh` accepté par son aide.
 - Modèle demandé explicitement : `claude-opus-5`. Aucun fallback demandé.
