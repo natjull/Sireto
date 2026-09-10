@@ -6710,4 +6710,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   seulement; aucun calcul en cours. `git diff --check` passe.
 
 ---
+## 10 septembre2026 — v30 recherche conjointe préenregistrée, complet lancé
+
+- `52dbe1c7` fige le canal conjoint nom courant/adresse courante par n-grammes
+ 3/4/5, un fragment requis dans chaque groupe sur le même document SIRET,
+ aucun numéro exact obligatoire. Score par groupe normalisé par son nombre
+ de grammes, poids égaux;512 résultats maximum, rang dense. Intégration
+ additive v18/RRF, expansion locale et modèles/règle v23 gelés, Master2000.
+-53 tests passent. Préflight16 :6685 témoins, recherche12,80 s/RSS2,10 Gio;
+ Master30276 références,6,99 s/RSS0,75 Gio. Replay scores/Master v23 exact,
+ zéro swapout, aucun label lu dans ces étapes. Pas de mesure de qualité.
+- Config SHA `8cb4ad779f11ac844a7307b3e414e2b5895bdd4c863dc367a5f311acc431666f`.
+ Recherche complète lancée sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/
+ retrieval_v30_discovery/8cb4ad779f11ac84`. Bilan seulement après génération
+ Master scellée. Aucun fit, index nouveau, geo v28, v24 ou variante choisie
+ après résultat. Folds0/1 fermés; plafonds2000/500/100 et aval inchangés.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
