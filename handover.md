@@ -6788,4 +6788,47 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   aval gelé; PIVOT_GENERATION inchangé. Aucun calcul en cours.
 
 ---
+## 11 septembre 2026 — préflight rejeu complet : STOP reproductibilité
+
+- Autorisation utilisateur « Vas-y » : contrôle de reconstruction puis complet
+  si conforme. Code initial `2af594b9`, branchement restauré et diagnostic
+  `a036fde5`, rapport `f18d7780` dans
+  `docs/retrieval_v31_replay_preflight_results.md`. Aucun run complet lancé.
+- Population recomptée : 23 571 labels utilisables (7 767/7 967/7 837),
+  16 absences de labels publiées (8/3/5). Isolation SIREN des modèles parent
+  gelés passée; projection de recherche conforme sur23 571 entrées CRM.
+  Folds0/1 non matérialisés, aucun résultat de qualité consulté dans le replay.
+- Le branchement v15 initial n'était pas celui du legacyv11. Restauration
+  overlay officielv2 + complément temporel RNE/BODACC + deuxième index
+  sectoriel DataES : candidats/ordre legacy identiques sur16/16 (contre0/16).
+  Aucun index reconstruit ni recette historique modifiée.
+- Canaux parent, union de présence, dix canaux directs et conjoint conformes.
+  Mais231 témoins SIRET de `sirene_economic_continuity` changent sur16 requêtes,
+  à parent/rang de canal/rang de seed identiques. Tous ont plusieurs cibles
+  admissibles au seed minimal; anciens/nouveaux témoins sont officiels.
+ 100 fichiers temporels hashés, glob égal au manifeste. `arg_min` sans
+ départage total laisse le choix du témoin dépendre du contexte d'exécution.
+- Replays1/2/8 threads égaux au sein de chaque processus, différents entre
+  processus :216 témoins différents à un thread sur16 requêtes. La seconde
+  exécution isolée émet STOP_PARITY_CAUSE_NOT_FULLY_ESTABLISHED car elle égale
+  le premier préflight; la comparaison avec le premier audit établit la
+  différence interprocessus. Rapports intermédiaires tous conservés.
+- Impact sans lire les labels : v23 perd209 paires requête/SIRET et en ajoute208;
+  v30 perd212/en ajoute211 sur16 requêtes. Ce ne sont pas des vrais positifs.
+  Les métriques822/829 des fichiers gelés ne sont pas rétractées, mais ne
+  prouvent pas la reproductibilité de la chaîne complète.
+- 19 tests passent; phases population1,93s, legacy restauré40,08s, canaux et
+  Masters35,80s, audits7,33/6,86s; RSS<4,5Gio, zéro swapout. Pas de SLO ni
+  d'extrapolation de temps national. Artefacts sous
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v31_replay_preflight/`.
+  SHA rapport canaux `9e29f79b10fb9a353b0fccc5ca1168f33e89a829e0ff12ab3d7f08a660bfb4ee`;
+  SHA second audit `73035ebb3fad09cd82034579583e5932c2aa0d2ad6bee645a16fac8db1da2ed6`.
+- **STOP** : complet non autorisé par le préflight. Proposer un départage
+  déterministe de la ligne de succession (SIRET et direction cohérents),
+  commun aux deux branches, sans labels, puis nouveau gel et contrôle
+  interprocessus/shards. Cette réparation modifierait des sorties historiques;
+  elle n'est pas appliquée silencieusement. Pas de nouveau recall/global,
+  pas de fit/500/100, aval gelé, folds0/1 fermés. Aucun calcul en cours.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
