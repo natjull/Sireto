@@ -6727,4 +6727,40 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  après résultat. Folds0/1 fermés; plafonds2000/500/100 et aval inchangés.
 
 ---
+## 10 septembre 2026 — v30 terminée et vérifiée : +7 exacts au Master2000
+
+- Recette `52dbe1c7`, lancement `c98f85f3`, vérificateur `24c1169b` figé avant
+  qualité; rapport final `a438dcd1`, `docs/retrieval_v30_joint_search_results.md`.
+- Sur les 1 034 requêtes réutilisées : exact v23 822 → v30 829, 12 gains/5 pertes;
+  opérationnel 824 → 832, 12 gains/4 pertes. Contrôles 512/512 conservés,
+  difficiles 317/522; net par fold 2/3/4 : +2/+3/+2. Le segment fermé perd 1.
+  Historique/V2/V3 publiés; V2/V3 non renseignés, aucun filtrage de labels.
+- Nouveau canal conjoint : 450 725 témoins, 1 033 requêtes éligibles, une
+  conservée avec canal vide. Réservoir additif 3 996 520 paires (+96 376),
+  exact 898 → 900. Parmi les 12 gains Master : 11 déjà dans l'ancien
+  réservoir, un nouvel exact; le second nouvel exact est évincé. Les cinq
+  pertes restent dans le réservoir. Pas de revendication de gain causal
+  direct pour le gain indirect sans témoin conjoint du SIRET exact.
+- Master 1 973 172 références, max 2 000. Attribution des 205 erreurs :
+  130 parents absents, 3 sites non développés, 71 évictions, 1 absence catalogue.
+  Sidecar officiel scellé présent; équivalence opérationnelle séparée.
+- 54 tests passent et `PASS_V30_OUTPUT_RECONCILIATION` : replay de recherche
+  exact, splits/ledger 2/3/4, union naturelle, modèles v23, classement, métriques
+  et préflight rapprochés. Aucun fit ni retuning après résultats.
+- Recherche 229,84 s/RSS11,52 Gio, Master 73,07 s/RSS9,88 Gio, évaluation
+  1,11 s/RSS2,01 Gio, vérificateur 266,78 s/RSS11,83 Gio; zéro swapout.
+  P95/p99 recherche concurrente 1,793/2,526 s, pas des SLO produit.
+  Index vérifié par manifeste/meta/inventaire, pas intégralement rehashé.
+- Artefacts sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/`, suffixe
+  `8cb4ad779f11ac84`, dans `retrieval_v30_discovery`, `retrieval_v30_master`,
+  `retrieval_v30_evaluation`, `retrieval_v30_verification`.
+  SHA évaluation `d7722bf7256d89507abd2349c601ca521a60474b5af625485e9051146e66ff5f`;
+  SHA vérification `faeea8c26e85e49bdd8f5c4d1cc852e5c25d607d2f0e0c3fc7c3502f29f6be6c`.
+- **NET_GAIN_REUSED_PANEL / PIVOT_GENERATION**. V30 conservée comme challenger
+  gelé, v23 référence stable; aucune promotion automatique ou nouvelle variante.
+  Validation moins réutilisée et admission restent des pistes, non exécutées.
+  Aucun national, 500/100, Wilson, garantie 99,2 % ou claim cross-CRM.
+  Folds 0/1 fermés, aval gelé. Aucun calcul en cours.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
