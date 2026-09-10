@@ -6525,4 +6525,60 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   revendication cross-CRM; folds0/1 fermés.
 
 ---
+## 10 septembre 2026 — v28 : sélection géographique OOF utile mais rejetée
+
+- `99a763aa` préenregistre et livre le pilote : mêmes4096 voisins v16,
+  nouveaux scores parent OOF avant coupe512. Aucun site ajouté, aucun rayon,
+  commune, cap produit ou modèle aval changé. Noms SIRENE courants autorisés,
+  adresse souple, qualité BAN et distance;21 features sans identifiant ni
+  nom de personne. Preuve nom×voie sur le même site, sans numéro obligatoire.
+  Génération sans labels :1034 requêtes,3160357 paires site et2949964 parents.
+- Trois modèles parent pairwise, paramètres v23 fixes240 arbres/profondeur6,
+  sampler positif naturel+256 tête+256 queue. Folds2/3/4 OOF, SIREN humains
+  disjoints, aucun positif injecté. Groupes entraînés376/373/357; lignes
+  189442/188031/179751. Les305/315/342 requêtes train non entraînables restent
+  au dénominateur d'évaluation. Folds0/1 fermés, aucun tuning après résultat.
+- **457→509 bons parents au top512 du canal géo :74 gains,22 pertes, net+52**,
+  plafond naturel553. Difficultés131→170 (56 gains/17 pertes); contrôles
+  326→339 (18 gains/**5 pertes**). Gains nets folds2/3/4 :+6/+12/+34.
+  Parmi132 parents absents multicanal :17 accessibles,**7 retenus**. Parmi
+  12 absents proches :10 accessibles,**3 retenus**;2 exclus avant4096 inchangés.
+- Plafonds de présence SIRET derrière les parents sélectionnés : exact389→424,
+  opérationnel410→445. Parmi132 absents, cinq SIRET exacts déjà dans ces sites.
+  Ce ne sont pas des Recall@512 SIRET/Master/top100 ni des sorties produit.
+  Les823 exacts/825 opérationnels Master v24 restent inchangés. V24 non promue,
+  v23 référence. Aucun nouveau Master2000,PreRank500,Recall100,Wilson ou SLO.
+- Bilan initial interrompu **après les trois fits/scorings** : assertion trop
+  stricte sur l'unique SIRET exact absent du sidecar opérationnel. Le sidecar
+  officiel atteste l'absence du catalogue, et le SIRET est absent du pool.
+  `0b44dd0b` scelle les neuf fichiers terminés et finalise sans réentraîner,
+  sans changer scores/sélection et sans exclure la requête (erreur exacte/op).
+  Le dossier initial sans manifeste final n'est pas admissible seul; les
+  fichiers originaux restent intacts. Reprise SHA
+  `884d10da18ef90a61cdb8382f7b81bed82606eb3c0bcf5f1521e9a4e1c0afb44`.
+- `f2a2bd72` publie `docs/retrieval_v28_geo_selection_results.md` et le
+  vérificateur `scripts/audit_retrieval_v28_results.py`. **82 tests passent**;
+  `PASS_V28_OUTPUT_RECONCILIATION` : SHA/copies des fits,ledger folds2/3/4,
+  préflight/complet,population naturelle,sampling,scores des3 modèles rejoués
+  exactement, sélection512 reconstruite, métriques parent/exact/op recalc.
+- Génération54,472 s/RSS8,69 Gio; finalisation1,254 s/RSS2,44 Gio; zéro swapout
+  sur ces étapes, temps hors hashes. Rapport chiffré des ressources du fit
+  non scellé à cause de l'arrêt du bilan : ne pas inventer temps/pic global.
+  Fits exécutés sous garde-fous14 Gio/30 minutes/zéro swapout. Mac/CATNAT,
+  aucun coût externe ni X/Y brut exporté; aucune hydratation riche.
+- Config SHA `1f604bd8a92e9fd923d4792e228d414d44d8e224ec559cb7eb22bdd9a5446394`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/` :
+  `retrieval_v28_geo_features/1f604bd8a92e9fd9/manifest.json`, SHA
+  `a960f8697bfcc7d18944445504a4634c36bcc1c333c487bc95d3183188c69762`;
+  `retrieval_v28_geo_oof/1f604bd8a92e9fd9-sealed-fits/manifest.json`, SHA
+  `38bf7a7b09ce4b1b1c53812dc8017c03db3d2b1b37a99560f217a662ab21d17b`.
+- Verdict **`PIVOT_GENERATION` / `REJECT_NO_RETUNING`** : cinq pertes de succès
+  géo parmi les contrôles violent le critère fixé avant run. Elles ne prouvent
+  pas cinq pertes du système multicanal complet, non évalué. Ne pas intégrer,
+  ne pas ajuster une fusion/quota/seuil sur ces résultats. Le signal utile
+  est conservé comme résultat, pas une recette promue. Aucun end-to-end ni
+  autre essai lancé automatiquement; aucune garantie99,2%/cross-CRM, panel
+  réutilisé et statuts historiques/V2/V3 toujours publiés séparément.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
