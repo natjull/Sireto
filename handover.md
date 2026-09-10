@@ -6626,4 +6626,23 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Contrôle documentaire `git diff --check`, pas de calcul/test relancé.
 
 ---
+## 10 septembre 2026 — v29 : essai consolidé préenregistré et lancé
+
+- `74588c2f` livre config/contrat/script/tests v29. Accord utilisateur pour
+  un seul essai consolidé, v23 + sélection géographique v28 figée; pas de v24.
+  Remplacer l'appartenance géo dans `v17_union`, conserver les membres
+  texte/adresse et tous les autres signaux. Pas de bonus geo ni nouveau poids.
+  Expansion locale et16 features v23 inchangées, modèles outer rechargés
+  sans entraînement; top2000 global sans protection anciens/nouveaux.
+- 46 tests passent. Préflight16 sans labels : replay exact réservoir/témoins
+  v21 puis scores et Master v23; nouveau Master30257 références sur16.
+  Étape7,49 s/RSS0,74 Gio/zéro swapout, hors hashes. Config SHA
+  `134f18bd1bae893adcea918ad7819ec4df87369d5998140935d29df94a14667c`.
+- Génération complète lancée sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/
+  audits/retrieval_v29_consolidated/134f18bd1bae893a`. Bilan séparé après
+  scellement; ne pas annoncer de gain avant mesure/vérification. Aucun fit,
+  LambdaMART SIRET grand réservoir, hydratation ou calcul500/100; folds0/1
+  fermés. V28 reste historiquement rejetée, aucune promotion produit.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
