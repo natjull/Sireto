@@ -65,3 +65,22 @@ Master exact/opérationnel antérieurs inchangés823/825. Sidecars officiels
 scellés obligatoires pour les vues de labels; absence/incohérence=STOP.
 Verdict final PIVOT_GENERATION (ou STOP intégrité/ressources). Milestones et
 commits isolés consignés dans handover.md.
+
+## Reprise du bilan depuis les trois fits terminés
+
+Les trois fits/scorings ont terminé sous `99a763aa`. Le bilan s'est arrêté
+sur une assertion trop stricte : la table opérationnelle n'inclut pas le
+SIRET exact d'une requête dont le sidecar officiel atteste déjà l'absence du
+catalogue. C'est l'unique cas, conservé au dénominateur. Aucun résultat OOF
+global n'avait été publié ni utilisé pour modifier le modèle.
+
+`config/retrieval_v28_completed_fits.json` scelle les neuf fichiers existants
+(modèles, scores, splits), les features et la configuration. Une finalisation
+distincte sans réentraînement exige que l'absence opérationnelle corresponde
+à une absence officielle et que le SIRET soit absent du pool naturel. Elle
+reste une erreur exacte et opérationnelle. Toute autre incohérence impose STOP.
+La sélection512 et toutes ses règles demeurent inchangées; aucun positif
+ou label n'est ajouté. Les fichiers initiaux restent intacts. La reprise
+est committée avant son bilan, dans un nouveau répertoire `-sealed-fits`.
+Les ressources quantitatives du premier fit-évaluation n'ont pas été scellées
+à cause de cet arrêt : ne pas inventer son pic RSS ni son temps complet.

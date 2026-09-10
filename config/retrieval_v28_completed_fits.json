@@ -1,0 +1,63 @@
+{
+  "schema": "sireto-v28-completed-fits-recovery-1",
+  "source_commit": "99a763aa",
+  "config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v28_geo_selection.json",
+    "sha256": "1f604bd8a92e9fd923d4792e228d414d44d8e224ec559cb7eb22bdd9a5446394",
+    "size_bytes": 2145
+  },
+  "features_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_features/1f604bd8a92e9fd9/manifest.json",
+    "sha256": "a960f8697bfcc7d18944445504a4634c36bcc1c333c487bc95d3183188c69762",
+    "size_bytes": 7125
+  },
+  "files": {
+    "outer2.json": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer2.json",
+      "sha256": "e42a7a8f0daf4bc3f573cbb556767f8c5cbab7331ac97effb16a3f9f2387271b",
+      "size_bytes": 1146020
+    },
+    "outer2_scores.parquet": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer2_scores.parquet",
+      "sha256": "aea3818ee9ee59811b7794e72a3e0ef16080e25b0ce05417a970869a5a2c8eca",
+      "size_bytes": 10132573
+    },
+    "outer2_split.json": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer2_split.json",
+      "sha256": "829e8fc0956f3bdc4549165a2acb1547a440017991a66fc499996f6d3eae1ccf",
+      "size_bytes": 25789
+    },
+    "outer3.json": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer3.json",
+      "sha256": "161c3641e928e31f6bb27339ac25d617d27db3e44378dbc77235e764ae39b919",
+      "size_bytes": 1137608
+    },
+    "outer3_scores.parquet": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer3_scores.parquet",
+      "sha256": "95dbb305537733a5139cf2ba7a84f627c08f94cca95b746b06b9df853c71117f",
+      "size_bytes": 9574776
+    },
+    "outer3_split.json": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer3_split.json",
+      "sha256": "f88aa24e76907599dfe328c73e24c48441f9e44b6872496319dff3f6b07af80b",
+      "size_bytes": 25471
+    },
+    "outer4.json": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer4.json",
+      "sha256": "85220bdbfad06c1fd8a449bae7203d28458673b2f0d75f7b05c9e54d54994492",
+      "size_bytes": 1134020
+    },
+    "outer4_scores.parquet": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer4_scores.parquet",
+      "sha256": "b49806ffc232dcc214033930b3aac02560357a8f7a217fe0feb4190f3400a82c",
+      "size_bytes": 9880344
+    },
+    "outer4_split.json": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9/outer4_split.json",
+      "sha256": "1a10e720004b52024ae87d95c18906875dece3b26ecabe8a8726278754a52c31",
+      "size_bytes": 24421
+    }
+  },
+  "models_retrained": false,
+  "expected_missing_operational_exact": 1
+}

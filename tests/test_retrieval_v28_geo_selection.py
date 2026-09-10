@@ -9,11 +9,18 @@ import pytest
 
 from scripts.retrieval_v28_geo_selection import FEATURES,UL_FIELDS,config_at,training_sample,build_features
 from src.xgb_matcher.retrieval_parent_fusion_v19 import assert_identifier_free_features
+from scripts.finalize_retrieval_v28_geo_oof import missing_op_allowed
 
 
 def test_identifier_and_person_fields_excluded():
     assert_identifier_free_features(FEATURES)
     assert not {'nomUniteLegale','nomUsageUniteLegale'} & set(UL_FIELDS)
+
+
+def test_missing_operational_exact_requires_official_absence_and_no_pool_positive():
+    assert missing_op_allowed(False,False)
+    assert not missing_op_allowed(True,False)
+    assert not missing_op_allowed(False,True)
 
 
 def test_config_refuses_budget_drift(tmp_path):
