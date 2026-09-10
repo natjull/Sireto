@@ -6645,4 +6645,41 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fermés. V28 reste historiquement rejetée, aucune promotion produit.
 
 ---
+## 10 septembre 2026 — v29 terminé : 817 exacts, régression −5, v23 conservée
+
+- `689eab8a` publie `docs/retrieval_v29_consolidated_results.md`, vérificateur
+  distinct et tests complétés. **49 tests passent**, verdict de réconciliation
+  `PASS_V29_OUTPUT_RECONCILIATION`. Une seule recette `74588c2f`, aucun refit.
+- Master exact **822→817 :4 gains/9 pertes**, net−5. Opérationnel824→820,
+  quatre gains/huit pertes. Contrôles512/512 conservés, dont les cinq pertes
+  du canal géo v28; difficultés310→305. Nets folds2/3/4 :−3/−3/+1.
+- Réservoir exact898→896 :sept nouveautés/neuf pertes. Quatre des sept
+  nouveautés survivent au Master et expliquent les quatre gains. Parmi les
+  neuf pertes Master :trois parents désormais absents, six évictions malgré
+  présence dans le réservoir. Attribution217 erreurs :134 parents absents,
+  trois sites non développés,79 évictions, une absence catalogue conservée.
+- Réservoir3929577 paires (346704 ajoutées/317271 retirées), Master1973000
+  références, max2000. Nouveau géo512 seulement, aucun bonus ajouté; autres
+  canaux et expansion locale conservés. Modèles v23 outer rechargés et
+  features recalculées; condition de numéro de la feature v23 inchangée.
+- Replays baseline exacts puis audit indépendant : sources/hashes, ledger
+  filtré2/3/4, splits, appartenance/expansion naturelle, témoins inchangés,
+  scores des trois modèles, top2000, préflight/complet, métriques et segments.
+  Génération103,54 s/RSS9,39 Gio; bilan1,21 s/RSS2,03 Gio; vérificateur29,68 s/
+  RSS8,18 Gio. Zéro swapout, hashes préalables hors temps, pas des SLO produit.
+- Config SHA `134f18bd1bae893adcea918ad7819ec4df87369d5998140935d29df94a14667c`.
+  Sous `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/` :
+  `retrieval_v29_consolidated/134f18bd1bae893a/manifest.json`, SHA
+  `c6b828eb825a5dd1b6432b38835e8f970ff3edd589e919ca828dd9b2802ebbc2`;
+  `retrieval_v29_evaluation/134f18bd1bae893a/manifest.json`, SHA
+  `4e1eb661acce89825998cff0688806cd04568eabdd988523f35da20089e501f9`;
+  audit `retrieval_v29_verification/134f18bd1bae893a/manifest.json`.
+- **`NO_NET_GAIN_REUSED_PANEL` / `PIVOT_GENERATION`**. Ne pas promouvoir v29,
+  v23 reste référence, v24/v28 historiques inchangées. Aucun nouvel essai
+  géo ni retuning. Orientation suivante proposée non exécutée : admission
+  des références existantes, sans prétendre corriger les absences de
+  génération. Folds0/1 fermés, modèles aval gelés; aucun national,500/100,
+  Wilson, garantie99,2% ou revendication cross-CRM. Pas de calcul en cours.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
