@@ -6605,4 +6605,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fermés. Documents uniquement, aucun test de calcul relancé.
 
 ---
+## 10 septembre 2026 — avis Opus 5 reçu, aucun run supplémentaire
+
+- `a621ac7f` publie la synthèse non verbatim de l'avis et son examen critique
+  dans `docs/retrieval_claude_opus_review_received.md`; statut de consultation
+  mis à jour. Après reconnexion, `claude -p --model claude-opus-5 --effort
+  xhigh` réussit; modèle principal confirmé par `modelUsage`, auxiliaire
+  Haiku signalé. Dossier agrégé seulement, aucun outil ni accès aux artefacts.
+- Orientation retenue : objectif exact SIRET sous2000, référence v23,
+  absence de réservation ancien/nouveau, mesure de nouveauté réelle et
+  gains/pertes appariés avant toute conclusion. Aucun retuning v28; son
+  rejet préenregistré reste inchangé. Le net389→424 n'est pas un ensemble
+  de35 gains; reconstruire les ensembles si cette investigation est lancée.
+- Les suggestions de seuil15 nouveaux/5 pertes et p<0,05 ne sont pas
+  adoptées. Panel réutilisé, pas de validation nationale par McNemar nominal
+  ni Wilson ordinaire sur une pondération.500/100 reste soumis au contrat,
+  pas de dégel aval ni de mesure automatiquement légitime via anciens modèles.
+- Consultation terminée, `PIVOT_GENERATION` inchangé. Aucun nouveau run,
+  changement de recette ou résultat Master/500/100; folds0/1 fermés.
+  Contrôle documentaire `git diff --check`, pas de calcul/test relancé.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
