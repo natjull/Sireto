@@ -1,0 +1,17 @@
+{
+  "schema": "sireto-v29-consolidated-1",
+  "recipe": "REPLACE_V17_GEO_MEMBERSHIP_WITH_FROZEN_V28_THEN_FROZEN_V23",
+  "folds": [2, 3, 4],
+  "master_cap": 2000,
+  "geo_parent_cap": 512,
+  "retrain": false,
+  "national_run": false,
+  "production_activation": false,
+  "v23_config": {"path": "config/retrieval_v23_joint_parent.json", "sha256": "bb12058773f80d6f5d7ff3ba7b0fc03d1b2a4eb5e95911b5deb7b33580746d69"},
+  "v19_config": {"path": "config/retrieval_all_human_v19_parent_fusion.json", "sha256": "dc0461ac2ea01f7b82c56580798841e4ef5ce9630f8b3e2c7c950fdb3995ae65"},
+  "features": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_features/bb12058773f80d6f/manifest.json", "sha256": "dcfffcdcc9f5d34db0d88c5039674090a2ed8911b8242b38d31f39d5c887adbe"},
+  "models": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_oof_master/bb12058773f80d6f/manifest.json", "sha256": "ac4b279be0f30fbee5cfe7fc0c205c31b9cf50fcc23351795ceb55423e05de81"},
+  "baseline": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v23_evaluation/bb12058773f80d6f/manifest.json", "sha256": "ca3400c50e3520d6974ac0abab49d80e17b27832bbbbaafaeb447abb5902010e"},
+  "geo": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v28_geo_oof/1f604bd8a92e9fd9-sealed-fits/manifest.json", "sha256": "38bf7a7b09ce4b1b1c53812dc8017c03db3d2b1b37a99560f217a662ab21d17b"},
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
