@@ -96,7 +96,13 @@ def replay_legacy(output,count=16):
     if not 1<=count<=16:raise ValueError('Bounded preflight only')
     v15=json.loads((ROOT/'config/retrieval_all_human_v15_master_feasibility.json').read_text())['authorities']
     backends=json.loads((ROOT/'config/retrieval_all_human_v16_parent_workbench.json').read_text())['authorities']['backends']
-    for a in [v15['base_index'],v15['sidecars'],*v15['overlay_indices'],backends['temporal'],backends['roles'],backends['sector']]:
+    # Raw v11 provenance has BODACC under official_overlay and a second sector
+    # backend. V15's RNE+full-overlay list is a DIFFERENT experiment's binding.
+    tail=dict(path=str(DATA/'indices/dossier_temporal_tail_v1/66f38cc146c51da6'),manifest_sha256='e568e5975940a70952fdd9033d69c208727c015455104d4869eabf89670a46b6')
+    sport=dict(path=str(DATA/'indices/official_sector_data_es_v1/37ea905013a83660'),manifest_sha256='9278c317be6c0f8f92dde7ecd894a8a4002f11f34c176f754f03980e9fb0acf0')
+    overlays=[backends['overlay_official'],tail]
+    sectors=[backends['sector'],sport]
+    for a in [v15['base_index'],v15['sidecars'],*overlays,backends['temporal'],backends['roles'],*sectors]:
         verify(dict(path=Path(a['path'])/'manifest.json',sha256=a['manifest_sha256']))
     panel=pq.read_table(PANEL,columns=['query_id','fold']).to_pylist()
     chosen={r['query_id'] for r in sorted(panel,key=lambda r:r['query_id'])[:count]}
@@ -114,14 +120,16 @@ def replay_legacy(output,count=16):
     with RetrievalSidecarReader(Path(v15['sidecars']['path'])) as sidecars:
         sidecars._connection.execute("SET memory_limit='2GB'");sidecars._connection.execute('SET threads=2')
         official=OfficialEvidenceRetriever.from_index_paths(v15['base_index']['path'],
-          [a['path'] for a in v15['overlay_indices']],oc,temporal_overlay_index_path=backends['temporal']['path'],
-          legal_entity_role_index_path=backends['roles']['path'],sector_official_index_path=backends['sector']['path'])
+          [a['path'] for a in overlays],oc,temporal_overlay_index_path=backends['temporal']['path'],
+          legal_entity_role_index_path=backends['roles']['path'],sector_official_index_path=[a['path'] for a in sectors])
         retriever=AllHumanV11Retriever(official,sidecars,vc)
         try:
             for i,row in enumerate(rows):
                 start=time.monotonic();result=retriever.retrieve(normalize_input(row))
                 actual=[(r.siret,r.siren,r.union_rank) for r in result.candidates]
                 base=expected[row['query_id']]
+                pq.write_table(pa.Table.from_pylist([dict(siret=r.siret,siren=r.siren,rank=r.union_rank,
+                  sources=list(r.sources),channels=list(r.channels)) for r in result.candidates]),output/f'legacy_{i:02d}.parquet')
                 report.append(dict(query_id=row['query_id'],fold=row['oof_fold'],exact_order=actual==base,
                   missing=len(set(base)-set(actual)),added=len(set(actual)-set(base)),
                   candidate_count=len(actual),seconds=time.monotonic()-start))
@@ -130,6 +138,7 @@ def replay_legacy(output,count=16):
     write_json(output/'legacy_rows.json',report)
     return dict(status='PASS_LEGACY_RECONSTRUCTION' if all(r['exact_order'] for r in report) else 'STOP_LEGACY_RECONSTRUCTION_MISMATCH',
       queries=count,matching_queries=sum(r['exact_order'] for r in report),quality_measured=False,
+      backend_manifests=[record(Path(a['path'])/'manifest.json') for a in [v15['base_index'],*overlays,backends['temporal'],backends['roles'],*sectors]],
       note='This validates legacy membership/ranks only, not the remaining v16-v30 channels or product latency.')
 
 
