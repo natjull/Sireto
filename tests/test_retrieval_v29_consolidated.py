@@ -45,8 +45,9 @@ def test_query_fold_lock(fold):
     c.close()
 
 
-def test_literal_sql_parses_and_no_fit_call():
-    tree=ast.parse(Path('scripts/retrieval_v29_consolidated.py').read_text())
+@pytest.mark.parametrize('filename',['scripts/retrieval_v29_consolidated.py','scripts/audit_retrieval_v29_results.py'])
+def test_literal_sql_parses_and_no_fit_call(filename):
+    tree=ast.parse(Path(filename).read_text())
     for node in ast.walk(tree):
         if isinstance(node,ast.Call) and isinstance(node.func,ast.Attribute):
             assert node.func.attr != 'fit'
@@ -61,3 +62,23 @@ def test_generator_does_not_read_truth_columns_or_baseline_outcomes():
     source=ast.get_source_segment(text,node)
     for forbidden in ('gt_siret','gt_siren','cohort_kind','qualification_v2','outcomes.parquet',"cfg['baseline']"):
         assert forbidden not in source
+
+
+@pytest.mark.parametrize('tamper',[False,True])
+def test_independent_metrics_keeps_catalog_absence_and_detects_false_gain(tamper):
+    from scripts.audit_retrieval_v29_results import verify_metrics
+    c=duckdb.connect()
+    c.execute('''CREATE TABLE t AS SELECT 'q' query_id,'a' gt_siret,'p' gt_siren,true exact_hit,
+      true operational_hit,true previous_exact_hit,true site_in_reservoir,true old_reservoir_hit,'HIT' loss_stage
+      UNION ALL SELECT 'missing','b','r',false,false,false,false,false,'OFFICIAL_CATALOG_ABSENT' ''')
+    c.execute("CREATE TABLE master AS SELECT 'q' query_id,'a' siret")
+    for table in ('oldmaster','pool','oldpool'):c.execute(f'CREATE TABLE {table} AS SELECT * FROM master')
+    c.execute("CREATE TABLE parents AS SELECT 'q' query_id,'p' siren")
+    c.execute('CREATE TABLE acceptable(query_id VARCHAR,siret VARCHAR)')
+    c.execute("CREATE TABLE catalog AS SELECT 'q' query_id,true official_catalog_present UNION ALL SELECT 'missing',false")
+    primary=dict(queries=2,exact_hits=2 if tamper else 1,operational_hits=1,gains_vs_v23=0,losses_vs_v23=0)
+    em=dict(primary=primary,historical_all_human=primary,segments={})
+    if tamper:
+        with pytest.raises(AssertionError):verify_metrics(c,em)
+    else:verify_metrics(c,em)
+    c.close()
