@@ -6682,4 +6682,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Wilson, garantie99,2% ou revendication cross-CRM. Pas de calcul en cours.
 
 ---
+## 10 septembre2026 — revue architecture Claude et contre-examen terminés
+
+- `8532b17c` prépare le mandat architecture, avec le micro des six évictions
+  v29 : scores parent/RRF directs/rangs site inchangés; rang parent relatif
+  dégradé. Aucun identifiant de cas ou CRM brut transmis. Code v21/v23/v28/v29,
+  contrats et rapport fournis à Opus5 via CLI, effort demandé xhigh, sans outils.
+- `fbe63f7c` conserve les deux réponses brutes, les objections et la synthèse
+  `docs/retrieval_claude_architecture_review_assessment.md`. Deux appels
+  réussis, modèle principal confirmé, auxiliaires Haiku déclarés. Coût CLI
+  indicatif total0,50989375 USD, pas preuve de facturation hors abonnement.
+- Claude retire les affirmations d'additivité par score absolu, d'inexistence
+  du ranker SIRET, de nouveauté site-first malgré les canaux directs, le mode
+  opérationnel initial présenté comme courant et la fausse dichotomie causale.
+  Le premier protocole proposé reste insuffisamment spécifié, non adopté.
+- Lecture complémentaire du backend `hierarchical_retrieval.py` : canaux
+  nom/adresse distincts; fielded_name combine des noms, pas nom+voie. Direction
+  proposée : preuve conjointe souple dès la recherche avant les coupes, sur
+  champs/index existants si possible, sans numéro obligatoire ni mélange de
+  preuves de sites/périodes incompatibles. Pas de reconstruction nationale
+  automatique ni d'audit RNE177Go préalable obligatoire. Hypothèse, pas gain.
+- Admission sur réservoir fixe, raccordement500/100 sous inner/outer OOF et
+  validation moins contaminée restent des jalons conditionnels. Aucun modèle
+  SIRET >2000, aucune modification de contrat/split/label. Aucune nouvelle
+  expérience retrieval, activation ou fit; `PIVOT_GENERATION` inchangé,
+  v23 conservée, folds0/1 fermés. Revue documentaire et diagnostic read-only
+  seulement; aucun calcul en cours. `git diff --check` passe.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
