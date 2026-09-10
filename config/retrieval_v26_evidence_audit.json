@@ -1,0 +1,15 @@
+{
+  "schema": "sireto-v26-evidence-audit-1",
+  "diagnoses": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v25_discovery_audit/arrowfix/manifest.json", "sha256": "e6b7b842b6e77cffa90e7e7f2b2b0190c119158424167405e181c046bf2adb83"},
+  "names_config": {"path": "config/retrieval_v23_joint_parent.json", "sha256": "bb12058773f80d6f5d7ff3ba7b0fc03d1b2a4eb5e95911b5deb7b33580746d69"},
+  "geo_config": {"path": "config/retrieval_geo_v16_sidequest.json", "sha256": "15b3d8c774edd5a741fb92e34c3ce0ec455bd20aa43964668422857c626247c7"},
+  "v17_config": {"path": "config/retrieval_all_human_v17_site_inventory_oracle.json", "sha256": "69ddd52660b41f684b4f5c2023c1fcf2351f3827d3d2af9e974b0457a3875ff6"},
+  "index_manifest": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/manifest.json", "sha256": "9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e"},
+  "name_roles": ["LEGAL_CURRENT", "TRADE_CURRENT", "SITE_CURRENT", "HISTORICAL"],
+  "distance_bins_m": [50,100,250,500],
+  "folds": [2,3,4],
+  "truth_side_only": true,
+  "persist_raw_coordinates": false,
+  "new_candidates": false,
+  "resources": {"max_seconds": 1800, "max_rss_bytes": 15032385536, "max_swapout_pages_delta": 0}
+}
