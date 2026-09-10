@@ -79,6 +79,11 @@ def geo(config, output, preflight):
     output=Path(output);output.mkdir(parents=True,exist_ok=False)
     with Budget(cfg['resources']) as budget:
         c=open_workbench_db(output);select(c,files['result.parquet'],preflight)
+        # Physical-only retry after the full 4GB sort exhausted its allocator.
+        # Keep the original query, sources, ranking, caps and RSS14GiB guard.
+        c.execute("SET memory_limit='8GB'")
+        c.execute('SET threads=2')
+        c.execute('SET preserve_insertion_order=false')
         ids=tuple(c.execute('SELECT query_id,fold FROM t ORDER BY query_id').fetchall())
         qs=_query_surface(gc,ids);qg=_resolve_ban(c,qs,ban)
         c.register('qs',qs);c.register('qg',qg)

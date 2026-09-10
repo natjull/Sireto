@@ -58,3 +58,15 @@ Recall ni gate; panel réutilisé, aucune revendication nationale/cross-CRM.
 Verdict PIVOT_GENERATION si intégrité satisfaite, STOP sinon. Consigner les
 résultats et les commits dans handover.md. Une éventuelle correction du canal
 fera l'objet d'un préenregistrement distinct; elle n'est pas automatique.
+
+## Amendement physique avant rejeu géographique
+
+Le premier complet géographique sous le commit `fb28a1fd` a échoué dans le
+tri des voisins : allocation DuckDB à 3,7 Gio/3,7 Gio. Le répertoire
+`retrieval_v27_geo/f6f0ed019069defc` est incomplet et non admissible. Aucun
+résultat géographique complet ni réglage scientifique n'en est tiré.
+Le rejeu distinct `f6f0ed019069defc-memory8` autorise DuckDB 8 Go, deux threads,
+sans conservation de l'ordre d'insertion; les ORDER BY scientifiques, sources,
+requêtes, caps4096/512, fonction v16, plafond RSS14 Gio et zéro swapout restent
+inchangés. L'audit des noms déjà terminé conserve son code et manifeste gelés
+`fb28a1fd`; il n'est pas réécrit. Cet amendement est committé avant le rejeu.
