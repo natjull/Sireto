@@ -81,6 +81,17 @@ def stat_record(path):
     return dict(path=str(p.resolve()), size=s.st_size, mtime_ns=s.st_mtime_ns, inode=s.st_ino)
 
 
+def select_edges(c,paths):
+    # Equivalent to DISTINCT(LEFT SEMI JOIN on predecessor OR successor), but
+    # permits two hash joins instead of a blockwise nested-loop over all seeds.
+    c.execute('''CREATE TABLE edges AS
+      SELECT e.* FROM read_parquet(?) e SEMI JOIN (SELECT siret FROM raw WHERE union_rank<=250) r
+        ON e.predecessor_siret=r.siret
+      UNION
+      SELECT e.* FROM read_parquet(?) e SEMI JOIN (SELECT siret FROM raw WHERE union_rank<=250) r
+        ON e.successor_siret=r.siret''',[paths,paths])
+
+
 def ordered_inputs(rows):
     ids=[r['query_id'] for r in rows]
     if len(ids)!=len(set(ids)) or any(not isinstance(q,str) or not q for q in ids):
@@ -229,8 +240,7 @@ def shard(rows,output,m):
     pq.write_table(pa.Table.from_pylist(parents,schema=PARENTS_SCHEMA),output/'parent_candidates.parquet',compression='zstd')
     pq.write_table(pa.Table.from_pylist(presence,schema=PRESENCE_SCHEMA),output/'parent_presence.parquet',compression='zstd')
     c.execute('CREATE TABLE raw AS SELECT * FROM read_parquet(?)',[str(output/'raw.parquet')])
-    c.execute('''CREATE TABLE edges AS SELECT DISTINCT e.* FROM read_parquet(?) e SEMI JOIN
-      (SELECT siret FROM raw WHERE union_rank<=250) r ON e.predecessor_siret=r.siret OR e.successor_siret=r.siret''',[m['edges']])
+    select_edges(c,m['edges'])
     c.execute(f'COPY edges TO {sql_path(output/"edges.parquet")} (FORMAT PARQUET,COMPRESSION ZSTD)')
     succession(c)
     c.execute(f'COPY (SELECT * FROM v32_proof ORDER BY query_id,channel_rank) TO {sql_path(output/"proof.parquet")} (FORMAT PARQUET,COMPRESSION ZSTD)')

@@ -63,3 +63,15 @@ def test_generator_does_not_read_historical_candidates_or_labels():
     # Inference is guarded by an explicit full-population scope, not by removing
     # the historical predict() target guard.
     assert "Foreign inference target" in inspect.getsource(predict)
+
+
+def test_hash_edge_selection_equals_or_join_including_duplicates_and_nulls(tmp_path):
+    from scripts.retrieval_v33_full_replay import select_edges
+    p=tmp_path/'edges.parquet'
+    pq.write_table(pa.table({'predecessor_siret':['a','x','a','a',None,'z'],
+      'successor_siret':['b','b','b','c','b','z'],'proof':[1,2,1,3,4,5]}),p)
+    c=duckdb.connect();c.execute("CREATE TABLE raw AS SELECT 'a' siret,1 union_rank UNION ALL SELECT 'b',250 UNION ALL SELECT 'z',251")
+    select_edges(c,[str(p)])
+    c.execute('''CREATE TABLE reference AS SELECT DISTINCT e.* FROM read_parquet(?) e SEMI JOIN
+      (SELECT siret FROM raw WHERE union_rank<=250) r ON e.predecessor_siret=r.siret OR e.successor_siret=r.siret''',[str(p)])
+    assert c.execute('SELECT count(*) FROM ((TABLE edges EXCEPT ALL TABLE reference) UNION ALL (TABLE reference EXCEPT ALL TABLE edges))').fetchone()[0]==0

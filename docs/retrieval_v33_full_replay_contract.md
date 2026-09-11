@@ -53,6 +53,16 @@ et100 fichiers temporels intégralement hashés à la préparation. Stat/inode/
 taille/mtime vérifiés ensuite avant et après chaque lot; code/config hashés.
 Les gros segments Tantivy ne sont pas intégralement rehashés : limite explicite.
 
+Amendement physique après le premier pilote sans labels :224,18s/32, projection
+45,87h, donc pas de lancement sous la garde36h. EXPLAIN révèle un
+BLOCKWISE_NL_JOIN pour la restriction des relations sur predecessor OR successor.
+Remplacer uniquement cet opérateur par deux semi-jointures d'égalité et UNION
+distinct : même ensemble de lignes officielles, NULL/doublons inclus. Référence
+exhaustive contre les relations matérialisées du premier pilote et tests
+unitaires avant nouveau gel. Nouvelle préparation/essais dans une racine
+distincte; le pilote lent et ses sorties sont conservés. Aucun seuil de coût,
+de pertinence, aucune source, feature ou métrique modifiés.
+
 ## Contrôle avant long run
 
 1. Rejouer les16 entrées de parité v32 depuis le CRM jusqu'aux Masters.
