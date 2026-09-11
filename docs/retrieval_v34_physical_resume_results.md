@@ -38,6 +38,14 @@ le rapport~2,2x entre le pilote et son ancien lot n'est pas une garantie
 nationale. La projection conservatrice des deux pilotes est15,70h restantes
 et9,17Gio de sorties, à réestimer sur les nouveaux lots réellement exécutés.
 
+Premier lot **inédit** après reprise (offset736) :112,90s, pic agrégé9,43Gio,
+zéro nouveau swapout. Avancement effectivement scellé768/23571, lot suivant
+en cours. Ce point est plus représentatif que les pilotes déjà réchauffés :
+projection linéaire restante~22,4h, encore fondée sur un seul nouveau lot.
+Comparaison indicative à l'ancienne médiane169,46s :~33% de temps en moins,
+pas une démonstration appariée de gain sur toute la population. Ne pas annoncer
+16h ou2x comme durée/accélération garantie du complet.
+
 Deux premiers prototypes conservant trop de lecteurs/caches ont été arrêtés
 par le garde ressources. Ils sont conservés comme échecs et exclus du gate.
 La version finale conserve14Gio de plafond RSS agrégé pour l'étape parallèle,
