@@ -6867,4 +6867,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fermés. Aucun calcul en cours; aucun rejeu23 571 lancé.
 
 ---
+## 11 septembre 2026 — v33 : lanceur complet intégré, contrôles en cours
+
+- Autorisation utilisateur « Go » pour intégration, essai court puis complet
+  si conforme. Commit `41c03013` : runner, contrat préenregistré et tests.
+  `scripts/retrieval_v33_full_replay.py` / `docs/retrieval_v33_full_replay_contract.md`.
+  38 tests passent (v33/v32/v31/v30), aucune nouvelle qualité consultée.
+- Préparation terminée :23 571 entrées originales, projection sans labels,
+  autorité explicite d'inférence étendue au scope OOF couvert par l'audit v31,
+  mêmes modèles hashés. Les gardes des anciens runners restent inchangées.
+- Tous les canaux sont reconstruits depuis les champs CRM, source-wiring v31,
+  succession v32 commune; génération partagée entre v23_stable/v30_stable.
+  Pas de SceneIR, ancien pool ou candidat précalculé comme entrée.
+- Protocole : parité16 contre v32 puis32 entrées choisies sur tout le CRM par
+  SHA sans labels, rejouées en ordre inversé/lots8. Comparaison exhaustive,
+  dimensionnement pilote avant tout long run. Préflight réel lancé, résultats
+  encore attendus. Racine CATNAT : `audits/retrieval_v33_full_replay/`.
+- Sources tabulaires/relations hashées; index manifest/meta/inventaire seulement,
+  pas rehash intégral des segments. Budget par lot30min/14Gio RSS/zéro swapout;
+  complet max36h, projection disque<=100Gio. Ce n'est pas un SLO produit.
+- Aucun complet lancé à cette entrée de journal. Évaluation officielle
+  exhaustive séparée après génération scellée; aucun fit/500/100 ni ouverture
+  folds0/1, aucun READY_FOR_FOLD1 ou gain de recall annoncé.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
