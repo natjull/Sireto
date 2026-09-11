@@ -6993,3 +6993,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Pilote, lot réparé, répétition et balayage BAN rescéllés sous préfixe
   `parallel_` avec les hashes du runtime final; en cours à cette entrée.
   Aucun complet nouveau encore lancé, sources/704 anciens résultats intacts.
+
+### V34 — reprise complète effectivement lancée et premier lot inédit scellé
+
+- Preuves finales `e375ee5d`, correction de projection `095ca9b4` dans
+  `docs/retrieval_v34_physical_resume_results.md`.52 tests,21 sorties communes
+  identiques sur pilote32/ancien et lot704 inverse/sous-lots8. BAN23571 sans
+  erreur,704 sorties anciennes strictement identiques. Aucun label ouvert.
+- **PASS_PHYSICAL_RESUME**, SHA gate
+  `01f4601df70c9c6df33f3e7b3075f661aee472f497b04d19de866fd5581ee342`.
+  Préparation SHA
+  `16dbf6bcfbcd4bff503c1ad90d75b54ece4ac6bb671386fe9115b4ec2c677c45`.
+  Runtime final `26f0f974` figé, pas de modification pendant le complet.
+- Relance réelle11/09/2026 à18:06, PID contrôleur57540, caffeinate57541.
+  Racine CATNAT `SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/`.
+ 22 anciens lots/704 requêtes adoptés avec certificats, fichiers originaux
+  intacts. Lot704 recalculé lors du gate, nouveau travail commencé à736.
+- **768/23571 scellées** après le premier lot inédit :112,90s, RSS agrégé
+ 9,43Gio, zéro nouveau swapout; lot768 ensuite observé en cours. Projection
+  restante~22,4h sur ce seul point, incertaine. Ancienne médiane22 lots169,46s :
+  gain indicatif~33%, pas2x garanti. Les pilotes chauds75,90/79,11s et leur
+  projection15,70h ne sont PAS la prévision de référence à communiquer.
+- Statut futur : lire `generation/progress.json`, `status.json` si présent,
+  les logs `generation/batchNNNNN.log` et les deux logs enfants dans chaque
+  shard. PID actif à vérifier, ne pas confondre progression conservée et vie du
+  processus. Aucun monitor récurrent; c'est le job local autonome qui tourne.
+- Évaluation officielle séparée automatiquement après scellement23571, code
+  et politique épinglés dans `launch.json`. Exacte/opérationnelle distinctes,
+  historique/V2/V3 et pertes; Master-only, aucun500/100, aucun READY_FOR_FOLD1.
