@@ -6943,4 +6943,34 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Ni admission500/100 ni READY_FOR_FOLD1; folds0/1 fermés, aval gelé.
 
 ---
+### V34 — correction et accélération physique, reprise en validation
+
+- Le premier run v33 a STOP le11/09 à12:33 après22 lots/704 requêtes :
+  `choose_ban_match` comparait deux objets BanCandidate en égalité complète.
+  `4bd7a39c` complète uniquement ce départage indéfini par des scalaires;
+  priorités existantes conservées, doublons comptés, tests de permutation.
+  Le même commit ajoute un profil borné sans labels de l'étape legacy.
+- `68b11655` ajoute caches bornés par lecteur/arguments complets, projection
+  exacte des sidecars par commune/CP, libération des index entre étapes,
+  direct en sous-lots8, garde de reprise et enveloppes d'adoption explicites.
+  Contrat `docs/retrieval_v34_physical_resume_contract.md`. Sources/caps/models
+  inchangés; aucun label ouvert, aucun résultat de recall nouveau.
+-50 tests passent. Profil : anciennes expansions locales~1,6s/requête,
+  projection~0,05–0,10s. Prototype32 complet76,03s cache chaud, pic7,04Gio,
+  zéro swapout et21 fichiers de sorties identiques, scores/rangs inclus.
+  Ce temps chaud n'est pas une projection fiable du run national.
+- Pilote final32, offset32 :138,55s après relecture/rehash des sources,
+  RSS7,02Gio/zéro swapout. Même parité exhaustive avec ancien lot32.
+  Lot704 auparavant planté : recalcul complet129,19s, RSS6,93Gio/zéro
+  swapout. Répétition inverse/lots8 et balayage BAN23571 encore en cours.
+- Deux prototypes conservant trop d'index/caches ont déclenché le garde
+  ressources et ne sont PAS validés. Le runtime retenu libère les familles
+  d'index entre étapes. Une variante à deux processus legacy seulement est
+  à mesurer avec garde RSS agrégé; elle n'est pas encore adoptée.
+- Nouvelle préparation SHA
+  `16dbf6bcfbcd4bff503c1ad90d75b54ece4ac6bb671386fe9115b4ec2c677c45`,
+  racine `retrieval_v34_fast_resume/` sur CATNAT. Ancien full et ses704
+  résultats laissés intacts. Aucun nouveau full lancé à cette entrée.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
