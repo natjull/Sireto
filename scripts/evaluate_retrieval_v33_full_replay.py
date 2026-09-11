@@ -18,6 +18,15 @@ SEGMENTS=('fold','qualification_v2','qualification_v3','label_kind','data_origin
           'unseen_siren','new_site_known_siren','mega_base_pool')
 
 
+def operational_same_site(q,s,multi):
+    if s is None:return False
+    geography=(q['crm_postcode'] and q['crm_postcode']==s['postcode']) or (
+      q['crm_insee'] and q['crm_insee']==s['insee'] and (not q['crm_postcode'] or s['insee'] in multi))
+    return bool(geography and same_site_evidence(query_number=q['crm_number']+' '+q['crm_suffix'],query_street=q['crm_street'],
+      query_insee=q['crm_insee'],query_postcode=q['crm_postcode'],site_number=s['street_number'],site_suffix=s['street_number_suffix'],
+      site_street=s['street_normalized'],site_insee=s['insee'],site_postcode=s['postcode']))
+
+
 def summary(rows):
     n=len(rows)
     return dict(queries=n,exact_hits=sum(r['exact_hit'] for r in rows),operational_hits=sum(r['operational_hit'] for r in rows),
@@ -100,15 +109,10 @@ def evaluate(generation,output):
             cat.append(dict(query_id=t['query_id'],fold=t['fold'],gt_siret=t['human_ground_truth_siret'],gt_siren=t['human_ground_truth_siren'],
               official_catalog_present=exact is not None,exact_state=exact['administrative_state'] if exact else None))
             acceptable.append(dict(query_id=t['query_id'],fold=t['fold'],siret=t['human_ground_truth_siret'],exact_truth=True,
-              administrative_state=exact['administrative_state'] if exact else None,same_site_evidence=False))
+              administrative_state=exact['administrative_state'] if exact else None,same_site_evidence=operational_same_site(q,exact,multi)))
             for s in by_siren[t['human_ground_truth_siren']]:
                 if s['siret']==t['human_ground_truth_siret']:continue
-                geography=(q['crm_postcode'] and q['crm_postcode']==s['postcode']) or (
-                  q['crm_insee'] and q['crm_insee']==s['insee'] and (not q['crm_postcode'] or s['insee'] in multi))
-                if not geography:continue
-                if same_site_evidence(query_number=q['crm_number']+' '+q['crm_suffix'],query_street=q['crm_street'],
-                  query_insee=q['crm_insee'],query_postcode=q['crm_postcode'],site_number=s['street_number'],site_suffix=s['street_number_suffix'],
-                  site_street=s['street_normalized'],site_insee=s['insee'],site_postcode=s['postcode']):
+                if operational_same_site(q,s,multi):
                     acceptable.append(dict(query_id=t['query_id'],fold=t['fold'],siret=s['siret'],exact_truth=False,
                       administrative_state=s['administrative_state'],same_site_evidence=True))
         # These are label-side targets ONLY, written and sealed before scoring hits.
@@ -119,7 +123,7 @@ def evaluate(generation,output):
           files={p.name:record(p) for p in output.glob('*.parquet')},queries=23571,never_used_in_retrieval=True))
         c.register('catalog',pa.Table.from_pylist(cat));c.register('acceptable',pa.Table.from_pylist(acceptable))
         c.execute('''CREATE TABLE truth AS SELECT l.*,cat.gt_siret,cat.gt_siren,cat.exact_state,cat.official_catalog_present,
-          (SELECT count(*) FROM acceptable a WHERE a.query_id=l.query_id AND a.administrative_state='A')>1 multiple_active_equivalents
+          (SELECT count(*) FROM acceptable a WHERE a.query_id=l.query_id AND a.administrative_state='A' AND a.same_site_evidence)>1 multiple_active_equivalents
           FROM labels l JOIN catalog cat USING(query_id,fold)''')
         outcomes=defaultdict(list);caps={v:0 for v in ('v23_stable','v30_stable')}
         for bm,ss in batch_records:

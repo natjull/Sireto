@@ -37,3 +37,15 @@ def test_scoring_preserves_missing_queries_and_separates_operational():
 def test_partial_generation_refused_before_labels(tmp_path):
     (tmp_path/'manifest.json').write_text('{"status":"SEALED_PAIRED_BATCH"}')
     with pytest.raises(ValueError,match='Complete sealed generation'):evaluate(tmp_path,tmp_path/'out')
+
+
+def test_operational_requires_number_suffix_street_and_strict_geography():
+    from scripts.evaluate_retrieval_v33_full_replay import operational_same_site
+    q=dict(crm_number='12',crm_suffix='BIS',crm_street='RUE TEST',crm_insee='75101',crm_postcode='75001')
+    s=dict(street_number='12',street_number_suffix='B',street_normalized='RUE TEST',insee='75101',postcode='75001')
+    assert operational_same_site(q,s,set())
+    assert not operational_same_site(q,dict(s,street_number_suffix=''),set())
+    assert not operational_same_site(q,dict(s,street_normalized='RUE ADJACENTE'),set())
+    assert not operational_same_site(q,dict(s,postcode='75002'),set())
+    assert operational_same_site(q,dict(s,postcode='75002'),{'75101'})
+    assert not operational_same_site(q,None,set())
