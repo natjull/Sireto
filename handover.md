@@ -6914,4 +6914,33 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ordre/lots à suivre avant décision de lancement. Aucun recall nouveau.
 
 ---
+### V33 — gate passé, comparaison23 571 effectivement lancée
+
+- Rapport final du préflight `a57f2a2d` :
+  `docs/retrieval_v33_full_replay_preflight_results.md`. Parité16 optimisée
+  exacte; pilote32 149,43s/RSS6,45Gio/zéro swapout; répétition inverse/lots8
+  214,32s/RSS3,89Gio/zéro swapout. Raw, preuves, signaux, pools et deux
+  Masters identiques, scores/rangs inclus. Avant/après optimisation identiques
+  sur les32 entrées également. 47 tests passent, aucun label réel ouvert.
+- **PASS_READY_FOR_FULL_REPLAY**, SHA gate
+  `d350ec587d1e5e2c96f962147da519ac10fe608023c4d661e18cb45393b4d918`.
+  Projection pilote30,58h/8,80Gio, incertaine; pas un SLO ou une garantie.
+- `ac8e8493` chaîne génération scellée puis évaluation séparée, épingle le
+  code évaluateur/la politique et publie les absences de labels. `a09ee041`
+  exige une preuve same-site réelle pour compter plusieurs équivalents actifs;
+  `928bab7e` confine le spill d'évaluation à CATNAT. Aucun changement de retrieval
+  après le gel physique `2fca6790`, aucun retuning ni fit.
+- Run complet **effectivement démarré**, processus vérifiés vivants et premières
+  entrées de génération observées. PID lanceur36166, orchestrateur36169.
+  Racine `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v33_full_replay/fast/full_job/`.
+  `launch.json` scelle les autorités; `generation/RUNNING.json` porte le PID;
+  `generation/progress.json` apparaît après un premier lot complet.
+  Logs par lot, aucun retry silencieux; erreur -> STOP/status. Caffeinate-i
+  empêche la veille inactive pendant le job sans changer les préférences système.
+- L'évaluation automatique ne démarre qu'après scellement des23 571 générations
+  appariées. Elle reste all-human avec catalogue/équivalences officiels séparés,
+  historique/V2/V3 et pertes. Pas de nouveau recall disponible à ce journal.
+  Ni admission500/100 ni READY_FOR_FOLD1; folds0/1 fermés, aval gelé.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
