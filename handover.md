@@ -6831,4 +6831,40 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pas de fit/500/100, aval gelé, folds0/1 fermés. Aucun calcul en cours.
 
 ---
+## 11 septembre 2026 — v32 : succession stable validée, complet non lancé
+
+- Autorisation explicite de réparer la recette. Contrat/code/tests gelés dans
+  `54156809`; rapport `18033d45`,
+  `docs/retrieval_v32_stable_succession_results.md`. Anciens fichiers préservés;
+  nouvelles branches `v23_stable` et `v30_stable`, aucune réécriture historique.
+- Meilleur seed inchangé, puis date effective la plus récente à égalité;
+  SIRET lié, seed, direction, date et relation sélectionnés sur une même ligne.
+  Départage terminal technique, pas d'identifiant comme feature. Pas de
+  préférence actif/successeur, ni nouveau signal géographique/nom. Rang parent
+  historique conservé; date agrégée parent distincte de la date du témoin.
+- 28 tests passent. 100 fichiers temporels hashés; référence Python indépendante
+  égale au SQL sur 1 494 preuves réelles de16 entrées. Parents, rangs de seed
+  et de canal identiques à l'historique. Aucun label consulté dans v32.
+- Trois processus : threads1/8/2, lots16/1/4, ordre croissant/inversé et
+  hash seeds différents. Preuves, signaux et deux Masters rigoureusement
+  identiques, scores/rangs inclus, et quatre SHA de fichiers identiques.
+  **PASS_STABLE_WITNESSES_AND_MASTERS**, portée limitée au contrôle16.
+- Préparation18,81s; exécutions31,72/63,72/61,91s; comparaison0,19s.
+  Pic RSS processus maximal1,07Gio, zéro swapout. Exécutions partiellement
+  concurrentes : ni benchmark de parallélisme, ni SLO, ni durée nationale.
+- Artefacts `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v32_stability/`;
+  SHA vérification
+  `d5c25efeb10a92930683b96b3110a6527a2f08d2994165da6f2f20641ac76422`.
+- Défaut identifié levé sur le contrôle prescrit, pas de nouveau recall.
+  Le test réutilise les canaux16 reconstruits par v31 pour isoler la réparation;
+  il ne constitue pas un nouveau rejeu bout en bout. Runner complet encore à
+  intégrer et dimensionner : champs CRM originaux, canaux régénérés, autorité
+  explicite d'inférence outer sur23 571 entrées, calculs communs partagés et
+  lots bornés/reprenables. Ne pas simplement enlever la garde panel existante.
+- Évaluation séparée après scellement, sidecar officiel exhaustif complet à
+  assurer, exact/opérationnel séparés. **STOP pour une conclusion de gate
+  complet**, aucun READY_FOR_FOLD1. Pas de fit/500/100, aval gelé, folds0/1
+  fermés. Aucun calcul en cours; aucun rejeu23 571 lancé.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
