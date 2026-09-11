@@ -59,6 +59,7 @@ def evaluate(generation,output):
     if gm['status']!='SEALED_FULL_PAIRED_GENERATION' or gm['queries']!=23571 or gm['quality_measured'] or gm['truth_columns_opened'] or gm['code']!=code():
         raise ValueError('Complete sealed generation required before labels')
     prepared=verify(gm['prepared']).parent;m=authority(prepared)
+    population=json.loads(verify(m['population']).read_text())
     batch_records=[];seen=set()
     # Complete denominator reconciliation before opening any labels.
     for r in gm['batches']:
@@ -150,6 +151,8 @@ def evaluate(generation,output):
         paired={k:dict(gains=sum(b[q][k] and not a[q][k] for q in a),losses=sum(a[q][k] and not b[q][k] for q in a)) for k in ('exact_hit','operational_hit')}
     write_json(output/'manifest.json',dict(status='MEASURED_FULL_CRM_MASTER_ONLY',generation=record(generation/'manifest.json'),results=result,paired=paired,
       label_side=record(output/'label_side_manifest.json'),resources=budget.report(),implementation=record(Path(__file__)),
+      excluded_missing_human_labels=dict(counts_by_fold=population['excluded_counts_by_fold'],
+        sidecar=population['excluded_sidecar'],sealed_population_audit=m['population']),
       decision='STOP',decision_reason='MASTER_ONLY_NO_PRERANK500_RECALL100_OR_PRODUCT_SLO_GATE',ready_for_fold1=False,
       fold0_opened=False,fold1_opened=False,prerank500_measured=False,recall100_product_measured=False,
       warning='Curves are ranks of Master only, not the learned downstream 500/100. Reused CRM, no cross-CRM claim.',
