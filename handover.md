@@ -6891,4 +6891,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   folds0/1, aucun READY_FOR_FOLD1 ou gain de recall annoncé.
 
 ---
+### V33 — premier pilote, optimisation physique avant long run
+
+- `738fc4f8` ajoute l'évaluation post-scellement et ses tests, sans l'exécuter
+  sur les labels réels. Elle refuse une génération incomplète, reconstruit
+  catalogue/équivalences sur la population entière et sépare les deux métriques.
+  La concordance INSEE avec CP contradictoire n'est admissible que dans une
+  commune multi-CP, selon la politique métier. Les courbes du Master ne sont
+  pas assimilées à l'admission apprise500/100.
+- Premier chemin complet : parité16 exacte contre les deux Masters v32,
+  144,85s/RSS4,47Gio/zéro swapout. Pilote32 tiré sur tout le CRM :224,18s,
+  RSS6,45Gio/zéro swapout. Projection naïve45,87h, hors garde36h : aucun complet.
+- EXPLAIN révèle le BLOCKWISE_NL_JOIN de la restriction des relations à un
+  seed prédécesseur OU successeur. `2fca6790` remplace seulement cet opérateur
+  par deux semi-jointures d'égalité et UNION distinct. Contrat amendé avant
+  nouvelle mesure; mêmes sources, caps, labels fermés et science inchangée.
+- Contrôle réel de cette restriction :3 743 relations identiques au premier
+  pilote32, différence symétrique exhaustive0, sélection1,656s. Cas NULL et
+  doublons couverts par test. La suite compte désormais46 tests passants.
+- Préparation physique nouvelle scellée sous `retrieval_v33_full_replay/fast/`;
+  premiers artefacts conservés. Nouvelle parité16 lancée, pilote32 et répétition
+  ordre/lots à suivre avant décision de lancement. Aucun recall nouveau.
+
+---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
