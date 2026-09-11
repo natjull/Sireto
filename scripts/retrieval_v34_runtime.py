@@ -148,6 +148,7 @@ class FastRuntime:
         self.official._search_pool.shutdown(wait=True)
         self.retriever=None;self.official=None;gc.collect()
     def address(self,*args,**kwargs):
+        if self.side is None:return self.native_address(*args,**kwargs)
         kwargs['sidecar_path']=self.side._local_path
         result=self.native_address(*args,**kwargs)
         # Only these two temporary projections were created by this runtime.
@@ -174,8 +175,12 @@ class FastRuntime:
                     rows.extend(collapse_siret_hits_to_parent_rows(query_id=qid,fold=fold,channel=spec.name,hits=future.result()))
                 order_rows=sorted(rows,key=lambda r:(r['query_id'],order[r['channel']],r['channel_rank'],r['siren']))
                 writer.write_table(pa.Table.from_pylist(order_rows,schema=SIGNAL_SCHEMA));del futures,rows,order_rows
+    def parallel_legacy(self,queries,output):
+        from scripts.retrieval_v34_parallel_legacy import run_parallel
+        self.base=None;gc.collect()
+        return run_parallel(queries,output)
     def install(self):
-        v33.legacy=self.legacy;v33._build_backends=self.parents;v33._write_direct_signals=self.direct;v33.TantivyBackend=self.base_backend
+        v33.legacy=self.parallel_legacy;v33._build_backends=self.parents;v33._write_direct_signals=self.direct;v33.TantivyBackend=self.base_backend
         v33._write_address_signals=self.address
     def close(self):
         self.pool.shutdown(wait=True)

@@ -27,6 +27,7 @@ COMMON = ('inputs.parquet','queries.parquet','raw.parquet','ban.parquet','addres
 
 def accelerator_code():
     return {n:record(v33.ROOT/n) for n in ('scripts/retrieval_v34_runtime.py',
+      'scripts/retrieval_v34_parallel_legacy.py',
       'scripts/retrieval_v34_resume.py','docs/retrieval_v34_physical_resume_contract.md')}
 
 
@@ -100,7 +101,13 @@ def batch(prepared,output,start,count,subshard,reverse):
     try:v33.batch(prepared,output,start,count,subshard,reverse)
     finally:runtime.close()
     if accelerator_code()!=frozen:raise ValueError('Accelerator drift')
-    p=output/'manifest.json';m=json.loads(p.read_text());m['accelerator_code']=frozen;write_json(p,m)
+    p=output/'manifest.json';m=json.loads(p.read_text());m['accelerator_code']=frozen
+    physical=sorted(output.glob('shard*/parallel_legacy.json'))
+    m['physical_artifacts']=[record(p) for p in physical]
+    m['resources']['peak_aggregate_rss_bytes']=max([m['resources']['peak_rss_bytes']]+
+      [json.loads(p.read_text())['peak_aggregate_rss_bytes'] for p in physical])
+    if m['resources']['peak_aggregate_rss_bytes']>v33.RESOURCE['max_rss_bytes']:raise ValueError('Aggregate RSS guard')
+    write_json(p,m)
 
 
 def checked_batch(path,prepared,start,reverse=False):
@@ -108,6 +115,12 @@ def checked_batch(path,prepared,start,reverse=False):
     if m['start']!=start or m['count']!=32 or m['reverse']!=reverse or m['parity'] or m['prepared']!=record(prepared/'manifest.json') or m.get('accelerator_code')!=accelerator_code():
         raise ValueError('Validation scope/code drift')
     if not m['resources']['pass_resource_policy']:raise ValueError('Resource failure')
+    if len(m.get('physical_artifacts',[]))!=len(s):raise ValueError('Missing aggregate resource proof')
+    for ref in m.get('physical_artifacts',[]):
+        physical=json.loads(verify(ref).read_text())
+        if physical['workers']!=2 or physical['swapout_pages_delta'] or physical['peak_aggregate_rss_bytes']>v33.RESOURCE['max_rss_bytes']:raise ValueError('Parallel budget')
+        for r in physical['workers_manifests']:
+            worker=json.loads(verify(r).read_text());verify(worker['inputs']);verify(worker['raw'])
     return m,s
 
 
@@ -180,6 +193,7 @@ def full(prepared,gate_dir,output):
                   stdout=log,stderr=subprocess.STDOUT,check=True,timeout=1900)
             bm,_=v33.manifests(stage)
             if bm.get('accelerator_code')!=g['accelerator_code']:raise ValueError('Batch accelerator drift')
+            for r in bm['physical_artifacts']:verify(r)
             done.append(record(stage/'manifest.json'));completed=min(start+32,23571)
             write_json(generation/'progress.json',dict(completed_queries=completed,total_queries=23571,adopted_queries=704,seconds=time.monotonic()-started))
         gate_authority(prepared,gate_ref)

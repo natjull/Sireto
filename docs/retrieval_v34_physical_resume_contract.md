@@ -16,6 +16,11 @@ Le run reste Master2000 apparié v23/v30, succession v32 commune, sur les mêmes
   préexistants. Aucune restriction géographique des témoins du Master global.
 - Libérer les index entre étapes; borner caches, futures et mémoire. Aucun
   effet sur quotas, candidats, scores, ordre, folds ou dénominateur.
+- Deux processus uniquement pour les requêtes indépendantes de l'étape
+  legacy, chacun sur un demi-lot. Fusion sans perte, ordre appelant rétabli.
+  Les enfants terminent avant les autres étapes; aucun double run national.
+  Garde14Gio RSS agrégé parent+enfants pendant l'exécution et contrôle
+  conservateur de la somme des pics enfants, zéro nouveau swapout machine.
 - Ne pas conserver les projections temporaires après usage. Les sources
   officielles, anciens résultats scellés et preuves restent intacts.
 
@@ -32,8 +37,8 @@ Le run reste Master2000 apparié v23/v30, succession v32 commune, sur les mêmes
 4. Balayer la résolution BAN des 23 571 entrées sans labels et vérifier les
    704 sorties BAN déjà scellées avant toute adoption.
 5. Mesurer temps, RAM et swap; conserver le plafond14Gio RSS, aucun nouveau
-   swapout,30min/lot et36h/run, disque projeté100Gio max. Pas de double worker
-   national sans preuve de budget agrégé; un seul processus lourd par défaut.
+   swapout,30min/lot et36h/run, disque projeté100Gio max. Les deux workers
+   legacy exigent une preuve RSS agrégée; une seule étape lourde à la fois.
 
 ## Reprise et évaluation
 

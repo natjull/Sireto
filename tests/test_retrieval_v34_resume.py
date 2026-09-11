@@ -14,6 +14,7 @@ def test_geo_surface_never_uses_truth_or_identity_as_feature():
 
 def test_accelerator_code_includes_implementation_and_contract():
     assert set(v34.accelerator_code())=={'scripts/retrieval_v34_runtime.py',
+      'scripts/retrieval_v34_parallel_legacy.py',
       'scripts/retrieval_v34_resume.py','docs/retrieval_v34_physical_resume_contract.md'}
 
 
