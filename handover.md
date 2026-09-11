@@ -6974,3 +6974,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 
 ---
 *Regle projet: chaque modification de code/metier doit citer son commit GitHub correspondant dans ce document.*
+
+### V34 — parallélisme borné validé sur prototype
+
+- `26f0f974` répartit uniquement les requêtes indépendantes de l'étape legacy
+  entre deux processus. Garde RSS agrégé parent+enfants et somme conservatrice
+  des pics enfants, zéro nouveau swapout. Ils terminent avant les autres
+  étapes; chaque nouveau lot libère l'ancien lecteur base.52 tests passent.
+- Prototype parallèle32 :90,62s tout compris,35,73s legacy, pic agrégé9,62Gio,
+  zéro swapout. Les21 sorties communes sont exactement identiques au lot32
+  ancien, deux Masters avec scores/rangs inclus. Le prototype n'est pas
+  présenté comme durée garantie : cache et entrées jouent sur le débit.
+- Gate séquentiel intermédiaire PASS : parité pilot32/ancien, lot704 inverse
+  et sous-lots8 exacts, balayage BAN23571 terminé et704 BAN strictement
+  identiques. Conservé dans `gate_serial/`, non utilisé pour autoriser le
+  code parallèle. Sa projection27,50h est remplacée seulement après les
+  contrôles propres au parallélisme.
+- Pilote, lot réparé, répétition et balayage BAN rescéllés sous préfixe
+  `parallel_` avec les hashes du runtime final; en cours à cette entrée.
+  Aucun complet nouveau encore lancé, sources/704 anciens résultats intacts.
