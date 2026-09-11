@@ -10,6 +10,7 @@ import pyarrow.parquet as pq
 
 from scripts.retrieval_v33_full_replay import authority, code, manifests, files_for, DATA, ROOT, RESOURCE
 from src.xgb_matcher.retrieval_v20_workbench import Budget, record, verify, write_json, sql_path
+from src.xgb_matcher.retrieval_v21_membership import open_workbench_db
 from src.xgb_matcher.retrieval_site_inventory_v17 import same_site_evidence
 
 LEDGER=dict(path=str(DATA/'datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet'),
@@ -87,7 +88,7 @@ def evaluate(generation,output):
         labels=pq.read_table(verify(LEDGER),columns=['query_id','fold','human_ground_truth_siret','human_ground_truth_siren',*SEGMENTS[1:]],
           filters=[('fold','in',[2,3,4])]).to_pylist()
         if len(labels)!=23571 or {(r['query_id'],r['fold']) for r in labels}!=scope:raise ValueError('Label denominator mismatch')
-        c=duckdb.connect();c.execute("SET memory_limit='3GB'");c.execute('SET threads=2')
+        c=open_workbench_db(output);c.execute("SET memory_limit='3GB'");c.execute('SET threads=2')
         c.register('labels',pa.Table.from_pylist(labels));sites=verify(m['sources']['sites'])
         official=c.execute('''SELECT s.* FROM read_parquet(?) s WHERE
           s.siren IN (SELECT human_ground_truth_siren FROM labels)
@@ -153,6 +154,7 @@ def evaluate(generation,output):
             pq.write_table(pa.Table.from_pylist(sorted(rows,key=lambda r:r['query_id'])),output/(v+'_outcomes.parquet'),compression='zstd')
         a={r['query_id']:r for r in outcomes['v23_stable']};b={r['query_id']:r for r in outcomes['v30_stable']}
         paired={k:dict(gains=sum(b[q][k] and not a[q][k] for q in a),losses=sum(a[q][k] and not b[q][k] for q in a)) for k in ('exact_hit','operational_hit')}
+        c.close()
     write_json(output/'manifest.json',dict(status='MEASURED_FULL_CRM_MASTER_ONLY',generation=record(generation/'manifest.json'),results=result,paired=paired,
       label_side=record(output/'label_side_manifest.json'),resources=budget.report(),implementation=record(Path(__file__)),
       excluded_missing_human_labels=dict(counts_by_fold=population['excluded_counts_by_fold'],
