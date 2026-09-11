@@ -191,7 +191,17 @@ def choose_ban_match(
                 similarity,
             )
         )
-    *_, chosen, score = min(scored)
+    # Keep every existing priority unchanged.  Equal priorities used to fall
+    # through to comparing non-orderable BanCandidate objects.  Resolve only
+    # that previously undefined case with all remaining scalar source fields.
+    # An exact duplicate is interchangeable and still counted in match_count.
+    *_, chosen, score = min(
+        scored,
+        key=lambda row: (
+            *row[:7], row[7].street, row[7].postcode, row[7].insee,
+            row[7].type_position, row[7].source_position, row[7].geography_match,
+        ),
+    )
     x, y = lonlat_to_l93(chosen.longitude, chosen.latitude)
     uncertainty = ban_uncertainty_m(
         type_position=chosen.type_position,

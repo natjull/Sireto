@@ -68,6 +68,22 @@ def test_choose_ban_match_prefers_insee_then_street_without_truth() -> None:
     assert match["ban_match_count"] == 2
 
 
+def test_ban_equal_priority_distinct_metadata_is_order_independent() -> None:
+    from dataclasses import replace
+    first = BanCandidate(2.33,48.86,'RUE TEST','75001','75101','entrée','commune',True,'INSEE')
+    second = replace(first,postcode='75002',type_position='ENTREE')
+    forward=choose_ban_match(crm_street='RUE TEST',candidates=[first,second])
+    assert forward==choose_ban_match(crm_street='RUE TEST',candidates=[second,first])
+    assert forward['ban_match_count']==2
+
+
+def test_ban_exact_duplicates_preserve_match_count_and_no_crash() -> None:
+    first = BanCandidate(2.33,48.86,'RUE TEST','75001','75101','entrée','commune',True,'INSEE')
+    result=choose_ban_match(crm_street='RUE TEST',candidates=[first,first])
+    assert result['ban_match_count']==2
+    assert result['ban_resolved']
+
+
 def test_generator_selection_rejects_truth_and_forbidden_folds(tmp_path: Path) -> None:
     truth = tmp_path / "truth.parquet"
     pq.write_table(
