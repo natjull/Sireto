@@ -7121,3 +7121,54 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   complet98,96059% impose aussi un travail de couverture. Aucun job suivant
   lancé automatiquement, aucun push et neuf modifications préexistantes
   conservées.
+
+### V36–V37 — preuves restaurées, sélection amont à corriger, 2 octobre 2026
+
+- Milestones isolés : `1c375be3` (v36, recette/features/concurrence complète),
+  `6509551b` (reprise physique par fold), `6648ec66` (v37,26 canaux parent),
+  `b6e840f0` (audit des segments et métadonnées absentes), `8c1fa6f2`
+  (résultats et diagnostic `docs/retrieval_v36_v37_evidence_results.md`).
+  Aucun ajout/modification dans l'inventaire gelé `src/xgb_matcher/*.py`.
+- Même pilote1024 que v35, membership Master inchangé, nested OOF2/3/4.
+  V36 primaire96,67969%@100 (990),98,63281%@500 (1010).
+  V36 ablation anciennes51features avec fit complet/topk100 :990 à100,
+  1005 à500. Pas de gain net démontré des nouvelles preuves v36 à100 ;
+  concurrence complète et paires changées ensemble, effets non séparés.
+- V37 restaure tous les26 canaux parent configurés,183features au total,
+  paramètres v36 inchangés. Exact993/1024=96,97266%@100 :+3/-0 contrev36,
+  +23/-3 contrev35 ;@5001010,+1/-1 contrev36 ;Master1018 inchangé.
+  Opérationnel séparé et ici égal à exact. Wilson100 bas95,73502%.
+  Pas de résultat national100, pas de généralisation cross-CRM démontrée.
+-31 pertes100 :3 parent absent,3 réservoir→Master,8 Master→500,17 500→100.
+  Bon SIREN présent dans995 top100 :29/31 erreurs n'ont pas le bon parent
+  admis. Modèle enrichi placé APRÈS la coupeMaster, dont la formule fixe
+  v23 ignore ces nouvelles preuves détaillées. Les111 évictions complètes
+  réservoir→Master ne peuvent donc pas être réparées par ce classement.
+- Prochaine orientation documentée, PAS exécutée : représentation officielle
+  multivue du parent et allocation parent→sites avant la coupe2000, avec
+  nouveaux memberships inner OOF, puis même LambdaMART SIRET jusqu'à500/100.
+  Pas de quotas arbitraires, pas de nouvelles canaries de paramètres sur le
+  même panel. Les130 parents absents du corpus complet restent un volet de
+  génération distinct. Plafond Master complet98,96059%, réservoir99,43150%.
+- Initial v36 : primaire terminé mais garde ressources déclenchée pendant
+  l'ablationfold4. STOP/log conservés, déclencheur RSS/swap exact non capturé,
+  ne pas qualifier ce processus de PASS ou d'OOM démontré. Reprise isolée
+  en84,17s,pic1,48Gio,zéro nouveau swap ; parité exacte des64 shards antérieurs.
+  V37 en136,97s,pic3,53Gio,zéro nouveau swap,2threads. Aucun index relancé.
+- Autorité v36 reprise :
+  `SIRETO_RECALL100/audits/retrieval_v36_evidence_ranker/recovery_20261002_a/manifest.json`,
+  SHA`97abf5e886068ccd878304f8f44ddec4efe470a5ddd7798949c9a9e602e471db`.
+  Autorité v37 :
+  `SIRETO_RECALL100/audits/retrieval_v37_parent_evidence/pilot_20261002_a/manifest.json`,
+  SHA`f6386d054f7b68186f6e7f8550efe7052548b8f942efbda949e6427655e7e018`.
+  V37 primaire utilise le nom de fichier `ablation_outcomes.parquet` hérité
+  du helper ; ce n'est pas une variante sélectionnée après coup.
+- Audit `reporting_audit.json` à côté du manifestev37,
+  SHA`7e5f98542549355b5b517deb44bf9d307fb2d17b5fb0aabd500aa4a1a8a63db9`.
+  Toutes les familles de segments publiées sans filtrer. V2/V3 vides et
+  mega_base_pool absent sur1024/1024 dans le ledger : UNKNOWN explicite,
+  pas des qualifications inventées. Historique, états et origines détaillés.
+  Les16 absences humaines sources restent publiées ; aucune exclusion pilote.
+-23 tests ciblés verts. **PIVOT_GENERATION**, aucun READY_FOR_FOLD1,
+  folds0/1 fermés, aval gelé, SLO/hydratation riche non validés. Aucun job
+  suivant lancé, aucun push. Les neuf modifications préexistantes conservées.
