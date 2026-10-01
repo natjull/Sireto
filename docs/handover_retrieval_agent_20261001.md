@@ -10,6 +10,16 @@ quand on le coupe à 100. La génération complète est déjà calculée et son
 évaluation est désormais terminée. Ne pas repartir sur 23 heures de calcul
 pour obtenir les mêmes métriques.
 
+Addendum du même jour : un [pilote de fusion SIRET v35](retrieval_v35_site_fusion_results.md)
+est désormais terminé (`c966cbb2` préenregistrement, `9a0d8319` résultats).
+Sur les mêmes 1 024 requêtes, le recall exact à 100 passe de 88,86719 % à
+95,01953 % ; à 500, de 97,26563 % à 97,65625 %. Trois nouveaux modèles
+SIRET de retrieval sont entraînés, les modèles aval restent gelés. Le reste
+de cette note décrit l'état avant ce pilote. Il ne faut pas confondre son
+résultat avec celui du complet, ni réutiliser les Masters outer d'autres
+folds pour un fit : reconstruire les Masters de fit avec les parents inner
+OOF, car l'ancienne sélection de candidats peut elle-même fuiter les labels.
+
 ## Objectif et règles à lire en premier
 
 Lire complètement `AGENTS.md`, `docs/retrieval_all_human_v12_contract.md` et

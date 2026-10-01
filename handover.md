@@ -10,6 +10,14 @@ V30 atteint 98,96059 % exact à 2 000 et 88,01069 % à la coupe100 de son
 ordre actuel, pas à une admission SIRET nouvellement apprise. Le fold1 reste
 fermé. Les sections antérieures ci-dessous décrivent leurs cycles historiques.
 
+Un pilote de fusion SIRET v35 est maintenant mesuré : sur les mêmes 1 024
+requêtes, 88,86719 % -> 95,01953 % exact à 100, 81 gains/18 pertes, en
+91,82 s. Prérequis et code `c966cbb2`, rapport `9a0d8319` :
+[résultats du pilote](docs/retrieval_v35_site_fusion_results.md).
+Ce n'est pas une mesure complète ni un gate ; PreRank500 reste insuffisant.
+Les Masters de fit sont reconstruits inner OOF pour empêcher une fuite par
+les upstream modèles des autres folds. Aucun nouveau run lourd en cours.
+
 ### Retrieval all-human v14 — PASS physique, national autorisé non lancé
 
 Le commit `e53f4ce` livre une révision physique distincte qui conserve
@@ -7072,3 +7080,44 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - La note sépare faits et pistes non exécutées, préserve les folds0/1 et
   les modifications locales, et évite un nouveau run de génération inchangé.
   Aucun fit, calcul lourd, message externe ni push effectué pour ce transfert.
+
+### V35 — premier gain de classement SIRET mesuré le 1 octobre 2026
+
+- Préenregistrement isolé `c966cbb2` : contrat
+  `docs/retrieval_v35_site_fusion_contract.md`, nouveau runner
+  `scripts/retrieval_v35_site_fusion.py`, 12 tests ciblés verts. Aucun ajout
+  sous `src/xgb_matcher/*.py`, pour conserver l'autorité gelée v33/v34.
+- Rapport isolé `9a0d8319` : `docs/retrieval_v35_site_fusion_results.md`.
+  Pilote de 1 024 requêtes, 32 premiers lots en ordre hashé préexistant,
+  aucune sélection par label/hit/qualification, folds0/1 non ouverts.
+- Nested OOF corrigé : pour outer2, train fold3 via parent inner_train4,
+  train fold4 via inner_train3, idem symétriquement. Ne jamais réutiliser
+  les Masters outer3/4 pour entraîner outer2 : ils dépendent de labels fold2
+  par leur membership aussi, même si on retire les scores parent.
+- Parité exhaustive outer Master vs v30 scellé sur les 32 lots. Features
+  scellées avant labels, 51 preuves légères sans identifiant, sampling de
+  négatifs après calcul, équivalents opérationnels neutralisés. Modèles aval
+  inchangés ; trois LambdaMART SIRET de retrieval nouveaux, recette unique.
+- Exact à 100 :910->973/1024, 88,86719->95,01953%,81 gains/18 pertes.
+  À500 :996->1000,97,26563->97,65625%,13 gains/9 pertes.
+  Master identique1018/1024=99,41406%. Opérationnel séparé, ici égal à exact.
+  Wilson100 bas93,51075%, folds10094,81707/96,26437/93,96552%.
+- 51 pertes100 :3 parent absent,3 éviction réservoir->Master,18 Master->500,
+  27 500->100. Sidecar officiel label-side repris et hashes revérifiés.
+  Les importances suggèrent un poids fort du rang parent appris, sans
+  attribution causale des gains au numéro ou à la géographie faute d'ablation.
+- Coût réel91,82s,pic2,06Gio RSS,zéro nouveau swapout,2 threads. Cache officiel
+  commun12,39s,lot32~2s,fits+évaluations~3,3s par fold. 1 891 016 références
+  outer scorées,cap2000/500/100 vérifié ; aucune recherche nationale refaite.
+- Artefacts nouveaux `SIRETO_RECALL100/audits/retrieval_v35_site_fusion/pilot_20261001_a/`.
+  Manifeste SHA`8000f1f8851d28af788708007b14c7fc2e2e5735d7fa8bbd34f46c27ca37112a`.
+  `MEASURED_BOUNDED_NESTED_OOF_SITE_FUSION`, **PIVOT_GENERATION**, jamais
+  READY_FOR_FOLD1. Aucun gate complet500/100/SLO et aucune hydratation riche
+  de production validée. Ne pas comparer le95,02% pilote au88,01% complet.
+- Suite : preuves officielles de noms SUPPORTING/historiques et distances
+  sur tous les sites coordonnées, ou augmentation du fit à recette inchangée,
+  à préenregistrer et borner. Les diagnostics du rapport ne sont pas des
+  filtres de GT. Ne pas lancer une génération v30 identique ; le plafond
+  complet98,96059% impose aussi un travail de couverture. Aucun job suivant
+  lancé automatiquement, aucun push et neuf modifications préexistantes
+  conservées.
