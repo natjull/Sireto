@@ -7021,3 +7021,35 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Évaluation officielle séparée automatiquement après scellement23571, code
   et politique épinglés dans `launch.json`. Exacte/opérationnelle distinctes,
   historique/V2/V3 et pertes; Master-only, aucun500/100, aucun READY_FOR_FOLD1.
+
+### V34 — évaluation complète reprise et mesurée, 1 octobre 2026
+
+- Rapport de milestone isolé `e5c1138b` :
+  `docs/retrieval_v34_full_crm_evaluation_results.md`.
+- Audit exhaustif réel :737 lots/23571 requêtes sans manque/doublon ; hashes
+  de toutes les sorties conformes, Masters naturels/rangs/cap2000 conformes,
+  code/config et autorités d'inférence inchangés. La génération avait fini
+  le12 septembre en~23,1h ; l'ancien STOP vient seulement du lancement de
+  l'évaluateur (`ModuleNotFoundError: No module named 'scripts'`).
+- Autorisation utilisateur « vas-y lance alors » : reprise uniquement via
+  `python -u -m scripts.evaluate_retrieval_v33_full_replay` depuis le dépôt,
+  sans modifier le code gelé et sans recalculer les candidats. Ancien
+  `status.json` STOP/log gardés comme historique, pas comme statut du résultat
+  repris. Résultat actuel :
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/evaluation_resume_20261001/manifest.json`,
+  SHA`b6d7123d2fb33616c76dc14ed4277552a7696d2bdb17b56f540b7f76edfec3c9`,
+  `MEASURED_FULL_CRM_MASTER_ONLY`.
+- Mesure exacte Master@2000 :v23 **23311/23571 =98,89695%** ;v30
+  **23326/23571 =98,96059%**,23 gains/8 pertes,+15 nettes. Opérationnelle
+  séparée :v23 98,90543%,v30 98,97756%. Historique/V2/V3 et folds2/3/4
+  publiés ensemble ;16 labels absents/inexploitables publiés séparément.
+- Pertes v30 :1 catalogue absent,130 parents non retrouvés,3 sites non
+  développés,111 évictions réservoir->Master2000. Sidecar officiel label-side
+  scellé avant scoring et sorties revérifiées par hashes/comptages.
+- Phase sous garde ressources96,17s/pic RSS~1,12Gio/zéro nouveau swapout,
+  garde PASS ; exclut réconciliation préalable et diagnostics. Aucune nouvelle
+  génération, aucun fit ni changement de features/caps, folds0/1 fermés.
+- Artefact `STOP` faute de gates500/100/SLO ; orientation **PIVOT_GENERATION** :
+  Master insuffisant pour99,2%@100 ou99,4%@500. Investiguer les évictions et
+  parents absents par mécanismes généralisables, pas par identifiants humains.
+  Pas de READY_FOR_FOLD1 ; les courbes100/500 du Master ne sont pas le produit.
