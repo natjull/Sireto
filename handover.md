@@ -2,6 +2,14 @@
 
 ## Etat des lieux
 
+Mise à jour du 1 octobre 2026 : le rejeu complet v33/v34 est généré et son
+évaluation reprise est terminée. Pour reprendre le chantier, lire d'abord
+[la note de handover agent](docs/handover_retrieval_agent_20261001.md),
+commit isolé `a4a761ab`, puis les dernières entrées v34 de ce journal.
+V30 atteint 98,96059 % exact à 2 000 et 88,01069 % à la coupe100 de son
+ordre actuel, pas à une admission SIRET nouvellement apprise. Le fold1 reste
+fermé. Les sections antérieures ci-dessous décrivent leurs cycles historiques.
+
 ### Retrieval all-human v14 — PASS physique, national autorisé non lancé
 
 Le commit `e53f4ce` livre une révision physique distincte qui conserve
@@ -7053,3 +7061,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Master insuffisant pour99,2%@100 ou99,4%@500. Investiguer les évictions et
   parents absents par mécanismes généralisables, pas par identifiants humains.
   Pas de READY_FOR_FOLD1 ; les courbes100/500 du Master ne sont pas le produit.
+
+### Note de transfert à un autre agent du 1 octobre 2026
+
+- Commit isolé `a4a761ab` : `docs/handover_retrieval_agent_20261001.md`.
+  Demande utilisateur de préparer une note, sans dispatch à un autre agent.
+- Résultats, décomposition des pertes245/473/2108, artefacts scellés et
+  ressources vérifiés ; distinction entre génération, ordre du Master,
+  prototypes d'admission v12 existants et modèles aval gelés.
+- La note sépare faits et pistes non exécutées, préserve les folds0/1 et
+  les modifications locales, et évite un nouveau run de génération inchangé.
+  Aucun fit, calcul lourd, message externe ni push effectué pour ce transfert.
