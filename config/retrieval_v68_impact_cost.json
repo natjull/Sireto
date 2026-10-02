@@ -1,0 +1,10 @@
+{
+  "generation_source": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/generation/manifest.json","sha256":"022b5c4e4436b335e78d217a81319c122390631e5698dd17c9d7db3f36c77e26"},
+  "documents":32768,
+  "crm_queries":16,
+  "common_term_stress_queries":8,
+  "block_size":256,
+  "repetitions":3,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "scope":"INDEPENDENT_OFFICIAL_PREFIX_COST_AND_EXACT_SCORE_PARITY_NOT_RECALL"
+}
