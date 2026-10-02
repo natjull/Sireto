@@ -106,8 +106,11 @@ def test_joint_fit_improves_regularized_objective_without_nan():
     assert np.isfinite(fitted[1]).all() and np.all(fitted[0] >= 0)
 
 
-def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch):
+@pytest.mark.parametrize('continuous', [False, True])
+def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch, continuous):
     import copy
+    from src.xgb_matcher import retrieval_continuous_sparse_v70
+    kernel = retrieval_continuous_sparse_v70 if continuous else m
     rng = np.random.default_rng(19); rows = []; scenes = []; raw = {}; aliases = {}
     registry = {str(f): [] for f in (2, 3, 4)}
     q = rng.normal(size=(180, 2, 4))
@@ -127,9 +130,9 @@ def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch):
     def fixed(z, data, initial, family, ridge, *args):
         return (m.PRIOR.copy(), initial.copy(), 0. if family == 'NATIVE23' else 1.), dict(
             converged=True, parameters=len(m.FEATURES)+(0 if family == 'NATIVE23' else initial.size))
-    monkeypatch.setattr(m, 'fit', fixed)
+    monkeypatch.setattr(kernel, 'fit', fixed)
     cfg = dict(vocabulary_cap=128, latent_per_field=2, ridges=[.1], flops=.1, query_terms=4, maxiter=1)
-    before, report_before = m.select(q, rows, scenes, raw, aliases, registry, 2, cfg)
+    before, report_before = kernel.select(q, rows, scenes, raw, aliases, registry, 2, cfg)
     changed_scenes = copy.deepcopy(scenes); changed_raw = copy.deepcopy(raw); changed_alias = copy.deepcopy(aliases)
     for i, row in enumerate(rows):
         if row['fold'] == 2:
@@ -137,7 +140,7 @@ def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch):
             changed_scenes[i]['positive_features'] = [100.]*len(m.NATIVE)
             changed_raw[row['positive_siret']] = dict(legal_names=['OUTER SECRET ONLY'])
             changed_alias[row['positive_siret']] = ['OUTER SECRET ONLY']
-    after, report_after = m.select(q, rows, changed_scenes, changed_raw, changed_alias, registry, 2, cfg)
+    after, report_after = kernel.select(q, rows, changed_scenes, changed_raw, changed_alias, registry, 2, cfg)
     assert before == after
     assert report_before['candidates'] == report_after['candidates']
     assert report_before['selected'] == report_after['selected']

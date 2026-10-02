@@ -1,0 +1,10 @@
+{
+  "vector_source": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v52_contrastive_training/probe_20261002_a/manifest.json","sha256":"95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db"},
+  "proof_source": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v56_exact_fields/training_20261002_a/manifest.json","sha256":"5e3e309953a1e153478dc34e8aa7e9ecef4e76cbfe5b511f35cae8e902c667ad"},
+  "alias_validation": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v67_stored_initialisms/probe_20261002_a/manifest.json","sha256":"9e74e3a376e0a0a5c4a5a37f8288b31ec0397b785cc1e6ef899594dc4a267e48"},
+  "vocabulary_cap":1024,"latent_per_field":16,"query_terms":16,
+  "ridges":[0.01,0.1],"flops":0.1,"maxiter":180,
+  "activation":"SUBTRACT_KPLUS1_LOG_RELU",
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "scope":"TRAINING_ONLY_CONTINUOUS_LEARNED_SPARSE_NO_NATIONAL_RECALL"
+}
