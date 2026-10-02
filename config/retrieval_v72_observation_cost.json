@@ -1,0 +1,12 @@
+{
+  "generation_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/generation/manifest.json","sha256":"022b5c4e4436b335e78d217a81319c122390631e5698dd17c9d7db3f36c77e26"},
+  "sources":[
+    {"folder":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/official_evidence/rne_bulk_formalities_20260304_v3","manifest_sha256":"4466bdb79d77f988d6c8f97593ca9945ba0bbea362a56376abb9510eabc30620","size_bytes":3994406414,"rows":50719791},
+    {"folder":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/official_evidence/bodacc_yearly_v1/2008","manifest_sha256":"67c771e4e80ccf076681832f1006ba36c8e9ff98f0cef0f91619f642eded9c11","size_bytes":223791684,"rows":2510120},
+    {"folder":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/official_evidence/bodacc_yearly_v1/2017","manifest_sha256":"2d1c385804036ac52fedb9cbdede19703135ad79e1d791f25ffbeb6b1c08b0b0","size_bytes":241629485,"rows":2664563},
+    {"folder":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/official_evidence/bodacc_yearly_v1/2026","manifest_sha256":"77ae0e0ab519a2fafcaff8dac3382d87ec8b57405bbf1feb70f437d3572e1cfb","size_bytes":263446534,"rows":2839977}
+  ],
+  "rows_per_source":32768,"crm_queries":8,"common_term_queries":8,"repetitions":2,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "scope":"OFFICIAL_OBSERVATION_STRUCTURE_AND_GROUP_DIRECT100_COST_NO_RECALL"
+}
