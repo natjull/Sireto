@@ -7950,3 +7950,114 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   et le modèle final passent. Toutes les tentatives sont terminales ; aucun
   job restant, fold1 fermé, fold0 non lu, utilisateur dirty files préservés,
   aucun push. Goal actif, objectif99,2% non atteint.
+
+### 2 octobre 2026 — V55/V56/V57 : preuves de site natives, coût et vrai top100
+
+- Commits isolés : `994663a4` V55 preuves natives sans BM25 ;
+  `38fd9659` V56 réparation des champs exacts préenregistrée ;
+  `6d9ad538` V57 ablation native directe11 preuves préenregistrée ;
+  `1be57832` audit séparé POST-scellement. Contrats de probes :
+  `docs/retrieval_v56_exact_fields_probe.md`,
+  `docs/retrieval_v57_native_probe.md`. Objectif initial100 exact99,2%
+  inchangé ; anciens2000/500 et modèles aval toujours hors de ce volet.
+- V55 a calculé512 scènes officielles/23749 négatifs naturels V52, en
+ 193,605s, pic5123751936 octets (~4,77Gio), zéro swap. Modèles OOF
+ 343/348/333 scènes,15765/15988/15370 paires, entités heldout exclues
+  des positifs ET négatifs. Poids non négatifs/ridge0,005 fixés avant
+  mesure. Couverture constante de mots/ngrams, nom/adresse exacts,
+  numéro+commune, siège+commune, distances physiques25/100/500/2000m
+  distinguant étendue de site et fiabilité BAN. Pas de filtre d'activité,
+  d'identifiant comme feature, d'alias CRM ni d'aval modifié. **Aucun
+  recall V55 mesuré**. Manifeste sous
+  `audits/retrieval_v55_proof_metric/training_20261002_a/`, SHA
+  `d9a4f8df9e438929920b313b5bf6c4db34b59465729667d5d48af71f50e1ebe5`.
+- Défaut trouvé AVANT toute qualité V55/V56 : le constructeur v3
+  `_add_site_evidence_document` ne remplit pas `names_exact`, bien que
+  déclaré au schéma. Il remplit les trois champs exacts legal/trade/site.
+  Les features2 et10 anciennes sont nulles pour TOUS les positifs ET
+  négatifs des512 scènes ; pas un comptage global de termes déclaré.
+  V56 interroge les trois champs remplis. Aucun rebuild national, aucune
+  preuve exacte historique/supporting inventée (ces champs n'existent
+  pas en exact dans cet index). Les preuves d'adresse exactes sont
+  également uniquement courantes.
+- V56 réutilise17 coordonnées inchangées des scènes V55 hashées, corrige
+  seulement2/10, vérifie identité/ordre/parents/denominateur et audit
+  lexical natif complet sur16 scènes/785 vecteurs : parité exacte.
+ 192/512 positifs ont alors une preuve de nom courant exact,368 négatifs
+  aussi : ce n'est PAS un recall, ni une preuve suffisante de gain.
+  Réparation/refit27,900s, pic2998075392 octets (~2,79Gio), zéro swap.
+  Manifeste `audits/retrieval_v56_exact_fields/training_20261002_a/`
+  SHA`5e3e309953a1e153478dc34e8aa7e9ecef4e76cbfe5b511f35cae8e902c667ad`.
+- V56 pilote initial national : **STOP_PRIMARY_COST_PREFLIGHT** après
+ 16 sorties certifiées, sans ouvrir labels ou comparateur. Moyenne
+ 6,836378s >4s, total113,803s, pic3905355776 octets (~3,64Gio),
+  zéro swap. Traversée variable100..6153 références selon requête,
+  plafond sortie100, pas de pool fixe ni résultat aval. Trop cher pour
+  l'objectif. Partiel conservé, AUCUN recall extrapolé à128, aucune
+  relance élargie. Sous `audits/retrieval_v56_exact_fields/pilot_20261002_a/`,
+  status SHA`edd37a74fcaf06ed2d355585ea267c8c9688ac55f37efe486c0d4ed448ed784e`.
+- V57 test d'isolation, PAS architecture finale : retirer les8 coordonnées
+  géographiques et refit les11 preuves natives sur les mêmes scènes,
+  même ridge/BASE/registry. Un unique collecteur Tantivy national émet
+  directement<=100 sites, aucun flux spatial, pool préalable, reranker
+  ni lecture d'ancien candidat. Refit0,170s, pic215760896 octets, zéro
+  swap ; même343/348/333 scènes et15765/15988/15370 paires OOF.
+  Manifeste `audits/retrieval_v57_native_proof/training_20261002_a/`
+  SHA`540a4abbc8a20996f8039965f63801e6cb911b37c59f27ddb7be12ccdf5411b7`.
+- Préflight V5716 sans labels : moyenne1,735668s, passe la garde4s
+  expérimentale, PAS SLO. Puis128 sorties entièrement scellées en
+ 287,016s, pic1788002304 octets (~1,67Gio), zéro swap. Corpus lexical
+  national complet43896818 sites, documents SIREN exclus ; pas de
+  réduction autour GT, pas de lookup vérité en génération, folds2/3/4.
+  Panel v38/V42/V49 réutilisé, pas holdout inédit ; disjoint512 train.
+  Références retournées/hydratées légèrement<=100. Les visites internes
+  de postings du moteur ne sont PAS instrumentées ; quantiles100 de
+  `unique_documents_visited` ne prouvent pas100 visites internes.
+- Évaluation séparée seulement APRÈS128 scellées : **113/128=88,28125%
+  exact**,115/128=89,84375% opérationnel, Wilson bas81,563384%.
+  V42 comparateur scellé111/128 exact,112op ;7 gains/5 pertes.
+  Face au dernier pilote V49 :113 vs113 exact,5 gains/5 pertes, aucun
+  gain net ; op115 vs114. Ne pas ne citer que V42 pour annoncer un progrès.
+  Folds V57 :37/43,36/41,40/44 ; V49 :38/43,37/41,38/44.
+  Nouveau CRM66/75 vs64/75 V49 ; historique47/53 vs49/53 V49.
+  Métrique all-human intacte : y compris AMBIGUOUS2/2, UNRESOLVED9/14,
+  MATCH_EXACT102/112 ; étatsA79/88,F23/24,UNKNOWN11/16.
+  V2/V3 et mega_base_pool UNKNOWN128 publiés, jamais inventés ;
+ 16 labels sources absents/inexploitables historiques publiés à part.
+- Latences chargées, sans coût BAN : moyenne2,180569s,
+  p50/p95/p99=2,128824/3,473938/3,768510s. Plus faible que V49
+  historique mais PAS benchmark cache froid/chaud contrôlé, PAS SLO.
+  SLO p95<=1s/p99<=2s non franchis. **PIVOT_GENERATION**,
+  pas de READY_FOR_FOLD1 ni preuve de99,2% nationale.
+  Sous `audits/retrieval_v57_native_proof/pilot_20261002_a/` :
+  génération SHA`11151f230e9616ee799dffbc47aa588bdbb6685ccebc357c6b326e61d3bd0384`,
+  évaluation SHA`cbf1a7afb4199f7193d4eced40d2085ba5ed58deb093e7e329e143a686ccb1c8`.
+- Audit officiel pointé POST-évaluation, jamais réinjecté :128 GT présentes
+  dans l'index ;15 pertes toutes sous cutoff, zéro violation du top100
+  natif. Parmi15 :4 ont le bon SIREN parmi100,6 n'ont aucune preuve
+  de nom dans cette représentation lexicale,3 aucune preuve d'adresse,
+ 1 aucune preuve textuelle,0 sans commune/CP,0 avec nom exact courant,
+ 2 avec adresse exacte courante,3 avec numéro+commune. Ces drapeaux
+  sont des recouvrements, PAS une partition des pertes. Absence de match
+  lexical n'est PAS absence de preuve dans les sources officielles brutes.
+  Audit16,105s, pic5065981952 octets (~4,72Gio), zéro swap, SHA
+  `073caac195fa69004be07b589cd16a92dc673c42b41f4ebaaa2d4a68b0d468ff`.
+  Pas attribution exhaustive brute RNE/BODACC/filiations revendiquée.
+- Conclusion : correction d'indexation réelle, mais modifier uniquement
+  pondérations/const-score ne ferme PAS le gap. Ne pas annoncer une
+  victoire de retrieval ni déployer V56/V57. Orientation à investiguer :
+  représentation apprise de l'identité ET du site, preuves officielles
+  cohérentes dans le temps (alias/adresse/période/filiation attachés à leur
+  source, pas bag-of-fields ni héritage libre), négatifs durs de même
+  entreprise/site voisin et entreprises distinctes à même adresse ;
+  recherche initiale indexée directe100, lexical exact complémentaire et
+  géographie fiable/faible, pas pool fixe2000 reclassé. Les contrôles
+  contrastifs V54 ne justifient toujours PAS un énorme build dense national.
+  D'abord démontrer la généralisation et l'utilité des représentations
+  disponibles ; seul un vrai test initial full-corpus vaut recall.
+-42 tests ciblés passent (V57+audit/V56/V55/V46/V47/V49), compilation et
+  diff-check passent. Tous jobs terminés, artefacts STOP conservés,
+  gros segments toujours inventoriés size/mtime et non entièrement
+  rehashés, fold0 non lu, fold1 fermé, modèles aval gelés, aucune
+  dépense externe/push, modifications utilisateur non liées préservées.
+  Goal actif : exact99,2% et SLO toujours NON atteints.
