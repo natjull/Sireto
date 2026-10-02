@@ -94,16 +94,20 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
         JOIN event_scope e ON e.siren=a.siren AND e.event_id=a.event_id AND e.address_count=1
         JOIN relations r ON r.to_identifier=a.siren AND r.event_id=a.event_id
         WHERE regexp_full_match(s.siret,'[0-9]{14}') AND regexp_full_match(s.siren,'[0-9]{9}')''', [])
-    execute('anchor_names', '''CREATE TEMP TABLE anchor_names AS
-        SELECT n.siren,list_sort(list(DISTINCT struct_pack(text := n.normalized_value,
+    # Publications repeat identical lexical facts. Preserve one coherent
+    # provenance row per (parent,text,source,kind), not millions of occurrences.
+    execute('name_facts', '''CREATE TEMP TABLE name_facts AS
+        SELECT n.siren,min(struct_pack(text := n.normalized_value,
             source := n.source,name_kind := n.name_kind,evidence_id := n.evidence_id,
             source_record_id := n.source_record_id,valid_from := n.valid_from,
-            valid_to := n.valid_to))) anchor_values
+            valid_to := n.valid_to)) fact
         FROM read_parquet(?) n
         SEMI JOIN (SELECT DISTINCT anchor_siren FROM bindings) b ON b.anchor_siren=n.siren
         WHERE n.subject_kind='SIREN' AND n.normalized_value<>''
         AND n.source IN ('SIRENE_CURRENT','SIRENE_HISTORY','SIRENE','RNE','BODACC')
-        GROUP BY n.siren''', [str(sources['names'])])
+        GROUP BY n.siren,n.normalized_value,n.source,n.name_kind''', [str(sources['names'])])
+    execute('anchor_names', '''CREATE TEMP TABLE anchor_names AS
+        SELECT siren,list_sort(list(fact)) anchor_values FROM name_facts GROUP BY siren''', [])
     execute('proof_paths', '''COPY (
         SELECT b.*,n.anchor_values anchor_names,'SIREN' anchor_name_scope,'BODACC' relation_source,
             'ASSET_TRANSFER' relation_type,'FORWARD' direction,
@@ -149,16 +153,18 @@ def run(output):
             sm = json.loads(source_manifest.read_text())
             if sm['policy']['crm_labels_present'] or sm['policy']['model_scores_present']:
                 raise ValueError('Forbidden dossier source')
-            sources = {}
+            sources = {}; source_refs={}; fingerprints={}
             for key, name in cfg['files'].items():
                 path = source_manifest.parent/name
                 sources[key] = verify(dict(path=path,sha256=sm['files'][name]['sha256']))
+                source_refs[key]=dict(path=str(path),sha256=sm['files'][name]['sha256'],size_bytes=path.stat().st_size)
+                fingerprints[key]=(path.stat().st_size,path.stat().st_mtime_ns)
             # Logical projected cost, independent of macOS disk caches.
             cost = {key:dict(rows=pq.ParquetFile(p).metadata.num_rows,
                              row_groups=pq.ParquetFile(p).metadata.num_row_groups,
                              bytes=p.stat().st_size) for key,p in sources.items()}
             write_json(output/'launch.json',dict(config=record(CONFIG), source_manifest=record(source_manifest),
-                sources={k:record(p) for k,p in sources.items()}, cost=cost,
+                sources=source_refs, cost=cost,
                 implementation=record(Path(__file__)), crm_opened=False, truth_opened=False))
             conn=duckdb.connect()
             conn.execute("SET memory_limit='512MB'"); conn.execute('SET threads=2')
@@ -168,6 +174,8 @@ def run(output):
             conn.execute("SET max_temp_directory_size='1GB'")
             stats=compile_paths(conn,sources,output,lambda x:print(json.dumps(x),flush=True))
             conn.close(); conn=None
+            if any((p.stat().st_size,p.stat().st_mtime_ns)!=fingerprints[k] for k,p in sources.items()):
+                raise ValueError('Source file changed during compilation')
             if sum(p.stat().st_size for p in output.rglob('*') if p.is_file())>cfg['max_output_bytes']:
                 raise ValueError('STOP_OUTPUT_SIZE')
         manifest=dict(status='SEALED_BODACC_SOURCE_PROOF_COMPILATION', stats=stats,
