@@ -7724,3 +7724,123 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pruning/audit/V42/géoV16/V38 passent ; compilation et diff-check passent.
   Aucun job restant, aucun push,
   modifications locales préexistantes conservées ; goal actif.
+
+### V46–V51 — score conjoint insuffisant, défaut d'apprentissage corrigé, changement de représentation testé
+
+- `e7be0c43` préenregistre la métrique initiale sparse structurée + proximité
+  XY soft, dix composants non négatifs appris OOF entity-disjoint, aucun
+  modèle aval. Les index lexical/spatial sont parcourus jusqu'à une borne
+  certifiant le même score conjoint ; pas de réservoir fixe ni reranker.
+  `1ad8e1e9` teste que le pruning lexical à borne0 n'empêche pas les sites
+  spatiaux hors commune/CP. La géométrie absente donne0, sans retirer la
+  requête ; la sigma BAN est une heuristique, pas une probabilité calibrée.
+- Fit V46 `audits/retrieval_v46_joint/training_20261002_a/` :128 requêtes
+  d'apprentissage historiques distinctes,90/77/89 scènes selon fold heldout,
+  19251/16233/19084 paires négatives, folds2/3/4 uniquement et registre entier
+  des entités tenu à l'écart aussi des négatifs. Les GT pointées sont des
+  cibles du TRAINER uniquement, jamais injectées dans les sorties évaluées.
+  Négatifs naturels V38, lexicaux V42 et spatiaux ; équivalents opérationnels
+  exclus. Aucune absence positive de catalogue, aucune scène sans texte ET
+  XY. Fit/mining472,705s, pic3550265344 octets, zéro swap. Manifeste SHA
+  `523bce3a4abec664a481ace967b1faa4283dcd9c9d0c9c83c0715887ab7c1495`,
+  modèles SHA`e03380ec032986b5362200911f4c19c54ab1fbdc3a24190f00813cf1074d029a`.
+- V46 `pilot_20261002_a` STOP avant premier lot : garde20s dépassée sans
+  certificat, pas de labels ouverts. `4f286757` V47 remplace la sélection
+  pouvant affamer une source par une alternance équitable et des pages
+  adaptatives ; taille des pages != profondeur/cap du corpus. Tests oracle
+  exhaustif passent, mais pilote V47 STOP_COST_PREFLIGHT après16, moyenne
+  paire5,05514s>4 ; pas d'évaluation partielle.
+- `55c0efd4` V48 simplifie la seule éligibilité textuelle en term-set à
+  score0 et les accès ponctuels lexicalement non locaux à borne0. Les
+  composants effectivement scorés restent inchangés ; tests native score/
+  documents et joint oracle passent. V48 STOP après16 à4,46175s par paire,
+  sans labels ouverts. Vérification read-only des16 sorties V47/V48 : mêmes
+  IDs, ordre et scores ; pas de rapport de parité128 scellé revendiqué.
+- `b5618d15` V49 préenregistre une séparation du coût primaire et de la
+  comparaison : le générateur ne lit AUCUN ancien candidat ni sortie V42.
+  Après scellement128 uniquement, l'évaluateur lit le comparateur V42 gelé,
+  même population et corpus. Seuil expérimental annoncé PRIMARY_MEAN16_LE4S,
+  et non l'ancien coût de deux recherches, ni le SLO produit. Préflight
+  3,76238s passe ; génération complète522,900s, pic3701243904 octets
+  (~3,45Gio), zéro swap,128 recherches certifiées, sortie<=100. Nombre
+  variable de documents visités p50/p95/p99=382/847,65/996,73, max1398 :
+  pas un cap de pool fixe ni une nouvelle cible2000.
+- V49 `audits/retrieval_v49_primary_probe/pilot_20261002_a/` : exact
+  **113/128=88,28125%**, opérationnel114/128=89,0625%, Wilson bas81,56338%.
+  Comparateur V42 exact111/128=86,71875%, opérationnel112/128=87,5%.
+  3 gains/1 perte, net+1,5625point. Folds2/3/4 :38/43,37/41,38/44
+  vs36/43,38/41,37/44. Nouveau CRM64/75 identique, historique49/53 vs47/53 :
+  tout le gain net vient de l'historique, PAS une preuve de généralisation.
+  Statuts/qualifications ne filtrent pas le dénominateur ; V2/V3 UNKNOWN
+  publiés,16 labels sources inexploitables séparés. Panel de développement
+  réutilisé, pas une population nationale all-human complète.
+- Latence primaire V49 p50/p95/p99=3,44248/8,61432/9,53509s : INSUFFISANTE.
+  Timings index chargés, sans BAN ; comparateur historique séparé, PAS une
+  mesure appariée courante ni un gain de vitesse. **PIVOT_GENERATION**,
+  objectif et SLO non atteints. Génération SHA
+  `086ebd108d92a8354c871b6fbd8b9978d7fb570611833c2883886e0664616f84`,
+  évaluation SHA`a6429e7e53aec7c70d8b25322853cb8b787b2086ab5835c962e846c64ea3299d`.
+- `0c3816ff` ajoute l'audit séparé V49 et corrige un défaut TRAINING/SERVING
+  sans toucher aux artefacts précédents. Le natif exige une preuve nom OU
+  adresse pour toute contribution lexicale ; les features brutes du trainer
+  conservaient pourtant parfois commune/numéro sans texte.1823/54568 paires
+  négatives et2 copies de positif affectées. La correction annule les huit
+  composants lexicaux dans ce cas, conserve la géographie, ne retire aucune
+  scène/document ; test contre le score natif inclut un document sans texte.
+- Refit V50 sur seuls vecteurs V46 déjà scellés, pas nouveau mining, pas
+  nouveau label/panel d'évaluation :0,407s,146456576 octets, zéro swap.
+  Trois modèles corrigés, même folds/entités/paires et même régularisation.
+  Les deux positifs sans texte sont conservés, sans prétention de recall
+  nouveau. Pas de replay BM25 lancé. Manifeste
+  `audits/retrieval_v50_serving_features/training_20261002_a/` SHA
+  `154f8c25ffd2e6974142a56b3bda515f181f71c893aecd19a57a41a7d38b317b`,
+  modèles SHA`5317e8f00b88507be476773d9741a1ebdead0b2b91ad35b1adf0d0da269193c7`.
+- Audit postévaluation V49 :15/15 vérités présentes dans l'index, TOUTES
+  sous la coupe du score conjoint,0 violation du certificat.4 ont un autre
+  SIRET du même parent parmi100,1 n'a aucune preuve textuelle,3 n'ont aucun
+  signal géométrique compatible/résolu. Cet audit lit les noms/adresses
+  officiels liés au GT uniquement APRÈS scellement ; il ne prouve pas à lui
+  seul une absence dans les sources RNE/BODACC hors index.17,766s,
+  pic2807627776 octets, zéro swap ; rapport SHA
+  `fda52a2767ce29a6f9ec7877cc495d93a7f1c2c3b2324159cd8d0288c37c1f3a`.
+- Demande utilisateur : arrêter de confondre sophistication avec petits
+  réglages TFIDF/BM25 ; tester une représentation adaptée à l'appariement
+  identité/site. `359adcac` préenregistre V51 : **probe TRAINING-ONLY de
+  représentation dense**, pas une évaluation de retrieval, PAS un index
+  réduit contenant des GT évalués.128 requêtes du seul panel d'entraînement
+  V46 et7280 documents officiels liés par identifiants de jointure ; anciens
+  candidats utilisés comme négatifs SUPERVISÉS, jamais comme pool produit.
+  Les documents GT sont des cibles d'apprentissage explicitement déclarées.
+  Aucune ouverture du panel128 V49 ni fold0/1 ; labels/IDs ne sont pas encodés.
+- MiniLM générique local offline,2threads CPU, noms/adresses officiels et CP,
+  documents inchangés ; adaptateur de requête ridge1, négatif0,25 fixés avant
+  mesure, un concurrent le plus dur choisi dans les seuls négatifs sûrs de
+  chaque scène d'apprentissage.90/77/89 fits avec registre heldout complet
+  exclu positifs ET négatifs. Contrôle de marges croisé interne sur38/51/39
+  requêtes, avec négatifs naturels ; **aucun recall@100 calculé** et aucune
+  métrique de pool de candidats requalifiée en recall initial.
+- V51 réduit la fraction moyenne de négatifs devant le positif dans chaque
+  fold :34,84→28,53%,23,07→16,31%,29,74→25,20%. La marge moyenne face au
+  concurrent le plus dur reste négative (-0,077/-0,026/-0,071). C'est un
+  indice d'apprentissage transférable dans ce petit contrôle, PAS une preuve
+  de généralisation nationale ni une qualité proche99,2%. Une vue concaténée
+  noms/adresses,13 textes tronqués à128 tokens, pas modèle temporel/graphique,
+  pas fine-tuning neuronal de type SC-Block ; publier ces limites.
+- Encodage128 requêtes +7280 documents11,844s, worker13,206s,
+  pic1257570304 octets (~1,17Gio), zéro swap ; aucun build national12h ni
+  téléchargement/dépense. Sous `audits/retrieval_v51_dense_training/probe_20261002_a/`,
+  manifeste SHA`75d3f723eef0668d3697cf3822d2aecaa272915ea18ac1552fce472986793ee6`,
+  worker SHA`76b891affd22c51a8bb9bb2414641ce1380cb7d17413db81053b74c79c0d8a73`.
+- Suite de fond : représentation spécialisée identité/adresse/site,
+  apprentissage contrastif avec beaucoup plus de scènes sûres et négatifs
+  proches/même enseigne, preuves officielles multivues/cohérence temporelle
+  des liens préindexées, géographie soft distincte de l'incertitude BAN.
+  Contrôler d'abord le gain de représentation et le coût ; puis seulement
+  index initial national avec collecteur100 unique natif et recette gelée,
+  sans réservoir fixe reclassé. Le dense générique seul n'est PAS la solution
+  validée ; le petit contrôle V51 ne franchit aucun gate et ne justifie pas
+  un gros build. Aucun objectif99,2% garanti, aucun READY_FOR_FOLD1.
+-48 tests ciblés V51/V41/V50/auditV49/V46/V47/V48/V49 passent ; compilation
+  et diff-check passent. Tous les processus de ce volet sont terminés,
+  fold1 fermé, fold0 non lu, aval gelé, aucun push. Fichiers locaux utilisateur
+  préexistants préservés ; goal actif. Milestones documentés par ce commit.
