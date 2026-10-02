@@ -1,0 +1,19 @@
+{
+  "training_source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v65_initialisms/probe_20261002_a/manifest.json",
+    "sha256": "8ea56e02bd4fd2306b422f4c407ec8ca6f4d68449d9160bcef070fd2af63094b"
+  },
+  "query_cache_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v61_sparse_flat/pilot_20261002_a/launch.json",
+    "sha256": "dfeaa3947a690ca0b8f5fe88239dee76af71a36911d8bc4dc1a57e816cf90af3"
+  },
+  "query_cache_encoding": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v61_sparse_flat/pilot_20261002_a/expansions.json",
+    "sha256": "e858ba1dff913b2b8327a9847d23cc4dc3eb12258282aee076a4be0aae56a0fd"
+  },
+  "resources": {"max_seconds":80,"max_rss_bytes":6442450944,"max_swapout_pages_delta":0},
+  "controller_seconds":360,
+  "primary_mean16_seconds":4,
+  "max_query_search_seconds":20,
+  "metric_family":"INITIAL_NATIVE_11_PROOFS_PLUS_SAFE_FOLD_LOCAL_OFFICIAL_WORDS_HEAD_LOSS_NO_POOL"
+}
