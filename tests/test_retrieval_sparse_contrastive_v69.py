@@ -142,3 +142,17 @@ def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch):
     assert report_before['candidates'] == report_after['candidates']
     assert report_before['selected'] == report_after['selected']
     assert report_before['outer_before'] != report_after['outer_before']
+
+
+def test_alias_manifest_verifies_referenced_launch_not_manifest(tmp_path, monkeypatch):
+    import json
+    from scripts import preflight_retrieval_v69_sparse_contrastive as probe
+    from src.xgb_matcher.retrieval_v20_workbench import record
+    launch = tmp_path/'launch.json'; launch.write_text(json.dumps(dict(implementation={'sentinel':'checked'})))
+    manifest = tmp_path/'manifest.json'
+    manifest.write_text(json.dumps(dict(launch=record(launch), native_current_alias_parity=True, recall_measured=False)))
+    seen = []
+    monkeypatch.setattr(probe.v38, 'verify_launch', lambda item: seen.append(item))
+    result = probe.validated_alias_source(record(manifest))
+    assert result['native_current_alias_parity']
+    assert seen == [dict(implementation={'sentinel':'checked'})]

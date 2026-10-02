@@ -19,6 +19,16 @@ from src.xgb_matcher.retrieval_v20_workbench import Budget, ROOT, record, verify
 CONFIG = ROOT/'config/retrieval_v69_sparse_contrastive.json'
 
 
+def validated_alias_source(reference):
+    manifest = json.loads(verify(reference).read_text())
+    # V67's manifest points to a launch; it is not itself a launch envelope.
+    alias_launch = json.loads(verify(manifest['launch']).read_text())
+    v38.verify_launch(alias_launch)
+    if not manifest['native_current_alias_parity'] or manifest['recall_measured']:
+        raise ValueError('Missing corrected alias validation')
+    return manifest
+
+
 def worker(output):
     launch = json.loads((output/'launch.json').read_text()); cfg = launch['config']
     v38.verify_launch(launch)
@@ -30,9 +40,7 @@ def worker(output):
             data = json.loads(verify(sl['inputs']).read_text())
             cache = json.loads(verify(source['worker']).read_text())
             proof = json.loads(verify(cfg['proof_source']).read_text()); v38.verify_launch(proof)
-            alias_proof = json.loads(verify(cfg['alias_validation']).read_text()); v38.verify_launch(alias_proof)
-            if not alias_proof['native_current_alias_parity'] or alias_proof['recall_measured']:
-                raise ValueError('Missing corrected alias validation')
+            validated_alias_source(cfg['alias_validation'])
             rows = data['rows']
             scenes = [s for ref in proof['features'] for s in json.loads(verify(ref).read_text())['scenes']]
             if source['recall_measured'] or proof['recall_measured'] or len(rows) != 512 or len(scenes) != 512:
