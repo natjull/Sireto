@@ -1,0 +1,13 @@
+{
+  "source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v52_contrastive_training/probe_20261002_a/manifest.json",
+    "sha256": "95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db"
+  },
+  "capacities": ["FIELD_SCALE", "DIAGONAL", "FULL"],
+  "ridges": [0.01, 0.1, 1.0, 10.0],
+  "temperature": 10.0,
+  "hard_count": 8,
+  "maxiter": 100,
+  "resources": {"max_seconds": 90, "max_rss_bytes": 2147483648, "max_swapout_pages_delta": 0},
+  "scope": "INNER_ENTITY_DISJOINT_SELECTION_TRAINING_ONLY_NOT_RETRIEVAL_EVAL"
+}
