@@ -1,0 +1,6 @@
+{
+  "structure_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v72_observation_cost/probe_20261003_a/manifest.json","sha256":"77a53b2acd959e8c0eed9fcda7307fce543d293151e0d17b2a003001515aad0b"},
+  "rows":32768,"crm_queries":8,"common_term_queries":8,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "scope":"EXPLICIT_RNE_LEGAL_OWNER_BINDING_STRUCTURE_AND_COST_NOT_RECALL"
+}
