@@ -1,0 +1,32 @@
+{
+  "schema": "sireto-v42-learned-structured-sparse-initial-metric-1",
+  "architecture": "NONNEGATIVE_INDEX_METRIC_COMPILED_BEFORE_NATIVE_TOP100_COLLECTION",
+  "is_dense_retrieval": false,
+  "fixed_candidate_pool_in_serving": null,
+  "downstream_reranking": false,
+  "training": "FIRST4_HASH_ORDER_V34_BATCHES_128_QUERIES_OUTER_OOF_AND_FULL_LEDGER_SIREN_EXCLUSION",
+  "evaluation": "NEXT4_HASH_ORDER_V34_BATCHES_128_QUERIES_NOT_USED_FOR_FIT",
+  "independent_holdout": false,
+  "training_negative_sample": "FIRST32_SEALED_V38_PRIMARY_PLUS_FIRST32_COMPARATOR_DEDUP_EXCLUDE_OPERATIONAL_EQUIVALENTS_AND_HELDOUT_ENTITIES",
+  "fit_positive_join": "OFFICIAL_TRUTH_DOCUMENT_IN_TRAINER_ONLY",
+  "full_corpus": "EXISTING_NATIONAL_SIRET_INDEX_NO_GT_SELECTED_CORPUS",
+  "feature_weights": "PAIRWISE_LOGISTIC_WITH_NONNEGATIVE_COEFFICIENTS_AND_RIDGE_TO_V38_BASELINE",
+  "ridge": 0.0005,
+  "maximum_coefficient": 64,
+  "initial_output_cap": 100,
+  "mean_pair_seconds_gate": 4,
+  "training_generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v38_initial_top100/pilot_20261002_a/manifest.json",
+    "sha256": "e37d9d874a79bf0c05dea1003b120a12fe7451c773134877b64aef847235b7fa"
+  },
+  "folds": [2, 3, 4],
+  "fold0": "NEVER_READ",
+  "fold1": "CLOSED",
+  "downstream_models": "FROZEN",
+  "quality_access": "SEPARATE_EVALUATOR_AFTER_ALL128_OUTPUTS_SEALED",
+  "pilot_can_validate_goal": false,
+  "xy_included": false,
+  "new_relation_sources_included": false,
+  "full_index_bytes_rehashed": false,
+  "unresolved_scope": "THIS_TEST_IS_LEARNED_FIRST_STAGE_SPARSE_NOT_COMPLETE_PROPOSED_DENSE_GEO_GRAPH_ARCHITECTURE"
+}
