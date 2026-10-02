@@ -1,0 +1,25 @@
+{
+  "spatial_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v43_spatial/index_20261002_a/manifest.json",
+    "sha256": "4c1cd18c34b8dfe33c172c069d823193d23d15fb1d52ad84e39a3068653a0325"
+  },
+  "query_geo_generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v45_spatial_pruned/pilot_20261002_a/manifest.json",
+    "sha256": "6960676ddb2c092d88788601d69288d33370c68bacebe01b6a671844f485f582"
+  },
+  "ridge": 0.005,
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 6442450944,
+    "max_swapout_pages_delta": 0
+  },
+  "controller_seconds": 360,
+  "max_query_search_seconds": 20,
+  "primary_mean16_seconds": 4,
+  "metric_family": "NATIVE_CONST_COVERAGE_POPULATED_CURRENT_EXACT_IDENTITY_SITE_MULTISCALE_NO_BM25_NO_FIXED_POOL",
+  "primary_cost_gate_not_production_slo": true,
+  "cached_proof_source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v55_proof_metric/training_20261002_a/manifest.json",
+    "sha256": "d9a4f8df9e438929920b313b5bf6c4db34b59465729667d5d48af71f50e1ebe5"
+  }
+}
