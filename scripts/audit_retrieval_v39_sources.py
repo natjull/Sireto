@@ -1,11 +1,9 @@
 """Bounded, label-free audit and adapter validation of official relation sources."""
 import argparse
-from collections import Counter
 import json
 from pathlib import Path
 
 import duckdb
-import pyarrow.parquet as pq
 
 from scripts import retrieval_v39_relational_proofs as proof
 from src.xgb_matcher.retrieval_v20_workbench import Budget, ROOT, record, verify, write_json
@@ -42,16 +40,16 @@ def run(output):
             conn.execute("SET preserve_insertion_order=false")
             b, r = str(paths['bodacc_relations']), str(paths['rne_roles']); ts = [p['path'] for p in temporal_refs]
             stats = {
-                'bodacc': records(conn, '''SELECT source,relation_type,from_kind,to_kind,count(*) rows,
+                'bodacc': records(conn, '''SELECT source,relation_type,from_kind,to_kind,count(*) AS row_count,
                     count(effective_date) reported_dates,count(observed_at) observation_dates
                     FROM read_parquet(?) GROUP BY ALL''', [b]),
-                'rne': records(conn, '''SELECT count(*) rows,
+                'rne': records(conn, '''SELECT count(*) AS row_count,
                     count(*) FILTER(WHERE coalesce(role_code,'')='') missing_role_code,
                     count(*) FILTER(WHERE coalesce(role_label,'')='') empty_role_label,
                     count(*) FILTER(WHERE coalesce(array_length(establishment_sirets),0)>0) site_anchored_rows,
                     count(*) FILTER(WHERE subject_siren=related_siren) self_relations
                     FROM read_parquet(?)''', [r]),
-                'rne_codes': records(conn, 'SELECT role_code,count(*) rows FROM read_parquet(?) GROUP BY role_code ORDER BY rows DESC', [r]),
+                'rne_codes': records(conn, 'SELECT role_code,count(*) AS row_count FROM read_parquet(?) GROUP BY role_code ORDER BY row_count DESC,role_code', [r]),
                 'succession': records(conn, '''SELECT count(*) raw_rows,
                     count(*) FILTER(WHERE economic_continuity) continuity_rows,
                     count(*) FILTER(WHERE economic_continuity IS NULL) unknown_continuity_rows,
