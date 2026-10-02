@@ -8203,3 +8203,87 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pas de gros build dense uniquement pour transformer ces contrôles en succès.
   Goal actif99,2% NON atteint, fold0 non lu/fold1 fermé, all-human intact,
   aval gelé, utilisateur dirty files préservés, aucun push/dépense externe.
+
+### 2 octobre 2026 — V65–V68 : réparation des sigles et nouvel exécuteur sparse
+
+- Milestones isolés : `2eafb977` V65 initialismes/contraste/words ;
+  `68f72bb8` V66 pilote initial100 HEAD_WORD ; `43ba8001` V67 réparation
+  du stockage des alias ; `92b5248d` V68 nouvel exécuteur d'impacts sparse
+  direct100 et protocole de coût. Pas de résultat national nouveau ni
+  de déploiement revendiqué ; dernier pilote complet V57 reste
+  113/128=88,28125% exact, objectif99,2%/Wilson/SLO NON atteint.
+- V65 avait une erreur d'intégrité des FEATURES : legal_names_exact,
+  trade_names_exact et site_names_exact sont INDEXÉS mais NON STOCKÉS.
+  Leur lecture via doc() retournait des listes vides et quatre nouvelles
+  preuves nulles. La parité8 queries/376 vecteurs, all-zero, ne détectait
+  pas cette perte de couverture. **Rétractation de la conclusion V65
+  « sigles inutiles/rejetés »**. Conserver V65 immuable ; modèle HEAD_WORD
+  sans sigle reste numériquement explicable, mais choix face aux variantes
+  sigle invalide. Manifeste V65 SHA
+  `8ea56e02bd4fd2306b422f4c407ec8ca6f4d68449d9160bcef070fd2af63094b`,
+  25,954s, pic2286649344octets, zéro swapout ; PAS recall.
+- V65/V67 renforcent aussi le vocabulaire : positifs ET négatifs des parents
+  internes/externes protégés exclus AVANT statistiques de vocabulaire et
+  projection. V59 utilisait un vocabulaire du corpus teacher entier :
+  qualifier ses contrôles antérieurs comme limités, pas preuve entièrement
+  inductive par entité. Aucun changement rétroactif aux anciens artefacts.
+- V66 national direct100 n'ouvrait ni vérité ni anciens candidats et
+  réutilisait uniquement les128 embeddings de NOM query-only de V61.
+  Recalcul des expansions depuis vocabulaire sûr par fold ; aucun ancien
+  résultat de génération repris. STOP360,273s après120 sorties, worker120
+  timeout1s sur budget contrôleur restant. Pas de manifeste128, pas de
+  mesure partielle ni assemblage/reprise de120+8. First16 coût moyen3,938s,
+  budget expérimental4s juste passé, PAS SLO. Status SHA
+  `655f7d2fab26113941a1bf2f5e854fc1325916a40af2658553cebddae0e61e58`.
+- V67 lit legal_names/trade_names/site_names STOCKÉS, normalisation des alias
+  identique au constructeur sans supprimer des chiffres encore indexés.
+  Garde exhaustive nom exact courant cache V56 pour24261 positifs/négatifs,
+  39646 valeurs d'alias,18 positifs et70 négatifs portant un signal sigle.
+  Parité native8 queries/376 vecteurs, sélection interne seulement, tous
+  trois folds retiennent HEAD_FULL16 paramètres contre HEAD_WORD auparavant.
+  Contrôles externes naturels : erreur de tête47,93→40,24%,48,78→37,80%,
+  45,25→34,64% ; concurrents devant GT5,47→3,88,5,74→3,46,6,02→4,32.
+  PAS recall100 ni preuve de corpus national.12,386s, worker11,878s,
+  pic2287009792octets, zéro swapout. Manifeste SHA
+  `9e74e3a376e0a0a5c4a5a37f8288b31ec0397b785cc1e6ef899594dc4a267e48`.
+- V68 implémente un AUTRE plan physique, pas une permutation BM25 : impacts
+  query·document non négatifs avec maxima par blocs, bornes arrondies vers
+  +inf, ties visités, heap100 seulement et aucun réservoir préalable.
+  Un bloc est ignoré uniquement s'il ne peut battre le100e score courant.
+  Encode les sigles au BUILD depuis UN alias officiel à la fois, langage
+  regex V67, particules/formes juridiques optionnelles, aucun mélange
+  d'alias et complexité excessive STOP non troncature. Référence Python,
+  PAS moteur production Block-Max WAND ni reproduction SPLADE.
+- Corpus de coût indépendant des labels/queries : prefix physique32768
+  sites du moteur national, non aléatoire.16 queries CRM whitelist/folds234
+  et8 sentinelles de termes OFFICIELS fréquents,3 répétitions,72 recherches.
+  Aucune lecture de labels/teacher/candidats précédents, aucune sortie de
+  clés candidats écrite ; poids1 fixes de coût, PAS recette V67 apprise.
+  622592 contrôles de membership sigle entre alias source et tokens compilés.
+  Parité EXACTE score/ordre/top100 contre scoring exhaustif de TOUT le cohort
+  sur72/72, caps/tests passent. Tout est RAM après build, PAS SLO national.
+- V68 coût complet8,308s, worker7,692s, pic373096448octets, zéro swapout.
+  Lecture/encodage5,443s, build1,973s ;278054 termes,525718 postings document,
+  409496 postings maxima,13447008octets d'arrays sparse. CRM :48/48 non vides,
+  indexé mean4,006ms/p95=6,025ms vs oracle vectorisé mean0,160ms/p95=0,292ms.
+  Sentinelles24/24 non vides : indexé mean0,680ms/p95=1,877ms vs oracle
+  mean0,058ms/p95=0,096ms. L'indexé est PLUS LENT à cette petite échelle ;
+  fraction scorée89,795% CRM et38,770% sentinelles. Ne pas extrapoler un gain
+  de vitesse à43,9millions, ni lancer un gros build sur cette seule mesure.
+  Manifeste V68 SHA
+  `1447af3780929c840f11ae11d314c8a8de471858581184ae5643bf47b8935097`,
+  métriques SHA
+  `3bd0ea41bdc9745aa04d27308ac47e1b969ad94008da652c6342447dada5ab9e`.
+- Limites explicites : V68 ne sert PAS BAN/XY, graphe typé, observation
+  source/période ni encodeur de documents appris ; mots encore en bags.
+  Direction cible reste identité ET site avec preuves cohérentes officielles
+  et apprentissage contrastif. Le nouveau kernel est une API d'impacts,
+  pas preuve que ces représentations sont déjà réalisées. L'ancienne V9
+  dense générique avait dégradé Recall@50 ; ne pas simplement la relancer.
+  Suite : impacts réellement appris et cohérence des observations/site,
+  borne plus sélective/plan natif avant build global ; seul full-corpus
+  initial100 OOF peut ensuite prouver le recall. Ne pas conclure un SOTA
+  ou99,2% à partir de ce benchmark ou des contrôles512.
+-37 tests ciblés V68/V67/V65/V66/V63/V59 passent. Tous jobs terminés,
+  artefacts STOP immuables, dirty utilisateur préservé, fold0 non lu/fold1
+  fermé, all-human/sidecar intacts, aval gelé, aucune dépense/push. Goal actif.
