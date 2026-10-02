@@ -1,0 +1,45 @@
+{
+  "schema": "sireto-v43-direct-spatial-initial-top100-1",
+  "experiment": "PURE_SPATIAL_WHEN_BAN_RESOLVED_AND_METRO_CRS_ELSE_FROZEN_V42_INITIAL_SEARCH",
+  "initial_cap": 100,
+  "metric": "EUCLIDEAN_LAMBERT93_FLOAT64_WITH_CANONICAL_SIRET_BOUNDARY_TIES",
+  "fixed_reservoir": null,
+  "reranker": false,
+  "source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+    "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"
+  },
+  "source_rows": 43896818,
+  "coordinate_scope": "METRO_VALID_INSEE_NON97_NON98_FINITE_L93_X0_1300000_Y6000000_7300000",
+  "outside_coordinate_scope": "NO_COORDINATE_FEATURE_NO_QUERY_DENOMINATOR_EXCLUSION",
+  "overseas_crs": "UNVERIFIED_FOR_THIS_SOURCE_COLUMN_NOT_MIXED_WITH_L93",
+  "closed_sites": "KEPT",
+  "missing_coordinate_sites": "REMAIN_IN_LEXICAL_CORPUS_BUT_NOT_SPATIAL_INDEX",
+  "ban": {
+    "path": "/Volumes/CATNAT_DATA/oubusiness/silver/ban_addresses_2026-08-14_semantics-v1.parquet",
+    "sha256": "48f9e3d4f9bbb47dd5e8bd55bc5f76a75e2e6a8ff1c4821026ba858f6e40247f"
+  },
+  "ban_resolution": "EXISTING_V16_LOCALITY_OR_CP_NUMBER_MATCH_BEST_STREET_QUERY_ONLY",
+  "ban_weak": "PUBLISHED_NOT_USED_AS_A_TRUTH_FILTER_THIS_PURE_GEO_DIAGNOSTIC",
+  "population": "SAME128_PREEXISTING_HASH_ORDER_V42_EVALUATION_QUERIES_REUSED_DEVELOPMENT_NOT_HOLDOUT",
+  "query_generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v42_indexed_metric/pilot_20261002_a/manifest.json",
+    "sha256": "e9ffdfea70359f0945ffe4d7a76ea0c680d04f7e9c51204c9ef501000ced4b27"
+  },
+  "models": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v42_indexed_metric/training_20261002_a/models.json",
+    "sha256": "0857206f4881e1cffa40af4eea8dd573f438941c1f80baa94b30064a33b7d32a"
+  },
+  "resources_build": {"max_seconds": 300, "max_rss_bytes": 6442450944, "max_swapout_pages_delta": 0},
+  "resources_worker": {"max_seconds": 80, "max_rss_bytes": 6442450944, "max_swapout_pages_delta": 0},
+  "label_blind_cost_gate": {"queries": 16, "max_mean_pair_seconds": 4},
+  "folds": [2, 3, 4],
+  "fold0": "FORBIDDEN",
+  "fold1": "CLOSED",
+  "downstream_models": "FROZEN",
+  "truth_access": "SEPARATE_EVALUATOR_AFTER_SEALED128_OUTPUTS",
+  "pilot_can_validate_goal": false,
+  "losses_without_query_coordinates": "KEPT_BY_FROZEN_INITIAL_LEXICAL_FALLBACK",
+  "losses_without_truth_coordinates": "ERRORS_IF_NOT_IN_OUTPUT_NO_LABEL_DEPENDENT_FALLBACK",
+  "production_latency": "NOT_VALIDATED_BY_BATCH_BAN_RESOLUTION_OR_LOADED_TREE_PROBE"
+}
