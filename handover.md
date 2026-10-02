@@ -7633,3 +7633,94 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   généralisation ne sont pas réglés par ce petit essai. Aucun job restant,
   aucun push, aucun modèle aval modifié. Goal actif ; changements locaux
   préexistants préservés.
+
+### V43/V44/V45 — XY direct mesuré, proximité seule rejetée, pruning exact utile
+
+- `dc5c8011` préenregistre `retrieval_spatial_v43.py`, la config et les tests
+  d'une recherche directe des100 sites les plus proches, sans pool fixe ni
+  reranker. SIRET/SIREN ne servent qu'aux jointures, sortie et égalités canoniques.
+  Source officielle complète43896818 lignes du stock2026-08-01, coordonnées
+  float64 ; fermés conservés. Le prédicat spatial ne couvre que les coordonnées
+  finies métropolitaines compatibles Lambert93. Les autres projections ne
+  sont pas mélangées ; les sites sans coordonnées restent dans le corpus
+  lexical national, mais ne peuvent être trouvés par le canal spatial seul.
+- Build `indexes/retrieval_v43_spatial/index_20261002_a/` :26951280 sites
+  compatibles,27697249 paires finies totales. Coordonnées absentes/incompatibles
+ 16945538 sur le catalogue national. Préflight arbre262144 vrais sites0,033s,
+  arbre complet8,606s, préparation/hash/sort/écriture compris24,608s ;
+  pic2354429952 octets (~2,19Gio), zéro nouveau swap. Manifeste SHA
+  `4c1cd18c34b8dfe33c172c069d823193d23d15fb1d52ad84e39a3068653a0325`.
+  Aucun CRM ou label utilisé pour construire/préfiltrer cet index.
+- Première tentative V43 `audits/retrieval_v43_spatial/pilot_20261002_a/` :
+  **STOP_COST_PREFLIGHT** après16 requêtes, moyenne des deux branches4,1194s
+  >4s ; aucune évaluation partielle ni ouverture des labels. Les sorties et
+  le STOP restent immuables. Ce sont les recherches lexicales du comparateur
+  qui dominent le coût, pas les collectes spatiales. STOP SHA
+  `7da46ad97d9fde3982f14c3291547f604ce4f5764ed95a38ae5e5cd731fbac21`.
+- `b3523370` implémente une optimisation physique exacte de la métrique V42 :
+  si tous les composants capables de scorer hors CP/INSEE sont exactement0,
+  et si100 résultats locaux ont un seuil strictement positif, les documents
+  exclus ont une borne0 et ne peuvent entrer dans le top100. Sinon, repli
+  vers la requête complète originale. Aucun poids, corpus, cap ou modèle
+  aval changé ; pas une règle géographique ajoutée à la recette métier.
+- Préflight V44 `audits/retrieval_v44_index_pruning/cost_20261002_a/` :
+ 16/16 sorties strictement identiques, IDs/ordre/scores flottants compris,
+  avec poids OOF gelés ; labels non lus. Original p50/p95=1,379/2,209s,
+  optimisé0,802/1,498s, cache non contrôlé. Total36,534s. Ce gain de coût
+  ne vaut NI gain de recall NI certification SLO. Manifeste SHA
+  `fd34f72dea307105a02526a8576b5105ef15d3d26d8e50f5413a2eb40e6163e2`.
+- `88999229` préenregistre une nouvelle tentative V45 avec ce plan physique,
+  sans changer la recette V43 : spatial direct si BAN résolue/CRS compatible,
+  sinon recherche initiale V42 gelée. Même128 requêtes de développement que
+  V42, déjà consommées, PAS un holdout inédit ni une population nationale
+  all-human complète. BAN résolue depuis la requête uniquement ; son statut
+  faible est publié mais pas exploité comme filtre de vérité dans ce probe.
+- V45 `audits/retrieval_v45_spatial_pruned/pilot_20261002_a/` : préflight16
+  passe à1,03893s par paire. Les128 sorties sont scellées avant évaluation ;
+ 97 recherches spatiales,31 replis lexicaux. Génération192,105s, pic worker
+ 3077062656 octets (~2,87Gio), zéro nouveau swap. Résolution BAN batch128
+ 0,918s, qui ne mesure pas un service BAN online. Le spatial n'est PAS un
+  index complet du catalogue : `full_corpus=false`, corpus lexical complet
+  et corpus spatial prescrit complet publiés séparément.
+- Audit séparé `48c3590b` :128/128 sorties du comparateur V45 strictement
+  égales aux sorties initiales V42 précédemment scellées, sans labels ouverts
+  pour cette vérification. L'optimisation ne transforme pas les candidats.
+  `85dba99a` ajoute ensuite tests de non-écrasement et durcit la validation
+  des audits futurs ; les artefacts mesurés restent ceux du code48c3590b.
+- **Exact spatial/fallback91/128=71,09375%**, opérationnel102/128=79,6875%,
+  Wilson95 bas62,71668%. Comparateur111/128=86,71875% exact et112/128=87,5%
+  opérationnel.7 gains/27 pertes, net-15,625points : proximité seule REJETÉE.
+  Folds2/3/4 :33/43,30/41,28/44 contre36/43,38/41,37/44. Toutes les
+  qualifications/absences/états conservés ;16 labels sources inexploitables
+  séparément publiés. Les deux vues exacte/opérationnelle ne sont pas fusionnées.
+- Latence du seul lookup spatial chargé (97 requêtes) p50/p95/p99=
+ 0,516/0,831/1,204ms. Recette avec replis p95/p99=1,442/1,895s, comparateur
+  p50/p95/p99=1,271/2,375/2,799s. Ces timings excluent chargements et BAN ;
+  ne pas les présenter comme SLO end-to-end. La géographie est rapide, mais
+  le recall et la couverture restent insuffisants.
+- Attribution des37 pertes postévaluation :24 vérités au-delà des100 sites
+  les plus proches,10 sans coordonnées officielles compatibles,2 ratés du
+  repli lexical,1 égalité spatiale à la coupe.113/128 vérités ont des XY,
+ 97/128 requêtes une position compatible. Un désaccord de distance ne prouve
+  à lui seul NI erreur BAN NI erreur de label. Plusieurs gains se situent
+  à43/96/135/205m : pas de nouveau filtre dur arbitraire à25m/100m.
+- Autorités V45 : génération SHA
+  `6960676ddb2c092d88788601d69288d33370c68bacebe01b6a671844f485f582`,
+  parité128 SHA`8a2d8b3c427e7e2083a2fed86eeb67e1eeb96a3297c426a02321c3403c1975bb`,
+  évaluation SHA`5c022b19730991a6ab89dee8f48e0229ef6b6a8852f77dd90ec30901b318676b`,
+  diagnostics SHA`d60406966ab063b0ed0d487cb5c272fdcfbaac309635d5aa6835d179d1e20c66`.
+- **PIVOT_GENERATION**, objectif99,2% non atteint, fold1 toujours fermé,
+  fold0 non lu, aval gelé. Ne pas utiliser ces gains pour sélectionner7 IDs
+  ni remplir la sortie après lecture des labels. Prochain changement de fond :
+  apprendre conjointement preuves identité/site/histoire et géographie soft
+  avec incertitude/missingness, négatifs difficiles même commune/enseigne,
+  OOF entity-disjoint ; produire100 directement avec une recherche indexée
+  et une borne de score sur les documents non visités, pas une union fixe
+  suivie de reranking. Les successions SIRENE restent à intégrer proprement
+  comme preuves officielles cohérentes, pas comme alias hérités librement.
+  La voie dense contrastive est une hypothèse appuyée par SC-Block, PAS une
+  promesse nationale99,2% ; ne pas lancer un build12h ou le replay23571 avant
+  gain mesuré et tests de généralisation.39 tests ciblés spatial/évaluation/
+  pruning/audit/V42/géoV16/V38 passent ; compilation et diff-check passent.
+  Aucun job restant, aucun push,
+  modifications locales préexistantes conservées ; goal actif.
