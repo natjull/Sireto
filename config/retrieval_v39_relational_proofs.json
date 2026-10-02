@@ -1,0 +1,48 @@
+{
+  "schema": "sireto-initial-relational-retrieval-v39-1",
+  "purpose": "OFFICIAL_RELATION_PROOFS_FOR_INITIAL_TOP100_SEARCH",
+  "product_output_cap": 100,
+  "target_exact_recall": 0.992,
+  "downstream_reranker_allowed": false,
+  "fixed_candidate_pool_then_rerank_allowed": false,
+  "semantic_relation_hops": 1,
+  "official_siren_site_membership_is_structural": true,
+  "queryable_proof_document": [
+    "official_anchor_names_with_scope",
+    "typed_relation_and_direction",
+    "event_site_address_or_site_continuity_proof",
+    "target_site_current_and_historical_address",
+    "reported_date_and_date_semantics",
+    "source_provenance"
+  ],
+  "identifier_usage": "JOIN_DEDUP_TRACE_OUTPUT_ONLY_NOT_TEXT_OR_EMBEDDING",
+  "sources": {
+    "SIRENE_MEMBERSHIP": "STRUCTURAL_SIREN_TO_OFFICIAL_SITE",
+    "SIRENE_SUCCESSION": "BIDIRECTIONAL_SITE_PATH_WHEN_ECONOMIC_CONTINUITY_EXPLICIT",
+    "BODACC_ASSET_TRANSFER": "OPERATOR_TRANSFER_PATH_REQUIRING_SITE_BINDING_NOT_IDENTITY",
+    "RNE_LEGAL_ENTITY_ROLE": "TYPED_CONTEXT_NOT_ALIAS_REQUIRES_VERIFIED_ROLE_AND_SITE_FOR_NAVIGATION"
+  },
+  "constraints": {
+    "inherit_site_trade_name_to_all_siblings": false,
+    "merge_connected_companies": false,
+    "untyped_transitive_closure": false,
+    "prefer_active_over_exact_closed_truth": false,
+    "publication_date_is_effective_date": false,
+    "unknown_role_is_identity": false,
+    "retrieval_seed_required_before_indexing_relational_proof": false,
+    "human_truth_in_proof_builder": false,
+    "crm_alias_lookup": false
+  },
+  "current_milestone": "SOURCE_AUDIT_AND_TYPED_PROOF_ADAPTER_ONLY_NO_RECALL_CLAIM",
+  "source_audit": {
+    "sample_per_source": 64,
+    "selection": "SHA256_OFFICIAL_RELATION_ID_INDEPENDENT_OF_CRM_AND_LABELS",
+    "read_human_labels": false,
+    "build_national_search_index": false,
+    "max_seconds": 120,
+    "max_rss_bytes": 2147483648,
+    "max_swapout_pages_delta": 0,
+    "duckdb_memory": "512MB",
+    "threads": 2
+  }
+}
