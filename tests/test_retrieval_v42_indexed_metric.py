@@ -58,3 +58,28 @@ def test_fit_heldout_scenes_and_entities_cannot_change_weights():
     assert a['training_queries']==40 and a['training_pairs']==40
     assert a['training_folds']==[3,4] and a['objective_after']<=a['objective_before']
     with pytest.raises(ValueError): v42.fit_metric(scenes,1,registry)
+
+
+def test_number_at_place_is_one_bounded_index_feature(tmp_path):
+    import json
+    import tantivy
+    from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
+    builder=tantivy.SchemaBuilder()
+    for f in ('document_type','siren','siret','insee','postcode','number'):
+        builder.add_text_field(f,stored=True,tokenizer_name='raw')
+    for f in (*v38.NAMES,*v38.ADDRESSES,'current_name_ngrams','address_ngrams'):
+        builder.add_text_field(f,stored=True)
+    schema=builder.build(); path=tmp_path/'tantivy'; path.mkdir()
+    index=tantivy.Index(schema,path=str(path)); writer=index.writer(heap_size=15_000_000,num_threads=1)
+    for i,place in enumerate(('75056','99999')):
+        raw=dict(document_type='siret',siren=str(100000000+i),siret=f'{100000000+i}00001',
+                 legal_names='ALPHA',addresses='12 RUE BLEUE',number='12',insee=place,postcode=place)
+        writer.add_document(tantivy.Document.from_dict(raw,schema))
+    writer.commit(); writer.wait_merging_threads(); index.reload()
+    (tmp_path/'manifest.json').write_text(json.dumps(dict(build_scope='fixture')))
+    b=TantivyBackend(tmp_path)
+    q=RetrievalQuery(name='ALPHA',address='12 RUE BLEUE',number='12',insee='75056',postcode='75056')
+    ids,x=v42.training_features(b,q,['10000000000001','10000000100001'])
+    assert x[:,7].tolist()==[1.,0.] and x[:,6].tolist()==[1.,0.]
+    w=np.ones(8); found=v42.search(b,q,w)
+    assert [r['score'] for r in found]==pytest.approx(sorted(x@w,reverse=True),rel=1e-6)
