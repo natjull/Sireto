@@ -93,7 +93,7 @@ def prepare(output,cfg):
 def worker(output):
     launch=json.loads((output/'launch.json').read_text()); cfg=launch['config']; v38.verify_launch(launch)
     for ref in [launch['config_ref'],launch['inputs'],*launch['model_refs'].values()]: verify(ref)
-        inputs=json.loads(verify(launch['inputs']).read_text()); rows=inputs['rows']; registry=inputs['registry']
+    inputs=json.loads(verify(launch['inputs']).read_text()); rows=inputs['rows']; registry=inputs['registry']
     import torch
     from sentence_transformers import SentenceTransformer
     from src.xgb_matcher.semantic import _repair_exported_tokenizer,assert_tokenizer_healthy

@@ -5,6 +5,14 @@ from src.xgb_matcher.retrieval_contrastive_v52 import surface,combine,fit
 from src.xgb_matcher.retrieval_learned_v41 import transform_queries
 
 
+def test_controller_import_and_frozen_config():
+    import json
+    from scripts.preflight_retrieval_v52_contrastive_training import CONFIG
+    config=json.loads(CONFIG.read_text())
+    assert config['first_batch']==8 and config['training_queries']==512
+    assert config['scope']=='TRAINING_ONLY_NO_RETRIEVAL_RECALL_NO_INDEX_BUILD'
+
+
 def fixture():
     rng=np.random.default_rng(52); q=rng.normal(size=(60,8)); p=q@np.eye(8)[::-1]
     memberships=[]; negatives=[]; registry={str(f):[] for f in (2,3,4)}
