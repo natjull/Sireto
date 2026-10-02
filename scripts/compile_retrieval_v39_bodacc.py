@@ -63,6 +63,19 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
         SELECT siren,event_id,count(DISTINCT struct_pack(address := normalized_value,
             postcode := coalesce(postcode,''),insee := coalesce(insee,''))) address_count
         FROM event_addresses GROUP BY siren,event_id''', [])
+    # Materialize narrow address keys before touching the national site file.
+    # Otherwise a multiway plan can expand all siblings before checking place.
+    execute('grounded_sites', '''CREATE TEMP TABLE grounded_sites AS
+        SELECT DISTINCT s.siren,s.siret,s.administrative_state,s.current_address_normalized,s.postcode,s.insee
+        FROM read_parquet(?) s JOIN (
+            SELECT DISTINCT a.siren,a.normalized_value,a.postcode,a.insee
+            FROM event_addresses a JOIN event_scope e ON e.siren=a.siren AND e.event_id=a.event_id
+            WHERE e.address_count=1 AND (coalesce(a.postcode,'')<>'' OR coalesce(a.insee,'')<>'')
+        ) a ON s.siren=a.siren AND s.current_address_normalized=a.normalized_value
+            AND (coalesce(a.postcode,'')='' OR a.postcode=s.postcode)
+            AND (coalesce(a.insee,'')='' OR a.insee=s.insee)
+        WHERE regexp_full_match(s.siret,'[0-9]{14}') AND regexp_full_match(s.siren,'[0-9]{9}')''',
+        [str(sources['sites'])])
     # Sites are selected by official SIREN field, never inferred from a SIRET.
     execute('site_bindings', '''CREATE TEMP TABLE bindings AS
         SELECT DISTINCT r.relation_id,r.source_record_id relation_record_id,r.event_id,
@@ -72,7 +85,7 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
             a.normalized_value event_address,a.postcode event_postcode,a.insee event_insee,
             s.siret,s.administrative_state,s.current_address_normalized target_address,
             s.postcode target_postcode,s.insee target_insee
-        FROM read_parquet(?) s
+        FROM grounded_sites s
         JOIN event_addresses a ON s.siren=a.siren AND s.current_address_normalized=a.normalized_value
             AND (coalesce(a.postcode,'')='' OR a.postcode=s.postcode)
             AND (coalesce(a.insee,'')='' OR a.insee=s.insee)
@@ -80,8 +93,7 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
             AND (a.subject_kind='SIREN' OR (a.subject_kind='SIRET' AND a.siret=s.siret))
         JOIN event_scope e ON e.siren=a.siren AND e.event_id=a.event_id AND e.address_count=1
         JOIN relations r ON r.to_identifier=a.siren AND r.event_id=a.event_id
-        WHERE regexp_full_match(s.siret,'[0-9]{14}') AND regexp_full_match(s.siren,'[0-9]{9}')''',
-        [str(sources['sites'])])
+        WHERE regexp_full_match(s.siret,'[0-9]{14}') AND regexp_full_match(s.siren,'[0-9]{9}')''', [])
     execute('anchor_names', '''CREATE TEMP TABLE anchor_names AS
         SELECT n.siren,list_sort(list(DISTINCT struct_pack(text := n.normalized_value,
             source := n.source,name_kind := n.name_kind,evidence_id := n.evidence_id,
