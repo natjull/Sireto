@@ -83,7 +83,8 @@ zéro nouveau swapout. Aucun fit ou nouvel appel à l'index.
 Sur12800 références primaires,12792 ont une localité dans le sidecar
 officiel utilisé. Parmi celles-ci,7704, soit**60,23%**, sont hors de la
 commune ET du code postal CRM. Les8 non jointes restent inconnues, pas
-comptées hors zone. Pour les7 régressions,485/700 références, soit69,29%,+sont hors de ces deux clés. Le comparateur est entièrement local par
+comptées hors zone. Pour les7 régressions,485/700 références, soit69,29%,
+sont hors de ces deux clés. Le comparateur est entièrement local par
 construction.
 
 C'est compatible avec un soutien géographique trop faible face aux

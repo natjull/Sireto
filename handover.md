@@ -7172,3 +7172,54 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 -23 tests ciblés verts. **PIVOT_GENERATION**, aucun READY_FOR_FOLD1,
   folds0/1 fermés, aval gelé, SLO/hydratation riche non validés. Aucun job
   suivant lancé, aucun push. Les neuf modifications préexistantes conservées.
+
+### V38 — recherche initiale directe à 100, premier pilote rejeté le 2 octobre 2026
+
+- Clarification utilisateur active : la recherche initiale doit rendre au
+  plus100 SIRET et atteindre99,2% AVANT tout reranker aval. Oublier les gates
+  2000/500 pour ce volet. `AGENTS.md` mis à jour, anciens contrats immuables.
+  Le96,97% v37 après classement appris n'est pas une preuve de cette cible.
+- Milestone `0a8bae16` : contrat
+  `docs/retrieval_v38_initial_top100_contract.md`, moteur/test v38. Requête
+  multivue BM25 directe sur l'index national complet, nom/adresse souples,
+  bonus commune/CP constant, aucune présélection apprise. L'index ne possède
+  pas de champsXY ; ce test n'est PAS une recherche par distance. Les noms
+  légaux du parent sont déjà joints aux documents établissement existants.
+-128 requêtes fixes, quatre premiers lots32 hashés v34, folds2/3/4, panel
+  de développement réutilisé. Index82772691 documents,43896818 établissements,
+  même corpus pour les deux recettes. Comparateur : canal conjoint v30
+  retournant100 directement, PAS toute l'ancienne recherche multicanal.
+-16 requêtes de préflight sans labels :3,64510s par paire de recherches,
+  gate coût PASS.128 sorties ensuite scellées avant processus d'évaluation.
+  Primaire105/128=82,03125% exact,108/128=84,375% opérationnel ; comparateur
+  103/128=80,46875% exact,106/128=82,8125% opérationnel.9 gains/7 pertes.
+  Les deux ratent16 requêtes. Aucun gain causal unique attribué aux historiques.
+  SurCRM20260817 :64→60/80 ; historique :39→45/48. Pas de promotion sélective.
+- Rapport `7f1b9020` : `docs/retrieval_v38_initial_top100_results.md`.
+  Wilson exact primaire bas74,47837%, folds26/38,46/51,33/39. Tous les labels
+  et qualifications au dénominateur ; exact/opérationnel et segments séparés.
+  Les16 absences sources8/3/5 publiées. Sidecar officiel scellé vérifié ;
+  23 pertes NOT_RETRIEVED_AT100, attribution fine index/score non mesurée.
+- Audit isolé `24fdb1a1` : aucune nouvelle recherche ni fit, uniquement
+  références retournées jointes aux localités officielles.7704/12792 références
+  primaires connues hors commune ET CP (60,23%),8 inconnues ;485/700 sur les
+  7 régressions (69,29%). Indice de concurrence nationale mal contenue, pas
+  preuve que chaque référence hors zone est fausse. Les7 vérités régressées
+  satisfont aussi le prédicat primaire plus large : éviction par score, pas
+  nouveau filtre. Ne pas retuner les poids sur ces7 cas.
+- Génération des deux recettes296,86s, pic worker2,12GioRSS,zéro nouveau swap,
+  processus séquentiels,RAYON_NUM_THREADS=2. Primaire p50/p95/p99
+  1,557/2,761/3,299s ; comparateur0,500/1,300/1,986s. Cache non contrôlé,
+  SLO produit non validés. Première requête primaire10,72s. Audit1,09s/205Mio.
+ 30 tests ciblés verts. Aucun téléchargement, index reconstruit, fit ou service
+  externe. Autorités/index meta/inventaire/doccount vérifiés avant/après,
+  gros segments non rehashés intégralement (limite explicite).
+- Racine `SIRETO_RECALL100/audits/retrieval_v38_initial_top100/pilot_20261002_a/`.
+  Manifeste SHA`e37d9d874a79bf0c05dea1003b120a12fe7451c773134877b64aef847235b7fa`.
+  Évaluation SHA`98b4816d04b6d1b3c7506a466851b825ade0a9257a37e7257c0ca5b61804bec5`.
+  Audit géo SHA`b45320db1ec88627f53cb75eeecd0b8435e39a66727a5658be164f927e878b43`.
+- **PIVOT_GENERATION**, recette rejetée. Nouvelle représentation spatiale/
+  textuelle et challenger neuronal restent NON exécutés ; coût de toute
+  réindexation à préflighter. Pas de recherche de poids automatique, pas de
+  reranker renommé en retrieval, pas de revendication SOTA. Aucun job restant,
+  fold1 fermé, aval gelé, aucun push, modifications préexistantes conservées.
