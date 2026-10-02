@@ -1,0 +1,31 @@
+{
+  "schema": "sireto-v40-exact-federated-initial-top100-1",
+  "population": "128_FIRST_FOUR_PREEXISTING_HASH_ORDER_V34_BATCHES_FOLDS234",
+  "development_panel_reused": true,
+  "initial_score": "MAX_NATIVE_NATIONAL_V38_PRIMARY_OR_BODACC_NAME_AND_SITE_ADDRESS_SCORE",
+  "national_corpus_full": true,
+  "collector_cap": 100,
+  "fixed_candidate_depth": null,
+  "per_source_paging": "ONE_INITIAL_FRONTIER_HIT_THEN_REMAINING_OUTPUT_CAPACITY",
+  "stop": "GLOBAL_SCORE_FRONTIER_AFTER_100_UNIQUE_SIRET",
+  "score_recomputed_after_discovery": false,
+  "learned_score_calibration": false,
+  "bm25_idf_scope": "SOURCE_LOCAL_UNCALIBRATED_PRE_REGISTERED_HYPOTHESIS",
+  "bodacc_geography": "MAX_CP_INSEE_CONSTANT_ONE_NOT_SUM",
+  "sirene_succession_paths_included": false,
+  "mean_seconds_cost_gate": 4,
+  "graph_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v39_relational_proofs/bodacc_index_20261002_a/manifest.json",
+    "sha256": "e8ac8784405fce16c7d0ecfba53d9be19cd59bc24dfb9b91548e38afb949e8b8"
+  },
+  "baseline_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v38_initial_top100/pilot_20261002_a/manifest.json",
+    "sha256": "e37d9d874a79bf0c05dea1003b120a12fe7451c773134877b64aef847235b7fa"
+  },
+  "truth_access": "SEPARATE_EVALUATOR_AFTER_ALL_OUTPUTS_SEALED",
+  "fold0": "NEVER_READ",
+  "fold1": "CLOSED",
+  "all_human_qualifications_in_denominator": true,
+  "downstream_models": "FROZEN",
+  "pilot_can_authorize_fold1": false
+}
