@@ -34,3 +34,13 @@ def test_serving_never_reads_training_scenes_or_geometry_or_previous_candidates(
     from scripts.retrieval_v57_native_proof import run,worker
     code=inspect.getsource(run)+inspect.getsource(worker)
     assert all(s not in code for s in ('training_rows','cached_features','by_siret','geo_queries','BASELINE'))
+
+def test_post_seal_evidence_audit_distinguishes_missing_proof_from_cutoff_error():
+    from scripts.audit_retrieval_v57_native_proof import summarize_proof
+    zero=np.zeros(11)
+    missing=summarize_proof(zero,0.,1.,True,False,False)
+    assert missing['no_name_proof'] and missing['no_text_proof'] and not missing['native_top100_violation']
+    values=zero.copy(); values[[0,2,4]]=1.
+    below=summarize_proof(values,.5,1.,True,False,True)
+    assert below['same_parent_in100'] and below['current_exact_name'] and not below['native_top100_violation']
+    assert summarize_proof(values,1.1,1.,True,False,True)['native_top100_violation']
