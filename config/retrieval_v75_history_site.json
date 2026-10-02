@@ -1,0 +1,10 @@
+{
+  "projection_root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene_temporal_v1",
+  "expected_partitions":100,"expected_observations":273796,
+  "trained":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/training_20261002_a/manifest.json","sha256":"540a4abbc8a20996f8039965f63801e6cb911b37c59f27ddb7be12ccdf5411b7"},
+  "baseline":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/pilot_20261002_a/manifest.json","sha256":"11151f230e9616ee799dffbc47aa588bdbb6685ccebc357c6b326e61d3bd0384"},
+  "resources":{"max_seconds":80,"max_rss_bytes":6442450944,"max_swapout_pages_delta":0},
+  "controller_seconds":360,"primary_mean16_seconds":4,"max_query_search_seconds":20,
+  "metric_family":"MAX_CURRENT_V57_AND_SITE_HISTORY_WITH_CURRENT_SCAFFOLD_UNCHANGED_WEIGHTS",
+  "history_parent_names_included":false,"successions_included":false
+}
