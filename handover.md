@@ -8061,3 +8061,70 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   rehashés, fold0 non lu, fold1 fermé, modèles aval gelés, aucune
   dépense externe/push, modifications utilisateur non liées préservées.
   Goal actif : exact99,2% et SLO toujours NON atteints.
+
+### 2 octobre 2026 — V58–V62 : audit brut, traduction sparse et limites de coût
+
+- Commits isolés : `4c30979c` audit officiel V58 ; `ecf3897c` probe
+  d'apprentissage V59 ; `cc46f0d6` pilote initial national V60 ;
+  `2f58738f` plan physique aplati V61 ; `e5533996` diagnostic de coût V62.
+  Contrats V59/V60/V61 dans leurs fichiers `docs/retrieval_v*_probe.md`.
+  Aucun modèle aval changé, aucun nouveau recall initial validé.
+- V58 est un audit POST-évaluation sélectionné par vérité, jamais une
+  source de features/index/modèle. Lecture hashée des preuves officielles
+  canoniques non plafonnées de nom/adresse, résolution unique des adresses
+  SIREN vers site, contexte légal/site/relations et distances BAN audit-only.
+  Terminé44,777s, zéro swap. Parmi15 pertes V57 : zéro nom CRM exact dans
+  les preuves directement attachées au parent/site ; zéro nouvelle preuve
+  de mot chez les6 cas sans preuve native de nom. Ce constat ne couvre PAS
+  toutes les archives officielles ni les preuves de voisins/prédécesseurs.
+  Quatre pertes touchent36 liens BODACC ; cinq ont une distance GT–BAN<=150m,
+  huit<=500m, sept une BAN déclarée faible. Drapeaux recouvrants, pas une
+  attribution exhaustive.19/128 requêtes ont25 paires nom/adresse de même
+  site/source/observation/période ; date causale CRM inconnue. Manifeste
+  `audits/retrieval_v58_raw_proofs/probe_20261002_a/manifest.json`, SHA
+  `bcd7311d98696abab6f4c086aa776a513c9b3831e8506ea73b89ca1164f356e8`.
+- V59 traduit l'embedding NOM déjà disponible en<=8 mots officiels pondérés,
+  vocabulaire2048 tiré des documents TRAINING, pas du corpus national entier.
+  Pas une reproduction SPLADE. Décodeur ridge et poids natifs sélectionnés
+  en splits internes par entité ; entités externes exclues des positifs ET
+  négatifs. Identité/alpha0 inclus ; aucune sélection par métrique externe.
+  Les3 folds choisissent ridge10/alpha2. Sur contrôles externes naturels
+  limités, erreur de tête47,93→43,79%,48,78→43,29%,45,25→41,90% ; nombre
+  moyen de concurrents devant le positif5,47→4,49,5,74→4,21,6,02→4,94.
+  Marges de tête améliorées sur les3 folds.13,773s, pic1527726080 octets,
+  zéro swap. Ce sont des contrôles d'apprentissage, PAS recall national100.
+  Manifeste `audits/retrieval_v59_sparse_query/probe_20261002_a/manifest.json`,
+  SHA`05ecda7f4c973f8458d5e59a1d1d01c7cb6474d8c377e4295160f3aec9dac815`.
+- V60 recherche directement100 dans l'index national, un collecteur,
+  pas de pool fixe ni reranker. Bundle query-only sans labels ni teacher.
+  Encoder128 noms en1,914s ; BAN/XY, catégorie juridique et filiations
+  absentes de CETTE ablation, pas une architecture complète. Budget total
+ 360s inchangé : STOP360,024s après120 sorties scellées ; aucun label ouvert,
+  aucun recall partiel. Status sous
+  `audits/retrieval_v60_sparse_initial/pilot_20261002_a/`, SHA
+  `79886c93f4575f1bac221f1d12e6ee8d5a4b402381d02d1318dc7641bb5bf3b7`.
+- V61 aplatit les clauses avec une garde SIRET partagée, mêmes modèles,
+  expansions et budgets. Même score mathématique, PAS bit-exact IEEE.
+  STOP239,714s après96 sorties par STOP_RESOURCE_POLICY ; l'ancien worker
+  ne conserve pas les valeurs de la garde fautive. Ne pas affirmer RSS ou
+  swap rétroactivement.96 sorties : moyenne2,216s, p95=3,536s, toujours
+  au-dessus du SLO. Diagnostic sans labels :5 ensembles/96 différents
+  de V60,28 ordres différents, delta score commun max9,54e-7 ; pas de
+  garantie de parité métier. Aucun recall partiel ni reprise déguisée.
+  Status sous `audits/retrieval_v61_sparse_flat/pilot_20261002_a/`, SHA
+  `4d1393e14b2c78e2d9837f3ee6ba7a9385b8a92f6bad141e2651ddb8cbc3c43b`.
+- V62 rejoue uniquement les8 requêtes du worker fautif, choisies pour le
+  coût et non les labels ; résultats candidats jetés, compte/temps seulement.
+  Garde80s/6Gio/zéro swap, supervision90s ; diagnostics numériques RSS/swap/
+  temps désormais conservés. Les DEUX plans passent : imbriqué17,640s,
+  aplati13,103s, pics~1,74Go, zéro swap. Panne V61 NON reproduite : sa cause
+  précise reste inconnue, pas une preuve de stabilité du pilote entier.
+  Manifeste `audits/retrieval_v62_sparse_cost/probe_20261002_a/manifest.json`,
+  SHA`2aa5f2bd73ca8f5d2a5e463288aea3a3b47499f3538224965d8a6f45563b9852`.
+- Tous jobs terminés, STOP conservés sans élargissement/reprise qualité,
+  dernier vrai recall initial V57=113/128=88,28125% exact. Fold0 non lu,
+  fold1 fermé, all-human/sidecar intacts, pas de dépense ni push. Objectif
+  actif NON atteint. Priorité : identité ET site appris conjointement,
+  preuves nom/adresse/période/source et relations officielles attachées au
+  bon site, XY et fiabilité BAN explicites ; pas une nouvelle permutation
+  TF-IDF/BM25 ni un énorme build dense justifié par les seuls contrôles V59.
