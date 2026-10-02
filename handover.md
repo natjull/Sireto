@@ -8287,3 +8287,78 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 -37 tests ciblés V68/V67/V65/V66/V63/V59 passent. Tous jobs terminés,
   artefacts STOP immuables, dirty utilisateur préservé, fold0 non lu/fold1
   fermé, all-human/sidecar intacts, aval gelé, aucune dépense/push. Goal actif.
+
+### 3 octobre 2026 — V69/V70 : sparse contrastif, STOP puis faible gain contrôlé
+
+- Stockage Mac débloqué à la demande utilisateur :229,4Gio de packs Git
+  TEMPORAIRES abandonnés et installateurs VS Code retirés ;230Gio libres.
+  Aucun dépôt original, modèle ou donnée métier supprimé. Audit hors repo
+  `/Volumes/CATNAT_DATA/MAC_SPACE_AUDIT_20261003/audit_summary.json`.
+  Cela résout la panne d'écriture qui empêchait l'implémentation V69 ;
+  l'objectif retrieval n'est ni réduit, ni achevé, ni mis en pause.
+- Milestones : `8748b1b5` V69 kernel/query sparse CONTRASTIF et protocole ;
+  `d8552303` correction vérification du manifeste alias V67 via son launch
+  hashé, avec test ; `ce5ced3d` V70 activation sparse CONTINUE plafonnée16,
+  dérivée exacte du terme frontière et protocole à budgets identiques.
+  Tous commits locaux, aucun push ; changements utilisateur préservés.
+- V69 utilise deux embeddings NOM/ADRESSE query-only gelés, bases16+16+biais,
+  vocabulaire officiel typé N:/A:/I: plafonné1024, DF3..15%, appris depuis
+  positifs ET négatifs train sans parents du contrôle interne/externe.
+  Documents : impacts fixes, normalisation par tous les termes de la vue,
+  sigles compilés UN alias à la fois.23 preuves natives :19 V56 dont XY/BAN,
+  plus4 sigles V67. Pas d'identifiant comme feature/alias CRM/nouveau pool.
+  InfoNCE égale par query, FLOPS0,1, decoder ridge0,01/0,1, init ridge10 ;
+  choix family/ridge interne uniquement, outer jamais sélectionnel.
+- V69a STOP0,057s sur enveloppe alias erronée (`implementation` absent du
+  manifeste V67, présent dans le launch référencé). Pas de training engagé.
+  V69b après correction STOP24,836s, pic1327759360octets,zéro swapout :
+  refit sélectionné non convergé. Deux folds2 ET3 complets, arrêt au fold4.
+  **Erratum de contexte du préenregistrement V70** : sa mention « deuxième
+  fold / unique fold achevé » est inexacte ; c'est le TROISIÈME fold qui a
+  stoppé et deux folds étaient achevés. Source préenregistrée/artefacts laissés
+  immuables, correction ici. Pas de manifeste complet, pas de métrique
+  assemblée/recall/validation V69. Worker STOP SHA
+  `de58c0e5914a29ac0bff2efd36b43964b1fcb0a1d23710db8739f23acf958745`.
+- Le hard Top16 V69 change brutalement un score quand16e/17e s'échangent.
+  Contre-exemple testé ; ce n'est PAS une preuve exclusive de cause du STOP.
+  V70 change seulement l'activation : v=log1p(ReLU(zW)), tau=17e valeur,
+  q=max(v-tau,0). Poids continus, support<=16, même formule train/serve et
+  gradient de tau inclus ; pas soft train/hard serve ni renormalisation.
+- V70 complet15,454s, worker15,076s, pic1323171840octets (~1,23Gio), zéro
+  swapout.512 queries/23874 documents OFFICIELS source train,24261 vecteurs
+  exact nom courant audités exhaustivement contre les champs STOCKÉS.
+  Toutes familles contrastives (6 candidats) ont atteint maxiter180 sans
+  convergence : EXCLUES, pas qualifiées « inutiles » sur cette preuve.
+  Les trois contrôles internes retiennent RIDGE_SPARSE24 paramètres
+  (decoder supervisé positif fixé, coefficient sparse hors activation appris
+  avec23 poids natives). Refits sélectionnés ET références convergés.
+- CONTRÔLES naturels hors apprentissage, PAS recall retrieval100 : erreur
+  de tête42,60→41,42%,39,02→38,41%,36,87→35,75% ; nombre moyen de concurrents
+  devant vérité4,78→4,50,5,09→4,88,5,02→4,79. Pooled202→197 queries/512
+  avec au moins un négatif devant GT, gain net5 seulement. Paires même parent
+ 22,02→13,69%,12,66→11,79%,13,66→10,56% (168/229/161 paires). Environ16
+  termes non nuls par query. Le changement native23→native23+sparse est
+  modeste ; ne pas extrapoler99% national ni justifier un gros build avec ça.
+- Manifeste scellé
+  `audits/retrieval_v70_continuous_sparse/probe_20261003_a/manifest.json`, SHA
+  `50cca660226f0eb9f840c6b7d521cb272674d3b0503514fce40ad6ea0748deb1` ;
+  models SHA
+  `3f65fa3a3cdba5aa89e60e6b899d8f66d995c50be157c830f9958bb4055bb042`.
+  Hashes/autorité launch, alias V67, folds2/3/4 complets, refits, ressources
+  revérifiés après mesure.45 tests V70/V69/V68/V67/V63/V59 passent, incluant
+  gradient finite differences complet, continuité, sparsité, parité serving,
+  scoring sparse/oracle entier/direct100 et absence d'influence des données
+  outer sur famille/vocab/bases/paramètres (V69 ET V70).
+- Dernier recall initial national-corpus PILOTE complet reste V57=113/128
+  =88,28125% exact. Aucun nouveau recall national par V69/V70. Folds0/1
+  fermés/non lus, all-human/sidecar inchangés, aval gelé, aucun grand build,
+  download/cloud/dépense. Tous jobs TERMINAUX. Goal99,2% toujours actif.
+- Suite justifiée : traiter la convergence du decoder conjoint par
+  conditionnement de l'optimisation (objectif/bornes identiques, pas relâcher
+  convergence ni sélectionner les non convergés), puis représentation
+  cohérente identité/site/source/période et relations typées. Le dossier
+  canonique contient evidence_id/source_record_id/source/périodes pour
+  names ET addresses : ces liens ne sont pas préservés dans les bags courants.
+  Ne pas les reconstruire par croisement libre entre observations d'une même
+  entreprise. Il reste aussi un exécuteur NATIONAL conjoint sparse+XY/proofs
+  et SLO à réaliser ; pas lancer un vaste encodage/build sur le gain net5.
