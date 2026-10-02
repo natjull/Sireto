@@ -7844,3 +7844,109 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   et diff-check passent. Tous les processus de ce volet sont terminés,
   fold1 fermé, fold0 non lu, aval gelé, aucun push. Fichiers locaux utilisateur
   préexistants préservés ; goal actif. Milestones documentés par ce commit.
+
+### V52/V53/V54 — représentation séparée, surapprentissage détecté, sélection interne mesurée
+
+- `fe010909` préenregistre un nouvel essai de représentation initiale,
+  pas un reranker aval : noms et adresses séparés, deux embeddings MiniLM
+  génériques locaux concaténés en768 dimensions, documents fixes et
+  transformation de requête apprise par objectif contrastif. Le score futur
+  est un unique produit scalaire indexable, sans features calculées sur un
+  réservoir produit. AUCUN index national/site construit dans cet essai.
+-512 requêtes supplémentaires fixées avant mesure : batches8..23 de
+  l'ordre hashé v34, disjointes des128 d'apprentissage V46 et des128 de
+  mesure V49. C'est toujours du développement folds2/3/4 déjà consommés,
+  PAS un holdout inédit. Ledger entier de ces seuls folds constitue le
+  registre protégé des entités. Aucun fold0/1 ouvert, aucun filtre de
+  qualification. Tous les positifs officiels préservés.
+- Négatifs SUPERVISÉS uniquement : quatre premières preuves par canal
+  natif direct v34,32 jointes, dédupliquées ; shards label-blind scellés,
+  aucun score parent appris ou identifiant encodé. Équivalents officiels
+  opérationnels exclus des négatifs.8 concurrents durs sélectionnés par
+  la métrique générique, après exclusion de TOUTES les entités heldout.
+  Les anciens résultats ne définissent aucun pool/top100 produit. Les GT
+  pointées sont explicitement des cibles d'apprentissage, jamais insérées
+  dans une sortie évaluée ; AUCUN recall@100 de ce corpus d'entraînement.
+- Le premier appel du contrôleur échoue à l'import sur indentation,
+  avant toute création d'artefact/processus de calcul. `ab0e6b10` corrige
+  la syntaxe et ajoute un test d'import ; même recette relancée après preuve
+  que le répertoire n'existait pas. Pas une relance d'un job encore vivant.
+- Préparation V52 :23874 documents officiels,28,256s,1177092096 octets,
+  zéro swap. Trois suites9/14 chiffres masquées de façon label-blind dans
+  les seules surfaces encodées, aucun document/requête supprimé. Noms
+  légaux/commerciaux/site/historiques/supporting restent officiellement
+  attachés au SIRET source ; pas héritage libre de parents ou filiations.
+  La concaténation des vues par champ n'est pas un modèle temporel/graphique.
+- Encodage : exactement2*(512+23874)=48772 surfaces nom/adresse,
+ 51,071s,32 textes tronqués à128 tokens. Trois fits343/348/333 scènes,
+ 2744/2784/2664 paires,31/31/30 itérations convergées ; ridge0,01,
+  température10, max100 itérations fixés avant mesure. Worker56,838s,
+  pic1874755584 octets (~1,75Gio), zéro swap, total91,033s.
+- **V52 rejeté comme preuve de gain** : objectif d'entraînement
+ 0,720/0,736/0,684→0,0116/0,0113/0,0110, mais contrôle externe par
+  entités/folds sur169/164/179 requêtes : fraction moyenne de concurrents
+  devant le positif16,23→19,76%,15,66→21,29%,19,49→17,59%.
+  Dégradation sur deux folds malgré perte train quasi nulle : surapprentissage
+  avéré de cette recette, aucune extrapolation vers99,2%.
+- Autorités V52 sous `audits/retrieval_v52_contrastive_training/probe_20261002_a/` :
+  manifeste SHA`95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db`,
+  worker SHA`9f554d5365ac08a3ce6ffffe6baa37df561b5f2457a762a28e1581d83aa83520`.
+  Vecteurs d'entraînement et leur ordre scellés, réutilisables sans nouvel
+  encodage ; aucune qualité ANN, couverture nationale ou latence produit
+  validée. Gros segments lexicaux toujours seulement inventoriés size/mtime,
+  pas de nouvelle affirmation de rehash intégral du corpus Tantivy.
+- `fc189e90` V53 préenregistre une sélection IMBRIQUÉE de capacité et
+  régularisation : identité,2 échelles de champ, diagonale768, matrice
+  complète589824 paramètres ; ridge0,01/0,1/1/10. Split interne SHA20%
+  par SIREN source, aucun parent interne validé comme positif OU négatif
+  d'apprentissage ; parent externe heldout exclu aussi des négatifs utilisés
+  en validation interne. Critère interne seulement : fraction moyenne de
+  concurrents devant le positif, égalités départagées par capacité moindre
+  puis régularisation plus forte. Aucune métrique externe dans la sélection.
+- V53 `probe_20261002_a` terminal **STOP_RESOURCE_POLICY** avant artefact
+  complet, conservé immuable, aucun résultat partiel retenu. L'ancien
+  contrôleur n'a pas scellé les valeurs RSS/temps/swap dans ce STOP ; ne pas
+  prétendre en connaître rétroactivement la garde exacte déclenchée. SHA
+  `17239f66e60d011d8b40c3839be818fcccc822b8d896185b95ce3fd7fd315a95`.
+- `690b99aa` V54 ajoute une optimisation du solveur, pas de recette ni de
+  budget élargi : pour L(QW)+lambda||W-I||², W-I optimal est dans row(Q).
+  QR orthonormal U, W=I+UA et ||UA||²=||A||² : même objectif complet,
+  moins de variables d'optimisation. Tests contre le solveur complet sur
+  objectif convexe/paramètres, directions non observées laissées à identité.
+  La tolérance finie peut donner des paramètres non bit-identiques ; pas
+  de promesse de parité des scores serveurs jamais évalués ici.
+- V54 garde90s,2Gio et zéro swap, deux threads ; même grille et métrique
+  interne, mêmes vecteurs V52. Le contrôleur instrumente désormais les
+  futurs STOP. Sous `audits/retrieval_v54_rowspace_training/probe_20261002_a/`,
+  recette complète en6,737s, pic723402752 octets (~0,674Gio), zéro swap.
+  Pas de réencodage, téléchargement, cloud, GPU loué ou grand build.
+- Contrôle interne :242/264/242 scènes train,101/84/91 validation,
+  entités séparées. Les trois folds sélectionnent FULL/ridge10 depuis
+  leurs seuls contrôles internes, puis refit343/348/333 scènes, tous
+  convergés ; solveur263424/267264/255744 variables vs589824 nominales.
+  Contrôles externes seulement APRÈS choix : fraction moyenne de concurrents
+  devant le positif16,23→12,44%,15,66→11,96%,19,47→12,32%.
+  Le baseline V54 renormalise les vecteurs float32 ; de minuscules écarts
+  numériques autour de ties expliquent notamment19,47 vs19,49% V52.
+  Ne pas prétendre à une parité bit-exacte entre ces contrôles.
+- Amélioration de cette fraction sur chaque fold, mais marge moyenne
+  face au concurrent LE PLUS DUR : -0,0205→-0,0300,
+  -0,0180→-0,0261, -0,0365→-0,0282. Deux folds ne s'améliorent pas sur
+  cette mesure de tête. **Pas de validation top100**, pas d'estimation
+  nationale du recall à partir de quelques dizaines de négatifs par scène.
+  Manifeste V54 SHA`e2df4b64b1ab07d664999a849b855b360106934687dc5e2561bd3f82bc14e2d0`.
+- Dernière vraie mesure de recall initial national sur un petit panel reste
+  V49 :113/128=88,28125% exact,114/128 opérationnel, et SLO non franchis.
+  Aucun modèle V52/V54 branché en produit, aucun modèle aval modifié,
+  aucun READY_FOR_FOLD1. Le petit bénéfice V54 ne justifie PAS un build
+  national de plusieurs heures. Suite scientifique : objectif d'apprentissage
+  ciblant les concurrents réellement dangereux, vérification des numéros/
+  preuves précises de site perdus par les embeddings, géographie multi-échelle
+  et sources/liens officiels cohérents encore non incorporés. Garder une
+  recherche initiale indexée100 et une vraie mesure complète sans injection,
+  pas convertir ces contrôles supervisés en recall@100 de retrieval.
+-64 tests ciblés V54/V53/V52/V51/V41/V50/auditV49/V46/V47/V48/V49 passent,
+  compilation et diff-check passent. Tests de non-influence des vecteurs du fold externe sur le choix interne
+  et le modèle final passent. Toutes les tentatives sont terminales ; aucun
+  job restant, fold1 fermé, fold0 non lu, utilisateur dirty files préservés,
+  aucun push. Goal actif, objectif99,2% non atteint.
