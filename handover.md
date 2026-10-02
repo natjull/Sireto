@@ -24,6 +24,17 @@ SLO SIRET ni une preuve de recall. Un réencodage complet des sites est estimé
 à~12h par vue sur cet échantillon court : aucun build national lancé. Voir
 l'entrée V41 en fin de journal. Objectif exact99,2% et protections inchangés.
 
+V42 mesure désormais un score initial structuré appris, compilé dans l'index
+national avant collecte100 : **111/128=86,71875% exact**, contre104/128=81,25%
+sur les mêmes requêtes avec v38,13 gains/6 pertes. Code `4e6c0b15`, test numéro
+`82954719`, diagnostic postscellement `f17e3780`. Les128 requêtes de fit et les
+128 évaluées sont disjointes ; ce sont des panels de développement déjà
+consommés par l'historique, pas un holdout indépendant. Aucune cible99,2%
+validée, p95=2,790s insuffisant.17 ratés :13 sous le seuil initial,3 égalités
+à la coupe100,1 inéligible au prédicat textuel.8 ratés ont une preuve d'adresse
+mais ses coefficients appris sont nuls ; cela ne prouve pas qu'un poids fixé
+à la main les récupérera sans régression. Voir la dernière entrée V42.
+
 Mise à jour du 1 octobre 2026 : le rejeu complet v33/v34 est généré et son
 évaluation reprise est terminée. Pour reprendre le chantier, lire d'abord
 [la note de handover agent](docs/handover_retrieval_agent_20261001.md),
@@ -7529,3 +7540,96 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Objectif non atteint, aucun READY_FOR_FOLD1, aucun modèle aval modifié,
   aucun run restant, aucun build12h ou push lancé. Les modifications locales
   préexistantes restent intactes ; le goal reste actif.
+
+### V42 — score de recherche initial appris : gain mesuré, gate toujours loin
+
+- Prérequis/code/config/tests préenregistrés `4e6c0b15` ; test supplémentaire
+  numéro/lieu `82954719`, audit officiel postscellement `f17e3780`.
+  `scripts/retrieval_v42_indexed_metric.py` et sa config testent une métrique
+  sparse structurée apprise. **Pas du dense, pas une reproduction de
+  SC-Block, pas encore l'architecture complète dense/géographique/relationnelle.**
+  Le moteur reste BM25 multichamp ; la nouveauté est le score joint appris,
+  compilé avant la collecte native100, et non un changement de tokenizer.
+- Huit composants indexables : nom, adresse, nom au lieu, adresse au lieu,
+  nom ET adresse, nom ET adresse au lieu, lieu max CP/INSEE, numéro au lieu.
+  Les portes de lieu ne contribuent pas deux fois leur score et ne filtrent
+  pas le prédicat national général. Au moins une preuve textuelle est requise.
+  Coefficients non négatifs, objectif logistique par paires, ridge0,0005 vers
+  la recette v38, bornes64 préenregistrées. Pas de réglage sur le résultat.
+  Serving = une seule requête native top100 pour la recette apprise, sans
+  extraction de features candidat, score après découverte, pool fixe ou
+  modèle aval. Les modèles aval restent inchangés.
+- Tests : égalité des scores avec v38 aux poids de baseline ; égalité de la
+  collecte native avec la somme linéaire exhaustive des composants sur le
+  corpus entier de fixture ; cap100, texte obligatoire, métriques invalides
+  refusées ; changer les scènes/entités heldout ne change pas les poids ;
+  numéro/lieu sont des preuves bornées à1, jamais addition CP+INSEE.24 tests
+  ciblés v42/v41/v38/v40 passent ; py_compile/diff-check passent. Aucun test
+  de fixture ne vaut certification de généralisation ou recall national.
+- Fit :128 requêtes des4 premiers lots hashés v34. Négatifs naturels déjà
+  scellés,32 premiers primary+32 comparator v38, dédupliqués ; alternatives
+  opérationnelles retirées. Vérité pointée dans l'index officiel uniquement
+  dans le trainer, jamais injectée dans une évaluation. Les stats BM25 restent
+  celles de l'index national entier. Toutes les128 lignes sont conservées dans
+  l'audit de fit, aucune qualification ne filtre les humains.
+- Registre complet des SIREN par fold dérivé du ledger protégé2/3/4 ; pour
+  chaque modèle, retirer le fold évalué ET ses entités des positifs/négatifs.
+  Folds0/1 non lus. Fit held2 :90 queries/4987 paires ; held3 :77/4240 ;
+  held4 :89/4905. Zéro absence officielle positive,1 positif inéligible au
+  texte publié.134,688s de préparation/fit ; pic worker1707016192 octets,
+  zéro swap. La baisse d'objectif de fit n'est pas une métrique de recall.
+- Les trois fits mettent les composants globaux nom/adresse à0 et
+  privilégient nom au lieu, lieu et numéro au lieu ; held2 garde aussi
+  adresse au lieu (~0,073). Ce choix appris rend pratiquement dominants les
+  candidats locaux sur ces scènes. Ce n'est PAS une preuve que l'adresse
+  est inutile ; les négatifs faciles et la petite population limitent le fit.
+- Génération sur les128 requêtes des4 lots hashés suivants, aucune commune
+  ou taille de pool filtrée. Zéro recouvrement de query_id avec le fit ; pas
+  de nombre9/14 chiffres dans les textes de requête sur ces256 lignes.
+  Le générateur ne lit ni labels ni registre du trainer : uniquement modèles,
+  attestations code/index, query_id/fold pour jointure et sélection OOF,
+  nom/adresse/lieu du CRM. Corpus43896818 SIRET /82772691 docs complet,
+  index manifeste/meta/inventaire/doccounts contrôlés, gros segments pas
+  intégralement rehashés. Aucun XY ou nouveau chemin relationnel dans ce test.
+- Préflight16 passe à3,08284s par paire nouveau/comparateur ; labels du
+  nouveau panel fermés jusqu'à scellement des128 sorties. Génération394,821s,
+  pic worker2217656320 octets (~2,07Gio), zéro nouveau swap. Comparateur v38
+  primaire réellement rejoué sur les mêmes requêtes et le même corpus,
+  ordre primaire/comparateur alterné par lot8 ; cache non contrôlé.
+- Exact@100 **111/128=86,71875%**, opérationnel112/128=87,5%, Wilson95 bas
+  79,75798%. Comparateur exact104/128=81,25%, opérationnel109/128=85,15625%.
+ 13 gains/6 pertes, soit +5,46875 points exact. Ne pas comparer directement
+  ce taux au pilote précédent105/128 : ce n'est pas la même population.
+  Folds exact nouveau/comparateur :36/43 vs30/43 ;38/41 vs38/41 ;37/44 vs36/44.
+  CRM20260817 :64/75 vs59/75 ; historique47/53 vs45/53. V2/V3 sont UNKNOWN
+  sans filtrage, historique/états/autres segments publiés ;16 labels sources
+  absents/inexploitables restent publiés séparément. Tout le dénominateur du
+  pilote est évalué, y compris les vérités absentes de la sortie.
+- Latence nouvelle p50/p95/p99=1,639/2,790/3,122s ; comparateur1,431/1,931/2,141s.
+  La recette est aussi insuffisante au SLO, pas seulement au recall. **Ne pas
+  appeler ces timings6ms+31ms** : ceux-ci décrivaient les briques vectorielles
+  V41 séparées, pas ce serving sparse ni un pipeline SIRET complet.
+- Après évaluation seulement, l'audit label-side attribue les17 ratés :
+ 13 sous le seuil initial,3 égalités à la coupe100,1 inéligible au texte,
+  aucun document absent de l'index. Tous les17 ont un lieu officiel compatible
+  CP/INSEE avec le CRM ; le simple élargissement de commune n'explique pas
+  leurs pertes sur ce panel.4 ont le bon parent parmi les100 candidats.
+ 8 ont une preuve d'adresse mais tous ses coefficients applicables sont
+  nuls. Le score de vérité pointé dans l'audit est vérifié égal au score
+  natif compilé et ne dépasse jamais le seuil scellé. Aucune correction de
+  candidats à partir de cet audit. Les constats orientent la prochaine
+  expérience, pas des règles par query_id/enseigne.
+- Autorités sous `audits/retrieval_v42_indexed_metric/` :
+  training manifeste SHA`d3f60c574457ee71bd76d4d5c71583017a43464faf4792c17b2789e29bc146a9`,
+  modèles SHA`0857206f4881e1cffa40af4eea8dd573f438941c1f80baa94b30064a33b7d32a`.
+  pilote manifeste SHA`e9ffdfea70359f0945ffe4d7a76ea0c680d04f7e9c51204c9ef501000ced4b27`,
+  évaluation SHA`87b729bd6742c9adb3007287810ec8a74a0c9c6ba9cfbfb71a3de93db8fa9526`,
+  diagnostic SHA`62d0e7c5d66959b99a5df9120d3f85bb53369158645c33f7cadaa1483dcdb537`.
+- **PIVOT_GENERATION**, objectif non atteint, aucun READY_FOR_FOLD1.
+  Prochaine investigation : intégrer une preuve de site plus fine qu'une
+  commune/numéro (XY/BAN avec incertitude) et améliorer l'apprentissage du
+  retriever avec des négatifs réellement difficiles, sans réservoir fixe
+  reclassé ni poids choisis pour récupérer ces17 IDs. Les défauts de
+  généralisation ne sont pas réglés par ce petit essai. Aucun job restant,
+  aucun push, aucun modèle aval modifié. Goal actif ; changements locaux
+  préexistants préservés.
