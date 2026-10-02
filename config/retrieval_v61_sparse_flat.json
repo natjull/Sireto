@@ -1,0 +1,19 @@
+{
+  "training_source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v59_sparse_query/probe_20261002_a/manifest.json",
+    "sha256": "05ecda7f4c973f8458d5e59a1d1d01c7cb6474d8c377e4295160f3aec9dac815"
+  },
+  "vector_source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v52_contrastive_training/probe_20261002_a/manifest.json",
+    "sha256": "95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db"
+  },
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 6442450944,
+    "max_swapout_pages_delta": 0
+  },
+  "controller_seconds": 360,
+  "max_query_search_seconds": 20,
+  "primary_mean16_seconds": 4,
+  "metric_family": "V60_UNCHANGED_SEMANTIC_NATIVE_METRIC_FLATTENED_PHYSICAL_QUERY"
+}
