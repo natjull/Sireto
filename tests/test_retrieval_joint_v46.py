@@ -82,6 +82,19 @@ def test_strong_name_can_win_without_source_coordinates(tmp_path):
     assert rows[0]['siret']=='10000034900001' and trace['certified']
 
 
+def test_zero_nonlocal_lexical_pruning_does_not_remove_nearby_nonlocal_sites(tmp_path):
+    b=backend(tmp_path,[dict(legal_names='ALPHA',insee='99999' if i==149 else '75056',
+        postcode='99999' if i==149 else '75001') for i in range(150)])
+    keys=np.array([int(f'{100000000+i}00001') for i in range(150)],dtype=np.uint64)
+    parents=(keys//100000).astype(np.uint32)
+    xy=np.full((150,2),500.,dtype=np.float64); xy[-1]=[0.,0.]
+    geo=dict(spatial_crs_compatible=True,ban_x_l93=0.,ban_y_l93=0.,ban_uncertainty_m=25.,ban_declared_weak=False)
+    q=RetrievalQuery(name='ALPHA',insee='75056',postcode='75001')
+    rows,trace=search(b,build_tree(xy),keys,parents,q,geo,[0,0,.1,0,0,0,.1,0,20,0])
+    assert trace['zero_nonlocal_lexical_pruning']
+    assert rows[0]['siret']=='10000014900001' and trace['certified']
+
+
 def test_fit_excludes_heldout_queries_and_negative_entities_exactly():
     import copy
     rng=np.random.default_rng(46); registry={str(f):[f'{f}00000000'] for f in (2,3,4)}
