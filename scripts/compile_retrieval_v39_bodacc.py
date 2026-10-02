@@ -53,10 +53,11 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
             a.evidence_id,a.source_record_id,
             regexp_replace(a.source_record_id, ':establishment:[0-9]+$', '') event_id
         FROM read_parquet(?) a
+        SEMI JOIN (SELECT DISTINCT to_identifier,event_id FROM relations) r
+            ON r.to_identifier=a.siren
+            AND r.event_id=regexp_replace(a.source_record_id, ':establishment:[0-9]+$', '')
         WHERE a.source='BODACC' AND a.normalized_value<>''
-        AND regexp_matches(a.source_record_id, ':establishment:[0-9]+$')
-        AND EXISTS(SELECT 1 FROM relations r WHERE r.to_identifier=a.siren
-            AND r.event_id=regexp_replace(a.source_record_id, ':establishment:[0-9]+$', ''))''',
+        AND regexp_matches(a.source_record_id, ':establishment:[0-9]+$')''',
         [str(sources['addresses'])])
     execute('event_scope', '''CREATE TEMP TABLE event_scope AS
         SELECT siren,event_id,count(DISTINCT struct_pack(address := normalized_value,
@@ -86,9 +87,10 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
             source := n.source,name_kind := n.name_kind,evidence_id := n.evidence_id,
             source_record_id := n.source_record_id,valid_from := n.valid_from,
             valid_to := n.valid_to))) anchor_values
-        FROM read_parquet(?) n WHERE n.subject_kind='SIREN' AND n.normalized_value<>''
+        FROM read_parquet(?) n
+        SEMI JOIN (SELECT DISTINCT anchor_siren FROM bindings) b ON b.anchor_siren=n.siren
+        WHERE n.subject_kind='SIREN' AND n.normalized_value<>''
         AND n.source IN ('SIRENE_CURRENT','SIRENE_HISTORY','SIRENE','RNE','BODACC')
-        AND EXISTS(SELECT 1 FROM bindings b WHERE b.anchor_siren=n.siren)
         GROUP BY n.siren''', [str(sources['names'])])
     execute('proof_paths', '''COPY (
         SELECT b.*,n.anchor_values anchor_names,'SIREN' anchor_name_scope,'BODACC' relation_source,
@@ -166,7 +168,8 @@ def run(output):
         print(json.dumps(dict(stats=stats,resources=manifest['resources'])),flush=True)
     except BaseException as exc:
         if conn is not None: conn.close()
-        write_json(output/'status.json',dict(status='STOP',reason=str(exc),truth_opened=False,ready_for_fold1=False))
+        write_json(output/'status.json',dict(status='STOP',reason=str(exc),truth_opened=False,
+            resources=budget.report() if hasattr(budget,'elapsed') else None,ready_for_fold1=False))
         raise
 
 
