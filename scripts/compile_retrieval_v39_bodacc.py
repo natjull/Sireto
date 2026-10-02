@@ -94,6 +94,8 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
         JOIN event_scope e ON e.siren=a.siren AND e.event_id=a.event_id AND e.address_count=1
         JOIN relations r ON r.to_identifier=a.siren AND r.event_id=a.event_id
         WHERE regexp_full_match(s.siret,'[0-9]{14}') AND regexp_full_match(s.siren,'[0-9]{9}')''', [])
+    execute('release_site_inputs', 'DROP TABLE grounded_sites', [])
+    conn.execute('DROP TABLE event_addresses')
     # Publications repeat identical lexical facts. Preserve one coherent
     # provenance row per (parent,text,source,kind), not millions of occurrences.
     execute('name_facts', '''CREATE TEMP TABLE name_facts AS
@@ -108,6 +110,7 @@ def compile_paths(conn, sources, output, progress=lambda _: None):
         GROUP BY n.siren,n.normalized_value,n.source,n.name_kind''', [str(sources['names'])])
     execute('anchor_names', '''CREATE TEMP TABLE anchor_names AS
         SELECT siren,list_sort(list(fact)) anchor_values FROM name_facts GROUP BY siren''', [])
+    conn.execute('DROP TABLE name_facts')
     execute('proof_paths', '''COPY (
         SELECT b.*,n.anchor_values anchor_names,'SIREN' anchor_name_scope,'BODACC' relation_source,
             'ASSET_TRANSFER' relation_type,'FORWARD' direction,
@@ -167,7 +170,7 @@ def run(output):
                 sources=source_refs, cost=cost,
                 implementation=record(Path(__file__)), crm_opened=False, truth_opened=False))
             conn=duckdb.connect()
-            conn.execute("SET memory_limit='512MB'"); conn.execute('SET threads=2')
+            conn.execute('SET memory_limit=?',[cfg['duckdb_memory']]); conn.execute('SET threads=2')
             conn.execute('SET preserve_insertion_order=false')
             # Spill only inside the task output, with an explicit disk ceiling.
             conn.execute('SET temp_directory=?',[str(output/'spill')])

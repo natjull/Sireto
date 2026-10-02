@@ -32,6 +32,7 @@ def test_only_same_announcement_establishment_can_ground_transfer(tmp_path):
     names=[dict(siren='111111111',subject_kind=kind,normalized_value=text,
         source='SIRENE_CURRENT',name_kind='LEGAL',evidence_id=f'n{i}',source_record_id='',
         valid_from=None,valid_to=None) for i,kind,text in [(1,'SIREN','ANCIEN OPERATEUR'),(2,'SIRET','AUTRE SITE')]]
+    names.append(dict(names[0],evidence_id='repeated-publication',source_record_id='another-announcement'))
     sources=dict(relations=save('relations',relations),addresses=save('addresses',addresses),
                  sites=save('sites',sites),names=save('names',names))
     conn=duckdb.connect(); stats=compile_paths(conn,sources,tmp_path); conn.close()

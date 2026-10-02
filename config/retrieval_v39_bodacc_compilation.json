@@ -17,6 +17,7 @@
     "max_swapout_pages_delta": 0
   },
   "max_output_bytes": 1073741824,
+  "duckdb_memory": "1GB",
   "search_output_cap": 100,
   "fixed_candidate_pool_allowed": false,
   "limitations": [
