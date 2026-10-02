@@ -106,11 +106,12 @@ def test_joint_fit_improves_regularized_objective_without_nan():
     assert np.isfinite(fitted[1]).all() and np.all(fitted[0] >= 0)
 
 
-@pytest.mark.parametrize('continuous', [False, True])
-def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch, continuous):
+@pytest.mark.parametrize('version', [69, 70, 71])
+def test_outer_changes_cannot_select_family_or_change_fitted_model(monkeypatch, version):
     import copy
     from src.xgb_matcher import retrieval_continuous_sparse_v70
-    kernel = retrieval_continuous_sparse_v70 if continuous else m
+    from src.xgb_matcher import retrieval_conditioned_sparse_v71
+    kernel = {69:m, 70:retrieval_continuous_sparse_v70, 71:retrieval_conditioned_sparse_v71}[version]
     rng = np.random.default_rng(19); rows = []; scenes = []; raw = {}; aliases = {}
     registry = {str(f): [] for f in (2, 3, 4)}
     q = rng.normal(size=(180, 2, 4))
