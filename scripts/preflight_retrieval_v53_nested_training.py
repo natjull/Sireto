@@ -13,8 +13,8 @@ from src.xgb_matcher.retrieval_v20_workbench import Budget,ROOT,record,verify,wr
 CONFIG=ROOT/'config/retrieval_v53_nested_training.json'
 
 
-def run(output):
-    output.mkdir(parents=True,exist_ok=False); began=time.monotonic(); cfg=json.loads(CONFIG.read_text())
+def run(output,config_path=CONFIG,solver=None,extra_implementation=()):
+    output.mkdir(parents=True,exist_ok=False); began=time.monotonic(); cfg=json.loads(config_path.read_text()); budget=None
     try:
         source=json.loads(verify(cfg['source']).read_text())
         if source['status']!='SEALED_TRAINING_ONLY_STRUCTURED_CONTRASTIVE_PROBE' or source['recall_measured'] or source['index_built']:
@@ -30,19 +30,21 @@ def run(output):
         reports={}; refs={}
         with Budget(cfg['resources']) as budget:
             for held in (2,3,4):
-                w,reports[str(held)]=select_and_refit(q,p,negatives,memberships,held,data['registry'],cfg)
+                options={} if solver is None else dict(solver=solver)
+                w,reports[str(held)]=select_and_refit(q,p,negatives,memberships,held,data['registry'],cfg,**options)
                 path=output/f'query_transform_fold{held}.npy'; np.save(path,w,allow_pickle=False); refs[str(held)]=record(path)
         v38.verify_launch(launch); verify(cfg['source']); verify(source['worker']); verify(launch['inputs'])
-        paths=[Path(__file__),CONFIG,ROOT/'src/xgb_matcher/retrieval_nested_v53.py',ROOT/'src/xgb_matcher/retrieval_contrastive_v52.py',
-            ROOT/'src/xgb_matcher/retrieval_learned_v41.py',ROOT/'src/xgb_matcher/retrieval_v20_workbench.py',Path(v38.__file__)]
+        paths=[Path(__file__),config_path,ROOT/'src/xgb_matcher/retrieval_nested_v53.py',ROOT/'src/xgb_matcher/retrieval_contrastive_v52.py',
+            ROOT/'src/xgb_matcher/retrieval_learned_v41.py',ROOT/'src/xgb_matcher/retrieval_v20_workbench.py',Path(v38.__file__),*extra_implementation]
         write_json(output/'manifest.json',dict(status='SEALED_NESTED_TRAINING_ONLY_METRIC_SELECTION',source=cfg['source'],
-            config=record(CONFIG),implementation={str(p):record(p) for p in paths},reports=reports,transforms=refs,
+            config=record(config_path),implementation={str(p):record(p) for p in paths},reports=reports,transforms=refs,
             seconds=time.monotonic()-began,resources=budget.report(),training_queries=512,recall_measured=False,index_built=False,
             outer_controls_used_in_selection=False,fold0_opened=False,fold1_opened=False,ready_for_fold1=False,downstream_models_unchanged=True))
         print(json.dumps(dict(reports={f:dict(selected=r['selected']['capacity'],ridge=r['selected']['ridge'],outer=r['outer']) for f,r in reports.items()},
             seconds=time.monotonic()-began,recall_measured=False)))
     except BaseException as exc:
-        write_json(output/'status.json',dict(status='STOP',reason=str(exc),recall_measured=False)); raise
+        details=budget.report() if budget is not None and hasattr(budget,'elapsed') else None
+        write_json(output/'status.json',dict(status='STOP',reason=str(exc),recall_measured=False,resources=details,seconds=time.monotonic()-began)); raise
 
 
 if __name__=='__main__':

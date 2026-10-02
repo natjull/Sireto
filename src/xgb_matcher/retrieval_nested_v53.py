@@ -78,7 +78,7 @@ def summarize(rows):
     return dict(queries=len(rows),**{key:float(np.mean([r[key] for r in rows])) for key in keys})
 
 
-def select_and_refit(q,p,negatives,memberships,held,registry,config):
+def select_and_refit(q,p,negatives,memberships,held,registry,config,solver=limited_fit):
     train,validation,inner=positions(memberships,held,registry)
     # Adding inner entities to the exclusion registry changes no source fold.
     protected={k:list(v) for k,v in registry.items()}; protected[str(held)]=sorted(set(protected[str(held)])|inner)
@@ -87,7 +87,7 @@ def select_and_refit(q,p,negatives,memberships,held,registry,config):
     candidates=[dict(capacity='IDENTITY',ridge=None,parameters=0,inner=baseline)]
     for capacity in config['capacities']:
         for ridge in config['ridges']:
-            w,report=limited_fit(q,p,negatives,memberships,held,protected,capacity,ridge,
+            w,report=solver(q,p,negatives,memberships,held,protected,capacity,ridge,
                 config['temperature'],config['hard_count'],config['maxiter'])
             if set(report['query_ids'])!={memberships[i]['query_id'] for i in train}:
                 raise ValueError('Inner training coverage drift')
@@ -98,7 +98,7 @@ def select_and_refit(q,p,negatives,memberships,held,registry,config):
         r['parameters'],-r['ridge'] if r['ridge'] is not None else 0.))
     if selected['capacity']=='IDENTITY': w=identity; final=dict(capacity='IDENTITY',parameters=0,training_queries=0,query_ids=[])
     else:
-        w,final=limited_fit(q,p,negatives,memberships,held,registry,selected['capacity'],selected['ridge'],
+        w,final=solver(q,p,negatives,memberships,held,registry,selected['capacity'],selected['ridge'],
             config['temperature'],config['hard_count'],config['maxiter'])
     outer=[i for i,r in enumerate(memberships) if r['fold']==held]
     measured=controls(q,p,negatives,memberships,outer,w)
