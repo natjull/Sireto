@@ -1,4 +1,21 @@
-# Directive active — Retrieval all-human v12 top100-first
+# Directive active du 2 octobre 2026 — Recherche initiale à 100
+
+La clarification utilisateur remplace la trajectoire 2000→500→100 ci-dessous :
+la recherche initiale doit émettre directement au plus 100 SIRET et atteindre
+99,2 % de recall SIRET humain exact AVANT tout reranker, ranker ou decider
+aval. Aucun résultat après LambdaMART ne vaut validation de cette recherche.
+Les profondeurs 2000 et 500 ne sont plus des objectifs ni des gates de ce
+nouveau volet. Ne pas recréer un pool fixe puis le reclasser sous un autre nom.
+
+Contrat du volet : `docs/retrieval_v38_initial_top100_contract.md`.
+Conserver les protections all-human, absence de positif injecté, folds2/3/4
+uniquement, fold0 contaminé et fold1 fermé, sources officielles sans alias CRM
+ni identifiants comme features, exact/opérationnel séparés, sidecar label-side
+scellé, tests de généralisation, SLO, calcul Mac/CATNAT sans dépense externe et
+milestones commités dans `handover.md`. Tous les modèles aval restent gelés.
+Les contrats et résultats antérieurs restent immuables comme historiques.
+
+# Directive historique — Retrieval all-human v12 top100-first
 
 La directive ci-dessous prévaut sur les descriptions historiques V6, V7 et V8
 conservées plus bas à titre de référence.
