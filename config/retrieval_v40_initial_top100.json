@@ -6,7 +6,7 @@
   "national_corpus_full": true,
   "collector_cap": 100,
   "fixed_candidate_depth": null,
-  "per_source_paging": "ONE_INITIAL_FRONTIER_HIT_THEN_REMAINING_OUTPUT_CAPACITY",
+  "per_source_paging": "NATIONAL_REMAINING_CAPACITY_BODACC_ONE_INITIAL_FRONTIER_THEN_REMAINING_CAPACITY",
   "stop": "GLOBAL_SCORE_FRONTIER_AFTER_100_UNIQUE_SIRET",
   "score_recomputed_after_discovery": false,
   "learned_score_calibration": false,

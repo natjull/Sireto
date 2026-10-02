@@ -60,4 +60,7 @@ def test_native_pagination_is_unique_and_stable_with_score_ties(tmp_path):
     stream=NativeStream(idx.searcher(),query,lambda d:json.loads(bytes(d['identity'][0])))
     found,_=collect(dict(native=stream))
     assert len(found)==100 and len({r['siret'] for r in found})==100
-    assert stream.calls==2 and stream.offset==100
+    assert stream.calls==1 and stream.offset==100
+    probe=NativeStream(idx.searcher(),query,lambda d:json.loads(bytes(d['identity'][0])),probe_first=True)
+    probed,_=collect(dict(native=probe))
+    assert found==probed and probe.calls==2 and probe.offset==100

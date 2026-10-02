@@ -42,16 +42,17 @@ def relational_query(index,query):
 
 class NativeStream:
     """Only native scores/locations are prefetched; identities decoded on pop."""
-    def __init__(self,searcher,query,decode):
+    def __init__(self,searcher,query,decode,probe_first=False):
         self.searcher=searcher; self.query=query; self.decode=decode
         self.page=[]; self.offset=0; self.exhausted=False; self.calls=0; self.decoded=0
         self.previous=float('inf'); self.ids=set(); self.locations=set()
+        self.probe_first=probe_first
 
     def peek(self,remaining):
         if not self.page and not self.exhausted:
             # The first hit bounds the source; later pages follow remaining
             # output capacity. Neither source has a candidate-depth ceiling.
-            n=1 if not self.offset else remaining
+            n=1 if not self.offset and self.probe_first else remaining
             self.page=list(self.searcher.search(self.query,limit=n,offset=self.offset,count=False).hits)
             self.calls+=1; self.offset+=len(self.page)
             self.exhausted=len(self.page)<n
@@ -96,7 +97,7 @@ def search(base,graph,query):
     def relational(doc):
         return json.loads(bytes(doc['identity'][0]))
     streams=dict(national=NativeStream(base.searcher,v38.query_for(base,query,'primary'),lexical),
-                 bodacc=NativeStream(graph.searcher(),relational_query(graph,query),relational))
+                 bodacc=NativeStream(graph.searcher(),relational_query(graph,query),relational,probe_first=True))
     rows,trace=collect(streams)
     for r in rows:
         if len(r['siret'])!=14 or len(r['siren'])!=9 or not r['siret'].isdigit() or not r['siret'].startswith(r['siren']):
