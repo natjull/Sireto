@@ -1,0 +1,30 @@
+{
+  "schema": "sireto-v41-learned-initial-search-preflight-1",
+  "phase": "LABEL_BLIND_ENCODING_COST_ONLY_NOT_RECALL_EVALUATION",
+  "target": {"initial_siret_cap": 100, "exact_all_human_recall": 0.992, "p95_seconds": 1, "p99_seconds": 2},
+  "query_metric": "OOF_ENTITY_DISJOINT_LEARNED_QUERY_TRANSFORM_DIRECT_INDEX_SCORE",
+  "training_folds": [2, 3, 4],
+  "fold0": "FORBIDDEN",
+  "fold1": "CLOSED",
+  "downstream_models": "FROZEN",
+  "fixed_pool_then_reranker": false,
+  "model_path": "/Volumes/CATNAT_DATA/SIRETO_V9/models/paraphrase-multilingual-MiniLM-L12-v2-86741b4e",
+  "model_origin": "EXISTING_GENERIC_MODEL_NOT_LEGACY_CRM_FINETUNED_MODEL",
+  "offline_only": true,
+  "device": "cpu",
+  "threads": 2,
+  "sample_rows": 512,
+  "sample_policy": "HASH_ORDER_OFFICIAL_NAME_ROWGROUPS_WITHOUT_QUERY_OR_LABEL_ACCESS",
+  "source_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json",
+    "sha256": "6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"
+  },
+  "resources": {"max_seconds": 180, "max_rss_bytes": 4294967296, "max_swapout_pages_delta": 0},
+  "limitations": [
+    "COST_SAMPLE_IS_NOT_A_RECALL_CORPUS",
+    "ONE_DIRECT_OFFICIAL_SITE_NAME_PLUS_CURRENT_SITE_ADDRESS_NOT_FULL_HISTORY_OR_GRAPH",
+    "NATIONAL_COST_EXTRAPOLATION_NOT_GUARANTEED",
+    "NO_NATIONAL_BUILD_OR_TRAINING_AUTHORIZED_BY_THIS_PREFLIGHT_RESULT",
+    "ANN_QUANTIZATION_AND_LEARNED_METRIC_QUALITY_NOT_YET_MEASURED"
+  ]
+}
