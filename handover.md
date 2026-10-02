@@ -8,9 +8,10 @@ rejeté ; les résultats Master/admission ci-dessous sont historiques, pas la
 trajectoire active. À la demande utilisateur, v39 prépare une recherche de
 preuves relationnelles officielles indexées en amont : succession de sites,
 transferts BODACC ancrés au site, hiérarchie SIREN/SIRET et rôles RNE typés.
-Adaptateurs/audit `5ab96dfa`, correctif SQL/test intégré `e9ad6702` ; voir
-l'entrée V39 en fin de journal. **Pas encore d'index relationnel ni de gain
-de recall mesuré**, aucun job restant. Folds0/1 fermés, modèles aval gelés.
+Adaptateurs/audit `5ab96dfa`, puis compilation des chemins BODACC et composant
+de recherche directe `06fa3518` ; voir les entrées V39 en fin de journal.
+**Composant BODACC indexé, intégration au corpus national et gain de recall
+encore non mesurés**, aucun job restant. Folds0/1 fermés, modèles aval gelés.
 
 Mise à jour du 1 octobre 2026 : le rejeu complet v33/v34 est généré et son
 évaluation reprise est terminée. Pour reprendre le chantier, lire d'abord
@@ -7302,3 +7303,76 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   folds2/3/4, sorties100 scellées avant labels, exact/opérationnel séparés.
   Aucune garantie99,2%, aucun résultat présenté SOTA, aucun service payant,
   aucun push et neuf modifications locales préexistantes conservées.
+
+### V39 suite — chemins BODACC compilés et recherchables, 2 octobre 2026
+
+- Compilateur isolé `5ede1dea` ; corrections physiques `34cdd38c`, `ec042338`,
+  `726b9fd4`, `d1e77260` ; composant de recherche `06fa3518`. Aucun fichier
+  de l'inventaire gelé `src/xgb_matcher/*.py` modifié. Les neuf modifications
+  préexistantes restent préservées. Tests ciblés v38/v39 :25 passent.
+- Corpus source complet :692010 relations officielles BODACC. Jointure exacte
+  de l'identifiant d'annonce entre `:predecessor:N` et `:establishment:N`,
+  avec même SIREN annoncé ; les adresses `:person:N` de siège ne rattachent
+  pas un fonds. Appartenance SIREN/SIRET lue dans le stock officiel, adresse
+  normalisée exacte et au moins CP ou INSEE compatible. Tous les SIRET qui
+  satisfont ces preuves sont conservés, y compris fermés et même-site multiples.
+  Une annonce avec plusieurs adresses de sites reste diagnostique tant que
+  l'affectation prédécesseur/site n'est pas vérifiée. Noms de site frères exclus.
+- Le compilateur conserve les noms officiels de la personne morale précédente
+  avec provenance dans un champ de preuve de transfert ; il ne les présente
+  pas comme dénomination actuelle du site cible. Les publications répétant un
+  même fait lexical sont dédupliquées par parent/texte/source/type de nom,
+  avec une ligne de provenance complète choisie de façon déterministe.
+  Aucune variante lexicale supprimée par cette réduction. Dates de publication
+  encore marquées effet NON vérifié ; aucune préférence pour un site actif.
+- Succès source `bodacc_compile_20261002_e` :368011 relations compilées,
+  370117 chemins,349475 sites cibles,324437 parents d'ancrage.262219 relations
+  sans site courant/adresse-géo compatible,61342 sans adresse d'établissement
+  d'annonce,438 sans nom officiel d'ancrage. Ces nombres sont une couverture
+  des relations BODACC, PAS un recall sur les labels humains. Diagnostic exhaustif
+  `coverage.parquet`, aucun CRM/label ouvert. Données relationnelles incomplètes
+  restent conservées dans ce diagnostic, jamais retirées d'une évaluation CRM.
+-44,475s, pic2266611712 octets (~2,11Gio), zéro nouveau swapout. DuckDB1GB,
+  deux threads, processus <=3Gio,180s, spill <=1GB. Le pipeline utilise des
+  semi-jointures directes, des clés d'adresse étroites, puis libère les tables
+  devenues inutiles avant l'agrégation. Tentatives `_a` à `_d` conservées STOP :
+  limites mémoire/spill de DuckDB512MB, pas une validation métier partielle.
+  Les gardes Mac ont tenu sur les tentatives dont le receipt ressource existe.
+  Fichiers sources complets rehashés une fois avant lecture, stat vérifié après.
+  Preuves89,1Mo, diagnostic34,9Mo. Manifeste compilation SHA
+  `6a1f1f13ecf34f5f91a16faff37762e5ceeca341ede15dfe7ebf70588e0a7ba9`.
+- Composant `bodacc_index_20261002_a` :349475 documents SIRET uniques pour
+  370117 chemins, index~98,2Mo. Construction15,464s,412467200 octets RSS
+  (~393Mio), zéro swap. Recherche native nom d'ancrage + adresse du site,
+  bonus CP/INSEE, collecteur100, preuves restituables. IDs/provenance stockés
+  en bytes NON indexés, aucun seed lexical actuel préalable. Test réel Tantivy
+  sur fixtures :110 sites/220 preuves donnent100 sites uniques avec les deux
+  preuves chacun ; une recherche par identifiant ne matche pas le champ nom.
+  Manifeste SHA
+  `e8ac8784405fce16c7d0ecfba53d9be19cd59bc24dfb9b91548e38afb949e8b8`.
+  Ce composant couvre TOUS les chemins compilés, mais PAS les43,9M sites
+  nationaux : ne pas l'évaluer comme un remplacement complet du retrieval.
+- Projection RNE versionnée `726b9fd4` : champs documentés INPI
+  `etablissementConcerne[].siret/dateEffetEtablissementConcerne`, `dateEffet`,
+  `entreprise.libelleRoleEntreprise` restaurés, inconnue d'activité conservée
+  NULL plutôt que vraie par défaut. Aucun changement de l'ancien extracteur.
+  [Documentation officielle INPI v4.0](https://www.inpi.fr/sites/default/files/2025-06/documentation%20technique%20API%20formalit%C3%A9s_v4.0.pdf),
+  pages18/20/27, distingue pouvoirs et établissements concernés ; ce n'est
+  toujours pas une preuve d'identité ou un dictionnaire de filiations.
+- Audit `rne_projection_20261002_a` : SHA complet du ZIP officiel vérifié,
+  deux membres choisis par SHA256 du nom, CRC et SHA propres contrôlés ;
+  10000 formalités,400 contextes projetés contre399 anciens rôles.0 champ
+  de site/libellé officiel/dateEffet restauré observé sur cet échantillon.
+  Le correctif supporte le schéma documenté mais aucun gain de données ou
+  de recall n'est démontré ici ; différence400/399 non attribuée causalement.
+  Temps18,171s,187793408 octets RSS,zéro swap. Échantillon diagnostic seulement,
+  jamais corpus de recherche. Manifeste SHA
+  `3ab1acecd1b26487ea684d5b2f3d988a4ba16bec41fc6acbe16532421efab18c`.
+- Suite nécessaire : compiler les successions SIRENE dans les deux directions
+  avec les noms officiels propres aux sites/historiques, intégrer ces preuves
+  et BODACC dans une représentation unique par SIRET du corpus NATIONAL,
+  préflighter le coût du build, puis mesurer avant labels une recette initiale
+  unique <=100 sur folds2/3/4. Ne pas concaténer100 lexicaux +100 relationnels
+  puis appeler leur reclassement « recherche initiale ». Pas de mesure CRM dans
+  ce jalon, pas de SLO produit validé, pas de gate99,2%, pas de READY_FOR_FOLD1.
+  Folds0/1 fermés, aval gelé, aucun job restant, aucun push/service payant.
