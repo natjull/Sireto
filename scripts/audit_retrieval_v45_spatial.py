@@ -18,8 +18,10 @@ def sealed(output):
     if manifest['status']!='SEALED_INITIAL_TOP100' or manifest['queries']!=128 or manifest['truth_opened']:
         raise ValueError('Complete sealed generation required')
     launch=json.loads(verify(manifest['launch']).read_text()); v38.verify_launch(launch)
-    rows={r['query_id']:r for ref in manifest['batches'] for r in json.loads(verify(ref).read_text())['rows']}
-    if len(rows)!=128 or set(rows)!={r['query_id'] for r in launch['queries']}: raise ValueError('Denominator drift')
+    generated=[r for ref in manifest['batches'] for r in json.loads(verify(ref).read_text())['rows']]
+    rows={r['query_id']:r for r in generated}
+    if len(generated)!=128 or len(rows)!=128 or set(rows)!={r['query_id'] for r in launch['queries']}:
+        raise ValueError('Denominator drift')
     return manifest,launch,rows
 
 
@@ -49,6 +51,8 @@ def diagnostics(output):
         equality=json.loads((output/'physical_parity128.json').read_text())
         if equality['status']!='SEALED_EXACT_OUTPUT_PARITY128' or equality['exact_output_matches']!=128:
             raise ValueError('Full physical parity required')
+        verify(equality['generation'])
+        if equality['generation']!=record(output/'manifest.json'): raise ValueError('Parity generation drift')
         evaluation=json.loads((output/'evaluation.json').read_text())
         verify(evaluation['generation'])
         if evaluation['generation']!=record(output/'manifest.json'): raise ValueError('Evaluation generation drift')
