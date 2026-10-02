@@ -2,6 +2,16 @@
 
 ## Etat des lieux
 
+Mise à jour active du 2 octobre 2026 : objectif **recherche initiale <=100
+SIRET, recall humain exact >=99,2%, avant tout reranker**. V38 lexical est
+rejeté ; les résultats Master/admission ci-dessous sont historiques, pas la
+trajectoire active. À la demande utilisateur, v39 prépare une recherche de
+preuves relationnelles officielles indexées en amont : succession de sites,
+transferts BODACC ancrés au site, hiérarchie SIREN/SIRET et rôles RNE typés.
+Adaptateurs/audit `5ab96dfa`, correctif SQL/test intégré `e9ad6702` ; voir
+l'entrée V39 en fin de journal. **Pas encore d'index relationnel ni de gain
+de recall mesuré**, aucun job restant. Folds0/1 fermés, modèles aval gelés.
+
 Mise à jour du 1 octobre 2026 : le rejeu complet v33/v34 est généré et son
 évaluation reprise est terminée. Pour reprendre le chantier, lire d'abord
 [la note de handover agent](docs/handover_retrieval_agent_20261001.md),
@@ -7223,3 +7233,72 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   réindexation à préflighter. Pas de recherche de poids automatique, pas de
   reranker renommé en retrieval, pas de revendication SOTA. Aucun job restant,
   fold1 fermé, aval gelé, aucun push, modifications préexistantes conservées.
+
+### V39 — relations officielles dès la recherche initiale, 2 octobre 2026
+
+- Demande utilisateur : exploiter filiations, BODACC et SIREN/SIRET dès le
+  retrieval. La recette lexicale v38 ne suffit pas à représenter ces preuves.
+  Les anciens canaux v18 partaient de seeds déjà retrouvés (RNE8 parents,
+  BODACC32 parents, successions250 sites), puis agrégeaient au parent.
+  Une relation ne pouvait donc pas découvrir son ancrage lexical absent ;
+  certaines preuves de site étaient réduites à un signal SIREN.
+- Milestone `5ab96dfa` : configuration
+  `config/retrieval_v39_relational_proofs.json`, adaptateurs typés
+  `scripts/retrieval_v39_relational_proofs.py`, audit borné
+  `scripts/audit_retrieval_v39_sources.py` et tests. Ce sont des fondations,
+  PAS un moteur de recherche ni une nouvelle mesure à100. Une relation
+  légale n'établit ni identité, ni alias, ni appartenance au même site.
+- Orientation : indexer avant les requêtes des chemins de preuve officiels
+  nom historique -> événement/relation typée -> site, avec direction, date,
+  portée du nom, adresse et provenance ; ces chemins ne nécessiteront pas
+  qu'un parent soit déjà retrouvé. Une relation sémantique au plus, puis
+  jointures d'appartenance officielle ; pas de fermeture transitive arbitraire,
+  ni pool fixe2000 suivi d'un reranker. Le futur collecteur devra retourner
+  directement au plus100 SIRET uniques. Les identifiants ne sont que des clés.
+- SIRENE : succession bidirectionnelle seulement si continuité économique
+  explicitement vraie, ancrage de site à vérifier, vérités fermées conservées.
+  Le nom propre à un site ne se propage pas à ses frères. Les noms de personne
+  morale sont déjà joints à leurs propres sites dans l'ancien index ; il ne
+  s'agit pas de redécouvrir cette jointure. BODACC : transfert d'exploitation,
+  pas fusion d'identité ; obligation future de rattachement événement/adresse
+  et appartenance officielle du site cible. Le champ `effective_date` peut
+  provenir de `dateparution` dans l'importeur : effet réel NON confirmé.
+  RNE : rôle conservé comme contexte, aucune navigation tant que dictionnaire
+  de rôles et portée géographique ne sont pas vérifiés.
+- Audit CATNAT `audits/retrieval_v39_relational_proofs/source_audit_20261002_b/` :
+  sources intégralement rehashées,100 fichiers SIRENE vérifiés.692010 lignes
+  BODACC, toutes ASSET_TRANSFER SIREN->SIREN ; date renseignée sur toutes,
+  `observed_at` absent sur toutes.9727541 lignes brutes de succession,
+  7751275 avec continuité vraie,2142264 inter-SIREN (toutes continuités
+  confondues). Comptages AVANT déduplication nationale, pas autant de liens
+  uniques démontrés.1754075 rôles RNE,0 avec établissement renseigné,
+  1483588 libellés vides mais seulement2 codes vides ; le libellé libre vide
+  ne signifie pas que le code officiel est inexploitable.
+- Échantillon diagnostic indépendant des CRM/labels :64 lignes par source,
+  ordre SHA256 d'identifiant officiel.64 preuves BODACC,64 successions et
+  57 rôles RNE adaptés ;7 lignes RNE non navigables faute d'identifiant valide.
+  Contrôle SQL complémentaire en lecture seule :113332 rôles RNE ont un
+  `related_siren` vide, seuls cas ne respectant pas les9 chiffres. Le modèle
+  source autorise un nom de personne morale sans SIREN : ne pas qualifier ces
+  lignes de corruption ni inventer l'identifiant. Aucun nom CRM/label lu,
+  aucune injection, aucun fit. Ces échantillons ne sont PAS un corpus retrieval.
+- Audit4,120s, pic479019008 octets RSS (~457Mio), zéro nouveau swapout,
+  DuckDB512MB/2threads. Manifeste SHA
+  `92c65bdb6cc3bf217ec2c6874143055c6c516efebcd69670ea4992470a695ae5`.
+  Statut AUDITED_RELATIONAL_SOURCES_AND_TYPED_ADAPTERS, décision STOP :
+  index relationnel initial absent, aucun gate recall mesuré, aucun fold1.
+  Première tentative `_a` conservée en STOP (alias SQL réservé `rows`).
+  Correctif isolé `e9ad6702`, test d'intégration réel DuckDB ajouté ;20 tests
+  v38/v39 passent. Les tests utilisent des fixtures, jamais des données
+  synthétiques dans une évaluation ou un index de production.
+- Prochain jalon concret NON exécuté : rattacher les transferts aux adresses
+  de leur annonce avec les clés exactes de l'importeur (pas un amalgame par
+  SIREN), vérifier le dictionnaire officiel RNE, puis compiler les documents
+  de preuve avec noms/adresses et portée de site. Préflighter I/O, volume,
+  duplication et collecteur SIRET unique avant toute réindexation nationale.
+  Le fichier d'adresses officiel (~8,26Go) n'a pas été scanné dans ce jalon.
+  La géométrie et l'incertitude BAN restent à intégrer ; pas de bonus XY
+  prétendument existant. Ensuite seulement, ablations préenregistrées sur
+  folds2/3/4, sorties100 scellées avant labels, exact/opérationnel séparés.
+  Aucune garantie99,2%, aucun résultat présenté SOTA, aucun service payant,
+  aucun push et neuf modifications locales préexistantes conservées.
