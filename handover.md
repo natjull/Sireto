@@ -8448,3 +8448,67 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   BODACC→site par preuve officielle d'adresse, graphes TYPOLOGIQUES et géo
   XY/BAN restent à intégrer, pas annoncés présents par V73. Ne pas extrapoler
   les couvertures structurelles ou le coût RAM à un recall national.
+
+### 3 octobre 2026 — V74 : interaction RNE cohérente, contrôle négatif
+
+- Milestone `a840ad68` : code/contrat/config/tests figés AVANT mesure. Deux
+  familles uniquement : NATIVE23 (preuves V56 avec XY/BAN + sigles V67) et
+  NATIVE_PLUS_COHERENT24. Nouveau scalaire = max APRES interaction d'un nom
+  ou sigle officiel individuel et d'UNE adresse dans UNE observation de site,
+  lieu/numéro bonus souples. Propriétaire LEGAL seulement dans même formalité
+  RNE avec lien explicite ; pas produit de maxima de versions différentes.
+- Population inchangée :512 scènes TRAIN V52,23749 paires naturelles.
+  Lookup des23874 SIRET ET21842 parents positifs/négatifs d'apprentissage,
+  extrait31318 observations officielles RNE dont15919 sites distincts.
+  **Extraction label-selected TRAIN uniquement, interdite comme source d'un
+  index national ou corpus d'évaluation**. Toutes512 scènes conservées ; source
+  absente => bonus zéro, jamais filtrage. Pas de génération de candidats ici.
+-15919 liens LEGAL explicites,14623 alias ajoutés,855 doublons d'alias
+  dédupliqués ;9276 sites fermés inclus, dates valid_from parent/site UNKNOWN
+  pour15919 liens. Couverture positives225/512, bonus positif non nul163/512 ;
+  négatifs15923/23749 présents dans RNE,3329 avec bonus non nul. Présence RNE
+  ne constitue pas une preuve de match ; couverture asymétrique et partielle.
+- Extraction COMPLETE17,059s,pic694222848octets,zéro swapout ; contrôle TRAIN
+  COMPLETE1,435s,pic1180581888octets,zéro swapout. Threads2, limites80s/4Gio
+  par worker inchangées ; aucun rerun élargi, aucune dépense/index/build.
+- Nested sélection entreprises V53, registre COMPLET folds2/3/4 ; exclusion
+  outer/inner des positifs ET négatifs au fit. Six fits inner et refits tous
+  convergés à17..20 itérations. Folds2/3 choisissent NATIVE23, fold4 choisit
+  nouveau bonus sur inner, coefficient refit0,630221. **Outer NEGATIF** :
+  scènes avec concurrent devant/à égalité202→205/512 ; mean_outrank_count
+  agrégé2539/512→2540/512. Fold4 seulement :66→69 scènes en erreur,3 scènes
+  diminuent leur nombre de concurrents et7 augmentent. Aucun gain national
+  mesuré et aucune raison de promouvoir ce bonus ni de lancer un gros build.
+- Manifeste `audits/retrieval_v74_coherent_proof/probe_20261003_a/manifest.json`
+  SHA`0440077c837d81ba92e922bee0fe37cc28f43f85b23d646272d138f0b18e5ea3` ;
+  extraction SHA`a14a3482080d1445148a5931773d55ff404fd2318b8f4357df79deb7939411c7` ;
+  models SHA`18ee05993cc3164d9ab650f71d68d14566be020cd34319f4780d6027558fb61b`.
+  Références/implémentations/segments sources revérifiés ; fingerprint officiel
+  RNE identique avant/après. Fichier4Go pas rehashé intégralement, limites de
+  récupération/quarantaine RNE héritées. Teacher ancien et ses exclusions
+  opérationnelles ne définissent pas le dénominateur all-human final.
+-69 tests ciblés passent, dont anti-cross-observation/alias/adresse, sigle sur
+  alias individuel, absent préservé, géographie/statut non filtrants, IDs sans
+  similarité, outer modifié ne change ni sélection ni poids. Aval inchangé,
+  fold0 non lu/fold1 fermé, all-human/sidecar final inchangés, jobs TERMINAUX.
+- Dernier recall initial national-corpus PILOTE reste V57=113/128=88,28125%
+  exact. Objectif99,2% NON atteint, goal actif. V74 rejette seulement l'ajout
+  de CE bonus RNE, pas le principe d'une représentation cohérente multi-source.
+  Suite : élargir les preuves liées à SIRENE courant/historique sans reconstruire
+  de croisements fictifs ni index depuis cet extrait TRAIN. Mesurer ensuite
+  une véritable recherche initiale sur corpus national ; contrôles de contrastes
+  (<100 négatifs par scène ici) ne prouvent PAS le recall@100 et ne doivent pas
+  devenir un objectif de substitution. BODACC/projection officielle, graphes
+  typés et exécuteur national sparse+XY restent non intégrés/non validés.
+- Vérification de sources avant prochaine recette : le nom de dossier
+  `official_history_2008_2026_v1` est trompeur pour cet usage ; son manifeste
+  référence RNE ciblé et BODACC2008..2026, pas les stocks SIRENE historiques
+  nationaux. Ne pas le traiter comme équivalent de ces stocks. Les vrais
+  `sources/sirene/2026-08-01/StockEtablissementHistorique.parquet` (95865102
+  périodes,870319380octets) et `StockUniteLegaleHistorique.parquet` (71355318,
+ 855957649octets) existent ; SCHÉMA vérifié sans lecture labels. L'historique
+  établissement contient enseignes/dénomination/état/activité/périodes mais
+  **AUCUNE adresse** : ne pas fabriquer une adresse historique depuis le
+  stock courant. Courant établissement43,9m contient adresses+XY et noms
+  de site ; UL29,9m noms légaux/sigles/usages. Toute prochaine association
+  historique/site doit porter son degré de preuve et ses dates UNKNOWN.
