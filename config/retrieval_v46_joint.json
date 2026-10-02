@@ -1,0 +1,56 @@
+{
+  "schema": "sireto-v46-learned-additive-initial-index-search-1",
+  "score": "NATIVE_LEARNED_LEXICAL_PLUS_SOFT_XY_PROXIMITY_WITH_DECLARED_BAN_RELIABILITY_INTERACTION",
+  "geographic_kernel": "1/(1+distance/max(5,BAN_UNCERTAINTY_PROXY)); NOT_A_CALIBRATED_PROBABILITY",
+  "missing_xy": "ZERO_SPATIAL_COMPONENT_NOT_A_DOCUMENT_OR_QUERY_FILTER",
+  "source_locality": "NO_HARD_CANDIDATE_EXCLUSION; PROVEN_ZERO_LEXICAL_BOUND_MAY_PRUNE_ONLY_LEXICAL_STREAM",
+  "collector": "ADAPTIVE_THRESHOLD_TRAVERSAL_UNTIL_GLOBAL_UNSEEN_SCORE_BOUND_CERTIFIES_TOP100",
+  "initial_cap": 100,
+  "page_size": 100,
+  "fixed_reservoir": null,
+  "reranker": false,
+  "ties": "CANONICAL_AMONG_VISITED_NATIVE_SCORE_EQUALS; UNSEEN_RECORDS_CAN_TIE_NOT_STRICTLY_BEAT_CUTOFF",
+  "training": "FIRST128_V34_HASH_ORDER_QUERIES_ONLY_FOLDS234_FULL_LEDGER_ENTITY_EXCLUSION_PER_OUTER_MODEL",
+  "training_negatives": "FROZEN_V42_HELD_MODEL_NATIVE100_PLUS_SPATIAL100_PLUS32_EACH_SEALED_V38_SOURCE; TRAINER_ONLY",
+  "negative_exclusions": "ALL_OFFICIAL_OPERATIONAL_EQUIVALENTS_AND_HELDOUT_SIREN",
+  "training_positive": "OFFICIAL_POINT_JOIN_TRAINER_ONLY_NEVER_INJECTED_IN_GENERATION",
+  "evaluation": "SAME_NEXT128_V42_V45_REUSED_DEVELOPMENT_NOT_INDEPENDENT_HOLDOUT",
+  "independent_holdout": false,
+  "ridge": 0.0005,
+  "maximum_coefficient": 64,
+  "natural_training_generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v38_initial_top100/pilot_20261002_a/manifest.json",
+    "sha256": "e37d9d874a79bf0c05dea1003b120a12fe7451c773134877b64aef847235b7fa"
+  },
+  "mining_models": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v42_indexed_metric/training_20261002_a/models.json",
+    "sha256": "0857206f4881e1cffa40af4eea8dd573f438941c1f80baa94b30064a33b7d32a"
+  },
+  "spatial_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v43_spatial/index_20261002_a/manifest.json",
+    "sha256": "4c1cd18c34b8dfe33c172c069d823193d23d15fb1d52ad84e39a3068653a0325"
+  },
+  "geo_evaluation_generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v45_spatial_pruned/pilot_20261002_a/manifest.json",
+    "sha256": "6960676ddb2c092d88788601d69288d33370c68bacebe01b6a671844f485f582"
+  },
+  "ban": {
+    "path": "/Volumes/CATNAT_DATA/oubusiness/silver/ban_addresses_2026-08-14_semantics-v1.parquet",
+    "sha256": "48f9e3d4f9bbb47dd5e8bd55bc5f76a75e2e6a8ff1c4821026ba858f6e40247f"
+  },
+  "resources_worker": {"max_seconds": 80,"max_rss_bytes": 6442450944,"max_swapout_pages_delta": 0},
+  "resources_prepare": {"max_seconds": 300,"max_rss_bytes": 6442450944,"max_swapout_pages_delta": 0},
+  "max_controller_seconds": 900,
+  "max_query_search_seconds": 20,
+  "mean_pair_seconds_gate16": 4,
+  "fold0": "FORBIDDEN",
+  "fold1": "CLOSED",
+  "downstream_models": "FROZEN",
+  "new_relation_paths_included": false,
+  "metric_family": "LEARNED_STRUCTURED_SPARSE_PLUS_SPATIAL_INITIAL_SEARCH_NOT_DENSE_OR_FULL_GRAPH_ARCHITECTURE",
+  "truth_access": "EVALUATOR_AFTER_ALL128_GENERATIONS_SEALED",
+  "full_catalog_lexical": true,
+  "full_catalog_spatial": false,
+  "pilot_can_validate_goal": false,
+  "full_index_segments_rehashed": false
+}
