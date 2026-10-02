@@ -1,0 +1,17 @@
+{
+  "proof_source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v56_exact_fields/training_20261002_a/manifest.json",
+    "sha256": "5e3e309953a1e153478dc34e8aa7e9ecef4e76cbfe5b511f35cae8e902c667ad"
+  },
+  "ridge": 0.005,
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 6442450944,
+    "max_swapout_pages_delta": 0
+  },
+  "controller_seconds": 360,
+  "max_query_search_seconds": 20,
+  "primary_mean16_seconds": 4,
+  "metric_family": "NATIVE_DIRECT_11_LEARNED_IDENTITY_SITE_PROOFS_NO_BM25_NO_GEOMETRY_NO_POOL",
+  "geometry_disabled_ablation_not_final_architecture": true
+}
