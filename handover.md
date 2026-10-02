@@ -8512,3 +8512,68 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   stock courant. Courant établissement43,9m contient adresses+XY et noms
   de site ; UL29,9m noms légaux/sigles/usages. Toute prochaine association
   historique/site doit porter son degré de preuve et ses dates UNKNOWN.
+
+### 3 octobre 2026 — V75 : anciens noms de sites SIRENE réellement indexés, recall inchangé
+
+- Milestone `fb4175ac` : contrat/code/config/tests scellés avant build et mesure.
+  Vérification native : l'artefact spécifique
+  `official_evidence_overlay_sirene_history_v1/5bb04044578179db` contient
+  réellement0 documents (manifeste ET searcher). Cela ne signifie PAS que
+  le principal n'avait aucune histoire : il indexe d'autres preuves RNE/BODACC.
+  Les100 projections `sirene_temporal_v1` couvrent les préfixes00..99 sans CRM,
+  avec273796 observations de noms historiques SIRET (21,4Mo Parquet au total).
+- Nouveau petit index indépendant,247731 documents SIRET uniques, TOUTES
+  observations de ces100 fichiers conservées avec evidence_id/kind/périodes.
+  Manifestes et petits Parquets entièrement hashés avant/après, raw inputs
+  identiques entre partitions, pas de corpus autour du GT/alias CRM/synthétique.
+  Caps/exclusions de la projection amont hérités, pas prétention d'exhaustivité
+  de TOUS anciens noms. Les4025541 lignes de projection noms d'UL et9727541
+  lignes de projection successions restent NON intégrées (comptes de lignes,
+  pas preuve de nombres d'alias/arêtes globalement dédupliqués).
+- Source historique distingue noms/périodes passées du scaffold courant
+  d'adresse/numéro/CP/INSEE/siege. Aucun ancien emplacement inventé, aucun
+  filtre date/état/commune. Addition nom ancien+scaffold courant NE PROUVE PAS
+  une coexistence temporelle ; champs agrégés, pas kernel cohérent V72/V74.
+  Transfert préenregistré des11 poids OOF V57 inchangés ; exact alias ancien
+  bonus retrieval seulement, pas exact_protection/AUTO. Tous modèles aval gelés.
+- Recherche initiale finalscore=max(source actuelle V57,source historique),
+  fronts natifs V40 fusionnés jusqu'à100 SIRET DISTINCTS, pas pool fixe ni
+  nouveau score après découverte/reranker. Les tie frontières sont natives,
+  pas canonique global par ID.128 queries CRM seules de l'ordre hashé V34,
+  disjointes du trainer512, folds234. Labels et ancien comparator lus seulement
+  APRÈS les128 sorties scellées, dans évaluateur séparé V49/sidecar all-human.
+- Build23,905s,pic583630848octets,zéro swapout, index191Mio. Génération
+  COMPLETE355,500s build compris, dans budget360s (pas élargi), workers tous
+  sous80s/6Gio/zéro swapout, pic worker1987002368octets. Gate coût16 passé
+  mean3,7735s ; p502,4217s/p953,9622s/p996,0393s : SLO1s/2s NON franchis,
+  cache non contrôlé. Baseline V57 timing historique p502,1288/p953,4739/
+  p993,7685s, pas replay ni comparaison temporelle appariée.
+- Résultat exact113/128=88,28125%, opérationnel115/128=89,84375%, Wilson95bas
+ 81,5634%, mêmes V57. **ZÉRO gain, ZÉRO perte exacts**, toujours15
+  NOT_RETRIEVED_AT100, pas OFFICIAL_CATALOG_ABSENT sur ce pilote.27 ensembles
+  candidats changent,41 nouveaux SIRET cumulés ;12752 sorties gagnées par
+  courant/48 par histoire sur12800 slots. La nouvelle source FONCTIONNE mais
+  n'améliore pas recall sur ce panel. Ne pas la promouvoir comme gain ni lire
+  ce résultat comme validation99,2% ou du SLO.
+- Manifeste génération SHA
+  `773a46b39454a0374e7e50936bea611fc78ac7b38126aa9ef81664442ba76d0a`,
+  évaluation SHA`638ae3a223facda20e60565341959d1b2add5ca2f5a5fa0047e6549337a3d298`,
+  source histoire SHA`e52786363ac3dbeef1248a16ec5bac8b8175f1e477dd948394a549db9562625a`
+  sous `audits/retrieval_v75_history_site/pilot_20261003_a/`. Le fichier
+  `evaluation_scope.json` précise que comparator=V57, PAS V42 (texte générique
+  de l'ancien évaluateur V49 conservé). Hashes/batches/caps/unicité/128 rows/
+  sourcecardinality revérifiés.81 tests ciblés passent, dont fronts V40 vs
+  oracle, provenance/dates/scaffold, anciens sites fermés et IDs sans similarité.
+- Diagnostic de score seul : seuil du top100 dépasse l'enveloppe nonlocal
+  nonexact w0+w1 sur10/128 queries, et enveloppe nonlocal totale w0..w3 sur
+ 0/128. Une simple suppression globale du nonlocal par lieu serait donc
+  NON justifiée ; aucune telle optimisation appliquée. Cela ne mesure aucun
+  gain de coût ni ne constitue un nouveau filtre/admission métier.
+- Folds0/1 non lus/fermés, aucun positif injecté ou qualification filtrante,
+  ledger/sidecar exact intact, aval inchangé, jobs TERMINAUX, aucune dépense.
+  Objectif99,2% toujours NON atteint, goal actif. Dernier recall initial complet
+  est maintenant V75 (égal V57), pilote national-corpus128, PAS OOF23k complet.
+  Prochaine branche justifiée : noms historiques d'UL et chemins officiels
+  typés vers sites, recherche conjointe indexée sans pool parent fixe ; les
+  anciennes enseignes de sites seules ne traitent pas les15 pertes. La latence
+  native globale doit également être traitée sans enlever de candidats valides.
