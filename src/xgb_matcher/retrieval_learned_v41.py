@@ -61,6 +61,11 @@ def oof_training_positions(rows: Sequence[TrainingMembership], heldout_fold: int
     if any(not re.fullmatch(r'\d{9}', s) for r in rows
            for s in (r.positive_siren, r.negative_siren)):
         raise ValueError('Invalid grouping identity')
+    known_heldout = {r.positive_siren for r in rows if r.fold == heldout_fold}
+    if not known_heldout.issubset(heldout_sirens):
+        raise ValueError('Incomplete heldout entity registry')
+    if not heldout_sirens or any(not re.fullmatch(r'\d{9}', s) for s in heldout_sirens):
+        raise ValueError('Missing or invalid heldout entity registry')
     # Exclude heldout entities both as positives AND as explicit negatives.
     return np.asarray([i for i, r in enumerate(rows)
                        if r.fold != heldout_fold

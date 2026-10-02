@@ -17,6 +17,10 @@ def members():
 
 def test_oof_excludes_fold_and_heldout_entities_on_both_sides():
     assert oof_training_positions(members(), 2, {'100000001'}).tolist() == [1, 2]
+    with pytest.raises(ValueError, match='registry'):
+        oof_training_positions(members(), 2, set())
+    with pytest.raises(ValueError, match='registry'):
+        oof_training_positions(members(), 2, {'100000999'})
 
 
 @pytest.mark.parametrize('fold', [0, 1, 5])
