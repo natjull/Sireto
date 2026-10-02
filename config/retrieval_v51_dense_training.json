@@ -1,0 +1,12 @@
+{
+  "model_path": "/Volumes/CATNAT_DATA/SIRETO_V9/models/paraphrase-multilingual-MiniLM-L12-v2-86741b4e",
+  "max_length": 128,
+  "ridge": 1.0,
+  "negative_weight": 0.25,
+  "resources": {
+    "max_seconds": 90,
+    "max_rss_bytes": 6442450944,
+    "max_swapout_pages_delta": 0
+  },
+  "scope": "TRAINING_ONLY_NO_RETRIEVAL_RECALL_NO_INDEX_BUILD"
+}
