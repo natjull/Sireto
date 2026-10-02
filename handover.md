@@ -8362,3 +8362,89 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Ne pas les reconstruire par croisement libre entre observations d'une même
   entreprise. Il reste aussi un exécuteur NATIONAL conjoint sparse+XY/proofs
   et SLO à réaliser ; pas lancer un vaste encodage/build sur le gain net5.
+
+### 3 octobre 2026 — V71–V73 : conditionnement rejeté, observations et lien légal explicite
+
+- Milestones : `3a21dbde` V71 même loss/bounds V70, coordonnées decoder
+  conditionnées par ridge/dimension ; `058bc6b6` V72 observations officielles
+  cohérentes et heap100 groupes SIRET ; `1dd28e07` V73 liaison LEGAL parent
+  RNE→site explicitement enfant de LA MÊME formalité ; `0e13d037` audit
+  corrigeant les compteurs d'alias sans modifier V73 scellé. Aucun push.
+- V71 complet17,211s, worker16,828s,pic1174405120octets,zéro swapout.
+  Native/RIDGE_SPARSE comparateurs IDENTIQUES V70 ; six contrastifs toujours
+  non convergés à180itérations, gradient projeté physique0,0249..0,0808.
+  Le conditionnement ridge seul N'A PAS aidé : loss train finale pire que
+  V70 pour tous contrastifs. Tous exclus ; trois inner choisissent RIDGE
+  comme V70, mêmes models SHA
+  `3f65fa3a3cdba5aa89e60e6b899d8f66d995c50be157c830f9958bb4055bb042`.
+  Pas refaire un gros fit à tolérance relâchée ni présenter cela comme gain.
+  Manifeste SHA
+  `47c6ea61ce01da12582478fa9cea7fb663beb44c3102beed3cc245990252eaf5`.
+- V72 préfixes PHYSIQUES indépendants des queries/labels :32768 RNE bulk et
+ 32768 de chaque BODACC2008/2017/2026 =131072 observations. RNE18141 sites,
+ 14627 parents ; BODACC98304 parents, aucun site explicite dans ces prefixes.
+  Total112931 parent-only non projetés,18141 sites/18141 clés distinctes.
+  Pas corpus national/aléatoire/représentatif, pas train/qualité/recall.
+- V72 conserve source/observation/period et score l'interaction nom/adresse
+  dans UNE observation et UNE alternative d'adresse. Alias séparés, pas
+  produit fictif entre nom ancien/adresse nouvelle. Group score=max des
+  observations de ce SIRET, collector avec<=100 groupes vivants ; répétitions
+  d'un site ne consomment pas plusieurs slots. Traversal de TOUS postings
+  correspondants, aucun réservoir fixe préclassé. Score coût non appris.
+- V72 complet5,820s, worker5,203s,pic411566080octets,zéro swapout. Lecture/
+  encodage4,715s,build0,030s ;32/32 recherches à parité EXACTE top100 distincts/
+  scores/ordre face au scan ENTIER cohort.8 CRM query-only et8 sentinelles
+  officielles de coût,deux passes. CRM16/16 non vides,mean6,521ms/p959,399ms
+  indexé vs12,145ms oracle ;6722 observations scorées en moyenne sur18141.
+  RAM/cache non contrôlé/Python : PAS SLO national ou extrapolation43,9m.
+  Manifeste SHA
+  `77a53b2acd959e8c0eed9fcda7307fce543d293151e0d17b2a003001515aad0b`,
+  metrics SHA
+  `06c07d1a401c8f613baf5ebce82dd7801a54b64f9782cc7b51839124233c0b5a`.
+- V73 lie uniquement LEGAL de parent RNE SIREN à un site RNE SIRET si SIREN
+  égal ET source_record_id du site égale root_parent+':site:'+SIRET.
+  Aucun alias TRADE transféré, aucune adresse parent copiée, pas de lien
+  fuzzy/sibling/asset-transfer traité comme identité. Source IDs provenance/
+  jointure seulement, noms officiels comme termes. Parent ambigu impose STOP.
+  Legal-owner dans même formalité ne prouve PAS une validité temporelle
+  commune : toutes18138 liaisons ont valid_from parent/site UNKNOWN ;12528
+  sites liés fermés inclus. Sidecar maintient les deux preuves/dates et règle.
+- V73 cohort RNE EXACTEMENT V72 :18138/18141 sites avec owner explicite,
+  trois sans owner correspondant dans ce prefix, non devinés. Couverture
+  nominale site brut1956/18141=10,7822%→composé18071/18141=99,6141%.
+  **Ce n'est PAS recall humain ni amélioration mesurée du pipeline courant** :
+  le moteur précédent hérite déjà de noms parents dans certains champs.
+  Le gain ici rend le NOUVEAU kernel observation exploitable sans perdre
+  toute preuve de nom lorsque le site officiel est sans enseigne propre.
+- V73 complet2,708s, worker2,312s,pic362561536octets,zéro swapout ; lecture/
+  composition1,758s,build deux indexes0,059s.32/32 parités exactes sur corpus
+  ENTIER,16 queries (8 CRM+8 sentinelles) pour chacune des2 recettes brut/
+  owner_bound. Indexed moyen3,565→4,140ms,p9510,141→10,851ms, pas cold/SLO.
+  Manifeste SHA
+  `3014558abd4c309549acf15d99d13b973ff562b120c86050de4582e55ad55b84`,
+  metrics SHA
+  `dfb7208f6c63223e51072fc4ed79842cd2465381b767df1227b7a1042f5bc100`.
+- ERRATUM V73 : ses compteurs d'ajouts calculaient différence de LONGUEURS
+  de tuples tout en dédupliquant88 entrées ; certaines additions devenaient
+  négatives/mal comptées. `0e13d037` reproduit les résultats historiques,
+  calcule différence des ENSEMBLES, scelle un nouveau sidecar correct sans
+  changer kernel/ensembles de preuves/score/ancien artefact. Correct :17769
+  alias légaux ajoutés et17769 sites recevant au moins un alias, pas17681/
+ 17689 du manifeste initial. Couverture nominale1956→18071 INCHANGÉE.
+  Audit1,682s,pic410238976octets,zéro swapout. Manifeste
+  `retrieval_v73_owner_observation/counter_erratum_20261003_a/manifest.json`,
+  SHA`c367654b4000b952bd1ef017eecc4ebbf316362ebbada368b4e3d21fe61483dd`.
+-62 tests ciblés passent, dont bounds/loss/gradient identiques V71, outer
+  indépendant, anti-cross-observation/alias/date/sibling, groupes100 distincts,
+  provenance RNE explicite et correction des compteurs. Hashes/launchs/scellements
+  V71/V72/V73 et sidecar corrigé revérifiés. Source manifestes hashés,
+  taille/mtime/inode/footer avant/après et digests prefixes ; gros Parquets
+  NON rehashés en entier, limite publiée. Aucun label/teacher lu V72/V73,
+  aucun candidat écrit, aucun grand build, aucune dépense ; aval gelé,
+  all-human/sidecar exact intact, fold0 non lu/fold1 fermé. Tous jobs terminaux.
+- Dernier recall initial complet reste pilote V57=113/128=88,28125% exact,
+  objectif99,2% NON atteint, goal actif. Suite : exprimer ces preuves
+  source/site/owner dans les contrôles OOF puis l'exécuteur national ; liaison
+  BODACC→site par preuve officielle d'adresse, graphes TYPOLOGIQUES et géo
+  XY/BAN restent à intégrer, pas annoncés présents par V73. Ne pas extrapoler
+  les couvertures structurelles ou le coût RAM à un recall national.
