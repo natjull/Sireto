@@ -1,0 +1,39 @@
+{
+  "generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/pilot_20261002_a/manifest.json",
+    "sha256": "11151f230e9616ee799dffbc47aa588bdbb6685ccebc357c6b326e61d3bd0384"
+  },
+  "evaluation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/pilot_20261002_a/evaluation.json",
+    "sha256": "cbf1a7afb4199f7193d4eced40d2085ba5ed58deb093e7e329e143a686ccb1c8"
+  },
+  "native_audit": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/pilot_20261002_a/native_proof_audit.json",
+    "sha256": "073caac195fa69004be07b589cd16a92dc673c42b41f4ebaaa2d4a68b0d468ff"
+  },
+  "dossier_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json",
+    "sha256": "6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"
+  },
+  "tables": {
+    "names": "name_evidence.parquet",
+    "addresses": "address_evidence.parquet",
+    "units": "legal_units.parquet",
+    "sites": "establishments.parquet",
+    "relations": "relations.parquet"
+  },
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 4294967296,
+    "max_swapout_pages_delta": 0
+  },
+  "controller_seconds": 270,
+  "query_geometry": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v45_spatial_pruned/pilot_20261002_a/manifest.json",
+    "sha256": "6960676ddb2c092d88788601d69288d33370c68bacebe01b6a671844f485f582"
+  },
+  "spatial_index": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/retrieval_v43_spatial/index_20261002_a/manifest.json",
+    "sha256": "4c1cd18c34b8dfe33c172c069d823193d23d15fb1d52ad84e39a3068653a0325"
+  }
+}
