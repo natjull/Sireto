@@ -8128,3 +8128,78 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   preuves nom/adresse/période/source et relations officielles attachées au
   bon site, XY et fiabilité BAN explicites ; pas une nouvelle permutation
   TF-IDF/BM25 ni un énorme build dense justifié par les seuls contrôles V59.
+
+### 2 octobre 2026 — V63/V64 : contraste identité/site et coût de géographie native
+
+- `28c77db9` préenregistre V63 : vrai objectif de tête par requête,
+  log(1+sum exp(score négatif-score positif)), tous négatifs naturels sûrs
+  V52, pas la moyenne logistique de paires. Deux vues sémantiques NOM/ADRESSE
+  distinctes +19 preuves V56 (numéro/exacts/site/XY/BAN),512 scènes sans
+  réencodage. BASELINE11 refit interne, HEAD19, JOINT_STATIC et JOINT_ADAPTED
+  contrôlés par entités imbriquées. Bases et positifs/négatifs de train
+  excluent les parents du contrôle interne ET externe. Identifiants utilisés
+  seulement pour exclusions/groupement/jointures, pas features.
+- Sélection interne uniquement : JOINT_STATIC21 paramètres sur CHAQUE fold.
+  La correction bilinéaire/adaptation contextuelle plus complexe n'est pas
+  retenue ; un candidat interne fold3/ridge0,0001 non convergé publié et exclu.
+  Tous refits sélectionnés convergés. V63 complet3,964s, worker3,235s,
+  pic1017184256 octets (~0,947Gio), zéro swap. Pas de grand build/GPU/cloud.
+  Manifeste `audits/retrieval_v63_joint_contrastive/probe_20261002_a/manifest.json`,
+  SHA`3ebb92942d42e7d49fec61da6c6a44ef02c7435f2d64cc619cc017c3c5a5e658`.
+- CONTRÔLES source externes, PAS recall national : erreur de tête
+ 47,93→40,83%,48,78→33,54%,45,25→36,87% ; concurrents moyens devant GT
+ 5,47→4,66,5,74→4,82,6,02→5,15. Marge face au pire concurrent
+ 0,532→1,055,0,653→1,307,0,590→1,131. Erreur par paire same-parent
+ 54,76→19,05%,55,02→11,35%,45,34→12,42%,168/229/161 paires ; adresse exacte
+ et numéro+commune améliorés aussi. Ces strates ne choisissent PAS la recette.
+ Sur contrôles internes HEAD19 vs JOINT_STATIC, l'ajout de sémantique améliore
+ aussi la tête sur chaque fold ; ne pas attribuer tout le gain aux embeddings
+ ou tout aux XY sans ablation externe supplémentaire. Les poids choisis
+ accordent plus de place à la cosine NOM qu'à la cosine ADRESSE, tandis que
+ les preuves précises d'adresse/numéro restent explicites.
+- Noyau V63 exprimable en vecteurs de requête + preuves natives non négatives,
+  mais exécution nationale indexée/SLO NON implémentée/validée. Ne pas utiliser
+  un ancien pool pour présenter ces contrôles comme retrieval100. Aucun grand
+  encodage dense lancé. Relations/filiations, catégorie juridique/activité,
+  cohérence temporelle nom-adresse/site pas ajoutées par V63 ; ces données
+  restent à intégrer explicitement, pas considérées couvertes implicitement.
+- `9d15ce65` V64 préenregistre un coût-only nouveau : résoudre les prédicats
+  complets XY25/100/500/2000m dans le KDTree officiel, joindre les clés SIRET
+  aux postings lexicaux, puis collecteur natif100 unique, sans fusion tardive.
+  PAS le score V63 : bases radiales binaires au lieu de continues et cosines
+  non servies ; poids réutilisés uniquement pour mesurer le coût. Géographie
+  souple, aucun site lointain/missing-XY exclu du corpus lexical complet.
+ 8 queries prefix indépendantes des labels, aucun candidat persisté/label lu.
+- V64 terminal STOP_COMPLETE_GEO_JOIN_TOO_LARGE au DEUXIÈME point : garde
+ 200000 membres d'un prédicat complet, aucune troncature ni relance élargie.
+  Worker7,107s, pic1510555648 octets, zéro swap ; ressources RSS/temps passent,
+  c'est la garde de jointure qui bloque. Une seule ligne coût complète :
+ 4899 sites dans2km, construction geo0,0052s, recherche geo2,211s versus
+ lexical2,751s ; cache non contrôlé, PAS un benchmark/SLO ou résultat qualité.
+  Status `audits/retrieval_v64_geo_postings/cost_20261002_a/status.json`, SHA
+  `f7d902f20101a93105d258367c5e89e2760de859541773f65c680ab95588acba` ;
+  diagnostic worker SHA
+  `fe8e06950c80c7352193c72a4612f788d82f2aaf9ff7649f5bf2ca59eefeab59`.
+- Diagnostic READ-ONLY après ce STOP, sans IDs matérialisés/retrieval/labels :
+  compte KDTree return_length des8 mêmes queries. Rayons0,01/25/100/500/2000m :
+  premier [3,14,58,647,4899] ; deuxième [0,83,859,24401,250063] ; troisième
+  [9,9,38,501,4596] ; quatrième incompatible ; cinquième
+  [14,128,1844,34629,651834] ; sixième [0,39,310,9760,39614] ; septième
+  incompatible ; huitième [104,105,540,5160,140630].0,346s, pic911835136,
+  zéro swap. Les très grands voisinages ne sont PAS prouvés être une simple
+  coordonnée effondrée : au deuxième point zéro co-localisation0,01m.
+  Densité géographique/historique est une vraie contrainte de représentation.
+- `9aae627b` ajoute le test de parité géographique native/cutoff100. Tests
+  gradient de loss, algèbre du noyau query/document, absence d'influence
+  des données externes sur choix/paramètres, BAN incompatible/faible, rayons
+  complets inclusifs et garde STOP non troncature passent.20 tests ciblés
+  V63/V64/V59/V60/V61 passent, dont parité des scores géographiques natifs
+  au corpus oracle et cutoff100 sans exclure les sites hors rayon.
+- Tous jobs terminés. Dernier recall initial complet reste V57=113/128=88,28125%
+  exact ; aucun nouveau recall déduit de V63/V64. Prochaine étape justifiée :
+  représentation spatiale compacte/indexée, densité et qualité des preuves
+  officielles, et jointure cohérente identité/site/relations, avant nouveau
+  pilote de qualité. Pas énumérer des centaines de milliers de clés par query,
+  pas de gros build dense uniquement pour transformer ces contrôles en succès.
+  Goal actif99,2% NON atteint, fold0 non lu/fold1 fermé, all-human intact,
+  aval gelé, utilisateur dirty files préservés, aucun push/dépense externe.
