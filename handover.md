@@ -16,6 +16,14 @@ complet et les chemins BODACC :105/128=82,03125% exact@100, identique à v38,
 Voir la dernière entrée V40 ; **objectif99,2% non atteint**, aucun job restant.
 Folds0/1 fermés, modèles aval gelés.
 
+V41 ouvre une expérience de recherche apprise, sans nouveau résultat de
+recall à ce stade : primitives/préflight `42f91396`, garde des entités OOF
+`644eafe3`, coût ANN national `0af4af1a`. L'encodage CPU d'une requête prend
+~6ms et le préflight ANN SIREN existant donne p95~31ms ; ce ne sont PAS des
+SLO SIRET ni une preuve de recall. Un réencodage complet des sites est estimé
+à~12h par vue sur cet échantillon court : aucun build national lancé. Voir
+l'entrée V41 en fin de journal. Objectif exact99,2% et protections inchangés.
+
 Mise à jour du 1 octobre 2026 : le rejeu complet v33/v34 est généré et son
 évaluation reprise est terminée. Pour reprendre le chantier, lire d'abord
 [la note de handover agent](docs/handover_retrieval_agent_20261001.md),
@@ -7446,3 +7454,78 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   initiale préenregistrée sur corpus complet. Ne pas lancer un rejeu national
   23571 inchangé à ce stade. Aucun job restant, aucun push ; modifications
   locales préexistantes conservées.
+
+### V41 — recherche apprise : primitives OOF et préflight de coût mesuré
+
+- Objectif utilisateur persistant : recall initial@100 supérieur à99% sans
+  triche ; le contrat actif conserve la cible plus stricte99,2% exact humain,
+  avant tout modèle aval. L'absence de gain V40 motive une autre expérience,
+  pas une relance identique ni une promotion des modèles historiques.
+- `42f91396` livre `retrieval_learned_v41.py`, ses tests et le préflight
+  `preflight_retrieval_learned_v41.py`. Il s'agit de primitives de recherche,
+  PAS d'un retriever national déjà entraîné ou branché. Documents encodés
+  offline, transformation de requête apprise avec documents inchangés ;
+  baseline de fit ridge contrastive, pas une reproduction de SC-Block.
+  L'oracle top100 exhaustif de tests cherche tout le corpus fourni et n'a
+  aucun réservoir préalable ; son coût O(N) n'est pas proposé pour la prod.
+- OOF obligatoire sur2/3/4 : exclure le fold évalué et ses SIREN aussi bien
+  des positifs que des négatifs. `644eafe3` refuse en plus un registre des
+  entités heldout vide/invalide ou incomplet vis-à-vis des lignes connues.
+  Le futur constructeur devra prouver la complétude de ce registre depuis
+  le ledger entier protégé, et exclure les négatifs incertains/opérationnels
+  équivalents. Ces obligations ne sont PAS validées par un fit réel ici.
+  Aucun identifiant, rang, qualification ou label comme argument du texte.
+  Les noms doivent être officiellement attachés au site par le constructeur,
+  pas hérités librement d'une filiation.19 tests ciblés v41/v38/v40 passent ;
+  compilation et diff-check passent. Aucun modèle entraîné dans ce milestone.
+- Préflight `cost_20261002_a` :512 SIRET distincts, noms directs
+  SIRENE_CURRENT, appartenance officielle au parent vérifiée, adresse actuelle
+  jointe. Row-groups de noms visités2208/1372/104/780/2338/1207 dans un ordre
+  SHA indépendant des requêtes/labels ; ce n'est pas un échantillon national
+  représentatif. Les fichiers officiels noms/sites (~6,94Go) sont entièrement
+  rehashés avant lecture. Aucun CRM, ledger ou sidecar label-side ouvert.
+- Modèle générique MiniLM local historique sur CATNAT, pas le modèle CRM
+  fine-tuné `siret-bert-deploy`. Offline strict,2threads CPU, max128tokens,
+  aucun nouveau téléchargement. Le correctif de tokenizer existant est
+  réutilisé et le healthcheck passe ; même ce modèle générique exigeait
+  cette réparation. Torch isolé des kernels DuckDB/Arrow/FAISS.
+- Encodage512 textes0,501608s (~1021/s), p50/p95 encodage d'une requête
+  chaude5,758/6,152ms, chargement0,971s. Pic worker1185628160 octets (~1,10Gio),
+  zéro swapout ; préparation225869824 octets,8,374s ; total18,623s.
+  Textes courts (tokens p50=16,p95=27), zéro troncature. L'extrapolation
+  arithmétique donne11,946h pour une vue de43896818 sites et67,426Go de
+  float32.48octets/code donneraient2,107Go HORS IDs/centroïdes/overhead :
+  aucun index quantifié de sites construit et aucune qualité PQ prouvée.
+  Historique, preuves multiples et coût d'indexation peuvent augmenter ces
+  coûts ; ces chiffres ne sont pas une garantie de build national.
+- Autorités sous `audits/retrieval_v41_learned_initial/cost_20261002_a/` :
+  manifeste SHA`18e84e901f034867116d38e6da94b17217505ffeaee9286ee4fa75b758c7d09f`,
+  worker SHA`93a365f4ea82b5178061797ebffe084ae3f3f0176ba526d7529e899675b7f931`.
+  Recette/code/modèle/inputs scellés ; aucune métrique de recall, aucun fit.
+- `0af4af1a` préenregistre puis exécute un probe de coût sur le FAISS
+  historique full28982797 SIREN,384dimensions,IVFPQ,nprobe32,2threads.
+  Index1,5Go entièrement rehashé, inventaire taille/mtime après ;16 premiers
+  vecteurs du préflight officiel précédent, sans carte d'identifiants ni
+  vérité. Chaque collecte native retourne100 offsets uniques valides.
+  Chargement0,26455s, première recherche30,433ms ;15 suivantes p50=3,683ms,
+  p95=30,902ms. Pic1770520576 octets (~1,65Gio), zéro swapout.
+  Cache froid non contrôlé. **Ni recall ni SLO produit SIRET** : un index
+  parent historique et ces requêtes courtes ne valident pas le futur index
+  sites, sa couverture, son score appris ou sa généralisation.
+  Autorités `audits/retrieval_v41_learned_initial/ann_cost_20261002_a/` :
+  manifeste SHA`baffc00b418b4f7399d4f910b5fec2dc2a3da98ccf7f21e5f0c1c8ca3669667e`,
+  worker SHA`73ca6de621ce7de5e1bbe1534f067c00e96734218311eadc59b23288eb70a328`.
+- Conclusion de coût : le chemin encodage-requête/ANN est matériellement
+  prometteur sur le Mac ; construire une nouvelle représentation exhaustive
+  de sites avant preuve de gain serait prématuré. Prochaine expérimentation
+  de qualité : une recherche initiale indexée apprise/structurée, score commun
+  et budget100, sur corpus officiel complet pour les prédicats déclarés,
+  OOF entity-disjoint ; génération scellée avant évaluation séparée,
+  exact/opérationnel et toutes les pertes publiés, puis tests de
+  généralisation. Aucun réservoir fixe reclassé pour contourner ce contrat.
+  Ne pas ressusciter le vieux spike99,25% comme validation nationale : il
+  portait sur400 requêtes de communes<=2500 candidats, union50+50, pas une
+  population all-human nationale. Ne pas relire ses lignes de holdout.
+- Objectif non atteint, aucun READY_FOR_FOLD1, aucun modèle aval modifié,
+  aucun run restant, aucun build12h ou push lancé. Les modifications locales
+  préexistantes restent intactes ; le goal reste actif.
