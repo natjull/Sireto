@@ -10,8 +10,11 @@ preuves relationnelles officielles indexées en amont : succession de sites,
 transferts BODACC ancrés au site, hiérarchie SIREN/SIRET et rôles RNE typés.
 Adaptateurs/audit `5ab96dfa`, puis compilation des chemins BODACC et composant
 de recherche directe `06fa3518` ; voir les entrées V39 en fin de journal.
-**Composant BODACC indexé, intégration au corpus national et gain de recall
-encore non mesurés**, aucun job restant. Folds0/1 fermés, modèles aval gelés.
+V40 mesure maintenant une recherche initiale fédérée sur le corpus national
+complet et les chemins BODACC :105/128=82,03125% exact@100, identique à v38,
+0 gain/0 perte. Les chemins BODACC compilés ne couvrent aucun des23 ratés.
+Voir la dernière entrée V40 ; **objectif99,2% non atteint**, aucun job restant.
+Folds0/1 fermés, modèles aval gelés.
 
 Mise à jour du 1 octobre 2026 : le rejeu complet v33/v34 est généré et son
 évaluation reprise est terminée. Pour reprendre le chantier, lire d'abord
@@ -7376,3 +7379,70 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   puis appeler leur reclassement « recherche initiale ». Pas de mesure CRM dans
   ce jalon, pas de SLO produit validé, pas de gate99,2%, pas de READY_FOR_FOLD1.
   Folds0/1 fermés, aval gelé, aucun job restant, aucun push/service payant.
+
+### V40 — recall initial national + BODACC mesuré le 2 octobre 2026
+
+- Demande utilisateur explicite de mesurer le recall@100. Recette et tests
+  préenregistrés `4c8929a1`, optimisation physique `6d214b69`, attribution
+  label-side `65dd73d4`. Configuration `config/retrieval_v40_initial_top100.json`,
+  runner `scripts/retrieval_v40_initial_top100.py`. Aucun fichier de l'inventaire
+  aval gelé modifié, aucune règle spécifique à un query_id ou alias CRM.
+- Recherche initiale exacte fédérée : vue lexicale nationale v38 primaire
+  (corpus82772691 docs,43896818 établissements) et vue BODACC (349475 sites).
+  Score initial du SIRET=max des scores natifs de ses vues. Les scores BM25
+  restent locaux aux sources, sans calibration apprise : hypothèse explicite,
+  pas une preuve qu'ils sont comparables de manière optimale. Nom ET adresse
+  requis pour BODACC, géographie max CP/INSEE bonus1. Le texte national reste
+  la recette v38 gelée. Aucun chemin de succession SIRENE ajouté dans ce test.
+- Collecteur sur flux classés : frontière des scores, déduplication officielle,
+  arrêt à100 sites uniques. Pas de réservoir fixe ni nouveau scoring de paires
+  découvertes ; les seules évaluations de score sont celles des requêtes
+  natives. National paginé selon la capacité restante (100 au départ), BODACC
+  sondé à1 puis selon la capacité restante. Les locations préchargées ne sont
+  pas réhydratées toutes ; seuls les hits consommés ont leur identité décodée.
+  Tests : résultat égal au top100 exhaustif des max sur deux sources de fixture,
+  pagination native stable sur égalités, conflits d'appartenance refusés.
+ 12 tests v38/v39/v40 ciblés passaient avant lancement ;4 tests du collecteur
+  repassent après optimisation physique. Fixtures hors corpus d'évaluation.
+-128 requêtes fixes des quatre premiers lots32 hashés v34, folds2/3/4,
+  panel de développement déjà consommé. Génération sans labels puis sorties
+  entièrement scellées avant évaluateur séparé. Comparateur v38 primaire105/128
+  déjà scellé, sur requêtes identiques vérifiées ; pas de nouveau comparateur
+  ajusté après lecture. Tous les humains/qualifications au dénominateur,
+  sidecar officiel v34 et ledger rehashés, folds0/1 non lus.
+- Première tentative `_a` STOP_COST_PREFLIGHT à16, moyenne4,601s, labels fermés.
+  L'optimisation ne change que la pagination nationale1+99 ->100 en une requête
+  native. Parité exacte des16 sorties, ordres, scores, appartenances et sources
+  gagnantes avec `_a`, vérifiée sans labels. Reprise `_b`, contrôle16 passe à
+  1,234s ; cache Mac non contrôlé, ne pas attribuer tout le gain à la seule
+  optimisation. Tentative arrêtée conservée, aucune évaluation partielle.
+- Résultat `_b` : **105/128=82,03125% exact@100**,108/128=84,375% opérationnel,
+  Wilson95 bas74,47837%. Comparateur identique :0 gain/0 perte. Folds26/38,
+  46/51,33/39 ; origine CRM20260817=60/80, historique45/48. Segments historique,
+  V2/V3, états et autres métadonnées publiés ; UNKNOWN conservés,16 absences
+  humaines sources publiées sans filtrage postqualification.23 pertes
+  NOT_RETRIEVED_AT100, aucune absence officielle catalogue dans ce pilote.
+-88 candidats émis avec la vue BODACC gagnante sur12800 candidats totaux,
+  12712 avec la vue nationale. Cela n'est PAS un gain de recall. Audit label-side
+  postévaluation :5/128 vérités exactes ont un chemin dans le composant BODACC,
+  toutes déjà retrouvées par v38 ;0/23 ratés y ont un chemin compilé. Cela
+  établit une limite de couverture du composant exploité sur ce panel, pas
+  une absence de toute preuve dans les annonces brutes ni une absence de valeur
+  générale du BODACC. Adresses historiques, noms propres aux sites prédécesseurs
+  et direction inverse restent des limites de compilation documentées.
+- Génération complète224,182s (3min44s), pic worker2203877376 octets (~2,05Gio),
+  zéro nouveau swap. p50/p95/p99=1,675/2,627/3,182s, cache non contrôlé,
+  SLO produit non validés. Workers successifs,2threads,80s/6Gio par worker,
+  timeout externe90s, budget contrôleur900s. Audit couverture0,434s.
+- Racine `audits/retrieval_v40_initial_top100/pilot_20261002_b/` :
+  génération SHA`2ed765e1eac5ee90ef44c9cbccb00fd2bf7e2c79909dd2d6b683772bfc4b8c26`,
+  évaluation SHA`cf25533727cd78566dc20e94b74bc160cf7df6510d90102cdcccdf9640d797ba`.
+  Index national : manifeste/meta/inventaire/doccounts contrôlés, gros segments
+  non intégralement rehashés ; composant BODACC intégralement rehashé avant/après.
+- **PIVOT_GENERATION** : recette insuffisante, aucun objectif99,2% validé,
+  aucun READY_FOR_FOLD1. Pas de fit, location de GPU ou service externe.
+  Priorité suivante : recherche des noms/site/historiques via successions SIRENE
+  bidirectionnelles et représentation géographique, puis nouvelle recette
+  initiale préenregistrée sur corpus complet. Ne pas lancer un rejeu national
+  23571 inchangé à ce stade. Aucun job restant, aucun push ; modifications
+  locales préexistantes conservées.
