@@ -9461,3 +9461,118 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Goal ACTIVE : objectif99,2% exact initial100 non atteint, OOF complet,
   Wilson/généralisation/attribution/SLO toujours manquants, fold1 fermé.
   Aucun push ni dépense externe. Aucun traitement de ce volet encore live.
+
+### 3 octobre 2026 — V107 : somme native initiale à quatre flux exhaustifs
+
+- Tour précédent PROGRESS : V105 STOP16 et V106 six ablations nationales
+  terminales sans labels ont changé l'action suivante. Les labels/contrats
+  mesurés antérieurs restent immuables, dernier recall89,0625%.
+- Milestone `648daa8c` : lexical11+mots et4 sigles pondérés interrogés
+  séparément, puis4 flux incluant noms scoped officiels/direct/une-hop et
+  XY. Score initial=max(L+A,64*N*S), UN heap100, pas top100 par canal
+  fusionné/reclassé, pas pool fixe2000/500. Données et paramètres appris
+  V67 identiques, pas mise à jour guidée par les14 misses ou labels.
+- Arithmétique explicite : L/A sont les scores float32 des deux prédicats,
+  somme float64 dans cette recette. Même fonction réelle apprise, pas
+  identité bitwise promise à V104/V105. Scores composants triés/points
+  stricts, oracle final sur tout corpus fixture exact, weighted features
+  V67 tolérance1e-6. Aucune supériorité SOTA/99,2% présumée.
+- Borne de tout site non vu=max(frontièreL+frontièreA,64*frontièreN*
+  frontièreS). Aucune avance de frontière avant fanout exhaustif. Unknown
+  composant=None ; zéro seulement PROUVÉ par épuisement exhaustif. Points
+  réels demandés si les bornes ne suffisent ni au score exact ni à la
+  dominance cutoff+clé canonique. Heap monotone, parent/components/intervals
+  contradictoires impliquent STOP, absence de cible jamais réparée via GT.
+-83 tests PASS3,42s avant mesure :10 seeds many-to-many/duplicates/plateaux,
+  contre-exemple gagnant hors des100 de chaque canal, fanout20001,
+  timeout/caps/scope/bounds corrompus,20 combinaisons sigle/lieu/numéro/
+  coefficients avec strict point/sorted/sous-ensemble,3 géométries et oracle
+  indépendant rawfacts+typededges. Les fixtures ne sont PAS la population
+  métier ni un résultat de recall national.
+- Pilote
+  `audits/retrieval_v107_split_initial/pilot_20261003_a/`, session64277,
+  lancé et à vérifier. Mêmes guards16mean<=4s/20s requête/80s worker/6Gio/
+  zéro swap/90s superviseur/900s contrôleur. Aucun fold0/1 ou aval ouvert.
+ 128 certifiées obligatoires avant évaluation séparée all-human234/sidecar
+  comparateurV101. Pas de reprise/extension des STOPV104/105.
+  Goal ACTIVE, OOF complet/Wilson/généralisation/attribution/SLO requis.
+
+#### V107 terminal — corriger la borne somme avant de réessayer
+
+- Session64277 terminal exit1 :1 certifiée, STOP deuxième requête22,873572s.
+  Native trié14,530352s (lexical11,247638/sigle3,282713), points8,070003s,
+ 10 appels,2652 complétions requises ; borne restante3,721966>cut3,424678.
+  Ce split somme est correct selon oracle mais coûteux, NON promu. Contrôleur
+ 42,160935s, worker34,536301s/pic4806541312/zéro swap/ressources PASS.
+  Status SHA `85094ea7c2fc1fd9ef3ee9c94c07eb7db7d091fc48682269abda027a15cec1c9`,
+  stop SHA `8e2deff41a9fc3b0100f420ca9a1607a93f160cd7025465a49eb9ed7e2033053`.
+  Aucun128/évaluation/labels ouverts, aucun élargissement des20s.
+
+#### V108 — décomposition conditionnelle exacte, pas suppression du sigle
+
+- Milestone `040a9873` : sources L lexical global et C natif conditionnel
+  MUST(sigle pondéré)/SHOULD(lexical). Si sigle applicable, C=L+A>=L ;
+  autrement C0 et L sert toujours le site. Donc max(L,C)=L+A en nombres
+  réels ; pas somme de frontières trop large. Score actuel float32 C et L,
+  max avec64*N*S, mêmes coefficients/grammaire/projections/8 termes V67,
+  arrondis explicitement nouveaux, pas identité bitwise annoncée.
+- UN heap100, flux nationaux exhaustifs sans top100 par canal fixé ou pool
+  reclassé. Borne=max(frontièreL,frontièreC,64*frontièreN*frontièreS).
+  Composant connu dominant les bornes inconnues donne score final exact ;
+  pour C>0 connu, borneL<=C validée au point/tri/oracle. Unknown=None ;
+  zéro seulement prouvé par source épuisée. Lecture C avant L indépendante
+  des labels ; évite des points sur un prédicat réellement vide.
+-94 tests ciblés V107/V108 PASS5,58s avant mesure : oracle entier rigoureux,
+ 10 seeds many-to-many/plateaux/duplicates, fanout20001 sans cap, cible
+  graph hors100 des flux natifs, égalités, bounds invalides,20 combinaisons
+  sigle/lieu/numéro/coefficients avec C>=L, points/tri stricts,3 géométries
+  et preuves rawfact+relations complètes. Aucune fixture n'est un gain CRM.
+- Nouveau pilote
+  `audits/retrieval_v108_conditional_initial/pilot_20261003_a/`, session30667
+  lancé.20s requête/16mean4s/80s6GiozeroSwap/90s superviseur/900s contrôleur
+  inchangés.128 certifiées obligatoires avant labels/evaluateur V101 ;
+  folds0/1/aval gelés, all-human/sidecar maintenus, objectifs complets
+99,2%/Wilson/généralisation/attribution/SLO non prouvés. Goal ACTIVE.
+
+#### V108 terminal, V109 physique terminé — ne pas poursuivre la micro-pagination
+
+- V108 session30667 terminal exit1 :16 certifiées puis STOP_COST_PREFLIGHT,
+  mean5,207976747333s>4s. Contrôleur107,918698s. Lot0 pic5991546880/
+  wall52,686787s, lot8 pic5977243648/wall40,432859s, resources PASS/zéro
+  swap. Native trié mean5,025177s, un seul point0,539753s sur16.
+  Chaque flux natif appelé UNE fois par requête : pas un coût de pagination
+  répétée sur ce panel. Status SHA
+  `2f3e98268fffd7c740e663e304e51f7b4f631ec6542cb56150df94a90a079e37`.
+- Milestone `b9415735` V109 : première page128 plutôt que256, seule
+  modification physique, score/model/sources/garde/cap/collecteur V108
+  identiques. Croissance adaptative vers4096 si certificat demande plus,
+  jamais plafond128 de sites.71 tests V108/V109 PASS5,53s avant mesure,
+  parité stricte et oracle entier avec3 géométries réellement actives.
+- V109 `audits/retrieval_v109_physical_pages/pilot_20261003_a/`, session2499
+  terminal exit1.16 certifiées, STOP_COST_PREFLIGHT5,097278619680s>4s,
+  contrôleur106,246737s. Lot0 pic5768675328/wall53,619384s ; lot8
+  pic5926043648/wall37,707381s, tous ressources PASS/zéro swap.2 points
+  natifs, pas nouveau128/recall. Status SHA
+  `be8060bcb5c349eae67220156f1ec80bacfbdde4fa9866e423a3e0ad6d9b5a7f`.
+- Après termination des DEUX runs : comparaison query-only des16 certifiées
+  V108/V109 dans processus diagnostic, alignement folds/IDs/caps vérifié.
+ 16/16 résultats entiers (SIRET/ordre/score/scoped proof) strictement égaux.
+  Aucun label lu, aucune recette/candidat promu/injecté, ni recall partiel.
+  Différence de temps non appariée/cache non contrôlé, pas un speedup garanti.
+- Conclusion limitée : pages plus petites ne ferment pas le coût ; ne pas
+  multiplier les mêmes essais natifs et ne pas élargir le guard pour enfin
+  obtenir un score. V107 sum ne convient pas, V108/109 modèles/correctness
+  conservés historiques, aucun promu. Dernier recall V101114/12889,0625%.
+- Prochaine action structurelle : représentation sparse indexée complète
+  conservant les preuves/actions monotones du score, bornes par blocs avec
+  oracle exhaustif, pas extrapolation à partir du cohort V6832768. Traiter
+  aussi main_activity officiel (43875381 non vides, différentes nomenclatures,
+  PAS NAF actuelle supposée) pour un vrai contexte d'identité/site appris
+  en TRAIN OOF/protection familles et testé sans dictionnaire CRM. Ce champ
+  est disponible mais encore NON utilisé en serving. Compiler source-only
+  complet et parité avant apprentissage ; pas suppression des9 misses sans
+  mot commun, du cas sansBAN ou changement de label/dénominateur.
+- Goal ACTIVE : safe prochaine action interne disponible, pas blocage
+  externe ou seuil réduit ;99,2%/OOF complet/Wilson/généralisation/SLO et
+  attribution toujours non prouvés. Aucun run de ce tour encore live,
+  fold0/1/aval gelés, pas de push/dépense externe/effacement d'artefact.
