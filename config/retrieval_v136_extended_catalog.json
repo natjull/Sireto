@@ -1,0 +1,15 @@
+{
+  "membership": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v96_national_membership/compile_20261003_a/manifest.json", "sha256": "63fdf65f3b8591219e648c9fc3ff2416d38af4cbaff7cf01fe3bf15fbf0ca458"},
+  "layout": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/manifest.json", "sha256": "47acc25da8280915e65080996a128ad9c102f8ba20b611b23083f713487f618f"},
+  "bridge": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v127_owner_blocks/compile_20261003_a/manifest.json", "sha256": "0010896e66f882960dc1093c9d191860662beab5182069a8db0eedebdb198a3c"},
+  "inventory": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v135_catalog_inventory/probe_20261003_a/manifest.json", "sha256": "2d412fdf7f6e7c760a64dba22192f15afdb930cf6d0c2d1345bb0d68ba20e33e"},
+  "expected_current_sites": 43896818,
+  "expected_current_parents": 29906504,
+  "expected_current_blocks": 342945,
+  "expected_extra_sites": 426471,
+  "block_size": 128,
+  "numpy_version": "2.4.1",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 67108864,
+  "scope": "CURRENT_V96_PLUS_EVERY_V135_MISSING_OFFICIAL_IDENTITY_NOT_ALL_UNINVENTORIED_SOURCES"
+}
