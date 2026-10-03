@@ -10167,3 +10167,151 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Sites masqués/non-localisés et tous fermés restent dans le dénominateur.
   Full OOF/Wilson/généralisation/attribution label-side/SLO restent NON
   franchis. Goal ACTIVE, pas READY_FOR_FOLD1 ni changement de définition99%.
+
+## 3 octobre 2026 — V127 attaches nationales, V128 lots exacts, V129 sources complètes
+
+- Milestone `aafc0e0c` V127 : jointure physique exhaustive parent→blocs V126
+  depuis les autorités V96, sans matérialiser aliasUL×sites. Tous43896818
+  sites et29906504 parents retenus,39020433 attaches distinctes vers342945
+  blocs, maximum10218 blocs/parent. Inversion/tri des couples entiers puis
+  CSR, audit EXACT de chaque couple de toute la source. Les identifiants
+  servent uniquement aux jointures/ordre physique, jamais aux features.
+  Les enseignes de site restent locales ; la source ne passe par aucun
+  filtre de nom/état/XY/CRM/GT. Build+audit9,677517s ; worker10,579296s,
+  pic1849950208 octets,zéro swapout,PASS80s/3Gio. Sorties570924993 octets.
+  Root `audits/retrieval_v127_owner_blocks/compile_20261003_a`, session26544
+  terminal0. Manifest SHA
+  `0010896e66f882960dc1093c9d191860662beab5182069a8db0eedebdb198a3c`,
+  launch SHA `5758e5cbd64407bcfe7cd91f372a1e9966aca32dcfb9eb80729a73201c2f2f0b`.
+  Contrôles complets tableaux sources/sorties/implémentations PASS.
+  Ce n'est pas encore l'index des preuves de noms ni une mesure de recall.
+- Milestone `e0a9a562` V128 : projection Arrow par lots des27 champs
+  observations V118, EXACTEMENT même ordre/règles/scope/métadonnées. Chemin
+  ASCII natif et fallback Unicode sur chaînes distinctes vers normaliseur
+  Python V118 intact. Toutes variantes/périodes, contextes et masks
+  conservés, EI explicitement diffusible O seulement et même ligne actuelle,
+  sans ajouter prénom courant à un ancien nom. Pas de cap/latest ni de
+  projection d'enseigne vers les autres sites.129 tests V117–129 PASS6,25s
+  avant mesure V129 (124 V117–128 PASS6,14s avant mesure V128).
+- V128 root `audits/retrieval_v128_variant_batches/probe_20261003_a`,
+  session11477 terminal0. Tous323597 observations des sources échantillons
+  V118, comparaison entière27 champs/ordre à autorité déjà scellée ET
+  nouveau scalaire ;12288 noms supplémentaires current/RNE/BODACC également
+  EXACTS, pas de GT. Temps projection lots/scalaire sur MÊMES tables :
+  current_site0,053060/0,626554s, current_ul0,524670/1,451673s,
+  history_site0,049347/0,353078s, history_ul0,074102/0,458877s,
+  official_names0,018293/0,184729s, familles0,010065/0,099147s.
+  Gains environ2,77–11,81× pour cette phase seulement, cache non contrôlé,
+  pas comparaison de runtimes différents ni SLO national. Worker4,409944s,
+  pic805421056 octets,zéro swapout,sorties5630357 octets,PASS80s/3Gio.
+  Manifest SHA `ca3b032fc69f4ae06038afacdc318a0bc857dae3704c7ce73644313923afd021`,
+  launch SHA `a64fe58fe7f32fc4d249db3b822b7686bacb8d0097c9fd8faf8ae688791c5152`,
+  projected SHA `550624960fd0198a8a0659f01acdfba50cec881167866efd44f15ffeecdad5c9`,
+  familles SHA `8a49eb70801867327e37226e691e929a353cf5e1f990efc33ae01ffa19dce0eb`.
+  Post-check implémentations,sorties et références des autorités PASS.
+- Milestone `626a77db` V129 : plan physique exhaustif immuable avant lecture
+  des lignes, cinq sources officielles complètes,553 parties de huit
+  rowgroups, lots32768, mono-thread, workers80s/3Gio/zéro swapout, sorties
+  par partie<=256Mio et total<=32Gio.403577216 lignes :71355318 historique
+  UL,95865102 historique sites,29922486 UL actuel,43896818 sites actuels,
+ 162537492 noms canonical incluant TOUTES familles officielles. Pas de
+  sélection CRM/GT/nom/état/zone ni de downsampling. Chaque lot vérifie tous
+  les ordinals source exacts ; première partie/premier lot de chacun des
+  cinq rôles compare les27 champs/ordre au scalaire V118. Impossible de
+  sceller la projection nationale si une partie/rôle/ligne manque, dépasse
+  les ressources ou échoue. Pas de reprise/écrasement automatique de STOP.
+  Root `audits/retrieval_v129_national_variants/projection_20261003_a`,
+  launch SHA `ce0a66b1cbaf0a637e0703614cc84daa93304b237abc590003c3ca6382ec9dc4`.
+  Les gros SHA sources sont hérités DÉCLARÉS, fingerprint stat/footer de
+  toutes sources avant/après chaque partie, pas rehash intégral répété.
+  Les sorties/plan/implémentations sont entièrement hashés. Même une
+  projection complète reste une brique source, PAS un index de retrieval.
+  Plan SHA `42eb18ffa5e3727f79be52a450046c83a571aec3533f520dd395ed7ed4188e95`.
+- V129 préflight cinq rôles première partie COMPLETE, tous oracles27 champs
+  exacts, aucun CRM/GT/fit/fold0/fold1. Par rôle source_rows/observations/
+  worker_seconds/picRSS : history_ul993843/2065544/4,048480/391659520 ;
+  history_site991887/1501773/2,844946/330366976 ;
+  current_ul990323/4391100/19,591107/634699776 ;
+  current_site993902/1725442/3,558363/439156736 ;
+  official_names525921/525921/1,253597/307658752. Tous zéro swapout et PASS.
+  Dates/variantes/identités invalides conservées ; lexical_eligible est
+  une admissibilité de texte source, pas un filtre de labels humains.
+  La construction EI actuelle reste la phase la plus lente : ne pas
+  modifier V128/V129 mesurés ; éventuel nouveau compiler exact seulement.
+- V129 historique UL ENTIER terminé, sessions82825/81832/7008 terminal0 :
+  72/72 parties,71355318 lignes sources,121623546 observations dont74499034
+  admissibles lexicalement,1719402795 octets. Workers cumulés241,072576s,
+  projection seule170,452728s,max4,048480s,pic391659520,zéro swapout partout.
+  Chaque partie complète/contiguë et sa couverture vérifiées, tous72 fichiers
+  observations entièrement rehashés et leurs footers/comptages exacts PASS.
+  Cela prouve cette source projetée, PAS la projection des cinq sources
+  complète ni un index national. Les553 parties restent le gate global.
+- V129 historique établissements ENTIER terminé, session5865 terminal0 :
+  97/97 parties,95865102 lignes sources,129325502 observations dont15004114
+  admissibles lexicalement,1652268355 octets. Workers cumulés230,905265s,
+  projection154,216557s,max3,072928s,pic330366976,zéro swapout partout.
+  Couverture contiguë complète et tous97 fichiers observations rehashés,
+  footers/comptages exacts PASS. Aucun nom/adresse/XY historique inventé.
+- V129 sites courants ENTIER projetés :45/45 parties,43896818 lignes sources,
+  61456979 observations dont7299187 lexicales,854514081 octets. Workers
+  cumulés122,146209s,projection71,728082s,max3,558363s,pic439156736,zéro
+  swapout et PASS partout. Audit read-only session67543 terminal0 : tous45
+  fichiers rehashés,footers/comptages et couverture contiguë complète PASS.
+- Contrôle source-only de la famille canonical ENTIER :82290265 observations
+  SIRENE_CURRENT,30974865 RNE,49272362 BODACC,total162537492. Statistiques
+  footer pures sans null et lecture étroite des huit rowgroups mixtes, aucun
+  échantillonnage/GT/CRM.0,037505s,pic128368640,zéro swapout,PASS. Ce sont
+  des observations, pas des noms/owners distincts ni des nouveaux hits.
+- Audit indépendant en lecture seule session97367 terminal0 : les cinq
+  sources ENTIERES rehashées, tous SHA256 égaux aux SHA déclarés du plan,
+  fingerprint complet avant/après PASS.11,610884s,pic117325824,zéro swapout.
+  Cela confirme les fichiers source effectivement utilisés, y compris les
+  5511316087 octets canonical ; pas seulement les footers. Les drapeaux
+  historiques `whole_input_hash_verified=false` du plan restent immuables :
+  cet audit supplémentaire ne les réécrit pas. Aucun CRM/GT/modèle.
+- V129 noms canonical COMPLETS308/308 parties :162537492 lignes et autant
+  d'observations,118574470 lexicales,8916430729 octets. Workers308,560334s,
+  projection131,697604s,max1,294064s,pic314884096,zéro swapout et PASS.
+  UL courant COMPLET31/31 parties :29922486 lignes,147753958 observations,
+  123164048 lexicales,2145491447 octets. Workers601,985365s,projection
+  529,310477s,max20,889817s,pic634699776,zéro swapout et PASS. Les nombreuses
+  dérivations EI sont des observations, PAS autant de nouveaux noms/hits.
+- V129 session64328 terminal0 après tous les blocs restants ; seal session
+  14508 terminal0. Statut `SEALED_COMPLETE_ALL_OFFICIAL_VARIANT_SOURCE_PROJECTION` :
+  553/553 parties,403577216 lignes sources,622697477 observations,
+  338540853 admissibles lexicalement,15288107407 octets (<32Gio). Workers
+  cumulés1504,669749s (~25,08min) ; délai launch→seal1931,294222s (~32,19min),
+  qui comprend contrôles/oracles/processus/temps d'orchestration, pas seulement
+  projection. Pic global des workers634699776 octets (<3Gio), toutes gardes
+ 80s/ressource PASS,zéro swapout partout. Scellement vérifie toutes parties,
+  couverture contiguë de chaque rôle,tous fichiers observations rehashés,
+  footers exacts et drapeaux noCRM/noGT/noFit/noFold0/noFold1.
+  Manifest SHA `7a7714f8a67462d600dac5b2906fb65093262c77a22f7da232325ebb1c6f229a`.
+  Post-check553 autorités de parties,plan,launch,implémentations et cinq
+  sources stat/footer PASS. SHA complets sources vérifiés séparément plus haut.
+  Aucun worker live restant ; ne pas relancer les parties scellées.
+- Ce tour PROGRESS : les variantes officielles manquantes ont maintenant
+  une projection nationale complète, sans pools candidats ni labels ciblés.
+  V127 évite le produit parent-alias×sites ; V128 rend la projection exacte
+  exploitable à coût borné ; V129 passe réellement toutes les sources.
+  PAS une mesure de rappel, de SLO ou une garantie99%. Dernier recall V101
+  inchangé114/128=89,0625% exact et116/128=90,625% opérationnel, pilote réutilisé.
+  Pas READY_FOR_FOLD1. Ranker/decider/risk/accepteur gelés,fold1 fermé et
+  fold0 jamais lu. Modifications utilisateur hors volet préservées,pas de push.
+- Prochaine action concrète : compiler le dictionnaire GLOBAL de textes
+  distincts et les faits owner/scope/current + provenance vers TOUTES les
+  observations V129, puis postings words/char3/4, avec phases physiques
+  bornées et audit de reconstruction exact. Ne pas réutiliser les codes
+  metadata V100 aveuglément (rôle HISTORY et dates string V129 différents).
+  Joindre query-side les preuves parent aux blocs V127/membership V96 et
+  site-local aux blocs V126, sans copies massives ni caps/état/zone/IDs en
+  features. Adresses officielles et liens de succession complets restent à
+  intégrer ; le graphe V84 historique est borné, ne pas le déclarer exhaustif.
+  Garder masques/UNKNOWN/scopes, vrai historique sans adresse/XY inventés.
+  Comparer le score/ordre à l'oracle scalaire puis sceller toutes les128
+  sorties nationales AVANT labels. Ensuite seulement publier recall et
+  pertes ; full OOF/Wilson/généralisation/label-side/SLO restent obligatoires.
+  Canaux dense/lexical/géo indépendants et fusion du projet utilisateur ne
+  sont PAS déjà tous implémentés. Union fixe→LightGBM reste hors contrat
+  initial100 sans clarification ; aucun dictionnaire d'alias CRM appris.
+  Goal ACTIVE, pas une clôture ni une pause.
