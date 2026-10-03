@@ -9887,3 +9887,89 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fold1 ouvert, aval gelé. V101114/128=89,0625% reste dernier recall exact,
   pilote réutilisé non validation finale. Goal ACTIVE ; cette étape révèle
   des lacunes concrètes à corriger, sans promettre99% ni quelques ms.
+
+## 3 octobre 2026 — V118–V120 variantes complètes et coût de préparation
+
+- Précédent tour V117 classé PROGRESS : lacunes effectives de couverture
+  changent la prochaine action. Ce tour construit et mesure la projection,
+  puis corrige le coût physique réel, sans changer le contrat initial100.
+  Union→LightGBM reste en attente de décision ; aucune autorisation inférée.
+- Milestone `05f5cbfd` V118 : génération source-only de variantes officielles
+  courantes/historiques UL et site, observations dossier RNE/SIRENE/BODACC
+  selon sample, stockage original des successions. EI concaténations des
+  noms/prénoms de la MÊME ligne O uniquement, deux ordres, champs d'origine
+  gardés ; pseudonymes/sigles/usuelles/enseignes disponibles conservés.
+  Pas de prénom courant ajouté à un nom ancien, ni ancienne adresse inventée.
+  Dates courantes dateDebut pas prises comme début du nom/fermeture.
+  Masques ND sans signal ; IDs retirés seulement du signal lexical, joins/
+  provenance gardés. Pas d'alias CRM ni de fanout d'enseigne aux sites frères.
+- Noms dédupliqués globalement mais faits owner/scope et TOUTES observations
+  distincts ; aucun cap noms/périodes/sites, aucune dernière période choisie
+  ou exclusion des noms courants de l'historique. Contextes vides/masqués/
+  identités invalides conservés sans admission lexicale. Tous les champs
+  originaux des lignes sélectionnées (adresse/XY/activité/diffusion/etc.)
+  dans les samples ; projection nominale ne les score PAS déjà. Pas de
+  produit aliasUL×sites. Les relations sont conservées, pas encore expandées.
+- V118 `audits/retrieval_v118_official_variants/probe_20261003_a`, session48745
+  terminal0, 58,363495s /pic1026129920/zéro swapout, sorties17154206 octets.
+  Par rôle32768 lignes sauf official_names23256 (dernier groupe court) ;
+  total sélectionnées187096 dont32768 successions ;323597 observations,
+  182171 lexicales,109420 noms,121751 faits,18 observations/fait max.
+  Toutes lignes de sample gardées, roundtrip de toutes observations PASS.
+  93160 observations de variantes EI dérivées de champs officiels de même
+  ligne (PAS nombre de nouveaux noms uniques ni gain recall).
+  Facto+roundtrip54,876353s ; le détail de ces sous-phases NON instrumenté
+  dans V118, donc ne pas attribuer toutes ces secondes au seul audit.
+  Manifest SHA `742729b3b3ca32fd1bc61fb27b2980bb946a23ea7f7af722f1d3e38f9403e68a`,
+  launch SHA `3294120b9e377670b464fabbc259e3cb81c7154ca3d7f6b0ebd8bafd9245bfd4`,
+  rawobservations SHA `e017a3b52589d605204ad28db0b17b81a49a5077f2a14ab8839f23aafb9b22a6`.
+- Milestone `0f48861c` V119 : mêmes observations/IDs/keys/scope que V118,
+  tables physiques et audit exact aligné. Cardinalité/unicité/indices vs
+  position physique, puis chacun des27 champs et tous les names/owners/
+  scopes comparés exhaustivement (nulls/lists inclus). Pas de checksum/
+  échantillon remplaçant la preuve ; tests de corruption de champ/référence/
+  owner/permutation. Dictionnaires V118 complets comparés à IDs égaux.
+  Session94594 terminal0 :25,097137s/pic619528192/zéro swapout,
+  mêmes323597/182171/109420/121751/18, sortie6648083 octets.
+  Détail : export observations24,416852s, audit0,215670s. Le ralentissement
+  restant est bien l'export/mapping, pas cet audit.
+  Manifest SHA `955846572184e7890e23b945ea96e60c0e101c30493c057b7dd1a0ba60c8f003`,
+  launch SHA `db52a12eaef62bb962c277d896687cc05816a793b7a0b7161d4bf437349ab1cc`.
+- Diagnostic EXPLAIN sur V118 source : LEFT ON name=name AND eligible
+  produit BLOCKWISE_NL_JOIN ; LEFT ON CASE WHEN eligible THEN name END=name
+  produit HASH_JOIN. Milestone `2b60dd29` V120 : uniquement cette révision
+  équivalente de jointure. Même input scellé, audits V119, clés/IDs V118,
+  budgets80s/3Gio/zéro swapout/DuckDB512Mo mono-thread/spill512Mo inchangés.
+  False/NULL restent non joints ; lignes contextuelles pas supprimées.
+  49 tests V117–V120 PASS0,74s avant mesure ; tables entières fixtures
+  V118/V119/V120 égales, tests true/false/NULL et plans natifs inclus.
+- V120 `audits/retrieval_v120_variant_hashjoin/probe_20261003_a`, session96707
+  terminal0 :0,945244s /pic568639488/zéro swapout, sorties6648453 octets.
+  Export mapping0,270749s, audit0,206354s ; mêmes nombres/keys/IDs/metadata
+  contrôlés. Gain wallworker≈26,55× vs V119, export≈90,18×. Ceci est un gain
+  de PRÉPARATION DU SAMPLE, pas de latence de retrieval ni de recall.
+  Manifest SHA `989200c22d47cf85c5b06b16a10465d849ee6738abba89726b8afbeb76f87dc2`,
+  launch SHA `a8c4fc09dcee4d30c029a4718ff4fdca3be07e32e2a41ba3c5b1f0a6e4453fe5`.
+- Post-check complet : hashes des implémentations et de tous les petits
+  artefacts V118/V119/V120 vérifiés. Grosses sources V118 : stats/footer/
+  schéma/comptes avant/après, SHA complets hérités DÉCLARÉS mais non
+  revérifiés ; limite explicite, pas publication nationale admissible.
+  Sélection max32768 par source au début des rowgroups0/milieu/dernier,
+  indépendante de CRM/GT mais non représentative. Sample official_names
+  ici SIRENE_CURRENT+RNE, AUCUN BODACC. Source nationale contient bien des
+  BODACC : footers2459 groupes,738 pursBODACC dès1249,468 pursRNE dès1991,
+  1245 pursSIRENE_CURRENT et8 mixtes. Échantillon ne prouve donc pas toute
+  la couverture ; prochain contrôle source-only doit couvrir les familles
+  par métadonnées, pas par sélection de queries/labels.
+- Prochain travail utile : source-family-stratified integrity/volume probe,
+  puis index de recherche à variantes cohérentes, words+char3/4 et jointures
+  owner→sites/relations, avec blocs corrélant adresse/XY/activité. Réutiliser
+  intégrité V100/V96, ne pas reproduire les frontiers additives/offsets
+  V115/V116 ni oublier fermés/non-localisés/UNKNOWN. Vérifier coût de
+  construction et oracles d'exactitude avant compilation nationale ; cette
+  projection seule ne remplace pas le moteur ni ne prouve un recall.
+- Goal ACTIVE. Aucun job live restant, aucun CRM/label/fold0/fold1 ouvert,
+  aucun fit ni downstream changé, pas dépense externe, pas de push. Dernier
+  vrai recall exact@100 V101114/128=89,0625%, pilote réutilisé. Tous les
+  gates99,2%/OOF complet/Wilson/généralisation/attribution/SLO restent NON
+  atteints ; pas de READY_FOR_FOLD1 ni de garantie nationale à partir d'ici.
