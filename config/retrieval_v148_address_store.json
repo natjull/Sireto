@@ -1,0 +1,20 @@
+{
+  "expected_observations": 317683879,
+  "expected_source_rows": 185993425,
+  "expected_sites": 44403034,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits",
+  "dictionary_buckets": 64,
+  "site_quantum": 65536,
+  "duckdb_version": "1.4.3",
+  "numpy_version": "2.4.1",
+  "duckdb_memory": "256MiB",
+  "spill_limit": "3GiB",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "initial_quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "max_phase_bytes": 2147483648,
+  "max_total_bytes": 128849018880,
+  "scope": "ALL_SEALED_ADDRESS_PROOFS_DICTIONARY_AND_SITE_REVERSE_NO_QUERY_OR_LABEL"
+}
