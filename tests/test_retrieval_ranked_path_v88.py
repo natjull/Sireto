@@ -140,7 +140,9 @@ def test_short_name_fanouts_complete_across_page_not_one_point_query_per_fact():
 
 
 def test_page_batching_still_checks_each_grade_against_its_own_fact_not_page_max():
-    args,_,_=graph_fixture([0.,0.],[1.,1.],[1.,.5],[(0,0,1.),(1,1,1.)])
+    # Keep sites unexhausted: with only two sites the valid site-side bound
+    # already completes all targets and legitimately never reads the bad page.
+    args,_,_=graph_fixture(np.zeros(300),np.ones(300),[1.,.5],[(0,0,1.),(1,1,1.)])
     original=args[3]
     def broken(row):
         for target in original(row):
