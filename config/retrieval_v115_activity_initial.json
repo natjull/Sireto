@@ -1,0 +1,11 @@
+{
+  "joint_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v114_activity_joint/probe_20261003_a/manifest.json","sha256":"454df55493e9e3e42a2393f3cd2c1f2d6da0e6d6c95690655953da8ef57cad3f"},
+  "query_only_launch":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/launch.json","sha256":"6fc2cb89b489e8038e6f211e0fac0a36954874e066e8a727558cfa01d9d90956"},
+  "comparator":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v101_national_paths/pilot_20261003_a/manifest.json","sha256":"696ee5fdd3d48dd4383445b34466b4a00ae204a3fea705f5fd9a7459a52866ab"},
+  "expected_sites":43896818,"expected_descriptions":2140,
+  "resources":{"max_seconds":80,"max_rss_bytes":6442450944,"max_swapout_pages_delta":0},
+  "controller_seconds":900,"max_query_search_seconds":20,"primary_mean16_seconds":4,
+  "collector_cap":100,"fixed_reservoir":null,
+  "metric_family":"V114_ACTIVITY_SITE30_INITIAL_FULL_NATIONAL_UPPER_BOUND_TRAVERSAL_NO_FIXED_POOL",
+  "relation_paths_included":false,"fold0":"FORBIDDEN","fold1":"CLOSED"
+}
