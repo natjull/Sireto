@@ -1,0 +1,8 @@
+{
+  "facts_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v85_name_facts/compile_20261003_a/manifest.json","sha256":"07784998a184c0ce51bd96fe1415384fa4388ba039633137ab35cc6f50786acc"},
+  "expected_facts":14162541,"expected_observations":50097324,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "duckdb_memory":"1GB","spill_limit":"1GB","max_output_bytes":2147483648,
+  "threads":2,"supervisor_seconds":90,
+  "scope":"ALL_ADMISSIBLE_SCOPED_WORD_FACTS_PLUS_ALL_OWNER_AND_OBSERVATION_METADATA"
+}
