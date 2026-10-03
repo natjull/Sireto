@@ -11210,3 +11210,56 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   NON approuvé ; ne pas lire continuation automatique comme choix humain.
   Aucun fit/dépense/cloud/purge/apps fermées/aval ; folds0/1 non lus.
   V101 reste114/128=89,0625% exact,116/128=90,625% op, pas READY99,2%.
+
+## 4 octobre 2026 — V151 reader complet passe sous garde, sans nouveau recall
+
+- Milestone `1a2f3ae7` : spécialisation physique du lecteur V138 utilisée
+  avec V150 runtime INCHANGÉ. Toutes1024 mmap lexicales readonly sont
+  fermées/rouvertes après CHAQUE calcul complet ; mêmes fichiers/dtypes/
+  shapes/namespace, epochs inode/size/mtime gardés. Les retours coverage/
+  exact possèdent leurs octets ; posting public copie, pas slice invalide.
+  Toute réouverture partielle FAIL interdit query suivante, pas index tronqué.
+  Pas purge globale, source effacée, application fermée, score ou poids modifié.
+- 9 tests nouveaux : parité bit-exacte vs V138 sur24 requêtes de fixture et
+  collisions raw alias, remaps répétés, sorties possédées/close/lifetime,
+  header/file epoch drift et panne après prefix STOP, spécialisation gardant
+  protections query/folds, budgets/seal/no retry. Nettoyage d'un mmap invalide
+  corrigé AVANT toute mesure ; V150/V149 mesurés jamais modifiés. Suite
+  V117–151403 PASS26,06s TERMINAL0 (session56788). Tests PAS métrique99%.
+- Run neuf `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v151_name_pages/probe_20261004_a`.
+  Session91596 TERMINAL0.4 mêmes premières requêtes V115, folds3/2/2/4,
+  nom CRM SEUL, aucun label/ancien candidat/fit. Tous patchs V149 réellement
+  consommés. Index national noms+graphe, PAS moteur nom+adresse+XY complet.
+- Quiet30,755304s74% libre, puis worker46,620319s,pic3110453248RSS,
+  global swap0,PASS. Chargement19,362667s, rehash après TOUTES sorties.
+  Garde80s/3GioRSS/zéro swap INCHANGÉE (marge pic seulement110772224 octets).
+  V150 STOP3,05Gio conservé. Pas de politique1Go/pression-only approuvée.
+- Temps stage complet (snapshot/rotation inclus)3,245754/3,351904/1,767805/
+ 1,072003s : trop lent pour le SLO de retrieval final, PAS benchmark global
+  ni cache contrôlé. Remaps0,354822/0,091543/0,095775/0,088387s ; RSS observé
+  avant→après2031321088→1938948096,3110453248→2957967360,
+ 3033628672→2969485312,2981396480→2969927680. Relâchement de pages propres au
+  lecteur observé, pas promesse d'accélération ou preuve p95/p99.
+- Parents append avec coverage>0 :207/365/123/41, exact direct0/0/0/0.
+  Sites append avec nom (incluant anciens parents)17063/29396/7645/1554.
+  Ces preuves parfois faibles ne sont PAS des candidats corrects. Deux
+  traces partielles V150 comparées : tous comptes hors timing + canaux
+  lexicaux identiques, pas parité de vecteurs nationaux mesurée ni validation
+  rétroactive de la population4 V150. Aucune sortie100/recall/SLO revendiquée.
+- Manifest `5a457c0b061663b90c11006346377024aa0c88016e850e8055bcc461a0672436` ;
+  launch `449e49c29c29636f10256375cb0ee7e264155c41902224c41e2647c050b1323f` ;
+  outputs `36e4c3fc0dee5cd810a12fe0f9656bd759bd445ff9a7ee10e76400a7065e51b2` ;
+  preflight `03be9af0a484924453ce836c694f1193422b9adb5e10615c1bf047ddb6d4b32a`.
+  Ces petits manifests/outputs/prefix/folds/garde revalidés APRÈS terminal.
+  Audit complémentaire post-run de metadata stage/launch noms et graphe +25
+  références d'implémentation PASS0,22s (pas deuxième run national). Les
+  gros arrays ont déjà reçu leur rehash intégral dans le worker protégé.
+- Tour PROGRESS : source-name runtime intégré, mesure réelle et correction
+  de résidence, pas simple test. Suite impérative : finir autorités/lexique
+  adresses (décision système encore attendue), brancher attributs/XY/activité
+  et toutes relations disponibles au collecteur initial100, optimiser à
+  bornes sûres, sceller sorties avant vérité puis OOF exact/op all-human.
+  Aucun raccourci pool2000/500 ni dense/LLM/reranker comme résultat retrieval.
+  Goal ACTIVE/PAS READY, objectif99,2% non atteint ; V101114/128=89,0625%
+  exact et116/128=90,625% op inchangés. Folds0/1 non lus, aval gelé,
+  dirty autres travaux préservé, aucune dépense/cloud/push.
