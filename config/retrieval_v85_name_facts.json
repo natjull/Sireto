@@ -1,0 +1,8 @@
+{
+  "source_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v82_scoped_succession_names/projection_20261003_b/manifest.json","sha256":"4fd00b95fd9692e36ce71e1662c9b8bfa8a1888eaecf41c28b4df39a86bc486b"},
+  "expected_observations":50097324,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "duckdb_memory":"1GB","spill_limit":"1GB","threads":2,
+  "max_output_bytes":2147483648,"supervisor_seconds":90,
+  "scope":"ALL_V82_OFFICIAL_NAMES_EXACT_SCOPED_FACTS_PLUS_COMPLETE_OBSERVATION_INVERSE"
+}
