@@ -1,0 +1,11 @@
+{
+  "projection_root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene_temporal_v1",
+  "expected_partitions":100,"expected_observations":4025541,
+  "history":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v75_history_site/pilot_20261003_a/history/manifest.json","sha256":"e52786363ac3dbeef1248a16ec5bac8b8175f1e477dd948394a549db9562625a"},
+  "trained":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/training_20261002_a/manifest.json","sha256":"540a4abbc8a20996f8039965f63801e6cb911b37c59f27ddb7be12ccdf5411b7"},
+  "baseline":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v75_history_site/pilot_20261003_a/manifest.json","sha256":"773a46b39454a0374e7e50936bea611fc78ac7b38126aa9ef81664442ba76d0a"},
+  "resources":{"max_seconds":80,"max_rss_bytes":6442450944,"max_swapout_pages_delta":0},
+  "build_supervisor_seconds":90,"generation_controller_seconds":360,
+  "primary_mean16_seconds":4,"max_query_search_seconds":20,
+  "metric_family":"MAX_V75_AND_NATIVE_EXACT_LEGAL_HISTORY_JOIN_UNCHANGED_V57_WEIGHTS"
+}
