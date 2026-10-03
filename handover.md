@@ -10863,3 +10863,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   d'adresses, collecteur100 avec noms/relations/attributs/XY et bornes sûres,
   sorties128 scellées avant labels puis OOF complet. Folds0/1 non lus,
   aval gelé, aucun aliasCRM/fit/push/dépense ou pool fixe reranké.
+
+## 3 octobre 2026 — V142 STOP réel, aucun index national d'adresses scellé
+
+- Revalidation de session91768 : TERMINAL1, pas timeout.74 lots officiels
+  réussis (parts0..73),39503580 lignes/observations,workers177,850693s,
+  pic793083904,zéro swapout,tous PASS ; plus current part0 déjà réussi,
+ 993902 sites/3975608 variantes,12,469363s,pic860864512,zéro swapout,PASS.
+ 75 parts restent immuables et admissibles à une reprise explicitement
+  hashée, pas national complet. Pas de relance du handle ou même root.
+- official_addresses/part00074 STOP à1,032403s :742817792 octets RSS,
+ 64 pages swapout GLOBAL, ressources FAIL. Budget V20 surveille vm_stat
+  machine entière ; stack normalisation interrompue n'est pas preuve d'un
+  bug lexical ni attribution causale au worker. Stop authority
+  `853e56644d2d6913d09dac22277883288df3a65fc080364ba3218b332079ac5e`.
+  Export partiel74 non importable, résultat STOP conservé. Garde zero-swap
+  inchangée, aucune hausse du seuil ni évaluation de résultats partiels.
+- Diagnostic read-only : memory_pressure -Q73% free au contrôle, VM
+  contient surtout caches file-backed/compression ; liste RSS des processus
+  sans arguments vérifiée, aucun worker retrieval encore actif ni autre
+  calcul national visible. Aucune app/processus utilisateur fermé. Ceci
+  n'attribue pas le swap à Teams/Edge/autre programme.
+- Suite : nouvelle version/root avec batch mémoire réduit (sans retirer
+  ligne/champ/famille), gate de stabilité VM avant lancement, import entier
+  vérifié des75 réussites via leurs références originelles. Réexécuter les
+  autres parts sous mêmes80s/3Gio/zéro swap. Pas de copie de résultat FAIL
+  ni de modification des sources/code/config/docs/artefacts V142 mesurés.
+  Objectif et dernier recall V101 inchangés,goal ACTIVE,PAS READY.
