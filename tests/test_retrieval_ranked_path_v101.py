@@ -62,6 +62,16 @@ def test_full_name_fanout_beyond_2000_is_not_a_fixed_site_pool():
     assert trace['path_endpoint_observations']==2501 and trace['unique_targets_completed']==2501
 
 
+def test_full_fanout_beyond_physical_8192_batch_is_still_exhaustive():
+    n=20001
+    args,expected,scores=graph_fixture(np.zeros(n),np.linspace(.01,1.,n),[1.],[(0,i,1.) for i in range(n)])
+    rows,trace=kernel.collect(*args,path_weight=2.,page_size=1)
+    assert [r['siret'] for r in rows]==expected[:100]
+    assert all(r['score']==scores[r['siret']] for r in rows)
+    assert trace['path_endpoint_observations']==n and trace['unique_targets_completed']==n
+    assert trace['fixed_reservoir'] is None and trace['certified']
+
+
 def test_repeated_proofs_do_not_fill_top100_and_graph_only_target_survives():
     n=300; native=np.full(n,.01); native[-1]=0.
     site=np.full(n,.05); site[-1]=1.
