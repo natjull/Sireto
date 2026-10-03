@@ -8742,3 +8742,78 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   folds0/1 non lus/fermés, exact/opérationnel/sidecar intacts, all-human sans
   exclusion qualification, aucun positif injecté, aucune dépense/push, autres
   changements utilisateur préservés, tous jobs TERMINAUX.
+
+### 3 octobre 2026 — V79 rejet géographique contrôlé, V80 faisabilité de succession
+
+- Reprise du goal après la demande séparée de nettoyage Mac. Le nettoyage
+  n'est PAS un progrès retrieval ; dernier vrai milestone V77/V78 avait
+  produit une preuve mesurée (PROGRESS). Cette reprise produit deux preuves
+  nouvelles, pas un statut ni un plan seul. Objectif initial100 exact99,2%
+  et généralisation/SLO inchangés, pas de trajectoire2000/500 recréée.
+- Milestone `3b8c65ec` V79 et correction de fixture `63936fe3` AVANT fit :
+ 8 coefficients nonnégatifs de distance25/100/500/2000m et fiabilité BAN,
+  native11/projection/vocab V77 figés, calibration avec prédictions dont les
+  fits excluent le fold source et tous parents outer/inner. Hyperparamètres
+  sémantiques V77 figés ; leur validation inner est réutilisée, PAS une
+  nouvelle population indépendante ni double nested hyperselection.
+  Aucun rayon, état ou commune comme filtre global ; XY manquant=>zéros,
+  BAN faible garde4 preuves brutes. Modèles aval intacts.
+- V79 COMPLETE4,706s,pic1196818432octets,zéro swapout,80s/4Gio. Les3 fits
+  convergent14..16 itérations et diminuent InfoNCE au fit MAIS dégradent
+  l'erreur de tête inner :34/101→39/101,29/84→30/84,33/91→35/91.
+  Famille BASELINE sélectionnée dans les3 folds selon critère PRÉENREGISTRÉ.
+ 8 poids serving tous nuls ; préfixes V77 bit-identiques revérifiés. Contrôles
+  outer512 identiques V77 (220 scènes avec concurrent devant/à égalité).
+  Contrastes avec moins100 négatifs/scène ne mesurent PAS recall@100 ; ceci
+  rejette CE bonus géographique, pas l'utilité de XY dans toute architecture.
+  Aucun replay national identique lancé, aucune promotion sur erreurs V78.
+- Manifeste V79
+  `audits/retrieval_v79_sparse_geo/training_20261003_a/manifest.json`
+  SHA`dfe2777bb802e1f5d7126153c3493184afd5eb30df0988c68313ce262e1c2a92`.
+  Ref modèle/vocab/projection/encodeur/512 scènes/officiel index/implémentation
+  vérifiées. Test contrefactuel initial invalide (vecteurs outer rendus nuls,
+  interdits par l'encodeur) corrigé en inversion NON nulle avant mesure ;
+  aucune modification de recette après résultats.19 tests V79/V77/V78 passent.
+- Milestone `0946f94a` V80 : audit borné du stock brut national de successions,
+  sans CRM/labels, et compatibilité de site sur64 paires choisies par SHA256
+  des endpoints. Flux TOP512 de lignes officielles PUIS64 clés distinctes
+  strictement pour échantillonnage diagnostic : preuve qu'il contient≥64
+  uniques sinon STOP ; ce n'est PAS un pool candidat de recherche. Toutes
+  les dates/lignes de ces paires sont retrouvées par second scan exact.
+  Empreintes complètes stock117987528octets, catalogue1424536919octets et
+  manifeste canonique vérifiées avant/après,43,896,818 sites préservés.
+- V80 COMPLETE6,655s,pic271400960octets,zéro swapout,80s/2Gio,DuckDB512MB,
+ 2threads,aucun spill. Brut9730972 lignes,7754652 continuité explicitement
+  vraie,0 IDs invalides/continuité inconnue,2821 autosuccessions. Comptes de
+  LIGNES, pas autant d'événements uniques démontrés. Les anciennes projections
+  V39 avaient9727541 lignes : leur total ne doit pas être substitué au brut,
+  et cette différence3431 n'a pas de cause attribuée dans cet audit.
+- Sur64 paires diagnostiques,62 ont deux endpoints dans le catalogue actuel,
+ 2 prédécesseurs absents/0 successeur absent,47 même SIREN/15 inter-SIREN,
+ 17 adresses courantes nonvides égales ET INSEE/CP nonvides concordants,
+ 10 transferts de siège. Pas un taux national ni recall CRM, pas une preuve
+  de coexistence temporelle/équivalence historique. Ne pas propager enseignes
+  aux siblings ou fusionner composantes du graphe ; ne pas retirer du
+  dénominateur des requêtes dont une preuve historique manque.
+- Manifeste V80
+  `audits/retrieval_v80_succession_site/source_audit_20261003_a/manifest.json`
+  SHA`7fd9fbc1e983a4691f5364a76fc77eb643ea0e9afa5c076944b3de161e3867bc`.
+ 21 tests V80/V79/V77/V78 passent, dont SQL réel Parquet et parité de64 clés
+  avec oracle exhaustif indépendant, lignes répétées sans paire inventée,
+  absence de revendication temporelle, protections outer/denominator.
+  Suite élargie V80/V79/V77/V78/V39/V47/V56 :50 tests passent1,28s.
+- Suite désormais motivée : préflighter puis compiler des chemins officiels
+  de succession à UN saut, noms d'ancrage/site distincts, date/direction,
+  ancrage physique explicitement gradué et endpoints officiels, sans seed
+  lexical préalable ni assimilation d'identité. Vérifier coût/duplication et
+  garder la voie nationale43,9m ; ne pas construire un index depuis64 paires
+  ni les14 pertes CRM. Les17 adresses compatibles justifient de distinguer
+  continuité économique et site physique, PAS une exclusion aveugle de tout
+  changement d'adresse. BODACC déjà compilé V39 reste source distincte avec
+  événement/adresse. RNE rôles encore context-only sans dictionnaire/site.
+- Dernier recall national-corpus PILOTE inchangé V78 exact114/128=89,0625%,
+  opérationnel116/128=90,625%. Objectif99,2% NON atteint, PIVOT_GENERATION,
+  goal ACTIVE, pas READY_FOR_FOLD1, aucun modèle aval changé, fold0 non lu,
+  fold1 fermé, aucun cloud/dépense/push. Jobs V79/V80 TERMINAUX. Modifications
+  utilisateur antérieures préservées. Ne pas présenter ces audits comme gain
+  de rappel, validation SOTA ou remplacement de l'OOF complet23k.
