@@ -10725,3 +10725,36 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   doit être admissible, pas seulement une preuve dans un index inaccessible.
   Puis adresses site-scopées,collecteur100/bornes exactes,nouveau128 scellé
   avant labels. Folds0/1 non lus,aval gelé,pas de fit/LightGBM/dense/push.
+
+## 3 octobre 2026 — V140 couverture complète des identités noms/adresses
+
+- Milestone `a1f4c53d` : inventaire de TOUTES162537492 observations de noms
+  et142096607 observations d'adresses canoniques originales, indépendamment
+  du texte/masque/famille/état/date. Aucun CRM, GT, ancien hit ou fold0/1 lu.
+  257 tests V117–140 PASS15,94s avant mesure. Les grains parent/site sont
+  explicites ; aucune adresse SIREN propagée à des établissements.
+- Root `audits/retrieval_v140_canonical_inventory/probe_20261003_a`,72792
+  TERMINAL0. Noms :35981335 observations SIRET toutes admises,126556157
+  contextes SIREN,0 contexte non vérifié,0 site supplémentaire. Adresses :
+  72757820 observations SIRET,69338787 contextes SIREN,0 non vérifié ;
+  72678075 présentes et79745 absentes =79745 SIRET supplémentaires uniques.
+  Chaque observation source comptée, chaque identité présente reconstituée
+  exactement, chaque absence vérifiée ; aucun cap ni filtre lexical.
+- Workers noms26,812856s/pic602537984 octets, adresses38,790307s/pic650706944,
+  zéro swapout, PASS. Sources et quatre dictionnaires namespace rehashés
+  avant/après. Sorties1276304 octets. Post-check sources d'implémentation,
+  tableaux, autorités phases, protections et ressources confirmé.
+  Manifest `6da14c87abd4a0baee5ef75d2c6172333e08389161b1e9ca02250355513ce31c`,
+  launch `cf8e74e078ca6b1b4f182f9d836c44d3ced8ca63c4af746be96cf7c7d4503a9c`,
+  union `97854d4ea7090992e2592391d9f7d82b2f453eeb65ec72ebacd128ab1a7a3cf5`.
+- Ce sont des identités source, PAS des gains/hits humains. Catalogue encore
+  inchangé ; prochaine étape ajoute ces79745 en conservant toutes positions
+  V136 et preuves V137, attributs inconnus UNKNOWN. Puis index d'adresses et
+  collecteur initial100. V101114/128=89,0625% exact,116/128=90,625% op reste
+  dernière métrique, goal ACTIVE, pas READY. Aucun modèle aval modifié.
+- Dossier officiel : `relations.parquet` contient692010 observations
+  BODACC/RNE (manifest source), distinctes des9730972 successions SIRENE
+  V133. Première lecture de schéma confirme des liens SIREN→SIREN ; leur
+  couverture et validité doivent être auditées avant usage. Ne pas présenter
+  V133 comme un graphe de toutes absorptions/TUP ni relier des sites par une
+  simple adresse parent ou reprendre une identité sentinelle comme preuve.
