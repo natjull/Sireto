@@ -1,0 +1,13 @@
+{
+  "source_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v130_variant_dictionary/compile_20261003_a/manifest.json",
+    "sha256": "a69477e35c53f9f6d702b9e870580e377a765fb1e92e990782c909fed29241f4"
+  },
+  "expected_names": 57530682,
+  "expected_facts": 105564761,
+  "expected_observations": 622697477,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_bucket_output_bytes": 134217728,
+  "max_total_output_bytes": 4294967296,
+  "scope": "EVERY_OFFICIAL_NAME_OWNER_SCOPE_CURRENT_EXACT_TYPED_CSR_NO_SITE_EXPANSION_NO_RETRIEVAL_QUERY"
+}
