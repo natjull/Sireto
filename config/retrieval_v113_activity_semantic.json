@@ -1,0 +1,10 @@
+{
+  "catalog":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v112_activity_catalog/compile_20261003_a/manifest.json","sha256":"31cfa6bcba5b6620d1afbfe67cc8e2932e122fb01692019802efee08f8fd73f5"},
+  "context":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v110_official_context/compile_20261003_a/manifest.json","sha256":"2b845337784cd2388c765d54db4edcdf0936ace55cb22559d445a4dcb02d1f22"},
+  "vectors":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v52_contrastive_training/probe_20261002_a/manifest.json","sha256":"95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db"},
+  "expected_training_queries":512,"expected_sites":43896818,"expected_descriptions":2140,
+  "ridges":[1,10,100],"encoder_parity_queries":8,"encoder_parity_tolerance":0.00001,
+  "max_estimated_encoding_seconds":60,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "scope":"TRAIN_ONLY_ACTIVITY_SEMANTIC_PRIOR_NO_NATIONAL_RECALL_OR_CANDIDATES"
+}
