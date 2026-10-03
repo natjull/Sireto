@@ -11171,3 +11171,42 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   séparés. Aucune nouvelle mesure recall : V101114/128=89,0625% exact,
  116/128=90,625% op, objectif99,2% non atteint, PAS READY, goal ACTIVE.
   Folds0/1 non lus, modèles aval gelés, aucun positif injecté.
+
+## 4 octobre 2026 — V150 runtime raccordé, sonde nationale STOP RSS
+
+- Tour précédent PROGRESS :3570 faits nominaux officiellement récupérés
+  V149, pas nouveau recall. Milestone V150 `a76d4ee3` consomme réellement
+  tous64 patchs/105564761 faits/all57530682 variantes/all9730972 successions,
+  même source/positions/scopes/score lexical V138 et one-hop V137. Ancien
+  source/code inchangé. Nouveau loader exige tous certificats/patchs fermés
+  et exacts, hashes avant ouverture/après sorties ; aucune absence masquée.
+- Les vecteurs parent de toute V141 rejoignent ReboundNameSnapshot/V146 ;
+  noms site jamais hérités par frères. Snapshots readonly et borrow de mmap
+  protégé après fermeture du reader. View catalogue mince PAS catalogue
+  membership/layout complet. Coverage/exact alias libérés après scatter
+  complet AVANT allocations relationnelles, pas cap/réduction/approximation.
+- 20 tests nouveaux : loader→scatter→one-hop→snapshot vs tous faits/oracle,
+  champs/source/old positions/flags, scopes/site siblings, readonly/lifetime,
+  budgets/hashes/flags fermés/missing patch/namespace/timeout/immutable roots,
+  query-only prefix/folds/extra field interdits, seal après Budget seulement.
+  V117–150394 PASS25,26s TERMINAL0 (session98791). Tests PAS métriques métier.
+- Sonde réelle4 mêmes premiers CRM V115 query-only, folds3/2/2/4, pas
+  GT/anciens hits/ID comme feature. Root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v150_rebound_names/probe_20261003_a`.
+  Session81325 TERMINAL1, PAS timeout ni job vivant. Quiet30,616489s74% libre,
+  worker STOP_RESOURCE_POLICY au scatter troisième query :26,327550s,
+  pic3273408512RSS>3221225472,swap0,FAIL. PAS seal/cost_outputs final.
+  STOP hash `4fcc2964a696958649e02113a08aa6a3ff1c3dfae3a5499d62927f136c3e58ab` ;
+  launch `b47bc51d81413ca9b0dbc1cddfa7f5edabaa74011f8acb64053901c41e5fc742` ;
+  preflight `6f3136ae9bbc54c8fb4fdceb8e2ff2a06a3af05d2714acfadbf7d9db2131a3f0`.
+- Deux traces PARTIELLES dans worker.log (PAS sonde validée) :2,636398s /
+ 3,316916s,207/365 nouveaux parents avec couverture lexicale>0,0 exacts
+  nouveaux ;17063/29396 sites append avec noms parent (incluant anciens
+  parents). Une preuve faible>0 PAS matching correct ni gain recall. Aucune
+  métrique population4/128 publiée depuis ces traces.
+- Suite : réduire résidence des pages lexicales propres au processus entre
+  requêtes, sans corpus réduit/poids changés/garde augmentée. Nouveau protocole
+  V151, run V150/code/hashes/STOP immuables. Besoin mémoire adresses toujours
+  NON approuvé ; ne pas lire continuation automatique comme choix humain.
+  Aucun fit/dépense/cloud/purge/apps fermées/aval ; folds0/1 non lus.
+  V101 reste114/128=89,0625% exact,116/128=90,625% op, pas READY99,2%.
