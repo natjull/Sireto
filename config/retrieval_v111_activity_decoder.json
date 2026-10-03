@@ -1,0 +1,7 @@
+{
+  "context":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v110_official_context/compile_20261003_a/manifest.json","sha256":"2b845337784cd2388c765d54db4edcdf0936ace55cb22559d445a4dcb02d1f22"},
+  "vectors":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v52_contrastive_training/probe_20261002_a/manifest.json","sha256":"95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db"},
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "expected_training_queries":512,"expected_sites":43896818,
+  "ridges":[1,10,100],"scope":"TRAINER_ONLY_NESTED_ACTIVITY_CONTEXT_NOT_NATIONAL_RECALL"
+}
