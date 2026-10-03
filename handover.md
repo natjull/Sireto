@@ -10481,3 +10481,102 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Finir V131 puis intégrer tableaux attributs/adresses et couplage exact
   query-side sans aliasUL×sites/réservoir candidat fixe ; sceller TOUTES
   sorties avant labels. Les anciens milestones restent historiques.
+
+## 3 octobre 2026 — V131/V134 complets côté noms, V135 écart de catalogue
+
+- Le précédent checkpoint55167 LIVE est maintenant TERMINAL0. Toutes512
+  parties V131 terminées :57530682 noms,2015657202 postings EXACTS,
+  words156127118/char3925687043/char4876312359/exact57530682,
+  feature_empty0 (ce corpus précis,les cas vides/collisions restent testés).
+  Workers1523,749363s,max3,677431s,pic1087782912,zéro swapout,tous PASS.
+  Sorties staging8214710498 octets,seal68028 terminal0 après rehash et
+  comptage de chaque fichier/channel/feature ; launch→seal1896,131996s.
+  Launch `5b99f8b5f1262e31da2dbb645f5cb57a90608f309b3af7ada80fe017f312ffad`,
+  plan `fecbd576f1e8d80f7f137617b7f6358dd8e4a62592f520c776d927222a4bbb5d`,
+  staging `462952a43e277343ae65d40e7bda860170289c044ad25022e51cb4e091c8938b`,
+  access_launch `b3b4e50a492f3bea12591d3c47b69b5c5bbf8e54c5da68ec83db372557b87865`.
+- V131 compactage préflight28390 TERMINAL1 : bucket0 word/char3/char4 PASS,
+  workers3,528734/3,678263/4,662025s,pics435830784/933888000/1232371712,
+  zéro swapout. Exact-feature STOP_RESOURCE_POLICY80,984678s,
+  pic435404800,zéro swapout ; pas de manifest exact ni seal d'accès complet.
+  Trace montre np.searchsorted sur postsuint64 avec entierPython,NumPy2.4.1
+  peut recopier/promouvoir TOUT le tableau par run. Diagnostic readonly sur
+  un million d'offsets,20 lookups :Pythonint0,005582s contreuint640,000020s.
+  STOP et tous artefacts V131 restent immuables,aucune relance sur ce root,
+  aucun budget relevé ; son STAGING complet reste une autorité indépendante.
+- Milestone `883cf61e` V134 : reprend TOUT staging V131 unchanged et garde
+  exactement l'algorithme/vocab/CSR/postings et SECONDE lecture exhaustive
+  des preuves sources. Seulement positions de runs en vecteuruint64,native
+  search par batch131072 : pas promotionfloat64 ni recopie par terme.192
+  tests V117–134 PASS16,18s avant mesure,dont10 nouveaux guards/bit-identité/
+  grand vocabulaire/postings inter-batches/uint64 au-delà2^53/folds/version/seal.
+  Budgets INCHANGES80s/90s,3Gio,zéro swapout,DuckDB1thread768Mio,spill2Gio,
+  phase512Mio/cumul32Gio STAGING inclus ; source/candidat/labels inchangés.
+- V134 root `audits/retrieval_v134_packed_names/compile_20261003_a`,init51130
+  TERMINAL0 : TOUTES features et tous fichiers staging rehashés,
+  audit30,162561s,pic244973568,zéro swapout,PASS. Préflight exact0 session
+  75861 TERMINAL0 :897682 termes/postings,c'est toute partition0 d'origine,
+  worker4,096472s,pic539721728,zéro swapout,PASS (V131 stopped>80s).
+  Préflight trois autres channels0 session83748 TERMINAL0 :2,088570/
+  3,424941/4,288645s,pics490405888/1224327168/1210449920,zéro swapout.
+  TOUS12 arrays entiers ont mêmes SHA/tailles que les trois buckets V131
+  valides,donc BIT-identiques sur toute cette partition,pas un sample.
+- V134 toutes252 autres phases+seal session37606 TERMINAL0,tous256
+  channel×buckets complets :57530682 noms/2015657202 postings,
+  61889313 termes physiques (words3803281/char342537/char4512813/
+  exact57530682). Chaque token/alias/boundary reconstruit EXACTEMENT sur
+  lecture source indépendante ordonnée,tous ordres/unicités/caps absents
+  contrôlés. Workers1008,441882s,max7,363057s,pic1866137600,zéro swapout,
+  toutes politiques PASS ; launch→seal1509,137068s,orchestration/pauses/
+  contrôles inclus. Sorties10140490970 octets seules,
+  STAGING inclus18355201468 (<32Gio).1024 arrays packed entiers rehashés au
+  seal et de nouveau post-check63832 TERMINAL0 ; code/source/256 autorités/
+  launch/protectedflags PASS. Statut
+  `SEALED_V134_COMPLETE_ALL_OFFICIAL_NAME_CHANNEL_ACCESS`,NOT moteur100.
+  Manifest `ea55dc0564ffaff56f62af0c6bb1822a81e7d91274e9e7c729b275933df22b52`,
+  launch `8c170de43a119d434c5ed41c51069086a3a3403ecc3d2ff05a54070b94924eb2`.
+- Milestone `1abfc3ed` V135 : inventaire ENTIER sources-only de la couverture
+  de l'univers CURRENT V96,avant toute lecture labels. Toutes95865102 lignes
+  stock historique établissement,tous15506308 endpoints V133 et tous8393444
+  facts site-scopés V132 ; owners SIREN ne sont pas des sites. Jointsuint64
+  exacts,leading zeros14 reconstructibles,pas features ni injection de GT.
+  198 tests V117–135 PASS17,10s avant mesure,dont6 nouveaux cas couverture/
+  hors-bornes/unsigned/scopes/immutabilité/sources/protectionfolds.
+- V135 root `audits/retrieval_v135_catalog_inventory/probe_20261003_a`,run
+  15318 TERMINAL0 : TOUT stock historique couvert dans CURRENT V96,
+  95865102 références présentes,0 absente. Graphe :15123899 endpoints dans
+  CURRENT,382409 hors CURRENT. Noms :8346966 facts-sites présents,46478 refs
+  absentes,44725 SIRET distincts hors CURRENT. UNION426471 SIRET officiels
+  distincts hors catalogue courant (intersection663 entre noms/graphe).
+  Ceci est un écart SOURCES/corpus,PAS426471 erreurs de labels ou un gain
+  recall revendiqué. Catalogue candidat NON modifié par cette sonde et
+  aucun statut humain/ligne exclu du dénominateur. Au-delà des sources
+  parcourues,adresses RNE/BODACC/autres SIRET/TUP restent à inventorier :
+  ne pas affirmer couverture de tous SIRET officiels sur cette seule sonde.
+  Worker37,386071s,pic822657024,zéro swapout,PASS,sorties6829352 octets.
+  Entrées entières rehashées avant/après,TOUS4 arrays rehashés post-check.
+  Manifest `2d412fdf7f6e7c760a64dba22192f15afdb930cf6d0c2d1345bb0d68ba20e33e`,
+  launch `a7663e0ab27a82ede18c3b55b143faaa46a48acdf5c8d26b71208017266b1ac4`.
+  Union array SHA
+  `35ce8bf7d83f5a92eef2d4526d99762cc03e6d6ba2c110dc5b0d5d499a720a3f`.
+- Tour PROGRESS,goal ACTIVE : noms/owners/succession ont des accès nationaux
+  complets,et un vrai écart structurel indépendant du modèle est documenté.
+  PAS de recherche initiale100 nationale intégrée,ni SLO/recall nouveau.
+  Dernier pilote reste V101114/128=89,0625% exact,116/128=90,625% opérationnel.
+  Modèles aval gelés,fold0 jamais lu,fold1 fermé,tous handles terminaux,
+  aucun fit/embedding/dense/RRF/LightGBM/dénominateur altéré/push/dépense.
+  Les autres modifications dirty (synthetic_GT/maps/v412/etc) sont préservées
+  et hors de ces commits. Ne pas présenter l'accès aux sources comme99,2%.
+- Prochaine action prioritaire : étendre l'univers candidat depuis TOUTES
+  identités officielles seules,au moins les426471 source-only ci-dessus,
+  jamais labels/anciens hits. Nouvelle version immuable,union exacte,
+  parents typés,sources/provenance d'origine ; état/XY/activité/hq/adresse
+  absents UNKNOWN,jamais inventés ni hérités d'une relation. V96/V126/V127
+  restent historiques ; réutilisation virtuelle de leurs positions/blocs
+  current possible,avec nouveaux sites UNKNOWN réellement indexés,aucun
+  cap de100 sur l'univers global (100 seulement SORTIE initiale parquery).
+  Puis attributs courants et adresses/scopes officielles,projection query-
+  side noms→facts/owners→blocs sans aliasUL×sites,graphe V133 un-hop explicite
+  avec self-context sans expansion,preuve entière et heap initial100 exact.
+  Tester coûts/oracle,sceller toutes sorties128 AVANT labels,mesurer nouveau
+  recall exact/op puis protocoleOOF complet. Aucun pool fixe réclassé.
