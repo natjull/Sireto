@@ -1,0 +1,13 @@
+{
+  "catalog": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v136_extended_catalog/compile_20261003_a/manifest.json", "sha256": "c0802273792ff2d0f85f062784db19009d64d5a162116459a1f6fed9bd53abbc"},
+  "context": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v110_official_context/compile_20261003_a/manifest.json", "sha256": "2b845337784cd2388c765d54db4edcdf0936ace55cb22559d445a4dcb02d1f22"},
+  "activity": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v112_activity_catalog/compile_20261003_a/manifest.json", "sha256": "31cfa6bcba5b6620d1afbfe67cc8e2932e122fb01692019802efee08f8fd73f5"},
+  "layout": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/manifest.json", "sha256": "47acc25da8280915e65080996a128ad9c102f8ba20b611b23083f713487f618f"},
+  "stock": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet", "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"},
+  "expected_current_sites": 43896818,
+  "expected_namespace_sites": 44323289,
+  "numpy_version": "2.4.1",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 805306368,
+  "scope": "ALL_CURRENT_SITE_STRUCTURED_PROOFS_AND_OFFICIAL_REUSE_NO_LABELS_NO_QUERY_FILTER"
+}
