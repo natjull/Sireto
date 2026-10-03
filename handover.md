@@ -9973,3 +9973,112 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   vrai recall exact@100 V101114/128=89,0625%, pilote réutilisé. Tous les
   gates99,2%/OOF complet/Wilson/généralisation/attribution/SLO restent NON
   atteints ; pas de READY_FOR_FOLD1 ni de garantie nationale à partir d'ici.
+
+## 3 octobre 2026 — V121–V124 recherche initial100 et coût de calcul
+
+- Continuation du goal ACTIVE, pas de changement de contrat. La proposition
+  utilisateur historique/EI/enseignes + géo/lexical/dense + relations guide
+  la couverture source. L'autorisation union fixe→LightGBM reste en attente
+  de clarification ; aucune inférence de nouveau contrat ni alias CRM appris.
+  Ce tour développe le noyau initial100, pas un nouveau test de recall.
+- Milestone `9c855735` V121 : score de preuves cohérentes par variante entière,
+  words/char3/char4,19 features nom/adresse/localité/siège/XY/BAN avec11
+  interactions activité. Poids30 non négatifs V114 transférés avant coût,
+  propres au fold évalué ; pas d'équivalence au score natif antérieur sous
+  ces nouvelles couvertures, pas de fit. Activité explicitement désactivée
+  dans tous les probes V121–124 ; tuples nomenclature/code gardés sans guess.
+  Blocs spatiaux connus + blocs UNKNOWN sans perte de site, borne sûre du
+  MÊME score feuille, heap<=100, arrêt certifié strict et égalités globales.
+  Aucun pool fixe/reclassement/offset source, aucune exclusion état/localité.
+- Adapter source V121 : parent officiel→ses seuls sites, preuve établissement
+  →son seul SIRET, adresses parent contextuelles pas diffusées aux succursales.
+  Adresse primaire/secondaire courante depuis champs officiels, ancienne
+  adresse non inventée. XY métropolitain officiel L93 compatible seulement,
+  autre XY/activité/siège inconnu conservés sans signal inventé. Variantes
+  V120/V118 et observations originales restent autorités, sans cap.
+  Relations1hop bidirectionnelles, grade0,5 si continuité explicitement vraie
+  sinon0,25, hypothèses jamais current-exact/identité juridique. Ne propage
+  pas une enseigne à tous les sites frères d'un voisin. Masques sans preuve.
+- Source-family probe noms ET adresses :4096 premières lignes du groupe pur
+  du milieu pour chacune SIRENE_CURRENT/BODACC/RNE, sélection par footers
+  indépendante de requêtes/GT. Lignes originales + ordinals sauvées. Sample
+ 32768 sites V118,32768 successions ; PAS couverture nationale/échantillon
+  représentatif. Requêtes : quatre premières dans l'ordre query-only128
+  préexistant V115, folds3/2/2/4, modèles own-fold validés, BAN query-only.
+  Budget80s/90s superviseur,3GioRSS,zéro nouveau swapout,20s/recherche,
+ 32Mio sorties, identiques pour toutes les versions, pas de relance élargie.
+- V121 session21317 terminal1 : STOP1,452435s/pic672710656/zéro swapout.
+  Cause :8 self-links officiels parmi32768 successions, aucune identité
+  manquante/malformée14digits ; aucune recherche/oracle/sortie100 exécutée.
+  Autorités historiques V121 immuables, pas de patch au code mesuré.
+  Root `audits/retrieval_v121_coupled_blocks/probe_20261003_a`, launch SHA
+  `7259c135f1a53030a8b31fd94628a9a77df2b333ea7c04eb4c495ad857049453`,
+  worker_stop SHA `b14c5e75a4f7bd74e9e8301d0705b5e76e1ed484e9d3f4a0462d10cbbc7c1b71`.
+- Milestone `0521aea6` V122 : self-links conservés dans snapshot ET ledger
+  avec ordinal/reasonSELF_LINK_NO_NEW_ENDPOINT, pas développés comme nouveaux
+  sites.32760 autres observations inchangées ;32768=32760+8, pas de site ni
+  label supprimé, identités malformées toujours STOP. Kernel V121 inchangé.
+ 75 tests combinés PASS2,68s avant mesure. Session84313 terminal0, root
+  `audits/retrieval_v122_coupled_source_ledger/probe_20261003_a`.
+ 32768 sites dont16735A/16033F,20809XY,350blocs ;66200 attaches de nom,
+ 36422 adresse,2226 hypothèses relationnelles ;6029 adresses contextuelles
+  non diffusées. Ces comptes d'attaches ne sont pas des gains de recall.
+  Adapter1,620719s,build1,078193s,worker12,985556s/pic826884096/zéro swapout.
+  Recherches1,273720/1,465813/1,117179/0,428367s ; visites26286/31736/
+ 22844/9465. Les quatre top100 scores/ordre EXACTEMENT égaux à l'oracle
+  scalar exhaustif de tous les32768 sites. Bornes sûres mais trop lâches.
+  Manifest SHA `328143b0f2fb57832d90a38e9ee9323a54c7b021ba2575baafd5f65ece404603`,
+  launch SHA `787dd6f74905f7ab14bf6b2f0c5dd433324131a62f1af9169cc4212e1248df99`,
+  outputs SHA `2c77433c328f5e4076c5244535df9cb460f4c547824c77b827f2a7b99fb3da39`.
+- Milestone `d3238633` V123 : bornes lexicales plus serrées par maxima de
+  variantes cohérentes, pas union de tokens de noms différents dans un bloc.
+  Toutes chaînes et attaches représentées, aucun top-alias/cap ; score,
+  corpus, modèle, groupes et arrêt V121 conservés. Tests chaque feuille<=UB,
+  UB123<=UB121 et sortie égale à oracle complet sous poids30 non négatifs,
+  XY fiables/faibles/absents,250 variantes et325 égalités.80 tests PASS4,15s.
+  Session52234 terminal0, root `audits/retrieval_v123_tight_blocks/probe_20261003_a`.
+  Adapter1,631006s,build1,871814s,worker12,225555s/pic866222080/zéro swapout.
+  Recherches0,539063/0,992841/0,832394/0,313086s ; visites12034/21036/
+ 16813/8094. Gain recherche1,34–2,36× apparié V122 ; PAS gain national.
+  Quatre sorties égales oracle ET V122, mêmes source_stats vérifiées.
+  Manifest SHA `d179d0ac5152937dfeff3da91de2b6f6931c14dcf5625c5022348832b196498a`,
+  launch SHA `06c7ac3d1a109ed26d62f9baa5217adf831e0f664d394e6f455ca9678f139239`,
+  outputs SHA `70417886e8211496236466eb60354f76106b6767dc15b7a6b9846860ef0d9427`.
+- Milestone `91d79669` V124 : mêmes feuilles19/30 et bornes V123, calcul des
+  scores de chaînes une fois par requête, attaches de score factorisées par
+  (site,texte) avec grades lexical/current-exact SÉPARÉS. Preuves/provenance
+  originales intactes. Features NumPy par bloc, cache par requête d'au plus
+  un bloc, pas matrice nationale/candidate pool. Heap/sommefloat64 V121
+  inchangés. Oracle explicitement SCALAIRE V121, pas vectorisation réutilisée.
+ 86 tests PASS5,16s : chaque feature/bound bit-exact, sorties/visites égales,
+  requêtes intercalées isolées, preuve oracle indépendant et caps/ties.
+  Session10309 terminal0, root `audits/retrieval_v124_vector_blocks/probe_20261003_a`.
+  Adapter1,614512s,build2,151847s,worker9,880347s/pic876609536/zéro swapout.
+  Recherches0,036297/0,057967/0,049056/0,026025s, mêmes visites que V123.
+  Gain12,03–17,13× vs V123 sur CE SAMPLE, quatre sorties exactes à oracle
+  tous32768 ET V123, mêmes source_stats. Aucun gain de recall évalué.
+  Manifest SHA `bb6dc6f82e716ae54137255631d4ab2f1e2892ebeb31b6ff940a8acd1f53cc97`,
+  launch SHA `13181ac478f434b84b7191fce04d6aa52a9ea534b1cd991bc858476cee3de181`,
+  outputs SHA `bb519e129e0b39832d441bcc317ea2316bc02adbacf13de66fc4f9f673e73828`.
+- Post-check : toutes implémentations listées dans launch V121–124 et tous
+  petits outputs/samples de familles hashés vérifiés ; gros SHA sources
+  hérités déclarés, stats/footer avant/après, PAS rehash intégral. Aucun label,
+  fold0/fold1 ou vieux candidat lu pendant génération. Comparaisons V122/
+  V123/V124 sorties seulement APRÈS scellement. Pas de fit/reselection,
+  dépense externe/aval modifié/push. Changements utilisateur hors volet
+  laissés intacts. Aucun job restant live à la fin de cette étape.
+- Ce tour PROGRESS : l'oracle et l'amélioration physique mesurée justifient
+  l'action suivante, PAS un verdict métier. Le prototype garde encore des
+  objets Python/postings V121 redondants et des bornes par bloc en boucle
+  Python. Ne pas lancer tel quel les43,9M sites ni extrapoler les26–58ms.
+  Prochaine étape : représentation persistante compacte, bornes vectorisées,
+  probe source-only de montée d'échelle/couverture sans corpus ciblé par GT.
+  Intégrer la couverture historique/EI/enseignes et les jointures officielles
+  complètes, puis seulement sceller les128 sorties nationales avant labels.
+  Les canaux dense/lexical/géo du projet multicanal ne sont PAS déjà tous
+  implémentés par ces probes. Réutiliser autorités V96/V100/V84/V112 sans
+  réintroduire caps, copie d'enseigne aux frères, ni historique fictif.
+- Dernier recall inchangé : V101114/128=89,0625% exact,116/128=90,625%
+  opérationnel, pilote réutilisé. Aucun recall V121–124 publiable. Gates99,2%,
+  OOF complet,Wilson,généralisation,attribution label-side et SLO NON atteints.
+  Goal ACTIVE, pas READY_FOR_FOLD1, pas garantie99%, pas STOP définitif.
