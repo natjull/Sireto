@@ -1,0 +1,13 @@
+{
+  "context":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v110_official_context/compile_20261003_a/manifest.json","sha256":"2b845337784cd2388c765d54db4edcdf0936ace55cb22559d445a4dcb02d1f22"},
+  "stock":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet","sha256":"48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"},
+  "expected_sites":43896818,
+  "tables":{
+    "NAFRev2":{"url":"https://www.insee.fr/fr/statistiques/fichier/2120875/naf2008_liste_n5.dbf","sha256":"dd01d8bf9b0930abd3b95b1f89f4a291f0101c5840a0f9ba2b178833cc6bb686"},
+    "NAFRev1":{"url":"https://www.insee.fr/fr/statistiques/fichier/2408180/naf2003_liste_n5.dbf","sha256":"9a1d313c1db9f8e1d8fe51c41f678adb5f8063672f9cde72ae3417fbe06878cb"},
+    "NAF1993":{"url":"https://www.insee.fr/fr/statistiques/fichier/2408178/naf1993_liste_n5.dbf","sha256":"fc683205e61734ed73002793cbeb14f1c238838a7260b3a244212540321e3fb1"}
+  },
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "max_output_bytes":268435456,
+  "scope":"SOURCE_ONLY_EXPLICIT_NOMENCLATURE_ALL_NATIONAL_SITES_NO_CRM_OR_LABEL_READ"
+}
