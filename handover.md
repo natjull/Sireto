@@ -10758,3 +10758,56 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   couverture et validité doivent être auditées avant usage. Ne pas présenter
   V133 comme un graphe de toutes absorptions/TUP ni relier des sites par une
   simple adresse parent ou reprendre une identité sentinelle comme preuve.
+
+## 3 octobre 2026 — V141 admission de tous les sites supplémentaires V140
+
+- Milestone `7d26e871` : troisième segment append-only, sans retrier les
+ 426471 extras V136. TOUS anciens sites/parents et leurs positions physiques
+  restent identiques ; proofs/graph V137 restent compatibles. TOUS nouveaux
+  sites officiels V140 admis une fois, CSR parent→membres/blocs exacts sans
+  fanout/cap candidats/alias×membres. Identifiants joins/sorties/ties seulement.
+ 269 tests V117–141 PASS18,03s avant mesure,12 nouveaux tests dont parent
+  entièrement nouveau, old-extra order,2501 membres, UNKNOWN, autorité
+  fermée/dérive/STOP/immutabilité et reader complet. Dirty existant préservé.
+- Root `audits/retrieval_v141_append_catalog/compile_20261003_a`,71686
+  TERMINAL0 :79745 sites supplémentaires,2743 nouveaux parents,624 nouveaux
+  blocs,75584 nouvelles refs parent-bloc. Totaux44403034 sites,30027199
+  parents,346901 blocs. Les blocs128 sont du stockage, PAS plafond retrieval.
+  Worker8,051602s,pic608780288 octets,zéro swapout,PASS ; sorties2787436
+  octets (<16Mio). Tous tableaux exportés et toutes positions précédentes
+  sites/parents reconstruits intégralement, pas oracle échantillonné.
+- Manifest `cbca06f853365f150cd239af0853bc0cc8f4cf6bb254526f6fee3a5713d64360`,
+  launch `441d3acc8dbbaa574dc1b4c374403029f858cb76b14e34016d4555ee59225406`.
+  Post-check13706 TERMINAL0 : rehash des sorties/impl et ouverture du reader
+  complet ; chaque nouvelle identité/parent reconstruite, frontières UNKNOWN
+  et protections confirmées. Post-check2,188080s,pic622313472,zéro swapout,
+  PASS. Aucun CP/XY/HQ/état/activité/date hérité du parent. Les observations
+  d'adresses sources restent à indexer, pas déjà présentes en query-side.
+- Clarification de l'audit relations : lecture ENTIÈRE des692010 lignes
+  `relations.parquet`, SHA source avant/après
+  `3516e4080fbf4332fd8d289c982903ba858219cec4b891c105d1cfb7c9059ab5`.
+  TOUTES sont BODACC ASSET_TRANSFER SIREN→SIREN,0 RNE dans ce fichier,
+ 0 autre type/identité hors ASCII9/self-loop/date manquante ;212 observations
+  comportent l'identifiant000000000. C'est un audit descriptif source, pas
+  encore graphe de query-side ni preuve d'absorption/TUP. Ne pas présenter
+  des relations source disponibles comme une couverture de tous ces cas.
+- Schémas originaux vérifiés : StockEtablissementHistorique et
+  StockUniteLegaleHistorique n'ont PAS de champs d'adresse. Anciennes
+  dénominations/enseignes existent ; anciennes adresses doivent provenir de
+  preuves officielles distinctes (RNE/BODACC/etc.), pas être fabriquées à
+  partir d'une période d'état. dateDebut n'est pas une fermeture démontrée.
+- Orientation suite au schéma utilisateur : couverture source et preuves
+  géo/lexicales/relations complémentaires avant course au dense ; aucun
+  département/rayon comme exclusion définitive. Dense éventuel = gain unique
+  mesuré, pas présomption99% ni encodage national lancé aujourd'hui. RRF puis
+  LightGBM d'un pool fixe ne satisfait pas le contrat initial100 actif ;
+  dictionnaire d'alias appris du CRM interdit. Folds234 seulement, fold0 non
+  lu/fold1 fermé, aval gelé. Auditer les labels sans retirer des erreurs du
+  dénominateur exact. Pas de promesse de quelques millisecondes : V138 étage
+  noms seul dépasse1s sur3/4 requêtes. Aucun nouveau recall ; V101114/128
+  =89,0625% exact/116/128=90,625% op demeure dernier résultat pilote.
+- Tour PROGRESS,goal ACTIVE,PAS READY. Prochaine action concrète : projection
+  complète d'adresses site-scopées, preuves cohérentes et contexte parent
+  séparé ; intégrer attributs/XY/bornes sûres et collecteur national100,
+  sceller les128 sorties avant labels puis OOF complet. Tous handles de ce
+  tour TERMINAL0, aucun fit/push/cloud/dépense ou changement aval.
