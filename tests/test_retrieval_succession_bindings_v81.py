@@ -4,6 +4,7 @@ import pyarrow.parquet as pq
 import pytest
 
 from scripts.compile_retrieval_v81_succession_bindings import compile_bindings
+from scripts.compile_retrieval_v81_streaming import compile_streaming
 
 
 def fixture(tmp_path,duplicate_site=False):
@@ -48,3 +49,15 @@ def test_conflicting_official_endpoint_fails_closed(tmp_path):
     with pytest.raises(ValueError,match='identity duplicate'):
         compile_bindings(c,ep,sp,tmp_path)
     c.close()
+
+
+def test_streaming_plan_is_identical_to_materialized_plan(tmp_path):
+    ep,sp=fixture(tmp_path); a=tmp_path/'materialized'; b=tmp_path/'streaming'; a.mkdir(); b.mkdir()
+    c=duckdb.connect(); old=compile_bindings(c,ep,sp,a); c.close()
+    c=duckdb.connect(); new=compile_streaming(c,ep,sp,b); c.close()
+    for name in ('succession_bindings.parquet','coverage.parquet'):
+        left=pq.read_table(a/name).to_pylist(); right=pq.read_table(b/name).to_pylist()
+        assert sorted(map(str,left))==sorted(map(str,right))
+    assert old['coverage']==new['coverage'] and old['site_binding_classes']==new['site_binding_classes']
+    assert old['source_rows']==new['source_rows']==12
+    assert pq.ParquetFile(b/'all_eligible_endpoint_observations.parquet').metadata.num_rows==7
