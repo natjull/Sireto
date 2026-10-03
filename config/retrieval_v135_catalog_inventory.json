@@ -1,0 +1,14 @@
+{
+  "membership": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v96_national_membership/compile_20261003_a/manifest.json", "sha256": "63fdf65f3b8591219e648c9fc3ff2416d38af4cbaff7cf01fe3bf15fbf0ca458"},
+  "owners": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v132_name_owners/compile_20261003_a/manifest.json", "sha256": "4db23546ea223bae45501f047d92bdf9eeb5255ff7547b14f4c5b2393e238cf5"},
+  "graph": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v133_all_succession/compile_20261003_a/manifest.json", "sha256": "afbd9475ecc29b208b3d7a8aaa5d6115d2221b411a23d44c8ae4f222001bd3e3"},
+  "history_sites": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementHistorique.parquet", "sha256": "711fed8260526ee61cbd2f8cdb9d655f67ca4ceba8d2b578e78c110e13f9b08d"},
+  "expected_sites": 43896818,
+  "expected_facts": 105564761,
+  "expected_site_facts": 8393444,
+  "expected_graph_endpoints": 15506308,
+  "expected_history_rows": 95865102,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 1073741824,
+  "scope": "ALL_HISTORY_SITE_ROWS_SCOPED_NAME_OWNERS_AND_SUCCESSION_ENDPOINTS_NOT_TRUTH_LOSS_AUDIT"
+}
