@@ -1,0 +1,18 @@
+{
+  "schema":"V118_SOURCE_ONLY_VARIANTS_COST_PROTOTYPE",
+  "sample_rows_per_source":32768,
+  "sampling":"FIRST_BATCH_OF_FIRST_MIDDLE_LAST_PHYSICAL_ROW_GROUP",
+  "sources":{
+    "current_ul":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet","sha256":"fdbc02abbe47339c7fbe56728667868ff42d938da8b213aa4276ad266751b30e","expected_rows":29922486},
+    "current_site":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet","sha256":"48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99","expected_rows":43896818},
+    "history_ul":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegaleHistorique.parquet","sha256":"2aaf17cbfd8205a7a14ee330d461c331094a0f1a0c02a2dc598f737c385c4eee","expected_rows":71355318},
+    "history_site":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementHistorique.parquet","sha256":"711fed8260526ee61cbd2f8cdb9d655f67ca4ceba8d2b578e78c110e13f9b08d","expected_rows":95865102},
+    "official_names":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/name_evidence.parquet","sha256":"3d7ea61142afff1800c3545783edb16cfaf6d1039ce47db353f7dfcfb74462f5","expected_rows":162537492},
+    "successions":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementLiensSuccession.parquet","sha256":"dfd6442f81cef3b1db51b7ce65471a4bb5f39b15f28e5f9a45ad9fcdbb27ca38","expected_rows":9730972}
+  },
+  "resources":{"max_seconds":80,"max_rss_bytes":3221225472,"max_swapout_pages_delta":0},
+  "max_output_bytes":402653184,"duckdb_memory":"512MB","spill_limit":"512MB",
+  "national_publication":false,"recall_measured":false,
+  "full_source_sha_verified":false,"fold0":"FORBIDDEN","fold1":"CLOSED",
+  "downstream_models":"FROZEN"
+}
