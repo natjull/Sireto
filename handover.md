@@ -10943,3 +10943,49 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   relations/attributs/XY et collecteur100/bornes sûres ; sorties128 scellées
   avant labels, puis OOF all-human complet. Folds0/1 non lus,aval gelé,
   aucun aliasCRM/fit/push/dépense ou pool fixe reranké. Dirty préservé.
+
+## 3 octobre 2026 — V144 STOP112 confirmé ; V145 dictionnaire préparé
+
+- Revalidation session6831 : TERMINAL1, pas timeout, aucun worker national
+  encore en cours. official_addresses/part00112 STOP_RESOURCE_POLICY :
+  1,021597s,pic698351616 octets RSS,376 pages de swapout GLOBAL,FAIL.
+  Hash worker_stop.json
+  `efcd1624693b147496031a3a9046343098c8b78c507f7d08d5c8bdb88fc5f3dc`.
+  Root V144 inchangé ;39 nouveaux manifests (officiel74..111 et current1)
+  plus75 imports V142 =114 parts réussies, PAS projection complète312.
+  Le lot partiel112 est exclu. Aucun seal national/index/recall revendiqué.
+  Swap global ne permet pas d'attribuer ce phénomène au worker. Pas de
+  retry ou nouvelle root lancée dans ce tour, pas d'app/cache fermé/purgé.
+- Choix système demandé à l'utilisateur : une NOUVELLE politique plafonnant
+  le worker à1Go, conservant le plafond temps et arrêtant sur pression
+  mémoire réelle, avec swap GLOBAL publié séparément plutôt que STOP à
+  lui seul. PAS de réponse reçue à ce stade, PAS d'autorisation implicite,
+  garde zéro-swap inchangée. Anciennes mesures/STOP resteraient immuables.
+  Ne pas relancer ni affaiblir le contrôle avant choix explicite/protocole.
+- Milestone `66d443a7` : V145 factorisation entière d'adresses/site/parent/
+  CP/INSEE/numéro, dictionnaire whole-text et liens de TOUTES observations
+  admissibles. Hash bucket physique seulement, collisions jamais identité.
+  current_exact OR explicite au même fait ; flags source/provenance/dates
+  restent aux autorités originales. Contexte parent/masques/vide conservés
+  source sans propagation vers sites. Aucun plafond de preuves ou owners,
+  identifiants seulement jointures, aucun CRM/label/candidat/modèle ouvert.
+- 14 tests nouveaux : mêmes textes avec sites/CP/numéros différents, flags
+  TRUE/FALSE/UNKNOWN, collisions physiques,2007 observations historiques
+  sans cap, parent/masque, dérive, duplicats/NULL/bucket, chemins apostrophe,
+  ranges invalides. Toute la suite V117–145 :303 PASS17,92s. Correction
+  CREATE VIEW DuckDB sans paramètres préparés, littéraux de chemins échappés.
+  Tests seulement ; aucune construction ou mesure nationale V145. Dirty
+  des autres travaux préservé ; commit isolé, aucun push/dépense/aval.
+- Schéma utilisateur retenu avec contraintes : couverture historique/EI/
+  noms et enseignes officiels, preuves géo/lexicales/relations complémentaires,
+  dense évalué sur gains uniques, pas garantie99%. Historique INSEE sans
+  anciennes adresses ; BODACC ASSET_TRANSFER pas TUP/absorption démontrée.
+  Pas d'alias appris du CRM, filtrage géographique dur, exclusion des labels
+  bruyants du dénominateur exact, ni pool fixe union→LightGBM100. RRF comme
+  fusion de score éventuelle ne dispense pas du contrat collecteur initial.
+- Suite concrète : résoudre le choix système, terminer/sceller toutes les
+  adresses, accès lexical et collecteur national initial100 réunissant noms/
+  adresses/XY/attributs/relations ; sorties128 scellées AVANT vérité puis OOF
+  complet. V101 reste114/128=89,0625% exact,116/128=90,625% opérationnel,
+  pilote réutilisé PAS validation nationale. Folds0/1 non lus, aval gelé,
+  goal ACTIVE, PAS READY et objectif99,2% non atteint.
