@@ -1,0 +1,17 @@
+{
+  "source_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v130_variant_dictionary/compile_20261003_a/manifest.json",
+    "sha256": "a69477e35c53f9f6d702b9e870580e377a765fb1e92e990782c909fed29241f4"
+  },
+  "expected_names": 57530682,
+  "expected_facts": 105564761,
+  "expected_observations": 622697477,
+  "term_buckets": 64,
+  "duckdb_version": "1.4.3",
+  "duckdb_memory": "768MiB",
+  "spill_limit": "2GiB",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_phase_output_bytes": 536870912,
+  "max_total_output_bytes": 34359738368,
+  "scope": "EVERY_RAW_NAME_SCALAR_EXACT_WORD_CHAR3_CHAR4_FEATURE_EXACT_ACCESS_NO_RETRIEVAL_QUERY"
+}
