@@ -1,0 +1,8 @@
+{
+  "input_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v118_official_variants/probe_20261003_a/manifest.json","sha256":"742729b3b3ca32fd1bc61fb27b2980bb946a23ea7f7af722f1d3e38f9403e68a"},
+  "resources":{"max_seconds":80,"max_rss_bytes":3221225472,"max_swapout_pages_delta":0},
+  "duckdb_memory":"512MB","spill_limit":"512MB","max_output_bytes":67108864,
+  "same_observations_and_scope_as":"V118",
+  "national_publication":false,"recall_measured":false,"full_source_sha_verified":false,
+  "fold0":"FORBIDDEN","fold1":"CLOSED","downstream_models":"FROZEN"
+}
