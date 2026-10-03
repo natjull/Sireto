@@ -1,0 +1,21 @@
+{
+  "source_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v129_national_variants/projection_20261003_a/manifest.json",
+    "sha256": "7a7714f8a67462d600dac5b2906fb65093262c77a22f7da232325ebb1c6f229a"
+  },
+  "expected_source_rows": 403577216,
+  "expected_observations": 622697477,
+  "expected_lexical_observations": 338540853,
+  "buckets": 64,
+  "duckdb_version": "1.4.3",
+  "duckdb_memory": "768MiB",
+  "spill_limit": "2GiB",
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 3221225472,
+    "max_swapout_pages_delta": 0
+  },
+  "max_phase_output_bytes": 536870912,
+  "max_total_output_bytes": 34359738368,
+  "scope": "ALL_OFFICIAL_VARIANTS_GLOBAL_TEXT_OWNER_DICTIONARY_NO_RETRIEVAL_QUERY"
+}
