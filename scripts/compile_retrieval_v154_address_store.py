@@ -17,11 +17,13 @@ import numpy as np
 import pyarrow.parquet as pq
 
 import scripts.resume_retrieval_v153_addresses as original
+import scripts.resume_retrieval_v157_addresses as race_resume
 from src.xgb_matcher.retrieval_address_dictionary_v145 import partition,dictionary
 from src.xgb_matcher.retrieval_address_reverse_v147 import stage,pack
 from src.xgb_matcher.retrieval_append_catalog_v141 import AppendKeys
 from src.xgb_matcher.retrieval_proof_bridge_v137 import PROTECTED
-from src.xgb_matcher.retrieval_memory_policy_v153 import Budget,quiet,LIMITS,POLICY,validate_report,supervise
+from src.xgb_matcher.retrieval_memory_policy_v153 import Budget,quiet,LIMITS,POLICY,validate_report
+from src.xgb_matcher.retrieval_supervisor_v157 import supervise
 from src.xgb_matcher.retrieval_v20_workbench import ROOT,record,verify,write_json
 
 CONFIG=ROOT/'config/retrieval_v154_address_store.json'
@@ -40,11 +42,20 @@ def config():
     return cfg
 
 
+def projection_backend(reference):
+    m=json.loads(verify(reference).read_text())
+    if m['status']=='SEALED_V157_ALL_ORIGINAL_OFFICIAL_AND_RAW_CURRENT_ADDRESS_PROJECTION':return race_resume
+    if m['status']=='SEALED_V153_ALL_ORIGINAL_OFFICIAL_AND_RAW_CURRENT_ADDRESS_PROJECTION':return original
+    raise ValueError('Complete protected all-source projection required, never partial successes')
+
+
 def projection(reference,cfg):
     """All original raw roles/parts, not a list of available successful lots."""
     m=json.loads(verify(reference).read_text())
+    backend=projection_backend(reference)
     validate_report(m['seal_resources'])
-    if (m['status']!='SEALED_V153_ALL_ORIGINAL_OFFICIAL_AND_RAW_CURRENT_ADDRESS_PROJECTION'
+    if (m['status'] not in ('SEALED_V153_ALL_ORIGINAL_OFFICIAL_AND_RAW_CURRENT_ADDRESS_PROJECTION',
+                          'SEALED_V157_ALL_ORIGINAL_OFFICIAL_AND_RAW_CURRENT_ADDRESS_PROJECTION')
         or any(m.get(k) is not False for k in PROTECTED) or m['complete_retrieval_index'] or m['ready_for_fold1']
         or m['observations']!=cfg['expected_observations'] or m['source_rows']!=cfg['expected_source_rows']
         or not m['every_original_source_full_hash_verified_before_and_after']
@@ -52,7 +63,7 @@ def projection(reference,cfg):
         or not m['every_site_proof_scope_reconstructed'] or m['parent_addresses_spread_to_sites']
         or not m['seal_resources']['pass_resource_policy']):
         raise ValueError('Complete protected all-source projection required, never partial successes')
-    l,p=original.load(Path(reference['path']).parent)
+    l,p=backend.load(Path(reference['path']).parent)
     if (m['launch']!=record(Path(reference['path']).parent/'launch.json') or m['plan']!=l['plan']
         or m['catalog']!=l['config']['catalog'] or p['role_order']!=['official_addresses','current_addresses']
         or l['config']['expected_namespace_sites']!=cfg['expected_sites']):
@@ -64,12 +75,12 @@ def projection(reference,cfg):
             i=len(parts)
             if i>=len(m['parts']):raise ValueError('UNFINISHED_ALL_ORIGINAL_ADDRESS_PARTS')
             item=m['parts'][i];key=f'{role}/{spec["part_id"]}';imported=key in p['imported_parts']
-            expected=p['imported_parts'][key]['manifest'] if imported else record(original.directory(Path(reference['path']).parent,role,spec['part_id'])/'manifest.json')
+            expected=p['imported_parts'][key]['manifest'] if imported else record(backend.directory(Path(reference['path']).parent,role,spec['part_id'])/'manifest.json')
             if any((Path(expected['path']).parent/name).exists() for name in ('worker_stop.json','status.json')):
                 raise ValueError('STOP_SOURCE_SUPERVISION_OR_WORKER_DO_NOT_REINTERPRET')
             if item!=dict(imported=imported,manifest=expected):raise ValueError('Every original physical part/order exactly once required')
             launch=p['imported_parts'][key]['launch'] if imported else m['launch']
-            part=original.validate(expected,role,spec,source,launch,m['catalog'],l['config']['scalar_first_source_rows'])
+            part=backend.validate(expected,role,spec,source,launch,m['catalog'],l['config']['scalar_first_source_rows'])
             begin=source['observation_base']+spec['source_start']*source['factor']
             if begin!=cursor or spec['source_start']!=row_cursor:raise ValueError('Whole original observation and source intervals required')
             stop=begin+part['observations']
@@ -101,7 +112,8 @@ def init(output,reference):
     source=json.loads(verify(reference).read_text());old=json.loads(verify(source['launch']).read_text())
     implementation=dict(old['implementation'])
     paths=[Path(__file__),CONFIG,ROOT/'scripts/compile_retrieval_v148_address_store.py',ROOT/'docs/retrieval_v148_address_store.md',
-        ROOT/'src/xgb_matcher/retrieval_memory_policy_v153.py',
+        ROOT/'src/xgb_matcher/retrieval_memory_policy_v153.py',ROOT/'src/xgb_matcher/retrieval_supervisor_v157.py',
+        ROOT/'scripts/resume_retrieval_v157_addresses.py',
         *[ROOT/('src/xgb_matcher/'+s+'.py') for s in ('retrieval_address_dictionary_v145','retrieval_address_reverse_v147',
             'retrieval_initial_collector_v146','retrieval_variant_factor_v119','retrieval_system_quiet_v143',
             'retrieval_append_catalog_v141','retrieval_proof_bridge_v137','retrieval_v20_workbench')],

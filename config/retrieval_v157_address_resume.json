@@ -1,0 +1,18 @@
+{
+  "original_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v153_address_resume/projection_20261004_a/launch.json",
+    "sha256": "7cdf70644c12bc3e0ea13187f7d1e2ed9c07fdd6e084d304cf8c8c0ec7a30f54"
+  },
+  "original_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v153_address_resume/projection_20261004_a/current_addresses/part00031/status.json",
+    "sha256": "b0c0012cae156a84f9b92663203191d316f76cacca4787b0041bd2251cebac79"
+  },
+  "expected_reused_parts": 298,
+  "batch_rows": 8192,
+  "initial_quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "authorization": "HUMAN_OUI_2026_10_04_1GIB_PRESSURE_SWAP_TELEMETRY",
+  "scope": "RACE_SAFE_SUPERVISOR_UNCHANGED_AUTHORIZED_V153_MEMORY_AND_ALL_SOURCE_BUSINESS_SKIP_PARENT_STOP"
+}

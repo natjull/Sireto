@@ -20,7 +20,8 @@ import scripts.compile_retrieval_v154_address_store as original
 from src.xgb_matcher.retrieval_address_access_v155 import STATUS,physical_plan,stage_addresses
 from src.xgb_matcher.retrieval_packed_names_v134 import pack
 from src.xgb_matcher.retrieval_proof_bridge_v137 import PROTECTED
-from src.xgb_matcher.retrieval_memory_policy_v153 import Budget,quiet,LIMITS,POLICY,validate_report,supervise
+from src.xgb_matcher.retrieval_memory_policy_v153 import Budget,quiet,LIMITS,POLICY,validate_report
+from src.xgb_matcher.retrieval_supervisor_v157 import supervise
 from src.xgb_matcher.retrieval_v20_workbench import ROOT,record,verify,write_json
 
 CONFIG=ROOT/'config/retrieval_v155_address_access.json'
@@ -40,7 +41,7 @@ def source_epochs(reference,m,d):
     Only explicit address authorities are traversed, never arbitrary JSON.
     """
     root=Path(reference['path']).parent;_,p=original.load(root)
-    _,raw=original.original.load(Path(p['source_projection']['path']).parent)
+    _,raw=original.projection_backend(p['source_projection']).load(Path(p['source_projection']['path']).parent)
     refs=[reference,p['source_projection'],m['catalog'],m['dictionary'],m['reverse_staged']]
     refs.extend(s['reference'] for s in raw['sources'].values())
     for part in p['parts']:refs.extend([part['source_manifest'],part['source']])
@@ -123,7 +124,8 @@ def init(output,reference):
         full_source_hashes_at_init_and_seal_not_each_phase=True,**{k:False for k in PROTECTED}))
     paths=[Path(__file__),CONFIG,ROOT/'src/xgb_matcher/retrieval_address_access_v155.py',
         ROOT/'scripts/compile_retrieval_v154_address_store.py',ROOT/'scripts/compile_retrieval_v152_address_access.py',
-        ROOT/'src/xgb_matcher/retrieval_memory_policy_v153.py',ROOT/'src/xgb_matcher/retrieval_address_access_v152.py',*[ROOT/('src/xgb_matcher/'+s+'.py') for s in
+        ROOT/'src/xgb_matcher/retrieval_memory_policy_v153.py',ROOT/'src/xgb_matcher/retrieval_supervisor_v157.py',
+        ROOT/'src/xgb_matcher/retrieval_address_access_v152.py',*[ROOT/('src/xgb_matcher/'+s+'.py') for s in
         ('retrieval_name_access_v131','retrieval_packed_names_v134','retrieval_national_names_v138',
          'retrieval_coupled_blocks_v121','retrieval_variants_v118','retrieval_name_postings_v86',
          'retrieval_variant_factor_v119','retrieval_system_quiet_v143','retrieval_address_reverse_v147','retrieval_v20_workbench')]]
