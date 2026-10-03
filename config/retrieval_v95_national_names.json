@@ -1,0 +1,7 @@
+{
+  "source_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v94_virtual_national_names/projection_20261003_a/manifest.json","sha256":"b5a52b1776f0d53e8f3be0a31ebb8f42b72f4f336e7c18bd28fae4764e0511b9"},
+  "expected_observations":162537492,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "duckdb_memory":"1GB","spill_limit":"2GB","max_output_bytes":10737418240,
+  "scope":"ALL_EXACT_NATIONAL_NAME_TUPLES_AND_EVERY_SOURCE_ORDINAL_NO_GRAPH_CRM_LABEL_SELECTION"
+}
