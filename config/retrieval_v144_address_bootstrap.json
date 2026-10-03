@@ -1,0 +1,11 @@
+{
+  "original_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v142_address_projection/projection_20261003_a/launch.json", "sha256": "a58e8f01b1df98613d7fab1a682000929c123509d6eb652c4a6197976bcc339d"},
+  "original_stop": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v142_address_projection/projection_20261003_a/official_addresses/part00074/worker_stop.json", "sha256": "853e56644d2d6913d09dac22277883288df3a65fc080364ba3218b332079ac5e"},
+  "expected_reused_parts": 75,
+  "batch_rows": 8192,
+  "initial_quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "scope": "CANONICAL_REFERENCES_BOOTSTRAP_V143_UNCHANGED_ALL_SOURCE_PROJECTOR_AND_ZERO_SWAP"
+}
