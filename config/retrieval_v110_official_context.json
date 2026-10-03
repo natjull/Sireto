@@ -1,0 +1,9 @@
+{
+  "registry_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v96_national_membership/compile_20261003_a/manifest.json","sha256":"63fdf65f3b8591219e648c9fc3ff2416d38af4cbaff7cf01fe3bf15fbf0ca458"},
+  "dossier_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json","sha256":"6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"},
+  "sites":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/establishments.parquet","sha256":"2913021ba4bb92aeb00bdb111d05e4db9d375027b0210e60784dd9fb86d9951e"},
+  "expected_sites":43896818,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "max_output_bytes":1073741824,
+  "scope":"ALL_OFFICIAL_SITES_RAW_CONTEXT_NO_CRM_LABEL_OR_CORPUS_FILTER"
+}
