@@ -1,0 +1,9 @@
+{
+  "dossier_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json","sha256":"6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"},
+  "names":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/name_evidence.parquet","sha256":"3d7ea61142afff1800c3545783edb16cfaf6d1039ce47db353f7dfcfb74462f5"},
+  "sites":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/establishments.parquet","sha256":"2913021ba4bb92aeb00bdb111d05e4db9d375027b0210e60784dd9fb86d9951e"},
+  "expected_name_rows":162537492,"expected_sites":43896818,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "duckdb_memory":"1GB","spill_limit":"2GB","max_output_bytes":8589934592,
+  "scope":"ALL_OFFICIAL_NAMES_AND_NATIONAL_MEMBERSHIP_NO_GRAPH_QUERY_LABEL_SELECTION"
+}
