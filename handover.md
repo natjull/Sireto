@@ -9733,3 +9733,52 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Goal ACTIVE ; vrai recall reste V101114/12889,0625%.99,2% exact all-human/
   fullOOF/Wilson/généralisation/attribution/SLO non prouvés. Les deux jobs
   de ce tour sont terminaux0, aucun long run lancé ou encore live.
+
+#### V114 — interaction activité/site cross-fit mesurée, pas recall national
+
+- Milestone code `59392aa8` :512 scènes TRAIN234 V52, preuves native19
+  réelles V56, descriptions2140 V113. Source activity UNKNOWN reste0,
+  sans retirer site/query. Pas feature identifiant/aliasCRM, aval inchangé.
+  Recette décodeur du INNER propre au fold externe, aucun modèle emprunté
+  d'un autre fold ; FIT features TRAIN exclut outer/inner ET tout le fold
+  source évalué, familles partagées incluses. Hyperparamètres du décodeur
+  restent sélectionnés INNER V113 ; ne pas présenter cette sélection comme
+  cross-fit par fold source. Refit décodeur final strictement byte-identique
+  au V113 propre à chacun des folds ; modèles/signaux alignés sans skip.
+-90 tests ciblés V114/V113/V112/V111/V110 PASS1,42s avant mesure : gradient
+  égal par requête, invariance modèle/INNER aux labels et preuves outer,
+  exclusion famille partagée, décodeur cross-fit invariant aux targets du
+  fold qu'il évalue, ordre négatifs, UNKNOWN vs preuve zéro, sans BAN,
+  coefficients monotones, réduction native19 exacte et bornes200 fixtures.
+  Les bornes de blocs nationaux et leur coût ne sont pas encore certifiés.
+- `audits/retrieval_v114_activity_joint/probe_20261003_a/`, session70022
+  terminal0 ;4,101959s/pic769851392/zéro swap, garde80s/4Gio PASS.
+  INNER choisit ACTIVITY30 sur les3 folds ; aucun choix selon résultat outer.
+  Contrôles mêmes23749 négatifs naturels/all512 TRAIN, pas recherche nationale.
+  NATIVE11 -> GEOMETRY19 -> ACTIVITY30 : head error40,8203% ->40,4297%
+  ->38,6719% ; erreur pairwise égale query10,8658% ->10,5527% ->9,9947% ;
+  nombre moyen négatifs au-dessus5,2363 ->5,0957 ->4,8262 ; MRR0,6867
+  ->0,6911 ->0,7062. Head améliore dans chacun des folds, pas garantie
+  d'un recall100 meilleur sur corpus national ni validation de la barre99,2%.
+  Paires même parent558 : erreur16,4875% ->16,3082% ->13,4409%.
+  Sans preuve de nom2193 paires :58,1395% ->55,9052% ->54,0812%.
+  Sans géométrie6296 paires :17,8685% ->19,6156% ->19,0121% (régression
+  vs native seule, publiée). Aucun positif UNKNOWN dans ces TRAIN ; ce
+  contrôle ne couvre pas ce segment de généralisation national.
+- Manifest SHA `454df55493e9e3e42a2393f3cd2c1f2d6da0e6d6c95690655953da8ef57cad3f`,
+  launch SHA `30cf73f3fd464ea7204b480c6bc2081ac058f254fb6467d5549f5b6507d04777`,
+  models SHA `a3ea5739bd573472e11fccc1ad476bda18887988efc42beb129b7312d68279f1`.
+- Prochaine action : exécution initiale100 de la formule native/activité/XY
+  avec coefficients query-conditionnés, bornes complètes jusqu'au cutoff,
+  inconnus neutres et corpus national entier. Pas fixe2000/500/100 puis
+  reranker. Mesurer avant promotion ; preuves officielles relationnelles
+  non incluses dans cette formule doivent rester explicitement distinctes,
+  pas prétendre à conservation bitwise de V101 ou à exploitation totale.
+  Coût natif reste à remplacer par preuves compactes/bloc-bounds, pas par
+  micro-pagination ou augmentation silencieuse d'un budget.
+- Tour goal précédent PROGRESS (V112/113 autorités scellées et preuve
+  sémantique qui justifie cette action). Détour nettoyage Mac terminé ;
+  aucune source, modèle, évaluation ou changement utilisateur modifié.
+  Goal ACTIVE ; dernier vrai recall V101114/12889,0625% INCHANGÉ.
+  Fold0 jamais lu, fold1 fermé, all-human exact/op/fullOOF/Wilson/
+  généralisation/attribution/SLO toujours non prouvés. Aucun job live.
