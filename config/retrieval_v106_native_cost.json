@@ -1,0 +1,13 @@
+{
+  "query_only_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v105_exact_intervals/pilot_20261003_a/launch.json",
+    "sha256": "7b5136adec43e625f0dfbf6ba1757e577823f1f5700955d7686c12f27e2e3906"
+  },
+  "queries": 2,
+  "native_limit": 100,
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 4294967296,
+    "max_swapout_pages_delta": 0
+  }
+}
