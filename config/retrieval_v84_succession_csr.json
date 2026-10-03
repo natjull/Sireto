@@ -1,0 +1,8 @@
+{
+  "bindings_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v81_succession_bindings/compile_20261003_c/manifest.json","sha256":"4c22d783c4e8a03accaedbc2809e9de888d0941f8bd2779d45d7b41eeb7cd41a"},
+  "names_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v82_scoped_succession_names/projection_20261003_b/manifest.json","sha256":"4fd00b95fd9692e36ce71e1662c9b8bfa8a1888eaecf41c28b4df39a86bc486b"},
+  "expected_observations":7512820,"expected_endpoint_sites":12531976,"expected_legal_owners":6087070,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "max_output_bytes":1073741824,"supervisor_seconds":90,
+  "scope":"ALL_BOUND_OFFICIAL_SUCCESSION_OBSERVATIONS_TWO_DIRECTIONS_NOT_QUERY_POOL"
+}
