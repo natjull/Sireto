@@ -9187,3 +9187,162 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Dernière métrique vérifiée toujours V91 exact114/128=89,0625%, non99,2%.
   Jobs V90/V91/V92/V93/V94 terminaux, pas de run à présumer vivant. Goal
   ACTIVE et étapes OOF/Wilson/généralisation/SLO encore nécessaires.
+
+### 3 octobre 2026 — indexation nationale complète et pilote V99
+
+- Tour goal précédent classé PROGRESS : les index complets changent le scope
+  serving réellement disponible ; pas de gain recall déduit de leurs builds.
+  Le nettoyage Mac séparé ne compte pas comme progrès retrieval. Goal ACTIVE,
+  cible initial100 exact99,2%, aval gelé, folds0/1 fermés, aucun push.
+- Milestone `a9c88498` V95 : toutes162537492 observations V94 donnent
+  57804962 tuples exacts, NULL/vides/contexte et ordinals originaux préservés.
+  Partition et16 phases de tuples PASS. Inverse global STOP_RESOURCE_POLICY
+  2,077988s/RSS4602052608>4Gio/zéro swap. Ancien inverse partiel jamais utilisé.
+  Stop SHA `a9247378df34d94003efa99e0adb0f76c60a4bb15e9093195d7f7e187bde5916`.
+- Milestone `3b34299e` V96 : registre et CSR parents complets,43896818 sites,
+  29906504 parents,43896818 références et fanout maximum13122 sans cap/rejet
+  fermé. PASS22,695938s/RSS2392588288/zéro swap,1161089537octets nouveaux.
+  Root `audits/retrieval_v96_national_membership/compile_20261003_a/`, SHA
+  `63fdf65f3b8591219e648c9fc3ff2416d38af4cbaff7cf01fe3bf15fbf0ca458`.
+- Milestone `dcd0884a` V97 : inverse construit en16 lots physiques puis
+  assemblage isolé, sans recalcul des tuples. Vérification exhaustive des
+  162537492 ordinals exactement une fois et mapping identique au factID.
+  Aucune observation perdue, max616 par tuple ; tous17 processus PASS80s/
+  4Gio/zéro swap. Total30,527175s, assemblage pic2473197568octets.
+  Root `audits/retrieval_v97_complete_provenance/compile_20261003_a/`, SHA
+  `fda7edf7c68275f224c11dbaf711555c7f3c9803fe7175e0ba01d88696e6b1e3`.
+- Milestone `7aa547a8` V98 : accès mots sur tous57804962 tuples, contexte
+  196228 tuples et129 tuples ID-only sans preuve lexicale mais conservés.
+  Prepare32,086342s/RSS739000320,32 buckets mots complets PASS, owners
+  4,676826s/RSS4025122816. Parents30043628,sites13254345 propriétaires,
+  aucune coupe de fanout. Métadonnées STOP80,150107s/RSS2650292224/zéro swap.
+  Pas de manifeste global V98 et aucune métadonnée partielle utilisée.
+- Milestone `d29ae96f` V100 : codes source/type vectorisés Arrow, strictement
+  identiques à V86 (tests de parité champs/date/null/priorité et inconnus).
+  Réutilise seulement phases mots/owners V98 intégrales vérifiées ; fichiers
+  métadonnées neufs sur TOUS162537492 ordinals, aucun élargissement budget.
+  Worker PASS19,024035s/RSS3047440384/zéro swap ; contrôleur50,513227s.
+  SEALED_COMPLETE_NATIONAL_NAME_WORD_ACCESS :109305599 postings et3605560
+  mots. Root `audits/retrieval_v100_complete_word_metadata/compile_20261003_a/`,
+  SHA `67a24a13b9bc4753847772c4b46771f65e99f8fd84b2d936cb411760afd56d0e`.
+  Dossier propriétaires = V98 référencé, pas dossier métadonnées V100.
+- Milestone `61328dea` V99 : accès direct des noms à TOUS les sites V96,
+  membres parent exhaustifs, succession V84 un hop typé inchangé. Validation
+  globale des endpoints/parents V84 contre V96 ; pas de nom site transmis
+  aux siblings ni établissement fabriqué depuis une observation hors registre.
+  Dictionnaire3,6M mots compacté, tuples/arithmetic identiques à V86. Oracles
+  indépendants all-sites fixture, hors-graphe/fermé/relations/BAN et trié/
+  ponctuel.34 tests ciblés PASS1,53s avant mesure. Pas de tuning du poids64
+  sur les14 misses, natif/sémantique V78 gelés et dates non transformées en
+  co-validité inventée. Sortie directe heap100, aucun pool2000/500.
+- Pilote V99 lancé `audits/retrieval_v99_national_paths/pilot_20261003_a/`,
+  session40571 à vérifier avant toute action.16 sans labels puis128 si
+  coût<=4s ; worker80s/6Gio/zéro swap, superviseur90s, contrôleur900s,
+  requête20s. Comparateur V91 scellé uniquement en évaluation APRÈS128.
+  Résultat terminal à consigner ci-dessous ; dernier recall vérifié toujours
+  114/128=89,0625%, opérationnel116/128=90,625%. Ni build complet ni tests
+  unitaires ne prouvent99,2%, fullOOF, Wilson, généralisation ou SLO.
+
+#### V99 terminal mémoire, V101 adaptation physique
+
+- V99 session40571 terminal exit1, contrôleur125,077987s. Batch0008 scellé
+  PASS56,199396s/pic6242697216/zéro swap, moyenne8=6,231237s (pas gate16).
+  Second lot7 recherches certifiées en logs puis STOP_RESOURCE_POLICY mémoire
+  pic6628098048>6442450944,52,767823s,zéro swap. Aucune population128,
+  aucun ledger ni recall partiel. Status SHA
+  `ff8cdc3a1f7d7cfc71c3a58cfcc6d1233fce7d486607a1b862aee1feb7b8af05`,
+  worker-stop SHA `06102d5818d0a940af333a6aa2de19eae98d6c1afccb3524758fe3dde8b47a89`.
+  Trace première requête lot008 :14 appels natifs ponctuels7,940397s.
+- Milestone `8dd98a35` V101 : EXACTE métrique/sources/champs/proofs V99.
+  Dictionnaire projeté sur les tokens CRM du lot, pas sur faits/sites/DF ;
+  vocabulaires complets lus/comptés et tous postings toujours accessibles.
+  Appel hors mots préparés STOP explicite. Completion8192/flush65536
+  physiques, fanouts entiers avant frontière, aucun pool nouveau.26 tests
+  projection/whole-corpus/batching/oracles PASS1,85s. Source poids64 et aval
+  inchangés, même garde80s/6Gio/zéro swap, coût16<=4s, aucune relance élargie.
+- V101 lancé `audits/retrieval_v101_national_paths/pilot_20261003_a/`,
+  session37273 à vérifier. Tous résultats/scopes V99 restent immuables ;
+  évaluation séparée seulement si128scellées. Dernier recall vérifié reste
+  V91 exact114/128, opérationnel116/128 ; goal ACTIVE.
+
+- Préflight V10116 PASS moyenne3,907169s, vérité fermée. Premier lot
+  RSS5757632512/zéro swap/35,971418s. Les temps V99/V101 ne sont pas
+  un benchmark cache contrôlé ; ne pas promettre un facteur vitesse en prod.
+- Milestone `60a6badf` V102 : audit128 ponctuel APRÈS génération scellée et
+  évaluation séparée, adapté au registre national complet et noms V100.
+  Flag hors graphe non assimilé à hors registre ; scores ponctuels doivent
+  être identiques aux sorties, miss au-dessus cutoff STOP. Folds234 seuls,
+  aucun GT/candidat audit utilisé en feature ou génération.29 tests PASS1,46s
+  incluant fanout20001 au-delà de buffer8192, projection/arithmetic/scopes
+  et contradictions de preuve. Audit préparé, non lancé avant128 scellées.
+- Milestone `468e30a7` V102 avant sa première mesure : contrôle exact des
+  égalités GT/cutoff et clé canonique, plus ordre global score-desc/SIRET-asc
+  des sorties avant ledger.7 tests PASS0,38s. Une égalité avec GT de meilleure
+  clé absent déclenche STOP, pas résultat faussement cohérent. Serving gelé.
+
+#### V101 terminal complet, recall inchangé — ne pas promouvoir la recette
+
+- Session37273 terminal exit0 :128 sorties certifiées/scellées,16 lots
+  PASS ressources, contrôleur749,008793s, pic6170148864octets, zéro swap.
+  Manifeste SHA `696ee5fdd3d48dd4383445b34466b4a00ae204a3fea705f5fd9a7459a52866ab`,
+  launch SHA `ad8a4b4faaf87cfc7f4dd57d033144b57522c53f6688d6583e9656c06672df76`.
+- Évaluateur distinct terminal exit0 APRÈS128 : exact114/128=89,0625%,
+  opérationnel116/128=90,625%, Wilson bas82,476555%, gains0/pertes0 vsV91.
+  Évaluation SHA `12e31057234efc6c6992e18062fc10761b4370c379d3161ccf284bbaa2f5127c`.
+  Folds2:37/43,3:36/41,4:41/44 ;16 labels historiques inexploitables publiés
+  séparément (8/3/5), aucun statut ne filtre les128 labels exploitables.
+  p50=4,263659s,p95=7,720279s,p99=9,599668s : SLO FAIL. Comparateur V91
+  historique non apparié/cache non contrôlé ; pas de facteur vitesse prod.
+- Verdict PIVOT_GENERATION : corriger le scope noms/membership officiel est
+  réalisé mais n'apporte AUCUN gain recall mesuré. Ne pas promouvoir V101
+  comme meilleure recette, ni prétendre SOTA/99,2%/fullOOF. Évaluation_scope
+  explicite corrige la prose historique V49 qui cite V42. Goal ACTIVE.
+- V102 audit128 lancé après évaluation complète sous
+  `audits/retrieval_v101_national_paths/evidence_audit_v102_20261003_a/`,
+  session92574 à vérifier. Contrôle serving ponctuel/canonical ties ; aucune
+  modification des sorties ou modèles ni feature tirée des labels.
+
+#### V102/V103 terminaux — preuve des limites du matching littéral
+
+- V102 session92574 terminal exit0, audit128 cohérent (y compris ties),
+  183,995896s, pic4186030080/zéro swap. Rapport SHA
+  `006937db59b4115661e0b1794923c46980863d64fdbe916db6b493cdeb55851d`.
+  Sur14 misses :9 sans mot littéral partagé dans TOUT le scope de noms
+  admis,4 preuves nom/XY positives sous seuil,1 BAN indisponible/incompatible.
+  Ces motifs ne signifient PAS absence de toute preuve sémantique/identité
+  officielle. Aucun score contradictoire ni candidat ajouté. Ancien hors
+  graphe V84 n'est plus un motif hors registre national.
+- Milestone `298575f9` V103 : noms site+parent de TOUS128 labels, conservant
+  vides/contexte/grains sans transfert sibling. Artefact explicitement
+  LABEL_SELECTED DIAGNOSTIC ONLY, jamais index/alias/source de fit/feature.
+ 2 tests PASS0,39s avant mesure. Toutes16 partitions V97 hashées avant/après,
+  SQL source complète filtre uniquement les propriétaires diagnostic234.
+  Session45715 terminal exit0 :308 tuples officiels, contrôle1,371709s,
+  contrôleur2,344746s,pic342130688/zéro swap. Rapport
+  `audits/retrieval_v101_national_paths/name_catalog_v103_20261003_a/report.json`,
+  SHA `1c3d335521d5d2653055a64c55c865437fbf5633dfa8bd4a59f366e7c9323aab`.
+- Exemples diagnostic, PAS dictionnaire à apprendre/promouvoir : CACF face
+  à CREDIT AGRICOLE CONSUMER FINANCE ; MB face à MAXI BAZAR ; gymnase face
+  à MAIRIE/COMMUNE ; autres marques face à propriétaires légaux différents.
+  Ajouter les mêmes sources de noms ne ferme pas ces écarts. Prochaine
+  recette doit être structurelle/généralisable (sigles/submots, champs de
+  contexte séparés, marque/propriétaire/type), fit TRAIN OOF uniquement,
+  pas règles spécifiques aux14 labels. Garder preuve nominale et adresse/
+  XY/contextes ; ne pas corriger les labels ni retirer les cas ambigus.
+- Inspection source-only activité `establishments.parquet` :43896818 lignes,
+  16715258A toutes activité non vide,27181560F dont21437 vides, soit43875381
+  activités non vides. Tous non-NULL ne signifie pas tous renseignés.
+  Codes distincts A736/F2132, plusieurs nomenclatures possibles à traiter
+  explicitement avant toute feature, pas assimiler tous à NAF actuelle.
+  Champ main_activity présent dans source, absent de la recette native11 et
+  du code d'index inspecté ; ce n'est pas encore une feature entraînée/serving.
+  Comptages SQL complets threads2/mémoire1GB en0,85s puis0,72s, aucun label.
+- Goal ACTIVE, dernier exact114/128=89,0625%, aucun objectif abaissé. Tous
+  jobs de ce milestone TERMINAUX. V101 non promu, aval/fold0/fold1 gelés.
+  OOF complet, Wilson>=99%, folds, généralisation, attribution et SLO encore
+  manquants ; rien ne valide99,2% initial100. Aucun push ni dépense externe,
+  changements utilisateur préservés. Le prochain tour a une action utile,
+  donc pas blocage ni pause inférés.
+- Vérification finale ciblée V99/V101/V102/V103/métadonnées/membership :
+ 43 tests PASS2,00s, diff-check propre. Seul handover modifié par ce volet
+  après commits code ; autres changements suivis utilisateur inchangés.
