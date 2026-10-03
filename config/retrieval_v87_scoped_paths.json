@@ -1,0 +1,9 @@
+{
+  "query_only_launch":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/launch.json","sha256":"6fc2cb89b489e8038e6f211e0fac0a36954874e066e8a727558cfa01d9d90956"},
+  "word_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v86_name_postings/compile_20261003_a/manifest.json","sha256":"da7bf106a4b94b05587177f0d41beb7f64dcbde7348ec3a485e0dc649114413b"},
+  "graph_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v84_succession_csr/compile_20261003_a/manifest.json","sha256":"8d6d83812bee28590d37a150cbcfd9596c77751411112d134578f9bdff94cdb1"},
+  "comparator":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/manifest.json","sha256":"18da83dbe7276b6dfece6f61f3982694d7172de1c7ae883b0c1d747e8e7dfb4a"},
+  "resources":{"max_seconds":80,"max_rss_bytes":6442450944,"max_swapout_pages_delta":0},
+  "path_weight":64,"controller_seconds":900,"primary_mean16_seconds":4,"max_query_search_seconds":20,
+  "metric_family":"MAX_FROZEN_V78_NATIVE_AND_SCOPED_OFFICIAL_NAME_ONE_HOP_TIMES_BAN_SITE_NO_FIXED_POOL"
+}
