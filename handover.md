@@ -10580,3 +10580,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   avec self-context sans expansion,preuve entière et heap initial100 exact.
   Tester coûts/oracle,sceller toutes sorties128 AVANT labels,mesurer nouveau
   recall exact/op puis protocoleOOF complet. Aucun pool fixe réclassé.
+
+## 3 octobre 2026 — V136 extension effective des identités officielles
+
+- Milestone `0e0de64f` : namespace virtuel qui conserve chaque position
+  V96/V126/V127 et admet les426471 SIRET officiels absents inventoriés V135.
+  Aucun label, ancien hit, statut humain ou identifiant comme feature.
+  Parents/membership/blocs complets sans cap ; attributs extra manquants
+  UNKNOWN, pas d'état/XY/activité/hq/adresse hérités d'une relation.
+  209 tests V117–136 PASS18,26s avant mesure,11 nouveaux guards/oracles.
+- Root `audits/retrieval_v136_extended_catalog/compile_20261003_a`, session
+  23924 TERMINAL0. Univers44323289 sites,30024456 parents :117952 nouveaux
+  parents,3332 nouveaux blocs,346277 blocs au total,306651 références
+  parent-bloc extra. Chaque ancien site conserve sa position ; chaque
+  nouvel ID admis exactement une fois, tous parents et tuples CSR exacts,
+  toutes sorties reconstruites entièrement. Worker7,588420s,pic716439552
+  octets,zéro swapout,PASS ; sorties12958296 octets (<64Mio).
+- Manifest `c0802273792ff2d0f85f062784db19009d64d5a162116459a1f6fed9bd53abbc`,
+  launch `f4887578f5680eda68ab9239aa10d1611ee771891d1e865e911217a8903c7544`.
+  Post-check1048 TERMINAL0 : rehash de toutes entrées/sorties, contrôles
+  authority/implémentation ; reader national testé aux frontières current/
+  extra sur ID→position→parent→membres→blocs→sites, UNKNOWN extra conservé.
+- Couverture revendiquée : CURRENT + TOUT V135 seulement. Les identités
+  des sources d'adresses/contexte officiel non encore inventoriées restent
+  une limite explicite. Pas encore moteur national initial100 ni nouvelle
+  mesure recall : V101114/128 exact89,0625%,116/128 op90,625% inchangés.
+  Fold0 jamais lu,fold1 fermé,aval gelé,aucun fit/dense/RRF/LightGBM/push.
+  Prochaine intégration : joindre toutes preuves nominales V132 et liens
+  V133 au namespace, sans produit cartésien aliases×sites ni pool fixé,
+  puis attributs/adresses et recherche initiale100 avant labels.
