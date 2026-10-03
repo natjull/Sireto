@@ -9849,3 +9849,41 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Aucun job live ni long run lancé, fold0 jamais lu/fold1 fermé/aval gelé.
   V101114/128=89,0625% demeure le DERNIER vrai recall exact@100 ; target
   99,2% all-human/fullOOF/Wilson/généralisation/attribution/SLO non atteint.
+
+## 3 octobre 2026 — V117 audit structurel après proposition multicanal
+
+- Milestone `6e80f66a` : audit documenté dans
+  `docs/retrieval_v117_structural_coverage_audit.md`, contrôle non mutateur
+  `retrieval_source_coverage_v117.py`, 10 tests PASS0,03s. Aucun artefact
+  historique, formule retrieval ou modèle aval modifié. Pas de push.
+- Contradiction vérifiée : manifeste projection principale SHA
+  `1df67665f69e39242be72fecbfbb1b92654b99c3d3f0124e4caaa3c37296b7f4`
+  déclare temporal_complete=true mais ses comptes ne recensent que
+  SIRENE_CURRENT/RNE/BODACC, pas SIRENE_HISTORY/SIRENE_SUCCESSION. V100
+  confirme ces seules trois familles nominales. Historique V75/V76 et
+  graphes V84/V96 existent séparément ; ne pas dire que tout le projet
+  serait sans historique. La présence de familles seule ne prouve jamais
+  couverture exhaustive des périodes/variantes/champs.
+- Autres lacunes : prénoms EI disponibles dans StockUL mais absents de
+  projection courante SIRENE du dossier ; ngrams natifs seulement courants,
+  champs exact historiques absents ; caps de noms du principal toujours
+  présents malgré projection nominale complète V94–100 séparée. Footers
+  historiques UL71355318/Etab95865102 ; historique Etab sans adresses ni XY.
+  Ni adresse courante jointe ni dateDebut ne valent ancienne adresse/date
+  de fermeture prouvée. Ne pas généraliser le drapeau temporel hérité.
+- Probe source-only 65536 premières lignes physiques UL :20213 unités
+  diffusibles O avec nom/prénom utilisables,208 autres statuts/inconnus,
+  mono-thread512Mo0,240860s. Pas représentatif national, pas de noms/IDs
+  publiés ni de CRM/GT ouverts ; disponibilité de preuve, aucun gain recall.
+- Proposition utilisateur union→RRF→LightGBM100 : question asynchrone de
+  changement de contrat posée, pas encore de réponse au moment de cet audit.
+  Ne pas implémenter ce reclassement sous nom de recherche initiale ;
+  dictionnaire d'alias CRM appris également interdit par contrat courant.
+  Normalisation et variantes à partir des sources officielles restent
+  possibles. Étapes non conflictuelles : projection variantes/cohérence
+  sans perte et coût borné, puis canaux géo/lexical/dense + jointures
+  officielles sans suppression des fermés/non-localisés/UNKNOWN.
+- Aucun run national/encoding/fine-tuning lancé. Aucun label, fold0 ou
+  fold1 ouvert, aval gelé. V101114/128=89,0625% reste dernier recall exact,
+  pilote réutilisé non validation finale. Goal ACTIVE ; cette étape révèle
+  des lacunes concrètes à corriger, sans promettre99% ni quelques ms.
