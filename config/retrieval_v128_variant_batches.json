@@ -1,0 +1,9 @@
+{
+  "sample_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v118_official_variants/probe_20261003_a/manifest.json","sha256":"742729b3b3ca32fd1bc61fb27b2980bb946a23ea7f7af722f1d3e38f9403e68a"},
+  "family_names":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v125_mapped_blocks/probe_20261003_a/family_name.parquet","sha256":"0f33d42bbbd98bd8823fe6038f8f3eb94d7aa5d13bb9111288a55f14bf46f765"},
+  "role_order":["current_site","current_ul","history_site","history_ul","official_names"],
+  "resources":{"max_seconds":80,"max_rss_bytes":3221225472,"max_swapout_pages_delta":0},
+  "max_output_bytes":33554432,
+  "scope":"EXACT_ORDERED_ALL27_SOURCE_OBSERVATION_FIELDS_COLUMNAR_PROJECTION_COST_ONLY",
+  "national_corpus":false,"recall_measured":false,"fit":false,"fold0":"FORBIDDEN","fold1":"CLOSED"
+}
