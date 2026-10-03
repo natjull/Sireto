@@ -11320,3 +11320,59 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pilote réutilisé seulement, objectif99,2% non atteint. Folds0/1 non lus,
   sorties initial100 nouvelles absentes, aucune suppression GT ou mutation
   des sources officielles, aucun cloud/fit/push, dirty autres travaux conservé.
+
+## 4 octobre 2026 — V152 : raccordement lexical complet des adresses, source nationale encore fermée
+
+- Tour précédent PROGRESS documentaire/source : limite réelle des successions
+  publiques vérifiée, audit et nettoyage récupérable `602c0f2e`, pas gain de
+  recall. Ce tour implémentation `e8858ff4` : chemin V148 dictionnaire complet
+  → mots/char3/char4/exact → snapshot des aliases → preuves de site V147.
+  Cette brique manquait explicitement ; PAS nouveau modèle aval ni pool fixe.
+- Kernel stage V131 et pack V134 réutilisés INCHANGÉS ; seuls noms de colonnes
+  address_id/address_text adaptés, chaque variante entière et position raw
+  conservée même si le guard d'identifiants rend son texte feature vide.
+  CP/INSEE/numéro/current_exact restent sur LEUR fait de site V145/V147.
+  Aucun sac de tokens entre adresses, adresse parent étendue aux sites,
+  limite de preuves/owners/aliases, filtre de fermeture/localité ou alias CRM.
+- Driver V152 exige V148 GLOBAL complet, autorités/dénominateurs317683879
+  observations185993425 lignes44403034 sites, toutes parts officielles et
+  courantes du validateur V148/V143 INCHANGÉ, toutes namespaces/dictionnaires/
+  intervalles reverse, flags fermés et budgets PASS zéro swap. Plan exhaustif
+  de TOUS rowgroups en slices physiques65536, y compris buckets vides.
+  Impossible de prendre les seuls lots qui ont réussi ou de déclarer READY.
+- Garde80s/3GioRSS/global swap0, supervisor90s, quiet30s puis1s, mono-thread
+  inchangés et fermés. Source absente refusée AVANT quiet/mkdir/worker.
+  Roots/phases/seals existants ou STOP non repris/écrasés. SHA des sources
+  complets sous Budget initial/final, SHA de chaque input effectivement utilisé
+  avant/après worker ; epochs inode/dev/size/mtime entre phases plutôt que
+  relire les grosses sources nationales à chaque slice. Drift = STOP, pas
+  réinterprétation. PAS benchmark national du coût de cette construction.
+- Reader NationalAddresses vérifie le seal et tous canaux/artifacts ; retourne
+  AliasSnapshot readonly avec le score whole-alias V138 inchangé. Exacts
+  lexicaux toujours séparés du current_exact du fait ; posting public copie,
+  snapshot possédant ses octets, close idempotent et rejet après fermeture.
+  Cleanup des mmap en cas d'ouverture partielle corrigé AVANT toute mesure.
+- 27 tests V152 verts : compilation/quatre canaux et collisions raw→feature,
+  masques/IDs, rowgroups/slices et buckets vides, namespace/schema invalides,
+  chaîne projection→dictionary→reverse→lexical→snapshot→tous faits vs oracle,
+  scopes/flags/read-only/lifetime, sources partielles/absentes, hashes/epochs,
+  metadata de staging modifiée, ressources relâchées et STOP/no retry/no seal.
+  Suite TOUTE V117–152430 PASS36,84s, session59300 TERMINAL0. Premier appel
+  avec regex trop étroite118 PASS19,68s N'ÉTAIT PAS la suite complète ; corrigé
+  et réellement exécuté ensuite. Timings de tests PAS SLO/recall national.
+- Préflight national réel TERMINAL0 du wrapper qui capture le REFUS :
+  `UNFINISHED_COMPLETE_ADDRESS_STORE_NO_WORKER_LAUNCHED`,0,007600s interne
+  (0,252s process), complete_source_existsFalse/output_createdFalse/
+  worker_launchedFalse. V148 namespace nationale n'existe toujours pas ;
+  V144 manifest global toujours absent (test exit1). Aucun nouveau root
+  national V152 créé. SHA placeholder uniquement pour argument d'un fichier
+  ABSENT, jamais présenté comme hash d'une source ni enregistré comme seal.
+- PAS sonde nationale de retrieval : pas sortie100, pas nouveau recall,
+  moteur noms/adresses/XY/activité/relations complet toujours à terminer.
+  Statistiques/V101 restent114/128=89,0625% exact116/128=90,625% op, pilote
+  réutilisé PAS validation nationale99,2%. Downstream/folds0/1 non ouverts,
+  aucun fit/GT/positif injecté/dépense/push/suppression de source historique.
+- Blocage de construction V144 STOP112 inchangé : décision explicite humaine
+  de garde mémoire encore attendue. Aucune continuation automatique ne vaut
+  approbation1Gio/pression-only. Goal ACTIVE/non atteint ; autres raccordements
+  et optimisations sûres restent possibles, pas impasse générale déclarée.
