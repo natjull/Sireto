@@ -1,0 +1,8 @@
+{
+  "semantic":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v113_activity_semantic/probe_20261003_a/manifest.json","sha256":"cfeebabf1e89ba82c0dec3967be08aaa4d63d8124923071dbad7dd13fb7d2608"},
+  "proof_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v56_exact_fields/training_20261002_a/manifest.json","sha256":"5e3e309953a1e153478dc34e8aa7e9ecef4e76cbfe5b511f35cae8e902c667ad"},
+  "expected_training_queries":512,"expected_sites":43896818,"expected_descriptions":2140,
+  "extra_penalty":0.05,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "scope":"TRAINER_ONLY_NESTED_DOUBLE_EXCLUDED_CONTEXT_INITIAL_SCORE_NOT_RETRIEVAL"
+}
