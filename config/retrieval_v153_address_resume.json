@@ -1,0 +1,12 @@
+{
+  "original_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v144_address_bootstrap/projection_20261003_a/launch.json", "sha256": "17ca648a6599d8f86c46116b9db4ffe6678a2f52c26dc5ac93bacd021e6339fc"},
+  "original_stop": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v144_address_bootstrap/projection_20261003_a/official_addresses/part00112/worker_stop.json", "sha256": "efcd1624693b147496031a3a9046343098c8b78c507f7d08d5c8bdb88fc5f3dc"},
+  "expected_reused_parts": 114,
+  "batch_rows": 8192,
+  "initial_quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "authorization": "HUMAN_OUI_2026_10_04_1GIB_PRESSURE_SWAP_TELEMETRY",
+  "scope": "UNCHANGED_ALL_SOURCE_PROJECTOR_EXPLICIT_NEW_RESOURCE_POLICY_NO_LABELS_NO_RECALL_CLAIM"
+}
