@@ -11433,3 +11433,60 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   index aval. Un STOP devra rester immuable ; aucun retry automatique.
   Puis adaptateur explicite V153 vers storage/lexical (anciens V148/V152
   incompatibles intentionnellement avec la nouvelle politique, à préserver).
+
+## 2026-10-04 — V154/V155 : raccordement complet et poursuite réelle V153
+
+- Classification du tour précédent : PROGRESS (reprise effectivement lancée,
+  nouveaux certificats source produits) ; pas une simple intention de run.
+  Objectif99,2% exact initial100 toujours ACTIVE/non atteint.
+- Milestones code isolés : `2ff68d86` pour V154 dictionnaire/reverse complet ;
+  `259ed7db` pour V155 lexical complet/reader ; `e0ffcbdc` ferme explicitement
+  le cas STOP superviseur à côté d'un manifest worker présent. Aucun source,
+  config, code ni résultat national V142–V153, V148 ou V152 modifié.
+- V154 exige GLOBAL V153 complet et tous312 lots dans leur ordre original,
+  launch exact par import (V142 ou V144), mêmes rôles/dénominateurs/provenances,
+  namespace44403034 sites, sources complètes SHA, all-human/folds protégés.
+  Les anciens rapports0-global-swap restent validés par V143 inchangé.
+  Nouveaux rapports V153 validés explicitement (1Gio/80s/pression1/libre>=50%).
+  Core partition/dictionary/stage/pack V145/V147 IDENTIQUE par import, aucune
+  nouvelle règle de matching, aucun cap de faits ou filtrage métier.
+- V155 consomme UNIQUEMENT V154 GLOBAL complet ; toutes autorités dictionary,
+  reverse, sources et intervalles. Fonctions physical_plan/stage_addresses
+  V152 et pack V134 inchangées ; tous word/char3/char4/exact, toutes collisions
+  raw→feature et aliases vides restent dans le même namespace. Tous champs
+  CP/INSEE/numéro/current et scope restent sur leur fait propre. Reader query
+  V138 inchangé, snapshots readonly/propriété/lifetime contrôlés, pas de pool.
+- Guards fermés identiques V153 : RSS1Gio/80s, pressure normal1, libre>=50%,
+  global swap telemetry NON attribué. Les sources/configs/outputs/epochs sont
+  hashés/contrôlés aux mêmes points ; sources absentes/partielles refusées
+  AVANT worker/output. Mono-thread, DuckDB256MiB, spill3Gio borné, quantum65536
+  uniquement physique. Aucun benchmark national V154/V155 exécuté encore.
+- STOP worker OU superviseur à côté d'un manifest succès = refus, jamais
+  revalidation/retry/seal. Tests de ce cas ajoutés AVANT mesure nationale.
+  Aucun statut ni politique historique relâché ou rebaptisé.
+- Tests : V15416 PASS4,36s, V15515 PASS10,28s avant ajout de guards ; nouvelle
+  suite ciblée34 PASS15,37s. Suite exhaustive V117–155487 PASS54,47s,
+  session9183 TERMINAL0. Parité de preuves/snapshots avec l'oracle, ressources
+  explicitement nouvelles y compris global swap>0, tout corpus/observations,
+  flags/folds, hashes/epochs, missing/partial/no retry/no seal et STOP parent.
+  Timings de tests ne valent PAS SLO ni recall national.
+- V153 session21938/PID69266 confirmé vivant à12min37 ; official_addresses
+  267/267 désormais terminés, puis current_addresses2/3 réussis ~14,9/14,8s,
+  pics RSS777224192/778469376 octets, pression1/libre72%/global0/PASS.
+  Snapshot plus récent :275/312 parts (161 nouvelles +114 importées),
+  current_addresses jusqu'à7 inclus, global seal toujours ABSENT,
+  pic nouveaux workers792182784 octets, min libre69%, tout PASS, aucun
+  worker_stop ni status superviseur. Une part a publié global swapdelta928
+  sous pression normale : preuve réelle que global-swap seul n'arrête plus
+  abusivement le worker ; ce compteur ne prouve PAS son attribution au worker.
+- Prochaine action : suivre le MÊME handle jusqu'au terminal, contrôler le
+  seal GLOBAL et ses312 autorités, puis lancer V154 `init` avec son VRAI SHA
+  global. Contrôler un vrai `part` avant `remaining`. V155 ne pourra partir
+  qu'après V154 GLOBAL, jamais d'après une poignée de lots réussis. Ne pas
+  relancer V153 pendant sa progression, ni utiliser un SHA placeholder.
+- Aucun nouveau retrieval100 national, recall/SLO ou gate READY. V101 reste
+  114/128=89,0625% exact116/128=90,625% opérationnel sur pilote réutilisé.
+  Names/XY/activité/relations/addresses doivent encore être intégrés au moteur
+  initial100 complet et évalués sans labels dans la génération. Downstream,
+  folds0/1 et sources label-side non ouverts ; pas de fit, injecté, cloud,
+  dépense/push/suppression. Modifications utilisateur sans rapport préservées.
