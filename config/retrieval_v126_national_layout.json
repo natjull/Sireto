@@ -1,0 +1,12 @@
+{
+  "membership_manifest": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v96_national_membership/compile_20261003_a/manifest.json","sha256":"63fdf65f3b8591219e648c9fc3ff2416d38af4cbaff7cf01fe3bf15fbf0ca458"},
+  "current_source": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet","sha256":"48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99","expected_rows":43896818},
+  "sample_manifest": {"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v118_official_variants/probe_20261003_a/manifest.json","sha256":"742729b3b3ca32fd1bc61fb27b2980bb946a23ea7f7af722f1d3e38f9403e68a"},
+  "expected_sites":43896818,
+  "block_size":128,
+  "resources":{"max_seconds":80,"max_rss_bytes":3221225472,"max_swapout_pages_delta":0},
+  "duckdb_memory":"256MB",
+  "max_output_bytes":1073741824,
+  "scope":"EVERY_NATIONAL_SITE_PHYSICAL_LAYOUT_NOT_COMPLETE_RETRIEVAL_INDEX",
+  "model_fit":false,"recall_measured":false,"fold0":"FORBIDDEN","fold1":"CLOSED"
+}
