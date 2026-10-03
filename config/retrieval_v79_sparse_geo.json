@@ -1,0 +1,10 @@
+{
+  "trained_sparse":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v77_safe_sparse/training_20261003_a/manifest.json","sha256":"b961e2cef641bd99837c624fedc631a6093d5e657d49145917d6c715e9d9ae12"},
+  "vector_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v52_contrastive_training/probe_20261002_a/manifest.json","sha256":"95af09fa0448cbc60f0b2b21600162426aa44c9912628d74845022f39b3e02db"},
+  "proof_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v56_exact_fields/training_20261002_a/manifest.json","sha256":"5e3e309953a1e153478dc34e8aa7e9ecef4e76cbfe5b511f35cae8e902c667ad"},
+  "alias_validation":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v67_stored_initialisms/probe_20261002_a/manifest.json","sha256":"9e74e3a376e0a0a5c4a5a37f8288b31ec0397b785cc1e6ef899594dc4a267e48"},
+  "vocabulary_cap":2048,"minimum_document_frequency":3,"maximum_document_fraction":0.15,"minimum_vocabulary_words":64,
+  "native_ridge":0.005,"geographic_ridge":0.005,"maxiter":180,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "families":["BASELINE","ADD_GEO8"],"scope":"TRAIN_ONLY_CROSSFITTED_GEOGRAPHIC_RESIDUAL_NO_RECALL"
+}
