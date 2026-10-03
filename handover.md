@@ -10417,3 +10417,67 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   attributes et succession entière restent à compiler/intégrer, graphe V84
   non exhaustif. Puis moteur national initial100 exact,oracle et coûts avant
   scellement128 sorties/labels. Aucun seuil99% abaissé ni dénominateur réduit.
+
+## 3 octobre 2026 — V132/V133 : owners complets et toutes successions brutes
+
+- Milestone `2634e376` V131 : accès names words/char3/char4/exact-feature,
+  toutes57530682 chaînes brutes V130.156 tests V117–131 PASS9,48s avant
+  mesure. Compilation physique512 groupes en cours à ce checkpoint, root
+  `audits/retrieval_v131_name_access/compile_20261003_a`, contrôleur55167
+  encore LIVE ; aucun seal complet ni recall déclaré. Préflights0/256/511
+  terminal56517 exit0 :122880/122880/39304 noms,tous ensembles/exports EXACTS,
+  workers3,094369/3,076940/1,066106s,pics874397696/1046167552/420855808,zéro
+  swapout,PASS. Init29236 terminal0,tous64 fichiers noms entiers rehashés
+  1,036286s,pic193937408,zéro swapout. Ne pas relancer les phases terminées,
+  ni un contrôleur/file-based restart pendant que55167 est live.
+- Milestone `f162d0ec` V132 : CSR natif nom→tous propriétaires,64 partitions
+  sources V130 entières.105564761 faits /57530682 noms,ordres originaux
+  fact/name contigus ; parentuint32,owneruint64,subject/scopeuint8,
+  current_exactbool,offsetsuint64. Toute preuve parent reste parent-scoped,
+  enseigne site locale ; owners hors catalogue gardés,pas aliasUL×sites,
+  cap de fanout ni dates/états prunés. Audit de TOUS tuples et de chaque
+  frontière batch,puis reconstruction EXACTE de CHAQUE nom et champ via CSR.
+  UNKNOWN/FALSE/TRUE et27 champs originaux restent V129/V130 immuables ;
+  boolcurrent_exact reprend uniquement l'agrégat V130 TRUE explicite.
+  173 tests V117–132 PASS13,60s avant cette mesure,dont17 nouveaux guards.
+- V132 root `audits/retrieval_v132_name_owners/compile_20261003_a`,init83084
+  terminal0 : tous fichiers facts/names rehashés3,367717s,pic387284992,zéro
+  swapout. Préflightbucket0 session94984 terminal0 :1658378 faits entiers,
+  0,815577s,pic254410752,zéro swapout. Tous63 restants+seal session39854
+  terminal0 : tous64 buckets EXACTS,PASS,somme workers51,539576s,
+  max0,936690s,pic259211264,zéro swapout ; launch→seal139,006371s,
+  sorties2043766535 octets (<4Gio).97171317 owners-personne morale,
+  8393444 owners-sites ; scopes80954919 légal/16216398 commercial/8393444
+  endpoint ;99338030 facts any-explicit-current-TRUE. Ces nombres ne sont
+  ni des candidats/labels ni des gains de recall. Post-check source/plan/
+  launch/code et TOUS384 arrays entiers rehashés PASS.
+  Manifest SHA `4db23546ea223bae45501f047d92bdf9eeb5255ff7547b14f4c5b2393e238cf5`,
+  launch `ec16ee110413d1b342e23f423a3e7525079c3a0f710844768e552b5de2a098eb`,
+  plan `fde78de19aaf6a2b93fbebac8f4825f1a6bac78718f43771f417841716b0cdd1`.
+- Milestone `c442d572` V133 : TOUTES9730972 observations brutes officielles
+  de succession,et non7512820 observations précédemment liées V84 (immuable).
+  Aucune continuité/état/membership/date filtrée,déduplication ou cap de
+  voisins. Deux orientations physiques par observation r/n+r,CSR exact
+  endpoint/parent,leading zeros et dates/nulls,UNKNOWN/FALSE/TRUE conservés.
+  Self-links gardés comme contexte,jamais expansion ; continuité n'est PAS
+  identité juridique ni preuve d'ancien même site XY. Aucun graphe BODACC
+  TUP/fusion exhaustif revendiqué.182 tests V117–133 PASS14,56s avant mesure,
+  dont9 nouveaux tests du graphe complet/nulls/self/leading zeros/fanout.
+- V133 root `audits/retrieval_v133_all_succession/compile_20261003_a`,run
+  81776 terminal0 :9730972 observations/19461944 incidences orientées,
+  15506308 endpoints/7311393 parents ;2821 self-context-links,
+  continuité TRUE7754652/FALSE1976320/UNKNOWN0 ; transfert siège
+  TRUE1361234/FALSE8369738/UNKNOWN0. Incidences endpoint max181,aucun cap.
+  CHAQUE champ source reconstruit EXACTEMENT,toutes orientations certifiées
+  permutation sans perte,puis tous endpoints/parents reconstruits via CSR.
+  Worker11,787889s,pic1875410944,zéro swapout,PASS,sorties725078204 octets.
+  Source entière rehashée avant/après,TOUS arrays rehashés post-check PASS.
+  Manifest SHA `afbd9475ecc29b208b3d7a8aaa5d6115d2221b411a23d44c8ae4f222001bd3e3`,
+  launch `dfc8cfb7c682387bfb7ea4d26111fea7d7ddbec713fb24040183b6226ffa3d2d`.
+- Checkpoint PROGRESS,goal ACTIVE : de vrais accès nationaux owners/graphe,
+  mais PAS encore moteur initial100 complet,recall ou SLO. Dernier pilote
+  V101114/128=89,0625% exact,116/128=90,625% opérationnel INCHANGE.
+  Folds0/1 jamais ouverts,aval gelé,aucune dépense externe/fit ni push.
+  Finir V131 puis intégrer tableaux attributs/adresses et couplage exact
+  query-side sans aliasUL×sites/réservoir candidat fixe ; sceller TOUTES
+  sorties avant labels. Les anciens milestones restent historiques.
