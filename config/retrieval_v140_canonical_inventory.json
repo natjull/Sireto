@@ -1,0 +1,12 @@
+{
+  "catalog": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v136_extended_catalog/compile_20261003_a/manifest.json", "sha256": "c0802273792ff2d0f85f062784db19009d64d5a162116459a1f6fed9bd53abbc"},
+  "names": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/name_evidence.parquet", "sha256": "3d7ea61142afff1800c3545783edb16cfaf6d1039ce47db353f7dfcfb74462f5"},
+  "addresses": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/address_evidence.parquet", "sha256": "1fa4f7e9cf5c503e5d9e74bbb4802a244bf74bf04e4c78da82755d7ada3d3984"},
+  "expected_namespace_sites": 44323289,
+  "expected_names_rows": 162537492,
+  "expected_addresses_rows": 142096607,
+  "numpy_version": "2.4.1",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 67108864,
+  "scope": "ALL_ORIGINAL_CANONICAL_SITE_IDENTITIES_REGARDLESS_OF_LEXICAL_MASK_NO_LABELS"
+}
