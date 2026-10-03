@@ -11033,3 +11033,44 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sceller128 sorties avant vérité puis OOF exact/op all-human complet.
   V101 reste114/128=89,0625% exact et116/128=90,625% op ; objectif99,2%
   non atteint, PAS READY, goal ACTIVE. Folds0/1 non lus, aval gelé.
+
+## 3 octobre 2026 — V147 accès inverse de toutes les adresses par site
+
+- Tour précédent PROGRESS : noyau V146 commité/testé, pas gain de recall.
+  État externe recontrôlé : V144 sans manifest global,39 manifests nouveaux
+  et STOP112 inchangé376 pages globales/698351616RSS/1,021597s. Aucun job
+  national relancé ; choix utilisateur sur garde système toujours absent.
+- Milestone `2719e121` : accès inverse faits V145→site via CSR mmap. Chaque
+  site/parent reconstruit depuis identités V141 pour jointure uniquement ;
+  partition physique de positions, pas cap/tri de pertinence. Chaque colonne
+  originale, couple bucket/fact_id de provenance, alias global, CP/INSEE/
+  numéro/current_exact reste exacte à l'export et relecture entière. Sources
+  hashées avant/après, artefacts à l'ouverture. Numéros partagés verbatim,
+  pas deuxième normalisation ni mélange entre adresses. Intervalles vides
+  conservent tous les sites. Aucune propagation aux frères ou via relations.
+- `ReversePart` retrouve seulement les plages de faits du site demandé et
+  retourne AddressBatch V146, sans reparcourir tout le stock par chunk de
+  sites. `AliasSnapshot` contrôle une fois les scores de TOUTES variantes,
+  exige readonly/exact cohérent ; pas de scan de validation mondial répété
+  pour chaque intervalle. Les chunks bornent la RAM temporaire, jamais le
+  nombre de faits du site ;2501 faits testés tous accessibles. Identités/
+  positions jamais features. Lexique d'adresses réel encore manquant.
+- 11 nouveaux tests : V142→V145→V147→V146 sur fixture sans label, parité
+  initial100 quel que soit chunk ; preuve-site/attributs/provenance exacte,
+  sites vides,2501 faits, numéro Unicode une seule normalisation, parent
+  erroné/dup/missing/count/alias/hashes STOP, intervalle immutable et snapshot
+  cohérent. Correction Array vs ChunkedArray PyArrow dans le nouveau code
+  AVANT toute mesure. Suite V117–147 :331 PASS19,26s, tous handles TERMINAL0.
+- Portée limitée explicitement : pas driver national/all-parts seal V145/
+  V147, ni accès lexical d'adresses, ni moteur national128 lancé. Les scores
+  de variantes de tests sont manuels pour la liaison, PAS coût/recall lexical
+  réel. Les parts physiques ne certifient pas la complétude nationale.
+  Aucun corpus partiel/fixture présenté comme objectif99,2% atteint.
+- Suite utile encore possible côté code : driver exigeant toutes les parts
+  de projection et scellant dictionnaire+reverse+lexique, loader query-side
+  noms/relations/attributs/XY ; pas de relance ni garde modifiée avant choix
+  humain. Ensuite coûts mesurés sous budgets, sorties128 scellées avant
+  vérité et OOF all-human exact/op/Wilson/généralisation/SLO. V101 demeure
+  114/128=89,0625% exact/116/128=90,625% op, pas nouveau recall. Dirty autres
+  travaux préservé, aucun push/fit/aliasCRM/dépense/aval ; folds0/1 non lus.
+  Ce tour PROGRESS source-intégration, goal ACTIVE, PAS READY.
