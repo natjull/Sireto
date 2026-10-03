@@ -10082,3 +10082,88 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   opérationnel, pilote réutilisé. Aucun recall V121–124 publiable. Gates99,2%,
   OOF complet,Wilson,généralisation,attribution label-side et SLO NON atteints.
   Goal ACTIVE, pas READY_FOR_FOLD1, pas garantie99%, pas STOP définitif.
+
+## 3 octobre 2026 — V125 runtime persistant et V126 layout national
+
+- Précédent tour PROGRESS : V124 exact et gain12–17× changent la prochaine
+  action, compilation compacte plutôt qu'augmentation de budget/recall sur
+  corpus partiel. Contrat initial100/all-human inchangé, aval gelé et union
+  fixe→LightGBM non autorisée ; pas d'alias CRM appris. Goal ACTIVE.
+- Milestone `db89b5a1` V125 : moteur indépendant array-only NumPy mmap
+  read-only, textes ASCII bytes/offsets/ordre lookup binaire, postings
+  words/char3/char4 et alias→bloc en CSR. Scatter des attaches lexicales
+  positives par chunks65536 références, aucun cap fanout/alias ; bornes19/30
+  vectorisées, mêmes marges flottantes/score V121/bornes V123. Grades lexical
+  et current-exact distincts, originales sources/provenances conservées
+  en autorités hashées. Pas d'objet par site/dictionnaire global par alias
+  dans le runtime, pas de pickle ni de pool fixe/reclassement/filtre d'état.
+  Exporter accepte encore un fixture V124 Python ; PAS compiler streaming
+  national. Même corpus source-only/familles/queries4/modèles/budgets V124,
+  activité désactivée, aucun fit.98 tests combinés PASS5,74s avant mesure.
+- V125 session23233 terminal0, root
+  `audits/retrieval_v125_mapped_blocks/probe_20261003_a`.
+  Compilation/sample adapter1,676563s,build2,158402s,export0,250759s,
+  oracle scalaire5,864890s :9,998715s/pic906395648/zéro swapout.93 tableaux,
+ 22071611 octets,53599 noms/23431 adresses uniques attachés. Ce volume
+  et ces ratios ne sont PAS une projection nationale représentative.
+  Nouveau processus de recherche PID14418 distinct du compilePID14392,
+  aucune instance Python source/V124 ni oracle/ancien candidat/GT ouvert.
+  Runtime0,176623s/pic168984576/zéro swapout,load+hashes0,046848s.
+  Recherches0,025218/0,039799/0,031986/0,011931s ; visites mêmes V124,
+ 12034/21036/16813/8094. Bornes0,000311 à0,000821s. Disque/cache non
+  contrôlés : nouveau processus Python != disque froid ni SLO national.
+  Tous quatre top100 scores/ordre EXACTEMENT égaux à l'oracle scalaire de
+  tous32768 sites, comparé dans superviseur APRÈS toutes sorties scellées.
+  Sorties23847435 octets au contrôle runtime (<32Mio), limites respectées.
+  Manifest SHA `6a57ae65fbe231a1e07af46ec2a4bb63516391ed617f06f05fe5679b102eeed3`,
+  launch SHA `7f535f846b26f604ae020edb4ab1621b9cbd9f1080e93944440cd32db4c74587`,
+  index SHA `3c6b13f572ee85b35dce1daad1a7fa393fbd45208a06677eaa242983ad9b4ff1`,
+  outputs SHA `7f6f3d6a2157c2e0f0edf5de09c1cdd0523a5f57e9fd8ec3c312eb6e3056376e`,
+  oracle SHA `a3293ec9d58765b1b15626486a1d9b6f7bcebc09c1933fe8d8ed306c0b02f9cd`.
+  Post-check toutes implémentations launch,93 tableaux, autorités source
+  complètes du sample et outputs/oracles PASS ; sources nationales gros
+  SHA déclarés/stat+footer, pas rehash intégral des stocks.
+- Milestone `374f2f0c` V126 : brique source-only pour TOUS les43896818 sites
+  nationaux, jointure typée exacte du stock courant vers membership V96,
+  aucun WHERE/état/localité/rayon/CRM/GT/graph-membership. Absences/duplicates/
+  mauvaises identités STOP, jamais retirées du dénominateur. XY officiels
+  L93 au périmètre V121, autres sites conservés UNKNOWN. Morton à maille1m
+  pour ORDONNEMENT PHYSIQUE SEULEMENT ; doubles originaux de score intacts.
+  Blocs<=128, connus/UNKNOWN séparés, bbox exacts et bitmap couverture
+  complète une fois. Pas de recherche ni modèle, relations/alias à attacher
+  ensuite.106 tests V117–126 PASS5,80s, dont coordinate oracle V121,
+  bboxes/coverage exactes, égalités Morton et dérives d'identité STOP.
+- V126 session7179 terminal0, root
+  `audits/retrieval_v126_national_layout/compile_20261003_a`.
+  Join coordonnées de TOUTES43896818 lignes17,906572s,layout+audit bitmap
+ 12,479323s ; worker32,263315s/pic2490761216/zéro swapout,PASS3Gio/80s.
+ 26951280 XY connus,16945538 UNKNOWN conservés,342945 blocs max128 sites,
+  tous exactement une fois. V96 états16715258A/27181560F,0UNKNOWN/autre ;
+  aucune ligne fermée supprimée.32768 coordonnées source-only V118 toutes
+  exactement égales au parseur scalaire V121. Sorties891659208 octets<1Gio,
+  pas de modèle/CRM/GT ni recherche de candidats exécutés sur ce layout.
+  Manifest SHA `47acc25da8280915e65080996a128ad9c102f8ba20b611b23083f713487f618f`,
+  launch SHA `65e5db3abd6b827bd6604804bd27d91d18d946946c95e0e616fbc498b0af9c7e`,
+  XY SHA `bca5ebff49229f77a0ad2eb60ce3ef2af5631e33e3c790bb036bcdc07c248006`,
+  block_sites SHA `31c4a07b671a99852a807e2b14eb45e30fab0c05ddda5776ff93ad400f9e1775`.
+  Post-check toutes implémentations et5 tableaux entiers PASS. Raw stock
+  SHA complet hérité déclaré, stats/footer avant/après ; pas rehash global,
+  limite explicite. Tableaux V96 identity/state entièrement hashés vérifiés.
+- Ce tour PROGRESS : V125 enlève les objets site/alias du runtime, V126
+  réalise une brique nationale complète à coût borné, pas une promesse.
+  Aucun job live restant ; commits hors volet de l'utilisateur préservés,
+  pas de push. Aucun recall/SLO national mesuré : V101114/128=89,0625% exact
+  et116/128=90,625% opérationnel toujours derniers, pilote réutilisé.
+- Prochain travail prioritaire : compiler les preuves sources COMPLÈTES et
+  les attaches owner→bloc/sites sur V126, en phases streaming bornées.
+  Éviter le produit matériel aliasUL×tous sites : dictionnaire de variantes
+  global, faits owner/scope+observations et membership exhaustif factorisés,
+  maxima query-side de preuves cohérentes par owner puis joints aux sites.
+  Ne pas propager les enseignes SIRET aux frères. Historique Sirene/EI doivent
+  réellement rejoindre les autorités RNE/BODACC, pas seulement un manifeste
+  temporal_complete. Noms courants/historiques/current-exact gardés distincts.
+  Tester équivalence au moteur scalaire et fanout/UNKNOWN/coût avant toute
+  recherche nationale128 ; scellement de toutes sorties AVANT labels.
+  Sites masqués/non-localisés et tous fermés restent dans le dénominateur.
+  Full OOF/Wilson/généralisation/attribution label-side/SLO restent NON
+  franchis. Goal ACTIVE, pas READY_FOR_FOLD1 ni changement de définition99%.
