@@ -8998,3 +8998,92 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   goal ACTIVE/PIVOT_GENERATION, aucun READY_FOR_FOLD1, OOF23k/généralisation/
   SLO finaux non validés. Cette section ne présente pas ces builds comme
   amélioration mesurée ni comme garantie d'atteindre la cible.
+
+### 3 octobre 2026 — V85/V86 complets, V87–V90 branche nationale réellement interrogée
+
+- Reprise du goal après nettoyage Mac séparé terminé. Dernier tour retrieval
+  PROGRESS (V85/V86 sources complètes), dernière métrique toujours V78
+  exact114/128=89,0625%, opérationnel116/128=90,625%. Aucun gain revendiqué
+  à partir de simples builds ; objectif initial100/99,2% et protections actifs.
+- Milestone `9c92ba67` V85 : factorisation EXACTE de la clé entière
+  (grain,owner,parent,scope,nom), pas bag de mots inter-alias ; toutes50097324
+  observations source mappées vers14162541 faits, inverse CSR complet,
+  max616 observations/fait non plafonné. COMPLETE27,787s,pic1673560064,
+  zéro swap,1304344659octets avec staging, guards80s/4Gio inchangés.
+  Manifest `audits/retrieval_v85_name_facts/compile_20261003_a/`, SHA
+  `07784998a184c0ce51bd96fe1415384fa4388ba039633137ab35cc6f50786acc`.
+  Vérification exhaustive inverse/mapping/exactly-once50m et hashes1,611s,
+  pic2122858496,zéro swap ; rapport SHA
+  `f972304aec79a44e7cbe714153088af993733d276b57d614cea8639c0d59f589`.
+  Jointure indépendante de toute la clé contre source entière non répétée :
+  limite publiée, pas affirmation de cette preuve.
+- Milestone `7e4fc715` V86 : tous28070741 postings de mots,1221241 mots
+  distincts, sans plafond de faits ; masque IDs exactement signal V56 sur
+  noms canoniquesASCII réassertés, pas normalizer SQL Unicode substitutif.
+  Une occurrence(word,fact), mots du même alias seulement.90441 faits
+  context-only et41 noms devenus vides après masquage conservés en source,
+  non lexicaux ; aucune ligne CRM/label retirée.6087062 owners parent avec
+ 10157816 faits et3829628 owners site/4004725 faits, CSR sans alias cap.
+  Toutes50097324 dates/source/kind/current/priority/NULL préservées par ordinal,
+  provenance textuelle originale restant V82 hashé, pas co-validité inventée.
+  COMPLETE41,761s,pic1762918400,zéro swap,1652617667octets avec staging,
+  guards80s/4Gio inchangés. Manifeste
+  `audits/retrieval_v86_name_postings/compile_20261003_a/`, SHA
+  `da7bf106a4b94b05587177f0d41beb7f64dcbde7348ec3a485e0dc649114413b`.
+  Pas encore de ngrams/fuzzy sur ce nouvel accès ; sémantique V77 reste natif.
+- Milestone `2b839aae` V87 : vraie recherche initiale nationale avec
+  MAX(native V78 gelé,64×meilleur nom-chemin×preuve XY),64 hypothèse unique
+  préenregistrée, non choisie sur14 misses. Nom=IDF source entière/couverture
+  CRM par alias carrée, scopes directs site/parent puis succession1hop
+  graduée1/.5/.25 ; jamais alias automatique d'un autre site. BAN sigma/
+  fiabilité explicites, absenceXY→branche0 PAS filtre natif. Dates restent
+  UNKNOWN pour co-validité (pas CRMdate), tous fermés conservés. Portée
+  ajoutée12531976 endpoints V84 seulement, natif43896818 intact. Non-graph
+  siblings donnent0 en random access aussi : pas expansion cachée incompatible
+  avec certificat. Sortie≤100 distincts, heap100 et streams exhaustifs,
+  aucun fixed2000/500 ni seed parent. Oracle indépendant source/scope/links
+  et vrai Tantivy/XY weak/missing passe ;41 tests initiaux2,04s.
+- V87 `pilot_20261003_a` STOP sur PREMIÈRE requête au budget20s :699
+  observations,497 targets complétés,300 faits/100native/100XY, cutoff1,752
+  égal borne donc non certifié. Contrôleur28,416s terminal. Aucun label lu,
+  aucune sortie partielle évaluée. Status SHA
+  `b49eb06edb9cfbc9c468d7e071e68c1f2a1cce87b5fed1277dc73301388b1c4d`,
+  worker-stop SHA`ddb36e9fd5d3c5aef21b3549bbe4346009477f318aa7fb0b77c58adc0079111a`.
+- Milestone `7b28a54b` V88 physique : completion100 à travers les fanouts
+  de toute la page, pas une requête native par petit alias ; grade toujours
+  validé contre SON fait, frontière après toute la page ; native→XY→names
+  round-robin. Métrique et corpus identiques. La nouvelle fixture guard
+  own-fact était inatteignable car site stream entièrement épuisé avant noms :
+  première tentative `_a` interrompue volontairement après1 recherche
+  certifiée7,496s, worker ensuite confirmé absent par ps ; pas mesure recall.
+  Correction de fixture `9d74b687`,44 tests2,29s. Tous anciens artefacts
+  préservés ; pas modification de code/scores après lecture de labels.
+- V88 `_b` :1 recherche certifiée7,479s puis STOP seconde20,563s,
+ 1192 targets/1299 observations ; deux scans natifs8,186s,10 accès ponctuels
+ 2,360s, borne2,469>cutoff2,153. Status SHA
+  `6aafca5e7c92f9b5a33a11835bb15d9d88680986bf321d2196e93489408e9df8`,
+  worker-stop SHA`8025d38358c0273ee4e960534bcfcb917db420801ad1e358a4d4cee852c443ee`.
+  Aucun label/recall partiel, pas de budget agrandi.
+- Milestone `b9501fe0` V89 physique : première page256 seulement lecture,
+  profondeur toujours adaptive/exhaustive ; ne pas rescanner un flux dont
+  sa propre borne unread est STRICTEMENT sous cutoff100. Égalité active pour
+  ties globaux. Oracle exhaustive+preuve de rescan évité24 tests1,49s. V89
+  `_a` a certifié7 recherches puis STOP worker80s à81,016s pendant recherche
+  binaire, pic4559814656,zéro swap ; contrôleur82,899s terminal. Pas128
+  scellé, aucun label ouvert ou métrique de recall publiée.
+- Diagnostic source-only :16 positions réparties sur endpoint_keys et
+  parent_owner_keys, comparaison alternée intPython/scalar du dtype, résultats
+  identiques. Endpoints12531976 p50=3,029ms vs3,229µs ; owners6087062
+ 1,465ms vs2,500µs. Coût dtype caché établi expérimentalement, pas facteur
+  garanti de gain end-to-end ni mesure SLO, pas besoin de labels/GT.
+- Milestone `3897dfd1` V90 physique : typed scalar uint64/uint32 dans
+  recherches binaires mmap, mêmes résultats/range/ASCII/scopes/provenances.
+  Aucun ID devenu feature ou poids modifié.31 tests2,30s : parité avec
+  adaptateurs anciens, spy de dtype, oracle initial100 et gardes du kernel.
+  Préflight V90 lancé sous EXACTS mêmes budgets20squery/4smean16/80sworker/
+ 6Gio/zéro swap/90s supervisor/900s contrôleur ; bilan dans section suivante.
+- Modèles aval gelés, folds0/1 non lus, pas injection/alias CRM/dépense/cloud.
+  Milestones locaux isolés, pas push, changements utilisateur conservés.
+  Goal ACTIVE ; ni READY_FOR_FOLD1 ni succès99,2%/OOF/généralisation/SLO
+  revendiqué. Ces adaptations physiques répondent à des causes de coût
+  vérifiées, pas à des gains/pertes humains ouverts pendant la génération.
