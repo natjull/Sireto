@@ -8893,3 +8893,108 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Folds0/1 non ouverts, tous modèles aval gelés, all-human/sidecar final
   inchangés, aucun positif injecté, aucun push. Jobs V81_a/b/c et vérification
   TERMINAUX, aucun handle encore à attendre. Changements utilisateur préservés.
+
+### 3 octobre 2026 — V82 complète, V83 collecteur de chemins, V84 accès national effectif
+
+- Dernier tour retrieval classé PROGRESS : compilation V81 complète puis
+  préenregistrement V82/STOP taille ont donné une cause vérifiée et une
+  prochaine action physique sûre. Le nettoyage Mac demandé séparément est
+  terminé ; reprise de l'objectif retrieval99,2% initial100, pas de pause ni
+  redéfinition. Aucun ancien job encore vivant au début de cette reprise.
+- Milestone `a4b6d161` V82 (tour précédent) : portée officielle des noms
+  endpoint SIRET ET parent SIREN, deux SEMI JOIN précis. Toutes observations
+  et dates/provenances conservées, aucun nom de site frère injecté. Enseigne
+  SIREN context-only, noms légaux/commerciaux SIREN preuve de personne morale,
+  pas alias universel des sites. Source canonique162537492 noms et7512820
+  bindings nationaux vérifiés, pas de CRM/label/corpus autour du GT.
+- `projection_20261003_a` STOP_OUTPUT_SIZE après exports complets :
+  50097324 observations /12531976 sites, deux Parquets2173183735octets,
+  25700087octets au-dessus de2Gio (hors petits logs). Aucun manifeste scellé
+  publié/adopté ; vieux code/config/doc/logs conservés. Pas erreur métier
+  corrigée par filtrage, pas de budget relevé.
+- Milestone `9e4dfbb2` V82 compression physique ZSTD6 uniquement. SQL,
+  colonnes/types/valeurs/observations inchangés, aucune coupe par récence,
+  qualité ou popularité. Parité schéma/multiset/dates/provenances sur fixtures,
+  anciennes sources non modifiées. Un test réutilisait la connexion TEMP
+  VIEW entre deux implémentations ; corrigé AVANT commit/mesure en ouvrant
+  deux connexions indépendantes, sans changement de recette.
+- `projection_20261003_b` COMPLETE52,212s, pic2030944256octets (~1,89Gio),
+  zéro swapout, output2109754613octets sous2Gio. Guards80s/4Gio, DuckDB1GB,
+  spill1GB/2threads/supervision90s identiques. 50097324 observations,12531976
+  sites,6087070 propriétaires ; pas autant de noms lexicaux uniques affirmés.
+  Dont133933 enseignes SIREN BODACC conservées context-only. Inconnus temporels
+  publiés par source/kind, notamment dates RNE/SIRENE_CURRENT souvent NULL ;
+  pas de co-validité nom/succession ni de dates inventées.
+- Manifeste V82b SHA
+  `4fd00b95fd9692e36ce71e1662c9b8bfa8a1888eaecf41c28b4df39a86bc486b`,
+  `audits/retrieval_v82_scoped_succession_names/projection_20261003_b/`.
+  Check complet de50097324 lignes :0 mauvaise portée/identité/flag alias,
+  tous hashes artefacts/sources/implémentations vérifiés ;6,336s,
+  pic280756224,zéro swap. Vérification SHA
+  `97310d1fa2342ab5d6e696fcecb07917e50ad4e9ab3025cc1bbb60ba5df3f855`.
+  Multiset complet50m contre sortie STOP non comparé ; pas d'affirmation
+  de cette preuve supplémentaire, parité logique/tests distinctement donnée.
+- Milestone `c9793f1d` V83 : kernel de recherche initiale par jointure classée
+  avec projection au groupe SIRET. Métrique MAX(native gelé, poids × meilleur
+  nom-chemin admissible × preuve site), nonnégative/bornée. MAX et non SUM
+  entre preuves répétées ; pas alias inventé, aucun ranker/decider entraîné.
+  Trois flux triés exhaustifs, fanout ENTIER de chaque nom avant frontière,
+  random-access à TOUS les chemins entrants du target, heap≤100 seulement,
+  pas réservoir/seed parent/depth2000. Borne unseen=max(native_frontier,
+  poids×name_frontier×site_frontier). Arrêt STRICT pour tie canonique global,
+  budget dans fanout→STOP sans sortie noncertifiée, guards de cohérence.
+- V83 ne constitue PAS encore une recette nationale ni preuve de SLO.
+  Certificat conditionnel aux adaptateurs exhaustifs, grades≤1, portée/date/
+  site admissibles REQUÊTE-side. Les plateaux peuvent coûter cher, un point
+  aléatoire incomplet n'est pas rendu correct par le certificat. Oracle
+  indépendant sur6 graphes many-to-many, doublons, fanout2501, target graph-
+  only, ties, timeout IN expansion : passe. Fixtures algorithmiques uniquement,
+  jamais données synthétiques comme features ni positif injecté en mesure.
+  Recherche primaire ranked joins/projections citée dans doc ; notre kernel
+  n'est pas reproduction de ses garanties/gains, aucune revendication SOTA.
+- Milestone `393b096e` V84 : accès inversé CSR national à un saut réellement
+  compilé, pas jointure fullscan par nom.7512820 observations →15025640
+  incidences exactes, directions/ordinal stable du Parquet V81 hashé/date/
+  mise à jour source/grade site/états/siège conservés. NULL date différent du
+  jour0, IDs stockage/jointure uniquement, pas proxy lexical. Observations
+  répétées et sites fermés conservés, pas fermeture transitive. Adresses et
+  valeurs originales accessibles par row ordinal dans V81, jamais supprimées.
+- V84 COMPLETE17,189s,pic2266251264octets (~2,11Gio), zéro swapout,
+  539750969octets (~515Mio) sous1Gio ;80s/4Gio/supervision90s. Tous12531976
+  couples endpoint/parent comparés à V82 ;6087070 parents. Max26 observations
+  par endpoint et2528 endpoints par parent. API memmap retourne tous les
+  voisins (pas un topN), nom SIRET uniquement à SON endpoint/parent, parent
+  légal/usuel/commercial à ses endpoints officiels du graphe ; SIREN SIGN
+  refusé comme entrée lexicale. Ces relations brutes ne prouvent PAS identité
+  ou admission métier/site : adapter query-side toujours requis.
+- Manifeste V84a SHA
+  `8d6d83812bee28590d37a150cbcfd9596c77751411112d134578f9bdff94cdb1`,
+  `audits/retrieval_v84_succession_csr/compile_20261003_a/`. Vérification
+  supplémentaire exhaustive des15025640 incidences : exactement UNE par
+  observation dans CHAQUE sens, endpoints sources corrects, toutes memberships
+  parent/site et hashes revérifiés.1,236s,pic1239203840,zéro swap,
+  vérification SHA`efd4805948165279ab7b9401b8578ed4aa35bccec20b1c199befe41cf1c2216d`.
+- Diagnostic coût source-only,65 owners (64 positions source evenly spaced
+  +parent au plus grand nombre d'endpoints), aucune requête/label CRM :
+  p50=0,612ms,p95=0,761ms,max12,204ms. Plus grand parent2528 endpoints,2652
+  observations de chemin/2399 cibles distinctes, aucune troncature. Après
+  hash complet/cache inconnu en prod ; PAS coût end-to-end/p95 validé.
+  Rapport SHA`2cb1f7dfc6df03f89dc8437170e1fe1a5c2abbc8b9f0e0abb4cbff8bfbf4737d`.
+- Suite PRIORITAIRE : accès lexical factorisé aux noms V82 avec MAX par
+  observation/portée et mapping complet vers provenance/périodes (ne pas
+  fabriquer des bags de mots traversant différentes enseignes). Préflight
+  coût/compression sur source entière avant build lourd, puis adaptateur
+  V83 avec native43,9m intacte, preuve de site native+BAN/XY fiabilité/absence
+  explicites et chemins site/date officiellement gradués. Figer recette,
+  scopes et poids sans tuning sur les14 pertes V78. Ensuite16 requêtes coût
+  sans labels puis128 outputs aveugles scellés, évaluation séparée ; aucun
+  nouveau chiffre recall avant cette recherche initiale réelle. Source CSR
+  source-only ne peut servir de corpus substitutif ni d'indice de recall.
+-59 tests ciblés V84/V83/V82/V81/V80/V78/V47/V39 passent1,11s. Tous jobs de
+  compilation/verification/tests TERMINAUX. Changements utilisateur conservés,
+  commits locaux isolés, aucun push/dépense/cloud, folds0/1 non lus et aval
+  gelé. Dernier recall initial national-corpus PILOTE inchangé V78 exact
+  114/128=89,0625%, opérationnel116/128=90,625%. Objectif99,2% NON atteint,
+  goal ACTIVE/PIVOT_GENERATION, aucun READY_FOR_FOLD1, OOF23k/généralisation/
+  SLO finaux non validés. Cette section ne présente pas ces builds comme
+  amélioration mesurée ni comme garantie d'atteindre la cible.
