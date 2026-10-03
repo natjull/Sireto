@@ -1,0 +1,18 @@
+{
+  "catalog": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v141_append_catalog/compile_20261003_a/manifest.json", "sha256": "cbca06f853365f150cd239af0853bc0cc8f4cf6bb254526f6fee3a5713d64360"},
+  "sources": {
+    "official_addresses": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/address_evidence.parquet", "sha256": "1fa4f7e9cf5c503e5d9e74bbb4802a244bf74bf04e4c78da82755d7ada3d3984", "expected_rows": 142096607},
+    "current_addresses": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet", "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99", "expected_rows": 43896818}
+  },
+  "role_order": ["official_addresses", "current_addresses"],
+  "expected_namespace_sites": 44403034,
+  "expected_total_observations": 317683879,
+  "row_groups_per_part": 8,
+  "batch_rows": 32768,
+  "scalar_first_source_rows": 64,
+  "numpy_version": "2.4.1",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_part_output_bytes": 536870912,
+  "max_total_output_bytes": 34359738368,
+  "scope": "ALL_ORIGINAL_CANONICAL_ADDRESSES_PLUS_ALL_RAW_CURRENT_PRIMARY_SECONDARY_LINE_FULL_VARIANTS_NO_LABELS"
+}
