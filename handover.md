@@ -10989,3 +10989,47 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   complet. V101 reste114/128=89,0625% exact,116/128=90,625% opérationnel,
   pilote réutilisé PAS validation nationale. Folds0/1 non lus, aval gelé,
   goal ACTIVE, PAS READY et objectif99,2% non atteint.
+
+## 3 octobre 2026 — V146 noyau de fusion cohérente et collecte initial100
+
+- Tour précédent classé PROGRESS : V145 code/tests/commit réel, STOP112
+  revalidé, PAS mesure recall. Ce tour poursuit l'intégration sans relancer
+  une construction nationale et sans considérer le choix système approuvé.
+  Session6831 désormais Unknown process id : plus de handle live à suivre.
+- Milestone `e81d04f0` : NameSnapshot conserve noms parent/direct-site et
+  one-hop, exact courant DIRECT seulement ; pas de remontée du nom de site
+  vers frères ni diffusion multi-hop. Namespace append V141 gérée sans
+  déplacer les positions ; mêmes attributs V139/V136 imposés par référence,
+  nouveaux sites UNKNOWN, pas héritage d'attributs/XY par parent ou relation.
+- Chaque adresse apporte un score natif30 COMPLET avec ses propres texte,
+  CP/INSEE/numéro/exact courant, MAX ensuite par site ; aucune combinaison
+  artificielle de plusieurs adresses. Fallback indépendant d'attributs
+  courants explicites ; XY/activité sont actuels et jamais déclarés
+  historiques. Ce max cohérent est une nouvelle hypothèse de fusion à
+  évaluer, PAS prétention de parité métier avec des anciens scores ne
+  portant qu'une adresse. Aucun poids fitted ni modèle aval modifié.
+- `search` relie preuves query-side et score à `collect` initial<=100.
+  Collecteur exige TOUTES positions site0..N-1 exactement une fois ; trous,
+  duplicats, scores invalides ou timeout STOP sans résultat partiel. Score
+  complet inchangé aux collecteurs locaux/heap final, ties par SIRET global
+  et non position physique append. Pas pool2000/500 ou rescore différent.
+  Aucun plafond de faits/owner, filtre d'état/rayon/département ou label.
+- 17 tests nouveaux : adresses contradictoires, flag courant non transféré,
+ 2501 preuves sans cap et parité batches, oracle scalaire natif30/XY/activité,
+  append UNKNOWN, scope noms parent/site/relations, intégration preuves→100,
+  parité tri global sur3007 sites avec égalités, trous/dup/NaN/timeout/caps.
+  Suite V117–146 :320 PASS18,51s. Aucun test n'est présenté comme corpus
+  national ou preuve99%. Dirty des autres travaux préservé, commit isolé,
+  pas de push/fit/dépense/cloud/garde relâchée. Tous handles tests TERMINAL0.
+- Limite explicite : loader/adaptateurs sources complets non branchés ;
+  projection adresses317683879 toujours non scellée, lexical/reverse-site
+  V145 non construit nationalement. Le noyau refuse de certifier à lui seul
+  les sources d'un appelant. Le parcours toutes feuilles sera un oracle
+  d'optimisations à bornes sûres, PAS revendiqué comme SLO sur44M sites.
+- Suite : décision utilisateur sur nouvelle politique système toujours
+  attendue ; ne pas relancer sous une garde différente par autorisation
+  implicite d'une continuation. Terminer autorités d'adresses/accès reverse,
+  brancher V138/V137 et preuves complètes, budgeter coûts mémoire/temps,
+  sceller128 sorties avant vérité puis OOF exact/op all-human complet.
+  V101 reste114/128=89,0625% exact et116/128=90,625% op ; objectif99,2%
+  non atteint, PAS READY, goal ACTIVE. Folds0/1 non lus, aval gelé.
