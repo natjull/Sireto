@@ -9782,3 +9782,70 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Goal ACTIVE ; dernier vrai recall V101114/12889,0625% INCHANGÉ.
   Fold0 jamais lu, fold1 fermé, all-human exact/op/fullOOF/Wilson/
   généralisation/attribution/SLO toujours non prouvés. Aucun job live.
+
+#### V115/V116 — serving activité réel essayé, STOP coût avant recall
+
+- Milestone `162abe70` V115 : première exécution de la formule30 V114
+  dans une recherche INITIALE, corpus natif national43896818 SIRET et
+  catalogue activité intégral, géographie officielle V43 connue. Deux
+  sorted UPPER streams, pas scores finaux, heap<=100 et complétion du
+  MÊME score avant certificat strict global. Aucune génération fixe2000/
+  500/100 puis reranker. Compatibilité exacte query vectors NOM V78 avec
+  encoder/descriptions V113, modèles propres au fold234 et TRAIN512 disjoint.
+  Les relations/sigles V101 ne sont pas tous dans cette nouvelle formule ;
+  ne pas annoncer conservation de leurs gains ou exploitation de tout.
+-106 tests V115/V114/V113/V112/V111/V110 PASS1,86s avant mesure : oracle
+  exhaustif450 documents caps/pages, gagnant sous100 dans CHAQUE flux,
+  global ties325 et vrai moteur Tantivy+XY+activité sur245 sites, BAN fiable/
+  faible/absente, UNKNOWN joints conservés, scores/ordre exacts, gardes.
+  Bornes natives f32 gamma_n conservatrices (pas clip) vérifiées en runtime
+  contre chaque score complété ; géométrie eps64 et unknown source0.
+- V115 `audits/retrieval_v115_activity_initial/pilot_20261003_a/`, session62659
+  terminal1 :STOP première query20s,0 certifiée, natif7 appels12160 lignes,
+  XY0 ;8064 sites complétés, completion4,876841s, wallworker22,975427s,
+  pic2703065088/zéro swap. Heap100 non certifié, frontière native1,8532356
+  +XY1,1053418=2,9585775 >cutoff2,6485195. Famine de source géographique
+  due stratégie max-frontier, source officielle inchangée. Aucun128 ni recall.
+  Launch SHA `c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569`,
+  status SHA `495939763f3958e871f8a18804cce6eb18bfa360f0d97733e3d11c79d796de18`,
+  workerSTOP SHA `a27d874071f2e5d56484ff6e804a561bed4b65e71a0a504461c8745c3425dbd4`.
+- Milestone `0adca6a0` V116 : correction physique isolée, choisir flux au
+  moins de lectures achevées, priorité frontière ensuite. Aucun changement
+  de score/weights/proofs/sources/arrondis/pages/cap/gardes.117 tests PASS
+  2,18s avant mesure : same score et ordre exhaustifs V115/V116, plateau
+  20000 sites certifié1 appel CHAQUE flux, true Rust/XY3 modes BAN ; config
+  strictement égale sauf physical_revision. Pas quota candidats par flux.
+- V116 `audits/retrieval_v116_activity_fair/pilot_20261003_a/`, session58305
+  terminal1 : première query CERTIFIÉE5,078619s,3 appels natifs/2 XY,
+  896/384 lignes,1254 sites complétés, completion1,183954s ; borne2,6279780
+  <cutoff2,6485195. Deuxième query STOP20s :5 appels natifs/4 XY,3968/1920
+  lignes,3828 sites complétés, completion3,853697s, wall21,324928s ;
+  frontière native2,4906404 +XY1,0838253=3,5744657 >cutoff3,3906559.
+  Worker27,598149s/pic2956361728/zéro swap,80s/6Gio PASS mais garde query
+  échouée. Aucune batch8 scellée,16 non achevées,128 non générées ; sorties
+  partielles dans log diagnostique seulement, AUCUN label/évaluateur ouvert.
+  Launch SHA `72bbdab64489fdb19a23bb1154278249ce28250d6763d0c9b13802588693d300`,
+  status SHA `b854eea064dc4979e1463d46874e796bc545e2bd1cbfa622344ca4061bb0ef1c`,
+  workerSTOP SHA `67f2e5d462e54d100a0ea938fc15e934b1d3cd20f5c4f8e264ea09dc2bcb6cf7`.
+- PostSTOP intégrité vérifiée (source/helper/model/index manifests/métas/
+  inventory inchangés), session53819 terminal0. Enregistrements additionnels
+  non écrasants poststop_integrity.json : V115 SHA
+  `97cdd7df62c80645d11b5aeabd6209612f755340422ab4bbf6a01cf8201227c3`,
+  V116 SHA `3f57b83d3d921ea91fb6c148fd6c71a14d09e9091b74975bc73e29611920b3e4`.
+- Conclusion evidence-backed : activité/site utile TRAIN, pas encore gain
+  recall. Corriger famine aide la première query mais ne lève pas le coût
+  structurel : sources globales additives majorées séparément restent trop
+  lâches, requête Tantivy/offset relit la recherche à chaque page. Ne pas
+  faire V117 simple page-size/priorité/poids ou grossir20s/80s/4s. Prochain
+  moteur doit associer preuves nominales/adresse, activité et bornes XY aux
+  MÊMES blocs/familles officiels ; unknowns et non-localisés doivent rester
+  accessibles. Prérequis : prototype source-only compact, contrôler complete
+  aliases/history/owners/SIREN-sites/relations, exact vs maj or oracle, coût
+  construction/sortie/RSS bornés avant toute compilation longue Mac. Les
+  invariants V100/V96 et les preuves relationnelles ne peuvent être réduits
+  à une shortlist ni abandonnés implicitement pour rendre le test rapide.
+- Goal ACTIVE ; ce tour PROGRESS (modèle scellé et serving réel modifient
+  l'orientation suivante), pas blocage : indexation couplée reste disponible.
+  Aucun job live ni long run lancé, fold0 jamais lu/fold1 fermé/aval gelé.
+  V101114/128=89,0625% demeure le DERNIER vrai recall exact@100 ; target
+  99,2% all-human/fullOOF/Wilson/généralisation/attribution/SLO non atteint.
