@@ -1,0 +1,9 @@
+{
+  "membership_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v96_national_membership/compile_20261003_a/manifest.json","sha256":"63fdf65f3b8591219e648c9fc3ff2416d38af4cbaff7cf01fe3bf15fbf0ca458"},
+  "layout_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/manifest.json","sha256":"47acc25da8280915e65080996a128ad9c102f8ba20b611b23083f713487f618f"},
+  "expected_sites":43896818,"expected_parents":29906504,"expected_blocks":342945,
+  "resources":{"max_seconds":80,"max_rss_bytes":3221225472,"max_swapout_pages_delta":0},
+  "max_output_bytes":1073741824,
+  "scope":"ALL_CANDIDATE_PARENTS_TO_BLOCKS_NO_ALIAS_EXPANSION_NO_QUERY_SELECTION",
+  "model_fit":false,"recall_measured":false,"fold0":"FORBIDDEN","fold1":"CLOSED"
+}
