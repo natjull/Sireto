@@ -1,0 +1,7 @@
+{
+  "word_root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v98_national_postings/compile_20261003_a",
+  "expected_facts":57804962,"expected_observations":162537492,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "max_output_bytes":4294967296,
+  "scope":"ALL_COMPLETED_NATIONAL_WORD_AND_OWNER_PHASES_PLUS_EQUIVALENT_FULL_METADATA"
+}
