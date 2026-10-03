@@ -5,6 +5,7 @@ import pytest
 
 from scripts.compile_retrieval_v81_succession_bindings import compile_bindings
 from scripts.compile_retrieval_v81_streaming import compile_streaming
+from scripts.compile_retrieval_v81_partitioned import compile_partitioned
 
 
 def fixture(tmp_path,duplicate_site=False):
@@ -61,3 +62,22 @@ def test_streaming_plan_is_identical_to_materialized_plan(tmp_path):
     assert old['coverage']==new['coverage'] and old['site_binding_classes']==new['site_binding_classes']
     assert old['source_rows']==new['source_rows']==12
     assert pq.ParquetFile(b/'all_eligible_endpoint_observations.parquet').metadata.num_rows==7
+
+
+def test_all_physical_partitions_equal_full_logical_oracle(tmp_path):
+    ep,sp=fixture(tmp_path)
+    edges=pq.read_table(ep).to_pylist(); sites=pq.read_table(sp).to_pylist()
+    for bucket in range(16):
+        predecessor=f'777777777{bucket:05d}'; successor=f'888888888{bucket:05d}'
+        edges.append(dict(edges[0],siretEtablissementPredecesseur=predecessor,siretEtablissementSuccesseur=successor))
+        sites.extend([dict(sites[0],siret=sid,siren=sid[:9]) for sid in (predecessor,successor)])
+    pq.write_table(pa.Table.from_pylist(edges),ep); pq.write_table(pa.Table.from_pylist(sites),sp)
+    a=tmp_path/'full'; b=tmp_path/'buckets'; a.mkdir(); b.mkdir()
+    c=duckdb.connect(); old=compile_bindings(c,ep,sp,a); c.close()
+    c=duckdb.connect(); new=compile_partitioned(c,ep,sp,b); c.close()
+    for name in ('succession_bindings.parquet','coverage.parquet'):
+        assert sorted(map(str,pq.read_table(a/name).to_pylist()))==sorted(map(str,pq.read_table(b/name).to_pylist()))
+    parts=list(b.glob('all_endpoint_observations_part*.parquet'))
+    assert len(parts)==16 and sum(pq.ParquetFile(p).metadata.num_rows for p in parts)==23
+    assert all(pq.ParquetFile(p).metadata.num_rows>=1 for p in parts)
+    assert old['coverage']==new['coverage'] and new['source_rows']==28
