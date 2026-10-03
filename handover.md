@@ -10811,3 +10811,55 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   séparé ; intégrer attributs/XY/bornes sûres et collecteur national100,
   sceller les128 sorties avant labels puis OOF complet. Tous handles de ce
   tour TERMINAL0, aucun fit/push/cloud/dépense ou changement aval.
+
+## 3 octobre 2026 — V142 projection de toutes les adresses, construction lancée
+
+- Milestone `865e705b` : projection de TOUTES observations canoniques et de
+  quatre variantes par site brut : ligne principale/complète, secondaire/
+  complète. Compléments, distribution, bornes de numéro, CP/communes/cedex/
+  étranger présents dans variantes complètes, identifiantAdresse exclu des
+  features. Composant [ND] UNKNOWN sans effacer les autres composants
+  publics ; raw canonique prioritaire, fallback seulement si raw absent/
+  vide/whitespace. Normaliser UNE fois, pas supposer l'idempotence Unicode.
+  Chaque record conserve ordinal raw, rôle et identité de preuve ; source
+  entière hashée garde dates/flags/evidence_id/source_record_id/valeurs raw.
+- Adresses explicitement SIRET = ce site seulement, sinon contexte parent/
+  non vérifié conservé, jamais propagation à des frères. Site absent de V141
+  impose STOP, pas suppression. Source-current bool exact conservé ; pour
+  raw, current_exact secondaire FALSE est hypothèse de score V121, pas
+  prétention de péremption physique. CP/INSEE/numéro propres à chaque adresse
+  conservés, pas code/XY/historique inventé. 279 tests V117–142 PASS16,84s
+  avant mesure,10 nouveaux tests indépendants de champs/raw/grain/masque/
+  Unicode/id/2501+ observations/STOP/closedfold/part/export. Dirty préservé.
+- Root `audits/retrieval_v142_address_projection/projection_20261003_a`.
+  Init12215 TERMINAL0 :185993425 lignes originales,317683879 observations
+  prévues,312 parts physiques8 row groups. Hash ENTIER des deux fichiers
+  originaux à l'init ; vérification stat/footer chaque part, hash entier de
+  nouveau au seal. Init12,500017s,pic657866752,zéro swapout,PASS.
+  Plan `16beab32f83f907f3ac23fbdac7923054124ab031bb530fd8a15e388b2fb0d15`,
+  launch `a58e8f01b1df98613d7fab1a682000929c123509d6eb652c4a6197976bcc339d`.
+- Premier lot officiel71687 TERMINAL0 :530379 observations,417566 lexicales,
+  2,446400s,pic793083904,zéro swapout,PASS,16705864 octets. Manifest part
+  `4b8c5bc2eb73f56be4829b33e7ae0513445d316d428fec729acca6ce5e427664`.
+  Premier lot brut46690 TERMINAL0 :993902 sites,3975608 observations,
+  1720695 lexicales,12,469363s,pic860864512,zéro swapout,PASS,72115823 octets.
+  Manifest part `6e6b4ea03abcc122955ef757318d935be02baa6b835f60ec64e7b75869d9b4fb`.
+  Post-check sorties/launch/ressources/flags des deux lots confirmé avant
+  lancement de la suite. Chaque champ exporté confronté à relecture entière
+  raw du LOT ; sites reconstruits indépendamment depuis identités originales.
+  Oracle texte scalaire indépendant sur64 premières lignes source seulement,
+  PAS revendiqué sur317M observations. Aucun label ni CRM ouvert.
+- Suite lancée `remaining`, exec session91768. Elle saute seulement les deux
+  lots déjà réussis, jamais un part incomplet/STOP ; séquentiel,80s internes/
+  90s superviseur/3Gio/zéro swapout,512Mio/part/32Gio total. Un part STOP
+  interdit retry même root/guard relevée. Suivre CE handle via write_stdin,
+  ne pas relancer sur simple timeout/absence de nouvel output. Pas encore
+  seal national : tous312 parts et audits sont requis. Vérifier handle réel
+  au prochain tour, puis autorités/sorties et hash total si terminal0.
+- Tour PROGRESS (code et construction réelle),goal ACTIVE,PAS READY. Pas
+  encore index lexical d'adresses ou moteur initial100 national. V101 reste
+  114/128=89,0625% exact/116/128=90,625% op ; aucun nouveau recall/SLO.
+  Suite : terminer/contrôler V142, dédup variantes/owner-scopes, accès lexical
+  d'adresses, collecteur100 avec noms/relations/attributs/XY et bornes sûres,
+  sorties128 scellées avant labels puis OOF complet. Folds0/1 non lus,
+  aval gelé, aucun aliasCRM/fit/push/dépense ou pool fixe reranké.
