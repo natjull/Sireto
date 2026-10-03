@@ -10609,3 +10609,37 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Prochaine intégration : joindre toutes preuves nominales V132 et liens
   V133 au namespace, sans produit cartésien aliases×sites ni pool fixé,
   puis attributs/adresses et recherche initiale100 avant labels.
+
+## 3 octobre 2026 — V137 tous facts nominaux et liens raccordés
+
+- Milestone `b1b6b9cb` : joints positionnels sur TOUS105564761 facts V132,
+  sans alias×membres ni cap,et sur TOUS9730972 liens bruts V133. Chaque
+  observation conserve sa provenance/dates/scopes/UNKNOWN dans ses sources
+  immuables. Nom site jamais levé au parent ; tous facts site doivent être
+  admis sinon STOP. Parents sans membership conservés avec position UNKNOWN.
+  Noyaux max whole-alias/current-exact et snapshot un-hop bilatéral,.5 si
+  continuité explicitement TRUE sinon.25, self-context non expansé,doublons
+  max,jamais contagion A→B→C/exact ou toute la fratrie du SIREN cible.
+  225 tests V117–137 PASS18,65s avant mesure,16 nouveaux tests/guards/oracles.
+- Root `audits/retrieval_v137_proof_bridge/compile_20261003_a`,25749 TERMINAL0.
+  Init rehash complet de tous arrays V132/V133/quatre dictionnaires V136 :
+  4,280452s,pic464257024,zéro swapout,PASS. Huit groupes physiques couvrent
+  TOUTES64 partitions originales,105564761 facts,8393444 site-scopés ;
+  158575 facts parent sans site dans le namespace restent préservés, pas
+  supprimés ni convertis en SIRET fictifs. Tous owners/scopes sont EXACTEMENT
+  reconstruits via positions exportées, chaque source utilisée rehashée
+  avant/après. Graphe :44323289 positions site→parent,15506308 endpoints
+  admis,9730972 pred/succ reconstitués,0 cap/attribut inféré.
+- Workers407,783209s au total,max49,962553s,pic1690370048,zéro swapout sur
+  TOUTES9 phases,toutes PASS ; graphe seul11,711751s. Sorties1223726508
+  octets (<1,5Gio). Seal0,532349s,pic494583808,zéro swapout,PASS. TOUS128
+  nouveaux arrays owners+5 graph rehashés au seal et post-check ; toutes
+  autorités phase rehashées de nouveau, ressources/totaux/flags confirmés.
+  Manifest `2c112cb7b9a0a79eb9d6b05ea79a45a3b2174872072c77ec2aec327696b2bb50`,
+  launch `30b94f160bb4f4c6ac27f9e697ad202cc488a8bb2c5404f4be9b017a4a3d2fa5`.
+- Pas encore moteur national initial100 ni métrique recall/latence produit.
+  Tour PROGRESS,goal ACTIVE. V101114/128=89,0625% exact,116/128=90,625% op
+  inchangés. Folds0/1 non lus,aval gelé,aucun dense/RRF/LightGBM/fit/push.
+  Prochaine action : lecteur V134 national, scatter strictement équivalent
+  sur preuves positives, sonde courte query-only sans labels ; puis adresses,
+  attributs/XY/upper bounds/collecteur100 et véritables sorties avant labels.
