@@ -65,6 +65,8 @@ def projection(reference,cfg):
             if i>=len(m['parts']):raise ValueError('UNFINISHED_ALL_ORIGINAL_ADDRESS_PARTS')
             item=m['parts'][i];key=f'{role}/{spec["part_id"]}';imported=key in p['imported_parts']
             expected=p['imported_parts'][key]['manifest'] if imported else record(original.directory(Path(reference['path']).parent,role,spec['part_id'])/'manifest.json')
+            if any((Path(expected['path']).parent/name).exists() for name in ('worker_stop.json','status.json')):
+                raise ValueError('STOP_SOURCE_SUPERVISION_OR_WORKER_DO_NOT_REINTERPRET')
             if item!=dict(imported=imported,manifest=expected):raise ValueError('Every original physical part/order exactly once required')
             launch=p['imported_parts'][key]['launch'] if imported else m['launch']
             part=original.validate(expected,role,spec,source,launch,m['catalog'],l['config']['scalar_first_source_rows'])
@@ -166,6 +168,8 @@ def maximum(output,phase):
 def phase_record(output,phase,index):
     path=directory(output,phase,index)/'manifest.json'
     if not path.is_file():raise ValueError('UNFINISHED_ALL_'+phase.upper()+'_PARTS')
+    if any((path.parent/name).exists() for name in ('worker_stop.json','status.json')):
+        raise ValueError('STOP_PHASE_SUPERVISION_OR_WORKER_DO_NOT_RESTART')
     m=json.loads(path.read_text())
     validate_report(m['resources'])
     if (m['status']!='SEALED_V154_PHYSICAL_'+phase.upper() or m['phase']!=phase or m['index']!=index

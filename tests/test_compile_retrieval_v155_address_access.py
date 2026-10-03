@@ -158,3 +158,11 @@ def test_scalar_channels_and_full_physical_plan_not_replaced():
     assert workbench.physical_plan is old.physical_plan
     assert workbench.stage_addresses is old.stage_addresses
     assert workbench.pack is old.pack
+
+
+def test_parent_supervisor_stop_cannot_be_masked_by_worker_manifest(tmp_path,monkeypatch):
+    source,out=setup(tmp_path,monkeypatch);workbench.init(out,record(source/'manifest.json'));finish_phase(out,'part')
+    write_json(workbench.directory(out,'part',0)/'status.json',dict(status='STOP',reason='supervisor RSS'))
+    with pytest.raises(ValueError,match='STOP_PHASE_SUPERVISION'):workbench.remaining(out)
+    with pytest.raises(ValueError,match='STOP_PHASE_SUPERVISION'):workbench.seal_parts(out)
+    assert not (out/'staging_manifest.json').exists()

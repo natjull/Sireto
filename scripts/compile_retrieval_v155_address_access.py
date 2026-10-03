@@ -162,6 +162,8 @@ def directory(output,phase,index,channel=None):
 def phase_record(output,phase,index,channel=None):
     path=directory(output,phase,index,channel)/'manifest.json'
     if not path.is_file():raise ValueError('UNFINISHED_ALL_ADDRESS_'+phase.upper()+'_PHASES')
+    if any((path.parent/name).exists() for name in ('worker_stop.json','status.json')):
+        raise ValueError('STOP_PHASE_SUPERVISION_OR_WORKER_DO_NOT_RESTART')
     m=json.loads(path.read_text())
     validate_report(m['resources'])
     if (m['status']!='SEALED_V155_ADDRESS_'+phase.upper() or m['phase']!=phase or m['index']!=index

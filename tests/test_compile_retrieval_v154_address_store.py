@@ -144,3 +144,19 @@ def test_reordered_or_duplicate_source_parts_cannot_be_accepted(tmp_path,monkeyp
     m['parts'][0],m['parts'][1]=m['parts'][1],m['parts'][0];write_json(path,m)
     with pytest.raises(ValueError,match='physical part/order'):workbench.init(out,record(path))
     assert not out.exists()
+
+
+def test_source_parent_stop_cannot_be_masked_by_worker_success_manifest(tmp_path,monkeypatch):
+    source,out=setup(tmp_path,monkeypatch)
+    path=projection.directory(source,'official_addresses',1)/'status.json'
+    write_json(path,dict(status='STOP',reason='supervisor timeout'))
+    with pytest.raises(ValueError,match='STOP_SOURCE_SUPERVISION'):workbench.init(out,record(source/'manifest.json'))
+    assert not out.exists()
+
+
+def test_phase_parent_stop_cannot_be_retried_or_sealed_as_success(tmp_path,monkeypatch):
+    source,out=setup(tmp_path,monkeypatch);workbench.init(out,record(source/'manifest.json'));finish_phase(out,'part')
+    write_json(workbench.directory(out,'part',0)/'status.json',dict(status='STOP',reason='supervisor timeout'))
+    with pytest.raises(ValueError,match='STOP_PHASE_SUPERVISION'):workbench.remaining(out)
+    with pytest.raises(ValueError,match='STOP_PHASE_SUPERVISION'):workbench.seal_staging(out)
+    assert not (out/'staged.json').exists()
