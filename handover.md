@@ -9651,3 +9651,85 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Goal ACTIVE, barrière99,2% exacte all-human avant aval inchangée ; fullOOF,
   Wilson/généralisation/attribution/SLO toujours non prouvés. Sources/code
   vérifiés avant/après et deux jobs de ce tour terminal0, rien encore live.
+
+#### V112 — version explicite retrouvée et descriptions officielles scellées
+
+- Milestone `faa5b516` : retrouver `nomenclatureActivitePrincipaleEtablissement`
+  dans le stock ORIGINAL qui avait alimenté V3, sans deviner par forme/date.
+  V3 avait aussi coalescé21437 activités NULL en vide ; vérifier cette
+  projection et restaurer NULL distinct dans NOUVEAUX tableaux seulement.
+  TOUS les43896818 sites alignés V96, roundtrip exact chaque valeur/ligne.
+- Source-only `audits/retrieval_v112_activity_catalog/compile_20261003_a/`,
+  session71585 terminal0,13,646572s/pic1050394624/zéro swap,132573150octets,
+  garde80s/4Gio/sortie256Mio PASS. Aucune lecture CRM/labels/fit/serving.
+ 58 tests V112/V110/V111 PASS1,27s avant mesure, source/parent/duplicate/
+  nomenclature/activity drift STOP, coalesce audit et inconnus sans exclusion.
+- Nomenclatures source exactes : NAFRev2=34398430,NAFRev1=2480977,
+  NAF1993=4573057,NAP=2422917,UNKNOWN=NULL21437 (vide0). Trois tables
+  dBASE officielles INSEE2120875/2408180/2408178 donnent2140 définitions
+  (732/712/696) versionnées, jamais assimilées. Hashes source avant mesure
+  dans config ; lecture dBASE III strictement complète, deleted/truncation/
+  duplicate/schema/encodage ambigu impliquent STOP. CP850 et CP437 sont
+  identiques sur CHAQUE texte réellement employé : pas accent supposé.
+- Couverture descriptions41437398 sites ;2459420 non décrits CONSERVÉS,
+  dont NAP2422917,UNKNOWN21437,NAF1993 non résolus9647,NAFRev1=4721,
+  NAFRev2=698. Certains couples sont absents de leur table explicite ; ne
+  pas leur appliquer une autre version par ressemblance du code. Tous les
+  couples non résolus et volumes sont publiés dans manifest, pas cachés.
+  NAP primaire https://www.insee.fr/fr/information/3582824 fournit XLS,
+  libellés pas encore chargés. Runtime Spreadsheets non configuré et aucun
+  lecteur XLS installé : lecture dBASE officielle alternative, pas installation
+  ou transformation de classeur. Skill a guidé provenance/contrôles de tables.
+- Manifest SHA `31cfa6bcba5b6620d1afbfe67cc8e2932e122fb01692019802efee08f8fd73f5`,
+  launch SHA `7be52e9bc01abe38683b404c3cfa26d589202e1c2a7d4b1d3e58552549a576ec`,
+  labels SHA `2fe420a6799edae6958b31a3328b1f848cb6a9eeac6c8078e8d8db09cae1fb4a`.
+
+#### V113 — sémantique d'activité utile en moyenne, PAS nouveau recall/route
+
+- Milestone `6193b3bc` : encoder les LIBELLÉS officiels seuls avec NOM
+  MiniLM local figé V52, pas codes/versions/IDs/aliasCRM dans les embeddings.
+  Sources et tous poids d'encoder rehashés avant/après. Parité8 premiers noms
+  TRAIN vs cache avant2140 embeddings, maxdiff1,277704e-7<1e-5, préfixe/masque/
+  longueur128 identiques. Tokenizer réparé en RAM selon helper historique,
+  aucun fichier de modèle changé, positions_idsUNEXPECTED du loader pas
+  caché ; parité et hashes vérifiés.0 description tronquée,2140 complètes.
+- `audits/retrieval_v113_activity_semantic/probe_20261003_a/`, session13538
+  terminal0. Encodage6,610277s/pic1218838528/zéro swap, estimation1,918841s
+  PASS60s ; TRAIN1,579776s/pic760987648/zéro swap. Phases80s/4Gio/90s
+  inchangées.67 tests V113/V112/V110/V111 PASS1,30s avant mesure, incluent
+  invariance strict choix/params aux targets tenus/familles partagées,
+  apprentissage de relation sémantique, same-activity ties, UNKNOWN neutre
+  conservé, jointure EXACTE code/version sans guess, zéro projection sansNaN.
+-512 scènes TRAIN234 préexistantes,23749 négatifs naturels/23874 documents
+  officiels.1306 documents non décrits, preuve0 seulement ; aucun des512
+  positifs non décrit (ne démontre pas généralisation sur ce segment national).
+  Ne pas injecter ces targets TRAIN dans un futur serving. Aucun128 label
+  serving, fold0/1, aval ou source synthétique ouvert/modifié. Aucun candidat
+  émis ni recherche nationale, pas reranker d'un pool fixe.
+- Fréquence TRAIN vs zero-shot vs ridge1/10/100, choix INNER familles
+  disjointes puis refit343/348/333 hors fold/familles tenus. Trois inner
+  choisissent SEMANTIC_RIDGE1. Error pairwise outer égale par requête :
+  fréquence49,5884%,zero-shot44,4992%,sélection37,0225%. Décodeur brut V111
+  était46,6257%, définitions/codebook différents donc comparaison secondaire.
+  Nombre moyen négatifs au-dessus22,7129 ->16,9258, MAIS head error93,1641%
+  ->94,3359% (moins bon), définition exacte top5=12,1094% (pas site).
+ 1029 paires à égalité ; pas désambiguïsation de sites/versions par ce signal.
+  Les labels de définitions voisins peuvent partager leur sémantique.
+- Manifest SHA `cfeebabf1e89ba82c0dec3967be08aaa4d63d8124923071dbad7dd13fb7d2608`,
+  launch SHA `dd5f499a17b6c83a01503ec0c85c4f065282baae265bb28751192855a2e36a1e`,
+  models SHA `5b7b94781b37bb78a4f1a96ad74c5c07bb3b36592bcc72bb172e0fc4db3c7cd9`,
+  encoding SHA `5d41f7a8a8e31ee3cc1fc5016155ddea1bca3a0817a235b09ddd2a303c7e46b9`.
+- Action suivante justifiée par ces preuves, pas promotion brute : mesurer
+  ACTIVITY_SEMANTIC x adresse/XY/BAN fiable/faible via contrôles native19
+  existants et fit de score initial monotone, toutes absences gardées. Générer
+  les signaux activité TRAIN du futur head en CROSS-FIT interne : chaque
+  famille/query évaluée hors du fit de son décodeur ET hors outer/inner
+  familles protégées. Ne pas réutiliser les modèles d'un autre fold V113
+  qui auraient appris des données du fold externe tenu, ni grader son propre
+  TRAIN puis annoncer de la qualité. Sélection finale inner uniquement,
+  modèle intégrable aux bornes/heap100 national, pas pair-reranker après pool.
+  En parallèle conceptuel, remplacer le coût natif5s par index compact de
+  preuves/bornes reste nécessaire, pas contourné par ce nouveau contexte.
+- Goal ACTIVE ; vrai recall reste V101114/12889,0625%.99,2% exact all-human/
+  fullOOF/Wilson/généralisation/attribution/SLO non prouvés. Les deux jobs
+  de ce tour sont terminaux0, aucun long run lancé ou encore live.
