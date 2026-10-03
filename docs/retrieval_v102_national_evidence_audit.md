@@ -3,6 +3,7 @@
 APRÈS128 sorties aveugles scellées ET évaluation exacte/op, vérifier les128
 scores ponctuels GT contre la recette V99/V101 gelée. Accès trié/ponctuel
 doivent être égaux ; hit-score différent ou miss au-dessus de cutoff STOP.
+À score cutoff égal, GT manquant avec clé canonique meilleure STOP aussi.
 Population, caps, ordres, certificats et hashes vérifiés AVANT le ledger.
 
 Même sources nationales complètes V100/V96/V84, lookup mots projeté sur

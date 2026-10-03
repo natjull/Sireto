@@ -1,6 +1,5 @@
 import pytest
-from scripts.audit_retrieval_v102_national_evidence import branch_reason
-from scripts.audit_retrieval_v91_scoped_evidence import check_point
+from scripts.audit_retrieval_v102_national_evidence import branch_reason,check_point
 
 @pytest.mark.parametrize('outside,score,ban,xy,expected',[
     (True,0.,True,True,'OUTSIDE_FULL_NATIONAL_REGISTRY'),
@@ -17,3 +16,10 @@ def test_inconsistent_points_remain_fail_closed():
         check_point([dict(siret='12345678900001',score=1.)],'12345678900002',2.)
     with pytest.raises(ValueError,match='CONTRADICTION'):
         check_point([dict(siret='12345678900001',score=1.)],'12345678900001',.5)
+
+
+def test_missing_equal_score_with_better_canonical_key_is_contradiction():
+    rows=[dict(siret=f'{200000000+i:09d}00001',score=1.) for i in range(100)]
+    with pytest.raises(ValueError,match='CANONICAL_TIE'):
+        check_point(rows,'10000000000001',1.)
+    assert check_point(rows,'99999999900001',1.)==(False,1.)

@@ -25,6 +25,14 @@ def branch_reason(proof,query_geo_available,xy_available):
     return 'POSITIVE_NATIONAL_SCOPED_WORD_SITE_PROOF'
 
 
+def check_point(result,gt,full):
+    hit,cutoff=core.check_point(result,gt,full)
+    if (not hit and len(result)==100 and full>0 and full==cutoff and
+            gt<result[-1]['siret']):
+        raise ValueError('STOP_CANONICAL_TIE_POINT_AUDIT_CONTRADICTION')
+    return hit,cutoff
+
+
 
 def population(generation):
     manifest=json.loads((generation/'manifest.json').read_text())
@@ -33,6 +41,8 @@ def population(generation):
     core.v38.verify_launch(launch)
     rows=[r for ref in manifest['batches'] for r in json.loads(core.verify(ref).read_text())['rows']]
     core.validate_population(manifest,evaluation,generation,launch['queries'],rows)
+    if any(r['results']['primary']!=sorted(r['results']['primary'],key=lambda x:(-x['score'],x['siret'])) for r in rows):
+        raise ValueError('Initial100 global canonical output order drift')
     return evaluation,launch,{r['query_id']:r for r in rows}
 
 
@@ -72,7 +82,7 @@ def worker(output,start):
                 native=core.NativeStream(base,core.native_query(base,core.v42.as_query(q),m['weights'],terms[q['query_id']],m['alpha']))
                 point_began=time.monotonic(); ns=native.complete([gt])[gt]; native_seconds=time.monotonic()-point_began
                 graph_score=launch['path_weight']*proof['score']*site; full=max(ns,graph_score)
-                hit,cutoff=core.check_point(emitted[q['query_id']]['results']['primary'],gt,full)
+                hit,cutoff=check_point(emitted[q['query_id']]['results']['primary'],gt,full)
                 rows.append(dict(query_id=q['query_id'],fold=q['fold'],human_siret=gt,human_siren=parent,
                     exact_hit=hit,branch_zero_or_positive_reason=branch_reason(proof,point is not None,xy),
                     native_score=ns,path_name_score=proof['score'],site_score=site,graph_score=graph_score,initial_score=full,
