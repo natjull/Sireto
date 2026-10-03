@@ -9576,3 +9576,78 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   externe ou seuil réduit ;99,2%/OOF complet/Wilson/généralisation/SLO et
   attribution toujours non prouvés. Aucun run de ce tour encore live,
   fold0/1/aval gelés, pas de push/dépense externe/effacement d'artefact.
+
+#### V110 — contexte national officiel lossless terminé, pas nouveau recall
+
+- Milestone `bba5348f` : cinq tableaux compacts activité brute/état brut/
+  siège/date création/date début période courante pour TOUS les43896818
+  établissements. Jointure uint64/uint32 exacte à V96, pas hypothèse sur les
+  ordinals ; codes bruts verbatim, NULL et vide séparés, dates non assimilées
+  à validité historique. Tous les fermés conservés ; aucun identifiant feature.
+-30 tests V110/V96 PASS1,18s avant mesure : permutation indépendante,
+  leading zeros, états/siège inconnus, codes historiques/casse/espaces,
+  overflow, duplicates dans/entre lots, absence/parent/state/schema/order/
+  dtype corrompus, recherche vectorielle strictement uint64 et décodage exact.
+- `audits/retrieval_v110_official_context/compile_20261003_a/`, session1591
+  terminal exit0 : SEALED_COMPLETE_NATIONAL_OFFICIAL_CONTEXT,17,838644s,
+  pic1422884864 octets/zéro swap, sortie570665316 octets (<1Gio), PASS
+ 80s/4Gio inchangé. Toutes43896818 lignes relues/décodées et comparées à
+  source pendant écriture, pas simple échantillon. Sources rehashées avant/après.
+-2133 codes activité (réserves NULL/vide comprises), activité vide21437,
+  NULL0 ; état A16715258/F27181560. Siège faux13996017/vrai29900801,
+  inconnu0. Création manquante3426532, début période manquant517794.
+  Les codes activité hétérogènes ne sont PAS tous une nomenclature actuelle.
+- Manifest SHA `2b845337784cd2388c765d54db4edcdf0936ace55cb22559d445a4dcb02d1f22`,
+  launch SHA `b6983dadfb7c936b7ed8aef5e74c4a06065aa4ad2035e3cc8c4cb86dbf9c0411`.
+  Aucun CRM/label/fit/serving/recall lu ou effectué par ce compilateur.
+- Prochaine expérience : signal activité query-conditioned TRAIN uniquement,
+  sélection inner entity-disjoint et refit hors familles de fold tenu ;
+  contrôles naturels non assimilés à recall national. Pas de dictionnaire
+  CRM, pas d'exclusion actifs/vide, modèle aval toujours gelé. Dernier recall
+  reste V101114/12889,0625%, tous gates finaux toujours non prouvés, goalACTIVE.
+
+#### V111 terminal — activité brute apprise faible, ne pas en faire un filtre
+
+- Milestone `8268f2ed` : décodeur TRAIN-only nom384 -> catégories officielles
+  brutes V110, fréquence TRAIN comparée à ridge1/10/100, choix inner familles
+  disjointes puis refit hors familles fold tenu. Ni alias CRM, features IDs,
+  classes tronquées, exclusion actifs, nouveaux candidats ni modèle aval.
+ 45 tests V111/V110/V96 PASS1,34s avant mesure ; incluent invariance stricte
+  modèles/choix aux changements de targets tenus, familles partagées exclues,
+  négatifs protégés retirés des contrôles sans retirer requêtes, missing0/1
+  neutres/dénominateur conservé, codes non normalisés et joins complets.
+- `audits/retrieval_v111_activity_decoder/probe_20261003_a/`, session75293
+  terminal exit0 : SEALED_TRAINING_ONLY_RAW_ACTIVITY_PROBE,0,791379s,
+  pic618135552 octets/zéro swap,80s/4Gio PASS.512 scènes TRAIN préexistantes,
+ 23874 documents officiels joints et23749 négatifs naturels ; folds2/3/4
+  uniquement. Les targets TRAIN connus ne sont jamais des candidats émis
+  ou injectés dans une génération d'évaluation. Aucun label des128 serving
+  n'est ouvert ; aucun fold0/1, aval, corpus synthétique ou dépense externe.
+- Ridge100 choisi par les trois inner contrôles, refits343/348/333 requêtes.
+  Sur leurs contrôles outer TRAIN, error pairwise égal par requête49,5927%
+  fréquence ->46,6257% décodeur. Ce n'est PAS recall SIRET. Activité brute
+  top1=12,1094%, top5=19,3359% (tous512) ; head error92,9688%,941 paires
+  ont même activité et5311 sont à égalité. Aucun positif inconnu/vide ici,
+  pas preuve de qualité sur ce segment, pas fullOOF ou généralisation.
+- Manifest SHA `868bc0ad90120441bae438be4aba9ff305ed91b7e89793f6032ff392e9646104`,
+  launch SHA `44a9d7fde6f07128b2b76442dae49ea76e3940e63c0056d3313d8b8b07a5095e`,
+  models SHA `ecb0d09c04b787cf5637b1cc0cbe4302187cfd3960b08271ed936bcb7788f86a`.
+- Conclusion : signal brut trop faible pour une route/filtre d'activité,
+  pas modèle promu. Ne pas traiter les classes top5 comme top5 sites, ni
+  utiliser cette capture pour prétendre à amélioration du89,0625% V101.
+- Recherche source officielle effectuée : INSEE publie libellés/hierarchie
+  NAF2008, classes NAF1993/2003 et correspondances ; URLs primaires :
+  https://www.insee.fr/fr/information/2120875,
+  https://www.insee.fr/fr/information/2408180,
+  https://www.insee.fr/fr/information/2408178,
+  https://www.insee.fr/fr/information/2579599.
+  Aucune table téléchargée/transformée ou nomenclature devinée ce tour.
+  Prochain essai : a priori sémantique d'activité via libellés officiels,
+  conserver ambiguïtés entre versions plutôt que transformer un ancien
+  code en NAF actuelle par sa forme/date ; contrôler sous exclusions avant
+  toute combinaison avec nom/adresse/XY/filiation. Index compact de preuves
+  et bornes toujours nécessaire pour remplacer le coût natif5s, pas oublier
+  ce chantier structurel. Aucun reranker/pool fixe autorisé pour contourner.
+- Goal ACTIVE, barrière99,2% exacte all-human avant aval inchangée ; fullOOF,
+  Wilson/généralisation/attribution/SLO toujours non prouvés. Sources/code
+  vérifiés avant/après et deux jobs de ce tour terminal0, rien encore live.
