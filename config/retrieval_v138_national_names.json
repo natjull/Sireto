@@ -1,0 +1,9 @@
+{
+  "names": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v134_packed_names/compile_20261003_a/manifest.json", "sha256": "ea55dc0564ffaff56f62af0c6bb1822a81e7d91274e9e7c729b275933df22b52"},
+  "bridge": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v137_proof_bridge/compile_20261003_a/manifest.json", "sha256": "2c112cb7b9a0a79eb9d6b05ea79a45a3b2174872072c77ec2aec327696b2bb50"},
+  "query_only_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v115_activity_initial/pilot_20261003_a/launch.json", "sha256": "c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569"},
+  "queries": 4,
+  "max_query_seconds": 20,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "scope": "ALL_OFFICIAL_NAME_OWNER_AND_ONEHOP_PROOFS_COST_ONLY_NOT_INITIAL100_OR_RECALL"
+}
