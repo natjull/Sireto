@@ -9346,3 +9346,118 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Vérification finale ciblée V99/V101/V102/V103/métadonnées/membership :
  43 tests PASS2,00s, diff-check propre. Seul handover modifié par ce volet
   après commits code ; autres changements suivis utilisateur inchangés.
+
+### 3 octobre 2026 — V104 : servir la recette sigles V67 réellement sélectionnée
+
+- Tour précédent PROGRESS : V101128 scellé/mesuré et V102/V103128 audités
+  changent l'action suivante, malgré gains0/pertes0. Dernier exact114/128=
+  89,0625%, cible initial10099,2% et objectif global NON atteints. Pas de
+  statut complete/blocked/paused inféré ; folds0/1 fermés et aval gelé.
+- Vérification historique : V65 comparait des features sigles toutes nulles
+  par erreur de lecture de champs exacts non stockés ; V67 l'a réparée et
+  ses3 inner folds ont choisi HEAD_FULL16. La recette corrigée n'avait
+  jamais eu de mesure nationale initial100. V66 STOP360s concernait une
+  AUTRE recette HEAD_WORD ; pas reprise de ses120 sorties partielles.
+- Milestone `e8102dc5` V104 : mêmes poids16/projections/vocabulaires fold-local
+  du manifeste V67 SHA9e74e3a376e0a0a5c4a5a37f8288b31ec0397b785cc1e6ef899594dc4a267e48,
+  sans fit nouveau ni poids/règle ajustés aux14 erreurs. Recalcul<=8 termes
+  depuis embeddings NOM CRM V78 uniquement, encodeur/refs/max_length vérifiés
+  identiques V52 ; pas anciennes expansions ou candidats repris. Modele
+  HEAD_FULL, features16/folds234/coeff sémantique/overlap queries vérifiés.
+- Natifs16 :11 preuves lexicales/nom/adresse/numéro/lieu/exact +4 sigles
+  courants officiels (global/lieu/numéro+lieu/adresse+lieu) +mots sémantiques
+  query-only. Langage V67/STOP/maximum2 tokens sigles sont limites historiques,
+  inchangées ici. Aucun alias CRM/code de cas appris ou co-validité affirmée.
+  Score initial=max(natifV67,64×preuve nom-chemin nationaleV101×XY), mêmes
+  57804962 tuples/43896818 sites/memberships exhaustifs/succession1hop/BAN.
+  Activité/dates encore non actives, jamais annoncer leur usage comme acquis.
+-30 tests ciblés PASS1,93s avant mesure : composants natifs16 comparés
+  sur TOUS documents fixture avec preuves sigles positives, oracle indépendant
+  des facteurs nom/site/relations complet et ordre/top100/scores exacts,
+  BAN faible/inconnue et garde modèles/folds/coeff. Syntaxe corrigée avant
+  commit/mesure, jamais altération d'artefact historique mesuré.
+- V104 lancé `audits/retrieval_v104_frozen_initialisms/pilot_20261003_a/`,
+  session78985 à vérifier. Même guards V10116mean<=4s,20s/requête,80s/6Gio/
+  zéro swap,superviseur90s,contrôleur900s.900s nouveau contrat commeV101,
+  pas élargissement/reprise du STOP V66 HEAD_WORD360s.128 sorties aveugles
+  avant évaluateur/ledger234/comparateurV101 uniquement, jamais recallpartiel.
+  Résultat terminal à consigner ; tous objectifs OOF/Wilson/généralisation/
+  attribution/SLO et99,2% restent requis. Aucun push/dépense externe,
+  changements utilisateur préservés et artefacts antérieurs immuables.
+
+#### V104 terminal et V105 — exécution exacte par intervalles
+
+- V104 session78985 terminal exit1 : STOP à la deuxième requête20,690814s,
+  une seule requête certifiée. Aucun128, label ouvert ou recall mesuré.
+  Native trié11,864463s, points8,629377s. Resources PASS, pic4590682112,
+  wall36,449102s/zéro swap ; contrôleur43,033038s. Status SHA
+  `b91a18245bced360a9d3201e389d3fc9ff18f0ce1a269d5c8b1731b607de0a7d`,
+  worker_stop000 SHA
+  `99a913e7236a1c46cb0424b92efc8aa8859fba65df5bfda0ebc2a1e44ec9d1b6`.
+- Milestone `14703479` V105 : même fonction réelle initiale HEAD_FULL16
+  V67 et noms/relations/XY nationaux exhaustifs. Factorise le prédicat
+  sigle commun aux4 composantes. Association float32 différente possible
+  à quelques ulps : pas identité bitwise proclamée à V104. Poids,
+  projections, vocabulaire et grammaire figés, aucune adaptation aux misses.
+- Collecteur100 exact : native inconnu=None avec borne du flux trié,
+  jamais zéro imputé. Score final exact si branche chemin>=borne ; sinon
+  point natif obligatoire sauf dominance prouvée par cutoff/clé canonique.
+  Tous les fanouts restent exhaustifs, buffer8192 physique uniquement.
+  Trace distingue cible bound-checked, score final exact et dominance,
+  garde sorted/point/completion et native connu cohérents, sinon STOP.
+-87 tests PASS4,32s avant mesure, dont20 combinaisons sigle/champs/bounds,
+  oracle natif complet + scores triés/points/sous-ensemble stricts,
+  oracle chemin indépendant direct/parents/relations complet,8 seeds
+  many-to-many avec plateaux/ties/duplicates, fanout20001 et corruptions.
+  Aucun corpus national réduit ni inclusion du positif par ces fixtures.
+- Pilote nouveau
+  `audits/retrieval_v105_exact_intervals/pilot_20261003_a/` lancé avec guards
+  16mean<=4s/20s requête/80s worker/6Gio/zéro swap/90s supervision/900s
+  contrôleur inchangés.128 sorties certifiées obligatoires avant évaluateur
+  séparé/comparateurV101. Aucun résultat du pilote ne vaut fullOOF,
+  généralisation, SLO ou READY_FOR_FOLD1. Dernier exact114/12889,0625%.
+- Nettoyage Mac demandé par utilisateur terminé séparément ; aucun modèle,
+  donnée CRM/label, Git ou artefact de retrieval supprimé. Travaux V105
+  repris après cette demande. Pas de répétition de blocker ; action utile
+  testée et mesurée, goal ACTIVE, aval et folds0/1 restent gelés.
+
+#### V105/V106 terminaux — le coût de composition, pas la disparition des preuves
+
+- V105 session48229 terminal exit1,16 sorties certifiées, aucune évaluation
+  des labels. STOP_COST_PREFLIGHT : mean5,510440976475s>4s ; contrôleur
+ 119,187527s.7305 cibles dominées prouvées,0 points natifs et0 point requis,
+  aucun zéro natif inventé. Lot0 pic5904384000/wall58,111296s ; lot8
+  pic5454118912/wall39,817905s, tous deux ressources PASS/zéro swap.
+  Status SHA `01760957c6fd40f175ef24243fb72833e53a79a2e998955289766fa532433851`.
+  Les128 ne sont PAS scellées ; dernier recall reste V101114/12889,0625%.
+- Milestone `9867c49c` V106 diagnostic coût seul : deux premières requêtes
+  CRM de l'ordre fixé, index natif national43896818 sites, aucun résultat
+  candidat/clé écrit, aucune recette apprise/choisie ou label/sidecar lu.
+  Modèles/expansions V105 hashés,3 ablations d'exécution, pas retrait
+  du sigle de la recette qualité.62 tests ciblés PASS3,18s avant mesure.
+- V106 session28355 terminal exit0 :6 recherches,4 non vides, deux sigles
+  du premier cas réellement sans résultat, non substitués par une fixture.
+  Premier cas lexical11+termes1,447806s, sigle global0,130295s, sigle+lieu
+ 0,064431s. Second cas lexical2,608546s, sigle global0,489089s, sigle+lieu
+ 0,434167s. Construction4–7ms ; wall5,227376s, pic1421852672/zéro swap,
+  resources PASS. Cela ne valide ni recall, ni SLO, ni coût sur fullOOF.
+- V106 manifeste SHA
+  `13fc0aa147b93bc77ed0643c9107030e1a3364c1fd111332bca6c81382b1fd4a`,
+  metrics SHA
+  `5cdcfdeeafbabda400c2d71703c68400093d8b5fdc98817e06dd8b58f7099ae1`,
+  sous `audits/retrieval_v106_native_cost/probe_20261003_a/`.
+- Comparaison V105/V106 non appariée/cache non contrôlé/limit256 vs100 :
+  ne pas annoncer un facteur de vitesse garanti. Mais le sigle seul
+  n'explique pas les9–12s de la composition sur ces deux requêtes ; piste
+  de build national coûteux de sigles NON engagée par cette observation.
+- Prochaine action sûre : V107 exécuteur initial à4 flux exhaustifs
+  lexical+termes, sigle pondéré, nom officiel-chemin, site XY. Borne native
+  somme des deux frontières et score final max(somme,branche), un seul
+  heap100, points composants seulement quand intervalles ne suffisent pas.
+  AUCUN topk fixe préalable reranké ni gate2000/500. Mêmes poids/projections
+  et sources ; déclarer l'association des arrondis float32 et contrôler
+  l'oracle entier/canonical ties/fanouts avant tout run ; guards inchangés.
+  Cette architecture est encore à implémenter et n'a PAS de nouveau recall.
+- Goal ACTIVE : objectif99,2% exact initial100 non atteint, OOF complet,
+  Wilson/généralisation/attribution/SLO toujours manquants, fold1 fermé.
+  Aucun push ni dépense externe. Aucun traitement de ce volet encore live.
