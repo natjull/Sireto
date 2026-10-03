@@ -8817,3 +8817,79 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fold1 fermé, aucun cloud/dépense/push. Jobs V79/V80 TERMINAUX. Modifications
   utilisateur antérieures préservées. Ne pas présenter ces audits comme gain
   de rappel, validation SOTA ou remplacement de l'OOF complet23k.
+
+### 3 octobre 2026 — V81 rattachements nationaux de succession effectivement compilés
+
+- Tour précédent classé PROGRESS : V79 rejeté selon règle préenregistrée et
+  V80 audit source/site ont changé la décision suivante. Pas de gain recall
+  implicite ; aucun job ancien à attendre/reprendre. Ce tour construit une
+  source nationale complète de jointure, pas seulement un échantillon/plan.
+- Milestone `15ec61d4` : V81 contrat/config/compilateur/tests avant mesure.
+  Stock brut9730972 observations et catalogue43896818 sites, hashes complets
+  fixés. Continuité économique explicitement vraie, endpoints valides
+  DISTINCTS, appartenance officielle aux deux côtés. États fermés conservés,
+  date source et transfert siège distincts. Les classes source couvrent tous
+  les records, pas un dénominateur humain filtré. Aucun nom transféré, modèle
+  appris, corpus autour de GT, seed parent ou requête CRM/label lu.
+- `compile_20261003_a` STOP au spill1GB pendant CTAS de la double jointure
+  large. Milestone physique `a265b936` streaming COPY, parité logique complète
+  sur fixtures, même garde : tentative `_b` STOP au même spill pendant join,
+  le sink seul ne résout donc pas les deux grandes hash tables. Ancien code,
+  budgets/config/logs préservés ; fermeture DuckDB a libéré ses temporaires,
+  tentatives STOP conservées, aucune production partielle évaluée.
+- Milestone `d06ef484` :16 partitions predecessor%16 disjointes/exhaustives,
+  tables des endpoints restreintes par semi-jointures EXACTES de clés avant
+  chaque petite double jointure. ID modulo = stockage uniquement, PAS
+  feature de similarité ou pool candidat. UNION logique des16 Parquets,
+  mêmes LEFT JOIN/colonnes/NULL/classes/provenances, aucune limite de records.
+  Tests CTAS/COPY/partitionné égaux pour lignes et couverture ; fixture
+  couvre TOUTES16 partitions, doublons source, closed, absents, changement
+  d'adresse et preuves incomplètes, pas de sibling/chemin transitif ajouté.
+- Tentative `_c` COMPLETE44,681s, pic2203041792octets (~2,05Gio), zéro swapout,
+  DuckDB1GB/2threads/spill1GB, guard80s/4Gio et supervision90s inchangées.
+ 811469601octets produits/intermédiaires, sous2Gio, surCATNAT uniquement.
+  Jointure nationale31,569s,16 buckets1,61..4,66s ; export4,428s. Aucune
+  dépense/GPU loué, aucune augmentation automatique de budget après STOP.
+-7512820 observations avec deux endpoints officiels présents. Coverage
+  exhaustive9730972 :7512820 BOUND_OFFICIAL_ENDPOINTS,1976320 sans continuité
+  explicite,2818 self à continuité vraie,49675 deux absents,166294 prédécesseur
+  absent,23045 successeur absent. Aucun ID invalide. Les2821 self V80 incluaient
+ 3 sans continuité vraie déjà comptées dans NO_EXPLICIT, pas conflit de comptes.
+  Comptes d'observations, **PAS autant d'arêtes/événements uniques prouvés**.
+- Classes de site exhaustives du binding :1621701 adresse actuelle nonvide
+  égale ET INSEE/CP concordant,5815833 emplacement différent/géo discordante,
+ 75286 preuve de site incomplète. Ces dernières sont conservées, pas rejetées
+  d'un futur dénominateur humain. Même adresse actuelle ne prouve PAS une
+  coexistence historique à la date du lien ; flag false explicite. Les noms
+  spécifiques à l'endpoint ne deviennent pas des alias de ses autres sites.
+- Vérification complémentaire complète source-only : parmi ces3 classes,
+  respectivement893000/658064/51942 observations inter-SIREN ;1579958/5704739/
+ 72028 ont au moins un endpoint fermé. Pas un taux de nouvelles preuves de
+  NOM, de nouveaux SIRET distincts ou de rappel. L'inter-SIREN concordant
+  constitue une possibilité de preuve à vérifier, pas un alias légitime acquis.
+- Artefact `audits/retrieval_v81_succession_bindings/compile_20261003_c/` :
+  manifeste SHA`4c22d783c4e8a03accaedbc2809e9de888d0941f8bd2779d45d7b41eeb7cd41a` ;
+  `succession_bindings.parquet`371628350octets,
+  SHA`427e722a501045e3f56ba8e449c85816d5b4b819f9120b83e19977599fe421a8`.
+ 18 Parquets scellés (16 intermediates complets +bindings+coverage), tous
+  hashes/source/implémentation revérifiés. Contrôle des7512820 lignes : IDs
+ 14/9 chiffres et appartenance cohérents, continuité true, preuve historique
+  false. Check supplémentaire1,935s,pic276643840,zéro swap.54 tests ciblés
+  V81/V80/V79/V77/V78/V39/V47/V56 passent1,39s. Sources/stocks inchangés.
+- Suite concrète : joindre des preuves de NOM officielles propres à chaque
+  endpoint et de personne morale (pas enseignes des frères), garder provenance,
+  portée/date/direction et grade d'ancrage. Construire un accès inversé de
+  chemin lexical/site sans seed lexical déjà retrouvé, puis UNE recherche
+  initiale nationale plafonnée100, via bornes/certificat sans pool fixe.
+  Priorité de coût : éviter de dupliquer noms et adresses pour chacune des
+ 7,5m observations et dédupliquer les faits lexicaux sans effacer provenance.
+  Site différent/incomplet ne peut être assimilé à identité ; l'usage devra
+  vérifier la compatibilité du SITE cible avec la requête, avec temporalité
+  explicite et sans exclusion dure de la voie globale43,9m. Les noms ne sont
+  PAS servis dans V81 et aucune revendication de retrieval relationnel mesuré.
+- Dernier recall initial national-corpus PILOTE reste V78 exact114/128=
+ 89,0625%, opérationnel116/128=90,625%. Objectif99,2% NON atteint, goal ACTIVE,
+  PIVOT_GENERATION, pas READY_FOR_FOLD1, pas OOF23k/SLO/généralisation validés.
+  Folds0/1 non ouverts, tous modèles aval gelés, all-human/sidecar final
+  inchangés, aucun positif injecté, aucun push. Jobs V81_a/b/c et vérification
+  TERMINAUX, aucun handle encore à attendre. Changements utilisateur préservés.
