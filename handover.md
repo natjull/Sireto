@@ -10890,3 +10890,56 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   autres parts sous mêmes80s/3Gio/zéro swap. Pas de copie de résultat FAIL
   ni de modification des sources/code/config/docs/artefacts V142 mesurés.
   Objectif et dernier recall V101 inchangés,goal ACTIVE,PAS READY.
+
+## 3 octobre 2026 — V143/V144 reprise vérifiée des adresses, mêmes preuves
+
+- Milestone `2eeaa51b` V143 : batch8192 au lieu32768, gate de stabilité
+  système30s init/1s par phase,min50% memory_pressure -Q,55s attente max.
+  Compteur doit rester identique jusqu'au début du Budget worker. Budgets
+ 80s/90s superviseur/3Gio/ZÉRO swapout global inchangés. Import entier des
+ 75 réussites, pas part74 FAIL. Aucun programme/cache utilisateur modifié.
+ 287 tests V117–143 PASS18,02s,8 nouveaux tests avec découpage bit-exact,
+  2051 observations sans cap, autorité fermée/dérive/absence quiet/STOP/retry.
+- V143 init48526 TERMINAL1, PAS worker data : gate PASS30,646712s,74% free,
+  zéro swap dans fenêtre. L'import refuse une référence launch config à
+  deux champs vs manifeste trois champs, uniquement size_bytes optionnel
+  absent. Diagnostic confirme même path/SHA/fichier et SCHEMA14 exact.
+  Aucun succès national ni nouvelles preuves revendiqués. Code/config/doc/
+  root V143 mesurés conservés ; pas patch rétroactif ni bypass de validate.
+- Milestone `b4e351e3` V144 : bootstrap canonicalise les références APRÈS
+  verify hash/path, record complet ; taille explicite erronée reste STOP.
+  Moteur V143 load/worker/execute/seal/remaining et projector/audit V142
+  réutilisés INCHANGÉS ; formats status V143 compatibles mais launch
+  bootstrap_revision=144 et root/hashes V144 explicites.289 tests V117–144
+  PASS17,78s avant mesure ; régression config MINIMALE sans size_bytes et
+  record complet, mauvais hash/taille, sorties/imports mixtes/full denom.
+- Root `audits/retrieval_v144_address_bootstrap/projection_20261003_a`.
+  Init35583 TERMINAL0 :75 imports entiers rehashés/vérifiés,312 parts total,
+  toutes sources originales encore entièrement hashées. Gate30,699799s ;
+  audit/init8,026916s,pic662192128 octets,zéro swapout,PASS. Plan
+  `7b33882da26312a922227fc9b9c2c140ecbcd2640c8b28762e7b3bf9cf583418`,
+  launch `17ca648a6599d8f86c46116b9db4ffe6678a2f52c26dc5ac93bacd021e6339fc`,
+  preflight `caa7206b8fce5e8dcf473b1d90f71f643ffe8d5b0d6aa40934e632e4da856f99`.
+- Nouveau lot officiel74 session30052 TERMINAL0 :537428 observations,
+ 392900 lexicales,2,729036s,pic749780992,zéro swapout,PASS,17454366 octets.
+  Manifest `592aec4835a74e94bb78df0191e3e06f91732bf680ca6c53faff02389bf68729`.
+  Nouveau lot brut1 session22022 TERMINAL0 :992785 sites/3971140 preuves,
+ 1882792 lexicales,12,686294s,pic781516800,zéro swapout,PASS,64407915 octets.
+  Manifest `a5b6a2b9fdfaada3f962b6e56c1fb03019a7f231e4fd31c50d336faef939d2d2`.
+  Nouvelle relecture entière de chaque lot/chaque champ + identité-source
+  indépendante. Backend validate/ref/gates/resources et STOP ancien
+  inchangé confirmés au post-check avant lancement suite. Pas benchmark
+  apparié de performance entre lots différents, pas gain métier revendiqué.
+- Suite235 parts lancée session6831 (`bootstrap_retrieval_v144_addresses
+  remaining`). IMPORTER les75 succès V142, SKIP les deux nouveaux succès
+  V144 ; ne jamais repartir du root STOP V142/V143. Suivre CE handle réel
+  via write_stdin, sans relance sur timeout. Si terminal0, vérifier seal
+  TOUTES312 autorités/export/source hashes,317683879 observations et
+  protections ; si STOP, préserver, diagnostiquer, pas retry même root.
+- Tour PROGRESS,goal ACTIVE,PAS READY. Pas encore projection nationale
+  scellée ni index lexical d'adresses, collecteur100 ou nouveau recall.
+  V101114/128=89,0625% exact/116/128=90,625% op inchangé. Suite après seal :
+  dédup whole-variants/owners-scopes, accès lexical d'adresses, joint noms/
+  relations/attributs/XY et collecteur100/bornes sûres ; sorties128 scellées
+  avant labels, puis OOF all-human complet. Folds0/1 non lus,aval gelé,
+  aucun aliasCRM/fit/push/dépense ou pool fixe reranké. Dirty préservé.
