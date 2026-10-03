@@ -11490,3 +11490,59 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   initial100 complet et évalués sans labels dans la génération. Downstream,
   folds0/1 et sources label-side non ouverts ; pas de fit, injecté, cloud,
   dépense/push/suppression. Modifications utilisateur sans rapport préservées.
+
+## 2026-10-04 — V156 compteurs exacts ; V157 correctif de supervision réel
+
+- Tour précédent PROGRESS : V154/V155 prêts et testés, et V153 effectivement
+  vivant puis progressant jusqu'à la phase current. Ce tour : nouveau correctif
+  reproductible et reprise réelle, pas reclassification d'un STOP en succès.
+- V156 commit `f4b9c005` : mêmes features V138 float64/whole-alias/exacts,
+  mêmes postings/corpus/denominators, dtype des compteurs uint8/16/32 choisi
+  uniquement par la borne du nombre de tokens DISTINCTS de la requête.
+  Aucune quantification de score, saturation/troncature, cap de noms/postings,
+  approximation, feature nouvelle, alias CRM ou fit. Map lifetime V151 intact.
+- Tests V15617 PASS1,92s : vecteurs bit-exact, collisions raw/feature, masques,
+  queries répétées/remaps/propriété des sorties,255/256/65535/65536 frontières,
+  257 tokens concordants sans overflow et vraie requête longue comparée à
+  V138,10001 aliases sans fanout cap, coût STOP sans sortie partielle.
+  Suite V117–156504 PASS54,93s session24916 TERMINAL0 (premier503 PAS encore
+  la nouvelle vérification longue, ajouté puis toute suite réellement relancée).
+- Analyse QUERY-ONLY128 du launch V115 hashc85c1368…569 : folds3=41/2=43/4=44,
+  tous compteurs uint8, max44 tokens distincts par canal. Sur57530682 aliases,
+  réduction ARITHMÉTIQUE du buffer hits172592046 octets (~164,6Mio).
+  PAS une réduction RSS nationale observée, ni une accélération/SLO/recall.
+  Aucun label/candidat/proof humain ouvert ; pas de sonde nationale V156.
+- V153 session21938 TERMINAL1, PID69266 disparu confirmé : STOP superviseur
+  `current_addresses/part00031/status.json`, NoSuchProcess PID88219 pendant
+  memory_info après poll vivant. Worker31 a exporté992279 lignes3969116
+  observations,14,994s/RSS778502144/min libre74/pression1/global0/PASS et
+  tous champs audités ; son CODE DE SORTIE n'a PAS été enregistré par le parent.
+  Donc cette sortie reste orpheline, non importée/scellée. Global V153 ABSENT.
+  299 manifests worker présents mais seulement298 sans STOP.
+  Ancien STOP SHA `b0c0012cae156a84f9b92663203191d316f76cacca4787b0041bd2251cebac79`.
+- V157 milestone commit `a8a2ac04` : supervisor race-safe ne conclut succès
+  qu'après wait() du PROPRE enfant et son exit0. NoSuchProcess seul n'est PAS
+  une preuve. Pression/counter/RSS/temps contrôlés avant sampling et après
+  exit ; exit nonzero/timeout/pression/reset restent STOP. Mêmes LIMITS V153,
+  aucun assouplissement ni purge/app tierce. Source/projection/audit V142
+  inchangés, mêmes batches8192/mono-thread.
+- Nouveau V157 ne modifie AUCUN root V142/V144/V153 ni leur code mesuré.
+  Il importe tous298 succès propres à leur launch original, exclut31 même
+  avec manifest worker présent, et doit produire les14 parts restantes31–44.
+  V154/V155 (non mesurés nationalement) raccordés EXPLICITEMENT au backend
+  V157 ou V153 suivant le statut GLOBAL, jamais rebaptisés/réinterprétés.
+  Tous imports/scopes/parts/proofs/resources/epochs restent contrôlés.
+- Tests ciblés V157 + intégration V154/V15544 PASS20,14s ; suite V117–157
+  514 PASS56,83s session25090 TERMINAL0 : exit-race0 confirmé,nonzero137/1/-9,
+  exit inconnu timeout, pression même après exit0 et avant disparition, STOP
+  source/parent exclu, orphan intact et recalcul bit-exact, toutes parts avant
+  storage, missing/duplicate/closed-fold/source/hash/ressource drift refusés.
+- INIT réel V157 lancé session41754, root neuf
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v157_address_resume/projection_20261004_a`.
+  À publication de cette note : initial_pressure_gate30s observé, pas encore
+  de terminal/plan import confirmé. Ne pas lancer `remaining` avant INIT PASS ;
+  vérifier un vrai part31 puis remaining/whole seal, ensuite V154 avec VRAI SHA.
+- Pas de nouveau retrieval initial100 national/recall/SLO, pas READY ; V101
+  reste114/128=89,0625% exact116/128=90,625% opérationnel sur pilote réutilisé.
+  Objectif99,2% NON atteint, goal ACTIVE. Downstream/folds0/1 gelés, pas de
+  label injecté/CRM alias/fit/dépense externe/push/suppression de sources.
