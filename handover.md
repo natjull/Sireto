@@ -10686,3 +10686,42 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   geometryV126,bornes/heap initial100,nouveau pilote128 scellé avant labels,
   puis OOF all-human complet. Pas de fit/dense/RRF/LightGBM/aliasCRM/aval/
   fold0/fold1/push/dépense. Dirty synthetic_GT/maps/v412 préservé horscommits.
+
+## 3 octobre 2026 — V139 attributs de site complets et XY disponibles au reader
+
+- Milestone `930fd214` : CP/INSEE/numéro de voie de TOUS43896818 sites
+  current, joints exacts aux positions V96 conservées V136. Code public5
+  réversible base36,leading zeros/Corsica/00000 conservés,sentinel UNKNOWN
+  distinct. Autorité scalaire V121 sur chaque chaîne source distincte,
+  normalisation numéros V118/V128 inchangée,dictionnaire SOURCE unique sans
+  largeur/cap arbitraire. Codes opaques pour égalité seulement,pas valeurs
+  ordinales comme features ni aliases CRM.249 tests V117–139 PASS15,70s
+  avant mesure,dont10 nouveaux oracles/guards/source drift/closed folds.
+- Réutiliser V110 HQ/état/dates,V112 activité+nomenclature ORIGINALS et
+  descriptions officielles,V126 XYfloat64 L93 inchangés. Classe explicite
+  (nomenclature,code),UNKNOWN=-1 sans NAP déduit ni sites retirés. Aucun
+  géocodage nouveau, dateDebut pas fermeture/adresse historique inventée.
+  Reader vecteur sert place/num/hq/classes/XY aux seuls sites visités ;
+ 426471 extras V136 UNKNOWN, jamais héritage d'un autre site du même SIREN.
+- Root `audits/retrieval_v139_site_attributes/compile_20261003_a`,16236
+  TERMINAL0. Build25,942291s,pic1434075136,zéro swapout,PASS ; audit autre
+  processus26,518109s,pic2003517440,zéro swapout,PASS. Chaque site source
+  exactement une fois et CHAQUE attribut exporté reconstruit par DEUXIÈME
+  lecture complète du stock original. Tous HQ/états/dates réutilisés aussi
+  confrontés RAW source, sans accepter implicitement un coalesce du dossier.
+  CP connus37946985,INSEE43526286,numéros30264115 ;9083 textes de numéros,
+  sorties526870719 octets (<768Mio),aucun filtre état/UNKNOWN/géographie.
+- Manifest `dcc90fd369de1ef40c7dcb464ceab6c2a32ac6598738635fe277d3cc8181310c`,
+  launch `e245898e92ce26f8c2226962f4b0767aa328127b63bdbd496790d04ed23b5427`,
+  dictionnaire `4dd3b320ddf21f3a116f9b7758712ab0410237ccd86b58fc323bfdbadb0c1b21`.
+  Post-check23004 TERMINAL0 : TOUS3 nouveaux et7 tableaux réutilisés +
+  dictionnaire/build/audit autorités rehashés,reader national testé current/
+  extra boundaries,extras preuves0/classes-1/XYNaN,aucun héritage inventé.
+- Tour PROGRESS,goal ACTIVE,pas encore recherche nationale initial100 ou
+  recall nouveau. V10189,0625% exact/90,625% op sur128 reste référence.
+  Avant index d'adresses, inventaire V140 de TOUTES identités originales de
+  noms et adresses,même texte masqué/non lexical : V135 avait inventorié les
+  noms site-scopés lexicalement éligibles seulement. Un nouveau site source
+  doit être admissible, pas seulement une preuve dans un index inaccessible.
+  Puis adresses site-scopées,collecteur100/bornes exactes,nouveau128 scellé
+  avant labels. Folds0/1 non lus,aval gelé,pas de fit/LightGBM/dense/push.
