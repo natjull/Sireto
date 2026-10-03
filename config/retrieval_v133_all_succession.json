@@ -1,0 +1,10 @@
+{
+  "source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementLiensSuccession.parquet",
+    "sha256": "dfd6442f81cef3b1db51b7ce65471a4bb5f39b15f28e5f9a45ad9fcdbb27ca38"
+  },
+  "expected_observations": 9730972,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 1073741824,
+  "scope": "EVERY_RAW_OFFICIAL_SUCCESSION_OBSERVATION_AND_ORIENTATION_NO_CONTINUITY_FILTER_NO_RETRIEVAL_QUERY"
+}
