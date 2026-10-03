@@ -1,0 +1,13 @@
+{
+  "variant_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v120_variant_hashjoin/probe_20261003_a/manifest.json","sha256":"989200c22d47cf85c5b06b16a10465d849ee6738abba89726b8afbeb76f87dc2"},
+  "sample_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v118_official_variants/probe_20261003_a/manifest.json","sha256":"742729b3b3ca32fd1bc61fb27b2980bb946a23ea7f7af722f1d3e38f9403e68a"},
+  "query_only_launch":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v115_activity_initial/pilot_20261003_a/launch.json","sha256":"c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569"},
+  "name_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/name_evidence.parquet","sha256":"3d7ea61142afff1800c3545783edb16cfaf6d1039ce47db353f7dfcfb74462f5"},
+  "address_source":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/address_evidence.parquet","sha256":"1fa4f7e9cf5c503e5d9e74bbb4802a244bf74bf04e4c78da82755d7ada3d3984"},
+  "rows_per_family":4096,"source_families":["SIRENE_CURRENT","BODACC","RNE"],
+  "queries":4,"block_size":128,"collector_cap":100,"max_query_seconds":20,
+  "resources":{"max_seconds":80,"max_rss_bytes":3221225472,"max_swapout_pages_delta":0},
+  "max_output_bytes":33554432,"national_publication":false,"recall_measured":false,
+  "activity_grades_enabled":false,"fit":false,"fold0":"FORBIDDEN","fold1":"CLOSED",
+  "metric_family":"COHERENT_WORD_CHAR3_CHAR4_NATIVE19_V114_WEIGHTS_TRANSFER_COST_AND_EXACT_ORACLE_ONLY"
+}
