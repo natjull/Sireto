@@ -1,0 +1,10 @@
+{
+  "successions":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementLiensSuccession.parquet","sha256":"dfd6442f81cef3b1db51b7ce65471a4bb5f39b15f28e5f9a45ad9fcdbb27ca38"},
+  "dossier_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json","sha256":"6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"},
+  "establishments":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/establishments.parquet","sha256":"2913021ba4bb92aeb00bdb111d05e4db9d375027b0210e60784dd9fb86d9951e"},
+  "expected_source_rows":9730972,"expected_sites":43896818,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "duckdb_memory":"1GB","spill_limit":"1GB","max_output_bytes":2147483648,"threads":2,
+  "supervisor_seconds":90,
+  "scope":"ALL_OFFICIAL_SUCCESSIONS_NO_CRM_NO_LABEL_NO_RETRIEVAL"
+}
