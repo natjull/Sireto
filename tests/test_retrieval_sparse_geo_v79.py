@@ -74,7 +74,7 @@ def test_outer_counterfactual_with_nonzero_sparse_semantics():
                query_ids=[r['query_id'] for r in rows[50:]])
     choice=dict(alpha=1.,ridge=10)
     w,r=select(q,rows,scenes,docs,registry,2,cfg,choice,final)
-    qq=q.copy(); qq[:50]=0.; dd=copy.deepcopy(docs)
+    qq=q.copy(); qq[:50]=-qq[:50]; dd=copy.deepcopy(docs)
     for row in rows[:50]:
         dd[row['positive_siret']]={'legal_names':['UNIQUE OUTER CHANGED']}
     ww,rr=select(qq,rows,scenes,dd,registry,2,cfg,choice,final)
