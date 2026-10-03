@@ -1,0 +1,17 @@
+{
+  "source_stage": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v131_name_access/compile_20261003_a/staging_manifest.json",
+    "sha256": "462952a43e277343ae65d40e7bda860170289c044ad25022e51cb4e091c8938b"
+  },
+  "expected_names": 57530682,
+  "expected_postings": 2015657202,
+  "term_buckets": 64,
+  "duckdb_version": "1.4.3",
+  "numpy_version": "2.4.1",
+  "duckdb_memory": "768MiB",
+  "spill_limit": "2GiB",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_phase_output_bytes": 536870912,
+  "max_total_output_bytes_including_source_stage": 34359738368,
+  "scope": "EXACT_UNCHANGED_ALL_V131_POSTINGS_UNSIGNED_BATCHED_CSR_AUDIT_NO_RETRIEVAL_QUERY"
+}
