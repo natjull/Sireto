@@ -11411,3 +11411,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Recall inchangé V101114/128=89,0625% exact116/128=90,625% opérationnel,
   pilote réutilisé non national. Aucun downstream entraîné, fold0/1 ouvert,
   positif injecté, dépense externe ou push. Objectif99,2% NON atteint.
+
+### V153 — lancement réel confirmé (suite du milestone `ce13dc8f`)
+
+- INIT session85000 TERMINAL0 :114 imports/312 parts, audit15,408s,
+  pic RSS764018688 octets, niveau pression1/min libre73%, global swap0/PASS.
+  Launch SHA `7cdf70644c12bc3e0ea13187f7d1e2ed9c07fdd6e084d304cf8c8c0ec7a30f54` ;
+  plan SHA `04604b3bdeea7fc68ef412600386f294e11b26969f924a83ff75294816965681`.
+- Premier lot official_addresses112 session2057 TERMINAL0, validation V153
+  indépendante relue :526985 lignes/observations, tous champs second pass
+  vérifiés,2,994s/RSS737181696 octets/min libre73%/pression1/swap0/PASS.
+  Manifest SHA `b2b1f08d0c4182ccc2f721a2debe27d86da33a99dd0039fc4ebe687bd46596b4`.
+  Ancien STOP112 V144 conservé, non réécrit et non changé en succès.
+- Poursuite `remaining` effectivement lancée, session21938, PID69266
+  confirmé vivant, séquentielle/mono-thread. Snapshot après46s :10 nouvelles
+  parts complètes donc124/312 avec les114 imports, pic nouvelles parts
+ 751386624 octets, toutes PASS, pas de STOP/status.json, seal global ABSENT.
+  Cet état PARTIEL n'est ni un résultat fini, ni une mesure de recall.
+- Prochaine action : suivre CE handle/PID sans relancer un second worker,
+  récupérer son état terminal et le seal complet avant tout dictionnaire/
+  index aval. Un STOP devra rester immuable ; aucun retry automatique.
+  Puis adaptateur explicite V153 vers storage/lexical (anciens V148/V152
+  incompatibles intentionnellement avec la nouvelle politique, à préserver).
