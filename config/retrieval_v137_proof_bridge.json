@@ -1,0 +1,20 @@
+{
+  "catalog": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v136_extended_catalog/compile_20261003_a/manifest.json", "sha256": "c0802273792ff2d0f85f062784db19009d64d5a162116459a1f6fed9bd53abbc"},
+  "owners": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v132_name_owners/compile_20261003_a/manifest.json", "sha256": "4db23546ea223bae45501f047d92bdf9eeb5255ff7547b14f4c5b2393e238cf5"},
+  "graph": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v133_all_succession/compile_20261003_a/manifest.json", "sha256": "afbd9475ecc29b208b3d7a8aaa5d6115d2221b411a23d44c8ae4f222001bd3e3"},
+  "expected_sites": 44323289,
+  "expected_parents": 30024456,
+  "expected_names": 57530682,
+  "expected_facts": 105564761,
+  "expected_site_facts": 8393444,
+  "expected_owner_buckets": 64,
+  "expected_graph_endpoints": 15506308,
+  "expected_graph_observations": 9730972,
+  "owner_group_size": 8,
+  "numpy_version": "2.4.1",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "controller_seconds": 1200,
+  "max_phase_output_bytes": 805306368,
+  "max_total_output_bytes": 1610612736,
+  "scope": "CURRENT_PLUS_ALL_V135_NAMES_AND_RAW_SUCCESSION_NO_LABELS_NO_CANDIDATE_POOL"
+}
