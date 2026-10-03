@@ -1,0 +1,19 @@
+{
+  "bridge": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v137_proof_bridge/compile_20261003_a/manifest.json", "sha256": "2c112cb7b9a0a79eb9d6b05ea79a45a3b2174872072c77ec2aec327696b2bb50"},
+  "catalog": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v141_append_catalog/compile_20261003_a/manifest.json", "sha256": "cbca06f853365f150cd239af0853bc0cc8f4cf6bb254526f6fee3a5713d64360"},
+  "expected_buckets": 64,
+  "expected_names": 57530682,
+  "expected_facts": 105564761,
+  "expected_site_facts": 8393444,
+  "expected_previous_unbound_facts": 158575,
+  "expected_sites": 44403034,
+  "expected_parents": 30027199,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits",
+  "numpy_version": "2.4.1",
+  "quiet_seconds": 30,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 16777216,
+  "scope": "ALL_ORIGINAL_OFFICIAL_NAME_FACTS_APPEND_ONLY_PARENT_REBIND_NO_QUERY_NO_LABEL_NO_MODEL"
+}
