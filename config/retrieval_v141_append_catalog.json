@@ -1,0 +1,13 @@
+{
+  "previous_catalog": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v136_extended_catalog/compile_20261003_a/manifest.json", "sha256": "c0802273792ff2d0f85f062784db19009d64d5a162116459a1f6fed9bd53abbc"},
+  "inventory": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v140_canonical_inventory/probe_20261003_a/manifest.json", "sha256": "6da14c87abd4a0baee5ef75d2c6172333e08389161b1e9ca02250355513ce31c"},
+  "expected_previous_sites": 44323289,
+  "expected_previous_parents": 30024456,
+  "expected_previous_blocks": 346277,
+  "expected_additional_sites": 79745,
+  "block_size": 128,
+  "numpy_version": "2.4.1",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 3221225472, "max_swapout_pages_delta": 0},
+  "max_output_bytes": 16777216,
+  "scope": "APPEND_ALL_V140_OFFICIAL_SITE_KEYS_WITH_ALL_V136_POSITIONS_UNCHANGED_NO_LABELS"
+}
