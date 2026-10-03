@@ -8647,3 +8647,98 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   génération intégrale et évaluateur séparé avec comparaisons V57/V75/V76,
   V49 et V42 ; ne pas annoncer le gain des contrastes comme recall. Ceci reste
   une ablation sans XY/BAN/graphes, pas une architecture complète ni SOTA.
+
+### 3 octobre 2026 — V77/V78 : expansion sémantique OOF corrigée, petit gain national pilote
+
+- Le turn V76 précédent est PROGRESS, pas un blocage : source/exécuteur et
+  mesure complète authentiques, recall inchangé. Ce turn est PROGRESS :
+  correction méthodologique démontrée, nouveaux modèles et véritable recall
+  initial national-corpus mesuré. Objectif99,2% inchangé et NON atteint.
+- Audit avant rerun : V59 calcule `vocab=vocabulary(documents,...)` AVANT
+  sa boucle de folds, à partir de TOUS documents sélectionnés TRAIN512.
+  Poids/projections excluent les entreprises outer, mais pas la sélection
+  globale des mots. Risque d'influence des documents outer/inner sur le
+  prétraitement ; ceci n'est PAS preuve d'un gain frauduleux mesuré (V60
+  n'a jamais128 sorties), mais le chemin n'est pas totalement isolé OOF.
+  Ancien bundle/résultats préservés, AUCUN rerun V60 ni reprise de ses120
+  sorties. La suite planifiée au milestone précédent a été corrigée sur
+  cette évidence, pas sur un nouveau résultat de recall.
+- Milestone `eaac9ebc` V77 : vocabulaire distinct par outer fold ET inner-fit,
+  uniquement documents officiels positifs/négatifs des requêtes autorisées
+  au fit ; parents protégés exclus y compris comme négatifs. Cibles lexicales
+  construites pour positions FIT seulement. Refit vocabulaire sur inner-train
+  +validation sans parents outer. Champs NOM uniquement, pas adresses ni
+  aliases CRM/IDs. Mêmes hyperfamilles ridge1/10/100,alpha0/0,5/1/2,8 mots,
+  vocab2048, DF3..15%, native ridge0,005,512 scènes/registre FULL234.
+- V77 COMPLETE5,259s,pic1174519808octets,zéro swapout, garde80s/4Gio.
+  Inner fit documents11113/12181/11150 ; final15886/16116/15475,2048 mots
+  par vocabulaire, hashes différents pour chaque outer fold. Chacun sélectionne
+  ridge10/alpha2 sur inner uniquement. Contrôles outer512 : scènes avec
+  concurrent devant/à égalité242→220 ; fold2 erreur47,929→43,787%, fold3
+ 48,780→43,293%, fold4 45,251→41,899%. **Contrastes, PAS recall national**.
+  Vocabulaire officiel issu TRAIN, pas source d'index label-selected ;
+  teacher et exclusions opérationnelles historiques ne remplacent pas le
+  dénominateur all-human de l'évaluation finale.
+- Source V77 `audits/retrieval_v77_safe_sparse/training_20261003_a/manifest.json`
+  SHA`b961e2cef641bd99837c624fedc631a6093d5e657d49145917d6c715e9d9ae12`.
+  Tests contrefactuels : changer documents/queries/targets/features du fold
+  extérieur ne change NI vocabulaire inner/final NI sélection/projection/
+  poids ; parents protégés comme négatifs exclus. Aucune cible hors fit
+  construite ; sélection du vocabulaire inner indépendante des textes de
+  validation. Tous fichiers et sources d'implémentation hashés/revérifiés.
+- Milestone `304e305d` V78 : bundle serving SANS contrôles/cibles/scènes,
+  vocab/projection propres à chaque fold, encodeur local V52 CPU,prefixnom,
+ 128 tokens, IDs retirés. Modèles figés avant mesure. Poids natifs11
+  BIT-IDENTIQUES aux3 modèles V57, différence due uniquement à l'expansion
+  de NOM apprise, ajoutée dans commune/CP (pas filtre de la base globale).
+  Un collecteur natif full43896818 sites retourne100 directement ; pas
+  pool parent/candidat fixe, reranker ni score post-découverte. Les vues
+  additionnelles V75/V76 ne sont PAS fusionnées dans cette ablation ; XY/BAN,
+  graphes et catégorie juridique restent NON intégrés. Aucun aval modifié.
+-128 CRM query-only de l'ordre V34, disjointes TRAIN512, folds234, noms
+  réencodés1,316s,pic1138769920octets,zéro swapout. Génération COMPLETE
+ 296,260s tout compris sous360s, workers80s/6Gio/zéro swap, pic1923563520.
+  Gate16mean2,33381s passe. p502,23467/p953,57313/p993,87614s : SLO1s/2s
+  NON franchis, cache non contrôlé/timing baseline historique pas apparié.
+  Compteur visites100 = références RETOURNÉES, PAS visites réelles de postings.
+- Labels/ancien comparateur ouverts APRÈS128 sorties intégrales scellées,
+  évaluateur séparé V49/sidecar all-human. **Exact114/128=89,0625%**, op
+ 116/128=90,625%, Wilson95bas82,4766% ;14 NOT_RETRIEVED_AT100,zéro catalogue
+  absent. Face V57/V75/V76 :2 gains/1 perte, +UNE requête nette (+0,78125pt),
+  PAS preuve de généralisation ni progrès statistiquement établi. Face V49
+ 5 gains/4 pertes (exact113,op114), face V42 7/4 (exact111,op112). Tous5
+  comparateurs, leurs segments historiques/V2/V3, folds et Wilson publiés
+  dans `baseline_comparisons.json`, pas seule comparaison avantageuse.
+  Folds V78=37/43,36/41,41/44 ; V76=37/43,36/41,40/44.
+- `audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/` : génération
+  SHA`18da83dbe7276b6dfece6f61f3982694d7172de1c7ae883b0c1d747e8e7dfb4a`,
+  évaluation SHA`83948510fac41a190d6f95f3d93035f8eca4faec6a2096bb1dc5cc6627a7159e`,
+  comparaisons SHA`3563e92b3b5f6ee4f36b729095b3790528c07388c9e8bb9372f4413c92a2b544`.
+  Sidecar `evaluation_scope.json` corrige texte générique V49 : vrai
+  comparateur V76, PAS V42. Hashes/caps/unicité128/modèles/vocabs/encodeur/
+  lots/sources de requêtes/provenance revérifiés,129 tests ciblés passent.
+- Diagnostic POST-évaluation uniquement depuis audits V57/V58 vérifiés :
+  les2 gains avaient déjà un nom partiel (couverture0,667/0,762) mais aucune
+  preuve textuelle d'adresse ; la perte avait nom0,407/adresse0,25. Les6
+  anciennes pertes sans aucune preuve native de nom restent manquantes
+  (7 cas sans preuve de nom sur128 incluaient1 ancien hit conservé). Ce
+  diagnostic ne devient JAMAIS un dictionnaire/feature label-side.
+  Parmi14 pertes V78 :5 GT à≤150m de BAN,8 à≤500m,4 distances UNKNOWN,
+ 7 BAN déclarées faibles, drapeaux recouvrants. Ni filtre rayon dur ni
+  distance GT→BAN comme feature requête autorisée, données GT audit-only.
+- Suite justifiée : combiner dans UNE métrique de recherche initiale les
+  mots sémantiques OOF corrigés et les8 preuves de distance multi-échelle
+  +fiabilité BAN V56, en contrôles TRAIN entreprise-disjoints puis vrai
+  test national. Aucune garantie de gain, ne pas refaire le même pilote
+  lexical ni couper les voisins/anciennes vérités. Collecteur à borne de
+  score globale, seuil dynamique jusqu'à100, **pas réservoir fixe reclassé**.
+  Index spatial officiel existant26951280 sites métro compatibles,724Mo
+  tree,17m absents/incompatibles => voie lexicale globale indispensable,
+  jamais réduire le dénominateur ou le catalogue. Graphes typés restent
+  ensuite à intégrer, pas annoncés présents. Budget/SLO/généralisation
+  doivent être vérifiés avant tout long calcul/build.
+- Dernier recall complet est V78 PILOTE national-corpus128, PAS OOF23k,
+  **PIVOT_GENERATION**, aucune validation99,2% ni READY_FOR_FOLD1. Goal ACTIVE,
+  folds0/1 non lus/fermés, exact/opérationnel/sidecar intacts, all-human sans
+  exclusion qualification, aucun positif injecté, aucune dépense/push, autres
+  changements utilisateur préservés, tous jobs TERMINAUX.
