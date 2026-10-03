@@ -11122,3 +11122,52 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - V101 demeure114/128=89,0625% exact,116/128=90,625% op. Aucun nouveau
   recall, objectif99,2% non atteint, PAS READY, goal ACTIVE. Folds0/1 non
   lus, aval gelé. Dirty autres travaux préservé, commit isolé, aucun push.
+
+## 3 octobre 2026 — V149 : perte de preuves nominatives réellement corrigée
+
+- Dernier tour de discussion architecture : NO_PROGRESS vers la métrique,
+  pas de nouvelle exécution ni gain. Ce tour PROGRESS : finalisation du
+  handover V148 `b2de2c5b`, puis milestone V149 `bce948af`, audit national
+  source-only TERMINAL0 (session7065), pas simple préparation de tests.
+- V149 contrôle TOUS105564761 faits V132/V137 et conserve leurs ordinals,
+  scopes UL/site et flags exact courant. Toutes positions auparavant liées
+  reconstruites exactement ; seuls les UL MISSING réellement absents de
+  V136 sont réattachés par identité officielle dans V141. Aucun alias CRM,
+  identifiant comme feature, propagation enseigne-site→frères ou cap.
+- Résultat réel :158575 faits parent non liés avant ;3570 récupérés pour
+ 2736 des2743 nouveaux parents, associés à2914 des79745 sites ajoutés.
+ 155005 faits parent restent non liés et CONSERVÉS dans sources/compteurs.
+  Pas suppression de contexte ni lookup humain pour créer de nouveaux sites.
+  Les7 nouveaux parents sans fait nominatif réattaché restent UNKNOWN.
+- Namespace/sites/facts/aliases originaux inchangés.64 patchs sparse, même
+  vides,128 arrays rehashés après exécution,44944 octets d'arrays. Overlay
+  `patched_positions` testé avec scatter V138 inchangé vs oracle tous faits ;
+  `ReboundNameSnapshot` conserve V146 ancien site/one-hop et ajoute seulement
+  les noms parent directs officiellement réattachés. Adaptateur PAS source
+  complète certifiée par lui-même ; moteur national pas encore branché.
+- Root `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v149_name_rebind/compile_20261003_a`.
+  Manifest SHA `1d9457e3237618564319b36af3bc8346476e52827d4a95f24c60eaf11a4d6270` ;
+  launch `e24804f5c1319a0d140ce908661c8693102e8fb9b5d56a3fee9c52558859c75c` ;
+  preflight `d9d888a3191aa873ebcbd098843de663ccb322b5a5b8b9d2e9da2b83e0e69842`.
+  Quiet30,689902s,74% libre ; worker9,847813s/pic1082146816RSS/global swap0,
+  PASS. Même garde80s/3Gio/zéro swap, superviseur90s ; NON politique1Go.
+  Succès publié après Budget PASS ; no retry/overwrite racine.
+- 30 tests nouveaux : reconstruction/grains/scopes/positions même non
+  récupérés, intersection zéro/empty,10001 faits sans cap, patch impossible
+  sur ancienne preuve, scatter/flags bit-exacts et adaptateur noms, toutes
+  autorités/closed flags/folds/source counts/hashes/budgets/STOP/root. Suite
+  V117–149374 PASS25,40s TERMINAL0 (session55914). Test timings PAS SLO.
+  Autorité V132 sans budget global contrôlée via SES64 certificats de phases,
+  pas budget inventé ni ancien manifest corrigé. Aucun fichier historique
+  modifié après mesures. Dirty autres travaux inchangé, aucun push/dépense.
+- Source adresses V144 recontrôlée : manifest global toujours absent, STOP
+  official_addresses/part00112 présent. Aucune relance de cette construction.
+  Choix humain système encore attendu ; ce run court n'autorise PAS à
+  relâcher le contrôle global sur d'autres runs ni à réinterpréter STOP112.
+- Suite : consommer les64 patchs scellés dans le loader national noms/scatter
+  (namespace complète V141, site/relations inchangées), terminer autorités
+  adresses après choix système, raccorder tous canaux au collecteur initial100
+  et enfin sceller sorties avant vérité. BODACC/absence/masques encore audits
+  séparés. Aucune nouvelle mesure recall : V101114/128=89,0625% exact,
+ 116/128=90,625% op, objectif99,2% non atteint, PAS READY, goal ACTIVE.
+  Folds0/1 non lus, modèles aval gelés, aucun positif injecté.
