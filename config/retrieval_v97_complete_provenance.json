@@ -1,0 +1,7 @@
+{
+  "tuple_root":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v95_national_names/compile_20261003_a",
+  "expected_observations":162537492,"expected_facts":57804962,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "max_output_bytes":2147483648,
+  "scope":"EVERY_COMPLETED_V95_TUPLE_AND_ORIGINAL_SOURCE_ORDINAL_MEMORY_ISOLATED_INVERSE"
+}
