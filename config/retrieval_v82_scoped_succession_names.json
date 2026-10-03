@@ -1,0 +1,10 @@
+{
+  "bindings":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v81_succession_bindings/compile_20261003_c/manifest.json","sha256":"4c22d783c4e8a03accaedbc2809e9de888d0941f8bd2779d45d7b41eeb7cd41a"},
+  "dossier_manifest":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/manifest.json","sha256":"6d8ed0053b78862adafd76d0b2ac46e06ac5fc735e81723bb21229528fcea198"},
+  "names":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_v3/01eb624cca97c6f3/name_evidence.parquet","sha256":"3d7ea61142afff1800c3545783edb16cfaf6d1039ce47db353f7dfcfb74462f5"},
+  "expected_name_rows":162537492,"expected_bound_observations":7512820,
+  "resources":{"max_seconds":80,"max_rss_bytes":4294967296,"max_swapout_pages_delta":0},
+  "duckdb_memory":"1GB","spill_limit":"1GB","max_output_bytes":2147483648,
+  "threads":2,"supervisor_seconds":90,
+  "scope":"ALL_OFFICIAL_ENDPOINT_AND_PARENT_NAME_OBSERVATIONS_NO_CRM_LABELS"
+}
