@@ -1,0 +1,13 @@
+{
+  "trained":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v77_safe_sparse/training_20261003_a/manifest.json","sha256":"b961e2cef641bd99837c624fedc631a6093d5e657d49145917d6c715e9d9ae12"},
+  "comparators":{
+    "V42":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v42_indexed_metric/pilot_20261002_a/manifest.json","sha256":"e9ffdfea70359f0945ffe4d7a76ea0c680d04f7e9c51204c9ef501000ced4b27"},
+    "V49":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v49_primary_probe/pilot_20261002_a/manifest.json","sha256":"086ebd108d92a8354c871b6fbd8b9978d7fb570611833c2883886e0664616f84"},
+    "V57":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v57_native_proof/pilot_20261002_a/manifest.json","sha256":"11151f230e9616ee799dffbc47aa588bdbb6685ccebc357c6b326e61d3bd0384"},
+    "V75":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v75_history_site/pilot_20261003_a/manifest.json","sha256":"773a46b39454a0374e7e50936bea611fc78ac7b38126aa9ef81664442ba76d0a"},
+    "V76":{"path":"/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v76_history_parent/pilot_20261003_a/manifest.json","sha256":"08fa89b42afc74b2522485b601e6564619dd079e7254c5540e688689adf8c469"}
+  },
+  "resources":{"max_seconds":80,"max_rss_bytes":6442450944,"max_swapout_pages_delta":0},
+  "controller_seconds":360,"primary_mean16_seconds":4,"max_query_search_seconds":20,
+  "metric_family":"NATIVE_DIRECT11_PLUS_SAFE_FOLD_SPECIFIC_SEMANTIC_OFFICIAL_TERMS8_NO_POOL"
+}
