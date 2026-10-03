@@ -11263,3 +11263,60 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Goal ACTIVE/PAS READY, objectif99,2% non atteint ; V101114/128=89,0625%
   exact et116/128=90,625% op inchangés. Folds0/1 non lus, aval gelé,
   dirty autres travaux préservé, aucune dépense/cloud/push.
+
+## 4 octobre 2026 — Confrontation de la proposition hybride et audit disque
+
+- Audit documentaire/code, PAS nouvelle expérience de recall. Proposition
+  utilisateur : couverture historique/enseignes/EI, géo + lexical + dense,
+  fusion et expansion de graphe. Ne remplace pas silencieusement le contrat
+  initial100 : RRF sur listes tronquées puis LightGBM serait un blocking
+  suivi de ranking, pas preuve de recherche directe100 selon le contrat actif.
+  Tout changement de cette frontière doit être explicite avant comparaison.
+- Réutiliser les autorités déjà scellées :57530682 variantes nationales,
+  liens de succession complets et runtime V149–151. Leur compilation n'est
+  PAS un gain mesuré. Adresses/collecteur complet encore incomplets ; pas
+  d'encodage dense national ni entraînement lancé pendant cet audit.
+- Limites vérifiées dans les sources primaires INSEE du15janvier2026 :
+  StockEtablissementHistorique contient enseignes/dénomination usuelle/état/
+  activité/périodes, PAS les anciennes adresses ou coordonnées. Source :
+  https://www.data.gouv.fr/api/1/datasets/r/e089a8d3-61d6-464a-a241-9cc11bbca618
+  StockEtablissementLiensSuccession exclut les unités du secteur public et
+  purgées, et tous liens privés ne sont pas connus. Important pour notre
+  clientèle publique ; ne pas assimiler fichier complet à couverture de
+  toutes restructurations. Source :
+  https://www.data.gouv.fr/api/1/datasets/r/c813daa5-a259-4a7f-b7dc-7f438a90f08e
+- Géolocalisation INSEE : qualité et système de coordonnées à respecter,
+  données diffusibles seulement, Mayotte exclue de ce fichier ; géographie
+  ne doit pas éliminer les sites sans XY ni faire croire à des XY historiques.
+  https://www.data.gouv.fr/datasets/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques
+- Aucun filtre départemental dur proposé pour remplacer la couverture
+  nationale. Normalisation générique doit conserver le texte brut et traiter
+  les abréviations ambiguës en vues alternatives, pas fabriquer des alias
+  officiels ni remplacer globalement MAIRIE/COMMUNE/CH/CC. Apprentissage
+  éventuel OOF et gain hors zones/entités à prouver ; modèles aval gelés.
+- Dimension384 E5-small vérifiée dans config officielle. Pour notre propre
+  dictionnaire57530682 noms, vecteurs seuls :82,30Gio float32,20,57Gio int8,
+ 2,57Gio binaire, hors modèle/index/jointures/OS. Déduplication ne garantit
+  donc PAS index complet confortable en24Go ou encodage en quelques heures.
+  https://huggingface.co/intfloat/multilingual-e5-small/blob/main/config.json
+- Audit Mac read-only par tailles, sans ouvrir labels/secrets/messages.
+  Racine utilisateur environ104,08Gio mesurés, scans du/permissions avec
+  retours1 : PAS inventaire exhaustif système. SIRETO21,34Gio dont Git7,29,
+  data9,01,models3,80,venv0,93. Disque interne161Gio disponibles au df.
+  Les gros packs/données/modèles/historiques ne sont PAS déchets démontrés.
+- Seul fichier nettoyé : `.git/objects/pack/tmp_pack_KoSQXJ`,156499980octets
+  (149,25Mio), déclaré garbage par git count-objects, aucun handle lsof,
+  processus de compactage ni lock. Déplacé, PAS détruit, vers
+  `/Volumes/CATNAT_DATA/SIRETO_STORAGE_QUARANTINE/mac-audit-20261004-aQwPhc/tmp_pack_KoSQXJ`.
+  SHA avant/après identique :
+  `44105667a8bcc241ef11d695061e6511c914f548131571a520196d9a6991c5fb`.
+  Vérification après :garbage0,5 vrais packs et7,09Gio inchangés. Récupérable
+  depuis CATNAT ; aucune réécriture d'historique ni suppression de résultat.
+- Cache Sparkle Installation1,67Gio PRÉSERVÉ : processus Autoupdate/Updater
+  vivants. Sessions Codex/LMStudio/Ollama/backups/documents personnels
+  préservés faute de preuve d'inutilité. Libérer disque ne résout PAS une
+  garde RSS/swap. Décision mémoire adresses toujours non approuvée.
+- Pas de nouveau recall :V101114/128=89,0625% exact/116/128=90,625% op,
+  pilote réutilisé seulement, objectif99,2% non atteint. Folds0/1 non lus,
+  sorties initial100 nouvelles absentes, aucune suppression GT ou mutation
+  des sources officielles, aucun cloud/fit/push, dirty autres travaux conservé.
