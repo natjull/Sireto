@@ -10643,3 +10643,46 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Prochaine action : lecteur V134 national, scatter strictement équivalent
   sur preuves positives, sonde courte query-only sans labels ; puis adresses,
   attributs/XY/upper bounds/collecteur100 et véritables sorties avant labels.
+
+## 3 octobre 2026 — V138 premières preuves query-side NATIONALES
+
+- Milestone `062ad17a` : reader V134 de TOUS57530682 raw aliases et
+  2015657202 postings,words/char3/char4 max whole-variant + exact-feature
+  multi-raw-collisions ; stockage64 buckets seulement,pas filtre/cap de
+  recherche. Hash DuckDB/NumPy pinned. Les sources sont hashées à l'ouverture,
+  pas chaque requête. Scatter positif sans perte vs V137 : seules preuves
+  couverture0 ET non-exact peuvent être sautées,TOUTES références positives
+  restent parcourues par chunks,y compris fanout10001. Zéro aliases×membres,
+  site-scopes et bool current officiels inchangés.239 tests V117–138
+  PASS15,73s avant mesure,14 nouveaux oracles/guards de champs/closedfolds/
+  collisions/CSR/hash/zero-proof/popular-alias/source drift.
+- Root `audits/retrieval_v138_national_names/probe_20261003_a`,22926 TERMINAL0.
+  Quatre PREMIÈRES requêtes du query-only128 V115 préexistant hashé,
+  ordre inchangé,folds3/2/2/4,crm_name seul utilisé ici. Aucun label/ancien
+  hit/modèle ouvert. Toute identité/provenance/source reste officielle,
+  scatter→owners V137 puis TOUT graphe snapshot un-hop V137. Pas de nouveaux
+  candidats ni de top100 émis : c'est un étage de preuves, pas le retrieval.
+- Load16,824713s inclut rehash ENTIER des sources d'accès/owner/graph
+  utilisées, puis temps étage parquery2,140834/3,058765/1,436243/0,802595s.
+  Lexical0,804508/1,423433/0,550464/0,278868s,scatter0,997028/1,366877/
+  0,609945/0,268179s,relation0,339301/0,268457/0,275835/0,255551s.
+  Toutes14848501/23831450/7809598/1571190 refs de variantes positives
+  parcourues. Ces volumes sont des PREUVES, pas pools candidats ou recall.
+  Worker40,503643s,pic3132669952 octets (<3Gio,faible marge),zéro swapout,
+  politique PASS ; sources entières utilisées rehashées APRÈS outputs aussi.
+  Cache disque non contrôlé,PAS cold benchmark ni SLO produit.
+- Manifest `eea9a8a56c478dbde0a9e97c035de6b39befbcdac6cc9096aa77ec395523e907`,
+  launch `16569476181c95846576db86cbfc3299738f1ff69872e5cae652a7d63c7cba48`,
+  outputs `64a93c4a7b2bd914d9e1c7ff173f0fc48b9a305c510b3bcadcd0829b9f2ed330`.
+  Post-check sorties/impl/folds/denom/flags confirmés. Tous handles terminal0.
+- Tour PROGRESS,goal ACTIVE, PAS READY : pas encore adresses/attributs/XY/
+  upper-bound/collecteur100 national intégré, ni nouveau recall. L'étage
+  noms seul dépasse déjà1s sur3/4 queries ; il faudra accélérer avec bornes
+  SÛRES du score complet et réduire RAM, jamais cap arbitraire de preuves.
+  V101114/128=89,0625% exact,116/128=90,625% op reste dernier recall.
+  Sources adresses et noms-context non lexicaux à inventorier aussi pour
+  d'éventuels autres SIRET horsV136 ; ne pas prétendre catalogue universel.
+  Prochaine action prioritaire : indices d'adresses/attributs officiels et
+  geometryV126,bornes/heap initial100,nouveau pilote128 scellé avant labels,
+  puis OOF all-human complet. Pas de fit/dense/RRF/LightGBM/aliasCRM/aval/
+  fold0/fold1/push/dépense. Dirty synthetic_GT/maps/v412 préservé horscommits.
