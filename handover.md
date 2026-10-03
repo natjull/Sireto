@@ -9087,3 +9087,103 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Goal ACTIVE ; ni READY_FOR_FOLD1 ni succès99,2%/OOF/généralisation/SLO
   revendiqué. Ces adaptations physiques répondent à des causes de coût
   vérifiées, pas à des gains/pertes humains ouverts pendant la génération.
+
+### 3 octobre 2026 — V91 mesuré sans gain, audit128 V92, correction de scope national V93
+
+- Tour retrieval précédent classé PROGRESS : résultat national-corpus128
+  effectivement scellé/évalué et causes physiques de coût vérifiées. Le
+  nettoyage Mac intervenu séparément ne vaut aucun progrès recall. Goal
+  ACTIVE, cible initial100 exact99,2%, modèles aval gelés et folds0/1 fermés.
+- V90 terminal STOP_COST_PREFLIGHT :16 recherches certifiées mais moyenne
+  4,731922s >4s, contrôleur85,526s ; pas128 scellé, aucun recall partiel.
+  Status SHA `c78bc468c88f61f70536b21a8283adcfa0f372e2fb99ec8039a14362b03639bd`.
+- Milestone `bf2aece2` V91 : mêmes scores/corpus/poids64 V87, typed lookups
+  V90, ordonnancement V89. Seuls buffers physiques de completion512 et
+  flush de doublons4096, jamais pools/admission512/4096 ; heap100 et fanouts
+  exhaustifs inchangés.32 tests ciblés2,40s avant run. Préflight16 moyenne
+  2,845398s PASS, puis128 scellées en549,259s. Tous16 lots PASS ressources,
+  pic4722720768octets et zéro swapout. Génération aveugle, pas old candidates.
+  Root `audits/retrieval_v91_scoped_paths/pilot_20261003_a/`, manifeste SHA
+  `fad3438926863788b365d863a2b26481322faff7e5e064c78ed0102ec0d0f121`,
+  launch SHA `b973707baf5dce638b8b1a7a01817ca9c909858423b3ebadb94ce207175dd655`.
+- Évaluation séparée APRÈS128 : exact114/128=89,0625%, opérationnel116/128=
+  90,625%, Wilson bas82,4766%, gains0/pertes0 vsV78. VerdictPIVOT_GENERATION,
+  aucun gain de recall revendiqué. Folds2:37/43,3:36/41,4:41/44.
+  p50=3,646985s,p95=5,988666s,p99=8,189438s : SLO non franchis. Comparateur
+  V78 historique, pas timing apparié/cache contrôlé. `evaluation_scope.json`
+  corrige la prose historique V49 qui mentionne V42 et son ancienne méthode.
+  Évaluation SHA `f9e177092899dcd23776a1ea3cdf99fa00fa3473f179ca1db1b7dc834d4d6d1e`.
+- Milestone `7716d339` audit label-side128 : vérifie population/caps/order/
+  certificats AVANT ouverture du ledger234 ; score ponctuel natif/chemin/XY
+  identique au serving, STOP si miss au-dessus frontière ou hit-score différent.
+  14 tests avec adaptateurs1,52s. Premier processus STOP_RESOURCE_POLICY
+  pendant un accès natif, sans rapport128. Status SHA
+  `543a672b7d7cd44b327d7d746e7e21bafd017631a0ae3fe7069d0647da8a56f8`.
+  La cause précise temps/RSS/swap n'a pas été enregistrée : ne pas transformer
+  le budget80s en durée mesurée, ni affirmer quelle garde a déclenché.
+- Milestone `71870744` V92 audit physique huit lots16, même recette et TOUS128
+  points. Chaque worker80s/6Gio/zéro swapout et superviseur90s, contrôleur900s,
+  arrêt terminal en62,300916s ; pic3569156096octets, tous8 lots PASS, zéro swap.
+  15 tests audit/adaptateurs1,62s avant mesure. Aucun score contradictoire,
+  pas correction des sorties ni features promues depuis les labels. Rapport
+  `audits/retrieval_v91_scoped_paths/evidence_audit_v92_20261003_a/report.json`,
+  SHA `de8e55b015d59691d6d1b873c070d9df154a572f0607a4e2f175ec2d9b261df1`.
+  Motifs de LA BRANCHE SCOPÉE : sur128,75 hors endpoints V84,36 preuves
+  positives,10 BAN indisponibles,5 sans mot correspondant,2 sans XY cible.
+  Sur14 misses :9 hors endpoints,3 sans mot,2 preuves positives sous frontière.
+  Cela ne prouve NI absence des9 vérités dans le moteur43896818 NI absence de
+  leurs preuves dans les autres sources officielles. Qualification essentielle.
+- Milestone `7d52da51` V93 : correction structurelle de ce scope, projection
+  source-only de TOUTES162537492 observations de nom et du registre43896818
+  sites, non filtrés par graphe/CRM/label/commune/CP/état. Rôles site/personne
+  morale/context-only préservés, grains invalides et vides conservés avec
+  éligibilité explicite, métadonnées et ordinal source préservés. Pas alias
+  de sibling ni propagation automatique de succession ni co-validité inventée.
+  12 tests projection+audits0,66s avant build. Budgets80s/4Gio/zéro swap,
+  DuckDB1GB/spill2GB, plafond physique8Gio préfixé pour volume complet.
+  Run `audits/retrieval_v93_national_names/projection_20261003_a/` lancé ;
+  statut terminal à consigner ci-dessous. Aucun recall à partir de ce build.
+- Suite : facteurs/postings et membership nationaux complets, adaptateur de
+  flux initiaux100 et oracles avec accès trié/ponctuel cohérents, puis préflight
+  aveugle et évaluation séparée. Ne pas ajuster64 sur14 labels, ni construire
+  corpus autour du GT, ni recréer2000/500 sous autre nom. FullOOF, Wilson,
+  généralisation, attribution complète et SLO restent requis avant fold1.
+  Tous commits locaux, aucun push, changements utilisateur préservés.
+
+#### V93 terminal et V94 projection nationale complète sans copie redondante
+
+- V93 `projection_20261003_a` STOP_RESOURCE_POLICY pendant export de TOUS
+  les noms :80,361319s,pic2256781312,zéro swap. Registre43896818 validé
+  en6,436s/exporté3,246s, mais aucune source globale scellée ; copie partielle
+  de noms interdite comme corpus complet. Worker-stop SHA
+  `d6fa4da263d00bcfda820b86e98d94088953753cb3d5d99de5e1bdb752bcec28`.
+  Aucun budget augmenté, aucun label ni recall partiel, anciens artefacts gardés.
+- Milestone `b2821ff2` V94 : MÊME projection logique des162537492 noms,
+  sans recopier leurs5,5Go. Vue SQL déterministe reconstruite depuis code
+  hashé et source officielle intégrale référencée/hashée ; tous champs/dates/
+  priorité/provenance/ordinal source accessibles. Pas corpus réduit et aucune
+  suppression d'observation. Registre intégral toujours validé/exporté.
+  Oracle compare toutes colonnes et observations à V93 sur fixture incluant
+  doublons/closed/siblings/contexte/grain invalide/vide ;13 tests projection/
+  audits0,67s avant mesure. Lecteur refuse SQL modifié/source partielle/labels.
+- V94 `audits/retrieval_v94_virtual_national_names/projection_20261003_a/`
+  SEALED_COMPLETE_VIRTUAL_NATIONAL_SCOPED_NAMES_AND_MEMBERSHIP en27,534070s,
+  pic1986232320octets, zéro swap,205893855octets nouveaux fichiers ; source
+  originale5511316087octets référencée séparément, pas assimilée à205Mo.
+  Même80s/4Gio/supervision90s/DuckDB1GB/spill2GB, plafond nouveaux fichiers1Gio.
+  Manifeste SHA `b5a52b1776f0d53e8f3be0a31ebb8f42b72f4f336e7c18bd28fae4764e0511b9`.
+  Source et artifacts/implémentations revérifiés après build.
+- Comptages exhaustifs de cette vue :162537492 observations dont162261607
+  lexiquement éligibles ;275422 SIREN SIGN context-only et463 noms normalisés
+  vides conservés, aucun grain invalide dans cette source nationale. Registre
+ 43896818=16715258 actifs+27181560 fermés, sans rejet des fermés. Aucune
+  assertion de co-validité, alias lié ou gain de recall. Ce résultat est une
+  vraie correction du SCOPE SOURCE, pas encore un index serving ni un run.
+- Prochaine étape concrète : factoriser sur la vue V94 TOUTES observations,
+  gérer explicitement463 vides/context-only (V85 historique refuse vide,
+  ne pas l'altérer ni les perdre), compiler postings et membership sans cap
+  parent/site, adapter scopes directs nationaux+succession1hop, oracle puis
+  génération initial100 aveugle. Aucune feature/poids ajustée sur14 misses.
+  Dernière métrique vérifiée toujours V91 exact114/128=89,0625%, non99,2%.
+  Jobs V90/V91/V92/V93/V94 terminaux, pas de run à présumer vivant. Goal
+  ACTIVE et étapes OOF/Wilson/généralisation/SLO encore nécessaires.
