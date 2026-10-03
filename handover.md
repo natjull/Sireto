@@ -10315,3 +10315,105 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sont PAS déjà tous implémentés. Union fixe→LightGBM reste hors contrat
   initial100 sans clarification ; aucun dictionnaire d'alias CRM appris.
   Goal ACTIVE, pas une clôture ni une pause.
+
+## 3 octobre 2026 — V130 dictionnaire global officiel sans fanout sites
+
+- Précédent tour PROGRESS : V129 source entière622697477 observations et
+  V127 attaches nationales déterminent la prochaine action, compiler les
+  noms/owners globaux sans aliasUL×sites. Aucun nouveau recall ni index
+  complet déclaré ; contrat initial100/all-human,fold0 interdit,fold1 fermé
+  et modèles aval gelés. Goal ACTIVE.
+- Milestone `f14ee4ee` V130 : plan exhaustif553 parties V129,64 buckets
+  physiques DuckDB1.4.3 épinglé. Hash du texte pour stockage seulement,
+  égalité/déduplication sur TEXTE ENTIER ; aucune collision ne fusionne des
+  noms différents. Positions internes uint32,identités officielles joints
+  typés seulement,jamais features. Dictionnaire global de chaque nom une
+  fois,faits name+parent+owner+subject+scope,liens vers TOUTES les observations
+  originales. Les27 champs et tous ordinals/périodes restent en V129 ;
+  current_exact agrège uniquement au moins un TRUE explicite, ne remplace
+  pas le UNKNOWN/FALSE/TRUE ni les dates des preuves originales. Pas de cap,
+  sélection géographique,filtre d'état,pool candidat,CRM/GT/fit/embeddings.
+- V130 audits EXACTS de chaque tuple observation/name/parent/owner/subject/
+  scope/current en staging, puis de chaque lien/nom/propriétaire après
+  déduplication globale. Unicité,ordinals source globaux,ID locaux contigus,
+  leading zeros reconstructibles par grain9/14 et toutes périodes testés.
+  Contextes/masques conservés en autorités sources,sans admission lexicale
+  fictive. Budget80s interne/90s superviseur,3Gio,zéro swapout,DuckDB1thread/
+ 768Mio,spill<=2Gio,sorties<=512Mio par phase/32Gio cumulé. Parties/buckets
+  immuables ; pas de reprise/élargissement automatique d'un STOP. Deux seals
+  obligatoires, tous553 staging puis tous64 dictionnaires, jamais partiels.
+ 142 tests V117–130 PASS7,07s avant mesure,dont13 nouveaux cas : collision
+  storage sans perte,preuves/périodes/current,masques,invalides,fermeture
+  folds,drift autorité/version,refus de seal incomplet et de réécriture.
+- Root `audits/retrieval_v130_variant_dictionary/compile_20261003_a`,init
+  session4140 terminal0 : tous553 fichiers observations V129 ENTIEREMENT
+  rehashés,footers/ordre/manifests et chaque source entière/partie vérifiés,
+  source_rows403577216,observations622697477,lexical338540853. Audit sources
+ 21,635504s,pic525713408,zéro swapout,PASS. Launch SHA
+  `12d6969c7d1c5fd4526253fbce554f6920ac46075663e1ed8245e5bab4454cd6`,
+  plan SHA `e8c5941b6c07c040abad90accbd7b666f1a07ca976618e3bc56d64656b9b08d5`.
+- Préflight physique de cinq rôles session26625 terminal0,parts0/72/169/200/
+ 245 toutes EXACTES : worker0,938733/0,501856/2,106246/0,600490/0,520007s,
+  pics351387648/215597056/668794880/215531520/260194304 octets,zéro swapout.
+  Observations originales2065544/1501773/4391100/1725442/525921 ;
+  admissibles843194/172958/2562010/178535/352845,residuels tous conservés
+  dans V129. Aucun de ces nombres ne compte des labels ni des nouveaux hits.
+- Toutes553 parties de staging V130 terminées, session50990 terminal0 :
+  observations622697477,lexical338540853,contextes284156624 en V129,
+  sorties4553745348 octets. Workers375,689391s cumulés,max4,760195s,
+  pic1295482880 octets,zéro swapout et toutes politiques PASS. Seal session
+ 1545 terminal0 après rehash et contrôle footer de TOUS35003 fichiers ;
+  launch→seal staging913,343917s (temps d'orchestration/processus/contrôles
+  inclus, pas seulement375,69s des workers). Toute partie et chaque tuple
+  source admissible couvert exactement, sans sélectionner des CRM/labels.
+  Staging SHA `9e6a9386053c4710f98141c59fb236945aa20c4357cd2984bde6e2bd1737287c`,
+  dictionary_launch SHA `9c608661927ad4b3d0d3a95ff335f0e77e4e4d741038cd9ef46281269b1232a4`.
+- Premier bucket GLOBAL0 session14254 terminal0 : toutes5370791 preuves
+  d'observation du bucket,897682 noms distincts,1658378 faits owner/scopes,
+  toutes5370791 références exactes conservées. Worker4,188850s,
+  pic1155383296,zéro swapout,PASS ; sorties54763645 octets. Déduplication
+  globale entre sources/owners/périodes, pas un fixture local ni un pool.
+  Tous tuples de TOUTES les observations comparés au nom/propriétaire
+  reconstruits,ID/dictionnaires uniques contigus et current_exact agrégé
+  exact. Ce seul bucket ne vaut PAS dictionnaire national complet.
+- V130 tous64 buckets GLOBAL terminés, session11939 terminal0,seal57670
+  terminal0 :57530682 chaînes distinctes,105564761 faits owner/scopes,
+  toutes338540853 observations admissibles liées EXACTEMENT une fois.
+  Origine des622697477 observations conservée par V129,284156624 contextes
+  non lexicaux conservés sans fabriquer de preuve. Workers dictionnaires
+ 282,253580s cumulés,max4,996609s,pic1371635712,zéro swapout,toutes gardes
+  PASS. Sorties dictionnaires3482587627 octets ; avec staging8036332975
+  octets (<32Gio). Seals vérifient tous fichiers/footers/ID locaux,refs/
+  cardinalités et toute reconstruction owner/nom.57,53M noms distincts pour
+ 338,54M observations lexicales (~5,88× dédup des chaînes avant encodage,
+  pas un gain de retrieval/recall ni une compression des labels).
+  Launch→seal1723,385619s (~28,72min,orchestration/pauses d'analyse/contrôles
+  inclus) ; workers staging+dictionnaires657,942971s (~10,97min). Ne pas
+  confondre temps phase de compilation/worker/SLO recherche.
+  Manifest SHA `a69477e35c53f9f6d702b9e870580e377a765fb1e92e990782c909fed29241f4`,
+  statut `SEALED_V130_COMPLETE_ALL_OFFICIAL_NAME_OWNER_DICTIONARY`.
+  Post-check64 autorités de phases,source/plan/launch/staging,implémentations,
+  cardinalités/prefixes et drapeaux protégés PASS. Tous outputs entiers
+  rehashés au seal. Aucun handle live restant,pas de reprise des phases.
+- Ce tour PROGRESS : les variantes officielles de TOUTES les sources ont
+  maintenant un dictionnaire/owner/provenance NATIONAL complet et compact,
+  pas seulement une projection brute ni un échantillon autour des labels.
+  Toujours PAS un index natif/query engine complet, embeddings,dense,fusion
+  RRF ou mesure recall/latence. Dernier pilote V101114/128=89,0625% exact,
+ 116/128=90,625% opérationnel inchangé. Objectif99,2% all-human/fullOOF/
+  Wilson/folds/généralisation/sidecar/SLO NON franchi. Goal ACTIVE, pas
+  READY_FOR_FOLD1 ; source IDs jamais features, aval inchangé, pas de push.
+- Prochain travail concret : compiler les postings words/char3/char4 et
+  index exact de TEXTE FEATURE avec les gardes IDs/masques du scalaire V121,
+  puis CSR name→faits/owners + tableaux typés mmap. V130 name_text conserve
+  la PREMIERE normalisation originale V129 : la normalisation feature peut
+  retirer les rares ID compatibles Unicode devenus ASCII. Un texte feature
+  peut donc joindre PLUSIEURS raw name_ids ; ne pas recopier naïvement le
+  lookup unique V125 ni réécrire V130. Toute similarité par variante entière,
+  jamais sac de tokens mélangés entre alias/propriétaires. Codes current
+  UNKNOWN/FALSE/TRUE et toutes observations restent disponibles dans V129.
+  Résoudre parent→blocs V127/parent→sites V96 query-side,siret-local→bloc
+  V126 directement,sans produit aliasUL×sites ni fanout cap. Adresses/source
+  attributes et succession entière restent à compiler/intégrer, graphe V84
+  non exhaustif. Puis moteur national initial100 exact,oracle et coûts avant
+  scellement128 sorties/labels. Aucun seuil99% abaissé ni dénominateur réduit.
