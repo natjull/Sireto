@@ -11074,3 +11074,51 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   114/128=89,0625% exact/116/128=90,625% op, pas nouveau recall. Dirty autres
   travaux préservé, aucun push/fit/aliasCRM/dépense/aval ; folds0/1 non lus.
   Ce tour PROGRESS source-intégration, goal ACTIVE, PAS READY.
+
+## 3 octobre 2026 — V148 driver adresses complètes, refus réel de l'incomplet
+
+- Tour précédent PROGRESS : V147 accès inverse et tests intégrés committés,
+  pas mesure de recall. Milestone nouveau `5272436d` : driver de projection
+  complète→staging V145→dictionnaires/faits/liens→staging V147→CSR de TOUS
+  les intervalles sites, même vides. Il n'accepte pas114 réussites/312 comme
+  source entière et ne réindexe pas seulement les observations disponibles.
+- Init exige manifest final V143/V144 hashé, toutes sources/roles/parts
+  originales en ordre,185993425 lignes/317683879 observations/44403034 sites.
+  Validateur V143 INCHANGÉ pour tous imports/succès, code/hashes/namespace/
+  budgets/proofs/scope contrôlés. Numéros/CP/INSEE/current exact et toutes
+  provenances restent à leurs faits ; aucune propagation parent-address,
+  pas cap de faits/owner et pas aliasCRM/GT/modèle/dépense.
+- Tous workers ET seals gardent gates et Budget80s/3GioRSS/ZÉRO swapout
+  global ;90s superviseur worker, DuckDB256MiB/spill3GiB, threads1. Les
+  seals publient un JSON de succès seulement APRÈS Budget validé. STOP
+  ressource seal conservé/interdit retry root. `remaining` revalide les
+  succès, sources/artefacts, flags fermés et seals, jamais phases incomplètes/
+  live/STOP. Sorties nationales limitées au root audits CATNAT. Politique
+ 1Go/pression/swap séparé toujours NON approuvée/NON implémentée ici.
+- 13 nouveaux tests : parcours entier projection complète factice de test
+  (12 observations,4 lexicales,2 faits,2 adresses,11 sites), imports/new
+  source exacts, tous intervals, immutabilité/no rebuild, absence source/
+  part/count, folds0/1/truth/CRM fermés, artefacts drift, phase live/STOP,
+  ressource sealFAIL sans succès publié/no retry, root et zéro swap non
+  affaiblis. Suite V117–148 :344 PASS30,57s. Unit timing PAS benchmark de
+  performance du moteur ; aucun corpus synthétique en évaluation/feature.
+- Vérification réelle du prérequis sur Mac/CATNAT (0,24s) : manifest global
+  V144 toujours ABSENT ; init V148 refuse
+  UNFINISHED_COMPLETE_ADDRESS_PROJECTION_NO_WORKER_LAUNCHED avant quiet/
+  worker/root. `output_created=false`. Root V148 national NON créé, aucun
+  artefact national/recall/SLO. Les adresses V144 restent STOP112. Tout
+  handle test TERMINAL0, aucun handle national vivant/reparti.
+- Le manifest V148 final déclare lexical_address_access_built=false et
+  complete_retrieval_index=false. Suite code : lexique d'adresses et loader
+  query-side des preuves nationales, puis optimisation à bornes sûres et
+  sorties128 scellées avant vérité, OOF all-human exact/op/Wilson/SLO.
+- Autre dépendance de couverture identifiée sur manifests V137/V141
+  REHASHÉS :158575 faits noms parent encore non liés en V137, tandis que
+  V141 a ajouté2743 parents. L'intersection N'EST PAS mesurée. Avant de
+  prétendre à toutes les preuves, vérifier leur réattachement exact à la
+  nouvelle namespace, sans parent/alias CRM inventé ni lookup de label.
+  NameSnapshot V146 ne doit pas faire passer UNKNOWN de l'ancienne
+  namespace pour absence officielle de noms des nouveaux propriétaires.
+- V101 demeure114/128=89,0625% exact,116/128=90,625% op. Aucun nouveau
+  recall, objectif99,2% non atteint, PAS READY, goal ACTIVE. Folds0/1 non
+  lus, aval gelé. Dirty autres travaux préservé, commit isolé, aucun push.
