@@ -8577,3 +8577,73 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   typés vers sites, recherche conjointe indexée sans pool parent fixe ; les
   anciennes enseignes de sites seules ne traitent pas les15 pertes. La latence
   native globale doit également être traitée sans enlever de candidats valides.
+
+### 3 octobre 2026 — V76 : jointure des anciens noms d'UL, aucune vérité récupérée
+
+- Milestone préenregistré `718a967a` : nouvelle source de jointure officielle
+  depuis les100 projections historiques UL00..99, sans CRM/teacher/labels.
+ 4025541 observations,1337055 SIREN,1586569 couples alias-parent avant signal,
+ 1586554 après normalisation V56/retrait des identifiants.1337046 parents ont
+  un signal non vide,9 n'en ont pas (absence publiée, pas exclusion du
+  dénominateur humain). Déduplication géographies/alias, petits fichiers et
+  manifestes entièrement hashés, sources et artefacts précédents immuables.
+- Vue nouvelle : prédicat d'égalité du nom CRM avec UN ancien alias d'UL,
+  TOUS parents correspondants, **aucun LIMIT/ranking parent**. Jointure
+  d'identifiants officiels vers TOUS SIRET du principal national. Nom historique
+  couverture=1/exact=1, autres9 preuves natives V56 et11 poids OOF V57 figés.
+  MAX des3 fronts natifs courant/SITE-histoire/UL-histoire-exacte jusqu'à100
+  SIRET distincts, sans pool fixe ni rescore/reranker post-découverte.
+  Pas de filtre lieu/état/activité, aucun modèle aval modifié. Ancien alias
+  ne prouve PAS coexistence avec l'adresse actuelle ; aucune adresse passée
+  inventée. Le flou des anciens noms et successions/filiations/BODACC restent
+  NON intégrés par cette vue exacte. Exclusions de la projection amont
+  (alias courants, parents sans INSEE courant) héritées explicitement.
+- Construction COMPLETE8,563s,pic1411776512octets,zéro swapout, base108Mio.
+  Génération COMPLETE254,268s ensuite, tous workers sous80s/6Gio/zéro swapout,
+  pic2054307840octets. Gate16mean2,00955s passe ; p501,88296/p953,20292/
+  p993,66160s. SLO1s/2s toujours NON franchis ; cache non contrôlé, pas
+  comparaison de vitesse appariée avec V75 ni effet nettoyage prouvé.
+-128 CRM query-only disjointes TRAIN512, ordre hashé V34, folds234 ;
+  labels/ancien comparateur ouverts uniquement APRÈS128 sorties scellées.
+  Première évaluation générique V49 échoue sur compteur diagnostique absent
+  `unique_documents_visited`, aucun fichier évaluation écrit. Correction
+  ISOLÉE `98e24644` : évaluateur séparé lisant les MÊMES sorties originales
+  immuables, candidats/scores/génération INCHANGÉS. Compte de visites explicite
+  = somme des références décodées par source, doublons intersources inclus,
+  PAS nombre global de SIRET uniques. Aucun nouveau fit/choix de variante.
+- Exact113/128=88,28125%, opérationnel115/128=89,84375%, Wilson95bas81,5634%,
+  identiques V75 : **zéro gain/zéro perte**,15 NOT_RETRIEVED_AT100, zéro
+  OFFICIAL_CATALOG_ABSENT. Prédicat UL exact non vide sur14/128, au plus52
+  parents correspondants pour une requête,47 slots gagnés par UL historique,
+ 48 par histoire SITE,12705 courant ;6 ensembles candidats changent. Ce volet
+  fonctionne mais n'améliore PAS le recall ; ne pas le promouvoir comme gain.
+- Sous `audits/retrieval_v76_history_parent/pilot_20261003_a/` : génération SHA
+  `08fa89b42afc74b2522485b601e6564619dd079e7254c5540e688689adf8c469`,
+  évaluation SHA`13d1a4162dfd398581e1071ce43d59bf43fbb8989619ed74fccc504c4e3bdd45`,
+  source aliases SHA`f784a04d7e00435e325ebc0c7be205e3b0a4f5be67fcc63020a28b6d4a34c647`.
+  Hashes de lancement, sources, base, modèles, lots et sidecar officiel
+  revérifiés.104 tests ciblés de génération passent +4 tests nouvel évaluateur.
+  Requête native identique à oracle scalaire, >100 parents sans coupe préalable,
+  aucun faux bonus nom+adresse quand adresse absente. Diff/compilation passent.
+- Audit V58 antérieur vérifié, non rejoué : les15 IDs de pertes V76 sont
+  exactement les15 pertes V57/V58. Dossier canonique directement lié n'a
+  aucun nom CRM exact pour ces15 et aucune nouvelle preuve de mot pour les6
+  sans preuve native de nom. Cela ne couvre PAS toutes archives ni graphes
+  voisins/prédécesseurs ; audit label-selected strictement diagnostique,
+  jamais dictionnaire d'alias/corpus/features de génération. Ne pas refaire
+  ce scan ni répéter les voies historiques EXACTES comme solution suffisante.
+- Dernier recall initial complet = V76, corpus national PILOTE128, PAS OOF23k
+  ni généralisation validée. Objectif99,2% NON atteint, **PIVOT_GENERATION**,
+  goal ACTIVE. All-human/exact/opérationnel/sidecar intacts, fold0 non lu,
+  fold1 fermé, aucune dépense/push, changements utilisateur préservés, jobs
+  TERMINAUX. Le précédent turn retrieval V75 et ce turn V76 sont PROGRESS
+  (sources/exécuteur/mesures authentiques), pas un succès ni un blocage.
+- Prochaine action fondée sur l'évidence : établir enfin le recall NATIONAL
+  de la recherche à expansion sémantique officielle OOF V59/V60, dont les
+  contrastes étaient positifs mais les128 sorties jamais complétées. Préflight
+  indépendant query-only avant toute nouvelle génération, MÊMES budgets
+ 360s/80s/6Gio/zéro swapout, aucune reprise des120 sorties anciennes ni
+  élargissement de budget ou résultat partiel. Si le coût passe, nouvelle
+  génération intégrale et évaluateur séparé avec comparaisons V57/V75/V76,
+  V49 et V42 ; ne pas annoncer le gain des contrastes comme recall. Ceci reste
+  une ablation sans XY/BAN/graphes, pas une architecture complète ni SOTA.
