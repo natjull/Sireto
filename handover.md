@@ -11376,3 +11376,38 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   de garde mémoire encore attendue. Aucune continuation automatique ne vaut
   approbation1Gio/pression-only. Goal ACTIVE/non atteint ; autres raccordements
   et optimisations sûres restent possibles, pas impasse générale déclarée.
+
+## 2026-10-04 — V153 : autorisation humaine et reprise mémoire explicite
+
+- L'humain a répondu `Oui` à la demande explicite de worker <=1Gio,
+  arrêt sur pression mémoire réelle, swap global mesuré/publié mais non
+  bloquant seul. Cette réponse retire le blocage de politique précédent ;
+  elle ne change ni le métier, ni le contrat top100, ni les folds autorisés.
+- Milestone code/config/tests : commit `ce13dc8f`. Nouveaux script V153 et
+  garde V153 ; aucun fichier mesuré V142/V143/V144 modifié. Les certificats
+  importés gardent leur politique globale-swap0 et leur launch originaux.
+  Nouvelles parts/seal explicitement V153, jamais renommés en V143.
+- Garde fermée 1073741824 octets RSS/80s, niveau kernel macOS normal=1,
+  memory_pressure libre>=50%. Préflight30s puis1s. Swap global publié et
+  explicitement NON attribué au worker ; compteur absent/reset = STOP.
+  Supervisor indépendant ne termine que son propre enfant en cas de
+  dépassement RSS/temps/pression, aucune app tierce ni purge système.
+- Source/projection/audit V142 inchangés : toutes lignes/provenances/scopes,
+  relecture indépendante de tous champs, mêmes batches8192/mono-thread,
+  aucun pool, filtre GT, cap de preuves, alias CRM ni feature identifiant.
+  Import exhaustif prévu114 succès (75 hérités +39 récents),198 parts
+  restantes,312 total ; STOP/parts partielles exclus, roots historiques intacts.
+- Tests V15323 PASS1,73s ; suite V117–153453 PASS34,62s (session84440
+  TERMINAL0). Tests de parité bit-exact, nested imports, global swap>0
+  accepté/publié, pression/RSS/temps/reset arrêtés, champs/folds protégés,
+  sources partielles/no retry/no seal et dérive des limites refusées.
+- Exécution réelle INIT lancée, session85000 : root neuf
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v153_address_resume/projection_20261004_a`.
+  À ce stade seul message initial_pressure_gate30s observé : ce n'est PAS
+  encore un INIT réussi, ni une source globale scellée, ni un recall.
+- Les validateurs historiques V148/V152 exigent encore V143/global swap0.
+  Après seal V153, prévoir un adaptateur versionné explicite ; ne pas affaiblir
+  ces validateurs ni réinterpréter rétroactivement leurs certificats.
+- Recall inchangé V101114/128=89,0625% exact116/128=90,625% opérationnel,
+  pilote réutilisé non national. Aucun downstream entraîné, fold0/1 ouvert,
+  positif injecté, dépense externe ou push. Objectif99,2% NON atteint.
