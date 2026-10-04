@@ -14544,3 +14544,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  16 vrais producteurs avant GT, exact/op all-human inchangés.70 tests PASS1,13s.
 - Mesurer128 appariées, zéro23k : publier toute perte autant que les gains,
   ne pas promettre amélioration ni généralisation. Aval/fold0/fold1 gelés.
+### 4 octobre 2026 — V226 audit TRAIN-only gelé ; contrôles supplémentaires V224
+
+- Milestone `f04a9cd3` : contrôler la diversité des négatifs du modèle OOF
+  gelé après V225 complet. Sources512 V56/V77 originales, mêmes query IDs
+  d'apprentissage et exclusion des parents held ; aucun fit ni lookup courant.
+  Contrôle l'hypothèse local/national, ne la déclare pas vraie avant comptage.
+  Processus propre214, refus des512 IDs overlap128, folds0/1 toujours fermés.
+- Tests supplémentaires `8f8f19bd` : confiance d'un singleton conservée même
+  avec adresse exacte ; particules/formes juridiques ne diluent pas le contenu.
+  AUCUN changement du code224 mesuré ;9 tests226/context PASS0,55s.
+- V224 session21153 EN COURS à120/128, GT encore fermé ; quinze lots actual
+  exit0/PASS214, dernier non admis encore. Pas de métrique partielle inférée.
