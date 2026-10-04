@@ -1,0 +1,70 @@
+{
+  "status": "STOP_NO_RECALL_ADMISSION",
+  "actual_controller_exit_code": 1,
+  "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v248_corroborated_population/run_20261005_a",
+  "launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v248_corroborated_population/run_20261005_a/launch.json",
+    "sha256": "5c199a82a338efb9b5306bd273d8fc798b3dd0fbbd3a04b2af4f061aef31bbac",
+    "size_bytes": 91430
+  },
+  "stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v248_corroborated_population/run_20261005_a/status.json",
+    "sha256": "c6aeffc037ccbad23e86e998ebfe9f951552f16179bcef486102bb3cc26f9965",
+    "size_bytes": 351
+  },
+  "supervisor_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v248_corroborated_population/run_20261005_a/batch012/supervisor_stop.json",
+    "sha256": "0f633f35da1bd649914601f167f84f832a2992a77621d35ede47895f56de059a",
+    "size_bytes": 820
+  },
+  "completed_queries": 96,
+  "producer": {
+    "completed": 96,
+    "downstream_models_changed": false,
+    "fold0_opened": false,
+    "fold1_opened": false,
+    "old_candidates_opened": false,
+    "ready_for_fold1": false,
+    "reason": "STOP_RSS_OR_WALL_RESOURCE_POLICY",
+    "recall_measured": false,
+    "seconds": 814.0590340001509,
+    "slo_validated": false,
+    "status": "STOP",
+    "truth_opened": false
+  },
+  "resource_stop": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 40210,
+    "cleanup_error": null,
+    "exit_code": -15,
+    "failure_wall_seconds": 33.40287962462753,
+    "global_swap_is_worker_attributed": false,
+    "last_sample": {
+      "free_percent": 76,
+      "pressure_level": 1,
+      "swapouts": 202073613
+    },
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 75,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 2173698048,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "reason": "STOP_RSS_OR_WALL_RESOURCE_POLICY",
+    "sample_count": 66,
+    "status": "STOP",
+    "swapout_pages_delta": 0,
+    "wall_seconds": 33.43709866562858
+  },
+  "labels_opened": false,
+  "recall_measured": false,
+  "evaluator_v249_launched": false,
+  "partial_outputs_reused": false,
+  "budgets_raised": false,
+  "reference_v229_exact_recall": 0.9375
+}
