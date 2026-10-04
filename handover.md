@@ -12316,3 +12316,78 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   NUM/current/scope/provenance/ownXYinchangés. Mesurer le snapshot national
   entier sous1Gio, puis brancher initial100158 en nouvelle version. Aucun
   recours àun corpus/candidat pool filtré ou àun résultat LambdaMART.
+
+### V175 — tous les lots d'adresse exhaustivement validés et scellés
+
+- Turn précédent classé PROGRESS : fin effective des576parts et coût174
+  bitexact mesuré, pas une simple attente/intention. Ce turn : nouvel état
+  source complet175 réellement scellé, objectif initial100/99,2% inchangé.
+- Milestone code `43c8b259`, protocole avant mesure
+  `docs/retrieval_v175_address_seal_contract.md`. Aucun changement de168/166
+  mesurés, source, normaliseur, score, scope ou cap. Pas de batch réduit par
+  query/GT/candidat :36batches physiques de16lots couvrent les576lots.
+- INIT41946 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v175_address_seal/compile_20261004_a`.
+  LaunchSHA `6c867a58e6e3b6af01b81ac9115cdbd4cd00176227b77e5d9e5bf5fa08f9cddd` ;
+  ledgerSHA `adc2fe38763b11ca29d7abca85162b6e87979646dd61b0609d307613f78a7b3d`,
+  20315501octets/576parts/39168epochs fixés. ÀINIT les artifacts sont des
+  claims/hashs originaux +epochs, PAS une recertification globale ; chaque
+  artifact ensuitefullhashé before/after danssonbatch. INIT2,855407s/
+  RSS438648832/min77/p[1]/global0, validate_report réellement accepté.
+- Premierbatch89991 TERMINAL0,16parts970661aliases/68066626postings ;
+  worker3,111757s/RSS502136832/min77/p[1]/global0/PASS, parentPID6516
+  actualexit0 confirmé3,578389s. ManifestSHA
+  `cb014f13abef5fb492f05e5f8d3beaf5d372e86cd45c3adc43aaf634a27668b2`.
+- Remaining7819 TERMINAL0,36batchmanifests présents sansSTOP ; puis vérification
+  réelle de CHAQUE batch_record175 (liens sources, parent_exit, tous epochs,
+  chaque champ/count/ref égal àl'autorité originale). Pas une assertion
+  d'exhaustivité àpartir du seul inventaire. Chacun avant/après : phase_record
+  original166/168 exact, tous les artifacts fullhashés, touteschannelcolumns
+  reread, compteurs64buckets×4 reconstruits, feature schema/nulls/IDs/rows
+  contigus complets. Pas de positif/filtre/cap/substitution ni alias CRM.
+- Tous576parts validés : maxbatch RSS504709120 (~481Mio), max3,263153s,
+  minfree76, pression[1], tous truechildexit0. Source49STOP166 exclue, seule
+  phase49V168 réussie utilisée ; aucun recalcul des lots ni retry.
+- Seal37163 TERMINAL0. Les deux sourcesaudits168 tagseal sont neufs, pas
+  seal_parts ni256packs ni ancienremaining. PREFIX fullhash45,633468s/
+  RSS1034141696/min77/p[1]/global0/PASS, parentPID8725 actualexit0 confirmé
+  46,391320s/RSS1027735552. ManifestSHA
+  `9476a42177a3a7623452b70f9abcb4b2d35ace79cb5e28e686f0bae4d22a427b`.
+  REVERSE fullhash49,574882s/RSS285163520/min76/p[1]/global0/PASS, parentPID9323
+  actualexit0 confirmé50,515290s. ManifestSHA
+  `1c23865b82e0aa5f0a93551da49859d1920815c821ce1f006d3c4e3e1a868a25`.
+  Tous les corpus bruts/dictionaries/98mfacts/678CSRsites d'origine audités
+  par les mêmes autorités complètes160/168, sourceepochs identiques init/seal.
+- Assemblage final en child175 :5,014940s/RSS688373760 (~657Mio)/min77/
+  p[1]/global0/PASS. ParentPID9953 actualexit0 confirmé5,689594s/RSS633651200.
+  child_disappeared_during_sampling TRUE (race après poll), MAIS wait réel
+  du child possédé a confirmé0 selon164 ; aucune inférence PASS sur PID absent.
+  parent_exit et validate_report réellement acceptés pour le seal.
+- `staging_manifest.json` STATUS
+  `SEALED_V175_ALL_WHOLE_ADDRESS_CHANNEL_POSTINGS`, SHA
+  `6729662580df40c9c47cc0600d2a255101c282848d985857130b0276a93c01ee`,
+  19532684octets ;34346446aliases/2440276150postings/feature_empty0,
+  8557670056octets de sorties sources. Totaux réellement comparés àtous36
+  batchrows,576features et sommes64buckets×4, toutesphases/epochs/bounds
+  couvertes. Ces8,56Go utiles ne sont PAS des candidats ou un modèle.
+- Tests17523PASS3,14s ; ciblés175+168+166+channels16661PASS24,63s session65264.
+  Fixtures complètes petites/fauxpression/process, pas une fullsuite ni
+  preuve nationale en eux-mêmes. Premiermock d'argv corrigé avant mesure ;
+  aucun correctif postmesure aux codes/config175 désormais immuables.
+- IMPORTANT : staging complet, PAS encore CSR lexical/querysnapshot/initial100
+  ni recall/SLO. Dernier exactV101114/128=89,0625% inchangé, noREADY,
+  folds0/1/GT génération/ancienhits/modèles aval toujours fermés, aucunpush
+  ni dépense externe. But final pas réduit àla compilation/mémoire.
+- Prochaine action utile : pack natif134 par256(channel,bucket), uniquement
+  les fichiers du bucket pertinent fullhashés before/after, staging175 entier
+  certifié UNE fois +epochs globaux (pas rehash8,56Go×256 ni reparsing des
+  gros audits source après chaque SQL). Nouveau contrôleur/plan compact176
+  sous153/1641Gio/80s ; mesurer unbucket puis continuer seulement siPASS.
+  Même corpus/chaînes/tokens/aliaspositions/arithmetic, aucune quota ou
+  reclassification de pool. Direct174 garde un rôle de comparateur exact,
+  pas de promesse vitesse nationale. Puis snapshotadressefile-backed et
+  raccordement initial100158 en nouvelleversion, preuvesownCP/INSEE/NUM/
+  current/scope/XY/UNKNOWN/fermé inchangées, scan44m sites sans pool.
+  Les noms17017,2s seuls restent trop lents : ne pas oublier SLO1s/2s, ni
+  prétendre que packingadresse suffira àles franchir. Mesurer qualité puis
+  accélérer sans approximation/caps (bornes exactes/collecteurs natifs).
