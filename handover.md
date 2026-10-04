@@ -12599,3 +12599,60 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   optimiser exactement ensuite, aucunepromesse99,2% depuis cette compilation.
   Dernier recallV101114/128=89,0625% inchangé ; pas labels/GT/folds0/1 ni
   downstream ouvert, nopush/spend. FullOOF/Wilson/généralisation restent dus.
+
+### V181–V184 — raccordement complet, phases physiques exactes, avant mesure nationale
+
+- Milestones isolés : V181 `e348e9d1`, V182 `4fa3f90e`, V183 `c07d1541`,
+  V184 `50bf6675`. Pas de push, pas de modification des artefacts mesurés
+  V177/178/179 ni des modèles aval. Changements hors retrieval préservés.
+- V181 ouvre les mêmes 678 intervalles/98 804 872 faits V160 via le seal177
+  et les audits175/epochs, sans refaire le prefixbrut monolithique à l'init.
+  Chaque référence originale, vrai parent_exit0 et report sont contrôlés.
+  CSR147/portée/provenance identiques, aucun positif injecté. STOP nouveau
+  dans une phase ou au seal refusé même sans changement d'epoch des données.
+  finish exige tout le parcours et le hash final du snapshot readonly178.
+  Tests181+15827PASS22,89s,60756 TERMINAL0 (avant optimisation sans impact
+  du contrôle STOP : scan une fois, pas quadratique à l'ouverture).
+- V182 remplace les strings parfact par une égalité du dictionnaire original
+  de numéro, validé une fois parintervalle. Aucun code ordinal comme feature,
+  dictionnaire jamais renormalisé ; rawquery seule normalisée118. Tous les
+  scores30float64 et l'ordre de réduction sont bitexact146, géographie/BAN/
+  NAF/UNKNOWN et preuves incohérentes inclus. Tests182/181/146/15878PASS
+  24,52s56151 TERMINAL0. Test initial faux sur chiffres Unicode fullwidth
+  corrigé AVANT mesure : regex\d enlève ces neuf chiffres comme l'oracle118 ;
+  les chiffres encerclés passent NFKD et gardent le cas non-idempotent réel.
+  Aucune modification de la normalisation ni du score pour faire passer le test.
+- V183 garde le gather noms170 pour TOUS les sites en float64/bool readonly.
+  Trois groupes physiques d'intervalles sont possibles sous workers1Gio/80s.
+  Tous les sites/faits scorés une fois par le MÊME score182/146 ; collecteur
+  local100 puis réduction exacte sans second score, PAS un pool2000/500.
+  Recette/source/query/fold identiques, appartenance officielle des identités,
+  dénominateurs complets et ties globaux exigés. Kernel seul ne certifie pas
+  national/exits/ressources. Tests183+182+181+146+15893PASS26,01s97442 TERMINAL0.
+- V184 protocole/config/code/tests figés AVANT mesure : une première query
+  nationale (prefix115 indépendant du label), ALL128 schemas/folds234/types
+  contrôlés avant sélection. Modèles30 et activité cross-fit114/115 gelés,
+  BAN45/46, tous noms134/joins149/sites141/XY139/adresses177/faits160.
+  Entrées réelles query-only/paramètres/geo validées read-only ; 2140 grades
+  officiels pour la premièrequery. Aucun refs.training/proofs/GT ou anciennes
+  sorties ouverts ; aucun nouvel apprentissage. Les bornes de coût internes
+  sont locales physiques (preuves20s, shardscore30s), pas un SLO global.
+- Tous les workers réels restent V153/V1641Gio/80s, quiet30/pression1/free50.
+  Chaque stage nécessite son vrai parent_exit0/report/hash/epochs avant usage.
+  Pas de faux reader reconstruit : chaque scoreworker appelle les vrais
+  PagedAddresses178+CertifiedFacts181 ; le ledger complet est recontrôlé
+  à la réduction. Les epochs répétés sont dédupliqués, pas réduits.
+  Seuls OWNmaps fermés ; preuves scellées retenues readonly, aucun purge.
+  Rootfresh prévu `audits/retrieval_v184_staged_initial/probe_20261004_a` :
+  réellement absent avant lancement. Pas de run national184 encore validé
+  par CE jalon. Source scripts/fixtures ne prouvent ni RSS ni qualité.
+- Suite tests184+183+182+181+180+146+158115PASS26,50s91556 TERMINAL0.
+  Tests184 : chaînes incomplètes, actualexit non confirmé/nonzero, RSS,
+  pression, GT, préflight/hash/epochs/STOP refusés. Contrôle de runtime simulé
+  clairement dans fixtures, pas une mesure nationale. git diff --check PASS.
+- À suivre : lancer une SEULE fois le root184 fresh, poll jusqu'à terminal,
+  préserver STOP et versionner toute correction. Ne pas évaluer une query
+  comme un recall, ni un pilote partiel comme128. Si sortie100 complète et
+  coût exploitable, protocole de toutes128 sorties avant labels séparés.
+  FullOOF/Wilson/généralisation/SLO dus ; dernier recall89,0625% inchangé,
+  aucun READY ni objectif accompli. Goal actif, Mac/CATNAT seuls.
