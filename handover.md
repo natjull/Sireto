@@ -11777,3 +11777,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   encore non publié ici. Mesure nationale V162 pas encore lancée à cette note.
 - V101 reste114/128 exact (89,0625%),116/128 opérationnel (90,625%), pilote
   réutilisé. Aucun nouveau moteur INITIAL100 complet ni métrique recall.
+
+## 2026-10-04 — V162 STOP mesuré et V163 audit source séparé
+
+- Régression V117–162584 PASS94,33s session43391 TERMINAL0.
+- INIT national V162 session85421 TERMINAL1. Diagnostic persistant
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v162_address_access/compile_20261004_a/init_stop.json`,
+  SHA `93f17beb42e03c1c01bf1aecabdbcd14476f9f3849f41e06ae2ce3bb81a340d3`.
+  Budget80,427569s, pic1033846784 octets (~986Mio), minfree73, pression[1],
+  global swap delta0, PASS False. Cette fois temps80s dépassé, RSS<1Gio et
+  pression normale : ne pas appeler cet arrêt un dépassement mémoire.
+  STOP pendant rehash d'une source reverse dans backend162, pas dans le prefix.
+  Aucun plan/launch/index V162 ; seulement diagnostic. V162 désormais mesuré
+  et immuable, aucune relance identique ni budget élargi.
+- Milestone commit `432a8f50` : V163 répartit les MÊMES audits exhaustifs en
+  deux enfants supervisés séparément. Prefix raw/projection312/dictionary64,
+  puis reverse64+678/provenances/attributs/exits confirmés et plan lexical.
+  Chacun mêmes1Gio/80s/pression normale. Époques des sources entre les étapes,
+  hashes des certificats et des rapports de supervision scellés ; aucune
+  fenêtre sans garde transformée en succès. Stop de l'un => pas de plan ni
+  launch produit, diagnostic du worker conservé, root non réutilisable.
+- Full source rehash répété via deux enfants au seal final avant le contrôle
+  lexical borné. Aucun champ/source/posting retiré, native152/134 inchangé,
+  pas de pool candidat ni reranker, folds0/1 et modèles aval fermés. Les propres
+  phases lexicales exigent aussi un exit parent confirmé pour admission.
+- Tests V162+V16333 PASS20,50s avant durcissement de l'exit lexical ;
+  régression V117–163 session26551 en cours avant mesure nationale. Fixtures
+  superviseur/pression simulées, PAS des RSS/latences nationales. Nouvelle
+  mesure V163 non lancée à cette note. Recall exact V101114/128 toujours.
