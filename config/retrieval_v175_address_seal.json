@@ -1,0 +1,16 @@
+{
+  "source_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v168_address_access/compile_20261004_a/launch.json", "sha256": "6c001857967b2e05ca8bdab05769bc6a5215549b5d0218e49ce45fa75b2b9797"},
+  "source_plan": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v168_address_access/compile_20261004_a/plan.json", "sha256": "e160faff30d7a2688f538dc7bf0b1d9490cc10f8808d569826d137495555af00"},
+  "parts": 576,
+  "aliases": 34346446,
+  "facts": 98804872,
+  "sites": 44403034,
+  "original_observations": 317683879,
+  "lexical_observations": 148075748,
+  "parts_per_batch": 16,
+  "term_buckets": 64,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 1073741824, "min_system_free_percent": 50, "required_pressure_level": 1, "global_swap_blocking": false},
+  "quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v175_address_seal"
+}
