@@ -12391,3 +12391,34 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Les noms17017,2s seuls restent trop lents : ne pas oublier SLO1s/2s, ni
   prétendre que packingadresse suffira àles franchir. Mesurer qualité puis
   accélérer sans approximation/caps (bornes exactes/collecteurs natifs).
+
+### V176 — source complète et petit pack PASS, pack volumineux STOP RSS
+
+- Milestone code `6343fa06`, protocole avant mesure
+  `docs/retrieval_v176_packed_addresses_contract.md`. Même corpus V175 entier,
+  native pack134 inchangé, validation compacte des autorités et epochs,
+  uniquement le bucket lu fullhashé avant/après. Tests176+175 :39PASS17,59s,
+  session32747 TERMINAL0 ; kernel134 tests10PASS3,22s,59342 TERMINAL0.
+- INIT28514 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v176_packed_addresses/compile_20261004_a`.
+  LaunchSHA `4e03ad7fa9b34f7518e0cc23327743eb32c26f13161eee920df906fe396e1330`.
+  Même34346446aliases/2440276150postings,93507epochs fixés. load() et
+  validate_report réellement acceptés :5,513945s/RSS678592512/min77/p[1]/global0.
+- Premierpack77429 TERMINAL0 : channel0/bucket0,2345644postings/16301terms,
+ 140k tokenbytes, full reconstruct/unsigned/all sorted unique/nocap proof.
+  ManifestSHA `563c65e3293f3889cdf83a8c3d59e07eac612c6f950d999fd69aa2591295d23e`.
+  phase_record réellement accepté,3,712933s/RSS574603264/min77/p[1]/global0.
+  Parent PID11168 actualexit0 confirmé4,655182s/RSS565428224 ; aucun PID disparu.
+- Bloc volumineux51653 TERMINAL1 : channel1/bucket0 attendu15035872postings.
+  Worker STOP_RSS_OR_WALL_RESOURCE_POLICY,4,297794s/RSS1079443456/min77/p[1]/global0.
+  Parent a réellement terminé SON worker PID11252 : actualexit-15 confirmé,
+  peak1079427072, failure4,636330s/final4,678623s, cleanup_errornull.
+  Aucun manifest de cette phase, aucun index complet V176, aucun remaining/seal
+  lancé. Artefacts STOP conservés sans retry ; code/config mesurés immuables.
+- Prochaine action : V177 fresh root, mêmes lignes/tokens/CSR/tri/preuves mais
+  budget interne DuckDB96Mio au lieu256Mio, avec même spill3Gio et plafond
+  RSS1Gio/80s. Remesurer d'abord le bloc qui vient de STOP, puis continuer
+  uniquement si vrai PASS. Pas d'augmentation mémoire, cap, approximation,
+  ajustement métier ou réutilisation d'une phase STOP.
+- Dernier recall exactV101114/128=89,0625% inchangé. Aucun nouveau candidat100,
+  label/CRM/fold0/1/downstream ouvert, noREADY, aucunpush ni dépense externe.
