@@ -13658,3 +13658,68 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   attribuer et conserver intact sans relâcher les limites. Aucun label ne
   sera lu avant128SEALED, aucune métrique partielle ou nouveau99% annoncé.
   Dernier89,0625%exact inchangé ; aval/folds0/1 fermés, goal ACTIVE.
+
+### V201 — q8 national coût+FULLaudit réellement SEALED, pas de recall
+
+- Code `691a79db`, pré-mesure `7da991ff`, session48252 TERMINAL0,
+  root `retrieval_v201_names_ram/probe_20261004_a`. Admission revalidée
+  séparément, mêmes vrais parents0/PASS153, pas relecture de labels.
+  ManifestSHA928e64c33b0044c6b2a3be905dbe4967a4a2313b2595b3dbd61ac7667949981f,
+  launchSHAffaed61e2a5ca6f040884a15744b6604329d5e11fa65d7cd11e0d41de8aeb751,
+  preuvesSHA4f217e20463cdb9768e661c75d8f0e62fcad99f36e3eb8bff4e2a4aa80ce3323.
+- ALL57530682aliases/44403034sites : lexical3,043579750s,
+  scatter6,533103834s, relation3,106919000s (blocs131072), query complète
+  12,812205834s <20, flatten6,960155250s. 23355439références propriétaires
+  (exactement le count du query8 avant STOP V199), gather entierdigest
+  14fb97304fb6928b64a1336f3218e6a854a55c91db8016bfc14fb30acdbee3b7.
+- Worker noms38,511494917s/RSS996032512, p1/free84%, global36252pages
+  NONattribuées ; ne pas annoncer zéro swap. Audit FULL1701fichiers/
+  14297453464bytes, worker13,006764833s/RSS562757632/p1/free87/global0.
+  Totalworkers51,518259750s, elapsed113,417169416 inclquiet/controllers.
+  Cache non contrôlé : aucune comparaison causale de temps à V199STOP,
+  aucun SLO. La margeRSS q8 réelle est positive sans modifier1Gio/80/20.
+- Ce succès porte uniquement sur le coût d'une query et ses sources FULL,
+  pas retrieval100 ni métrique. Codes/scopes201 désormais IMMUTABLES.
+  Nouvelle génération128 indépendante doit encore terminer avant labels.
+
+### V200 — noyau pur de métriques commité, aucun fichier label ouvert
+
+- Commit `f8b374a4`, 28tests PASS/0,05s, tableaux synthétiques UNIQUEMENT
+  en tests, pas features de génération. Noyau sans accès fichier/driver
+  national : exact/op distincts, même all-human128, neuf segments/V2/V3,
+  UNKNOWN, Wilson95, promotions opérationnelles, absence/mauvais fold,
+  targets inventés/équivalencefloue/cap101/GT numérique refusés.
+- Présence du GT actuel exige lookup exact POSTSEAL. Ancienne absence
+  conservée comme historique, pas utilisée comme actuelle. Ensemble op
+  préexistant sidecar officiel, incomplet pour nouveaux historiques :
+  portée explicite, aucun claim d'expansion complète. Attribution fine
+  toujours nonmesurée ; même100%sur128 => jamaisREADY/fullOOF/SLO.
+- Le driver séparé, son autorisation128SEALED et la lecture filtrée du
+  ledger/sidecar officiels restent à implémenter. Pas de métrique nouvelle.
+
+### V202 — protocole complet commité et testé avant mesure
+
+- Commit isolé `fddafc78` : nouveau script/config/contrat/tests. Même
+  pipeline199, ALL128/ownvecteurs/OOFheads234 et ALL44m sites/98mfaits,
+  mêmes poids/formules/collecteur100 direct. Seul changement physique :
+  lecteur201 (RAM198+relationV170 en blocs131072) pour TOUSles128noms.
+  Helper197 capsule/audit,198 compteur et201 query figés dans87références
+  d'implémentation. Aucun fragment/capsule/proof/output ancien lu/réadmis.
+- Suite étendue265PASS/59,13s, session14602 TERMINAL0 : nouveau202,
+  helpers/protocol201, métriques200, RAM198, capsule197,170,192,183.
+  Tinyfichiers/FULLhashes/epochs/oracles réels ; processus/pression et
+  population des fixtures explicitement simulés, pas preuve nationale.
+  Config/384phases/impl87/compile/diffcheckPASS. Toutes caps/denominateurs/
+  modèle propre/omissions/epochs/refs/ledger/GT/folds0/1/rescore protégés.
+- Nouvelle racine prévue `retrieval_v202_population_initial/run_20261004_a`,
+  non lancée à ce jalon. CATNAT libre642Gio, nouveauvolume conservé attendu
+  ~90Gio de preuves ; aucune purge/suppression historique ou autre app.
+  Un worker mono-thread, budgets inchangés query20/flatten20/partition30,
+  RSS1Gio/80s/quiet30/p1/free>=50%, swap GLOBAL nonattribué. Plusieurs heures
+  possibles, ne pas garantir que toutes les queries passeront.
+- Coût-first : capsuleinitiale3phases, tous noms puis toutes adresses et
+  tous scorers ; plancanonique384 inchangé. FULLaudit toutes sources et
+ 512vecteurs puis64merges/ledger93507, ROOTSEALED128 AVANT touteGT.
+  Driver séparé encore à construire ; ancienTantivy ne définit pas absence
+  actuelle. Dernier89,0625%exact inchangé, pilote non READY, aval/folds0/1
+  gelés, objectif99,2%/fullOOF/Wilson/généralisation/SLO nonprouvés, goalACTIVE.
