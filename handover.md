@@ -14709,3 +14709,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   négatifs TRAIN minés qui devancent le positif8,5→6,765625 ; CENSURÉ,
   pas Recall100 national, pas utilisé pour choisir/tuner modèle.
  95 tests234/235/233/232/231 PASS avant émission, pas preuve métier.
+- Commits `06314024` résultats233, `1c2386a2` recette234 et `7b8ef27e`
+  évaluateur235 : trois milestones isolés, figés avant nouvelles sorties.
+ 234 en cours, namespace `retrieval_v234_corroborated_population/run_20261004_a`.
+  Base comparaison120/128 de229/230, pas mélange du meilleur par requête.
+  Les onze poids sont appliqués DIRECTEMENT dans les postings du mêmekernel217,
+  pas de score aval. Cibles128 fermées jusqu'aux16 producteurs PASS214 et
+  scellement complet ; GT TRAIN232 non lus par l'autorité de serving.
