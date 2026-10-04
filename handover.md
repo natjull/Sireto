@@ -11882,3 +11882,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   réellement compatibles1Gio et moteur INITIAL100 avant évaluation OOF
   séparée ; V101114/128 exact (89,0625%) inchangé. Pas de promesse99,2%,
   modèles aval et folds0/1 fermés, aucune dépense externe ni push.
+
+### Clôture du milestone164 de ce tour
+
+- Régression V117–164615 PASS103,19s session13893 TERMINAL0 après tous
+  changements et la sonde nationale ; aucun job de CE volet encore vivant.
+  Sessions85421/69494 exit1 restent STOPs immuables,55908/77853 exit0 réels,
+  tests26551/13893 exit0. Ne pas relancer un root déjà démarré.
+- Code milestone164 `14759937`, résultats/note `f64a15ae`. Source audits
+  complets et prototype lexical économisé effectivement validés ; index
+  lexical complet et requêtes INITIAL100 encore à produire. Objectif99,2%
+  exact NON atteint, pas de nouvelle métrique recall ni READY_FOR_FOLD1.
