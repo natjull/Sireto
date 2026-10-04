@@ -1,0 +1,61 @@
+{
+  "names": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v134_packed_names/compile_20261003_a/manifest.json",
+    "sha256": "ea55dc0564ffaff56f62af0c6bb1822a81e7d91274e9e7c729b275933df22b52"
+  },
+  "joins": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v149_name_rebind/compile_20261003_a/manifest.json",
+    "sha256": "1d9457e3237618564319b36af3bc8346476e52827d4a95f24c60eaf11a4d6270"
+  },
+  "catalog": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v141_append_catalog/compile_20261003_a/manifest.json",
+    "sha256": "cbca06f853365f150cd239af0853bc0cc8f4cf6bb254526f6fee3a5713d64360"
+  },
+  "structured": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v139_site_attributes/compile_20261003_a/manifest.json",
+    "sha256": "dcc90fd369de1ef40c7dcb464ceab6c2a32ac6598738635fe277d3cc8181310c"
+  },
+  "addresses": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v177_packed_addresses/compile_20261004_a/manifest.json",
+    "sha256": "15d8b1610af4944dbdf422a896bbb80139c7019328083a9d2e4ab108bfb0b6d4"
+  },
+  "query_only_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v115_activity_initial/pilot_20261003_a/launch.json",
+    "sha256": "c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569"
+  },
+  "sites": 44403034,
+  "aliases": 34346446,
+  "facts": 98804872,
+  "queries": 1,
+  "partitions": 3,
+  "chunk": 65536,
+  "lexical_chunk": 524288,
+  "max_proof_query_seconds": 20,
+  "max_partition_score_seconds": 30,
+  "quiet_seconds": 30,
+  "max_query_disk_bytes": 3221225472,
+  "numpy_version": "2.4.1",
+  "duckdb_version": "1.4.3",
+  "resources": {
+    "max_seconds": 80,
+    "max_rss_bytes": 1073741824,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial",
+  "proof_prefix": {
+    "launch": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v184_staged_initial/probe_20261004_a/launch.json",
+      "sha256": "7b8e9e8dff56a9031cf432b7fc9ac1b9301e468e2421897d1107e0cf548e0f43"
+    },
+    "names": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v184_staged_initial/probe_20261004_a/names/manifest.json",
+      "sha256": "170c0f735875d3b185563297c42317951f62f67aa9c937bec8490d8859b8f63d"
+    },
+    "addresses": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v184_staged_initial/probe_20261004_a/addresses/manifest.json",
+      "sha256": "88a588aa674befbca06c20e46375626fa4559541eab9ec886c5848ae9fb9eeff"
+    }
+  }
+}
