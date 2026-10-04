@@ -1,0 +1,78 @@
+{
+  "status": "MEASURED_V218_EXACT_INITIAL100_ALL128_REUSED_PILOT",
+  "generation_code_commit": "f4b3b0d3",
+  "evaluation_code_commit": "bf944228",
+  "premeasurement_handover_commit": "8bc91a0d",
+  "generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v217_corroborated_population/run_20261004_a/manifest.json",
+    "sha256": "b702c91eca9a69332bf59f694008af1aa48b7793dcd55edd2c28c8eb1b608479",
+    "size_bytes": 5332
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v218_postseal_evaluation/run_20261004_a/metrics/report.json",
+    "sha256": "0c5d5793cddaaf19ca2643aac5ee1b4ba1e2060354b9862c5c8ef81528dce426",
+    "size_bytes": 117999
+  },
+  "population": 128,
+  "exact_hits": 118,
+  "exact_recall_at100": 0.921875,
+  "operational_hits": 119,
+  "operational_recall_at100": 0.9296875,
+  "wilson95_lower_exact": 0.8621530681952095,
+  "folds": {
+    "2": {"hits": 39, "queries": 43},
+    "3": {"hits": 37, "queries": 41},
+    "4": {"hits": 42, "queries": 44}
+  },
+  "paired_comparison_authority": "Same128IDs/folds; original human ledger and official label_side SHA256 verified equal",
+  "paired_vs_v101": {
+    "baseline_exact_recall": 0.890625,
+    "gained_positions": [10, 42, 117, 118],
+    "lost_positions": [],
+    "net_exact_hits": 4,
+    "exact_percentage_points": 3.125,
+    "operational_gained_positions": [42, 117, 118],
+    "operational_lost_positions": []
+  },
+  "paired_vs_v215": {
+    "baseline_exact_recall": 0.8359375,
+    "gained_positions": [3, 19, 27, 31, 39, 42, 55, 73, 76, 93, 104, 116, 122],
+    "lost_positions": [12, 62],
+    "net_exact_hits": 11,
+    "exact_percentage_points": 8.59375,
+    "operational_gained_positions": [3, 19, 27, 39, 42, 55, 73, 76, 93, 104, 116],
+    "operational_lost_positions": [12, 62]
+  },
+  "remaining_missed_positions": [6, 12, 16, 34, 62, 67, 74, 79, 97, 121],
+  "misses_present_in_both_native_and_available_catalogs": 10,
+  "generation_wall_seconds": 984.1617583329789,
+  "generation_worker_seconds": 492.0512429997325,
+  "peak_generation_rss_bytes": 1974222848,
+  "query_latency_descriptive": {
+    "total_seconds": 457.541524999775,
+    "mean_seconds": 3.574543164060742,
+    "p50_seconds": 3.5327595211565495,
+    "p95_seconds": 5.443149131280369,
+    "p99_seconds": 8.694806434921926,
+    "max_seconds": 9.651564416009933,
+    "cache_state": "UNCONTROLLED",
+    "production_slo_validated": false
+  },
+  "all_generation_workers_actual_exit0_and_pass214": true,
+  "evaluation_authority_and_metrics_actual_exit0_and_pass214": true,
+  "native_segments_full_hash_verified": false,
+  "used_official_sources_full_hash_verified_pre_and_post": true,
+  "native_leaf_universe": 43896818,
+  "full_appended_leaf_universe": false,
+  "fine_loss_attribution_measured": false,
+  "per_channel_causal_ablation_measured": false,
+  "decision": "PIVOT_GENERATION",
+  "target_exact_initial100_recall": 0.992,
+  "full_oof_population": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "labels_corrected_or_removed": false,
+  "new_fit_on_diagnostic_misses": false
+}
