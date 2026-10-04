@@ -13282,3 +13282,42 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   deuxoutputs, PASunrecall128/99%. PasfullOOF/Wilson/généralisation/SLO/
   READY/SOTA/garantie ; fold0/1/GTfermés, avalgelé, Mac/CATNATonly,
   aucune dépense/push/autreappkill/purge ni sourcehistorique supprimée.
+
+### V196 préhash différé — contrôles et code figés AVANT mesure
+
+- Turnprécédent195 PROGRESS réel, HEAD0e53d4e1 inspecté ; aucunjoblive.
+  Nouveaucommit isolé `63850369`, lecteurdeferred196/scorer196/config/
+  contrat/tests. Aucun177..195code/config/résultat mesuré modifié.
+- DeferredHashAddresses196 conserve VRAIES1024arrays/256packs readonly,
+  exactroot177/phasecerts hashés/actualparent0/preflight/report/typedCSR/
+  namespaces/counts/epoch93507/STOP. phase_certificate compare CHAQUEphase
+  et sesréférences au root177 scellé. Seuls lesdatahashes des1024arrays
+  ne sontplusFULLlus avantl'ouverture/scoring ; references/checksums retenus,
+  pendingTrue. Snapshotstats déclarent hashesNONlusàl'ouverture etpending,
+  toutelecture réarmequarantaine. verify_after hérité178 FULLhash TOUTES
+  arrays +sourceepochsavant/après, n'estpas remplacéparheaders/stat.
+- Intégration196 gardeEXACT195positions0/1/pop128/4spans/sites44403034/
+  facts98804872/aliases34346446 et30features/182/183/models114/ownvector192/
+  proofs193/194/XY/num/CPINSEE. Aucun changement de score/source/pool/rerank
+  ou d'aval. Paquet etaudits195 intacts, mêmes56462targets attendus,
+  FULLhash TOUSaprès4scores, deuxmerges puisledger93507/après avantadmission.
+  Pointcoûtseulement, pasclaimrecall/pilot128/fullOOF/READY/SLO.
+- Tests196reader+195+181+182+183135PASS37,21s/session15634TERMINAL0.
+  Tests196protocol+reader+195+192+181+182+183213PASS38,14s/session44572
+  TERMINAL0. TinyactualnativeCSR/scalarcoverages/typedarrays/scoreoracle146
+  réels, supervision/pression simuléesexplicitement. GuardsALL1024hashes
+  APRESquery, absencepréhashdata seulement, réarmementpending, mêmeinode/
+  size/mtime payload acceptéenquarantaine mais FULLafterhash rejette,
+  shape/dtype/offsets/rootpartial/GT/source/status/lastpackparentunconfirmé/
+  closed/timeout ettous195cap100/receipt/source/ledger/fold/pop/budget.
+  Premieressai protocole réutilisaitfixtures195 hardcodéstatus195 :36FAIL/
+  177PASS avantcommit ; remplacéparfixtures196propres, aucun guard affaibli
+  ni production177/195patchée. Compile/diffcheckPASS.
+- Prochainrun freshroot retrieval_v196_pair_initial/probe_20261004_a,
+  9phases1Gio80s/score30s/quiet30/p1/free>=50. Pasencorelancéaujalon,
+  pasélargissementlimites/retrySTOP/GT/aval. Inclure193/194164,286078s de
+  preuves danscoûtfinal ; montrer gainmesuréglobal, cacheincontrôlé,
+  paspromettre que18-20s entièrementévités. Puisamortissementdes audits
+  queryindépendants et orchestrationTOUTES128avantévaluateur séparé.
+  GoalACTIVE, dernier89,0625%exact/90,625%opinchangé, fold0/1/GTfermés,
+  aucune dépense/push/purge/autreappkill/sourcehistorique supprimée.
