@@ -11981,3 +11981,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   d'abord, puis remaining seulement si le lot2 est effectivement validé.
 - Exact recall V101114/128 (89,0625%) toujours, noREADY. Modèles aval gelés,
   folds0/1 et labels non ouverts, aucun résultat partial transformé en recall.
+
+### Gates166 réellement PASS sur le lot national qui arrêtait165
+
+- Régression V117–166647 PASS123,51s session43957 TERMINAL0.
+- INIT166 session64302 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v166_address_access/compile_20261004_a`.
+  Import SOURCE-ONLY1,047976s/RSS352403456/min76/pression[1]/global0/PASS ;
+  mêmes full audits163, pas de vieux lexical importé. Launch SHA
+  `45e62afd31dd51fdaf64ae4eb05902dde9bb112c55a08137e79ade5710e432c6`,
+  plan SHA `0b466adeb78a4eb420ab5aff5bc8674a4c12281fa141533c5cce435f43c0a941`.
+- Hard-lot2 session78855 TERMINAL0 :65536 aliases/4304713 postings,16 COPYs,
+ 16 audits disjoints d'exports <=4 lecteurs/writers ; tout reconstitué exactement.
+  Worker5,071376s/RSS999768064 (~954Mio), min75/pression[1]/global0/PASS.
+  Parent PID48665 réellement wait/reaped exit0 confirmé6,713021s/RSS999768064,
+  min75/global0 ; PID disparu pendant sample puis wait0, PAS succès déduit
+  de la disparition seule. phase_record() et load() réellement relus/acceptés.
+  Manifest SHA `04e1e901ee39c1a7c0d171316b25174f36f22c3ce1c88d37a4025b8f156849d0`.
+- Comparaison de coût limitée : le MÊME lot2 arrêté à RSS observé1246904320
+  par165 passe ici sous1Gio avec toutes preuves. Ce n'est ni une garantie sur
+  les574 autres lots ni un recall/SLO, et pas le pic final165 (job tué).
+- Codes/configs166 désormais mesurés et immuables. Remaining à lancer sur CE
+  root sans recréer le lot2 validé ;0/1 de165 restent historiques, non importés.
+  Objectif99,2% non atteint, dernière mesure exacte V101114/128 inchangée.
