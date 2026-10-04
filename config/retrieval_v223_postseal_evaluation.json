@@ -1,0 +1,25 @@
+{
+  "generation_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v222_corroborated_population.json",
+    "sha256": "8f7c1bb1678e69e8be2a5e629b48d0fd92da469e2ea393081ea167476c65ba43",
+    "size_bytes": 898
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v223_postseal_evaluation",
+  "evaluation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/evaluation_resume_20261001/manifest.json",
+    "sha256": "b6d7123d2fb33616c76dc14ed4277552a7696d2bdb17b56f540b7f76edfec3c9"
+  },
+  "ledger": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet",
+    "sha256": "24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720"
+  },
+  "queries": 128,
+  "quiet_seconds": 30,
+  "resources": {
+    "max_rss_bytes": 2147483648,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  }
+}
