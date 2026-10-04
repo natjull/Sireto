@@ -14428,3 +14428,59 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Objectif99,2%/Wilson99%/folds98,8%/SLO inchangé, pilote128réutilisé jamais
   READY. Dernier recall83,59375%, fold0interdit/fold1fermé/avalgelé. Pas push,
   cloud/dépense ou alias des21. Modifications utilisateur hors volet préservées.
+
+### V217/V218 terminaux — premier gain réel sur la meilleure recherche initiale
+
+- Milestone résultats `01a3bc3e` (`docs/retrieval_v218_results.json`). Recette217
+  `f4b3b0d3`, évaluateur218 `bf944228`, pré `8bc91a0d` ; code/config/contrats
+  IMMUTABLES après mesure. Tests fermetureGT supplémentaires `ea673d6f` :9PASS,
+  sans changement de scoring. Régression158PASS2,41s (nouveaux+historique),
+  tests nouveaux/audit/autorité84PASS à la clôture ; fixtures uniquement tests.
+- Generation session50142 TERMINAL exit0 :ALL128, tous16exits0/PASS214 ;
+  re-admission217 après terminal vérifiée. ManifestSHA
+  `b702c91eca9a69332bf59f694008af1aa48b7793dcd55edd2c28c8eb1b608479`,
+  outputsSHA `20fc8e0e44f1d3cfb7cbf3211fbef501d7f6ae006c0f63fa123f8a39077bf0a3`.
+  GTfermée jusqu'au ROOT128. FULLhash/epochs des sources utilisées avant/après
+  et globaux, indexmetadata/inventory seulement, PAS FULLhashsegments.
+- Generation984,161758s=16,402696min wall,492,051243s workers. Querytotal
+ 457,541525s/mean3,574543/p50=3,532760/p95=5,443149/p99=8,694806/
+  max9,651564s. Peak1974222848 (<2Gio), pression1/free>=81/globaldelta0
+  télémétrie nonattribuée.16mean4,455746 DESCRIPTIVE nonéliminatoire.
+  La réduction49→16min n'est PAS un benchmark physique équivalent : recette,
+  nombre de recherches natives et organisation des workers ont changé.
+- Evaluation session72824 TERMINAL exit0, autorité puis métriques chacune
+  exit0 confirmé/PASS214 ; re-admission218 finale réelle vérifiée. Autorité
+ 0,860511s/RSS174702592 ; métrique4,482001s/RSS993820672, pression1/free81,
+  globaldelta0. ReportSHA
+  `0c5d5793cddaaf19ca2643aac5ee1b4ba1e2060354b9862c5c8ef81528dce426`,
+  rootmanifestSHA `3ade284070b006d5b532dadf4809cb0ab44e698a09c1919235c13def7514267d`.
+- EXACT118/128=92,1875% ; opérationnel119/128=92,96875%, Wilson95lower
+ 86,215307%. Folds2:39/43=90,697674%,3:37/41=90,243902%,4:42/44=95,454545%.
+  V2/V3 UNKNOWN128 publiés, labels112MATCH_EXACT/14UNRESOLVED/2AMBIGUOUS
+  tous comptés ;16historiqueinexploitables séparés.10miss tous présents dans
+  univers natif ET catalogue disponible. Aucun label changé/retiré/injecté.
+- APPARIE contreV101114/12889,0625% :4gains positions10/42/117/118,
+  ZERO perte ; net+4/+3,125points. Op3gains/0perte. Même128IDs/folds,
+  SHAledger24f5928c… et label_side42e15d60… égaux vérifiés, pas timingscomparés.
+  ContreV215107/12883,59375% :13gains3/19/27/31/39/42/55/73/76/93/104/116/122,
+ 2pertes12/62, net+11/+8,59375points ; op11gains/2pertes. Ces2pertes étaient
+  déjà ratées parV101 ; ne pas cacher les régressions face215.
+-10miss positions6/12/16/34/62/67/74/79/97/121. Diagnostic noms103 précédemment
+  scellé :7sans mot littéral partagé et3partiels dans cette portée officielle.
+  Cela n'est PAS absence de toute preuve sémantique ni erreur de label prouvée.
+  Pas attribution causale aux sous-canaux : modifications simultanées,
+  score joint unique, aucune ablation indépendante mesurée.
+- Verdict PIVOT_GENERATION, NON99,2%/READY/fullOOF/généralisation/SLO. Gain
+  mesuré sur pilote128réutilisé seulement, pas garantie produit. Aval gelé,
+  fold0jamais lu/fold1fermé. Ne PAS lancer23k ou un nouveau gros run simplement
+  pour réduire le bruit de ce92,19%. Priorité suivante : sigles/abréviations
+  génériques (preuves d'un nom officiel complet, pas dictionnaireCRM), puis
+  décalage enseigne/site/personne légale et fiabilité des preuves adresse/lieu.
+  Auditer les scores/pertes2 nouvelles avant de choisir la prochaine variante ;
+  fit éventuel TRAIN OOF234 seulement, pas réglage sur les10 ratés ou correction
+  des labels. Les alias dérivés103/216 restent diagnostics, JAMAIS features.
+- Tous jobs de ce volet TERMINAUX, aucun worker à laisser surveiller. Aucun
+  push/dépense/cloud, user edits hors volet préservés. Objectif99,2% complet
+  NON atteint ; statutgoal API restehistoriqueBLOCKED nonmodifiable enactive,
+  pas nouvelle pause ou completion inférée. Ce tour PROGRESS : vrai gain
+  initial100 vérifié et prochaine action qualité identifiée, pas microbench.
