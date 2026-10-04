@@ -14385,3 +14385,46 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   reste nonréutilisable. Code/contrat désormais figés avant mesure.
 - Aucun modèle aval/fold0/fold1 touché, aucune dépense/push. Objectif99,2%
   initial100 entier ; dernier exact21583,59375% inchangé. User edits préservés.
+
+### V216 terminal, puis V217/V218 figés avant nouvelle mesure qualité
+
+- Audit216 `055bc5fd`/pré `0f9fcd0f` terminé, TOUS3 exits0 réels/PASS214.
+  Milestone résultats `0f495d4b`, reportSHA
+  `aafce9681edf0d6e0114109d83a9d9b5fdb854738d65261a1f6ea67dad4576c7`.
+  Workers28,675401/19,506015/15,772662s, RSSpeak1283817472,
+  pression1/free>=80/globaldelta0 nonattribué. ALL21 pertes215 auditées,
+  noms103/documents natifs/coordonnées officielles et mêmesGT128 vérifiés.
+- Sur21 :7 sans mot littéral officiel partagé,12 correspondances partielles
+  ne satisfaisant pas toute la conjonction,2 aliases complets ;9 BANincompatible,
+  5GT dans rayon/5hors rayon/2coordonnéesGT absentes,3opérationnels seulement.
+  Texte214 isolé direct100 ne retrouve AUCUN des21. Ne pas inventer un recall
+  all128 texte ni un sauvetage causé uniquement par quotas. Distances jusqu'à
+ 9,7km illustrent identité/site différents, pas erreur de label prouvée.
+  Résultats LABEL_SELECTED DIAGNOSTIC ONLY jamais exportés en features/alias.
+- Milestone `f4b3b0d3` V217 : UNE requête native globale top100 de preuves
+  bornées, sans fréquenceBM25 ni quotas. Head11 OOF77/78 et8expansionsquery
+  figés réutilisés sansfit, foldsheld/entités/vocabulaire/absence des128IDs
+  training contrôlés. Nom officiel courant inclus dans un span CRM accepté
+  (exactfieldsnatifs), corroboration parent/site courant du même doc à la
+  place. Ce n'est ni alias inventé, ni nouvelle garantie de covalidité.
+- Propriétaires officiels210 et successions1331hop corroborés par adresse/place,
+  grades1/0,5 fixes, pasidentitéfusionnée. Géo anneaux25..2000m (+3sigmaBAN),
+  score500m en marches explicite/weakBANdemi, BONUS SOUPLE : horsrayon ou
+  sansXY reste accessible globalement. Scope natif43896818, pas append/dense/
+  BODACC/TUP exhaustifs. Exactcontainment natif ne résout pas tous les noms
+  historiquespacked : limitation publiée, pas promotionSOTA.
+- Milestone `bf944228` V218 : évaluateur séparé lié217 seulement, permission
+  sansGT aprèsALL128/tous16workers exits0 avant métriques. Mêmeledger et
+  sidecarofficiel exact/op, allhuman/UNKNOWNV2V3/présencescatalogues distinctes.
+  Canaljoint unique ne permet PAS attribution des hits aux sous-preuves.
+-75 tests nouveaux/audit PASS1,09s ; contrôle serving3heads/128terms alignés
+  valide, aucun scoreGT moteur217 ou métrique218 ouvert. Fixtures synthétiques
+  tests only, pas preuves métier. Guards214 inchangés :2Gio/query20/worker80/
+  quiet30/pression1/free50/unthread ; batch8moteurs clos entrequeries,16workers.
+  Moyenne16 descriptive, tout dépassementSTOP sans retry/partiel promu.
+- Fresh ROOT217 `retrieval_v217_corroborated_population/run_20261004_a` puis
+  ROOT218 `retrieval_v218_postseal_evaluation/run_20261004_a` prévus après
+  ce commit de préparation. Recette/config/contrats immuables dès mesure.
+  Objectif99,2%/Wilson99%/folds98,8%/SLO inchangé, pilote128réutilisé jamais
+  READY. Dernier recall83,59375%, fold0interdit/fold1fermé/avalgelé. Pas push,
+  cloud/dépense ou alias des21. Modifications utilisateur hors volet préservées.
