@@ -13488,3 +13488,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   cap sur tokens. Tests indépendants bit-exacts puis probe q4 de coût sans
   GT, temps de query20 et worker80 inchangés ; nouvelle version/racine avant
   mesure, profiling par les checkpoints natifs pour attribuer le coût réel.
+
+### V198 — protocole RAM exact testé et commité avant mesure nationale
+
+- Commit isolé `89a3609e` : seuls helper RAM, probe, config, contrat et leurs
+  deux suites de tests. Sources/codes mesurés V197 et antérieurs intacts ;
+  aucune modification tierce ajoutée, aucun push.
+- 163 tests PASS/13,82s, session33508 TERMINAL0 (V198 kernel/protocole,
+  V170, V193, V192 et V183). Comparaisons bit-exactes alias/snapshot au
+  calcul indépendant ; fichiers/hashes réels dans fixtures, supervision
+  et population miniature explicitement simulées. Compile/diffcheck PASS.
+- Même limite query20s globale, worker80s/1Gio, quiet30/p1/free>=50% et swap
+  global non attribué. Seulement petit compteur intégral <=64Mio en RAM,
+  mêmes tokens/postings/aliases/propriétaires/successions, sinon fallback
+  disque exact sans cap de tokens. Pas nouvelle feature ni score métier.
+- Nouvelle racine prévue `retrieval_v198_names_ram/probe_20261004_a` :
+  coût de position4 fixé par STOP temps de V197, population128 contrôlée
+  avant sélection, ALL57530682aliases/44403034sites, puis FULL audit séparé
+  des sources et preuves avec epochs originaux. Aucun candidat/GT ancien
+  ouvert. Admission refuse preuves hors inventaire, population partielle,
+  mauvais query/fold/process/ressources/flags. Pas reprise du STOP V197.
+- Mesure pas encore lancée à ce jalon. Si PASS, nouvelle version de la
+  génération128 complète ; si STOP, conserver intact et attribuer avec
+  checkpoints, pas hausse du budget. Dernier recall89,0625%exact inchangé.
+  Pilote non READY, pas SLO ni généralisation prouvés ; aval/folds0/1 fermés.
