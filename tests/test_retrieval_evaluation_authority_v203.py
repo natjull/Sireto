@@ -62,3 +62,18 @@ def test_no_generation_manifest_does_not_trigger_admission_or_any_target_callbac
     def forbidden(unused): raise AssertionError('admission called before full seal')
     monkeypatch.setattr(authority.generation, 'admission', forbidden)
     with pytest.raises(FileNotFoundError): authority.authorize(root)
+
+
+@pytest.mark.parametrize('change', ['float_count', 'bool_count', 'supervision_erased'])
+def test_recheck_typed_permission_cannot_bypass_supervision_or_counts(monkeypatch, change):
+    permit = dict(status=authority.STATUS, queries=128, population=128,
+        actual_generation_admission_verified=True, all128_before_targets=True,
+        truth_opened=False, recall_measured=False, ready_for_fold1=False,
+        fold0_opened=False, fold1_opened=False, downstream_models_changed=False,
+        evaluation_process_supervision_still_required=True)
+    if change == 'float_count': permit['queries'] = 128.
+    elif change == 'bool_count': permit['population'] = True
+    else: permit['evaluation_process_supervision_still_required'] = False
+    def forbidden(unused): raise AssertionError('Header/source opened before typed permission accepted')
+    monkeypatch.setattr(authority, 'header', forbidden)
+    with pytest.raises(ValueError): authority.recheck(permit)

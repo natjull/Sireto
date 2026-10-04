@@ -13723,3 +13723,47 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Driver séparé encore à construire ; ancienTantivy ne définit pas absence
   actuelle. Dernier89,0625%exact inchangé, pilote non READY, aval/folds0/1
   gelés, objectif99,2%/fullOOF/Wilson/généralisation/SLO nonprouvés, goalACTIVE.
+
+### V202 — STOP temps réel à q4 ; aucune évaluation partielle
+
+- Run fresh `retrieval_v202_population_initial/run_20261004_a`, code
+  `fddafc78`/pré-mesure `f09b56c3`, session36920 TERMINAL1 confirmée.
+  Quatre phases passées : names00059,448021375s/RSS1000587264,
+  addresses00028,943237959s/RSS744112128,
+  score000-00043,920188584s/RSS1026342912,
+  names00163,280255792s/RSS1002946560. Vrais parents0/PASS153,
+  p1/free84/global0. Code/config/contrat/scope désormais IMMUTABLES.
+- names002 position4 a STOP_PAGED_NAME_QUERY_COST pendant le loop des
+  observations one-hop après lexical4,379722250s et scatter13,869174875s
+  (SCATTER_COMPLETE18,248897125s/39054006références). La marge20s est
+  insuffisante sur cette mesure, même si d'autres mesures q4 avaient passé.
+  Worker36,704197416s/RSS1051426816/p1/free84/global0/PASS153, parent
+  réel91797/exit1/confirmed, pas dépassementRSS ni observationtimeout.
+  Ces différences de cache/charge ne sont pas un gain garanti ou une preuve
+  d'absence de triche ; seule la tentative réelle détermine le STOP.
+- Aucune sortie ROOT128SEALED, permissionlabels, initial100 ou recall.
+  Pas run encore live, aucun ancien fragment réadmis. Dernier89,0625%exact
+  inchangé. Ne pas contourner20s/80s/1Gio ni retirer query4/5 du dénominateur.
+- Goulot observé : diffusion de chaque alias vers ses propriétaires et
+  mises à jour mmap parent/site/exact via np.maximum.at/logical_or.at,
+  plutôt que lexique ou seul1hop. Prochaine optimisation exacte à tester :
+  supprimer les écritures ORFALSE redondantes (après validation de TOUTES
+  refs) et agréger les maxima par position dans de petits blocs triés,
+  mêmes toutes références/counts/valeurs, sans positif injecté ni cap.
+  Microtests/bench avant nouveau probe, pas autre long run aveugle.
+
+### V203 — autorisation label-free préparée, jamais émise nationalement
+
+- Commit `5734f232` : helper d'autorité203 fixé au backend202,
+  contrat et15tests PASS/56,31s (session42951 TERMINAL0). Headers seul
+  insuffisants : véritable admission384producteurs/FULLaudits/64merges/
+  ledger93507, ROOTbindings/caps/folds/epochs avant permission. Recheck
+  original avant/après targets, supervision effective encore obligatoire.
+- Tinyfichiers et tous128 IDs/certificats réellement hashés ; ledger
+  national/pression/processus explicitement SIMULÉS. Aucun label réel lu.
+  Backend202 ayantSTOP doit être refusé, pas recycler ses fragments.
+  Ajout de guards typed-count/supervision et tests3cas ciblés après suite,
+  pas ouverture des fichiers de target pour tester ces guards.
+- Aucun driver d'évaluation connecté ni permission nationale/metrics.
+  Noyau200 seulement prêt. Adapter backend au prochain générateur complet
+  dans une version figée avant mesure ; toutes GT restent fermées. GoalACTIVE.
