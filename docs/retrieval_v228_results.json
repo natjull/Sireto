@@ -1,0 +1,123 @@
+{
+  "status": "SEALED_SUPERVISED_TRAIN_ONLY_PLACE_COEFFICIENT_NOT_RECALL",
+  "implementation_commit": "1e72f28f",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v228_national_place_training/run_20261004_a/manifest.json",
+    "sha256": "05966487d7d26b2438f6d5072917a53169691bca402df4a481ceb678921ec44c",
+    "size_bytes": 1191
+  },
+  "models": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v228_national_place_training/run_20261004_a/worker/models.json",
+    "sha256": "5a46c2dd33cc57c3f5b3500fe09c93a8a5e08faef6fe31ef885da39d2f7d5d75",
+    "size_bytes": 46896
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v228_national_place_training/run_20261004_a/worker/report.json",
+    "sha256": "fb4cdc138967f7859e582bf1b2e8dd247fbc928cf7d12abf66ac94a217184e34",
+    "size_bytes": 10706
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 82,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 300384256,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 3,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.5467637502588332
+  },
+  "folds": {
+    "2": {
+      "place": 1.5178629067656029,
+      "changed_indices": [
+        4
+      ],
+      "exclusions": {
+        "acceptable_national_references": 38,
+        "held_fold_or_positive_entity": 25,
+        "held_national_references": 46
+      },
+      "fit_score_scope": "FIXED11_PRIMITIVES56_NOT_FULL217",
+      "heldout_entity_overlap": 0,
+      "identifiers_as_features": false,
+      "national_negative_source": "V227_QUERY_ONLY_TRAIN64",
+      "objective_after": 0.1960888160356637,
+      "objective_before": 0.22810308472432622,
+      "pairs_by_channel_and_place": {
+        "local_1_1": 1829,
+        "national_1_0": 4343,
+        "national_1_1": 2297
+      },
+      "ridge": 0.005,
+      "training_pairs": 8469,
+      "training_queries": 39,
+      "query_ids_omitted_from_local_summary": true
+    },
+    "3": {
+      "place": 1.4239147929733071,
+      "changed_indices": [
+        4
+      ],
+      "exclusions": {
+        "acceptable_national_references": 50,
+        "held_fold_or_positive_entity": 19,
+        "held_national_references": 59
+      },
+      "fit_score_scope": "FIXED11_PRIMITIVES56_NOT_FULL217",
+      "heldout_entity_overlap": 0,
+      "identifiers_as_features": false,
+      "national_negative_source": "V227_QUERY_ONLY_TRAIN64",
+      "objective_after": 0.15820756963022592,
+      "objective_before": 0.18519160330833345,
+      "pairs_by_channel_and_place": {
+        "local_1_1": 2146,
+        "national_1_0": 4968,
+        "national_1_1": 2572
+      },
+      "ridge": 0.005,
+      "training_pairs": 9686,
+      "training_queries": 45,
+      "query_ids_omitted_from_local_summary": true
+    },
+    "4": {
+      "place": 1.238426205420435,
+      "changed_indices": [
+        4
+      ],
+      "exclusions": {
+        "acceptable_national_references": 52,
+        "held_fold_or_positive_entity": 20,
+        "held_national_references": 87
+      },
+      "fit_score_scope": "FIXED11_PRIMITIVES56_NOT_FULL217",
+      "heldout_entity_overlap": 0,
+      "identifiers_as_features": false,
+      "national_negative_source": "V227_QUERY_ONLY_TRAIN64",
+      "objective_after": 0.12361649661584237,
+      "objective_before": 0.14343398987543654,
+      "pairs_by_channel_and_place": {
+        "local_1_1": 2003,
+        "national_1_0": 5014,
+        "national_1_1": 2264
+      },
+      "ridge": 0.005,
+      "training_pairs": 9281,
+      "training_queries": 44,
+      "query_ids_omitted_from_local_summary": true
+    }
+  },
+  "pilot_targets_opened": false,
+  "recall_measured": false,
+  "ready_for_fold1": false,
+  "full_oof_or_generalization_validated": false
+}
