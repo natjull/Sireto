@@ -1,0 +1,27 @@
+{
+  "expected_sites": 44403034,
+  "expected_original_observations": 317683879,
+  "expected_source_rows": 185993425,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v167_address_access",
+  "term_buckets": 64,
+  "batch_rows": 65536,
+  "duckdb_version": "1.4.3",
+  "numpy_version": "2.4.1",
+  "duckdb_memory": "256MiB",
+  "spill_limit": "3GiB",
+  "resources": {
+    "max_rss_bytes": 1073741824,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "initial_quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "max_phase_bytes": 2147483648,
+  "max_total_bytes": 128849018880,
+  "scope": "ALL_COMPLETE_V160_WHOLE_ADDRESS_ALIASES_V163_INIT_V166_SUCCESS_ONLY_SINGLE_METADATA_LIFETIME_V167_NO_POOL",
+  "writer_group": 4
+}
