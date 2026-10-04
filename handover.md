@@ -14614,3 +14614,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   actuel inféré ni completion (99,2% NON atteint). Ce tour : une vraie
   mesure initial100 sans gain, et une cause de non-apprentissage géographique
   objectivée ; la suite doit tester ce pivot, pas refaire des quotas/regex.
+
+## 4 octobre2026 — reprise persistante, TRAIN national227 avant mesure
+
+- Utilisateur : poursuivre jusqu'à l'objectif99,2% exact initial@100,
+  protections inchangées ; le GoalAPI historique BLOCKED n'empêche pas les
+  actions nouvelles autorisées, aucune completion annoncée.
+- Commit `888b75b7` : protocole227 gelé,64 premières requêtes de la source
+  TRAIN51256 dans son ordre préexistant, projection huit champs query-only
+  sans GT ni négatifs ;512 disjointes du pilote128. Six tests métadonnées
+  synthétiques PASS, pas preuve de qualité nationale.
+- Deux collecteurs nationaux100 indépendants pour MINER les négatifs de
+  TRAIN : nom et preuve11 native, sans filtre local. Ce n'est PAS une sortie
+  produit ni un reservoir à reclasser en service. Tous64 / huit vrais exits
+  PASS214 nécessaires avant fit distinct228. Aucune lecture fold0/1.
+- Hypothèse gelée228 : seul poids place appris (logistique ridge0,005,
+  local/national50/50, moyenne par requête), dix autres poids77 et sparse
+  inchangés. Registre d'entités held/équivalents officiels exclus des
+  négatifs ; fit supervisé uniquementTRAIN, aucun réglage sur les128.
+- Politique214 inchangée2Gio/80s/20s/un thread/calme30s. Aucune dépense,
+  modèles aval gelés. Puis recette nouvelle initial100128 complète et
+  évaluateur post-scellement distinct ; pas de promesse de gain/READY.
