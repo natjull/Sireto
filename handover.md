@@ -12113,3 +12113,111 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun moteur national INITIAL100 complet, aucun nouveau recall/SLO.
   V101114/128 exact inchangé ; noms paginés encore nécessaires. Labels,
   folds0/1, aval gelés, noREADY. Sources/provenance/dénominateurs intégraux.
+
+### V169 noms/owners/successions exacts paginés ; première mesure à vérifier
+
+- Tour précédent PROGRESS :168 a corrigé un vrai dépassement sur le même
+  lot49 (1121075200 STOP ->763674624 PASS), commit `54a403c4` ; reprise
+ 14381 re-pollée LIVE durant ce tour, ne pas dupliquer/repartir du root.
+  Lots50/60/100 spécifiquement phase_record168 vérifiés : RSS754401280,
+ 950845440,762216448 ; workers3,624560/5,750321/3,789779s. Ce sont TROIS
+  témoins complets, pas une assertion de tous les lots jusqu'à100.
+- Milestone code `cd5cd3c4` : noms169 file-backed query-owned float64,
+  mêmesmax/OR138/137, compteur exact156 sans saturation. Chaque posting
+  entier consommé ; seule sa partition4 arrays readonly remappée, pas1024
+  réouvertures inutiles/token. Tous autres buckets restent accessibles.
+- Owners : fenêtres physiques d'alias positifs, TOUS leurs faits (fanout
+  supérieur au quantum conservé), patches149 exactes sur rows originales
+  sans copie entière du bucket. UNKNOWN UL conservé, MISSING site fatal.
+  Pas de nom site->parent/frères. Snapshot endpoint figé avant relation,
+  deux sens/grade0,5 TRUE sinon0,25, selflinks exclus de l'expansion,
+  max doublons, pas de deux sauts ni flags exact hérités. Gather anciens ET
+  appended-sites bit-exact au natif150/149 dans les fixtures.
+- Validation source150 entière réutilisée, rotation uniquement de SES own
+  maps readonly avec copie avant close+epochs/types/shapes exacts. Sources
+  jamais écrites. Scratch fresh.npy dimensions complètes, aucune réduction
+  de noms/owners/sites. Nettoyage au succès uniquement des fichiers possédés
+  de la requête, échecs conservés sans publier snapshot/certificat complet.
+- Unitaires16926 PASS + probe16912 PASS ; ciblés150/151/156/16971 PASS6,24s.
+  Suite117–16977 fichiers721 PASS150,34s session96763 TERMINAL0.
+  Fixtures et fausse pression/supervision, PAS coût/recall national.
+  Un bug de mock de test a créé un fichier160octets hors tmp ; récupérablement
+  déplacé à `/private/tmp/sireto-v169-test-recovery.4INcAq/failed.npy`, dossier
+  vide de test retiré, aucune donnée utilisateur ou source supprimée.
+- Protocole avant mesure `docs/retrieval_v169_paged_names_contract.md` :
+  une première requête V115 ordre préexistant, query-only folds234 sansGT,
+ 57530682aliases/105564761facts et graph9730972observations, joins149
+ 30027199parents/44403034sites. Garde153/supervision1641Gio/80s/pression1/
+  free>=50, query20s, scratch3Gio, fullhash à l'ouverture/après. Gather
+  TOUT le namespace site une fois en chunks, digest et compteurs, pas100
+  candidats ni métrique ; ce n'est pas un SLO ni test du pipeline aval.
+- Commandeprobe169 sur rootprobe_20261004_a fraîche lancée après721PASS.
+  Vérifier son handle puis certificate+supervision, ne jamais déclarer
+  PASS sur intent/microtests. Si STOP, conserver/méthodiquement diagnostiquer
+  et versionner le correctif, aucun budget augmenté ni retry de root mesuré.
+  Dernier recall exact V101114/128 inchangé, objectif99,2% NON atteint,
+  noREADY, folds0/1 et aval toujours fermés. Aucun push/dépense externe.
+
+### V169 STOP de coût, pas de validation complète mémoire ; V170 borné
+
+- Probe169 session85292 TERMINAL1, worker_stop réellement lu. Requête0
+  STOP_PAGED_NAME_QUERY_COST dans scatter/guard20s. Worker41,121805s,
+  RSS940621824 (~897Mio)/min73/pression[1]/global0, resourcepolicy153 PASS.
+  Pas de manifest/cost_outputs, ni query complète/un-hop/gather : NE PAS
+  déclarer whole-query1Gio validé à partir de ce peak partiel. Pas d'initial100
+  ni recall. Scratch/diagnostics169 et code `cd5cd3c4` désormais immuables.
+- Milestone `3626e04f` V170 : seules fenêtres physiques élargies524288 vs131072 ;
+  moins de close/remap et re-faults d'updates, exactement le MÊME total de
+  postings/faits/patches/relations, précision float64 et maximum/OR inchangés.
+  Pas de quota/cap métier ni pruning. Tests quantum524288 vs oracle natif,
+  timing/RSS après LOAD/LEXICAL/CHAQUE bucket/SCATTER/ONE_HOP pour diagnostiquer
+  sans publier de labels ni de preuve de succès avant gate entier.
+- Ciblés169+17082 PASS10,67s session80595 TERMINAL0.721 tests117–169 déjà
+  passés, pas une assertion de fullsuite170. Fixtures/fauxprocess uniquement.
+  Protocole `docs/retrieval_v170_paged_names_contract.md` fixé avant mesure.
+- Requête/ordre/sourcesV134/V149 EXACTEMENT les mêmes ; limites1531Gio/80s,
+  query20s/scratch3Gio/normal pressure/free50 INCHANGÉES. Root170 frais,
+  aucun retry de169. Adresse168 remaining14381 re-pollé LIVE, non dupliqué.
+  Dernier exact V101114/128 inchangé,99,2% non prouvé, noREADY.
+
+### V170 première preuve nationale complète noms sous1Gio
+
+- Probe170 session18338 TERMINAL0 sur
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v170_paged_names/probe_20261004_a`.
+  Manifest SHA `4b10c919dad04ebc4f9d8f530f2d15faf7db310ec0bfe897daed59e4a392fe63`,
+  resources153 réellement validate_report() puis parent_exit() acceptés.
+- Worker58,333837s/RSS956678144 (~912Mio)/minfree72/pression[1]/PASS.
+  Parent propre PID77406 actualexit0 confirmé59,186297s/RSS942440448,
+  sans PID disparu. Global swap34212 pages observé par les deux, NON attribué
+  au worker et non bloquant selon autorisation153 ; ne pas prétendre zéro
+  swap global ou savoir quel processus l'a causé. Pas de purge/autre app tuée.
+- Ouverture21,853545s, RSS aprèsload567721984. QUERYcomplète17,197419s,
+  lexical4,360882/scatter10,818386/un-hop1,805364 ; queryguard20s respecté.
+  Toutes64 ownerbuckets réellement terminées,14848501 références positives
+  parcourues sans quota, namespaces d'origine57530682aliases/105564761facts
+  et9730972successions entiers accessibles. Aucune promesse SLO :17s pour les
+  NOMS SEULS reste trop lent pour p95<=1s/p99<=2s et doit être accéléré.
+- Gather intégral44403034sites une fois1,097489s ;9128294 noms nonzero,
+ 2exact-current, digest
+  `3927c45d5d912c01ab3e9967aa9c4f104b4fd1544f0796f27137a635edbe4f73`.
+  Query-owned sortie1023741344 octets, seuls ces5fichiers réussis nettoyés ;
+  scratch169 STOP conservé. Fullhash sources before/after vérifié parprobe.
+- Comparaison nationale aux traces du premier cas151 : MÊMEquery_id/fold,
+  mêmes3compteurs de channels, mêmes14848501refs,5236925parent-proofsold,
+ 207parent-proofsappended/0exact,1119847site-proofs,3383931relatedendpoint,
+ 17063appendedsites/0directexact. Compteurs égaux, PAS une preuve byte-by-byte
+  nationale (anciens vectors151 non conservés). Bitexact prouvé dansfixtures.
+- Code/config170 désormais mesurés immuables `3626e04f`;169 `cd5cd3c4` STOP
+  conservé. AUCUN INITIAL100 national complet/candidat/label évalué. Dernier
+  exactV101114/128 toujours, noREADY. Pas de claim99,2% sur cette étape.
+- Suite117–169721 PASS ; delta169/17082 PASS. Sourceadresse168 remaining-
+  parts14381 toujours LIVE au dernier poll ; ne pas dupliquer. Prochain travail
+  utile : terminer/valider TOUS les576parts, mesurer seals/packs sous1Gio
+  sans rehash global coûteux répété à chaque pack, puis brancher les snapshots
+  noms paginés et adresses sur INITIAL100 complet158 en nouvelleversion.
+  Remplacer les gros snapshots d'adresse heap par même paging exact (34m
+  alias), tester scopes/current/ownCP/INSEE/NUM/XY et fermé/UNKNOWN inchangés.
+  En parallèle, coût noms dominé parscatter10,8s : premiers updates random
+  de fichiers sparse coûteux, hypothèse à mesurer (pas causalité garantie).
+  Optimiser les pages propres/cohérentes, pas réduire les preuves/candidats.
+  Labels/folds0/1/aval fermés ; aucun push/dépense externe.
