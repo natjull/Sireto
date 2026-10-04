@@ -11893,3 +11893,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   complets et prototype lexical économisé effectivement validés ; index
   lexical complet et requêtes INITIAL100 encore à produire. Objectif99,2%
   exact NON atteint, pas de nouvelle métrique recall ni READY_FOR_FOLD1.
+
+## 2026-10-04 — V165 compilation complète à partir des preuves SOURCE V163
+
+- Milestone commit `769b8b1a` : compiler/reader/backend165 versionnés,
+  EXACTEMENT stage_addresses164 mesuré (8 writers physiques), physical_plan152
+  et pack134 inchangés. Même corpus/dénominateurs/channels/features, mêmes
+ 1Gio/80s/pression normale153 ; diagnostics parent164 conservés en STOP.
+- INIT165 prend le launch V163 initial complet, pas un Global lexical,
+  pas une sonde, pas la phase0 STOP. Audits prefix/reverse originaux V163
+  gardent leurs titres/hashes/rapports d'exit confirmés ; scope et code,
+  epochs de toutes sources, mêmes paramètres physiques/sources requis.
+  Aucun fichier lexical n'est importé, même s'il existe. Nouveau root et
+  nouvelles sorties. Une dérive ou exit source non confirmé => pas de launch.
+- Ressources de l'import sous Budget publiées séparément des deux audits
+  originaux ; aucun rehash source récent inventé. Champ explicite
+  `full_source_hashes_in_imported_init_audits_and_own_seal_not_each_phase`.
+  Full sources rehash au seal165 dans deux enfants bornés ; mêmes audits,
+  validations lexicales complètes, aucune baisse de couverture/autorité.
+- Tous lots165 exigent manifest propre ET exit parent réel confirmé,
+  ressources et absence de STOP/supervisor_stop ; certificats du stage borné
+  vérifiés. Downstream et folds0/1 inchangés, aucune requête CRM/GT lue ici.
+- Tests ciblés165+16427 PASS10,81s session55124 TERMINAL0 : fixture pipeline
+  source165→tous lots→CSR→snapshot ; SOURCE reuse sans lexicalSTOP/probe,
+  source scopes/epoch/exit/metadata drift refusés, writer9/featurechange refusés.
+  Supervision et pression simulées, PAS une preuve de coût national.
+- Régression V117–165 session22400 en cours avant mesure. Aucun INIT165 ni
+  worker national encore lancé à cette note. Suite : INIT165, phase0 sous
+  superviseur164, puis remaining uniquement si phase0 valide. V101114/128
+  exact89,0625% reste la dernière mesure de recall, objectif99,2% non atteint.
