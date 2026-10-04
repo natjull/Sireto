@@ -11740,7 +11740,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Suite immédiate : versionner une INIT/source validation plus économe,
   avec diagnostic de Budget persistant même en échec. Hypothèse mémoire à
   vérifier : V161/V155 parsènt et retiennent les18Mo de manifest complet
-  avant l'audit prefix qui culminait déjà~1,03Gio. Réordonner/segmenter les
+  avant l'audit prefix qui culminait déjà~1,03Go (983Mio). Réordonner/segmenter les
   mêmes audits exhaustifs (pas les supprimer), sans hausse1Gio/80s/pression.
   Ne pas refaire les64+678 ni la compilation V154 : tout le stockage V160
   est validé. Nouveau root/protocole/versions, source originale et STOPs intacts.
