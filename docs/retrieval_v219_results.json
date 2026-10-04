@@ -1,0 +1,27 @@
+{
+  "status": "SEALED_V219_ALL10_POSTSEAL_LOSS_DIAGNOSTICS_NOT_RECALL",
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v219_score_diagnostic/run_20261004_a/report.json",
+    "sha256": "6af27abbb92027b26d4bd61b005342f6f503aa8db12d7707d0ba7e4796a924a0",
+    "size_bytes": 246485
+  },
+  "actual_controller_exit_code": 0,
+  "actual_worker_exit_codes": [0, 0, 0],
+  "queries": 10,
+  "strictly_below_frontier": 10,
+  "tied_at_frontier": 0,
+  "regressions_vs215_positions": [12, 62],
+  "worker_seconds": [27.711497958749533, 13.629673207644373, 7.610700624994934],
+  "peak_worker_rss_bytes": 1443348480,
+  "minimum_system_free_percent": 82,
+  "pressure_levels": [1],
+  "global_swapout_pages_delta": 0,
+  "global_swap_is_worker_attributed": false,
+  "original_top1_and_cutoff_native_scores_reproduced": true,
+  "scope": "LABEL_SELECTED_DIAGNOSTIC_NOT_RECALL_OR_UNBIASED_ABLATION",
+  "outputs_promoted_to_features": false,
+  "generation_modified": false,
+  "recall_measured": false,
+  "ready_for_fold1": false,
+  "downstream_models_changed": false
+}
