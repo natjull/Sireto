@@ -13991,3 +13991,34 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   national live. Si coûtpositif, NEWq24probe FULLnational/freshaudit avant
   autre128long ; ne pas supposer le gain national du bench ou retry206.
   Driver207 doit refuser206STOP, dernier89,0625%exact inchangé, goalACTIVE.
+
+### V208 — bench CATNAT terminé : coût d'initialisation rejeté
+
+- Code `5702f7eb`, pré-mesure `96defadf`, session45469 TERMINAL0,
+  root `retrieval_v208_numeric_storage/benchmark.49PNQ9` : report/preflight
+  conservés, same_filesystem_as_catnatTrue. Kernel/bench/contrat208
+  désormais IMMUTABLES. Numérique seulement, aucun source/label national.
+- Init+4updates dense : original0,527422375/0,356814167/0,347710917s,
+  warm_ordered1,504984083/1,116712250/0,765158458s. Sparse : original
+  0,321974333/0,327872459/0,327552375s, warm_ordered0,939670917/
+  1,106700625/1,026404834s. Toutes30000000positions bit-identiques,
+  troistrials alternés ; coût total plus lent dans les SIXcomparaisons.
+  Ne pas sélectionner le seul temps update favorable et cacher initializer.
+- Updates seuls aprèswarm : dense0,100459958/0,097791583/0,082871875s,
+  sparse0,077223292/0,084531167/0,081386417s. Initializer0,68..1,40s
+  domine dans ce fixture4calls ; la vraie génération a davantage de calls
+  ET une pression de cache différente, ce bench ne permet pas d'attribuer
+  le gain à tri OU warm ni garantir/amortir son coût national. Pas probe
+  q24 ni autre128long avec208 supposépositif. Prototype complet rejeté.
+- Budget153 réel9,289771000s/RSS385269760/p1/free82/global0/PASS,
+  rawCLIexit0, pas autoritéparent164/nationalcertifiée. Cache noncontrôlé.
+  Seuls12npy privés numériques ont été supprimés après comparaison de
+  toutespositions ; régénérables parseed208/script, report/préflight
+  conservés. Aucune source/STOP/autreapp/résultat utilisateur supprimé.
+- Prochaine expérience exacte : NEW209 stableordering sparse SEUL,
+  sans warmglobal/reset (nouveaukernel/bench avant mesure), original
+  np.maximum.at et ordredup conservés, pas group/reduce204. Comparer
+  sparse ETdense init+updates surCATNAT, puis q24nationalfresh seulement
+  si gain crédible. Cette piste conserve toute la population/sources et
+  les budgets20/80/1Gio. Aucun worker live, GT fermées, pas permission207,
+  dernier89,0625%exact inchangé ; cible99,2% etgoalACTIVE nonprouvés.
