@@ -12888,3 +12888,36 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   inchangés. Toutes128 sorties avantGT séparé/fullOOF/Wilson/généralisation/
   SLO dus. Goal ACTIVE, pas bloqué sur autorisation/externe, pas pause ni
   accompli ; progrès sûr reste possible190. Aucun coût externe/push/aval.
+
+### V190 séparation physique post-merge — jalon avant mesure
+
+- Précédent goalturn PROGRESS : six phases187 nationales réellement PASS,
+  STOPs188/189 produisent la preuve des pics transitoires et changent l'action
+  suivante. Pas une attente ni un blocage dépendant d'autorisation/externe.
+- V190 isolé `5f460f4d` AVANT mesure : même187/stream189/merge183 complet,
+  sixphases187 figées hashes190, tous44403034sites/98804872faits, modèles/
+  query/BAN/XY inchangés. Workermerge seulement QUARANTINED draft et epochs
+  capturés dans artifact dédié hashé. Workerledger APRÈS vrai parentmerge0/
+  report153 exécute ORIGINALbackend177.load/check_live sur93507epochs complets.
+  Receipt exactdraft/manifestmerge/capturedeps/sourceauthorities/signature/
+  counts/protected ; rootadmission exige DEUX vraies phases, aucune manquante/
+  STOP, revalide toutes93507epochs et tous hashescheck_live avant publication.
+  Aucun contrôle retiré, budgets1Gio/80s/quiet30 inchangés, nouvelles traces
+  RSS+ru_maxrss. Pas reranker/réservoir2000/500/GTinjecté/aliasCRM/IDfeature.
+- Tests190+189+188+187+18389PASS3,07s, session14158 TERMINAL0 ; fixtures
+  tinyfichiers réellement hashés, backend/process explicitement SIMULÉS.
+  Guards contre noledger/exitnonconfirmé/nonzero/RSS/STOP/GT/draft/merge/
+  signature/source/epochs différents et émission anticipée. Réduction190
+  conserve tout9sites/17faits tiny, backend interdit INLINE pour assurer la
+  séparation réelle. py_compile/diffcheck PASS. Readonlyorigin190 réel accepte
+  sixphases/all44403034/98804872, 73filesimplementation, root187resteSTOP,
+ 89400 TERMINAL0. Les tests ne mesurent ni qualité ni mémoire nationale.
+- Prochaine action unique freshroot
+  `audits/retrieval_v190_staged_merge/probe_20261004_a` : deuxworkers
+  séquentiels/quiet30, ressources1Gio/80s, pas encore lancés à ce jalon.
+  Coûtglobalinclut184108,169869s +187218,077705s +DEUXworkers190 et elapsed
+  courantincluantquiet/parent. STOPs historiques gardés, aucun retry.
+- Toujours une requête pour intégration, PAS recall. Toutes128 sorties avant
+  GT dans évaluateur séparé, fullOOF/Wilson/généralisation/SLO dus ; dernière
+  exacte89,0625%/op90,625% inchangée, aucunREADY/SOTA/99% garanti. Fold0/1/
+  labels fermés, aval gelé, GoalACTIVE, Mac/CATNAT sans dépense/push.
