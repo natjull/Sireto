@@ -14311,3 +14311,59 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  214ROOT128scellé. Tout STOP bloquelabels/mesure ; code215 immuable après
   mesure. Dernierrecall89,0625% inchangé, objectif99,2%entier, pasREADY/SLO,
   fold0/1 et avalgelés. Modifications hors volet préservées, pas push.
+
+### V214/V215 terminaux — vraie mesure de qualité, recette rejetée
+
+- Milestone résultats `cf31f0e2` (`docs/retrieval_v215_results.json`).
+  Generation214 `3436168b`/pré `6bd85c5b`, session71703 TERMINAL0 ;
+ 128outputs scellés, TOUS64exits0/PASS214, GTfermée jusqueROOT.
+  Nouvelle recherche exécutée, pas nouveau microbench. Corpus43896818
+  natif,97canalgéo, noms57530682/owners/successions officiels complets
+  pour cette recette ; pas intégration exhaustiveBODACC/TUP/append/dense.
+- Generation49,121841min wall (quiet30×64 inclus),16,375778min workers,
+  totalquery923,479810s/mean7,214686s/p50=7,422129/p95=10,497626/
+  p99=13,067607/max14,596954s. RSSpeak1877491712 (<2Gio), pression1,
+  free>=82/globaldelta0nonattribué. Moyenne16=8,778526 publiée, NONgate.
+  Source USED fullhash avant/après + epochs globaux ; natifmanifest/meta/
+  inventory seulement, segments PASfullhash. Code214/contrat immuables.
+  ManifestSHA `165c6945d72fc5829871fb95e9a7fc45120e97bb309bb5308123fa94334e449b`,
+  outputsSHA `e9de93618985b98ba59b77b2df4025a732d272b2f738f51c7bc8ed127e2a54af`.
+- Evaluateur215 `2efef0a7`/pré `43ca2e3b`, session21806 TERMINAL0 ;
+  autorité sansGT puis métriques, chacune exit0 confirmé/PASS214.
+  Autorité2,221784s/RSS169525248 ; métrique7,395729s/RSS985268224,
+  pression1/free>=82/globaldelta0. Re-admission215 réelle vérifiée après
+  terminal, tous refs/epochs/presences séparées et sidecar inchangés.
+  Code215/noyau213/config/contrats désormais IMMUTABLES après mesure.
+- Exact107/128=83,59375% ; opérationnel110/128=85,9375%, Wilson95lower
+ 76,218192%. Folds2:31/43,3:38/41,4:38/44. V2/V3 UNKNOWN128 publiés,
+  pas qualifications inventées ou dénominateur filtré. Labels historiques
+  inexploitables16 publiés séparément comme dans l'autoritéV34.
+  ReportSHA `00ce5ac3b48e0bfc6e5fd3bc422981d0b5afe04336e632c218cb49a7c6cb47e0`.
+- Comparaison APPARIEE métrique (pas timing) contreV101 SHA
+  `12e31057234efc6c6992e18062fc10761b4370c379d3161ccf284bbaa2f5127c` :
+  mêmes128IDs/folds, ledger et sidecar officiels vérifiés.5gains/12pertes,
+ 102hits communs/9misscommuns, net-7hits/-5,46875points vs114/12889,0625%.
+  Gains positions10/12/62/117/118 TOUS émis par texte. Les autres canaux
+  n'apportent PAS les gains observés contre cette ancienne recette apprise.
+- Les21miss ont TOUS leur vérité dans univers natif ET catalogue disponible :
+  absence d'identité n'explique PAS ces21pertes. Ne pas confondre présence
+  avec preuve de nom/adresse adéquate. Hits attribués à émission : texte82/
+ 7169places, noms16/812, succession2/626, géo7/4193. PAS recalls parcanal
+  isolé ou rescuesuniques ; pas ablation causale de l'union calculée.
+ 4pertesbaseline (19/27/93/104) même avec text100 sans autrecanal : ce
+  n'est PAS seulement un problème de quotas. V101 est une autre recherche
+  apprise, pas le canaltexte pur214 ; aucune attribution simpliste au XY.
+- Verdict PIVOT_GENERATION : NEPAS promouvoir rotationfixe210/214 ou annoncer
+  SOTA/99,2%/READY/fullOOF/généralisation/SLO. Dernier NOUVEAU recall mesuré
+ 83,59375% ; meilleur historique89,0625% reste historique, pas remplacé par
+ 83,59commeamélioration. Objectif99,2%allhuman entier, aval/folds0/1 gelés.
+- Prochaine investigation : auditer les preuves officielles de nom/adresse/
+  géographie des pertes et leur compatibilité, puis fusion initial100
+  discriminante plutôt que places aveugles. Pas simple répartition manuelle
+  ajustée aux128labels, pas microoptimisation vitesse ou fit/reranker aval.
+  Toute nouvelle recette doit être figée avant mesure, OOF234/généralisation
+  et GTjamais en entrée. Pas d'autre workerlive, pas push ; utilisateurhors
+  volet préservé. Ce tour PROGRESS : nouvelle mesure négative réelle oriente
+  le pivot, pas objectif atteint. L'APIgoal reste BLOCKED de l'audit précédent
+  malgré Go ; les outils ne permettent pas resume/active. Ne pas le présenter
+  COMPLETE ou inventer un nouveau blocage budget maintenant résolu.
