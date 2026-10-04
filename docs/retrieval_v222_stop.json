@@ -1,0 +1,30 @@
+{
+  "status": "STOP_V222_RSS_NO_RECALL",
+  "controller_exit": 1,
+  "worker_exit": -15,
+  "own_child_exit_confirmed": true,
+  "query_outputs_seen_in_log": 1,
+  "admitted_batches": 0,
+  "supervisor_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v222_corroborated_population/run_20261004_a/batch000/supervisor_stop.json",
+    "sha256": "5081f82af06cee60fcba087e0842add69afe7759826879eb6b1484e9e009a51b",
+    "size_bytes": 821
+  },
+  "controller_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v222_corroborated_population/run_20261004_a/status.json",
+    "sha256": "f428d22b65e8eca41c94c113203594311af993c807f93ceb736294106c9ee689",
+    "size_bytes": 350
+  },
+  "peak_rss_bytes": 2171518976,
+  "limits": {
+    "global_swap_blocking": false,
+    "max_rss_bytes": 2147483648,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1
+  },
+  "seconds": 24.749996208120137,
+  "truth_opened": false,
+  "recall_measured": false,
+  "evaluation_started": false
+}
