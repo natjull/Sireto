@@ -12465,3 +12465,68 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Dernier exactV101114/128=89,0625% INCHANGÉ. Ces builds ne montrent aucune
   hausse de recall et ne valident ni99,2%, ni latency, ni folds fermés.
   Aucunlabel/CRM/fold0/1/downstream lu, aucune dépense externe ni push.
+
+### V178/V179 — intégration adresse paginée et essai de coût prêts, source177 LIVE
+
+- Turn précédent classé PROGRESS : milestones176/177 et vrai PASS du plus
+  gros pack, pas une attente sans preuve. Ce turn : nouveau reader178 testé
+  et nouveau probe179 préparé/commité, progression177 revalidée en lecture.
+- Code178 `c442877a`, protocole `docs/retrieval_v178_paged_addresses_contract.md`.
+  PagedAddresses exige un SEALED177 complet et vrai parentexit de seal ET
+  chaque256phase, fullhash chaqueCSR, dtype/shape/boundary/counts/refs égaux
+  au seal, code/config/sources175/168/160 inchangés. Toutesvariants/postings
+  accessibles, mêmes coverage170/138 exactfloat64/counters, aucunequota.
+- Snapshot file-backed subclassAliasSnapshot147 : valide TOUS lesaliases
+  en chunks, même finite/[0,1]/exact=>1. Gathers copiés readonly, aucune
+  materialisation heap implicite. ReversePart147 inchangé conserve chaque
+  OWNnuméro/CP/INSEE/current/provenance ; pas de Frankenstein/sitefrères.
+- Test a révélé que mtime peut rester identique après modification d'une
+  page mmap déjàdirty. Correction AVANT mesure178 : propriété transférée à
+  un SnapshotVector readonly ; lease du producteur mutable révoqué. Hashs
+  des2vecteurs au scellement, snapshot.verify_after obligatoire AVANT
+  publication future des candidats après consommation desfacts. Le test
+  restaure exprès l'epoch après write : hash final refuse quand même.
+  Cleanup uniquement des2fichiers OWN réussis avec hash valide, jamais une
+  source/changé/STOP. Source/queryfailure invalide reader, pas de partial.
+- Tests178+147+158+17082PASS41,46s,6923 TERMINAL0. Run antérieur11241
+  82PASS40,41s avant ajout du fail-closed ;90084 23PASS2FAIL corrigés avant
+  mesure (nom de champ testalias_exact et réelle immutabilité dulease).
+  Toutesfixtures petites/fauxpressure-process, pas preuve nationale.
+- Code179 `a034d701`, protocole `docs/retrieval_v179_paged_addresses_contract.md`.
+  Sourcefixée : root177 compile_20261004_a/launch23c6dfa… +touscounts.
+  SHA du futur sealmanifest acquis au preflight et fixé danslaunch AVANT
+  worker, pas de changement de source ; aucune exécution avant complete177.
+  Premièrequery fixe du query-only115128 (hashc85c136…), toutes128 lignes
+  schémas/types/folds234/IDuniques validées avantprefix1. Aucun activityproof
+  ni label/oldhit suivi. Texte numéro+suffixe+voie identique125.
+- Probe179 snapshot +FULLgather34346446aliases+hashsvecteurs+cleanup dans
+  un TOTAL20s, init/fullCSRrehash inclus dans worker80s/1Gio. Sources et
+  actualchildexit0 vérifiés avant/après, pas de falsePASS sur PIDdisparu.
+  Aucun facts→sites/initial100 ni recall/SLO publié depuis ce composant.
+  Tests179+17845PASS36,27s,42698 TERMINAL0 ; run16316 43PASS2FAIL corrigés
+  avant mesure (clé recall_measured doublée avec PROTECTED). Pas d'élargissement
+  de budget, filtre dequery, retune de modèle ou projection de source.
+- Remaining34945 toujours LIVE re-pollé réellement, pas de second job lancé.
+  Vérification READ-ONLY95082 TERMINAL0 :180phases réellement phase_record
+  validées, pas un inventaire ;2201132601postings, channels0=64/1=64/2=52/3=0.
+  Actualparentexit/report/protection/hashes natifs sur CHAQUE phase sélectionnée.
+  MaxRSS861257728/max16,691870s/minfree74/p[1], aucunephaseSTOP àcet instant.
+  Audit lecture sousBudget153 :14,877360s/RSS582254592/min74/p[1]/global0/PASS.
+  Les autresphases restent NONcertifiées par ce point de contrôle.
+- Àreprendre : poll34945 jusqu'à état terminal. SiPASS, seal177 supervisé
+  réel et vérifier manifest+parentexit+report+hash ; pas de seal déclenché
+  ni manifest final177 annoncé dans ce turn. Puis seulement probe179 fresh
+  root probe_20261004_a, limite1Gio/80s/quiet30 ; préserver tout STOP et
+  versionner toute correction, pas de retry du même root.
+- Reader178/probe179 NATIONAUX encore NONmesurés. Pour initial100 : nouvel
+  adaptateurfullfacts160 via audits175/epochs, source structured139 paginée
+  et catalogue OWNmaps, noms170 en fichier +snapshotsadresse178 ; conserver
+  scores146/les30poidsgelés, vérifier snapshot.verify_after àla finavant
+  émission. Ne PAS utiliser directement factory158 connu incompatible
+  mémoire ni déclarer cap/sources/SLO validés par lesseuls testsfixtures.
+  Optimisation future exacte duNUM : dictionnaire source canonical147
+  (sans renormaliser lebook) vs querynormalisé, équivalence complète avec
+  comparaison string146 àprouver, aucune approximation/token/candidatecap.
+- Dernier recallV101114/128=89,0625% inchangé. Aucun objectif atteint,
+  noREADY ni fold0/1/GT/downstream ouvert. But99,2% exact humain avantaval,
+  sortie<=100 et fullOOF/Wilson/généralisation/SLO restent actifs. Aucunpush.
