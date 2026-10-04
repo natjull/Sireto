@@ -11591,3 +11591,80 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pas nouvelle métrique nationale. Goal toujours ACTIVE/non atteint. Ce tour
   PROGRESS : source nationale COMPLETE validée, construction suivante réelle
   vérifiée et lancée ; aucune réduction de l'objectif ni ouverture downstream.
+
+## 2026-10-04 — V158 raccordement initial100 ; V154 STOP réel, V159 correctif mesuré
+
+- Tour précédent PROGRESS (GLOBAL V157 complet, V154 réellement lancé).
+  Ce tour PROGRESS : raccordement testé, dictionnaire national complet,
+  STOP traité sans assouplissement, correctif réussi sur le vrai lot fautif.
+  L'objectif final reste ACTIVE/non atteint ; ne pas transformer ces étapes
+  de construction en preuve de recall/SLO.
+- Milestone V158 commit `b08661b3` : source factory explicite V134/V149/V139/
+  V154/V155, même collecteur V146 sur TOUS les sites, pas de pool fixe ni fit.
+  Chaque preuve d'adresse reste entière avec ses propres CP/INSEE/numéro/
+  current_exact. CSR remappé un intervalle à la fois, toutes les sources
+  hashées à l'ouverture/verification finale et epochs contrôlés entre les deux.
+  Un seul délai total nom+adresse+collecteur+epochs, pas trois budgets ;
+  chaque site et chaque fact doivent être parcourus avant publication.
+  Nettoyage uniquement des propres mappings. Aucun moteur NATIONAL V158
+  lancé : V150/V151 nom dense dépasse déjà1Gio, donc ce raccordement ne
+  résout PAS encore la mémoire et ne doit pas être lancé sans supervision.
+- Tests V15813 PASS14,31s ; suite V117–158527 PASS65,26s session50319
+  TERMINAL0 : chunk crossing, alias/proof/current cohérents, égalité au
+  scalaire, compteur exhaustif, source/corpus/query mismatches, snapshot
+  périmé, deadline totale, fermeture de generator et source drift STOP.
+  Names du fixture sont synthétiques et explicitement NON certificatifs.
+- V154 session17929 TERMINAL1. PID94007 disparu confirmé par ps, pas de
+  contrôleur restant de CE run. Les312 parts et64 dictionaries sont bonnes.
+  Staged GLOBAL SHA
+  `63e1644fb235dc2fe2cb56f24a82810f298efe72a13f01be0eaef01a50069c1e`,
+ 148075748 observations lexicales ; seal10,055s/RSS139231232/libre76/p1/global0.
+  Dictionary GLOBAL SHA
+  `8c33ad453cf54eb2e27d1a8c2ba430706f69900695b55dd8f43acadde5a7506e` :
+ 34346446 aliases entiers,98804872 facts,148075748 observations lexicales,
+ 317683879 observations originales ; seal2,257s/RSS388120576/libre76/p1/global0.
+  Ce dictionnaire est COMPLET, mais reverse_staged et manifest V154 ABSENTS.
+- STOP V154 reverse-stage0 : parent `STOP_RSS_OR_WALL_RESOURCE_POLICY`,
+  SHA `2e126f36d0ef1b56af71af4dbff7820d5bfc2606dda9b9c02da9ea2ad46748a8`.
+  Worker log vide, sortie non scellée, ancien staging partiel conservé.
+  Le superviseur ne publie PAS ici le pic RSS/temps précis du STOP : ne pas
+  inventer cette valeur. ~680 répertoires créés par COPY simultané, hypothèse
+  de mémoire des buffers d'écriture, pas une preuve d'attribution exclusive.
+  Aucun parent STOP/worker orphan n'est importé comme succès.
+- Milestone V159 commit `19db397c` : même schema/facts/site-parent joins/
+  contrôles V147, COPY borné à16 partitions physiques simultanées. TOUTES les
+  partitions sont écrites en groupes disjoints puis relues et comparées champ
+  par champ ; pas de cap de sites/aliases/preuves ni filtre candidat, IDs
+  seulement comme clés de partition/identité. Source originale V154/code/
+  kernels147/limites153 et STOP restent immuables.
+- Tests V1599 PASS2,11s : égalité de TOUS champs/provenances à l'ancien COPY
+  sur12001 facts129 partitions, groupes1/7/16, UNKNOWN et numéros9 digits
+  once-normalized, identités originales, vide, immutable outputs, group bound,
+  source dictionary réussie seulement (pas de stopped reverse outputs).
+  Suite V117–159536 PASS63,56s session36312 TERMINAL0, après le dernier edit.
+- Sonde V159 réelle session52542 TERMINAL0, root neuf
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v159_address_stage/probe_20261004_a`.
+  Launch SHA `b62ea5bd1d70ee0a2d4605a6caca7ca7b0ba9909cbe3a9dfcd3230087f93e4df` ;
+  manifest SHA `3883a019c0133ebfc9a2609867be06ec3287756888cae20c6b15fb26224d08c3`.
+  Même V154 dictionary bucket0 original,1564886 facts, namespace44403034,
+  source facts SHA `62797ba0e88483e87c8d1f127f6cba4a14d22e6ccbb5fa2b7e0bbe04e5811112`.
+  Tous les facts/champs/site-parent/provenances reconstruits,678 artifacts,
+ 43 COPYs <=16 partitions simultanées, aucun cap.
+  Worker2,331093s/RSS1004945408 (~958,4Mio)/min libre76%/pression[1]/global0/PASS.
+  Supervision propre exit0 confirmé3,109398s/RSS1001324544/min76/global0.
+  Même plafond1073741824 et80s, pas de waiver ni purge. Marge mémoire faible
+  (~65,6Mio), succès d'UNE phase ne prouve PAS toutes les autres ni un index.
+- Suite concrète : nouveau resume/version de reverse storage qui référence
+  EXPLICITEMENT le préfixe staged/dictionary V154 complet et ses certificats
+  d'origine, sans refaire312+64 ni adopter le reverse0 STOP. Appliquer le
+  writer grouping V159 à TOUS64 buckets, puis678 packs, seals exhaustifs ;
+  envisager groupe8 pour marge, sans changer faits/ressources (code déjà
+  mesuré V159 ne pas éditer en place). Raccorder EXPLICITEMENT ce nouveau
+  GLOBAL au compilateur lexical, puis rendre les snapshots de noms exacts
+  compatibles1Gio (sparse/file-backed, pas de troncature/corpus réduit).
+  Ensuite seulement sonde query-only complète avant sorties/scellement et
+  évaluation séparée OOF. Tout changement de backend doit être versionné et
+  testé ; ne jamais rebaptiser un GLOBAL ou interpréter les STOP comme bons.
+- Aucun nouveau recall initial100 : V101 reste114/128=89,0625% exact,
+ 116/128=90,625% opérationnel sur pilote réutilisé. Pas de READY/holdout,
+  downstream gelés, folds0/1 fermés, pas de GT/alias CRM/fit/dépense/push.
