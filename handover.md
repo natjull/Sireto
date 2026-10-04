@@ -12781,3 +12781,45 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   recall nouveau, exact V10189,0625% inchangé. Toutes128 sorties avant
   évaluateur séparé/fullOOF/Wilson/généralisation/SLO restent dus. Goal actif,
   Mac/CATNAT seuls, aucune dépense ni push. Ne pas déclarer READY.
+
+### V187 six phases réelles PASS, merge RSS STOP ; V188 correction avant mesure
+
+- V187 `462fb09b` désormais mesuré/immuable ; session84842 TERMINAL1, root
+  probe_20261004_a STOP conservé. Trois scores de TOUS44403034sites et
+ 98804872faits +trois FULLhash audits validés ORIGINALstage187/actualparent0/
+  report153/refs/epochs. Aucun initial100.json émis, aucun label ouvert.
+- score00054,181715s/RSS838516736/min79/p[1]/globalswap0 ; score001
+ 52,094890s/RSS926400512/min77/p1/global0 ; score00250,842548s/RSS945012736/
+  min76/p1/global0. Scores seuls26,280145/24,995608/24,107738s <30s, spans
+ 14811136+14811136+14780762sites et33480926+34319787+31004159faits complets,
+  signature commune80679905b25cc8f187fb2245af6a2769cb4c56866e804fb4406230f0e08537ce.
+  Collecteurs toujours QUARANTINED, pas sorties initiales ni recall.
+- Audits facts52891fichiers/6461635887octets32,478066s/RSS815349760/min77 ;
+  postings1832/1161244750819,827546s/RSS815529984/min77 ; context37/
+ 30350074508,652940s/RSS822067200/min76. Tous fullhash/parent0/reportPASS,
+  pression1/globalswap0 non attribué. Chaque packet18740410387octets environ,
+ 56436epochs capturés ; toutes receipts exactes, aucun hash retiré.
+- Merge187 RSS STOP confirmé : parentPID49661 actualexit-15,
+  failure8,214861s/wall8,237516s/RSS1079705600 (>1073741824)/min79/p1/global0.
+  Checkpoints : REQUIRE_AUDITS0,886831s/RSS301023232 ; VERIFY_PARTITIONS
+ 6,573186s/681607168 ; CHECK_COMPLETE_SOURCE_LEDGER7,506364s/834600960.
+  Backend177.load après réduction a déclenché le dépassement par coexistence
+  des copies de métadonnées/maps +registre93507epochs. Pas wall80STOP.
+- V188 isolé `4b35ff2d` AVANT mesure : réutilise uniquement les six phases
+  réussies187 aux hashes exacts config188, via originalstage187. Root187
+  reste STOP, mergeSTOP jamais suivi. Originalaudited_plan187 revalide tout.
+  Unionepochs UNEfois, libération des copies groups/packets, mêmes scores/
+  merge183, fermeture des mapsOWN avant ORIGINALbackend177.load complet
+  après réduction. gc Python seulement, pas purge ni application tierce.
+  Aucun contrôle/source supprimé, budgets1Gio/80s/quiet30 inchangés.
+- Tests188+187..158170PASS26,89s/session22152 TERMINAL0 ; corrections de
+  fixture minuscule avant mesure (deux spans vs3nationaux), pas nouveau
+  score. Tests ledgerfail propagé/mapsfermés/auditmanquant/no budgetélargi.
+  Prefix188 RÉELLEMENT accepte les six phases, 72 fichiersimplementation,
+ 73078 TERMINAL0. DiffcheckPASS. Prochaine action run188 fresh root
+  `audits/retrieval_v188_compact_merge/probe_20261004_a`, seul merge supervisé.
+  Pas encore lancé à ce jalon. Coût inclut108,169869s preuves184 +218,077705s
+  sixworkers187 +merge188 ; essaisSTOP historiques distincts, pas cachés.
+- Qualité non mesurée ; V101 exact89,0625% inchangé. Toutes128 sorties
+  avantGT séparée/fullOOF/Wilson/généralisation/SLO1s/2s dus, aval/fold0/1
+  gelés/fermés, pas READY/SOTA/garantie. Goal ACTIVE, sans dépense ni push.
