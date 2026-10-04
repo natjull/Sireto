@@ -13321,3 +13321,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   queryindépendants et orchestrationTOUTES128avantévaluateur séparé.
   GoalACTIVE, dernier89,0625%exact/90,625%opinchangé, fold0/1/GTfermés,
   aucune dépense/push/purge/autreappkill/sourcehistorique supprimée.
+
+### Comparaison indépendante V195/V196 — protocole figé avant mesure
+
+- Commit isolé `0d5cd6d5` : diagnostic, contrat et 11 tests PASS (0,79 s).
+  Il exige les deux générations nationales SEALED et leurs admissions réelles
+  avant de comparer candidats, scores, ordre et traces exacts des requêtes 0/1.
+  Les fichiers des générateurs et leurs sorties restent immuables.
+- Ce diagnostic déclare explicitement la lecture des anciennes prédictions
+  uniquement APRÈS génération. Aucun label, feature, rescue ou sélection de
+  variante ; aucune nouvelle métrique de recall. Rapport distinct sur CATNAT.
+- V196 est maintenant TERMINAL 0, statut SEALED. La comparaison indépendante
+  n'a pas encore été exécutée à ce jalon. Les 128 sorties et le recall restent
+  à produire ; aval gelé, folds 0/1 fermés, objectif 99,2 % non démontré.
