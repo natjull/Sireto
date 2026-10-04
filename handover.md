@@ -13374,3 +13374,55 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sans retirer de cible ou remplacer les FULL hashes par des stats. Chaque
   preuve propre à une requête doit rester contrôlée et liée aux producteurs.
   Ne pas multiplier 64 fois les audits de 35 Go sous prétexte de batching.
+
+### V197 — génération des 128 sorties, code figé AVANT lancement
+
+- Tour précédent PROGRESS : V196 national terminé, contrôle réel de parité
+  et ressources, commits `0d5cd6d5`/`0f79d937`/`2133370c`. Aucun job ancien
+  en cours. Nouveau commit isolé `cbef1439` : lanceur complet, capsule/audit,
+  configuration, contrat et tests. Aucun fichier mesuré V177–V196 modifié.
+- Population V192 ENTIEREMENT conservée : positions 0..127 une fois chacune,
+  64 paires physiques, propres vecteurs, preuves et heads OOF 2/3/4. Aucune
+  ancienne prédiction ou GT dans les inputs. Folds 0/1 fermés et aval gelé.
+- Même corpus et formule V196 : 44403034 sites, 98804872 faits, numéros,
+  noms/adresses actuels/historiques, preuves officielles parent/site/one-hop,
+  XY et fiabilité BAN, activité couplée aux preuves. Tous les établissements
+  restent accessibles, y compris fermés et géographie inconnue. Score V182,
+  réduction exacte V183 <=100, jamais re-score d'un réservoir fixe.
+- 384 phases de génération : noms/adresses et quatre spans par paire. La
+  première paire crée une capsule de TOUTES les sources externes, avec hashes
+  et epochs pré-lecture. Chaque scorer suivant exige l'ensemble externe exact,
+  les workers de preuves l'inclusion exacte de leurs références originales.
+  Lecteurs clos avant les allocations supplémentaires de métadonnées ;
+  nettoyage limité aux pages/scratch créés et détenus par le worker.
+- Tous les fichiers de preuves propres aux 128 clients restent dans l'audit
+  final, séparément des sources communes. Après TOUS les scorers : plan
+  source+preuves+partitions+contrôles+certificats, hashes FULL une seule fois
+  par référence, chunks physiques <=5 Gio/4096 fichiers. Aucun stat/sample
+  à la place du FULL hash. Toutes les receipts liées aux 384 vrais producteurs
+  sont nécessaires avant les 64 réductions ; ledger 93507 après toutes.
+  Admission finale reconstitue l'inventaire complet, y compris fichiers dérivés,
+  et refuse une omission même si un plan plus petit a été rehashé lui-même.
+- Tests initiaux 51 PASS/13,51 s ; suite étendue deux fois, dernier 235 PASS
+  en 75,55 s, session69183 TERMINAL0. Les petits fichiers, hashes et noyaux
+  natifs/oracles sont réels ; processus/pression/autorité nationale de ledger
+  sont explicitement SIMULÉS dans les fixtures, pas une certification réelle.
+  Tests full128, dernière paire126/127, folds et recettes propres, cap101,
+  source/epoch/hash/receipt/parent manquants, GT/folds contaminés, rescore,
+  omission d'une preuve dérivée et modification après merge. Compile/CLI/
+  diffcheck PASS. Aucun relâchement d'un budget pour obtenir un test vert.
+- Diagnostic read-only de l'INVENTAIRE de sources V196 (pas les candidats) :
+  56462 références, plus gros fichier702349216 octets, donc aucune cible
+  nationale existante >5 Gio. CATNAT libre651 Gio ; preuves conservées
+  attendues ~90 Gio plus métadonnées, pas un nouvel index par client.
+- Run prévu : `retrieval_v197_population_initial/run_20261004_a`, nouveau
+  scope CATNAT, non lancé à ce jalon. 1 worker mono-thread à la fois, politique
+  V153 inchangée1Gio/80s/score30/quiet30/p1/free>=50%, swap global non attribué.
+  Plusieurs heures prévues, avec pauses ; pas latence production/SLO validée.
+  STOP immuable, aucune reprise/retry élargi ni source historique supprimée.
+- Après 128 sorties réellement SEALED seulement : évaluateur séparé, mêmes
+  labels exploitables/absences/V2/V3/qualifications, exact/op séparés et
+  sidecar officiel scellé rapporté au catalogue actuel. Ne pas utiliser
+  l'ancien évaluateur Tantivy tel quel ni un ancien CATALOG_ABSENT comme
+  vérité du catalogue V141. Dernier recall89,0625% exact inchangé, objectif
+  99,2%/OOF complet/Wilson/généralisation/SLO toujours non prouvé. Goal ACTIVE.
