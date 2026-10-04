@@ -14073,3 +14073,47 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Sources/arithmétique restent complètes, tousfloat64/bool exacts,
   ROOT128SEALED avantlabels etdriver207 doit refuser206STOP. Dernier
  89,0625%exact inchangé, objectif99,2%/allhuman/généralisation/SLO nonprouvés.
+
+### V210 — priorité corrigée : nouvelle recette de retrieval, pas tampon RAM
+
+- Retour humain : deux jours de coût/tests sans nouvelle mesure qualité ne
+  répondent pas à la demande. Tour précédent NO PROGRESS vers le recall :
+  vérification/honnête restitution du statu quo, pas recette ni mesure nouvelle.
+  Ne pas poursuivre automatiquement la piste RAM parent suggérée après209.
+- Milestone local `0b411c2c` : expérimentation initial100 par quatre canaux
+  indépendants : texte natif, noms officiels entiers exacts/tous mots dans
+  MEMEvariante57530682 -> tous owners132, successions133 bidirectionnelles
+ 1hop sans fanoutcap, et TOUS sites dans rayon300m/BANfaible élargi.
+  Les noms de site restent site-local ; noms UL rejoignent leurs sites.
+  Native classe chaque canal ; rotation lazy/dédup émet directement100,
+  pas réservoir2000/500/100 puis re-score, pas scoreglobal/RRF certifié.
+  Cette allocation fixe est une HYPOTHESE non mesurée, peut perdre des hits.
+- Limite explicite : émission native sur43896818sites V38 et non tous
+ 44403034append. Les nouveaux noms peuvent rejoindre des sites natifs,
+  pas créer les absents ; aucune vérité absente ne sera exclue du recall.
+  Pas dense/BODACC/TUP exhaustif/activité114 nouvellement exécutés. V210
+  n'est PAS la solution finale ou substitution d'objectif ; test causal
+  des nouveaux canaux avant leur éventuelle intégration au corpus complet.
+- Suites15tests210+27population192 =42PASS/0,75s ; testinitial fixture
+  RetrievalQuery sansname corrigé AVANTmesure. Vrai Tantivy local vérifie
+  parent->toussites (fermés/nonlocaux inclus), site-name jamais sibling ;
+  fixtures graphe1hop/deuxsens/selflink, radius150sites sansnearest100,
+  BANfaible élargi/missingfallback, champs/hash/epochs et caps/doublons.
+  Pas données métier synthétiques ni tests présentés comme recall.
+  Inputpréflight réel128typed/folds234/geo128/native82772691documents,
+  indexmanifest/meta/inventory originaux vérifiés, truthFalse ; aucun label.
+- Avant mesure : probe210q24 dans fresh
+  `audits/retrieval_v210_structural_channels/probe_20261004_a` prévu ;
+  query choisie pour COSTSTOP206, pas sur son label/raté. Tous128 inputs
+  validés avant q24. Query20/worker80/1Gio/quiet30/p1/free>=50 inchangés,
+  swapglobalnonattribué. Vrais supervision164/exit0/PASS153 obligatoires.
+  Tous fichiers USED fullhash avant/après+epochs, readonly ; indexnatifs
+  inventory/meta seulement, pas FULLhashsegments, limite publiée. Code/
+  config/contrat mesurés resteront IMMUTABLES. Pas probe/GT à ce jalon.
+- Même probe émettant100 ne donne PAS autorisationGT ; generationALL128
+  et évaluateur séparé nouvelleversion encore requis après coût. Mean16<=4
+  conservé, pas hausse implicite. Aucun workerlive, STOP206 et208/209 intact,
+  dernier V101114/12889,0625% exact inchangé, pas READY/OOF/SLO ou objectif
+  atteint. Goal ACTIVE, aval/folds0/1 gelés, modifications utilisateur hors
+  volet préservées, pas push. Prochaine livraison visée : vraie mesure de
+  qualité et pertes, pas autres variantes de stockage si210n'apporte rien.
