@@ -18,6 +18,7 @@ import pyarrow.parquet as pq
 
 import scripts.compile_retrieval_v154_address_store as original
 from src.xgb_matcher.retrieval_address_access_v155 import STATUS,physical_plan,stage_addresses
+from src.xgb_matcher.retrieval_address_authority_v161 import STATUS as RESUMED_STORE,store as resumed_store,epochs as resumed_epochs
 from src.xgb_matcher.retrieval_packed_names_v134 import pack
 from src.xgb_matcher.retrieval_proof_bridge_v137 import PROTECTED
 from src.xgb_matcher.retrieval_memory_policy_v153 import Budget,quiet,LIMITS,POLICY,validate_report
@@ -40,6 +41,7 @@ def source_epochs(reference,m,d):
     global source audit outside the worker Budget on every physical slice.
     Only explicit address authorities are traversed, never arbitrary JSON.
     """
+    if m['status']==RESUMED_STORE:return resumed_epochs(reference,m,d)
     root=Path(reference['path']).parent;_,p=original.load(root)
     _,raw=original.projection_backend(p['source_projection']).load(Path(p['source_projection']['path']).parent)
     refs=[reference,p['source_projection'],m['catalog'],m['dictionary'],m['reverse_staged']]
@@ -63,6 +65,7 @@ def config():
 
 def store(reference,cfg):
     path=verify(reference);root=path.parent;m=json.loads(path.read_text())
+    if m['status']==RESUMED_STORE:return resumed_store(reference,cfg)
     validate_report(m['seal_resources'])
     if (path.resolve()!=(root/'manifest.json').resolve() or m['status']!=original.GLOBAL
         or any(m.get(k) is not False for k in PROTECTED) or m['complete_retrieval_index'] or m['ready_for_fold1']
@@ -123,6 +126,8 @@ def init(output,reference):
         source_audit_resources=budget.report(),source_epochs=epochs,
         full_source_hashes_at_init_and_seal_not_each_phase=True,**{k:False for k in PROTECTED}))
     paths=[Path(__file__),CONFIG,ROOT/'src/xgb_matcher/retrieval_address_access_v155.py',
+        ROOT/'src/xgb_matcher/retrieval_address_authority_v161.py',ROOT/'scripts/resume_retrieval_v160_reverse_store.py',
+        ROOT/'config/retrieval_v160_reverse_resume.json',ROOT/'src/xgb_matcher/retrieval_address_stage_v159.py',
         ROOT/'scripts/compile_retrieval_v154_address_store.py',ROOT/'scripts/compile_retrieval_v152_address_access.py',
         ROOT/'src/xgb_matcher/retrieval_memory_policy_v153.py',ROOT/'src/xgb_matcher/retrieval_supervisor_v157.py',
         ROOT/'src/xgb_matcher/retrieval_address_access_v152.py',*[ROOT/('src/xgb_matcher/'+s+'.py') for s in
