@@ -13630,3 +13630,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   query20/worker80/1Gio, aucun relâchement ni corpus réduit. Travail de
   métriques pures V200 commencé sans lecture de fichiers labels ; non
   mesuré/non commité à ce stade, adaptation d'évaluation reportée. GoalACTIVE.
+
+### V201 — relation1hop à workspace borné, commité avant probe q8
+
+- Commit isolé `691a79db` : helper201, probe/config/contrat et deux tests.
+  Seul changement du querykernel198 : one-hop V170 appelle des blocs
+  physiques min(chunk,131072), sans changer snapshots, liens, deux directions,
+  float64, grades/max, exact ou propagation. Tous les endpoints/observations
+  restent traités, pas cap de sources ni réservoir. RAMcounter198 inchangé.
+- 108PASS/12,55s (session58481 TERMINAL0) avec201 kernel/protocol+198+170 ;
+  amélioration de fixture ensuite36PASS/0,59s. 109 cas distincts au total.
+  Champs d'artefacts et tailles réelles, inventaire canonique : asymétrie
+  réelle V198 couverte. Tests négatifs de preuve rebindent l'enveloppe de
+  supervision SIMULÉE pour atteindre réellement les guards sémantiques,
+  pas seulement échouer par un ancien checksum externe.
+- Oracle indépendant V150/V138 pour tous vecteurs parent/site/relation/gather;
+  test entier131079endpoints ET131079observations, tous visités, deux sens,
+  dernier bloc incomplet et self-edge, float64 bit-exact. Processus/pression
+  des fixtures explicitement simulés. Compile/diffcheck PASS.
+- Nouvelle racine prévue `retrieval_v201_names_ram/probe_20261004_a`,
+  pas lancée à ce jalon. Query8 choisie sur STOP RSS, pas recall ; contrôle
+  préalable ALL128/vecteurs/heads/folds2/3/4 puis sources nationales ENTIERES
+  57530682aliases/44403034sites, FULLaudit séparé source+preuve/epochs.
+  Budget20s query/80s worker/1Gio/quiet30/p1/free>=50 inchangé, swap GLOBAL
+  non attribué. Pas GT, candidats, capsule ni fragments des STOP anciens.
+- Si PASS, génération entière128 fresh dans nouvelle version ; si STOP,
+  attribuer et conserver intact sans relâcher les limites. Aucun label ne
+  sera lu avant128SEALED, aucune métrique partielle ou nouveau99% annoncé.
+  Dernier89,0625%exact inchangé ; aval/folds0/1 fermés, goal ACTIVE.
