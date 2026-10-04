@@ -14780,6 +14780,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 
 ## 5 octobre2026 — V242 sans gain, preuves lexicales officielles V243/V244
 
+- Commit résultat `35437d08`, artefacts/hashes et appariement conservés.
 - V241/V242 terminaux : tous128/16 producteurs et deux évaluateurs réels
   exit0/PASS214. Exact120/128=93,75%,op121/128=94,53125%, gain NET zéro
   apparié vs230 : gains67/74/97, pertes42/44/121, exact ET opérationnel.
