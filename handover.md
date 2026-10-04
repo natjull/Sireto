@@ -14693,3 +14693,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   explicitementTRAIN après227scellé. Pas de candidats de vérité injectés
   dans recherche ni métrique, geos depuisBANCRM vérifiée,pas depuisGT.
   Tous64/parités/exits214 avant fit233 ; aucun retour aux pools2000/500.
+- Commit `9c719a09` : driver233 figé avant fit ; modèles écrits/hashés AVANT
+  contrôles OOF TRAIN, pas de sélection/réentraînement après contrôles.
+  Autorité serving MODELE-SEUL, sans ouvrir les rows232 contenant les labels
+  TRAIN. Métadonnées/sourceepochs/exit réel/bundle/projections préservés.
+-232 TERMINAL exit0 :64 observations,8 producteurs PASS214 et toutes les
+  parités natives217 trois heads validées. Rapport machine dans
+  `docs/retrieval_v232_results.json`, aucun nouveau recall national.
+  Suite233fit puis234initial128/235postseal, recette figée avant émission.
