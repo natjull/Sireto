@@ -12656,3 +12656,49 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   coût exploitable, protocole de toutes128 sorties avant labels séparés.
   FullOOF/Wilson/généralisation/SLO dus ; dernier recall89,0625% inchangé,
   aucun READY ni objectif accompli. Goal actif, Mac/CATNAT seuls.
+
+### V184 STOP de raccordement ; V185 nouveau run depuis les seules preuves réussies
+
+- V184 session59217 TERMINAL1, rootprobe_20261004_a conservé intégralement.
+  Code184 `50bf6675` et ses dépendances181/182/183 désormais mesurés,
+  immuables. Aucun score/candidat émis, aucun label ni recall ouvert.
+- Phase noms184 réellement validée par stage184/parent_exit/report/hashes :
+  64,527621s/RSS917094400 (~875Mio)/minfree73/pression[1]/PASS. Query noms
+  17,833776s +flattenTOUS44403034sites7,769673s ; fichiers readonly355224400
+  et44403162octets. Digestgather interleavechunks65536
+  00f0419fca81b69939c8fb5268b88e6fce89a2e6ed092035ffbc66bf8a6093fc :
+  format d'interleave dépend du chunk, PAS comparable au digest170524288.
+  Globalswap79892 pages TELEMETRIE partagée non attribuée, pas zéro annoncé.
+- Phase adresses184 réellement validée :43,642247s/RSS700317696/min78/p[1]/
+  globalswap0/PASS. Tous34346446aliases/98804872facts source181 certifiés ;
+  adresse5,107723s (lexical3,857018s), preuves retained274771696+34346574octets.
+  Spans complets :0..14811136/33480926facts ;14811136..29622272/34319787facts ;
+  29622272..44403034/31004159facts. Aucune exclusion ou quota de candidat.
+- score000184 STOP AVANT score : AttributeError RotatedKeys.remap manquante
+  en appelant rotate_keys170. Worker1,575290s/RSS746602496/min79/p[1]/global0,
+  report mémoire PASS mais actualexit1 confirmé : pas une phase admissible.
+  ParentPID41889 exit1/2,585904s, pas disparitionPID. Le root reste STOP,
+  jamais requalifié ni relancé. Pas de score001/002/merge184 exécuté.
+- V185 nouveau milestone `eaab9beb`, protocole AVANT mesure. Copie versionnée
+  du contrôle184, remap static170 explicitement raccordé ; aucun score/poids/
+  feature/source ou budget changé. Réutilise UNIQUEMENT phases noms/adresses
+  réussies via ORIGINAL stage184, vraie supervision/report/hash/epochs, même
+  config commune (seul outputroot diffère). Aucun candidat/scoreSTOP importé.
+- Prefix185 figé : launch184SHA
+  7b8e9e8dff56a9031cf432b7fc9ac1b9301e468e2421897d1107e0cf548e0f43 ;
+  nomsmanifestSHA170c0f735875d3b185563297c42317951f62f67aa9c937bec8490d8859b8f63d ;
+  adressemanifestSHA88a588aa674befbca06c20e46375626fa4559541eab9ec886c5848ae9fb9eeff.
+  Prefix_stage185 RÉELLEMENT accepté les deux phases avant lancement. Pas
+  d'audit du root184 comme succès global, pas de reprise de ses phases STOP.
+- Tests185+184+183+182+181+180+146+158122PASS27,37s54719 TERMINAL0, puis
+  après correction pré-mesure comparaison config outputroot, tests1857PASS
+  0,68s. Fixture réplique le vrai bug184 puis prouve rotation185/OWNcopies/
+  non-fermeture d'un map extérieur ; guards contre candidats/STOP/query/
+  source/hash différents. Prefix_control fake clairement, pas métrique.
+- Run185 fresh root `audits/retrieval_v185_staged_initial/probe_20261004_a`
+  réellement lancé session97909 LIVE au moment de ce jalon. Trois scoregroups
+  entiers puis merge, chacun V153/V1641Gio/80s/quiet30. Ne pas lancer de second
+  run ; poll97909 jusqu'à terminal, conserver/versionner chaque STOP.
+  Les temps finaux incluront les108,169869s workers de preuves184, pas
+  seulement l'assemblage185. Labels toujours fermés, dernière mesure exacte
+ 89,0625% inchangée. Une sortie nationale unique ne mesurera pas le recall.
