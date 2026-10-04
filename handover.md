@@ -14840,3 +14840,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fermés, quatre lignes de log de batch échoué NON réutilisées. Pas budget
   levé ni retry de ce root/langage.251TRAIN disjoint lancé ensuite sous214
   pour observer trois preuves nouvelles déjà gelées ; aucun128GT lu en251.
+
+- Diagnostic248 QUERY-ONLY, sans cible : query100 MAIRIE →31regex. Ce mot
+  figurait déjà dans STOP222 mais pas dans246. Commits `4861949c`256/257/258
+  et `b18ea438`259 gelés : exclure TOUS contextes STOP222, pas seul MAIRIE,
+  conserver textpaths originaux ; autres sigles entiers3..6 et ALLpartitions
+  restent uncapped. Nouveau langage déclaré, pas parité248 ni budget relevé.
+  Horssigle, ne pas recomposer les expressions217.88tests PASS, pas rappel.
+ 258 attend fin des jobs séquentiels251/252/254/255 ; aucun retry de248.
