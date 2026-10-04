@@ -11668,3 +11668,90 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun nouveau recall initial100 : V101 reste114/128=89,0625% exact,
  116/128=90,625% opérationnel sur pilote réutilisé. Pas de READY/holdout,
   downstream gelés, folds0/1 fermés, pas de GT/alias CRM/fit/dépense/push.
+
+## 2026-10-04 — V160 stockage national terminé ; V161 raccordement ; V155 INIT STOP
+
+- Tour précédent PROGRESS : vrai lot V159 réussi après STOP V154 ; ce tour
+  PROGRESS : reprise intégrale effectivement TERMINÉE, pas seulement une
+  sonde. Objectif99,2% exact initial100 toujours NON prouvé/goal ACTIVE.
+- Milestone V160 commit `e783a3ad` : audit indépendant des312 parts et64
+  dictionnaires V154 réussis à leur launch original, données/provenances/roles
+  et prefix complet vérifiés. Ancien reverse0 STOP et orphan conservés,
+  jamais importés. Nouveau root, V159 writer grouping8, natif pack147 intact,
+  mêmes limites1073741824/80s/pression1/libre>=50%, swap global télémétrie.
+  Toutes64 stages puis678 packs imposés, aucun cap de faits/noms/proofs/sites.
+  Pas de source/quasi-pool réduit, renommage de certificats, parent spread,
+  fit, alias CRM ou lecture des folds/labels.
+- Tests V16014 PASS4,36s, puis V117–160550 PASS73,82s session77322
+  TERMINAL0 : fixture source officielle intégrale à son échelle, prefix
+  missing/STOP/namespace/denominator/protected flags refusés, orphan inchangé,
+  every-site/fact reconstruction, tous phases, seal resource STOP, hot epochs
+  sans fullhash énorme par chunk, impossibilité de retry d'un partial/STOP.
+- INIT V160 session49409 TERMINAL0 : audit51,709s/RSS1030422528/min libre74/
+  pression[1]/global0/PASS. Launch SHA
+  `b49d27f186d43b493570a27593066faa64955c9cfd70534c4fc40537c7195150` ;
+  plan SHA `829a9e0cfd5608d07a0119459e5a5f046ab17a2421489847a44c47a7dd46d50a`.
+  Tous44403034 sites/34346446 aliases/98804872 facts/317683879 observations/
+  185993425 sources rows validés avant premier worker.
+- Stage0 V160 session9141 TERMINAL0 :1564886 facts,85 COPYs <=8 writers,
+  tous attributs/site-parent/provenances exacts, pas de cap ;2,600589s/
+  RSS1001848832/min75/pression1/global0/PASS. Supervision propre exit0 confirmé
+  3,116720s/RSS851066880/min75/global0. Manifest SHA
+  `711d486cec747b9106cc633d8c7ee2c1260021b99cbaf561599bac2a71552f9a`.
+- Remaining V160 session65272 réellement suivi puis TERMINAL0 :64 stages,
+  678 packs, seal staged SHA
+  `918cefc2439d48aee401020f4c090da5ed6306dd492bdb84fad2ba1609cdd11a`.
+  Every98804872 facts, toutes aliases34346446,8,055s/RSS162955264/min75/p1/
+  global0/PASS. Packs observés ~0,47–0,51s/~314Mo, derniers0,31–0,39s/~268Mo.
+  Toutes phases validées, pas d'extrapolation d'un microtest.
+- GLOBAL V160 réellement présent et relu par authority(), root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v160_reverse_resume/compile_20261004_a`.
+  SHA `885122063599572695e31bb24994149f4091be89c9b9d4d93c818ef97ffac096`,
+  18038962 octets. Tous44403034 sites/34346446 aliases/98804872 facts,
+  317683879 observations originales/148075748 lexicales,678 intervalles ;
+  stockage13003181709 octets incl prefix réutilisé. Final full prefix rehash/
+  audit61,752624s/RSS1050099712/min74/pression[1]/global0/PASS. Ancien STOP
+  importedFalse ; complete_retrieval_index/recall/READY False. Source complète
+  de stockage d'adresses, PAS encore un moteur ni un index lexical complet.
+- Milestone V161 commit `237e8e6a` : backend EXPLICITE V160 dans V155 avant
+  sa première mesure nationale. Aucun titre/source V160 rebaptiséV154, pas
+  de sondes V159/parts seules acceptées. Toutes sources originales, chaque
+  stage et chaque pack revalidés. Parent supervision exit0/own-child-confirmed,
+  limites/temps/RSS/free/counter requis pour chacun des64+678 succès ; worker
+  PASS seul n'est pas un exit parent prouvé. Les epoch refs incluent ces
+  supervision proofs. Native word/char3/char4/exact kernels152/134 inchangés.
+  CompleteAddressFacts158 et reader155 raccordés via ce backend.
+- Tests V161+V15532 PASS21,06s ; suite V117–161566 PASS86,25s session36182
+  TERMINAL0 : vrai pipeline de fixture V160→lexical→toutes facts→verification,
+  fullnamespace/sources/STOP/closed flags/probe/partial refusés, unconfirmed
+  exit/nonzero/bool exit/free49/RSS>1G/wall81/counter reset refusés. Supervision
+  fixture simulée, explicitement PAS une preuve de process/pression nationale.
+- Commit `a9da1724` clarifie le scope config V155 V154 OU V160 avant mesure ;
+  mêmes paramètres métiers/source/RSS/deadlines. Tests ciblés32 PASS19,75s
+  session42071 TERMINAL0 après cette seule modification de texte de scope.
+- INIT V155 réel session51198 TERMINAL1 : `STOP_RSS_OR_WALL_RESOURCE_POLICY`
+  via Budget153/KeyboardInterrupt pendant V161.store→V160.prefix→V154.projection
+  rehash d'un artifact original. Aucun output/launch V155 créé : confirmé
+  `/.../retrieval_v155_address_access/compile_20261004_a` ABSENT. Pas de worker
+  lexical ni index partiel ni recall à réinterpréter. Le pic/elapsed du STOP
+  n'a PAS été exporté par cet ancien INIT ; ne pas inventer quel seuil exact
+  a déclenché l'arrêt. V160 GLOBAL reste hash-identique complet. Ces scripts/
+  kernels/configs viennent désormais d'être mesurés : ne pas modifier en place.
+- Suite immédiate : versionner une INIT/source validation plus économe,
+  avec diagnostic de Budget persistant même en échec. Hypothèse mémoire à
+  vérifier : V161/V155 parsènt et retiennent les18Mo de manifest complet
+  avant l'audit prefix qui culminait déjà~1,03Gio. Réordonner/segmenter les
+  mêmes audits exhaustifs (pas les supprimer), sans hausse1Gio/80s/pression.
+  Ne pas refaire les64+678 ni la compilation V154 : tout le stockage V160
+  est validé. Nouveau root/protocole/versions, source originale et STOPs intacts.
+  Ensuite lexical whole aliases, puis snapshots de noms réellement compatibles
+  1Gio, source-bound direct100 query-only, seal et évaluation séparée OOF.
+- Réinspection QUERY-ONLY du précédent V151 cost_outputs (pas de labels) :
+  rotation source ne suffisait pas, RSS APRÈS rotation1,9389G/2,9580G/2,9695G/
+  2,9699G, coûts noms3,24575/3,35190/1,76781/1,07200s sur les4 anciens queries.
+  Cela confirme la nécessité de snapshots exacts paginés/sparse plutôt qu'un
+  simple compteur uint8. PAS un nouveau benchmark, pas un SLO ni recall.
+- Aucun run restant vivant de CE volet à publication (65272 exit0,51198 exit1,
+  tests42071 exit0). Ne pas relancer V155 à l'identique ni dupliquer un job.
+  V101 reste114/128=89,0625% exact116/128=90,625% op, pilote réutilisé ; objectif
+ 99,2% NON atteint, noREADY. Downstream et folds0/1 gelés, pas de dépense/push.
