@@ -13043,3 +13043,50 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  128sorties avantGTséparée/fullOOF/Wilson/généralisation/SLO/99,2% exact.
   Fold0/1/GTfermés, avalgelé, dernier89,0625%inchangé, GoalACTIVE, sansdépense/
   push/READY/garantie. Aucun127queries ignorées au futurmetric.
+
+### V193 pairnames nationale réellement SEALED — optimisation, pas recall
+
+- V193 `0c52e35f` désormais mesuré/immuable, session56344 TERMINAL0,
+  root `audits/retrieval_v193_names_pair/probe_20261004_a` SEALED réel.
+  admission193 revalidée aprèsrun (readonlyprocessTERMINAL0), deuxvrais
+  parent_exit0/resources153PASS/hashes/epochs/proofs. Aucun jobLIVEce turn.
+- RootmanifestSHAc9914ed68f29ecabd5eaccfcd2f7d765581316d27741638ce0ed7b0f6f11d759
+ 1742octets ; proofsmanifestSHA84d223e1583d3d3dec9d81d84478c65c4fa4df94a2733623b0db7ea485e46c98
+ 5992octets. Positions0/1 folds3/2,57530682aliases mêmesnames134/149,
+ 44403034sites PARquery/TOUSgatherés, aucuncandidate100/labelémis.
+- Namesworker65,869049s/RSS998178816 (~952Mio)/min80/p[1]/global0/PASS153.
+  Ouverture complète19,243328s (pic998178816 dèsavantquery0) ; Q0query
+ 17,524496s/flatten7,332348s, digestEXACT184
+ 00f0419fca81b69939c8fb5268b88e6fce89a2e6ed092035ffbc66bf8a6093fc.
+  Q1query13,789857s/flatten6,919261s, digest
+ 2012ed5fe9ddc06a0f4262d0c8712795d5e5adff36a838b2331977fc2e328038.
+  OWNrotation1024maps0,382180s puis0,109991s, paspurgesystème/autresapps ;
+  snapshotsOWNretained et scratchOWNintermédiaire supprimé parclosecomme184.
+  Sources/artefactsscellés historiques NONsupprimés, pasnettoyagegénéral.
+- Auditworker18,180674s/RSS563085312/min80/p1/global0/PASS : TOUS1703fichiers/
+ 14697081026octets FULLhash, epochavant/après et receipt exacttargets/files/
+  bytes/digest/sourceproofs attaché actualmanifestnames0. Pas de hash retiré.
+  Total84,049722s/2=42,024861s parqueryNOMS ycomprischargement/queries/flatten/
+  rotation/FULLafteraudit. Elapsed145,932833s inclutquiet60/parent. Baseline
+ 184noms64,527621s pourQ0seul ; moyenne193surQ0/Q1etcacheUNCONTROLLED,
+  ne PAS promettre réduction35% générale, prodfroid ou latenceretrieval42s.
+- Flagsrootconfirmés : truth/fold0/fold1/recall/initial100/SLO/READYFalse,
+  avalinchangé. Seulepreuve de noms, pas adresses/scoring/128sorties/recall.
+  Dernier114/12889,0625%exact/11690,625%opinchangé. GoalACTIVE, pasexternal
+  blockingcondition ; turnPROGRESSall128alignment192+2querynames193réelles.
+- Prochaine étape194 NOUVEAU protocole/code avantmesure : pairADDRESS0/1,
+  mêmes128typedownvector/ownfold, query125/BAN/XYaucuneréassignation. Ouvrir
+ 178/181UNEfois, snapshotde TOUS34346446aliases pourchaquequery, garder
+ 98804872faits/44403034sites certifiés et spans3complets ; epochpendant,
+  audit FULLaprès séparé deTOUS facts.used/CSR/authorities/sourceledger/
+  querycontrols et deuxsnapshotfiles, actualparents0/reports1Gio80s. Aucun
+  candidat admis avantaudit/score/réduction/loss-sidecar. ComparateurQ0
+ 184addresscoverages devraitêtrebitexact (ou nouveau digestphysicalcommun).
+ 194 noncréé dansce turn, pasrelanceSTOP/nouveau budget/corpuspluspetit.
+- Puisbatchscoring2queries, une PartitFacts parquery/cursor/coverages/head,
+  même182/183bitexact surTOUSsites et facts, scorephase<=80s/cap100direct,
+  pas Q0candidats/vecteur/featuresréemployés pourQ1. Éviter deuxcopiespacket
+ 40Mo+epochs24Mo en mémoire : stocker targets/epochscommuns unefois si nouveau
+  protocole d'audit équivalent prouvé, jamais targetsretirés. Tant full128
+  avantGTséparée/SLO/fullOOF/Wilson/généralisation nonpassés, pasobjectif
+  complet/READY/SOTA. Aucunspend/push/aval/GT/fold0/1 ouvert ce turn.
