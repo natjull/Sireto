@@ -13906,3 +13906,35 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ROOT128SEALED puis autorisation séparée complète, pas métrique partielle.
   Pas relance automatique, élargissement de budget, réemploi de STOP,
   réduction de population ou autre app arrêtée. Dernier89,0625%exact inchangé.
+
+### V207 — évaluateur séparé prêt, aucun label national ouvert
+
+- Commit `3343743f` : helper autorité207 lié206, nouveau driver deux
+  workers AUTHORITÉ puis MÉTRIQUES, config/contrat/deux suites. Noyau200
+  inchangé, autorité203 portée206 sans assouplissement. V206 mesurée pas
+  éditée. ConfiggenerationSHAe8a6499eb3bf4a358b460d77c200b1fd92d804aa45364cbbe5044cdf2f54908f.
+- Suite75PASS/63,25s, session64322 TERMINAL0 :18autorité207+29driver+28
+  noyau200. Quatre nouveaux cas worker/STOP ensuite, driver33PASS/0,76s,
+  79casdistincts au total. Tinyparquets/tous128IDs/bytes/hashes/epochs
+  réellement testés, autorité/pression/process et cardinalité23571 des
+  fixtures explicitement SIMULÉS, pas preuve nationale. Compile/diffPASS.
+- Driver refuse LIVE/STOP/fragment avant output ou target vérifié, puis
+  exige parentréel0/PASS153/hash d'autorisation avant le moindre fichierGT.
+  ALL128 et folds2/3/4 filtrés dans Arrow, champs absentsUNKNOWN, aucun
+  filtrequalification. Lookupexactpostseal dans toutcatalog141, ancienne
+  présence officielle séparée. Exact/op/V2/V3/Wilson/allhuman/absences,
+  cap100unique, target-sideofficiel scellé et FULLhash/epochs pré/post.
+  Scope opérationnel historique limité et fineattribution/SLO/fullOOF
+  nonprouvés explicitement publiés ; pilote nonREADY même100%.
+- Diagnostic réel sur ROOT206 encoreLIVE a refusé manifestfinalabsent,
+  evaluationroot crééFalse/targetreads[] ; exit0 de ce diagnostic seulement,
+  PAS worker d'autorisation national ni lecturelabels ou preuve de budget.
+  V207 pas lancé pour mesurer, aucune permission/metric nationale émise.
+- Pour mesurer APRÈS ROOT206 véritablement SEALED :
+  `.venv/bin/python -u -m scripts.evaluate_retrieval_v207_postseal run
+  --generation /Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v206_population_initial/run_20261004_a
+  --output /Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v207_postseal_evaluation/run_20261004_a`.
+  Supervisor153/164, worker80/RSS1Gio/quiet30/p1/free>=50, un thread,
+  swapglobalnonattribué inchangés, aucune dépense/purge. V206STOP => ne pas
+  lancer ni recycler, conserver GT fermées. Nouveaubackend exige nouveau
+  protocole avant mesure. Dernier89,0625%exact inchangé, objectifACTIVE.
