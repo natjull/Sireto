@@ -14288,3 +14288,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Nouveau évaluateur séparé à préparer pendant génération, GT seulement
   aprèsROOT128 complet. Corpus43,9M versus44,4Mappend publié, pasREADY/SLO,
   aucun fold0/1 ou modèle aval lu, Mac/CATNAT sans coût/push.
+
+### V215 — évaluateur séparé figé avant GT pendant génération214
+
+- Nouveau évaluateur/autorité215 pour ROOT214 COMPLET seulement ; actuel
+ 214session71703 confirméLIVE par handle,14queries produites/PASS214.
+  Première paire28,859s/RSS1668218880/pression1/free>=82/swapdelta0,
+  geo q0 :403sites dans300m et q1 :8548sites, aucun nearest100precut.
+ 14n'est PAS population évaluée ou recall : GT toujoursfermée.
+- Evaluateur215 : deux enfants autorité/métrique,2Gio/80/quiet30 et parent
+  exits réels. ALL64producers/128controls/hash/epochs requis AVANT labels.
+  Ledger/sidecar23571inchangés, sélection Arrow IDs128 ET folds234,
+  all-human exact/op séparés/UNKNOWN et noyau213. LookupGT seulementpostseal,
+  native43896818 versus disponible44403034, manque index versus manque
+  catalogue versus nonretrieved100 ; aucun label exclu ni équivalence floue.
+-102PASS/1,9s environ :215IO/autorité+213+214policy/population. Fixtures
+  mémoire/processus synthétiques déclarées ; pas national recall. Collision
+  nom de fonctionepochs et fixtureordreclose corrigés AVANT toute mesure215.
+  Pas nouvelle recette/scoring ou réglage selonGT, pas microbench.
+- Commit215 `2efef0a7` scellé avant lancement. Fresh
+  `retrieval_v215_postseal_evaluation/run_20261004_a` prévu UNIQUEMENT si
+ 214ROOT128scellé. Tout STOP bloquelabels/mesure ; code215 immuable après
+  mesure. Dernierrecall89,0625% inchangé, objectif99,2%entier, pasREADY/SLO,
+  fold0/1 et avalgelés. Modifications hors volet préservées, pas push.
