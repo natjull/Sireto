@@ -14716,3 +14716,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Les onze poids sont appliqués DIRECTEMENT dans les postings du mêmekernel217,
   pas de score aval. Cibles128 fermées jusqu'aux16 producteurs PASS214 et
   scellement complet ; GT TRAIN232 non lus par l'autorité de serving.
+
+## 5 octobre2026 — V235 régressif, nouvel accès officiel236/237
+
+- Commit `878b91e6` :234/235 TERMINAUX actualexit0,16 producteurs génération
+  et deux évaluateurs PASS214. Exact117/128=91,40625%,op118/128=92,1875%,
+  Wilsonlower85,265909%. Folds39/43,38/41,40/44. Même target_references
+  scellées que230, comparaison appariée : gains67/97, pertes39/42/62/76/118
+  exact ET opérationnel. Aucun mix oracle. Référence229/230120/128 conservée.
+  TRAIN meilleur sur les négatifs censurés n'a PAS prédit le gain national.
+-2341094,917263s wall/600,746680s workers/pic1993097216octets ; p95=6,481176s,
+  p99=8,866258s descriptifs/cache incontrôlé,SLO NON validés.235autorité
+  0,844815s/RSS175177728,métriques4,439982s/RSS995704832. Tous11 ratés présents
+  dans natif ET catalogue disponible, pas d'absence officielle alléguée.
+  Manifest234SHA51926659478ec71976bb0a092d560930992e223a96fc6766c4b21cef9bf0cc09,
+  report235SHA94552b710a93af5ebcfc2f11302da3667f9fb6696c1f53c79c6f1a754d58b9dc.
+- Commit `3ed744fb` :236kernel/237driver gelés, nouvel accès aux variantes
+  officielles entières contenues dans le texte CRM, via catalogue134 complet
+  EXACT seulement et propriétaires132/149. Full-query210 conservé. Pas de
+  dictionnaireCRM/alias issus du GT ni regex de sigles220/222 recyclée.
+  UL→SIREN,site→CE SIRET seulement. MAX preuve propriétaire, pas somme
+  des alias. Confiance singleton1/ncontenu, multiword1 ; successions demi.
+  Ancien head229 (place228) gelé, pas head233 régressif ni fit par requête.
+- Commit `abd744af` :238évaluateur distinct post237 intégral, même noyau
+  métrique218 et cibles234 protégées.85 tests source-role/algebra/autorité
+  et limites PASS, fixtures uniquement, pas preuve recall national.
+  Prochaine exécution237ALL128, labels fermés jusqu'à tous16exit0/PASS214.
+  Même2Gio/20squery/80sworker/quiet30 ; aucun cap propriétaire/pool intermédiaire,
+  aucune hausse de budget, aucun partiel STOP évalué. Puis238 et comparaison230.
+  Pas fullOOF/READY/SLO/généralisation ; fold0interdit/fold1fermé/aval gelé.
