@@ -14117,3 +14117,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   atteint. Goal ACTIVE, aval/folds0/1 gelés, modifications utilisateur hors
   volet préservées, pas push. Prochaine livraison visée : vraie mesure de
   qualité et pertes, pas autres variantes de stockage si210n'apporte rien.
+
+### V210 terminal : nouvelle recette exécutée, STOP au hash ; V211 cycle de vie
+
+- V210 code `0b411c2c`/pré-mesure `fd784e4b`, session69241 TERMINAL1.
+  Fresh `retrieval_v210_structural_channels/probe_20261004_a` conservé,
+  code/config/contrat/tests210 maintenant IMMUTABLES. Aucune GT ouverte.
+- Recherche q24 a réellement émis100 en10,077460458s : texte34places,
+  noms officiels33, successions33 ; consommations43/80/59, sans re-score
+  ni cap propriétaire.32aliases dont1exact,72faits,43UL/21sites ;63ancres,
+ 76observations,64endpoints liés1hop. BAN incompatible donc canalgeo absent,
+  pas fausse preuve de distance ni requête retirée. Ces100 NE SONT PAS
+  des hits validés ou un recall, et la recette reste non promue.
+- STOP pendant fullhashpostlecture : Budget153 `STOP_RSS_OR_WALL_RESOURCE_POLICY`,
+  après recherche et avantbatch/seal. Parent12345/exit1/confirmed, wall
+ 11,306207917s/samplepeak1065369600/free>=83/p1/globaldelta0/cleanupnull.
+  Parentpeak sous1Gio n'annule PAS la mesure RSS fatale propre du worker.
+  Pas de worker live, pas permission/évaluation ni fragment réutilisé.
+- Milestone `a7a46257` V211 corrige SEULEMENT fermeture de notre moteur Tantivy et connexion
+  DuckDB APRES recherche et AVANT fullhashpostlecture, plus rapport ressources
+  en cas de STOP et revalidation implémentations postlecture. Pas tamponRAM,
+  tri/quantification, nouveau score, autreapp ou cacheglobal touchés. Recette
+  métier210, originalepochs/FULLhashsources et tous budgets inchangés.
+ 44PASS/0,78s =15noyau210+2cycledeVie211+27population192. CycledeVie simulé
+  explicitement, pas preuve mémoire nationale. Vrais tests Tantivy petits.
+- Probe fresh211q24 prévu, code/config/contrat commités avant mesure ; son
+  succès éventuel restera COSTONLY sans permissionGT. Tous128 scellés avant
+  évaluation séparée toujours requis ; corpus natif43,9M/append non intégré
+  restent publiés, objectiffinal99,2% non diminué. Ancien recall V10189,0625%
+  inchangé, goalACTIVE, fold0/1 et aval gelés, pas push.
