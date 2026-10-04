@@ -12530,3 +12530,72 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Dernier recallV101114/128=89,0625% inchangé. Aucun objectif atteint,
   noREADY ni fold0/1/GT/downstream ouvert. But99,2% exact humain avantaval,
   sortie<=100 et fullOOF/Wilson/généralisation/SLO restent actifs. Aucunpush.
+
+### V177 fini/scellé ; V179 national adresse PASS ; V180 attributs exacts paginés
+
+- Turn précédent PROGRESS :178/179 code/test et180phases effectivement
+  validées. Ce turn PROGRESS : source177 terminée et scellée,179 national
+  réellement PASS,180 nouveau wrapper testé. Objectif PAS accompli.
+- Remaining34945 TERMINAL0, tous256manifests/aucunSTOP. Seal80590 TERMINAL0,
+  root177 compile_20261004_a inchangé. Sealworker vérifie réellement chaque
+  phase_record256 +hashs/dtypes/shapes/CSRoffsets/compteurs/epochs avant
+  émission, pas un inventaire. source34m entière/aucunequota ni corpusréduit.
+- Finalmanifest177 STATUS SEALED_V177_ALL_OFFICIAL_ADDRESS_CHANNEL_ACCESS,
+  SHA `15d8b1610af4944dbdf422a896bbb80139c7019328083a9d2e4ab108bfb0b6d4`,
+  431013octets ;34346446aliases/44403034sites/98804872facts/2440276150postings,
+ 35760239terms/11548627801octets (~11,55Go) sortie. Ce sont des tableaux
+  d'accès, pas des candidats ou des modèles. complete_retrieval_indexfalse.
+  Inventaire des reports256 : maxphaseRSS861257728/max19,041683s ; leur
+  actualparentexit/hashes sont réellement validés par le seal, pas seulement
+  déduits de ces reports. Code177 `e4a71ffb` inchangé après mesure.
+- Sealreport177 réellement validate_report accepté :22,957763s/
+  RSS722190336 (~689Mio)/min69/p[1]/global0/PASS. ParentPID37117 actualexit0
+  confirmé23,795759s/RSS659324928/min69/global0/pasPIDdisparu. parent_exit
+  seal accepté et freeze179 a accepté la même source complète/hash.
+- Probe179 session72062 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v179_paged_addresses/probe_20261004_a`.
+  Code `a034d701`, reader178 `c442877a` désormais MESURÉS et immuables.
+  LaunchSHA `d875c3f5d73abba29709943b06d1b408773686f0f1bb5d3049d81bf068054435`,
+  manifestSHA `1b7a300f96e61efa1cea4ddf32251186dc6bd3ffa72a9a04bcf909bb16a18e99`.
+  load179/parent_exit/validate_report/outputs verify réellement acceptés.
+- Premièrequery gelée115 fold3, ID NEWCRM:c9cd9a5957d416f8f982ddb511408265
+  (ID de trace seulement, pas feature). Load17,201614s/RSS498515968.
+  Lexical3,695814s : word4tokens5939075posts ; char3 20tokens65886647posts ;
+  char4 19tokens27578640posts. Tous les postings, aucuncap/filtregéographique.
+  Snapshottotal4,938022s inclut contrôles/validation/hashs, float64 inchangé,
+ 34346446aliases validés,26085141positive/1exact (pas un SIRET ni un HITGT).
+- Fullaliasgather34346446/positive26085141/exact1, digest
+  `61983e78481b0e88410a32ca7969124af6bcea328ee42bfe5c7eb8912a78c496`.
+  Snapshot+FULLgather+rehash2vecteurs+cleanup TOTAL5,332853s,309118270octets
+  scratch propres, aucun.npy restant réellement vérifié. Les2fichiers OWN
+  ont été enlevés après hash valide ; sources et artefacts STOP conservés.
+  Tous1024CSR arrays fullhashés avant/après, sources originales/epochs intacts.
+- Worker17940,014975s/RSS693698560 (~662Mio)/min72/p[1]/global0/PASS.
+  ParentPID37745 actualexit0 confirmé40,594549s/RSS682328064/min72/global0,
+  pasPIDdisparu. initial100/recall/completeindex/READYfalse. Cache disque
+  UNCONTROLLED : pas preuve froide ou latence globale du retrieval.
+- Code180 `d6b47e45`, protocole `docs/retrieval_v180_paged_attributes_contract.md`.
+  PagedStructuredSites appelle constructor/flags/coordinates139 INCHANGÉS,
+  capture epochs/refs/dtypes/shapes, impose outputs owningcopies puis
+  ferme/rouvre seulement ses OWNreadonlymaps effectivement lus. Pas purge,
+  cap, filtre, feature ou modèle modifié ; extras/NAF/XYUNKNOWN inchangés,
+  sitesfermés accessibles. verify_after fullhash10tableaux+métadonnées/
+  dictionnaires/labels officiels, toutefail invalide reader.
+- Tests180+139+14630PASS2,77s,84067 TERMINAL0 : toutesflags/XY bitexact139,
+  scores30features146 bitexact, unknowns/DOM/Corsica/nombrescompat Unicode,
+  sorties indépendantes/maps OWNseulement, epochinutilisé/indicesinvalides
+  refusés. Fixtures complètes tiny, pas mesure nationale180 ou preuveRSS.
+- AUCUN worker encoreLIVE de ces jobs :34945/80590/72062/84067 terminaux.
+  Ne pas les relancer. Source177 complète utilisable,179 querycost acquis.
+  Prochaine étape réelle vers recall : adapterfullfacts160 depuis les
+  autorités175/epochs (éviter leprefixfullraw monolithique161 dépassant
+  budget), même ReversePart147/Bound158 surtous678intervalles/98mfacts,
+  noms170/coords180/catalog OWNmaps, puis engineinitial100 complet versionné
+  et supervisé. Snapshot178.verify_after AVANT publication. Numérocanonical
+  via dictionary equality vectorisée seulement après paritéoracle146/147,
+  jamais renormaliser lebook source ni introduirealiasCRM/candidatpool.
+- Budget expérimental queryadresse20s PASS, mais4,94s de ce seul composant
+  et noms17017,2s seuls restent HORS SLO1s/2s. Gate qualité encore nonmesuré,
+  optimiser exactement ensuite, aucunepromesse99,2% depuis cette compilation.
+  Dernier recallV101114/128=89,0625% inchangé ; pas labels/GT/folds0/1 ni
+  downstream ouvert, nopush/spend. FullOOF/Wilson/généralisation restent dus.
