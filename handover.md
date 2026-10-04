@@ -13426,3 +13426,37 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   l'ancien évaluateur Tantivy tel quel ni un ancien CATALOG_ABSENT comme
   vérité du catalogue V141. Dernier recall89,0625% exact inchangé, objectif
   99,2%/OOF complet/Wilson/généralisation/SLO toujours non prouvé. Goal ACTIVE.
+
+### V197 — run complet réellement lancé, première paire PASS, toujours live
+
+- Code `cbef1439`, jalon pré-mesure `2a9874da`. Run fresh
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v197_population_initial/run_20261004_a`.
+  Session exec **48625**, re-pollée et CONFIRMÉE LIVE après les six premières
+  phases ; aucun statut STOP. Continuer ce même handle, ne jamais relancer
+  sur un timeout d'observation. Le contrôleur programme TOUTES les 128
+  positions puis audits, 64 merges et ledger ; ce n'est pas un nouveau pilote
+  réduit à deux clients. Source/code/config/contrat V197 maintenant mesurés :
+  IMMUTABLES. Une correction éventuelle exige une nouvelle version et racine.
+- Launch SHA `25b54fe946834abf708ac2565772b80a56f5b779e2e7d49c2f118f1114cfe555`,
+  29393 octets. Capsule `score000-000/source_capsule.json`, SHA
+  `c9e7114d98a3c1824a10f06b09409a2746faaa86b0225288a06925fa06f8165b`,
+  40409473 octets : **56487 sources externes ET 56487 epochs originaux**,
+  encore PENDING_FULL_HASH. Les fichiers de preuves dérivés sont distincts et
+  seront obligatoirement ajoutés au plan global, pas supprimés de l'audit.
+- Parents réels 0/PASS153 pour noms000 68,866084167 s/RSS1000259584,
+  adresses000 27,823744542 s/RSS740655104, puis scorers000-000..003
+  42,965530542 /42,762374042 /42,124728625 /40,569518417 s et
+  RSS946307072 /983416832 /980516864 /986234880. Tous <1Gio/<80s,
+  pression1, minimum libre79–80%, swapout global observé0/non attribué.
+  Le contrôle de l'égalité de l'ensemble externe à la capsule fonctionne
+  réellement pour les trois scorers suivants, pas seulement dans les tests.
+- Ces phases ne publient pas encore de recherche initiale : toutes les
+  sorties sont en quarantaine tant que les 128 calculs, FULL audits et ledger
+  ne sont pas terminés. Pas de GT, nouveau recall, READY ou SLO. Dernier
+  recall89,0625%exact/90,625%opinchangé. Run prévu plusieurs heures sous les
+  limites actuelles ; aucune hausse de budget, dépense, push ou source supprimée.
+- Prochaine reprise : même session48625 / logs de la phase réellement active.
+  Évaluateur V49 inspecté CODE seulement, pas les fichiers de labels ; son
+  hypothèse d'égalité avec l'ancien index Tantivy n'est pas réutilisable.
+  Préparer un adaptateur indépendant, puis labels seulement après SEALED128,
+  et audit de présence officielle au catalogue V141 actuel pour chaque perte.
