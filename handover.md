@@ -13870,3 +13870,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   aucune preuve205 réutilisée, mêmes limites et tous audits. Probeq4
   passé ne garantit pas autresqueries ; code/tests/protocole avant mesure.
   Dernier89,0625%exact inchangé, aval/folds0/1 gelés, labels fermés.
+
+### V206 — génération complète figée avant lancement
+
+- Commit `5a737346` : script/config/contrat/tests206, clone202 avec seul
+  lecteur FlagsOnlyNames205 pour TOUS128. Maximum170 inchangé, relations
+  201/compteur198 et toutes sources/poids/vecteurs/heads propres conservés.
+  Implementation89références inclut197/198/201/204/205 et nouveau206.
+  Aucun output/preuve/capsule205 ou fragment202STOP réutilisé.
+- Suite169PASS/52,87s, session6745 TERMINAL0 : protocole206, oracle205,
+  probe205, population197, métriques200. Tous384producteurs/128outputs/
+  512preuves, FULLhash et epochs tiny réels ; autorités/pression/process
+  des fixtures SIMULÉS, aucune lectureGT réelle. Compile/config/diffcheck
+  PASS. Budgets query20/flatten20/partition30/worker80/RSS1Gio inchangés.
+- Freshroot prévue `retrieval_v206_population_initial/run_20261004_a`.
+  CATNAT639Gio libre, plusieursheures possibles ; pas garantie que tous
+  noms/adresses/scorers passent malgré probeq4 positif. Mono-thread,
+  quiet30/p1/free>=50/globalnonattribué, aucune purge ni dépense externe.
+  384phases cost-first puis FULLaudit/64merges/ledger93507/ROOT128SEALED.
+- Aval/folds0/1 etGT gelés. Authority203 lié202STOP doit être adapté dans
+  un nouveau driver figé/supervisé avant lecturelabels ; métriques200
+  disponibles mais pas run d'évaluation connecté. Dernier89,0625%exact
+  inchangé ; objectif99,2%/allhuman/fullOOF/Wilson/généralisation/SLO
+  toujours nonprouvés, pilote réutilisé nonREADY, objectifACTIVE. Aucun push.
