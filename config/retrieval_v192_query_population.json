@@ -1,0 +1,16 @@
+{
+  "query_only_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v115_activity_initial/pilot_20261003_a/launch.json",
+    "sha256": "c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569"
+  },
+  "encoder_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/launch.json",
+    "sha256": "6fc2cb89b489e8038e6f211e0fac0a36954874e066e8a727558cfa01d9d90956"
+  },
+  "encoded_reference": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/expansions.json",
+    "sha256": "dabd6ff1e99fa0bb390109aad4e503f714185dd6b6ab46c66a178c062366279c"
+  },
+  "queries": 128,
+  "batch_width": 2
+}
