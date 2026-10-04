@@ -12823,3 +12823,33 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Qualité non mesurée ; V101 exact89,0625% inchangé. Toutes128 sorties
   avantGT séparée/fullOOF/Wilson/généralisation/SLO1s/2s dus, aval/fold0/1
   gelés/fermés, pas READY/SOTA/garantie. Goal ACTIVE, sans dépense ni push.
+
+### V188 vrai pic transitoire STOP ; V189 plan exact incrémental avant mesure
+
+- V188 `4b35ff2d` mesuré/immuable, session89918 TERMINAL1/rootSTOP conservé.
+  ParentPID50199 actualexit1/wall11,343380s confirmé ; reportworker153FAIL
+  wall10,568650s/ru_maxrss1154924544 (>1Gio)/min80/p1/global0. Parent sampling
+  peak1000259584 n'a PAS vu le pic transitoire, ne pas le prendre pour PASS.
+- Checkpoints188 réels : audits1,897707s/RSS341606400 ; catalog7,792930s/
+ 702234624 ; reduction9,005192s/765280256 ; ledger9,211457s/778977280 ;
+  final10,318042s/835928064. Réduction/ledger terminés mais Budget final
+  rejette vrai maximum transitoire. Aucun draft initial100188 admissible,
+  aucun résultat recall, aucun retry188 ni augmentation de budget.
+- V189 `dffabaa6` AVANT mesure : même188 sauf audited_plan lu incrémentalement
+  un packet à la fois, pas trois copies simultanées. Mêmes typed/protected
+  validations187/actualstage/report/parent/refs, plans/spans/counts/signatures,
+  canonical_epochs/references/require_receipts187 identiques. Même merge183
+  et originalbackend177.load après fermeturemaps. Aucun target/contrôle
+  retiré, score/source/candidat changé, mémoire système purgée ou aval touché.
+- Tests189stream+188+187audit+18371PASS3,06s/session90875 TERMINAL0 ; parité
+  DICTEXACT plans/receipts187 sur tinyfixture réelbytes, simulatedparents
+  explicites. Guards contre missing sites/pool/signature/epoch/GT/targets/
+  parent/receiptGroup. Suite188..158170PASS26,89s précédente toujours valable.
+  DiffcheckPASS. Read-only origin189 réel sixphases acceptées/all44403034/
+ 98804872, 73 fichiersimplementation ; root187 toujoursSTOP. Freshroot
+  `audits/retrieval_v189_stream_merge/probe_20261004_a` prévu, pas lancé au
+  moment de ce jalon ; seul mergeworker1Gio/80s/quiet30. Coût globalinclut
+  preuves184108,169869s +scores/audits187218,077705s +merge189, pas SLO.
+- Fold0/1/GT fermés et toutes128 sorties avant évaluation séparée ; dernière
+  mesure89,0625% inchangée, fullOOF/Wilson/généralisation/SLO toujours dus.
+  GoalACTIVE, Mac/CATNAT seuls, aucune dépense/push/READY/garantie.
