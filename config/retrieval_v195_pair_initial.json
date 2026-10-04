@@ -1,0 +1,62 @@
+{
+  "base_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v187_staged_initial.json",
+    "sha256": "75d76fff841b2b52241410b15a17d43ab40eb5cf733f05e9c49665a0b7e148d9",
+    "size_bytes": 2690
+  },
+  "population_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v192_query_population.json",
+    "sha256": "8920c805dea501bc81331a0d794e68f3fb82335aae1389b478a8475db75cf654",
+    "size_bytes": 742
+  },
+  "positions": [
+    0,
+    1
+  ],
+  "queries": 128,
+  "resources": {
+    "max_rss_bytes": 1073741824,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "quiet_seconds": 30,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v195_pair_initial",
+  "names_root": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v193_names_pair/probe_20261004_a/manifest.json",
+    "sha256": "c9914ed68f29ecabd5eaccfcd2f7d765581316d27741638ce0ed7b0f6f11d759",
+    "size_bytes": 1742
+  },
+  "addresses_root": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v194_addresses_pair/probe_20261004_a/manifest.json",
+    "sha256": "af59d9494f581e13673146edc3b5e49e4a38fd27b499f4ca5199257bb6377f43",
+    "size_bytes": 1762
+  },
+  "sites": 44403034,
+  "aliases": 34346446,
+  "facts": 98804872,
+  "partitions": 4,
+  "expected_spans": [
+    {
+      "start": 0,
+      "stop": 11141120,
+      "facts": 25049175
+    },
+    {
+      "start": 11141120,
+      "stop": 22282240,
+      "facts": 25956701
+    },
+    {
+      "start": 22282240,
+      "stop": 33357824,
+      "facts": 25357414
+    },
+    {
+      "start": 33357824,
+      "stop": 44403034,
+      "facts": 22441582
+    }
+  ]
+}
