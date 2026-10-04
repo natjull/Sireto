@@ -13460,3 +13460,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   hypothèse d'égalité avec l'ancien index Tantivy n'est pas réutilisable.
   Préparer un adaptateur indépendant, puis labels seulement après SEALED128,
   et audit de présence officielle au catalogue V141 actuel pour chaque perte.
+
+### V197 — STOP réel sur le coût de noms, sans ouverture des labels
+
+- Session48625 re-pollée : TERMINAL1, pas timeout d'observation. Douze phases
+  ont passé pour les quatre premières requêtes, puis names002 a échoué pour
+  la position4 : `STOP_PAGED_NAME_QUERY_COST` pendant `one_hop` V170. Le
+  contrôleur et le vrai parent confirment l'arrêt. Aucun run encore live,
+  aucune sortie initiale/GT/recall issue de ce scope partiel.
+- Le worker arrêté a duré40,893067041s, RSS1042300928 (<1Gio), pression1,
+  libre74%, swapout global0/PASS153 ; arrêt pour limite INTERNE de query,
+  pas limite mémoire/80s. Checkpoint avant query20,532220834s, puis timeout
+  au début des parcours de succession, sans snapshot retourné.
+- Correction documentaire importante : la configuration originale V187
+  impose `max_proof_query_seconds=20`, non30. Les docs/handover V197
+  mentionnaient30 par erreur ; le runtime a réellement conservé20. Les
+  30 secondes concernent le scoring de partition et quiet. Ne pas patcher
+  les contrats mesurés ni transformer20 en30 pour faire passer cette query.
+- Codes/racine/fragments V197 restent intacts et immuables. Pas de retry ni
+  admission de ses fragments. Évaluation reportée : il faut les 128 sorties
+  SEALED. Dernier89,0625%exact inchangé ; goalACTIVE, aval/folds0/1 fermés.
+- Prochaine action : optimisation physique exacte des compteurs lexicaux
+  V170 (petit uint8 RAM au lieu d'un fichier mmappé ouvert/fermé pour chaque
+  mise à jour). Même totalité des tokens/postings/aliases, max de variantes,
+  propriétaires et succession1hop, float64/bool ; pas filtre ni pool. Cap de
+  workspace RAM physique et fallback original pour dtype plus gros, sans
+  cap sur tokens. Tests indépendants bit-exacts puis probe q4 de coût sans
+  GT, temps de query20 et worker80 inchangés ; nouvelle version/racine avant
+  mesure, profiling par les checkpoints natifs pour attribuer le coût réel.
