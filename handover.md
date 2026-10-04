@@ -13114,8 +13114,53 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   1FAIL nomchampfixture geo_reliable corrigé enreliable_geo AVANT commit.
   Compile/diffcheckPASS, aucuneaugmentation1Gio/80s/quiet30/maxquery20s.
 - Prochaineaction réelle : freshroot retrieval_v194_addresses_pair/probe_20261004_a,
-  addressespuisfullaudit. Pas encore mesuré àcej alon. Aucun100/GT/recall/SLO
+  addressespuisfullaudit. Pas encore mesuré à ce jalon. Aucun100/GT/recall/SLO
   niREADY ; dernière mesure89,0625%exact inchangée. Fold0/1fermés, avalgelé,
   goalACTIVE. Après PASS : batchscoring propreownvector/fold, toutes128sorties
   avantévaluation séparée ; pas de candidat Q0 pour aider Q1 ni pool2000/500.
   Mac/CATNAT seulement, aucune dépense/push ni sourcehistorique supprimée.
+
+### V194 national paired addresses réellement SEALED — aucun recall nouveau
+
+- Code/config/protocole `4e2bf175` désormais mesurés : immuables. Run4446
+  TERMINAL0, freshroot CATNAT audits/retrieval_v194_addresses_pair/probe_20261004_a.
+  Admission194 revalidée en lecture seule aprèsrun, session69170 TERMINAL0 :
+  actualparents0/rapports153/receipt/epochs/fullsource177/proofs/parité PASS.
+- RootmanifestSHA af59d9494f581e13673146edc3b5e49e4a38fd27b499f4ca5199257bb6377f43,
+  1762octets ; proofsSHA45ee3c67b1af8d1866edf4a66c4fff7e19f67633a42fa17d45f7545f48cd7755,
+  5819octets. Paire0/1 folds3/2, mêmes34346446aliases/44403034sites/
+  98804872facts PARquery, spans3complets. Q0coverage/exactSHA BITEXACT184.
+  Q1coverageSHA7c314d0024a2af752caae0394df13818ae11927d79f8f26eaf439b2a87ad2ae5 ;
+  exactSHA0ddbf9d82954afee6154e5166c7aeb2932e0cbeea9b9b0206f0620c5bc699bc8.
+  Propres CRM/BAN/XY/fiabilité contrôlés sans candidats/labels/IDfeatures.
+- Workeraddresses35,14097295794636s, RSS716488704 (~683Mio), min78/p1/
+  globalswap0/PASS. AvantQ0 sourceouverte20,39961358s ; Q0query5,35771079s,
+  Q1query5,28016037s. Fermeture uniquement des maps propres, quatrepreuves
+  conservées, aucun fichier/sourcehistorique supprimé.
+- Workeraudit45,095383167266846s, RSS794918912 (~758Mio), min78/p1/
+  globalswap0/PASS. TOUS54739fichiers/18695094676octets FULLhash vérifiés
+  aprèslesdeuxqueries, exacttargets/files/bytes/digest/epochs et autorité177
+  ledger93507 avant/après. Tousfacts.used181, CSR/autorités/plans/ledger/
+  impl/catalogue/contrôlesquery/vecteurs/geo/models/decoderparams et snapshots.
+  Aucun hash remplacé parstat, aucune suppression de cible ni de provenance.
+- Totalworkers80,2363561252132s, moyenne40,1181780626066s PARqueryADRESSES
+  auditcomplet partagé inclus ; elapsed143,99167550029233s inclutquiet60/
+  parent. Cette moyenne n'est PAS latence retrieval ni SLO, cacheincontrôlé,
+  et ne mesurepas un gain99%. Noms193 et adresses194 seuls ne scorentpas100.
+- Tests supplémentaires sources177/178/181/182 et mémoire153105PASS45,92s,
+  session74268 TERMINAL0. Avecsuite194+193+192+191+190+187+183157PASS3,13s
+  déjàdocumentée. AucunjobLIVEremaining, pasrelancer194/anciensSTOP.
+- Suivant195, nouveau protocole/code AVANT mesure : scoringpaire0/1 pour
+  chaque3spanphysique, mêmes sources complètes et30features182/183, ownvector/
+  ownhead192 (NE PAS187.activity qui prendvectors[:1]). Sourcesunefois par
+  worker, propres flatnames193/adressessnap194/PartitionFacts cursor/query ;
+  cap100local exact puisréductionidentiquedes3spans, PASpool fixe/reranker.
+  OuvrirRotatedKeys AVANT grossemetadata comme191. Capturer targets/epochs
+  communsUNEfois/ref-backed pour éviterdeuxcopies40Mo, sans enleverunhash ;
+  auditcomplet aprèsscoring et ledgeraprèsmerge toujoursrequis avantadmission.
+  Testerchargepaire<=1Gio/80s/maxscore30s sansnouveaubudget, puistoutes128
+  sorties scellées avantévaluationGT séparée. 195 noncréé àcej alon.
+- GoalACTIVE, dernierrecall114/128=89,0625%exact et116/128=90,625%opinchangé.
+  Pas recallnouveau/READY/SOTA/SLO/99%garanti ; fold0/1/GTfermés et avalgelé.
+  FullOOF/Wilson/généralisation/label-sidecar restent dus ; Mac/CATNAT seuls,
+  aucune dépense/push/purge/autreappkill ni changementdesmodèlesaval.
