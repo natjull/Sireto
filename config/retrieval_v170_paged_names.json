@@ -1,0 +1,17 @@
+{
+  "names": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v134_packed_names/compile_20261003_a/manifest.json", "sha256": "ea55dc0564ffaff56f62af0c6bb1822a81e7d91274e9e7c729b275933df22b52"},
+  "joins": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v149_name_rebind/compile_20261003_a/manifest.json", "sha256": "1d9457e3237618564319b36af3bc8346476e52827d4a95f24c60eaf11a4d6270"},
+  "query_only_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v115_activity_initial/pilot_20261003_a/launch.json", "sha256": "c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569"},
+  "queries": 1,
+  "max_query_seconds": 20,
+  "chunk": 524288,
+  "resources": {"max_seconds": 80, "max_rss_bytes": 1073741824, "min_system_free_percent": 50, "required_pressure_level": 1, "global_swap_blocking": false},
+  "numpy_version": "2.4.1",
+  "duckdb_version": "1.4.3",
+  "quiet_seconds": 30,
+  "min_system_free_percent": 50,
+  "max_quiet_wait_seconds": 55,
+  "max_query_disk_bytes": 3221225472,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v170_paged_names",
+  "scope": "ALL_OFFICIAL_NAME_ALIAS_OWNER_PATCH_AND_ONE_HOP_PROOFS_FLOAT64_PAGED_V170_NO_POOL_NO_LABEL"
+}
