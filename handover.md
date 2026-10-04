@@ -12221,3 +12221,98 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   de fichiers sparse coûteux, hypothèse à mesurer (pas causalité garantie).
   Optimiser les pages propres/cohérentes, pas réduire les preuves/candidats.
   Labels/folds0/1/aval fermés ; aucun push/dépense externe.
+
+### V171–174 — coût exact, compilation des576parts terminée
+
+- Milestone code V171 `0b7c3cc5` : mêmes tableaux propres float64/bool,
+  mêmes dimensions/sources/owners/patches/relations, zéro séquentiel avant
+  updates random, miseàzéro incluse dans queryguard20s. Delta171/17088PASS
+  14,48s, pas une assertion de fullsuite171. Aucune quota/cap métier.
+- Probe171 session20080 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v171_paged_names/probe_20261004_a`.
+  ManifestSHA `33aa376c30afc896673a3453f180e3b1450f69e23a66eef67db5b2465590ca4e`.
+  validate_report et parent_exit réellement acceptés ; worker57,530077s,
+  RSS999325696/minfree75/pression[1]/PASS, parentPID97165 actualexit0 confirmé
+  58,301936s/RSS750977024. Global swap1872pages, NON attribué au worker,
+  non bloquant153 ; aucun purge/autreprocess tué. Load20,794070s.
+- Query17117,684907s vs17017,197419s ; lexical4,723213/scatter10,637254/
+  relation2,183420. Pas de gain total constaté : ne pas retenir171 comme
+  optimisation de vitesse ni attribuer causalement les différences à une
+  seule opération. Gather44403034sites1,005015s, entier réellement comparé
+  à170 : mêmes sites9128294nonzero/2exact et digest
+  `3927c45d5d912c01ab3e9967aa9c4f104b4fd1544f0796f27137a635edbe4f73`.
+  Code171 mesuré désormais immuable. Aucun INITIAL100/recall national.
+- Milestone V172 `695982f0` : calcul direct EXACT de chaque whole-alias
+  feature_text déjà certifié166/168, mots avec frontières et char3/4 underscores,
+  tokensDISTINCT/max fractionsfloat64/exact nonvide. IDs uniquement joins,
+  namespace ordonné unique/nullrefusé, pas d'alias/candidat cap ni nouveau
+  normaliseur. Oracle indépendant TOUS les postings du lot par4lecteurs,
+  compteurs sommés AVANT division, chaque float/bool comparé. SourcesfullINIT
+  V168/V163 et PASSpart49 stricts, chaque artifact fullhash avant/après.
+- Probe172 session63798 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v172_direct_alias/probe_20261004_a`.
+  ManifestSHA `f52580f13519961beebff0694887195fc14ae1691dab5680bcb771d4f900fd53`.
+  65536aliases/4260552postings entiers, same premièrequeryV115/rue/fold3,
+  49496positive/0exact, chaque score bitexact àoracle. Digest
+  `d7cb00dd502f969b3e1c74b36499b752a9df20bbc7bc112c855a350adbf0aaeb`.
+  Direct0,460077s/oracle0,071772s ; premierdirect potentiellement startup,
+  ne pas comparer ce différentiel comme causalité pure d'algorithme.
+  Worker2,535987s/RSS439664640/min76/pression[1]/global0/PASS ; parentPID2492
+  actualexit0 confirmé3,104232s/RSS439664640, parent_exit réellement accepté.
+  30tests172PASS1,19s ; fixtures/fauxpression, pas coût national/SLO/recall.
+- Milestone V173 `182e5d1b` : même kernel172 exécuté trois fois sur même lot
+  et query, tous les timings publiés, chaque vecteur égal aux répétitions et
+  oracle exhaustif. Session41974 TERMINAL0 ; direct0,457680/0,434053/0,436261s
+  contreoracle0,069171s. Aucun gain chaud substantiel constaté, ne pas retenir
+  list_transform direct comme accélération du natif. Cache disque non contrôlé,
+  startup/caches non causalement isolés. Même65536aliases/4260552postings,
+  49496positive/0exact/digest172. Worker3,372898s/RSS439009280/min76/p[1]/
+  global0/PASS. ManifestSHA
+  `db3a1cd74e5a3189601dd7f6d3af4852142578d513faf3d03558a15159af0520`,
+  parent_exit réellement accepté : PID4895 actualexit0 confirmé4,140747s/
+  RSS439009280/min75/global0. Delta172/17349PASS1,57s, pas une fullsuite.
+- Milestone V174 `f241e27c` : remplace les listes par colonnescompact/padded
+  puis sommescontains vectorisées, groupes physiques32expressions, TOUS les
+  tokens consommés/additionnés avant division. Aucune réduction du texte,
+  dimension, alias, proof ou candidat ; exact/cov identiques scalar/172 et
+  oraclepostings dans fixtures, ycompris300mots (>32tokens). Temp table own
+  détruite avant sortie. Delta172/173/17479PASS2,08s, pas fullsuite174.
+  Même protocole trois timings/sourcepart49 complet/1Gio80s/pression153,
+  root174 fresh, session24471 TERMINAL0. Manifest+supervision/trueexit0
+  réellement contrôlés ci-dessous ; codes172/173/174 mesurés immuables.
+- Adresse168 remaining-parts14381 désormais TERMINAL0 réellement confirmé,
+  ne pas relancer. Inventaire527ownmanifests49..575 +49imports1660..48 =
+  576parts présents, aucun worker_stop/status/supervisor_stop dansparts.
+  Inventaire et exit du contrôleur ne sont PAS encore une certification
+  exhaustive finale de chaquepart/hashes/counts, ni un staging/access seal.
+  Pas de lancement automatique du seal_parts monolithique ou256packs qui
+  rehashent tous les fichiers àchaquepack. Prochain travail utile : certificat
+  complet par batches physiques sous1Gio, sources réauditées au seal, puis
+  mesurer voie d'adresse qui conserve TOUS les alias/facts et mêmesfeatures.
+  Si174 performant surlot, cela ne prouve PAS coût national ; mesurer corpus
+  complet avant usage. Sinon terminer l'accès lexical paginé exact natif.
+- Dernier recall exact V101114/128=89,0625% toujours inchangé ; aucune sortie
+  INITIAL100 nationale complète,99,2% NON atteint, noREADY. Folds0/1 et GT
+  génération/ancienscandidats/aval fermés. Aucun push/dépense externe.
+
+#### Mesure174 effectivement terminée, pas un temps national
+
+- Root `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v174_direct_alias/probe_20261004_a`.
+  ManifestSHA `73de32211d8eba05149fb0591069b9f0660862777abcf725c63e6e3f06ba7b16`
+  réellement obtenu par record(). Chaque65536alias,49496positive/0exact, digest172/173 identique,
+  oracle4260552postings complet. Trois groupes d'expressions, pas un token cap.
+- Direct0,124232/0,096051/0,096426s vs1730,457680/0,434053/0,436261s,
+  gain constaté sur CE lot (~4,5x àchaud), même fullfloat/bool/proofs exacts.
+  Oracle1740,066136s reste plus rapide ; aucun verdict universal/national/SLO.
+  Cache disque inconnu, ne pas convertir ces chiffres en temps national promis.
+- Worker2,164987s/RSS438681600 (~418Mio)/min76/p[1]/global0/PASS.
+  parent_exit+validate_report réellement acceptés : PID5685 actualexit0
+  confirmé2,574186s/RSS418758656/min76/global0, sans PID disparu.
+  Aucun candidat/SIRET100, label/recall ou downstream produit par ce test.
+- Prochaine action : certifier exhaustivement les576parts en phases bornées
+  plutôt qu'un seal monolithique risquant80s, avec sourcefullrehash final.
+  V174 permet éventuellement une voie qualité exacte AVANT256packs natifs,
+  mais ne la lancer que surTOUS les34mwholealiases et98mfacts, champsCP/INSEE/
+  NUM/current/scope/provenance/ownXYinchangés. Mesurer le snapshot national
+  entier sous1Gio, puis brancher initial100158 en nouvelle version. Aucun
+  recours àun corpus/candidat pool filtré ou àun résultat LambdaMART.
