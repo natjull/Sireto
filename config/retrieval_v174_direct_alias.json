@@ -1,0 +1,14 @@
+{
+  "source_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v168_address_access/compile_20261004_a/launch.json", "sha256": "6c001857967b2e05ca8bdab05769bc6a5215549b5d0218e49ce45fa75b2b9797"},
+  "part_manifest": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v168_address_access/compile_20261004_a/parts/part00049/manifest.json", "sha256": "d9774e5e2257754e22c714f2b61f7331532553310cec74aded78ecd7a20dd8a0"},
+  "part": 49,
+  "query_only_launch": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v115_activity_initial/pilot_20261003_a/launch.json", "sha256": "c85c1368a0e4565725d5c0aa384b9bb4424b9d334431eff810317ed9691bf569"},
+  "resources": {"max_seconds": 80, "max_rss_bytes": 1073741824, "min_system_free_percent": 50, "required_pressure_level": 1, "global_swap_blocking": false},
+  "duckdb_version": "1.4.3",
+  "numpy_version": "2.4.1",
+  "duckdb_memory": "256MiB",
+  "spill_limit": "3GiB",
+  "quiet_seconds": 30,
+  "repetitions": 3,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v174_direct_alias"
+}
