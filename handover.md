@@ -14833,3 +14833,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Gen1123,986382s/631,118363sworkers/pic2059812864 sous214 inchangé.
   Référence229 conservée, source243 non promue.248 lancé ensuite query-only,
   pas réutilisation STOP222 ni GT ouvertes avant128complet.
+
+- Commit `0ea4c20e` :248 TERMINAL controller1 après96 admises, batch012
+  STOP RSS2173698048>2147483648, ownchildexit-15 confirmé, pression1/free>=75,
+  delta global0 nonattribué. Aucun recall mesuré,249 NON lancé, labels
+  fermés, quatre lignes de log de batch échoué NON réutilisées. Pas budget
+  levé ni retry de ce root/langage.251TRAIN disjoint lancé ensuite sous214
+  pour observer trois preuves nouvelles déjà gelées ; aucun128GT lu en251.
