@@ -11805,3 +11805,46 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   régression V117–163 session26551 en cours avant mesure nationale. Fixtures
   superviseur/pression simulées, PAS des RSS/latences nationales. Nouvelle
   mesure V163 non lancée à cette note. Recall exact V101114/128 toujours.
+
+## 2026-10-04 — INIT V163 complète, lexical0 STOP, sonde V164
+
+- Régression V117–163600 PASS99,34s session26551 TERMINAL0.
+- INIT V163 national session55908 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v163_address_access/compile_20261004_a`.
+  Source GLOBAL160 hash885122...fc096 inchangé. Launch19210 octets SHA
+  `7b83de5453cc03fd3fdf7ed9d5d9bfc4f4579e394f2c2b13e194207eeead375f` ;
+  plan25223450 octets SHA
+  `b6374295bb622de37c985c6d656d98a48be57732df70ca0edcc93c89a460f3d0`.
+  Tous34346446 aliases/44403034 sites/98804872 facts et sources originales
+  validés,576 tranches lexicales physiques (pas des candidats).
+- Prefix full audit47,030057s/RSS1034289152/minfree74/pression[1]/global0/PASS,
+  parent exit0 confirmé47,705033s/RSS1026080768. Cert510290 octets SHA
+  `3e613d166807a7be24c75282fccc6d2f442c15acfc8af8617b8d9b883be8ff54`.
+- Reverse full audit46,654742s/RSS285097984/minfree74/pression[1]/global0/PASS,
+  parent exit0 confirmé47,338348s/RSS285097984. Cert25221954 octets SHA
+  `d6358448687884347a42f0a20805427afbb3609b888cbbf378120870021567c6`.
+  Chaque enfant sous80s/1Gio : les mêmes audits sont réellement achevés,
+  aucun STOP ancien requalifié. Pas encore un index lexical complet.
+- Lexical phase0 V163 session69494 TERMINAL1 : parent157
+  `STOP_RSS_OR_WALL_RESOURCE_POLICY`, status SHA
+  `2e126f36d0ef1b56af71af4dbff7820d5bfc2606dda9b9c02da9ea2ad46748a8`.
+  features et staging partiels présents, manifest/supervision PASS absents.
+  Ni import ni retry de cette phase, pas de remaining/full index lancé.
+  Ancien superviseur157 ne conserve pas pic/temps en échec : ne pas inventer
+  lequel des seuils RSS ou temps a déclenché cet arrêt. V163 mesuré immuable.
+- Milestone commit `14759937` : prototype164 borne à8 les writers COPY
+  lexicaux physiques, parcourt TOUS les64 buckets, mêmes normalisation,
+  word/char3/char4/exact, toutes aliases/postings et preuves scalaires/export
+  natives131/152. APPEND vers partitions disjointes, pas d'overwrite ni de
+  cap candidat. Hypothèse de moindre pic mémoire, PAS encore une preuve réelle.
+- V164 superviseur garde mêmes limites153 et race-safe wait propre157,
+  mais conserve STOP/peak/elapsed/last actual sample même en échec ; pas de
+  succès déduit d'un PID absent, aucune terminaison d'autre application.
+- Tests ciblés164+163+15738 PASS13,35s session55563 TERMINAL0. Égalité complète
+  ancienne/nouvelle table de postings et features, groupes1/3/8, guarded
+  empty/features, scopes/STOP/own exit/pression/RSS/sonde bout-en-bout en fixture.
+  Fixtures minuscules/supervision simulée, PAS des métriques nationales.
+- Sonde164 doit utiliser le source launch V163 complet et sa tranche0 originale,
+  JAMAIS les artifacts de sa phase STOP ; pas besoin de refaire les audits
+  réussis pour ce microcoût. Sonde non lancée à cette note. Recall V101114/128
+  toujours, objectif99,2% non atteint ; downstream/folds0/1 fermés, pas de push.
