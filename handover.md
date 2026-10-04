@@ -14224,3 +14224,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   une NOUVELLEautorisation/config/contrat, PAS modification212/153 ni baisse
   de l'objectif ou validation des SLO. Aucune hausse ou relance autorisée
   à ce jalon. Attendre décision explicite, objectifACTIVE/pas push.
+
+### V213 — rapport qualité préparé sans relance ou hausse de budget
+
+- Continuation automatique NE VAUT PAS accord pour2Gio ou retrait du gate
+  mean16<=4. Blocage212 revalidé par status/supervisor_stop :0outputs,
+  exit-15confirmed,24510464octets au-delà1Gio, pression1/swapdelta0.
+  Tour212 précédent PROGRESS : nouvelle génération figée et exécutée,
+  preuve d'arrêt qui change la prochaine décision ; pas nouveau recall.
+- Milestone local `bc422828` : noyau213 purement métrique, sans
+  fichier/IO/fit/retrieval. Adapte outputs structurels initial100 aux métriques
+  all-human200, sans rescore/recapping/filtre de statut. Sépare membership
+  natif versus catalogue disponible et trois classes de perte ; tout
+  membership label-side devra être calculé APRÈS seal par le futur caller.
+  Hits par canal ATTRIBUES à l'émission, PAS rappel de canaux isolés/union
+  exhaustive. Temps descriptifs, pas SLO ou promesse de vitesse.
+- Suite120PASS/1,21s :23nouveaux tests213+28noyau200+69retrieval/population.
+  Données synthétiques de test uniquement, aucune GT/candidatbaseline réel
+  lu. Noyau ne donne ni permissionGT ni READY et ne remplace PAS l'évaluateur
+  supervisé. Préparation indépendante du futur budget, pas adaptateur au
+  run212STOP mort. Pas nouvelle recette ou mesure nationale à ce tour.
+- Sans accord budget, pas lancement ni série de microbench. Après accord,
+  figer NOUVELLEversion génération/autorité/évaluateur avant mesure, labels
+  fermés jusqu'àALL128. Dernier exact89,0625% inchangé, objectifACTIVE,
+  aval/folds0/1 gelés, pas push, modifications utilisateur hors volet intactes.
