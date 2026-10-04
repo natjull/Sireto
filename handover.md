@@ -13603,3 +13603,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Pas encore labels/recall/READY/SLO. Dernier89,0625%exact inchangé.
   Préparer évaluateur catalogue courant sans ouvrir les labels avant
   scellement128 ; avertir si un nouveau contrôle échoue. Goal ACTIVE.
+
+### V199 — STOP mémoire réel à names004 ; labels toujours fermés
+
+- Session18499 re-pollée TERMINAL1. Six phases ont passé (names000,
+  addresses000, score000-000, names001..003), puis names004 a réellement
+  été arrêtée par son parent pour RSS1089552384 >1073741824, à32,257203333s.
+  Parent réel pid86391/exit-15/confirmed, pas timeout d'observation. Pression1,
+  minimum libre81%, swapoutglobal0, cleanup_errornull. Aucun run encore live.
+- names00159,292914958s/RSS1029046272 ; names00273,184921667s/RSS945029120
+  (global824pagesNONattribuées), names00351,082613875s/RSS1053294592,
+  vrais parents0/PASS153. Q4 a donc passé réellement dans la génération
+  indépendante ; cela n'autorise pas une mesure des labels partiels.
+- names004, première query de la paire position8/9 : SCATTER_COMPLETE
+  14,936138625s après query, worker31,055279375s/RSS784531456,
+  peak1047527424. Pas ONE_HOP_COMPLETE avant arrêt, pas worker_stop car
+  le parent a envoyéSIGTERM ; supervisor_stop et ROOTSTOP sont autorités.
+  Le parcours endpoints one-hop avec chunk524288 dépasse le RSS de16Mo.
+- Scope/code/contrat V199 demeurent IMMUTABLES, aucune preuve/scorer/capsule
+  de ce STOP ne sera réadmis. Aucun ROOTSEALED128, initial100, GT ou recall.
+  Dernier89,0625%exact inchangé. L'ordre coût-first a détecté ce problème
+  avant les255scorers et leurs longues pauses, sans modifier la population.
+- Suite : nouveau kernel physique pour relation1hop avec plus petits blocs
+  (tous endpoints/liens, mêmes snapshot figé et grades/max float64), tests
+  indépendants bit-exacts puis probe de coût q8 fresh/fullsource. Garder
+  query20/worker80/1Gio, aucun relâchement ni corpus réduit. Travail de
+  métriques pures V200 commencé sans lecture de fichiers labels ; non
+  mesuré/non commité à ce stade, adaptation d'évaluation reportée. GoalACTIVE.
