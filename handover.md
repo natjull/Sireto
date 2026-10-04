@@ -13182,7 +13182,7 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Raisoncoût :2xscore18725-26s +ouverture20s laissent peu de marge80s ;
   4spans pluspetits devraientlaissermarge, pasgarantie/nouveaubudget.
   Lecture readonlymetadata160 pourspans, pasmesurequery/GT. Les anciens
-  spans3 de194nechangentpas sesvecteurs complets348mvariants34346446.
+  spans3 de194nechangentpas sesvecteurs complets34346446variants.
 - Cataloguechargé AVANT grossesmétadonnées ; sources ouvertesUNEfois par
   worker, propre PartitionFacts/cursor/grades parquery, writepart avantnext.
   Paquetcommun targets/epochsunefois+deuxrecettes, ALLfacts.used/CSR/autorités/
@@ -13203,7 +13203,82 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   coût deuxinitial100 nationales seulement, PAS128 nirecall. Worker1Gio80s/
   score30s/quiet30/p1/free>=50 inchangés. Inclure19384,049722+19480,236356s
   de preuves danscoût final, pasprésentermergeseul/chaud comme retrieval/SLO.
-  Pasmesuré àcej alon, pasrelanceSTOP ; toutes128outputs scellées puisGT
+  Pasmesuré à ce jalon, pasrelanceSTOP ; toutes128outputs scellées puisGT
   séparée toujoursdue,99,2%exactinitial/fullOOF/Wilson/généralisation/SLO.
   GoalACTIVE, dernier89,0625%exact/90,625%op inchangé, fold0/1/GTfermés/
   avalgelé, aucune dépense/push/nettoyage/sourcehistorique supprimée.
+
+### V195 deux initial100 nationales réellement SEALED + math128 ownfold réelle
+
+- Commitmesuré `6ca0cace` désormais IMMUTABLE. Run59912 TERMINAL0,
+  root audits/retrieval_v195_pair_initial/probe_20261004_a SEALED réel.
+  Admission195 revalidée readonly aprèsrun (processTERMINAL0), tousneuf
+  actualparents0/rapports153/receipts/hashes/epochs/producerlinks/caps PASS.
+  Aucun jobLIVE. Précédentturn194 PROGRESS ; ce turn195 PROGRESS réel.
+- RootmanifestSHA5f269408bf03bac2adcc6cfaa87ede81d182b5e83097d0b2c420a97faafe9145,
+  1902octets ; output merge/draft_initial100.jsonSHA
+  0c687351cbf607f81f0e8d8339a434d1e351663027b0e324c3b3eee42310accf,
+  26986octets. Draft est admis SEULEMENT via rootSEALED+ledger/aprèsaudits.
+  Deuxqueries positions0/1, folds3/2 ; CHAQUEquery100uniqueSIRET,
+  TOUS44403034sites et98804872facts, fourphysicalspans, aucun pool/rescore/
+  anciencandidat/IDfeature/GT. Aucune comparaison avec195labels ou ancien191
+  candidat (mêmeQ0), labels restentfermés tantles128outputs nonscellées.
+- Recettespropres Q0a59b9d19fdbd3eadb00ce120c23d4f8b2927ba9b96aaa238fe59abbb7f305731 ;
+  Q1ea2cd2fb0979f6331c4412e6a63f0ab58195a0ba1ac56647564f73db01e60d2d ;
+  contrôlepaire77efab0923960b2141885e84b6dd1cbf426708d644c690c634dbb3fddc25a4bc.
+  Signatures diffèrent anciennes187 parceque nouvellesPREUVES/refspinnings,
+  pasnouveau modèle/formule ni features d'identité. Source namespaceintégral.
+- Scoreworkers000..003 :63,759471416/64,571530583/63,343668042/60,180201833s ;
+  RSS910721024/902840320/898695168/869548032, min77..79/p1/global0/PASS153.
+  Deuxscores ownquery PARworker17,139063333+15,462998042 /
+  18,216002500+15,745707709 /17,735400167+15,156551500 /
+  15,943340958+13,729809208s, chacun<=30s ; everyownphysicalleaf/factonce.
+  56462targets ALLcommunssource/proofs, packet40,848938..945Mo unefois/
+  worker ; manifeste4174..4181octets (pasduplicationepochs40Mo inline).
+- Audits ALLaprèsTOUS4scores, mêmes refs etempreintes contrôlées :
+  facts52891files/6461635887bytes33,833655500s/RSS488161280 ;
+  postings1832files/11612447508bytes21,046988750s/RSS712622080 ;
+  context1739files/17201879604bytes28,910428791s/RSS761282560.
+  Ensemble56462fichiers/35275962999octets FULLhash, passtat/sample. Context
+  conserve maintenant les targets/epochs193/194 (noms CSR/rawowner/graph/
+  snapshots) ETattributs/querycontrols/models/descriptions/3heads complets.
+  Dédup physiqueunefois, aucuncible supprimée ni provenance perdue.
+- Merge7,650505708s/RSS615284736, propresqueries<=100, réduction183identique
+  sansscoreaprès pool. Ledger2,044048792s/RSS500056064 aprèsDEUXmerges,
+  FULL93507epochs177 +capturedtargets vérifiés. Tousmin78..79/p1/global0,
+  vraisparents0. SourcebeforeloadPic~615MiB puislargefacts729MiB ; loader
+  précocecatalogue éviteanciensSTOP. Pasretouraux184..190STOP niretry195.
+- Totalnouveauxworkers345,340499415s +preuves193/194164,286078459s =
+  509,626577874s/2 =254,813288937s PARquery toutworkerretrieval inclus.
+  Contrôleurprélaunch3,689694750s, runelapsed626,810053292s inclquiet270/
+  parent ; preuves193/194elapsed précédents àpart. Cacheincontrôlé, moyenne
+  deuxqueries vsancien191unequery338,828683s : NE PASgarantir24,8% ouSLO.
+  Environ4,25mincompute/query restebeaucouptroplong, paslatenceprodvalidée.
+- Contrôle math192 RÉEL surTOUTES128queries sousBudget153 :0,549806375s,
+  RSS316981248/min81/p1/global0/PASS, processTERMINAL0. Fold2=43/fold3=41/
+  fold4=44, CHAQUEposition2140grades dePROPREvecteur/head,128digestsdistincts,
+  min0/max0,948399501675. Aucun candidat/GT/recall ; valide ycomprishead4
+  réellement, pas uniquement les quatrepositions diagnostiques192 précédentes.
+- Prochaineétape196 protocole/code AVANT mesure : supprimerles RELECTURES
+  FULLpréhash11,6GoCSR dansCHAQUEscorer (constructor178 phase_record177 fait
+  verifychaquearray alorsque scorer utilisefacts+snapshots, paspostings).
+  Cela coûte~18-20s àchaqueouverture ; garder contrôletyped/CSR/namespace/
+  epochs/actualparents/sourceSTOPintégral, utilisercertificat177 FULLoriginal
+  et imposer FULLhashTOUTESmêmescibles APRÈSread/score avantadmission. Aucun
+  hash de sortie supprimé/stat substitué ; démontrerpar testsinclmutation
+  sameinode/size/mtime rejetéeaprès, puisvraiqueryproof/nationalcost1Gio80s.
+  NOUVEAUreader196, jamaispatch178/195mesurés. Conserverphysical4 tantcoût
+  nonprouvé ; plus tardamortirauditsqueryindépendants surTOUTES128, sans
+  laisserpartielGT/READY ou déplacerlimites, pour éviter~9hcompute+quiet.
+- Évaluateur49 lu CODEseulement (PAS donnéeslabel) : exigeancienTantivy
+  index_manifest/inventory etsidecarancien, doncNE PAS réutiliser telquel
+  pournouveaucatalogue14144m/historiques. Après128scellées, nouveaucontrat/
+  adaptateuréval séparépréécrit, mêmesallhuman128/labelsV2V3/ambiguïtés/
+  absentsexposés etexact/op séparés. AttributionOFFICIAL_CATALOG_ABSENT doit
+  être vérifiéedanslecorpusactuel141, pasprisecommevéritédansancienpool.
+  Label-sidecarofficielscelléexhaustif toujoursrequis ; aucunelecturelabels
+  pourcréergenerator/alias/rescue ou choisirvariante.
+- GoalACTIVE, dernier114/128=89,0625%exact/116=90,625%op INCHANGÉ :195a
+  deuxoutputs, PASunrecall128/99%. PasfullOOF/Wilson/généralisation/SLO/
+  READY/SOTA/garantie ; fold0/1/GTfermés, avalgelé, Mac/CATNATonly,
+  aucune dépense/push/autreappkill/purge ni sourcehistorique supprimée.
