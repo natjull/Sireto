@@ -12921,3 +12921,33 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   GT dans évaluateur séparé, fullOOF/Wilson/généralisation/SLO dus ; dernière
   exacte89,0625%/op90,625% inchangée, aucunREADY/SOTA/99% garanti. Fold0/1/
   labels fermés, aval gelé, GoalACTIVE, Mac/CATNAT sans dépense/push.
+
+### V190 nouvelles traces du vrai pic ; V191 ouverture catalogue anticipée
+
+- V190 `5f460f4d` mesuré/immuable, session39216 TERMINAL1/rootSTOP conservé.
+  MergeparentPID51308 actualexit1/wall11,337920s, ownconfirmationtrue/min80/
+  p1/parentRSS783810560/global0 ; worker153FAIL wall10,864752s et
+  ru_maxrss1149255680 (>1Gio). Aucun ledger190 lancé, draft nonadmissible.
+- Traces190 RSS ET ru_maxrss : requireaudits1,917521s/RSS341540864/peak
+ 388628480 ; avantcatalog8,434553s/694452224/764018688 ; avantscorereduction
+ 10,021638s/762413056/1149255680 ; quarantine10,225880s/776093696/1149255680 ;
+  final10,609197s/746668032/1149255680. Pic survient ENTRE avantcatalog et
+  avantscorereduction, dans bloc ouvertureRotatedKeys +relecture3scores,
+  AVANT registre177 qui n'est plus exécuté inline. Donc hypothèse précédente
+  attribuant le pic au seulledger non prouvée et infirmée comme nécessaire.
+- V191 isolé `a9b340bb` avant mesure : même contrôle190/deuxworkers/
+  ledgerpostsource/admission/score/world ; ouverture du mêmeRotatedKeys187
+  déplacée AVANT audits, fermeturefinally même auditFAIL. Checkpoints après
+  constructeur et avantchaquephase reload pour isoler le sous-appel. Rien
+  retiré ni budgetaugmenté, tous44403034/98804872, mêmes sixphases187réussies.
+- Tests191..18392PASS3,05s, 48690 TERMINAL0 après
+  correction de normalisation nommodule dans testAST AVANT mesure. TestAST
+  prouve config/origin/load/ledger/worker/stage/admission/run identiques190
+  horsversion/noms ; contrôle reduction seulement aprèsaudits/c fermetureFAIL.
+  Readonlyorigin191sixsuccesses/all44403034/98804872, 73files, 54202 TERMINAL0.
+  Les parents/backend de tests sont simulés, pas métrique mémoire nationale.
+- Prochaine action freshroot `audits/retrieval_v191_early_catalog/probe_20261004_a`,
+  deuxworkers1Gio/80s/quiet30. Pas encore lancé à ce jalon. CodesSTOP190gelés,
+  aucunGT/fold0/1 ouvert, aucunscorequalité nouveau/READY/SLO niavalchangé.
+  Toutes128 sorties puisévaluation/fullOOF/Wilson/généralisation/SLO dus,
+  dernierexact89,0625%inchangé ; GoalACTIVE, aucun externalblock/spend/push.
