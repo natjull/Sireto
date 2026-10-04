@@ -1,0 +1,39 @@
+{
+  "status": "SEALED_V216_ALL21_POSTSEAL_LOSS_DIAGNOSTICS_NOT_RECALL",
+  "code_commit": "055bc5fd",
+  "premeasurement_handover_commit": "0f9fcd0f",
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v216_loss_evidence/run_20261004_a/report.json",
+    "sha256": "aafce9681edf0d6e0114109d83a9d9b5fdb854738d65261a1f6ea67dad4576c7",
+    "size_bytes": 47421
+  },
+  "misses_audited": 21,
+  "diagnostic_subset_not_recall": true,
+  "all_three_worker_exits": [0, 0, 0],
+  "categories_nonexclusive": {
+    "no_literal_official_name_overlap": 7,
+    "partial_but_not_whole_official_alias": 12,
+    "whole_official_alias_exists": 2,
+    "ban_incompatible": 9,
+    "gt_inside_current_radius": 5,
+    "gt_outside_current_radius": 5,
+    "compatible_ban_but_missing_native_gt_xy": 2,
+    "text_alone_top100_contains_gt": 0,
+    "operational_only": 3
+  },
+  "conclusions": [
+    "Retirer la rotation des canaux ne sauve aucun des 21 ratés via le texte BM25214 seul à100.",
+    "La conjonction de tous les mots du CRM dans une seule variante officielle exclut les noms enrichis de contexte ou combinant parent et site.",
+    "Le rayon300m n'est pas un substitut à une recherche de l'identité légale : certains GT désignent un autre établissement/adresse ou siège, jusqu'à9,7km du point CRM dans ces diagnostics.",
+    "Présence native et preuve nominale/physique sont distinctes ; ni absence de mot partagé ni distance ne prouvent une erreur de label.",
+    "Changer la métrique initiale et la corroboration des preuves, pas seulement les quotas. Ne pas apprendre des alias/règles propres aux21 cas."
+  ],
+  "new_recall_measured": false,
+  "last_measured_exact_recall": 0.8359375,
+  "target_exact_initial100_recall": 0.992,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "outputs_promoted_to_features": false
+}
