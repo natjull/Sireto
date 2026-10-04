@@ -13938,3 +13938,29 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   swapglobalnonattribué inchangés, aucune dépense/purge. V206STOP => ne pas
   lancer ni recycler, conserver GT fermées. Nouveaubackend exige nouveau
   protocole avant mesure. Dernier89,0625%exact inchangé, objectifACTIVE.
+
+### V206 — STOP réel q24, pas de labels ni évaluation partielle
+
+- Code `5a737346`, pré-mesure `25b46824`, session44652 TERMINAL1
+  confirmée. Racine `retrieval_v206_population_initial/run_20261004_a`
+  intacte, code/config/contrat IMMUTABLES. Quatorze phases ont passé
+  (names000..011,addresses000,score000-000), puis names012 q24 STOP
+  `STOP_PAGED_NAME_QUERY_COST` pendant scatter, à la garde globale20s.
+- Q24 : lexical12,953323667s/3598431alias positifs ; dernierbucket8
+  19,855949417s/792088refs, parentmaximum4,207078001s/727300refs,
+  sitemaximum0,850182084s/62285refs, flags0,244517581s/tousFalse.
+  Ce sont des accès sparsespages coûteux, pas le même profil dense q4.
+  Source/alias/ref non tronqués ; la relation n'a pas été atteinte.
+- Worker40,620604125s/RSS1000456192/p1/free81/PASS153 ; swapGLOBAL1436
+  pages nonattribuées, noncause de STOP. Vrai parent8273/exit1/confirmed,
+  wall41,603909334s/RSS992149504, cleanupnull, arrêt confirmé. Aucun
+  worker national encorelive. RootSTOP, initial100False, truthFalse.
+- Autorité/driver207 doivent refuser206STOP. Pas permission nationale,
+  GT fermées, aucun nouveau recall, dernier89,0625%exact inchangé.
+  Ne pas retry206, élargir20/80/1Gio, retirerq24 ou recycler ses fragments.
+- Prochaine piste physique à tester avant un nouveau probe q24 : ordonner
+  stablement les écritures maximum lorsque les positions sont très éparses,
+  sans réduction/approximation ni changement de l'ordre des doublons,
+  conserver np.maximum.at et signedzero. Le groupement/réduction204 était
+  plus lent en dense ; ne pas l'activer aveuglément. Oracle BYTES et
+  bench numérique sparse/dense avant sources nationales. ObjectifACTIVE.
