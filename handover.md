@@ -12753,3 +12753,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   généralisation/SLO1s/2s dus. Aucun READY, pas objectif accompli. Goal actif,
   pas de pause/blocage demandé, aucune dépense/push. Tous jobs de ce turn
   actuellement terminaux ; prochaines modifications uniquement nouvelleversion.
+
+### V187 avant mesure — score inchangé, tous les hashes après score obligatoires
+
+- Milestone isolé `462fb09b` : code/protocole/config/tests V187 avant mesure.
+  V186 et ses STOP restent immuables. Même kernel182/183/146, sources entières,
+  requête/fold/modèles114 et BAN/XY, plafonds1Gio/80s/score30s inchangés.
+- Trois groupes physiques de score QUARANTINED, pas des sorties initiales ;
+  puis trois workers facts/postings/context FULLhash de tous les fichiers
+  capturés, dédup uniquement même path/SHA/epoch. Packet attaché au vrai
+  span/signature/stats source complet de chaque partition. Réduction100
+  seulement après tous les parent_exit0/reports153, hashes/receipts de tous
+  les targets attachées aux manifests/packets actuels. Aucun hash supprimé
+  ni epoch pris pour un hash. Coût global inclut preuves184108,169869s.
+- Tests187+186..158163PASS26,86s, session41540 TERMINAL0 ; hashes réels de
+  petits fichiers, contrôle parent/RSS simulé explicitement, aucune mesure
+  nationale/SLO/recall depuis fixtures. Contrôles contre missing audit,
+  actualexit nonzero/nonconfirmé, RSS, GT, STOP, target/span/score différent,
+  drift source, pool reclassé, sortie score admise. Kernel/inputs/activity
+  et config (hors outputroot) identiques186. Diff-check PASS.
+- Prefix_stage187 réellement accepté les deux seules phases réussies184,
+  hashes figés précédents ; implementation69 fichiers, fresh root187 absent.
+  Prochaine action : une seule requête nationale complète fresh root
+  `audits/retrieval_v187_staged_initial/probe_20261004_a`, sept workers
+  séquentiels supervisés après quiet30. Pas encore lancé à ce jalon.
+- Aucun label/fold0/1/ancien candidat ouvert ni modèle aval changé ; pas
+  recall nouveau, exact V10189,0625% inchangé. Toutes128 sorties avant
+  évaluateur séparé/fullOOF/Wilson/généralisation/SLO restent dus. Goal actif,
+  Mac/CATNAT seuls, aucune dépense ni push. Ne pas déclarer READY.
