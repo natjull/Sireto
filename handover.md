@@ -14658,3 +14658,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  91 tests de contrôle/unitaires227–230 PASS avant run, pas preuve nationale.
   Nouveau128 seulement après recette/bundle figés ; labels fermés pendant
   generation, aucune promesse de gain ni READY sur ce panel réutilisé.
+- Commit `09e65de6` :231 extraction supervisée de la décomposition EXACTE
+  du kernel217. Onze poids unitaires reproduisent containment/corroboration,
+  contributions fixes sparse/propriétaire/succession/XY séparées. Tests
+  petit index natif synthétique : parité score complet pour tous points,
+  aucun re-score correctif, aucune preuve recall. Pas d'usage en génération.
+- Commit `16d470b2` :232 driver TRAIN64 supervisé disjoint, uniquement
+  après227 complet. Références ponctuelles explicitementTRAIN, jamais pool
+  produit. Geo authentifiée depuis parquetsBAN55 query-only, vecteurs nom52
+  ordre/texte vérifiés ; trois expansions77 fold-safe ; parité native217
+  pour tous points/modèles. Dix tests232/231 PASS, guards214 inchangées.
+  Pas de nouvel objectif2000/500, de dépenses ou d'apprentissage aval.
+-229 TERMINAL exit0 :128 et16 producteurs PASS214 scellés, cibles restées
+  fermées.230 maintenant autorisé à évaluer en processus séparés ; aucun
+  nouveau pourcentage annoncé avant son admission complète.
