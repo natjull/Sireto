@@ -12029,3 +12029,35 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Fold0/fold1 et downstream fermés, exact/op toujours séparés, noREADY,
   objectif actif complet99,2% toujours NON atteint. Modifications utilisateur
   étrangères (synthetic/maps/v412) conservées. Aucun push/dépense externe.
+
+### V166 terminal STOP49 vérifié ; V167 métadonnées sans doublon
+
+- Session75068 TERMINAL1, aucun remaining166 encore actif. Lot49
+  worker_stop.json réellement lu : RSS1121075200 (~1,04Gio),4,346172s,
+  minfree76/pression[1]/global0 ; budget1Gio dépassé, pas80s. Trace worker
+  dans load(output)->imported_source->V163.audit_record à la fin du SQL.
+  Hypothèse précise de surcoût des plans/audits JSON en doublon, pas une
+  mesure RSS par instruction ni une garantie sur les prochains lots.
+- Tous49 lots0..48 V166 réellement phase_record() vérifiés, parents exit0 :
+  2929166 alias/206832290 postings, maxRSS1072152576 (<1Gio), max6,801799s,
+  minfree74. Aucun lot49 arrêté importable.166 code/résultats immuables.
+- Milestone code `c5ca7318` : V167 conserve exactement kernel166, pack134,
+  physical_plan152, mêmes types/voies/sources et limites. Chargement complet
+  avant calcul ; fin de calcul rehash des références déjà validées et contrôle
+  de CHAQUE epoch source/STOP tardif, sans reparser simultanément les grands
+  plans. Fixtures mutations de cert/source et STOP tardif refusées.
+- Reprise166 optionnelle SOURCE/CONFIG/slices identiques, seuls lots
+  individuellement complets/PASS avec vrais exits ; titres/chemins historiques
+  gardés, aucune copie/réétiquette ni import de STOP. Artefacts fullhashés à
+  chaque utilisation, certs revalidés même hors utilisation de leurs données.
+  remaining-parts ne lance pas automatiquement un seal global non mesuré.
+- Tests initiaux16716 PASS12,32s ; ciblés165/166/kernel166/16748 PASS29,12s
+  avant ajout des deux derniers tests. Sous-suite32 fichiers session75263
+  TERMINAL0 :253 PASS144,23s. Suite complète74 fichiers117–167 session44138
+  encore en cours à cette note. Fixtures et pression simulée, pas un coût
+  national. Contrat `docs/retrieval_v167_metadata_lifetime_contract.md`.
+- Prochain gate : INIT167 frais important les seuls49 PASS puis lot49 frais,
+  supervision164/budget1531Gio/80s. Pas de hausse de ressources. Si PASS,
+  remaining-parts uniquement, puis mesurer seals/packs séparément. Noms
+  paginés restent à implémenter avant moteur national100. Exact V101114/128
+  inchangé ; aucune nouvelle mesure recall, noREADY, folds0/1 fermés.
