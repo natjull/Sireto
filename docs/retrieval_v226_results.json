@@ -1,0 +1,38 @@
+{
+  "status": "SEALED_V226_FROZEN_OOF_TRAIN_GEOGRAPHY_NOT_RECALL",
+  "code_commit": "f04a9cd3",
+  "premeasurement_handover_commit": "3eb9a58b",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v226_training_geography/run_20261004_a/manifest.json",
+    "sha256": "43ab4e808cad1513b3da120f2897909177012fe23ec1befc77fa5f4c9bd9b944",
+    "size_bytes": 819
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v226_training_geography/run_20261004_a/worker/report.json",
+    "sha256": "237504bbd379b51b64148c6aeed989669bd059dbbacc46776080ebaa44c7d0e5",
+    "size_bytes": 3510
+  },
+  "controller_actual_exit": 0,
+  "worker_actual_exit": 0,
+  "worker_pass214": true,
+  "worker_seconds": 1.9934089579619467,
+  "peak_worker_rss_bytes": 342982656,
+  "source_training_queries": 512,
+  "source_queries_disjoint_from_current128": true,
+  "folds": {
+    "2": {"training_queries": 343, "negative_pairs": 15765, "positive_place_negative_place_counts": {"1_1": 15765}, "queries_with_no_place_contrast": 343, "place_weight": 0.0},
+    "3": {"training_queries": 348, "negative_pairs": 15988, "positive_place_negative_place_counts": {"1_1": 15988}, "queries_with_no_place_contrast": 348, "place_weight": 0.0},
+    "4": {"training_queries": 333, "negative_pairs": 15370, "positive_place_negative_place_counts": {"1_1": 15370}, "queries_with_no_place_contrast": 333, "place_weight": 0.0}
+  },
+  "pair_counts_are_per_model_not_unique_examples_across_folds": true,
+  "feature_definition": "CRM_INSEE_OR_POSTCODE_MATCH_NOT_DISTANCE_OR_ALL_GEOGRAPHY",
+  "observation": "Both positive and every eligible negative have place1 in all three actual model fits; that dimension has zero pairwise contrast and weight0",
+  "hypothesis_for_next_experiment": "Mine national label-blind training negatives, preserve safe OOF, then learn an initial index-level score rather than a downstream reranker",
+  "all_current_misses_explained_causally": false,
+  "new_recall_or_generalization_proven": false,
+  "model_fit": false,
+  "model_changed": false,
+  "recall_measured": false,
+  "fold0_opened": false,
+  "fold1_opened": false
+}
