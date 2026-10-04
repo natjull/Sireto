@@ -13577,3 +13577,29 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   après ROOT SEALED : exact/op/all-human/absences/V2/V3/sidecar catalogue
   courant, pas ancien évaluateur Tantivy comme preuve d'absence actuelle.
   Dernier89,0625%exact reste inchangé, pilote non READY, goal ACTIVE.
+
+### V199 — run complet réellement LIVE, premières trois phases passées
+
+- Code `f81a6b1d`, pré-mesure `5421d205`. Racine fresh
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v199_population_initial/run_20261004_a`.
+  Session exec **18499**, CONFIRMÉE encore live après trois phases, pas de
+  ROOT STOP. Continuer CE handle, jamais démarrer un autre scope sur un
+  simple timeout de lecture. Code/config/contrat V199 désormais IMMUTABLES.
+- Launch SHA `5719b041d2126a159c044aeb980e92fae5ebac89f381402f6629c8742fcdd014`,
+  29835octets. Parents réels0/PASS153 pour names00057,095624500s/
+  RSS1031962624, addresses00026,250841125s/RSS741736448 et
+  score000-00043,635509583s/RSS1028571136. Tous sous80s/1Gio,
+  pression1/minimumlibre81%, swapoutglobal0 sur ces trois workers.
+- Le contrôle canonique des quatre preuves propres à la paire0 fonctionne
+  réellement avant scorer ; ce dernier a parcouru intégralement son premier
+  span physique pour chacun des deux clients, sans rescore de candidats.
+  Capsule créée et toujours PENDING_FULL_HASH ; elle n'admet PAS un initial100.
+- Diagnostic autorisé query-only, sans labels : totalité128 noms, max44
+  tokens par canal de compteur ; zéro query nécessitant le fallback disque
+  >64Mio. Ceci ne sélectionne ni réordonne des clients et ne prouve pas
+  que tous les budgets passeront. Tous384calculs et contrôles restent dus.
+- Prochaines phases : names001..063 avant addresses001..063/scorers ;
+  surveiller18499 et phase réellement active, conserver tout STOP intact.
+  Pas encore labels/recall/READY/SLO. Dernier89,0625%exact inchangé.
+  Préparer évaluateur catalogue courant sans ouvrir les labels avant
+  scellement128 ; avertir si un nouveau contrôle échoue. Goal ACTIVE.
