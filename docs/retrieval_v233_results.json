@@ -1,0 +1,180 @@
+{
+  "status": "SEALED_V233_TRAIN_ONLY_ACTUAL_NATIVE_INITIAL_INDEX11_LISTWISE",
+  "implementation_commits": [
+    "3f6f9d9e",
+    "9c719a09"
+  ],
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v233_actual_initial_training/run_20261004_a/manifest.json",
+    "sha256": "ca780099d264df1b4e1809cdbd4001e02327e9ef1297463b1a197dc06cd5bd17",
+    "size_bytes": 1194
+  },
+  "models": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v233_actual_initial_training/run_20261004_a/worker/models.json",
+    "sha256": "4e37b10f7057a74001f77b7989979aadbff8eb4b0c60e39285ca6b78e43644f6",
+    "size_bytes": 47057
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v233_actual_initial_training/run_20261004_a/worker/report.json",
+    "sha256": "892cbd79f8efa236e83e22a1bc5efe649b84d30064da00fd2a65cef81b612b0c",
+    "size_bytes": 31493
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 81,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 299433984,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 3,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.5376246250234544
+  },
+  "folds": {
+    "2": {
+      "weights": [
+        3.1859738919024845,
+        0.6740122899276124,
+        2.2798593270086225,
+        1.0678036232112844,
+        2.1273420979732864,
+        0.2940492058238206,
+        2.246544969853117,
+        0.3995834154406278,
+        1.0947955400308986,
+        0.6773351558812186,
+        0
+      ],
+      "actual_native_kernel_features": true,
+      "changed_native_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "excluded_held_fold_or_positive_entities": 25,
+      "heldout_entity_overlap": 0,
+      "identifiers_as_features": false,
+      "objective": "EQUAL_QUERY_LOG_ONE_PLUS_SUM_EXP_NEGATIVE_MINUS_POSITIVE_FULL_ACTUAL217",
+      "objective_after": 1.5539208399901285,
+      "objective_before": 2.2999932591093284,
+      "parameters_selected_on_outer_controls": false,
+      "recall_measured": false,
+      "ridge": 0.005,
+      "semantic_owners_relations_xy_fixed": true,
+      "training_pairs": 7924,
+      "training_queries": 39
+    },
+    "3": {
+      "weights": [
+        2.4711795057007633,
+        0.9308680868208306,
+        3.635198709476153,
+        1.5001967736071602,
+        2.4277152953164753,
+        1.1842958813450521,
+        2.237220346847214,
+        0.5860907086597078,
+        0.09841050655527875,
+        0.6323303956305832,
+        0.4797916560933114
+      ],
+      "actual_native_kernel_features": true,
+      "changed_native_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "excluded_held_fold_or_positive_entities": 19,
+      "heldout_entity_overlap": 0,
+      "identifiers_as_features": false,
+      "objective": "EQUAL_QUERY_LOG_ONE_PLUS_SUM_EXP_NEGATIVE_MINUS_POSITIVE_FULL_ACTUAL217",
+      "objective_after": 1.1738018306077187,
+      "objective_before": 1.9337105746811505,
+      "parameters_selected_on_outer_controls": false,
+      "recall_measured": false,
+      "ridge": 0.005,
+      "semantic_owners_relations_xy_fixed": true,
+      "training_pairs": 9196,
+      "training_queries": 45
+    },
+    "4": {
+      "weights": [
+        3.787386113246699,
+        0.30390871720091894,
+        2.512207516838633,
+        1.2724250323649926,
+        2.0212297636173275,
+        1.436771539277199,
+        2.1615059052147605,
+        0.22309773457074092,
+        0.3574201497480828,
+        1.346450341781843,
+        0
+      ],
+      "actual_native_kernel_features": true,
+      "changed_native_indices": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10
+      ],
+      "excluded_held_fold_or_positive_entities": 20,
+      "heldout_entity_overlap": 0,
+      "identifiers_as_features": false,
+      "objective": "EQUAL_QUERY_LOG_ONE_PLUS_SUM_EXP_NEGATIVE_MINUS_POSITIVE_FULL_ACTUAL217",
+      "objective_after": 1.1467229826330316,
+      "objective_before": 1.8340295609184443,
+      "parameters_selected_on_outer_controls": false,
+      "recall_measured": false,
+      "ridge": 0.005,
+      "semantic_owners_relations_xy_fixed": true,
+      "training_pairs": 8761,
+      "training_queries": 44
+    }
+  },
+  "train_controls": {
+    "controls_used_in_model_selection": false,
+    "mean_negative_outrank_count_after": 6.765625,
+    "mean_negative_outrank_count_before": 8.5,
+    "recall_measured": false,
+    "scope": "OOF_TRAIN64_CENSORED_MINED_NEGATIVES_NOT_NATIONAL_RECALL"
+  },
+  "recall_measured": false,
+  "pilot_targets_opened": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false
+}
