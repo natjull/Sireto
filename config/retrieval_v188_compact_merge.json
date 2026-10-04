@@ -1,0 +1,48 @@
+{
+  "origin_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/launch.json",
+    "sha256": "9b28305c2182c962d67418e7a3ecae0d1f225e6b7e1d9c6df756b4d14c36f48c",
+    "size_bytes": 25596
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v188_compact_merge",
+  "quiet_seconds": 30,
+  "resources": {
+    "global_swap_blocking": false,
+    "max_rss_bytes": 1073741824,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1
+  },
+  "stages": {
+    "audit-context": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/audit-context/manifest.json",
+      "sha256": "60e76acf404418697f79efd232f43df5e1293dfbcdcf75bc32704d7f2b3321cf",
+      "size_bytes": 24231343
+    },
+    "audit-facts": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/audit-facts/manifest.json",
+      "sha256": "1d37343388ac4ec28ab6b10e39c9162f191fe6c4ee069147fdc976003b58f3f7",
+      "size_bytes": 24231340
+    },
+    "audit-postings": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/audit-postings/manifest.json",
+      "sha256": "8b0bfe5fc1f2fa2136df67a4ab86901862289bac723a0bb95e6e8acddc065a09",
+      "size_bytes": 24231353
+    },
+    "score000": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/score000/manifest.json",
+      "sha256": "822a52056d82e1b419c2083e6b0f0ef51cc80a466f935cccb7dbb97ec73a523a",
+      "size_bytes": 24232194
+    },
+    "score001": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/score001/manifest.json",
+      "sha256": "d23d58736976523faf4c6047ca283c752efe74ab31b747c8ccfb2e02c1d5f6f6",
+      "size_bytes": 24232193
+    },
+    "score002": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v187_staged_initial/probe_20261004_a/score002/manifest.json",
+      "sha256": "f9f0ce96577e90a88b56bcbacdf0bb99a46521c6abe5a300c27276f3c0eb95d1",
+      "size_bytes": 24232192
+    }
+  }
+}
