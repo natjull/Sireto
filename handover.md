@@ -14494,3 +14494,23 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Avant mesure : priorité aux régressions12/62 et à la distinction preuve
   manquante / preuve disponible mais trop faible. V217/V218 immuables,
   pilote118/128 toujours seule qualité courante, folds0/1 fermés, aval gelé.
+### 4 octobre 2026 — V219 terminal ; V220/V221 gelés avant pilote qualité
+
+- Résultat `e1e10033`, code `4ee13dc6` : V219 session33566 TERMINAL exit0,
+  trois workers exit0/PASS214, ALL10 pertes sous score frontière (pas de
+  tie), top1/frontière reproduits ponctuellement. RapportSHA
+  `6af27abbb92027b26d4bd61b005342f6f503aa8db12d7707d0ba7e4796a924a0`.
+  Pic RSS1443348480, pression1/free>=82, delta swap système0 non attribué.
+- GLP/CACF : preuves littérales exactes sur d'autres personnes juridiques,
+  le bon site plus proche/adresse cohérente manque la reconnaissance sigle.
+  MB perte12 manque aussi le nom ; perte62 a une frontière bénéficiant
+  du singleton contenu (incrément0,968479), preuve nominale GT quasi nulle.
+  Cela ne justifie ni fausse correction de labels ni dictionnaire CRM.
+- Milestone `ff7dea04` : V220 deux règles génériques nouvelles : partitions
+  exhaustives sigle→préfixes de mots d'UN alias courant entier corroboré place,
+  et singleton contextuel gradué1/nombre tokens de contenu. MAX pas doublon,
+  poids OOF11 et sparse8 gelés, autres chemins mondiaux conservés, une seule
+  recherche native100. Pas nouveau réservoir/ranker, pas transfert V219→features.
+- Tests grammaticaux/engine avec fixtures synthétiques déclarées, jamais
+  preuve métier ; panel128 réutilisé adaptativement, pas généralisation.
+  Prochaine mesure V220 generation complète puis V221 séparée, mêmes gardes214.
