@@ -13539,3 +13539,41 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Prochaine génération128 indépendante peut conserver le helper RAM exact
   mesuré V198 ; pas de lecture/réemploi de ses preuves ni celles de V197.
   Dernier recall89,0625%exact inchangé, aucun label ouvert, goal ACTIVE.
+
+### V199 — génération128 complète RAM exacte, protocole commité avant run
+
+- Commit isolé `f81a6b1d` : nouveau script/config/contrat/tests, pas patch
+  des versions mesurées. Helper RAM V198 et capsule/audit V197 réutilisés
+  comme CODE figé et FULL hashé dans86références d'implémentation, jamais
+  leurs fichiers de résultats. Modifications tierces préservées, pas push.
+- ALL128/vecteurs/heads/folds2/3/4 et ALL44m sites/98m faits conservés,
+  même formule V182/collecteur V183, <=100 direct sans réservoir/re-score.
+  Compteurs RAM mêmes tokens/proofs et fallback V170 exact ; query20s,
+  flatten20s, partition30s, worker80s/1Gio et quiet30 inchangés.
+- Correction de formats intégrée au contrôle de preuves propre à V199 :
+  appartenance canonique path+SHA256 ET epoch/size original ET verifyFULL,
+  ne pas comparer naïvement dict avec/sans size_bytes. Aucun relâchement
+  si ref/hash/size/epoch manquant ou changé. Test du vrai lecteur de paires
+  avec records sizés et inventaire canonique, pas seulement d'un helper.
+- Ordre physique avant calcul : trois phases pour capsule complète
+  (names000/addresses000/score000-000), tous names001..063, tous
+  addresses001..063, puis255scorers restants. Exactement384 phases une
+  fois ; ordre canonique pour plan/audit et128outputs inchangé. But :
+  échouer tôt sur coût des noms, jamais sélectionner selon labels.
+- Suite étendue190PASS/59,27s (session57931 TERMINAL0) ; ajout de2cas de
+  config ensuite20PASS ciblés/0,46s ; ajout du vrai lecteur2PASS/1,20s
+  (session37431 TERMINAL0). 194 cas distincts au total. Fichiers, FULLhashes,
+  epochs et oracles réels ; supervision/population des petites fixtures
+  explicitement simulées. Compile/CLI/config384/implementation86/diffcheck
+  PASS. Mauvais formats/refs/size/epoch, cap101, manque dernier client,
+  audit/parent/ledger partiels, GT et rescore refusés.
+- Nouvelle racine prévue
+  `retrieval_v199_population_initial/run_20261004_a`, pas encore lancée à
+  ce jalon. Aucun ancien worker encore live. Plusieurs heures prévues,
+  séquentiel mono-thread avec pauses ; pas de ressource/budget élargi,
+  cloud, purge ou dépense. STOP immuable, aucun fragment ancien réadmis.
+- Après TOUS384calculs, FULLaudit sources+512vecteurs+certificats,
+  puis64réductions et ledger93507, admission128. Labels séparés seulement
+  après ROOT SEALED : exact/op/all-human/absences/V2/V3/sidecar catalogue
+  courant, pas ancien évaluateur Tantivy comme preuve d'absence actuelle.
+  Dernier89,0625%exact reste inchangé, pilote non READY, goal ACTIVE.
