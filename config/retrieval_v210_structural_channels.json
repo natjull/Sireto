@@ -1,0 +1,18 @@
+{
+  "source_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v187_staged_initial.json",
+    "sha256": "75d76fff841b2b52241410b15a17d43ab40eb5cf733f05e9c49665a0b7e148d9",
+    "size_bytes": 2690
+  },
+  "resources": {
+    "max_rss_bytes": 1073741824,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "quiet_seconds": 30,
+  "query_seconds": 20,
+  "mean16_seconds": 4,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v210_structural_channels"
+}
