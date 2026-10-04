@@ -13164,3 +13164,46 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Pas recallnouveau/READY/SOTA/SLO/99%garanti ; fold0/1/GTfermés et avalgelé.
   FullOOF/Wilson/généralisation/label-sidecar restent dus ; Mac/CATNAT seuls,
   aucune dépense/push/purge/autreappkill ni changementdesmodèlesaval.
+
+### V195 pair initial100 — code et contrat AVANT mesure nationale
+
+- Turnprécédent PROGRESS :194 deuxpreuvesd'adresses réelles SEALED, pasattente/
+  no-progress. Source actuelle HEADd3a67563 inspectée ; aucun joblivehérité.
+- Nouveaucommit isolé `6ca0cace` : scripts/probe_retrieval_v195_pair_initial.py,
+  module retrieval_pair_audit_v195, config, contrat ettests. Aucun184..194
+  mesuré ni modèleaval modifié. Deuxpositions0/1 figées dans128typedCRM,
+  propresproofs193/194, propreq125geo/num/CP/INSEE/vecteur/ownhead192 ;
+  JAMAISoriginal187.activity(vectors[:1]) pourquery1. Recettes hashées propres.
+- Découpage PHYSIQUE4 vs3 documenté avantmesure : np.array_split des678
+  intervalles officiels, spans[0,11141120)/[11141120,22282240)/
+  [22282240,33357824)/[33357824,44403034), faits25049175/25956701/
+  25357414/22441582. TOUS44403034sites/98804872faits pourCHAQUEquery,
+  même182/14630features/183scoresweights/ordre, sanspool2000/500/rerank.
+  Raisoncoût :2xscore18725-26s +ouverture20s laissent peu de marge80s ;
+  4spans pluspetits devraientlaissermarge, pasgarantie/nouveaubudget.
+  Lecture readonlymetadata160 pourspans, pasmesurequery/GT. Les anciens
+  spans3 de194nechangentpas sesvecteurs complets348mvariants34346446.
+- Cataloguechargé AVANT grossesmétadonnées ; sources ouvertesUNEfois par
+  worker, propre PartitionFacts/cursor/grades parquery, writepart avantnext.
+  Paquetcommun targets/epochsunefois+deuxrecettes, ALLfacts.used/CSR/autorités/
+  plans/ledger/impl/catalogue/attrs/queries/vectors/models/descriptions/
+  3decoderparams ETepochs/targetscomplets193/194. Dédup auditphysiqueseulement,
+  aucune cible supprimée ; chaque conflit hash/epoch bloque. Fullaudits3
+  aprèsTOUS4scores, deuxréductions exactes<=100 puisledger93507 indépendant
+  APRÈSmerge. Trace pinne tousproducers/packets/audits etadmissionrevérifie
+  leuractualité, pas sortie admiseavecpartiel/STOP/parentnonconfirmé.
+- Tests195+194+193+192+183+187169PASS5,54s/session81320TERMINAL0. Première
+  suite156PASS4,74s/session29290TERMINAL0 puis ajoutguardsledger/output.
+  Bytes tinyfixtures réellementFULLhash ; process/populationcontrôles simulés,
+  pasrésultatnational. Oracle unsplit146==deuxqueries propres surleMÊME réel
+  tinyfactstore181/147, owncursors/completed/score/ties. Guardsmissingtail/
+  queryrecipe/fold0/1/truth/sourcesubset/changedaftermerge/101/epochs/bytes/
+  receipt/actualparent/RSS/STOP/budgets/pop128. Compile/diffcheckPASS.
+- Freshroot à lancer retrieval_v195_pair_initial/probe_20261004_a. Scope
+  coût deuxinitial100 nationales seulement, PAS128 nirecall. Worker1Gio80s/
+  score30s/quiet30/p1/free>=50 inchangés. Inclure19384,049722+19480,236356s
+  de preuves danscoût final, pasprésentermergeseul/chaud comme retrieval/SLO.
+  Pasmesuré àcej alon, pasrelanceSTOP ; toutes128outputs scellées puisGT
+  séparée toujoursdue,99,2%exactinitial/fullOOF/Wilson/généralisation/SLO.
+  GoalACTIVE, dernier89,0625%exact/90,625%op inchangé, fold0/1/GTfermés/
+  avalgelé, aucune dépense/push/nettoyage/sourcehistorique supprimée.
