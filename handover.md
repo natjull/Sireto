@@ -14146,3 +14146,37 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   évaluation séparée toujours requis ; corpus natif43,9M/append non intégré
   restent publiés, objectiffinal99,2% non diminué. Ancien recall V10189,0625%
   inchangé, goalACTIVE, fold0/1 et aval gelés, pas push.
+
+### V211 terminal PASS réel — nouvelle recette exécutable, pas encore de recall
+
+- Code `a7a46257`, pré-mesure `5c8088c7`, session58699 TERMINAL0 réel.
+  `retrieval_v211_structural_channels/probe_20261004_a` neuf, aucun fragment
+  de210STOP repris. Code/config/contrat/tests211 désormais IMMUTABLES.
+- q24 :100 SIRET uniques directs, query3,844562708s ; canaux texte34,
+  noms_officiels33,successions33 et mêmes32aliases/72faits/43UL/21sites/
+ 63ancres/76observations/64liés que210. Pas retour100 déclaré100hits.
+  BAN incompatible sur CETTEquery, canalgéonational pas encore mesuré.
+  Ne pas attribuer10,077->3,845s à une accélération métier : cache noncontrôlé,
+  ni comparaison de latence paired ni garantie pour autres queries/SLO.
+- Worker4,506128750s/RSS1060028416 (<1073741824 mais marge seulement~13Mo),
+  p1/free>=83/globaldelta0/PASS153. Parent12848/exit0/confirmed, wall
+ 5,149311917s/sampleRSS1059520512/free>=83/globaldelta0/cleanupaucun,
+  postcheck parent168 et validate_report PASS. Pas de worker encorelive.
+- Tous192 fichiers USED /1389148288octets fullhash avant+après et epochs
+  originaux, metadata/inventory natifs inchangés ; segmentsnatifs PAS fullhash,
+  aucun artefact unused revendiqué re-audité. Manifest SHA
+  `7efa993dd1085cc30bb52eb5cf8394580e96d30f8eb1e846c310e88284977c5a`,
+  launch SHA `21529b7a926620c14824bbc8a5ef858d948e7a768fe0eb9d907098221c9b832b`.
+  Full128typed validé, 1query costONLY, evaluation_authorizedFalse,
+  full128_outputs_sealedFalse, truthFalse. Aucun label/candidatbaseline lu.
+- Ce tour PROGRESS : une NOUVELLE recette de retrieval a été implémentée et
+  réellement exécutée sous les limites, pas un autre stockage de V206.
+  Prochaine action prioritaire : nouveau driver de génération ALL128 et
+  évaluateur séparé après seal, métriques exact/op et pertes all-human ;
+  pas nouvelle série de kernels/tampons mémoire. Budget20/80/1Gio/quiet30/
+  mean16<=4 inchangé, signaler explicitement si ce budget bloque la mesure.
+  Ne pas inférer de ce probe le succès128 ou élargir silencieusement.
+- Limite de corpus43,9M versus44,4M connue, ne pas cacher les manquants
+  ou promouvoir cette expérience comme solution finale. Exact99,2%/allhuman/
+  fullOOF/généralisation/sidecar/SLO restent NON atteints. V101114/12889,0625%
+  demeure dernier recall ; objectifACTIVE, aval/folds0/1 gelés, pas push.
