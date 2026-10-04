@@ -1,0 +1,125 @@
+{
+  "status": "MEASURED_V230_EXACT_INITIAL100_ALL128_REUSED_PILOT",
+  "decision": "PIVOT_GENERATION",
+  "primary": {
+    "active_successor_same_site": 10,
+    "exact_hits": 120,
+    "exact_recall": 0.9375,
+    "multiple_active_equivalents": 2,
+    "operational_hits": 121,
+    "operational_only_hits": 1,
+    "operational_recall": 0.9453125,
+    "queries": 128,
+    "wilson95_lower": 0.8815120889557413,
+    "wilson95_upper": 0.9679930743049387
+  },
+  "paired_versus_v218": {
+    "exact_hit": {
+      "gains": [
+        62,
+        121
+      ],
+      "losses": []
+    },
+    "operational_hit": {
+      "gains": [
+        62,
+        121
+      ],
+      "losses": []
+    }
+  },
+  "remaining_exact_miss_positions": [
+    6,
+    12,
+    16,
+    34,
+    67,
+    74,
+    79,
+    97
+  ],
+  "folds": {
+    "2": {
+      "active_successor_same_site": 5,
+      "exact_hits": 39,
+      "exact_recall": 0.9069767441860465,
+      "multiple_active_equivalents": 0,
+      "operational_hits": 39,
+      "operational_only_hits": 0,
+      "operational_recall": 0.9069767441860465,
+      "queries": 43,
+      "wilson95_lower": 0.783972963587464,
+      "wilson95_upper": 0.9632283593682872
+    },
+    "3": {
+      "active_successor_same_site": 1,
+      "exact_hits": 39,
+      "exact_recall": 0.9512195121951219,
+      "multiple_active_equivalents": 2,
+      "operational_hits": 40,
+      "operational_only_hits": 1,
+      "operational_recall": 0.975609756097561,
+      "queries": 41,
+      "wilson95_lower": 0.8386102112962914,
+      "wilson95_upper": 0.9865190546348308
+    },
+    "4": {
+      "active_successor_same_site": 4,
+      "exact_hits": 42,
+      "exact_recall": 0.9545454545454546,
+      "multiple_active_equivalents": 0,
+      "operational_hits": 42,
+      "operational_only_hits": 0,
+      "operational_recall": 0.9545454545454546,
+      "queries": 44,
+      "wilson95_lower": 0.8486500156237035,
+      "wilson95_upper": 0.987444890050405
+    }
+  },
+  "latency": {
+    "cache_state": "UNCONTROLLED",
+    "max_seconds": 8.936156166251749,
+    "mean_seconds": 3.5725949869665783,
+    "p50_seconds": 3.4713838750030845,
+    "p95_seconds": 5.256515985843725,
+    "p99_seconds": 8.186138352090499,
+    "production_slo_validated": false,
+    "queries": 128,
+    "total_query_seconds": 457.292158331722
+  },
+  "generation": {
+    "manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v229_corroborated_population/run_20261004_a/manifest.json",
+      "sha256": "06a1b5b9cbb932ee87dd982f6146ff87609fe9ac01d3a1682fa66c1d074b04d0",
+      "size_bytes": 5333
+    },
+    "outputs": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v229_corroborated_population/run_20261004_a/outputs.json",
+      "sha256": "1c232e6e1c502468d719c8ec28344f924e2691804971bc930166e8c0632ffa39",
+      "size_bytes": 3403220
+    },
+    "wall_seconds": 988.0530880838633,
+    "worker_seconds": 494.37469279114157,
+    "peak_worker_rss_bytes": 1976647680
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v230_postseal_evaluation/run_20261004_a/metrics/report.json",
+    "sha256": "77d76e04c7ea6ba7cf54f2f5cc54bda73b53b492bc12df71cd758cbaf85707cd",
+    "size_bytes": 117898
+  },
+  "evaluation_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v230_postseal_evaluation/run_20261004_a/manifest.json",
+    "sha256": "0bf07241d33329e723dfe2c52dd62089a33f2966915036d4d771dec04a3236f4",
+    "size_bytes": 1585
+  },
+  "identical_target_references": true,
+  "all_actual_exits_zero_and_pass_v214": true,
+  "pilot_reused": true,
+  "ready_for_fold1": false,
+  "full_oof_population": false,
+  "slo_validated": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false
+}
