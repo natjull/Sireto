@@ -13792,3 +13792,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ajout `a773b9c8` cite STOP202 et verrou. Aucun driver de labels exécuté.
   Dernier89,0625%exact inchangé, cible99,2%/OOF/Wilson/SLO nonprouvés,
   aval/folds0/1 gelés, goal ACTIVE.
+
+### V204 — bench terminé : tri des maxima rejeté, ORFALSE seul prometteur
+
+- Code `d3f69769`, pré-mesure `a96e4407`, session11473 TERMINAL0.
+  Report `/private/tmp/sireto-v204-updates.Whz2sO/report.json` ; numeric
+  fixtures seulement, pas sources nationales, features métier ou labels.
+  Trois essais alternés, mêmes BYTES sur TOUTES16000000positions pour max
+  et bool, pas uniquement positions touchées. Code/contrat204 mesurés
+  désormais IMMUTABLES, ne pas les patcher pour améliorer le bench.
+- Temps des quatre appels max original0,120741250/0,098625875/0,100286041s,
+  groupé0,384021625/0,358062750/0,347861458s : plus lent, NE PAS intégrer
+  la classe complète au query national. Ce résultat négatif change le choix,
+  plutôt que relancer encore un128 avec une optimisation supposée positive.
+- ORFALSE original0,102631084/0,106988208/0,110300958s contre
+  optimisé0,018475292/0,017469834/0,027478375s : gain local ~5–6x sur ces
+  écritures uniquement, pas gain national/recall/SLO garanti. Max+flags
+  ensemble du prototype plus lents ; conserver max V170 inchangé.
+- WorkerBudget réel2,182153041s/RSS285409280/p1/free84/global0/PASS153,
+  cache non contrôlé. Seuls12 fichiers npy de scratch numériques propres
+  (3essais x4) ont été supprimés après comparaison complète ; entièrement
+  régénérables par seed204/script. Préflight/report conservés, aucune
+  source/ancienne preuve/résultat utilisateur supprimé. Aucun worker live.
+- Prochaine action : NEW205 FlagsOnlyVector (maximum170 inchangé,
+  flags204 optimisé), profile séparé max/flags au cours du scatter réel,
+  oracle complet150 bit-exact puis probe q4 national fresh avant128long.
+  Conserver tous refs/counts/grades/snapshots et query20/worker80/1Gio.
+  Pas relance de V202STOP ni réemploi de ses fragments. Helper203/V200
+  d'évaluation préparés mais aucun label national ouvert ; dernier
+ 89,0625%exact inchangé. GoalACTIVE, objectif99,2% nonprouvé.
