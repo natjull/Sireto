@@ -14248,3 +14248,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   figer NOUVELLEversion génération/autorité/évaluateur avant mesure, labels
   fermés jusqu'àALL128. Dernier exact89,0625% inchangé, objectifACTIVE,
   aval/folds0/1 gelés, pas push, modifications utilisateur hors volet intactes.
+
+### Audit du blocage — décision utilisateur requise, troisième tour consécutif
+
+- Etat revalidé : HEAD `6e5fd684`, limites212/153 inchangées1Gio et
+  mean16<=4, run212STOP/0outputs/GTfalse, propre child13794exit-15 confirmé
+  et cleanupnull. Aucun calcul encore live à attendre ; pas timeout confondu
+  avec arrêt. Les fichiers du volet restent propres et les STOP immuables.
+- Tour précédent PROGRESS de préparation (noyau213 commit `bc422828`,
+ 120tests), mais pas amélioration ou nouveau recall. Ce tour NO PROGRESS
+  vers la mesure, car la même autorisation manque depuis212 puis213 et
+  cette continuation. Les continuations automatiques ne sont pas un accord.
+- Alternatives sûres déjà épuisées dans le périmètre demandé : probe211
+  valide seulement1query et ne peut remplacerALL128 ; fragments212 ne
+  peuvent être évalués ; réduction du dénominateur/source/100 ou ouverture
+  fold0/1 interdites ; nouveau cycle de micro-optimisation contredit la
+  priorité humaine. Budget supérieur ou gate4s nonéliminatoire nécessitent
+  décision explicite. Pas de fit aval/cloud/hausse/relance entreprise.
+- Seuil des3tours au même blocage atteint : statut goal à passer BLOCKED,
+  pas COMPLETE ni PAUSED. Attendre accord pour2Gio et latence mesurée
+  sans gate moyen4s, autres protections inchangées, puis nouvelle version
+  avant run. L'objectif99,2%allhuman exact/fullOOF/généralisation/SLO demeure
+  entier, dernier89,0625% inchangé. Pas push.
