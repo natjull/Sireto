@@ -14529,3 +14529,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ciblés PASS1,40s avant mesure, aucune garantie nationale par les fixtures.
 - Relance bornée V222/223 sur128 only, pas23k, pas de nouveau fit aval/OOF,
   ni évaluation des seuls cas ratés. Dernier recall reste118/128=92,1875%.
+### 4 octobre 2026 — STOP222 RSS ; V224/V225 testent uniquement la confiance nominale
+
+- V222 session39932 TERMINAL exit1, enfant55219 exit-15 confirmé : RSS
+ 2171518976>2147483648 à24,707611s, pas nouvelle garde/relance élargie. Une
+  sortie query0 vue au log, ZERO batch admis, aucun GT/recall. Résultat
+  `7be3f47d`, V223 jamais lancé. Le langage compile mais n'est pas viable
+  tel quel dans2GiB ; ST dans un nom contextuel expose un fanout massif.
+- Milestone `c6779450` : V224 revient au cœur217 avec SEULE correction de
+  confiance des fragments nominaux (singleton1/nbtokens, alias entier1).
+  SIGLES NON UTILISÉS, pas une relance STOP222, pas de ressourcement GT.
+  Les futurs sigles nécessitent un accès officiel approprié, pas RSS élargi.
+- Milestone `91aa92d1` : V225 autorité/metrics séparés, toutes128 sorties et
+ 16 vrais producteurs avant GT, exact/op all-human inchangés.70 tests PASS1,13s.
+- Mesurer128 appariées, zéro23k : publier toute perte autant que les gains,
+  ne pas promettre amélioration ni généralisation. Aval/fold0/fold1 gelés.
