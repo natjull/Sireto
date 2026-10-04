@@ -1,0 +1,55 @@
+{
+  "base_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v187_staged_initial.json",
+    "sha256": "75d76fff841b2b52241410b15a17d43ab40eb5cf733f05e9c49665a0b7e148d9",
+    "size_bytes": 2690
+  },
+  "population_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v192_query_population.json",
+    "sha256": "8920c805dea501bc81331a0d794e68f3fb82335aae1389b478a8475db75cf654",
+    "size_bytes": 742
+  },
+  "queries": 128,
+  "batch_width": 2,
+  "resources": {
+    "max_rss_bytes": 1073741824,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "quiet_seconds": 30,
+  "max_audit_bytes": 5368709120,
+  "max_audit_files": 4096,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v206_population_initial",
+  "sites": 44403034,
+  "aliases": 34346446,
+  "facts": 98804872,
+  "partitions": 4,
+  "expected_spans": [
+    {
+      "start": 0,
+      "stop": 11141120,
+      "facts": 25049175
+    },
+    {
+      "start": 11141120,
+      "stop": 22282240,
+      "facts": 25956701
+    },
+    {
+      "start": 22282240,
+      "stop": 33357824,
+      "facts": 25357414
+    },
+    {
+      "start": 33357824,
+      "stop": 44403034,
+      "facts": 22441582
+    }
+  ],
+  "max_counter_ram_bytes": 67108864,
+  "execution_order": "NAMES_BEFORE_REMAINING_SCORES_TRUTH_FREE",
+  "max_relation_chunk": 131072,
+  "max_update_chunk": 131072
+}
