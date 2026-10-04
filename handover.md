@@ -14777,3 +14777,23 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Prochain run241128 complet sousgardes214, GT fermé jusqu'au seal ;242
   distinct et comparaison230. Persister vers99,2 sans changer le contrat,
   aucun READY/fullOOF/SLO/généralisation ni ouverture fold0/1/aval.
+
+## 5 octobre2026 — V242 sans gain, preuves lexicales officielles V243/V244
+
+- V241/V242 terminaux : tous128/16 producteurs et deux évaluateurs réels
+  exit0/PASS214. Exact120/128=93,75%,op121/128=94,53125%, gain NET zéro
+  apparié vs230 : gains67/74/97, pertes42/44/121, exact ET opérationnel.
+  Mêmes contrôles/cibles ; huit ratés mais PAS les mêmes. Critère TRAIN
+  top100 n'a pas suffi ; référence229 conservée. Détails scellés dans
+  `docs/retrieval_v242_results.json`. Pas fullOOF/SLO/READY/généralisation.
+- Commit `36a208a6` :243/244 gelés AVANT émission. Variantes ENTIERES
+  officielles134/132 contenues dans CRM, historique inclus, deviennent
+  de vraies preuves lexicales MAX dans0/2/6/8/10, pas seulement bonus owner.
+  Rôles UL/site conservés, aucun prêt de nom de site aux frères, aucune
+  somme de doublons, head229/228 gelé. Nouvelles sémantiques de features
+  explicites, PAS parité revendiquée avec fit217, aucune union oracle.
+- Commit `9bb39d6f` :245 autorité/métriques séparées, GT fermées jusqu'à
+  génération244 intégrale sous214.84 tests PASS, pas preuve recall. Même
+  plafond100 direct global, pas pool/rerank, fanouts officiels complets,
+  STOP si trop coûteux ; pas hausse de budget, fold0interdit/fold1fermé,
+  aval gelé. Prochain244ALL128 puis245 uniquement après seal admis.

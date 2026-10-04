@@ -1,0 +1,368 @@
+{
+  "generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v241_corroborated_population/run_20261005_a/manifest.json",
+    "sha256": "089bc0e530244bce485c934cba947a290fccdfaaf5d7dffad1e27e7b91eeed2b",
+    "size_bytes": 5333
+  },
+  "outputs": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v241_corroborated_population/run_20261005_a/outputs.json",
+    "sha256": "90b03546733ae06325d34c2151fff9f6d7833b29a7dee8e3d5c6194911aac46b",
+    "size_bytes": 3427837
+  },
+  "evaluation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v242_postseal_evaluation/run_20261005_a/manifest.json",
+    "sha256": "f3012b84667e20410852068ad07db5c2379a38fd53a0bef164c3e79c304ca4f4",
+    "size_bytes": 1585
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v242_postseal_evaluation/run_20261005_a/metrics/report.json",
+    "sha256": "1a1d5f0b6769c6044da3866e84546c3a69907bf75f138d0dbac43b784e117b43",
+    "size_bytes": 117945
+  },
+  "primary": {
+    "active_successor_same_site": 10,
+    "exact_hits": 120,
+    "exact_recall": 0.9375,
+    "multiple_active_equivalents": 2,
+    "operational_hits": 121,
+    "operational_only_hits": 1,
+    "operational_recall": 0.9453125,
+    "queries": 128,
+    "wilson95_lower": 0.8815120889557413,
+    "wilson95_upper": 0.9679930743049387
+  },
+  "folds": {
+    "2": {
+      "active_successor_same_site": 5,
+      "exact_hits": 40,
+      "exact_recall": 0.9302325581395349,
+      "multiple_active_equivalents": 0,
+      "operational_hits": 40,
+      "operational_only_hits": 0,
+      "operational_recall": 0.9302325581395349,
+      "queries": 43,
+      "wilson95_lower": 0.8139101309875801,
+      "wilson95_upper": 0.9759884104227855
+    },
+    "3": {
+      "active_successor_same_site": 1,
+      "exact_hits": 38,
+      "exact_recall": 0.926829268292683,
+      "multiple_active_equivalents": 2,
+      "operational_hits": 39,
+      "operational_only_hits": 1,
+      "operational_recall": 0.9512195121951219,
+      "queries": 41,
+      "wilson95_lower": 0.8057255146228096,
+      "wilson95_upper": 0.9748021693660901
+    },
+    "4": {
+      "active_successor_same_site": 4,
+      "exact_hits": 42,
+      "exact_recall": 0.9545454545454546,
+      "multiple_active_equivalents": 0,
+      "operational_hits": 42,
+      "operational_only_hits": 0,
+      "operational_recall": 0.9545454545454546,
+      "queries": 44,
+      "wilson95_lower": 0.8486500156237035,
+      "wilson95_upper": 0.987444890050405
+    }
+  },
+  "loss_counts": {
+    "HIT": 120,
+    "NOT_RETRIEVED_AT100": 8
+  },
+  "misses": [
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_HISTORICAL",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 3,
+      "ground_truth_state": "",
+      "historical_official_catalog_present": true,
+      "label_kind": "UNRESOLVED",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": true,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 6,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "3397",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_20260817",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 4,
+      "ground_truth_state": "A",
+      "historical_official_catalog_present": true,
+      "label_kind": "MATCH_EXACT",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": false,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 12,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "NEWCRM:448f1debd902123e3d800f6a22e7ce2e",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_HISTORICAL",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 2,
+      "ground_truth_state": "",
+      "historical_official_catalog_present": true,
+      "label_kind": "UNRESOLVED",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": true,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 16,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "12204",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_20260817",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 4,
+      "ground_truth_state": "A",
+      "historical_official_catalog_present": true,
+      "label_kind": "MATCH_EXACT",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": false,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 34,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "NEWCRM:65e5fe83d01a3291829ab1872123b796",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_HISTORICAL",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 2,
+      "ground_truth_state": "A",
+      "historical_official_catalog_present": true,
+      "label_kind": "MATCH_EXACT",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": false,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 42,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "7351",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_20260817",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 2,
+      "ground_truth_state": "A",
+      "historical_official_catalog_present": true,
+      "label_kind": "MATCH_EXACT",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": false,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 44,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "NEWCRM:a5c9a966cb35a9291aa34b63d8a6cf59",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": true,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_HISTORICAL",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 3,
+      "ground_truth_state": "",
+      "historical_official_catalog_present": true,
+      "label_kind": "UNRESOLVED",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": true,
+      "operational_hit": true,
+      "operational_rank": 1,
+      "position": 79,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "10533",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    },
+    {
+      "active_successor_same_site": false,
+      "available_official_catalog_present": true,
+      "current_catalog_present": true,
+      "data_origin": "REAL_CRM_20260817",
+      "exact_hit": false,
+      "exact_rank": null,
+      "fold": 3,
+      "ground_truth_state": "F",
+      "historical_official_catalog_present": true,
+      "label_kind": "MATCH_EXACT",
+      "loss": "NOT_RETRIEVED_AT100",
+      "mega_base_pool": null,
+      "multiple_active_equivalents": false,
+      "native_index_catalog_present": true,
+      "new_site_known_siren": false,
+      "operational_hit": false,
+      "operational_rank": null,
+      "position": 121,
+      "qualification_v2": "",
+      "qualification_v3": "",
+      "query_id": "NEWCRM:27f1cb7ddcfa87826206b77fe233d6b3",
+      "structural_loss": "NOT_RETRIEVED_AT100",
+      "unseen_siren": false
+    }
+  ],
+  "paired_to_v230": {
+    "exact_hit": {
+      "gains": [
+        67,
+        74,
+        97
+      ],
+      "losses": [
+        42,
+        44,
+        121
+      ]
+    },
+    "operational_hit": {
+      "gains": [
+        67,
+        74,
+        97
+      ],
+      "losses": [
+        42,
+        44,
+        121
+      ]
+    }
+  },
+  "same_controls": true,
+  "same_target_references": true,
+  "latency": {
+    "cache_state": "UNCONTROLLED",
+    "max_seconds": 6.859316457994282,
+    "mean_seconds": 2.989561014357605,
+    "p50_seconds": 2.9990398744121194,
+    "p95_seconds": 4.539780655759385,
+    "p99_seconds": 6.189723413083703,
+    "production_slo_validated": false,
+    "queries": 128,
+    "total_query_seconds": 382.66380983777344
+  },
+  "generation_resources": {
+    "peak_worker_rss_bytes": 1979514880,
+    "wall_seconds": 907.3423158749938,
+    "worker_seconds": 415.62455799849704
+  },
+  "evaluation_resources": {
+    "authority": {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 175374336,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 3,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 0.8582277498207986
+    },
+    "metrics": {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 996179968,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 10,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 4.513142708223313
+    }
+  },
+  "decision": "PIVOT_GENERATION",
+  "ready_for_fold1": false,
+  "pilot_not_full_oof": true,
+  "reference_v229_retained": true
+}
