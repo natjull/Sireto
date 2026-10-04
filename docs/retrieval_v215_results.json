@@ -1,0 +1,72 @@
+{
+  "status": "PIVOT_GENERATION",
+  "generation_code_commit": "3436168b",
+  "evaluation_code_commit": "2efef0a7",
+  "generation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v214_structural_population/run_20261004_a/manifest.json",
+    "sha256": "165c6945d72fc5829871fb95e9a7fc45120e97bb309bb5308123fa94334e449b"
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v215_postseal_evaluation/run_20261004_a/metrics/report.json",
+    "sha256": "00ce5ac3b48e0bfc6e5fd3bc422981d0b5afe04336e632c218cb49a7c6cb47e0"
+  },
+  "baseline_evaluation": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v101_national_paths/pilot_20261003_a/evaluation.json",
+    "sha256": "12e31057234efc6c6992e18062fc10761b4370c379d3161ccf284bbaa2f5127c"
+  },
+  "queries": 128,
+  "initial_cap": 100,
+  "exact_hits": 107,
+  "exact_recall": 0.8359375,
+  "operational_hits": 110,
+  "operational_recall": 0.859375,
+  "wilson95_lower": 0.7621819239629298,
+  "paired": {
+    "same128_controls_folds_ledger_and_official_sidecar_verified": true,
+    "old_exact_hits": 114,
+    "new_exact_hits": 107,
+    "gains": 5,
+    "losses": 12,
+    "shared_exact_hits": 102,
+    "shared_misses": 9,
+    "delta_points": -5.46875,
+    "gained_positions": [10, 12, 62, 117, 118],
+    "lost_positions": [3, 19, 27, 31, 39, 55, 73, 76, 93, 104, 116, 122],
+    "all_gains_emitted_by": "text",
+    "baseline_is_different_learned_initial_retrieval_not_standalone_current_text_channel": true,
+    "causal_channel_ablation_measured": false
+  },
+  "losses": {
+    "native_catalog_absent": 0,
+    "available_catalog_absent": 0,
+    "native_present_not_retrieved_at100": 21,
+    "baseline_losses_with_text100_and_no_other_admission": [19, 27, 93, 104],
+    "fine_causal_attribution_measured": false
+  },
+  "emitted_channels": {
+    "text": {"candidates": 7169, "exact_hits_attributed": 82},
+    "official_name": {"candidates": 812, "exact_hits_attributed": 16},
+    "succession": {"candidates": 626, "exact_hits_attributed": 2},
+    "geo_text": {"candidates": 4193, "exact_hits_attributed": 7}
+  },
+  "channel_statistics_are_not_standalone_recall_or_unique_rescues": true,
+  "latency": {
+    "mean_seconds": 7.214686013976461,
+    "p95_seconds": 10.497626373311503,
+    "p99_seconds": 13.067606842257085,
+    "generation_wall_seconds": 2947.310486207716,
+    "generation_worker_seconds": 982.5467031700537,
+    "peak_worker_rss_bytes": 1877491712,
+    "cache_state": "UNCONTROLLED",
+    "production_slo_validated": false
+  },
+  "all128_before_target_reads_verified": true,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "ready_for_fold1": false,
+  "full_oof_population": false,
+  "initial100_target_achieved": false,
+  "promote_this_recipe": false,
+  "next_investigation": "Audit official name/address/geometry and query-side proof compatibility for the losses. Compare evidence fusion without blindly reserving slots; no causal claim that quotas alone explain the regression. No speed microbench."
+}
