@@ -13767,3 +13767,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun driver d'évaluation connecté ni permission nationale/metrics.
   Noyau200 seulement prêt. Adapter backend au prochain générateur complet
   dans une version figée avant mesure ; toutes GT restent fermées. GoalACTIVE.
+
+### V204 — prototype arithmétique testé, bench commité avant mesure
+
+- Commit `d3f69769` : GroupedProofVector204,18tests PASS/1,21s
+  (session44450 TERMINAL0), bench numérique et contrat. Max local trié/
+  réduit en blocs131072 et ORFALSE sans écritures redondantes, MAIS toutes
+  refs/dtypes/shapes/epochs/fichiers restent validés, aucune source retirée.
+  Source IDs utilisés seulement pour regrouper les écritures au même slot,
+  pas comme features ni candidats. Valeurs finales comparées en BYTES,
+  signedzero renvoyé au kernel original pour préserver sa sémantique.
+- Pas encore intégré à query complet/national : ne pas dire qu'il accélère
+  ou améliore déjà le retrieval. Bench synthétique fixé, jamais feature
+  métier ou GT, trois trials à ordre alterné, entiers/float64/bool et
+  égalité de TOUTES16000000positions avant coût admis. Temps mesurés max et
+  flags séparés, cache non contrôlé. Budgets1Gio/80s/quiet30 inchangés.
+- Racine fresh créée `/private/tmp/sireto-v204-updates.Whz2sO`, bench pas
+  encore lancé à ce jalon. Aucun worker national live. Après égalité des
+  vecteurs numériques de chaque essai, seules ses quatre npy privées seront
+  supprimées (entièrement régénérables), report/préflight conservés ; aucune
+  source/résultat utilisateur/STOP supprimé ou réadmis. Si gain crédible,
+  tests oracle du query complet205 puis probe q4 avant autre128long.
+- V20315tests initiaux plus3typed-permission ciblés0,44s PASS,18casdistincts,
+  ajout `a773b9c8` cite STOP202 et verrou. Aucun driver de labels exécuté.
+  Dernier89,0625%exact inchangé, cible99,2%/OOF/Wilson/SLO nonprouvés,
+  aval/folds0/1 gelés, goal ACTIVE.
