@@ -11945,3 +11945,39 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   gate de coût mais pas encore lancé à cette note.576 lots puis256 packs,
   tous requis ; arrêt au premier échec, pas de retry ni métrique sur partial.
   Aucun moteur complet, aucun nouveau recall, V101114/128 exact inchangé.
+
+### V165 remaining STOP vérifié ; V166 lecteurs ET writers bornés
+
+- Remaining165 session86697 TERMINAL1, pas de job encore vivant de ce build.
+  Seuls lots0 et1 complets ; lot1 :57344 adresses,4,640612s/RSS973389824,
+  minfree76/pression[1]/global0/PASS et parent report propre présent.
+  Lot2 manifest absent ; status et supervisor_stop présents, aucun succès.
+- Diagnostic164 du parent lot2 SHA
+  `af5289146475f95d77db3a22302d25834a8f5758db4a2dcc5da4ce3038475b04` :
+  pic1246904320 octets (~1,16Gio), failure5,678411s, min76/pression1/global0,
+  own PID47293 terminé exit-15 confirmé. Cette fois RSS réellement au-dessus
+ 1Gio ; pas un dépassement80s ni une pression système. Lot0 ne garantissait
+  pas les576. Ne pas relancer root165 ni importer le lot2 arrêté.
+- Features et les64 dirs staging déjà présents lors de l'arrêt2 : cela
+  suggère aussi le coût des lecteurs pendant l'audit d'exports, sans prétendre
+  avoir une trace RSS par instruction SQL. Groupes de COPY seuls ne prouvaient
+  pas la maîtrise du pic. Sources et tous résultats165 maintenant immuables.
+- Milestone `88f8678c` : compiler/reader/backend166 + kernel versionné166,
+  quatre writers et audit d'exports par groupes d'au plus quatre partitions.
+  Chaque original (alias_id,channel,token,term_bucket) doit toujours joindre
+  exactement son export, cardinalité/unicité/champ bucket vérifiées pour
+  CHAQUE groupe, somme couvrant TOUS les postings. Aucune donnée/famille/
+  région/alias/token retirée ; mêmes scalar guards/proofs/features131/152.
+- Native pack134, physical_plan152, source importV163 complet et assertions
+ 165 conservés. Budget1Gio/80s, pression et diagnostics164 inchangés. Aucun
+  assouplissement ni déduction de succès d'un PID absent. Kernel164 et165
+  mesurés non retouchés ; nouveau root166 requis. Les lecteurs sont un réglage
+  de stockage, PAS une sélection de candidats ni une nouvelle normalisation.
+- Tests ciblés166+16532 PASS17,33s session13861 TERMINAL0 ; fixtures bout-
+  en-bout et égalité intégrale des features et tables de postings au natif,
+  groupes1/3/4, corruption d'export même cardinalité rejetée par join indépendant.
+  Fixtures/process/pression simulés : PAS de coût national. Régression
+  V117–166 session43957 en cours avant mesure. INIT166 et hard-lot2 à mesurer
+  d'abord, puis remaining seulement si le lot2 est effectivement validé.
+- Exact recall V101114/128 (89,0625%) toujours, noREADY. Modèles aval gelés,
+  folds0/1 et labels non ouverts, aucun résultat partial transformé en recall.
