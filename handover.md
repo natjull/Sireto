@@ -12701,4 +12701,55 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   run ; poll97909 jusqu'à terminal, conserver/versionner chaque STOP.
   Les temps finaux incluront les108,169869s workers de preuves184, pas
   seulement l'assemblage185. Labels toujours fermés, dernière mesure exacte
- 89,0625% inchangée. Une sortie nationale unique ne mesurera pas le recall.
+89,0625% inchangée. Une sortie nationale unique ne mesurera pas le recall.
+
+### V185 wall STOP ; V186 goulot réellement isolé APRÈS le score
+
+- Session97909 TERMINAL1, pas LIVE : root185 probe_20261004_a conservé STOP.
+  score000 parentPID42335 actualexit-15 confirmé, wall80,229735s (failure
+ 80,207059s), RSS773275648/min79/p[1]/globalswap0. Ce n'est PAS un STOPRSS.
+  Aucun manifest/partition/candidat/worker_stop émis avant terminaison ; log
+ 185 vide donc phase responsable inconnue à ce stade. Aucun secondgroup.
+  Code185 `eaab9beb` maintenant mesuré/immuable.
+- V186 milestone `fc0473f3`, uniquement checkpoints (step/elapsed/RSS réel)
+  ajoutés aux frontières du185 identique, nouveau root/protocole. Test AST
+  complet prouve différences seulement version et instrumentation ; mêmes
+  fonctions de score/bind/merge/ressources. Suite186..158124PASS27,10s,
+ 22089 TERMINAL0, py_compile PASS, deux prefixes184 réellement acceptés.
+- V186 lancé UNEfois root `audits/retrieval_v186_staged_initial/probe_20261004_a`,
+  session30453 TERMINAL1, plus aucun jobLIVE185/186. Ne pas relancer ces roots
+  ni modifier leurs codes/configs/docs/artefacts. Aucun labels/GT/folds0/1
+  ouvert ; avalanche de variantes ne vaut pas validation de qualité.
+- Checkpoints RÉELS score000186 : INPUTS0,000001s/RSS121454592 ;
+  LOAD_CATALOG0,605570s/283295744 ; LOAD_READONLY_QUERY_PROOFS0,920039s/
+ 300990464 ; LOAD_COMPLETE_ORIGINAL_FACTS3,520657s/416448512 ;
+  SCORE_EVERY_PHYSICAL_LEAF21,358625s/564690944 ;
+  FULL_USED_SOURCE_HASH_AFTER44,505076s/600702976. Le score du groupe entier
+ 14811136sites/33480926facts est revenu de partition_search (qui exige tous
+  les faits de ce groupe +hashs des deux snapshots) en23,146451s <30s.
+  Ce n'est PAS le parcours complet44403034sites/98804872facts ni une sortie100.
+- Ensuite superviseur STOP wall80 : parentPID43851 actualexit-15 confirmé,
+  failure80,204705s/wall80,226461s/RSS778256384 (~742Mio)/min79/p[1]/global0,
+ 157samples/pasPIDdisparu. Aucun checkpoint suivant, aucune partition publiée.
+  Donc goulot localisé dans bloc vérifications FULL_USED_SOURCE_HASH_AFTER,
+  PAS dans l'ouverture/catalogue/scoring. Ne pas affirmer quel sous-appel
+  facts.verify_after/index.verify_after/attrs... était encore actif : non tracé.
+  Deux wallSTOP, pas un blocage dépendant d'autorisation ou ressources cloud.
+- Prochaine action sûre V187 AVANT mesure : séparer PHYSIQUEMENT le hash
+  exhaustif après score en worker(s) d'audit bornés80s, sans en retirer un.
+  Les collecteurs de partitions restent QUARANTAINE/non admissibles avant
+  receipt(s) réel(s) complet(s), mêmes refs/epochs/dtypes/source/query/fold/
+  poids/signature, actualparent0+reports153+hashs de chaque artifact. Réduction
+  initial100 seulement après tous les sites/facts et tous les hashs validés.
+  Pas de score différent, reranker, pool2000/500, réduction de corpus, positif
+  injecté ou élargissement1Gio/80s. Publier temps global ycompris preuves184
+ 108,169869s +scores +audits, jamais cacher leur coût dans une phase séparée.
+  Cette séparation précise est une piste d'implémentation, PAS encore faite
+  ni testée ou mesurée : aucun fichierV187 créé dans CE turn.
+- Noms/adresses184/initialscore186 prouvent intégrité de composants et coûts,
+  pas amélioration du recall. Dernier V101114/128=89,0625% exact/116opérations
+ 90,625% inchangé. Toujours génération sansGT puis toutes128 sorties avant
+  évaluation séparée ; initial10099,2% exact/all-human/fullOOF/Wilson95/
+  généralisation/SLO1s/2s dus. Aucun READY, pas objectif accompli. Goal actif,
+  pas de pause/blocage demandé, aucune dépense/push. Tous jobs de ce turn
+  actuellement terminaux ; prochaines modifications uniquement nouvelleversion.
