@@ -11754,4 +11754,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Aucun run restant vivant de CE volet à publication (65272 exit0,51198 exit1,
   tests42071 exit0). Ne pas relancer V155 à l'identique ni dupliquer un job.
   V101 reste114/128=89,0625% exact116/128=90,625% op, pilote réutilisé ; objectif
- 99,2% NON atteint, noREADY. Downstream et folds0/1 gelés, pas de dépense/push.
+  99,2% NON atteint, noREADY. Downstream et folds0/1 gelés, pas de dépense/push.
+
+## 2026-10-04 — V162 : même audit complet, durée de vie des objets réduite
+
+- Milestone commit `b1403595` : compiler/reader/backend V162 versionnés ;
+  V155/V161 mesurés et tous résultats précédents inchangés. Backend explicitement
+  V160 complet seulement. Même corpus, word/char3/char4/exact152 et pack134,
+  mêmes limites153 (1Gio/80s/pression normale, swap global télémétrie).
+- Audit exhaustif raw sources et prefix312+64 AVANT parsing du GLOBAL18Mo ;
+  plus de double parsing GLOBAL au dispatch. Même rehash des reverse64+678,
+  attributs/provenances, dénominateurs et exits parents confirmés. Au seal final,
+  l'audit source précède la rétention des objets staging lexicaux, toujours
+  sous le même Budget, sans saut de preuve ni pool candidat.
+- INIT en échec conserve désormais `init_stop.json` et Budget.report réel si
+  disponible : aucun plan/launch et root STOP non réutilisable. Global source
+  absent échoue toujours avant quiet/output/worker. Pas de chiffres inventés
+  pour l'ancien STOP V155, aucune hausse de budget.
+- Tests ciblés V155+V161+V162 :50 PASS32,60s, session81000 TERMINAL0.
+  Fixtures minuscules/pression simulée, PAS une preuve nationale de RSS,
+  latence, recall ou SLO. Régression V117–162 lancée session43391, résultat
+  encore non publié ici. Mesure nationale V162 pas encore lancée à cette note.
+- V101 reste114/128 exact (89,0625%),116/128 opérationnel (90,625%), pilote
+  réutilisé. Aucun nouveau moteur INITIAL100 complet ni métrique recall.
