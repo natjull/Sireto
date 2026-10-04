@@ -12951,3 +12951,53 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   aucunGT/fold0/1 ouvert, aucunscorequalité nouveau/READY/SLO niavalchangé.
   Toutes128 sorties puisévaluation/fullOOF/Wilson/généralisation/SLO dus,
   dernierexact89,0625%inchangé ; GoalACTIVE, aucun externalblock/spend/push.
+
+### V191 PREMIÈRE sortie nationale100 complète admise — pas encore recall
+
+- V191 `a9b340bb` désormais mesuré/immuable, session69114 TERMINAL0,
+  root `audits/retrieval_v191_early_catalog/probe_20261004_a` SEALED réel,
+  pasSTOP ni joblive. Originaladmission191 revalidée réelle aprèsrun,
+  session62015 TERMINAL0 : tous parents/reports/hashes/epochs/counts passent.
+- RootmanifestSHA4d91574dee610cd00b4263ed66d78f4da9996a5dbd6a91a8c7389612fad88498
+  (3481octets) ; outputmerge/draft_initial100.json admis SEULEMENT parroot
+  finalsha3bbb44dd6b9d3ecda7c7d1e3e5201ee3c929d67fcf447dd440555858e0b4b359
+  (11398octets). Vérifié100candidats/100SIRETuniques, ordre scoredesc/SIRET,
+  TOUS44403034sites/98804872faits, troisphysicalpartitions, aucunfixedpool/
+  rescore, signature80679905b25cc8f187fb2245af6a2769cb4c56866e804fb4406230f0e08537ce.
+- Merge191 parentactual0, worker10,458889s/RSS812417024 (~775Mio)/min80/
+  p[1]/globalswap0/PASS153. Trace ru_maxrss avantkeys388628480, APRÈSkeys
+ 812417024 AVANTaudits ; reste812417024 jusqu'àsortie. Cela prouve enfin
+  l'allocation transitoire d'ouverture du catalogue, que191 fait AVANT
+  résidentmetadataaudit ; pas retraitcontrôle ni sourcerefiltrée.
+- Ledger191 parentactual0,2,122220s/RSS505774080/min80/p1/global0/PASS,
+  TOUS93507epochs sourceoriginal177 aprèsmerge, receipt/liaisonexactes,
+  revalidationcheck_liveàadmission. Coût TOTALworkers338,828683s inclut
+ 184preuves108,169869 +187scores/audits218,077705 +merge19110,458889 +ledger
+ 2,122220. Elapsedrun19176,948923s inclutquiet60 et contrôleur. Cache non
+  froid, PAS une latenceproduction10s/2s ni SLO1s/2s validé. STOPs188/189/190
+  restenthistoriques distincts et leurs coûts n'entrent pas comme succès.
+- crmTrue, truth/fold0/fold1/recall/SLO/READY/downstreamchangeFalse confirmés
+  rootfinal ; aucuneGT une seulequery ouverte. Pas mesurer un recall sur
+  cequery de coût ; dernier exact114/12889,0625%/op11690,625% inchangé.
+  GoalACTIVE, objectif99,2% all-human/avantaval/fullOOF/Wilson/généralisation/
+  SLO pas atteint. Tous jobsce turn terminaux, aucun relanceroot191.
+- Prochaine étape GÉNÉRATION128 (protocole/code nouveaux AVANT mesure), pas
+  lireleslabels191. Généraliser la positiondequery et son vecteur/decoder
+  ownfold, garder même score/nom149-170/adresse177-182/XY139/model114/world.
+  Important187.activity utilise vectors[:1] : correct UNIQUEMENT query0
+  mesurée ; NE PAS employer pourquery1..127. Alignement source inspecté
+  read-only : querylaunch78.queries==115.queries, query_sources identiques,
+  launch78SHA6fc2cb89b489e8038e6f211e0fac0a36954874e066e8a727558cfa01d9d90956 ;
+  encodedqueryproof78 expansions.jsonSHA
+  dabd6ff1e99fa0bb390109aad4e503f714185dd6b6ab46c66a178c062366279c86029octets
+  (AUCUNEexpansion utilisée feature, seulement ordrequeryid/fold et sha128x384).
+  Source115.query_vectors valide déjà cetalignement/TRAINcompatibilité.
+  Pour192, vérifier128typedCRM avantselectposition, proprevecteur[pos:pos+1]
+  et decoderfold, pasreusevecteur0, fold0/1 jamaislus, pasqueryidfeature.
+- Ne pas lancer128 copiesde339s+quiet aveuglément :~12hworkers minimum,
+  plusquiet (près20h end-to-end si neufphases/query), paspreuve99%. Préparer
+  batching physique/reuse des contrôles queryindépendants sousmêmes1Gio/80s
+  et conserver fullafterhash avanttoutes128outputs puisGT séparée. Aucune
+  suppression de source/hash ou évaluationpartielle. Coût/latence à améliorer
+  encore, pasréduireobjectif. CATNAT653Giofree inspecté ; pasnettoyageeffectué,
+  aucuneapp tierce/dépense/push. Étape192 non créée dansce turn.
