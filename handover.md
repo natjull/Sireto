@@ -14367,3 +14367,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   le pivot, pas objectif atteint. L'APIgoal reste BLOCKED de l'audit précédent
   malgré Go ; les outils ne permettent pas resume/active. Ne pas le présenter
   COMPLETE ou inventer un nouveau blocage budget maintenant résolu.
+
+### V216 — audit qualité des pertes figé avant mesure
+
+- Accord humain « Allez vas-y » pour auditer les21 pertes215 puis changer
+  la fusion, pas microbench. Milestone isolé `055bc5fd` : audit LABEL_SELECTED
+  DIAGNOSTIC ONLY après admission réelle215 ALL128, noms103 scellés et mêmes
+  labels/CRM contrôlés. Aucun artefact diagnostic utilisable en serving/fit.
+- Mesurer pour ALL21 : noms officiels bruts vs document natif, distance XY
+  officielle au point BAN, et texte214 isolé top100 sans GT dans la recherche.
+  Pas nouvelle métrique de recall, pas dénominateur réduit du produit, pas
+  équivalence opérationnelle déduite de la proximité. Corpus natif inchangé.
+- Tests8 PASS0,10s ; prélecture autorité inputs128/21 validée avant lancement,
+  aucun lookup GT moteur encore exécuté. Trois workers7 diagnostics,
+  query20/worker80/quiet30/RSS2Gio/pression1/free50, un thread, budget214.
+  ROOT fresh `retrieval_v216_loss_evidence/run_20261004_a` prévu. Tout STOP
+  reste nonréutilisable. Code/contrat désormais figés avant mesure.
+- Aucun modèle aval/fold0/fold1 touché, aucune dépense/push. Objectif99,2%
+  initial100 entier ; dernier exact21583,59375% inchangé. User edits préservés.
