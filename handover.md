@@ -14484,3 +14484,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   NON atteint ; statutgoal API restehistoriqueBLOCKED nonmodifiable enactive,
   pas nouvelle pause ou completion inférée. Ce tour PROGRESS : vrai gain
   initial100 vérifié et prochaine action qualité identifiée, pas microbench.
+### 4 octobre 2026 — V219 : déficit réel des dix pertes V218
+
+- Milestone `4ee13dc6` : diagnostic post-scellé de TOUTES les dix pertes,
+  recompile le score V217 exact et vérifie ponctuellement top1/frontière100.
+  Aucun label en génération, aucun dictionnaire CRM, aucun nouveau recall.
+- Trois workers4/4/2, politique214 autorisée2GiB/20s/80s/quiet30 ; sources
+  utilisées FULL SHA avant/après, epochs, sorties réelles. 21 tests ciblés PASS.
+- Avant mesure : priorité aux régressions12/62 et à la distinction preuve
+  manquante / preuve disponible mais trop faible. V217/V218 immuables,
+  pilote118/128 toujours seule qualité courante, folds0/1 fermés, aval gelé.
