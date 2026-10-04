@@ -12422,3 +12422,46 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ajustement métier ou réutilisation d'une phase STOP.
 - Dernier recall exactV101114/128=89,0625% inchangé. Aucun nouveau candidat100,
   label/CRM/fold0/1/downstream ouvert, noREADY, aucunpush ni dépense externe.
+
+### V177 — DuckDB96Mio, bloc STOP précédent et plus gros bloc réels PASS
+
+- Milestone code `e4a71ffb`, protocole avant mesure
+  `docs/retrieval_v177_packed_addresses_contract.md`. Budget tri DuckDB réduit
+  256→96Mio, tout le reste identique : corpus, nativekernel134, posting/alias
+  positions, dtype/tri, validations/epochs, superviseur1Gio/80s. Nouveaux
+  fichiers/autorités V177, pas de modification mesurée176 ni retry deSTOP.
+- Tests177+176+17555PASS33,23s, session3019 TERMINAL0. Fixtures petites avec
+  pression/process simulés ; preuves nationales uniquement ci-dessous.
+- INIT23812 TERMINAL0, root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v177_packed_addresses/compile_20261004_a`.
+  LaunchSHA `23c6dfa55d784d6f77efc20c8242f6d810df782768cbedf99c69da8cad487f78`.
+  load() réellement accepté :4,580752s/RSS679329792/min77/p[1]/global0,
+ 34346446aliases/2440276150postings/93507epochs identiques176/175.
+- Bloc channel1/bucket0, session25085 TERMINAL0, celui qui STOP en176 :
+ 15035872postings/600terms/1800tokenbytes, toutespreuves134 nativesexactes.
+  phase_record réellement accepté, ManifestSHA
+  `965ecee3b58dd37dcdcbaea183afe400fd1460de33885de9ee3b6aad41685c1a`.
+  Worker6,185509s/RSS750665728 (~716Mio)/min77/p[1]/global0/PASS ;
+  parentPID11695 actualexit0 confirmé6,707227s/RSS750649344, pasPIDdisparu.
+- Plus grande partition EN COMPTE DE POSTINGS du plan entier : channel2/
+  bucket30,44442698postings/5010terms/20040tokenbytes. Max réellement calculé
+  sur les256partitions, pas une hypothèse ni un filtre métier. Session49967
+  TERMINAL0, phase_record réel accepté, ManifestSHA
+  `17f9d7075e5a6b6629cebabba1f52bc71758b931a9136b6092c609a96c8c9e62`.
+  Worker16,691870s/RSS861257728 (~821Mio)/min77/p[1]/global0/PASS ;
+  parentPID11807 actualexit0 confirmé17,559861s/RSS834519040/pasPIDdisparu.
+  Plus gros ne garantit pas tous les autres : chaque phase reste supervisée.
+- Remaining34945 lancé séquentiellement après ces2PASS, encore LIVE àla
+  dernière vérification. Ce handle n'est PAS une preuve de fin ; àreprendre
+  par write_stdin, vérifier toutesphases/absenceSTOP avant seal. Aucunseal177
+  ni manifest d'index complet lancé/annoncé. Ne pas lancer un secondremaining.
+- Prochaine action : suivre34945, préserver toutSTOP ; si toutes256phases
+  PASS, seal supervisé et réellement confirmé. Puis lecteur/snapshotadresses
+  file-backed (scores exacts170/138, alias entiers), preuveadresse cohérente
+  sur les98mfacts160, raccordement initial100 en nouvelle version. Aucun
+  reservoir2000/500. Ancienfactory158 connu incompatible mémoire, ne pas
+  le lancer national sans version et supervision dédiées. Noms17017,2s
+  seuls : SLO pas franchi, optimisation exacte toujours àtraiter.
+- Dernier exactV101114/128=89,0625% INCHANGÉ. Ces builds ne montrent aucune
+  hausse de recall et ne valident ni99,2%, ni latency, ni folds fermés.
+  Aucunlabel/CRM/fold0/1/downstream lu, aucune dépense externe ni push.
