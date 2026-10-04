@@ -14824,3 +14824,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   algebra/parité/gradient/protections/collecteur PASS, fixtures seulement.
   Séquence Mac continue244/245 puis248/249 puis251complet et252 seulement
   si admissibles sous214 inchangées. Modèle253 initial, pas reranker aval.
+
+- Commit `db42252f` :244/245 TERMINAUX128/16 producteurs + deux métriques
+  réels exit0/PASS214. Exact120/128=93,75%,op121/128=94,53125%, ZEROgain/
+  ZEROloss appariés vs230, mêmes contrôles ET cibles, mêmes huit ratés.
+ 371matches de variantes SOMMÉS par requête ne produisent aucun gain de
+  recall. P95=7,714642s,p99=9,337548s cache incontrôlé, pas SLO/READY.
+  Gen1123,986382s/631,118363sworkers/pic2059812864 sous214 inchangé.
+  Référence229 conservée, source243 non promue.248 lancé ensuite query-only,
+  pas réutilisation STOP222 ni GT ouvertes avant128complet.
