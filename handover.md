@@ -13512,3 +13512,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   génération128 complète ; si STOP, conserver intact et attribuer avec
   checkpoints, pas hausse du budget. Dernier recall89,0625%exact inchangé.
   Pilote non READY, pas SLO ni généralisation prouvés ; aval/folds0/1 fermés.
+
+### V198 — coût q4 passé, STOP réel du contrôle final introduit dans ce jalon
+
+- Code `89a3609e`, pré-mesure `2dce15b7`, session4373 TERMINAL1.
+  Racine fresh `retrieval_v198_names_ram/probe_20261004_a`, désormais
+  IMMUTABLE : aucun patch ni retry. Pas manifest ROOT SEALED/initial100/GT.
+- Le calcul national complet q4 a passé : lexical3,334282917s,
+  scatter8,270137500s, relation1,580191000s, preuve globale13,331830000s
+  <20s, flatten7,243234750s. ALL57530682aliases/44403034sites,
+  39054006 références propriétaires traitées, RAMcounter57530682bytes.
+  Worker40,035492666s/RSS1040957440, vrai parent0, pression1/libre79%.
+  Swapout GLOBAL36012pages observées, NON attribuées à ce worker ; ne pas
+  présenter cette observation comme zéro swap ni comme gain de recall/SLO.
+- Audit séparé FULL1701fichiers/14297453464bytes passé, worker16,767084208s/
+  RSS563134464, vrai parent0/p1/free81/global0. Les deux phases sont en
+  quarantaine, pas une admission du scope STOP.
+- Erreur de code introduite dans l'admission : comparaison directe entre
+  ref de preuve `{path,sha256,size_bytes}` et ref d'inventaire canonique
+  `{path,sha256}`. Même path/hash réel, mais dicts inégaux : STOP final.
+  Le test avait utilisé des refs déjà canoniques et ne couvrait pas cette
+  asymétrie réelle. À corriger/tester dans une NOUVELLE version ; ne jamais
+  retirer le contrôle d'appartenance ou admettre ce run retrospectivement.
+- LaunchSHAff45652f410173569bb84b0836b7e26368e73dcbbe2943449b3eeabc00a213c5,
+  preuvesSHA9b6b8a8db76b35cb5e64ad38684693ea7c4c72645c0768e2528ee4674ff5cb80.
+  Prochaine génération128 indépendante peut conserver le helper RAM exact
+  mesuré V198 ; pas de lecture/réemploi de ses preuves ni celles de V197.
+  Dernier recall89,0625%exact inchangé, aucun label ouvert, goal ACTIVE.
