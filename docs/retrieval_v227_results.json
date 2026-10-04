@@ -1,0 +1,31 @@
+{
+  "status": "SEALED_TRAIN64_NATIONAL_MINING_NOT_RETRIEVAL_RECALL",
+  "implementation_commit": "888b75b7",
+  "source": "FIRST64_OF_PREEXISTING_TRAIN512_ORDER_DISJOINT_FROM_PILOT128",
+  "queries": 64,
+  "physical_workers": 8,
+  "all_actual_exits_zero_and_pass_v214": true,
+  "naturally_mined_distinct_references_across_queries": 10895,
+  "worker_seconds": 214.64594487752765,
+  "peak_worker_rss_bytes": 851984384,
+  "maximum_query_seconds_including_native_open": 9.085972582921386,
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v227_national_training_negatives/run_20261004_a/manifest.json",
+    "sha256": "8c272248faafe4307bdf7b56f0770f75624649392323cd91b3469fc9a17209a8",
+    "size_bytes": 3085
+  },
+  "outputs": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v227_national_training_negatives/run_20261004_a/outputs.json",
+    "sha256": "2dc945d134fef973799ca6bdcaff16955170067afab2b7648143379154cdbb0a",
+    "size_bytes": 3750825
+  },
+  "recall_measured": false,
+  "pilot_targets_opened": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "ready_for_fold1": false,
+  "serving_candidate_pool_created": false,
+  "native_segments_full_hash_verified": false,
+  "full_oof_or_generalization_validated": false
+}
