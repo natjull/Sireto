@@ -11848,3 +11848,37 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   JAMAIS les artifacts de sa phase STOP ; pas besoin de refaire les audits
   réussis pour ce microcoût. Sonde non lancée à cette note. Recall V101114/128
   toujours, objectif99,2% non atteint ; downstream/folds0/1 fermés, pas de push.
+
+## 2026-10-04 — Sonde164 nationale réellement PASS sous1Gio
+
+- Milestone de code `14759937`, note préalable `c2a8831b`. Sonde164 session77853
+  TERMINAL0 root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v164_address_channels/probe_20261004_a`.
+  Manifest22212 octets SHA
+  `5ec21c7b037ad22266ecea379cfc444aa745cb1f754410e17e1c87d51f177d1b`.
+- Même tranche0 ORIGINALE du source launch V163 scellé,65536 aliases,
+ 4332450 postings (word407069/char3 1947893/char4 1911952/exact65536).
+  Tous textes/features et ensembles scalaires et chaque posting exporté
+  reconstruits exactement.8 COPYs <=8 writers chacun ; aucun alias ou token
+  supprimé, aucun artifact STOP V163 importé. Dataset/provenances/num/CP/INSEE
+  non changés. Les phases réussies SOURCE V163 seules fondent cette sonde.
+- Worker5,300221s/RSS899448832 (~858Mio), minfree75, pression[1], global0/PASS.
+  Supervision réelle own-child PID44857 exit0 confirmé6,213653s/RSS899432448,
+  min75/global0/PASS. Pas de supervisor_stop ni worker_stop ni status STOP.
+  Ne pas attribuer un facteur d'amélioration mémoire à V163 : son ancien pic
+  STOP n'était pas exporté. Ici borne1Gio effectivement respectée avec marge.
+- Cette réussite est UN lot physique, pas les576 lots, ni les256 packs,
+  ni un moteur complet, ni un recall ni un SLO. Flagscomplete_retrieval_index,
+  recall_measured,ready_for_fold1 et tous PROTECTED False. Versions164
+  désormais mesurées/immuables ; ne pas modifier leur kernel/config en place.
+- Tests ciblés38 PASS13,35s avant sonde. Régression V117–164 session13893
+  encore en cours à cette note ; confirmer terminal avant clôture du tour.
+- Suite : version165 compilateur intégrant EXACTEMENT kernel164 et ses
+  diagnostics, nouveau root. Réutiliser comme preuves sources uniquement les
+  audits INIT V163 tous deux complets/hashés/exits confirmés avec guards
+  epochs/code, JAMAIS lexical0 STOP ni sonde164 comme index complet. Évaluer
+  firstpart165 sous les mêmes limites avant remaining. Full source rehash
+  au seal en phases bornées, mêmes dénominateurs. Ensuite snapshots noms
+  réellement compatibles1Gio et moteur INITIAL100 avant évaluation OOF
+  séparée ; V101114/128 exact (89,0625%) inchangé. Pas de promesse99,2%,
+  modèles aval et folds0/1 fermés, aucune dépense externe ni push.
