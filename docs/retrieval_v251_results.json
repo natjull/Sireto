@@ -1,0 +1,188 @@
+{
+  "status": "SEALED_V251_ACTUAL_INITIAL_SCORE_TRAIN64_FEATURES_NOT_RECALL",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v251_actual_train_features/run_20261005_a/manifest.json",
+    "sha256": "48793185f3997231e3caf8a16d670e3e8d295b59a5de32315b5f33dc674f1e06",
+    "size_bytes": 2746
+  },
+  "outputs": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v251_actual_train_features/run_20261005_a/outputs.json",
+    "sha256": "0d8707a63018893f66af4aa2842401132c38e6dd8bde95e3a4ae4e9197f3e0e1",
+    "size_bytes": 5082133
+  },
+  "queries": 64,
+  "points": 13126,
+  "maximum_conditional_native_parity_error": 0.0,
+  "workers": 8,
+  "all_actual_exit0_pass": true,
+  "peak_worker_rss_bytes": 723075072,
+  "worker_seconds": 26.131999584380537,
+  "maximum_query_seconds": 0.7501375419087708,
+  "resources": [
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 647397376,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 9,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 4.011635624803603
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 638730240,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 9,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 3.882610334083438
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 619020288,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 8,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 3.6008460419252515
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 558088192,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 7,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 3.0668838750571012
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 597835776,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 7,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 2.7152000833302736
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 723075072,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 7,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 2.836113709025085
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 651001856,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 7,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 3.0572435408830643
+    },
+    {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 77,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 692338688,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 7,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 2.961466375272721
+    }
+  ],
+  "truth_scope": "TRAINER_ONLY",
+  "pilot_labels_opened": false,
+  "recall_measured": false,
+  "ready_for_fold1": false,
+  "downstream_models_changed": false
+}
