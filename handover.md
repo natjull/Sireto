@@ -14745,3 +14745,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Même2Gio/20squery/80sworker/quiet30 ; aucun cap propriétaire/pool intermédiaire,
   aucune hausse de budget, aucun partiel STOP évalué. Puis238 et comparaison230.
   Pas fullOOF/READY/SLO/généralisation ; fold0interdit/fold1fermé/aval gelé.
+-237 TERMINAL actualexit0, ALL128/16 producteurs PASS214, labels fermés
+  jusqu'au scellement.238 désormais lancé en processus distinct ; aucun
+  nouveau pourcentage annoncé avant admission. Aucune hausse de ressources.
+- Commit `359c91b9` :239/240 critère top100 convexe figé avant fit. Preuves
+  effectives217232, TRAIN64 disjoint, mêmes exclusions d'entités held et
+  équivalents officiels. Top100 mean hinge avec coordonnée vraie0, marge1,
+  prior228/L1=0,005, k réduit explicitement si classes minées<100. Ce
+  critère sur concurrents CENSURÉS n'est jamais recall national. LP sparse
+  HiGHS mono-thread,20s/fit, bornes11 poids0..64. Six tests convexité,
+  égalité objectif LP/direct, parité/exclusions/invariance held PASS,
+  fixtures seulement. Modèles avant contrôle TRAIN, pas sweep/sélection128.
+  Pas modèle aval/pool puis re-score ; serving modèle-seul sans cibles232.
+  Prochaine exécution240 uniquement après fin de238, gardes214 identiques.
