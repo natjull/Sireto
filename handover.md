@@ -13844,3 +13844,29 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   une métrique recall ni SLO. Dernier89,0625%exact inchangé ; cible99,2%,
   allhuman/fullOOF/Wilson/généralisation encore nonprouvés. Aval/folds0/1
   gelés, labels fermés avant ROOT128SEALED, objectif ACTIVE. Aucun push.
+
+### V205 — q4 national PASS, optimisation physique seulement
+
+- Code `f981c77f`, pré-mesure `489285ff`, session74482 TERMINAL0,
+  racine `retrieval_v205_names_ram/probe_20261004_a` SEALED coût seulement.
+  Parents réels93836 et94556, exit0/confirmed. Code/config/contrat/probe
+  désormais IMMUTABLES. Aucun initial100, label ou métrique nouveau.
+- Toutes39054006références parcourues : lexical4,320458083s,
+  scatter7,057467917s, relation3,089708708s, querytotal14,605195042s
+  sous garde20 ; flatten7,082529500s. Worker complet41,369326583s,
+  RSS996130816/p1/free81/global0/PASS153. Ancien STOP202scatter13,869s
+  plus lent ; cache/charge non contrôlés, ce ratio n'est pas garanti.
+- Profil : maximumparent1,878759762s/36036009refs,
+  maximumsite1,845902704s/2946269refs ; flagsparent0,335561297s et
+  flagssite0,380580544s, toutes refs validées malgré zéro True. Tout
+  maximum reste original170. Reste scatter~2,62s hors mises à jour.
+- FULLaudit1701fichiers/14297453464octets, worker17,022961416s,
+  RSS563265536/p1/free81/global0/PASS153. Total workers58,392287998s,
+  elapsed119,579658125s quiet/contrôleurs compris, pas SLO production.
+  Gather44403034sites digest18bc6f05b6804a61b1933021fb2879e9896d4acfc84fc8b3d945a1dee5118a3c.
+  LaunchSHA1f3c71b8bab66220b7db99ec4ee90e51808500c95bd688e43bc5b3e8b248fb2f,
+  proofsSHA7037dd1ffa115e0f18079e5b79adc27ece5609ab3d7de7e2c11a650991a4d444.
+- Suite suivante : générationfresh206 sur tous128 avec helper205,
+  aucune preuve205 réutilisée, mêmes limites et tous audits. Probeq4
+  passé ne garantit pas autresqueries ; code/tests/protocole avant mesure.
+  Dernier89,0625%exact inchangé, aval/folds0/1 gelés, labels fermés.
