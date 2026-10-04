@@ -12004,3 +12004,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Codes/configs166 désormais mesurés et immuables. Remaining à lancer sur CE
   root sans recréer le lot2 validé ;0/1 de165 restent historiques, non importés.
   Objectif99,2% non atteint, dernière mesure exacte V101114/128 inchangée.
+
+### Remaining166 démarré et réellement suivi — ne pas dupliquer
+
+- Commande `compile_retrieval_v166_address_access remaining` session75068,
+  spécifique à rootcompile_20261004_a ci-dessus. `write_stdin` confirme encore
+  RUNNING, dernier poll avant cette note ; aucune disparition supposée d'un PID.
+  Reprendre CE handle/inspecter ce root, ne pas lancer un second remaining.
+- Treize lots0..12 réellement relus par phase_record166 avec leurs exits
+  parents confirmés :782245 aliases/54322543 postings, pic worker max1042399232
+  octets (<1Gio), max6,267710s, minfree75. Aucun STOP dans ces13 certs ; les
+  restants non validés ici. Pas d'extrapolation d'un microcoût à tout le corpus.
+-647 tests passés ; code166 `88f8678c`, gates nationaux/note `f910a910`.
+  Aucun moteur INITIAL100 complet ni requête/label humain évalué aujourd'hui.
+  Index lexical intégral exige576 lots+256 packs et seals ; pas de nouveaux
+  chiffres recall avant sorties complètes source-bound et évaluation séparée.
+- Prochaine reprise : poll75068 sans restart. Si terminal STOP, préserver
+  diagnostics puis résoudre exactement le plafond/fichier fautif sans hausse
+  de budget. Si live, travail mémoire noms en version indépendante peut être
+  préparé, sans retoucher aucun fichier code/config/source épinglé par166.
+  Les noms150/151 restent ~2,90Gio dans la dernière sonde ancienne : prototype
+ 156 uint8 seul n'est PAS une preuve1Gio. Il faut des snapshots exacts paginés
+  et gestion des maps/source joins, pas une réduction de noms/owners/candidats.
+- Fold0/fold1 et downstream fermés, exact/op toujours séparés, noREADY,
+  objectif actif complet99,2% toujours NON atteint. Modifications utilisateur
+  étrangères (synthetic/maps/v412) conservées. Aucun push/dépense externe.
