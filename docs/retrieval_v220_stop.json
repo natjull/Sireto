@@ -1,0 +1,40 @@
+{
+  "status": "STOP_V220_REGEX_STATE_LIMIT_NO_RECALL",
+  "controller_exit": 1,
+  "worker_exit": 1,
+  "completed_queries": 0,
+  "worker_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v220_corroborated_population/run_20261004_a/batch000/worker_stop.json",
+    "sha256": "c194930a51302bd950aa8a3bab9b8da7385bc6dd854faa36a997bedac6fb774e",
+    "size_bytes": 963
+  },
+  "controller_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v220_corroborated_population/run_20261004_a/status.json",
+    "sha256": "c172acb6b34da8f84cedd95b04f33036da36e6be07bae8f91203870e6e590b9c",
+    "size_bytes": 628
+  },
+  "reason": "An invalid argument was passed: 'RegexQueryError: Compiled regex exceeds size limit of 1000 states'",
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 82,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 487243776,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 5,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 1.7439532498829067
+  },
+  "truth_opened": false,
+  "recall_measured": false,
+  "evaluation_started": false
+}
