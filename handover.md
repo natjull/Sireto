@@ -13964,3 +13964,30 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   conserver np.maximum.at et signedzero. Le groupement/réduction204 était
   plus lent en dense ; ne pas l'activer aveuglément. Oracle BYTES et
   bench numérique sparse/dense avant sources nationales. ObjectifACTIVE.
+
+### V208 — stockage exact testé, benchmark figé avant mesure
+
+- Commit `5702f7eb` : WarmOrderedVector/Names208, bench fixe et contrat,
+  tests. Float64 frais initialisé +0 dans TOUTESpositions par131072 sous
+  timerquery20. Maximum.at original, stableordering seulement blocs>=4096
+  avecspan>256*refs, aucun reduceat/skip/cap ni précisionmodifiée.
+  Bool205, RAM198, sources/propriétaires/patches/relations201 inchangés.
+- Suite84PASS/11,49s, session74131 TERMINAL0 :49tests208+17tests205+
+  18tests204. Oracle150/138 BYTES tousvecteurs/gathers, branchedensity et
+  forcedsparse, doublons/signedzero/chunks1/3/131072, initializer20guard,
+  références/valeurs invalides et FULLhash de payload altéré. Premier
+  test mmapmetadata seul avait échoué : aucune garantie ajoutée à tort,
+  guardepoch testé avec dériveexplicitement forcée, hash complet obligatoire
+  pour altérations de contenu même si size/mtime conservés. Compile/diffPASS.
+- Benchmark numérique prévu dansfresh
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v208_numeric_storage/benchmark.49PNQ9`,
+  pas encore lancé à ce jalon. Même filesystem CATNAT que preuves, pas
+  internalSSD déclarééquivalent. Seed208/world30000000, dense1048576 et
+  sparse65536,4calls/3trials alternés ; init+update compris, ALLfloats BYTES
+  avant coût admis. Après comparaison, seuls12npy privés régénérables
+  supprimés ; report/preflight conservés. Aucune source/autreapp/STOP purgé.
+- Budget1531Gio/80s/quiet30/p1/free>=50/globalnonattribué inchangé,
+  aucun label/feature métier synthétique ou modèle aval. Aucun worker
+  national live. Si coûtpositif, NEWq24probe FULLnational/freshaudit avant
+  autre128long ; ne pas supposer le gain national du bench ou retry206.
+  Driver207 doit refuser206STOP, dernier89,0625%exact inchangé, goalACTIVE.
