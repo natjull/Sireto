@@ -14798,3 +14798,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   plafond100 direct global, pas pool/rerank, fanouts officiels complets,
   STOP si trop coûteux ; pas hausse de budget, fold0interdit/fold1fermé,
   aval gelé. Prochain244ALL128 puis245 uniquement après seal admis.
+
+- Commits `22eb7348` génération246/247/248 et `9278f4a1` évaluation249,
+  figés avant test. Nouvelle grammaire NOM COURT ENTIER uniquement : un seul
+  token contenu3..6lettres, hors particules/formes juridiques. Pas mots
+  embarqués de longues phrases/deux lettres ; chemins217 inchangés. ALL
+  partitions en préfixes, alias entier courant unique, place obligatoire
+  pour CE signal seulement ; MAX nom0/recomposition6/8, pas exact-string2.
+  Head229/228 gelé ; pas source243/head240 ni combinaison oracle.87 tests
+  syntaxe/native/algebra/contrats/autorités PASS, pas recall national.
+  Gardes214 inchangées, pas reprise STOP222/capfanout ;248 sera exécuté
+  après fin244/245. Panel consommé pas généralisation/fullOOF/READY/SLO.
