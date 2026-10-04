@@ -13334,3 +13334,43 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - V196 est maintenant TERMINAL 0, statut SEALED. La comparaison indépendante
   n'a pas encore été exécutée à ce jalon. Les 128 sorties et le recall restent
   à produire ; aval gelé, folds 0/1 fermés, objectif 99,2 % non démontré.
+
+### V196 — test national terminé et parité exacte vérifiée
+
+- Code figé `63850369`, protocole de comparaison `0d5cd6d5` consigné avant
+  mesure par `0f79d937`. Les deux processus réels sont TERMINAL 0 ; aucun
+  worker ne reste en cours. Génération V196 SEALED et admissions V195/V196
+  revalidées par le diagnostic indépendant, sans consulter les labels.
+- Racine V196 : `retrieval_v196_pair_initial/probe_20261004_a` sur CATNAT.
+  Manifeste SHA `cac1407e6ef9f4d35280ca13259f095fd86bdad2d2bae661c0c65ff5158be4da`.
+  Deux sorties de 100 SIRET uniques, couvrant chacune les 44 403 034 sites et
+  98 804 872 faits officiels. Sortie SHA
+  `0c687351cbf607f81f0e8d8339a434d1e351663027b0e324c3b3eee42310accf`,
+  IDENTIQUE à V195 : mêmes candidats, scores, ordre et traces nationales.
+- Rapport séparé `retrieval_pair_semantic_parity/probe_20261004_a/parity.json`,
+  SHA `b4ed4ceb187e6823b0bf749bb35ea0787e9da562fdebe53f1a65cc01ee776a9b` :
+  VERIFIED_POSTSEAL_V195_V196_EXACT_PREDICTION_PARITY_ONLY. Les anciennes
+  prédictions sont lues uniquement APRÈS scellement, jamais par le générateur.
+- Scoring 000/001/002/003 : 41,6492 / 40,2127 / 39,8138 / 36,5686 secondes ;
+  RSS 976928768 / 979976192 / 984449024 / 975880192 octets. Toutes les phases
+  passent la politique V153 : RSS <1 Gio, durée <80 s, pression 1, minimum
+  libre 80–81 %, swapout global observé 0 (non attribué au worker).
+- FULL audits après tous les scores : facts 52891 fichiers/6461635887 octets
+  en 28,7603 s ; postings 1832/11612447508 en 20,8808 s ; context
+  1739/17201879604 en 28,5509 s. Total inchangé : 56462 fichiers et
+  35275962999 octets réellement hashés. Merge 7,7001 s, puis ledger 2,0374 s
+  après les deux réductions, avec les 93507 empreintes originales conservées.
+- Nouveaux workers 246,173850042 s ; preuves noms/adresses précédentes
+  164,286078459 s incluses : 205,229964250 s par requête, contre
+  254,813288937 s sur V195. Contrôleur préalable 3,9276 s ; run courant
+  526,7434 s, pauses et supervision comprises, hors runs des preuves.
+  Cache NON contrôlé : différence observée, pas accélération garantie ni SLO.
+- Ce progrès est physique, pas une amélioration mesurée du recall. Dernier
+  recall initial réellement mesuré : 114/128 =89,0625 % exact et
+  116/128 =90,625 % opérationnel, inchangé. Aucune GT ouverte ; folds 0/1
+  fermés, aval gelé, pas de claim 99,2 %, READY, SOTA ou OOF complet.
+- Suite : produire l'ensemble des 128 sorties avant toute évaluation séparée.
+  Les audits de sources indépendantes des requêtes doivent être mutualisés,
+  sans retirer de cible ou remplacer les FULL hashes par des stats. Chaque
+  preuve propre à une requête doit rester contrôlée et liée aux producteurs.
+  Ne pas multiplier 64 fois les audits de 35 Go sous prétexte de batching.
