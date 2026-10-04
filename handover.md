@@ -14270,3 +14270,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   sans gate moyen4s, autres protections inchangées, puis nouvelle version
   avant run. L'objectif99,2%allhuman exact/fullOOF/généralisation/SLO demeure
   entier, dernier89,0625% inchangé. Pas push.
+
+### V214 — accord humain reçu, pilote qualité prêt avant mesure
+
+- « Go » humain autorise explicitement2Gio et gate moyen4s nonéliminatoire.
+  Nouveau driver/politique/supervision214 séparés, anciennes212/153 intactes.
+  Recette210, sources, query20/worker80/quiet30/pression1/free50/unthread,
+  all128/folds234/cap100, absenceGT et avalgelé STRICTEMENT inchangés.
+  Seule moyenne16 descriptive plutôt que STOP, pas budget temps infini.
+- Code/config/contrat/tests `3436168b` commités avant mesure.
+  Suite100PASS : contrôle2Gio et ancien1Gio inchangé, autres stops conservés,
+  réel parentreceipt requis (fixtures simulées), mean7s admise descriptivement,
+  plus contrôles all128/noyaux210/213 ; pas nouveau recall ou garantie128.
+- Lancement fresh prévu `retrieval_v214_structural_population/run_20261004_a`,
+  aucun fragment212/probe211 repris. Code/config/contrat après mesure immuables.
+  Rapporter résultat ou causeSTOP ; aucun microbench/optimisation prévu.
+  Nouveau évaluateur séparé à préparer pendant génération, GT seulement
+  aprèsROOT128 complet. Corpus43,9M versus44,4Mappend publié, pasREADY/SLO,
+  aucun fold0/1 ou modèle aval lu, Mac/CATNAT sans coût/push.
