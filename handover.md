@@ -14635,3 +14635,8 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Politique214 inchangée2Gio/80s/20s/un thread/calme30s. Aucune dépense,
   modèles aval gelés. Puis recette nouvelle initial100128 complète et
   évaluateur post-scellement distinct ; pas de promesse de gain/READY.
+- Commit `1e72f28f` : apprentissage228 gelé avant mesure, source TRAIN56
+  uniquement,64 minés complets227 requis, sidecar acceptable filtré dans
+  Arrow par ces64 et folds234. Positifs/équivalents exclus des nouveaux
+  négatifs, registre held conservé, coefficient4 seul modifié. Vingt tests
+  synthétiques/unitaires227/228/226 PASS, pas métrique de rappel.
