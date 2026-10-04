@@ -14514,3 +14514,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Tests grammaticaux/engine avec fixtures synthétiques déclarées, jamais
   preuve métier ; panel128 réutilisé adaptativement, pas généralisation.
   Prochaine mesure V220 generation complète puis V221 séparée, mêmes gardes214.
+### 4 octobre 2026 — STOP220 de compilation ; V222/V223 prêts au test qualité
+
+- Milestone évaluation221 `25708acc`, jamais lancé. V220 session2848
+  TERMINAL exit1, ZERO sortie, GT fermé, aucune mesure partielle. Résultat
+  STOP `8f8178f9` : RegexQuery limite1000 états, pas budget mémoire dépassé.
+  Worker1,743953s/pic487243776/pression1/free82/globaldelta0, aval/folds gelés.
+- Milestone `1cfd07f7` : V222 conserve règles/score220, déplie le langage
+  récursif en ALL regex plates séparées puis OR natif (aucun cap de partitions).
+  Corpus et un collecteur100 inchangés, pas reprise des sorties STOP220,
+  pas de garde relâchée. Tests FST5/6 lettres + parité exhaustive partitions.
+- Milestone `5f4f602f` : autorité223 séparée appliquée uniquement à ALL128
+  V222 complete/PASS ; cible exacte humaine et sidecar inchangés. 93 tests
+  ciblés PASS1,40s avant mesure, aucune garantie nationale par les fixtures.
+- Relance bornée V222/223 sur128 only, pas23k, pas de nouveau fit aval/OOF,
+  ni évaluation des seuls cas ratés. Dernier recall reste118/128=92,1875%.
