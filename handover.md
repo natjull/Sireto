@@ -14045,3 +14045,31 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Gain local crédible nécessaire avant NEWq24probe/FULLaudit et tout128
   nationalfresh. STOP206 et mesurés208 inchangés, aucun worker national
   live/permission207/recall nouveau ; dernier89,0625%exact, objectifACTIVE.
+
+### V209 — tri seul sans warm rejeté, benchmark terminé
+
+- Code `3ab7294f`, pré-mesure `41b09bb5`, session10189 TERMINAL0,
+  root `retrieval_v209_numeric_storage/benchmark.iYTuCz`, filesystemCATNAT
+  True. Kernel/bench/contrat209 désormais IMMUTABLES. Numérique seulement,
+  pas source/GT/recall national. ALL30000000floats bit-identiques à chaque
+  trial, zéro position warm/reset, sparse4blocs effectivement ordonnés.
+- Init+4updates dense : original0,370936626/0,346953167/0,352887709s,
+  ordonné0,354585999/0,351386458/0,347501376s, variations faibles/cache
+  noncontrôlé, pas accélération générale prouvée. Sparse : original
+  0,328732708/0,328929209/0,317872668s, ordonné0,338085791/
+  0,331689999/0,337090167s : TROISsurTROISpluslent. Tri seul n'explique
+  donc pas le gain des updates aprèswarm208 ; ne pas lancer un probe
+  national/128long en prétendant cette variante positive. Piste209rejetée.
+- Budget153réel4,729403584s/RSS386498560/p1/free82/global0/PASS,
+  rawCLIexit0 (pas autorité164 nationale). Douzefichiers npy numériques
+  privés supprimés après comparaisonscomplètes, regenerables seed208/
+  script209 ; report/preflight conservés. Aucune source/STOP/autreapp ou
+  données utilisateur effacées. Aucun worker encorelive, GT fermées.
+- Prochaine investigation : parentmaximum en RAM bornée, sans tri,
+  initialisationcalloc exacte/fallbackintégralfilebacked si namespace
+  tropgrand. Pas troncature de parents, identifiantfeature, changement
+  de score ou hausse1Gio. Vérifier le budget réel de mémoire pendant
+  scatter ETrelations avant nouveau q24probe, pas un128long supposébon.
+  Sources/arithmétique restent complètes, tousfloat64/bool exacts,
+  ROOT128SEALED avantlabels etdriver207 doit refuser206STOP. Dernier
+ 89,0625%exact inchangé, objectif99,2%/allhuman/généralisation/SLO nonprouvés.
