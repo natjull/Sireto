@@ -14640,3 +14640,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Arrow par ces64 et folds234. Positifs/équivalents exclus des nouveaux
   négatifs, registre held conservé, coefficient4 seul modifié. Vingt tests
   synthétiques/unitaires227/228/226 PASS, pas métrique de rappel.
+- Commit `76197b40` :227 TERMINAL exit0,64 sorties /8 vrais workers
+  exit0/PASS214,10895 références naturelles,214,645945s workers,
+  pic851984384octets,max requête9,085973s ; aucune métrique recall.
+- Commit `314a54ea` :228 TERMINAL exit0/PASS214,0,546764s/pic300384256.
+  Poids place f2=1,5178629068,f3=1,4239147930,f4=1,2384262054.
+  Respectivement39/45/44 requêtes TRAIN sûres,8469/9686/9281 paires.
+  Vrais contrastes nationaux1_0=4343/4968/5014, locaux1_1 conservés,
+  positifs/équivalents et entités held exclus. Comptes par modèle, non
+  population unique. Les dix autres poids77, alpha/vocab/projections restent
+  inchangés. Un coefficient appris n'est PAS une mesure de rappel.
+- Commit `204de9cf` :229 initial100 gelé avant mesure ; kernel217 inchangé,
+  coefficient4 remplacé par228, assertions sur toutes métadonnées77 et
+  autres coefficients. Pas de fit par requête/pool fixe/reranker aval.
+- Commit `b3b14e8c` :230 évaluateur séparé post-scellement229 complet,
+  règles218 pures identiques, caps/sidecar/dénominateur/folds inchangés.
+ 91 tests de contrôle/unitaires227–230 PASS avant run, pas preuve nationale.
+  Nouveau128 seulement après recette/bundle figés ; labels fermés pendant
+  generation, aucune promesse de gain ni READY sur ce panel réutilisé.
