@@ -14180,3 +14180,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ou promouvoir cette expérience comme solution finale. Exact99,2%/allhuman/
   fullOOF/généralisation/sidecar/SLO restent NON atteints. V101114/12889,0625%
   demeure dernier recall ; objectifACTIVE, aval/folds0/1 gelés, pas push.
+
+### V212 — pilote qualité ALL128 figé, avant lancement
+
+- Milestone local `40f15207` : nouvelle génération ALL128 de la recette
+  structurelle210, sortie initiale100 directe ;64 workers physiques de2,
+  fermeture de notre moteur après CHAQUE query. Aucun nouveau score, fit,
+  réservoir/reranker ou optimisation de stockage.97 points compatibles,
+  dont11 parmi16premières,55 BANfaibles ; comptages query-side seulement.
+- Suite69PASS/1,08s : noyau210, lifecycle211, population192 et25 contrôles
+ 212 ; fixtures des sorties/processus explicitement simulées, pas recall.
+  Trois erreurs de fixtures (taille optionnelle des références canonicalisées,
+  géométrie manquante du double) corrigées AVANT toute mesure212.
+- Lancement prévu fresh `retrieval_v212_structural_population/run_20261004_a`.
+  Pas reprise210STOP/206STOP ni probe211. Tous128/folds234 conservés,
+  GT fermée jusqu'au sealGLOBAL128 et évaluateur séparé nouveau nécessaire.
+  Budgets1531Gio/80s/quiet30/p1/free50/query20/mean16<=4 inchangés : si
+  blocage, le publier et demander une décision, pas repartir en microbench.
+- Fullhash USED avant/après et globalepochs ; index natif metadata/inventory
+  seulement, corpus43896818 et non tous44403034append. Cette limite ne
+  retire aucun label du dénominateur. Pas garantieSOTA/99,2%/fullOOF/SLO ;
+  aval/folds0/1 gelés, objectifACTIVE, dernier recall89,0625%, pas push.
