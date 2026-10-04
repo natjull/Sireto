@@ -1,0 +1,38 @@
+{
+  "status": "SEALED_V240_TRAIN_ONLY_ACTUAL_NATIVE_INITIAL_INDEX11_TOP100_HINGE",
+  "implementation_commit": "359c91b9",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v240_actual_initial_training/run_20261005_a/manifest.json",
+    "sha256": "42bfb9b99bb71cad64ea9e90a9f440dc49abc2f79f6f3db180cd0089c9a57e23",
+    "size_bytes": 1198
+  },
+  "models_sha256": "1a802538f89e74f10b05b2a574626c3b4dd80fdb48d5eff6070ee44ec62a12da",
+  "report_sha256": "0dbd88d101b3295a53b05748026919555d0529789ab9aad689d002eef1f087d6",
+  "actual_exit_zero_pass214": true,
+  "worker_seconds": 0.9421208328567445,
+  "peak_rss_bytes": 350306304,
+  "folds": {
+    "2": {"training_queries": 39, "training_pairs": 7924, "objective_before": 0.11857312947721003, "objective_after": 0.08582470387364301},
+    "3": {"training_queries": 45, "training_pairs": 9196, "objective_before": 0.09905778845251696, "objective_after": 0.07808224947142052},
+    "4": {"training_queries": 44, "training_pairs": 8761, "objective_before": 0.012712000357586607, "objective_after": 0.0037344848786919757}
+  },
+  "all_actual_train_queries_have_at_least100_observed_classes": true,
+  "prior": "FROZEN_V228_PLACE_ADJUSTED_HEAD",
+  "objective": "EQUAL_QUERY_TOP100_MEAN_HINGE_TRUE_CLASS_ZERO_L1_PRIOR228",
+  "k": 100,
+  "margin": 1,
+  "ridge": 0.005,
+  "training_control_scope": "OOF_TRAIN64_CENSORED_MINED_NEGATIVES_NOT_NATIONAL_RECALL",
+  "control_mean_negative_outrank_count_before": 5.5,
+  "control_mean_negative_outrank_count_after": 6.203125,
+  "control_outrank_mean_did_not_improve": true,
+  "models_frozen_before_controls": true,
+  "controls_used_in_selection": false,
+  "recall_measured": false,
+  "national_gain_claimed": false,
+  "heldout_entity_overlap": 0,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "ready_for_fold1": false
+}
