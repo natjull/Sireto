@@ -13820,4 +13820,27 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Conserver tous refs/counts/grades/snapshots et query20/worker80/1Gio.
   Pas relance de V202STOP ni réemploi de ses fragments. Helper203/V200
   d'évaluation préparés mais aucun label national ouvert ; dernier
- 89,0625%exact inchangé. GoalACTIVE, objectif99,2% nonprouvé.
+  89,0625%exact inchangé. GoalACTIVE, objectif99,2% nonprouvé.
+
+### V205 — ORFALSE seul, oracle complet PASS avant mesure nationale
+
+- Commit `f981c77f` : helper FlagsOnlyNames205, probe q4/config/contrat et
+  tests. Maximum170 strictement inchangé (spy interdit maximumgroupé204) ;
+  seules écritures ORFALSE redondantes évitées après validation de toutes
+  références, et True dédupliqués en blocs131072. Même query201 complet,
+  RAMcounter198, propriétaires/patches, sites/parents, relations1hop figées.
+- Suite145PASS/17,15s, session51501 TERMINAL0 : 205 kernel/protocole,
+  204 numérique,201,198,170 ; scalar150/lexique138, BYTES de tous vecteurs
+  et gathers, chunks/textes/vides/signedzero/référencesFalseinvalides.
+  Tinyhashes réels, autorités/process/pression de fixture SIMULÉS.
+  Compile/diffcheckPASS ; aucun label national ouvert.
+- Nouvelle racine prévue `retrieval_v205_names_ram/probe_20261004_a` :
+  query4 fixée par STOPtemps202, pas par recall. National57530682aliases/
+  44403034sites complet, FULLaudit séparé1701fichiers avec epochs originales,
+  vrais parents0/ressources153. Profil max/flags par bucket pour attribuer
+  le coût, jamais feature ou filtre. Budgetquery20/flatten20/worker80/
+  RSS1Gio/quiet30/p1/free>=50 inchangé ; pas réemploi de STOP202.
+- Pas autre128long avant résultat du probe. Une preuve de coût n'est pas
+  une métrique recall ni SLO. Dernier89,0625%exact inchangé ; cible99,2%,
+  allhuman/fullOOF/Wilson/généralisation encore nonprouvés. Aval/folds0/1
+  gelés, labels fermés avant ROOT128SEALED, objectif ACTIVE. Aucun push.
