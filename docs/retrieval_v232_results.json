@@ -1,0 +1,27 @@
+{
+  "status": "SEALED_ACTUAL_INITIAL_SCORE_TRAIN64_NOT_RECALL",
+  "implementation_commit": "16d470b2",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v232_actual_train_features/run_20261004_a/manifest.json",
+    "sha256": "efc8d47924b3ca4e5614614e441a1f501bce6e0e231b0e50c06b45c48c09c273",
+    "size_bytes": 2746
+  },
+  "outputs": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v232_actual_train_features/run_20261004_a/outputs.json",
+    "sha256": "181c0916ff949c1c6adb0ab15a71268a8c50f812ce77b0f69647e7524a1de1f7",
+    "size_bytes": 5479466
+  },
+  "queries": 64,
+  "supervised_point_observations": 13126,
+  "all_actual_exits_zero_and_pass_v214": true,
+  "maximum_absolute_native_parity_error": 0.000008974935353123215,
+  "worker_seconds": 283.26623179297894,
+  "peak_worker_rss_bytes": 1808416768,
+  "maximum_query_seconds": 13.149090874940157,
+  "pilot_targets_opened": false,
+  "recall_measured": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "ready_for_fold1": false
+}
