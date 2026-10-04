@@ -13893,3 +13893,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   disponibles mais pas run d'évaluation connecté. Dernier89,0625%exact
   inchangé ; objectif99,2%/allhuman/fullOOF/Wilson/généralisation/SLO
   toujours nonprouvés, pilote réutilisé nonREADY, objectifACTIVE. Aucun push.
+
+### V206 — lancement réel confirmé, génération encore LIVE
+
+- Session44652 LIVE, code `5a737346`/pré-mesure `25b46824`, freshroot
+  `retrieval_v206_population_initial/run_20261004_a`. LaunchSHA
+  `8f0770b01eea205b4ee7b653f060b40a3337d316bbdf05e6c7dd81f1fc81eb1b`,
+  30925octets. names000 a réellement commencé, checkpoints des buckets
+  officiels observés ; aucun ROOTSTOP ni ROOTSEALED à ce jalon.
+- Ne pas annoncer de run terminé ou recall. Superviser session réelle et
+  ses logs/parents, respecter tout STOP. Tous labels restent fermés jusqu'à
+  ROOT128SEALED puis autorisation séparée complète, pas métrique partielle.
+  Pas relance automatique, élargissement de budget, réemploi de STOP,
+  réduction de population ou autre app arrêtée. Dernier89,0625%exact inchangé.
