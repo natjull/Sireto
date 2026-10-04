@@ -13001,3 +13001,45 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   suppression de source/hash ou évaluationpartielle. Coût/latence à améliorer
   encore, pasréduireobjectif. CATNAT653Giofree inspecté ; pasnettoyageeffectué,
   aucuneapp tierce/dépense/push. Étape192 non créée dansce turn.
+
+### V192 population128/ownvector réelle validée ; V193 pairnames avant mesure
+
+- Précédent goalturn PROGRESS réel : V191 sortie100 nationale admise,
+  premier accès complet et goulotcatalogue corrigé. Toujours1query, pas99%
+  ni recallnouveau. Revalidé currentworktree HEAD67866b8c au départ, pasjoblive.
+- V192 isolé `9992fe0f`, protocole/tests AVANT lecture réelle. Toutes128CRM
+  typed/uniqueID/folds234 vérifiées AVANT sélectionnerposition ; preuve78
+  launch/encoded order/refs identiques115, vecteurs128x384finiteunitaires,
+  positionscopiesOWN, head propreownfold/frozen114/30weights/catalogue/grades.
+  Aucun tokenexpansion, sourceTRAINproof/anciencandidat/GT suivi ni IDfeature.
+  Les groupesphysiques2 couvrent0..127unefois, pas shrinkpopulation.
+- Tests192+191+190+189stream+18776PASS1,28s/session91830 TERMINAL0. Guards
+  dernierfold0/1/malformed/typebool/doublon/label extra AVANTlecturefichier,
+  vectorlastNaN/nonunit/order/source différents, unsafeheads/TRAINoverlap,
+  owncopies/no clipping ; mathquery0 EXACT187 et autresvectors/heads distincts.
+- Lecture RÉELLE192 aprèscommit envOMP/OPENBLAS1/sessionTERMINAL0 :128rows/
+  (128,384), gradesquery0DICTEXACT187 ; positions0/1/2/127 ownfold3/2/2/3,
+ 2140grades chacune. Toutes128positions unefois. Vérificationne touchepasGT
+  et ne mesurepasrecall. Code192 maintenantutilisé sursources réelles/geler.
+- V193 isolé `0c52e35f` AVANT mesure : pairefixe0/1 sanslabels, source134/
+ 149/141 entière, mêmes170/183/nomsparent/site/exact/onehop, TOUS44403034sites
+  PARquery. SourcesouvertesUNEfois, mapsOWNrotées aprèsquery, scratchtemp OWN
+  libérécomme184 ; flatfloat64/boolretenus, aucunsource/artefactscellé supprimé.
+  Epochs/typed/namespace contrôlées, query20s/flatten20s, worker1Gio/80s inchangé.
+  Les deuxproofs restent QUARANTINE avant workerAUDIT FULLhashTOUS CSR/rawowner/
+  graph/catalog/queryauthorities/vectors/models/decoderparams et snapshots,
+  actualparent0/reports153/receipt exacttargets/files/bytes/digest/epochs.
+  Rootadmitfeatureproofs seulementaprès touscontrôles. Q0gather doitégaler
+ 184digest00f0419fca81b69939c8fb5268b88e6fce89a2e6ed092035ffbc66bf8a6093fc
+  (mêmechunk65536). Aucun candidat/score100 émis par193, pasévaluerGT.
+- Tests193+192+191+190+189+187+183111PASS3,29s25960 TERMINAL0 ; bytesréels
+  tinyfixtures, process/populationcontrôle simulés explicitement. Guards
+  missingaudit/exitnonzero/nonconfirmé/RSS/STOP/truth/targets/epochs/files/bytes/
+  paire/digest différents, budgetsnonaugmentés/pop128nonréduit. Compile/
+  diffcheckPASS. Read-onlyinputs193128typed/folds3,2/sites44403034/73implPASS.
+- Prochaine action freshroot `audits/retrieval_v193_names_pair/probe_20261004_a`,
+  namespair puisfullaudit, quiet30 parphase. Pas encore lancé aujalon. Coût
+  publiéglobal/parquery ycompris audits, paslatenceretrieval ; objectifreste
+ 128sorties avantGTséparée/fullOOF/Wilson/généralisation/SLO/99,2% exact.
+  Fold0/1/GTfermés, avalgelé, dernier89,0625%inchangé, GoalACTIVE, sansdépense/
+  push/READY/garantie. Aucun127queries ignorées au futurmetric.
