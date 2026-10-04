@@ -11922,3 +11922,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   worker national encore lancé à cette note. Suite : INIT165, phase0 sous
   superviseur164, puis remaining uniquement si phase0 valide. V101114/128
   exact89,0625% reste la dernière mesure de recall, objectif99,2% non atteint.
+
+### V165 gates nationaux INIT et premier lot réellement PASS
+
+- Régression V117–165627 PASS114,67s session22400 TERMINAL0.
+- INIT165 session58097 TERMINAL0 ; root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v165_address_access/compile_20261004_a`.
+  Import SOURCE-ONLY1,280342s/RSS352452608/minfree76/pression[1]/global0/PASS,
+  publié séparément des full audits16347,03s et46,65s. Source launch163
+  hash7b83...375f conservé, aucune phase lexical0 STOP ni sonde164 importée.
+  Launch SHA `880fab1c6b2363365742ae3e1f3d2d6c8032eb95ab951d273630a060876ee6ed`,
+  plan SHA `3de0d14737175a44995d5f9566170e9bfe3375185d32e118ab7ba9776a1daa25`.
+- Phase0 V165 session68703 TERMINAL0 :65536 adresses/4332450 postings,
+  mêmes scalar/export proofs complets et8 COPYs, namespace inchangé.
+  Worker5,234071s/RSS983384064 (~938Mio), min76/pression[1]/global0/PASS.
+  Parent propre PID47019 exit0 confirmé7,239448s/RSS960708608/min76/global0.
+  Manifest SHA `355578dfa24c51f7c680b2619dbfa517996b2bb63a42bacf8b48494ad8ffff2e`.
+  phase_record() réellement relu/accepté ; aucun STOP. Ne pas présenter le
+  prototype164858Mio comme mémoire du nouveau compilateur complet (938Mio).
+- CATNAT df674Gio disponibles, au-dessus du cap total120Gio de ce build.
+- Code et config165 désormais mesurés, immuables. Remaining autorisé par ce
+  gate de coût mais pas encore lancé à cette note.576 lots puis256 packs,
+  tous requis ; arrêt au premier échec, pas de retry ni métrique sur partial.
+  Aucun moteur complet, aucun nouveau recall, V101114/128 exact inchangé.
