@@ -14672,3 +14672,24 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 -229 TERMINAL exit0 :128 et16 producteurs PASS214 scellés, cibles restées
   fermées.230 maintenant autorisé à évaluer en processus séparés ; aucun
   nouveau pourcentage annoncé avant son admission complète.
+- Commit `960f0769` :230 TERMINAL exit0, autorité ET métriques vrais
+  exit0/PASS214. Exact120/128=93,75%,op121/128=94,53125%,Wilson bas88,1512%.
+  Cibles et128 contrôles exactement identiques218 ; exact/op deux gains
+  positions62/121, ZÉRO perte. Huit miss6/12/16/34/67/74/79/97, tousnatifs
+  présents. Folds exact39/43,39/41,42/44.229/230 devient référence de
+  développement améliorée, pas promotion produit ni validation générale.
+-229 wall988,053s,workers494,375s,pic1976647680octets. Latences descriptives
+  p95=5,2565s,p99=8,1861s,cache incontrôlé ;SLO NON validés.230workers
+  autorité0,843227s/RSS174620672 et métriques4,865649s/RSS996704256,
+  pression normale/free>=78/globaldelta0. Objectif99,2 NON atteint, aucun
+  READY, dénominateur/cibles/qualifications/états inchangés.
+- Commit `3f6f9d9e` :233loss listwise figée sur vrais scores217 avant fit,
+  onze paramètres index-level et contributions fixes représentées, ridge
+ 0,005/prior77/loss par requête. Contrôles OOF TRAIN64 censurés, JAMAIS
+  Recall100 national ni sélection sur les métriques extérieures. Cinq tests
+  gradient/protections/invariance held PASS. Modèles aval restent gelés.
+- PROCHAINE exécution232 :64 observations TRAIN du score réel ; reprendre
+  les concurrents naturels227, POSITIF UNIQUEMENT dans dataset supervisé
+  explicitementTRAIN après227scellé. Pas de candidats de vérité injectés
+  dans recherche ni métrique, geos depuisBANCRM vérifiée,pas depuisGT.
+  Tous64/parités/exits214 avant fit233 ; aucun retour aux pools2000/500.
