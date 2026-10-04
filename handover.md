@@ -14201,3 +14201,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   seulement, corpus43896818 et non tous44403034append. Cette limite ne
   retire aucun label du dénominateur. Pas garantieSOTA/99,2%/fullOOF/SLO ;
   aval/folds0/1 gelés, objectifACTIVE, dernier recall89,0625%, pas push.
+
+### V212 terminal STOP — plafond expérimental, demander décision qualité
+
+- Code `40f15207`, pré-mesure `1a041664`, session69533 TERMINAL1 ;
+  fresh `retrieval_v212_structural_population/run_20261004_a` conservé.
+  Code/config/contrat/tests212 désormais IMMUTABLES.0/128 sorties complètes,
+  aucune GT ouverte, aucun recall nouveau et aucun fragment évalué.
+- Premier worker13794 interrompu par supervision164 à11,340620542s :
+  RSS1098252288 dépasse1073741824 de24510464octets (~23,4Mio), p1,
+  free>=83% (dernière85%), delta swapglobal0 nonattribué. Exit-15 confirmé,
+  cleanupnull, wall11,363265417 ; rootSTOP à41,410930916s (quiet30 inclus).
+  Workerlog vide : ne pas inventer de canal ou étape causale du pic, ni
+  preuve que géographie/recall étaient corrects ou incorrects. Worker terminé.
+- STOP de budget, PAS résultat qualité négatif. Ni coût80s ni pression
+  système déclencheur. Pas évaluation207/213 lancée, pas labels/holdout.
+  Dernier recall114/12889,0625% inchangé ; objectif99,2% non atteint.
+- Ne PAS recommencer des microbench/variantsRAM pour23Mio après objection
+  humaine. Proposition à soumettre : pilote qualité séparé sous2Gio, temps
+  de recherche observé plutôt que mean16<=4 éliminatoire ; limites système,
+  tous128 avantlabels, plafond100, folds234 et aval gelé maintenus. Ce serait
+  une NOUVELLEautorisation/config/contrat, PAS modification212/153 ni baisse
+  de l'objectif ou validation des SLO. Aucune hausse ou relance autorisée
+  à ce jalon. Attendre décision explicite, objectifACTIVE/pas push.
