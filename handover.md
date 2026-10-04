@@ -13090,3 +13090,32 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   protocole d'audit équivalent prouvé, jamais targetsretirés. Tant full128
   avantGTséparée/SLO/fullOOF/Wilson/généralisation nonpassés, pasobjectif
   complet/READY/SOTA. Aucunspend/push/aval/GT/fold0/1 ouvert ce turn.
+
+### V194 paired addresses — protocole et tests figés avant mesure
+
+- Commit isolé `4e2bf175` : nouveau194, aucun code/config mesuré modifié.
+  Deux positions0/1 fixes, population128 entièrement vérifiée avant sélection,
+  propre query125 CRM/BAN/XY/fiabilité, contrôleJSON des coordonnées sans
+  tuple/list fauxdiff. Sources178/181 ouvertesUNEfois, corpus34346446aliases/
+  44403034sites/98804872facts inchangé et spans183 complets. Les snapshots
+  complets sont conservés ; fermeture mapsOWN seulement, aucun nettoyage.
+- Targets capturent TOUS facts.used/CSR/autorités177/plan/ledger/impl/catalogue/
+  contrôlespopulation/vecteurs/models/geo/3decoderparams/quatreproofs. Auditor
+  séparé FULLhash chaquefichier, exacttargets/bytes/files/epochs et contrôles
+  source177 ledger93507 avant/après ; admissionrevérifie l'autorité complète
+  et appartenance de chaqueproof aux targets audités. Q0 exigé BITEXACT184
+  SHAcoverage a4167fa3e78e366ba9a9139e9d33d068bf1972f248719b1416db79d84d5c19cb,
+  SHAexact7e08546b0f671246dfd6e4b7ec236678f411eaaf94a8b954b7c2de2953ad0f6d.
+- Tests194+193+192+191+190+187+183157PASS3,13s/session26842 TERMINAL0.
+  Tinybytes réellement hashés ; supervision/population/sourceauthority SIMULÉES,
+  pasunrésultat national. Guardsquery/XYmélangées, sourcepartielle, missingexact,
+  proofnonauditée, STOP/exitnonconfirmé/RSS/receipt/epoch/populationetbudgets.
+  Premierappeltest mauvaisnom190 : aucune exécution ; premieressai120PASS/
+  1FAIL nomchampfixture geo_reliable corrigé enreliable_geo AVANT commit.
+  Compile/diffcheckPASS, aucuneaugmentation1Gio/80s/quiet30/maxquery20s.
+- Prochaineaction réelle : freshroot retrieval_v194_addresses_pair/probe_20261004_a,
+  addressespuisfullaudit. Pas encore mesuré àcej alon. Aucun100/GT/recall/SLO
+  niREADY ; dernière mesure89,0625%exact inchangée. Fold0/1fermés, avalgelé,
+  goalACTIVE. Après PASS : batchscoring propreownvector/fold, toutes128sorties
+  avantévaluation séparée ; pas de candidat Q0 pour aider Q1 ni pool2000/500.
+  Mac/CATNAT seulement, aucune dépense/push ni sourcehistorique supprimée.
