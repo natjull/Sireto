@@ -14809,3 +14809,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   syntaxe/native/algebra/contrats/autorités PASS, pas recall national.
   Gardes214 inchangées, pas reprise STOP222/capfanout ;248 sera exécuté
   après fin244/245. Panel consommé pas généralisation/fullOOF/READY/SLO.
+
+- Commit `de5e1377`250preuves/251observations TRAIN, `86988444`252fit et
+  `7043baaf`253collecteur global figés avant toute observation nouvelle.
+  Trois preuves : nomCRM dans adresse native du même site à place, alias
+  exact actuel à place, couverture adresse à numéro+place. Preuves faibles
+  croisées ne valent ni nom légal ni alias inventé. Pas prêt aux frères.
+  251réutilise TOUS points supervisés232/64TRAIN disjoint128 et observe
+  natif3, valide deux conditionnels contre les11réels217 sur chaque point.
+  252apprendra UNIQUEMENT trois coefficients positifs, offset head228/fixed
+  preuve217 immuable, logistic pairwise égalquery et ridgeL2=0,005/prior0.
+  Tousfolds/entités held/equivalents exclus, aucun fit/sélection après
+  contrôles OOFTRAIN censurés, aucun rappel national proclamé.21 tests
+  algebra/parité/gradient/protections/collecteur PASS, fixtures seulement.
+  Séquence Mac continue244/245 puis248/249 puis251complet et252 seulement
+  si admissibles sous214 inchangées. Modèle253 initial, pas reranker aval.
