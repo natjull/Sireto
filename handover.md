@@ -11546,3 +11546,48 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   reste114/128=89,0625% exact116/128=90,625% opérationnel sur pilote réutilisé.
   Objectif99,2% NON atteint, goal ACTIVE. Downstream/folds0/1 gelés, pas de
   label injecté/CRM alias/fit/dépense externe/push/suppression de sources.
+
+### V157 GLOBAL réellement terminé ; V154 compilation nationale démarrée
+
+- INIT V157 session41754 TERMINAL0 :298 imports/312,22,311s,
+  RSS956432384 octets/min libre75%/pression1/global0/PASS. Nouveau launch
+  SHA `f093f5ce2cd8625e0ef8a0c02ead245b2f5b96a15c61a4d108425d8a13c14e3c`.
+- Lot current31 recalculé session64883 TERMINAL0 :992279 lignes3969116 obs,
+  13,858s/RSS776552448/min libre75%/pression1/global0/PASS. Supervision propre
+  exit0/own_child_exit_confirmedTrue,14,386s. Nouveau manifest
+  SHA `bddec3f27da5c4498f3bcf25f00b5d79fbb16368ace9160e2944b0014302e435`.
+  Ancien et nouvel artifact vérifiés SHA IDENTIQUE
+  `a10d53b0d2b84fd47ec37e01fc91727d16121d950185e25dd9548b78135e888e`.
+  Ancien STOP/orphan V153 inchangés et PAS réutilisés comme succès.
+- Remaining V157 session28946/PID90863 TERMINAL0, pas de worker vivant
+  nécessaire à la suite. GLOBAL `SEALED_V157_ALL_ORIGINAL_OFFICIAL_AND_RAW_CURRENT_ADDRESS_PROJECTION`
+  réellement produit, SHA `ecda5e70b05e96390baf0433ce6b0ce317580a1b12e4f2fee9a5b17b14eec39b`.
+  Toutes312 parts (298 imports/14 nouvelles),185993425 lignes317683879 obs,
+  148075748 observations lexicales ; explicit_site248345092,
+  parent_context69338787/unverified0. Output7668443291 octets (6711063311
+  réutilisés). Seal24,870s/RSS564051968/libre min74%/pression1/global0/PASS.
+  Hash complets avant/après et tous champs/site identities audités ; aucun
+  cap/adresse parent étendue/masque retiré/GT/fit/READY. Un GLOBAL d'adresses
+  n'est toujours PAS un moteur initial100 ni une preuve de recall/SLO.
+- INIT V154 lancé avec CE vrai SHA global, session57475 TERMINAL0 ; nouveau
+  root `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v154_address_store/compile_20261004_a`.
+  Revalidation indépendante312 sources, namespace44403034 sites,
+  mêmes185993425/317683879/148075748.27,044s/RSS953778176/min libre74%/
+  pression1/global0/PASS. Launch SHA
+  `192776151f0fe9598eba634d8d475d8030c1cf85cdd4badd8eb9049f3192cdfa` ;
+  plan SHA `47a1de65e096cec4b4a6f76c32758aef5eae248f6e44ee6b99c2d276c6f59120`.
+- Première vraie phase V154 part0 session60141 TERMINAL0, phase_record relu :
+  original530379/lexical417566/context112813 (contexts restent source),64
+  artifacts10386909 octets, tous champs/unique provenance exacts,
+  aucun cap/IDfeature/parent spread.0,825s/RSS339705856/libre75%/pression1/
+  global0/PASS, superviseur exit0 confirmé1,570s. Manifest SHA
+  `7b5b7f7b0a6b8e5520983528592c92b63d30490649820c820f42db472e853b17`.
+- V154 `remaining` effectivement lancé session17929. Suivre CE handle vivant
+  sans doublon et contrôler terminal + staged/dictionary/reverse_staged/GLOBAL.
+  Pas de seal global V154 à ce stade ; V155 doit attendre ce GLOBAL complet.
+  Source/kernel/config/code désormais pinés par le launch national : ne pas
+  les modifier en place, versionner un correctif si besoin.
+- Recall initial100 inchangé V10189,0625% exact90,625% op sur128 réutilisés,
+  pas nouvelle métrique nationale. Goal toujours ACTIVE/non atteint. Ce tour
+  PROGRESS : source nationale COMPLETE validée, construction suivante réelle
+  vérifiée et lancée ; aucune réduction de l'objectif ni ouverture downstream.
