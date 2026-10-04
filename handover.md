@@ -12061,3 +12061,55 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   remaining-parts uniquement, puis mesurer seals/packs séparément. Noms
   paginés restent à implémenter avant moteur national100. Exact V101114/128
   inchangé ; aucune nouvelle mesure recall, noREADY, folds0/1 fermés.
+
+### INIT167 sous budget, mais load refusé ; référence CLI corrigée en168
+
+- Suite complète117–167665 PASS187,64s, session44138 TERMINAL0 ; code167
+  `c5ca7318`, handover `1821826e`. Ne pas confondre la sous-suite253 avec665.
+- INIT16795231 TERMINAL0, rootcompile_20261004_a ;49 PASS166 conservés,
+ 2,788939s/RSS495337472/min76/pression[1]/global0/PASS. Launch SHA
+  `8bc3932effa7d603bef25e6ae40007b40957cf0e4295d6bfa5174663d628fa85`,
+  plan `36733f8cd92ba0c6471c1a75ea9bb5825ac9bd26683185f482ac50afd818c3ee`.
+- Vérificationload58850 et phase49191398 TERMINAL1 : comparaison de launch
+  refusée AVANT création de parts/lancement du worker. Référence humaine CLI
+  path/sha256 comparée à record() incluant size_bytes. PAS un gate mémoire
+  du lot49, ni une mesure recall. Aucun part167 à reprendre ; code/résultats
+ 167 immuables, ne pas relancer root167 en le retouchant.
+- Milestone `54a403c4` :168 canonicalise record(verify(reference)) pour la
+  seule référence de launch reprise. Test bout-en-bout utilise exactement le
+  format CLI minimal et vérifie la référence canonique. Toutes assertions
+  d'intégrité/STOP/exits conservées, même kernel166 et budget153. Contrat
+  `docs/retrieval_v168_canonical_resume_contract.md` avant mesure.
+- Tests ciblés166/kernel166/167/16856 PASS38,57s, session33592 TERMINAL0.
+  Fixtures et fausse supervision, aucun coût national revendiqué. INIT168
+  lancé sur root frais ; mesurer load natif puis lot49 avant remaining-parts.
+  Aucun autre volet utilisateur touché, aucun push/dépense, noREADY.
+
+### Gate national168 PASS sur le lot49 qui arrêtait166
+
+- INIT168 session61784 TERMINAL0 et load natif66881 TERMINAL0 ; root
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v168_address_access/compile_20261004_a`.
+  Import49 PASS166,2,706228s/RSS494682112/min76/pression[1]/global0/PASS.
+  Launch SHA `6c001857967b2e05ca8bdab05769bc6a5215549b5d0218e49ce45fa75b2b9797`,
+  plan SHA `e160faff30d7a2688f538dc7bf0b1d9490cc10f8808d569826d137495555af00`.
+  Tous34346446 aliases/44403034 sites/576 lots physiques requis inchangés.
+- Phase49 session65981 TERMINAL0, manifest réellement accepté ensuite par
+  phase_record168 (session32342 TERMINAL0).65536 aliases/4260552 postings,
+  mêmes preuves exactes scalar/export, <=4 readers/writers ; rien retiré.
+  Worker3,977174s/RSS763674624 (~728Mio)/min76/pression[1]/global0/PASS.
+  Parent propre PID56301 wait/reaped ACTUALexit0 confirmé5,697736s,
+  RSS755466240/min76/global0, pas de disparition interprétée comme succès.
+  Manifest SHA `d9774e5e2257754e22c714f2b61f7331532553310cec74aded78ecd7a20dd8a0`.
+- Comparaison de coût circonscrite : même lot49 et kernel166, ancien STOP
+  RSS1121075200 vs nouveau pic763674624. La validation complète puis hash/
+  epochs sans gros reparsing passe ici ; aucune garantie sur les526 restants.
+ 168 code/config/résultats désormais mesurés et immuables (`54a403c4`).
+- remaining-parts168 démarré sur CE root ; reprendre son handle, ne pas
+  dupliquer. Reprise des49 PASS166 et du49 propre168, seuls lots50..575 à
+  produire, tous sous supervision164/budget153. Pas de retry d'un STOP, pas
+  de hausse de budget, pas de seal/packs automatiquement lancés.
+  Handle exact14381, dernier write_stdin confirme RUNNING ; aucune conclusion
+  sur les nouveaux lots tant que leurs certs/exits n'ont pas été relus.
+- Aucun moteur national INITIAL100 complet, aucun nouveau recall/SLO.
+  V101114/128 exact inchangé ; noms paginés encore nécessaires. Labels,
+  folds0/1, aval gelés, noREADY. Sources/provenance/dénominateurs intégraux.
