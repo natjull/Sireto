@@ -1,0 +1,16 @@
+{
+  "staging": {"path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v175_address_seal/compile_20261004_a/staging_manifest.json", "sha256": "6729662580df40c9c47cc0600d2a255101c282848d985857130b0276a93c01ee"},
+  "aliases": 34346446,
+  "postings": 2440276150,
+  "term_buckets": 64,
+  "duckdb_version": "1.4.3",
+  "numpy_version": "2.4.1",
+  "duckdb_memory": "96MiB",
+  "spill_limit": "3GiB",
+  "resources": {"max_seconds": 80, "max_rss_bytes": 1073741824, "min_system_free_percent": 50, "required_pressure_level": 1, "global_swap_blocking": false},
+  "quiet_seconds": 30,
+  "phase_quiet_seconds": 1,
+  "max_phase_bytes": 2147483648,
+  "max_total_bytes": 128849018880,
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v177_packed_addresses"
+}
