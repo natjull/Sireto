@@ -14758,3 +14758,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   fixtures seulement. Modèles avant contrôle TRAIN, pas sweep/sélection128.
   Pas modèle aval/pool puis re-score ; serving modèle-seul sans cibles232.
   Prochaine exécution240 uniquement après fin de238, gardes214 identiques.
+- Commit `7c5455ad` :238 TERMINAL deux vrais exits0/PASS214,120/128 exact,
+  121/128op, ZERO gain/ZERO perte vs230, contrôles ET cibles identiques.
+  Toujours huit miss6/12/16/34/67/74/79/97 ; accès310 aliasfragment matches
+  SOMMÉS par requête, pas310 noms uniques nationaux ni gain recall.
+ 2371138,002263s wall/645,405520sworkers/pic2066219008, pression1/free>=74,
+  globaldelta0 nonattribué. p95=7,570472,p99=8,929935 descriptifs/cache
+  incontrôlé, aucun SLO validé. Référence229/230 conservée sans promotion237.
+- Commit `1a09c354` :240 TERMINAL exit0/PASS214,fit0,942121s/RSS350306304.
+  Chaque modèle39/45/44TRAINq7924/9196/8761paires, mêmes exclusions held,
+  toutes ont>=100classes observées. Objectif LP/direct validé ; poids
+  figés AVANT contrôles. Mean nombre négatifs OOF TRAIN qui devancent GT
+  5,5→6,203125 vs prior228 : PAS amélioration de ce diagnostic censuré.
+  Aucun tuning/sélection après contrôle, aucun recall national revendiqué.
+- Commits `8ba8b4ed` recette241 et `ce011974` évaluateur242 : frozen avant
+  émission ; kernel217 inchangé, nouveau head240 uniquement, pas kernel236
+  ni head233 ni fusion oracle.86 tests241/242/239 PASS, fixtures seulement.
+  Prochain run241128 complet sousgardes214, GT fermé jusqu'au seal ;242
+  distinct et comparaison230. Persister vers99,2 sans changer le contrat,
+  aucun READY/fullOOF/SLO/généralisation ni ouverture fold0/1/aval.
