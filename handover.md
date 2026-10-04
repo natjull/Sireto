@@ -12853,3 +12853,38 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
 - Fold0/1/GT fermés et toutes128 sorties avant évaluation séparée ; dernière
   mesure89,0625% inchangée, fullOOF/Wilson/généralisation/SLO toujours dus.
   GoalACTIVE, Mac/CATNAT seuls, aucune dépense/push/READY/garantie.
+
+### V189 terminal RSS STOP — aucun job live, séparation ledger requise ensuite
+
+- V189 `dffabaa6` mesuré/immuable, session49585 TERMINAL1, rootprobe_20261004_a
+  STOP conservé. ParentPID50669 actualexit1/wall11,832631s confirmé, sampling
+  peak926154752/min80/p1/global0. Reportworker153FAIL wall11,060126s et
+  ru_maxrss1148436480 (>1073741824) : même pic transitoire non vu par parent,
+  PAS un PASS sous1Gio ni un STOPwall. Pas de retry189/budgetaugmentation.
+- Checkpoints : requireaudits1,898490s/RSS341475328 ; catalog8,402599s/
+ 693665792 ; reduction9,607904s/762626048 ; ledger9,813054s/775274496 ;
+  final10,812541s/831733760. Réduction et registre entier reviennent ;
+  Budget de sortie refuse le maximum transitoire. Leur ordre mesuré localise
+  les coûts mais ne prouve PAS encore quel sous-appel est responsable du
+  ru_maxrss exact ; la séparation de packets seule n'a pas clos le gap.
+- Aucun candidat draft188/189 ne vaut sortie validée ou mesure de recall.
+  Aucun label/ancienhit/fold0/1 ouvert. Six scores/audits187 restent réellement
+  réussis et réutilisables via originalstage187, root187 resteSTOP. Codes,
+  configs et docs187/188/189 gelés. Tous jobs nationaux et tests de ce turn
+  terminaux, aucune attente/livejob à repoller (84842/89918/49585 terminaux).
+- Prochaine correction V190 AVANT mesure : séparation PHYSIQUE du registre
+  complet177 post-réduction dans un worker distinct borné1Gio/80s. Le
+  collecteur final est encore QUARANTINE avant ce receipt actualparent0/
+  report153/hash/sourceepoch exact attaché au manifest et outputdraft, puis
+  seul le root ayant TOUTES phases valides admet100. Même réduction183,
+  tous44403034sites/98804872faits, recettes/query/XY/modèles inchangés,
+  originalaudited_plan/targets entiers et originalbackend177.load exécuté
+  après réduction, jamais un contrôle retiré ou epoch remplacé par hash.
+  Publier temps global ycompris184+187+TOUS workers190. Ce protocole190 n'est
+  pas créé/testé/mesuré dans ce turn ; ne pas annoncer implémenté.
+- Milestones réalisés : six étapes187 réellesPASS, 188/189 plans exacts et
+  guards testés, STOPs précisés/versionnés sans fauxsuccès. Pas d'amélioration
+  qualité démontrée ; dernier exact114/12889,0625%, opérationnel116/12890,625%
+  inchangés. Toutes128 sorties avantGT séparé/fullOOF/Wilson/généralisation/
+  SLO dus. Goal ACTIVE, pas bloqué sur autorisation/externe, pas pause ni
+  accompli ; progrès sûr reste possible190. Aucun coût externe/push/aval.
