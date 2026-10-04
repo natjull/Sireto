@@ -14022,3 +14022,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   si gain crédible. Cette piste conserve toute la population/sources et
   les budgets20/80/1Gio. Aucun worker live, GT fermées, pas permission207,
   dernier89,0625%exact inchangé ; cible99,2% etgoalACTIVE nonprouvés.
+
+### V209 — ordre sparse seul testé, coût figé avant mesure
+
+- Commit `3ab7294f` : SparseOrderedVector/Names209, bench/contrat/tests,
+  suppression complète du warm/reset208. Même float64/flags205, original
+  maximum.at et ordre des doublons, ordre stable uniquement pour blocs
+  >=4096/span>256*refs, blocs131072. Aucun reduceat204, cap ou feature.
+- Suite84PASS/11,21s, session76678 TERMINAL0 :49tests209+17tests205+
+  18tests204. Oracle150/138 BYTES tousvecteurs/gathers, branches naturelle
+  et sparse forcée, signedzero/doublons/chunks, guards, spy reset interdit,
+  FULLhash obligatoire même size/mtime identiques. Compile/diffPASS.
+- Benchmark prévu fresh
+  `retrieval_v209_numeric_storage/benchmark.iYTuCz`, pas encore lancé à
+  ce jalon. Même seed208/world30000000/dense1048576/sparse65536/4calls/
+  3trials alternés que208 ; coûtinit+maximum pour DEUXmodes. ALLfloats BYTES,
+  mêmes références, pas modifier fixture selon résultat. Même filesystem
+  CATNAT publié, cache noncontrôlé. Seules12npy numériques privées seront
+  supprimées après comparaison, régénérables ; report/préflight conservés.
+- Budgets1531Gio/80s/quiet30/p1/free>=50/globalnonattribué inchangés.
+  Pas dépense/source supprimée/GT/feature métier synthétique, aval gelé.
+  Gain local crédible nécessaire avant NEWq24probe/FULLaudit et tout128
+  nationalfresh. STOP206 et mesurés208 inchangés, aucun worker national
+  live/permission207/recall nouveau ; dernier89,0625%exact, objectifACTIVE.
