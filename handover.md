@@ -14556,3 +14556,61 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   AUCUN changement du code224 mesuré ;9 tests226/context PASS0,55s.
 - V224 session21153 EN COURS à120/128, GT encore fermé ; quinze lots actual
   exit0/PASS214, dernier non admis encore. Pas de métrique partielle inférée.
+### 4 octobre 2026 — V224/V225 terminaux sans gain ; vrai angle mort appris confirmé V226
+
+- Génération224 `c6779450`, évaluation225 `91aa92d1`, résultats `18950794`.
+  Session21153 TERMINAL exit0, ALL128/tous16 producteurs actualexit0/PASS214,
+  exactement100 chaque requête, GT fermé jusqu'au scellement.967,221975s
+  total/474,822195s workers, pic1983528960, pression1/free>=78, globaldelta0
+  NON attribué. ManifestSHA
+  `a1ff417f2365a05a7797e9b9e40628a7d1cd9f7d5522add7c55a892851ed42b8`.
+- Évaluation225 session50368 TERMINAL exit0, deux vrais workers PASS214,
+  autorité0,944939s/RSS175783936, métrique4,488331s/RSS994033664. Admissions
+ 225 ET218 revalidées, targets originaux identiques,128 IDs/folds identiques.
+  Exact118/128=92,1875%, opérationnel119/128=92,96875%, Wilsonlower86,215307%.
+  Folds2:39/43,3:37/41,4:42/44. V2/V3 UNKNOWN, toutes qualifications comptées,
+ 16inexploitables historiques séparés.10miss identiques6/12/16/34/62/67/74/79/97/121,
+  tous dans natif ET catalogue disponible. ZERO gain/ZERO perte vs218 exact/op.
+  ReportSHA `2ebc1941c47af80d6c786b0da5bf1794e30e7b041704bc6283b7939295fcc785`.
+- Ne PAS promouvoir224 comme progrès : correction singleton seule ne ferme
+  AUCUN gap. Référence217/218 conservée. Nouvelle recherche sigles220/222
+  STOP, NON évaluée ; ne pas les mélanger à ce résultat225. Pas de modèle
+  aval changé, pas de garantie SOTA/99,2/fullOOF/READY/généralisation/SLO.
+  p95=5,310826s/p99=7,631173s descriptifs cache non contrôlé ; pas comparaison
+  causale de vitesse avec217. Aucun positif injecté/label changé/filtré.
+- Audit226 code `f04a9cd3`, résultat `b1442384`, session20012 TERMINAL exit0,
+  worker actualexit0/PASS2141,993409s/RSS342982656, pression1/free80/globaldelta0.
+ 512scènes TRAIN officielles originales234, zéro overlap avec128, mêmes IDs
+  des modèles77, exclusions held SIREN strictes. Source hashée avant/après.
+  ReportSHA `237504bbd379b51b64148c6aeed989669bd059dbbacc46776080ebaa44c7d0e5`.
+- CONSTAT précis : dans CHAQUE fit réel, positif.place=1 ET négatif.place=1
+  pour TOUTES les paires retenues. F2:343q/15765paires,F3:348q/15988paires,
+  F4:333q/15370paires, placeweight0 sur les trois. Compter par modèle, pas
+  sommer comme autant d'exemples uniques. Place = INSEE OU CP cohérent,
+  pas XY ni toute la géographie. Dimension sans contraste, donc incapable
+  d'apprendre à discriminer les concurrents hors-zone dans ce fit. Les
+  autres preuves conditionnelles/XY existent toujours ; ne pas prétendre
+  que toute géographie est absente ou que toutes10 pertes sont expliquées.
+- PROCHAINE action qualité : remplacer le mining TRAIN local par des vrais
+  concurrents nationaux query-only, puis calibrer le score DANS l'index avant
+  collecteur100. Commencer une cohorte TRAIN bornée64 (sélection figée label-
+  blind parmi512, disjointe128 et entités held exclues), pas23k ou512 nouveau
+  run d'emblée. Garder des concurrents proches et homonymes hors-zone ; tenir
+  compte des équivalents officiels pour ne pas les appeler négatifs. Positifs
+  permis uniquement dans l'apprentissage supervisé distinct, JAMAIS injectés
+  dans une recherche/évaluation. Aucun pool de service puis reranker masqué.
+  Modèle initial OOF234 seulement, registre held protégeant positifs ET
+  négatifs ; modèles aval toujours gelés. Coefficient commune appris sur
+  TRAIN/contrôle interne, jamais réglé sur les dix pertes, bonus SOFT pas
+  filtre : erreurs CRM hors-zone doivent rester récupérables. Préflight coût
+  query-only, sources/recette gelées avant tout nouvel128 post-scellé.
+- Les sigles composés demandent un accès officiel indexé adapté : ne PAS
+  relancer les regex220/222 en élargissant RSS, en capant les fanouts ou en
+  prétendant utiliser déjà un dictionnaire de noms historiques. Le langage
+  seul sur fixtures n'a pas prouvé la qualité nationale.
+- Tous jobs TERMINAUX, aucun worker à surveiller. Commits locaux seulement,
+  aucun push/cloud/dépense, neuf fichiers utilisateur hors volet préservés.
+  GoalAPI demeure historique BLOCKED nonmodifiable par outils, pas un blocage
+  actuel inféré ni completion (99,2% NON atteint). Ce tour : une vraie
+  mesure initial100 sans gain, et une cause de non-apprentissage géographique
+  objectivée ; la suite doit tester ce pivot, pas refaire des quotas/regex.
