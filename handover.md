@@ -14701,3 +14701,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   parités natives217 trois heads validées. Rapport machine dans
   `docs/retrieval_v232_results.json`, aucun nouveau recall national.
   Suite233fit puis234initial128/235postseal, recette figée avant émission.
+- Commit `c5a98dbc` :232 résultats réels64/8exits PASS214,13126 points
+  supervisésTRAIN, erreur absolue native max8,974935e-6 (trois heads),
+  workers283,266232s,pic1808416768,max requête13,149091s. Pas de recall.
+-233 TERMINAL exit0/PASS214 :fit onze poids effectifs217, contributions
+  fixes incluses, paramètres figés avant contrôle extérieur. Mean nombre
+  négatifs TRAIN minés qui devancent le positif8,5→6,765625 ; CENSURÉ,
+  pas Recall100 national, pas utilisé pour choisir/tuner modèle.
+ 95 tests234/235/233/232/231 PASS avant émission, pas preuve métier.
