@@ -1,0 +1,55 @@
+{
+  "status": "ACTUAL_TERMINAL_STOP_NOT_EVALUATED",
+  "admitted_queries": 0,
+  "failed_batch": 0,
+  "unadmitted_complete_query_rows": null,
+  "cause": "RSS_LIMIT_214_NO_BUDGET_RAISE",
+  "recall_measured": false,
+  "truth_opened": false,
+  "evaluator_launched": false,
+  "retry_performed": false,
+  "controller": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v273_corroborated_population/run_20261005_a/status.json",
+    "sha256": "05fbfb7d0ed957080a150a6dec49846f49ed62fed4662a1d5361b716dac037fe",
+    "size_bytes": 350
+  },
+  "worker": null,
+  "supervisor": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v273_corroborated_population/run_20261005_a/batch000/supervisor_stop.json",
+    "sha256": "77e74a176d49e5540449d1464fcb6050fe26c4c84d7ef6d4a84f50abcbbce9ec",
+    "size_bytes": 820
+  },
+  "worker_resources": null,
+  "actual_supervision": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 81963,
+    "cleanup_error": null,
+    "exit_code": -15,
+    "failure_wall_seconds": 6.2017814591526985,
+    "global_swap_is_worker_attributed": false,
+    "last_sample": {
+      "free_percent": 75,
+      "pressure_level": 1,
+      "swapouts": 202073613
+    },
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 75,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 2161934336,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "reason": "STOP_RSS_OR_WALL_RESOURCE_POLICY",
+    "sample_count": 13,
+    "status": "STOP",
+    "swapout_pages_delta": 0,
+    "wall_seconds": 6.24850312480703
+  },
+  "full_oof": false,
+  "ready_for_fold1": false,
+  "downstream_models_changed": false
+}
