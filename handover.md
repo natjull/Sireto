@@ -15076,3 +15076,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   288/281/256PASS. GT128234 fermé avant toutegen128/16exit0PASS/scellée,
   exact/op allhuman/ledger/sidecar original, appariements259 ET230 mêmes
   contrôles ETcibles ; aucune oracleunion/READY/fullOOF/SLO/généralisation.
+
+- Commit `671a2612` :289/290 nouvelle métrique relation administrative
+  indépendante, pas282réessayé : coefficient1×MAXrolequery280×MAXadresse OU
+  place surALLparents279. Nom0/6/8 inchangés257, pas poidsnomamplifié,
+  parent déjàownerexact210 dédupliqué(joins), deux rôlesMAXpas somme.
+  OWNcfg et original serving_query_launch explicites et exactref enfixtures,
+  constructorqueryonlyréel128metadata valide compatibilité/refs/epochs
+  sansGT/recall. Source actuelle ne certifiepasowner,6EPCIpositifsTRAIN
+  seulement ; pas nouvelaval/fit ni fusionoracle/region286/etc.214inchangé,
+  aucune réutilisation283STOP, attend287/288terminaux avantgeneration.
+
+- Commit `cbb01985` :291 évaluateur figé avant290,126fixtures289/290/291/
+  282/280/279/256PASS. ALL128/16 propres exit0PASS avantGT, sameledger/
+  sidecar128234 allhuman exact/op, compare259 ET230 mêmescontrôles ETcibles.
+  Paneladaptatif n'est jamaisfullOOF/READY/SLO/généralisation, pas oracleunion.
