@@ -1,0 +1,79 @@
+{
+  "status": "ACTUAL_STOP_WIRING_NO_QUERY_OR_ADMISSION",
+  "reason": "BACKEND_CONFIG_SHADOWED_OWN_CONFIG_MUNICIPAL_STRUCTURE_KEY_MISSING",
+  "exact_exception": "'municipal_structure'",
+  "admitted_queries": 0,
+  "completed_query_outputs": 0,
+  "worker": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 79,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 210649088,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 2,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.14481033338233829
+  },
+  "supervisor": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 93283,
+    "cleanup_error": null,
+    "exit_code": 1,
+    "failure_wall_seconds": 1.0324239591136575,
+    "global_swap_is_worker_attributed": false,
+    "last_sample": {
+      "free_percent": 79,
+      "pressure_level": 1,
+      "swapouts": 202073613
+    },
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 79,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 206536704,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "reason": "Command '['/Users/nathanjullia/Documents/Projets/SIRETO/.venv/bin/python', '-u', '-m', 'scripts.retrieval_v283_corroborated_population', 'worker', '--output', '/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v283_corroborated_population/run_20261005_a', '--batch', '0']' returned non-zero exit status 1.",
+    "sample_count": 2,
+    "status": "STOP",
+    "swapout_pages_delta": 0,
+    "wall_seconds": 1.032550500240177
+  },
+  "worker_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v283_corroborated_population/run_20261005_a/batch000/worker_stop.json",
+    "sha256": "f91971eee100691293530d1ca45955b0737472ac10a005aba9352e1b0a508eab",
+    "size_bytes": 886
+  },
+  "supervisor_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v283_corroborated_population/run_20261005_a/batch000/supervisor_stop.json",
+    "sha256": "87fc0d51649056ede8e054bfe7bfc4ef3b9b449ecbefa1a0216339e39f475013",
+    "size_bytes": 1095
+  },
+  "root_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v283_corroborated_population/run_20261005_a/status.json",
+    "sha256": "9c4c1a3417583268456a00d8d1b21c457b72dce9483203a89dd401bff18df2e6",
+    "size_bytes": 627
+  },
+  "truth_opened": false,
+  "recall_measured": false,
+  "evaluation_v284_launched": false,
+  "measured_code_config_immutable": true,
+  "stop_retry_launched": false,
+  "partial_reused": false,
+  "resource_limits_changed": false,
+  "best_quality_reference": "V258_V259_122_EXACT_123_OP_OF_128_NOT_PRODUCTION"
+}
