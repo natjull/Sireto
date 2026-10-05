@@ -15341,3 +15341,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   1query avecIDmanquant. Worker1,351255s/RSS153370624/free80pression1/delta0.
   Pas candidats/scores/GT/recall ; gatepositif autorise test distinct306/307
   déjàfigé, pas récupération317STOP. Manifest dde06f64.../payload07ce4e8b...
+
+- Commit `681d964b` :320 source-only BODACC figé,12fixturesPASS. Source
+  canonique692010relations/11champs entièrement typée/reconstruite ; toutes
+  relationsBODACC avecordinaux/provenance, secondparcours complet. AucunCRM/
+  GT/candidat/score/recall/fold0/1 ; ASSET_TRANSFER jamais identité/TUP.
+  Pas encore exécuté ; attendre terminaison306/307, gardes214 inchangées.
