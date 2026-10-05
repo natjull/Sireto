@@ -14986,4 +14986,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   RSSsuperviseur2161934336>2GiB,6,201781sworker,p1/free>=75/globaldelta0
   nonattribué. Aucun274/GT/recall/retry/hausse/cap. Métriques nonmesurées,
   ne pas annoncer résultat négatif recall ni absence de valeur activité.
- 277 cohérencevoie lancé ensuite séparément sous214 ; référence259maintenue.
+  277 cohérencevoie lancé ensuite séparément sous214 ; référence259maintenue.
+
+- Commit `9f8834bd` :279 SOURCE-ONLY commune/EPCI/code/ALL CP versSQLite
+  figé AVANTcompile,16tests fixtures PASS. Tous35014records source267 et
+  memberships, absentsvidesNULLUNKNOWN (raw conservé), roundtripintégral,
+  lectureRO/immutable/caché2MiB ; ALLparents via INSEE OU CP, pas first/topK.
+  Aucun CRM/GT/model/recall, idsjoins pas features, la mairie/EPCI n'est
+  PAS automatiquement propriétaire de l'équipement. Compilation après
+ 277/278terminaux sous214 inchangé ; aucun fragment270/273réutilisé.
+  Hypothèse suivante préparée : rolequery appris TRAIN512 disjoint128,
+  puis relationofficielle appliquée AVANTcollect100, pas dictCRM/GT ni
+  rerankd'unpool. Pas encore modèle280 entraîné/recall ni identité certifiée.
