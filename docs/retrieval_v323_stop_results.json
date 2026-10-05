@@ -1,0 +1,47 @@
+{
+  "status": "STOP_CODE_AUTHORITY_DRIFT_BEFORE_FIRST_BATCH_ADMISSION",
+  "protocol_commit": "49d768b6",
+  "root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v323_corroborated_population/run_20261005_a",
+  "status_reference": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v323_corroborated_population/run_20261005_a/status.json",
+    "sha256": "f788b9cc5eff1b0a4bca91c3fa89cc119aec8754d8c7d1e423b8150744aa0850",
+    "size_bytes": 628
+  },
+  "worker_stop_reference": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v323_corroborated_population/run_20261005_a/batch000/worker_stop.json",
+    "sha256": "a2dcc2063b5bf8e6b9403c4413dd141be0d64daa942db96e76dd4a3d4f195f64",
+    "size_bytes": 976
+  },
+  "supervisor_stop_reference": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v323_corroborated_population/run_20261005_a/batch000/supervisor_stop.json",
+    "sha256": "d9d306037d193cbb3691500e09b25db0725fee46bdae8019db0fb2fed7569bc1",
+    "size_bytes": 1098
+  },
+  "own_child_pid": 82383,
+  "own_child_exit_code": 1,
+  "own_child_exit_confirmed": true,
+  "workflow_and_generation_controller_exit_code": 1,
+  "admitted_queries": 0,
+  "printed_nonadmitted_queries": 4,
+  "controller_seconds": 66.25424249982461,
+  "failure_worker_seconds": 36.089841708075255,
+  "supervisor_peak_rss_bytes": 1518665728,
+  "minimum_system_free_percent": 81,
+  "last_sample": {
+    "free_percent": 81,
+    "pressure_level": 1,
+    "swapouts": 202073613
+  },
+  "global_swapout_pages_delta": 0,
+  "global_swap_is_worker_attributed": false,
+  "truth_opened": false,
+  "recall_measured": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "partial_outputs_used": false,
+  "cause": "Assistant edited the not-yet-measured V323 identifier conformance while automatic workflow had already entered V323. Own after-hash caught drift, no first batch admitted. Original measured snapshot restored byte-exact. No silent retry.",
+  "source_package_v328_complete": true,
+  "identifier_mask_helper_v329_prepared_only": true,
+  "next_requires_fresh_human_authorization": true
+}
