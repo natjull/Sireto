@@ -15347,3 +15347,36 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   relationsBODACC avecordinaux/provenance, secondparcours complet. AucunCRM/
   GT/candidat/score/recall/fold0/1 ; ASSET_TRANSFER jamais identité/TUP.
   Pas encore exécuté ; attendre terminaison306/307, gardes214 inchangées.
+
+- Commit `1d4582b8` :306/307 TERMINAUX ALL128/16gen exit0/PASS214 plus
+  deux producteursévaluation propres exit0/PASS.123exactET123op/128=96,09375%,
+  mêmes5miss12/34/67/74/97, ZEROgain/ZEROloss288 dans les deux vues, mêmes
+  contrôles ET6targetrefs ; folds40/43,41/41,42/44, Wilsonbas91,1813%.
+  DataESrelation305 NONretenue comme meilleure référence,288 reste le socle.
+  Génération1037,579723s/workers544,634610s/RSS2086502400, p957,695885s/
+  p999,295848s cacheNONcontrôlé, PAS SLO. Manifest28e15418...,outputs37aa7bd0...,
+  eval5c60513f.../reportaea2da1f... . Aucunlabel modifié/fold0ou1ouvert/aval
+  changé/READY/fullOOF/généralisation.195fixtures tousvolets courantPASS.
+
+- Commit `2f93451b` :320 TERMINAL STOP_OUTPUT_SIZE, child56082exit1
+  confirmé/reaped,controllerexit1 ;359902814octets vs268435456 (excess91467358).
+  Supervisorrss1783447552/failure9,791551s/free76/delta0global. STOPavant
+  secondroundtrip/sourceepochs, aucune source/compte/graph admis, aucun
+  payloadSTOP lu/réutilisé/GT/recall. Source320pas source-serving autorisée.
+
+- Commit `2b794130` :321 correctionserialisation320 uniquement PRÉPARÉE,
+  NONautorisée/NONexécutée. ParquetZSTD en4096rows, ALLchamps/schemaArrow/
+  métadonnées/date32/NULL/ordinaloriginal et tousrecords identiques, second
+  parcours sourceENTIER/roundtrip CHAQUErecord avantownexit0/PASS.21fixtures
+  320/321PASS inclpas100cap/date/null/typeoriginal, limitesdisque256MiB/RSS2GiB/
+  80s quiet30 inchangées. Aucune partie320réutilisée, autorisation humaine
+  expliciteNEUVE obligatoire pour relancer cette correction aprèsSTOP.
+  Pas futurgraph100promisvalidé, pas compte BODACC publié depuisSTOP.
+
+État terminal du tour : aucun producteur physiqueLIVE ; tous handles réapés.
+Objectif99,2% initial100 NONatteint ; meilleur résultat demeure288DEV96,09%.
+Deux suites nécessitent direction humaine : source321 compactsansrelâcher
+les limites ; et retest noms313/316 aprèsnouveauSTOP317 (question proposée :
+isolation avec2GiB inchangés ou autorisation2,25GiB pour ce test seulement).
+La réponse « Poursuis » du début de ce tour a déjà été consommée pour308et317,
+elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
