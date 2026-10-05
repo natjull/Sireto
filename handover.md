@@ -15326,3 +15326,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   endpoints publiés grade1support ou source-local ; autres sites mêmeSIREN
   grade0,5support natif seulement, MAXrelations/dédupstrong. ONEcollect100,
   pas pool/rerank/ownerinventé/équivalenceclaim/313fusion. Await319 positif.
+
+- Commit `d894000c` :317 TERMINAL STOP batch003, ownchild44551 exit1
+  confirmé/reaped, controllerexit1.24admis,8imprimésNONadmis même si payload
+  existe ; pas manifestPASS. RSS2195783680 dépasse2147483648 de48300032,
+  wallworker36,571873s/controller296,981386s/free80pression1/delta0global.
+  Supervisorstop0e0e24a8...1098octets ownexitconfirmed ; aucune évaluation318,
+  cible/recall/partiel/rerun/budgetraise. Correction316 n'a pas suffi ; ni
+  gain ni régression qualité démontrés. DataES319 est une expérience distincte,
+  autorisée et figée, aucun313/316STOPscore fusionné. Meilleur288 inchangé.
