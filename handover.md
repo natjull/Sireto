@@ -14899,3 +14899,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   prépost ; toutes protections214 inchangées.265 attend258/259 et261/262
   terminaux ;266 uniquement ALL128/16 vrais exit0/PASS. Pas fusion oracle,
   aucun recall/SLO/fullOOF/READY/généralisation revendiqué avant mesure.
+
+- Commit `597a98be` :267 acquisition SOURCE-ONLY officielle figée,13tests
+  fixtures PASS, pas fetch réel ni recall encore. GET global constant
+  geo.api.gouv.fr tous types actuel/arrondissement et zones metro/drom/com,
+  projectionnom/code/CP/SIREN/EPCI seulement, pas requête CRM/GT. Toutes
+  réponses brutes byte-identiques/hash,UNKNOWN publiés ; complétude serveur
+  pas recertifiée contre COG, pas claim corpus SIRET. Sous214 propre et
+  séquentiel après jobs terminaux, aucun credential/coût externe/retry.
+  But futurs liens officiels et contexte nominal, pas featureID/aliasCRM.
