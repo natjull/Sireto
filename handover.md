@@ -14998,3 +14998,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Hypothèse suivante préparée : rolequery appris TRAIN512 disjoint128,
   puis relationofficielle appliquée AVANTcollect100, pas dictCRM/GT ni
   rerankd'unpool. Pas encore modèle280 entraîné/recall ni identité certifiée.
+
+- Commit `522d9aa9` :277/278 TERMINAUX ALL128/16 producteurs réels exit0/
+  PASS214. Exact121/128=94,53125%,op122/128=95,3125%. Mêmes contrôles ET
+  cibles : gains6/16 et perte121 vs230 ; ZEROgain et perte121 vs259.
+  Cohérencevoie275 NON retenue, référence259 reste122exact/123op.
+  Gen1012,922072s/workers520,105474s/RSS2095923200 ; cache incontrôlé,
+  p95=7,426329/p99=8,145355 nonSLO. Pas oraclefusion/fullOOF/READY ni
+  généralisation ;279 source-only lancé ensuite sous214 inchangé.
