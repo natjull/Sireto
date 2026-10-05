@@ -1,0 +1,74 @@
+{
+  "status": "COMPLETE_SOURCE_ONLY_NOT_RECALL",
+  "protocol_commit": "49d768b6",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v328_serving_panel/package_20261005_a/source/manifest.json",
+    "sha256": "9750ca9002cec090f5760504cdcf14f43c9a3f73bd0cb2452554cd01106d7f18",
+    "size_bytes": 1603
+  },
+  "panel": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v328_serving_panel/package_20261005_a/source/panel.json",
+    "sha256": "ae3fc62137132b8ad896f6ca4276d6bfefb2874488470758c467e1b8f65e7255",
+    "size_bytes": 2504239
+  },
+  "population_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v328_serving_panel/package_20261005_a/population_manifest.json",
+    "sha256": "ad9996080963bd801a49f92bec6418e4ad65ccfda0238b08875423bb52643917",
+    "size_bytes": 1043
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 81,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 768851968,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 33,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 17.57438537478447
+  },
+  "supervision": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 78084,
+    "exit_code": 0,
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 81,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 696991744,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "sample_count": 36,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 18.155566041823477
+  },
+  "queries": 2000,
+  "folds": {
+    "2": 653,
+    "3": 715,
+    "4": 632
+  },
+  "geo_resolved": 1656,
+  "geo_compatible": 1655,
+  "declared_weak": 880,
+  "geographic_prefixes": 89,
+  "original128_ban_full_parity": true,
+  "truth_opened": false,
+  "recall_measured": false,
+  "all_expansions_sealed": false,
+  "initial100_generated": false
+}
