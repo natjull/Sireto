@@ -14965,3 +14965,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Pas contexte268/adresse260/head252/240/243 ni unionoracle.214 inchangé,
  273 attend270/271terminaux ;274 seulement ALL128/16 réels exit0/PASS.
   Paneladaptatif jamais fullOOF/SLO/READY/généralisation même100%.
+
+- Commits `13ac24cb`275/276/277 et `8b74070a`278 figés AVANT émission,
+ 102tests fixtures PASS. Nouvelle feature5 : numéro exact+place contribuent
+  ZEROscore, corroborent couverture bornée des mots de voie informatifs SUR
+  CE LEAF. Types voie/particules syntaxiques seulement, pas dictCRM/GT ;
+  retrait seul span numéro explicite EN TÊTE, dates/nombres dansvoie conservés.
+  MAXcourant/historique/supporting, ALL coretokens distincts, pas hardfilter.
+  Pas core/num/place ->pas bonus5 ; autres preuves257/numdansadresse/sigles256/
+  owners/graph/XY/sparse/exacts conservés, head229/228 gelé, pas paritéfit217.
+  ONEcollect100 global, pas pool/rerank ni fusion272/268/260/240/252/243.
+  Hypothèse avant métriques270/273, attendre leurs terminaux ;214 inchangé,
+ 278 uniquement ALL128/16 réels exit0/PASS scellés, appariements259ET230.
+  Paneladaptatif jamais SLO/fullOOF/READY/généralisation même100%.
