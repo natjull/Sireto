@@ -15260,3 +15260,19 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Aucun candidat/label/recall ; testlongnative100 nonlancé pourcetajoutvide.
   Limite exactWHOLEmultiword311, pas preuve que Culture entier estinutile.
   Worker0,243334s/RSS166789120/free78pression1,deltaswapglobal0.
+
+- Commit `5b188bae` :313/314 nouvelle relation weakULpartielle figée avant
+  measure. ALLpaires adjacentesdistinctes contenues =union exacteALLspans
+  avec>=2motsdistincts après retraitparticules/formesjuridiques286, tous
+  postingsword0 intersectés SAMEalias134. ALLfacts132/149contrôlés, subjectUL
+  scopeLEGAL/COMMERCIAL seulement, SITEpartialfacts jamais relevésàparent.
+  Grade0,5MAXadresse/INSEEorCP, pas exactnamecopié/frères/graphenouveau,
+  anciensstrongparents dédupliqués ; ONEglobalnative100/ALLsitesnatifs.
+  Base286réussie inchangée, pas300retenté/STOP293297303fusionné/Culturevide/
+  fit/CRMalias/identifiantfeature/GT.214quiet30/2GiB80s20query inchangé.
+
+- Commit `91857800` :315 évaluationfigée AVANT314,99fixtures313314315300286
+  PASS dont égalitémathématiqueALLspans/paires,151ownersnonsélectionnés et
+  partialSITEignored. ALL128/16 actualexit0/PASS avantGToriginaux128ET234,
+  comparaisons230259288 mêmescontrôles ETcibles, exact/op séparés. Panel
+  adaptatif jamais fullOOF/READY/généralisation/SLO même100%, avalgelé.
