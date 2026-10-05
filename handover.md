@@ -15443,3 +15443,14 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Cet accord ne permet PAS un autre retry en cas de nouvel échec, ni317/
   320/321 ni hausse de budget. Objectif99,2% nonatteint, folds0/1fermés.
   Changements utilisateur préservés, aucun push. Préparation à lancer.
+
+- Commit `034dc68a` :328 SOURCE TERMINALE admise (package d'encodage encore
+  LIVE). Ownchild78084exit0/PASS214 confirmé/réapé ; worker17,574385s/
+  RSS768851968/libre81%/pression1/deltaswapglobal0, superviseur18,155566s.
+  ALL2000queryonly sélectionnées/scellées sansqualité/label ;folds653/715/632,
+  89préfixesdépartementaux,1656BANrésolues/1655Lambertcompatibles/880weak.
+  ALL128géométries servingTOUSchamps/ordre EXACT après recalcul officiel ;
+  pas oldBAN/fragment322réutilisé. Sources fullhash pre/post/epochs admises.
+  Manifest9750ca90.../panelae3fc621.../popad999608... ; aucunGT/recall/candidat
+  ni99%/SLO/fullOOF/READY claim. 16encodeurs physiques puis323/326 dans
+  workflow séquentiel autorisé ; aucun autre producteur lourd parallèle.
