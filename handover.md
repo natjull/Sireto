@@ -15380,3 +15380,22 @@ les limites ; et retest noms313/316 aprèsnouveauSTOP317 (question proposée :
 isolation avec2GiB inchangés ou autorisation2,25GiB pour ce test seulement).
 La réponse « Poursuis » du début de ce tour a déjà été consommée pour308et317,
 elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
+
+## 5 octobre 2026 — élargissement de la mesure initial100
+
+- Commit `bceea4d0` : accord humain « Go » après explication des limites des
+  128, nouveau protocole V322–326 figé AVANT sélection/recherche/labels.
+  Exactement 2 000 nouvelles requêtes : priorités SHA256 avec seed fixé,
+  23 571 CRM folds234 moins 128 consommées et 512 TRAIN disjointes. Aucun
+  statut, ancien hit, qualité BAN ou label ne choisit les lignes. Nouveau pour
+  cette recette initial100, PAS un holdout externe pristine (ancien replay
+  V34 consommé). Source exclusive queries/BAN ; parité entière128 requise.
+  Même encoder local/projections/heads77/228 et EXACT moteur286 que288,
+  zéro refit/modification de score/aval, ONEcollecteur100. Lots physiques4,
+  gardes214 inchangées ; TOUS500 exit0/PASS avant permission325 et GT326.
+  Kernels324 changent cardinalité seulement, exact/op/segments/Wilson et
+  sidecar original conservés. 77fixtures PASS (pas preuve national/coût).
+  Pas relance317/320/321 autorisée par ce nouvel accord sur le panel.
+  FullOOF23571/généralisation/SLO toujours dus, fold0 nonlu/fold1 fermé.
+  Préparation puis génération/évaluation neuves à exécuter ; pas nouveau
+  recall annoncé. Changements préexistants utilisateur préservés, aucun push.
