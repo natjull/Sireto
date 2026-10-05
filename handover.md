@@ -14978,3 +14978,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Hypothèse avant métriques270/273, attendre leurs terminaux ;214 inchangé,
  278 uniquement ALL128/16 réels exit0/PASS scellés, appariements259ET230.
   Paneladaptatif jamais SLO/fullOOF/READY/généralisation même100%.
+
+- Commit `563143f1` :270 TERMINAL STOP RSS2197864448>2GiB,96admis,
+  batch012 huit lignes complètes MAIS nonadmises, réel exit1 confirmé.
+  Aucun271/GT/recall/retry/hausse/fanoutcap ni fragments réutilisés.
+ 273 TERMINAL STOP première requête,0admis, réel exit-15 confirmé,
+  RSSsuperviseur2161934336>2GiB,6,201781sworker,p1/free>=75/globaldelta0
+  nonattribué. Aucun274/GT/recall/retry/hausse/cap. Métriques nonmesurées,
+  ne pas annoncer résultat négatif recall ni absence de valeur activité.
+ 277 cohérencevoie lancé ensuite séparément sous214 ; référence259maintenue.
