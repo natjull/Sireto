@@ -1,0 +1,34 @@
+{
+  "backend_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v211_structural_channels.json",
+    "sha256": "62b6e4725a5f61fa5b5fda3185946d6b13bb84192d00e7080f09572e477b0cdc",
+    "size_bytes": 587
+  },
+  "serving_query_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/launch.json",
+    "sha256": "6fc2cb89b489e8038e6f211e0fac0a36954874e066e8a727558cfa01d9d90956",
+    "size_bytes": 85950
+  },
+  "queries": 128,
+  "batch_width": 8,
+  "quiet_seconds": 30,
+  "query_seconds": 20,
+  "mean16_seconds": null,
+  "resources": {
+    "max_rss_bytes": 2147483648,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v265_corroborated_population",
+  "national_place_training": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v228_national_place_training/run_20261004_a/manifest.json",
+    "sha256": "05966487d7d26b2438f6d5072917a53169691bca402df4a481ceb678921ec44c",
+    "size_bytes": 1191
+  },
+  "activity_semantic": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v113_activity_semantic/probe_20261003_a/manifest.json",
+    "sha256": "cfeebabf1e89ba82c0dec3967be08aaa4d63d8124923071dbad7dd13fb7d2608"
+  }
+}
