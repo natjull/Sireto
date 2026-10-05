@@ -14883,4 +14883,19 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Gen1043,566255s/549,931205sworkers/pic1982365696. P95=6,171513s,
   p99=8,251053s cache incontrôlé, pas SLO/READY/fullOOF/généralisation.
  258 sigles NOMcourt hors STOPcontextes lancé séquentiellement ensuite,
-  aucun retry248/unionoracle ni GT de258 ouvert avant128complet.
+ aucun retry248/unionoracle ni GT de258 ouvert avant128complet.
+
+- Commits `6b8e56bb`263/264/265 et `499eda15`266 figés AVANT émission,
+ 106tests PASS fixtures seulement. Nouvelle métrique : head229/228 intact
+  +1×activité-au-lieu faible continue, pas reprise/optimisation métrique30
+  V115/V116 STOP. Decoder113 SEMANTIC_RIDGE1 déjà entraîné TRAIN512 disjoint
+ 128, même encoder NOM/docs2140, modèles safe-fold/familles et queryIDs
+  contenus dans heads77 protégés ; pas refit/sélection sur128/poids114.
+  Tous sites43896818 scannés en pages physiques ; memberships CP OU INSEE
+  connus +activitéversionnée exacte, UNKNOWN0 pas identité, horszone/
+  fermé/inconnu tous chemins229 maintenus. Grades0..1 nonprobabilités,
+  nonquantisés, aucune classe/site/fanout capé, un seul collect100 natif
+  global avant matérialisation, pas pool/rerank. Sources entierhash/epochs
+  prépost ; toutes protections214 inchangées.265 attend258/259 et261/262
+  terminaux ;266 uniquement ALL128/16 vrais exit0/PASS. Pas fusion oracle,
+  aucun recall/SLO/fullOOF/READY/généralisation revendiqué avant mesure.
