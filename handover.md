@@ -14926,3 +14926,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   indépendamment recertifiée ni retrieval/recall mesuré. Référence/hash
   source complète dans `docs/retrieval_v267_results.json` ; futurs joins/
   contexte nécessitent nouvelle recette figée et mesure vraie100.
+
+- Commits `df1cb4ac`268/269/270 et `dd77d505`271 figés AVANT émission,
+ 118tests fixtures PASS. ALL noms communaux267 via INSEE OU CP connus,
+ plusieurs communes parCP conservées, retrait ALL spans dans COPIE nom,
+ original intact ; résidu>=2 contenus distincts OU langage2563..6 inchangé.
+ Pas nouvelle grammaire2lettres/code magasin/dictCRM, IDs joins seulement,
+ pas SIREN/EPCI municipal exploité pour prétendre identité équipement.
+ MAX nominal faible0/6/8 au lieu seulement, exact2/10/owners/sparse/cohérence
+ original seul. Head229/228 + sigles256 inchangé, ONEcollect100 global,
+ pas fusion activité264/adresse260/head252/240/histoire243 par oracle.
+ Source267 entièrehash/producer réel/supervision/quiet/epochs liés ;
+ complétudeAPI non recertifiéeCOG.270 attend261/262 et265/266 terminaux,
+ gardes214 inchangées ;271 uniquement ALL128/16 réels exit0/PASS scellés.
+ Panel adaptatif n'est jamais fullOOF/READY/SLO/généralisation même100%.
