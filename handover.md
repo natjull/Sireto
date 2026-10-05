@@ -15335,3 +15335,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   cible/recall/partiel/rerun/budgetraise. Correction316 n'a pas suffi ; ni
   gain ni régression qualité démontrés. DataES319 est une expérience distincte,
   autorisée et figée, aucun313/316STOPscore fusionné. Meilleur288 inchangé.
+
+- Commit `a617f6e7` :319 TERMINAL disponibilité ALL128 ownexit0/PASS214,
+  4queries avec15incidencesSIRET explicites (1local/14nonlocal),42observations,
+  1query avecIDmanquant. Worker1,351255s/RSS153370624/free80pression1/delta0.
+  Pas candidats/scores/GT/recall ; gatepositif autorise test distinct306/307
+  déjàfigé, pas récupération317STOP. Manifest dde06f64.../payload07ce4e8b...
