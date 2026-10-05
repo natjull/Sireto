@@ -15154,3 +15154,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   cacheincontrôlé nonSLO. Pas GTcorrigé/parentowner certifié/READY/fullOOF/
   généralisation.299diagnostic best288 lancé ensuite propre214séquentiel,
   cadreSIREN !=substitution métriqueexacte et aucuneoracleunion.
+
+- Commit `9a3c62d7` :299 TERMINAL propre exit0/PASS214, diagnostic best288
+  allhuman128 postseal. Exact123/128, SIRENdans100124/128 ; parentabsent
+  positions12/34/74/97, parentprésent/siteexactabsent67 (3sites, premier39).
+  Pas substitutionparent→exact ni règleclient/correctionGT/READY/fullOOF.
+  Worker8,362198s/RSS351469568,free77pression1.293proximitéfine lancé
+  ensuite seul producer national ; 294 reste fermé jusqu'àALL128/16 PASS.
