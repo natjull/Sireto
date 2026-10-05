@@ -15091,3 +15091,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   282/280/279/256PASS. ALL128/16 propres exit0PASS avantGT, sameledger/
   sidecar128234 allhuman exact/op, compare259 ET230 mêmescontrôles ETcibles.
   Paneladaptatif n'est jamaisfullOOF/READY/SLO/généralisation, pas oracleunion.
+
+- Commit `434076bd` :292/293 nouvelle métrique proximitéfine figée avant
+  run : floor128(factorBAN/(1+d/500))/128, mêmefactorfiable1/faible0,5,
+  mêmesrayonsmax2000/3sigma que257, pas autrecoefficient/thresholdGT.
+  ALLnativeXY43896818 scan readonlychunks131072, aucunnearestK/réservoir,
+  erreur quantification<1/128 explicitée, changementscore assumé pas
+  optimisation sansimpactmétier. Head257/256/228/sparse/owners inchangés,
+  sourceXYqueryonlyBAN pasGT.55fixturesPASS donttypedcoords scan complet/
+  missing/horsradiusouvert.214inchangé, après290/291terminaux seulement.
+
+- Commit `160e5fd8` :294 évaluation proximitéfine figée avantrun,97fixtures
+  292/293/294/256PASS. ALL128/16 exit0PASS/scellés avantGT/ledger/sidecar
+  original, ArrowIDs128ET234, exact/op allhuman+historique/V2/V3. Apparier
+  259ET230 contrôles ETcibles, quantificationexplicitée, pas oracleunion/
+  READY/fullOOF/SLO/généralisation depuis paneladaptatif même100%.
