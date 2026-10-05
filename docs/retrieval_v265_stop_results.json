@@ -1,0 +1,79 @@
+{
+  "status": "ACTUAL_TERMINAL_STOP_NOT_EVALUATED",
+  "reason": "'serving_query_launch'",
+  "cause": "DRIVER_PASSED_BACKEND_CONFIG_INSTEAD_OF_OWN_CONFIG_TO_ACTIVITY_MODELS",
+  "admitted_queries": 0,
+  "recall_measured": false,
+  "truth_opened": false,
+  "evaluator266_launched": false,
+  "retry_performed": false,
+  "resource_budget_changed": false,
+  "old265_code_config_immutable": true,
+  "controller": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v265_corroborated_population/run_20261005_a/status.json",
+    "sha256": "d8d7156e230d76433d12a19d9b61f98428e164a586cc95484bc1896ece6e2aff",
+    "size_bytes": 629
+  },
+  "worker": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v265_corroborated_population/run_20261005_a/batch000/worker_stop.json",
+    "sha256": "239e081bec5594d85761f71c73be79517651576549ae5c2a0ad53e288a916b1d",
+    "size_bytes": 887
+  },
+  "supervisor": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v265_corroborated_population/run_20261005_a/batch000/supervisor_stop.json",
+    "sha256": "7286b7c327826636c3733fd81211d216518c6ae75774d62346b9a7fdced357fe",
+    "size_bytes": 1095
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 77,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 217317376,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 2,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.13978812471032143
+  },
+  "actual_supervision": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 73673,
+    "cleanup_error": null,
+    "exit_code": 1,
+    "failure_wall_seconds": 1.0357339582405984,
+    "global_swap_is_worker_attributed": false,
+    "last_sample": {
+      "free_percent": 77,
+      "pressure_level": 1,
+      "swapouts": 202073613
+    },
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 77,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 212615168,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "reason": "Command '['/Users/nathanjullia/Documents/Projets/SIRETO/.venv/bin/python', '-u', '-m', 'scripts.retrieval_v265_corroborated_population', 'worker', '--output', '/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v265_corroborated_population/run_20261005_a', '--batch', '0']' returned non-zero exit status 1.",
+    "sample_count": 2,
+    "status": "STOP",
+    "swapout_pages_delta": 0,
+    "wall_seconds": 1.035841042175889
+  },
+  "full_oof": false,
+  "ready_for_fold1": false,
+  "downstream_models_changed": false
+}
