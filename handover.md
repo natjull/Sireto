@@ -15194,3 +15194,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   498020rows existent déjà ; les cinq rôles129 ne contiennent pas cette
   entrée sectorielle. Aucun ancien candidat/évaluateur/fold0 ouvert ou
   réutilisé, pas d'inférence de couverture à partir des résultats historiques.
+
+- Commit `7823f22a` :303 source DataES figée AVANTmeasure. RawCSV entier
+  331746052octets hashb7c49db... uniqueinput, ALLrows2observationsnom parrow
+  et15champsbruts projetésSQLite, autrescells conservéesdansrawinput complet.
+  Secondparcours exactCHAQUEchamp/ordinal/alias normalisé118. SIRET14ASCII
+  explicite seulement(parentnonzero), formatsinvalides/absentsUNKNOWN sans
+  supprimerrow ; aucun owner inféréparnom/typeCommune, aucunlabel/ancien
+  output/overlaycandidate/fold0/1 lu. RuntimePython/SQLite/Unicode lié,
+  DBreadonly/hashprepost/epochs/ownactualexit0/PASS214 requis, sortie256MiB.
+  Tests303+30017PASS, sourcecomplète nonencorerun ; attend301/302terminaux.
+  Culture documentation consultée sansCRM ; APIauth noncontournée, export
+  public40,5Mo repéré mais NONcollecté/nonintégré, aucuncontactenvoyé.
