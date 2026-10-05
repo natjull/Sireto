@@ -15302,3 +15302,15 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   via génération317/évaluateur318 à geler. Limites214, scores et labels
   inchangés ; aucun STOP antérieur réutilisé. Aucun nouvel échec ni hausse
   de budget autorisé, ni relance293/297. Objectif reste non atteint.
+
+- Commit `b570443b` : V308 source Data ES TERMINAL complète, nouveau
+  parcours original ALL333553lignes/667106noms, 41060SIRET explicites,
+  64996lignes sansIDexploitable. Ownexit0/PASS214 et controllerexit0,
+  worker16,457386s/RSS153878528/free80pression1 ; manifest e6ce7504...,
+  DB127262720octets. Aucun CRM/GT/candidat/recall, aucun output303 réutilisé.
+
+- Commits `a8d2f904` et `da3bd9fd` : génération317 et évaluation séparée318
+  figées AVANTrun. Core316 équivalent313, libération mémoire sans coupe ni
+  score modifié. 106fixtures316313317318308PASS. ALL128/16exit0PASS requis
+  avantGT, limites214inchangées ; DataES308 NONfusionnée pour cette ablation.
+  Aucun STOP314 réutilisé, panel adaptatifDEV seulement, fold1 fermé.
