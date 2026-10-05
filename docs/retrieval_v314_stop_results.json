@@ -1,0 +1,42 @@
+{
+  "status": "STOP",
+  "reason": "STOP_RSS_OR_WALL_RESOURCE_POLICY",
+  "admitted_queries": 24,
+  "printed_other_queries_not_admitted": 7,
+  "failed_batch": 3,
+  "controller_exit_code": 1,
+  "controller_seconds": 269.66966758389026,
+  "own_child_exit_confirmed": true,
+  "worker_exit_code": -15,
+  "peak_rss_bytes": 2205663232,
+  "rss_excess_bytes": 58179584,
+  "worker_failure_seconds": 35.510857332963496,
+  "minimum_system_free_percent": 78,
+  "pressure_level": 1,
+  "global_swap_delta_not_attributed": 0,
+  "status_reference": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v314_corroborated_population/run_20261005_a/status.json",
+    "sha256": "d3fdfb8b09e7cce565b4ca0b5a81badb3337a38b25bbd19c3c9daf4e535304d7",
+    "size_bytes": 352
+  },
+  "supervisor_stop_reference": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v314_corroborated_population/run_20261005_a/batch003/supervisor_stop.json",
+    "sha256": "920b08dd73b8e2ccbe2886f29791a4df18e94e85c07577dcf4e319c7a04b918c",
+    "size_bytes": 820
+  },
+  "truth_opened": false,
+  "recall_measured": false,
+  "evaluation315_launched": false,
+  "partial_outputs_reused": false,
+  "automatic_retry": false,
+  "limits_changed": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "best_complete_reference": "V287/V288 DEVELOPMENT ONLY",
+  "best_complete_exact": 123,
+  "best_complete_denominator": 128,
+  "best_complete_recall": 0.9609375,
+  "interpretation": "Resource failure, not evidence of negative or positive quality"
+}
