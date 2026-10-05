@@ -15483,3 +15483,19 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   recall inchangé123/128=96,09375% DEV, objectif99,2%/fullOOF/généralisation/
   SLO/READY nonvalidés ; folds0/1fermés, aval gelé, changements utilisateur
   préservés, aucun push.
+
+## 5 octobre 2026 — accord neuf « Go » après STOP323
+
+- Commit `68c068f1` : UNE relance recherche seule330 autorisée explicitement,
+  réutilisant package328 COMPLETE admis. Pas BAN/encoder/tirage/refit repris.
+  Même ONEcollecteur286 cap100/heads77/228/sources/limites214, seul delta
+  conformité texte via329 (même masque52, aucune ligne retirée). Nouveau
+  driver330/autorité331/évaluateur332 figés avant exécution,323STOP immuable.
+  Implémentation330 pinne helper329/contrat neuf/332config/code/331authority.
+  88fixturesPASS (84population/masque/metrics/prep +4bindings/closedheader),
+  aucune preuve nationale/recall/SLO. Workflow séquentiel : ALL500 producteurs
+  exit0/PASS et ALL2000 outputs avant331 puis332GT exact/op séparé, pas
+  fragments323. Aucun nouvel accord de retry/budgetraise/source317320321.
+  Fold0 nonlu/fold1 fermé/aval gelé ; panelDEV nonpristine, fullOOF/généralisation/
+  SLO dus. Recherche à lancer, aucune mesure nouvelle. Changements utilisateur
+  préservés ; code du workflow ne sera plus édité pendant son exécution.
