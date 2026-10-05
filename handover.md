@@ -14864,3 +14864,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   lancé séquentiellement sous214 ;255 seulement si ALL128/16 producteurs
   réels exit0/PASS et scellés. Pas source243/head240/grammaire256 fusionnés.
   Référence229/230 conservée jusqu'à résultat apparié réel.
+
+- Commits `991b772f`260/261 et `e443bb62`262 gelés AVANT émission.99tests
+  PASS,fixtures seulement. Vue nominale QUERY-ONLY retire ALL spans adresse
+  répétés avec>=2 motscontenu distincts uniquement si résidu conserve>=2.
+  Original conservé ; couverture supplémentaire commune/CP corroborée MAX
+  dans0/6/8 seulement. Pas nouvel exactalias2/10 ni lookup owner/sparse/
+  cohérence sur résidu. Head229/228 inchangé, pas parité fit217 annoncée.
+  Pas fusion avec253/256/243/240.261 attend jobs254/255/258/259 terminaux,
+  gardes214 inchangées ;262 uniquement ALL128/16 vrais exit0/PASS scellés.
+  Panel adaptatif, pas fullOOF/READY/SLO/généralisation/unionoracle.
