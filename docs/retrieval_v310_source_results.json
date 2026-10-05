@@ -1,0 +1,89 @@
+{
+  "status": "SEALED_V310_WHOLE_PUBLIC_CULTURE_SOURCE",
+  "source_only": true,
+  "producer_actual_exit0_pass": true,
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v310_culture_source/snapshot_20261005_a/manifest.json",
+    "sha256": "1ef90561eca2a668b65943a8d59312dd830bc0b9a8eeb6c7a87695647f64d8a4",
+    "size_bytes": 1453
+  },
+  "database": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v310_culture_source/snapshot_20261005_a/phase/culture.sqlite",
+    "sha256": "58c4a259b6554cf381fa3ec61e2536cab72b2f5abb15a7463d60fad602ec7ffc",
+    "size_bytes": 52555776
+  },
+  "original": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v310_culture_source/snapshot_20261005_a/phase/original.csv",
+    "sha256": "a16d4e40c69a28ce21988b355aff35144d5ba719dc86df9bc6de307b93464cb9",
+    "size_bytes": 42496931
+  },
+  "stats": {
+    "distinct_explicit_sirets": 549,
+    "missing_or_invalid_siret_records": 35780,
+    "name_observations": 72772,
+    "nonempty_name_observations": 72770,
+    "records": 36386
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 78,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 160284672,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 7,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 2.916198958642781
+  },
+  "supervision": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 36116,
+    "exit_code": 0,
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 78,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 160268288,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "sample_count": 8,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 3.648903999943286
+  },
+  "source_epochs": [
+    {
+      "fingerprint": [
+        16777240,
+        2618408,
+        42496931,
+        1791172351267617500
+      ],
+      "reference": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v310_culture_source/snapshot_20261005_a/phase/original.csv",
+        "sha256": "a16d4e40c69a28ce21988b355aff35144d5ba719dc86df9bc6de307b93464cb9",
+        "size_bytes": 42496931
+      }
+    }
+  ],
+  "truth_opened": false,
+  "recall_measured": false,
+  "crm_request_sent": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false
+}
