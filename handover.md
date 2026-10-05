@@ -15320,3 +15320,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Lookup WHOLEmultiword/ALLendpoints/touteslocalités, sans déductionID ni
   score/candidat/GT. ZEROendpointquery implique pas de longrun vide ; sinon
   recette distincte à geler. Ne pas exécuter319 tant que317 est physiqueLIVE.
+
+- Commits `c4eeaa9e` et `ac219a00` : nouvelle relation305 et génération306/
+  évaluation307 Data ES figées AVANT mesure, 87fixturesPASS. Base286 intacte,
+  endpoints publiés grade1support ou source-local ; autres sites mêmeSIREN
+  grade0,5support natif seulement, MAXrelations/dédupstrong. ONEcollect100,
+  pas pool/rerank/ownerinventé/équivalenceclaim/313fusion. Await319 positif.
