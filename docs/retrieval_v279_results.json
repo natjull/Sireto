@@ -1,0 +1,47 @@
+{
+  "status": "SEALED_V279_ALL_RETURNED_OFFICIAL_MUNICIPAL_PARENT_JOINS",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v279_municipal_structure/compile_20261005_a/manifest.json",
+    "sha256": "2c0f9b6c924ea2833f1a372a329d05e082f780fd55f88246ae9f5be0ed06a8f1",
+    "size_bytes": 1283
+  },
+  "database": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v279_municipal_structure/compile_20261005_a/phase/municipal.sqlite",
+    "sha256": "6460cb923029553c63ed8575b48288be48293c5d4c8ac07df6feb811e52c73f0",
+    "size_bytes": 3022848
+  },
+  "input": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v267_official_communes_snapshot/snapshot_20261005_a/manifest.json",
+    "sha256": "68427d6357b2fb9324ad26603df712183bb6a9807a02811e11d7a26cb7410177",
+    "size_bytes": 984
+  },
+  "stats": {
+    "missing_epci": 143,
+    "missing_siren": 139,
+    "postal_memberships": 35539,
+    "rows": 35014
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 79,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 184942592,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 2,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.30276841670274734
+  },
+  "truth_opened": false,
+  "recall_measured": false,
+  "candidates_emitted": false
+}
