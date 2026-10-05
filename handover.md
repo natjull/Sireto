@@ -15241,3 +15241,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Fullresponse/rawhash/epochs et secondparcours CHAQUEcellule/alias requis,
   SQLitereadonly256MiB, quiet30/2GiB80s214/ownexit0PASS avantseal.26fixtures
   310/308PASS dont sizecanonical et HTTPpartiel rejeté. Pas recall/SLO mesuré.
+
+- Commit `c79725c1` :310 TERMINAL sourcecomplète ownexit0/PASS214 scellée.
+  ALL36386lieux/72772observationsnom/72770nonempty ;35780records sansSIRET
+  exploitable,549SIRETdistincts explicites. Couverturejuridique limitée,
+  pas recall/gain annoncé. Raw42496931SHAa16d4e40...,DB52555776SHA58c4a259...,
+  manifest1ef90561... ;worker2,916199s/RSS160284672/free78pression1/deltaswap0.
+
+- Commit `5ddf4619` :311/312 figés avantmeasure ; faitsCulture wholealias
+  ALLspans300/ALLendpoints, source310admise ; disponibilité ALL128queryonly
+  sanscandidat/score/GT.15fixtures310/311/312PASS. SiZEROquery avecendpoint
+  explicite touteslocalités, ne pas lancer longnative100pourcetajoutvide.
+  Présencedelien !=recall ni identitéphysique ;propre214inchangé/exit0PASS
+  etALL128 requis avantanalyse. DataES308 attendtoujours accordhumain.
