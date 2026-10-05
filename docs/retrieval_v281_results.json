@@ -1,0 +1,83 @@
+{
+  "status": "SEALED_V281_THREE_EXPLICIT_COMPLETE_OFFICIAL_REGION_SNAPSHOTS",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v281_official_region_snapshots/snapshot_20261005_a/manifest.json",
+    "sha256": "9aaf9bccb8450ccbc3d900271613a23ba90767b7b02ad7f2786e8f402a8d3455",
+    "size_bytes": 906
+  },
+  "source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v281_official_region_snapshots/snapshot_20261005_a/phase/source.json",
+    "sha256": "c0b42010e4ed4edfb90512f3d5c72e03c714a4bb43b503ab182cc6c1038494f7",
+    "size_bytes": 13946
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 79,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 64602112,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 2,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.3312012501992285
+  },
+  "snapshots": {
+    "2015": {
+      "url": "https://www.insee.fr/fr/statistiques/fichier/2560698/reg2015-txt.zip",
+      "response": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v281_official_region_snapshots/snapshot_20261005_a/phase/reg2015-txt.zip",
+        "sha256": "f943f206fbc4d2d2766738a66169e3788a0c1e42b9fbed637d728fc6c76ba227",
+        "size_bytes": 846
+      },
+      "headers": {
+        "content_type": "application/zip",
+        "date": "Mon, 05 Oct 2026 01:57:22 GMT",
+        "etag": null,
+        "last_modified": null
+      },
+      "rows": 27
+    },
+    "2016": {
+      "url": "https://www.insee.fr/fr/statistiques/fichier/2114819/reg2016-txt.zip",
+      "response": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v281_official_region_snapshots/snapshot_20261005_a/phase/reg2016-txt.zip",
+        "sha256": "60a15fe2d5cb74ca8c8cb07f0464d360c2f9faa051fa8ee21c2a2a47e35199ea",
+        "size_bytes": 774
+      },
+      "headers": {
+        "content_type": "application/zip",
+        "date": "Mon, 05 Oct 2026 01:57:22 GMT",
+        "etag": null,
+        "last_modified": null
+      },
+      "rows": 18
+    },
+    "2026": {
+      "url": "https://www.insee.fr/fr/statistiques/fichier/8740222/v_region_2026.csv",
+      "response": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v281_official_region_snapshots/snapshot_20261005_a/phase/v_region_2026.csv",
+        "sha256": "d903566d9c0d263389d279baea6761917b7460749a07bec8ba37dd8f2ff7d98a",
+        "size_bytes": 1245
+      },
+      "headers": {
+        "content_type": "text/csv",
+        "date": "Mon, 05 Oct 2026 01:57:22 GMT",
+        "etag": null,
+        "last_modified": null
+      },
+      "rows": 18
+    }
+  },
+  "whole_history_claimed": false,
+  "truth_opened": false,
+  "recall_measured": false
+}
