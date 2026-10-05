@@ -15296,3 +15296,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   à303STOP inutilisable,305core indépendant préparé nonmesuré noncommité.
   Toushandles actuels terminaux ; aucunrun/label/testnational LIVE ni aval
   modifié. Objectif99,2% initial100 NONatteint, fold1 toujoursfermé.
+
+- Commit `a61d37f7` : accord humain « Poursuis » après question explicite
+  autorise une exécution neuve de V308 et de la correction mémoire V316
+  via génération317/évaluateur318 à geler. Limites214, scores et labels
+  inchangés ; aucun STOP antérieur réutilisé. Aucun nouvel échec ni hausse
+  de budget autorisé, ni relance293/297. Objectif reste non atteint.
