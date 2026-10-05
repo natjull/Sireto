@@ -15106,3 +15106,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   original, ArrowIDs128ET234, exact/op allhuman+historique/V2/V3. Apparier
   259ET230 contrôles ETcibles, quantificationexplicitée, pas oracleunion/
   READY/fullOOF/SLO/généralisation depuis paneladaptatif même100%.
+
+- Commit `e9046723` :287/288 TERMINAUX ALL128/16exit0PASS214 et deux
+  métriquesproducteurs propres. Exact123/128=96,09375%,op123/128 idem.
+  Mêmescontrôles ETcibles ; gainexact79/ZEROloss vs259, opinchangé ;
+  gains6/16/79vs230,ZEROloss,op6/16gains. NOUVELLEréférencequalitéDEV
+  287/288 seulement, PAS prod/SLO/fullOOF/READY/généralisation.
+  Miss12/34/67/74/97 ; fold2=40/43,3=41/41,4=42/44,Wilsonbas91,1813%.
+  Gen1014,014346s/workers520,358690s/RSS2070675456,p957,432215/p998,618533
+  cacheincontrôlé. Recetterégionalecorroborée ne corrige pas labels.290
+  indépendante figée auparavant conserve257 pourattribution, comparaison
+  230ET259ET nouvelle288 à publier sans unionoracle aprèslabels.
