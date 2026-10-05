@@ -15161,3 +15161,25 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Pas substitutionparent→exact ni règleclient/correctionGT/READY/fullOOF.
   Worker8,362198s/RSS351469568,free77pression1.293proximitéfine lancé
   ensuite seul producer national ; 294 reste fermé jusqu'àALL128/16 PASS.
+
+- Commit `9dddc836` :293 TERMINAL STOP exit1confirmé batch006,48admis,
+  8autres imprimés nonadmis. RSS2152579072>2147483648 de5095424octets,
+  worker35,377665s/controller436,744745s,free78pression1/deltaswapglobal0.
+  ZEROlabels/294/recall/fragment/retry/hausse ; pas qualité négative prouvée.
+  Best288123/128 maintenu.297activité distincte figée lancée aprèsterminal.
+
+- Commit `2693e953` :300/301 nouvelle relation faible figée AVANTmeasure,
+  base286/287régionale inchangée, ALLspans contigus >=2motscontenusDISTINCTS
+  nonjuridiques/nonparticules, exactWHOLEalias134→ALLownerfacts132/149.
+  ULparents et SITEparentofficialjoin deviennent hypothèse0,5×MAXadresse/
+  INSEEorCP, parents déjàownerULdédupliqués ; aucune feature de nom copiée
+  surfrères/identité/équivalence affirmée. Toussitesnatifs parents sanscap,
+  fermésinclus, ONEglobalcollect100, aucun pool/reranker/whitelistclient/GT.
+  OriginalownerSITE210 reste endpointlocal ; pas nouvelleexpansiongraph,
+  pas fusion293/297/administratif289,214inchangé. Attend297/298terminal.
+
+- Commit `91392025` :302 autorité/évaluateur figés AVANT301,103fixtures
+  300/301/302/286/285PASS. ALL128/16actualexit0PASS avant GToriginal128ET234,
+  allhuman exact/op distincts, appariements230/259/288 contrôles ETcibles.
+  Pas paneladaptatif→READY/fullOOF/généralisation/SLO même100%, ni aliasSITE
+  emprunté→équivalence opérationnelle. AucunSTOPpartiel ou budget modifié.
