@@ -15051,3 +15051,28 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  2MiBguardSTOPpastroncature, sourcesglobales fixes sansCRM/GT/credential.
   Pas histoireexhaustive/lineage/identitéentreprise certifiée. Acquisition
   séquentielle214 inchangée après283terminal, aucune sourcepartielle admise.
+
+- Commit `5d6d9bab` :283 TERMINAL STOP câblage configbackend au lieuOWN,
+  KeyErrormunicipal_structure ;0requête/0admis, propreexit1 confirmé,
+  worker0,144810s/RSS210649088/PASSresource214, aucun284/GT/recall.
+  Versionmesuréeimmutable, pas retry ni fragment. Fixture future impose
+  OWN distinctbackend réellement, mocks précédents masquaient ce défaut.
+- Commit `8ce2e846` :281 SOURCE TERMINAL propreexit0/PASS214,
+  0,331201s/RSS64602112 ; ALL27/18/18records+rawbyteidentiques/headers/hash.
+  Date5oct01:57:22UTC,ETag/LastModifiedUNKNOWN publiés. PasCRM/GT/recall,
+  trois snapshots officiels pas histoire/lineageexhaustif ni identité.
+
+- Commit `1120ca43` :285/286/287 nouvelle recherche régionale figée avant
+  mesure, source281ALL63rows/39variantesnoms. RetraitALLspans dansCOPIEnom,
+  résidu whole2563..6 ALLSTOP conservés, expansionswhole avec régionFULL
+  expliciteedge seulement, pas suffixeinitiales2lettres/code/aliascroisés.
+  MAXnom0/6/8place CE LEAF, originalallpaths ouverts, ONEglobalcollect100,
+  base257head229/228inchangée, pas fusionoracle/public282/activité272/etc.
+  FixtureSOURCEONLY real39variants+syntheticquery compile279regexALL sans
+  cap, pas businessfeature/recall. OWNconfig distinctbackend EXACTref exigée
+  enfixture ; aucun283STOPréutilisé.214inchangé, ALL128/16 avant288.
+
+- Commit `08a6af70` :288 évaluateur figé avant run,125fixtures285/286/287/
+  288/281/256PASS. GT128234 fermé avant toutegen128/16exit0PASS/scellée,
+  exact/op allhuman/ledger/sidecar original, appariements259 ET230 mêmes
+  contrôles ETcibles ; aucune oracleunion/READY/fullOOF/SLO/généralisation.
