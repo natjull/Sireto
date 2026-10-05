@@ -15183,3 +15183,14 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   allhuman exact/op distincts, appariements230/259/288 contrôles ETcibles.
   Pas paneladaptatif→READY/fullOOF/généralisation/SLO même100%, ni aliasSITE
   emprunté→équivalence opérationnelle. AucunSTOPpartiel ou budget modifié.
+
+- Commit `e2eab393` :297 TERMINAL STOP exit1confirmé batch006,48admis,
+  8autres imprimés nonadmis. RSS2227453952>2GiB de79970304octets,
+  worker40,998301s/controller480,910809s,free78pression1/deltaswapglobal0.
+  ZEROlabels/298/recall/fragment/retry/hausse ; signalactivité nonmesuré,
+  pas démontré inutile. Best288123/128 maintenu.301relationcontained lancé
+  seulement aprèsterminal, sous214inchangé,302 reste fermé jusqueALL128.
+  InvestigationSOURCEONLY : CSV DataES331746052octets et ancien parquet
+  498020rows existent déjà ; les cinq rôles129 ne contiennent pas cette
+  entrée sectorielle. Aucun ancien candidat/évaluateur/fold0 ouvert ou
+  réutilisé, pas d'inférence de couverture à partir des résultats historiques.
