@@ -15531,3 +15531,20 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   aucune édition pendant exécution. Fold0 nonlu/fold1 fermé/aval gelé ;
   fullOOF/généralisation/SLO/99,2%/READY toujours nonvalidés. Changements
   préexistants utilisateur préservés, aucun push. Préparation job à lancer.
+
+- Commit `8f3ed80c` : lancement336 REFUSÉ AVANT toute exécution Python,
+  aucun marqueur/worker/root333/GT créé. BootstrapCATNATexit5, loglaunchd
+  badownership/permissions ; proxyplistlocal EXACT b455f384... chargé mais
+  xpcproxydenyfile-write-create service_stdout.log surCATNAT à23h34m48,
+  launchdexit78 EX_CONFIG. Jobinactif bootouté, zéro retry du retrieval.
+  Aucun TCC/FDA/droit/énergie permanent modifié. Nouveau transport337
+  depuis contexteCLI autorisé avec permissions héritées, nouvelle session
+  POSIX/stdinDEVNULL/closefds/logs ouverts parparent, puis wrapper déparenté.
+  Marqueursstart/job O_EXCL, heartbeat et ownedworkflowexit, aucune reprise/
+  calendrier/restart. Supplément337 pinne code337/contrat/runtime et TOUTE
+  implémentation333 ; sources/scoring333/334/335/336 et freeze739beefe intacts.
+  97fixturesPASS (9transport337+88generation/prep/metrics), pas preuve physique
+  de détachement ni qualité. UNE génération333 toujours à lancer depuis zéro,
+  package328 seul réutilisé, aucunfragment330/336. Limites214 et cap100 égaux,
+  fold0nonlu/fold1fermé/avalgelé/fullOOF/généralisation/SLO dus. Pas code
+  mesuré édité pendant exécution ; changements utilisateur préservés.
