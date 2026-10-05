@@ -15314,3 +15314,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   score modifié. 106fixtures316313317318308PASS. ALL128/16exit0PASS requis
   avantGT, limites214inchangées ; DataES308 NONfusionnée pour cette ablation.
   Aucun STOP314 réutilisé, panel adaptatifDEV seulement, fold1 fermé.
+
+- Commit `de707afc` : accès309 lié308 admis (304 immuablelié303STOP),
+  disponibilité319 query-only ALL128 figée avant mesure ; 22fixturesPASS.
+  Lookup WHOLEmultiword/ALLendpoints/touteslocalités, sans déductionID ni
+  score/candidat/GT. ZEROendpointquery implique pas de longrun vide ; sinon
+  recette distincte à geler. Ne pas exécuter319 tant que317 est physiqueLIVE.
