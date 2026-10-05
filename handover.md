@@ -14874,3 +14874,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Pas fusion avec253/256/243/240.261 attend jobs254/255/258/259 terminaux,
   gardes214 inchangées ;262 uniquement ALL128/16 vrais exit0/PASS scellés.
   Panel adaptatif, pas fullOOF/READY/SLO/généralisation/unionoracle.
+
+- Commit `fab3b41f` :254/255 TERMINAUX ALL128/16 producteurs + deux
+  évaluateurs réels exit0/PASS214. Exact120/128=93,75%,op121/128=94,53125%,
+  ZEROgain/ZEROloss appariés vs230, mêmes contrôles ET cibles, mêmes huit
+  ratés6/12/16/34/67/74/79/97. Trois nouvelles preuves apprises n'ont PAS
+  fait progresser le rappel. Référence229 conservée,254 non promue.
+  Gen1043,566255s/549,931205sworkers/pic1982365696. P95=6,171513s,
+  p99=8,251053s cache incontrôlé, pas SLO/READY/fullOOF/généralisation.
+ 258 sigles NOMcourt hors STOPcontextes lancé séquentiellement ensuite,
+  aucun retry248/unionoracle ni GT de258 ouvert avant128complet.
