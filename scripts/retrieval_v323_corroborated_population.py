@@ -17,8 +17,8 @@ from scripts import retrieval_v211_structural_channels as backend
 from src.xgb_matcher.hierarchical_retrieval import RetrievalQuery, TantivyBackend
 from src.xgb_matcher.retrieval_memory_policy_v214 import Budget, LIMITS, POLICY, quiet, validate_report, parent_exit
 from src.xgb_matcher.retrieval_postscore_audit_v187 import canonical_epochs, check_epochs
-from scripts import retrieval_v322_large_panel as population
-from scripts.retrieval_v322_large_panel import population_rows
+from scripts import retrieval_v328_serving_panel as population
+from scripts.retrieval_v328_serving_panel import population_rows
 from src.xgb_matcher.retrieval_structural_channels_v210 import SourceFiles, identity
 from src.xgb_matcher.retrieval_regional_initial_v286 import Evidence, search
 from src.xgb_matcher.retrieval_regional_abbreviation_v285 import Regions
@@ -49,6 +49,7 @@ def implementation():
     refs = backend.implementation()
     refs.update(population.implementation())
     for path in (Path(__file__), CONFIG, ROOT/'docs/retrieval_v322_large_panel_contract.md',
+                 ROOT/'docs/retrieval_v328_serving_panel_contract.md',
                  ROOT/'src/xgb_matcher/retrieval_regional_initial_v286.py',
                  ROOT/'src/xgb_matcher/retrieval_regional_abbreviation_v285.py',
                  ROOT/'scripts/retrieval_v281_official_region_snapshots.py',

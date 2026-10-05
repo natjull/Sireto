@@ -1,8 +1,8 @@
 {
   "generation_config": {
     "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v323_corroborated_population.json",
-    "sha256": "26f5f8eca7c4db1509e82350759694f149e71cf36de48a1d1f0100bf33660563",
-    "size_bytes": 1283
+    "sha256": "372939cd3f21efc52ceb1244d8d0a761e81e468f0576914d15e3fad673d29e61",
+    "size_bytes": 1285
   },
   "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v326_postseal_evaluation",
   "evaluation": {
