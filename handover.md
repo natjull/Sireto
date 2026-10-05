@@ -15117,3 +15117,22 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   cacheincontrôlé. Recetterégionalecorroborée ne corrige pas labels.290
   indépendante figée auparavant conserve257 pourattribution, comparaison
   230ET259ET nouvelle288 à publier sans unionoracle aprèslabels.
+
+- Commit `6bb44f92` :295/296/297 nouvelle métrique activitésourceofficielle
+  floor128 + baseregionale286 réussite figée AVANTmeasure, pas mêmes272
+  STOPretenté. ALL2140classrelevances decoder113safeTRAIN512 gelé/queryonly
+  NOM384 compatibles, gradefloor128erreur<1/128, scoresfaibles deviennent0
+  explicitement ; pas topclasses/capSIRET/hardfiltreunknowns, ALLsites43896818
+  scannedCP/INSEE/codeversion, coefficient1avantONEnativecollect100.
+  Changementsbusinessscore déclarés, pas optimizationsansimpact garantie.
+  92fixtures295/296/297/264/263/285/256PASS ; constructorqueryonlyréel
+  3heads128x2140 metadata valide sansGT/recall. OWNcfg/originallaunchrefs
+  testées, aucune sortie265/273STOP réutilisée.214inchangé, source281 ALL39
+  noms/63records,régionpaslineagecertifié ; attend293/294terminaux.
+
+- Commit `14d78944` :298 évaluateur figé AVANT297,134fixtures295/296/
+  297/298/264/263/285/256PASS. GT seulementALL128/16exit0PASS/scellés,
+  ledger/sidecaroriginals128ET234, allhuman exact/op/historique/V2/V3,
+  comparaisons230/259/288 mêmescontrôles ETcibles. Pas oracleunion/
+  READY/fullOOF/SLO/généralisation depuis paneladaptatif, quantifier !=même
+  metriccontinuous273retried et sourcesnecertifientpasidentitéentreprise.
