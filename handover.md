@@ -15215,3 +15215,29 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   conservée sanshardfiltre. Ownernom/typejamais inférenceID/identitéphysique.
   303/30411fixturesPASS dont151endpointsnoncappés, pas recallmesuré ni
   sourcenationaledéjàscellée.301 encoreLIVE120/128, pas partieleval.
+
+- Commit `4c109d8d` :301/302 TERMINAUX ALL128/16 propres exit0/PASS214.
+  Exact123/128=96,09375%,op123/128 idem ; ZEROgain/ZEROloss vs288 sur
+  mêmescontrôles ETcibles. Expansion300 nonretenue, référence288 maintenue.
+  Gen1051,604895s/workers558,770159s/RSS2105835520 ; p957,976878/p9910,355196
+  cacheincontrôlé nonSLO. Paneladaptatif, pas fullOOF/READY/généralisation.
+
+- Commit `96af970a` :303 TERMINAL STOP contrôleur après worker propre
+  exit0/PASS214 (16,574731s/RSS153616384). Bug de comparaison finale :
+  canonical_epochs supprime size_bytes avant comparaison à INPUT typé.
+  Source NONadmise malgré worker réussi, aucune DB/sortie réutilisée.
+  Relance corrigée explicitement demandée à l'humain, réponse encore absente.
+
+- Commit `5eeaabd3` :308 correction de référence préparée et testée, mêmes
+  limites/CSV/champs/métrique303 ; vérifie size avant canonical puis path/SHA
+  et fingerprint.size après. NONexécutée : attendre autorisation explicite
+  de refaire ce STOP, aucun retry sous nouveau nom.304 dépend303STOP donc
+  inutilisable en serving ;305core préparé nonmesuré attend source admise.
+
+- Commit `074779ee` :310 nouveau volet indépendant source Culture figé avant
+  collecte ; GETglobal public CSV42496931octets, ALLrows/ALL50champs bruts,
+  deux noms118, SIRET explicite ASCII14 sinonUNKNOWN, aucun owner inféré.
+  Pas APIauth contournée/contact/CRM/GT/fold0/1/candidat/ancienoutput utilisé.
+  Fullresponse/rawhash/epochs et secondparcours CHAQUEcellule/alias requis,
+  SQLitereadonly256MiB, quiet30/2GiB80s214/ownexit0PASS avantseal.26fixtures
+  310/308PASS dont sizecanonical et HTTPpartiel rejeté. Pas recall/SLO mesuré.
