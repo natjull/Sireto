@@ -1,0 +1,38 @@
+{
+  "status": "COMPLETE_V328_QUERY_PACKAGE_NOT_RECALL",
+  "protocol_commit": "49d768b6",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v328_serving_panel/package_20261005_a/manifest.json",
+    "sha256": "36dbf3c4367a57847ac4534e217967ed121d085cadb4b0ddc18984853bbb2e04",
+    "size_bytes": 5432
+  },
+  "panel": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v328_serving_panel/package_20261005_a/source/panel.json",
+    "sha256": "ae3fc62137132b8ad896f6ca4276d6bfefb2874488470758c467e1b8f65e7255",
+    "size_bytes": 2504239
+  },
+  "expansions": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v328_serving_panel/package_20261005_a/expansions.json",
+    "sha256": "ba0430888971557e248239acf53b7944014fdab92aa7ff59305fbc2dbcf6f24a",
+    "size_bytes": 1337265
+  },
+  "queries": 2000,
+  "expansion_rows": 2000,
+  "own_successful_producers": 17,
+  "all_own_producers_exit0_pass": true,
+  "source_worker_seconds": 17.57438537478447,
+  "encoder_worker_seconds": 29.13697928842157,
+  "peak_worker_rss_bytes": 1188741120,
+  "original128_ban_full_parity": true,
+  "folds": {
+    "2": 653,
+    "3": 715,
+    "4": 632
+  },
+  "source_epochs_checked": true,
+  "truth_opened": false,
+  "recall_measured": false,
+  "initial100_complete": false,
+  "whole_workflow_exit_code": 1,
+  "whole_workflow_failed_stage": "V323_GENERATION_CODE_AUTHORITY_DRIFT"
+}
