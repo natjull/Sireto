@@ -15424,3 +15424,22 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   mais jamais exécutés ; encore liés322STOP donc pas de serving autorisé.
   Aucun processus producteur LIVE à la fin de ce tour. Meilleur recall reste
   123/128=96,09375% DEV, aucune preuve2k/fullOOF/READY/généralisation/SLO.
+
+## 5 octobre 2026 — accord neuf pour BAN serving et panel élargi
+
+- Commit `49d768b6` : « Oui » humain après question explicite autorise UNE
+  nouvelle préparation V328 avec helper327 et BAN officielle recalculée,
+  puis recherche323/permission325/évaluation326 si TOUSles producteurs PASS.
+  Tirage/seed/exclusions/taille2 000 inchangés, même engine286/heads77/228,
+  modèle local et sparse8 ; pas fit ni score ni limites ni aval modifiés.
+  Source V34 queriesONLY234 reparcourue, jamais BAN legacy ni fragmentSTOP322.
+  ALL128pilot+ALL2000selected géocodés via surface normalisée V43 ; parité
+  TOUSchamps/ordre128 obligatoire avantseal, numéro normalisé vide reste
+  NONrésolu. DuckDB1thread/128MiB/spill0 sous limites214 2Gio/80s/quiet30.
+  93fixturesPASS ; pas preuve coût/RAM/BANnational/recall. Scripts/configs
+  323–326 jamais exécutés auparavant adaptés AVANTrun à V328, source322
+  mesurée et contrats/artefacts antérieurs intacts. Workflow physique
+  séquentiel automatique, aucun label avantALL2000 initial100 scellés.
+  Cet accord ne permet PAS un autre retry en cas de nouvel échec, ni317/
+  320/321 ni hausse de budget. Objectif99,2% nonatteint, folds0/1fermés.
+  Changements utilisateur préservés, aucun push. Préparation à lancer.
