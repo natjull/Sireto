@@ -15254,3 +15254,9 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   explicite touteslocalités, ne pas lancer longnative100pourcetajoutvide.
   Présencedelien !=recall ni identitéphysique ;propre214inchangé/exit0PASS
   etALL128 requis avantanalyse. DataES308 attendtoujours accordhumain.
+
+- Commit `afd9fbfa` :312 TERMINAL ALL128 queryonly ownexit0/PASS214 ;ZERO
+  queryavecSIRET explicite,1query/5observations avecnom officiel sansID.
+  Aucun candidat/label/recall ; testlongnative100 nonlancé pourcetajoutvide.
+  Limite exactWHOLEmultiword311, pas preuve que Culture entier estinutile.
+  Worker0,243334s/RSS166789120/free78pression1,deltaswapglobal0.
