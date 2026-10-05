@@ -15454,3 +15454,32 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Manifest9750ca90.../panelae3fc621.../popad999608... ; aucunGT/recall/candidat
   ni99%/SLO/fullOOF/READY claim. 16encodeurs physiques puis323/326 dans
   workflow séquentiel autorisé ; aucun autre producteur lourd parallèle.
+
+- Commit `f917aaec` : package328 COMPLET admis, ALL2000 requêtes/expansions,
+  source+16encodeurs ownexit0/PASS214 confirmés/réapés. Source17,574385s,
+  encodeurs29,136979s cumulés, peakworkerRSS1188741120 ; ALL128BAN parité
+  complète inchangée. Manifest36dbf3c4.../expansionsba043088... scellés.
+  AucunGT/recall ; workflow global exit1 ultérieur au stade323 n'invalide
+  pas les producteurs328 individuellement terminaux admis.
+
+- Commit `f2796930` :323 STOP après hash du premier lot, zéro requête admise,
+  quatre sorties imprimées NONadmises, jamais réutilisées. Ownchild82383exit1
+  confirmé/réapé, contrôleur66,254243s/worker36,089842s, superviseurRSS
+  1518665728/libre81%/pression1/deltaswapglobal0 nonattribué au worker.
+  Erreur d'orchestration de l'agent : modification du masquage des identifiants
+  pendant que le workflow automatique avait déjà démarré323. Contrôle
+  d'autorité a stoppé le lot ; erreur explicitement signalée à l'utilisateur.
+  Script323 restauré BYTEexact snapshot49d768b6 et référence vérifiée.
+  AucunGT/permission325/eval326/recall, pas retry silencieux ni budget relevé.
+
+- Commit `9189a1aa` : helper329 de conformité identifiants seulement PRÉPARÉ,
+  nonintégré au run323 arrêté. Même surface52 masque spans9/14chiffres dans
+  nom/adresse/numéro, sans lookup/alias/positif/filtre de ligne ; toutes les
+  requêtes et vérités restent au dénominateur. ALL128 features query égales
+  aux originales vérifiées queryONLY ;100fixturesPASS, pas preuve retrieval.
+  Nouveau driver/version/commit et accord humain neuf requis avant relance
+  recherche seulement, réutilisant package328 complet sans refaire BAN ni
+  encodage. Aucun producteur de ce workflow LIVE à la fin du tour. Meilleur
+  recall inchangé123/128=96,09375% DEV, objectif99,2%/fullOOF/généralisation/
+  SLO/READY nonvalidés ; folds0/1fermés, aval gelé, changements utilisateur
+  préservés, aucun push.
