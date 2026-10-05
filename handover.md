@@ -15136,3 +15136,11 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   comparaisons230/259/288 mêmescontrôles ETcibles. Pas oracleunion/
   READY/fullOOF/SLO/généralisation depuis paneladaptatif, quantifier !=même
   metriccontinuous273retried et sourcesnecertifientpasidentitéentreprise.
+
+- Commit `7c6a859b` :299 diagnostic figé, sourceévaluée288/291/294/298 requiert ALL128/
+  16genexit0PASS/scellées et deuxévaluateursréels, admissionFIRSTavantGT,
+  ledger/sidecaroriginaux seulementArrowIDs128ET234. SIRENdans100 séparé
+  SIRETexact, parentabsent vs parentprésent/siteexactabsent ; pas substitution
+  gate99,2/GTcorrigé/identifiantfeature/positifinjecté/avalmodifié.9fixtures
+  PASS, nouveau producer214séquentiel après291terminal, pas lossfineexhaustive
+  ni READY/fullOOF/SLO/généralisation depuis paneladaptatif.
