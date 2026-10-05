@@ -15206,3 +15206,12 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Tests303+30017PASS, sourcecomplète nonencorerun ; attend301/302terminaux.
   Culture documentation consultée sansCRM ; APIauth noncontournée, export
   public40,5Mo repéré mais NONcollecté/nonintégré, aucuncontactenvoyé.
+
+- Commit `5d7d6e72` :304 accès aux faits DataES figé avantusage, source303
+  propreALLrows/exit0PASS/seal requis, références/code/CSV/DB/epochs propagés.
+  ExactWHOLEalias surALLspans300 multiword, ALLobservations/endpoints sanscap,
+  pas sourcepool classé/score/candidatemis. Local INSEE ORCP, nonlocal
+  seulementcodescomparablesaucunmatch, UNKNOWN sinon ; chaqueprovenance
+  conservée sanshardfiltre. Ownernom/typejamais inférenceID/identitéphysique.
+  303/30411fixturesPASS dont151endpointsnoncappés, pas recallmesuré ni
+  sourcenationaledéjàscellée.301 encoreLIVE120/128, pas partieleval.
