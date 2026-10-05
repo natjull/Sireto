@@ -15509,3 +15509,25 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Workflow poursuit séquentiellement les lots, puis332 seulement si ALL500
   exits0/PASS et ALL2000 scellés. Aucun code mesuré édité pendant le run,
   aucune nouvelle préparation328 ni autre producteur lourd lancé par l'agent.
+
+## 5 octobre 2026 — interruption330 et accord pour job macOS indépendant
+
+- Commit `739beefe` :330 constaté INCOMPLET, aucun contrôleur/worker330/332
+  actif au contrôle23h25, dernier log21h59m55. Dix lots ownexit0/PASS/40
+  outputs localement admis, puis deux lignes log NONadmises au lot10, aucun
+  exit propre de ce lot/contrôleur ni STOP enregistré. Cause NONétablie,
+  pas inférée comme échec ressource ou fin réussie ; aucun GT/recall.
+  Autorisation humaine « Oui » à sécuriser l'exécution persistante et relancer.
+  Nouvelle génération333 depuis zéro, zéro fragment330 réutilisé ; package328
+  COMPLETE seul réutilisé, pas nouvelle BAN/encoder/tirage/fit/score/budget.
+  Driver333/autorité334/eval335 même recette286+329, cap100 natif direct,
+  ALL500 exit0/PASS et2000 scellés avant GT. Sources/modèles/limites214 égaux.
+  Wrapper336+plist launchd ONE-SHOT CATNAT, KeepAlivefalse/RunAtLoadtrue,
+  sans scheduler/Login/LaunchAgents ni retry, marqueurO_EXCL anti-secondstart.
+  Heartbeat et ownedworkflowexit journalisés ; caffeinate-i limité à la durée
+  du job, pas réglage permanent ni protection capot/reboot/logout/volume.
+  96fixturesPASS (incluant8launcher) ; ce n'est pas encore preuve launchd ou
+  recall national. Code/configs/contrat figés AVANT préparation/bootstrap,
+  aucune édition pendant exécution. Fold0 nonlu/fold1 fermé/aval gelé ;
+  fullOOF/généralisation/SLO/99,2%/READY toujours nonvalidés. Changements
+  préexistants utilisateur préservés, aucun push. Préparation job à lancer.
