@@ -14908,3 +14908,21 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   pas recertifiée contre COG, pas claim corpus SIRET. Sous214 propre et
   séquentiel après jobs terminaux, aucun credential/coût externe/retry.
   But futurs liens officiels et contexte nominal, pas featureID/aliasCRM.
+
+- Commit `1f07b7c1` :258/259 TERMINAUX ALL128/16 + deux évaluateurs réels
+  exit0/PASS214. Exact122/128=95,3125%,op123/128=96,09375%. Gains6/16,
+  ZERO perte exact ET op vs230, mêmes contrôles ET cibles. Six ratés
+ 12/34/67/74/79/97. Nouvelle RÉFÉRENCE QUALITÉ DE DÉVELOPPEMENT258/259,
+  pas promotionprod/SLO/fullOOF/READY/généralisation. Fold2=40/43,
+ 3=40/41,4=42/44,Wilson95bas90,1502%. Gen1002,207777s,workers510,542011s,
+  pic2095054848 sous214 inchangé. P95=7,425139,p99=7,929941 cache incontrôlé.
+ 261 lancé ensuite séparément head229 original pour attribuer vue contexte,
+  pas fusion oracle ; comparaison230 ET nouvelle référence259 à publier.
+- Commit `5fd72089` :267 SOURCE réel TERMINAL exit0/PASS214,35 014records
+  retournés préservés,139SIREN/143EPCI manquants publiés,35 539membershipsCP.
+  Réponse3 710 896octets,headers Date5oct00:39:03UTC/ETag,LastModifiedUNKNOWN.
+  Source0,523295s/RSS134070272,quiet30/p1/free80/globaldelta0nonattribué.
+  Données officielles globales nonfiltrées parCRM, pas complétudeCOG
+  indépendamment recertifiée ni retrieval/recall mesuré. Référence/hash
+  source complète dans `docs/retrieval_v267_results.json` ; futurs joins/
+  contexte nécessitent nouvelle recette figée et mesure vraie100.
