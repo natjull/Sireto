@@ -15021,3 +15021,26 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Fixtures280+27918PASS. Avant fit réel, namespace séparé214 inchangé ;
   aucun recall national ni modèle aval, source absente n'est pas erreurGT.
   Serving contrôle epochs TRAIN sans ouvrir scènes/GT ; pas candidat injecté.
+
+- Commit `e9469e4f` :280 TRAIN TERMINAL propre exit0/PASS214,0,894897s/
+  RSS214777856. Tous512 TRAIN conservés, mêmes343/348/333 safe heads,
+  zéro recoupement famille heldout ; source34875parentscommune/1255EPCI.
+  Positifs observés TRAIN63commune et6EPCI seulement : supervisionEPCI
+  très limitée, relevances NON calibrées, aucune promesse recall. Paramètres
+ 385x2 chacun6288octets, provenance/epochs source, pas scènesGT en serving.
+  ContrôlesMSE/MAE OOF descriptifs ne sélectionnent pas la recette nationale.
+
+- Commit `41834552` :282/283 recherche publique initiale native100 figée,
+  base257 successfulsigles + MAX role280query-only/parent279/place CE LEAF
+  dansnom0/6/8, pas exact2/10 ni doublecompte2roles. Tousparents INSEE OU CP,
+  ALLleaves natifs concernés, sourceadministrative ne certifie pasowner.
+  TRAIN scenes/GT fermés en serving, params/provenanceetepochs seulement,
+  pas nouveaufit/aval/fusionoracle/bonuscohérencevoie275/activité272/contexte268.
+  SOURCE/encoder/models hashes, gardes214 inchangées,128panel jamaisfullOOF/
+  SLO/READY/généralisation. Mesure284 séparée requiert ALL128/16exit0PASS.
+
+- Commit `2b7719bd` :284 évaluateur figé AVANT génération, mêmescibles
+  ledger/sidecar et contrôles128234, exact/op allhuman, readGT seulement
+  ALL128/16 propres scellées/exit0PASS. Fixtures282/283/284/280/279/256
+  116PASS, pas recall simulé. Comparer259 ET230, sourcepublique ni rôle
+  ne corrige leslabels/retire lignes ; pas unionoracle/READY/fullOOF/SLO.
