@@ -15399,3 +15399,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   FullOOF23571/généralisation/SLO toujours dus, fold0 nonlu/fold1 fermé.
   Préparation puis génération/évaluation neuves à exécuter ; pas nouveau
   recall annoncé. Changements préexistants utilisateur préservés, aucun push.
+
+- Commit `fbd624f6` : V322 TERMINAL STOP avant sélection/scellement/encoder/
+  candidats/GT, cause STOP_FULL128_CRM_BAN_PARITY. Child67266 exit1 réel
+  confirmé/réapé, controllerexit1, superviseur4,127107s/RSS216432640/libre81%
+  pression1/deltaswapglobal0. Pas un dépassement de budget. Aucun panel2k
+  ni candidat ni recall élargi produit ; aucune partie STOP réutilisée.
+  Diagnostic readonly sur sources ORIGINALES scellées : CRM128 égaux, BAN
+  différente aux positions27/43, toutes deux crm_number normalisé vide.
+  V33 geo_q utilise numéro BRUT, V43 numéro NORMALISÉ ; anciennes coordonnées
+  résolues vs absence dans pilote. Réutiliser BAN V34 changerait les entrées
+  métier. Correction à l'explication utilisateur des128 : ceux de V288/V307
+  sont lots d'indices4..7 (positions128..255), pas V38premiers4. Ordrehashé
+  indépendant des labels, folds234 et DEV consommé inchangés. AucunGT lu.
+
+- Commit `ef0781a8` : helper V327 BAN exact-serving seulement PRÉPARÉ,
+  NONexécuté sur sources nationales ;8fixturesPASS (données fictives de tests).
+  Même normalize_street/_resolve_ban/sourceofficielle48f9e3d4.../flagsV43,
+  numéro normalisé vide reste NONrésolu, pas vérité comme géoréparation.
+  Futur producteur doit résoudre panel avec cette surface et prouver ALL128
+  parité avant candidats, sourcehashes/epochs/exit0PASS214 inchangés.
+  Nouveau consentement humain requis avant nouvelle préparation aprèsSTOP322,
+  pas retry sous nouveau nom/source317320321/budgetraise. Scripts323–326 figés
+  mais jamais exécutés ; encore liés322STOP donc pas de serving autorisé.
+  Aucun processus producteur LIVE à la fin de ce tour. Meilleur recall reste
+  123/128=96,09375% DEV, aucune preuve2k/fullOOF/READY/généralisation/SLO.
