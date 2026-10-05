@@ -15548,3 +15548,21 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   package328 seul réutilisé, aucunfragment330/336. Limites214 et cap100 égaux,
   fold0nonlu/fold1fermé/avalgelé/fullOOF/généralisation/SLO dus. Pas code
   mesuré édité pendant exécution ; changements utilisateur préservés.
+
+- Commit `39738b8d` : V337 DÉTACHÉ réellement lancé depuis contexteCLI
+  autorisé après handover `4c3146ca`. Une erreur initiale de cheminCLI
+  (_detached_launcher au lieu du CONTROL_BASE _persistent_launcher) refusée
+  avant état/worker puis commande corrigée, code figé inchangé. Rootcontrôle
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v337_persistent_launcher/job_20261005_a`,
+  gen333 `run_20261005_a`. Starterownexit0 ; wrapper93390 observé PPID1,
+  SID=PGID=93390, workflow93392 SID=PGID=93392 ; caffeinate93391 lié aujob.
+  Détachement observé APRÈS retour du starter, pas garantie panne/reboot/capot/
+  logout/volume. Launch1c8fb149.../startsupervision5e070cfb... ;12/2000 outputs
+  dans trois lots ownexit0/PASS confirmés au checkpoint, aucune génération
+  complète/permission334/GT/recall335/SLO/READY. Workflow LIVE, heartbeatstate
+  contrôle ci-dessus et workflow.log à consulter pour état/ETA ; seul producteur
+  lourd lancé par l'agent, code333–337 nonédité pendant run. Package328 réutilisé
+  seul, zéro fragment330, budgets/cap100/scores égaux. ETA6–8h extrapolée,
+  pas garantie ; aucun retry automatique ni nouvel accord aprèsSTOP. Exact/op
+  et folds234 toujours protégés, fold0nonlu/fold1fermé/avalgelé, changements
+  utilisateur préservés, aucun push.
