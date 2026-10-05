@@ -14847,4 +14847,20 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   conserver textpaths originaux ; autres sigles entiers3..6 et ALLpartitions
   restent uncapped. Nouveau langage déclaré, pas parité248 ni budget relevé.
   Horssigle, ne pas recomposer les expressions217.88tests PASS, pas rappel.
- 258 attend fin des jobs séquentiels251/252/254/255 ; aucun retry de248.
+258 attend fin des jobs séquentiels251/252/254/255 ; aucun retry de248.
+
+- Commit `6261130b` :251 TRAIN64 TERMINAL, huit producteurs réels exit0/
+  PASS214,13 126 références observées, parité native des deux preuves
+  conditionnelles erreur maximale0. Pas mesure recall national. Workers
+  26,132s, pic723075072, pression1/free>=77, swap global nonattribué.
+- Commit `7d6b8927` :252 TERMINAL exit0/PASS214,fit0,866s/RSS339165184.
+  Seuls trois nouveaux poids appris ; head228 original et sparse/owners/XY
+  inchangés. Folds held exclus,39/45/44TRAINq,7924/9196/8761paires.
+  Contrôle censuré OOF TRAIN mean outrank5,5→5,484375 : pas recall national
+  ni preuve de gain. Aucun tuning après ces contrôles.
+- Commits `fac80cec` génération254 et `e9d8aa96` évaluateur255 gelés avant
+  émission ;104tests PASS. Modèles252 réels liés par hash, trois preuves
+  dans la requête globale native AVANT collect100, pas pool/rerank.254
+  lancé séquentiellement sous214 ;255 seulement si ALL128/16 producteurs
+  réels exit0/PASS et scellés. Pas source243/head240/grammaire256 fusionnés.
+  Référence229/230 conservée jusqu'à résultat apparié réel.
