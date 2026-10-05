@@ -15044,3 +15044,10 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   ALL128/16 propres scellées/exit0PASS. Fixtures282/283/284/280/279/256
   116PASS, pas recall simulé. Comparer259 ET230, sourcepublique ni rôle
   ne corrige leslabels/retire lignes ; pas unionoracle/READY/fullOOF/SLO.
+
+- Commit `084b8217` :281 SOURCE-ONLY trois tablesrégions INSEE COG2015/
+  2016/2026 figé AVANTGET,20fixturesPASS. All27/18/18rows et champs/raw
+  préservés ; strictschema/encodings/ZIPsinglemember sans extractionfiles,
+ 2MiBguardSTOPpastroncature, sourcesglobales fixes sansCRM/GT/credential.
+  Pas histoireexhaustive/lineage/identitéentreprise certifiée. Acquisition
+  séquentielle214 inchangée après283terminal, aucune sourcepartielle admise.
