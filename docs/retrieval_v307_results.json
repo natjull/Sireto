@@ -1,0 +1,209 @@
+{
+  "status": "ACTUAL_ALL128_PASS_TERMINAL",
+  "primary": {
+    "active_successor_same_site": 10,
+    "exact_hits": 123,
+    "exact_recall": 0.9609375,
+    "multiple_active_equivalents": 2,
+    "operational_hits": 123,
+    "operational_only_hits": 0,
+    "operational_recall": 0.9609375,
+    "queries": 128,
+    "wilson95_lower": 0.9118129792331631,
+    "wilson95_upper": 0.9832013892021962
+  },
+  "paired": {
+    "v230": {
+      "exact_hit": {
+        "gains": [
+          6,
+          16,
+          79
+        ],
+        "losses": []
+      },
+      "operational_hit": {
+        "gains": [
+          6,
+          16
+        ],
+        "losses": []
+      }
+    },
+    "v259": {
+      "exact_hit": {
+        "gains": [
+          79
+        ],
+        "losses": []
+      },
+      "operational_hit": {
+        "gains": [],
+        "losses": []
+      }
+    },
+    "v288": {
+      "exact_hit": {
+        "gains": [],
+        "losses": []
+      },
+      "operational_hit": {
+        "gains": [],
+        "losses": []
+      }
+    }
+  },
+  "same_controls": true,
+  "same_target_references": true,
+  "miss_positions": [
+    12,
+    34,
+    67,
+    74,
+    97
+  ],
+  "folds": {
+    "2": {
+      "active_successor_same_site": 5,
+      "exact_hits": 40,
+      "exact_recall": 0.9302325581395349,
+      "multiple_active_equivalents": 0,
+      "operational_hits": 40,
+      "operational_only_hits": 0,
+      "operational_recall": 0.9302325581395349,
+      "queries": 43,
+      "wilson95_lower": 0.8139101309875801,
+      "wilson95_upper": 0.9759884104227855
+    },
+    "3": {
+      "active_successor_same_site": 1,
+      "exact_hits": 41,
+      "exact_recall": 1.0,
+      "multiple_active_equivalents": 2,
+      "operational_hits": 41,
+      "operational_only_hits": 0,
+      "operational_recall": 1.0,
+      "queries": 41,
+      "wilson95_lower": 0.9143324298155681,
+      "wilson95_upper": 0.9999999999999999
+    },
+    "4": {
+      "active_successor_same_site": 4,
+      "exact_hits": 42,
+      "exact_recall": 0.9545454545454546,
+      "multiple_active_equivalents": 0,
+      "operational_hits": 42,
+      "operational_only_hits": 0,
+      "operational_recall": 0.9545454545454546,
+      "queries": 44,
+      "wilson95_lower": 0.8486500156237035,
+      "wilson95_upper": 0.987444890050405
+    }
+  },
+  "loss_counts": {
+    "HIT": 123,
+    "NOT_RETRIEVED_AT100": 5
+  },
+  "latency": {
+    "cache_state": "UNCONTROLLED",
+    "max_seconds": 11.531718916725367,
+    "mean_seconds": 3.8353207682812354,
+    "p50_seconds": 3.5702055415604264,
+    "p95_seconds": 7.695884850551372,
+    "p99_seconds": 9.295847931872125,
+    "production_slo_validated": false,
+    "queries": 128,
+    "total_query_seconds": 490.9210583399981
+  },
+  "decision": "PIVOT_GENERATION",
+  "generation_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v306_corroborated_population/run_20261005_a/manifest.json",
+    "sha256": "28e1541887ac72289f9cb80f8727d69dc3b352a3da3b4a8032691dad81799999",
+    "size_bytes": 5333
+  },
+  "generation_outputs": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v306_corroborated_population/run_20261005_a/outputs.json",
+    "sha256": "37aa7bd08cf022fc221445122bd1844bffaa44d7f87e5488554cb126fb1c7886",
+    "size_bytes": 3535509
+  },
+  "evaluation_manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v307_postseal_evaluation/run_20261005_a/manifest.json",
+    "sha256": "5c60513fad9eda821191da71df74211b74c051f5376c40132783ae688bdfc78c",
+    "size_bytes": 1585
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v307_postseal_evaluation/run_20261005_a/metrics/report.json",
+    "sha256": "aea2da1f6ffb700eb6f3ef3898fa16bd0cbc6daea2e742adbab63acedd87a366",
+    "size_bytes": 117659
+  },
+  "baseline_reports": {
+    "v230": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v230_postseal_evaluation/run_20261004_a/metrics/report.json",
+      "sha256": "77d76e04c7ea6ba7cf54f2f5cc54bda73b53b492bc12df71cd758cbaf85707cd",
+      "size_bytes": 117898
+    },
+    "v259": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v259_postseal_evaluation/run_20261005_a/metrics/report.json",
+      "sha256": "79640a0a149548ccbac76ae47e2e1efe0907ef9834444ea161111afac20f2fd9",
+      "size_bytes": 117782
+    },
+    "v288": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v288_postseal_evaluation/run_20261005_a/metrics/report.json",
+      "sha256": "0f0229814ddf1c0424248b3e3e75138ee70dcfaa2a6576d45dc87867af6aceaf",
+      "size_bytes": 117658
+    }
+  },
+  "generation_cost": {
+    "wall_seconds": 1037.5797227500007,
+    "worker_seconds": 544.6346099586226,
+    "peak_worker_rss_bytes": 2086502400
+  },
+  "evaluation_resources": {
+    "authority": {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 76,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 177078272,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 3,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 0.8968566250987351
+    },
+    "metrics": {
+      "global_swap_is_worker_attributed": false,
+      "limits": {
+        "global_swap_blocking": false,
+        "max_rss_bytes": 2147483648,
+        "max_seconds": 80,
+        "min_system_free_percent": 50,
+        "required_pressure_level": 1
+      },
+      "minimum_system_free_percent": 76,
+      "pass_resource_policy": true,
+      "peak_rss_bytes": 997359616,
+      "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+      "pressure_levels": [
+        1
+      ],
+      "sample_count": 10,
+      "swapout_pages_delta": 0,
+      "wall_seconds": 4.553197540808469
+    }
+  },
+  "interpretation": "V305_DATA_ES_OFFICIAL_ENDPOINT_RELATIONS_NO_GAIN_VS_V288",
+  "retained_as_development_quality_reference": false,
+  "ready_for_fold1": false,
+  "production_slo_validated": false,
+  "full_oof": false,
+  "downstream_models_changed": false
+}
