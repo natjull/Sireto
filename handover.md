@@ -14939,4 +14939,17 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
  Source267 entièrehash/producer réel/supervision/quiet/epochs liés ;
  complétudeAPI non recertifiéeCOG.270 attend261/262 et265/266 terminaux,
  gardes214 inchangées ;271 uniquement ALL128/16 réels exit0/PASS scellés.
- Panel adaptatif n'est jamais fullOOF/READY/SLO/généralisation même100%.
+  Panel adaptatif n'est jamais fullOOF/READY/SLO/généralisation même100%.
+
+- Commit `241b02b4` :261/262 TERMINAUX ALL128/16 + deux producteurs
+  métriques réels exit0/PASS214. Exact120/128,op121/128,ZEROgain/ZEROloss
+  vs230, pertes6/16 vs nouvelle référence259 qui conserve ses sigles.
+  Mêmes contrôles ET cibles ; vueadresse260 NON retenue, pas fusion oracle.
+  Gen952,669067s/workers459,012874s/RSS1980891136, p95=4,955864,
+  p99=7,069727 cache incontrôlé, pas SLO/READY/fullOOF/généralisation.
+- Commit `73b4ea67` :265 TERMINAL STOP avant première requête/admission,
+  propre enfant exit1 confirmé ; erreur de câblage config backend au lieu
+  config265 ('serving_query_launch'), pas limite métier/coût atteinte.
+  Budget214 resté inchangé, worker0,139788s/RSS217317376 ; ZEROadmis,
+  aucun GT/recall/266 ni retry/fragment réutilisé.265/code/config immuables.
+ 270 contextecommunal lancé ensuite séparément ; référence259 maintenue.
