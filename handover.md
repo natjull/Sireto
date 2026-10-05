@@ -15499,3 +15499,13 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Fold0 nonlu/fold1 fermé/aval gelé ; panelDEV nonpristine, fullOOF/généralisation/
   SLO dus. Recherche à lancer, aucune mesure nouvelle. Changements utilisateur
   préservés ; code du workflow ne sera plus édité pendant son exécution.
+
+- Exécution330 LANCÉE après freeze `68c068f1` et handover `82d09d5e` ; root
+  `retrieval_v330_corroborated_population/run_20261005_a`, session72520.
+  Checkpoint LIVE :16/2000 outputs, quatre lots ownexit0/PASS confirmés,
+  peakworkerRSS1566277632, pression1/libreminimum79%, deltaswapglobal0
+  nonattribué. Pas génération complète/seal/permission331/GT/recall332,
+  aucune qualité/SLO/READY annoncée ; STOP ou partiel ne sera pas évalué.
+  Workflow poursuit séquentiellement les lots, puis332 seulement si ALL500
+  exits0/PASS et ALL2000 scellés. Aucun code mesuré édité pendant le run,
+  aucune nouvelle préparation328 ni autre producteur lourd lancé par l'agent.
