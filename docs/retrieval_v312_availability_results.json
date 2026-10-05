@@ -1,0 +1,86 @@
+{
+  "status": "SEALED_V312_ALL128_QUERY_ONLY_CULTURE_FACT_AVAILABILITY",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v312_culture_availability/probe_20261005_a/manifest.json",
+    "sha256": "829895e80a32493b025d1ec79f26078bcdb0c98c16c25a0ce25d54ba9185ee1b",
+    "size_bytes": 1290
+  },
+  "payload": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v312_culture_availability/probe_20261005_a/phase/payload.json",
+    "sha256": "0fddea371be805439bc04a0bbf315bdc32501748541ad6d8d444f97cfabb4ff4",
+    "size_bytes": 114645
+  },
+  "source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v310_culture_source/snapshot_20261005_a/manifest.json",
+    "sha256": "1ef90561eca2a668b65943a8d59312dd830bc0b9a8eeb6c7a87695647f64d8a4",
+    "size_bytes": 1453
+  },
+  "query_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v78_safe_sparse_initial/pilot_20261003_a/launch.json",
+    "sha256": "6fc2cb89b489e8038e6f211e0fac0a36954874e066e8a727558cfa01d9d90956",
+    "size_bytes": 85950
+  },
+  "summary": {
+    "locality_incidences": {
+      "local": 0,
+      "nonlocal": 0,
+      "unknown": 0
+    },
+    "matched_observation_incidences": 5,
+    "queries": 128,
+    "queries_with_explicit_endpoints": 0,
+    "queries_with_source_name_observations": 1,
+    "queries_with_unknown_identifier_records": 1,
+    "query_endpoint_incidences": 0
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 78,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 166789120,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 2,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.24333395902067423
+  },
+  "supervision": {
+    "child_disappeared_during_sampling": false,
+    "child_pid": 36492,
+    "exit_code": 0,
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 78,
+    "own_child_exit_confirmed": true,
+    "peak_rss_bytes": 158351360,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "sample_count": 3,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 1.0653406670317054
+  },
+  "long_native100_test_launched": false,
+  "decision": "NO_NATIVE100_TEST_FOR_ZERO_EXPLICIT_ENDPOINT_RELATIONS",
+  "recall_measured": false,
+  "truth_opened": false,
+  "candidates_emitted": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false,
+  "limitation": "Exact whole multiword alias access only; not proof that Culture has no other useful evidence"
+}
