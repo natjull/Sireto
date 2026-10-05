@@ -1,0 +1,138 @@
+{
+  "status": "SEALED_V280_TRAIN_ONLY_OOF_QUERY_PUBLIC_ROLE",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v280_public_role_training/train_20261005_a/manifest.json",
+    "sha256": "6ec4c531b27515676b6b131c4980c48becbddf1dcd84e934794c9d1aa310d48b",
+    "size_bytes": 1446
+  },
+  "models": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v280_public_role_training/train_20261005_a/phase/models.json",
+    "sha256": "a26a9ad4dd527213f6f29b38d0350082db53f84dd806a78487df7ce080ccf21e",
+    "size_bytes": 39135
+  },
+  "report": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v280_public_role_training/train_20261005_a/phase/report.json",
+    "sha256": "9be432b541d46e74d53a701ec7b776fb861a184ad53ae431c0df4efaa2ad3031",
+    "size_bytes": 29649
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 79,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 214777856,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 3,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.8948972090147436
+  },
+  "controls": {
+    "2": {
+      "mean_absolute_error": [
+        0.1801871694425787,
+        0.02982662836170525
+      ],
+      "mean_squared_error": [
+        0.08517425345438483,
+        0.011395836640533483
+      ],
+      "observed_positive_memberships": [
+        26,
+        2
+      ],
+      "queries": 169,
+      "scope": "TRAIN_OOF_QUERY_ROLE_CONTROLS_NOT_RECALL_OR_SELECTION"
+    },
+    "3": {
+      "mean_absolute_error": [
+        0.17087170927039688,
+        0.03406715951266118
+      ],
+      "mean_squared_error": [
+        0.06634184288077517,
+        0.01802589944969221
+      ],
+      "observed_positive_memberships": [
+        19,
+        3
+      ],
+      "queries": 164,
+      "scope": "TRAIN_OOF_QUERY_ROLE_CONTROLS_NOT_RECALL_OR_SELECTION"
+    },
+    "4": {
+      "mean_absolute_error": [
+        0.17881622976676967,
+        0.03170407997130016
+      ],
+      "mean_squared_error": [
+        0.0693906231136387,
+        0.006433380561689379
+      ],
+      "observed_positive_memberships": [
+        18,
+        1
+      ],
+      "queries": 179,
+      "scope": "TRAIN_OOF_QUERY_ROLE_CONTROLS_NOT_RECALL_OR_SELECTION"
+    }
+  },
+  "role_parent_counts": {
+    "commune": 34875,
+    "epci": 1255
+  },
+  "training_queries": 512,
+  "model_fit": true,
+  "pilot_truth_opened": false,
+  "recall_measured": false,
+  "scope": "TRAIN_ONLY_NOT_RETRIEVAL_RECALL",
+  "folds": {
+    "2": {
+      "parameter": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v280_public_role_training/train_20261005_a/phase/public_role_fold2.npy",
+        "sha256": "0d31bc3399fc7d6ce6f9c988a647aa9a7dfd332a829870e23f301bb656c61e9b",
+        "size_bytes": 6288
+      },
+      "training_queries": 343,
+      "positive_training_memberships": [
+        37,
+        4
+      ],
+      "heldout_entity_overlap": 0
+    },
+    "3": {
+      "parameter": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v280_public_role_training/train_20261005_a/phase/public_role_fold3.npy",
+        "sha256": "52084e33c6be1323e9c2d84b9928562ffaac47ec42d41a6172031c26365e6309",
+        "size_bytes": 6288
+      },
+      "training_queries": 348,
+      "positive_training_memberships": [
+        44,
+        3
+      ],
+      "heldout_entity_overlap": 0
+    },
+    "4": {
+      "parameter": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v280_public_role_training/train_20261005_a/phase/public_role_fold4.npy",
+        "sha256": "3e27c630c7898c9debb77c853cce9a51dd651307a77425000214a2119ddbaa50",
+        "size_bytes": 6288
+      },
+      "training_queries": 333,
+      "positive_training_memberships": [
+        45,
+        5
+      ],
+      "heldout_entity_overlap": 0
+    }
+  }
+}
