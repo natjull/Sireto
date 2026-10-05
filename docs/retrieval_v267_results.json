@@ -1,0 +1,56 @@
+{
+  "status": "SEALED_V267_ALL_RETURNED_OFFICIAL_COMMUNES_SOURCE_ONLY",
+  "manifest": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v267_official_communes_snapshot/snapshot_20261005_a/manifest.json",
+    "sha256": "68427d6357b2fb9324ad26603df712183bb6a9807a02811e11d7a26cb7410177",
+    "size_bytes": 984
+  },
+  "source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v267_official_communes_snapshot/snapshot_20261005_a/phase/source.json",
+    "sha256": "f85ecb82f0198666821a6759a06036df80ff9d8593e3c6f4b7dc252108d7b557",
+    "size_bytes": 1307
+  },
+  "response": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v267_official_communes_snapshot/snapshot_20261005_a/phase/response.json",
+    "sha256": "742f0e0fae43bfcde0da48973bb480c7727c32db2b9c8fdd94abf7add1f69f9f",
+    "size_bytes": 3710896
+  },
+  "stats": {
+    "missing_epci": 143,
+    "missing_siren": 139,
+    "postal_memberships": 35539,
+    "rows": 35014
+  },
+  "headers": {
+    "content_type": "application/json; charset=utf-8",
+    "date": "Mon, 05 Oct 2026 00:39:03 GMT",
+    "etag": "W/\"389fb0-9YP9RCOwoFqij/xlVbBCwr+1tqk\"",
+    "last_modified": null
+  },
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 2147483648,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 80,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 134070272,
+    "policy_id": "V214_AUTHORIZED_2GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 2,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 0.5232945829629898
+  },
+  "all_returned_rows_preserved": true,
+  "actual_producer_exit0_verified": true,
+  "independent_cog_completeness_audited": false,
+  "recall_measured": false,
+  "ready_for_fold1": false,
+  "downstream_models_changed": false
+}
