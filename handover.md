@@ -15276,3 +15276,23 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   partialSITEignored. ALL128/16 actualexit0/PASS avantGToriginaux128ET234,
   comparaisons230259288 mêmescontrôles ETcibles, exact/op séparés. Panel
   adaptatif jamais fullOOF/READY/généralisation/SLO même100%, avalgelé.
+
+- Commit `c62abfd3` :314 TERMINAL STOP superviseur batch003,24admis,
+  7autres imprimés NONadmis. Child38951 SIGTERM-15 confirmé/reaped ; RSS
+  2205663232 dépasse2GiB de58179584octets, failure35,510857s/controller
+  269,669668s,free78pression1/globaldelta0 nonattribué. ZEROlabels/315/recall/
+  partialreuse/retry/budgetraise, ni qualité positive ou négative prouvée.
+  Meilleurrecallexact complet288123/128=96,09375%DEV reste inchangé.
+
+- Commit `d1ff516c` :316 correction équivalente313 seulement PRÉPARÉE,
+  NONexécutée. ALLpostings dechaquepaire successivement au lieu de TOUSmots
+  simultanés ; libérer setsPython owners/relations/radial après compilation
+  nativeavantcollect100. ALLaliases/parents/sites/score/poids gardés, pas cap.
+  22fixtures316313300PASS : mêmespoints/sorties, lifespansets libérés avant
+  collecteur,151owners complets. PAS preuve RSSnational/qualité/SLO.
+  Autorisation humaine explicite requise pour retester STOP314, mêmeavec
+  scores et limites214 invariants. Pas nouveau driver317/eval318 lancé.
+  Source308 correction303 reste aussi nonexécutée attenteaccord ;304 lié
+  à303STOP inutilisable,305core indépendant préparé nonmesuré noncommité.
+  Toushandles actuels terminaux ; aucunrun/label/testnational LIVE ni aval
+  modifié. Objectif99,2% initial100 NONatteint, fold1 toujoursfermé.
