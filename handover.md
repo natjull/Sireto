@@ -15144,3 +15144,13 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   gate99,2/GTcorrigé/identifiantfeature/positifinjecté/avalmodifié.9fixtures
   PASS, nouveau producer214séquentiel après291terminal, pas lossfineexhaustive
   ni READY/fullOOF/SLO/généralisation depuis paneladaptatif.
+
+- Commit `1c8c58a0` :290/291 TERMINAUX ALL128/16exit0PASS214 et deux
+  évaluateursréels. Exact122/128=95,3125%,op123/128=96,09375% ; mêmes
+  contrôles ETcibles, ZEROgain/ZEROloss vs259, manquegainrégional79 vs288
+  (nonfusionnéparconstruction), ZEROgainopvs259/288. Signaladministratif
+  indépendant289 NONretenu, baseline288123exact/123opmaintenue.
+  Gen1073,453369s/workers580,095119s/RSS2102345728,p958,106598/p999,136843
+  cacheincontrôlé nonSLO. Pas GTcorrigé/parentowner certifié/READY/fullOOF/
+  généralisation.299diagnostic best288 lancé ensuite propre214séquentiel,
+  cadreSIREN !=substitution métriqueexacte et aucuneoracleunion.
