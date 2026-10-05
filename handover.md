@@ -15006,3 +15006,18 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   Gen1012,922072s/workers520,105474s/RSS2095923200 ; cache incontrôlé,
   p95=7,426329/p99=8,145355 nonSLO. Pas oraclefusion/fullOOF/READY ni
   généralisation ;279 source-only lancé ensuite sous214 inchangé.
+
+- Commit `8f133cb5` :279 SOURCE TERMINAL propre exit0/PASS214, ALL35014
+  records/35539 memberships CP roundtrip,139SIREN/143EPCI UNKNOWN publiés.
+  SQLite3022848octets entierhash6460cb92..., worker0,302768s/RSS184942592.
+  Source279 complète pour joins INSEE OU CP, pas identité équipement certifiée,
+  aucun TRAIN/CRM/GT/recall/candidats/SLO/READY.280 préparé namespace TRAIN
+  séparé, source actuelle entière jamais dict sélectionné sur les ratés128.
+
+- Commit `2e03250e` :280 TRAINonly routeur NOM384 vers deux appartenances
+  officielles commune/EPCI, fixedridge1/385x2/clippingrelevance noncalibrée.
+  TRAIN512 complet disjoint128, mêmes IDs safe77 et familles fold234 exclues,
+  identifiants joins/contrôles pas features, pas dictionnaire aliasCRM.
+  Fixtures280+27918PASS. Avant fit réel, namespace séparé214 inchangé ;
+  aucun recall national ni modèle aval, source absente n'est pas erreurGT.
+  Serving contrôle epochs TRAIN sans ouvrir scènes/GT ; pas candidat injecté.
