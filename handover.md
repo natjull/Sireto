@@ -14952,4 +14952,16 @@ calibration saturante. Le holdout est désormais consommé. Rapport :
   config265 ('serving_query_launch'), pas limite métier/coût atteinte.
   Budget214 resté inchangé, worker0,139788s/RSS217317376 ; ZEROadmis,
   aucun GT/recall/266 ni retry/fragment réutilisé.265/code/config immuables.
- 270 contextecommunal lancé ensuite séparément ; référence259 maintenue.
+270 contextecommunal lancé ensuite séparément ; référence259 maintenue.
+
+- Commits `1c569516`272/273 et `b0aef0fb`274 figés AVANT émission,
+ 111tests fixtures PASS. Nouvelle métrique : sigles256/base257 réussie
+  conservée + activité263faible1au lieu, pas retry265/base217 ni réutilisation
+  fragmentSTOP. Config OWNlaunch273 transmise explicitement, fixture de
+  régression exige cet objet. Metadata-only sourcesréelles : nomenclatures/
+  codes/arrays/labels/catalogues trois modèles/encodeur cohérents, pas GT.
+  Decoder113 safeTRAIN512 disjoint128 gelé, gradescontinusALL2140, scanner
+  ALL43896818physique, UNKNOWN/horszone cheminsouverts, ONEcollect100 global.
+  Pas contexte268/adresse260/head252/240/243 ni unionoracle.214 inchangé,
+ 273 attend270/271terminaux ;274 seulement ALL128/16 réels exit0/PASS.
+  Paneladaptatif jamais fullOOF/SLO/READY/généralisation même100%.
