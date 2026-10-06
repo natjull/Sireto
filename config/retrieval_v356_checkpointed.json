@@ -1,0 +1,18 @@
+{
+  "worker_config": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v344_corroborated_population.json",
+    "sha256": "1cdfa30db3357e639689bbbbe634771f842e8926413a633615ec92b6ad83cc80"
+  },
+  "output_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356",
+  "resources": {
+    "max_rss_bytes": 3221225472,
+    "max_seconds": 80,
+    "min_system_free_percent": 50,
+    "required_pressure_level": 1,
+    "global_swap_blocking": false
+  },
+  "queries": 2000,
+  "max_attempts_per_batch": 3,
+  "max_controller_runs": 3,
+  "exhausted_failure_policy": "STOP_KEEP_DENOMINATOR"
+}
