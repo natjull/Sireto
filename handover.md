@@ -15693,3 +15693,55 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   V344 et compter explicitement ses tentatives si le timeout réapparaît.
   Ne pas lancer un second calcul concurrent ni élargir les budgets après STOP.
   Aucun push ; changements préexistants utilisateur préservés.
+
+## 6 octobre 2026 — V353 : correction du crash de compilation, lot réel validé
+
+- Commit `d6a53ace` : à la demande humaine « Vas-y corrige », ajout V353–V355
+  sans modifier les fichiers/recettes/contrats historiques exécutés. Le run
+  V352/V349 lancé plus haut a finalement STOP après 97 checkpoints complets,
+  388/2 000 sorties, workflow45745 exit1 réel confirmé ; aucune évaluation.
+  Lot97 : position388 terminée mais non admise, position389 « SESSAD » crash
+  RegexQueryError limite1 000 états. Worker91058 exit1 confirmé/réapé,
+  peak1 353 351 168bytes/6,435008s, ressourcesPASS3Gio ; erreur inconnue
+  correctement fatale, pas échec du mécanisme de reprise sur coûts déclarés.
+  Le lot23/position92 avait réellement passé à sa deuxième tentative.
+
+- V353 conserve le RegexQuery d'origine pour toute expression qui compile.
+  Seulement après l'erreur précise de taille, factorisation des alternatives
+  littérales par suffixe, avec portée originale des groupes/quantificateurs :
+  même langage, mêmes partitions et scores, zéro variante retirée, pas de
+  nouveau pool/reranker/fit/feature/filtre. Même limiteDFA1 000, aucune
+  dépendance installée/index reconstruit. Une réparation qui échoue reste
+  fatale. V354 réutilise le code worker344 via globals privés explicitement
+  liés à search353 et load354 ; aucune mutation des globals historiques.
+  Tous anciens+nouvelles implémentations hashés, mêmes producteurs et guards.
+  44 tests PASS en1,72s, dont45 198 comparaisons de langage, régressionSESSAD,
+  SAASAS, alias multi-valués non empruntés, parité scores/rangs des succès,
+  un seul collecteur100 et absence de monkeypatch historique ; diff/compilePASS.
+
+- V355 audit query-only complet :2 000 requêtes/3 261 expressions/9 783
+  compilations sur les trois champs exacts, aucune en échec après réparation.
+  Seule position389 nécessitait la correction (une partition, trois champs).
+  Premier probe réel neuf `probes_v355_regex_repair/batch97_20261006_a` STOP
+  sur coût20s de389, après388 ; compilation corrigée, resourcesPASS, aucun
+  payload partiel admis. Deuxième probe neuf, mêmes code/budgets/sources,
+  `probes_v355_regex_repair/batch97_20261006_b` : PASS complet lot97,
+  worker94645 ownexit0 confirmé/réapé, stage354 revérifié ; positions388–391
+  chacune100 candidats ; temps3,875/14,188/5,506/7,737s, worker33,850495s,
+  pic1 877 639 168bytes (1,749 Gio), libremin69%/pression1/deltaswapglobal0
+  nonattribué. Premier STOP conservé, deuxième PASS n'est pas preuve de SLO
+  stable à froid ni une sélection de qualité : aucune vérité ouverte.
+  Références hashées et les DEUX observations conservées dans
+  `docs/retrieval_v353_regex_repair_results.json`.
+
+- Fix vérifié, PAS de nouveau run complet lancé : V352 reste STOP388/2000.
+  Aucun ancien checkpoint/payload importé, aucun STOP effacé, aucun compteur
+  388→392 ; le probe reste hors génération. Prochaine action : nouvelle
+  orchestration versionnée gelant worker354, mêmes bornes349/352, ALL500
+  exit0/PASS et2 000 scellés avant label-side/eval exact/op. Le contrat actuel
+  refuse les fragments STOP ; ne pas reprendre l'ancien root en modifiant
+  son lancement. Une éventuelle réutilisation des97 checkpoints complets
+  nécessiterait un protocole explicite de migration/provenance/parité avant
+  toute admission. Budgets3Gio/80s/20s/quiet30 inchangés ; folds0/1 fermés,
+  aval gelé, recall99,2%/fullOOF/généralisation/Wilson/SLO/READY toujours dus.
+  Les neuf modifications utilisateur préexistantes sont intactes, aucunpush.

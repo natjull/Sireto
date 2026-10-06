@@ -1,0 +1,91 @@
+{
+  "status": "FIX_VERIFIED_REAL_BATCH_ONLY_NOT_ALL2000",
+  "implementation_commit": "d6a53ace",
+  "tests_passed": 44,
+  "synthetic_language_oracle_comparisons": 45198,
+  "old_generation_admitted_queries": 388,
+  "old_generation_status": "STOP",
+  "original_failure": "RegexQueryError: Compiled regex exceeds size limit of 1000 states",
+  "original_failed_query_position": 389,
+  "old_state": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v352_persistent_launcher/job_20261006_a/state.json",
+    "sha256": "6f884d63eabbd33819c192a5bed2a504e079e2c56f4a32a29f23e2f40f10f59e",
+    "size_bytes": 693
+  },
+  "old_worker_stop": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v349/run_20261006_a/attempts/batch097/attempt00/batch097/worker_stop.json",
+    "sha256": "e09a33d0a47bb9ab522a9d960675d3003986ef7308c7b0a5eca8fc0b1a96b484",
+    "size_bytes": 964
+  },
+  "compiler_audit": {
+    "queries": 2000,
+    "expressions": 3261,
+    "field_compilations": 9783,
+    "repaired_field_patterns": 3,
+    "affected_positions": [389],
+    "patterns_discarded": 0,
+    "native_state_limit_changed": false,
+    "reference": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/probes_v355_regex_repair/batch97_20261006_b/compiler_audit.json",
+      "sha256": "eeedd1e27dfdd57338b617ef1ef628e294272add227083963263f062d041dc40",
+      "size_bytes": 854
+    }
+  },
+  "first_real_probe": {
+    "status": "STOP_QUERY_COST_NOT_ADMITTED",
+    "reason": "STOP_CORROBORATED_QUERY_COST",
+    "max_query_seconds": 20,
+    "peak_worker_rss_bytes": 1666547712,
+    "resources_passed": true,
+    "reference": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/probes_v355_regex_repair/batch97_20261006_a/batch097/worker_stop.json",
+      "sha256": "9d3604b95250dd1ec50aef11f97344e30d1b461a3b4026fb9a00ff52fbc7eb5a",
+      "size_bytes": 893
+    },
+    "supervisor_stop": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/probes_v355_regex_repair/batch97_20261006_a/batch097/supervisor_stop.json",
+      "sha256": "9088456d64175350ac2fb4bd10df73ff40ae652f4bde5e4ede74d7e32d3200b4",
+      "size_bytes": 1115
+    }
+  },
+  "second_fresh_real_probe": {
+    "status": "PASS_REAL_BATCH_ONLY",
+    "batch": 97,
+    "positions": [388, 389, 390, 391],
+    "candidates": [100, 100, 100, 100],
+    "query_seconds": [3.874657250009477, 14.187527165748179, 5.506079541053623, 7.736556833144277],
+    "repaired_field_patterns": [0, 3, 0, 0],
+    "worker_seconds": 33.8504950418137,
+    "peak_worker_rss_bytes": 1877639168,
+    "minimum_free_percent": 69,
+    "pressure_levels": [1],
+    "global_swapout_delta_pages": 0,
+    "global_swap_is_worker_attributed": false,
+    "actual_worker_pid": 94645,
+    "actual_worker_exit_code": 0,
+    "own_worker_exit_confirmed": true,
+    "original_stage_revalidated": true,
+    "manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/probes_v355_regex_repair/batch97_20261006_b/probe_manifest.json",
+      "sha256": "d5e1adfefaca035a0b4803a3e30d1ce7345ea49f7f7b50ba7454241dbc0bdbf5",
+      "size_bytes": 2444
+    },
+    "supervision": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/probes_v355_regex_repair/batch97_20261006_b/batch097/supervision.json",
+      "sha256": "1921b33e57b83e6205ee9f3544a9e972a1a6bf86cd53b555a448e750ec88c93f",
+      "size_bytes": 581
+    }
+  },
+  "score_or_search_language_changed": false,
+  "native_direct_candidate_cap": 100,
+  "old_outputs_imported": false,
+  "all2000_outputs_sealed": false,
+  "full_generation_relaunched": false,
+  "truth_opened": false,
+  "recall_measured": false,
+  "slo_validated": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false
+}
