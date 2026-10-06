@@ -15815,3 +15815,67 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   lots23 et97 qui ont exposé coût/compilation. Ne pas changer budgets/code
   figés, relancer un secondjob ou reprendre unSTOPterminal. Les reprises
   internes sont bornées automatiquement et leurs échecs conservés.
+
+## 6 octobre 2026 — sidequest nocturne EmbeddingGemma 2 isolée
+
+- Milestone code/contrat/tests : commit `06a9b8b9`, branche
+  `codex/v9-architecture`. Nouveaux `scripts/embeddinggemma2_night.py`,
+  `tests/test_embeddinggemma2_night.py`,
+  `docs/embeddinggemma2_night_contract.md`. Aucun fichier du run V356/V359
+  modifié, aucun modèle aval réentraîné, aucun push. Deux tests unitaires
+  PASS (groupes SIREN déterministes/disjoints et retrait des IDs du texte),
+  compilation/diff-check PASS ; pas de campagne de tests interminable.
+
+- Modèle officiel Google EmbeddingGemma 2, révision HF
+  `914f7f89142e33e77833254d9c9b90c3cef7303b`, téléchargement public local,
+  texte seul : 271 002 624 paramètres. Une vraie inférence MPS BF16 a produit
+  des vecteurs finis `[2,12,768]`, allocation driver 1 217 085 440 bytes.
+  Cette preuve ne vaut pas entraînement/backward réussi ni recall. Runtime
+  séparé CATNAT : torch2.14.1/transformers5.19.0/sentence-transformers6.1.0,
+  environnement `.venv` retrieval inchangé. Première installation/download
+  a échoué sur cache interne plein/Xet, puis succès avec caches CATNAT et
+  download HTTP sans Xet. Aucun nettoyage/destruction autorisé ou effectué.
+  Disque interne observé ~318 Mio libres : ne pas y placer poids/caches.
+
+- Préparation réelle terminée exit0 :
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/night_20261006_a`.
+  Ledger inchangé SHA `24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720`.
+  Folds234 uniquement et 2 000 query_id du panel courant exclus AVANT
+  lecture Arrow des labels, aucun sidecar courant ouvert. Restant21 571,
+  split groupé SIREN70/10/20 : TRAIN15 036 (10 014 SIREN), validation2 212
+  (1 430 SIREN), test4 323 (2 862 SIREN). Dataset train15 035 : une cible
+  officielle absente publiée dans `train_coverage.json`, jamais une suppression
+  de dénominateur retrieval ; train1 865/validation325 sans négatif lexical.
+  Négatifs BM25 samecommune/CP du corpus officiel complet ; exclusion même
+  SIREN et SIREN des autres splits. Documents positifs via lookup supervisé
+  pour fit/contrôle contrastif seulement, pas ajoutés à une recherche évaluée.
+  Identifiants joints/splits/masquages uniquement, pas features. Tests hashes
+  et datasets hashes scellés dans `manifest.json`. Aucun alias CRM indexé.
+  Le test interne est nouveau pour ce fine-tuning, PAS pristine pour le
+  pipeline historique : données déjà consommées en développement. Pas
+  d'usage du panel courant comme test inédit du nouveau modèle, car groupes
+  SIREN peuvent recouper ceux de ce train expérimental. Fold1 toujours fermé.
+
+- Job réellement détaché à `1791322873.3337321` : PID97127 observé PPID1,
+  caffeinate-i temporaire PID97128, huit heures maximum à partir du départ.
+  État observé `WAITING_RESOURCES` (68–70% libres, admission72%) : ne PAS
+  dire que des gradients ont déjà été calculés. Départ automatique dès marge
+  disponible, yield62%, superviseur termine seulement son child avant58%
+  libre/pression anormale/RSS3Gio ; MPS fraction.16, CPU1thread, aucun
+  watermark désactivé. Maximum12 reprises resource-only, aucune reprise
+  aveugle exception/numerics ; checkpoints100pas, deuxepochs maximum,
+  LoRA8 sur Q/V/projection, contraste température.05 et vrais batchs4.
+  Contrôle64 validation fixe, baseline brute puis meilleur checkpoint sur
+  loss contrastive : PAS recall national, PAS SLO, PAS gain business prouvé.
+
+- Lecture demain : `supervisor.json` (statut réel), `state.json`,
+  `training.log`, `baseline_diagnostic.json`, `best_adapter.pt` et
+  `checkpoint.pt` du root ci-dessus. Si STOP, lire l'erreur, ne pas conclure
+  finetuning réussi sur un vieux heartbeat. Si pas de baisse validation,
+  ne pas déployer. Sinon comparer modèle brut/tuné contre corpus réel complet
+  à budget identique, contribution marginale à la recherche initiale <=100,
+  recall exact et opérationnel séparés, SLO/généralisation ; jamais mesurer
+  uniquement contre les SIRET annotés. Le gate99,2%/OOF/one-shotfold1 reste dû.
+  Cross-fitting234 seulement avant éventuelle feature dense aval après gate.
+  V359 toujours RUNNING, dernier contrôle avant sidequest :852/2 000,
+  aucune mesure ouverte ; ses guards/source/code restent inchangés.
