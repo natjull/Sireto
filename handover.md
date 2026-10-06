@@ -15566,3 +15566,30 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   pas garantie ; aucun retry automatique ni nouvel accord aprèsSTOP. Exact/op
   et folds234 toujours protégés, fold0nonlu/fold1fermé/avalgelé, changements
   utilisateur préservés, aucun push.
+
+## 6 octobre 2026 — plafond RAM borné3Gio après direction humaine
+
+- Commit `270b0019` :333 TERMINALSTOP RSS à00h00m37 après23lots/92queries,
+  child4027exit-15 confirmé/réapé, workflow93392exit1 réel confirmé par337,
+  aucun GT/recall/outputs globaux ; processus absents au contrôle7h22.
+  Peak2152611840octets soit4,890625Mio au-dessus2Gio, wall19,116343s<80,
+  pression1/libreminimum75%/deltaswapglobal0 nonattribué. Détachement a tenu
+  jusqu'au STOP contrôlé. Aucun fragment333 réutilisé, pas un échec de recall.
+  Nouvelle direction utilisateur : dépassement2Go acceptable tant que RAM
+  ne monte pas trop haut. Interprétation bornée annoncée :3Gio parworker et
+  UNE relance, pas suppression de garde ni hausse illimitée.342 copie214
+  avec seul RSS3221225472 etpolicy_id neuf ;343 même supervision. Tout le
+  reste identique (pression1/libre>=50%/80sworker/20squery/quiet30/unthread/
+  unproducteur).214 et expériences historiques intacts.344 mêmespreuves286+
+  mask329/collecteur100 natif/2000queries/sources/heads77/228/sparse8, zéro
+  fit/score/selection/aval.328 COMPLETE seul réutilisé, BAN/encoder nonrefaits,
+  admission328 reste214(2Gio).345 puis346 exact/op/ledger/sidecar identiques,
+  ALL500 exit0/PASS et2000scellés avantGT, evalworkers3Gio/80s également.
+  Transport347 même détachement337 éprouvé, claimO_EXCL/heartbeat/ownedexit/
+  caffeinate-i temporaire, sans restart/launchd/TCC/FDA ni autre producteur.
+  111fixturesPASS incluantparité fonctionnelle worker/serving/scores/contrôles,
+  picfailedaccepté3Gio et autresgardesfatal ; pas preuve nationalrecall/coût.
+  Nouvelle exécution à lancer aprèsfreeze, code nonédité pendant run,
+  fold0nonlu/fold1fermé/avalgelé/fullOOF/généralisation/SLO/99,2%/READY dus.
+  Changements utilisateur préservés, aucunpush ; pas prochainSTOPretry ou
+  hausse automatique au-dessus3Gio autorisés par cette direction.
