@@ -15607,3 +15607,64 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   STOP. Évaluation automatique uniquement aprèsALL500 exits0/PASS et2000scellés.
   Aucun nouveau STOPretry ou hausse au-delà3Gio, fold0nonlu/fold1fermé/avalgelé,
   changements utilisateur préservés, aucunpush.
+
+## 6 octobre 2026 — reprise automatique bornée, sans modifier le retrieval
+
+- Commit `80f50ae4` : V344/V347 ont terminé en STOP après 92/2 000 sorties
+  validées. Première requête du lot 23 (position 92) :
+  `STOP_CORROBORATED_QUERY_COST`, budget de 20 s. RSS = 2 330 902 528 octets,
+  soit 2,170822 Gio < 3 Gio ; PASS V342, pression 1, minimum libre 73 %, delta
+  swap global 0 non attribué. Le plafond RAM a passé ; le temps a bloqué.
+  Worker 21207 : exit 1 confirmé ; workflow 10254 : exit 1 confirmé par V347,
+  durée 1 246,780770 s. Sources STOP/supervision hashées dans
+  `docs/retrieval_v344_stop_results.json`, processus absents au contrôle
+  lecture seule. Aucune vérité terrain ouverte, aucun recall sur 2 000, SLO
+  ou READY obtenu.
+
+- Même commit `80f50ae4` : à la demande humaine de redémarrage automatique,
+  V348 fournit des checkpoints atomiques fsync/rename, un verrou fcntl et des
+  tentatives contiguës bornées. V349 orchestre les workers V344 IMMUTABLES dans
+  des dossiers neufs, tous avec le même lancement query-only 2 000 et les
+  mêmes hashes de code, sources et contrôles.
+  Reprise du dernier lot complet validé ; sorties incomplètes jamais admises.
+  Chaque checkpoint exige exit 0 propre, PASS, hashes pré/post, epochs et
+  plafond 100 ; chaque reprise revérifie. Crash après vrai reçu mais avant
+  checkpoint : revalidation possible ;
+  manifest sans vrai reçu recalculé, jamais auto-admis. Première tentative
+  valide seulement, pas meilleure qualité ni nouveau score. Reçus des échecs
+  et lancements protégés ; erreur inconnue, drift ou annulation humaine fatals.
+  Timeout/RSS/pression déclarés : trois tentatives par lot maximum, délai de
+  10 s puis préflight quiet 30 s. Budgets inchangés : 3 Gio, 80 s par worker,
+  20 s par requête, 50 % libres, pression 1, un thread.
+  Trois échecs : `STOP_KEEP_DENOMINATOR`, sans requête ignorée ni résultat inventé.
+  Question humaine asynchrone sur continuer avec erreurs comptées sans réponse
+  lors du freeze : défaut STOP conservé, pas d'autorisation implicite de changer
+  le dénominateur. Aucun ancien fragment STOP V333/V344 importé ; la reprise
+  concerne les futurs checkpoints V349, pas les 92 résultats historiques.
+
+- V352 supervise en mode détaché, trois contrôleurs maximum après SIGKILL ou
+  SIGTERM sans STOP terminal ; groupe NEW-session propre nettoyé avant reprise.
+  Autorisation liée au lancement, PID parent, ancien PID et reçu de nettoyage ; reprise CLI
+  seule refusée après premier contrôleur. Exit positif inconnu, STOP, drift,
+  seal/phase cibles commencée : pas de restart. Claim unique, heartbeat,
+  caffeinate-i temporaire ; aucune sécurité/TCC/FDA/énergie permanente/launchd/calendrier
+  modifiée. Mort du superviseur lui-même/reboot/logout/volume restent des limites,
+  aucun auto-reboot garanti. V350 puis V351 uniquement après les 500 producteurs
+  valides et les 2 000 sorties scellées ; kernels V324, cibles, ledger et sidecar inchangés,
+  exact/op séparés, temps des tentatives ratées exclus du temps de succès et
+  déclaré explicitement non-SLO ; nombre d'échecs et `controller_runs` publiés.
+
+- Vérification : `149 tests PASS` en 23,84 s, py_compile et diff-check. Comprend
+  de vrais processus factices tués, réapés et redémarrés, ainsi que la libération
+  du verrou après kill. Fixtures synthétiques uniquement : pas de retrieval
+  national, labels CRM ou preuve de qualité/SLO. Les 2 000 sorties/producteurs
+  sont revalidés en fixture ; dernier lot manquant, sorties partielles, STOP,
+  drift et références modifiées refusés avant ouverture des cibles. Recette
+  et modèles aval inchangés, folds 0/1 fermés. Aucun nouveau run long lancé ni
+  dossier de génération V349 créé pendant l'implémentation. Commandes prepare/start
+  dans `docs/retrieval_v352_detached_launch_contract.md` ; à lancer seulement
+  après choix explicite de la suite. Prochaine action utile : profiler la
+  requête 93 en query-only sous budgets inchangés, car des retries ne guérissent
+  pas un timeout déterministe. Ces tests ne valident ni 99,2 %, full OOF 23 571,
+  Wilson, généralisation, attribution fine ou READY. Changements préexistants
+  utilisateur préservés sur `codex/v9-architecture`, aucun push.
