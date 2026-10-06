@@ -1,0 +1,104 @@
+{
+  "status": "STARTED_V359_WITH_FIRST_VALID_CHECKPOINT_NOT_COMPLETE",
+  "code_commit": "f8f963c9",
+  "control_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v359_persistent_launcher/job_20261006_a/launch.json",
+    "sha256": "5a029b50f321e5093794ed5c0f1f31fd4748b5e0203967f03bf3bc132708a8f6",
+    "size_bytes": 24849
+  },
+  "start_supervision": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v359_persistent_launcher/job_20261006_a/start_supervision.json",
+    "sha256": "3d15c87a382a0d73c6f51680647009540a7f247f94dbfdf0f8bad38af4ffb7e7",
+    "size_bytes": 212
+  },
+  "generation_launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356/run_20261006_a/launch.json",
+    "sha256": "a53b031042d6f650edd0bfb74d256a3aba0b7105f8be577bbdc96361e282a84a",
+    "size_bytes": 609815
+  },
+  "first_checkpoint": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356/run_20261006_a/checkpoints/batch000.json",
+    "sha256": "e9612286925478951b7166f206bc896fdda37c9cc71df9556df0ca2533350253",
+    "size_bytes": 1823
+  },
+  "producer": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356/run_20261006_a/attempts/batch000/attempt00/batch000/manifest.json",
+    "sha256": "d9b1ee9d1754b180658e13d41a1dece3f10f10d618c804a23b6f33f428415906",
+    "size_bytes": 1810
+  },
+  "supervision": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356/run_20261006_a/attempts/batch000/attempt00/batch000/supervision.json",
+    "sha256": "cd367ae20285989ca2c958d051311fee94ca287ee74d64480fe048182daf5bb0",
+    "size_bytes": 582
+  },
+  "observed_state": {
+    "admitted_generation_queries": 8,
+    "automatic_retry": true,
+    "controller_run": 0,
+    "elapsed_seconds": 125.24174529127777,
+    "generation_root": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356/run_20261006_a",
+    "job_pid": 96379,
+    "job_ppid": 1,
+    "max_controller_runs": 3,
+    "own_workflow_exit_confirmed": false,
+    "recall_admitted": false,
+    "required_queries": 2000,
+    "status": "RUNNING_V359_NOT_COMPLETE",
+    "updated_at_unix": 1791312021.424631,
+    "workflow_pid": 96381
+  },
+  "first_batch_positions": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "first_batch_candidates": [
+    100,
+    100,
+    100,
+    100
+  ],
+  "first_batch_query_seconds": [
+    4.124192832969129,
+    8.720794917084277,
+    5.111765041016042,
+    6.27301766583696
+  ],
+  "resources": {
+    "global_swap_is_worker_attributed": false,
+    "limits": {
+      "global_swap_blocking": false,
+      "max_rss_bytes": 3221225472,
+      "max_seconds": 80,
+      "min_system_free_percent": 50,
+      "required_pressure_level": 1
+    },
+    "minimum_system_free_percent": 76,
+    "pass_resource_policy": true,
+    "peak_rss_bytes": 1566588928,
+    "policy_id": "V342_AUTHORIZED_3GIB_NORMAL_PRESSURE_GLOBAL_SWAP_TELEMETRY",
+    "pressure_levels": [
+      1
+    ],
+    "sample_count": 51,
+    "swapout_pages_delta": 0,
+    "wall_seconds": 25.63737825024873
+  },
+  "first_worker_pid": 96566,
+  "first_worker_exit_code": 0,
+  "own_first_worker_exit_confirmed": true,
+  "stage_revalidated": true,
+  "automatic_retry": true,
+  "max_attempts_per_batch": 3,
+  "max_controller_runs": 3,
+  "old_outputs_imported": false,
+  "truth_opened": false,
+  "recall_measured": false,
+  "all2000_outputs_sealed": false,
+  "slo_validated": false,
+  "ready_for_fold1": false,
+  "fold0_opened": false,
+  "fold1_opened": false,
+  "downstream_models_changed": false
+}

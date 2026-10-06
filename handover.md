@@ -15745,3 +15745,73 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   toute admission. Budgets3Gio/80s/20s/quiet30 inchangés ; folds0/1 fermés,
   aval gelé, recall99,2%/fullOOF/généralisation/Wilson/SLO/READY toujours dus.
   Les neuf modifications utilisateur préexistantes sont intactes, aucunpush.
+
+## 6 octobre 2026 — V356–359 : run complet corrigé et reprise bornée
+
+- Commit `f8f963c9` : accord humain « Continue », nouvelle orchestration356
+  et superviseur détaché359, worker354 avec correctif353. Copies versionnées
+  des contrôles349/352, namespaces neufs ; aucune modification des recettes,
+  résultats, code ou contrats historiques exécutés. Même panel328query-only
+  2 000/folds234/mask329/heads77-228/sparse8/preuves286/collecteur100 avant
+  tout aval. Pas pool2000 de candidats/fit/BAN/encoder/index/aliasCRM nouveau.
+  Recompute complet : pas import des388 checkpoints historiques ou probe355,
+  aucun STOP retiré, aucune injection/filtre de statut ou changement dénominateur.
+  Budgets3Gio/80sworker/20squery indexopen inclus/quiet30/free50/pression1
+  et un worker/thread inchangés. Même checkpoints348 fsync/rename/flock,
+  trois tentatives max/lot, trois contrôleurs max si interruption propre sans
+  STOP, première tentative valide uniquement, reçus échecs hashés et conservés,
+  inconnue/drift/intégrité/cancel fatals, STOP_KEEP_DENOMINATOR après épuisement.
+
+- Même commit : mesure lecture seule de dix stages réels du probe355,
+  0,135–0,145s chacun (projection69,38s pour500 avant répétitions349/350).
+  Risque réel de timeout de l'autorité80s en fin de run.356 supprime seulement
+  les répétitions du scope global dans UNE admission : lancement/code/config/
+  querysources/inventaire intégralement validés pré ET post, chaque CP et
+  shardlaunch identique, chaque manifest/payload/supervision/failedreceipt,
+  première tentative et worker344 `_stage` ownexit0/PASS/sourceepochs/full4/
+  cap100 toujours vérifiés. Scope nonpersistant ; validations autonomes et
+  génération inchangées, drift pré/post/epoch fatal. Chaque trace doit porter
+  la politique353/langageinchangé/zéropartition retirée. Dix `_stage` réels
+  avec scope validé pré/post :6,39–7,01ms (projection3,25s pour500 du noyau,
+  hors lancement/CP/JSON/globalchecks ; PAS SLO national garanti).357 évite
+  admissions complètes doublées dans un même authorize/recheck ; chaque
+  recheck refaitALL500 puis vérifie le manifest lié.358 kernels324/ledger/
+  sidecar/exact-op/filtresArrow234ET2000/gates identiques. GT uniquement après
+  ALL500 vrais producteurs exit0/PASS et2 000 scellés ; fold0nonlu/fold1fermé,
+  avalgelé/fullOOF/généralisation/Wilson/attributionfine/SLO/99,2%/READY dus.
+
+- Vérification :107 tests PASS en49,97s, py_compile/diff-checkPASS. Fixtures
+  couvrentALL500/2 000, dernierlotabsent/foreignlaunch/traceincorrecte/drift
+  pré-post/source/CP/payload/receipt refusés, retries3max et vrais dummy
+  contrôleurs kill/restart/nettoyage, parité mécanique du launcher359,
+  des kernels358 et des règles nonmodifiées. Aucun label réel lu pour ces
+  tests/profilages, aucune preuve recall/généralisation/SLO par fixtures.
+
+- Lancement réel après freeze `f8f963c9` :prepare et starterexit0 ; contrôle
+  `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v359_persistent_launcher/job_20261006_a`,
+  génération `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v356/run_20261006_a`.
+  Wrapper96379 observé PPID1/PGID96379, contrôleur96381PGID96381 distinct,
+  heartbeat RUNNING_V359_NOT_COMPLETE, automatique borné actif. Pas autre
+  run retrieval actif au contrôle préalable, pas modification énergie/TCC/FDA/
+  launchd permanente ; caffeinate-i temporaire, arrêt du superviseur/reboot/
+  volume restent limites connues. Estimation6–8h selon run précédent, non
+  garantie ; quiet30×500 implique déjà4h10. États LIVE et compteur ne valent
+  pas admission. Attendre le premier CP validé puis ALL500, ne modifier aucun
+  code/config/contrat figé pendant le run. Mesure358 automatique seulement
+  après seal356 complet. Aucunpush, neuf changements utilisateur préservés.
+
+- Premier checkpoint réel V356 vérifié avant handoff :4/2 000 sorties,
+  lot0/tentative0,100 SIRET par sortie, worker96566 ownexit0 confirmé/réapé,
+  stage356 revalidé (launch/code/sources/epochs/contrôles/trace353/receipt).
+  Worker25,637378s, pic1 566 588 928bytes (~1,459 Gio), libremin76%, pression1,
+  deltaswapglobal0 nonattribué. Wrapper96379 reste détaché/PPID1, contrôleur
+  96381 actif ; compteur heartbeat4 n'est pas une génération complète.
+  Références immuables et snapshot observé dans
+  `docs/retrieval_v359_live_checkpoint.json` (control launch5a029b50...,
+  états LIVE nonprouvants et pas de promesse de statut futur). Aucune
+  évaluation/GT/recall encore ouvert, aucune99,2%/fullOOF/SLO/READY validée.
+  Prochain suivi : `state.json` et `workflow.log` du contrôle359 ci-dessus,
+  puis ALL500 producteurs/seal356/autorité357/mesure358 ; surveiller les
+  lots23 et97 qui ont exposé coût/compilation. Ne pas changer budgets/code
+  figés, relancer un secondjob ou reprendre unSTOPterminal. Les reprises
+  internes sont bornées automatiquement et leurs échecs conservés.
