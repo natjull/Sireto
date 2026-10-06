@@ -15668,3 +15668,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   pas un timeout déterministe. Ces tests ne valident ni 99,2 %, full OOF 23 571,
   Wilson, généralisation, attribution fine ou READY. Changements préexistants
   utilisateur préservés sur `codex/v9-architecture`, aucun push.
+
+- Commit `6afc6f1a` : nouvelle autorisation humaine « Ben vas-y », puis
+  lancement réel V352 après freeze `80f50ae4` et handover `6c103d47`.
+  Contrôle : `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v352_persistent_launcher/job_20261006_a`.
+  Génération : `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v344_corroborated_population/autoresume_v349/run_20261006_a`.
+  Préparation et starter exit 0 ; wrapper 45741 observé PPID 1/PGID 45741,
+  workflow 45745 dans sa propre session PGID 45745, caffeinate 45744 temporaire.
+  Le job survit au retour du starter. Reprise bornée active, trois tentatives
+  par lot/trois contrôleurs, `STOP_KEEP_DENOMINATOR` après épuisement ; aucune
+  réponse autorisant l'omission ou la conversion des requêtes échouées.
+  Premier checkpoint : 4/2 000 sorties, lot 0/tentative 0 ; worker 45962
+  own exit 0 confirmé, PASS réel, durée 35,730412 s, pic 1 565 392 896 octets,
+  libre minimum 81 %, pression 1, delta swap global 0 non attribué. Checkpoint
+  et producteurs revérifiés par `stage` V349 : hashes, epochs, contrôles et
+  sorties complètes. Snapshot hashé `docs/retrieval_v352_live_checkpoint.json`.
+  Run LIVE, aucune génération complète ni recall mesuré. Seuls les 500 lots
+  valides et 2 000 sorties scellées permettront l'évaluation V350/V351.
+  Aucun ancien fragment STOP réutilisé, aucune BAN/encodage refait, source,
+  score, cap 100 ou budget modifié ; code/configs/contrats figés pendant le run.
+  Fold 0 non lu, fold 1 fermé, aval gelé, aucune validation 99,2 %/full OOF/
+  généralisation/SLO/READY. Prochaine vérification : `state.json` et
+  `workflow.log` du contrôle ci-dessus ; surveiller le lot 23 qui a bloqué
+  V344 et compter explicitement ses tentatives si le timeout réapparaît.
+  Ne pas lancer un second calcul concurrent ni élargir les budgets après STOP.
+  Aucun push ; changements préexistants utilisateur préservés.
