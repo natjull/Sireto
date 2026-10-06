@@ -15593,3 +15593,17 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   fold0nonlu/fold1fermé/avalgelé/fullOOF/généralisation/SLO/99,2%/READY dus.
   Changements utilisateur préservés, aucunpush ; pas prochainSTOPretry ou
   hausse automatique au-dessus3Gio autorisés par cette direction.
+
+- Commit `06d2f56f` :347 LANCÉ après freeze `270b0019`/handover `336b9e4c`,
+  rootcontrôle `/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v347_persistent_launcher/job_20261006_a`,
+  gen344 `run_20261006_a`. Starterexit0, wrapper10252PPID1/PGID10252 observé,
+  workflow10254PGID10254 indépendant ; claimstart/job uniques, heartbeatLIVE,
+  launch5cad3edc.../start85a65398... . Premierlot4/2000 ownchild10442exit0 réel
+  confirmé/réapé, policy342 cap3Gio, worker31,377059s/peak1567293440bytes/
+  minimum77%libre/pression1/deltaswapglobal0 nonattribué ; PASS effectif.
+  Pas génération complète/permission345/GT/recall346/99,2%/SLO/READY claim.
+  Run continue, aucun score/label/dénominateur/limittemps modifié et code du
+  workflow nonédité pendant exécution. Package328 seul réutilisé, aucunfragment
+  STOP. Évaluation automatique uniquement aprèsALL500 exits0/PASS et2000scellés.
+  Aucun nouveau STOPretry ou hausse au-delà3Gio, fold0nonlu/fold1fermé/avalgelé,
+  changements utilisateur préservés, aucunpush.
