@@ -15879,3 +15879,68 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Cross-fitting234 seulement avant éventuelle feature dense aval après gate.
   V359 toujours RUNNING, dernier contrôle avant sidequest :852/2 000,
   aucune mesure ouverte ; ses guards/source/code restent inchangés.
+
+## 7 octobre 2026 — résultats nocturnes, reprise Gemma et preuves des ratés
+
+- Résultats détaillés et limites : `docs/retrieval_v366_findings_and_next.md`
+  (commit de synthèse `41ce4f94`).
+  V359 est COMPLETE à03:39:57 Paris, exit0/own workflow confirmé,
+  ALL2000/ALL500, une reprise coût du lot23. Hashes génération358/report
+  revérifiés : exact@1001 823/2 000=91,15%, opérationnel1 845=92,25%.
+  Toutes177 cibles manquées présentes dans le corpus natif. SLO/fullOOF/
+  attribution causale fine/99,2%/READY nonvalidés, fold1 toujours fermé.
+
+- Reprise FT : `076108a1` ajoute script/test/contrat cached ; essai initial
+  conservé STOP aprèsstep1+yield+MPS OOM. Runtime/données de la veille repris
+  par hashes, test/folds0/1 nonlus, aucun modèle aval changé. Gradient-cache
+  vrais batches4/micro2 ; test loss ET gradients FP64 direct/cached PASS,
+  plus2tests isolation, compilation/diff-checkPASS. Préflight5pas réels
+  exit0step1→6. Job CATNAT `SIRETO_EMBEDDINGGEMMA2/cached_20261007_a`,
+  superviseur5192 PPID1 et child5196 réels, temporaire caffeinate5193.
+  Dernier contrôle avant synthèse :step1 830, zéroreprise, best validation
+  .330919 vsbaseline.674642 sur64contrôles fixes ; RSS538 624 000,
+  driverGPU1 283 145 728bytes, libre61%, pression normale. PAS gain recall,
+  PAS entraînement terminé, test4 323 fermé. Checkpoints25pas/100validation,
+  deuxepochs/huitheures maximum ; gardes cached propres, originalretrieval
+  terminé/guards inchangés. Suivre supervisor/state/training.log ; conserver
+  checkpoint sélectionné avant comparaison dense brut/tuned sur validation
+  et vrai corpus complet des zones figées, puis protocole national.
+
+- Audit360 `7e07356b`, root CATNAT `SIRETO_RECALL100/audits/retrieval_v360_miss_evidence/run_20261007_a` :
+  re-admission ALL500358 avant labels234/2000,177misses+64hits témoins hashés.
+  BonSIREN déjà dans100 pour58misses, absent pour119.150 faibles similarités
+  noms indexés (heuristique, pas erreur causale/label fausse),49sansgéométrie
+  compatible,34GT<=300m/21>2km sur90distances disponibles. Diagnostics à
+  flags chevauchants ; aucun remplacement du dénominateur/scoring serving.
+
+- Audit361 `446b4609` :64buckets/105 564 761faits/57 530 682noms officielsV130
+  en8,56s, fichiers consommés hashés/epochs revérifiés.68misses avec variantes
+  pré-natives supplémentaires,142encore faibles lexicalement ; zérocas
+  rawsim>=.8 ET nativesim<.5. Pas audit complet des observations brutes27champs
+  masquées/nonlexicales : absence d'alias forte dans CETTE projection seulement.
+  Réindexer ces seuls noms ne semble pas combler le gap. Root `.../retrieval_v361_name_provenance/run_20261007_a`.
+
+- Audit363 `062c4dc8` root `.../retrieval_v363_transfer_coverage/run_20261007_a` :
+  originalparquet BODACC692 010ASSET_TRANSFER SIREN→SIREN hashé, jamais le
+  payload320rejeté.37misses avec lien,8avec seed naturel déjà trouvé dont6
+  parentabsent. Aucun gain d'admission revendiqué, transfert != équivalence.
+  STOP320 venait de JSON>256Mio (source originale35Mio intacte), pas de
+  preuves BODACC inexistantes. Ne pas relancer320ni promouvoir sonpayload.
+
+- Canal adresse : V362 `446b4609` STOP timeout270s sans génération complète ;
+  V364 `062c4dc8` STOP_RESOURCE à1 701/2 000/249s (budget240s), zérorecall.
+  Sorties partielles nonreprises/nonmesurées. V365 `ff1e1a60` nouveau root
+  `.../retrieval_v365_address_words_budget/run_20261007_a`, EXACT même recette
+  motsseuls avec budget explicite360s/parent390s, pas extension cachée.
+  ALL2000 en239,214s + ownchildexit0, labels après seal/admission :
+  adresse@100931/2 000=46,55%,34ratés antérieurs retrouvés mais926ancienshits
+  perdus. Ce canal n'est PAS un nouveau meilleur retrieval ni une union100.
+  Garde commune/CP dure, cache noncontrôlé, dev déjàconsommé, aucun SLO.
+  Zéroadresse9/14digits danspanel, garde générique IDs due avantindustrialisation.
+
+- Décision : PIVOT_GENERATION. Ne pas réexécuter7h du même conjoint ni ajouter
+  des34aliasesCRM/IDs comme recette. Séparer identité (lexical/dense/official
+  historique/relations) et sites (adresse/XY/parent), mesurer une admission
+  DIRECTE<=100, pas une union200ni pool2000reranké. Audit labelnoise à poursuivre
+  sans retirer/corrigerautomatiquement des labels. Milestones code explicitement
+  ci-dessus ; neufdiffs utilisateur préservés, aucunpush, aval toujoursgelé.
