@@ -16100,3 +16100,44 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Derniers owned processus confirmés par commande :pipeline9209/miner13760/
   watcher10019, aucun doublon. RAM libre60%, RSSminer~.54Gio. Ne pas modifier
   code/config actifs ni relancer : attente utile jusqu'au prochain milestone.
+
+### Contrôle nocturne01:50 — minage fini, continuation de l'exécution
+
+- V3minage complet ownedexit0 à01:29:45,117 158textes ; préflight ownedexit0
+  à01:30:24, deuxvraisbacks512/batch16/micro2/dual,23,96s, GPU1,48Go/RSS1,96Go.
+  Train baseline256 contrôles=.522988251352217, pas recall. HuitSIGTERM par
+  supervisor ressource, état live10puis20pas mais derniercheckpoint durable3.
+  Les motifs anciens groupés ne prouvent pas chaque condition déclenchée ;
+  `level!=1` tue même les alertes intermédiaires, ancienne admission45%attend.
+- Milestone `a8571178` : nouvelles exécutions `embeddinggemma2_v4_fit.py` et
+  `embeddinggemma2_v4_compare.py`, quatretests PASS migration poids/optimizer/
+  cursor/deadline, gradient FP64 V4, alertes2/critique3/4/inconnu et cap100.
+  Détail `docs/embeddinggemma2_v4_resource_continuation.md`. Pas modification
+  des codes/configs/artefacts historiquesV3, ni d'alias/labels/recette scientifique.
+- Arrêt ciblé réel après vérification de commandes :pipeline9209/watcher10019/
+  worker43832, aucun survivant. Seuls ces processus SIRETO, pas autresjobs ni
+  nettoyage des gros tmpGit. Caffeinate anciens associés se libèrent à leur exit.
+  Ne pas redémarrer V3 sur un ancien état TRAINING désormais historique.
+- Continuation V4 active PID44628/caffeinate44629, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v4/night_20261008_b`.
+  `migration.json` pins ancienlaunch000252a7…/checkpointedf4957e…,
+  step3/epoch0/cursor48, optimizer/weights/exposure/curriculum/LR/seed/minage
+  et ARTIFACTS DATA identiques. Les17pas nonpersistés observésV3 ne sont pas
+  récupérés ; pas reprise prétendue au pas20. Deadlinefit06:43:38 etnuit08:43:38
+  conservées, pas huitheures supplémentaires. Baseline/bestcheckpoint repris.
+- Seule politique exécution changée :free30admit/20yield/15supervise,
+  niveaux0/1/2 acceptés si RSS<=8Gio/mémoire restante,3/4/inconnu bloqués,
+  MPS.4 inchangé. SIGTERM coopératif batchboundary/checkpoint et45s grâce,
+  checkpoint10pas ; motifs free/pressure/RSS/deadline détaillés désormais.
+- Nouveau préflightV4 réellementPASS23,17s, mêmes pertes queV3,
+  GPU1,40Go/RSS2,73Go/free61%, aucuncheckpoint issu de ce préflight réutilisé.
+  Workerfit supervisé lancé ; état INITIAL/step à lire avant annoncer progrès.
+- Comparaison activePID44747/caffeinate44748, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v4/comparison_20261008_b`.
+  Exacte préparationV3 réutilisée par références hashées :80queries/119064sites,
+  tous noms officiels/canauxlexicaux identiques, aucunreprepare/minageGPU.
+  Watcher WAITING_FIT, scriptcontinue-prepared puis troisablations et unionRRF,
+  toujoursaucun résultat ni label ouvert pendant préparation/reprise.
+- Heartbeat existant mis à jour versV4 avec même échéance absolue ; lire les
+  nouveauxroot/state/fit/supervisor/fit/state et comparison/night_watch, pas les
+  étatsV3 périmés. Serving/aval/test4323/folds0/1gelés, aucunpush/dépenseexterne.
