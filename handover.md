@@ -15944,3 +15944,36 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   DIRECTE<=100, pas une union200ni pool2000reranké. Audit labelnoise à poursuivre
   sans retirer/corrigerautomatiquement des labels. Milestones code explicitement
   ci-dessus ; neufdiffs utilisateur préservés, aucunpush, aval toujoursgelé.
+
+## 7 octobre 2026 — training terminé et comparaison dense brut/fine-tuné
+
+- Cached FT (`076108a1`) terminé17:25 Paris, COMPLETE exit0, deuxepochs,
+  7 518pas. Meilleur adapter **step7 200**, contrôle64 validation.187265
+  vsbaseline.674642 ; dernier checkpoint.227860 nonchoisi. Test nonlu.
+- Nouveau protocole/code/tests `b377cfa7` :
+  `scripts/embeddinggemma2_compare.py`, deux tests PASS (streaming exact100
+  et IDs exclus), contrat `docs/embeddinggemma2_comparison_contract.md`.
+  Résultats/inputs/limites `docs/embeddinggemma2_comparison_results.md`,
+  commit `141f2f08`. Artefacts CATNAT :
+  `SIRETO_EMBEDDINGGEMMA2/comparison_v1/run_20261007_a` COMPLETE.
+- Validation contrastive entière2 212 :1 887 avec négatifsBM25 et325sans,
+  succès face aux négatifs76,05% brut→89,24% tuned (1 435→1 684),
+  loss.687264→.372772. PAS une mesure retrieval/fullcorpus.
+- Pilote dense sur30queries des6communes CRM hashées, TOUS33 209sites natifs,
+  actifs/fermés, sans GTinjecté, présélection lexicale ou reranker :
+  exact@10020/30→28/30, huitgains/zéroperte ; SIREN23/30→28/30 ;
+  opérationnel officiel séparé20/30→28/30. Top1 14→18, top10 18→27.
+  Deuxvariantes complètes en513,37s, ownproducerexit0 AVANT labels/sidecar
+  opérationnel hashé. ZéroGT horspartition (sinon aurait compté comme erreur).
+  Wilson95 tuned[78,68%;98,15%] : PAS preuve99,2%/nationale/SLO/fullOOF.
+- Audit training : noms/adresses/CP natifs du SIRETpositif seulement, SIREN
+  comme clé split/masquage, IDs nonfeatures. PasXY/BAN/confianceBAN/contexte
+  autres sites/relations. MêmesSIREN exclus des négatifs : pas objectif explicite
+  de discrimination des siblings. Troncature160tokens45/15 035positifsTRAIN,
+  10/2 212validation ; ne pas prétendre couverture de tous les noms en amont.
+- Décision : garder adapter expérimental prometteur, pas de promotion serving.
+  Deuxmisses nomdiscordant (INFODESCA/IRRIGARONNE, NAOS/AUBERT FRANCE) demandent
+  preuves officielles/site, jamais ajout d'aliasCRM ni exclusion/correctionauto.
+  Conserver séparation identité/site/géo pour prochaine recette initial100.
+  Recall ancienpipeline inchangé91,15%, PIVOT_GENERATION. Test4 323/fold1
+  toujoursfermés, fold0nonlu, avalgelé ; pas d'upload/push/dépenseexterne.
