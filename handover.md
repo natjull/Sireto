@@ -16078,3 +16078,25 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   hypothèse généralisable historique/enseignes/succession/géographie si temps.
   À échéance bilan mesuré/checkpoints et mettre heartbeat en pause, pas nouvelle
   nuit implicite. Aucunpush/cloud/APIpayante ; neuf dirty utilisateur préservés.
+
+### Contrôle nocturne 01:20 — calcul actif, reprise ressources réelle
+
+- Pipeline9209 actif ; ancien miner9211 a rendu exit75 après pression système
+  `free37% /pressure2 /RSS300564480`, reçu `mining/resource_yield.json`.
+  Reprise automatique vers miner13760 avec les shards liés/hachés, pas perte
+  des encodages persistés. Dernier contrôle94 464/117 158 ; aucun fit démarré.
+- Comparaison préparée :80requêtes/119 064sites complets, pas128car budget
+  prédeclare120k respecté sans sélection par outcomes ; watcher10019 actif
+  WAITING_FIT, RSS~.09Gio après restitution des objets de préparation. Sources
+  enrichies pour tous les distracteurs, pas de résultat ni de labels ouverts.
+- Alerte réelle disque interne :121–138Mio libres, CATNAT612Gio. MPS imprime
+  erreurs d'écriture de diagnostics mais le minage continue et valide finitude
+  des vecteurs. Scan limité TMP :236Gio surtout nombreux `tmp.* /objects/pack`
+  Git antérieurs, PAS notre dossier MPSGraph (0octet au contrôle). Attribution
+  au run nonprouvée ; rien supprimé/déplacé, pas nettoyage d'autres travaux.
+  Une inspection escaladée a d'abord échoué faute de place pour le verrou
+  reviewer, action nonexécutée ; nouvelle inspection après espace redevenu
+  disponible a réussi. Ne pas contourner les permissions.
+- Derniers owned processus confirmés par commande :pipeline9209/miner13760/
+  watcher10019, aucun doublon. RAM libre60%, RSSminer~.54Gio. Ne pas modifier
+  code/config actifs ni relancer : attente utile jusqu'au prochain milestone.
