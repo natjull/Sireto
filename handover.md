@@ -16024,3 +16024,57 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   absents noninventés, succession/transfert pas label positif d'identité.
   Test4 323/fold1 fermés, fold0nonlu, aucunpush/cloud/dépenseexterne ; neuf
   modifications utilisateur préservées. Préparation complète != modèle V2 validé.
+
+## 8 octobre 2026 — nuit autonome huit heures, fine-tuning et initial100
+
+- Mandat explicite utilisateur : huit heures nocturnes pour améliorer le fit et
+  le retrieval, sans coupure arbitraire courte. Pas une levée de l'isolation des
+  labels ou une permission de dépenses/cloud. Objectif exact99,2% initial<=100,
+  aval/serving gelés, test4 323/folds0/1 fermés, pas de positif injecté/aliasCRM.
+- V2 historique `run_20261007_a` réellement STOP_STAGE_FAILED mine exit1,
+  7octobre21:37:33Paris, dernier82 048/117 158encodés ; pas de fit V2 lancé.
+  Exception guard groupée STOP_V2_DATA_RESOURCE_OR_TIME, limite30min compatible
+  avec durée, mais condition temps/RSS/pression non distinguée dans le reçu.
+  Le temps ou les vecteurs en RAM de ce run ne sont pas récupérables depuis un
+  checkpoint absent ; ne pas dire repris à70%. Tous artefacts conservés.
+- Milestone `867fa154` : nouveau `scripts/embeddinggemma2_v3_fit.py`, contrat
+  `docs/embeddinggemma2_v3_night_contract.md`, tests restart/digest/deadline et
+  gradient réelV3 plus testsV2.13tests exécutés PASS avec la data safety suite
+  (inclut doublons hérités). Pas modification du code/data/hash historique.
+  Minage shards128vecteurs atomiques/hashés, reprise exact binding, matrice mmap.
+  Même source multivue officielleV2 et objectif dual-proof75/25, batch16/micro2,
+  LoRAr8 init V1best7200 ; pas claim nouvelle meilleure recette scientifique.
+  Nouveau config dérivé tracé :MPS.4/RSS8Gio/admit45/yield25/supervise20%, pression
+  normale,96reprises ressources TRAIN ; minage yield20/reprise30s. Deadline
+  globale8h08:43:38Paris, fit réserve2h comparaison, deuxepochs au plus.
+- Pipeline V3 détaché PID9209/caffeinate9210, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v3/night_20261008_a`, lancement
+  00:43:38Paris. Dernier contrôle00:48:41 :13 952/117 158encodages persistés,
+  RUNNING_MINE, PAS encore de fit ou de nouveau recall. PID à revalider par
+  commande/temps, pas tuer un PID réutilisé. Lire mining/state puis fit/preflight,
+  fit/supervisor, fit/state, checkpoints/exposition ; epoch incomplet != fit fini.
+- Milestone `e7b6fabe` : `scripts/embeddinggemma2_v3_compare.py`, contrat avant
+  résultats `docs/embeddinggemma2_v3_comparison_contract.md`,3tests PASS.
+  Cohort validation sélectionnée uniquement CRM/hash/comptages :min3queries,
+ 100–20kétablissements/commune, corpus total<=120k, viser>=128queries si possible.
+  Communes COMPLÈTES avec noms officielsV130 enrichis pour TOUS les distracteurs.
+  Publier taille réelle et GT hors partition sans filtrer les pertes.
+  Ablations V1-native160 /V1-official512 /V3-official512 ; derniers deux scores
+  exhaustifs .75SITE+.25IDENTITÉparent (max vues), sortie100 directe, pas reranker.
+  Lexical V38 national initial100 ; RRFk60 poidségaux avec chaque canal dense,
+  sortie finale100, pas pool fixe2000/500 ni score aval. Préparer/encoder les
+  sources officielles ne rend pas le dense local national et ne prouve pas99,2%.
+- Watcher comparaison PID10019/caffeinate10020, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v3/comparison_20261008_a`.
+  Action `night-run` prépare pendant minageGPU (CPU seulement), attend vrai
+  FIT_DONE_EVALUATION_PENDING, génère trois workers GPU successifs, puis évalue
+  uniquement après seals/ownedexit0. Dernier contrôle préparation officielle
+  noms64/64 ; pas de résultat. Reprises par commune hashée si resource-only ;
+  ne pas changer code/config actifs. Trainingadapter lié au hash de fitlaunch.
+- Suivi heartbeat produit créé id `sireto-nuit-fine-tuning-et-recall100`, toutes
+  30min16fois, dans CETTE tâche, deadline8octobre08:43Paris. Reprendre à partir
+  des vrais états, corriger blocages sans relancer un calcul actif, pas plomberie
+  répétitive. Après métriques auditer ratés/gains/pertes et preuve manquante,
+  hypothèse généralisable historique/enseignes/succession/géographie si temps.
+  À échéance bilan mesuré/checkpoints et mettre heartbeat en pause, pas nouvelle
+  nuit implicite. Aucunpush/cloud/APIpayante ; neuf dirty utilisateur préservés.
