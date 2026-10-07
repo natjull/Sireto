@@ -1,6 +1,6 @@
 # V2 — données préparées et paramètres d'exécution
 
-8 octobre2026 (travail commencé7octobre). Milestone données `8f841fb0`,
+7 octobre2026. Milestone données `8f841fb0`,
 contrat immuable `docs/embeddinggemma2_v2_contract.md`. Namespace données :
 `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v2/data_20261007_a`.
 

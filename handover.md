@@ -15977,3 +15977,50 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Conserver séparation identité/site/géo pour prochaine recette initial100.
   Recall ancienpipeline inchangé91,15%, PIVOT_GENERATION. Test4 323/fold1
   toujoursfermés, fold0nonlu, avalgelé ; pas d'upload/push/dépenseexterne.
+
+## 7 octobre 2026 — recette EmbeddingGemma2 V2 préparée, pipeline lancé
+
+- Autorisation utilisateur : mieux paramétrer le fine-tuning avec les données
+  disponibles, notamment les tokens coupés et la séparation entreprise/sites.
+  Baseline V1 best7200 conservée ; aucun résultat V2 annoncé, ancien retrieval
+  toujours91,15%, pas de promotion ni de modèles aval modifiés.
+- Milestone `8f841fb0` : config/contrat/preparer officiel multivue +4tests.
+  Données CATNAT `SIRETO_EMBEDDINGGEMMA2/v2/data_20261007_a` préparées exit0
+  en168,24s :176 497sites natifs de TOUS les SIREN TRAIN/validation,
+  208 031documents avec les négatifs officiels V1,208 385vues site et42 064
+  vues identité. V13064buckets noms/historiques fullhashés ; textes512tokens
+  maximum par vue, aucun truncation=True, atomes trop longs découpés explicitement.
+  Noms de siblings contexte parent seulement, pas enseignes transférées au site.
+  TRAIN15 035usable/15 036membership,1positif natif absent publié sans retrait
+  d'un futur dénominateur retrieval. Validation2 212.1 964TRAIN/281validation
+  avec négatif mêmeSIREN autre site PROUVÉ par adresse numérotée CRM/positif,
+  pas d'historique partagé/ambiguïté suffixe ; aucun sidecar eval utilisé pourfit.
+- Milestone `d8392b39` : training dual-proof, minage TRAIN-only, preflight,
+  supervision et3tests de plus.7tests PASS dont gradients pondérés cached/direct
+  FP64 et masques des équivalents. Détails `docs/embeddinggemma2_v2_execution.md`.
+  Reprise V1 rank8/alpha16 ; batch16/micro2, loss75%site/25%identité,
+  LR3e-5/warmup3%/cosine10%, température.05/decay.01/clip1.2epochs/8hmax.
+  Plan22 127exemples/epoch pour15 035queries, poids inverse nombrevues,
+  exposition réelle tracée. Validation256hash-fixed tous200pas ; arrêt3
+  nonaméliorations seulement après au moins1epoch. Sélection loss ne prouve
+  pas recall ; comparer V1anciens textes/V1nouveaux/V2nouveaux ensuite.
+- Pipeline réel PID82347 lancé et détaché, child minage82348 ; root
+  `SIRETO_EMBEDDINGGEMMA2/v2/run_20261007_a`, logs propres et stages owned.
+  Minage courant RUNNING_MINE, dernier contrôle17 280/117 158textes uniques,
+  childRSS2 095 218 688bytes.117 538sites TRAIN géographiquement atteignables
+  parmi179 825banque ; première vue par site pour minage seulement, PAS un
+  corpus d'évaluation ni mesure recall. Anciennes sources négatives excluaient
+  déjà les SIREN des autres splits ; banque nouvelle vérifiée sansSIRENvalidation.
+  Caffeinate83133 lié uniquement au PIDpipeline, libéré quand celui-ci finit.
+- Séquence automatique : minage complet exit0 → prepare → préflight deux vrais
+  backwards longs512 avec pertesdual → training supervisé SEULEMENT siPASS.
+  À la présente passation, préflight et training PAS encore exécutés.
+  Lire root/state puis mining/state, fit/preflight, fit/supervisor etfit/state.
+  STOP au moindre échec de stage ; minage30min/parent31min, preflight10min,
+  training8hdeadline. MPS cap.25/RSS5Gio/65→50→45%libre, retriesTRAIN
+  resource-only12 ; ne pas modifier le code/config déjà hashé d'un job lancé.
+- XY/BAN/confiance restent hors texte : preuves numériques de futur canal géo,
+  pas coordonnées converties artificiellement en langage. Noms/relations
+  absents noninventés, succession/transfert pas label positif d'identité.
+  Test4 323/fold1 fermés, fold0nonlu, aucunpush/cloud/dépenseexterne ; neuf
+  modifications utilisateur préservées. Préparation complète != modèle V2 validé.
