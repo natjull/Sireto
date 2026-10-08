@@ -16418,3 +16418,39 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   un sous-corpus facile ou un pool fixe reranké. Confirmation4323 seulement si
   autorisation humaine puis recette définitivement gelée ; OOF/SLO nationaux
   encore dus, aucune promotion aval/serving ou victoire99,2%.
+
+### Autorisation humaine12:09 et reprise12:14 — test conditionnel, baseline inchangée
+
+- Réponse humaine « Go » à la question explicite d'ouverture UNIQUE du test
+  réservé4323 APRES gel définitif. Milestone `dc6ee5c6` : autorisation conservée
+  dans `config/embeddinggemma2_reserved_test_authorization_20261008.json`, état
+  AUTHORIZED_CONDITIONAL_NOT_CONSUMED, membership attendu SHA256
+  `a410c10dba521cc787b6c7a4c0c97517027e01a1ec5969a8248558d1bef9a8d7` repris
+  du manifeste de split, PAS d'ouverture du fichier test. Folds0/1 toujours
+  fermés ; aucun mandat de nouvelle nuit, dépense externe ou modification aval.
+- Le calcul V12 n'était plus actif : parent97716/worker97717 absents, dernier
+  état400/2212 à09:32, ownedexit1, traceback explicite de sa garde ressources.
+  Ni génération complète ni score partiel ni label d'évaluation ouvert. La garde
+  ne publiait pas quelle sous-condition avait déclenché : ne pas attribuer
+  arbitrairement à RSS plutôt que pression/free. Ressources12:11 free73%/niveau1.
+- Même milestone `dc6ee5c6` : superviseur V13 isolé,3testsPASS avec protection
+  V12. Reprend le worker V12 ORIGINAL, mêmes hashes/panel/census/shards/algorithme
+  et limitesfree20/pression0–2/RSS8Gio. Aucun changement de ranking, texte ou
+  seuil scientifique. Reset du lecteur par nouveau processus, pas modification
+  d'un code actif hashé. Archives des ownedexits/états et exits propres à chaque
+  tentative ; seul message de garde ressources est retriable. Erreur data/code/
+  binding ou trois workers sans progrès : STOP, pas boucle aveugle. Admission
+  réelle free30/pression0–2, vérification anti-doublon avant chaque lancement.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v13/resume_20261008_a`, session
+  47270 ; commandes vérifiées12:14:55 : superviseur1299, parentV12 1302,
+  worker1303 (~2,2GioRSS). Première tentative réutilise400shards/queries scellés,
+  poursuit les suivantes ; zéro nouveau score à ce contrôle. Ne pas dupliquer
+  V12 ou V13, ne modifier aucun de leurs codes/configs hashés pendant activité.
+- Lire V13/state et attemptNN_{process,exit,state,owned_exit}, V12/state,
+  generation.log/owned_exit/generation/report. Rapport après TOUTES2212 sorties
+  et ownedexit0 seulement, avec Wilson/bootstrapSIREN/segments. Cette mesure
+  reste une BASELINE lexicale nationale, PAS le score de la fusion dense complète.
+- Autorisation4323 nonconsommée tant que recette complète nonmesurée puis nongelée.
+  Pas lancement final sur baseline seule ni sur le seul panel80, pas réglage
+  après test. Ancienne automation nocturne PAUSED, aucune nouvelle relance
+  native programmée. Sources/checkpoints/400sorties et dirty utilisateur préservés.
