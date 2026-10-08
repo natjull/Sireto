@@ -16508,3 +16508,62 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   seulement après mesure et gel définitif de recette. Folds0/1/aval/serving
   fermés/gelés, OOF/SLO/nonpristine explicités. Ancienne automationPAUSED,
   aucunpush/dépenseexterne/nettoyage et9dirtyfiles utilisateur intacts.
+
+### Changement humain16:09 — arrêt exhaustif et pilote probabiliste V15
+
+- Après ETA explicitée6–9jours, demande « Ben oui prenons quelque chose de
+  représentatif » : remplace la passe exhaustive, pas autorisation de réduire
+  les distracteurs autour du GT. ContrôleurV14 12216 SIGSTOP pour empêcher
+  relance, worker24904 zone40236/SITE512 SIGTERM coopératif, vérifié ZOMBIE avant
+  SIGTERM/SIGCONT du contrôleur. Session91527 réellement sortie143. Aucun fichier
+  supprimé, pas SIGKILL ; artefacts V14/caches/checkpoints conservés. Une première
+  vérification a rencontré ZombieProcess en lisant cmdline, sans mutation, puis
+  vérification directe statut/PPID a confirmé l'arrêt. Aucun processus ancien
+  full_validation_20261008_a actif ; ne PAS relancer ce run.
+- V14 avait fini le lookup officiel64buckets et la géographie nationale2212,
+  ownedexits0 : réutilisables. Lookup3 043 831 808bytes, SHA256
+  `43e287846a11629e38fe9ae44a99942645a7ef5aa1051059148851c304388f32`.
+  Des communes petites également prepared/encoded/sealed ownedexit0, jamais
+  évaluées. Source/state ancien peut rester RUNNING : vérifier suspension.json
+  et commandes réelles ; état interrompu n'est pas preuve d'activité.
+- Milestone `15e8e2f9` : `scripts/embeddinggemma2_v15_probability_pilot.py`,
+  contrat V15,4tests nouveaux +10V14/V10 PASS. Sélection query-only depuis
+  census complet2212, strates taillescommunes <1k/1k–10k/10k–50k/50k–200k/>=200k.
+  PermutationSHA seed fixe, tirage communes uniforme sans remise par strate,
+  nombres145(toutes)/100/40/8/2. Allocations étudiées uniquement sur coût/counts
+  query-only avec même ordre hashé, aucune repioche/filtre selon GT/score/présence
+  cible. TOUS les cas CRM et TOUS les sites officiels des communes tirées.
+- Résultat du tirage :526queries,295communes,2 554 848sites ; stratesqueries
+  174/169/111/33/39, folds2/3/4=178/162/186,109sansnuméro,3INSEEabsents inclus.
+  Grandescommunes Nantes/Lille, Paris6e/9e, Lyon6e/Villeurbanne, Marseille8e.
+  Pas sélection des seules petites communes, pas corpus réduit. KishpoidsESS
+  343,6709 :526 ne signifie PAS526 observations indépendantes, SIRENcorrélation
+  supplémentaire publiée après scellement, score certain99,2 NON promis.
+- Mesure Gemma2SITE512best1000 +lexicalnational +BAN/XY RRF60, recette identique
+  V8/V14, max100. Ancien encodeur NON réencodé, comparaison famille différée,
+  pas présentée comme mesurée. Pas training/gradient/ranker/decider/BODACC nouveau.
+  Lookup, lexical et géo complets projetés sur mêmes526 ; préparations/sorties
+  SITE compatibles réutilisées avec références et ownedexits ORIGINAUX, pas
+  nouvelles réussites fictives. Autres calculs : workers V14 ORIGINAUX immuables.
+- Scope neuf `v14/representative_20261008_b` (V15orchestration dans namespace
+  accepté par les workersV14, ne PAS confondre avec ancienne passe exhaustive).
+  Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/representative_20261008_b`,
+  log `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v15_representative_20261008_b.log`,
+  session57426. À16:24:06 contrôleur27102/caffeinate27114/workerSITE27188 pour
+  68147 vérifiés par COMMANDE ; préparation complète445sites déjà scellée,
+  encodage nouveau actif. Reprises ressources V14 conservées, code hashé actif
+  ne pas éditer, ne pas dupliquer. Lire state/worker_state/reuse/sampling,
+  zones/*/{prepare,v3_official512}_exit et logs ; source/suspension garde arrêt.
+- ETA préalable annoncée24–36h, PAS7jours/PAS garantie8h. Estimation à actualiser
+  avec débit actuel ; jamais filtrer corpus/queries pour tenir cette ETA.
+- Rapport après TOUTES526sorties et tous ownedexits0 avant labels. Scores bruts
+  descriptifs et taux représentatif pondéré séparés : Hájek calibré aux totaux
+  queries desstrates2212. Publier probabilitésd'inclusion/poids, bootstrap
+  stratifié COMMUNES avec correctionpopulationfinie/variancebootstrap et
+  bootstrappondéréSIREN, APPROXIMATIFS. Wilsonbrut ne couvre pas ce sondage,
+  bootstrap dégénéré sans raté possible ;2trèsgrandescommunes donnent forte
+  incertitude. Aucune garantie99,2/distribution-free/OOF/SLO/pristine.
+- Test4323 nonconsommé, folds0/1 fermés, aval/serving gelés, automationnative
+  ancienne PAUSED. Aucune dépenseexterne/push/nettoyage ni modification des9
+  dirtyfiles utilisateur. Confirmations exhaustives restent dues, pas relance
+  implicite de l'ancienne passe après le pilote.
