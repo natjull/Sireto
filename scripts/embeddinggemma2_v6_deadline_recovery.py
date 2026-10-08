@@ -12,7 +12,6 @@ import time
 from scripts import embeddinggemma2_night as io
 from scripts import embeddinggemma2_v4_fit as fit
 from scripts import embeddinggemma2_v4_compare as paired
-from scripts import embeddinggemma2_v5_geo as geo
 from src.xgb_matcher.retrieval_v20_workbench import record, verify
 
 OUTPUT = io.HOME / 'v6'
@@ -77,8 +76,8 @@ def migrate_checkpoint(source, out):
     return states['checkpoint.pt']
 
 
-def owned_call(out, action, deadline, variant=None):
-    command = [sys.executable, '-u', '-m', 'scripts.embeddinggemma2_v6_deadline_recovery',
+def owned_call(out, action, deadline, variant=None, python=None):
+    command = [str(python or sys.executable), '-u', '-m', 'scripts.embeddinggemma2_v6_deadline_recovery',
         action, '--output', str(out)]
     if variant: command += ['--variant', variant]
     name = variant or action
@@ -143,7 +142,8 @@ def recover(source, comparison, geographic, out):
         'original_owned_exit': record(geographic / 'generation_exit.json')})
     io.write(new_geo / 'generation.json', generation)
     io.write(new_geo / 'generation_exit.json', receipt)
-    geo.evaluate(new_geo)
+    code = owned_call(new_geo, 'evaluate-geo', deadline, python=io.ROOT / '.venv/bin/python')
+    if code: raise RuntimeError('Geographic evaluation exit ' + str(code))
     io.write(new_geo / 'state.json', dict(status='COMPLETE_GEO_COMPARISON'))
     io.write(out / 'state.json', dict(status='COMPLETE_MEASURED_PARTIAL_TRAINING',
         comparison=record(new / 'report.json'), geographic=record(new_geo / 'report.json'),
@@ -152,7 +152,7 @@ def recover(source, comparison, geographic, out):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('action', choices=['recover', 'finalize', 'generate'])
+    parser.add_argument('action', choices=['recover', 'finalize', 'generate', 'evaluate-geo'])
     for name in ('source', 'comparison', 'geographic', 'output'):
         parser.add_argument('--' + name, type=Path, required=name == 'output')
     parser.add_argument('--variant', choices=paired.VARIANTS)
@@ -161,6 +161,9 @@ if __name__ == '__main__':
     try:
         if args.action == 'finalize': sys.exit(fit.worker(args.output))
         elif args.action == 'generate': paired.generate(args.output, args.variant)
+        elif args.action == 'evaluate-geo':
+            from scripts import embeddinggemma2_v5_geo as geo
+            geo.evaluate(args.output)
         else: recover(args.source, args.comparison, args.geographic, args.output)
     except fit.ResourceYield as error:
         io.write(args.output / 'resource_yield.json', dict(reason=str(error))); sys.exit(75)
