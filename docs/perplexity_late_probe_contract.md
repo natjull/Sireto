@@ -7,7 +7,7 @@ Ce premier essai n'est PAS un benchmark de recall ni un corpus représentatif.
 Modèle `perplexity-ai/pplx-embed-v2-late-0.6b`, révision immuable
 `8fc2de24534aa3610d85fa59c463313a5f096455`, poids publics float32, attention eager,
 MPS sans fallback CPU, prompts query/document natifs du modèle et MaxSim natif.
-Aucun remote code, installation/mise à jour de dépendances, fine-tuning,
+Aucun remote code, installation/mise à jour du runtime ACTIF, fine-tuning,
 quantification ni changement du serving ou des modèles aval.
 
 Sources : panel query-only V15 folds2/3/4 et documents officiels entièrement
@@ -36,3 +36,10 @@ communes COMPLÈTES et mêmes requêtes que Gemma, recherche initiale<=100, avec
 lexical/géo puis fusion scellée avant labels. Pas de rerank d'un pool Gemma.
 
 Source primaire : https://huggingface.co/perplexity-ai/pplx-embed-v2-late-0.6b
+
+Premier essai `probe_20261008_a` STOP avant inférence : processeur multimodal
+exige Pillow/Torchvision absents du runtime. Reprise `probe_20261008_b` avec
+overlay CATNAT séparé `vision_overlay`, Pillow12.3.0/Torchvision0.29.1 installés
+sans dépendances ; torch2.14.1/transformers/ST originaux inchangés. PYTHONPATH
+de CE processus uniquement. Aucune étape de modèle/corpus/labels changée,
+premiers artefacts conservés. Résultat à vérifier, pas présomption MPS.

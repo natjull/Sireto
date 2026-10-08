@@ -13,7 +13,7 @@ import subprocess
 import time
 
 ROOT = Path('/Volumes/CATNAT_DATA/SIRETO_PPLX')
-OUTPUT = ROOT / 'probe_20261008_a'
+OUTPUT = ROOT / 'probe_20261008_b'
 SOURCE = Path('/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/representative_20261008_b')
 REVISION = '8fc2de24534aa3610d85fa59c463313a5f096455'
 MODEL = ROOT / 'hf_cache/models--perplexity-ai--pplx-embed-v2-late-0.6b/snapshots' / REVISION
@@ -181,7 +181,7 @@ def run():
             document_vectors_bytes=sum(v.numel()*v.element_size() for v in vectors),
             mps_peak_observed_driver_bytes=peak_driver, mps_peak_observed_current_bytes=peak_current,
             rss_bytes=psutil.Process().memory_info().rss,
-            versions={p: importlib.metadata.version(p) for p in ('torch','transformers','sentence-transformers')},
+            versions={p: importlib.metadata.version(p) for p in ('torch','transformers','sentence-transformers','pillow','torchvision')},
             labels_read=False, retrieval_evaluated=False, serving_or_gemma_changed=False)
         save('report.json', report)
         save('state.json', dict(status=report['status'], pid=os.getpid()))
