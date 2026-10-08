@@ -16239,3 +16239,45 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   variantes_generation/exit, geo/report, recovery_error, puis auditer les gains/
   pertes si temps. Ne pas relancer V4 ni V5. Test4323/folds0/1/aval gelés ; aucun
   nouveau label d'évaluation lu, aucun push/dépense/nettoyage utilisateur.
+
+### Contrôle07:18–07:32 — baseline complète, optimisation rejetée, canal SITE prioritaire
+
+- V6 native160 réellement COMPLETE ownedexit0 :80queries,107682 textes,
+  18 textes tronqués historiques,938,7054189168848s ; sorties scellées avant
+  labels. Deuxième ablation officielle512 autour de45textes/s : environ215k
+  encodages site+identité par variante, deux variantes restantes incompatibles
+  avec deadline08:43. Aucun recall partiel publié ou label ouvert.
+- Arrêt ciblé du worker90219, commande exacte vérifiée, puis parent87741 sorti
+  de lui-même avec génération interrompue. Toutes sorties/receipts V6 conservées,
+  pas modification du code/fit/baseline complète. Aucun processus V6 survivant.
+- Milestone `d5dc6862` V7 : lots32/tri par longueur et préflight numérique/vitesse,
+  deux tests CPU PASS ordre/absence de suppression. Préflight réel REFUSÉ,
+  ownedexit1 : abs.005123790353536606 et cos.000349581241607666 dépassent les
+  tolérances préfixées .002/1e-5. Aucun assouplissement, aucune génération V7
+  admise ni label lu. Code/artefacts V7 historiques conservés, aucun survivant.
+- Milestone `f979b4bc` V8 : nouveau contrat, génération SITE exhaustive et deux
+  tests PASS cap/scellés/ownedexit0 obligatoire avant labels. Hypothèse figée
+  AVANT outcomes : nom+adresse SITE seul, maxcosinus de toutes les vues propres,
+  sans mélange .25 identité parent. Motivation : objectifsite fortement appris,
+  identité encore faible, intérêt d'un canal dense indépendant du lexical/géo.
+  Économise les encodages identité, PAS des sites, queries ou vues SITE.
+- Encodeur ORIGINAL batch8/poids V6best1000/textes inchangés, aucune étape de
+  gradient. Même80queries/119064sites de communes COMPLÈTES. Nouvelle comparaison
+  de deux pipelines avec baseline native160 scellée réutilisée ; ablation
+  intermédiaire officielle V1 et canal identité NON mesurés. Effets des textes
+  enrichis et du fine-tuning ne sont PAS isolés. Ne pas présenter troisablations
+  finies. Champ v3_official512 = modèle/textes, mais score V8 explicitement
+  MAX_SITE_VIEW_COSINE_NO_PARENT_BLEND, site1/identity0, pas dual V4/V6.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v8/site_pipeline_20261008_a`,
+  parent92717/caffeinate92718/worker92726 vérifiés par commande, session96274.
+  Log `SIRETO_EMBEDDINGGEMMA2/v8_site_pipeline_20261008_a.log`. Génération réelle
+  premièrezone83062,640/17552textes SITE en15,25s au contrôle07:32. Aucun autre
+  calcul GPU actif. Ne pas relancer V4–V7 historiques ni modifier code hashé V8.
+- Après les DEUX générations complètes, ownedexit0 et scellés : V8/report et
+  outcomes exact/SIREN/opérationnel/Wilson/segments/gains/pertes, puis V8/geo
+  réutilise le scellé V5 et fusion finale100 SITE+lexical national+géographie,
+  mêmeRRF60/poidsBANfaible.5, aucun rescan/injection/filtreGT. Attendre utilement.
+- Heartbeat mis à jour vers V8 ; échéance08:43 inchangée, pas nouvelle nuit.
+  80queries restent diagnostic géosélectionné, ni nationale99,2%, ni OOF/SLO.
+  Test4323/folds0/1/aval gelés, modifications utilisateur préservées, aucunpush/
+  dépense/nettoyage. À deadline conserver artefacts, bilan honnête et pause.
