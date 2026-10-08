@@ -16641,3 +16641,30 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   pressionmémoire1normale et swapstable5076,56Mo pendant premier shardPPLX.
   Pas de signal envoyé àV15, pas de modèleaval/serving/training modifié.
   Test4323/folds0/1 fermés.9dirtyfiles étrangers intacts, aucunpush/spend/cleanup.
+
+### 9 octobre 2026 — reprise explicite du pilote Gemma après disparition des processus
+
+- Autorisation humaine « Relance ! ». Contrôleur27102 et worker38144 absents,
+  dernier shard durable zone34057 vers23:11 le8octobre, aucun ownedexit final
+  ni traceback : cause de disparition NON établie, pas assimilée à une erreur
+  mémoire. Machine non redémarrée depuis19août. État RUNNING ancien obsolète.
+- 270/295communes achevées,899798/2554848sites (~35,2%) ;13shards1024textes
+  de34057 scellés. Tous artefacts conservés. Aucune ouverture de labels partiels.
+- Reprise à binding identique : orchestrateurV15 commit15e8e2f9 et workersV14
+  commit3b83dfda inchangés, authority PASS sur implémentations/sources/model.
+  Même526queries, corpus exhaustifs tirés, checkpointbest1000, scoreSITE512,
+  lexical/géo/RRF, splits et seuils ressources. Aucun nouveau training.
+- Lancement détaché nohup/session propre (pas lié au terminal précédent),
+  contrôleur46892/worker46896 vérifiés par commande ; root inchangé
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/representative_20261008_b`.
+  Nouveau log append-only dédié
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v15_representative_20261009_resume_a.log`.
+  Reprise native des shards scellés, progression FULL_CORPUS_ENCODING nouvelle
+  confirmée avec PID46896 à1791498723.092567. Aucune sortie/ownedexit inventée
+  pour l'essai interrompu. Caffeinate et retries ressources natifs conservés ;
+  nohup ne garantit pas une reprise après reboot/kill du contrôleur.
+- Aucun autre Gemma/Perplexity actif avant lancement. CATNAT587Gio libres,
+  interne65Gio, mémoire libre80%. Pas d'ancien run exhaustif relancé ni
+  automation réactivée. Test4323/folds0/1 fermés, aval gelé,9dirtyfiles
+  utilisateur préservés, aucunpush/dépense/nettoyage. ETA à recalculer après
+  progression réelle ; ancienne fenêtre invalidée par l'interruption.
