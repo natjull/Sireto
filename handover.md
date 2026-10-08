@@ -16567,3 +16567,33 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   ancienne PAUSED. Aucune dépenseexterne/push/nettoyage ni modification des9
   dirtyfiles utilisateur. Confirmations exhaustives restent dues, pas relance
   implicite de l'ancienne passe après le pilote.
+
+### 8 octobre 2026 — essai Perplexity late-interaction sur Metal, sans labels
+
+- Autorisation « Tente le » après proposition d'un court essai technique à côté
+  de Gemma. Milestone `c0cd459b` : script `perplexity_late_probe.py`, contrat,
+  2tests PASS ; modèle0,6B revision8fc2de24534aa3610d85fa59c463313a5f096455.
+- EssaiA STOP avant inférence (Pillow/Torchvision absents). Milestone3255a207 :
+  repriseB avec overlayCATNAT dédié Pillow12.3.0/Torchvision0.29.1 sansdeps,
+  PYTHONPATH du seul processus Perplexity. Runtime Gemma inchangé, aucun
+  torch/transformers/ST remplacé, premiers artefacts et cache conservés.
+- EssaiB COMPLETE_TECHNICAL_ONLY_NO_RECALL, own session8483 exit0 : MPS sans
+  fallbackCPU, float32/eager/batch4,4queries/128documents officiels courts,
+  aucune troncature,128dims/token, oracleMaxSim écart0. Encodage17,047s soit
+  7,509textes/s ;4queries260,6ms ;MaxSim512pairesCPU20,4ms. Empreinte réelle
+  vmmap4,4Gio/pic4,5Gio, driverMPS~3,42Gio, RSS~705Mio. Compteurs mesurés
+  sous concurrence Gemma, pas débit isolé/SLO/ETA national.
+- 4petitescommunes déjà préparées uniquement pour hardware : docs hashés,
+  32parcommune, corpus réduit EXPLICITEMENT NON utilisé pour recall. Aucun
+  label/candidatGemma/fold0/1/test4323 lu. Identifiants sélection/jointure
+  seulement, aucun modèle aval/serving ou gradient. Référence kernels
+  PyTorch Qwen3.5 moins optimisés queCUDA, pas installationCUDA.
+- Root `/Volumes/CATNAT_DATA/SIRETO_PPLX/probe_20261008_b` : report/state,
+  inputs sources scellées, memoryvmmap. Cachepublic~2,4Go sur CATNAT. Aucun
+  rescan national ni passePerplexity2,55Msites lancée. Prochaine décision :
+  évaluation initial100 appariée sur communes COMPLÈTES dont zone dense,
+  lexical/géo figés, labels ouverts seulement après sorties scellées.
+- GemmaV15 toujours actif après probe : controller27102/worker59799 zone33013,
+  workerstate1791478106.127674, aucun signal envoyé ni config active modifiée.
+  Ne pas relancer de controller.9dirtyfiles utilisateur intacts, aucunpush,
+  dépenseexterne/nettoyage. Résultat détaillé `docs/perplexity_late_probe_result.md`.
