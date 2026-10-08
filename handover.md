@@ -16179,3 +16179,25 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Commit45257a19réussiensuite ; hashcodeexécutéidentique, pas résultats relus.
 - Ne pasrelancergéoactive/scellée. AprèsrapportV4 lireV5/report/outcomes pour
   apportspécifiqueetpertes. Budget08:43inchangé, test4323/folds0/1/aval gelés.
+
+### Contrôle nocturne03:48 — deux validations améliorées, exécution stable
+
+- Suivi du milestone scientifique/exécution `a8571178`, sans changement de
+  recette ni de code actif. Fit V4 au pas510, epoch0, cursor8160/22127 exemples
+  du plan ; aucune reprise (`history=[]`, `restarts=0`). Cela ne signifie pas
+  une époque complète ni que toutes les variantes positives ont été exposées.
+- Même contrôle préfixé de256 requêtes : baseline loss .522988251352217,
+  pas200 .29679154459154233, pas400 .23754887498216704. Au pas400, composantes
+  site .07310560694895685 et identity .7308786790817976 ; au pas200 elles
+  étaient .14772511762566864 et .7439908254891634. Le gain vient surtout de
+  l'objectif site, pas encore d'une preuve de recall initial100 ou nationale.
+- Commandes réelles confirmées : parent44628/worker44710, comparaison44747,
+  watcher géographique50054. Aucun doublon ni nouveau calcul lancé. Comparaison
+  WAITING_FIT et géo SEALED_GEO_WAITING_COMPLETE_DENSE_COMPARISON ; aucun nouveau
+  label d'évaluation ouvert. Checkpoints et artefacts conservés sur CATNAT.
+- Disque interne désormais50Gio libres, CATNAT608Gio. Aucun nouveau nettoyage
+  effectué par cette tâche ; origine de l'espace récupéré non attribuée.
+  L'inspection escaladée des processus a maintenant réussi, contrairement au
+  contrôle03:18 bloqué par l'initialisation du reviewer faute d'espace.
+- Échéances06:43fit/08:43nuit inchangées. Attendre la comparaison complète et
+  scellée avant de choisir une nouvelle hypothèse ; test4323/folds0/1/aval gelés.
