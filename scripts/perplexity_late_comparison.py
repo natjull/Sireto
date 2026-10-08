@@ -14,11 +14,10 @@ from scripts import embeddinggemma2_v14_full_pipeline as engine
 from scripts import embeddinggemma2_v15_probability_pilot as pilot
 from scripts import embeddinggemma2_v10_representative as population
 from scripts import embeddinggemma2_v3_compare as paired
-from scripts import embeddinggemma2_v5_geo as spatial
 from scripts import perplexity_late_probe as probe
 from src.xgb_matcher.retrieval_v20_workbench import record, verify
 
-OUTPUT = io.HOME / 'v14/perplexity_paired_20261008_a'
+OUTPUT = io.HOME / 'v14/perplexity_paired_20261008_b'
 RUNTIME = io.HOME / 'runtime/bin/python'
 OVERLAY = probe.ROOT / 'vision_overlay'
 
@@ -214,6 +213,7 @@ def generate(zone):
 
 
 def seal_all():
+    from scripts import embeddinggemma2_v5_geo as spatial
     launch = engine.authority(OUTPUT)
     panel = io.read(verify(launch['panel']))
     scope = {q['query_id'] for q in panel}

@@ -55,3 +55,9 @@ ayant servi au choix checkpoint, pas OOF/national/SLO/pristine/READY_FOR_FOLD1.
 Fold0/1/test4323 restent fermés. Pas de score partiel deV15 présenté comme
 sa validation complète. RecettesV15hashées inchangées ; aucun ajustement selon
 ces27 résultats dans un run actif. Chaque milestone commité au handover.
+
+Première tentativeA STOP avant chargement du modèle : import de l'utilitaire
+géo exigeait DuckDB dans le runtime GPU, alors que celui-ci n'en a pas besoin.
+Correction d'import différé, nouvelle exécutionB à
+`v14/perplexity_paired_20261008_b`. Même sélection/données/poids/recettes ;
+A et son exit1 conservés, aucune dépendance/runtime active modifiée.
