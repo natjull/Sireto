@@ -1,0 +1,25 @@
+{
+  "schema": "sireto-reserved-test-conditional-one-shot-1",
+  "status": "AUTHORIZED_CONDITIONAL_NOT_CONSUMED",
+  "human_reply": "Go",
+  "human_question": "Pour confirmer ensuite la recette, m’autorises-tu à ouvrir une seule fois le test réservé de 4 323 requêtes, après gel définitif ?",
+  "recorded_at_utc": "2026-10-08T10:09:06Z",
+  "authorized_population": "embeddinggemma2_reserved_test_4323",
+  "expected_queries": 4323,
+  "allowed_folds": [2, 3, 4],
+  "expected_membership_sha256": "a410c10dba521cc787b6c7a4c0c97517027e01a1ec5969a8248558d1bef9a8d7",
+  "maximum_openings": 1,
+  "conditions": [
+    "Finalize the retrieval recipe on development validation without reading this test.",
+    "Seal recipe, model, text builders, corpora, fusion, evaluation policy and implementations before test access.",
+    "Publish representative development evidence and its limitations; do not call the lexical baseline a dense-fusion result.",
+    "Generation sees only query inputs and official sources; seal all test outputs and confirm owned exits before evaluation labels.",
+    "No post-test recipe selection or tuning. Report all usable human labels, exact and operational separately, and uncertainty."
+  ],
+  "fold0_open_authorized": false,
+  "fold1_open_authorized": false,
+  "external_spending_authorized": false,
+  "downstream_model_changes_authorized": false,
+  "new_overnight_automation_authorized": false,
+  "test_opened": false
+}
