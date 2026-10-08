@@ -16362,3 +16362,59 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   exact initial100 (98,75%), également79/80opérationnel ; objectif99,2% national
   NON ATTEINT/NON VALIDÉ. Reprise uniquement après demande humaine explicite,
   sans retuner sur les80outcomes ni rouvrir test4323/folds0/1/aval gelés.
+
+### Reprise humaine09:08–09:28 — complémentarité figée et validation représentative
+
+- Nouvelle autorisation humaine : poursuivre la complémentarité et obtenir une
+  mesure représentative. Aucun nouveau mandat nocturne ; ancienne automation
+  laissée PAUSED. Test4323/folds0/1 toujours fermés. Question native envoyée pour
+  autorisation éventuelle d'ouverture UNIQUE du test4323 après gel de recette,
+  pas pour ouvrir fold1 ; aucune réponse/autorisation constatée à ce stade.
+- Milestone `2358da76` : V10 fusion de famille dense et recensement intégral,
+  contrat/tests5PASS. Hypothèse préfixée : MAX des contributionsRRF60 ancien/
+  nouveau dense, puis lexical/géo, afin de ne pas doubler des preuves corrélées.
+  Aucun quota fixe/reranker/master2000/500 ni règle ciblantNAOS ; initial100.
+- Recensement réellement completed exit0, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v10/census_20261008_a` :2212queries,
+  1430SIREN disjoints TRAIN,937communes,87départements connus+UNKNOWN ; folds
+  2/3/4=714/757/741,3communes inconnues,341adresses sans numéro conservées.
+  196queries partagent un SIREN avec ancienpanel80,2016non. Le recensement
+  n'ouvre aucun label pour score/génération ; IDs seulement splits/roles.
+- Coût structurel constaté : somme des corpus complets de ces communes
+  19 097 808sites, contre119064 dans ancienpanel13communes. L'ancienpanel
+  excluait explicitement les communes>20000sites ; il n'était pas un échantillon
+  probabiliste national. Ex : Paris8e503476sites, Toulouse438882, Nice389768.
+  Refaire les deux encodages intégralement représenterait plusieurs jours au
+  débit constaté, avant dédup/enrichissement. Aucun calcul dense19M lancé en
+  silence. Une mesure future doit éviter de rejeter les grandes communes et
+  publier la portée exacte ; accélérer en changeant le corpus serait une autre
+  hypothèse scientifique, pas une comparaison identique à la nuit.
+- La validation2212 représente la population CRM disponible, pas tout futur CRM.
+  Utilisée pour checkpoint et développement historique, pas holdout pristine.
+  Wilson de planification à99,2% sur2212 ≈[98,72%;99,48%] ; sur4323
+  ≈[98,88%;99,42%], pas score certain/gateWilsonbas99,0%. Bootstrap par SIREN
+  exigé pour dépendance multisite, exact/SIREN/opérationnel toujours séparés.
+- Milestone `66340b40` : V11 replay diagnostique une seule fois de la recette
+  figée sur les80déjà lus, vraie génération ownedexit0 puis labels, root
+  `SIRETO_EMBEDDINGGEMMA2/v11/family_posthoc_20261008_a`. Résultat79/80exact,
+  SIREN/opérationnel79/80,0gain/0perte contre fusionV8. PAS nouvelle preuve
+  représentative ni amélioration ; poids non retunés. V10/V12 tests6PASS.
+- Même milestone : V12 baseline nationale lexicale directe100 sur TOUTES les
+  2212queries, pour mesurer le niveau global et préparer un canal réutilisable.
+  Ce n'est PAS le résultat de la fusion dense. Root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v12/lexical_validation_20261008_a`.
+  Parent97716/worker97717 vérifiés par commande, session73656. Ressource réelle
+  worker~3,6GioRSS/~79%unCPU, aucun GPU. À09:24:52,80/2212sorties scellées,
+  165,28s ; aucun recall partiel évalué. Shards16 hashés permettent reprise à
+  binding identique ; garde réelle free20/pression0–2/RSS8Gio, pas filtrelabel.
+  Code actif commité et immuable. Ne pas dupliquer ce calcul.
+- V12 attend génération2212 complète et ownedexit0 avant tout label, puis
+  publie métriques/Wilson/bootstrapSIREN2000tirages/segments folds/roles/V2/V3/
+  origine/état. Lire state, owned_exit, generation, report et generation.log.
+  Suivi automatique natif non réactivé, pas nouvelle nuit implicite. Aucunpush/
+  dépense/externe/nettoyage ni modification des9dirtyfiles utilisateur.
+- Prochain verrou scientifique : décider du support de recherche dense qui
+  permette une validation large et une future inférence réaliste, sans substituer
+  un sous-corpus facile ou un pool fixe reranké. Confirmation4323 seulement si
+  autorisation humaine puis recette définitivement gelée ; OOF/SLO nationaux
+  encore dus, aucune promotion aval/serving ou victoire99,2%.
