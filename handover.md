@@ -16597,3 +16597,47 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   workerstate1791478106.127674, aucun signal envoyé ni config active modifiée.
   Ne pas relancer de controller.9dirtyfiles utilisateur intacts, aucunpush,
   dépenseexterne/nettoyage. Résultat détaillé `docs/perplexity_late_probe_result.md`.
+
+### 8 octobre 2026 — comparatif Perplexity/Gemma initial100 réellement lancé
+
+- Autorisation humaine « Vas-y check ». Milestone `69416e4d` : code/contrat
+  `perplexity_late_comparison`,4tests nouveaux ;11tests comparatif/probe/V14 PASS.
+  Sélection query-only figée AVANT labels : une commune query-rich par strate
+  1–999/1000–9999/20000–49999sites, hash ex-aequo ; cas sanscommune inclus.
+  39510 :4queries/567sites ;66048 :6/1146 ;71076 :14/29348 ;UNKNOWN :3/0.
+  TOTAL27queries/31061sites, corpus exhaustifs actifs/fermés, pas corpus autour
+  duGT ni résultatschoisis. Ce n'est PAS un panel probabiliste/représentatif,
+  très grandesvilles nonmesurées, aucun score99,2 national promis.
+- SITE512 littéralement mêmes textes officiels que Gemma2best1000, Perplexity
+  0,6B publicrevision8fc2de24534aa3610d85fa59c463313a5f096455, nativeprompts,
+  tokenMaxSim puisMAXparvue, recherche exhaustive directe100 sans poolGemma.
+  Float32/eager/batch4 MPS sansfallbackCPU ; aucune troncature silencieuse.
+  Shards128raggedfloat32 hashés, bindings identiques pour reprise, MaxSimCPU
+  borné. Géo/lexicalnationaux V15 projetés, aucun rescan. Noms propriétaire
+  officiels complets réutilisés ; code/configs et checkpointsV15 inchangés.
+- Pipelines figés :Gemma+lexical+géo ;Perplexity+lexical+géo ;familledense
+  MAXcontributionRRF Gemma/Perplexity+lexical+géo (pas doublevote dense).
+  RRF60 et fiabilitéBAN inchangés, cap100. Canaux seuls également publiés.
+  Toutes sorties27/corpus/ownedexits0 et sceauglobal AVANT labelsvalidation234,
+  sidecarofficiel requis ; exact/SIREN/opérationnel/Wilson descriptif/segments
+  et gainspertes appariés après. Pas scorepartielV15, pristine/OOF/SLO/nationale.
+- TentativeA root`v14/perplexity_paired_20261008_a` STOP exit1 avant chargement :
+  importgéo exigeait DuckDB absentruntimeGPU. Milestone `bc24a413` différé
+  l'importCPU, A conservé, aucun ajout runtime. Même recette/scope dans B.
+- ACTIF root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/perplexity_paired_20261008_b`,
+  session80744, controller64221/worker64230 vérifiés par COMMANDE. À
+  1791479390.6209111, zone39510 :384/508textes durables,567sites complets,
+  52,829s (~7,27textes/s encodage+scoring+cache),3shards scellés. Aucun label
+  encore ouvert. ETAprudente1–3h, gros corpus/tokenlongs inconnus. Lire
+  state/worker_state, zones/*/perplexity_generation, *_exit, *.log,
+  perplexity_vectors/*seals, puis generation/all_outputs/report/outcomes.
+- Supervisionadmitfree30/pression0–2 ;yieldfree20/driverMPS6Gio/RSS8Gio ;
+  signal coopératif du seul enfantPPLX si free15/pressionanormale/RSS9Gio,
+  reprise ressources75 uniquement+3sansprogrèsSTOP, namespaces/hashes figés.
+  Attendre si calculGemma mêmezone déjà actif. ConcurrenceGPU peut ralentir
+  Gemma, ne pas promettre débitinchangé. Aucune automation nouvelle créée.
+- V15Gemma toujours vivant controller27102/worker64072 zone67348 au contrôle,
+  pressionmémoire1normale et swapstable5076,56Mo pendant premier shardPPLX.
+  Pas de signal envoyé àV15, pas de modèleaval/serving/training modifié.
+  Test4323/folds0/1 fermés.9dirtyfiles étrangers intacts, aucunpush/spend/cleanup.
