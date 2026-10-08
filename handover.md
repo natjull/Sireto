@@ -16201,3 +16201,41 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   contrôle03:18 bloqué par l'initialisation du reviewer faute d'espace.
 - Échéances06:43fit/08:43nuit inchangées. Attendre la comparaison complète et
   scellée avant de choisir une nouvelle hypothèse ; test4323/folds0/1/aval gelés.
+
+### Bascule06:43–06:57 — validation finale récupérée sans nouveau training
+
+- V4 a été réellement interrompu par son superviseur à la deadlinefit :
+  SIGTERM puis SIGKILL après45s, owned exit-9, raison deadline=true/free65%/
+  pression1/RSS1,75Go. État BUDGET_EXHAUSTED et pipeline NIGHT_INTERRUPTED,
+  watcher comparaison interrompu. Aucun processus de fit/comparaison V4
+  survivant confirmé par commande ; fichiers historiques conservés immuables.
+- Milestones `3a057ee6` puis `fe5b72f8` : script V6 de finalisation, contrat et
+  deux tests PASS (bindings, poids/optimizer/cursor/deadlines/sources immuables,
+  refus d'un fit encore actif ou d'un arrêt non lié à la deadline). Le premier
+  essai d'import des tests avait échoué car runtimeGemma sans DuckDB ; corrigé
+  par import différé et évaluation géographique dans la .venv EXISTANTE,
+  sans installation ni modification d'un code historique hashé.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v6/deadline_recovery_20261008_a`.
+  Migration exacte du checkpoint durable1340/epoch0/cursor21440, meilleur1000/
+  cursor16000, optimizer/poids/objectifs/LR/seed/splits/échéances identiques.
+  Les boucles d'apprentissage du worker original sont sautées puisque sa
+  deadlinefit est passée : AUCUNE étape de gradient supplémentaire.
+- Validation finale réellement ownedexit0 à06:56:43 : état
+  TIME_BUDGET_CHECKPOINTED, step1340/epoch0 inchangés, bestloss.20020603567536455,
+  finalloss.2011061841767514. View exposure .973249311409732, toutes vues NON
+  exposées ; ni époque complète ni convergence nationale prétendue.
+- Parent V6 PID87741/caffeinate87742, session54138 ; premier essai nohup
+  n'avait produit ni processus ni namespace, puis session persistante vérifiée.
+  Log `SIRETO_EMBEDDINGGEMMA2/v6_deadline_recovery_20261008_a.log`.
+  Comparaison V6/comparison INITIAL100_GENERATING réelle : première ablation
+  v1_native160, zone83062,3968/17506textes en36,52s au contrôle06:57.
+  Exactement les80queries/119064sites/textes/lexical/RRF de V4, pas reprepare.
+- V5 watcher50054 devenu orphelin du rapport V4 arrêté volontairement après
+  vérification exacte de commande ; géographie scellée et vrai ownedexit0
+  conservés. V6/geo réutilisera ces sorties sans rescan après les trois
+  générations complètes, scellées et leurs ownedexit0. Aucun recall partiel.
+- Heartbeat existant redirigé vers V6 avec même cadence/échéance absolue08:43,
+  pas nouvelle nuit. Lire V6/state, fit/state/finalize_exit, comparison/state,
+  variantes_generation/exit, geo/report, recovery_error, puis auditer les gains/
+  pertes si temps. Ne pas relancer V4 ni V5. Test4323/folds0/1/aval gelés ; aucun
+  nouveau label d'évaluation lu, aucun push/dépense/nettoyage utilisateur.
