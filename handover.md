@@ -16141,3 +16141,41 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Heartbeat existant mis à jour versV4 avec même échéance absolue ; lire les
   nouveauxroot/state/fit/supervisor/fit/state et comparison/night_watch, pas les
   étatsV3 périmés. Serving/aval/test4323/folds0/1gelés, aucunpush/dépenseexterne.
+
+### Contrôle nocturne02:18–02:28 — fit stable et preuve géographique indépendante
+
+- FitV4 actif worker44710,120paspuis150,epoch0/cursor2400, aucune reprise
+  depuis correction(historyvide). Dernierdriver1,28Go/RSS1,51Go/free63%.
+  Premiercontrôle256queries au pas200 PAS encore disponible, aucune métrique
+  recall nouvelle. Ne pas interpréter trainingloss fluctuante comme validation.
+- Milestone `45257a19` : `scripts/embeddinggemma2_v5_geo.py`, contratV5 et3tests
+  PASS radius selon flags/incertitude BAN, streamingnearest100 exact incluant
+  égalités, fusionpondérée/cap100. Nouvelle preuve indépendante, pas modification
+  des codes/configs/fit/comparaisons actifs. Mêmecohort80 avant tout nouveauGT.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v5/geo_20261008_a`,
+  superviseurPID50054/caffeinate50055. Runtime principal.venv(DuckDB1.4.3,
+  NumPy2.4.1/PyArrow23), CPU1/tempCATNAT/memoryDuck384Mo, AUCUN GPU.
+  BANhelper327 query-only EXACT normalisé etcompatibilitéLambert93, source
+  BAN/hash/impls vérifiées. Lescoords43896818natifs keys96/XY126 fullhashés
+  pre/post, ordrestrictunique etshapecontrôlés. Pas decoordsGT,append/historique
+  sansXYpasinventés. Touspointsvalables scannés, pas filtrecommune ni poolfixe.
+- Géométrieinitial100 : rayonmax300mfiable/1000mfaible/3sigmaBAN, ordre distance
+  exact ettieSIRET déterministe uniquementidentifiant de sortie, aucunefeatureID.
+  Union future dense+lexical+géographiqueRRFlimite100,k60, poidsgéo1fiable/.5faible.
+  Algorithme figé avantmétriques, aucunreseeding selonmisses.
+- Génération GÉO réellement complète ownedexit0,43 896 818sites scannés en17,39s
+  (tempsscanaprèsBAN/hash, paslatenceprod),80queries,23BANincompatibles/nonrésolues
+  au dénominateur. `generation.json`,outputssha33bd3484…/810367octets.
+  État SEALED_GEO_WAITING_COMPLETE_DENSE_COMPARISON : pasencorerecall.
+  L'évaluationautomatique attendreportV4 avec troisgénérationscomplètes avant
+  lecture labels etfusion. Publieexact/opérationnel,gains/pertes/folds/segments,
+  pas proofnationale99,2% malgré corpusgéonational.
+- Disque interne bloque deuxessais gitadd/commit(noSpace,index.lock noncréé).
+  Archivé UNIQUEMENT cachesPython du dépôt(scripts/tests/src-xgb_matcher,
+  contrôlésnecontenirque.pyc), environ30Mo conservés surCATNAT dans
+  `SIRETO_EMBEDDINGGEMMA2/v5/internal_bytecode_archive_20261008/{scripts_pycache,
+  tests_pycache,xgb_matcher_pycache}`. Aucunfichierdata/source/model/git ou
+  tmpd'autretravail supprimé. Cachesrégénérables/restaurables,~165Miolibresaprès.
+  Commit45257a19réussiensuite ; hashcodeexécutéidentique, pas résultats relus.
+- Ne pasrelancergéoactive/scellée. AprèsrapportV4 lireV5/report/outcomes pour
+  apportspécifiqueetpertes. Budget08:43inchangé, test4323/folds0/1/aval gelés.
