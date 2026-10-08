@@ -16350,3 +16350,15 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Aucun nouveau training/run lancé. Échéance08:43 inchangée ; checkpoints,
   historiques et résultats préservés, pause du suivi à la clôture. Modifications
   utilisateur étrangères inchangées, aucun push/dépense/nettoyage supplémentaire.
+
+### Clôture08:43 — mandat nocturne terminé, suivi en pause
+
+- Bilan complet dans le commit `1018e587`, audit scientifique `a4a65668`.
+  À08:43:46, mise à jour native de l'automatisation existante
+  `sireto-nuit-fine-tuning-et-recall100` confirmée status=PAUSED ; nom, cadence
+  et thread conservés, prompt de reprise remplacé par le bilan et l'interdiction
+  d'une nouvelle nuit implicite. Aucun nouveau calcul ni nouvel entraînement.
+- Checkpoints et rapports scellés conservés. Meilleur résultat mesuré :79/80
+  exact initial100 (98,75%), également79/80opérationnel ; objectif99,2% national
+  NON ATTEINT/NON VALIDÉ. Reprise uniquement après demande humaine explicite,
+  sans retuner sur les80outcomes ni rouvrir test4323/folds0/1/aval gelés.
