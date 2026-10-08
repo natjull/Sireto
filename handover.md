@@ -16281,3 +16281,72 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   80queries restent diagnostic géosélectionné, ni nationale99,2%, ni OOF/SLO.
   Test4323/folds0/1/aval gelés, modifications utilisateur préservées, aucunpush/
   dépense/nettoyage. À deadline conserver artefacts, bilan honnête et pause.
+
+### Résultats nocturnes08:16–08:30 — progrès mesuré, objectif NON atteint
+
+- Milestone scientifique `f979b4bc` terminé : V8 état
+  COMPLETE_MEASURED_TWO_PIPELINES, worker ownedexit0 à08:16:45 puis évaluation
+  géographique ownedexit0 à08:16:46. Parent92717/worker92726 désormais absents.
+  Les DEUX générations complètes ont été scellées avant ouverture des labels.
+  Nouvelle génération :80queries,108239textes SITE,2665,77642450016s, aucun
+  gradient supplémentaire. Baseline native160 complète réutilisée sans calcul
+  doublé ; communes complètes119064sites, lexical national et géo V5 inchangés.
+- Recall exact initial100 sur les mêmes80queries, dénominateur inchangé :
+
+  | Pipeline | Exact | SIREN | Opérationnel |
+  | --- | --- | --- | --- |
+  | Lexical national seul | 65/80 (81,25%) | 74/80 | 68/80 |
+  | Ancien dense native160 | 76/80 (95%) | 77/80 | 77/80 |
+  | Nouveau dense SITE512 | 78/80 (97,5%) | 78/80 | 78/80 |
+  | Ancien dense + lexical RRF | 78/80 (97,5%) | 78/80 | 78/80 |
+  | Nouveau SITE + lexical RRF | 79/80 (98,75%) | 79/80 | 79/80 |
+  | Géo seul | 25/80 (31,25%) | 36/80 | 32/80 |
+  | Nouveau SITE + lexical + géo RRF | 79/80 (98,75%) | 79/80 | 79/80 |
+
+- Nouveau dense contre ancien :3gains/1perte ; fusion nouvelle contre ancienne :
+  1gain/0perte ; ajout géo contre SITE+lexical :0gain/0perte. Cela ne prouve PAS
+  que la géographie est inutile ailleurs. Sortie finale100 : fold2 11/11,
+  fold3 20/21, fold4 48/48. Wilson95% [93,25372992233133%;99,77900244795476%].
+  80queries géosélectionnées ne valident ni recall national99,2%, ni OOF complet,
+  ni généralisation/SLO. Aucune ouverture du test4323/folds0/1, aucun changement
+  aval/serving, aucun positif injecté ni retrait de fermé/UNRESOLVED.
+- Les textes officiels ET les poids changent entre pipelines ; V1official512
+  et canal identité n'ont pas été mesurés. Ne PAS attribuer isolément le gain
+  au fine-tuning. Fit partiellement terminé au checkpoint1340/epoch0,
+  97,3249% vues exposées ; meilleurcheckpoint1000 conservé, pas convergence
+  prétendue. L'objectif99,2% reste NON ATTEINT / NON VALIDÉ.
+- Artefacts immuables sous
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v8/site_pipeline_20261008_a` :
+  report.json SHA256
+  `4c804d15e0fefc2608ae053c3f233f8441fd34d98834e53cdd509b77b4fa0340` ;
+  geo/report.json
+  `46ff1f8976d191a4cb1a002d3edc1d41fa87188bee10c8109371aa2acf8b9bc2` ;
+  v3_official512_outputs.json
+  `1bcecc232111af15d20b6d6a8fd30c1d5610c0334c0c4a06f0d8399103a363d0` ;
+  v3_official512_binding.json
+  `f12262db1dbebae6ba4f4fcbabca8280b317cb4abb713633085246953a83a851`.
+- Milestone `a4a65668` : audit post-scelle readonly V9, deux tests CPU PASS,
+  root `SIRETO_EMBEDDINGGEMMA2/v9/postseal_20261008_a/audit.json`, état
+  POSTSEALED_DIAGNOSTIC_NEVER_A_RETRIEVAL_RECIPE. Aucune génération/recette
+  modifiée après lecture des résultats, pas de nouveau calcul GPU.
+- Trois gains dense documentés sur sources officielles naturellement présentes :
+  LAURELLI → CABINET LAURELLI GROUPE EUREX (rang5), LSTE → EDAX TRANSPORT/LSTE
+  fermé (rang3), contexte ATOUMOD/FLASH → LE BRAZZA/LE FLASH fermé (rang18).
+  Autre raté dense LE JEAN BART conservé par le lexical rang14 : preuve utile
+  d'indépendance des canaux, sans correction du label.
+- Unique perte finale : CRM NAOS, AVENUE FREDERIC MISTRAL sans numéro, INSEE38087 ;
+  cible39922665302782 fermée, AUBERT FRANCE/AUBERT,1388avenueFrédéricMistral,
+  aliasparentAUBILAND. Présente dans le corpus officiel ; ancien dense rang55,
+  absente nouveau dense/lexical/géo. BAN nonrésolue, XYnull, pas de point précis
+  inventé. Aucune preuve d'aliasNAOS dans les vues officielles préparées ; ne pas
+  qualifier arbitrairement le label d'erroné ni le retirer du dénominateur.
+- Union diagnostic NON plafonnée ancien+nouveau+lex+géo :80/80supportés mais
+  jusqu'à377SIRET/query. Ce plafond oracle n'est PAS un recall@100 ni une recette
+  admissible ; interdit d'en faire une victoire99,2% ou de recréer un pool fixe.
+  Hypothèses futures : conserver preuves complémentaires des deux encodeurs
+  dans une sortie directement100 ; géométrie de voie/incertitude BAN sans
+  numéro ; historique/enseignes/successions vérifiables. Recette à préfixer
+  sur nouveaux groupes SIREN et portée géographique, pas régler sur ces80cas.
+- Aucun nouveau training/run lancé. Échéance08:43 inchangée ; checkpoints,
+  historiques et résultats préservés, pause du suivi à la clôture. Modifications
+  utilisateur étrangères inchangées, aucun push/dépense/nettoyage supplémentaire.
