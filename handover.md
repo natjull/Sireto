@@ -16454,3 +16454,57 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Pas lancement final sur baseline seule ni sur le seul panel80, pas réglage
   après test. Ancienne automation nocturne PAUSED, aucune nouvelle relance
   native programmée. Sources/checkpoints/400sorties et dirty utilisateur préservés.
+
+### Autorisation humaine « Let’s go » — pipeline COMPLET lancé le 8 octobre15:12
+
+- Demande explicite : mesurer EmbeddingGemma2 fine-tuné ET les canaux annexes,
+  pas encore une baseline seule. Coût de plusieurs jours sur les19,1Msites
+  signalé avant lancement, population/modèles non changés pour raccourcir.
+  Nouvelle autorisation du calcul complet, PAS nouvelle nuit native récurrente.
+- V12/V13 réellement terminés : génération2212 scellée/ownedexit0, exact
+  1730/2212=78,2098%, SIREN1848, opérationnel1787 ; Wilson[76,4413%;79,8804%],
+  bootstrapSIREN[71,7269%;83,4045%]. RootV12 inchangé, report SHA256
+  `db3459be3af68fffd882f78bf59107d1347151bac034db5603f30e6d90b6bc2b`.
+  C'est UNIQUEMENT lexical, jamais le résultat Gemma2+fusion. Source désormais
+  réutilisée sans recalcul, tous les processusV12/V13 terminés.
+- Milestone `3b83dfda` : script `scripts/embeddinggemma2_v14_full_pipeline.py`,
+  contrat `docs/embeddinggemma2_v14_full_pipeline_contract.md`,5nouveauxtests
+  +5testsV10 PASS. Recette V8/V10 préexistante, figée avant labels2212 :
+  SITE512best1000+lexicalnational+BAN/XY RRF60 ; comparaison famille dense
+  MAXcontributionRRF anciennative160best7200/nouveau, puis lexical/géo.
+  Pas d'identité parent mélangée au scoreSITE, pas expansionBODACC/filiations
+  mesurée, pas attribution isolée au fine-tuning car textes ET poids diffèrent.
+- Population complète2212,1430SIREN,937communes,19 097 808sites, folds2/3/4.
+  Grandes communes et3INSEEabsents conservés ; canal dense vide si commune
+  inconnue, aucune ligne supprimée. Runtime ORIGINAL nuit torch2.14.1/
+  transformers5.19.0 (runtime projet2.10.0/5.0.0 différent donc NON utilisé
+  pour encoder). Contrôle query-only2212 : max60tokens, aucune>512.
+- Lookup officiel propriétaire/noms V130 entier,64transactionsSQLite atomiques,
+  identique à l'enrichissement nocturne ; pas noms des frères transférés au site.
+  Corpus préparés compatibles V3 réutilisés littéralement, autres communes
+  extraites intégralement puis tous les distracteurs enrichis également.
+  Vecteurs hashés par1024textes, appels128 avec batches16/8 originaux, pas
+  optimisationV7 rejetée. Reprises mêmes bindings, aucune étape de gradient.
+- Calcul ACTIF root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/full_validation_20261008_a`,
+  launcherlog `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14_full_validation_20261008_a.log`,
+  session91527. Commandes vérifiées : contrôleur12216, workeraliases12221,
+  caffeinate12218 lié à12216. À15:13:04,6/64buckets durablement commités,
+  bucket6 en traitement, RSSworker~535Mio. C'est préparation des noms,
+  PAS encore encodageGemma ni nouveau recall. Aucun autre calculGemma actif.
+- Supervision réellement lancée, admissionfree30/pression0–2, yieldfree20/
+  RSS10GiB, superviseurfree15/RSS12GiB et SIGTERM coopératif. Reprises
+  ressources/MPS OOM seulement, trois tentatives sans progrès DURABLE=STOP ;
+  code/data/hashes bloquent immédiatement. Pas plafond30min arbitraire,
+  réserveCATNAT80GiB ;606GiB disponibles au lancement. Préserve tout artefact.
+  Ne pas modifier code/configs hashés actifs, ne pas lancer un deuxièmecontroller.
+- Lire V14/state,worker_state,names/generation,aliases.log ; puis geo outputs/
+  ownedexit, zones/*/{prepare,v1_native160,v3_official512}_exit.json et caches,
+  attempts/*_exit.json. Labels d'évaluation ouverts UNIQUEMENT après tous
+  les2212outputs/canaux/communes +ownedexits0. Rapport complet exact/SIREN/
+  opérationnel/Wilson/bootstrapSIREN/segments/gainspertes automatique à la fin.
+  Pas de score partiel ni de98,75% extrapolé au cohort2212.
+- Test4323 autorisé CONDITIONNELLEMENT, toujours NON OUVERT/NON CONSOMMÉ,
+  seulement après mesure et gel définitif de recette. Folds0/1/aval/serving
+  fermés/gelés, OOF/SLO/nonpristine explicités. Ancienne automationPAUSED,
+  aucunpush/dépenseexterne/nettoyage et9dirtyfiles utilisateur intacts.
