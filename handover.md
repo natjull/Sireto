@@ -16668,3 +16668,51 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   automation réactivée. Test4323/folds0/1 fermés, aval gelé,9dirtyfiles
   utilisateur préservés, aucunpush/dépense/nettoyage. ETA à recalculer après
   progression réelle ; ancienne fenêtre invalidée par l'interruption.
+
+### 9 octobre 2026 — V15 terminé et audit complet des45ratés, sans changement de retrieval
+
+- V15 COMPLETE à10:26Europe/Paris :295communes/2554848sites complets,
+  526queries, tous ownedexits0 avant labels. Rapport
+  `v14/representative_20261008_b/report.json`, SHA
+  f5c5b8b0cbcbfff9dc381d12042ef088225452bf5005020a556fd5c7d99256c6.
+  Pipeline Gemma2best1000SITE512+lexicalnational+BANXYRRF :481/526exacts,
+  91,4449%brut,90,1645%pondéré, bootstrapcommunes approximatif86,616–92,986%.
+  SIREN484/526/op482/526 séparés. Pas99,2, pasSLO/OOF/testfinal validés.
+- Autorisation humaine « Vas-y audite les ratés ». Milestone `db3e754b` :
+  auditpostseal CPU des45, puis réencodage des SEULS lotsqueryoriginaux avec
+  modèle/runtime/batch inchangés et relecture des vecteurscorpus sauvegardés.
+  AUCUN document réencodé, gradient, nouveau candidat ou scoreproduit modifié.
+  Les45top100originaux sont reproduits exactement, maxécartscore0 ; exit0.
+  Milestone `60feb7e8` : synthèse preuveofficielle/portfoliosiblings/labels ;
+  5tests PASS. Root `v16/failure_audit_20261009_a`, COMPLETE_EVIDENCE_REVIEW_ALL45.
+- 45/45GT présents dans les corpus réellementencodés. Aucune adresseindex
+  perdue à l'extraction ;2valeurs de nom retirées sont seulement marqueursND,
+  aucun nomexploitable perdu à cette étape. Pas preuve de couverture amont
+  parfaite ni d'optimalité du modèle. Catégories :31 ratés detouscanaux,
+  14 évictionsfusion (10Gemma/1lexical/3géo). FusionvsGemma sur526 :10gains/10pertes.
+  Uniondiagnostic495/526, plafondpondéré92,3252%, PASpoolproduit ni nouvellemétrique.
+- Sur31 :rangsGemma1entre101–200/10entre201–1000/20au-delà1000 ;27sansmotdenom
+  commun,27sansmotdistinctifdevoie,24cumulent. Indiceslexicaux PAS fauxlabels
+  prouvés :aucune correction/aucun filtrage. 11labelsHISTORICAL_FALLBACK/34CURRENT.
+- Géosur45 :16BANnonrésolues (14sansnuméro),7XYGTmanquants,12horsrayon,
+  6dansrayonmaisaprèsnearest100,1égalitédeseuildistanceévincée,3hitsévincésfusion.
+  Cause d'exclusionnuméro vide confirmée `_resolve_ban`, JOINnuméroexact et
+  crm_number<>''. Piste rue/zone avec incertitude explicite, PAS coordonnées
+  artificielles ni géolabel-side. Cause31seuls :11BAN/5XY/11horsrayon/4nearestcap.
+- Preuvehiérarchique réelle :FoyerTyBreiz apparaît chezsiblingsduSIREN etpas
+  dansnomduGT. 4cas augmentent recouvrementliteral avecsiblings mais certains
+  faibles ; PAS4gainsmesurés. 8ratésNAOS sont AubertFrance mêmeSIREN ;aucune
+  attestationNAOS/Aubert dansportfolios/voisinsimmédiatsinspectés :pasaliasCRM.
+  Casino a1362SIRENliésnon typés :pasexpansionaveugle/transfertd'enseignes.
+  2ciblesadressesND, dont1sansnomexploitable ;preuvehorsvuesactuelles requise.
+- Rapportlisible CATNAT `v16/failure_audit_20261009_a/report.txt` ; détails
+  `evidence_cases.json` SHAae895793ba8597c8b6e6ba6ce2931aeb639f6763f709cc99aca5ac3f2c2766f2,
+  `evidence_summary.json` SHA0478aa881aaf177f606ad3947efd30a5ba93f8ac666347a7840c7e5ad55dca68,
+  seals etprovenance `review_completion.json`/`launch.json`. Fullrehashfinal
+  officialsites/owners/nationalXY PASS. Touscalculsaudit terminés exit0.
+- Recommandations NON implémentées :géoquery-only sansnuméro avecincertitude,
+  nom+distance avant cap ;fusion fiabilité/canaluniquesansprotectionIDs ;
+  contexteparent/sitesetliensTYPES ;relecturehumaine écartsd'identité/adresse.
+  Aucun fine-tuningPerplexity ou grandrun nouveau autorisé/engagé par cet audit.
+  Folds0/1/test4323 fermés,aval/serving gelés,recette originale immuable,
+  9dirtyfilesutilisateur préservés ;commitslocaux, aucunpush/spend/nettoyage.
