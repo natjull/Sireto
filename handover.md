@@ -16791,3 +16791,29 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   vérification de commande. Aucun processus de travaux étrangers touché.
   V17 non lancé, aucun nouveau recall. Handover antérieur de blocage complété,
   recette79918b80 inchangée ; folds/test/aval/artefacts préservés.
+
+### 10 octobre 2026 — Accès SSD rétabli, V17 effectivement lancée
+
+- Après intervention humaine « C'est bon normalement », lecture réelle de
+  launch.json réussie immédiatement exit0 ; panel, BAN parquet (schema), noms
+  SQLite (lecture schema) et document officiel complet lisibles. Pas d'attribution
+  certaine du geste ayant débloqué TCC, mais accès constaté, pas seulement mount.
+- Recette commit `79918b80` INCHANGÉE. 10 tests relancés PASS ; aucun autre
+  Gemma/Perplexity actif et namespace V17 inexistant avant lancement.
+  Lancement détaché session propre, parent24432/worker24434 vérifiés par commande,
+  parent create_time1791665179.948676, caffeinate associé. Log
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v17_structural_20261010_a.log`.
+  Root `v17/structural_20261010_a`, launch.json/recipe.json déjà figés avant
+  nouveaux outcomes. Aucun gradient ou encodage Gemma relancé.
+- Progression réelle : NATIONAL_NAME_AWARE_GEO10485760/43896818sites,
+  208585 voisins éligibles scorés,32,339s depuis début scan. RSS worker~637MiB,
+  mémoire libre83%, pressure1 ; CATNAT608GB libres. Interne seulement1,06GB
+  libre : aucun nettoyage de travaux étrangers ; gros artefacts/temp DuckDB
+  et log sur CATNAT. La prochaine phase parcourt tous2554848sites des295communes
+  avec contexte parent/sites, puis scelle tous526outputs avant évaluation.
+- Aucun résultat nouveau à ce stade, aucune estimation99,2. Ne pas modifier
+  le script/helpers/config hashés ni dupliquer ce calcul. Lire state/log,
+  generate_exit et generation puis report/outcomes. Generation incomplète ou
+  exit nonzero => pas de métrique partielle, artefacts conservés. Dataset déjà
+  vu : diagnostic développement, pas holdout/OOF/SLO/certification. Folds0/1/
+  test4323 fermés, aval/serving gelés ; dirt utilisateur inchangé, aucunpush.
