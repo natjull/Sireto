@@ -16763,3 +16763,31 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   états réels, vérifier aucun calcul actif, puis lancer cette recette sans la
   retoucher selon les outcomes. Folds0/1/test4323 fermés, aval/serving gelés,
   9 dirtyfiles utilisateur préservés, aucunpush/dépense/nettoyage/automation.
+
+### 10 octobre 2026 — Cause du blocage SSD identifiée dans les logs macOS
+
+- Demande humaine « Trouve un moyen d'accéder au ssd externe ». Lecture normale,
+  contexte exec escaladé, ouverture relative et listdir sans xattrs échouent
+  encore ; stat/mount/diskutil fonctionnent. SSD disk5s1 APFS monté, non verrouillé,
+  ~608GB libres. Aucun démontage/réparation/effacement/changement des droits.
+- Preuve nouvelle : logs kernel `(Sandbox) watchdog expired for approval entry
+  ... (kTCCServiceSystemPolicyRemovableVolumes, pid ...)` toutes les5s pour nos
+  lecteurs. Ce sont les demandes d'autorisation des volumes amovibles qui
+  restent suspendues. Pas une preuve d'erreur matérielle USB/APFS.
+- Sample du TCC utilisateur44988 : thread en CFUserNotificationReceiveResponse,
+  autres threads en attente de sémaphore. Relance user TCC sans réinitialiser
+  les permissions : launchctl kill refusé ; SIGTERM direct accepté mais service
+  ne termine pas ; SIGKILL du SEUL pid utilisateur après uid/commande vérifiés,
+  puis launchd kickstart : nouveau pid22690. Les permissions stockées ne sont
+  pas modifiées. Lecture bornée post-relance encore en échec. TCC système44989
+  inchangé ; absence de sudo sans mot de passe et inspection root refusée.
+- UI native toujours indisponible. Aucun accès nouveau accordé, aucun contournement
+  TCC ni modification de sa base, aucun mot de passe demandé dans le chat.
+  Étape proposée à l'humain dans Terminal : relancer le broker système avec
+  `sudo launchctl kickstart -k system/com.apple.tccd.system`, puis retester une
+  vraie lecture. Ce n'est qu'une tentative de récupération, pas un accès rétabli
+  ni une réparation certaine. Ne pas attribuer un succès avant lecture/hash.
+- Tous nos probes sont terminés ; seul ls22189 suspendu a été arrêté après
+  vérification de commande. Aucun processus de travaux étrangers touché.
+  V17 non lancé, aucun nouveau recall. Handover antérieur de blocage complété,
+  recette79918b80 inchangée ; folds/test/aval/artefacts préservés.
