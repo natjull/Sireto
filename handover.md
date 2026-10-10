@@ -16817,3 +16817,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   exit nonzero => pas de métrique partielle, artefacts conservés. Dataset déjà
   vu : diagnostic développement, pas holdout/OOF/SLO/certification. Folds0/1/
   test4323 fermés, aval/serving gelés ; dirt utilisateur inchangé, aucunpush.
+
+### 10 octobre 2026 — V17 terminée : 5min22, gain modeste, pas de gate validé
+
+- COMPLETE_STRUCTURAL_COMPARISON, parent/worker terminés, owned génération
+  exit0 confirmé avant labels. Durée lancement→report321,952s (5min22).
+  Tous526 conservés,43 896 818sites nationaux géo et2 554 848sites des communes
+  complets parcourus. Aucun gradient/réencodage/aval modifié.
+- Root `v17/structural_20261010_a` : report.json SHA
+  969d40b0502b409b63e266a78af2c48a4fdfa60f08b9a4e336859447fb0816a9,
+  outputs.json SHA0dcd62986622c6fff0a70b547300583620f0202dd43c80fd4618fa505e577508,
+  generation.json SHAa40d188c5207af08c48b90a876b9dd66065f0c02291c493602a8be1f110cccfb.
+  Report/outputs rehashés à la lecture PASS, baseline V15 SHA inchangé PASS.
+- Exact brut/pondéré et gains/pertes appariés contre baseline481/526=90,1645%
+  pondéré : geo_sum479/526,89,2791%,5/7 ; max_old_geo481/526,90,0497%,3/3 ;
+  max_new_geo478/526,89,2339%,5/8 ; max_new_geo_family482/526,90,5837%,9/8.
+  Dernière combinaison : SIREN485/526, opérationnel483/526, exact brut91,6350%,
+  IC bootstrap communes APPROXIMATIF87,5634–93,0179%. Delta pondéré+0,4192point
+  seulement, pas preuve statistique d'amélioration ni garantie de généralisation.
+- Canaux isolés nouveaux : géo307/526,63,2951%pondéré (ancien géo251/526,
+  51,0572%pondéré) ; contexte parent/sites415/526,77,4276%pondéré. Ces canaux
+  ne remplacent pas seuls le dense ; leur amélioration/complémentarité n'évite
+  pas les évictions lors de la fusion finale100. Aucun choix/promotion automatique
+  selon ce panel déjà vu. 99,2% exact NON atteint, OOF/SLO/foldsfermés inchangés.
+  Code/recette79918b80 restent immuables ; les métriques ne justifient pas de
+  déclarer une réussite massive ou de lancer un nouveau long fine-tuning.
