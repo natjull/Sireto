@@ -16716,3 +16716,50 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Aucun fine-tuningPerplexity ou grandrun nouveau autorisé/engagé par cet audit.
   Folds0/1/test4323 fermés,aval/serving gelés,recette originale immuable,
   9dirtyfilesutilisateur préservés ;commitslocaux, aucunpush/spend/nettoyage.
+
+### 10 octobre 2026 — Suite de l'audit : V17 écrite, mesure bloquée avant lancement
+
+- Autorisation humaine « À partir de cet audit tu te débrouilles ». Milestone
+  `79918b80` : nouveau namespace et script
+  `scripts/embeddinggemma2_v17_structural_retrieval.py`, 10 tests locaux PASS.
+  Aucun fichier/code/config historique hashé modifié, aucun gradient ni nouvel
+  encodage. Recette pré-déclarée dans RECIPE avant toute nouvelle mesure.
+- Hypothèses : BAN sans numéro par empreinte de rue (tous les points officiels,
+  centroïde + étendue maximale +300m, incertitude explicite, ambiguïtés refusées) ;
+  nom officiel + distance parmi TOUS les sites dans le rayon national avant
+  cap100 ; contexte noms officiels parent/tous ses sites nationaux, puis adresse
+  et nom propres du site sur les communes COMPLÈTES. Les noms des siblings
+  restent contexte du parent, jamais des alias du site. Aucun lien non typé,
+  alias CRM, identifiant comme feature, GT injecté ou lecture des cas V16 en
+  génération. Identifiants uniquement jointure/sortie/tie-break déterministe.
+- Comparaison prévue sur TOUS les526, pas seulement45 ratés : baseline ;
+  nouvelle géo + somme RRF ; MAX des contributions RRF sur anciens canaux ;
+  MAX avec nouvelle géo ; MAX avec nouvelle géo et contexte parent/sites.
+  Géométrie faible garde poids .5. Chaque canal émet directement <=100 sans
+  pool fixe à reclasser. Les hyperparamètres sont des hypothèses heuristiques,
+  pas un optimum acquis ni une garantie d'amélioration.
+- Namespace prévu, PAS créé par une génération :
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v17/structural_20261010_a`.
+  Commande APRÈS rétablissement et vérification de l'accès réel CATNAT :
+  `.venv/bin/python -u -m scripts.embeddinggemma2_v17_structural_retrieval run`.
+  Évaluation séparée après génération complète scellée et owned exit0 ;
+  baseline SHA357031e7f79d190ba6b68c8dfecbbd3f945178a475f8354e087442593d94a9ff,
+  tous526/historiques/V2/V3/exact/SIREN/opérationnel/poids/segments/gains/pertes.
+  Ce panel a déjà été vu et la validation a choisi le checkpoint : diagnostic
+  développement, PAS nouveau holdout, OOF complet, SLO ou preuve nationale99,2%.
+- BLOCAGE OBSERVÉ vers22:19–22:28Paris : métadonnées CATNAT accessibles,
+  disque APFS USB monté/non chiffré/non verrouillé,608GB disponibles, mais
+  open() du petit launch.json, panel.json et report.txt suspendu puis
+  « Interrupted system call » pour head. Python diagnostic PID20359 dormait
+  à0%CPU, sample confirmait attente dans open(), pas un calcul lent. Ce SEUL
+  diagnostic a été arrêté SIGTERM après vérification exacte de sa commande.
+  Les autres processus/travaux n'ont pas été touchés. Aucune cause matérielle
+  ou permission macOS démontrée ; aucune réparation/démontage/permission forcée.
+  L'inventaire UI native est indisponible. Question non bloquante envoyée à
+  l'utilisateur pour vérifier demande d'accès macOS / disque externe.
+- Aucun run V17 lancé : pas de résultats métier nouveaux, dernier recall reste
+  V15 481/526,90,1645% pondéré. Implémentation testée seulement localement,
+  intégration/données réelles NON vérifiées. À reprendre d'abord les accès et
+  états réels, vérifier aucun calcul actif, puis lancer cette recette sans la
+  retoucher selon les outcomes. Folds0/1/test4323 fermés, aval/serving gelés,
+  9 dirtyfiles utilisateur préservés, aucunpush/dépense/nettoyage/automation.
