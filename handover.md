@@ -16842,3 +16842,55 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   selon ce panel déjà vu. 99,2% exact NON atteint, OOF/SLO/foldsfermés inchangés.
   Code/recette79918b80 restent immuables ; les métriques ne justifient pas de
   déclarer une réussite massive ou de lancer un nouveau long fine-tuning.
+
+### 10 octobre 2026 — V18 identité Gemma + preuve propre du site lancée
+
+- Accord humain « Go » sur la branche IDENTITÉ déjà entraînée mais inutilisée
+  dans le canal SITE V15. Implémentation/recette figées commit `f538f6a7`,
+  `scripts/embeddinggemma2_v18_identity_retrieval.py` ; 8 tests PASS,
+  imports/CLI runtime original PASS, intégration préparation réelle en cours.
+  Aucun nouveau gradient, aucune modification des scripts/helpers hashés
+  historiques, du serving ou des modèles aval.
+- Namespace neuf `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v18/identity_site_20261010_a`.
+  Controller détaché33345, create_time1791667012.556635, commande `run` vérifiée ;
+  enfant préparation34541 vérifié par commande, caffeinate associé au parent.
+  Log `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v18_identity_site_20261010_a.log`.
+  Aucun autre Gemma/Perplexity actif avant lancement, pas d'automation réactivée.
+- Recette AVANT nouveaux outcomes : noms légaux officiels + TOUS les noms des
+  établissements nationaux du SIREN, role-labelled comme contexte du parent
+  (pas alias de chaque site). Requête identité identique à l'entraînement :
+  nom CRM seul. Vues <=512 sans troncature, déduplication globale des textes,
+  encodeur ORIGINAL best1000/batch8/768float32. Vecteurs SITE V15 réutilisés
+  littéralement, aucun nouvel encodage SITE ; replay strict des top100 SITE
+  de TOUS526 imposé avant résultats. Pas de tolérance assouplie/batch32 V7.
+- Score NATIF sur CHAQUE établissement des communes complètes :
+  .75cosinus_site_max + .25cosinus_identité_parent_max. Pondération issue de
+  l'hypothèse V4 dual préexistante NON mesurée, pas estimée sur les ratés V15.
+  Aucun beam SIREN ou pool fixe500/2000 puis reranker. Sortie directe<=100.
+  Variantes préfixées : baseline V15 ; joint seul ; joint+lexical+ancienne géo
+  et joint+lexical+géo V17, somme RRF60/reliability géo originale. Pas grille,
+  choix automatique ou promotion au serving selon ce panel.
+- Recensement query-only COMPLET :526 requêtes,295 communes,2 554 848 sites,
+  **2 126 387 parents distincts**. Noms source SHA43e287846a11629e38fe9ae44a99942645a7ef5aa1051059148851c304388f32
+  rehashés PASS ; baseline357031e7f79d190ba6b68c8dfecbbd3f945178a475f8354e087442593d94a9ff
+  inchangée. Dernier état PACKING_ALL_OFFICIAL_PARENT_NAMES768 parents,
+  zone02340, RSS enfant~766MiB. Préparation CPU/tokenizer, PAS encore encodage.
+  La taille encodée/durée ne sera connue qu'après dédup ; ne pas annoncer un
+  test de quelques minutes ni promettre99,2%. Ressources initiales83% libres,
+  pressure1, CATNAT607GB libres ; gros caches/temp/log sur CATNAT, aucun nettoyage.
+- Reprise explicite `resume` au même binding, parent SQLite transactionnel,
+  vecteurs identité scellés par1024 et communes scorées scellées ; verrou owned
+  nonbloquant empêche les deux contrôleurs. Les resource yields enfant exit75
+  sont réessayés au même binding, les autres erreurs arrêtent sans labels.
+  Lire worker_state/state/log, censuses/identity_counts, prepare_exit/generate_exit,
+  puis generation/report ; ne pas dupliquer le processus ni éditer son code
+  actif. Aucune métrique partielle : génération complète526 + owned exit0
+  requis AVANT labels ; évaluation exacte/SIREN/opérationnelle, pondérée et
+  brute, segments/all-human/gains/pertes. Dernier résultat mesuré reste V17
+  482/526,90,5837% pondéré, gain modeste non prouvé statistiquement.
+- Panel représentatif pondéré mais DÉJÀ VU et checkpoint choisi sur validation :
+  développement, PAS holdout pristine, OOF complet, SLO ou certificat99,2%.
+  Folds0/1/test4323 fermés, tous526 conservés, pas alias CRM/identifiant feature,
+  positif injecté ou dénominateur filtré. 9 dirty utilisateur préservés ; pas
+  de dépenses externes, push ou nouvelle nuit implicite. Autorisation actuelle
+  « Go » porte sur cette expérience, pas ouverture du test ou nouveau training.
