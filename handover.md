@@ -17221,6 +17221,40 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Folds0/1/test4323 fermés ; sidecar officiel de métrique vérifié à l'évaluation.
   Préserver9dirtyutilisateur et tous historiques. Pas dépenseexterne/push.
 
+### 12 octobre 2026 00:51 Paris — V22B complet, score appris natif mesuré
+
+- Exec42252 exit0 COLLECTÉ ; prepare child52708,calibrate54434,generate55653
+  tous OWNEDexit0. Aucun calcul V22 encore actif. ALL526 natifs100 complets,
+  sourcelexical nation43,9M toujours ouvert, aucune uniondecanauxcoupés ni
+  positif injecté. Génération905,2s ; artefacts source et trois phases conservés.
+- Report SHAa8eeadb5dbc3dc639d80ebeb3466497ff1f241cfb77f767970b43bd0f7aeca76
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v22/learned_native_20261012_b`.
+  Learned_native_ooc487/526=92,5856%brut,91,6939%pondéré, SIREN490,
+  opérationnel488. V18référence486/526=92,3954%/90,9823%pondéré.
+  Apparié9gains/8pertes ; gainpondéré+.7116point, PAS palier99 ni fullEncoderOOF.
+  Par rôle :newquery461/493,previouspanel26/33 ;39ratés conservés, aucunstatutfiltré.
+- Runtime p501,513s/p954,450s/p995,020s, froidchaudnoncontrôlé, inclutcompilation
+  requête mais exclutpréparationone-shot. Pas validation SLO ni servingpromu.
+  Calib5folds284/298/314/296/308queriesTRAIN chacune,63892/66398/70798/66228/
+  69076paires, aucunSIRENheldoutdansfit.375requêtescalibtotal,151controlsireNs
+  exclusfit mais conservésmétriq526. Aucuns tests unitaires lancés.
+- Poids appris :parentcos~2,6–2,8 versusSITE~1,4–1,7,adresse/geo cooccurrences
+  utilisés, nomWRatio~.24–.41 (plus l'écrasement V19). MAIS les3features
+  successiongéonominative apprises à0 dansTOUSlesfolds ; densecontext.4–1.25.
+  C'est un diagnostic de l'apprentissage, pas justification pourforcerunbonus.
+- Suite pourlemandat toujoursactif jusqu'à07:07:09Paris : élargirpreuvespropres
+  /parent (noms officiels et proximité de TOUSses établissements nationaux,
+  pas uniquementidentitétextuelle), garder géovoisin/SITEvoisin comme rôles
+  distincts des preuvespropres. Conserverdate/typesansaliasCRM. Prioritéaussi
+  à objectifd'apprentissage de présence@100 plutôtquetop1 pairwise, avec
+  négatifsTRAIN autour du vrai seuilnatifsansleakageentreSIREN. Namespace/code
+  nouveaux pourchaque changement, ablationsqualifiées, pasbonuschoisiaudoigt.
+- Un contrôle indépendant mérite encodinglong seulement après progrès solide
+  de développement. Les communes SMALL du piloteonttoutesétéconsommées ;
+  ne pas prétendre qu'un contrôle choisi uniquement parmi nouvellescommunes
+  représente toute lapopulation2212 (etencoremoins tousCRM). Population/source/
+  exclusionsdesplit/poidsdoiventêtrepubliésavantlabels. Test4323/folds0/1fermés.
+
 ### 12 octobre 2026 00:32 Paris — V22B normalisation lexicale corrigée AVANT mesures
 
 - Milestone `38fef45b` : contrôle des ancêtres de l'encodeur. TRAINcached initial
