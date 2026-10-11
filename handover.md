@@ -16978,3 +16978,33 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   non complet. Panel déjà vu/validationcheckpoint : développement seulement,
   folds0/1/test4323fermés, pas dénominateur filtré, positif injecté ou featuresID.
   Neuf dirty utilisateur préservés, pas push/automation/nouvelle nuit implicite.
+
+### 11 octobre — V19B audit officiel OWNED0, intégration native réelle PASS
+
+- Suite du code figé `2b9c931d`/handover `9f74a90e`, aucune recette modifiée
+  en fonction de l'audit. V19B generate37410 encore actif, dernières communes
+  complètes total75250sites/2554848, replay SITE ET joint PASS sur ces communes,
+  features complètes scellées ; PAS recall partiel. RSS~2,12GiB, pas erreur.
+- Audit37407 OWNEDexit0 explicitement collecté par controller37404,
+  `audit_exit.json` updated1791743540.568511, durée71,692s. Completion scellée,
+  summary SHA514ba6a21733245482f6776fe94676f14b5a6d5065168509a1a0eccadd7ce265
+  vérifié ; findings/original_sources vérifiés pour lecture. Audite40ratésV18,
+  rien injecté dans le moteur V19B, aucune correction/filtrage des labels.
+- Sources ciblées conservées COMPLETES dans cet audit :4587noms officiels
+  (SIRENE3803/BODACC682/RNE102),6557adresses (SIRENE5348/RNE366/BODACC843),
+  toutes relations/successions attachées aux parents concernés, dates/NULL
+  et rôles originaux. Les fichiers source nationaux entiers ont été hashés,
+  comptes vérifiés et epochs contrôlés ; pas lecture du payload320STOP.
+- Sur40 :15ontcontexte transfert,2avecparentvoisin déjàretrouvé naturellement,
+  27ontcontexte succession. Surles26absents de touscanaux :11contextestransfert,
+  1seednaturel (ATOL),20contextessuccession,0fortnompropre/parent>=.85,
+  2fortscontextesnomsfrères (FOYERTYBREIZ/CERGYPONTOISE). « Contexte succession »
+  est au niveau SIREN entier, pas encore une relation directe du SIRET annoté
+  ni une preuve d'expansion correcte. Scores lexicalement forts restent
+  diagnostics heuristiques, pas preuve d'identité/causalité/labelcorrecte.
+  Voisins BODACC examinés ici via noms LEGAL parent seulement ; absence de
+  nomfort ne prouve pas absence d'enseigne sur tous leurs établissements.
+- Lookup NAOS dansTOUSowners officiels donne73records, aucun ownerAUBERT399226653 ;
+  aucun alias NAOS→AUBERT ni label faux déduit de cette absence. Toutes preuves
+  restent audit-only. Gain graphe/nouveau retrieval national/SLO non mesuré.
+  Attendre generationcompleteALL526 et ownedgenerateexit0 pour nouveau recall.
