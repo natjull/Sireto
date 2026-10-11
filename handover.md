@@ -17084,3 +17084,42 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   conservés (partitionvide puis sérialisationnumpy corrigées), jamaisadmis
   comme résultat ; aucun calcul historique/actif modifié ni données effacées.
   9dirtyutilisateur préservés, aucun push/serviceexterne/automation/nuit relancé.
+
+### 11 octobre 2026 — Go utilisateur : première ablation relationnelle native
+
+- Autorisation humaine « Ok go » après l'audit approfondi : implémenter la
+  direction, sans ouvrir les tests fermés ni réentraîner/altérer les modèles aval.
+- Milestone `f86b40e1`, correctif de compatibilité BAN `b7f6d718` :
+  `scripts/embeddinggemma2_v21_relation_views.py` et 10 tests nouveaux.
+  29 tests PASS avec V18/V19, diffcheck PASS. Pas de changement du checkpoint.
+- Nouvelle hypothèse figée : vues DIRECTES de succession officielle dans les
+  deux orientations, continuité économique explicitement vraie, date connue
+  <=2026-08-01, pas de closure. Voisin = CONTEXTE DATÉ, pas alias propre,
+  identité juridique ou équivalence de site. Identifiants seulement joins/sortie.
+- Ablations distinctes : joint Gemma/parent V18 avec/sans vues relationnelles,
+  géographie nominative V17 avec/sans ces vues. Score de chaque vue inchangé,
+  maximum sur vues propres et contexte direct avant collecteur100 natif,
+  départage favorisant la vue propre. TOUS les scores des communes complètes
+  et TOUS les sites nationaux dans les empreintes BAN sont parcourus : aucun
+  graphe généré à partir de top100, aucun pool300/500/2000 reclassé.
+- Lexical national et pipeline V18 conservés INCHANGÉS comme références.
+  Ce volet mesure seulement l'apport structurel des vues : pas de nouveau
+  combiner appris, pas de fusion des canaux déjà coupés, pas de nouveau
+  recall pipeline complet revendiqué. Le score global appris horséchantillon
+  reste la prochaine étape, distincte de cette ablation.
+- Namespace A conservé, owned generate exit1 avant labels (champ optionnel
+  `footprint_radius_m` absent des BAN ordinaires). Correctif B reprend EXACTEMENT
+  la règle V17 : empreinte explicite sinon max(300/1000faible,3incertitude),
+  sans nouveau rayon choisi après métriques. Aucune métrique partielle publiée.
+- Actif B :
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v21/relation_views_20261011_b`,
+  exec session50213, worker33006 à vérifier PAR COMMANDE, propriété contrôleur.
+  Génération query-only, fullsource9730972 successions et registre national,
+  matrices originales scellées, pas de sources d'audit label-side en recherche.
+  Labels seulement après ALL526 complet/scellé/owned exit0, exact/SIREN/
+  opérationnel et pondération initiale séparés. Panel consommé, PAS holdout
+  représentatif inédit ou preuve nationale99,2%. Folds0/1/test4323 restent fermés.
+- Reprise `resume --output ..._b` uniquement après constat d'absence de processus
+  actif et bindings identiques. Ne pas modifier code hashé pendant ce calcul.
+  Watcher nocturne toujours pausé, pas de nouvelle nuit/push/compute externe.
+  9dirtyutilisateur inchangés, historiques et calcul A préservés.
