@@ -9,6 +9,13 @@ from scripts import embeddinggemma2_v21_relation_views as retrieval
 
 
 class RelationViewsTests(unittest.TestCase):
+    def test_original_ban_and_fallback_footprints(self):
+        strong={'ban_declared_weak':False,'ban_uncertainty_m':25}
+        self.assertEqual(retrieval.footprint_radius(strong),300)
+        self.assertEqual(retrieval.footprint_radius({**strong,'ban_declared_weak':True}),1000)
+        self.assertEqual(retrieval.footprint_radius({**strong,'ban_uncertainty_m':200}),600)
+        self.assertEqual(retrieval.footprint_radius({**strong,'footprint_radius_m':450}),450)
+
     def test_all_views_are_visited_not_only_first100(self):
         keys=np.arange(10000000000000,10000000000101,dtype=np.uint64)
         scores=np.linspace(1.,.5,101);calls=set()

@@ -49,6 +49,14 @@ def valid_link(continuity, effective_date):
     return continuity is True and isinstance(effective_date, date) and effective_date <= date(2026,8,1)
 
 
+def footprint_radius(geometry):
+    # Exactly the original V17 rule: street-fallback geometries carry an
+    # explicit footprint; ordinary BAN geometries do not have this field.
+    return geometry.get('footprint_radius_m',max(
+        1000 if geometry['ban_declared_weak'] else 300,
+        3*max(0,geometry['ban_uncertainty_m'])))
+
+
 def collect(keys, scores, edges, cap=100):
     """All views first, one native top-k. No propagation of propagated scores.
 
@@ -129,7 +137,7 @@ def geometry_sources(panel, launch, source, out):
             for q in panel:
                 g=geos[q['query_id']]
                 if not g['spatial_crs_compatible']:continue
-                x,y=g['ban_x_l93'],g['ban_y_l93'];radius=g['footprint_radius_m']
+                x,y=g['ban_x_l93'],g['ban_y_l93'];radius=footprint_radius(g)
                 mask=valid&(np.abs(a[:,0]-x)<=radius)&(np.abs(a[:,1]-y)<=radius)
                 loc=np.flatnonzero(mask)
                 if not len(loc):continue
