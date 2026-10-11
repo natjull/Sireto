@@ -17123,3 +17123,56 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   actif et bindings identiques. Ne pas modifier code hashé pendant ce calcul.
   Watcher nocturne toujours pausé, pas de nouvelle nuit/push/compute externe.
   9dirtyutilisateur inchangés, historiques et calcul A préservés.
+
+### 11 octobre 2026 — V21 terminé : apport géographique des successions prouvé
+
+- Correctif d'exécution `fad8ce0c` : DuckDB COPY interprétait les placeholders
+  dans un ordre inattendu (B owned exit1 avant labels). Lecture SQL paramétrée
+  puis écriture Arrow/Parquet en flux, test réel I/O ajouté, ordre des liens
+  déterministe. 30 tests PASS (11V21+8V18+11V19), diffcheck PASS.
+  Recette scientifique INCHANGÉE, namespace B conservé sans résultat admis.
+- C reprend uniquement `geo_sources.json` complet et scellé de B, après
+  vérification de recette, sources/bindings identiques et owned exit nonzero.
+  Aucun rescan géographique ni réencodage, aucune lecture de label en génération.
+  Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v21/relation_views_20261011_c`,
+  exec56465 exit0 COLLECTÉ, generate child38168 OWNEDexit0, état
+  COMPLETE_RELATIONAL_VIEW_ABLATION ; aucun calcul V21 encore actif.
+  Durée C approximative238,2s (timestamps lancement/étatfinal, PAS SLO).
+- ALL526 / TOUS2554848 sites de communes /43896818 sites géographiques nationaux
+  parcourus. Sources query-only2665173 sites,754829observations de succession
+  éligibles,1000730vues orientées ;10063cibles de liens hors registre officiel
+  publiées/exclues des vues, PAS des requêtes/dénominateur humain.
+  Chaque canal natif émet<=100 uniques après vues, aucune fusion nouvelle,
+  aucun top100 servant de graine de graphe, aucune injection positive.
+- Report SHAbf4bf8f08dccd2d2884b7e8bc64b0b41cdce4303cf107eb331d432dd2220b636,
+  outputs4c681c325438099e36f978cc52f84da0677477614a69f235eac2f48c53d5fcf0,
+  links493a888af3a982048bbfb66151d395890751b655944bfd5c228c6ddd0f5c012c.
+  Joint ET géographie propre rejouent EXACTEMENT leurs sorties historiques
+  sur526 avant évaluation ; sidecar opérationnel officiel vérifié par évaluateur.
+- Ablation joint :481→479exact/526,1gain/3pertes ; pondéré90,0726→89,9821%.
+  1gain NAOSavenueAvenir ; pertes1329 BLANCHISSERIE,16681 ITTRATTORIA,
+  527 CAMERA. Max aveugle des vues relationnelles REFUSÉ comme remplacement
+  de Gemma. Le lien doit être une preuve contextualisée, pas copie universelle.
+- Ablation géographique :307→326exact/526,19gains/0perte ; brut58,3650→61,9772%,
+  pondéré63,2951→67,2129% ; SIREN339→345,opérationnel321→333.
+  Ces pourcentages sont ceux du CANAL GÉO, PAS du pipeline Gemma+lexical.
+- Attribution après seal :6hits du nouveau canal géo manqués par V18complet,
+  dont4 déjà disponibles dans géoV17propre et SEULEMENT2 nouveaux grâce aux
+  relations. Les17autres gains relationnels sont déjà hits V18. Les2nouveaux
+  étaient absents des7ancienscanaux :
+  * NAOSrueGardes `NEWCRM:9b06e3b43386ff11df75e55ab8cb76dc`, GT39922665300380,
+    rank27 par contexte94575441402359, succession2025-01-01.
+  * NAOSavenueAvenir `NEWCRM:eee3aad2d761ccb5f6f04cc6db9187dc`, GT39922665301875,
+    rank61 par contexte94575441402847, succession2025-01-01.
+  Pas alias NAOS→AUBERT appris, pas adressevoisin copiée comme adressepropre.
+  Pas unionoracle présentée comme sortie100, pas6gains/19gains pipeline annoncés.
+- Pipeline national de référence INCHANGÉ486/526=92,3954%brut/90,9823%pondéré.
+  Aucun nouveau recall pipeline complet mesuré, pas OOFcomplet/holdout/SLO ni
+  preuve99,2%. Décision : conserver le signal GÉO+SUCCESSION pour le moteur
+  multichamp, rejeter le max dense aveugle ; prochaine étape score natif appris
+  sur preuves/rôles/fiabilité/contradictions, calibration horsSIREN et contrôle
+  indépendant, avec lexical national, sans pool fixe reclassé. Ne pas augmenter
+  au doigt mouillé le poids géo ou entraîner à mémoriser les2dossiers.
+- Aval/serving/checkpoint/test4323/folds0/1 inchangés et fermés. Ancienne
+  automation nocturne pausée. Toutes namespaces/artefacts d'échec préservés,
+  9dirtyutilisateur intacts, aucune dépense externe/nouveaufit/push.
