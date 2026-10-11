@@ -17176,3 +17176,47 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Aval/serving/checkpoint/test4323/folds0/1 inchangés et fermés. Ancienne
   automation nocturne pausée. Toutes namespaces/artefacts d'échec préservés,
   9dirtyutilisateur intacts, aucune dépense externe/nouveaufit/push.
+
+### 12 octobre 2026 00:07 Paris — Nouveau mandat autonome explicite de sept heures
+
+- Demande humaine : sept heures autonomes, aucun unit test, tokens sans plafond
+  explicite, objectif toujours recall@100>99%. Mandat reçu22:07:09UTC ; borne
+  ABSOLUE12octobre07:07:09Europe/Paris, unix1791781629. Pas de nouvelle nuit
+  implicite au-delà. Ancienne automation reste pausée. Aucun unit test lancé
+  ni ajouté ; contrôles runtime/intégrité/généralisation maintenus.
+- Milestones code `5ab064bb` (features/score natif) et `15dd1288` (calibration,
+  génération, supervision) :
+  `scripts/embeddinggemma2_v22_native_features.py`,
+  `scripts/embeddinggemma2_v22_learned_query.py`. Validation syntaxe AST et
+  diffcheck uniquement, PAS tests unitaires. Aval/serving/checkpoint inchangés.
+- Nouvelle hypothèse : score de retrieval linéaire nonnégatif appris sur
+  cinq scores lexicaux natifs +16preuves nom/SITE/parent/adresse/XY/interactions/
+  contexte de succession. Proofs propres et voisines distinctes ; voisins
+  restent datés/typés, jamais alias du site. Dates/fiabilité/cohérence continue
+  entrent dans des features, pas dans un copiercoller universel de score.
+- Pas de pool fixe : TOUS les leaves des communes complètes, TOUS ceux des
+  empreintes nationales BAN et leurs successions avant la coupe. Leur somme
+  numérique apprise est compilée en20plans binaires de termes SIRET (références
+  d'une preuve calculée, pas identifiant comme feature). Lexical sur TOUTl'index
+  national reste ouvert ; UNcollecteur natifTantivy100, aucun rerank/union300.
+  Quantification floor20bits préannoncée, erreur absolue <=sommeCoefficients/
+  (2^20-1), hors arrondisfloat32 ; PAS équivalence numérique exacte revendiquée.
+- Calibration préannoncée : pairwise logistic bornée coefficients>=0,
+  L2.01, cinq folds par SIREN avec seedfixe, négatifs TRAINéchantillonnés uniquement
+  (pas corpusd'évaluationréduit). Positif ajouté AUX EXEMPLES D'APPRENTISSAGE
+  seulement, jamais recherche. Poids du sondage initial conservés. SIRENTRAIN
+  Gemma disjoints ; SIREN des256controls de choixcheckpoint exclus du fit
+  calibrateur, mais toutes526requêtes gardées dans métriqueprimaire.
+  Pas fullEncoderOOF ni holdoutpristine annoncés sur ce panel déjàconsommé.
+- Actif premièrephase prepare_only root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v22/learned_native_20261012_a`,
+  session58225, lire prepare_process/worker_state/prepare_exit/log et vérifier
+  commande réelle avant action. Réemploie EXACTEMENT les matrices V19 complètes
+  et les geo_sources/liens V21 scellés query-only, pas de nouvel encodage MPS.
+  Labels jamais ouverts par cette préparation. Ne pas modifier code hashé actif.
+- Après préparation ownedexit0 : préflight réel de recherche nativenationale
+  query-only pour coût/score, puis calibration/génération526 complète avant
+  nouvelle métrique. Poursuivre ensuite vers contrôle disjoint de calibration
+  sans promettre représentativité nationale d'un souspanelconditionnel.
+  Folds0/1/test4323 fermés ; sidecar officiel de métrique vérifié à l'évaluation.
+  Préserver9dirtyutilisateur et tous historiques. Pas dépenseexterne/push.
