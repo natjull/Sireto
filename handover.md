@@ -16894,3 +16894,87 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   positif injecté ou dénominateur filtré. 9 dirty utilisateur préservés ; pas
   de dépenses externes, push ou nouvelle nuit implicite. Autorisation actuelle
   « Go » porte sur cette expérience, pas ouverture du test ou nouveau training.
+
+### 11 octobre 2026 — V18 terminée, audit des40 ratés et V19 native lancée
+
+- V18 commit `f538f6a7` COMPLETE à08:23:55Paris, prepare ownedexit0 et
+  generate ownedexit0, aucun processus encore actif. Tous526 conservés,
+  2 554 848 sites/2 126 387parents,1 862 302textes identité dédupliqués,
+  2 131 929vues. Replay SITE tous526 PASS, aucun nouveau gradient.
+  Report SHA77d3b6ade8e6f534a7d41384155613b685848a709ae5e39dbb2fdaa0954b50b2,
+  generation96915506e97c06ae5a918395eae7371dd1ec0b7da101806eb3d8d8448c76b345,
+  outputs f8fc6cb4cf6b79c7c1d9f8a3b768f8f1adc9a3e075acff06d6a79955b5baf1d5.
+  Report/generation vérifiés à la lecture, owned exits lus, pas métrique partielle.
+- V18 exacte brute/pondérée : joint481/526,90,0726% ; joint+lexical+ancienne
+  géo486/526=92,3954%brut,90,9823%pondéré,8gains/3pertes contre baseline481,
+  90,1645%pondéré. SIREN487/op487, bootstrap communes APPROX87,9275–93,4945%.
+  Joint+lexical+nouvelle géo481/526,89,6654%pondéré. Gain modeste, aucune
+  significativité/généralisation/SLO/OOF nationale99,2% démontrée, aucune promotion.
+- Diagnostic post-seal demandé :40 ratés du meilleur V18 =9 évictions par
+  fusion (cible présente joint/lexical/ancienne géo),5 trouvés dans autres
+  variantes (3ancienSITE,2nouvelle géo),26absents de TOUTES les six sorties
+  testées. Toutes cibles retrouvées dans leurs corpus officiels complets :
+  38SIRET distincts pour40requêtes, aucun « absent de SIRENE » ici.
+  9casNAOS→AUBERTFRANCE,39sansbonSIREN en sortie,FOYERTYBREIZ seul cas
+  bonSIREN+opérationnel maisexact manquant. Aucun label corrigé/retiré ; nom
+  et rue discordants ne prouvent pas une erreur humaine. Exemples d'éviction :
+  NAOSMontauban exact1er géo ; BLANCHISSERIE88e joint ; CASINO72e joint.
+- Accord humain neuf « Go » sur score de preuves et audit officiel. Nouveau
+  code/recette figés commit `2b9c931d` :
+  `scripts/embeddinggemma2_v19_proof_retrieval.py`,
+  `scripts/embeddinggemma2_v19_official_audit.py`,11tests nouveaux +8V18 PASS.
+  CLI/imports CPU et runtimeoriginal PASS. Pas de modification des helpers
+  historiques hashés, aval/serving/encoder/poids/splits inchangés.
+- Hypothèse native UNTRAINED explicite, PAS score appris/calibré ni garantie :
+  maximum entre SITE, dual.75SITE+.25identité (identité ne diminue plus SITE),
+  preuve cohérente d'adresse propre et preuve de nom officiel ; petit bonusXY
+  indépendant avec incertitudeBAN/fiabilité faible. Tous les sites de CHAQUE
+  commune complète sont scorés AVANT collecteur initial100, sans pool500/2000,
+  rangRRF, filtre d'activité/fermeture ou numéro éliminatoire. Numéro/suffixe
+  intégré au champcrm_street traité explicitement (661B), inconnus gardés ;
+  jamais numéro d'une adresse combiné avec voie d'une autre. Noms légaux
+  officiels complets via SQLite, pas enseigne de frère promue alias du site.
+  Vecteurs SITE/identité réutilisés ; seules requêtes réencodées originalbatch8.
+  Replay STRICT SITE ET joint V18 sur tous526 avant métriques, pas tolérance
+  assouplie. Features complètes de TOUS les sites cachées/scellées par commune
+  pour itérations suivantes sans réencodage. Cap100 et all-human conservés.
+- Portée nouvelle variante : communes complètes du pilote, PAS nouveau canal
+  lexical national ni graphe intégré. BaselineV15 et référenceV18 inchangées
+  publiées avec la variante native ; aucune claim « tous les à-côtés intégrés ».
+  Graph/relations sont audit séparé, jamais fichier/feature de la génération.
+  Les poids sont hypothèses pré-déclarées, PAS optimum appris sur40ratés.
+- Premier root `v19/proof_engine_20261011_a`, parent34357/generate34364 : owned
+  exit1 sur `ModuleNotFoundError: rapidfuzz`, première commune nonvide ; pas
+  génération complète, pas de métrique. Artefacts/log conservés. Audit34361
+  a terminé séparément avec fichiers scellés MAIS parent déjàmort : son exit
+  n'est pas collecté/admis comme ownedexit0, pas de succès supervisé inventé.
+  Aucun ancien STOP320/321 relancé/réutilisé.
+- Dépendance d'exécution corrigée : ajout RapidFuzz3.14.3 IDENTIQUE au runtime
+  CPU dans le venv external original ; torch2.14.1/transformers5.19.0 inchangés.
+  Install1,3MiB,aucune dépense/service externe ; cacheuv surCATNAT. Vrai appel
+  address_proof dans le runtime PASS. Aucun code/config/poids hashé édité.
+- Après vérification A/audit/generate terminés, relance même recette/code dans
+  namespace NEUF `v19/proof_engine_20261011_b` : parent37404,
+  create_time1791743463.48673, enfantaudit37407/generate37410 vérifiés par
+  commande, caffeinate associé. Log `SIRETO_EMBEDDINGGEMMA2/v19_proof_engine_20261011_b.log`.
+  Pas doublon actif. Dépendance/contexte conservés dans
+  `v19/proof_engine_20261011_b_execution_dependency.json`. Dernier état B :
+  modèle chargé, communeUNKNOWN complète0sites, pas erreur ; audit noms4587
+  observations officielles ciblées à16,686s. Libre67%,pression1, RSSgenerate
+  ~961MiB. Interne216GiB/CATNAT442GiB libres, aucun nettoyage de cette tâche.
+- Audit B relit les ORIGINAUX hashés :5,5GB noms162 537 492observations,
+  8,2GB adresses142 096 607observations SIRENE/RNE/BODACC,692010relations
+  canoniques,9 730 972successions SIRENE. Seulement audit post-seal des40
+  erreurs V18 et focus26, rôles parent/site/frère et dates préservés ; cession
+  !=identité/TUP/même site, pas closure ni aliasCRM dérivé. Orignaux35MB
+  BODACC autorisés dans cette investigation, PAS payload320STOP ni run321.
+  Conserver original_source_records/findings/summary ; attendre audit_exit
+  OWNED0 avant admettre fin supervisée, aucun gain retrieval déduit d'un lien.
+- À reprendre : lire B/state/worker_state/execution_error/log, audit/completion
+  et audit_exit, generate_exit puis generation/report. Pas éditer code/config
+  actif ou relancer doublon ; erreur nonzero conserve shards et interdit mesure
+  partielle. Resourceyield75 réessaie aux mêmes bindings, garde libre/RSS réelle,
+  pas vieux budget30min. Résultat V18reste486/526,90,9823%pondéré tant que B
+  non complet. Panel déjà vu/validationcheckpoint : développement seulement,
+  folds0/1/test4323fermés, pas dénominateur filtré, positif injecté ou featuresID.
+  Neuf dirty utilisateur préservés, pas push/automation/nouvelle nuit implicite.
