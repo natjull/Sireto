@@ -265,7 +265,7 @@ def owned_stage(out,action):
                         try:rc=child.wait(timeout=25)
                         except subprocess.TimeoutExpired:child.kill();rc=child.wait()
                         io.write(out/(action+'_exit.json'),dict(exit_code=rc,pid=child.pid,own_child_exit_confirmed=True,deadline_or_user_stop=True))
-                        raise TimeoutError('SEVEN_HOUR_END_CHECKPOINTS_PRESERVED')
+                        raise TimeoutError('CONTROLLER_SIGNAL_ARTIFACTS_PRESERVED' if engine.INTERRUPTED else 'SEVEN_HOUR_END_CHECKPOINTS_PRESERVED')
         io.write(out/(action+'_exit.json'),dict(exit_code=rc,pid=child.pid,own_child_exit_confirmed=True,finished_unix=time.time()))
         if rc==75:
             io.write(out/'state.json',dict(status='REAL_RESOURCE_YIELD_SAME_BINDING',phase=action,updated_unix=time.time()));time.sleep(30);continue

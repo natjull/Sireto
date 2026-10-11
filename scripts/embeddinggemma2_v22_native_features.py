@@ -20,7 +20,7 @@ from scripts import embeddinggemma2_v17_structural_retrieval as structural
 from scripts import embeddinggemma2_v21_relation_views as relations
 from scripts import embeddinggemma2_v2_data as data
 from scripts import retrieval_v38_initial_top100 as lexical
-from src.xgb_matcher.hierarchical_retrieval import RetrievalQuery
+from src.xgb_matcher.hierarchical_retrieval import normalize_text
 from src.xgb_matcher.retrieval_query_ban_v327 import surface
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
@@ -36,6 +36,7 @@ FEATURE_FIELDS=LEXICAL_FIELDS+PROOF_FIELDS
 RECIPE=dict(scope='ALL526_CONSUMED_DEVELOPMENT_FULL_PROOF_CORPORA_PLUS_NATIONAL_LEXICAL',
     feature_fields=FEATURE_FIELDS,score='LEARNED_NONNEGATIVE_LINEAR_PROOF_QUERY_NATIVE_TANTIVY_SUM',
     native_collector=100,quantization_bits=20,
+    lexical_word_normalization='EXACT_SHARED_INDEX_NFKD_ACCENT_FOLD_ASCII_ALNUM',
     quantization='FLOOR_FULL_NONLEXICAL_SUM_FIXED_COEFFICIENT_BOUND_BINARY_TERMSET_PLANES',
     quantization_is_declared_scientific_approximation=True,
     corpus='ALL_ORIGINAL_COMPLETE_COMMUNE_LEAVES_ALL_NATIONAL_BAN_FOOTPRINT_LEAVES_AND_DIRECT_SUCCESSIONS',
@@ -77,6 +78,7 @@ def initialize(out,deadline):
         index_manifest=source['index_manifest'],index_meta=source['index_meta'],index_inventory=source['index_inventory'],
         adapter=old['adapter'],all526_development_only=True,unit_tests_requested=False,
         labels_opened_in_feature_generation=False,closed_test_opened=False,downstream_changed=False)
+    launch['helpers'].append(record(io.ROOT/'src/xgb_matcher/hierarchical_retrieval.py'))
     io.write(out/'launch.json',launch)
 
 
@@ -203,8 +205,8 @@ def prepare(out):
 def lexical_parts(backend,q):
     """Five independent actual global-index score features, no geo filter."""
     tv=backend._tantivy
-    name=data.safe(q['crm_name'])
-    address=' '.join(data.safe(q[k]) for k in ('crm_number','crm_suffix','crm_street') if data.safe(q[k]))
+    name=normalize_text(data.safe(q['crm_name']))
+    address=normalize_text(' '.join(data.safe(q[k]) for k in ('crm_number','crm_suffix','crm_street') if data.safe(q[k])))
     def maximum(fields,text):
         parts=[lexical.mean_query(backend,f,lexical.tokens(text)) for f in fields]
         parts=[p for p in parts if p is not None]
