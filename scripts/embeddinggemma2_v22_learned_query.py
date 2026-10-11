@@ -36,6 +36,7 @@ RECIPE=dict(model='NONNEGATIVE_PAIRWISE_LOGISTIC_L2',l2=.01,folds=5,
     training_positive='LABELED_TRAINING_ONLY_NO_SEARCH_INJECTION',
     query_weights='ORIGINAL_COMMUNE_STRATIFIED_PROBABILITY_WEIGHTS',
     encoder_control_sirens_excluded_from_calibration_training=True,
+    ancestor_cached64_and_current256_control_sirens_both_excluded=True,
     every526_query_retained_in_evaluation=True,
     standardization='TRAIN_ONLY_WEIGHTED_PAIR_DIFFERENCE_RMS',
     no_hyperparameter_grid=True,native_quantization_bits=proof.RECIPE['quantization_bits'],
@@ -53,9 +54,18 @@ def calibration_sources():
     train_sirens={r['siren'] for r in training}
     controls=sorted(validation,key=lambda r:hashlib.sha256(('gemma2-v2-control|'+r['query_id']).encode()).digest())[:config['validation_queries']]
     control_sirens={r['siren'] for r in controls}
+    ancestor_launch=io.read(io.HOME/'cached_20261007_a/launch.json');ancestor=Path(ancestor_launch['source'])
+    ancestor_refs=[dict(path=str(ancestor/name),sha256=ancestor_launch['inputs'][name]) for name in ('train.json','validation.json')]
+    ancestor_train=io.read(verify(ancestor_refs[0]));ancestor_validation=io.read(verify(ancestor_refs[1]))
+    train_sirens.update(r['siren'] for r in ancestor_train)
+    ancestor_controls=sorted((r for r in ancestor_validation if r['negatives']),
+        key=lambda r:hashlib.sha256(r['query_id'].encode()).digest())[:64]
+    if len(ancestor_controls)!=64:raise ValueError('Exact initial cached checkpoint controls')
+    control_sirens.update(r['siren'] for r in ancestor_controls)
     labels=io.read(membership)
     if {r['siren'] for r in labels}&train_sirens:raise ValueError('Gemma training identity leakage into calibration')
-    return labels,control_sirens,[record(membership),fit_launch['data'],data['config'],artifacts['train.json'],artifacts['validation.json']]
+    return labels,control_sirens,[record(membership),fit_launch['data'],data['config'],artifacts['train.json'],artifacts['validation.json'],
+        record(io.HOME/'cached_20261007_a/launch.json'),*ancestor_refs]
 
 
 def masked_lexical_features(backend,q,keys):
