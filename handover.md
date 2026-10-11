@@ -17220,3 +17220,41 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   sans promettre représentativité nationale d'un souspanelconditionnel.
   Folds0/1/test4323 fermés ; sidecar officiel de métrique vérifié à l'évaluation.
   Préserver9dirtyutilisateur et tous historiques. Pas dépenseexterne/push.
+
+### 12 octobre 2026 00:32 Paris — V22B normalisation lexicale corrigée AVANT mesures
+
+- Milestone `38fef45b` : contrôle des ancêtres de l'encodeur. TRAINcached initial
+  et TRAINV4 tous deux disjoints des SIRENvalidation. Exclusion de calibration
+  des SIRENcontrols initiaux64 ET actuels256, union151requêtes du panel526.
+  Les375autres requêtes fournissent les paires TRAINcalibrateur ; toutes526
+  restent au dénominateur de la génération/mesure OOC. Aucune exclusion de
+  métrique pour faciliter le score, aucun test4323 ouvert.
+- A préparation OWNEDexit0,19 048 436lignes complètes en51,9s, artefacts conservés.
+  Préflight RÉEL nonunitaire, query-only plusgroscorpusNantes44109/query13857 :
+  292055leaves numériques +lexical national43,9M,100candidats,10,42s dont
+  .56sconstruction et9,86srecherche. Coefficients1 pour coûtseulement, PAS modèle
+  appris ou métriquequalité/SLO. Zéro nouveauFT/réencodage, pas de pool fixe.
+- Bug général prouvé dans l'ancienne requête v38 réutilisée : tokens mots de
+  « COMMUNAUTÉ D’AGGLOMÉRATION » =communaut/agglom/ration, alorsque l'index
+  _split_values applique normalize_text=NFKD/ASCII et stockecommunaute/
+  agglomeration. Pas découvert via une évaluation de recall ou un cas ciblé GT.
+- A calibration interrompue VOLONTAIREMENT par SIGTERM du contrôleur51173
+  après vérification commande ; son enfant51178 a rendu OWNEDexit75,
+  exec83890 exit1 COLLECTÉ. Aucun modèle/scoringcomplet/métrique nouveau admis.
+  Messagehistorique SEVEN_HOUR_END est un libellégénériquedu signal, PAS vraie
+  échéance : il reste6h35. Tous artefactsA restent préservés, ne pas relancerA.
+- Correctif `f8f08427` : mots requête normalisés par la MÊMEfonction que l'index,
+  après suppression des chaînes9/14chiffres ; featureheads et rôle source
+  inchangés. Nouveau namespace scientifique B, deadline1791781629 inchangée.
+  B est actif root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v22/learned_native_20261012_b`,
+  exec42252. Lire prepare/calibrate/generate_process ET commandes/ownedexits,
+  calibration/state et native/state, logs, generation/report/error avantaction.
+  Contrôleur enchaîne prepare puiscalibrate puisnative526 puisévaluation.
+  Autoreprise sur vraieressource75, arrêt absolu07:07:09Paris avec25sgrâce
+  incluse dans la borne. Ne pas toucher au code/config actifs.
+- Aucun unit test lancé/ajouté. Aucun modèle aval ni serving changé, paspush.
+  Continuer ce mandat jusqu'à la borne ou objectif réellement démontré, pas
+  de fin anticipée sur simple petitpanel/loss. Ne pas annoncerpipeline99 sur
+  loss/OOCconsommé ; prévoir un contrôle horsSIREN de calibration et qualifier
+  franchement sa population (nationale/conditionnelle), sans rouvrirclosedtests.
