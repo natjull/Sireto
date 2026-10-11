@@ -2,6 +2,7 @@ import ast
 from datetime import date
 from pathlib import Path
 import unittest
+from tempfile import TemporaryDirectory
 
 import numpy as np
 
@@ -9,6 +10,20 @@ from scripts import embeddinggemma2_v21_relation_views as retrieval
 
 
 class RelationViewsTests(unittest.TestCase):
+    def test_duckdb_parameterized_read_stream_to_parquet(self):
+        import duckdb
+        import pyarrow as pa
+        import pyarrow.parquet as pq
+        with TemporaryDirectory() as tmp:
+            source=Path(tmp)/'source.parquet';dest=Path(tmp)/'selected.parquet'
+            pq.write_table(pa.table({'siret':['10000000000001','10000000000002']}),source)
+            con=duckdb.connect()
+            try:
+                retrieval.write_selection(con,'SELECT * FROM read_parquet(?) WHERE siret = ?',
+                    [str(source),'10000000000002'],dest)
+            finally:con.close()
+            self.assertEqual(pq.read_table(dest).to_pylist(),[{'siret':'10000000000002'}])
+
     def test_original_ban_and_fallback_footprints(self):
         strong={'ban_declared_weak':False,'ban_uncertainty_m':25}
         self.assertEqual(retrieval.footprint_radius(strong),300)

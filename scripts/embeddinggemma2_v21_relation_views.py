@@ -85,7 +85,7 @@ def collect(keys, scores, edges, cap=100):
     return result
 
 
-def initialize(out):
+def initialize(out,prepared_from=None):
     from src.xgb_matcher.retrieval_query_ban_v327 import surface
     if out.exists(): raise ValueError('Fresh immutable namespace required')
     source=engine.authority(SOURCE); panel=io.read(verify(source['panel'])); surface(panel)
@@ -111,6 +111,18 @@ def initialize(out):
         v18_outputs=io.read(identity.OUTPUT/'generation.json')['outputs'],
         v17_outputs=io.read(structural.OUTPUT/'generation.json')['outputs'],
         geo=cache_launch['geo'],names=cache_launch['names'],created_unix=time.time(),truth_opened=False))
+    if prepared_from is not None:
+        old=io.read(prepared_from/'launch.json');current=io.read(out/'launch.json')
+        if io.read(verify(old['recipe']))!=RECIPE or any(old[k]!=current[k] for k in
+                ('source_launch','geo','names','source_successions','baseline_outputs','feature_launch')):
+            raise ValueError('Prepared geometry must have identical scientific bindings')
+        ex=io.read(prepared_from/'generate_exit.json')
+        if ex['exit_code']==0 or not ex['own_child_exit_confirmed'] or (prepared_from/'generation.json').exists():
+            raise ValueError('Only fully exited failed prelabel execution may supply geometry')
+        path=engine.sealed(prepared_from/'geo_sources.json')
+        if not path:raise ValueError('Complete sealed query-only geometry required')
+        io.write(out/'geo_sources.json',io.read(path));engine.seal(out/'geo_sources.json')
+        current['prepared_geometry']=record(path);io.write(out/'launch.json',current)
 
 
 def authority(out):
@@ -161,6 +173,14 @@ def geometry_sources(panel, launch, source, out):
     io.write(out/'geo_sources.json',found);engine.seal(out/'geo_sources.json');return found
 
 
+def write_selection(connection,sql,parameters,path):
+    import pyarrow.parquet as pq
+    reader=connection.execute(sql,parameters).fetch_record_batch(8192)
+    with pq.ParquetWriter(path,reader.schema) as writer:
+        for batch in reader:
+            engine.guard();writer.write_batch(batch)
+
+
 def compile_links(out, source_keys, launch, source):
     """Semijoin on ALL query-only search views, never labels or top100 seeds."""
     import duckdb
@@ -179,9 +199,12 @@ def compile_links(out, source_keys, launch, source):
             regexp_full_match(siretEtablissementSuccesseur, '[0-9]{14}') AND
             siretEtablissementPredecesseur <> siretEtablissementSuccesseur AND
             (CAST(siretEtablissementPredecesseur AS UBIGINT) IN (SELECT key FROM selected) OR
-             CAST(siretEtablissementSuccesseur AS UBIGINT) IN (SELECT key FROM selected))'''
+             CAST(siretEtablissementSuccesseur AS UBIGINT) IN (SELECT key FROM selected))
+             ORDER BY siretEtablissementPredecesseur,siretEtablissementSuccesseur,
+                      dateLienSuccession,transfertSiege,continuiteEconomique,
+                      dateDernierTraitementLienSuccession'''
         try:
-            con.execute('COPY ('+sql+') TO ? (FORMAT PARQUET)',[str(path),str(out/'links.pending.parquet')])
+            write_selection(con,sql,[str(path)],out/'links.pending.parquet')
         finally:con.close()
         os.replace(out/'links.pending.parquet',out/'links.parquet');engine.seal(out/'links.parquet')
         saved=engine.sealed(out/'links.parquet')
@@ -277,11 +300,11 @@ def evaluate(out):
     io.write(out/'report.json',report);io.write(out/'state.json',dict(status='COMPLETE_RELATIONAL_VIEW_ABLATION',report=record(out/'report.json')))
 
 
-def run(out,resume=False):
+def run(out,resume=False,prepared_from=None):
     import fcntl
     lock=(io.HOME/(out.name+'.owned.lock')).open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     if resume:authority(out)
-    else:initialize(out)
+    else:initialize(out,prepared_from)
     env=dict(os.environ,PYTHONDONTWRITEBYTECODE='1',TMPDIR=str(out),RAYON_NUM_THREADS='2')
     while True:
         child=subprocess.Popen([str(engine.CPU),'-u','-m','scripts.embeddinggemma2_v21_relation_views','generate','--output',str(out)],env=env)
@@ -305,10 +328,10 @@ def run(out,resume=False):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('action',choices=['run','resume','generate','evaluate']);p.add_argument('--output',type=Path,default=OUTPUT);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['run','resume','generate','evaluate']);p.add_argument('--output',type=Path,default=OUTPUT);p.add_argument('--prepared-from',type=Path);a=p.parse_args()
     signal.signal(signal.SIGTERM,engine.interrupted);signal.signal(signal.SIGINT,engine.interrupted)
     try:
-        if a.action in ('run','resume'):run(a.output,a.action=='resume')
+        if a.action in ('run','resume'):run(a.output,a.action=='resume',a.prepared_from)
         else:globals()[a.action](a.output)
     except engine.ResourceYield as e:print(str(e),flush=True);sys.exit(75)
     except Exception as e:
