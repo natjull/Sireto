@@ -17008,3 +17008,79 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   aucun alias NAOS→AUBERT ni label faux déduit de cette absence. Toutes preuves
   restent audit-only. Gain graphe/nouveau retrieval national/SLO non mesuré.
   Attendre generationcompleteALL526 et ownedgenerateexit0 pour nouveau recall.
+
+### 11 octobre 2026 soir — Audit approfondi terminé et direction décidée
+
+- Milestone code et synthèse `c16218ce` :
+  `scripts/embeddinggemma2_v20_deep_audit.py`,
+  `scripts/embeddinggemma2_v20_peer_audit.py`, tests et
+  `docs/retrieval_deep_audit_direction_20261011.md`.
+  Demande humaine : audit ultra approfondi donnant une direction claire,
+  PAS nouveau run long, fit, changement aval ou serving. Guide write-page
+  utilisé uniquement pour la synthèse locale du dépôt, aucune Page externe.
+- V19B terminé, generate OWNEDexit0, aucun calcul de cette tâche encore actif.
+  Report SHA3a555a9aa2cb5efa04a528c936c6e023020eecaa1f984484d1ee24fd80c8dfaf
+  vérifié : nouveau natif470/526=89,3536%brut,87,6073%pondéré ; référence V18
+  486/526=92,3954%brut,90,9823%pondéré. Apparié V18 :8gains/24pertes.
+  Prototype REFUSÉ comme remplacement ; aucun checkpoint/encodeur changé.
+- V20 audit all526 réussi root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v20/deep_audit_20261011_c`,
+  session exec11598 exit0 collecté,62,4688s. Summary
+  SHAcb3da5109bc9310db3584163c46a4376af28632c44cbe2eaa1e0eb4069786ecc,
+  rowsbb8df9caf35b0d4b495eef839f0a8d636cf39cf37d200a5f91fdd7e1044533ae.
+  Rejoue appartenance top100 SITE/joint/natif de TOUTES526 via matrices
+  complètes scellées, sans nouvel encodage ni score produit optimisé après labels.
+  64dossiers individuels =union40ratésV18 et56ratésV19,405SIREN au panel.
+  Sources originales hashées :7454observations nom/8490adresse, relations
+  BODACC et successions propres, dates/NULL/rôles conservés. Quatre cibles
+  hors partition dense (3INSEEabsents,1communevide), PAS absentes du national.
+- Oracle DIAGNOSTIQUE des6canaux puis7avecV19 :500/526 identique,
+  94,1308%pondéré, aucun nouveau cas hors anciens canaux apporté parV19.
+  Pas sortie100/poolproduit/recallatteint/borne intrinsèque des données.
+  Les40ratésV18 restent14présents ailleurs et26absents de toutes sorties.
+  Une fusion seule ne peut atteindre99,2% avec CES sorties finies.
+- Mécanisme V19 :52 091candidats,30246dominés adresse/21130nom lexical/
+  715SITE/0joint,98,6274%heuristique. Scores noncalibrés écrasent Gemma ;
+  SOGEMA1erSITE/joint devient413e, LEROYSOMER9eSITE/4ejoint devient10734e.
+  4pertes liées aussi à l'absence du lexical national dans nouveau prototype.
+  Sur60dossiers avec doc, seul manque de nom exploitable :PETITCASINO et
+  LEADERPRICEEXPLOITATION (cible déjà retrouvée ancienscanaux). Autres gaps
+  =ND/valeurvide/4horspartition, pas enseignes manquantes récupérables.
+- V20 voisins DIRECTS root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v20/direct_peer_audit_20261011_a`,
+  session exec76645 exit0,73,5731s. Summary
+  SHAdeb4b2045237a59b39f90d4fd6af1c594b73c4eb84847ad2f1872c5b5df577c5,
+  cases90ef4af18df92be954ae6b22284a27e6f96db02560acd9c93d1dcd22d79cf466.
+  26cas,17avec succession directe,5avec endpoint lié naturellementretrouvé.
+  Noms des vrais endpoints et parents voisins audités :0similarité>=.85,
+  3avec voie>=.90,3voisin<=300mduCRM résolu,4voisin<=300mducible.
+  NAOSavenueAvenir :successeur déjàretrouvé à0m,exactancien à491m,
+  lien2025-01-01. ATOL :voisin déjàretrouvé à6m,exact à1670m et autrevoisin
+  à~199km. Une succession n'est pas même-site ; aucune identité/alias inféré.
+  Les5cas seed :SBALLIANCEx2,ATOL,NAOSrueGardes,NAOSavenueAvenir.
+  Ce sont des pistes de représentation, pas5gainsmesurés ni garantie99,2%.
+- Audit entraînement :15035rows,117538sites banque TRAIN réduite,
+  minage statique1nouveaunégatif/row/1èrevue,14688rowsavecajoutdense.
+  Négatifs35570lexicaux/14079denseautreparent/1964autresiteprouvé/
+  609denseautresite,66rows sans explicite (inbatch reste possible).
+  Best1000 choisi surloss256controls, pas recallcorpuscomplet ; fitfinal1340
+  epoch0/couverture97,32% ne décrit pas automatiquement le best1000.
+  XY/BAN/graph nonentraînés comme features numériques/relationnelles ;
+  gain isoléFTsur mêmes textes non prouvé. Aucun nouveauFT autorisé par audit.
+- Dossiers26 :0nompropre/parentfort>=.85,2contextefrèrefort,0égalitéstricte
+  numéro/suffixe/voie CRM avec adressepropre. Cela ne prouve PAS26labelsfaux.
+  Provenance commerciale vérifie saisie/existence/commune, PAS adjudication
+  indépendante identité/site. INOX/ABAQUEPLAST/FROMAGERIES versus nomsCRM
+  restent cas à expliquer/reconfirmer,0correction/0filtre dénominateur.
+- Décision PIVOT_GENERATION : Gemma conservé, nouveau score max rejeté.
+  Direction : preuves multichamps comparables/apprises horséchantillon,
+  vues de succession typées AVANTcollecteur100, accès lexical national
+  conservé, et adjudication indépendante des26dossiers sans apprendre
+  NAOS→AUBERT ou supprimer les casdifficiles. Pas500/2000/300rerankés.
+  Prochaine expérience proposée, PAS lancée : ablation vues relationnelles
+  puis score natif appris/crossfit, contrôles SIREN/zones horsdéveloppement,
+  objectifexact/OOF/SLO inchangés et test4323/folds0/1fermés.
+- 24tests PASS (5nouveaux/11V19/8V18), diffcheckPASS. Audits a/b incomplets
+  conservés (partitionvide puis sérialisationnumpy corrigées), jamaisadmis
+  comme résultat ; aucun calcul historique/actif modifié ni données effacées.
+  9dirtyutilisateur préservés, aucun push/serviceexterne/automation/nuit relancé.
