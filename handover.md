@@ -17359,3 +17359,19 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   FINESS/Éducation/DINUM410603observations SHAce446da891b17e89b653d90abea00d55b94050d5f4699a35a53dc44f886a31a1.
   Non encore intégrées aux nouvelles sorties. Rôle officiel≠identité ;
   commissaireauxcomptes ne vaut pas groupe. Personnes physiques/BE exclus.
+
+### 12 octobre 2026 02:42 Paris — V26 : a priori publics d'établissement sans filtre
+
+- Milestone `73876f41` : isoler l'information SIRENE siège/non-siège et actif/
+  fermé déjà publiée dans l'index national. Quatre champs natifs constants
+  apprennent leur coefficient horsSIREN, pas de bonusmanuel ni retrait des
+  vérités fermées. Disponible sur TOUTES43896818leaves, pas seulement les
+  familles/communes qui disposent d'embeddings. Codesis_siege1/0 etstateA/F
+  vérifiés dans le constructeur original de l'index, hashé en provenance.
+- Même architecture V23 et preuves scellées,31champs appris, mêmes splits/
+  contrôles/dénominateur526/collecteur100. Modificationdespriors seulement,
+  pas combinaison posthoc V24/V25. Pas unit tests, AST/diffcheck seulement.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v26/official_site_priors_20261012_a`,
+  exec93442 actif à free68%/pressure1. Trois workersCPU sous gardes réelles,
+  aucun entraînement ou encodageMPS,14coeurs et sourcecachepartagés ; vérifier
+  mémoire/commandes/ownedexits, ne pas doubler. Échéance1791781629 inchangée.
