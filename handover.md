@@ -18018,3 +18018,26 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   valides exclues,1 640 743 dates effectives inconnues conservées comme inconnues.
 - Même deadline absolue1791870324, pas de nouvelle fenêtre. Automation lit
   ce handover : V57 remplace V56 comme calcul actif, ne pas relancer V56.
+
+### 13 octobre 2026 00:02 Paris — Géographie nationale indépendante lancée
+
+- Milestone `e76d9d5a`, source atlas V58
+  `scripts/embeddinggemma2_v58_public_site_ban.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v58/public_site_ban_20261013_a`.
+  Initialisation réelle exit0 collectée, superviseur session9646 lancé.
+  Lire `prepare_process.json`, `state.json`, `prepare_exit.json`, `generation.json`.
+- Couverture du stock NATIONAL entier, sites O actifs et fermés dont point L93
+  original manque ou est incompatible. Aucune sélection par GT/raté/query ou100.
+  Jointure exacte commune+rue normalisées sur BAN `score_eligible`, numéro et
+  suffixe exacts pour HOUSE ; sinon empreinte complète de rue, qualité .25 et
+  dispersion explicite, pas fausse précision maison. Coordonnées existantes
+  jamais remplacées ; adresses propres publiques seulement, aucun siège copié.
+  Provenance BAN par hashes conservée. Stock2026-08-01/BAN2026-08-14, pas une
+  preuve géographique historique au jour de fermeture. Aucun nom masqué récupéré.
+- V58 est une SOURCE à compiler avant expérimentation de score, PAS un gain de
+  recall. Réutiliser uniquement après génération complète et owned exit0, avec
+  nouveaux bindings/namespace pour intégration. Coordinate projection reprend
+  les constantes Lambert93 existantes ; aucune dépendance installée.
+- V57 toujours actif parent70810/prepare70813,113/526 features à22:02 UTC,
+  RSS3,1 Go, mémoire système libre67% sur24 Go. Aucun calcul dupliqué.
+  Même échéance07:45:24 Paris, modèles aval/test4323/folds0/1 toujours gelés.
