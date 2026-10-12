@@ -17504,3 +17504,74 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - V28 publicsector est préparé526complet et calibré, générationactive ;
   V24fullnativeTRAINminage poursuitfold2 ; V27/V29générationactive. Aucune de
   leurs sorties partielles n'a été évaluée. Pas unit tests, modèlesavalgelés.
+
+### 12 octobre 2026 04:40 Paris — Ablations complètes, continuation globale encadrée
+
+- V24 COMPLETE exec63695 exit0 collecté, minage cinqfolds/génération OWNED0.
+  ReportSHA0a99b16188d3a673dff4c298139de43eeedd97e30920d927712901bd3ed5f898.
+  Exact491/526=93,3460%brut/92,6662%pondéré, SIREN493/op491. CVaRtop100 sur
+  vrais concurrents nationaux TRAIN n'améliore PAS V25pondéré93,2105%.
+- V27 COMPLETE exec32465 exit0 collecté, reportSHA
+  eb219bf45cce852ecda9de38460b971b241231792d4e2f118c0959906b6d274c.
+  RéseauH8 exact477/526=90,6844%/89,6844%pondéré, SIREN478/op477.
+  REJETÉ malgré lossTRAIN~.08-.09. V29sourceDropout COMPLETE exec88901exit0,
+  reportSHA8a3bf1bb834cc0084003fcb5d86ef3043413316ab87650855f0d98152569be0d,
+  exact482/526=91,6350%/91,0275%pondéré, SIREN486/op482 ; NONretenu aussi.
+- V28 publicsector COMPLETE exec45795exit0, reportSHA
+  0288a3ab4b920dc47a866177f8e7851c31529e27e2204735502652f2720b81f1.
+  Exact492/526=93,5361%/92,8296%pondéré, SIREN495/op492. Apporte versus
+  V23base91,5946%pondéré, mais pas mieux queV25. V30rôlesRNE COMPLETE
+  exec15164exit0, reportSHA7f81cbfe7ecb2a2d724328b5fe6b58285ed628be95e31a6179a8859c98cc6418,
+  exact493/526=93,7262%/92,2313%pondéré, SIREN497/op494 ; pas meilleurpondéré.
+- V31 (`036ac8c7`,`76233232`) COMPLETE exec74499exit0, reportSHA
+  6a774682a2cfc1029e1f4d1ecd07656b575590d03da97e85c7e0f7366db7ef0d.
+  Exact492/526/93,2105%pondéré inchangéV25 ; MAXvue locale onehop n'apporte
+  aucun gain exact mesuré. Pas prétendre avoirclosé les cas historiques.
+- V32 `e6a9663d` root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a`,
+  prepare_only exec98175exit0 ;165635parents/199899alias officielsSIREN-only,
+  future0/undated97954. Nom propre de site NONbroadcasté comme aliasparent.
+  TOUScesparents ont leurs scores de nom diffusés à TOUSmembres nationaux
+  par référenceSIREN, avantUNcollecteur100, pas beam. Calibrationactive
+  exec12292 depuis04:10, concurrentsTRAINnatifs101 seulement. Lire ownedexits.
+- V33 `f1fc27a9`,`20fdcec7` : globaliser identité dense existante. SOURCEcache
+  V18=2126387parents/1862302textes/2131929vues de295communes, PAS tousparents
+  français. Toutesvues scellées réemployées, zéroencodageDOC/nouveaufitGemma.
+  Ancien A root v33/global_cached_parent_dense_20261012_a : exec71541exit1
+  collecté, encodepid98917OWNED1 avantcalcul (duckdbabsent runtimeGPU).
+  uv--no-deps a ajouté UNIQUEMENTduckdb1.4.3, mêmeversionCPU ; Torch2.14.1 et
+  Transformers5.19.0 vérifiés INCHANGÉS. Pas installationpip ni upgradeNumPy.
+- B root v33/global_cached_parent_dense_20261012_b : exec52577interrompu
+  VOLONTAIREMENT viaPID894 vérifié, prepare1110OWNEDexit-15 collecté. Encodage
+  QUERYONLY526 nominal completOWNED0 conservé. Banque rowmajor partielle
+  durable17408textes conservée ; I/Odispersées empêchaientfin dansmandat.
+  Ne pas redémarrerA/B ni interpréter CONTROLLER_SIGNAL comme deadlinehumaine.
+- V34 `6bdc17a4` combinaisoncohérence+sector stoppéeOWNEDcalibrate1 avantfit :
+  wildcardimport deV28 exportaitsonalias'source'=V23 et écrasaitla liaison
+  V28 attendue (22vs31champs). Historiquescode/artéfactsV34 préservés.
+  RecoveryV35 `6cbb9201` restaureexplicitementaliasV28 APRESwildcard,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v35/coherence_sector_recovery_20261012_a`,
+  exec7801 actif. Mêmehypothèse scientifique,72coefficients,375TRAIN/ALL526.
+- RecoveryV36 `6cbb9201` root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v36/global_cached_parent_dense_forder_20261012_a`,
+  exec96798 actif : scoresglobaux Qxparent stockés FORTRANparent-major,
+  EXACTmêmes requêtes copiéesbyte-identiques B/poids/vecteurs/dtype/max.
+  Aucun cas sansnom ni vue 'nom public indisponible' utilisé comme vraienom.
+  Vérification RÉELLE de préfixe (PAS unit test) :526queries×128parents déjà
+  totalement calculés, array_equalTrue/maxabs0 ; record
+  real_prefix_numeric_comparison.json. Pas équivalence nationalecomplète
+  annoncée ni métrique sur un bancpartiel. Banque doitterminerOWNED0 avantusage.
+- V37 `d9496411` root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v37/global_identity_existing_heads_20261012_a`,
+  exec14529 attendV36préparationOWNED0, AUCUN calculdebanquedupliqué. Copie
+  parentblocks4096 versrowmajor pourlecture parrequête, comparaison exacte de
+  CHAQUEbloc réel (pas unit test). Puis RÉEMPLOIE les têtesV25 horsSIREN,
+  sans nouveaufit : identitéparent globale remplace locale, interactions
+  parent×adresse/parent×géoparent recalculées, tous autreschamps/lexicalnational
+  inchangés. Scoreparent diffusé à tous membres parréférence, pasbeam ni
+  unionpoolfixe. Déclarer modificationdescope et absenceclaimreplayquerypadding.
+  Après V36OWNEDprepare0, arrêter son contrôleur parcommande vérifiée avant
+  calibration globale nouvelle pluscoûteuse ; conserverbanquefinale etexits.
+- Tous ces runs partagent ABSOLUMENTdeadline1791781629 (07:07:09Paris), pas
+  prolongation. Meilleuremesure resteV25 93,2105%pondéré ;99 NONatteint et
+  tests4323/folds0/1 restentfermés. Pas unités, aval/serving/modèleGemma gelés,
+  neufdirtyutilisateur préservés, aucunpush/dépenseexterne.
