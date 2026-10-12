@@ -17375,3 +17375,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   exec93442 actif à free68%/pressure1. Trois workersCPU sous gardes réelles,
   aucun entraînement ou encodageMPS,14coeurs et sourcecachepartagés ; vérifier
   mémoire/commandes/ownedexits, ne pas doubler. Échéance1791781629 inchangée.
+
+### 12 octobre 2026 02:47 Paris — V27 : contradictions apprises dans les preuves natives
+
+- Milestones `0f024122` puis `8813bd31` : réseau tanhHIDDEN8→sigmoid bornée,
+  amplitude0..30 apprise et lexical natif linéaire>=0. Les poids cachés signés
+  permettent contradictions/interactions nonmonotones que V23 ne représente
+  pas. Aucun nouvel encodeur, labelalias ou featureidentifiant ; mêmes22preuves
+  source V23 et même nationallexical. 199paramètres, L2.01, seed20261012 fixe,
+  pas grille de modèles ni sélection après scores. Fit horsSIREN cinqfolds.
+- Tous les leaves de preuves sont scorés AVANTcollecteur100 ; pour TOUSles
+  leaves nationaux horscouverture, score EXACTdu même réseau au vecteurzéro.
+  Cette baseline est une requête native leafMust/refsMustNot, pas exclusion
+  d'un corpus nonencodé, bonus pour simpleprésencecache ou poolreranké.
+  Score réseau borné compilé20bits avec erreur amplitude/(2^20-1), horsfloat32.
+  Initialisationlexicale du modèle V23 du MÊMEfoldK excluantK, provenancehashée.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v27/nonlinear_native_20261012_a`,
+  exec32465 actif après free68%/pressure1, mêmesgardes etdeadline1791781629.
+  Fit du petit score seulement, pas gradientGemma/MPS/aval. Nativecap100.
+  Aucun unit test, seulement AST/diffcheck puis vraiefit/exécution sousgardes.
+  Ne pas ouvrir metrics sur sorties partielles ; vérifierownedexits et hashes.
+- Auditprimaire NAOS : sa section ENTIÈRE « Nos clients » contient quatre
+  images publiques logo_aubert.gif/logo_euromedis.gif/logo_jill.gif/logo_vintex.gif,
+  observées sans requêteGT au HTML officiel https://www.naos-it.com/ . Cela
+  corrobore PRESTATAIRE/CLIENT, PAS identitéNAOS=AUBERT. Sourcepublicevidence
+  conservée comme diagnostic ; aucun de ces liens n'entre encore dansfit/index.
