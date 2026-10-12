@@ -152,9 +152,10 @@ def calibrate(out):
             feature_generation=record(out/'features_generation.json'),recipe=record(root/'recipe.json'),
             assignment=record(root/'assignment.json'),encoder_control_queries=record(root/'encoder_control_queries.json'),
             label_sources=sources,encoder_train_disjoint=True,deadline_unix=launch['deadline_unix'],
+            initialization_calibration=record(proof.PREPARED/'calibration/generation.json'),
             calibration_labels_read_for_training_only=True,encoder_control_queries_kept_in_primary_evaluation=True))
     cal=io.read(root/'launch.json')
-    for ref in (cal['implementation'],cal['feature_implementation'],cal['feature_generation'],cal['recipe'],cal['assignment'],cal['encoder_control_queries'],*cal['label_sources']):verify(ref)
+    for ref in (cal['implementation'],cal['feature_implementation'],cal['feature_generation'],cal['recipe'],cal['assignment'],cal['encoder_control_queries'],cal['initialization_calibration'],*cal['label_sources']):verify(ref)
     assignment=io.read(verify(cal['assignment']));excluded=set(io.read(verify(cal['encoder_control_queries'])))
     source=io.read(verify(launch['source_launch']));old=io.read(verify(io.read(proof.CACHE/'launch.json')['baseline_outputs']))
     sampling=io.read(verify(source['sampling']));backend=TantivyBackend(io.INDEX)
@@ -330,5 +331,4 @@ if __name__=='__main__':
     except Exception as error:
         if args.output.exists():io.write(args.output/(args.action+'_error.json'),dict(error=repr(error),updated_unix=time.time()))
         raise
-
 
