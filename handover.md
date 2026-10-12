@@ -17423,3 +17423,36 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   recherche526 complète et scellée avant mesure. Gardes20%/10GiB/deadline
   1791781629 inchangées, CATNATreserve80GiB. Pas unit tests, AST/diffcheck
   seulement, aucunmodèleGemma/aval/serving modifié, closedfolds/test inchangés.
+
+### 12 octobre 2026 03:03 Paris — Deux hypothèses suivantes préparées, pas encore lancées
+
+- Milestone `0125bb0a` : V29 conserve EXACTla recherche V27, modifie seulement
+  le fit avec .75loss complète +.25loss des mêmes paires réelles avec preuves
+  numériques ABSENTES. L'espérance de ce masquage est calculée directement,
+  pas génération de nouveaux noms/entreprises/labels synthétiques. Motivation
+  query-only : V27 a appris poids adresselexicale0 dansTOUSlesfolds alorsque
+  certaines requêtes production peuvent manquer de communes/empreintes.
+  [ModDrop](https://arxiv.org/abs/1501.00102) appuie le principe d'apprentissage
+  avec canaux manquants, pas la validité de ce coefficient ni un recall99 SIRENE.
+  Aucune métrique V27 partielle lue pour choisir cette expérience.
+- Milestone `9f9923af` : V30 ajoutedixpreuves de rôle RNE ENTREPRISEdirect,
+  nomacteur etnomacteur×XYpropre, séparées par codes sources75/73/99/71/OTHER.
+  Codes choisis uniquement par fréquence entière source>100000, PAS sens
+  de gouvernance supposé ni labels. Aucune identité/groupe déduit d'un rôle,
+  aucun effondrement par commissaireauxcomptes ou aliascopié dansnomspropres.
+  RelatedSIREN structurérequis, suffixes REPRESENTEEPAR/REPRPAR retirés avant
+  matching pour ne pas encoder les représentants physiques dans dénomination.
+  EffectiveDate inconnue resteUNKNOWN, observation≤01août2026 ; mêmefullbank
+  query-onlyV23, aucun voisin du GT utilisé comme graine, aucun pooltopk.
+- V29/V30 CODEPRÉPARÉ seulement à03:03Paris ; aucune source active initialisée,
+  pas nouveau résultat. Attendre libération d'au moins un worker actuel avant
+  lancement sous garde20%/10GiB et même borne1791781629. Toutes sorties de
+  V24/V25/V26/V27/V28 restent partielles et NONmesurées àcetinstant.
+- Contrôle indépendant faisabilité : validation2212 disjointe encoderTRAIN,
+  SIREN405dupanel etcontrôles253 exclus ;962requêtes restent éligibles mais
+  ZÉRO danslescommunesdéjàencodées295. Le sondage précédent a consommé les
+  requêtes de chacune de sescommunes, pas quelques lignes au sein de chaque
+  commune. Réutiliser leurs vecteurs pour un nouveau holdout est donc
+  impossible sans nouvellescommunes/encodages. Toute sélection limitée aux
+  nouvellescommunespetites/moyennes serait CONDITIONNELLE, pas représentative
+  nationale ; pas annoncer « contrôle national certain » via cette facilité.
