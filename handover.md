@@ -17651,3 +17651,27 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   déjà scellés. Aucun worker V37 actif au moment de la reprise.
 - La priorité reste terminer les expériences scientifiques V32/V35/V37,
   pas continuer la plomberie. Pas métrique partielle ni unit tests.
+
+### 12 octobre 2026 05:42 Paris — V35 améliore la mesure ; audit V25 complet
+
+- V35 exec7801 exit0 collecté ; génération6642 owned0 complète526,
+  calibration horsSIREN et mêmes contrôles exclus. Exact494/526=93,9163%brut,
+  pondéré93,5636019%, SIREN496/op494. IC pondéré APPROX90,768–95,721%,
+  Wilsonbrut91,538–95,658%. Nouveau meilleur développement, +2,5813points
+  pondérésvsV18, +.3531vsV25 ; aucune preuve99%/99,2%/OOFcomplet/SLO/test.
+  Historique239/244, récent255/282 ; actifs392/404, fermés61/76, inconnus41/46.
+  Pas de promotion aval/serving ni ouverturefold1/test4323.
+- Audit V41 `e8f3fcde`, exec46344 process0 collecté, namespace
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v41/postseal_v25_attribution_20261012_a`.
+  Uniquement LABEL-SIDE après génération V25COMPLETE et owned0. Les34cibles
+  ratées appartiennent toutes au flux nonlexical COMPLET V23, mais score
+  nonquantifié sous cutoffnatifs100 (écarts>.03, bien au-dessus erreur1e-5).
+  Aucun rang national inventé : contributionsnom/adresse/geo/relations et
+  scoreslexicauxréels relevés pourdiagnostic, pas feature/pool/recetteproduit.
+  Nompropre≥.85 :1cas ; géopropre≥.8 :2 ; géopropre0 :17 ; contextesuccession
+  nonnul18 ; seulement6écarts<.15. Présence dans preuves ne prouve PAS
+  identité suffisamment discriminante ni récupération garantie par score.
+  casesSHA c32f4e85e9b90d6edd58a2fb025dc80e52a4c6f572e7e8e2671a1cdb701f245c.
+- V40 vérificateur exec52743 process0 collecté : huitmêmeslistes100, delta
+  max4,768e-7 (tolérance1e-5 inchangée), mais coût6–163s ; nonretenu. V37
+  repriseidentique active exec94088, sorties noncomplètes NONévaluées.
