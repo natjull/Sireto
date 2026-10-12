@@ -17631,3 +17631,23 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   nécessaire avant reprise complète ; ne pas déclarer équivalence avant PASS.
 - V32 et V35 continuent ; aucune métrique partielle ouverte. Deadline
   ABSOLUE1791781629 inchangée, neufdirtyutilisateur conservés.
+
+### 12 octobre 2026 05:35 Paris — Optimisations rejetées sur coût réel ; reprise identique
+
+- Vérificateur réel V38 `35694c63` a fini exec49001 owned process0 : huit
+  sorties scellées V37 comparées, mêmes100 SIRET dans mêmeordre, écartscore0.
+  MAIS plus lent ; aucune génération entière V38 ni recall ouvert.
+- V39 `9f16e358` préparé seulement, jamais génération/labels : masquebitwise
+  avait un piège booléen repéré par inspection. Historique laissé intact.
+  V40 `d908a658`,`d851773b` corrige dans namespace neuf ; modèle repris via
+  calibrate13921 owned0, pas nouveaufit. Le front adaptatif étend128 puis
+  double SANSplafond jusqu'à preuve de domination score ; aucun pool fixe.
+  Comparaisons réelles toujours exactes mais27–55s/cas, donc non retenu sur
+  performance. Attendre ownedfin du vérificateur avant bilan définitif.
+- V37 a été volontairement interrompu, parent4655 vérifié, generate11690
+  owned75/exec14529exit1 collecté, sorties scellées conservées. Exits/erreur
+  d'avant reprise archivés sous noms explicites dans root. Reprise du MÊME
+  binding/code/config/modèles et deadline, pas nouveau calcul des shards
+  déjà scellés. Aucun worker V37 actif au moment de la reprise.
+- La priorité reste terminer les expériences scientifiques V32/V35/V37,
+  pas continuer la plomberie. Pas métrique partielle ni unit tests.
