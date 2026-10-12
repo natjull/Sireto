@@ -17400,3 +17400,26 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   observées sans requêteGT au HTML officiel https://www.naos-it.com/ . Cela
   corrobore PRESTATAIRE/CLIENT, PAS identitéNAOS=AUBERT. Sourcepublicevidence
   conservée comme diagnostic ; aucun de ces liens n'entre encore dansfit/index.
+
+### 12 octobre 2026 02:51 Paris — V28 : preuves de sites des annuaires officiels
+
+- Milestone `85757995` : source FINESS/Éducation/DINUM locale complète410603
+  observations, SHAce446da891b17e89b653d90abea00d55b94050d5f4699a35a53dc44f886a31a1
+  et manifeste original vérifiés. Sources projetées à identifiants structurés,
+  pas rapprochement nom→identifiant inventé. Datecutoff01août2026 ; dates
+  manquantes conservées UNKNOWN et comptes publiés, dates futures horsrecette.
+- TOUTESles références SIRET de ce catalogue présentes au catalogue national
+  ajoutées à CHAQUErequête avant score, sans recherchetopk/filtreGT. Proves de
+  nom/voie/numéro et cohérence d'une MÊMEobservation source ;XYpropres INSEE
+  là où connus, pas géocodagemassif. Parent SIREN-only reste CONTEXTE sur les
+  familles de preuves de requête, jamais alias/adresse d'un site ni assertion
+  de couverture nationale de toutes les familles sectorielles.
+- Même architecture V23 et original22preuves INCHANGÉES sur leurs feuilles,
+  neufchampssectoriels nouveaux,36scores avec lexicalnational5. Même procédure
+  horsSIREN375queries TRAIN et ALL526evaluation, corpus privé original intact.
+  Pas exceptionpharmacie/nomprestataire spécifique ni correctiondeGT.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v28/official_sector_native_20261012_a`,
+  exec45795 actif aprèsfree64%/pressure1. Préparationfullquery-only puisfit/
+  recherche526 complète et scellée avant mesure. Gardes20%/10GiB/deadline
+  1791781629 inchangées, CATNATreserve80GiB. Pas unit tests, AST/diffcheck
+  seulement, aucunmodèleGemma/aval/serving modifié, closedfolds/test inchangés.
