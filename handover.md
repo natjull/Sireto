@@ -17827,3 +17827,46 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   pas pousser géocodage deGT ni précisionmaison quandnuméroabsent.
 - Modifications de cette nuit commitées localement surcodex/v9-architecture,
   sanspush ; neufmodifications antérieures noncommitées toujours intactes.
+
+### 12 octobre 2026 12:10 Paris — Audit demandé BODACC et dirigeants, sans nouvelle recette
+
+- Mandat humain « Vas-y audite ces pistes », distinct de la nuit terminée :
+  inspection de sources seulement, pas reprise du training/serving ni long run.
+  Milestone `517aa49a`, rapport
+  `docs/retrieval_bodacc_directors_audit_20261012.md`, scripts V49/V50.
+- V49 complet : session87230 réellement collectée exit0, 19 snapshots locaux
+  2008–2026,50 380 026 lignes de snapshots, cutoff2026-08-01, audit20,68s.
+  Même all526 après V32 complet/scellé/owned0 ; aucun fold0/1/test4323 ouvert.
+  Annonces379/526, administration347, anciens noms absents du dictionnaire
+  parent17, prédécesseurs108. Sur31ratés :21avecannonces,20administration,
+  3correspondances informatives complètes dansadministration,1dansacte,
+  5prédécesseurs,1avec noms propres manquants parent (CAMPHES→ALTO'PRIX/TOOBA,
+  sans ressemblance CRM ; portée site/historique à conserver, pas gain).
+  casesSHA1cf1e21aa70484be5f3dee3f73aef485e130028344a639e0349505f3e4017201.
+- V50 complet : session70336 réellement collectée exit0, inspection RNE ZIP
+  sélective des31ratés/26SIREN,19sujets exacts retrouvés=24cas. Recherche
+  heuristique sixmembres voisins, PASabsence démontrée pour7cas nonretrouvés.
+  Sur17cas avecINDIVIDU, aucun token informatif de ces noms dansCRM ; les
+  recoupements sont ENTREPRISE :CATZAM,FOURNIER,EUREDEN,partielEUROVIA.
+  Pas extraction domicile/naissance/bénéficiaires effectifs ni identitéP
+  reconstituée. casesSHAcd3f82b5ef2b234f0e41292bea2745b697774216aff541e5fede3201d7b1df1c.
+- Administration existe encore dans les JSONpersonnes anciens/2026, mais est
+  ignorée au canonicaliseur ; actes/modifications/divers locaux seulement
+  dans copies2022–2025. Pas prétendre avoir tous textes/PDF ou fraîcheur2026
+  complète. RNEroles1,754M uniquement sociétés, pas dirigeantsINDIVIDU.
+- CATZAM etEUREDEN déjà récupérés par recetteV30 ; celle-ci fait3gains/5pertes
+  vsV32,493exact/92,2313%pondéré contre495/93,6717%. Ce n'est pas une ablation
+  causale ni une raison de promouvoirV30. FOURNIER etEUREDEN n'ont pas XY ;
+  CATZAM a pointpropre à1,93m. Fanout :CATZAM10parents,EUREDEN68,FOURNIER15
+  etquatreSIRENacteurs homonymes. Discriminants propres du site indispensables.
+- ActeBODACC A202300971476(2023-05-21) décrit société mère communeEUREDEN
+  desdeux sociétés344799390/383509049 et projet de fusion. CET acte n'est pas
+  extrait comme relation ; TROISASSET_TRANSFER existent déjà entrelesdeux via
+  autresannonces2023. Lacune :clause de détention typée, PAS toutefusion
+  absente. Projet/dateprévue ne signifient pas réalisation confirmée.
+- Direction auditée :corporatecontexte+géométriepropre puis compilationoff-line
+  indépendante deslabels des clausesparent/fusion/TUP/cession, typées/datées/
+  sourcées, avant unique collecteur natif100. Personnes physiques moins
+  prioritaires pources entrées nom/adresse ; pas verdict universel. Aucun
+  aliasCRM, nouveau candidat/règle, dénominateur changé, score nouveau,
+  gradient, unit test, dépense externe ou push. Neufdirtyutilisateur intacts.
