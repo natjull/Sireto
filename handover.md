@@ -17701,3 +17701,27 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   préparation active PID16051 viaexec6837 àvérifier, sortie attendue owned
   du tool avant receiptprepare0 et démarrageV43. Ne jamais fabriquer unexit0
   d'aprèsseuleprésencefichier. DeadlineABSOLUE07:07:09Parisinchangée.
+
+### 12 octobre 2026 06:01 Paris — Chaînes complètes et calibration scellée
+
+- V42 source prepare16051, exec6837 exit0 réellement collecté : receipt
+  prepare_exit.json porte explicitement ownership par outil (pas subprocess
+  caché). ALL526/202720278lignes depreuves, chaînes sources
+  SHAb7c1e201d30e2e6d612a258521d1bcd529ec1fea7d33bb0f162a7d99eae0a505.
+  Bibliothèque chrono compilée en entier puis endpoints validés catalogue ;
+  count chain_observations est demi-compte des arêtes dirigées éligibles,
+  pas affirmer compte exact des observations originales après filtrecatalogue.
+- V43 root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v43/coherent_temporal_chains_20261012_a`,
+  exec18772 parent17332 ; prepare0 et calibration18322 owned0, cinq modèles
+  horsSIREN scellés. Une reprise ressource75 au cas280/RSS10GiB, mêmebinding,
+  puis les375shards finies sans relâcher les protections. Generate19437 actif,
+  ALL526 requis avant métrique. Ne pas redémarrer ni modifierhashes actifs.
+- V37 reprise volontairement arrêtée de nouveau car ETA dépasse deadline :
+  parent14370 commande vérifiée, generate14379 owned75, exec94088exit1 collecté.
+  Banque entière et~100shards préservées ; AUCUN recall global ouvert/annoncé.
+- Audit V44 `5980af7b` terminé exit0 : ORACLE exclusivement label-side de
+  TOUTES sorties anciennes et des12recettes nocturnes complètes, pasnouveau
+  retrieval. 506/526cas présents quelque part (96,1977%brut/95,9885%pondéré),
+  20absents partout. Cela exclut99% par simple fusion de CES listes finies,
+  PAS un plafond des fluxcomplets, d'autres modèles ou d'autres sources.
+  Aucun pool produit/feature/query modifié d'aprèscetoracle, aucunlabel retiré.
