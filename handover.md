@@ -17575,3 +17575,34 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   prolongation. Meilleuremesure resteV25 93,2105%pondéré ;99 NONatteint et
   tests4323/folds0/1 restentfermés. Pas unités, aval/serving/modèleGemma gelés,
   neufdirtyutilisateur préservés, aucunpush/dépenseexterne.
+
+### 12 octobre 2026 04:53 Paris — Audit de rôle commercial, sans alias dérivé des labels
+
+- Les34ratésV25 se répartissent sur27SIREN, dontseptrequêtesAUBERT. Lecture
+  AFTERsealV25 des dossiersV20 et noms officiels du dictionnaire : rawCNAM
+  AGCRETEILDUHAMEL→CAISSEPRIMAIREASSURANCEMALADIE94/CPAM94 ; rawGROUPAMA
+  SUPPORTSET SERVICES→EIRLGASTONJUTGEASSURANCE ; INFODESCA→IRRIGARONNE/
+  PROSJETIRRIGARONNE etMIDIPYRENEESSCELLEMENT/MPS. Ce ne sont PAS des noms
+  d'alias à apprendre ni une preuve automatique labelerroné. Identifiants
+  utilisés UNIQUEMENT pourlookup de dossier d'auditpostseal, jamaisfeatures.
+- Preuves primaires indépendantes recherchées avec les NOMSCRM de prestataires,
+  pas source créée selon leurs SIRETGT :
+  https://annuaire-entreprises.data.gouv.fr/entreprise/343222311 : INFODESCA,
+  gestioninstallationsinformatiques ;
+  https://www.descours-cabaud.com/mentions-legales/ : hébergeurINFODESCA ;
+  https://groupama-recrute.talent-soft.com/offre-de-emploi/imprimer-fiche-emploi-manager-des-achats-informatique-et-telecoms-h-f_60774.aspx :
+  G2S=GIEinformatique/achats/télécomsdugroupeGroupama ;
+  https://www.naos-it.com/ : référencesclientsAubert/Euromedis/Jill/Vintex.
+  Il s'agit de rôles fournisseur/SI/groupe/agent/client, PAS identité juridique.
+- Hypothèse de direction renforcée : certains noms CRM désignent le donneur
+  d'ordre technique/acheteur centralisé plutôt que l'entreprise du site. Une
+  meilleure similarité nom ne peut inventer cette relation. Extractionamont
+  des rôles/noms occupants ou véritables relations commerciales/enseigne
+  documentées nécessaire à investiguer, sans transformer les associations
+  CRM→GT en dictionnaire. Aucune de ces pages/relations n'est injectée au
+  retrieval de cette nuit ; sourcesadministratives/contratsactifs inchangés,
+  aucune tablecomptesannuels/personnesphysiques/contacts utilisée commefeature.
+- Ne pas qualifier GASTONJUTGE d'établissement médical : la source légale
+  ditASSURANCE. L'ancien soupçon basé sur un nom/éditeur n'était pas une
+  preuve sectorielle. V28/V35 lisent TOUTFINESS/Éducation/DINUM sans règle
+  spécifique attribuant pharmacie à Cegedim ou assurance à un libellé CRM.
