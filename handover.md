@@ -17477,3 +17477,30 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   exec88901, après libération V25/free63%/pressure1. Même deadline1791781629.
   V30 encore CODEPRÉPARÉ uniquement, ne pas le confondre avec expérienceactive.
   AutresV24/V26/V27/V28 poursuivis, pas lecture de leurs metrics partielles.
+
+### 12 octobre 2026 03:18 Paris — Priors V26 non retenus, rôles V30 actifs, vues V31 préparées
+
+- V26 COMPLETE, exec93442 exit0 collecté, ALL526ownedexit0 avantmesure.
+  ReportSHA40df5ba348b8547f2a653753c388e472d53b7b93181c0d33884b1a3e3884db10.
+  Exact486/526=92,3954%brut/91,3266%pondéré, SIREN488/opérationnel486,
+  apparié11gains/11pertesvsV18. InférieuràV25 ; priorspublics seuls NONretenus,
+  pascombinaisonposthoc avec V25 ni promotionserving. HQ/actif ne suffisentpas.
+- V30 `9f9923af` maintenant actif root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v30/legal_role_context_20261012_a`,
+  exec15164, après ownedfinV26/free~63%/pressure1. TOUTsource RNE lu en projection
+  corporateonly, représentecontexteacteur pas identité. Borne1791781629 intacte.
+- V31 milestones `036ac8c7`,`76233232`, CODEPRÉPARÉ NONlancé : réutilise V25
+  modèles horsSIREN ET preuvesV23inchangées. MAX des scores appris dans la MÊME
+  unité entre vuepropre et vue locale du site directement lié par succession
+  éconTrue datée≤01août2026. Aucuns cosinus/fuzzybruts mélangés commescorefinal.
+  VueSOURCE exclut TOUSchamps parent et relations : columns0/2/3/4/5/6/7/9/10
+  propres uniquement. Sourcefamilles originales query-only (communescomplètes
+  +empreintesBANcomplètes) AVANTUNlien, puisendpointcible ; pas sourceétendue
+  réutilisée pourfaire2sauts. Nom/adresse voisin reste CONTEXTE, pasownalias.
+  Nationallexicalresteouvert, unseulcollecteur100 et mêmequantification20bits.
+  Pas nouveaufit/bonusqueryparticulier/labelinjecté. Coût deconstructiondevue
+  explicitement inclus dans timings ; pasSLOinféré. Attendrelibérationworker
+  V27 avant lancement, mêmedeadline1791781629 et gardesressources.
+- V28 publicsector est préparé526complet et calibré, générationactive ;
+  V24fullnativeTRAINminage poursuitfold2 ; V27/V29générationactive. Aucune de
+  leurs sorties partielles n'a été évaluée. Pas unit tests, modèlesavalgelés.
