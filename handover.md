@@ -18087,8 +18087,9 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v64/bodacc_parent_clauses_20261013_a`.
   Session80953 réellement collectée exit0, PID74783, compile_exit.json conservé.
   Quatre snapshots2022–2025 complets,13 761 225 annonces source,
-  9170 passages examinés,3970 faits candidats publics après3 sujets protégés
-  exclus. Scan/compilation12,49s, ZEROCRM/ZEROGT ; pas les backfills label-side.
+  9170 passages examinés,3970 faits candidats publics après3 faits concernant
+  des sujets non publics exclus. Scan/compilation12,49s, ZEROCRM/ZEROGT ; pas
+  les backfills label-side.
 - Revue aveugle32 hashée : au moins4 fausses captures grammaticales (`associée
   unique`, `détenant...`, `il ne sera...`, `et l'opération...`),1 nom pollué par
   `La Société Absorbante`,1 `HOL` potentiellement tronqué par ponctuation.
@@ -18101,3 +18102,27 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - V57 calibrateur reste actif PID73928,93/375 à00:14 Paris (features526/526
   déjà owned exit0), aucune génération100 encore évaluée. Limites réelles de
   mémoire respectées ; même deadline1791870324 et neuf dirty utilisateur intacts.
+
+### 13 octobre 2026 00:22 Paris — Portée des clauses vérifiée sur textes complets
+
+- Lecture des annonces complètes du contrôle aveugle : `HOL` est réellement
+  tronqué de `HOL.TR.AD.` (A20220230430). A202302271096 nomme C-BEYOND comme
+  absorbante détenant SYBELE, mais le sujet annoncé EST C-BEYOND : l'attacher à
+  lui-même comme mère serait faux. A20230153737 présente le même risque pour
+  MD BOISSONS et pollue le nom par `La Société Absorbante`. A20230043226 valide
+  au contraire IMPRIMERIE ROBERT mère commune de Bordessoules/Boismoreau.
+  Au moins7 problèmes nom/portée sur32 ; aucun corpus brut admis.
+- Correction de sémantique source générale V65 milestone `ad7b6dd3`, script
+  `scripts/embeddinggemma2_v65_bodacc_strict_common_parent.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v65/bodacc_strict_common_parent_20261013_a`.
+  Ne garde que mère explicitement nommée `la société`, clause mentionnant
+  capital et BOTH absorbante/absorbée, sujet annoncé présent dans projet,
+  parent différent du sujet ; points internes des noms conservés. Aucune arête
+  déduite d'IDs cooccurrents, aucune possession actuelle/ réalisation affirmée.
+- Initialisation réelle exit0, compile lancé et à collecter. Nouvelle revue32
+  choisie par hash EXCLUT toutes annonces des32 précédentes ; elle reste à lire
+  et corpus à accepter/rejeter. Aucune query, GT, aliasCRM, modèle ou score changé.
+- Deux calculs principaux demeurent V57 calibrateur puis initial100 et V62
+  agrégation atlas à partir de points complets scellés. Ne pas les doubler ni
+  optimiser leur code hashé pendant exécution. V62 observé CPU200%, RSS0,5 Go,
+  pas bloqué sur absence de calcul. Deadline07:45:24 Paris inchangée.
