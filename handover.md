@@ -17961,3 +17961,41 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Même meilleur score V32, rien promu. Gemma/aval/serving/folds0/1/test4323
   inchangés, unit tests0, coût externe0, aucun LLM externe, pas nouvelle nuit
   ni automation. Neuf dirty utilisateur préservés ; aucun push.
+
+### 12 octobre 2026 23:55 Paris — Nouveau mandat autonome de huit heures
+
+- Nouvelle autorisation humaine, début observé à 21:45:24 UTC, fin absolue
+  le 13 octobre à 05:45:24 UTC / 07:45:24 Paris : `1791870324`.
+  Aucune prolongation implicite. Les nuits historiques ne sont pas relancées.
+- Milestone `50e2a6d3`, nouveau script
+  `scripts/embeddinggemma2_v56_corporate_site.py`. Namespace V56 indépendant :
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v56/corporate_site_20261013_a`.
+  Initialisation réelle exit0 ; superviseur lancé session98092. Lire commandes
+  `prepare_process.json`, `calibrate_process.json`, `generate_process.json`,
+  états et owned exits avant reprise. Aucun score nouveau disponible au lancement.
+- Hypothèse fixée avant nouveaux outputs : découverte nationale via tous les
+  noms corporate RNE éligibles, couverture de tokens informatifs pondérée IDF
+  maximum par nom d'acteur, puis contexte séparé par rôle et conjonctions avec
+  géographie, commune, rue et numéro PROPres au site. Aucune identité ou
+  propriété déduite du seul mandat ; personnes physiques non extraites.
+  Tous les candidats sont évalués avant un unique collecteur natif100, sans
+  prépool fixe. Le stock d'adresses est sélectionné par univers complet des
+  preuves query-only, jamais par GT ou anciennes sorties100.
+- Source RNE complète, cutoff 2026-08-01 ; identifiants uniquement références.
+  Gemma V6best1000 et aval gelés. Calibration groupée SIREN hors échantillon,
+  contrôles checkpoint exclus du fitting mais toutes526 requêtes évaluées.
+  Pilote consommé : aucune revendication de test inédit, OOF encodeur complet,
+  SLO ou 99,2% national. Baseline V32 inchangée :495/526 exact,
+  93,6716658% pondéré. Les backfills label-side V49–55 ne sont pas indexés.
+- Suite scientifique : remplir la couverture géographique via adresses
+  publiques propres + BAN locale, puis clauses BODACC typées/datées et contrôle
+  inédit disjoint si recette gelée et temps suffisant. Mesurer les deux pistes
+  séparément, conserver gains/pertes et preuves officielles. Pas de nouveau
+  fine-tuning sans preuve que le texte supplémentaire est informatif.
+- Suivi périodique configuré dans automation locale
+  `sireto-entity-matching-20261013`, heartbeat30min/COUNT16, garde absolue à chaque
+  reprise et pause finale. Ancienne automation du 8 octobre reste PAUSED.
+  Documentation officielle OpenAI utilisée pour le suivi ; livraison des
+  prochains heartbeats non encore observée. Protection réelle Mac/CATNAT,
+  aucun processus étranger interrompu (travaux CatNat-TRACC également actifs).
+  Aucun unit test, dépense externe, push ni modification des neuf dirty utilisateur.
