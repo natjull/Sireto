@@ -17870,3 +17870,33 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   prioritaires pources entrées nom/adresse ; pas verdict universel. Aucun
   aliasCRM, nouveau candidat/règle, dénominateur changé, score nouveau,
   gradient, unit test, dépense externe ou push. Neufdirtyutilisateur intacts.
+
+### 12 octobre 2026 19:19 Paris — Utilité discriminante vérifiée avant fitting
+
+- Demande utilisateur : vérifier d'abord si ces preuves servent vraiment.
+  Milestone `b5da5970`, scriptV51 et complément du rapport BODACC/dirigeants.
+  Session22949 ownedprocess réellement collectée exit0 ; nouveau namespace
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v51/postseal_role_separation_20261012_a`.
+  Diagnostic postseal uniquement, aucune nouvelle recette ni entraînement.
+- Pour trois chaînes corporate issues des dossiers : table RNE entière,
+  noms d'acteurs contenant TOUS tokensinformatifs CRM, puis TOUS sites
+  nationaux des sujets correspondants, annotation label ensuite. Pas pool
+  produit, candidat injecté, poids/threshold ajusté ou prédiction changée.
+- CATZAM :10parents/12sites nationaux ;6danscommune,3mêmerue,UNseul même
+  numéro/suffixe/rue = vérité humaine. Concurrent du top100V32 est uneautre
+  société présidéeCATZAM dansmêmerue à autre numéro. Conjonction contexte
+  corporate × adressePROPRE réellement discriminante, pas seulnomparent.
+- FOURNIER :token dansnomcorporate165parents/609sites (vs15parents pour
+  NOMLITTÉRALFOURNIER dansauditprécédent),2danscommune dontvéritéfermée et
+  concurrentactif actuellement émis. Adresse du stock350rue desClauwiers vs
+  CRM1110avenue de l'Épinette, aucun matchrueactuelle. Pas active-only gate.
+- EUREDEN :69parents/755sites,2danscommune dontvéritéfermée etsiteactif de
+  l'autre sociétéfusion ; aucundecesparents dans100V32. Adresse stockBOURG
+  sansnuméro vsCRM92rue d'Anjou. Mandat+commune réduit réellement ambiguïté
+  même quand XY/adresse exacte faibles ; pas siègecopié/identitéassimilée.
+- Décision d'audit :preuve corporate–site conjointe mérite poursuite ; bonus
+  national indistinct de nomacteur etFTpersonnesphysiques nonjustifiés.
+  Pasgainglobal/99% démontré. Illustrationoracle LABEL-SIDE si ces3corrigés
+  sansaucuneperte :498/526=94,6768%brut/94,0735%pondéré, PASnouveaurecall
+  mesuré ni plafonduniversel. Foldsréservés/Gemma/aval/serving inchangés,
+  unit tests0, dépense0, neufdirtyutilisateur intacts, paspush.
