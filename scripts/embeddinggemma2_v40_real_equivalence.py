@@ -7,7 +7,7 @@ from scripts import embeddinggemma2_v40_native_features as proof
 
 def main():
     out=proof.OUTPUT
-    run.calibrate(out)
+    run.owned_stage(out,'calibrate')
     proof.bind_runtime(out)
     launch=proof.authority(out)
     gen=run.io.read(out/'features_generation.json')
