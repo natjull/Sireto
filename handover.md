@@ -17750,3 +17750,57 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   ne pas présenter le gain développement+2,689 comme prouvé horséchantillon.
   Cela renforce besoin de nouveau contrôle indépendant et véritableOOF,
   ne modifie PAS les métriques/gates historiques ou contrats.
+
+### 12 octobre 2026 06:57 Paris — Mesures terminales et direction tirée des preuves
+
+- V43 COMPLETE, exec18772exit0 collecté ; generate21142 owned0 après reprise
+  ressource mêmebinding. ReportSHA29b4978ff179e99703c25a3b68ad9b24c54a9a4920661260e58b895eaf2aceb8.
+  Exact494/526=93,9163%brut/93,2975%pondéré, SIREN496/op494. AppariévsV35 :
+  gain4422/perteCNAMAGCRETEILDUHAMEL, donc deuxliens économiques ne sont PAS
+  retenus comme amélioration. Pas prétendre fermeture transitive utile à99%.
+- V45 COMPLETE, exec2159exit0 collecté ; generate20130 owned0. ReportSHA
+  bc828db18882083d1fbd8b06d1857dd41bb32d6c85e77915f28d8fa28d52f5e3.
+  Exact494/526=93,9163%/93,448836%pondéré, SIREN496/op494. StablevsV35
+ 93,5636% malgré purge descommunes et SIREN au calibrateur. Diagnostic de
+  transférabilité desPOIDS, PAS évaluationnouveauCRM/encodeurgeoOOF/pristine.
+- V47 `df602c56`, exec28706exit0 collecté : JOIN sur stocksORIGINAUX, LABEL-SIDE
+  uniquement aprèsV32scellé. Les31cibles ratées existent TOUTES dans stocks
+  établissements/UL ;16actives/15fermées ;29sites'O'/2'P',30owners'O'/1'P'.
+  Aucunownerpurgé ; unseul sansnomlégal ouindividuel public. LesdeuxP sont
+  Groupama→EIassurance etCapitalSanté→EI masquée. Ni disparition desstocks,
+  ni redaction n'expliquent les29autres. Aucunlabel corrigé/supprimé, aucune
+  adressepersonnelle masquée reconstituée. CasesSHA
+  08b9ecbbaff1391db1159c5c57d71b349135b7af1667177bb35883dd148992c3.
+  Sens duP vérifié sur [documentationINSEE de2024](https://www.sirene.fr/static-resources/documentation/Sirene_4-Onglet-Statut_Diffusion.pdf)
+  et[APIopendata](https://www.data.gouv.fr/dataservices/api-sirene-open-data).
+- V48 `bcbc8701`, exec86784exit0 collecté :14/31cibles sansXYvalide dans
+  namespace actuel (4actives/10fermées),12avec voiepublique, seulement3
+  requêtes sans géométrie compatible ;2cumulent lesabsences. Ne pas confondre
+  site nonlocalisé, BANrequête nonrésolue et preuve que le site est loin.
+  CasesSHA4104f94cf1ca86d959fa896d88312cd3e1b1a74368315102af907fcb5ae206ec.
+  Audit seulement : aucun gain de recall ni impossibilité absolue démontré.
+- Direction concrète du prochain mandat, sans code lancé maintenant :
+  1) compléter géométrie PROPRE desétablissements sansXY avec leurs adresses
+     officielles et laBANpublique DÉJÀ locale
+     `/Volumes/CATNAT_DATA/oubusiness/silver/ban_addresses_2026-08-14_semantics-v1.parquet`.
+     Jamais géocodageGT/aliasCRM niadresse du siège copiée suruneagence ;
+     quand numéro absent, empreinte devoie/dispersion etflag dequalité, PAS
+     fauxpoint maison. Traitementquery-only de tousendpoints admissibles,
+     pas réparation ciblée des12labels. Préserver leschamps masqués.
+  2) preuves commerciales/enseigne/acheteur/prestataire→clientoccupant,
+     sourcéesindépendamment, typées etdatées quandpossible. Une succession,
+     un présidentRNE ou un clientSI ne sont PAS une identité légale. Les
+     cas NAOS/AUBERT, INFODESCA/clientsgroupe etGroupama/agent montrent la
+     limite de la seule similarité nom ; pas dictionnaire dérivé CRM→GT.
+  3) supervisionretrieval beaucoup pluslarge sur véritablesTRAIN15035,
+     négatifsprod et pertesmultivues cohérentes avecinférence, avant nouvelle
+     nuit deFT/encodageDOC. Calibrer375requêtes a été une preuve deconcept,
+     pas 'entraîner toutle retrieval sur40k'. Les modèlesaval restentgelés.
+  4) nouveau contrôle représentatifindépendant après gel, sansouvrirfold1/
+     test4323 sansautorisation. Les962validation encore horsSIRENconsommés
+     etcontrôles n'ont AUCUNEcommune encodée commune aveccecache : pas test
+     tronqué aux seules petitescommunes/cache existant pourfaire99%.
+- Meilleur point resteV32 495/526,93,6717%pondéré, pas99%. GemmaV6best1000
+  est RESTÉ gelé cette nuit ; nouveaux modèles sont des calibrateurs de
+  recherche initiale nationale, jamais rerankers d'unpoolfixe2000/500.
+  Financesexternes0, unit tests0, paspush, neufdirtyutilisateur préservés.
