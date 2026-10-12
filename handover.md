@@ -17900,3 +17900,64 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   sansaucuneperte :498/526=94,6768%brut/94,0735%pondéré, PASnouveaurecall
   mesuré ni plafonduniversel. Foldsréservés/Gemma/aval/serving inchangés,
   unit tests0, dépense0, neufdirtyutilisateur intacts, paspush.
+
+### 12 octobre 2026 20:19 Paris — Audit approfondi des textes BODACC sur les ratés
+
+- Demande humaine explicite : lire les annonces des cas non retrouvés et
+  vérifier l'intérêt pour les embeddings, pas entraîner ou promouvoir une
+  nouvelle recette. Milestone `386d16f8`, scripts V52 à V55, rapport complet
+  `docs/retrieval_bodacc_fulltext_misses_audit_20261012.md`. La rédaction du
+  rapport suit le skill write-page pour séparer preuves, hypothèses et sonde.
+- V52 session99031 exit0 collecté : API publique gratuite, annonces jusqu'au
+  2026-08-01, 24 requêtes en 2,93s, textes complets des sujets pour restaurer
+  les champs omis dans les copies anciennes. Pas reproduction point-in-time
+  du snapshot V32 ; namespace exclusivement LABEL-SIDE, jamais corpus positif
+  destiné au retrieval. Les 2 parents à site/unité P ne sont pas backfillés.
+- V53 session90352 exit0 collecté : sujet OU précédent exploitant/propriétaire
+  OU mention de SIREN vérifiée dans texte. 337 annonces distinctes des cibles
+  publiques, 20/31 requêtes couvertes ; 9 sans référence vérifiée ici et 2
+  protégées non backfillées, TOUTES gardées dans les31. 13 requêtes avec source
+  d'un autre sujet. Recherche numérique API bruitée : vérification stricte
+  après search, pas arête entre tous identifiants cooccurrents. 21,02s.
+  casesSHA 0fe2c9969fa64e85b0d45dcecaec43953ae6f86fe62e9b03221f58b2ae6d426f.
+- V54 session43539 exit0 collecté : SONDE DE SIMILARITE, PAS évaluation du
+  retrieval, pas candidats SIRET/pool/recall. Encodeur Mac/MPS ORIGINAL batch8,
+  poids V6best1000 gelés, 240 passages uniques, 18 atomiques longs entièrement
+  découpés avec overlap,512 tokens sans crop, identifiants retirés. Aucun
+  gradient/choix de coefficient. Encodage10,21s ; casesSHA
+  2976bec07e17f15504b3c26fa018e8016bd177903a2c443caf84291bb720e517.
+  BanqueSHA 849896c390b0fbed6d9bb40c2265cced06c84f005c1bb2872dbfb76e98c9abfd.
+- Sonde : CATZAM admin .283 vs autre passage .204 ; EUREDEN admin .219,
+  acte libre .145 vs autre .213 ; SB Alliance .106 vs autre .179 ; CUISINES
+  activité .260 vs autre .250. Cosinus NONprobabilités ; banque de diagnostic
+  sélectionnée après labels, aucune revendication de rang/recall national.
+  INFODESCA .280 vient d'un avis d'adresse VENDEUR àBoé alors que fonds cédé
+  est ailleurs : proximité textuelle ne désigne pas automatiquement le site.
+- V55 session83121 exit0 collecté : 12 recherches nationales act/modifications/
+  divers,686 résultats lus intégralement,267 occurrences littérales vérifiées,
+  aucune référence aux SIREN cibles publics du pilote dans leurs parties ou
+  passages. NAOS38 mentions, CEGEDIM3, ATOL14, SCHMIDT207, TRESCAL5 ; aucun
+  lien démontré vers leurs cibles ici. Pas absence sémantique universelle.
+- BODACC utile concrètement : EUREDEN détention commune Bernard Agriservice/
+  BDV ; CATZAM etFOURNIER mandats déjà RNE ; nouveau projet SB Alliance :
+  actes2022 Fromageries du Lévézou/Papillon nomment société mère Savencia.
+  Anciennom SB Alliance Informatique → Savencia IT & Digital Services établi
+  par BODACC au mêmeSIREN780876405 ; contexte RNE et publications du groupe
+  donnent corroborants mais chaîne corporate doit être compilée/validée,
+  PAS identité déduite du seul mot Savencia. Les anciensPDF repérés sont
+  aujourd'hui protégés/redirigés : pas considérer extraits indexés comme
+  source nationale gelée sans conservation/lecture du document intégral.
+- INFODESCA : actes démontrent mère DECABER pour ProSJET Irrigaronne, pas
+  lien depuis INFODESCA. Mentions légales Prolians prouvent hébergement, pas
+  propriété. NAOS : opérations Aubert existent, pont prestataire→Aubert absent.
+  Autresenseignes/fonctions : activité blanchisserie et cuisines/Hauconcourt
+  utile comme contexte sectoriel/local, pas preuve ATOL/SCHMIDT/GEDIMAT.
+- Correction des suppositions antérieures : SMART GESTION (cible Cegedim)
+  porte61.90Z, pas une pharmacie présumée ; EI cibleGroupama porte68.20A,
+  pas agence d'assurance déduite du patronyme. Ces codes NEprouventPAS labels
+  faux, aucun label corrigé/retiré. Tous26parents/31cas documentés dansrapport.
+- Décision : faits typés/datés + site propre et passages compacts fidèles,
+  pas encodage national brut immédiat des actes ou nouveauFT sur ces ratés.
+  Même meilleur score V32, rien promu. Gemma/aval/serving/folds0/1/test4323
+  inchangés, unit tests0, coût externe0, aucun LLM externe, pas nouvelle nuit
+  ni automation. Neuf dirty utilisateur préservés ; aucun push.
