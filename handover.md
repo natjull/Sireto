@@ -17335,3 +17335,27 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Aucun unit test ajouté/lancé, seulement AST/diffcheck et exécution réelle.
   Aval/serving/Gemma/checkpoint inchangés, fold0/1/test4323 fermés, neufdirty
   utilisateur préservés, aucune dépenseexterne/push. Poursuivre jusqu'à07:07:09.
+
+### 12 octobre 2026 02:38 Paris — V25 : pondération conditionnée à la cohérence de la requête
+
+- Milestone `4e3ccee1`, nouvelle hypothèse figée AVANT outcomes : deux têtes
+  linéaires nonnégatives, pondérées continûment par r et1-r ; r=max(proof
+  own_name_similarity*own_geo_quality) sur TOUTESles preuves query-only V23.
+  Ni classe prestataire spécifique ni mapping CRM ni seuil hard de routage.
+  Les deux têtes conservent toutes les sources : même lexical national, mêmes
+  preuves/familles/successions, UNseul collecteur100. Le score de chaque preuve
+  dépend de la cohérence nom/position observée, pas du SIREN/label de la requête.
+- Calibration pairwiseL2.01,54coefficients, mêmes cinq foldsSIREN/exclusions
+  contrôleencodeur. Comparaison distincte de l'objectif CVaR V24, pas une
+  combinaison sélectionnée après outcomes. Réutilisation références V23 scellées,
+  aucun encodage ou gradient Gemma. Toute526 conservée. Pas unit tests.
+- Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v25/coherent_query_experts_20261012_a`,
+  exec52967. Active en parallèle du minage CPUV24 uniquement après mesure
+  free75%/pressure1, garde20%/RSS10GiB conservée pour chacun. Aucun trainingMPS
+  actif. Vérifier ownedexits/commandes et scope avant actions ; sourcepartielle
+  ne permet aucun recall. Même échéance absolue1791781629, pas nouvelle nuit.
+- Sources structurées supplémentaires déjà locales inventoriées sans labels :
+  RNE personnesMORALES1754075rôles SHAe626cdf17395693411375d41c6848fcf6085d62ce3c66d08cf1388a0d42457b1 ;
+  FINESS/Éducation/DINUM410603observations SHAce446da891b17e89b653d90abea00d55b94050d5f4699a35a53dc44f886a31a1.
+  Non encore intégrées aux nouvelles sorties. Rôle officiel≠identité ;
+  commissaireauxcomptes ne vaut pas groupe. Personnes physiques/BE exclus.
