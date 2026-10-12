@@ -18126,3 +18126,60 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   agrégation atlas à partir de points complets scellés. Ne pas les doubler ni
   optimiser leur code hashé pendant exécution. V62 observé CPU200%, RSS0,5 Go,
   pas bloqué sur absence de calcul. Deadline07:45:24 Paris inchangée.
+
+### 13 octobre 2026 00:43 Paris — Deux mesures initial100 actives et sources nouvelles
+
+- V57 calibration COMPLÈTE owned exit0 au12Oct22:32:51 UTC,375 requêtes fit,
+ 151 contrôles conservés hors fitting, cinq modèles auxiliaires SIREN-disjoints
+  scellés. Génération native100 active worker76189, parent70810,83/526 à00:43.
+  Aucun recall partiel lu. Toutes références nationales restent admissibles
+  dans le collecteur initial100 ; aucun modèle aval ou Gemma changé.
+- Blocage atlas V62 identifié par EXPLAIN : condition LEFT-only `m.number<>''`
+  impose BLOCKWISE_NL_JOIN quadratique. SIGTERM non traité pendant boucle native,
+  puis SIGKILL du seulPID74631 vérifié ; session96791 collectée exit137/signal9.
+  Source points12149538 scellée conservée. Correction équivalente : filtrer les
+  numéros vides côté houses puis jointure uniquement égalitaire ; mêmes maisons
+  admissibles, pas modification métier. V67 commits `b6537d95` puis `fce323b9`
+  (correction de littéral avant toute initialisation hashée), query_plan.json
+  confirme HASH_JOIN et garde anti-quadratique. Source V67 session32564 exit0.
+- Atlas final V67 COMPLET en24,9569s :3 310 914 sites,2 441 214 maisons
+  exactes et869 700 empreintes de rue ;5 741 057 publics sans point restent
+  non résolus, jamais retirés du dénominateur. GeometrySHA
+  b183192cfe813de43ccfab00a6afc8c3d3def2f3cd8fd098cb2a358c3aa42ba9.
+  BAN demeure DIAGNOSTIC_ONLY_BAN_SCORE_INELIGIBLE, aucune promotion autorisée.
+- Mesure géographique INDEPENDANTE V68 milestone `46d7e33d`,
+  `scripts/embeddinggemma2_v68_filled_site_geo.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v68/filled_own_site_geo_20261013_a`.
+  Init exit0, superviseur session25698. Features526/526 complètes en79,05s,
+  prepare76434 owned exit0 ; calibration29/375 à00:43. V32 original + cinq
+  interactions de point propre rempli, sans features corporate. Scope numérique
+  original COMPLET non pruné, pas nouvelle expansion de footprint hors ce scope.
+  Point existant jamais remplacé, fiabilités et incertitudes source/query
+  explicites ; absences non négatives. Même génération avant labels/100 cap,
+  mais résultat géo ne peut valider le gate production BAN.
+- V65 source stricte complète session76507 exit0,1379 clauses publiques,
+ 11,09s. Deuxième revue32 montre des noms bien délimités (dont HOL.TR.AD.),
+  mais son disjoint est PARANNONCE seulement : des annonces jumelles du même
+  événement peuvent rester (HOL.TR.AD.). Ne pas présenter une précision globale
+  certifiée ni graph de possession actuelle. À compléter par revue parent/event
+  disjointe et binding sujet/roles avant admission ; corpus non indexé.
+- Source fournisseur–client nouvelle V66 milestone `e6770c24`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v66/archived_provider_evidence_20261013_a`,
+  session5535 exit0. Archive officielle du site NAOS, memento réel18Jun2026
+ 07:54:51 GMT, HTML37799octets SHA
+  c8e5e692df742010d7259fa61da913dd34e57610420e9f6be1fb9ccf8fe2e469.
+  Mention explicite applicationsAUBERT et TOUTES quatre références d'images
+  clients (Aubert,Euromedis,Jill,Vintex). Source AVANTcutoffAug1, pas preuve
+  de filiation/identité, clients de marque pas encore IDs légaux résolus,
+  logos non vérifiés visuellement, politique source pas admise. Aucun aliasCRM
+  ou score créé. Piste généralisable : séparer SUPPLIER_CUSTOMER d'OWNERSHIP.
+- Recherche suivante source-only : archives des rapports de groupe Savencia
+  pour vérifier tables de périmètre complet plutôt que préfixe Savencia ou
+  nomination de dirigeant. SkillPDF lu pour contrôler visuellement les tables
+  avant toute assertion ; aucun PDF encore téléchargé/lu à ce milestone.
+- Le suivi heartbeat local est configuré ACTIVE, mais aucun heartbeat nouveau
+  observé à00:43. Vérification app : list_threads a dépassé52s et a été annulé,
+  lecture UI Codex interdite par outil ; aucune tentative de contournement.
+  Le travail continue dans ce tour actif. Ne pas promettre que le scheduler a
+  été validé. Échéance1791870324 inchangée, tous autres calculs conservés,
+  neuf dirty utilisateurs intacts, aucun unit test, coût externe ou push.
