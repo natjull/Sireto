@@ -78,7 +78,7 @@ def main(out):
             ORDER BY m.site_key"""
         plan=c.execute("EXPLAIN "+query).fetchone()[1]
         if "BLOCKWISE_NL_JOIN" in plan:raise ValueError("Quadratic source join is not admissible")
-        io.write(out/\'query_plan.json\',dict(plan=plan,no_quadratic_join=True,empty_house_numbers_removed_on_right_side_only=True))
+        io.write(out/'query_plan.json',dict(plan=plan,no_quadratic_join=True,empty_house_numbers_removed_on_right_side_only=True))
         table=c.execute(query).fetch_arrow_table()
         pq.write_table(table,out/'site_geometry.pending.parquet',compression='zstd')
         os.replace(out/'site_geometry.pending.parquet',out/'site_geometry.parquet');engine.seal(out/'site_geometry.parquet')
@@ -101,4 +101,3 @@ if __name__=='__main__':
     except Exception as e:
         if a.output.exists():io.write(a.output/'execution_error.json',dict(error=repr(e),updated_unix=time.time()))
         raise
-
