@@ -17456,3 +17456,24 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   impossible sans nouvellescommunes/encodages. Toute sélection limitée aux
   nouvellescommunespetites/moyennes serait CONDITIONNELLE, pas représentative
   nationale ; pas annoncer « contrôle national certain » via cette facilité.
+
+### 12 octobre 2026 03:08 Paris — V25 mesuré : +2,23points pondérés, objectif non atteint
+
+- V25 COMPLETE, exec52967 exit0 collecté ; prepare76432/calibrate76441/
+  generate77717 OWNEDexit0. ALL526 scellées avant metrics, reportSHA
+  c798ab38f02bbc60357ba5ee8438657000159190033b4e006507a0ca81ccc752.
+  Exact492/526=93,5361%brut/93,2105%pondéré ; SIREN495/opérationnel492.
+  VsV18référence486/526/90,9823%pondéré :14gains/8pertes, +2,2282pointspondérés.
+  Approxbootstrapcommunes95=[90,137%;95,450%], Wilsonbrutbas91,103%.
+  Pas preuve99, pas fullEncoderOOF ni nouveautestindépendant ; panelconsommé.
+- Segments : CRMhistorique238/244=97,54%, CRMrécent254/282=90,07%,
+  actifs392/404=97,03%, fermés60/76=78,95%, UNKNOWN40/46. Toutes526 conservées.
+  Fold3=142/162=87,65%, donc aucune gatedegénéralisation franchie. Le gain
+  ne justifie pas de retirer le CRMrécent/fermés ni modifier les annotations.
+- p502,602s/p957,653s/p998,879s sous concurrence CPU ; froid/chaudnoncontrôlé,
+  pas SLOserving. Score initial natif100, pas rankeraval ni rerankpool.
+- V29 code `0125bb0a` maintenant ACTIF root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v29/source_robust_native_20261012_a`,
+  exec88901, après libération V25/free63%/pressure1. Même deadline1791781629.
+  V30 encore CODEPRÉPARÉ uniquement, ne pas le confondre avec expérienceactive.
+  AutresV24/V26/V27/V28 poursuivis, pas lecture de leurs metrics partielles.
