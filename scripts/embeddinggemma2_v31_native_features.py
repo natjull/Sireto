@@ -98,6 +98,10 @@ def compiled_search(backend,q,keys,features,coefficients):
 
 
 _CONTEXT=None
+ACTIVE_OUTPUT=OUTPUT
+def bind_runtime(out):
+    global ACTIVE_OUTPUT
+    ACTIVE_OUTPUT=out
 def context(out):
     global _CONTEXT
     if _CONTEXT is None:
@@ -106,7 +110,8 @@ def context(out):
     return _CONTEXT
 
 def native_search(backend,q,keys,features,coefficients):
-    edges,geo,bank=context(OUTPUT)
+    view_started=time.monotonic()
+    edges,geo,bank=context(ACTIVE_OUTPUT)
     weights=np.asarray(coefficients,dtype=float);d=len(source.FEATURE_FIELDS)
     if weights.shape!=(2*d,) or not np.isfinite(weights).all() or (weights<0).any():raise ValueError('Exact V25 head weights')
     coherence=float(features[:,7].max()) if len(features) else 0.
@@ -138,9 +143,13 @@ def native_search(backend,q,keys,features,coefficients):
     reduced=np.concatenate((effective[:5],[numeric.sum()]))
     bound=float(numeric.sum())
     normalized=(scores/bound if bound>0 else scores)[:,None]
+    view_seconds=time.monotonic()-view_started
     rows,cost=compiled_search(backend,q,keys,normalized,reduced)
+    cost['total_seconds']+=view_seconds
+    cost['query_build_seconds']+=view_seconds
     cost.update(typed_direct_links=len(selected),promoted_context_views=projected,
-        source_view_excludes_parent_and_relations=True,relationship_hops=1,query_only_coherence=coherence)
+        source_view_excludes_parent_and_relations=True,relationship_hops=1,query_only_coherence=coherence,
+        source_view_construction_seconds=view_seconds)
     return rows,cost
 
 
@@ -148,5 +157,4 @@ if __name__=='__main__':
     p=argparse.ArgumentParser();p.add_argument('action',choices=['initialize','prepare']);p.add_argument('--output',type=Path,default=OUTPUT);p.add_argument('--deadline-unix',type=float);a=p.parse_args()
     if a.action=='initialize':initialize(a.output,a.deadline_unix)
     else:prepare(a.output)
-
 

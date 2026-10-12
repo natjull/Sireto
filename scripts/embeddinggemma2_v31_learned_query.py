@@ -102,6 +102,7 @@ def calibrate(out):
         source_calibration=launch['model_generation'],new_fit=False,calibration_labels_read_in_this_worker=False))
 
 def generate(out):
+    proof.bind_runtime(out)
     launch=proof.authority(out);cal=io.read(out/'calibration/generation.json');verify(cal['implementation'])
     if cal['status']!='SEALED_ALL_FIVE_SIREN_CROSS_FITTED_QUERY_MODELS':raise ValueError('All calibration models sealed first')
     models={k:io.read(verify(v)) for k,v in cal['models'].items()};assignment=io.read(verify(cal['assignment']))
@@ -212,5 +213,4 @@ if __name__=='__main__':
     except Exception as error:
         if args.output.exists():io.write(args.output/(args.action+'_error.json'),dict(error=repr(error),updated_unix=time.time()))
         raise
-
 
