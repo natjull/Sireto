@@ -18041,3 +18041,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - V57 toujours actif parent70810/prepare70813,113/526 features à22:02 UTC,
   RSS3,1 Go, mémoire système libre67% sur24 Go. Aucun calcul dupliqué.
   Même échéance07:45:24 Paris, modèles aval/test4323/folds0/1 toujours gelés.
+
+### 13 octobre 2026 00:07 Paris — Couverture source et sémantique BAN
+
+- V57 features complètes526, prepare70813 owned exit0 confirmé,354,20s de
+  génération des interactions (plus chargement). Le superviseur session86630
+  passe à calibration ; vérifier commandes et progression avant toute reprise.
+- V58 atlas a échoué avant données, owned exit1 : `key` réservé DuckDB.
+  Correction SQL isolée V59 milestone `7d6edd1b`, référence `site_key`.
+  V59 owned exit1 collecté session25284 après stock complet :9 051 971 sites
+  publics éligibles sans XY, puis aucun BAN `score_eligible=true`. Aucun worker
+  historique restant, aucun atlas partiel admis ni recall géographique évalué.
+- Cause vérifiée sur25 239 640 lignes BAN : toutes `score_eligible=false`,
+  conformément au catalogue ; c'est une restriction décisionnelle, pas une
+  qualité par ligne. Le contrat géographique v16 permet le diagnostic d'adresse,
+  interdit promotion production et absences comme signal négatif.
+- Nouveau diagnostic explicite V60 milestone `6cc67fec`, contrat
+  `docs/retrieval_public_site_ban_diagnostic_20261013.md`, rédigé avec skill
+  write-page pour garder conditions et métriques au bon niveau. Source catalogue
+  immuable vérifiée, correspondance d'adresse autorisée, score inéligible conservé.
+  Aucune longitude/latitude BAN brute persistée ; provenance et L93 seulement.
+  Ni permission catalogue modifiée, ni promotion ou gate production autorisé.
+- V60 root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v60/public_site_ban_diagnostic_20261013_a`,
+  initialisation exit0, superviseur session72901 lancé. Remplace V58/V59 arrêtés.
+  Mesurer l'apport EXPÉRIMENTAL ensuite, pas assimiler couverture source au recall.
+  Aucun nouveau délai, unit test, coût externe ou changement des dirty utilisateur.
