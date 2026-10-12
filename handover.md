@@ -17999,3 +17999,22 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   prochains heartbeats non encore observée. Protection réelle Mac/CATNAT,
   aucun processus étranger interrompu (travaux CatNat-TRACC également actifs).
   Aucun unit test, dépense externe, push ni modification des neuf dirty utilisateur.
+
+### 13 octobre 2026 00:00 Paris — Correction avant toute sortie évaluée
+
+- Milestone `4e582175`, continuation V57
+  `scripts/embeddinggemma2_v57_corporate_site_nullsafe.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v57/corporate_site_nullsafe_20261013_a`.
+  Initialisation exit0 et nouveau superviseur session86630 réellement lancé.
+- Blocage confirmé sur le stock : normaliseur générique `normalize(None)`
+  donne `NONE` alors qu'un suffixe absent doit être chaîne vide. L'exact
+  numéro/suffixe/rue pouvait ainsi être perdu. Correction source-faithful dans
+  un wrapper nouveau ; aucun fichier V56 hashé modifié, aucun coefficient choisi
+  sur des résultats, aucun label utilisé pour corriger cette sémantique de null.
+- V56 parent68876/worker68879 vérifiés par commandes puis parent SIGTERM,
+  owned child exit75 confirmé, session98092 collectée exit1 de supervision.
+  Aucun processus restant, aucun candidat ou recall généré. Artefacts source
+  corporate complets conservés :1 055 001 sujets,113 332 relations sans IDs
+  valides exclues,1 640 743 dates effectives inconnues conservées comme inconnues.
+- Même deadline absolue1791870324, pas de nouvelle fenêtre. Automation lit
+  ce handover : V57 remplace V56 comme calcul actif, ne pas relancer V56.
