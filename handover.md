@@ -17804,3 +17804,26 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   est RESTÉ gelé cette nuit ; nouveaux modèles sont des calibrateurs de
   recherche initiale nationale, jamais rerankers d'unpoolfixe2000/500.
   Financesexternes0, unit tests0, paspush, neufdirtyutilisateur préservés.
+
+### 12 octobre 2026 07:09 Paris — Clôture du mandat de sept heures
+
+- Échéance de calcul1791781629 (07:07:09Paris) respectée : tous calculs
+  scientifiques terminés ou arrêtés AVANT échéance ; aucunworker propre
+  actif vérifié à05:05UTC puis05:09UTC. Cette entrée clôt le bilan, pas une
+  prolongation de recherche. Aucune nouvelle nuit ni automation démarrée.
+- Objectif99%/contrat99,2% NONATTEINT. Meilleur développementV32 :495/526
+  exact94,1065%brut/93,6717%pondéré contreV18 486/526/90,9823%pondéré.
+  Gain observé+2,6894points pondérés, PAS preuve indépendante nationale.
+  Folds0/1/test4323 fermés, modèleGemma et aval/serving gelés. Ne pas déclarer
+  READY_FOR_FOLD1 ni promouvoir automatiquement ce meilleur point.
+- Artefacts complets, modèles, checkpoints, banque globale et shards partiels
+  V37 préservés ; V37 n'aaucun recall complet. Pas reprise sans prochain
+  mandat explicite et nouvelle deadline/namespace si binding scientifique
+  change. Ne pas confondre oldrun_error conservé avec processus encore actif.
+- BANpublique locale confirmée par métadonnées :25239640adresses, champs
+  numero/rep/nom_voie/code_commune/latitude/longitude/type_position/source_position/
+  certification_commune/score_eligible. La prochaine reconstruction doit
+  respecter score_eligible, normalisationsem-v1 etqualité/empreinte devoie,
+  pas pousser géocodage deGT ni précisionmaison quandnuméroabsent.
+- Modifications de cette nuit commitées localement surcodex/v9-architecture,
+  sanspush ; neufmodifications antérieures noncommitées toujours intactes.
