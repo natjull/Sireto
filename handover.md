@@ -17606,3 +17606,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   ditASSURANCE. L'ancien soupçon basé sur un nom/éditeur n'était pas une
   preuve sectorielle. V28/V35 lisent TOUTFINESS/Éducation/DINUM sans règle
   spécifique attribuant pharmacie à Cegedim ou assurance à un libellé CRM.
+
+### 12 octobre 2026 05:30 Paris — Banque globale terminée ; bornes exactes en vérification
+
+- V36 banque complète : prepare2005 owned exit0 à03:11:38UTC ;
+  global_parent_cosine.npy SHA5d953db58caf79844f4314d1acf4c69b669612a7ef0ec7a5e1926374f84a29d0,
+  parent_keys.npy SHAeefc729131a83449d908ae00e4d4b1a3ca21ecdd0603ff93e5590846de09ab50.
+  Contrôleur1959 arrêté volontairement, calibration10496 owned-9 après
+  délai coopératif, exec96798 exit1 collecté : pas nouveau modèle entraîné.
+- V37 prepare4666 owned0 : transposition rowmajor complète, comparaison
+  exacte de chaque bloc réel. Génération sans nouvelle calibration active,
+  ~41/526 à03:29UTC ; ~22s/requête ne permet pas de finir dans ce mandat.
+- V38 `6d562e1e` root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v38/global_identity_exact_bounds_20261012_a` :
+  reprend banque complète V37 sans copie/recalcul, prepare12924 owned0.
+  Mêmes poids/modèles/dtype/quantification et fonction de score que V37.
+  Une borne inférieure conservatrice provient du100e score nonlexical sur
+  TOUTES les preuves ; membership des100 témoins vérifié dans index réel.
+  Seuls les établissements sans aucune autre preuve dont le score parent
+  maximal ne peut atteindre cette borne sont exclus, avec filtre score0.
+  Aucun nombre fixe de parents, aucun pool collecté puis reranké. Si borne
+  nonpositive ou témoins manquants, fallback recherche exhaustive V37.
+  Vérification de sorties réelles scellées, sans labels et sans unit tests,
+  nécessaire avant reprise complète ; ne pas déclarer équivalence avant PASS.
+- V32 et V35 continuent ; aucune métrique partielle ouverte. Deadline
+  ABSOLUE1791781629 inchangée, neufdirtyutilisateur conservés.
