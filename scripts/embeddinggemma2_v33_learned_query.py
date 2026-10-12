@@ -293,7 +293,7 @@ def run(out,prepare_only=False):
     import fcntl
     lock=(io.HOME/(out.name+'.owned.lock')).open('a');fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
     for action in (('prepare',) if prepare_only else ('encode_queries','prepare','calibrate','generate')):
-        done={'encode_queries':'query_identity_vectors.npy.seal.json','prepare':'features_generation.json','calibrate':'calibration/generation.json','generate':'generation.json'}[action]
+        done={'encode_queries':'query_identity_vectors.seal.json','prepare':'features_generation.json','calibrate':'calibration/generation.json','generate':'generation.json'}[action]
         if (out/done).exists():
             ex=io.read(out/(action+'_exit.json'))
             if ex['exit_code']!=0 or not ex['own_child_exit_confirmed']:raise ValueError('Completed artifacts require owned exit0')
@@ -312,5 +312,4 @@ if __name__=='__main__':
     except Exception as error:
         if args.output.exists():io.write(args.output/(args.action+'_error.json'),dict(error=repr(error),updated_unix=time.time()))
         raise
-
 
