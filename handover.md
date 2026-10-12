@@ -17675,3 +17675,29 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - V40 vérificateur exec52743 process0 collecté : huitmêmeslistes100, delta
   max4,768e-7 (tolérance1e-5 inchangée), mais coût6–163s ; nonretenu. V37
   repriseidentique active exec94088, sorties noncomplètes NONévaluées.
+
+### 12 octobre 2026 05:52 Paris — V32 complet ; dernière hypothèse temporelle
+
+- V32 exec12292 exit0 collecté ; génération9817 owned0. ReportSHA
+  992d27b44d34bbcaf50d57732ca3a6ce96bc46f529af7b00c8abf4d5b009cf3a.
+  Exact495/526=94,1065%brut/93,6716658%pondéré ; SIREN499/op496. Meilleur
+  point développement àcetinstant,99% NONatteint. IMPORTANT nouveau canal
+  publicparent a coefficient0 : gainvient calibration/négatifs différents,
+  pas preuve causale d'apport de ce canal (aucun poids forcé aprèsoutcomes).
+- V35 reportSHA711de4606606e3ef4352d31bc480c40969ef8f3f2eea392e3940a9aac3d2ff4d.
+  AppariévsV25 :3gains BLANCHISSERIE/CNAMAGCRETEILDUHAMEL/CERGYPONTOISE et
+  1perte. Petitevariation, pascertitude d'avantage généralisé/pristineholdout.
+- V42/V43 `cbb7ed5e` : hypothèse datée figée avant nouvelle génération :
+  deux liens économiques officiels SUCCESSIFS, date1≤date2≤2026-08-01,
+  mêmechaîne inversée pour anciens endpoints ; cycles retour immédiat exclus.
+  Lecture intégrale du fichieroriginal9,73M, aucune sélectionGT, aucunalias.
+  Huitchamps CONTEXTUELS avantcollecteur100 (géo/site/géonom/récence selon
+  sens), pas adresse/nom voisin copié comme preuve propre. Tous endpoints
+  nationaux des chaînes issues du flux complet peuvententrer, aucun beam.
+  Source V28 sectorielle complète réutilisée ; nouvelle calibration cohérence
+ 5foldsSIREN, mêmes375fit/ALL526eval/contrôles fermés. Maximumdeuxliens
+  explicite, pas fermeture transitive assimilant succession à identité.
+  Root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v42/temporal_economic_chains_20261012_a`,
+  préparation active PID16051 viaexec6837 àvérifier, sortie attendue owned
+  du tool avant receiptprepare0 et démarrageV43. Ne jamais fabriquer unexit0
+  d'aprèsseuleprésencefichier. DeadlineABSOLUE07:07:09Parisinchangée.
