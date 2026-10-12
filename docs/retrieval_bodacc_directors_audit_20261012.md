@@ -169,3 +169,64 @@ volet preuves commerciales indépendantes ni la supervision TRAIN plus large.
 - Les manifests sont référencés et les tailles/schémas inspectés ; pas nouvelle
   certification indépendante de chaque SHA des gros ZIP/parquets source.
   Les snapshots historiques, modèles et recettes n'ont pas été modifiés.
+
+## Complément V51 — Vérifier l'utilité avant un entraînement
+
+Demande utilisateur : s'assurer avant de dépenser un entraînement si le signal
+apporte quelque chose. Contrôle LABEL-SIDE de discrimination, pas nouvelle
+prédiction : pour les trois noms corporate probants, parcours de la table RNE
+complète, puis **tous les établissements nationaux** de leurs sujets. La vérité
+est annotée ensuite. Aucun seuil/poids ajusté ni sortie de candidats créée.
+
+La sélection de noms utilise les tokens informatifs CRM contenus dans le nom
+officiel de l'acteur, après retrait de suffixes de représentation et dates
+postérieures au cutoff. Elle est volontairement plus large que l'égalité
+littérale du tableau précédent : FOURNIER passe ainsi de15 sujets avec nom
+acteur exactement FOURNIER à165 avec ce token dans leur dénomination. Ces
+relations de mandat ne sont pas assimilées à des liens de propriété.
+
+| Requête | Sites nationaux de tous sujets avec acteur correspondant | Même commune | Même rue publique actuelle | Même numéro/suffixe/rue | Le SIRET exact est dans le groupe communal |
+|---|---:|---:|---:|---:|---|
+| CATZAM | 12 | 6 | 3 | 1 | Oui |
+| FOURNIER | 609 | 2 | 0 | 0 | Oui |
+| EUREDEN GROUP | 755 | 2 | 0 | 0 | Oui |
+
+**CATZAM : séparation forte et directement observable.** Le seul site qui
+cumule mandat CATZAM et45rue deGand est le SIRET humain attendu. Le top100V32
+contient déjà un autre établissement d'une société présidée par CATZAM, dans
+la même rue, mais pas au même numéro. Ce n'est donc pas une vague proximité
+de nom : la conjonction preuve corporate × adresse propre distingue la vérité
+d'un concurrent actuellement émis, sans apprentissage de cette identité.
+
+**FOURNIER : signal utile mais adresse actuelle non concordante.** La commune
+avec le mandat ramène les609sites à deux SIRET : la cible fermée42857705000183
+et le concurrent actif32305708301200 déjà émis. Le stock actuel porte350rue
+desClauwiers pour la cible, contre1110avenue de l'Épinette dans le CRM.
+Il faut conserver les deux pour la recherche initiale, pas privilégier l'actif
+ou exiger une rue actuelle identique. Pas preuve que cette différence est une
+erreur de label ou qu'une ancienne adresse adéquate est déjà disponible.
+
+**EUREDEN : signal de génération local fortement réducteur.** Les755sites
+deviennent deux dans la commune : cible fermée34479939000028 et site actif
+38350904900193 de l'autre société du projet de fusion décrit plus haut.
+Aucun site de ce groupe de rôles n'est actuellement dans le top100V32.
+Le stock actuel porteBOURG, sans numéro, contre92rue d'Anjou dans le CRM.
+Le lien corporate et la commune restent donc utiles quand l'adresse/géométrie
+propre est faible ; le mandat n'identifie pas à lui seul le bon établissement.
+
+Décision avant entraînement : **poursuivre une preuve corporate–site
+conjointe**, plutôt qu'un bonus de nom de dirigeant diffusé nationalement.
+Les comptes montrent une information discriminante disponible ; ils ne
+certifient pas encore une amélioration globale du collecteur100 ni sa
+généralisation. Pas retour automatique à V30, pas règle dédiée à ces noms.
+
+Même en corrigeant optimistement ces trois cas et en ne perdant absolument
+rien, l'arithmétique sur ce pilote serait498/526=94,6768%brut et94,0735%
+pondéré. **Ce n'est PAS un recall mesuré**, ni un plafond des futures sources
+ou des autres noms. Cette seule poignée de cas ne justifie pas une promesse99%.
+
+V51 : `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v51/postseal_role_separation_20261012_a`.
+Session outil22949 réellement collectée exit0. Script
+`scripts/embeddinggemma2_v51_postseal_role_separation.py` ; sources et sorties
+référencées danssummary, trois dossiers danscases. Toujours aucun entraînement,
+encodage, nouveau retrieval, label corrigé ou fold réservé ouvert.
