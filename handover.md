@@ -18066,3 +18066,38 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   initialisation exit0, superviseur session72901 lancé. Remplace V58/V59 arrêtés.
   Mesurer l'apport EXPÉRIMENTAL ensuite, pas assimiler couverture source au recall.
   Aucun nouveau délai, unit test, coût externe ou changement des dirty utilisateur.
+
+### 13 octobre 2026 00:15 Paris — Clauses BODACC nationales et atlas préservé
+
+- V60 a scellé12 149 538 points projetés correspondant aux rues de9 051 971
+  sites publics sans XY. Échec SQL final (`method` réservé), owned exit1
+  session72901 collectée ; aucun atlas partiel utilisé ni source rescannée.
+  Recovery V62 milestone `299726cb`, `scripts/embeddinggemma2_v62_atlas_finish.py`,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v62/public_site_ban_finish_20261013_a`,
+  session96791, PID74631 vérifié par commande. Reprend UNIQUEMENT les points
+  complets/scellés V60 et refait agrégation finale. Statut BAN toujours diagnostic
+  non décisionnel, aucune longitude/latitude brute, aucun label.
+- BODACC compiler V61 milestone `0c755f58` : blocage pré-scan car les références
+  du manifeste canonique portent taille/provenance mais pas SHA256. Wrapper V63
+  milestone `482fbe9d` épingle les snapshots par hash réel ; son SQL pré-scan
+  échoue sur alias réservé `text`. Deux sessions collectées exit1, pas données
+  partielles admises. Historiques conservés ; ne pas les relancer.
+- Compiler fonctionnel V64 milestone `243ba840`, script
+  `scripts/embeddinggemma2_v64_bodacc_clauses.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v64/bodacc_parent_clauses_20261013_a`.
+  Session80953 réellement collectée exit0, PID74783, compile_exit.json conservé.
+  Quatre snapshots2022–2025 complets,13 761 225 annonces source,
+  9170 passages examinés,3970 faits candidats publics après3 sujets protégés
+  exclus. Scan/compilation12,49s, ZEROCRM/ZEROGT ; pas les backfills label-side.
+- Revue aveugle32 hashée : au moins4 fausses captures grammaticales (`associée
+  unique`, `détenant...`, `il ne sera...`, `et l'opération...`),1 nom pollué par
+  `La Société Absorbante`,1 `HOL` potentiellement tronqué par ponctuation.
+  Corpus brut REJETÉ pour admission au retrieval. Plusieurs vrais noms sont
+  explicites (Porcelanosa, Tenergie, Visiativ, Abalone...) ; pas confondre
+  reconnaissance du nom et preuve de relation/temps pour le sujet annoncé.
+  Prochaine correction générale : noms ancrés dans dictionnaires officiels,
+  frontières d'entité/roles et dates préservées, puis autre échantillon aveugle
+  disjoint des32 avant indexation. Aucun modèle entraîné sur ces candidats.
+- V57 calibrateur reste actif PID73928,93/375 à00:14 Paris (features526/526
+  déjà owned exit0), aucune génération100 encore évaluée. Limites réelles de
+  mémoire respectées ; même deadline1791870324 et neuf dirty utilisateur intacts.
