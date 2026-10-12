@@ -17292,3 +17292,46 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   de fin anticipée sur simple petitpanel/loss. Ne pas annoncerpipeline99 sur
   loss/OOCconsommé ; prévoir un contrôle horsSIREN de calibration et qualifier
   franchement sa population (nationale/conditionnelle), sans rouvrirclosedtests.
+
+### 12 octobre 2026 02:35 Paris — Hiérarchie exhaustive V23 et objectif top100 V24
+
+- Milestone `b631f8a7` : V23 élargit AVANT collecteur100 toutes les familles
+  nationales des établissements query-only, puis un seul lien de succession
+  économique daté et toutes les familles cibles. Identité/portefeuille/XYparent
+  restent CONTEXTEparent, jamais nom/adresse propres d'un autre établissement.
+  2 221 727 propriétaires source,5 182 918 établissements familiaux,9 730 972
+  observations succession originales scannées ;128 313 036 lignes de preuves
+  natives complètes. Source liensp SHA
+  f1e206f4c6387c92ea4c809c2df716b3a12c579dd66e29a201619748df91e7d4.
+- V23 root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v23/hierarchical_native_20261012_a`
+  COMPLETE, exec13391 exit0 collecté ; prepare58441/calibrate70737/generate73087
+  ownedexit0. Report SHA d9e427f4b1a05c1c8977edd642cf004e2a15e8443f5eb9245ed24f9860a31907.
+  Exact488/526=92,7757%brut/91,5946%pondéré, SIREN491/opérationnel488.
+  VsV18:11gains/9pertes. Pondéré INFÉRIEUR à V22B91,6939%, donc pas progrès
+  robuste ni promotion. p501,387s/p956,393s/p997,014s : pas SLO.
+- Audit de l'entrée brute NOUVEAUCRM projeté uniquement sur NONlabelcolonnes
+  des services526/folds234 autorisés : crm_name vient directement de
+  client_final ; aucune autre colonne nomoccupant ou XYCRM n'existe dans ces
+  onze champs. order_siret et lignes hors scope NONlus. La source sourceCSV
+  SHA829cee816839bd7c24962127e2d35784923bc0d0c5ecbe12ce34e45a1439f7da.
+  Les noms NAOS/CEGEDIMCLOUD-SMARTRX peuvent désigner un prestataire, pas le
+  site occupé. Preuve primaire https://www.naos-it.com/ : services télécom/SI,
+  références clients et offre de poste développant applications AUBERT ;
+  https://www.smart-rx.com/ : éditeur pour pharmacies. Relation PRESTATAIRE/
+  CLIENT à investiguer, PAS alias légal/CRM ni preuve automatique labelerroné.
+  Aucun mapping NAOS→GT ni liste d'exceptions injectés dans l'index/fit.
+- Milestone `956f6149` : V24 isole objectif d'apprentissage, mêmes matrices V23
+  scellées réutilisées par références sans copie/réencodage. Minage TRAINONLY
+  sur le VRAIcollecteur national101 (101 pour disposer de100rivaux même si
+  positif présent), modèle du foldK excluant tout groupeK, puis contexte/
+  négatifs originaux. AUCUNE profondeur101 en production : native100 inchangé.
+  Cinq fits SIRENgroupés, mêmes151queriescontrol excluesfit et TOUTES526évaluées.
+  Loss préannoncée .9softplus(moyenne100plus hauts scores négatifs moins
+  scorepositif)+.1RankNet, L2.01 nonnégatif. Surrogateconvexe upperbound du
+  score100e rival, pas optimisation exacte du recallnational ni garantie99.
+- V24 actif root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v24/native_top100_objective_20261012_a`,
+  exec63695 ; vérifier commandes et ownedexits, calibration/state parfold,
+  génération526 complète avant labels de mesure. Deadline1791781629 inchangée.
+  Aucun unit test ajouté/lancé, seulement AST/diffcheck et exécution réelle.
+  Aval/serving/Gemma/checkpoint inchangés, fold0/1/test4323 fermés, neufdirty
+  utilisateur préservés, aucune dépenseexterne/push. Poursuivre jusqu'à07:07:09.
