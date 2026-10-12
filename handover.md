@@ -17725,3 +17725,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   20absents partout. Cela exclut99% par simple fusion de CES listes finies,
   PAS un plafond des fluxcomplets, d'autres modèles ou d'autres sources.
   Aucun pool produit/feature/query modifié d'aprèscetoracle, aucunlabel retiré.
+
+### 12 octobre 2026 06:18 Paris — Généralisation des poids et incertitude des groupes
+
+- V45 `68ab97e2` root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v45/commune_purged_coherence_20261012_a`.
+  Stress scientifique fixé avant sorties : mêmesfeaturesV28, pairesTRAIN V35
+  scellées réemployées, mais chaque calibrateur exclut TOUS les SIREN ET les
+  INSEEcommunes de son foldheldout. 220/223/250/221/239requêtesTRAIN parfold,
+  ALL526 évaluées ; mêmes contrôles151exclus. Pas réencodage ou nouveauFT.
+  Calibrate20113 owned0, cinq modèles scellés ; generate20130 actif exec2159.
+  Il s'agit de généralisation COMMUNALE du calibrateur, PAS encodeur OOF
+  géographique complet, région inconnue ou nouveau test indépendant.
+- V46 `83ae439f` diagnosticpostseal strictement statistique, zérofeatures,
+  calibration/pool/labels corrigés. Repondération exponentielle indépendante
+  des295communes et405SIREN, produit despoids ; parts géographiques fixes,
+  4000réplicas seed20261012, estimateur central reproduit EXACTreportV32.
+  Référence primaire Owen/Eckles [Bootstrapping data arrays of arbitrary
+  order](https://arxiv.org/abs/1106.2125). Cette analyse est une sensibilité
+  conditionnelle aux scores, PAS couverture exacte duplan ni correction
+  du biais de sélection de modèles sur pilote déjà consommé.
+- V32 point93,6717% : sensibilitécommune90,799–95,845 ; SIREN90,622–96,239 ;
+  croisée88,439–96,926%. Gain appariévsV18 croisé -.514 à+7,281points :
+  ne pas présenter le gain développement+2,689 comme prouvé horséchantillon.
+  Cela renforce besoin de nouveau contrôle indépendant et véritableOOF,
+  ne modifie PAS les métriques/gates historiques ou contrats.
