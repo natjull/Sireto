@@ -19365,3 +19365,37 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - V140 temporal497/526 à23:16, autres sorties prévues inchangées. V132 run
   toujours en attente du seul worker natif. Score mesuré reste504/526.
   Jeux fermés, labels, downstream/serving inchangés ; fin05:06:08UTC.
+
+#### Jalon 23:27 UTC — ancrage prêt, cas lexical-only conservé
+
+- Attribution incrémentale V142 PRÉinit `08d24ffe` : primaire publiera exact
+  et opérationnel appariés versusV134 en plus deV115, après ses deux sorties
+  complètes. Ne pas présenter un gain hérité OSM/RNA comme un gain BANO.
+- Exception d'exécution coordonnée : préparation numérique V132/V143 peut
+  coexister avec **un seul** natif V140, sans lancer une deuxième recherche.
+  Surveillance racine RSSprépa4GiB soft/free25%/pression0,1,2 ; interruption
+  coopérative si nécessaire, shards conservés. Threads2 prépa d'origine,
+  index natif1. À23:27 RSSprépa2,35GiB/natif6,06GiB/free63% ; swapouts
+  206549649 inchangé entre23:21 et23:27, pas de nouveau swapout observé.
+- V132 préparation directe session98479/PID7414 exit1 réel après35shards,
+  publicmaskeO/uO42MiB scellée : erreur `group.max()` sur un tableau keys
+  vide, pas panne mémoire ni suppression du cas. Cette requête doit rester
+  évaluée par le lexical national ; pas de positif injecté ou nouveau filtre.
+- Reprise module/root neufs V143 `0728caba`,
+  `embeddinggemma2_v143_empty_reference_continuation.py`, root
+  `v143/local_evidence_empty_recovery_20261013_night`. CodeV132 historique
+  SHA58bd94842b7f2565ef20bce85023bb5f082d7bb86b7cdb0571aa78874717eee8
+  préservé. Seul correctif de calcul `group.max(initial=-1)` permet tableaux
+  vides et incrément nul ; tous scores non vides/sources/modèles/recettes sept
+  identiques. Migration session13118 exit0,35scores+metadata byte-identiques,
+  mêmes keys et query/model/source bindings, publicmaskcopiée+hashidentique.
+- Préparation V143 directe session28636/PID9378 actif vérifié à23:27,
+  87/526shards. Pas de run natif V143, pas de nouvelles métriques avant ses
+  sept sorties complètes. V132 ancien namespace complet/échec conservé.
+- V134 et V142 toujours non initialisés : imports parent->V143 et même
+  réduction vide V142 corrigés PRÉinit `ae7c3e05`, import/--help exit0
+  seulement. Pas unit test ou variation des scores non vides. Réutilisation
+  RNA/BANATIC et trois sources isolées envisagée uniquement si vraie preuve
+  d'égalité des entrées/AST nativement scorés, jamais selon les hits.
+- V140 cinq isolées526/526/exits0, MAXprimaire en cours(PID9158 vérifié).
+  Aucun nouveau recall lu, recettes ne sont pas adaptées aux outcomes.
