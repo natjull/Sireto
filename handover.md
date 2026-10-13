@@ -18725,3 +18725,38 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   deadlineabsolue1791870324 intacte, scheduler toujours NONvérifié. Statut
   ACTIVE jusqu'à fermeture de la plage ; pausefinale à07:45:24 uniquement.
   Objectif99,2 pasatteint ; foldsfermés/serving/aval inchangés.
+
+### 13 octobre 2026 07:46 Paris — Fermeture de la plage de huit heures
+
+- Deadline absolue1791870324 passée ; aucun calcul embeddinggemma/SIRETO
+  possédé actif lors des deux dernières vérifications de commande, donc
+  aucun SIGTERM/SIGKILL supplémentaire. Aucun processus étranger touché.
+- Automation possédée `sireto-entity-matching-20261013` mise **PAUSED**,
+  configuration relue, updated_at1791870367009. Scheduler non vérifié ;
+  ne promettre aucune reprise hors tour ni nouvelle nuit. Une nouvelle
+  plage exige une demande humaine.
+- Bilan final `docs/retrieval_entity_matching_night_20261013.md` : meilleurs
+  **503/526 exact95,6274% brut /94,7101% pondéré**, baseline495, huit gains,
+  zéro perte, sept SIREN. Objectif99,2 **NON ATTEINT**, aucun READY ou dégel.
+  Pilote405SIREN/295communes consommé ; pas confirmation nationale ni SLO.
+- Derniers compléments documentaires : `f7e89791` priorités issues de
+  littérature primaire (SC-Block++ et interaction tardive, sans garantie
+  transférée au projet), `a8d19004` initialisation propre obligatoire pour
+  futur cross-fitting complet (V6 ne peut initialiser un fold contenant
+  son ancien TRAIN), `efc23bde` métadonnée FINESS generatedAt
+  2026-08-01T02:06:22.875029296Z/schemaVersionv1.0.0, en-tête seulement lu.
+  Ce timestamp ne date pas UAI/DINUM et n'admet pas un nouveau canal.
+- Checkpoints et tous artefacts scientifiques conservés ; V99 référence
+  développement, V94/V95 non promues, BANatlas/RNAoctobre/webactuel
+  diagnostic-only. Aucun nouveau gradient Gemma, aval/serving gelés ;
+  folds0/1/test4323/contrôle962 fermés, allhuman et métriques séparées.
+  Zéro dépense/unit tests/push/nettoyage. Neuf modifications préexistantes
+  conservées. Dernières ressources :free79%/pressure1, CATNAT107GiB libres,
+  interne70GiB ; pas besoin d'intervention destructrice.
+- Prochaine direction, NON LANCÉE : ponts officiels typés enseigne-exploitant
+  et groupe-membre, contexte fonctionnel attribué à son sujet, alternatives
+  site/administratif conditionnelles sans bonusHQglobal ; fine-tuning avec
+  information suffisante et masques d'indécidabilité, puis mesure complète
+  figée sur groupes non consommés/distracteurs denses selon gates du contrat.
+  Ne pas transformer les hypothèses, diagnostics ou conflits de labels en
+  nouveaux hits exacts. Ne relancer aucun run terminé sans nouveau mandat.
