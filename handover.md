@@ -19457,3 +19457,18 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   et20bitplanes. Aucune comparaison candidates/outcomes pour l'éligibilité.
   Exécution de preuve en cours, aucune copie autorisée avant reçu complet.
   V143 préparation526 prête ; géographie et BANO pas encore mesurés.
+
+- Preuve corrigée interface metadata supplier (own/temporal uniquement),
+  `3ab249a7`, **exit0 réel** : rapport
+  `v140/isolated_equivalence_20261013_night/report.json`
+  SHAd8ffd77f451609168c979be63bf10400e50368627b81c13caded293784ffc72c.
+  Aucun score/source modifié. Transfert `d1ee87d6`, session62469 exit0,
+  RNA526/BANATIC526shards byte-identiques, query/model/seals vérifiés,
+  manifeste V143/equivalent_native_reuse_owner.json. **Pas de generation ni
+  exit copié** : V143 doit agréger et recevoir son propre exit0. Timings
+  réutilisés explicitement historiques, pas nouveau SLO cold/warm.
+- V143 run lancé23:54UTC par racine **session66160**, parent15490 et
+  worker15493 geometry_only vérifiés par commande. `0728caba`, mêmes sept
+  variantes pré-déclarées ; préparation déjà exit0 réel sautée. Un seul
+  natif actif, aucun recalcul historique V140. Troisisolées V134 attendent
+  init aprèsV143 complet avant toute éventuelle réutilisation prouvée.
