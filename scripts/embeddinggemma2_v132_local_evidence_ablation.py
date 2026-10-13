@@ -9,6 +9,7 @@ import fcntl
 import gc
 import hashlib
 import os
+import re
 from pathlib import Path
 import signal
 import subprocess
@@ -70,8 +71,9 @@ def authority(out):
     launch=io.read(out/'launch.json')
     for k in ('implementation','recipe','baseline_launch','baseline_generation','baseline_exit',
               'baseline_features','baseline_calibration','osm_generation','osm_exit','rna_generation','rna_exit',
-              'banatic_generation','banatic_exit'):
+              'banatic_generation','banatic_exit','public_owners'):
         verify(launch[k])
+    for ref in launch['helpers']:verify(ref)
     guard();return launch
 
 
@@ -87,10 +89,16 @@ def initialize(out):
     if bg['status']!='COMPLETE_SEALED_ALL526':raise ValueError('Complete baseline')
     if og['status']!='COMPLETE_ALL526_LOCAL_OSM_SOURCE' or og['all_queries']!=526:raise ValueError('All526 complete OSM source')
     for ref in og['files'].values():verify(ref)
+    if rg['status']!='COMPLETE_SEALED_WHOLE_JULY_RNA_QUERY_ONLY_CONTEXT_NOT_RECALL' or rg['all_queries']!=526:
+        raise ValueError('Whole complete public RNA source')
     verify(rg['context'])
     if tg['status']!='COMPLETE_SEALED_WHOLE_BANATIC_PUBLIC_RELATIONS_QUERY_ONLY_NOT_RECALL' or tg['all_queries']!=526:
         raise ValueError('Whole public typed membership source')
     verify(tg['context'])
+    old_launch=io.read(BASE/'launch.json')
+    ol=io.read(verify(og['launch']));rl=io.read(verify(rg['launch']));tl=io.read(verify(tg['launch']))
+    if ol['recipe']['query_only']!=old_launch['panel'] or rl['query_panel']!=old_launch['panel'] or tl['query_panel']!=old_launch['panel']:
+        raise ValueError('Identical hash-bound source panels, not just same query count')
     out.mkdir(parents=True);(out/'spill').mkdir();(out/'calibration').mkdir()
     io.write(out/'recipe.json',RECIPE)
     launch=dict(io.read(BASE/'launch.json'),implementation=record(Path(__file__)),recipe=record(out/'recipe.json'),
@@ -99,7 +107,9 @@ def initialize(out):
         baseline_calibration=record(BASE/'calibration/generation.json'),osm_generation=record(OSM/'generation.json'),
         osm_exit=record(OSM/'scan_owned_tool_exit.json'),rna_generation=record(RNA/'generation.json'),
         rna_exit=record(RNA/'owned_tool_exit.json'),banatic_generation=record(BANATIC/'generation.json'),
-        banatic_exit=record(BANATIC/'owned_tool_exit.json'),deadline_unix=DEADLINE,created_unix=time.time())
+        banatic_exit=record(BANATIC/'owned_tool_exit.json'),
+        public_owners=record(Path(old_launch['stock_source']['path']).with_name('StockUniteLegale.parquet')),
+        deadline_unix=DEADLINE,created_unix=time.time())
     launch['helpers'].extend([record(Path(geometry.__file__)),record(Path(native_proof.__file__)),
         record(io.ROOT/'scripts/embeddinggemma2_v128_named_geo_feasibility.py')])
     io.write(out/'launch.json',launch)
@@ -115,7 +125,7 @@ def public_coordinates(out,launch):
     mask=np.lib.format.open_memmap(path,mode='w+',dtype=bool,shape=(len(keys),));mask[:]=False
     con=duckdb.connect();con.execute('SET threads=1');con.execute("SET memory_limit='512MB'")
     con.execute('SET temp_directory=?',[str(out/'spill')])
-    owners=Path(launch['stock_source']['path']).with_name('StockUniteLegale.parquet')
+    owners=verify(launch['public_owners']);verify(launch['stock_source'])
     cur=con.execute("""SELECT CAST(e.siret AS UBIGINT) site_key FROM read_parquet(?) e
       JOIN read_parquet(?) u USING(siren) WHERE e.statutDiffusionEtablissement='O'
       AND u.statutDiffusionUniteLegale='O'""",[launch['stock_source']['path'],str(owners)])
@@ -132,9 +142,13 @@ def public_coordinates(out,launch):
 
 
 def exact_address(q,obj):
-    tags=obj['tags'];number=normalize(q.get('crm_number','')+q.get('crm_suffix','')).replace(' ','')
-    source_number=normalize(tags.get('addr:housenumber','')).replace(' ','')
-    return bool(number and number==source_number and normalize(q['crm_street'],street=True)==
+    def number(value):
+        # A range/list is not a single exact house number: never join6;8 into68.
+        match=re.fullmatch(r'\s*(\d+)\s*(BIS|TER|QUATER|[A-Z])?\s*',normalize(value))
+        return (int(match[1]),match[2] or '') if match and int(match[1])>0 else None
+    tags=obj['tags'];query_number=number(q.get('crm_number','')+' '+q.get('crm_suffix',''))
+    source_number=number(tags.get('addr:housenumber',''))
+    return bool(query_number and query_number==source_number and normalize(q['crm_street'],street=True)==
                 normalize(tags.get('addr:street',''),street=True))
 
 
@@ -189,7 +203,9 @@ def prepare(out):
             del changed,group,parents
             qt=set(normalize(q['crm_name']).split())-STOP;matched=[]
             for obj in context['pois']:
-                if qt and any(qt<=set(normalize(n).split())-STOP for n in obj['names']):matched.append(obj)
+                # Separate published aliases; a composite of two aliases is not a third name.
+                variants=[part for n in obj['names'] for part in re.split(r'[;|]',n) if part.strip()]
+                if qt and any(qt<=set(normalize(n).split())-STOP for n in variants):matched.append(obj)
             distance=np.full(len(coords),np.inf)
             for obj in matched:
                 for p in obj['points_l93']:distance=np.minimum(distance,np.hypot(coords[:,0]-p[0],coords[:,1]-p[1]))
