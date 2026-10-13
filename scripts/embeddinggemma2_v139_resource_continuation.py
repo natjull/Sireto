@@ -5,6 +5,7 @@ only exact query/model-bound sealed shards; no predictions or labels opened.
 """
 import argparse
 import copy
+import json
 from pathlib import Path
 import shutil
 import signal
@@ -38,7 +39,7 @@ def bind_original():
     # sees the same authority/recipe interfaces. No historical file changes.
     bound.__dict__['__file__']=str(Path(__file__).resolve())
     exec(compile(text,str(SOURCE),'exec'),bound.__dict__)
-    original=bound.io.read(OLD/'recipe.json');new=copy.deepcopy(bound.RECIPE)
+    original=bound.io.read(OLD/'recipe.json');new=json.loads(json.dumps(bound.RECIPE))
     original.pop('resources');new.pop('resources')
     if original!=new:raise ValueError('Scientific recipe unchanged, resource policy only')
 
