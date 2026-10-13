@@ -59,6 +59,27 @@ Le rapport Savencia conservé et les pages 120–121 vérifiées constituent la
 preuve documentaire du contexte de consolidation :
 :codex-file-citation{path="/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v69/group_reports_20261013_a/savencia_2021_fr/primary.pdf" purpose="source"}
 
+### Ce que le test des textes BODACC permet réellement de dire
+
+Le Gemma figé a aussi encodé 240 passages BODACC dans un diagnostic construit
+à partir des anciens ratés. Ce n’est pas un index national indépendant des
+labels et ses scores ne sont ni des probabilités, ni un recall de retrieval.
+
+Parmi les 21 ratés publics qui restent après V99, 13 disposent d’un passage
+propre hors administration dans cette banque. Pour trois seulement, le
+meilleur score dépasse celui d’un passage associé à une autre entreprise de
+la banque. Le comparateur peut inclure l’administration : ce n’est pas une
+ablation contrôlée de tous les champs. Même ces trois cas n’établissent pas
+une identité : INFODESCA et ATOL remontent des actes avec une adresse, et
+CUISINES SCHMIDT une description générique de vente de cuisines.
+
+L’orientation retenue n’est donc pas « encoder toutes les annonces et espérer
+99 % ». C’est extraire des passages une preuve attribuée à un sujet, un rôle
+et une date, conserver la distinction entre projet et opération réalisée,
+puis mesurer ce canal contre les vrais distracteurs. Les contextes corporate
+et de consolidation testés cette nuit donnent déjà des gains ; la similarité
+sur du texte juridique brut n’a, elle, encore produit aucun gain mesuré.
+
 ## Les pistes rejetées comme améliorations globales
 
 V94 gagne SAS 5EME ETAGE et FOURNIER, mais perd IT TRATTORIA. Pour ce dernier,
@@ -194,5 +215,6 @@ Milestones : V88 `44707cd5`, V94 `172a7e99`, V95 `b7d73976`, V98 `0a97e241`,
 V99 `550732d8`, comparaison `52645159`, audit siège `d8817f46`, champs de noms
 `365efe9e`, inventaire brut et protections de diffusion `b4eb35cc`, ambiguïté
 TRAIN `45834634`, information et négatifs exacts `bdf51335`.
+Réconciliation du diagnostic BODACC avec les 23 ratés restants : `665ad966`.
 Les reprises de V99 ont conservé les shards et les bindings. Aucun unit test,
 aucune dépense externe, aucun push ou modèle aval modifié.
