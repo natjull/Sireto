@@ -7,7 +7,9 @@ August source is post-cutoff and diagnostic only. No labels or predictions.
 from collections import defaultdict
 from pathlib import Path
 import re
+import resource
 import shutil
+import sys
 import time
 import xml.etree.ElementTree as ET
 import zipfile
@@ -47,6 +49,12 @@ def run():
     if OUTPUT.exists():raise ValueError('Fresh immutable whole-source namespace')
     if shutil.disk_usage(io.HOME).free<80*1024**3:raise ValueError('CATNAT reserve80GiB')
     start=time.monotonic();OUTPUT.mkdir(parents=True);(OUTPUT/'spill').mkdir()
+    def resource_guard():
+        peak=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        peak_bytes=int(peak if sys.platform=='darwin' else peak*1024)
+        if peak_bytes>512*1024**2:raise ValueError('Owned BANATIC source RSS cap512MiB')
+        if shutil.disk_usage(io.HOME).free<80*1024**3:raise ValueError('CATNAT reserve80GiB')
+        return peak_bytes
     metadata=io.read(SOURCE/'dataset.json')
     resource=next(r for r in metadata['resources'] if r.get('format')=='xlsx')
     if resource['last_modified'][:10]<='2026-08-01':raise ValueError('Observed August postcutoff resource expected')
@@ -87,9 +95,11 @@ def run():
                         edges.add((group,adhesion,'GROUP_ADHERES_TO_GROUP','GROUP_ADHESION'))
                 rows+=1;e.clear();root.clear()
                 if rows%4096==0:
+                    resource_guard()
                     io.write(OUTPUT/'state.json',dict(status='STREAMING_WHOLE_BANATIC_PUBLIC_COLUMNS',rows=rows,
                         subjects=len(names),distinct_edges=len(edges),updated_unix=time.time()))
-    con=duckdb.connect();con.execute('SET threads=1');con.execute("SET memory_limit='512MB'")
+    resource_guard()
+    con=duckdb.connect();con.execute('SET threads=1');con.execute("SET memory_limit='128MB'")
     con.execute('SET temp_directory=?',[str(OUTPUT/'spill')])
     con.register('wanted',pa.table({'siren':sorted(names)}))
     owners=con.execute("""SELECT u.siren,u.denominationUniteLegale,u.sigleUniteLegale,
@@ -142,6 +152,8 @@ def run():
         queries_with_context=sum(bool(v) for v in context.values()),owner_query_references=sum(map(len,context.values())),
         largest_query_owner_degree=max(map(len,context.values())),labels_read=False,
         source_eligibility=False,no_raw_contact_president_fields_exported=True,no_new_recall_or_predictions=True,
+        coordination='ROOT_EXPLICIT_LIGHT_STREAM_EXCEPTION_DURING_OWNED_OSM_HEAVY_WORKER',
+        cpu_threads=1,max_rss_bytes=resource_guard(),rss_cap_bytes=512*1024**2,
         elapsed_seconds=time.monotonic()-start,observed_unix=time.time()))
     print({k:v for k,v in io.read(OUTPUT/'generation.json').items() if not isinstance(v,dict)},flush=True)
 
