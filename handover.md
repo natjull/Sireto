@@ -18680,3 +18680,48 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   folds0/1/test4323/contrôle962 fermés. Dernière plage reste deadline absolue
   1791870324=07:45:24Paris, pas nouvelle nuit/prolongation implicite. Reste
   documentation et contrôle final, pas grille scientifique supplémentaire.
+
+### 13 octobre 2026 07:33 Paris — Annuaire de sites, conflits de rôle et incertitude du pilote
+
+- V108 `810a6203`, root `v108/sector_site_gap_20261013_a`, session75313
+  collectéeexit0. Première invocation BinderException DuckDB VIEW paramétrée,
+  aucun artefact créé ; corrigée avant lancement/hash final, rien d'actif édité.
+  Source existante WHOLE410603lignes vérifiée :64959UAIsite,139214FINESSsite,
+  108476FINESSparent,97954DINUMparent. Branche V32 lit seulement SIREN ;
+  indexprincipal dossierSIRENE/RNE/BODACC, pas ces noms SIRET sectoriels.
+  5330lignesFINESSsite portent SIRENgestionnaire différent du préfixeSIRET ;
+  préfixe autorité du propriétaire, manager relationdistincte. Pas rétroalias
+  au manager/site/HQ. Publiccurrent+recorddatecutoff :342056lignes ; dateMAJ
+  n'est PASpreuve de snapshotcutoff, aucune nouvelle admission au benchmark.
+  All23ratés gardés : deuxcas avecmotinformative, aucun nom propre de GTsite
+  nouveau (Foyer autre site mêmeowner, Cergy noms parents déjàsupportés).
+- FINESS440003671 nomme FOYER DEPARTEMENTAL D'ADOLESCENTES TY BREIZ,
+  SIRET20000554400024, sourceobserved2015-01-05. Stockactuel87RUEDESCHALATRES
+  égaleCRM, A/nonsiège. V99leplace DÉJÀrang1/7,790457, donc ce nom ne prouve
+  pasgainexact. GT20000554400073 est A/siège20RUEDUPORTBOYER. Aucun lien
+  directsuccession incident à cesdeuxdansstockinspecté ; pas inventer
+  transfert ni corrigerlabel. Opérationnel V99 true selonpolitiqueexistante,
+  historiquecomplet/politique nonréadjudiqués, exact reste false.
+- V109 `caa4367b`, root `v109/site_parent_conflicts_20261013_a`, session65272
+  collectée0 : tousquatreratés oùSIREN déjàretrouvé. TroisGT HQ(Foyer/Cergy/
+  Ados), unnonHQ(Infodesca). CergyGTparvisPréfecture vsCRM Hautil/rueVergers,
+  AdosGTFonton vsCRMJeanMermoz/siteferméretrouvé79, InfodescaGTZONEINDUSTRIELLE
+  vsCRM320GeorgesGuignard/sitefermé830retrouvé3. Currentstockdifférences pas
+  preuves erreurslabels. Foyer site00032mêmeadresseHQretrouvé7 sansGT00073.
+  Ne pas attribuer adressed'une filiale auHQ comme own, ni forcerHQpartout.
+- V110 `7dc459d8`, root `v110/pilot_uncertainty_20261013_a`, exécutionexit0.
+  Tirage SRScommunes stratesdensité :295communes/526queries représente2212,
+  weightsum2212, Kish343,670944 ; poidsmin1/max12,696970. StrateDENSE111queries,
+  101exact,34,1772%dupoidsréférence,3,0790pointsdes5,2899%d'erreurspondérées.
+  Taillespoids ne sont PASnouvelleCI ni correctiondépendances/sélection.
+  Préserver validationurbainedistracteurs, pas davantagevillagesseulement.
+- Document bilan complété `cd502a63`(sector/site) et `316e851f`(densité).
+  Recontrôle final : sources/generation/outcomes/reports V32/81/88/94/95/99
+  hashes INTACTS, chacunALL526/max100uniqueSIRET/ownedexit0 ; implementations
+  V104–110 intactes, V102SHA7d985021eb852661dbca09767abaacb2fecb6d6e373746f8b86496b0521a27c7.
+  Aucun calcul embeddinggemma actif observé, seulement commande de diagnostic.
+  Neufdirtypréexistants restent seuls fichiers suivis modifiés horsmilestones.
+- Automation possédée promptactualisé07:28Paris : toutterminé, pasrelance,
+  deadlineabsolue1791870324 intacte, scheduler toujours NONvérifié. Statut
+  ACTIVE jusqu'à fermeture de la plage ; pausefinale à07:45:24 uniquement.
+  Objectif99,2 pasatteint ; foldsfermés/serving/aval inchangés.
