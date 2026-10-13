@@ -19009,3 +19009,76 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   règles opérationnelles changées ; folds0/1, test4323/contrôle962 fermés,
   aval/serving gelés. Neuf dirty initiaux préservés. Dernier état disque
   observé avant clôture : CATNAT96GiB libres, interne261MiB ; aucun nettoyage.
+
+### 13–14 octobre 2026 — Mandat autonome de huit heures, sources et mécanismes
+
+- Autorisation humaine explicite : huit heures et sous-agents par périmètre,
+  au-delà de la géographie, sans surfit ni correction manuelle des labels.
+  Début réel 13 octobre **21:06:08 UTC**, échéance absolue 14 octobre
+  **05:06:08 UTC / 07:06:08 Paris**, aucune prolongation implicite. Mandat
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/night_20261013_b/mandate.json`.
+  À l'échéance conserver artefacts et résultats ; les jeux protégés restent
+  fermés, le panel526 est consommé et ne constitue pas une confirmation.
+- Trois agents distincts : `night_osm_layer` (source locale OSM),
+  `night_structural_evidence` (ponts officiels historiques),
+  `night_retrieval_diagnosis` (causes de score et protocole). Root intègre et
+  mesure. Un seul worker lourd à la fois, fichiers/cache/tmp sur CATNAT,
+  réserve80GiB, aucun modèle aval/serving/label modifié, aucun nouveau gradient
+  prévu. Les neuf modifications étrangères initiales sont conservées.
+- V131 mécanismes `74a7773a`, root `v131/mechanism_20261013_night`, outil
+  session86907 exit0 : les20 cibles publiques restantes sont toutes dans
+  l'univers numérique complet, pas un manque de génération pour ces20.
+  Deux protégées non reconstruites. 19/20 n'ont pas de mot CRM informatif
+  dans le dictionnaire officiel déjà compilé, **pas affirmation d'absence
+  absolue dans tous les payloads officiels**. Quotas de parents non justifiés :
+  diversité des sorties élevée et certains hits exigent beaucoup de sites.
+- V131 votes `a6dddcaa`, root `v131/source_vote_overlap_20261013_night`,
+  session68402 exit0 : 52 451 sorties publiques scellées / 526 requêtes,
+  corroboration INSEE/CP exacte. 196 feuilles multi-votes, 78 surplus SUM
+  contre MAX >0,25 ; 21/22 ratés n'ont aucun concurrent multi-votes. Donc
+  dédoublonner tous les bonus ne répond pas au problème dominant. La baseline
+  SUM reste inchangée ; MAX est prévu pour les preuves OSM corrélées nouvelles.
+- V130 RNA source `6cb771b0`, root `v130/structural_20261013_night`, session
+ 81836 exit0 observé et scellé : archive nationale ministérielle juillet,
+  2 290 974 lignes / 1 098 592 jointures publiques explicites par identifiant
+  association. Titres complets/courts non tronqués, initiales génériques
+  selon STOP existant, aucune liste d'alias CRM. 87 requêtes / 2054 références,
+  toutes526 représentées. Confiance `.5/sqrt(degré propriétaire national)`
+  et corroboration administrative requise. EBSN produit deux associations
+  nationales, pas une réponse présélectionnée. Avant cutoff mais pas admission
+  implicite de toute la pipeline au benchmark, aucune nouvelle métrique.
+- Audit structurel `4731134a`, correction protection catégorie numérique
+  `d319e126` : stocks Historique UL/établissements sans champs d'adresse,
+  les noms historiques ont déjà été projetés nationalement. Pas un historique
+  XY oublié à activer. Les preuves de cession BODACC ancien/nouvel exploitant
+  sont distinctes des seuls liens de succession INSEE. Les relations client/
+  prestataire/comptable ne deviennent jamais des identités ou alias propres.
+  Correction factuelle : INFODESCA31688191100010 est actif dans le stock,
+  pas fermé ; le lien de succession ne suffit pas à inférer sa fermeture.
+- V129 source OSM figée `3dc1131c`, root `v129/osm_local_20261013_night` :
+  archive nationale datée 12 octobre téléchargée session91260 exit0,
+  5 097 546 976 octets, MD5 éditeur vérifié,
+  SHA256280e0c6e57f95df002483308eeb8cd894e30dad81733333d90c02f9e8e42adaf.
+  Runtime pyosmium4.3.1 isolé SSD, aucune modification venv existante.
+  Scan streaming actif session54756 / PID94637 à vérifier par commande,
+  sans Overpass. Sélection query-only des voisinages de toutes526, 466
+  positions compatibles et60 absentes explicitement conservées au dénominateur.
+  Cette première source n'est pas un géocodeur indépendant pour les60.
+  Source communautaire actuelle diagnostique, pas preuve d'exploitant ni
+  admission rétroactive au cutoff. Ne pas dupliquer son scan actif.
+- V132 code/recettes figés avant résultats `d534dfc3` : cinq ablations prévues
+  **géométrie seule, lieux nommés seuls, MAX OSM, RNA seule, MAX OSM + RNA**.
+  Même baseline V115, calibrateurs et Gemma figés, univers numérique complet
+  inchangé, lexical national ouvert, un seul collecteur initial100. Les
+  cinq générations doivent être complètes et leurs exits possédés avant
+  évaluation. Pas grille de poids ni adaptation aux22labels. Comparaison
+  exploratoire ALL526, gains/pertes exacts et opérationnels séparés. Source
+  OSM pas encore complète : initialize/run NON lancés à ce jalon.
+- V133 proposition typée figée `91323376` : marques clients publiées ×
+  preuve propre de site, puis continuité économique une hop comme variante
+  séparée. Coefficient contextuel déjà figé, aucune identité/adresse héritée
+  et aucun réglage sur les quatre NAOS. Préparation attend le worker OSM,
+  pas nouveau résultat annoncé. Statut réel à relire avant toute reprise.
+- Ressources ont changé indépendamment de cette tâche : dernier df interne
+ 243GiB / CATNAT92GiB libres à21:19 UTC, aucun nettoyage par cette équipe.
+  Aucun unit test, cloud, push, nouveau jeu fermé ou positif injecté.
