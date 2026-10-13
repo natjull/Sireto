@@ -238,6 +238,14 @@ au pipeline V99 entier, sur des groupes non consommés et le corpus complet,
 pas seulement sur la loss ou le canal dense. Aucun nouveau training n’est
 lancé dans cette fin de plage ; le checkpoint de référence reste inchangé.
 
+Pour un OOF complet futur, chaque encodeur devra partir d’un checkpoint qui
+n’a jamais été entraîné sur les CRM du fold tenu dehors. Repartir de V6 pour
+un fold contenant ses anciennes lignes TRAIN ne les rendrait pas hors
+échantillon. Un modèle de base, ou un prétraining sur les seules données
+officielles autorisées, doit servir d’initialisation commune non contaminée.
+Le holdout supervisé constaté pour les 526 requêtes actuelles ne dispense
+pas de cette protection lorsqu’on élargira l’évaluation.
+
 Les stocks historiques SIRENE locaux contiennent les périodes de noms,
 d’activité et de siège ; le stock Historique établissements inspecté ne
 contient pas les colonnes d’adresse. Une histoire complète des adresses et
