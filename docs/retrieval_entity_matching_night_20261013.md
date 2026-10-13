@@ -124,6 +124,51 @@ jamais une entrée choisie depuis le GT dans ce benchmark.
    les gates OOF et SLO prévus au contrat. Aucun résultat ici n’autorise
    l’ouverture du fold1 ou le dégel des modèles aval.
 
+## Fine-tuning : une ambiguïté mesurée, pas une promesse de gain
+
+Le modèle actuel apprend deux tâches : site avec nom et adresse (poids 0,75),
+et entreprise avec le nom seul (poids 0,25). L’audit porte uniquement sur les
+15 035 lignes TRAIN du jeu figé ; aucun gradient ni test réservé n’a été ouvert.
+
+| Informations disponibles dans la requête | Lignes dont l’entrée exacte désigne plusieurs SIREN |
+|---|---:|
+| Nom seul | 1 148, soit 7,64 % |
+| Nom et code postal | 192 |
+| Nom et commune, comparaison diagnostique | 172 |
+| Nom, code postal et voie | 10 |
+| Nom et adresse complète | 0 |
+
+Ces nombres décrivent l’information disponible, pas la performance d’un
+nouvel encodeur. Zéro ambiguïté exacte ne prouve ni la qualité des labels,
+ni la robustesse aux variantes, ni le recall sur de nouvelles entreprises.
+Les identifiants SIREN restent des clés de regroupement, jamais des features.
+
+Dans le plan de batches réellement exposé avant le checkpoint best1000,
+18 batches contiennent 37 positions d’ancres à nom identique mais entreprises
+différentes, sans masque protecteur. Dix positions de la tâche entreprise
+traitent aussi un texte documentaire identique au positif comme un négatif.
+Aucune collision documentaire exacte de ce type n’a été trouvée pour la tâche
+site. Ces collisions explicites sont rares : ce n’est pas une explication
+quantifiée des 23 ratés, et leur suppression n’assure pas 99,2 %.
+
+La prochaine ablation de fine-tuning doit donc distinguer deux problèmes :
+
+- **Information insuffisante** : conserver un canal de similarité de noms,
+  mais ne pas lui demander une identité unique quand l’entrée ne peut la
+  déterminer. Un contexte géographique doit avoir un correspondant documentaire
+  officiel explicite ; ajouter un code postal à la requête seulement ne suffit
+  pas si les vues entreprise n’en contiennent aucun.
+- **Négatifs indécidables** : masquer prudemment les collisions d’entrée ou de
+  texte qui ne permettent pas une discrimination, sans déclarer positives ou
+  identiques toutes les entreprises homonymes. Garder les vrais distracteurs
+  locaux et les preuves séparant les sites d’une même entreprise.
+
+Les vues parent décrivent plusieurs noms et sites ; leur supervision doit
+rester distincte de celle du site exact. Toute évolution devra être comparée
+au pipeline V99 entier, sur des groupes non consommés et le corpus complet,
+pas seulement sur la loss ou le canal dense. Aucun nouveau training n’est
+lancé dans cette fin de plage ; le checkpoint de référence reste inchangé.
+
 Les stocks historiques SIRENE locaux contiennent les périodes de noms,
 d’activité et de siège ; le stock Historique établissements inspecté ne
 contient pas les colonnes d’adresse. Une histoire complète des adresses et
@@ -147,6 +192,7 @@ SHA `437d7777a937475d44074ad91ee284bfa917043648762c1871e6d8384ed4f2ca`.
 
 Milestones : V88 `44707cd5`, V94 `172a7e99`, V95 `b7d73976`, V98 `0a97e241`,
 V99 `550732d8`, comparaison `52645159`, audit siège `d8817f46`, champs de noms
-`365efe9e`, inventaire brut et protections de diffusion `b4eb35cc`.
+`365efe9e`, inventaire brut et protections de diffusion `b4eb35cc`, ambiguïté
+TRAIN `45834634`, information et négatifs exacts `bdf51335`.
 Les reprises de V99 ont conservé les shards et les bindings. Aucun unit test,
 aucune dépense externe, aucun push ou modèle aval modifié.
