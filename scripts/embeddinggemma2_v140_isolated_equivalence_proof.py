@@ -130,7 +130,7 @@ def main():
         refs = io.read(verify(g['extras']))
         count = 0
         for q in panel:
-            records = list(refs[q['query_id']].values()) if name == 'supplier' else [refs[q['query_id']]]
+            records = [refs[q['query_id']]['own'], refs[q['query_id']]['temporal']] if name == 'supplier' else [refs[q['query_id']]]
             for ref in records:
                 if ref is None:
                     continue
