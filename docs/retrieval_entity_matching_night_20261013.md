@@ -44,6 +44,15 @@ tous les états intermédiaires. Surtout, ce pilote reste consommé par notre
 sélection de sources et de recettes : absence d’exposition TRAIN et test
 inédit sont deux garanties différentes.
 
+Le tirage initial porte sur 295 communes, par strates de densité, et représente
+un ensemble de référence de 2 212 requêtes. Ses poids donnent une taille
+effective de Kish d’environ 344 observations, avant de tenir compte des
+dépendances entre communes et entreprises. Les 111 requêtes de la strate
+DENSE concentrent dix erreurs et 34,18 % du poids de référence : elles
+contribuent 3,08 points aux 5,29 % d’erreurs pondérées. La priorité de validation
+doit donc inclure ces distracteurs urbains, pas seulement davantage de petits
+villages. Cette taille effective n’est pas une nouvelle borne de confiance.
+
 ## Les preuves qui apportent un gain
 
 - **CATZAM, EUREDEN et EUROVIA** : les noms de personnes morales liées
@@ -258,5 +267,6 @@ Réconciliation du diagnostic BODACC avec les 23 ratés restants : `665ad966`.
 Audit de séparation des groupes pour les encodeurs V1/V6 : `e9d76700`.
 Noms de sites sectoriels et gestionnaire : `810a6203` ; audit des quatre
 ratés site/parent : `caa4367b`.
+Poids, densité et taille effective du pilote : `7dc459d8`.
 Les reprises de V99 ont conservé les shards et les bindings. Aucun unit test,
 aucune dépense externe, aucun push ou modèle aval modifié.
