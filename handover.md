@@ -19213,3 +19213,32 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Durcissement PRÉ-lancement V132 `5648e9de` : reprise de shard vérifie aussi
   son modèle hashé, comme V134/V138. V132 toujours non initialisé, aucun
   changement de score ou de recette et aucun fichier actif modifié.
+
+#### Jalon 22:33 UTC — provenance du checkpoint, sans ouverture du test
+
+- Audit indépendant scellé :
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/checkpoint_provenance_20261014_night/report.json`,
+  SHA256 `0ac5ff1a988be73660d394c3ac73817f01762b30360ede2104c3ff48f71d6c87`.
+  Lecture CPU légère des checkpoints et comptage TRAIN en streaming,
+  agrégats seuls, aucune liste de membres de jeu fermé exportée.
+- Gemma utilisé = V6 **best1000/epoch0/cursor16000**, tenseurs identiques à
+  V4best, initialisé depuis cached best7200/epoch1/cursor13764. L'ancêtre a
+  déjà parcouru toutes15035 paires TRAIN/10013 SIREN positifs. Continuation
+  best1000 :11144 requêtes CRM/7564 SIREN/9720 sites positifs,18098 vues sur
+  23962, soit **75,5279 %**. Ne pas confondre avec97,3249 % du final1340,
+  lequel n'est pas le checkpoint employé. V6 n'a ajouté aucun gradient.
+- V107 établit0 overlap TRAIN ancestral/continuation avec526 en requêtes,
+  SIREN positifs et négatifs explicites ; reconstruction du curseur best1000
+  confirme les deux premiers pour les gradients réellement parcourus.
+  En revanche151 requêtes du panel/79 SIREN appartiennent aux groupes des
+  contrôles de validation (union64 anciens +256 actuels). **Ce ne sont pas
+  151 contrôles exacts**, ni des gradients sur151 requêtes. Les375 autres
+  restent consommées par les décisions répétées de retrieval.
+- Les4323 restent fermées. Leurs manifests prouvent une séparation SIREN
+  par construction, pas un nouveau recomptage des membres TEST. Après gel,
+  règle de serving globale et autorisation one-shot, elles pourront mesurer
+  des paires/groupes réservés de ce CRM historique ; pas automatiquement
+  un nouveau CRM, une région indépendante ou une période future. Le gel de
+  cette nuit ne rend pas rétroactivement les526 indépendantes.
+- À22:32, RNA269/526 sans labels nouveaux ; OSM tous527874658 nœuds lus,
+  38963990 retenus, scan ways en cours. Aucun nouveau recall mesuré.
