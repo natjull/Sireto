@@ -18822,3 +18822,70 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   bilan détaillé àproduire. Suivre progressionV115 puis pairedmesuré avecV99,
   compléter attribution desratés/sourcetriage et protocoleFT/validation ;
   pasconfondre sourcesdisponibles, diagnostics etgains derecall démontrés.
+
+### 13 octobre 2026 10:13 Paris — Cinq étapes : audit détaillé et activité BODACC mesurée
+
+- Mandat humain renouvelé traité sans prolonger l'ancienne nuit ; automation
+  antérieure toujours PAUSED, aucun nouvel horaire automatique. Bilan détaillé
+  `docs/retrieval_five_steps_open_data_audit_20261013.md` : protocole/note
+  `52568389`, résultats/direction `3f8650e6`. Les skills rédaction et PDF ont
+  servi à la note traçable et au contrôle visuel du tableau producteur.
+- V115 `e015f25a`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a`
+  COMPLETE ALL526, generate owned exit0, parent session73659 collectée exit0.
+  Aucun processus V114–V121 possédé actif lors de la dernière vérification.
+  Toutes les sorties :100SIRET exactement, zéro doublon, pasprepool/reranker,
+  labels absents du worker ; minage/modèles/coefficients originaux inchangés.
+  Historique des reprises RSS75 conservé ; aucune réécriture des hashes actifs.
+- V121 protocole `52568389`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v121/activity_paired_20261013_a`,
+  exécution outil exit0 : vérifie V99 ET V115 complets/scellés/exits0, bindings
+  panel/modèles/calibrateurs/index identiques, unité/poids identiques AVANT
+  outcomes. Résultat **504/526 exact95,8174905% brut /94,7553265% pondéré**,
+  SIREN508/526, opérationnel505/526. VsV99 : **un gain1329 BLANCHISSERIE,
+  SIREN533956942, zéro perte** ; gainpondéré+0,04520796point. StrateDENSE
+  inchangée101/111. Restent22ratés ; pas99,2 niREADY, verdictPIVOT_GENERATION.
+  Wilsonexactbrut[93,74866%,97,22195%]. Bootstrapapparié dégénéré, car seul
+  changementdansSMALL totalementéchantillonnée : aucune garantiefutureCRM.
+- V115 reportSHA256
+  `aed1187527fa5c962ebefb8ed751b7791fd78594b3f65abfb690137cf9fe7421` ;
+  V121reportSHA256
+  `845b7d1f0f4a445e52cf876e7a2f473fd1c4b6c95ad851a95c99204f435a28fd`.
+  RuntimeV115 p50/p95/p99=5,754/13,392/17,534s, préparationone-shot exclue,
+  froid/chaud noncontrôlés, pasSLO. L'activité fonctionnelle aide marginalement
+  mais ne résout pas les enseignes/relations manquantes ; aucun poids retuné.
+- Limite de politique explicitée : V99 report porte
+  `DIAGNOSTIC_ONLY_NEW_PRIMARY_SOURCES_AND_BAN_SCORE_INELIGIBLE`. V115report
+  ne réexporte pas `eligibility`, mais champmanquant≠admission. Toute cette
+  comparaison reste diagnostic-only ; reconstruire sourcesadmissibles ou
+  nouveaucontrat temporel explicitementautorisé avant certification.
+- V119 `6975d167`, root `v119/banatic_public_context_20261013_a` : swagger
+  archivé, paginationglobale échouée surdoublons ; nepasdirecataloguecomplet.
+  API membres observecommunesseulement ; ficheBANATIC montreaussigroupements.
+  ALPI→CC244000881 vérifié maisfiche21sept2026postcutoff, relationadhésion
+  PASidentité. Aucun nom de délégué personnephysique utilisé.
+- V120 `f7b71fa1`, root `v120/primary_group_report_20261013_a`, PDFcomplet
+  producteur2025/publicationcatalogue17avr2026, PDFLastModified29avr2026.
+  SHA256`e2aa524a39da60cf19dfb90dd06b8fd5af42cbdb5502ff8cd5ac744635292479`.
+  Page123 entière rendue/inspectée, `visual_review.json` ajouté sansmodifier
+  archive : CegedimCloud790173066 etSmartRX342280609 consolidés explicitement,
+  SMARTGESTION absente table/textextrait. PASpreuve du pont vers488612581,
+  PASpreuve d'absencehistorique. AucuneadresseBoulognehéritéeVilleurbanne.
+- Étapes couvertes : ledger23exhaustif, wholeactivité/sourceinventory,
+  activitémesurée, V118site/adminpréparé seulement (2queries, gainmax1ratéV99),
+  protocoleFTobjectif/masques/fauxnégatifs etvalidationOOF/groupes/zones rédigé.
+  NouveauFT NONlancé : information insuffisante avant gradients. Priorité
+  ponts enseigne–exploitant datés, BANATIC archives/groupements, RNA/JOAFE,
+  historiquesgroupes/successions ; extractioncohortescomplètes, pasGTalias.
+  DECP219980contrats/151136pairespubliques/0nomacteur : pasprioritéalias.
+- FTfutur doitrepartirebase ouofficial-only pourOOF : pasV6initialisation
+  quandfold contientancienTRAIN. Corpusnationalcomplet, uncollecteur100,
+  allhuman/nompropre vscontexte typé, exact/op distincts toujours. Fold0/1,
+  test4323/contrôle962 etaval/serving toujoursfermés/gelés. Aucun nouveau
+  gradient, unit test, cloud, push, correctionlabel ou nettoyage.
+- Neuf modifications préexistantes conservées. Dernierdf : CATNAT103GiB
+  libres, **disque interne1GiB libre** (autres travaux possibles ; aucun
+  nettoyage de cette tâche). Éviter nouveaucalcul massif avant vérifier
+  ressources, pas besoin de changer/supprimer sources utilisateur. Prochaine
+  actionscientifique : démontrerlespontsmanquants, puis ablationinitial100
+  frozen sur526consommé avant confirmationprotégée explicitementautorisée.
