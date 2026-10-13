@@ -14,7 +14,7 @@ from scripts import embeddinggemma2_night as io
 from scripts import embeddinggemma2_v49_postseal_bodacc_roles as naming
 from src.xgb_matcher.retrieval_v20_workbench import record, verify
 
-OUTPUT = io.HOME/'v130/structural_audit_20261013_night'
+OUTPUT = io.HOME/'v130/structural_audit_20261013_night_b'
 BASE = io.HOME/'v115/streamed_activity_ablation_20261013_a'
 LABELS = io.HOME/'v122/label_clarification_20261013_b'
 DOSSIER = io.HOME/'v20/deep_audit_20261011_c/original_source_records.json'
@@ -44,7 +44,7 @@ def run():
     for case in labels:
         protected = case['protected_no_reconstruction']
         category = case['public_legal_category_only'] or {}
-        natural_person = category.get('legal_category') == '1000'
+        natural_person = str(category.get('legal_category', '')) == '1000'
         q, target = case['crm'], case['label_siret']
         qt = naming.tokens(q['crm_name'])
         facts = []
