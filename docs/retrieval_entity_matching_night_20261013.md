@@ -112,13 +112,43 @@ conditionnée par les preuves du site, pas une règle appliquée à tous les cas
 V99 laisse 23 erreurs exactes, dont deux cibles partiellement diffusibles
 qui n’ont pas été reconstituées. Parmi les 21 ratés publics, 20 n’ont aucun
 mot du libellé CRM dans les champs de noms indexés du SIRET attendu. Le même
-constat apparaît dans l’inventaire officiel de noms légaux et de noms propres
-du site : aucune nouvelle correspondance littérale manquante à l’index n’a
+constat apparaît dans l’inventaire SIRENE/RNE/BODACC de noms légaux et de noms
+propres du site inspecté : aucune nouvelle correspondance littérale manquante à l’index n’a
 été trouvée pour ces 20 cas. Cela ne prouve pas une impossibilité sémantique.
 
 Les cas se répartissent entre enseignes sans pont vers l’exploitant, groupes
 ou prestataires, organismes publics, choix du siège plutôt que du site et
 adresses anciennes ou imprécises. Quatre ratés trouvent déjà le bon SIREN.
+
+### Noms sectoriels et choix du site : une lacune distincte
+
+L’inventaire précédent ne couvre pas tous les noms de sites des annuaires
+sectoriels. La source locale FINESS/Éducation/DINUM compte 410 603 lignes,
+dont 204 173 portant un SIRET. La branche globale ajoutée en V32 n’utilise
+que les lignes SIREN ; l’index national principal est construit à partir du
+dossier SIRENE/RNE/BODACC. Les noms de sites sectoriels ne sont donc pas
+exploités par cette branche. Aucun nouveau recall n’est mesuré sur cette piste.
+
+Un contrôle de la source entière identifie 5 330 lignes FINESS dont le SIREN
+publié diffère du préfixe du SIRET. Le gestionnaire peut être une relation
+utile ; il ne doit pas devenir artificiellement le propriétaire du SIRET.
+L’ingestion doit garder ces deux rôles séparés, comme le fait déjà le lecteur
+structuré du projet.
+
+FINESS nomme « FOYER DEPARTEMENTAL D’ADOLESCENTES TY BREIZ » le SIRET
+20000554400024. SIRENE le situe au 87 rue des Chalatres, l’adresse CRM ; V99
+le retrouve déjà au rang 1. Le label humain attend 20000554400073, siège
+actuel au 20 rue du Port Boyer. Le nouveau nom sectoriel n’est donc pas une
+preuve de récupération du SIRET exact attendu. Il ne doit pas être copié
+comme alias propre du siège. La vue opérationnelle existante accepte ce cas,
+mais l’erreur exacte reste comptée ; son historique complet n’est pas
+réadjudiqué ici.
+
+Sur les quatre ratés dont le SIREN est déjà trouvé, trois cibles sont des
+sièges et une ne l’est pas. Pour CERGY et ADOS LOISIRS, le libellé ou l’adresse
+CRM décrit aussi un site différent de l’adresse actuelle du siège attendu.
+Cela renforce la nécessité de distinguer site et rôle administratif, mais
+ne justifie ni un bonus siège partout, ni une correction automatique des labels.
 
 CONVERGENCE MEDIAS appelle une revue du label : le top1 naturel possède le
 nom publié et l’adresse 199 rue Hélène Boucher, tandis que le SIRET humain
@@ -226,5 +256,7 @@ V99 `550732d8`, comparaison `52645159`, audit siège `d8817f46`, champs de noms
 TRAIN `45834634`, information et négatifs exacts `bdf51335`.
 Réconciliation du diagnostic BODACC avec les 23 ratés restants : `665ad966`.
 Audit de séparation des groupes pour les encodeurs V1/V6 : `e9d76700`.
+Noms de sites sectoriels et gestionnaire : `810a6203` ; audit des quatre
+ratés site/parent : `caa4367b`.
 Les reprises de V99 ont conservé les shards et les bindings. Aucun unit test,
 aucune dépense externe, aucun push ou modèle aval modifié.
