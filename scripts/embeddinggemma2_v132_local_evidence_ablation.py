@@ -35,6 +35,7 @@ DEADLINE=1791954368.
 VARIANTS=('geometry_only','named_places_only','osm_max','rna_only','osm_max_rna')
 RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_NOT_CONFIRMATION',
     primary_predeclared='osm_max_rna',other_variants='EXPLANATORY_ABLATIONS_NOT_HOLDOUT_MODEL_SELECTION',
+    quantization_bits=baseline.RECIPE['quantization_bits'],
     baseline='EXACT_FROZEN_V115',initial_cap=100,no_prepool=True,no_new_fit=True,
     osm_names='ALL_INFORMATIVE_QUERY_TOKENS_IN_ONE_PUBLISHED_OSM_NAME_VARIANT',
     osm_name_variants='NAME_BRAND_ALT_OFFICIAL_SHORT_OLD_NOT_OPERATOR',
