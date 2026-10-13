@@ -18889,3 +18889,56 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   ressources, pas besoin de changer/supprimer sources utilisateur. Prochaine
   actionscientifique : démontrerlespontsmanquants, puis ablationinitial100
   frozen sur526consommé avant confirmationprotégée explicitementautorisée.
+
+### 13 octobre 2026 — Clarification demandée sur les labels humains
+
+- Mandat humain ciblé : déterminer si les22ratésV115 sont de vraiséchecs ou
+  deslabels incohérents, sansnouveaurun/training ni corrections implicites.
+  Note accessible `docs/clarification_labels_humains_20261013.md`, commit
+  `101d38a4`. Skill rédaction utilisé pour séparer clairement les niveaux
+  depreuve ; pasnouvelleautomation/nuit/agent délégué.
+- V122 script `1f25cc3e`, correction datesISO/nouveau namespace `36731c3b`.
+  Root `_a` échoué au JSONdate avant cases/report, conservé. Rootcomplet
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v122/label_clarification_20261013_b`
+  outil exec exit0. Les22outcomes issusV115ALL526/ownedexit0 vérifiés avant
+  lecture labels ; publiccorporate sites/enseigne/category et successions
+  uniquement. Deuxprotégés nonrestaurés, aucunnomPP exporté. Rivauxdocumentaires
+  indépendants de prédictions, jamaisremplacementautomatique niMLfeature.
+- Conclusions exclusives couvrant22 : **2contradictionsdesite**, **4labels
+  fortement suspects**, **3identitésd'entreprise corroborées**, **6rattachements
+  relationnels/historiques plausibles**, **5preuvesinsuffisantes**, **2protégés**.
+  Zéro mauvaisesaisiehumaine/contractant définitivementprouvé ; contradictions
+  de site ≠ preuves d'erreur defacturation. Aucunlabel/statut exact/opmodifié,
+  score toujours504/52695,8175%brut94,7553%pondéré.
+- Site : FOYERTYBREIZ CRM87Chalatres/site00024 vslabelsiège00073/20PortBoyer
+  (opérationneldéjàvrai, pasnouvellecorrection). ATOL CRM6Marne, ancienne
+  brancheMODERNE66/00012 primary4/complement4-6 vslabel00020Roosevelt/fermé,
+  succession2018-04-01 siège+continuité ; exploitant/date actuelsnonarbitrés.
+- Quatresuspects : CONVERGENCEMEDIAS→INOX alorspublicautreSIREN481904753/site
+  00029 correspondnomhistorique+199HélèneBoucher ; SAS5EMEETAGE→MURDUSONGE
+  alorsBODACCconfirme autreSIREN842876773 au22TourAuvergne ; Maisonprojets
+  Stains→ABAQUEPLAST alorsvillepublielieu10GeorgeSand dès2021 ; TRESCAL→EI
+  313818965/cat1000/activitéhistorique93.0E, succession1996, alorspersonnemorale
+  Trescal562047050. Date/adresseCRM/contratmanquants : pas6labels déclarésfaux.
+- Correction importante du soupçonOPHLM : label13001281800220 a l'enseigne
+  **TRESORERIE D'ANGOULEME OPH**. OfficeHLM40278771700022 au42Duroselle :
+  destinatairecomptableplausible, paslabelrandom. NAOS→Aubert : prestataire
+  IT/siteclientrelationpubliée ; quatrelabelsAubertfermés, troislienssuccessions
+  vers945754414 au2025-01-01. Fermeture/neufSIREN ne prouvepaslabelhistoriquefaux.
+- API DILA directe a confirmé C20260108381/10juin2026/5EMEETAGE842876773/
+  22TourAuvergne. Observationbusinessonly `official_5eme_etage.json` ajoutée
+  dansrootcomplet sans modifierreport/caseshashés ; pasfullrawarchiveAPI.
+  Stockaoût indique27TourAuvergne : divergence conservée. Un secondidentifiant
+  exploratoire concernait JUBILADO, sansrapport : écarté, aucuneconclusiontirée.
+- Sources web primaires/émetteurs pourStains, EBSNmentionsSIRETexact, Gedimat,
+  Atol, Naos/Aubert/SAP ; jugementSALVY consulté viaDoctrine/miroir, l'ancien
+  domainemagasin redirige actuellement : limitesconservées. Aucunscraping
+  personnel/accèsrestreint/message àtiers. Ces sourcesdiagnostiques ne sont
+  pas admises rétroactivement ni desaliasd'entraînement.
+- Besoinpourarbitragefinal : justificatif + date métier des quatre suspects
+  et des deuxécartsdesite, distinctionlieu/exploitant/contractant. Le panel
+  query n'a que nom/adresse/fold/ID, aucuncontrat/facture/dateCRM. Webnepeut
+  connaîtrecesrelationsprivées. Folds0/1/test4323/contrôle962/aval/serving
+  toujoursfermés ; labelsallhuman inchangés. Unit tests0/cloud0/push0/nettoyage0.
+  Neufdirtyinitiauxpréservés ; dernierdisqueinterne404MiB libre, CATNAT103GiB.
+  Pas nouveaucalculmassif ni suppression de fichiersautrestravaux.
