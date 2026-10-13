@@ -28,12 +28,13 @@ from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
 ROOT=io.HOME/'v132/local_evidence_20261013_night'
-OSM=io.HOME/'v129/osm_local_20261013_night'
+OSM=io.HOME/'v129/osm_local_20261013_night_b'
 RNA=io.HOME/'v130/structural_20261013_night'
 BASE=baseline.OUTPUT
 DEADLINE=1791954368.
 VARIANTS=('geometry_only','named_places_only','osm_max','rna_only','osm_max_rna')
 RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_NOT_CONFIRMATION',
+    primary_predeclared='osm_max_rna',other_variants='EXPLANATORY_ABLATIONS_NOT_HOLDOUT_MODEL_SELECTION',
     baseline='EXACT_FROZEN_V115',initial_cap=100,no_prepool=True,no_new_fit=True,
     osm_names='ALL_INFORMATIVE_QUERY_TOKENS_IN_ONE_PUBLISHED_OSM_NAME_VARIANT',
     osm_name_variants='NAME_BRAND_ALT_OFFICIAL_SHORT_OLD_NOT_OPERATOR',
@@ -127,17 +128,27 @@ def exact_address(q,obj):
                 normalize(tags.get('addr:street',''),street=True))
 
 
+def query_contexts(path,panel):
+    import ijson
+    queries={q['query_id']:q for q in panel};seen=set()
+    with path.open('rb') as stream:
+        for qid,context in ijson.kvitems(stream,'',use_float=True):
+            if qid not in queries or qid in seen:raise ValueError('Exact unique query-only source scope')
+            seen.add(qid);yield queries[qid],context
+    if seen!=set(queries):raise ValueError('Every query retained, including source-empty cases')
+
+
 def prepare(out):
     launch=authority(out);panel=io.read(verify(launch['panel']));fg=io.read(verify(launch['baseline_features']))
     source=io.read(verify(launch['osm_generation']))
-    contexts=io.read(verify(source['files']['query_context']));shapes=io.read(verify(source['files']['shapes']))
+    context_path=verify(source['files']['query_context']);shapes=io.read(verify(source['files']['shapes']))
     gs={r['query_id']:r['geometry'] for r in io.read(verify(launch['geometry']))}
-    if set(contexts)!=set(gs)&{q['query_id'] for q in panel}:raise ValueError('Whole same source population')
+    if set(shapes)!={q['query_id'] for q in panel}:raise ValueError('Whole same source population')
     keys_all,xy,public=public_coordinates(out,launch)
     cal=io.read(out/'calibration/generation.json');assignment=io.read(verify(cal['assignment']))
     models={k:io.read(verify(v)) for k,v in cal['models'].items()}
     root=out/'extras';root.mkdir(exist_ok=True);shards={}
-    for q in panel:
+    for q,context in query_contexts(context_path,panel):
         guard();qid=q['query_id'];path=root/(hashlib.sha256(qid.encode()).hexdigest()+'.npz')
         if engine.sealed(path):shards[qid]=record(path);continue
         model=models[str(assignment[qid])]
@@ -151,7 +162,7 @@ def prepare(out):
             pos=pos[good];coords=coords[good]
             g=gs[qid];lines=[]
             if g.get('precision')=='STREET_FOOTPRINT_NOT_HOUSE':lines.extend(shapes[qid]['lines_l93'])
-            for obj in contexts[qid]['addresses']:
+            for obj in context['addresses']:
                 if exact_address(q,obj):
                     for p in obj['points_l93']:lines.append([p,p])
             distance=np.full(len(coords),np.inf)
@@ -167,7 +178,7 @@ def prepare(out):
                 geom[~valid]=0.
             del changed,group,parents
             qt=set(normalize(q['crm_name']).split())-STOP;matched=[]
-            for obj in contexts[qid]['pois']:
+            for obj in context['pois']:
                 if qt and any(qt<=set(normalize(n).split())-STOP for n in obj['names']):matched.append(obj)
             distance=np.full(len(coords),np.inf)
             for obj in matched:
