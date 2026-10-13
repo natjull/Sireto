@@ -18433,3 +18433,32 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Docs primaireTantivyTopDocs/offset consultée ; aucun runtime modifié.
 - Réserve CATNAT138GiB, mémoire libre~54%, aucun nettoyage d'autres travaux,
   aucune réécriture des artefacts hashés actifs. Neuf dirty utilisateur intactes.
+
+### 13 octobre 2026 04:20 Paris — Cinq variantes complètes, pas de certification99
+
+- V71,V73,V75,V78,V81 générations ALL526 scellées, owned exit0 par leurs
+  superviseurs. Sessions97414/34641/48834/61116/70562 collectées sans relance.
+  Gemma best1000 reste gelé, folds0/1/test4323 fermés, aval/serving inchangés.
+- Comparaison post-seal V84 `e2c54696`, exécution directe exit0, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v84/paired_night_results_20261013_a`.
+  Même526queries/405SIREN ; V32 495exacts/93,6717%pondéré ; V71 497/93,7324% ;
+  V73 498/93,9255% ; V75 etV78 identiques V71 ; V81 500/94,1639%.
+  V81 brut95,0570%, SIREN504/95,0215%pondéré, opérationnel501/94,3273%pondéré.
+  V32→V71 trois gains CATZAM/EUREDEN/EUROVIA et une perteNAOS ; V71→V73
+  récupère cette perte seule. V71→V75 zéro changement ; V71→V78 zéro
+  changement malgré correction des offsets TRAIN imbriqués. V75→V81 trois
+  gains NAOS, aucune perte. Ces comparaisons sont descriptives de développement
+  consommé, pas confirmation indépendante ni causalité isolée FT.
+- Reports SHA V71 b4f6f46a147a6db519f9c6908103e4cbad525208e8529517af62ba95af0f4f53 ;
+  V75 84145b7d5680d8e1c3203bb24dd03843067c9a63df628d063ed4ccfd2bdcb87c ;
+  V78 c346b8abae0ad661923f0748bce21a89451b014816fab978295201cd8b957646 ;
+  V81 c3510ffd2a18333f10502b461da7c782c3a1e7aad625bc44da70c9546b66030b.
+- Audit V85 `950665a7`, session17333 exit0, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v85/postseal_proof_gap_20261013_a`.
+  Les26ratés restent TOUS dans l'univers complet de preuves ;22 mauvaisSIREN,
+  quatre bonsSIREN dont un opérationnel. Top100 des ratés médiane88,5SIREN
+  distincts, maxfamille médiane4 (maximum25). Donc pas justification d'un
+  quota arbitraire parSIREN : encombrement familial n'explique pas l'essentiel.
+  Lookup GT strictement label-side après scellement, aucun input de recherche.
+- Aucun gate99,2 franchi, aucune promotion. BAN/primaires additions restent
+  diagnostic-only. Deadline1791870324 inchangée, pasunit tests/dépense/push.
