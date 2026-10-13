@@ -18608,3 +18608,75 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   aprèsscéllement, pasunionoracle ouadaptation sursesoutcomes.
   Checkpoints/artefactsserving/aval/folds0/1/test4323 inchangés. 99,2 nonatteint,
   piloteconsommé pasconfirmation. Deadline07:45:24Paris inchangée.
+
+### 13 octobre 2026 07:18 Paris — Toutes générations terminées ; bilan et audit du fine-tuning
+
+- Bilan lisible : `docs/retrieval_entity_matching_night_20261013.md`, création
+  `6d3d00c5`, compléments `854e9980`, `78ad6018`, `5240a315`. Les neuf fichiers
+  dirty initiaux restent inchangés. Aucun push, unit test ou coût externe.
+- V95 COMPLETE526/generate28234 owned0, session86080 collectée0 : 501/526
+  exacts, 94,2976% pondéré. Contre V81 : cinq gains, quatre pertes. V100
+  `d8817f46`, root `v100/postseal_hq_tradeoff_20261013_a`, session10667 exit0,
+  attribue la concentration : part HQ top100 moyenne53,711%→73,612%. Les gains
+  sont des sièges, les pertes des sites. Rejeter le bonus HQ général ; trois
+  des quatre sites perdus ne sont jamais sièges dans l'historique UL examiné.
+- V99 COMPLETE526_SEALED/generate44661 owned0, session47458 collectée0.
+  Reprises41025/43487 exit75, shards identiques et bindings conservés ; aucun
+  calcul actif à relancer. Exact **503/526=95,6274% brut,94,7101% pondéré** ;
+  SIREN507/526=95,5677% pondéré ; opérationnel504/526=94,8736% pondéré.
+  SHA report437d7777a937475d44074ad91ee284bfa917043648762c1871e6d8384ed4f2ca.
+  Huit gains contre V32(495), zéro perte, sept SIREN. Une seule nouvelle
+  requête contre V88(502) : ARTEIS SPORT CNSD, rang37, initiales dérivées
+  confiance.390615 ; aucun alias CNSD créé. EBSN citycue existe mais ne
+  récupère PAS la cible. p50/95/99=4,875/11,889/13,450s hors préparation,
+  pas de protocole cold/warm contrôlé ni gate SLO.
+- V96 `bc99a1ce` réellement exécuté exit0 : V81/V88/V94/V95 comparables et
+  scellés. V102 `52645159`, root `v102/final_paired_20261013_a`, exit0,
+  compare toutes les variantes complètes jusqu'à V99, sans union oracle.
+  SHA7d985021eb852661dbca09767abaacb2fecb6d6e373746f8b86496b0521a27c7.
+  Delta pondéré V32→V99 +1,03845point ; bootstrap commune descriptif95%
+  [+0,3752;+2,2516]points, pas correction de sélection expérimentale.
+  Wilson brut V99 [93,5243;97,0689]%. Objectif99,2 NON ATTEINT.
+- V101 `365efe9e`, root `v101/postseal_name_roles_20261013_a`, session18047
+  exit0 ; V103 `b4eb35cc`, root `v103/raw_alias_coverage_20261013_a`, session12210
+  exit0. Diffusion actuelle vérifiée pour ALL526 AVANT noms bruts :524(O,O),
+  un(P,P),un(P,O). Parmi21ratés publics restants,20zéro mot CRM dans noms
+  indexés ET dans inventaire brut légal/ownsite ; zéro nouvelle concordance
+  littérale brute absente de l'index sur ces21. Deux P conservés erreurs et
+  non reconstitués. Ce n'est ni impossibilité sémantique ni audit global de
+  perfection d'index. Quatre ratés trouvent déjà le bon SIREN.
+- V104 `45834634`, root `v104/identity_ambiguity_20261013_a`, session25243
+  exit0, puis V105 `bdf51335`, root `v105/train_information_audit_20261013_a`,
+  session53651 collectée0. TRAIN uniquement, encoder/optimizer inchangés.
+  15035lignes :1148entrées nom seul identiques avec plusieurs SIREN(138textes,
+  maximum140SIREN). Nom+CP192lignes ambiguës ; nom+commune172 ; nom+CP+voie10 ;
+  adresse complète0ambiguïté exacte. Pas preuve qualité labels/performance.
+  Avant best1000 :18batches/37ancres identiques vers parents distincts sans
+  masque ;10ancres ont aussi positif documentaire identique à un négatif
+  nonmasqué(identity seulement). Avant1340 :19batches/39ancres/14doccollisions.
+  Collisions rares, pas explication causale des23ratés ni promesse99.2.
+  Future ablation : information contextuelle avec correspondant officiel
+  côté document et masques d'indécidabilité, jamais homonymes déclarés mêmes
+  entités/positifs. Site task0doccollision exacte ; aucun nouveau training.
+- V106 `665ad966`, root `v106/remaining_bodacc_probe_20261013_a`, exit0 :
+  réutilise le diagnostic V54 figé240passages, aucun nouvel encodage/source.
+  Sur21ratés publics V99 :13passage own hors administration,3marges positives
+  contre autre passage de banque DIAGNOSTIQUE label-sélectionnée. INFODESCA
+  et ATOL meilleurs textes sont actes avec adresse, SCHMIDT activité cuisines
+  générique, pas preuve enseigne-exploitant. Comparateur peut inclure admin ;
+  pas ablation nationale contrôlée, aucun gain retrieval attribuable au brut.
+  Retenir extraction sujet/rôle/date plutôt que score d'annonce entière.
+- V107 `e9d76700`, root `v107/encoder_group_exposure_20261013_a`, session7252
+  collectée0 : audits TRAIN V1 et V6, hashes/provenance initialcached vérifiés.
+  Zéro recouvrement queries526/groupes405 comme positifs OU négatifs explicites.
+  Encourageant contre mémorisation supervisée, mais pilote consommé par choix
+  de recettes/sources ; pas prétraining audit, pas OOF complet ni test inédit.
+- Piste documentaire Gedimat-Bracq→LEON BRACQ ET COMPAGNIE685520389 confirmée
+  par site/mentions légales publics ; preuve entreprise pas SIRET, source
+  actuelle non reproduite au cutoff et jamais feature choisie depuis GT.
+  RNA octobre/BANatlas restent nonadmis ; pas nouvelle source serving.
+- Tout retrieval calculé cette nuit est terminé ; ne relancer AUCUN V4/V6/
+  V88/V94/V95/V99. V99 référence développement seulement, aval/serving gelés,
+  folds0/1/test4323/contrôle962 fermés. Dernière plage reste deadline absolue
+  1791870324=07:45:24Paris, pas nouvelle nuit/prolongation implicite. Reste
+  documentation et contrôle final, pas grille scientifique supplémentaire.
