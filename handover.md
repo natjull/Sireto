@@ -19194,3 +19194,22 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Pas de second retrieval/MPS, unit tests, nettoyage ou dépense extérieure.
 - Score mesuré toujours504/526. Aucune nouvelle recette adaptée à des outcomes
   de cette nuit, jeux fermés et aval inchangés, fin05:06:08 UTC inchangée.
+
+- Continuation V139 maintenant active, commits `217b0265`, `c5a72550`,
+  `b77f6766`, module `embeddinggemma2_v139_resource_continuation.py`, root
+  `v139/structural_native_resource_20261013_night`, session64021,
+  parent96829/enfant96832 vérifiés à22:23 UTC. Migration25shards RNA
+  byte-identiques, seule modification d'exécution RSS7->10GiB. V138 ancien
+  parent96295 arrêté après vérification, session72253 exit1 possédé et
+  volontaire, ancien enfant96637 exit75 ; aucun processus V138 restant.
+  RNA48/526 à22:24, aucun label nouveau lu. Ne pas dupliquer V139 actif.
+- Revue indépendante statique : aucun blocage scientifique direct trouvé pour
+  ces ablations exploratoires, pas de branche par qid/marque/cible ou GT dans
+  génération ; tous les calibrateurs58 non négatifs, w6 fixe1,306–1,961.
+  RNA/BANATIC restent un contexte propriétaire corroboré INSEE OU CP, pas
+  même adresse garantie. Continuité historique n'établit pas un exploitant
+  à une date CRM inconnue. Limites OOF/serving, validation déjà consommée et
+  éligibilité des sources empêchent toujours promotion/99,2 certifié.
+- Durcissement PRÉ-lancement V132 `5648e9de` : reprise de shard vérifie aussi
+  son modèle hashé, comme V134/V138. V132 toujours non initialisé, aucun
+  changement de score ou de recette et aucun fichier actif modifié.
