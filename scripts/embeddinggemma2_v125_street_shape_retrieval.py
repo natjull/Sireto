@@ -25,7 +25,7 @@ from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
 OUTPUT=io.HOME/'v125/street_shape_retrieval_20261013_a'
-SOURCE=io.HOME/'v124/query_street_shapes_20261013_a'
+SOURCE=io.HOME/'v124/query_street_shapes_20261013_b'
 BASE=baseline.OUTPUT
 RECIPE=dict(hypothesis='FROZEN_V115_WITH_GENERIC_WEAK_QUERY_STREET_AXIS_GEOGRAPHY',
     eligibility='DIAGNOSTIC_ONLY_LIVE_COMMUNITY_OSM_AND_INHERITED_BAN_INELIGIBLE',

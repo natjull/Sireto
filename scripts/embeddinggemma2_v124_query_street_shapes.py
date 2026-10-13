@@ -20,10 +20,11 @@ from scripts.embeddinggemma2_v17_structural_retrieval import normalize
 from src.xgb_matcher.retrieval_geo_v16 import lonlat_to_l93
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
-OUTPUT=io.HOME/'v124/query_street_shapes_20261013_a'
+OUTPUT=io.HOME/'v124/query_street_shapes_20261013_b'
 BASE=io.HOME/'v115/streamed_activity_ablation_20261013_a'
 RECIPE=dict(scope='ALL526_QUERY_ONLY_WEAK_STREET_GEOMETRY',weak_queries_only=True,
-    osm_objects='ALL_NAMED_HIGHWAY_WAYS_WITHIN_QUERY_UNCERTAINTY_NEIGHBOURHOOD',
+    osm_objects='NAMED_HIGHWAY_WAYS_WITHIN_QUERY_UNCERTAINTY_NEIGHBOURHOOD',
+    request_execution='BOUNDING_BOX_PLUS_GENERIC_NAME_PREFILTER_EXACT_FULL_NAME_AND_RADIUS_CHECK_AFTER',
     radius='MIN_2000_MAX_500_EXISTING_FOOTPRINT_PLUS_300_METRES',
     road_names='EXACT_SHARED_NORMALIZATION_OF_PRIOR_BAN_MATCHED_STREET',
     road_axis_not_house_or_property=True,no_shop_names_or_business_ids_read=True,
@@ -53,7 +54,16 @@ def main():
     timestamps=[];source_refs=[]
     for batchno,start in enumerate(range(0,len(wanted),8)):
         engine.guard();batch=wanted[start:start+8]
-        statements=[f'way(around:{r["radius"]:.2f},{r["lat"]:.7f},{r["lon"]:.7f})[highway][name];' for r in batch]
+        statements=[]
+        generic={'RUE','AVENUE','BOULEVARD','CHEMIN','ROUTE','IMPASSE','PLACE','ALLEE','QUAI',
+                 'DU','DE','DES','LE','LA','LES','ET','D','L','SAINT','SAINTE'}
+        accent={'A':'[aàâä]','E':'[eéèêë]','I':'[iîï]','O':'[oôö]','U':'[uùûü]','C':'[cç]'}
+        for r in batch:
+            dlat=r['radius']/110000.;dlon=r['radius']/(110000.*math.cos(math.radians(r['lat'])))
+            bb=','.join(f'{v:.7f}' for v in (r['lat']-dlat,r['lon']-dlon,r['lat']+dlat,r['lon']+dlon))
+            words=[w for w in normalize(r['geometry']['matched_street'],street=True).split() if w not in generic and len(w)>=3]
+            pattern=''.join(accent.get(c,c.lower()) for c in max(words,key=len)) if words else '.'
+            statements.append(f'way({bb})[highway][name~{json.dumps(pattern)},i];')
         query='[out:json][timeout:30];('+''.join(statements)+');out geom;'
         body=None;attempts=[]
         for endpoint in ('https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter'):
