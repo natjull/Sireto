@@ -1,6 +1,6 @@
 """One frozen full-panel geographic ablation, before the native collector100.
 
-Replace unreliable point-only proximity by max(old, distance-to-real-street).
+Replace point-only proximity by max(old, distance-to-actual-street-addresses).
 Only existing full unpruned numeric proof coordinates are used. No brand hint,
 target injection, fixed candidate pool, downstream ranker or new fitting.
 Unchanged query inputs reuse the exact sealed baseline outputs by equivalence.
@@ -24,12 +24,13 @@ from scripts.embeddinggemma2_v123_street_geometry_probe import segment_distance
 from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
-OUTPUT=io.HOME/'v125/street_shape_retrieval_20261013_a'
-SOURCE=io.HOME/'v124/query_street_shapes_20261013_b'
+OUTPUT=io.HOME/'v125/street_cloud_retrieval_20261013_b'
+SOURCE=io.HOME/'v126/ban_street_clouds_20261013_a'
 BASE=baseline.OUTPUT
-RECIPE=dict(hypothesis='FROZEN_V115_WITH_GENERIC_WEAK_QUERY_STREET_AXIS_GEOGRAPHY',
-    eligibility='DIAGNOSTIC_ONLY_LIVE_COMMUNITY_OSM_AND_INHERITED_BAN_INELIGIBLE',
-    own_geo='MAX_ORIGINAL_AND_HALF_DIV_ONE_PLUS_DISTANCE_TO_STREET_OVER_EXISTING_300M_SCALE',
+RECIPE=dict(hypothesis='FROZEN_V115_WITH_UNIFORM_WEAK_STREET_BAN_POSITION_CLOUD_GEOGRAPHY',
+    eligibility='DIAGNOSTIC_ONLY_INHERITED_POSTCUTOFF_BAN_INELIGIBLE',
+    own_geo='MAX_ORIGINAL_AND_HALF_DIV_ONE_PLUS_DISTANCE_TO_NEAREST_ACTUAL_STREET_POSITION_OVER_300M',
+    no_interpolated_road_or_property_claim=True,
     original_strong_house_geometry_unchanged=True,source_names_not_company_aliases=True,
     numeric_scope='IDENTICAL_FULL_UNPRUNED_V115_NUMERIC_PROOF_UNIVERSE',
     original_national_lexical_unrestricted=True,no_new_external_footprint_expansion=True,
