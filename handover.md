@@ -18183,3 +18183,49 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Le travail continue dans ce tour actif. Ne pas promettre que le scheduler a
   été validé. Échéance1791870324 inchangée, tous autres calculs conservés,
   neuf dirty utilisateurs intacts, aucun unit test, coût externe ou push.
+
+### 13 octobre 2026 02:00 Paris — Mesures complètes, pas de promotion ; résiduel actif
+
+- V57 (`4e582175`) COMPLETE : supervision session86630 collectée exit0,
+  génération finale PID78564 owned exit0. Exact498/526 (94,6768% brut),
+  93,4818% pondéré contre93,6717% V32 : huit gains, cinq pertes, donc PAS de
+  promotion. SIREN500, opérationnel498 ; Wilson brut95%[92,4141;96,2917].
+  Latence p50/p95/p99=4,861/10,497/12,344s. ReportSHA
+  03c24169fc42d4b8c33caf190b1a8a6cf6081f87e25a832828e3.
+- V68 (`46d7e33d`) COMPLETE : session25698 collectée exit0, génération finale
+  PID80364 owned exit0. Exact492/526 (93,5361% brut),93,0957% pondéré :
+  un gain, quatre pertes vsV32, PAS de promotion. SIREN496, opérationnel493,
+  pondéré opérationnel93,2592%. Wilson brut95%[91,1031;95,3378]. Latence
+  p50/p95/p99=3,009/8,220/9,401s. ReportSHA
+  7b3aa1f7b0011bffafab9870839b4cf74d7174679f0ffdba04c67bd5b96b6346.
+  Le seul gain CATZAM avait déjà un point propre : attribution causale au
+  remplissage impossible, coefficients/minage ont aussi changé. BAN inéligible
+  demeure diagnostic-only. Les526 sorties sont scellées avant labels.
+- Source primaire historique V69 `374f3915` : archive20240531080206 du
+  rapport Savencia2021, PDF3778976octets, SHA
+  4e87a26ea9f02e1bc2a738d0b5d308efa762fc66fce734e2e5773407890d8cd6.
+  Pages120/121 rendues et vérifiées visuellement : Note17, principales
+  sociétés intégrées globalement au31Dec2021. SBAlliance Informatique780876405
+  et Fromageries du Levezou431566884 dans ce périmètre ; SBAlliance SNC409080538
+  est distincte. Racine SAVENCIA SA847120185, pas FDE Europe351014352.
+  Relation de consolidation historique, pas identité, filiation directe ni
+  possession actuelle. Capture originale conservée, source encore non admise.
+- V70 `3b5fdbdb` compile TOUTES52 lignes françaises de ce périmètre plus la
+  racine (53), sans sélection CRM/GT. MembersSHA
+  cc6118eab5398519a8154846942898f84d1e59a181d5d5d207b0fb97b95469b8.
+  Ne pas qualifier cette liste d'exhaustive pour tout le groupe/toutes méthodes.
+- Nouvelle hypothèse figée V71 `2b5e9ae1`, script
+  `scripts/embeddinggemma2_v71_frozen_residual.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a`.
+  Session97414, superviseur84226/prepare84229 vérifiés par commande ;
+  progression54/526 à02:00. Coefficients V32 de chaque fold auxiliaire
+  STRICTEMENT figés ; seuls coefficients additifs non négatifs des nouvelles
+  preuves appris. RNE, BODACC mère rapportée et groupe historique sont du
+  CONTEXTE lié au site propre, jamais alias/adresse hérités. Score V32 et sa
+  quantification restent exacts ; un seul collecteur initial100 national,
+  aucun ancien top100 recollecté. Calibrateur outer SIREN OOF mais marges TRAIN
+  baseline in-sample, PAS nested OOF. Pas preuve encoderOOF complet/pristine.
+  Sources primaires/BAN diagnostic-only, pas promotion production possible.
+- Échéance1791870324 (07:45:24 Paris) inchangée. Préparer ensuite confirmation
+  sur requêtes non consommées sans ouvrir fold1/test4323 ; ne pas confondre
+  panel de développement avec national99,2%. Neuf dirty utilisateur préservés.
