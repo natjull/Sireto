@@ -19242,3 +19242,32 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   cette nuit ne rend pas rétroactivement les526 indépendantes.
 - À22:32, RNA269/526 sans labels nouveaux ; OSM tous527874658 nœuds lus,
   38963990 retenus, scan ways en cours. Aucun nouveau recall mesuré.
+
+#### Jalon 22:42 UTC — OSM complète, sept ablations initialisées avant labels
+
+- Source V129 `_night_e` terminée réellement : session1423 **exit0**,
+  scan_owned_tool_exit.json possédé, PID96258 terminé.1470,173s, pic2,65GiB,
+  snapshot2026-10-12T20:21:35Z.527874658 nœuds lus/38963990 conservés,
+  6388483callbacks ways après filtre natif et112541relations ;142718POIs,
+  306711adresses,1290639routes,30087bâtiments nommés. Toutes526 représentées,
+  466positions compatibles avec POIs,407rues matchées,60sanscentre vides.
+  47812ways partiels et76relations pertinentes incomplètes ; couverture
+  d'outers non tagués incomplète, aucune reconstruction inventée. COMPLETE
+  ne signifie ni exhaustivité de chaque objet OSM, ni preuve d'exploitant.
+- Source/scoring inchangés, aucune reprise disque supplémentaire nécessaire.
+  CATNAT82GiB et interne242GiB libres. Marge40GiB autorisée pour traitements
+  suivants sans suppression ; RAM10GiB/free25%/pression0,1,2. Les anciens
+  artefacts, PBF, cache et SQLite restent préservés. Aucun nettoyage.
+- V132 PRÉ-lancement ressources `e00af072` : guard déclaré lié dans chaque
+  processus, helpers historiques hashés non modifiés ; marge40 évite le
+  seuil hérité80. Une seule génération retrieval lourde, deux threads après
+  scan OSM terminé. Binding source réussie_e `0a99b403`. Recettes sept et
+  primaire OSM+RNA inchangées avant résultats. Initialisation session45706
+  **exit0** possédé ; root `v132/local_evidence_20261013_night` maintenant
+  hashé actif, aucun code/config/helper associé ne doit être modifié.
+- V132 prepare/run PAS lancés : attend fin V139 pour ne pas dupliquer le
+  worker lourd. V139 RNA431/526 à22:42 ; reprise automatique après owned
+  exit75 du worker96832 RSS10,03GiB/free67%/pression1, pas saturation réelle.
+  Shards préservés, recettes/model/source identiques. Aucune métrique nouvelle
+  avant les six sorties complètes. V140 n'est pas créé ou lancé faute de
+  blocage disque réel. Score global mesuré toujours504/526.
