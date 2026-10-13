@@ -19082,3 +19082,71 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Ressources ont changé indépendamment de cette tâche : dernier df interne
  243GiB / CATNAT92GiB libres à21:19 UTC, aucun nettoyage par cette équipe.
   Aucun unit test, cloud, push, nouveau jeu fermé ou positif injecté.
+
+#### Jalon 21:58 UTC — sources complémentaires prêtes, OSM toujours en préparation
+
+- V129 première exécution `_night` a cédé sur garde5GiB (session54756 exit1,
+  pas OOM machine). Reprise compacte `_night_b` au commit `e1d07229`, ancien
+  code/source/PBF conservés ; session55125 exit143 après arrêt contrôlé du
+  PID94998 vérifié. Tous527874658nœuds lus, mais reconstruction des bâtiments
+  facultatifs trop coûteuse, aucune génération finale et aucun label ouvert.
+- Source **active `_night_c`**, commit `62a73507`, module
+  `scripts.embeddinggemma2_v129_osm_filtered_source.py` (vérifier nom exact
+  et commande dans son process/launch avant toute intervention),
+  session81144 / PID95744 à vérifier par commande. MêmePBF/526/rayons/tags
+  et preuves POIs/adresses/rues que les variantes ; filtrage natif des objets
+  sans nœud dans le buffer et omission explicite des bâtiments anonymes
+  jamais lus par V132. Cache de références, pas de double géométrie.
+  Migration enregistrée ; ne pas modifier ou dupliquer un calcul actif.
+  Attendre COMPLETE_ALL526_LOCAL_OSM_SOURCE et scan_owned_tool_exit0 réel.
+  Projection streaming `6be63f6e`/`938bb220` prévue après la source complète.
+- BANATIC root `v130/banatic_memberships_20261013_night_b` COMPLETE,
+  commits `d6014cdf`, `8b0f2828`, correction exécution `adbe4c0e`. Session50861
+  exit0 réel ;66,23s/325,5MiB, streaming XML sans décompression persistante.
+  142518lignes /155795relations publiques /46785organisations (groupements
+  ET membres), contexte40/526 et3364refs. Rôles/directions explicites,
+  contacts exclus, postcutoff diagnostique, pas identité héritée. Ancien
+  namespace conservé après variable resource masquant moduleRSS, exit1 avant
+  premier checkpoint, pas échec mémoire ni nouvelle hypothèse. Exception
+  légère coordonnée pendant scan OSM, aucun second worker lourd.
+- V133 root `v133/supplier_site_context_20261013_night`, commit `91323376`,
+  session28868 / PID95872 exit0 réellement collecté.19queries sélectionnées
+  uniquement par marque fournisseur publiée, toutes526 conservées ;7503refs
+  publiques,17queries own/temp nonzéro,38shards confidence<=.5. Source
+  partielle d'un éditeur, pas couverture nationale démontrée. Coefficient
+  contextuel figé appliqué une fois ; aucun alias/XY/identité hérités.
+  Exception légère coordonnée, pic observé495MiB/mémoire libre81%, pas de
+  retrieval/labels. Source/exits et integration_schema.json prêts.
+- V132 correctifs PRÉ-lancement : `ab2df35a` lecture source streaming,
+  `e4cb3139` binding quantization, `7bcf78a4` deux ablations BANATIC en plus
+  des cinq initiales, `edb44606` rejet de plages/listes de numéros et séparation
+  de variantes de noms, panels RNA/OSM/BANATIC hashés identiques ; `3a0d86f3`
+  source_c et exits réellement observés. Modèles58=7lex+51num et unique
+  collecteur100 revus par agent. **Source_c pas complète : initialize/run
+  toujours NON lancés**, aucun score nouveau. Sept variantes figées, primaire
+  OSM+RNA inchangé ; toutes les sept doivent terminer avant labels.
+- V134 intégration de V133 figée `139225e0`, script
+  `embeddinggemma2_v134_supplier_native_ablation.py` : supplier own seul,
+  temporal seul, MAX des nouveaux bonus leaf + MAX RNA/BANATIC par propriétaire.
+  Trois ablations toutes526, pas grille/fit/sourcecopiée. Attend V132 prepared
+  complet et owned sourceV133. NON lancé ; ne pas annoncer métrique.
+- V137 faisabilité figée `047b0bab` : continuité économique directe publique
+  et égalité des adresses propres des endpoints lorsque XYmanque, numéro/voie/
+  commune exacts versus compatibilité de rue faible explicitement distincts.
+  Pas copie de coordonnées/nom/adresse, pas règle NAOS, sourcequery-only.
+  Lecture légère agent en cours à vérifier, aucune ablation/recall annoncé.
+- Plan de confirmation `v130/generalization_plan_20261013_night/report.json`,
+  SHA5db2466357e70e6742bfcf808e6defcecfe6886b8971dd83623ec314f9d4f4d8 :
+  2212validation déjà exposée lexicalement/checkpoint,1686hors526 PASpristine.
+  Contrôle962 fermé,851SIREN/478communes/14,31Msites et sans SMALL, donc pas
+  test totalement indépendant/représentatif. Préparation corpus dominante,
+  pas promesse1h ;35–88h pour une vue/site à45–115textes/s AVANTdédup est un
+  ordre de grandeur, pas ETA ferme. Test4323 fermé malgré ancienne autorité
+  conditionnelle nonconsommée ; politique de source à renouveler/geler avant.
+- Assignation de calibrateur par partition SIREN est légitime pour OOF526,
+  **pas une règle de serving pour une nouvelle query au SIREN inconnu**.
+  Avant confirmation figer modèle global ou vecteur moyen, un collector100,
+  jamais choisir par le GT du test. Pas prétendre moyenne in-sample = OOF.
+  SLO1s non démontré : baseline p50~5,75s /p95~13,39s hors préparation.
+- Le score mesuré reste **504/526**, aucune nouvelle métrique de cette nuit,
+  aucun jeu fermé ouvert ou label corrigé. Échéance05:06:08UTC inchangée.
