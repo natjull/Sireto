@@ -251,6 +251,29 @@ pas un sigle. Le fichier historique d’août a renvoyé HTTP403, sans contourne
 [RNA officiel](https://www.data.gouv.fr/datasets/repertoire-national-des-associations),
 [miroir national](https://www.data.gouv.fr/datasets/rna-agrege-a-lechelle-nationale).
 
+## Ce que la recherche récente change dans la priorité
+
+SC-Block++ (2025) étudie la régularisation adaptative d’un blocker contrastif
+pour limiter le surapprentissage. C’est une piste ultérieure pour le training,
+pas une preuve que régulariser notre Gemma retrouvera les identités absentes.
+[Papier des auteurs](https://personal.eur.nl/frasincar/papers/SAC2025a/sac2025a.pdf).
+
+Les modèles à interaction tardive conservent plusieurs vecteurs de tokens et
+font des comparaisons plus fines, avec un coût de stockage plus important
+qui motive les travaux de pruning. Mon inférence pour SIRETO : cette précision
+supplémentaire ne crée pas le pont enseigne–exploitant manquant dans les noms
+publiés. Ce n’est pas le premier changement à lancer au vu des 20 ratés sans
+recouvrement de mots dans l’inventaire examiné.
+[Analyse des interactions tardives](https://arxiv.org/abs/2403.13291).
+
+Il faut aussi distinguer les champs informatifs du texte juridique générique.
+Le dossier BODACC de la cible « BLANCHISSERIE » décrit explicitement une activité
+de blanchisserie ; celui de SCHMIDT décrit la vente de cuisines. Ces activités
+peuvent fournir un contexte fonctionnel, pas un alias ni une identité du site.
+Une future mesure doit utiliser ce champ avec son sujet officiel et sa portée,
+au lieu d’assimiler la similarité d’une annonce entière à un lien d’entreprise.
+Cette hypothèse n’a pas encore été testée en retrieval national.
+
 ## Artefacts et traçabilité
 
 Comparaison finale :
