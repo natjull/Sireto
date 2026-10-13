@@ -7,7 +7,7 @@ August source is post-cutoff and diagnostic only. No labels or predictions.
 from collections import defaultdict
 from pathlib import Path
 import re
-import resource
+import resource as process_resource
 import shutil
 import sys
 import time
@@ -19,7 +19,7 @@ from scripts import embeddinggemma2_v49_postseal_bodacc_roles as naming
 from scripts import embeddinggemma2_v14_full_pipeline as engine
 from src.xgb_matcher.retrieval_v20_workbench import record, verify
 
-OUTPUT=io.HOME/'v130/banatic_memberships_20261013_night'
+OUTPUT=io.HOME/'v130/banatic_memberships_20261013_night_b'
 SOURCE=Path('/Volumes/CATNAT_DATA/oubusiness/raw/banatic_public_service_competences/2026-08-05_current-v1')
 STOCK=Path('/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet')
 BASE=io.HOME/'v115/streamed_activity_ablation_20261013_a'
@@ -50,7 +50,7 @@ def run():
     if shutil.disk_usage(io.HOME).free<80*1024**3:raise ValueError('CATNAT reserve80GiB')
     start=time.monotonic();OUTPUT.mkdir(parents=True);(OUTPUT/'spill').mkdir()
     def resource_guard():
-        peak=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        peak=process_resource.getrusage(process_resource.RUSAGE_SELF).ru_maxrss
         peak_bytes=int(peak if sys.platform=='darwin' else peak*1024)
         if peak_bytes>512*1024**2:raise ValueError('Owned BANATIC source RSS cap512MiB')
         if shutil.disk_usage(io.HOME).free<80*1024**3:raise ValueError('CATNAT reserve80GiB')
