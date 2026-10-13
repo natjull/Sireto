@@ -288,7 +288,9 @@ def generate(out,variant):
                     rna_owners=len(entries),osm_geometry_name_max_not_duplicate_votes=True)
                 part=dict(query=q,model=cal['models'][str(assignment[qid])],candidates=candidates,cost=cost,labels_read=False)
             io.write(path,part);engine.seal(path);gc.collect()
-        if part['query']!=q or len(part['candidates'])>100:raise ValueError('Exact query and native cap')
+        if (part['query']!=q or part['model']!=cal['models'][str(assignment[qid])]
+                or len(part['candidates'])>100):
+            raise ValueError('Exact query/model binding and native cap')
         rows[qid]=part['candidates'];costs[qid]=part['cost'];changed+=not part['cost']['unchanged_outputs_reused']
         io.write(root/'state.json',dict(status='INITIAL100_GENERATION_NO_LABELS',queries=len(rows),total=526,recomputed=changed,updated_unix=time.time()))
     if len(rows)!=526 or any(len({r['siret'] for r in cs})!=len(cs) for cs in rows.values()):raise ValueError('All526 unique outputs')
