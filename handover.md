@@ -19150,3 +19150,47 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   SLO1s non démontré : baseline p50~5,75s /p95~13,39s hors préparation.
 - Le score mesuré reste **504/526**, aucune nouvelle métrique de cette nuit,
   aucun jeu fermé ouvert ou label corrigé. Échéance05:06:08UTC inchangée.
+
+#### Jalon 22:23 UTC — garde-fous scientifiques et mesures indépendantes d'OSM
+
+- Rappel explicite utilisateur : pas de surfit du dataset, pas de correction
+  manuelle des labels. Aucun label changé, alias CRM ou exception par cas.
+  Les variantes pré-déclarées restent exploratoires sur les 526 consommées ;
+  aucune sélection post-hoc n'est une confirmation ni une preuve des 99,2 %.
+  Un agent effectue une revue lecture seule des chemins de génération.
+- V129 `_night_c` terminé exit1 sur garde RSS 5 GiB, sans génération complète.
+  Représentation disque `_night_d`, commit `ba1f620e`, session53282 exit143
+  après arrêt volontaire : collision des clés objet route/POI détectée avant
+  résultat. Sources, archive et fichiers historiques préservés.
+- Source active `_night_e`, commit `48acedc7`, module
+  `scripts.embeddinggemma2_v129_osm_disk_category_source.py`, session1423,
+  PID96258 vérifié par commande à22:22 UTC. Clés SQLite catégorie/type/id,
+  cache de positions sur SSD et checkpoint des nœuds : gestion d'exécution,
+  pas changement de rayons, panel, tags ou recette. Agent observe134M nœuds
+  à22:21, pic408Mo RSS ; aucun téléchargement dupliqué ou label lu. V132
+  demeure NON lancé et doit être lié à la source complète réellement réussie
+  avant initialisation, pas à l'ancien chemin `_night_c`.
+- V137 source complète `047b0bab`, session2049 exit0 observé, root
+  `v137/continuity_address_source_20261013_night` : toutes526 présentes,
+  17contextes positifs, 4063refs. Même adresse propre exacte versus simple
+  voie faible séparées ; aucun XY, nom ou adresse copiés à l'autre endpoint.
+  Pas encore de preuve de gain retrieval. V134 quatre variantes fixées avant
+  mesure, commits `96765de3` / `7a30ca0d`, NON lancé.
+- Comparaison indépendante sans OSM V138, commit `cf8dca07`, module
+  `scripts.embeddinggemma2_v138_structural_native_ablation.py`, root
+  `v138/structural_native_20261013_night` : RNA, BANATIC, fournisseur/site,
+  fournisseur/continuité datée, continuité/adresse, MAX structurel. Chaque
+  variante conserve toutes526, un collecteur initial100 et les mêmes poids.
+  Les six générations complètes avec exits possédés sont exigées avant labels.
+  RNA25/526 shards scellés ; worker96298 exit75 réel après RSS8,31GiB alors
+  que mémoire libre73 %, pression1 : pas saturation réelle de la machine.
+  Ancien parent arrêté par agent, continuation namespace/code neufs en cours
+  de préparation, sans reprendre un second calcul ni modifier code hashé.
+- Exception d'exécution autorisée et coordonnée : un seul worker retrieval
+  CPU thread1 peut coexister avec extraction OSM disque légère. Pour sa
+  continuation RSS10GiB, mémoire libre>=25 %, pression0/1/2 et réserve SSD
+  80GiB ; aucune relaxation scientifique. Réutilisation seulement des shards
+  aux bindings query/modèle/source/score identiques. Dernier df CATNAT89GiB.
+  Pas de second retrieval/MPS, unit tests, nettoyage ou dépense extérieure.
+- Score mesuré toujours504/526. Aucune nouvelle recette adaptée à des outcomes
+  de cette nuit, jeux fermés et aval inchangés, fin05:06:08 UTC inchangée.
