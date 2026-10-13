@@ -29,7 +29,7 @@ from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
 ROOT=io.HOME/'v132/local_evidence_20261013_night'
-OSM=io.HOME/'v129/osm_local_20261013_night_b'
+OSM=io.HOME/'v129/osm_local_20261013_night_c'
 RNA=io.HOME/'v130/structural_20261013_night'
 BANATIC=io.HOME/'v130/banatic_memberships_20261013_night_b'
 BASE=baseline.OUTPUT
@@ -86,6 +86,8 @@ def initialize(out):
     bg=io.read(BASE/'generation.json');bx=io.read(BASE/'generate_exit.json')
     if ox['exit_code'] or rx['exit_code'] or tx['exit_code'] or bx['exit_code'] or not bx['own_child_exit_confirmed']:
         raise ValueError('Observed complete sources and baseline required')
+    if any(not ex.get('own_tool_exit_confirmed',ex.get('own_child_exit_confirmed',False)) for ex in (ox,rx,tx)):
+        raise ValueError('Actual owned source tool exits required, not inferred from files')
     if bg['status']!='COMPLETE_SEALED_ALL526':raise ValueError('Complete baseline')
     if og['status']!='COMPLETE_ALL526_LOCAL_OSM_SOURCE' or og['all_queries']!=526:raise ValueError('All526 complete OSM source')
     for ref in og['files'].values():verify(ref)
