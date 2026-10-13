@@ -35,6 +35,15 @@ V99 est d’environ [93,52 % ; 97,07 %]. Le bootstrap apparié de la différence
 V32→V99 est descriptif et ne corrige pas la sélection parmi les expériences.
 Les folds humains 0/1, le test 4323 et le contrôle indépendant 962 restent fermés.
 
+L’audit des jeux TRAIN figés V1 et V6 trouve **zéro recouvrement** avec les
+526 requêtes et leurs 405 SIREN, aussi bien comme positifs que comme négatifs
+explicites. Le checkpoint initial et les hashes TRAIN ont été reliés à leur
+provenance. C’est un signal favorable contre la mémorisation supervisée de
+ces entreprises ; ce n’est pas un audit du préentraînement général ni de
+tous les états intermédiaires. Surtout, ce pilote reste consommé par notre
+sélection de sources et de recettes : absence d’exposition TRAIN et test
+inédit sont deux garanties différentes.
+
 ## Les preuves qui apportent un gain
 
 - **CATZAM, EUREDEN et EUROVIA** : les noms de personnes morales liées
@@ -216,5 +225,6 @@ V99 `550732d8`, comparaison `52645159`, audit siège `d8817f46`, champs de noms
 `365efe9e`, inventaire brut et protections de diffusion `b4eb35cc`, ambiguïté
 TRAIN `45834634`, information et négatifs exacts `bdf51335`.
 Réconciliation du diagnostic BODACC avec les 23 ratés restants : `665ad966`.
+Audit de séparation des groupes pour les encodeurs V1/V6 : `e9d76700`.
 Les reprises de V99 ont conservé les shards et les bindings. Aucun unit test,
 aucune dépense externe, aucun push ou modèle aval modifié.
