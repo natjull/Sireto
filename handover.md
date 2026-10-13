@@ -18361,3 +18361,46 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   explicitement. Ne pas présenter la table de groupe comme preuve de ce sigle.
 - Deadline1791870324 inchangée, no unit tests/no spend/no push ; contrôles
   indépendants962 et folds0/1/test4323 préservés. SourceQA ne change pas recall.
+
+### 13 octobre 2026 03:06 Paris — Générations actives et expansion lexicale indépendante
+
+- V71 calibration375 COMPLETE ownedexit0 PID86904, cinq modèles scellés ;
+  génération96010 active,44/526 à03:05. V75 modèles repris strictement,
+  génération96025 active, mêmes44/526. V78 nested calibration93995 ownedexit0,
+  vingt baselines internes et cinq residuals scellés, ordre exact des paires
+  contrôlé ; génération97214 active44/526. Pas recall partiel. Les coefficients
+  des quatre contextes partagés montrent geo/commune/street àZERO pour les cinq
+  folds, house seulement positif(.20–.34 V71/.12–.28 V78) : présence de preuves
+  ne garantit pas leur admission. C'est un diagnostic TRAIN, pas recall mesuré.
+- V81 milestone `fb6813df`,
+  `scripts/embeddinggemma2_v81_indirect_lexical_query.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v81/indirect_lexical_query_20261013_a`.
+  Init session91580 exit0, run session61116,parent97309. Prepare97312 owned0.
+  Nouvelle hypothèse AVANTlecture de tout résultat V71/V75/V78 : expansion
+  lexicale indépendante des marques clientes publiées, pondérée.5 fois les
+  coefficients word/char EXACTS V32, modèlesV71 strictement repris. Mêmes
+  preuves numériquesV75. Scanne nationalStockULcomplet publics corporate pour
+  chaque référence déclarée :1429Aubert/3Euromedis/56jill/2Vintex propriétaires,
+  pas topk ni sélectionGT. Branches supplémentaires exigent preuve admin
+  queryINSEE/CP, branche originale nationale reste SANSfiltre. Un SEUL
+  collecteur100 sur ensemble national et preuves complètes, pas union de
+  top100 déjà coupés ni reranker. Marques restent hints lexicaux faibles,
+  pas IDs clients résolus, homonymie fournisseur non résolue ; primaires/BAN
+  diagnostic-only. Génération34/526 à03:05 ; chiffres de source ≠ recall.
+- V73 calibration270/375 à03:05, supervision active ; ne pas doubler. Tous
+  producteurs gardent deadline1791870324. Mémoire libre62–72%, CATNAT140Gio
+  libres (réserve80GiB conservée), nouveauxV75/V78/V81 réutilisent immutables
+  plutôt que copier des matrices complètes. Aucun nettoyage étranger.
+- V80 session26141 réellement collectée exit0. Lecture INTÉGRALE des32annonces
+  du troisième aveugle : zéro erreur observée de frontière du nom/de binding
+  du sujet pour la clause de mère commune. Revue par agent principal, PAS
+  certificat humain indépendant. Un cas annonce >=90%votes, pas100%capital.
+  Tous sont des clauses publiées de projets, pas réalisation de fusion ou
+  propriété actuelle vérifiée. annotation_review.json séparé SHA
+  e6f62197877ea374ee72e7ea3f52519135e14736ce682432b0bf392e840e1773.
+  32/32 cohérences observées ne certifient PAS99% sur1379faits ; Wilson brut
+  hypothétique iid bas89,282%, pas preuve de précision population. Aucun
+  changement des sources V65 ni recettes actives suite à cette revue.
+- Pas nouveaux gradientsGemma, serving/aval/folds0/1/test4323 figés ; aucune
+  exposition de labels du contrôle indépendant962. Deadline07:45:24 Paris,
+  no unit tests/no spend/no push, neufdirtyutilisateur inchangés.
