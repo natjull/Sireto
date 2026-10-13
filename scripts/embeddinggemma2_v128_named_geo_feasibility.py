@@ -47,7 +47,7 @@ class NamedPlaceCollector:
         return self.searcher.search(combined,**kwargs)
 
 
-def generate(qid,out):
+def generate(qid,out,reuse_source=None):
     import duckdb
     import pyarrow as pa
     engine.guard()
@@ -67,31 +67,36 @@ def generate(qid,out):
             exact_query_name_token_coverage=True,poi_context_not_own_alias=True,
             score='HALF_DIV_ONE_PLUS_DISTANCE_OVER300_MAX_SAME_FROZEN_ACTOR_COEFFICIENT',
             no_fixed_prepool=True,no_positive_injected=True,no_refitting=True),created_unix=time.time()))
-    req=urllib.request.Request('https://overpass-api.de/api/interpreter',data=urllib.parse.urlencode({'data':query}).encode(),
-        headers={'User-Agent':'SIRETO-readonly-named-geography/1.0'})
-    with urllib.request.urlopen(req,timeout=30) as response:raw=response.read(5*1024*1024+1)
-    if len(raw)>5*1024*1024:raise ValueError('Bounded source body')
-    body=json.loads(raw)
-    if body.get('remark'):raise ValueError('Incomplete neighbourhood')
-    pois=[]
-    for e in body['elements']:
-        p=e.get('center',e);name=e.get('tags',{}).get('name','')
-        if name and 'lon' in p and 'lat' in p:
-            x,y=lonlat_to_l93(p['lon'],p['lat']);pois.append(dict(osm_type=e['type'],osm_id=e['id'],name=name,x=x,y=y))
-    io.write(out/'source.json',dict(query=query,pois=pois,osm_timestamp=body.get('osm3s',{}).get('timestamp_osm_base'),
-        current_community_not_official_identity=True))
+    if reuse_source:
+        source_ref=record(reuse_source);source=io.read(verify(source_ref))
+        if source['query']!=query:raise ValueError('Exact unchanged query-only source request')
+        pois=source['pois'];io.write(out/'source.json',dict(source,reused_source=source_ref))
+    else:
+        req=urllib.request.Request('https://overpass-api.de/api/interpreter',data=urllib.parse.urlencode({'data':query}).encode(),
+            headers={'User-Agent':'SIRETO-readonly-named-geography/1.0'})
+        with urllib.request.urlopen(req,timeout=30) as response:raw=response.read(5*1024*1024+1)
+        if len(raw)>5*1024*1024:raise ValueError('Bounded source body')
+        body=json.loads(raw)
+        if body.get('remark'):raise ValueError('Incomplete neighbourhood')
+        pois=[]
+        for e in body['elements']:
+            p=e.get('center',e);name=e.get('tags',{}).get('name','')
+            if name and 'lon' in p and 'lat' in p:
+                x,y=lonlat_to_l93(p['lon'],p['lat']);pois.append(dict(osm_type=e['type'],osm_id=e['id'],name=name,x=x,y=y))
+        io.write(out/'source.json',dict(query=query,pois=pois,osm_timestamp=body.get('osm3s',{}).get('timestamp_osm_base'),
+            current_community_not_official_identity=True))
     tokens=set(normalize(q['crm_name']).split())-STOP
     matched=[p for p in pois if tokens and tokens<=set(normalize(p['name']).split())-STOP and
              math.hypot(p['x']-g['ban_x_l93'],p['y']-g['ban_y_l93'])<=radius]
     fg=io.read(verify(launch['baseline_features']))
     with np.load(verify(fg['features'][qid]),allow_pickle=False) as f:keys=f['keys'];features=f['features']
     con=duckdb.connect();con.execute('SET threads=2');con.execute("SET memory_limit='512MB'")
-    con.execute('SET temp_directory=?',[str(out/'spill')]);con.register('wanted',pa.table({'ref':keys}))
+    con.execute('SET temp_directory=?',[str(out/'spill')]);con.register('wanted',pa.table({'site_key':keys}))
     owners='/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet'
-    public=con.execute("""SELECT CAST(e.siret AS UBIGINT) ref FROM read_parquet(?) e
-       JOIN wanted w ON CAST(e.siret AS UBIGINT)=w.ref JOIN read_parquet(?) u USING(siren)
-       WHERE e.statutDiffusionEtablissement='O' AND u.statutDiffusionUniteLegale='O' ORDER BY ref""",
-       [launch['stock_source']['path'],owners]).fetchnumpy()['ref'];con.close()
+    public=con.execute("""SELECT CAST(e.siret AS UBIGINT) AS site_key FROM read_parquet(?) e
+       JOIN wanted w ON CAST(e.siret AS UBIGINT)=w.site_key JOIN read_parquet(?) u USING(siren)
+       WHERE e.statutDiffusionEtablissement='O' AND u.statutDiffusionUniteLegale='O' ORDER BY site_key""",
+       [launch['stock_source']['path'],owners]).fetchnumpy()['site_key'];con.close()
     at=np.searchsorted(public,keys);valid=at<len(public);valid[valid]&=public[at[valid]]==keys[valid]
     official=np.load(verify(launch['keys']),mmap_mode='r');xy=np.load(verify(launch['xy']),mmap_mode='r')
     loc=np.searchsorted(official,keys);good=loc<len(official);good[good]&=official[loc[good]]==keys[good];valid&=good
@@ -129,5 +134,6 @@ def evaluate(qid,out):
 
 
 if __name__=='__main__':
-    p=argparse.ArgumentParser();p.add_argument('action',choices=['generate','evaluate']);p.add_argument('--query-id',required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
-    globals()[a.action](a.query_id,a.output)
+    p=argparse.ArgumentParser();p.add_argument('action',choices=['generate','evaluate']);p.add_argument('--query-id',required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--reuse-source',type=Path);a=p.parse_args()
+    if a.action=='generate':generate(a.query_id,a.output,a.reuse_source)
+    else:evaluate(a.query_id,a.output)

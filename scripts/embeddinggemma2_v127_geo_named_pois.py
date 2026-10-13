@@ -75,9 +75,9 @@ def main():
     con=duckdb.connect();con.execute('SET threads=2');con.execute("SET memory_limit='512MB'")
     con.execute('SET temp_directory=?',[str(OUTPUT/'spill')])
     owners='/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet'
-    records=con.execute("""SELECT CAST(e.siret AS UBIGINT) ref FROM read_parquet(?) e JOIN read_parquet(?) u USING(siren)
-        WHERE e.statutDiffusionEtablissement='O' AND u.statutDiffusionUniteLegale='O' ORDER BY ref""",
-        [launch['stock_source']['path'],owners]).fetchnumpy();con.close();public=records['ref']
+    records=con.execute("""SELECT CAST(e.siret AS UBIGINT) AS site_key FROM read_parquet(?) e JOIN read_parquet(?) u USING(siren)
+        WHERE e.statutDiffusionEtablissement='O' AND u.statutDiffusionUniteLegale='O' ORDER BY site_key""",
+        [launch['stock_source']['path'],owners]).fetchnumpy();con.close();public=records['site_key']
     fg=io.read(verify(launch['baseline_features']));original_keys=np.load(verify(launch['keys']),mmap_mode='r');xy=np.load(verify(launch['xy']),mmap_mode='r')
     shards={};matched_queries=0
     weak_ids={q['query_id'] for q in wanted}
