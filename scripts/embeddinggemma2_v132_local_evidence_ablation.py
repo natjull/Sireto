@@ -30,9 +30,10 @@ from src.xgb_matcher.retrieval_v20_workbench import record,verify
 ROOT=io.HOME/'v132/local_evidence_20261013_night'
 OSM=io.HOME/'v129/osm_local_20261013_night_b'
 RNA=io.HOME/'v130/structural_20261013_night'
+BANATIC=io.HOME/'v130/banatic_memberships_20261013_night_b'
 BASE=baseline.OUTPUT
 DEADLINE=1791954368.
-VARIANTS=('geometry_only','named_places_only','osm_max','rna_only','osm_max_rna')
+VARIANTS=('geometry_only','named_places_only','osm_max','rna_only','osm_max_rna','banatic_only','osm_max_rna_banatic')
 RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_NOT_CONFIRMATION',
     primary_predeclared='osm_max_rna',other_variants='EXPLANATORY_ABLATIONS_NOT_HOLDOUT_MODEL_SELECTION',
     quantization_bits=baseline.RECIPE['quantization_bits'],
@@ -47,12 +48,14 @@ RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_NOT_CONFIRMATION',
     geometry_interactions='SAME_EXISTING_FIELDS5_6_7_16_17_19',
     combined_osm='MAX_GEOMETRY_SCORE_INCREMENT_AND_NAMED_PLACE_CONTEXT_PER_SITE',
     rna='PREDECLARED_V130_CONTEXT_OWNER_REFS_AND_CONFIDENCES_GATED_BY_QUERY_ADMIN',
+    banatic='PREDECLARED_WHOLE_PUBLIC_TYPED_MEMBERSHIP_CONTEXT_NOT_IDENTITY_GATED_BY_ADMIN',
+    rna_banatic='MAX_CONFIDENCE_PER_OWNER_ACROSS_THESE_CONTEXT_SOURCES_NOT_DUPLICATE_VOTES',
     combined_rna_osm='ADDITIVE_DISTINCT_SOURCES_NOT_INDEPENDENCE_CLAIM',
     public_diffusion='BOTH_SITE_AND_OWNER_O_REQUIRED_FOR_OSM',
     coordinate_scope='EXISTING_ALL_UNPRUNED_NUMERIC_REFERENCE_UNIVERSE',
     original_national_lexical_unrestricted=True,no_new_spatial_expansion_claim=True,
     unchanged_query_reuse='ONLY_IDENTICALLY_ZERO_NEW_SCORE_BY_QUERY_INPUTS',
-    labels_opened_only_after_all_five_generations_and_owned_exits=True,
+    labels_opened_only_after_all_predeclared_generations_and_owned_exits=True,
     exact_operational_separate=True,production_promotion_allowed=False,
     eligibility='DIAGNOSTIC_SOURCE_EXTENSION_CURRENT_COMMUNITY_OSM_AND_INHERITED_POSTCUTOFF_BASE',
     full_encoder_oof=False,closed_tests_opened=False,deadline_unix=DEADLINE)
@@ -66,7 +69,8 @@ def guard():
 def authority(out):
     launch=io.read(out/'launch.json')
     for k in ('implementation','recipe','baseline_launch','baseline_generation','baseline_exit',
-              'baseline_features','baseline_calibration','osm_generation','osm_exit','rna_generation','rna_exit'):
+              'baseline_features','baseline_calibration','osm_generation','osm_exit','rna_generation','rna_exit',
+              'banatic_generation','banatic_exit'):
         verify(launch[k])
     guard();return launch
 
@@ -76,13 +80,17 @@ def initialize(out):
     if out.exists():raise ValueError('Fresh scientific namespace required')
     og=io.read(OSM/'generation.json');ox=io.read(OSM/'scan_owned_tool_exit.json')
     rg=io.read(RNA/'generation.json');rx=io.read(RNA/'owned_tool_exit.json')
+    tg=io.read(BANATIC/'generation.json');tx=io.read(BANATIC/'owned_tool_exit.json')
     bg=io.read(BASE/'generation.json');bx=io.read(BASE/'generate_exit.json')
-    if ox['exit_code'] or rx['exit_code'] or bx['exit_code'] or not bx['own_child_exit_confirmed']:
+    if ox['exit_code'] or rx['exit_code'] or tx['exit_code'] or bx['exit_code'] or not bx['own_child_exit_confirmed']:
         raise ValueError('Observed complete sources and baseline required')
     if bg['status']!='COMPLETE_SEALED_ALL526':raise ValueError('Complete baseline')
     if og['status']!='COMPLETE_ALL526_LOCAL_OSM_SOURCE' or og['all_queries']!=526:raise ValueError('All526 complete OSM source')
     for ref in og['files'].values():verify(ref)
     verify(rg['context'])
+    if tg['status']!='COMPLETE_SEALED_WHOLE_BANATIC_PUBLIC_RELATIONS_QUERY_ONLY_NOT_RECALL' or tg['all_queries']!=526:
+        raise ValueError('Whole public typed membership source')
+    verify(tg['context'])
     out.mkdir(parents=True);(out/'spill').mkdir();(out/'calibration').mkdir()
     io.write(out/'recipe.json',RECIPE)
     launch=dict(io.read(BASE/'launch.json'),implementation=record(Path(__file__)),recipe=record(out/'recipe.json'),
@@ -90,7 +98,8 @@ def initialize(out):
         baseline_exit=record(BASE/'generate_exit.json'),baseline_features=record(BASE/'features_generation.json'),
         baseline_calibration=record(BASE/'calibration/generation.json'),osm_generation=record(OSM/'generation.json'),
         osm_exit=record(OSM/'scan_owned_tool_exit.json'),rna_generation=record(RNA/'generation.json'),
-        rna_exit=record(RNA/'owned_tool_exit.json'),deadline_unix=DEADLINE,created_unix=time.time())
+        rna_exit=record(RNA/'owned_tool_exit.json'),banatic_generation=record(BANATIC/'generation.json'),
+        banatic_exit=record(BANATIC/'owned_tool_exit.json'),deadline_unix=DEADLINE,created_unix=time.time())
     launch['helpers'].extend([record(Path(geometry.__file__)),record(Path(native_proof.__file__)),
         record(io.ROOT/'scripts/embeddinggemma2_v128_named_geo_feasibility.py')])
     io.write(out/'launch.json',launch)
@@ -232,6 +241,7 @@ def generate(out,variant):
     original=io.read(verify(io.read(verify(launch['baseline_generation']))['outputs']))
     old_cost=io.read(verify(io.read(verify(launch['baseline_generation']))['timings']))
     rna=io.read(verify(io.read(verify(launch['rna_generation']))['context']))
+    memberships=io.read(verify(io.read(verify(launch['banatic_generation']))['context']))
     backend=TantivyBackend(io.INDEX);root=out/variant;root.mkdir(exist_ok=True);(root/'native').mkdir(exist_ok=True)
     if backend.searcher.num_docs!=82772691:raise ValueError('Unchanged full national corpus')
     rows={};costs={};changed=0
@@ -242,8 +252,12 @@ def generate(out,variant):
             with np.load(verify(prepared['shards'][qid]),allow_pickle=False) as f:
                 keys=f['keys'];geom=f['geometry'];named=f['named']
             score=geom if variant=='geometry_only' else named if variant=='named_places_only' else np.maximum(geom,named)
-            if variant=='rna_only':score=np.zeros_like(geom)
-            entries=rna[qid] if variant in ('rna_only','osm_max_rna') else []
+            if variant in ('rna_only','banatic_only'):score=np.zeros_like(geom)
+            entries=rna[qid] if variant in ('rna_only','osm_max_rna','osm_max_rna_banatic') else []
+            if variant in ('banatic_only','osm_max_rna_banatic'):
+                merged={r['siren_ref']:r['confidence'] for r in entries}
+                for r in memberships[qid]:merged[r['siren_ref']]=max(merged.get(r['siren_ref'],0.),r['confidence'])
+                entries=[dict(siren_ref=r,confidence=c) for r,c in sorted(merged.items())]
             if not np.any(score) and not entries:
                 part=dict(query=q,model=cal['models'][str(assignment[qid])],candidates=original['learned_native_ooc'][qid],
                     cost=dict(old_cost[qid],unchanged_outputs_reused=True),equivalence='EXACT_ZERO_NEW_SOURCE_SCORE',labels_read=False)
@@ -299,7 +313,7 @@ def evaluate(out):
     authority(out)
     for v in VARIANTS:
         root=out/v;ex=io.read(root/'generate_exit.json');g=io.read(root/'generation.json')
-        if ex['exit_code'] or not ex['own_child_exit_confirmed'] or g['status']!='COMPLETE_SEALED_ALL526':raise ValueError('All five complete before labels')
+        if ex['exit_code'] or not ex['own_child_exit_confirmed'] or g['status']!='COMPLETE_SEALED_ALL526':raise ValueError('All predeclared generations complete before labels')
         verify(g['outputs']);verify(g['timings'])
     old={r['query_id']:r for r in io.read(BASE/'outcomes.json')['learned_native_ooc']};summary={}
     for v in VARIANTS:
@@ -315,7 +329,7 @@ def evaluate(out):
             no_full_encoder_oof=True,unchanged_shard_reuse_not_filtered_denominator=True)
         io.write(root/'report.json',report);summary[v]=dict(report=record(root/'report.json'),paired=paired,
             metrics=report['variants']['learned_native_ooc'])
-    io.write(out/'report.json',dict(status='COMPLETE_FIVE_PREDECLARED_ALL526_EXPLORATORY_ABLATIONS',variants=summary,
+    io.write(out/'report.json',dict(status='COMPLETE_SEVEN_PREDECLARED_ALL526_EXPLORATORY_ABLATIONS',variants=summary,
         no_independent_certification=True,no_source_or_model_admission=True,finished_unix=time.time()))
 
 
