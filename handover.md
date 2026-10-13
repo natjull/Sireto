@@ -19436,3 +19436,24 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   tout voisin. Aucun nouveau branchement client/label ni fit cette nuit.
 - V140 primaire441/526 à23:45UTC, cinq isolées complètes ; aucun nouveau
   recall ouvert. V143 prêt, aucune deuxième recherche native lancée.
+
+#### Jalon 23:51 UTC — six ablations structurelles complètes, gain mesuré
+
+- V140 `73d8b0c9`, parent4909/session96401 **exit0 réel recueilli**,
+  six générations COMPLETE_SEALED_ALL526 et exits enfant0. Aucun natif actif
+  restant ; évaluation automatique uniquement après les six sorties complètes.
+  Rapport `v140/structural_native_disk_20261013_night/report.json`.
+- Primaire figée MAXstructurel : **506/526 exact96,1977%**,510SIREN,
+  507opérationnel ; versusV115504/526 : **deux gains, zéro perte**.
+  Estimation exacte pondérée95,3711%, Wilson brut95%[94,2002%;97,5253%] ;
+  pas certificat national/indépendant, pas source admissible production.
+- RNA seule505/526(+1/0perte), supplier propre505(+1/0), supplier temporel
+  505(+1/0, pas un gain additionnel à propre), BANATIC504(+0/0), continuité
+  adresse504(+0/0 exact mais+1SIREN). Pas sélection d'une variante sur ces
+  résultats, poids/recettes suivants déjà figés, labels inchangés.
+- Preuve de réutilisation cinq isolées `c6167e82`,
+  `embeddinggemma2_v140_isolated_equivalence_proof.py` : entrée/source/model/
+  corpus et AST normalisé, admin component4 V71->V56->V32->V23, même floatw6
+  et20bitplanes. Aucune comparaison candidates/outcomes pour l'éligibilité.
+  Exécution de preuve en cours, aucune copie autorisée avant reçu complet.
+  V143 préparation526 prête ; géographie et BANO pas encore mesurés.
