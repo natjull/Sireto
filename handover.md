@@ -18559,3 +18559,52 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Ressourcesréelles free72%level1 observé, disqueCATNAT110GiB libres,
   seuil80 conservé ; neufdirtyintactes. Folds0/1/test4323 etavalgelés.
   Deadline1791870324 reste07:45:24Paris, pas prolongation ni nouvelagenrextérieur.
+
+### 13 octobre 2026 05:38 Paris — Gains relationnels mesurés ; normalisation initiales en cours
+
+- V88 COMPLETE526owned0/generate7410, session11815 réellement collectée0.
+  502exacts/526=95,4373%brut,94,4022%pondéré ;506SIREN/95,2598%pondéré,
+  503op/94,5657%pondéré. ReportSHA7aea9c056612307a20650a20fbb309aed77a4d41e3236453a25cc346e0c02e44.
+  vsV81 : deuxgains etzéroperte. SBAlliance→Levézou : contexte consolidation
+  globale2021 confiance.5, coefficient1.80496, ajout.90248 ; cible43156688400018
+  naturelle rang12/score3.7861/cut3.09398. FOURNIER→SODIMOB : mandat corporate
+  etpeer commun, confiance.144338 (degré12), coefficient1.3059, ajout.18849,
+  cible42857705000183 rang71/4.13844/cut4.06043. Préserve lesciblesfermées,
+  pascopieadresse/alias ni preuve propriétéactuelle. p50/95/99=4.298/10.695/
+  12.997s, prép one-shot non incluse, pasSLOpristine.
+- V94 COMPLETE526owned0/generate13446, session23646 collectée0 ;501exacts,
+  95,2471%brut/94,2125%pondéré. SHA
+  beb927334027e4121563782a02d25e2ffbeb0092bd5ec47279e7ff3f30f35136.
+  vsV81 : gainsSAS5EMEETAGE etFOURNIER, perte16681ITTRATTORIA. Seule colonne
+  adresse×num/suffixe×commune reçoit poids(.221–.413), autresdeuxzérochaquefold.
+  GainFOURNIER ne peutêtre attribué à l'adresse seule : sourceadresse différente,
+  négatifs etresidualcoefs/nestedoffsets changent aussi. V88 reste meilleur
+  pondéré, paspromotionV94. Runtime3.340/10.081/11.485s nonSLO.
+- V95 génération28234 active,53/526 à05:32 ; calibration14923owned0,
+  cinqfolds apprennent contexteHQ×parent, pasun choix forcé siège. Ne lire
+  outcomes qu'aprèsALL526+owned0. Source/sourcecoeffsbaseline exacts.
+- V97 `28af2cab` échoué immédiatement(io.data.safe inexistant), aucune source
+  acceptée ; historiquepréservé. V98 `0a97e241`, namespace neuf et safehelper
+  correct, indexinverse prefixcity équivalent exact sans balayage295villes
+  paralias. Script embeddinggemma2_v98_official_initial_alignment.py, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v98/official_initial_alignment_20261013_b`.
+  Session15366 réellement exit0, owned_exit.json observétool pasPIDinventé.
+  WHOLE95 164 995aliaslegalrows scannés,16 714 831aliasescorporatepubliques,
+  12 997 994owners admissibles ;325queries ontalignement,918896ownerrefs
+  cumulées et122site-cityrefs. COG2026 primaireINSEE entier scellé ;30939
+  absent désactive seulementcitycue, pasrechercheoriginale.
+  Alignementinitials complet=1/span>=3=.5, nom+ville propre=.5, IDFsource
+  propriétaire ; featuresdérivées, PASsigles déclarés/textealias généré.
+  Individuscat1000 etunitésP exclus du nouveau signal, pasdes526requêtes.
+- V99 `550732d8`, embeddinggemma2_v99_initial_alignment_native.py, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v99/initial_alignment_native_20261013_a`,
+  session47458, worker41025 aprèsprepare40353owned0. Prépare strictement
+  donnéesV88 immuables + sourceV98 owned0 ; mêmescoefficientsV71 etGemma,
+  composantinitialsdérivés avantUNSEULcollecteur100, adminsoft surbranche
+  supplémentaire, sourceconfidenceMAX/SIREN-ou-SIRET (pas doublevote entre
+  cesdeuxformes), corpusnationaloriginal nonfiltré. Aucuncap prépool,
+  aucunlabelnouveauouvert ;38/526 à05:37. Quantification20bits déclarée.
+- V96 comparaison complète attendV95 ; pourV99 comparaisonfixecontreV88
+  aprèsscéllement, pasunionoracle ouadaptation sursesoutcomes.
+  Checkpoints/artefactsserving/aval/folds0/1/test4323 inchangés. 99,2 nonatteint,
+  piloteconsommé pasconfirmation. Deadline07:45:24Paris inchangée.
