@@ -18272,3 +18272,43 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   qualifier cela de représentatif ; full nouveaux corpus coûteux non lancés.
 - Échéance07:45:24 Paris inchangée, aucun unit test/coût externe/push et neuf
   dirty utilisateur intacts. Automation locale non vérifiée ; tour reste actif.
+
+### 13 octobre 2026 02:29 Paris — Comparaison supplier figée, attribution post-seal
+
+- V75 milestone `a3b90295`,
+  `scripts/embeddinggemma2_v75_published_supplier_context.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a`.
+  Init session55104 collectée exit0 ; run session34641, parent88588.
+  Préparation526 owned exit0,PID88593 ; attend uniquement V71 calibration
+  complète ET ownedexit0 (worker bind_models91190). Réutilise ses coefficients
+  EXACTS, aucune refit fournisseur ni lecture de résultat V71 pour choisir
+  recette. Les19 requêtes contenant la marque NAOS reçoivent un contexte
+  publié client lexical faible(.5), croisé avec leur site PROPRE ; TOUTES526
+  restent à évaluer. TOUTES quatre références source traitées. 141 propriétaires
+  corporate publics du scope complet ont un indice de nom :134Aubert/0Euromedis/
+  7jill/0Vintex. Noms des propriétaires StockUL courants seulement ; marques
+  clients PAS résolues en IDs légaux, homonymies prestataire PAS résolues.
+  Ni aliasCRM ni identité/ownership fabriquée : feature de contexte lexical
+  rapporté, source primaire encore diagnostic-only. Pas score certain ni
+  gain déjà mesuré. Paramètres génériques de relation transférés, signal
+  supplier non observé par le fitter V71 ; cette limite est déclarée.
+- V76 milestone `c7e1589f`,
+  `scripts/embeddinggemma2_v76_postseal_source_attribution.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v76/postseal_source_attribution_20261013_a`.
+  Session56612/PID91340 actif : diagnostic label-side des seulesV32/V57/V68
+  COMPLÈTES/scellées/owned0, jamais ouverture des labels des sorties actives
+  V71/V73/V75. Quantifie présence de nouvelles preuves et changements de
+  contribution numérique ; ce n'est pas attribution causale du recall car
+  coefficients lexicaux/négatifs/seuil100 ont aussi changé. Aucun score ni
+  modèle modifié. Attendre collection et summary avant annoncer conclusion.
+- Recherche primaire consultée : SC-Block ESWC2024 (papier/auteurs/code),
+  https://2024.eswc-conferences.org/wp-content/uploads/2024/04/146640116.pdf ;
+  apprentissage contrastif supervisé multi-positifs/source-aware pour limiter
+  faux négatifs. Son99,5% cible VALIDATION avec k choisi, pas promesse universelle
+  test : WBlarge test90% àk50. À ne pas transformer en garantie SIRETO99%.
+  MERAI2025 https://arxiv.org/html/2508.03767v1 combine champs multivues mais
+  ignore blocs énormes ; ce cap n'est pas repris dans notre collecteur100.
+  Ici les relations sont un contexte, pas composantes connexes d'identité.
+- Prompt de CETTE automation locale actualisé V71/V73/V75 pour ne pas relancer
+  V56 terminé. Son déclenchement reste NON vérifié, aucun contournement d'accès
+  UI refusé. Travail dans tour actif, deadline1791870324 inchangée.
