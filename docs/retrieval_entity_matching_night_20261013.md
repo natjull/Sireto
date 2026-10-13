@@ -137,6 +137,10 @@ dont 204 173 portant un SIRET. La branche globale ajoutée en V32 n’utilise
 que les lignes SIREN ; l’index national principal est construit à partir du
 dossier SIRENE/RNE/BODACC. Les noms de sites sectoriels ne sont donc pas
 exploités par cette branche. Aucun nouveau recall n’est mesuré sur cette piste.
+L’en-tête du fichier FINESS existant indique une génération producteur le
+1er août 2026 à 02:06:22 UTC ; ce contrôle de métadonnées ne constitue pas
+une nouvelle admission du canal dans la recette et ne date pas les deux
+autres annuaires.
 
 Un contrôle de la source entière identifie 5 330 lignes FINESS dont le SIREN
 publié diffère du préfixe du SIRET. Le gestionnaire peut être une relation
