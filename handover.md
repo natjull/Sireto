@@ -18760,3 +18760,65 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   figée sur groupes non consommés/distracteurs denses selon gates du contrat.
   Ne pas transformer les hypothèses, diagnostics ou conflits de labels en
   nouveaux hits exacts. Ne relancer aucun run terminé sans nouveau mandat.
+
+### 13 octobre 2026 09:44 Paris — Nouveau mandat humain cinq étapes et sources ouvertes
+
+- Utilisateur autorise explicitement de poursuivre les cinq étapes et de
+  vérifier les autres open data. Nouvelle tâche, pas prolongation de la nuit
+  close ; ancienne automation reste PAUSED. Pas de nouvelle plage8h présumée.
+- V111/V112 `51d8cbaa` : ledger exhaustif23ratés, root
+  `v111/five_steps_ledger_20261013_a`, session3127 collectée0. Buckets17
+  OWNER_BRIDGE_UNPROVEN,4SITE_SELECTION,2PUBLIC_INFORMATION_LIMIT ; diagnostics
+  noncorrections. Le soupçon ALPI/communauté a ensuite trouvé une vraie
+  adhésion BANATIC : ne pas déclarer faux un label sans compléter la revue.
+- V112 `v112/bodacc_activity_context_20261013_a`, session35871 collectée0.
+  SourceWHOLE2008–2026local, singlepersonpm/singleétablissementobject strict,
+  publication<=2026-08-01/currentpubliccorporate guard AVANT activité retournée.
+  4177176owners,12641678refscumulées sur526queries. Activité parent-context,
+  pasalias niidentité. Union historique de mots parowner, pasnécessairement
+  unephrase/mêmeannonce/currentactivity ; scopeparser limitée publiée.
+  ProvenanceJSON3,5GiB conservée, observed owned_tool_exit0/session35871.
+- V113 `44dbb996`, root `v113/open_data_inventory_20261013_a`, session42671
+  collectée0 : huitrecherchescatalogue primaire, paginationentière, metadata
+  sources/dates/licences/diffuseurs archivée ; aucune admission automatique.
+- V114 `a8fbff70`/fixparentdir `d7a879f2`, root
+  `v114/native_activity_ablation_20261013_a` : hypothèse figée V99 + activité
+  weak<=.5 avec EXACTpoidsacteur, mêmeNUM/Gemma/calibrateurs, UNcollecteur100.
+  PremièrelectureJSONglobal RSS10879320064→exit75, puis arrêt volontaire
+  parent59530 vérifié, secondchild exit-15, session82318collectée1. Zéro
+  évaluation partielle. Historiquepréservé, aucun code hashé actif réécrit.
+- Reprise V115 `e015f25a`, root `v115/streamed_activity_ablation_20261013_a`,
+  session73659 ACTIVE parent59789 vérifié parcommande, worker63002 à09:42
+  (vérifiercommande ànouveau). Scores/refsexacts identiques V114 projetés
+  parquery S9/float64 NPZcompressés, roundtriparray_equal ; aucuneprune/retune.
+  526projectionsshards/12641678refs COMPLETE. Prepareowned0 puisgeneration
+  282/526 à09:42, RSS~8,76GiB ; reprisesexit75 surgarderéelle10GiB conservent
+  shards/bindings. Runtimefail-safe6h propre au calcul, pas nouvelle nuit ni
+  autorisation de poursuite automatique. Lire launch/native/state/ownedexits
+  etcommands, nepasdupliquer. Sourcepublicactivitéavantseulcollector ; labels
+  seulement ALL526+owned0. Aucun score nouveau avant completion/report.
+- V116 `f93772d4`, root `v116/decp_name_probe_20261013_a` : sept versions
+  DECPprimaires2025 publiéesJuin/Juillet2026seloncatalogue, bodies513578138bytes
+  intégralementarchivés. Session94605exit1 container attenduwrong ; aucun
+  fauxreport. Pasre-download. V117 `ece44078`/guardsyntax `62c2a141`, root
+  `v117/decp_schema_recovery_20261013_a`, session90557collectée0 : container
+  marches.marche.item ettitulairewrapper réels. 219980contrats, ZÉROnomacteur
+  exploitable,151136pairespubliccorporate acheteur/titulaire. Nerejoindrepas
+  nomsSIRENE puisprétendrenouveauxalias. Relationsachat≠identité/propriété,
+  septmoisnoncomplets/historiqueincomplet, snapshotmetadata limites publiées.
+- V118 `5976c505`, root `v118/addressed_facility_context_20261013_a`, session74103
+  collectée0 : WHOLEsectordata sourcefacilitySIRETprefix, nominformatif et
+  adressehouse/street/cm à lafois SOURCE etSTOCK currentPUBLIC corroborantCRM.
+  Deuxqueriesqualifiées,deuxoptionsHQ .5 contre ownsite1. Pasadresse/alias
+  copié auHQ, pasquota/slotforcé, opérateur/managerdiff séparés. PREPAREsource
+  seulement, aucun testretrieval de cettehypothèse lancé tantqueV115 actif.
+- Rechercheprimaire : BANATIC ALPI254003304 publie CC244000881 parmiadhérents,
+  sourcemiseàjour21sept2026 POSTCUTOFF, diagnosticuniquement. APIcollectivités
+  swaggerpublic observé indique /referentiel/v1/groupements et/membres.
+  INPImarques nécessiteaccèsAPI/FTP techniques/licence : nepasinstaller/ouvrir
+  compte niaccepterlicence implicitement, pas dépense externe.
+- Checkpoints/aval/serving/folds0/1/test4323/contrôle962 toujoursgelés. Neuf
+  dirtyinitiauxpréservés ; unit tests0, no push. Skill rédaction lu pour
+  bilan détaillé àproduire. Suivre progressionV115 puis pairedmesuré avecV99,
+  compléter attribution desratés/sourcetriage et protocoleFT/validation ;
+  pasconfondre sourcesdisponibles, diagnostics etgains derecall démontrés.
