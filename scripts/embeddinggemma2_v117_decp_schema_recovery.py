@@ -54,7 +54,7 @@ def main():
                 if ref:ids.add(ref)
                 else:counts['unknown_actor_identifier']+=1
         coverage.append(dict(resource=item['catalog']['id'],title=item['catalog']['title'],contracts=n))
-    if not sum(r['contracts'] for r in coverage):raise ValueError('No valid contracts, don't publish fake completion')
+    if not sum(r['contracts'] for r in coverage):raise ValueError('No valid contracts; cannot publish fake completion')
     con=duckdb.connect();con.execute('SET threads=2');con.execute("SET memory_limit='1GB'")
     con.register('wanted',pa.table({'ref':sorted(ids),'siren':[r[:9] for r in sorted(ids)]}))
     public={r[0] for r in con.execute("""SELECT w.ref FROM wanted w JOIN read_parquet(?) u USING(siren)
