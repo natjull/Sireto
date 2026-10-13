@@ -17,7 +17,7 @@ import time
 
 import numpy as np
 from scripts import embeddinggemma2_v134_supplier_native_ablation as upstream
-from scripts import embeddinggemma2_v132_local_evidence_ablation as parent
+from scripts import embeddinggemma2_v143_empty_reference_continuation as parent
 from scripts import embeddinggemma2_night as io
 from scripts import embeddinggemma2_v14_full_pipeline as engine
 from scripts import embeddinggemma2_v115_streamed_activity_ablation as baseline
@@ -202,7 +202,7 @@ def prepare(out):
                 changed[:, 6] = changed[:, 0]*changed[:, 5]
                 changed[:, 7] = changed[:, 2]*changed[:, 5]
                 _, group = np.unique(keys//100000, return_inverse=True)
-                parents = np.zeros(int(group.max())+1, dtype=np.float32)
+                parents = np.zeros(int(group.max(initial=-1))+1, dtype=np.float32)
                 np.maximum.at(parents, group, changed[:, 5])
                 changed[:, 16] = np.maximum(changed[:, 16], parents[group])
                 changed[:, 17] = changed[:, 1]*changed[:, 16]

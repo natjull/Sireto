@@ -15,7 +15,7 @@ import sys
 import time
 import numpy as np
 
-from scripts import embeddinggemma2_v132_local_evidence_ablation as parent
+from scripts import embeddinggemma2_v143_empty_reference_continuation as parent
 from scripts import embeddinggemma2_night as io
 from scripts import embeddinggemma2_v14_full_pipeline as engine
 from scripts import embeddinggemma2_v115_streamed_activity_ablation as baseline
