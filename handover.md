@@ -18405,6 +18405,48 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   exposition de labels du contrôle indépendant962. Deadline07:45:24 Paris,
   no unit tests/no spend/no push, neufdirtyutilisateur inchangés.
 
+### 13 octobre 2026 04:44 Paris — Deux nouvelles hypothèses générales actives
+
+- V86 `f340fa5a`, script typed_context_expansion : prepare session24538 exit1
+  (variable localeout écrasée par masque numpy), aucun résultat/label lu.
+  Historique conservé. V87 `4d2f9f2f`, namespace neuf, même science corrigée,
+  prepare6225 owned0 ; source complète1 518 080nodes/1 614 245incidences,
+  1379mères rapportées/53membres consolidés2021,267queries,1 040 933expansions
+  source cumulées, max45352ownerrefs sans topk/pruning.
+  Génération6776 arrêtée volontairement via exact supervisor6222SIGTERM,
+  puis ownedSIGKILL après25s, exit-9 session85131 collectée ; septshards
+  conservés, PASde recall. Motif réelle explosion de requêtes lex paralias
+  d'un acteur hub (pas épuisement de deadline, malgré texteEIGHT_HOUR_END).
+- V88 `44707cd5`, scripts/embeddinggemma2_v88_typed_context_native.py,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v88/typed_context_native_20261013_a`,
+  session11815,parent6856,worker7410 à vérifier par commande. Prepare6859owned0.
+  NOUVELLE science figée : tous contextes conservés, score sourceMAX (pas
+  addition de doublons), confidence.5/sqrt(degréacteur) pour incidences,
+  .5mère publiée/groupe daté. Coefficient EXACTV71corporateactor transféré,
+  champsID lookup-only, bits20 et supportadminquery requis pour brancheajoutée.
+  OriginalV81national nonfiltré, unseulcollector100, pas alias/site renumé.
+  Pas refit/gradient. Environ204/526 à04:42, labels nouveaux non ouverts.
+- V89 `5d9a6698`, scripts/embeddinggemma2_v89_coherent_address_content.py,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v89/coherent_address_content_20261013_a`,
+  session2756,parent7623. Prepare7626 COMPLETE526owned0 ; calibration10026
+  active137/375 à04:42. SourcecurrentStockEtabpublicO propre, suppression
+  symétrique du typevoie/articles, ratio complet surtokens triés PASpartial
+  WRatio. Troispreuves indépendantesnom : voie×commune,voie×num/suffixe×commune,
+  voie×géopointpropre. Aucune exclusion mismatch/fermé, vieuxhistoriquegardé.
+  V32 serving EXACTfrozen ; residualcalibration nouveaux négatifsTRAINonly,
+  offsets imbriqués repris des20baselinesV78 doublementpurged parSIREN.
+  Gemma et aval gelés. Sourcepolicydiagnostic-only. Aucunscorepartielpublié.
+- V90 `7a25be37` compiler nationalRNA officielle parIDassociation SIRENEO,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v90/public_rna_names_20261013_a`.
+  Archive août2026 observée au catalogue du ministère, avantcutoff8/1,
+  téléchargementHTTP403 ; session21955 réellement exit1, launch/catalog
+  conservés, aucunearchive ni compilation acceptée. Pascontournementdu403,
+  pas corpusRNA choisi depuis GT. Mirrorofficieldatagouv observé maisOct1,
+  POSTCUTOFF : ne pas le glisser dans ces benchmarksdatés8/1.
+- Neufdirtyutilisateur conservées ; toutes nouvelles sources/recettes
+  diagnostic-only, deadline1791870324 inchangée, fonds fermés/pasunit tests/
+  dépense/push. Contrôleindépendant962 jamais ouvert.
+
 ### 13 octobre 2026 03:41 Paris — Progression réelle ; diagnostic de coût sans GT
 
 - Toutes cinq générations progressent par commandes/states réels, aucun
