@@ -44,6 +44,7 @@ RECIPE = dict(variants=VARIANTS, primary_predeclared='all_new_sources_max_bano',
     no_positive_injected=True, no_identifier_features=True,
     reuse='ONLY_EXACT_EQUAL_LEAF_SCORES_AND_OWNER_CONTEXTS_OR_EXACT_ZERO_NEW_SOURCE',
     labels_only_after_two_whole_generations_and_actual_owned_exits=True,
+    incremental_attribution='PRIMARY_PAIRED_EXACT_AND_OPERATIONAL_VS_FROZEN_V134_ALL_NEW_SOURCES_MAX',
     exact_operational_separate=True, full_encoder_oof=False, closed_sets_opened=False,
     eligibility='DIAGNOSTIC_CURRENT_COMMUNITY_PARTIAL_PUBLISHER_AND_INHERITED_POSTCUTOFF_SOURCES',
     production_promotion_allowed=False, quantization_bits=baseline.RECIPE['quantization_bits'],
@@ -389,6 +390,15 @@ def evaluate(out):
     complete_family(out, VARIANTS)
     summary = {}
     old = {r['query_id']: r for r in io.read(baseline.OUTPUT/'outcomes.json')['learned_native_ooc']}
+    # Upstream outcomes are opened only after BOTH new complete owned outputs.
+    upstream_outcomes_path = upstream.ROOT/'all_new_sources_max/outcomes.json'
+    previous = {r['query_id']: r for r in io.read(upstream_outcomes_path)['learned_native_ooc']}
+    if len(old) != 526 or set(previous) != set(old) or any(old[q][f] != previous[q][f]
+            for q in old for f in ('fold', 'zone', 'siren_group', 'calibrated_query_weight')):
+        raise ValueError('Same all526 upstream evaluation units and weights')
+    def paired_by_metric(before, after, metric):
+        return dict(gains=[q for q in before if after[q][metric] and not before[q][metric]],
+                    losses=[q for q in before if before[q][metric] and not after[q][metric]])
     for variant in VARIANTS:
         root = out/variant
         io.write(root/'launch.json', io.read(out/'launch.json'))
@@ -400,16 +410,25 @@ def evaluate(out):
         if set(fresh) != set(old) or any(old[q][f] != fresh[q][f] for q in old
                 for f in ('fold', 'zone', 'siren_group', 'calibrated_query_weight')):
             raise ValueError('Same all-human population and evaluation units')
-        paired = dict(gains=[q for q in old if fresh[q]['exact'] and not old[q]['exact']],
-                      losses=[q for q in old if old[q]['exact'] and not fresh[q]['exact']])
+        paired = paired_by_metric(old, fresh, 'exact')
+        paired_operational = paired_by_metric(old, fresh, 'operational')
         report = io.read(root/'report.json')
         report.update(paired_vs_v115=paired, eligibility=RECIPE['eligibility'], production_promotion_allowed=False,
             full_encoder_oof=False, no_full_encoder_oof=True, encoder_train_sirens_disjoint=None,
             independent_encoder_generalization_not_validated=True, runtime_contains_equivalent_output_reuse=True,
             no_full_new_cold_warm_slo=True)
+        report['paired_operational_vs_v115'] = paired_operational
+        if variant == RECIPE['primary_predeclared']:
+            report['paired_vs_v134_all_new_sources_max'] = dict(
+                exact=paired_by_metric(previous, fresh, 'exact'),
+                operational=paired_by_metric(previous, fresh, 'operational'),
+                upstream_outcomes=record(upstream_outcomes_path),
+                interpretation='INCREMENTAL_BANO_ON_SAME_ALL526_NOT_INHERITED_OTHER_SOURCE_GAINS')
         io.write(root/'report.json', report)
         summary[variant] = dict(metrics=report['variants']['learned_native_ooc'], paired=paired,
-                               report=record(root/'report.json'))
+                               paired_operational=paired_operational, report=record(root/'report.json'))
+        if variant == RECIPE['primary_predeclared']:
+            summary[variant]['paired_vs_v134_all_new_sources_max'] = report['paired_vs_v134_all_new_sources_max']
     io.write(out/'report.json', dict(status='COMPLETE_TWO_PREDECLARED_BANO_ABLATIONS_ALL526',
         primary_predeclared=RECIPE['primary_predeclared'], variants=summary,
         no_holdout_or_national_certification=True, finished_unix=time.time()))
