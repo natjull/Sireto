@@ -18312,3 +18312,52 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Prompt de CETTE automation locale actualisé V71/V73/V75 pour ne pas relancer
   V56 terminé. Son déclenchement reste NON vérifié, aucun contournement d'accès
   UI refusé. Travail dans tour actif, deadline1791870324 inchangée.
+
+### 13 octobre 2026 02:45 Paris — Offsets nested et qualité des preuves
+
+- V76 `c7e1589f` COMPLETE, session56612 collectée exit0. Parmi31 ratés V32,
+  corporate a15 indices de similarité NON NULS, mais UN seul contribue à son
+  nouveau score numérique ; cela ne signifie PAS15 relations nominatives
+  convaincantes. Parmi495hits,201indices/98contributions. Aucun des cinq cas
+  perdus corporate n'a de nouvelle contribution numérique positive : poids
+  anciens/lexical et admission ont donc changé, pas preuve source seule.
+  Remplissage géo ajoute un signal àUN/31ratés et12/495hits. V48 avait14points
+  manquants dont12publics : l'atlas en retrouve2, mais un queryBAN est incompatible,
+  donc signal pour1. Plusieurs adresses propres sont des zones/lieux-dits/anciens
+  libellés ('ZC LECLERC','LE CAMP GUYNEMER','QU DE LA VALENTINE', etc.), pas les
+  rues du CRM : ne pas recopier l'adresse/point CRM sur le candidat pour réparer.
+  Une ancienne proposition de bug StockXY disponible n'est PAS confirmée : les
+  sites manquants ont effectivement StockXY vide/ND, le cas1329 a queryincompatible.
+- V78 milestone `530a6768`,
+  `scripts/embeddinggemma2_v78_nested_residual_offset.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v78/nested_residual_offset_20261013_a`.
+  Init session25945 exit0, superviseur session48834/PID93929 ; prepare93932
+  ownedexit0 ; calibrateur93995 ATTEND V71pairs375 complets+ownedexit0, pas remine.
+  Corrige hypothèse générale de biais d'offsetTRAIN : pour outerfoldk, baseline
+  intérieure de queryfoldj entraînée SANS k NI j. Puis residualtheta appris sur
+  marges nested, MAIS coefficients serving V32k restent EXACTS. Cinq modèles
+  résiduels, vingt baseline fits numériques légers, mêmes375paires sourceV71,
+  pas nouveauGemma ni vraieOOFencoder ni choix fondé sur résultats V71 encore
+  inconnus. Origine et ordre de TOUTES paires contrôlés np.array_equal. Folds
+  ici auxiliaires SIREN, pas ouverture des folds humains0/1.
+- V73 préparation526 COMPLETE ownedexit0 en1466,74s, stagecalibration actif ;
+  V71 calibration166/375 à02:41, V75coefficients attendus sans refit. Ne pas
+  dupliquer ni modifier ces quatre scripts/recettes hashés pendant exécution.
+- Qualité source BODACC : V79 `c8bb950d`,
+  `scripts/embeddinggemma2_v79_bodacc_disjoint_precision.py`, source-onlyexit0,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v79/bodacc_disjoint_precision_20261013_a`.
+  Troisième32 aveugle sur1241faits/513noms parents éligibles, exclut noms parents,
+  sujets, annonces et clauses exactes des deux précédents ; identités des mères
+  et événements non résolus, donc PAS certification entity/event-disjoint.
+  V80 `4ce0eb55`, `scripts/embeddinggemma2_v80_bodacc_precision_context.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v80/bodacc_precision_context_20261013_a`,
+  session26141 à collecter : les courts snippets n'incluent PAS le binding sujet,
+  récupération des32textes primaires COMPLETS et personnes morales annoncées
+  propres nécessaire avant jugement QA. Aucun retuning des recettes actives.
+- Inspection source de tous53membres du périmètre Savencia :129aliases légaux
+  officiels ;780876405 a CL INFORMATIQUE/SAVENCIA IT DIGITAL SERVICES/SB ALLIANCE
+  INFORMATIQUE/SICA OUEST LAIT/SICA SIBA, aucun alias de site. SBIT n'est PAS un
+  alias retrouvé : l'association du sigle CRM à cette société reste à corroborer
+  explicitement. Ne pas présenter la table de groupe comme preuve de ce sigle.
+- Deadline1791870324 inchangée, no unit tests/no spend/no push ; contrôles
+  indépendants962 et folds0/1/test4323 préservés. SourceQA ne change pas recall.
