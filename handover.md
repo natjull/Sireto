@@ -18229,3 +18229,46 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Échéance1791870324 (07:45:24 Paris) inchangée. Préparer ensuite confirmation
   sur requêtes non consommées sans ouvrir fold1/test4323 ; ne pas confondre
   panel de développement avec national99,2%. Neuf dirty utilisateur préservés.
+
+### 13 octobre 2026 02:15 Paris — Contexte relationnel source-large actif
+
+- V71 préparation complète526 owned exit0 (PID84229,671,43s), calibrateur
+  PID86904 actif28/375 ; aucun résultat partiel lu. Ne pas relancer ses étapes.
+- Nouveau source-only V72 `37ec9b7a`,
+  `scripts/embeddinggemma2_v72_corporate_incidence.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v72/corporate_incidence_20261013_a`.
+  Session43395 collectée exit0 ; aucun PID inventé dans owned_exit. Scan17,64s,
+  1518080 nœuds corporate publics,1617787 liens typés et1614245 incidences
+  distinctes,187336 acteurs à plusieurs sujets, degré maximal15334.
+  Pas propriété/identité/affiliation actuelle : intervenant corporate commun
+  seulement. Codes de rôle conservés, libellés souvent absents, pas inférence
+  'président'/'associé' par intuition. Noms physiques jamais lus ; EI/ULP exclus.
+  80741 sujets ont116524 noms corporate à identifiant non résolu, conservés
+  comme contexte direct publié, JAMAIS joints entre entités par nom homonyme.
+  IncidenceSHA7508d5580eaa4d620efa5f75cde7d6509b51695e4c607232834e3efec066261a.
+- V73 `e1d505f4`, `scripts/embeddinggemma2_v73_frozen_corporate_peer.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v73/frozen_corporate_peer_20261013_a`.
+  Init session68648 exit0 ; run session70562, parent87003/prepare87006 vérifiés,
+  12/526 à02:15. Ajoute contexte d'autres sociétés partageant l'acteur (self
+  EXCLU), max exact tous peers sans topk puis atténuation sqrt(degré-1) contre
+  hubs fiduciaires. Croise avec géographie/adresse PROPRE. Noms étrangers
+  non résolus en quatre features séparées. Noms peers StockUL courant seulement,
+  pas couverture historique complète. Corrige dans le lecteur seulement les
+  2414 SIREN à zéro initial ; source V72 immuable préservée. V32 reste figé,
+  Gemma/aval figés ; sources nouvelles/BAN demeurent diagnostic-only.
+- V74 `fe9eb53c` puis `ab8fb146` (PIL absent, conversion native sips avant toute
+  initialisation source),
+  `scripts/embeddinggemma2_v74_archived_client_visuals.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v74/archived_client_visuals_20261013_a`.
+  Session73339 collectée exit0 ; TOUTES quatre images source du client-section
+  avantcutoff, mementos10Feb2026, vues effectivement : Aubert, Euromedis Groupe,
+  jill, Vintex. visual_review.json séparé ; pas changement de l'archive source.
+  Fournisseur NAOS explicitement publié, mais marques clientes ≠ IDs légaux
+  résolus et ≠ propriété/identité. Aucun aliasCRM ni score encore créé.
+- Vérification réelle du prochain contrôle :962 requêtes/851SIREN/478communes
+  hors405groupes pilot+contrôles, ZEROcommune dense encodée commune. Répartition
+  MEDIUM319req/246zones/1035292sites ; DENSE349/161/3867218 ; LARGE222/60/5943702 ;
+  VERY_LARGE72/11/3465401. Ne pas tester seulement les zones bon marché puis
+  qualifier cela de représentatif ; full nouveaux corpus coûteux non lancés.
+- Échéance07:45:24 Paris inchangée, aucun unit test/coût externe/push et neuf
+  dirty utilisateur intacts. Automation locale non vérifiée ; tour reste actif.
