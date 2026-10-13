@@ -18942,3 +18942,70 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   toujoursfermés ; labelsallhuman inchangés. Unit tests0/cloud0/push0/nettoyage0.
   Neufdirtyinitiauxpréservés ; dernierdisqueinterne404MiB libre, CATNAT103GiB.
   Pas nouveaucalculmassif ni suppression de fichiersautrestravaux.
+
+### 13 octobre 2026 — Voies adjacentes et pont géographique des enseignes
+
+- Mandat ciblé : trouver une solution géographique générique au cas où le
+  CRM et SIRENE nomment deux rues voisines. Note initiale `8ea17f44`, bilan
+  mesuré `5552ff4e` dans `docs/retrieval_geographie_voies_adjacentes_20261013.md`.
+  Pas nouvelle nuit, automation, agent délégué ni dépense externe.
+- V123 `4eb4032a`, root `v123/street_geometry_probe_20261013_a` : génération
+  OSM complète, session 32446 exit0, 1 322 voies / 6 684 bâtiments / sept
+  tronçons de la rue CRM. Source quartier query-only sans enseigne ni SIRET.
+  Après scellé : distance point SIRENE au point BAN moyen 439,59m, à une
+  position BAN réelle de la rue 146,19m, à l'axe OSM 88,70m. Les deux rues
+  partagent deux nœuds OSM, intersection réelle. Numéro 9012 toujours
+  imprécis ; pas contour certifié du magasin ni correction du label.
+- Carte locale à coordonnées réelles créée et inspectée dans Edge via skill
+  visualize : `gedimat-street-geometry.html` sous le répertoire autorisé de
+  visualisations de la tâche. Serveur de preview PID81089 confirmé par sa
+  commande puis arrêté volontairement ; session64629 exit143. Aucun onglet
+  utilisateur, serving métier ou fichier étranger modifié.
+- V124 sources OSM groupées `2ec5aa99` / `59b197ec`, roots
+  `v124/query_street_shapes_20261013_a` et `_b` : sessions96884/76768 exit1,
+  Overpass504/timeouts, conservées incompletes. Pas métrique sur sous-ensemble.
+- Repli offline uniforme V126 `c9d6e627`, root
+  `v126/ban_street_clouds_20261013_a` : toutes526 représentées, 62 replis
+  explicites rue, 942 positions uniques cumulées ; session2283 exit0 observé.
+  Nuage discret BAN, pas axe interpolé ni parcelle. Les464 autres requêtes
+  sont inchangées par construction, pas sélectionnées selon outcomes.
+- V125 code `7c2e7e4d` / `59b197ec` / `c9d6e627`, binding final `873c3372`,
+  root `v125/street_cloud_retrieval_20261013_b` : session74149 exit0 collecté,
+  ownedworker83443 exit0 après une reprise coopérative mémoire. ALL526 scellé,
+  62 recalculées et464 sorties équivalentes réutilisées. Exact **504/526**
+  **95,8175% brut /94,7553% pondéré**, SIREN508/526, opérationnel505/526,
+  **0 gain /0 perte** vsV115 ; GEDIMAT reste absent. Modèles/poids figés,
+  seul signal géographique et interactions existantes changés avant unique
+  collecteur100 ; univers numérique inchangé, lexical national ouvert.
+  Génération SHA260fcdf725c68c049ee308b8bbad435f2ebe55b7e45c8c3318cf70bd99ea95f2.
+  Sources postcutoff héritées => diagnostic-only, pas SLO contrôlé.
+- V127 `647de24f`, root `v127/geo_named_pois_20261013_a`, source de commerces
+  nommés pour tous les replis : première requête Overpass504, session26571
+  exit1, aucune génération complète ni métrique. Ne pas dire source prête.
+- V128 faisabilité **une requête consommée, PAS recall** : `97280e9f`, puis
+  correction SQL/reprise source identique `3ceaee89`. Namespace `_a`
+  conservé après erreur SQL exit1 session51027 ; source complète sans
+  candidats. `_b` root `v128/named_geo_feasibility_5130_20261013_b`, session
+  **16456 exit0 collecté**, owned_tool_exit réel, génération scellée puis
+  évaluation séparée exit0. Source demande tous les commerces du quartier
+  sans nom/ID : 35 lieux dont Gedimat à50,06m du point SIRENE Léon Bracq.
+  Source `_a` réutilisée avec requête strictement identique, pas redownload.
+- Recette V128 figée avant label : couverture exacte des tokens informatifs
+  CRM par le nom du lieu, proximité faible `.5/(1+d/300)` appliquée aux sites
+  publics des390003 références numériques préexistantes, coefficient
+  géographique déjà figé du calibrateur heldout. Pas alias propre, pas
+  ownership inféré, sites eO+uO seulement, lexical national nonrestreint,
+  unique collecteur100 avant matérialisation, aucun positif injecté.
+  Diagnostic postscellé : **68552038900030 au rang46**. Cela débloque ce cas
+  mais ne modifie PAS504/526, ne prouve ni généralisation ni99,2%. Poids,
+  hypothèse et rayon n'ont pas été ajustés après lecture du rang.
+- Direction claire : couche locale de lieux nommés + formes de voies,
+  recette unique avant labels, mesure de cohorte complète et audit des
+  pertes/homonymes/couverture/centres commerciaux. Un snapshot local évite
+  la dépendance Overpass ; sa préparation n'est pas lancée. Ne pas extrapoler
+  ce cas connu ni confondre enseigne proche et exploitant certifié. Aucun
+  nouveau calcul actif de cette tâche à la clôture ; historiques conservés.
+- Pas nouveaux gradients, unit tests, dépendances, cloud, push, labels ou
+  règles opérationnelles changées ; folds0/1, test4323/contrôle962 fermés,
+  aval/serving gelés. Neuf dirty initiaux préservés. Dernier état disque
+  observé avant clôture : CATNAT96GiB libres, interne261MiB ; aucun nettoyage.
