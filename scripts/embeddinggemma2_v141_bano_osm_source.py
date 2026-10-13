@@ -18,12 +18,11 @@ import sqlite3
 import time
 import urllib.request
 
-import pyproj
-
 from scripts import embeddinggemma2_night as io
 from scripts.embeddinggemma2_v129_osm_coverage_audit import number
 from scripts.embeddinggemma2_v17_structural_retrieval import normalize
 from src.xgb_matcher.retrieval_v20_workbench import record, verify
+from src.xgb_matcher.retrieval_geo_v16 import lonlat_to_l93
 
 ROOT = io.HOME/'v141/bano_osm_20261013_night_a'
 RAW = Path('/Users/nathanjullia/Documents/Projets/SIRETO/tmp/bano_public_20261013_lZ8b88')
@@ -144,7 +143,6 @@ def main():
     for c in communes:
         for cp in c['codesPostaux']:postal.setdefault(cp,set()).add(c['code'])
     delegates={c['code']:c['chefLieu'] for c in io.read(DELEGATES) if c.get('chefLieu')}
-    transform=pyproj.Transformer.from_crs('EPSG:4326','EPSG:2154',always_xy=True)
     context={};coverage=Counter()
     for q in panel:
         code=q['crm_insee'];cp=q['crm_postcode'];street_key=normalize(q['crm_street'],street=True)
@@ -157,7 +155,7 @@ def main():
             sql='SELECT source_file,source_row,bano_id,insee,street,number_raw,number_integer,suffix,postcode,city,lat,lon FROM addresses WHERE street_key=? AND insee IN ('+','.join('?' for _ in codes)+')'
             for sf,sr,bid,ci,st,nraw,ni,suffix,pc,city,lat,lon in con.execute(sql,[street_key,*codes]):
                 l93_ok=-6<=lon<=10 and 41<=lat<=52
-                xy=list(transform.transform(lon,lat)) if l93_ok else None
+                xy=list(lonlat_to_l93(lon,lat)) if l93_ok else None
                 point=dict(source_file=sf,source_row=sr,bano_id=bid,insee=ci,street=st,number=nraw,
                     source='OSM',postcode=pc,city=city,lat=lat,lon=lon,l93_compatible=l93_ok,
                     point_l93=xy,precision='PUBLISHED_ADDRESS_POINT_NOT_CERTIFIED_ENTRANCE',
