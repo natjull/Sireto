@@ -2,12 +2,12 @@
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime,timezone
 from email.utils import parsedate_to_datetime
-from io import BytesIO
 from pathlib import Path
+import struct
+import subprocess
 import time
 import urllib.parse
 import urllib.request
-from PIL import Image
 from scripts import embeddinggemma2_night as io
 from scripts import embeddinggemma2_v56_corporate_site as mandate
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
@@ -26,12 +26,14 @@ def capture(item):
     memento=headers.get('memento-datetime') or headers.get('Memento-Datetime')
     if not memento or parsedate_to_datetime(memento)>=datetime(2026,8,2,tzinfo=timezone.utc):raise ValueError('No pre-cutoff actual image capture')
     name=Path(urllib.parse.urlparse(original).path).name
-    image=Image.open(BytesIO(body));image.load()
+    if body[:6] not in (b'GIF87a',b'GIF89a'):raise ValueError('Actual GIF, not redirect HTML')
+    dimensions=struct.unpack('<HH',body[6:10])
     target=OUTPUT/name;target.write_bytes(body)
-    preview=OUTPUT/(Path(name).stem+'.png');image.convert('RGBA').save(preview)
+    preview=OUTPUT/(Path(name).stem+'.png')
+    subprocess.run(['sips','-s','format','png',str(target),'--out',str(preview)],check=True,capture_output=True,timeout=10)
     return dict(original_url=original,requested_url=request,effective_url=effective,
         memento_datetime=memento,source=record(target),preview=record(preview),
-        dimensions=image.size,semantic_brand_not_yet_visually_verified=True)
+        dimensions=dimensions,semantic_brand_not_yet_visually_verified=True)
 
 
 def main():
