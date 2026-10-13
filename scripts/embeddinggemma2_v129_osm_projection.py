@@ -21,7 +21,9 @@ def main(root):
     source=verify(g['files']['query_context']);shapes=verify(g['files']['shapes'])
     out=root/'query_context_for_retrieval.json'
     if out.exists():raise ValueError('Immutable projection already exists')
-    sys.path.insert(0,str(root/'deps'));import ijson
+    deps=root/'deps'
+    if not deps.exists():deps=root.parent/'osm_local_20261013_night/deps'
+    sys.path.insert(0,str(deps));import ijson
     counts={'queries':0,'pois':0,'addresses':0};tmp=out.with_suffix('.json.tmp')
     with source.open('rb') as src,tmp.open('w') as dst:
         dst.write('{');first=True
