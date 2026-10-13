@@ -19413,3 +19413,26 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   inutile sans audit couverture->score->présence. Aucune grille de poids ou
   adaptation sur les nouveaux outcomes cette nuit. Tous les scores de
   développement restent exploratoires, aucune correction de labels.
+
+#### Jalon 23:46 UTC — audit operator sans labels, ambiguïté conservée
+
+- Sous-agent périmètre query-only, rapport
+  `v129/operator_query_only_audit_20261014_night_a/report.json`,
+  SHA256 `60a03030842da7a9e3955cce1060717666bf82720b638a40a368a0fb3552e8dc`.
+  Même526, sources OSM_e et metadata V143, aucun GT/outcome/jeu fermé lu,
+  aucune recherche native ou modification de recette. Scan officiel public
+  corporate (hors personnes naturelles) threads1/512MiB, exit0 réel16,76s,
+  RSS206MiB. Aucun identifiant ni champ de personne exporté dans le rapport.
+- 41queries/54POI concordent avec la règle de nom figée ; six de ces POI sur
+  cinq queries ont un operator. Cinq des six valeurs trouvent une couverture
+  de tokens dans une dénomination officielle, seulement deux sont uniques
+  sous cette règle ; quatre égalités normalisées existent, trois uniques.
+  Ce sont des disponibilités textuelles, pas des identités ni gains recall.
+- Deux POI nommés mairie sont typés location de vélos/autopartage : leur
+  operator n'est pas une preuve d'exploitant mairie. Hypothèse future :
+  arêtes séparées nom publié->POI typé->operator->propriétaire officiel->son
+  propre site, ambiguïté et cohérence de rôle/site conservées, contrôles de
+  permutation pré-déclarés. Pas d'alias plat operator/brand ou de bonus à
+  tout voisin. Aucun nouveau branchement client/label ni fit cette nuit.
+- V140 primaire441/526 à23:45UTC, cinq isolées complètes ; aucun nouveau
+  recall ouvert. V143 prêt, aucune deuxième recherche native lancée.
