@@ -61,8 +61,49 @@ univers. Elle ne change pas non plus la règle métier d'équivalence des labels
 
 ## Résultat de retrieval
 
-Comparaison complète en cours à la rédaction initiale. Aucune mesure partielle
-de recall ou du rang de GEDIMAT n'est utilisée pour régler la recette.
+La comparaison complète a terminé avec une sortie possédée 0 : **504/526
+SIRET exacts (95,8175 % brut ; 94,7553 % pondéré)**, 508/526 SIREN et 505/526
+opérationnels. **Zéro gain et zéro perte** par rapport à la baseline V115.
+GEDIMAT reste absent des 100. Corriger la géométrie seule ne suffit donc pas
+dans cette ablation ; aucun poids n'a été ajusté après ces résultats.
+
+## Le pont géographique enseigne–établissement
+
+Une seconde expérience indépendante teste une autre information : les
+**commerces nommés présents dans le quartier**. La requête source demande tous
+les commerces OSM autour de la géométrie CRM, sans nom d'entreprise ni SIRET.
+Elle trouve 35 commerces, dont un point « Gedimat » situé à **50,06 mètres du
+point SIRENE de Léon Bracq**.
+
+Le mécanisme générique recherche les points dont le nom couvre les tokens
+informatifs du nom CRM, puis apporte une preuve faible aux établissements
+publics voisins. Cette preuve est distincte d'un alias propre de l'entreprise :
+la proximité ne certifie pas l'exploitant. Le signal vaut
+`0,5 / (1 + distance_m / 300)` et utilise le coefficient géographique déjà
+figé, sans entraînement ni ajustement après lecture du résultat. Les
+établissements à diffusion protégée sont exclus de ce nouveau signal.
+
+La recherche conserve l'univers numérique complet préexistant de 390 003
+références pour cette requête, la branche lexicale nationale non restreinte
+et **un seul collecteur initial de 100**. Aucun positif n'est injecté.
+Le SIRET humain n'est lu qu'après génération complète, sortie outil 0 et
+scellé des candidats. **Résultat : le SIRET 68552038900030 apparaît au rang
+46**, alors qu'il était absent dans la comparaison précédente.
+
+C'est une preuve de faisabilité sur un cas déjà diagnostiqué, **pas une
+mesure de recall ni une validation de généralisation**. Le score complet
+reste 504/526 ; il n'est pas augmenté à partir de cette expérience ciblée.
+Les données et coefficients hérités gardent aussi leurs limites de cutoff
+et d'OOF encodeur. Aucun déploiement ni certification de latence n'en découle.
+
+La direction est désormais précise : tester une couche locale de lieux
+nommés et de géométries de voies sur une cohorte complète, avec une recette
+figée avant les labels, en publiant gains **et pertes**. Les homonymes,
+enseignes voisines d'une autre entreprise, centres commerciaux, points OSM
+mal placés et couverture inégale doivent être audités. Un snapshot local
+éviterait la dépendance aux appels Overpass en ligne ; sa préparation n'a
+pas été lancée ici. La simple proximité ne doit jamais devenir une décision
+de matching automatique.
 
 ## Sources et traçabilité
 
@@ -87,7 +128,16 @@ Artefacts sous `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2` :
 - source locale `v126/ban_street_clouds_20261013_a`, commit `c9d6e627`,
   génération complète et sortie outil 0, session 2283 ;
 - comparaison `v125/street_cloud_retrieval_20261013_b`, commits `7c2e7e4d`,
-  `59b197ec`, `c9d6e627` et `873c3372`, recette et code figés avant génération.
+  `59b197ec`, `c9d6e627` et `873c3372`, recette et code figés avant génération,
+  sortie outil 0 session 74149, 526 sorties couvertes ;
+- tentative groupée de lieux nommés `v127/geo_named_pois_20261013_a`, commit
+  `647de24f`, premier appel Overpass 504, sortie outil 1 session 26571,
+  aucune génération complète ni mesure ;
+- faisabilité `v128/named_geo_feasibility_5130_20261013_b`, commits
+  `97280e9f` et `3ceaee89`, sortie outil 0 session 16456 et diagnostic
+  post-scellé rang 46. Namespace `_a` conservé après erreur SQL : source
+  complète réutilisée à requête strictement identique, pas de candidats ni
+  de métrique dans ce premier namespace.
 
 Tous les labels, modèles aval, serving et jeux fermés restent inchangés.
 Pas de nouveau training, unit test, installation de dépendance, cloud ou
