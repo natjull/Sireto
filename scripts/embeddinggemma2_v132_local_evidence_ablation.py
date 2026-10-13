@@ -29,7 +29,7 @@ from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
 from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
 ROOT=io.HOME/'v132/local_evidence_20261013_night'
-OSM=io.HOME/'v129/osm_local_20261013_night_c'
+OSM=io.HOME/'v129/osm_local_20261013_night_e'
 RNA=io.HOME/'v130/structural_20261013_night'
 BANATIC=io.HOME/'v130/banatic_memberships_20261013_night_b'
 BASE=baseline.OUTPUT
