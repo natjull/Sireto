@@ -59,12 +59,22 @@ RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_NOT_CONFIRMATION',
     labels_opened_only_after_all_predeclared_generations_and_owned_exits=True,
     exact_operational_separate=True,production_promotion_allowed=False,
     eligibility='DIAGNOSTIC_SOURCE_EXTENSION_CURRENT_COMMUNITY_OSM_AND_INHERITED_POSTCUTOFF_BASE',
-    full_encoder_oof=False,closed_tests_opened=False,deadline_unix=DEADLINE)
+    full_encoder_oof=False,closed_tests_opened=False,deadline_unix=DEADLINE,
+    execution_resources=dict(max_rss_gib=10,min_memory_free_percent=25,
+        admitted_pressure_levels=[0,1,2],reserve_catnat_gib=40,threads=2))
 
 
 def guard():
+    import psutil
+    # Process-local execution policy; historical hash-bound helpers stay intact.
+    # Their native scoring calls must use the same declared reserve, not80GiB.
+    engine.guard=guard
     if time.time()>=DEADLINE:raise TimeoutError('Eight-hour mandate finished, preserve artifacts')
-    engine.guard()
+    free,level=io.pressure();rss=psutil.Process().memory_info().rss
+    if engine.INTERRUPTED or free<25 or level not in (0,1,2) or rss>10*1024**3:
+        raise engine.ResourceYield(f'V132 resource yield free={free} level={level} rss={rss}')
+    if psutil.disk_usage(io.HOME).free<40*1024**3:
+        raise engine.ResourceYield('CATNAT reserve below40GiB; preserve all artifacts')
 
 
 def authority(out):
