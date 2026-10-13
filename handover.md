@@ -19399,3 +19399,17 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   d'égalité des entrées/AST nativement scorés, jamais selon les hits.
 - V140 cinq isolées526/526/exits0, MAXprimaire en cours(PID9158 vérifié).
   Aucun nouveau recall lu, recettes ne sont pas adaptées aux outcomes.
+
+- V143 préparation complète session28636/PID9378 **exit0 réel**, reçu23:30UTC,
+  prepare_exit.json lie directement le processus outil possédé. Toutes526
+  shards préparées sans labels, publicmask/keys inchangés. Seulement78queries
+  avec incrément géométrique,41 avec contexte nommé,108union : chiffres de
+  charge source/scoring, **pas des gains recall**. Les sorties identiques
+  seront réutilisées uniquement quand les nouvelles entrées de score sont
+  nulles ; aucune ligne ne disparaît de l'évaluation.
+- L'ablation figée mesure la valeur des sources avec les poids historiques,
+  pas leur performance maximale après futur apprentissage hors échantillon.
+  Une preuve nouvelle trop faible pour franchir100 ne sera pas déclarée
+  inutile sans audit couverture->score->présence. Aucune grille de poids ou
+  adaptation sur les nouveaux outcomes cette nuit. Tous les scores de
+  développement restent exploratoires, aucune correction de labels.
