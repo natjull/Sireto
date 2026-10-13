@@ -36,6 +36,7 @@ RECIPE=dict(hypothesis='FROZEN_V115_WITH_UNIFORM_WEAK_STREET_BAN_POSITION_CLOUD_
     original_national_lexical_unrestricted=True,no_new_external_footprint_expansion=True,
     changed_proof_fields=[5,6,7,16,17,19],own_and_parent_context_distinct=True,
     no_refitting=True,no_new_encoder_fit=True,no_fixed_prepool=True,native_cap=100,
+    quantization_bits=baseline.RECIPE['quantization_bits'],
     unchanged_queries='EXACT_SEALED_V115_SHARD_REUSE_PROVED_BY_EMPTY_STREET_GEOMETRY',
     no_partial_recall=True,production_promotion_allowed=False)
 SHAPES=None;XY=None;KEYS=None
@@ -171,6 +172,17 @@ def run(out):
         evaluator.proof=sys.modules[__name__];evaluator.evaluate(out)
         r=io.read(out/'report.json');r.update(eligibility=RECIPE['eligibility'],production_promotion_allowed=False,
             no_new_fitting=True,unchanged_inputs_reused_not_partial_evaluation=True,cold_warm_not_controlled=True)
+        old={u['query_id']:u for u in io.read(BASE/'outcomes.json')['learned_native_ooc']}
+        new={u['query_id']:u for u in io.read(out/'outcomes.json')['learned_native_ooc']}
+        if len(old)!=526 or set(old)!=set(new):raise ValueError('Same full paired denominator')
+        for qid in old:
+            if any(old[qid][k]!=new[qid][k] for k in ('fold','zone','siren_group','calibrated_query_weight')):
+                raise ValueError('Unchanged evaluation unit and weights')
+        r.update(paired_vs_v115=dict(gains=[qid for qid in old if new[qid]['exact'] and not old[qid]['exact']],
+            losses=[qid for qid in old if old[qid]['exact'] and not new[qid]['exact']],
+            no_partial_labels_read=True),
+            runtime_contains_exact_reused_baseline_timings=True,
+            no_full_new_cold_warm_slo_measurement=True)
         io.write(out/'report.json',r);io.write(out/'completion.json',dict(status='COMPLETE_OWNED_STREET_SHAPE_ABLATION_ALL526',report=record(out/'report.json')))
 
 
