@@ -83,6 +83,12 @@ def main():
             raise ValueError('All six complete owned generations, no output inspection')
     old = io.read(SOURCE/'launch.json')
     new = target.authority(target.ROOT)
+    verify(old['implementation'])
+    verify(old['recipe'])
+    for helper in old['helpers']:
+        verify(helper)
+    if importlib.metadata.version('tantivy') != '0.25.1':
+        raise ValueError('Version-specific collector tie proof only')
     if old['panel'] != new['panel'] or old['baseline_features'] != new['baseline_features'] or old['baseline_calibration'] != new['baseline_calibration']:
         raise ValueError('Exact query,51-fields,58-model authority bindings')
     for field in ('index_manifest', 'index_meta', 'keys', 'xy', 'baseline_generation', 'baseline_exit'):
