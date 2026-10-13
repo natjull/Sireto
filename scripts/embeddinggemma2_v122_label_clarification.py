@@ -5,12 +5,13 @@ Natural-person names are excluded. Same-owner sites and succession facts are
 diagnostic and cannot establish an unseen CRM invoice's contracting party.
 """
 from pathlib import Path
+from datetime import date
 import time
 
 from scripts import embeddinggemma2_night as io
 from src.xgb_matcher.retrieval_v20_workbench import record, verify
 
-OUTPUT = io.HOME / 'v122/label_clarification_20261013_a'
+OUTPUT = io.HOME / 'v122/label_clarification_20261013_b'
 BASE = io.HOME / 'v115/streamed_activity_ablation_20261013_a'
 LEDGER = io.HOME / 'v111/five_steps_ledger_20261013_a'
 # Independently identified documentary rivals, not a proposed replacement set.
@@ -75,6 +76,10 @@ def main():
       WHERE {predecessor} IN (SELECT siret FROM refs)
          OR {successor} IN (SELECT siret FROM refs)""",
       [launch['raw_successions']['path']]).fetch_arrow_table().to_pylist()
+    for row in records + edges:
+        for key, value in row.items():
+            if isinstance(value, date):
+                row[key] = value.isoformat()
     con.close()
     result = []
     for r in cases:
