@@ -1,4 +1,4 @@
-"""Three predeclared supplier/site context ablations, no extra fitting.
+"""Four predeclared supplier/site context ablations, no extra fitting.
 
 Published client relationships remain weak typed context, never legal identity.
 Native outputs cover the same526 before labels. No per-query rescue or pool.
@@ -32,6 +32,7 @@ RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_EXPLORATORY_NOT_CONFIR
     all_new_sources='MAX_OSM_GEOMETRY_NAMED_SUPPLIER_OWN_SUPPLIER_TEMPORAL_CONTINUITY_ADDRESS_PER_LEAF_AND_MAX_RNA_BANATIC_PER_OWNER',
     continuity_address='EXACT_PREDECLARED_V137_PUBLIC_DIRECT_ECONOMIC_RELATION_AND_OWN_ADDRESS_COMPATIBILITY_NOT_XY_COPY',
     no_double_supplier_provenance_votes=True,no_fit=True,no_grid=True,
+    reuse_upstream='ONLY_EXACT_EQUAL_ALL_LEAF_SCORE_AND_IDENTICAL_OWNER_CONTEXT_INPUTS',
     initial_cap=100,no_prepool=True,no_positive_injected=True,
     all_four_generations_and_owned_exits_before_labels=True,
     quantization_bits=baseline.RECIPE['quantization_bits'],
@@ -41,7 +42,8 @@ RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_EXPLORATORY_NOT_CONFIR
 
 def authority(out):
     launch=parent.authority(out)
-    for k in ('supplier_generation','supplier_exit','address_generation','address_exit','parent_prepared','parent_launch'):verify(launch[k])
+    for k in ('supplier_generation','supplier_exit','address_generation','address_exit','parent_prepared','parent_launch',
+              'parent_composite_generation','parent_composite_exit'):verify(launch[k])
     return launch
 
 
@@ -58,6 +60,10 @@ def initialize(out):
         raise ValueError('Exact whole source population, not source-selected labels')
     if source['query_panel']!=old['panel'] or prepared['status']!='COMPLETE_ALL526_LABEL_FREE_SOURCE_SCORES':
         raise ValueError('Exact source/cohort and prepared binding')
+    composite=parent.ROOT/'osm_max_rna_banatic'
+    cg=io.read(composite/'generation.json');cx=io.read(composite/'generate_exit.json')
+    if cg['status']!='COMPLETE_SEALED_ALL526' or cx['exit_code'] or not cx['own_child_exit_confirmed']:
+        raise ValueError('Owned complete upstream composite before equivalent reuse')
     if out.exists():raise ValueError('Fresh predeclared experiment namespace')
     verify(source['extras']);out.mkdir(parents=True);(out/'spill').mkdir();(out/'calibration').mkdir()
     io.write(out/'recipe.json',RECIPE)
@@ -65,6 +71,7 @@ def initialize(out):
         parent_launch=record(parent.ROOT/'launch.json'),parent_prepared=record(parent.ROOT/'prepared.json'),
         supplier_generation=record(SOURCE/'generation.json'),supplier_exit=record(SOURCE/'owned_tool_exit.json'),
         address_generation=record(ADDRESS/'generation.json'),address_exit=record(ADDRESS/'owned_tool_exit.json'),
+        parent_composite_generation=record(composite/'generation.json'),parent_composite_exit=record(composite/'generate_exit.json'),
         created_unix=time.time())
     launch['helpers'].append(record(Path(parent.__file__)));io.write(out/'launch.json',launch)
     io.write(out/'features_generation.json',io.read(parent.ROOT/'features_generation.json'))
@@ -92,6 +99,8 @@ def generate(out,variant):
     rna=io.read(verify(io.read(verify(launch['rna_generation']))['context']))
     banatic=io.read(verify(io.read(verify(launch['banatic_generation']))['context']))
     bg=io.read(verify(launch['baseline_generation']));old=io.read(verify(bg['outputs']));old_cost=io.read(verify(bg['timings']))
+    cg=io.read(verify(launch['parent_composite_generation']))
+    composite=io.read(verify(cg['outputs']))['learned_native_ooc'];composite_cost=io.read(verify(cg['timings']))
     backend=TantivyBackend(io.INDEX)
     if backend.searcher.num_docs!=82772691:raise ValueError('Identical whole national corpus')
     root=out/variant;root.mkdir(exist_ok=True);(root/'native').mkdir(exist_ok=True);rows={};costs={};modified=0
@@ -113,7 +122,12 @@ def generate(out,variant):
                 merged={r['siren_ref']:r['confidence'] for r in rna[qid]}
                 for r in banatic[qid]:merged[r['siren_ref']]=max(merged.get(r['siren_ref'],0.),r['confidence'])
                 entries=[dict(siren_ref=r,confidence=c) for r,c in sorted(merged.items())]
-            if not np.any(score) and not entries:
+            if variant=='all_new_sources_max' and np.array_equal(score,np.maximum(geom,named)):
+                # Owner-context merge is exactly the upstream recipe above.
+                part=dict(query=q,model=cal['models'][fold],candidates=composite[qid],
+                    cost=dict(composite_cost[qid],unchanged_outputs_reused=True,reused_exact_upstream_inputs=True),
+                    equivalence='ALL_LEAF_SCORES_AND_RNA_BANATIC_CONTEXT_EXACTLY_IDENTICAL',labels_read=False)
+            elif not np.any(score) and not entries:
                 part=dict(query=q,model=cal['models'][fold],candidates=old['learned_native_ooc'][qid],
                     cost=dict(old_cost[qid],unchanged_outputs_reused=True),equivalence='EXACT_ZERO_NEW_SCORE',labels_read=False)
             else:
@@ -182,6 +196,7 @@ def evaluate(out):
         report=io.read(root/'report.json');paired=dict(gains=[q for q in old if fresh[q]['exact'] and not old[q]['exact']],
             losses=[q for q in old if old[q]['exact'] and not fresh[q]['exact']])
         report.update(paired_vs_v115=paired,eligibility=RECIPE['source_eligibility'],production_promotion_allowed=False)
+        report.update(runtime_contains_equivalent_output_reuse=True,no_full_new_cold_warm_slo=True)
         io.write(root/'report.json',report);summary[v]=dict(metrics=report['variants']['learned_native_ooc'],paired=paired,report=record(root/'report.json'))
     io.write(out/'report.json',dict(status='COMPLETE_FOUR_PREDECLARED_SUPPLIER_ABLATIONS_ALL526',variants=summary,
         no_holdout_or_national_certification=True,finished_unix=time.time()))
