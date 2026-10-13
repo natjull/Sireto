@@ -53,7 +53,7 @@ def migrate():
     old=bound.io.read(OLD/'launch.json');panel=bound.io.read(verify(old['panel']))
     queries={q['query_id']:q for q in panel};cal=bound.io.read(verify(old['baseline_calibration']))
     assignment=bound.io.read(verify(cal['assignment']))
-    NEW.mkdir();(NEW/'spill').mkdir();(NEW/'calibration').mkdir()
+    NEW.mkdir(parents=True);(NEW/'spill').mkdir();(NEW/'calibration').mkdir()
     bound.io.write(NEW/'recipe.json',bound.RECIPE)
     launch=dict(old,implementation=record(Path(__file__)),recipe=record(NEW/'recipe.json'),created_unix=time.time())
     launch['helpers']=[*old['helpers'],record(SOURCE)]
