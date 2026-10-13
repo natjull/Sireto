@@ -19091,8 +19091,8 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   PID94998 vérifié. Tous527874658nœuds lus, mais reconstruction des bâtiments
   facultatifs trop coûteuse, aucune génération finale et aucun label ouvert.
 - Source **active `_night_c`**, commit `62a73507`, module
-  `scripts.embeddinggemma2_v129_osm_filtered_source.py` (vérifier nom exact
-  et commande dans son process/launch avant toute intervention),
+  `scripts.embeddinggemma2_v129_osm_native_source.py` (vérifier sa commande
+  dans son process/launch avant toute intervention),
   session81144 / PID95744 à vérifier par commande. MêmePBF/526/rayons/tags
   et preuves POIs/adresses/rues que les variantes ; filtrage natif des objets
   sans nœud dans le buffer et omission explicite des bâtiments anonymes

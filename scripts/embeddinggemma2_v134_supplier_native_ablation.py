@@ -24,14 +24,16 @@ from src.xgb_matcher.retrieval_v20_workbench import record,verify
 
 ROOT=io.HOME/'v134/supplier_native_20261013_night'
 SOURCE=io.HOME/'v133/supplier_site_context_20261013_night'
-VARIANTS=('supplier_own_site_only','supplier_temporal_only','all_new_sources_max')
+ADDRESS=io.HOME/'v137/continuity_address_source_20261013_night'
+VARIANTS=('supplier_own_site_only','supplier_temporal_only','continuity_address_only','all_new_sources_max')
 RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_EXPLORATORY_NOT_CONFIRMATION',
     source='PREDECLARED_V133_PUBLISHED_CLIENT_SITE_CONTEXT_NOT_IDENTITY',
     coefficient='FROZEN_SAME_HELDOUT_CONTEXT_COEFFICIENT6_ONCE',
-    all_new_sources='MAX_OSM_GEOMETRY_NAMED_SUPPLIER_OWN_SUPPLIER_TEMPORAL_PER_LEAF_AND_MAX_RNA_BANATIC_PER_OWNER',
+    all_new_sources='MAX_OSM_GEOMETRY_NAMED_SUPPLIER_OWN_SUPPLIER_TEMPORAL_CONTINUITY_ADDRESS_PER_LEAF_AND_MAX_RNA_BANATIC_PER_OWNER',
+    continuity_address='EXACT_PREDECLARED_V137_PUBLIC_DIRECT_ECONOMIC_RELATION_AND_OWN_ADDRESS_COMPATIBILITY_NOT_XY_COPY',
     no_double_supplier_provenance_votes=True,no_fit=True,no_grid=True,
     initial_cap=100,no_prepool=True,no_positive_injected=True,
-    all_three_generations_and_owned_exits_before_labels=True,
+    all_four_generations_and_owned_exits_before_labels=True,
     quantization_bits=baseline.RECIPE['quantization_bits'],
     upstream_primary_not_changed=True,source_eligibility='INHERITED_DIAGNOSTIC_ONLY_NOT_PRODUCTION',
     no_full_encoder_oof=True,pristine_tests_opened=False,deadline_unix=parent.DEADLINE)
@@ -39,16 +41,21 @@ RECIPE=dict(variants=VARIANTS,scope='SAME_CONSUMED_ALL526_EXPLORATORY_NOT_CONFIR
 
 def authority(out):
     launch=parent.authority(out)
-    for k in ('supplier_generation','supplier_exit','parent_prepared','parent_launch'):verify(launch[k])
+    for k in ('supplier_generation','supplier_exit','address_generation','address_exit','parent_prepared','parent_launch'):verify(launch[k])
     return launch
 
 
 def initialize(out):
     old=parent.authority(parent.ROOT);prepared=io.read(parent.ROOT/'prepared.json')
     ex=io.read(SOURCE/'owned_tool_exit.json');source=io.read(SOURCE/'generation.json')
+    ax=io.read(ADDRESS/'owned_tool_exit.json');ag=io.read(ADDRESS/'generation.json')
     if source['status']!='COMPLETE_QUERY_ONLY_ALL526_SUPPLIER_SITE_CONTEXT' or source['queries']!=526:
         raise ValueError('Complete supplier source all526')
     if ex['exit_code'] or not ex['own_tool_exit_confirmed']:raise ValueError('Observed actual source exit')
+    if ax['exit_code'] or not ax['own_tool_exit_confirmed'] or ag['status']!='COMPLETE_QUERY_ONLY_ALL526_CONTINUITY_ADDRESS_FEASIBILITY_NOT_RECALL':
+        raise ValueError('Complete observed new address-continuity source')
+    if ag['query_panel']!=old['panel'] or set(io.read(verify(ag['extras'])))!={q['query_id'] for q in io.read(verify(old['panel']))}:
+        raise ValueError('Exact whole source population, not source-selected labels')
     if source['query_panel']!=old['panel'] or prepared['status']!='COMPLETE_ALL526_LABEL_FREE_SOURCE_SCORES':
         raise ValueError('Exact source/cohort and prepared binding')
     if out.exists():raise ValueError('Fresh predeclared experiment namespace')
@@ -57,6 +64,7 @@ def initialize(out):
     launch=dict(old,implementation=record(Path(__file__)),recipe=record(out/'recipe.json'),
         parent_launch=record(parent.ROOT/'launch.json'),parent_prepared=record(parent.ROOT/'prepared.json'),
         supplier_generation=record(SOURCE/'generation.json'),supplier_exit=record(SOURCE/'owned_tool_exit.json'),
+        address_generation=record(ADDRESS/'generation.json'),address_exit=record(ADDRESS/'owned_tool_exit.json'),
         created_unix=time.time())
     launch['helpers'].append(record(Path(parent.__file__)));io.write(out/'launch.json',launch)
     io.write(out/'features_generation.json',io.read(parent.ROOT/'features_generation.json'))
@@ -80,6 +88,7 @@ def generate(out,variant):
     cal=io.read(out/'calibration/generation.json');assignment=io.read(verify(cal['assignment']))
     models={k:io.read(verify(v)) for k,v in cal['models'].items()}
     source=io.read(verify(launch['supplier_generation']));extras=io.read(verify(source['extras']))
+    address=io.read(verify(io.read(verify(launch['address_generation']))['extras']))
     rna=io.read(verify(io.read(verify(launch['rna_generation']))['context']))
     banatic=io.read(verify(io.read(verify(launch['banatic_generation']))['context']))
     bg=io.read(verify(launch['baseline_generation']));old=io.read(verify(bg['outputs']));old_cost=io.read(verify(bg['timings']))
@@ -94,12 +103,13 @@ def generate(out,variant):
         else:
             with np.load(verify(pg['shards'][qid]),allow_pickle=False) as f:
                 keys=f['keys'];geom=f['geometry'];named=f['named']
-            own=projected(keys,extras[qid]['own']);temporal=projected(keys,extras[qid]['temporal'])
+            own=projected(keys,extras[qid]['own']);temporal=projected(keys,extras[qid]['temporal']);continuity=projected(keys,address[qid])
             w=float(model['coefficients'][6]);entries=[]
             if variant=='supplier_own_site_only':score=w*own
             elif variant=='supplier_temporal_only':score=w*temporal
+            elif variant=='continuity_address_only':score=w*continuity
             else:
-                score=np.maximum(np.maximum(geom,named),w*np.maximum(own,temporal))
+                score=np.maximum(np.maximum(geom,named),w*np.maximum(np.maximum(own,temporal),continuity))
                 merged={r['siren_ref']:r['confidence'] for r in rna[qid]}
                 for r in banatic[qid]:merged[r['siren_ref']]=max(merged.get(r['siren_ref'],0.),r['confidence'])
                 entries=[dict(siren_ref=r,confidence=c) for r,c in sorted(merged.items())]
@@ -160,7 +170,7 @@ def evaluate(out):
     for v in VARIANTS:
         ex=io.read(out/v/'generate_exit.json');gen=io.read(out/v/'generation.json')
         if ex['exit_code'] or not ex['own_child_exit_confirmed'] or gen['status']!='COMPLETE_SEALED_ALL526':
-            raise ValueError('All three complete owned generations before evaluation')
+            raise ValueError('All four complete owned generations before evaluation')
         verify(gen['outputs'])
     summary={};old={r['query_id']:r for r in io.read(baseline.OUTPUT/'outcomes.json')['learned_native_ooc']}
     for v in VARIANTS:
@@ -173,7 +183,7 @@ def evaluate(out):
             losses=[q for q in old if old[q]['exact'] and not fresh[q]['exact']])
         report.update(paired_vs_v115=paired,eligibility=RECIPE['source_eligibility'],production_promotion_allowed=False)
         io.write(root/'report.json',report);summary[v]=dict(metrics=report['variants']['learned_native_ooc'],paired=paired,report=record(root/'report.json'))
-    io.write(out/'report.json',dict(status='COMPLETE_THREE_PREDECLARED_SUPPLIER_ABLATIONS_ALL526',variants=summary,
+    io.write(out/'report.json',dict(status='COMPLETE_FOUR_PREDECLARED_SUPPLIER_ABLATIONS_ALL526',variants=summary,
         no_holdout_or_national_certification=True,finished_unix=time.time()))
 
 
