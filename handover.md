@@ -18404,3 +18404,32 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Pas nouveaux gradientsGemma, serving/aval/folds0/1/test4323 figés ; aucune
   exposition de labels du contrôle indépendant962. Deadline07:45:24 Paris,
   no unit tests/no spend/no push, neufdirtyutilisateur inchangés.
+
+### 13 octobre 2026 03:41 Paris — Progression réelle ; diagnostic de coût sans GT
+
+- Toutes cinq générations progressent par commandes/states réels, aucun
+  restart observé : V71/V75/V78 302/526, V81 291/526, V73 171/526.
+  V73 calibration375 COMPLETE ownedexit0 PID93838 ; génération98995.
+  Aucun report complet ni recall partiel ouvert. Deadline1791870324 inchangée.
+- Étude de faisabilité de scoring exact paresseux, PAS nouvelle recette ni
+  petit benchmark de recall : V82 `68643b00` a échoué au vrai garde domination
+  numérique, car launch.links était l'ancien sous-ensembleV21 alors que les
+  valeursV23 utilisent family_sources.compiled_links. Aucun artefact accepté,
+  session43711 réellement exit1. V83 `2a0b4f1a` nouveau namespace et exactes
+  arêtes originelles, session78450 exit0,
+  `scripts/embeddinggemma2_v83_bound_family_authority.py`, root
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v83/bound_family_authority_20261013_a`.
+  Cinq queries choisies par hash query-only, une par strate densité, sans GT.
+  Borne sitecos=1 et propagations identiques DOMINENT toutes valeurs originales.
+  Score de coupure100 ancien complet/scellé utilisé pour coût seulement.
+- Après connaissance optimiste de TOUS scores parent, minimum de sites pouvant
+  encore battre le cut rien qu'au score numérique : SMALL175/928,
+  MEDIUM181/9155,DENSE657/27016,LARGE587/65970,VERY_LARGE237/225241.
+  Ceci est une borne INFERIEURE de travail, pas nombre réel suffisant : scores
+  lexicaux/ seuil online inconnu augmentent les raffinements. Coût PARENT
+  non inclus,868/7634/22973/58577/185327parents respectivement. Pas promesse
+  de speedup, pas contrôle962 tronqué ni prepool fixe. Pas implémenter un
+  raccourci 'quelquescentaines suffisent' sans certificat exact/mesure complète.
+  Docs primaireTantivyTopDocs/offset consultée ; aucun runtime modifié.
+- Réserve CATNAT138GiB, mémoire libre~54%, aucun nettoyage d'autres travaux,
+  aucune réécriture des artefacts hashés actifs. Neuf dirty utilisateur intactes.
