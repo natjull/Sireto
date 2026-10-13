@@ -19271,3 +19271,47 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Shards préservés, recettes/model/source identiques. Aucune métrique nouvelle
   avant les six sorties complètes. V140 n'est pas créé ou lancé faute de
   blocage disque réel. Score global mesuré toujours504/526.
+
+#### Jalon 23:03 UTC — couverture indépendante et supervision TRAIN
+
+- V129 couverture query-only `6445f206`, session29436 exit0 réel : 41 requêtes
+  ont un nom OSM selon la règle déjà figée, 123 une adresse numéro/rue exacte
+  dont24 multi-objets. Ni ces possibilités de preuves, ni le nombre d'objets
+  ne sont des gains recall. Projection lossless POIs/adresses481MiB,
+  session22397 exit0 ; V132 reste lié au contexte original1,64GiB.
+- Audit d'ancrage sans GT `0c5e0a7f`, root
+  `v129/independent_anchor_audit_20261014_a`, session38503 exit0,
+  4,54s/418MiB. Sur60 sansBAN compatible :55 communes actuelles +1 commune
+  déléguée routée par table officielle,4 non routées ;29 avec objets déjà
+  extraits dans leur commune,0 nom complet,0 maison exacte,6 voies exactes.
+  Contours100m et sommet représentatif des routes, pas intersection exhaustive
+  ni position maison. Ce résultat montre la limite du source_e limité aux
+  voisinages BAN ; il n'est pas une seconde localisation nationale complète.
+- Préparation complémentaire autorisée **V141 BANO source=OSM seulement**,
+  module `embeddinggemma2_v141_bano_osm_source.py`, root
+  `v141/bano_osm_20261013_night_a`, archives internes dédiées
+  `/Users/nathanjullia/Documents/Projets/SIRETO/tmp/bano_public_20261013_lZ8b88`.
+  Tous106 lots France publiés, aucune sélection par les ratés. Schéma CSV
+  huit colonnes sans header vérifié. JSON.gz rejetté : provenance supprimée.
+  CAD/C+O/OD/O+O exclus du canal indépendant ; sourceOSM ne garantit toutefois
+  pas l'absence d'import historique BAN. Sources mixtes non comptées deux fois.
+  Marge réseau relevée de1 à2,5GiB pour CSV~1,91GiB, éviter une complexification
+  SHP inutile ; Mac/CATNAT seulement, aucun coût extérieur. Staging interne
+  pour préserver marge80 encore active V139 ; index/contextes surCATNAT,
+  réserve40GiB/RSS1,5GiB/free25%/threads1/temp32GiB, prépa stop00:00UTC.
+  Aucun nouveau worker retrieval/gradient ; recettes V132/V139 inchangées.
+  Future source actuelle communautaire diagnostique, aucun gain annoncé.
+- Audit TRAIN scellé `v130/train_supervision_20261014_night/report.json`,
+  SHA256 `792734dd2c157cb26af8ec3aaf280fae476b524e2195c8991e0e47f427b69ecc`.
+  RéutiliseV104/V105/V2manifest, pas nouveau scan inutile : aucune troncature
+  silencieuse512,354 vues SITE supplémentaires dans tout le pack seulement.
+  Nom seul1148/15035 lignes ambiguës entre SIREN, adresse complète0 conflit
+  exact ; best1000 :10 négatifs documentIDENTITY indiscernables non masqués,
+  SITE0 exact. Masquer l'indiscernabilité ne fusionne pas les entités ni les
+  labels ; multi-positifs exacts exigeraient une provenance propre. MIL vise
+  alignement/couverture des vues, pas un passage automatique à1024tokens.
+  Aucun gain prouvé ou nouveau training justifié par ces seuls constats.
+- V139 RNA526/526 ownedexit0(pid98904), BANATIC526/526 ownedexit0(pid540).
+  Supplier own-site en cours, puis temporal/address/MAX. Six sorties/exits
+  toujours exigés avant labels. V132 run reste en attente ; modèle, sources
+  actives et labels inchangés, échéance05:06:08UTC conservée.
