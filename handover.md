@@ -18504,3 +18504,58 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Lookup GT strictement label-side après scellement, aucun input de recherche.
 - Aucun gate99,2 franchi, aucune promotion. BAN/primaires additions restent
   diagnostic-only. Deadline1791870324 inchangée, pasunit tests/dépense/push.
+
+### 13 octobre 2026 05:10 Paris — Adresse reprise exactement ; hypothèse siège et RNA
+
+- Lecture des états, pas duplication : V88 génération495/526 à05:06, aucun
+  report complet à05:10. Supervisor6856/worker7410, session11815 actifs.
+- V89prepare COMPLETE526owned0, minage375TRAIN COMPLETE ; fit arrêté sur
+  TypeError(link None), car glob inner baselines incluait fichiers.seal.json.
+  Aucun nouveau coefficient accepté avant cet échec. Calibrate10026 owned1,
+  session2756 collectée exit1. Historique et matrices31GiB conservés.
+- Reprise V94 `172a7e99`, scripts/embeddinggemma2_v94_coherent_address_recovery.py,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v94/coherent_address_recovery_20261013_a`,
+  session23646. Nouvelle namespace/code, science/valeurs/ordre des375paires/
+  contrôle151/assignments/coefficientsold28/L2/deadline IDENTIQUES V89 ; zéro
+  remine/reprepare. Reprise exacte shards parliens et bindinghashes, filtre
+  metadata.seal.json dansglob. Prepare12276owned0, calibration12297owned0,
+  génération active66/526 à05:06. Troisfeaturesadresse maintenant apprises,
+  baselines imbriquées doublémentpurged reprises V78. Pas labels de nouvelles
+  générations ouverts, pas scorepartiel ni comparaisonFT isolée.
+- Hypothèse indépendante V95 `b7d73976`,
+  scripts/embeddinggemma2_v95_parent_headquarters_context.py,
+  root `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v95/parent_headquarters_context_20261013_a`,
+  session86080, prépare13612 COMPLETE526owned0 puiscalibration fraîche375.
+  booléen explicite etablissementSiege publicO + quatre interactionsparent
+  identité/portfolio/geographie. Jamais ordinal SIRET ni adresse/point/autre
+  enseigne d'une filiale. Pas choix forcé siège, non-sièges/fermés restent
+  admissibles. OldV32exact, residualTRAIN offsets imbriqués, encoder gelé.
+  CompressionNPZ sansperte (pas matrices réécrites/historiques). À05:06 cal11/375.
+  Le docstring hérité mentionne l'adresse, MAIS recette/cinqcolonnes effectives
+  définissent EXPLICITEMENT contextePARENT/SIEGE, pas nouvelle preuveadresse.
+- V96 `bc99a1ce`, script embeddinggemma2_v96_paired_context_address_hq.py,
+  prête NONEXECUTEE. Attend V81/V88/V94/V95 ALL526+owned0+hash avant outcomes.
+  Publiera exact/SIREN/op/pondéré/caps100/runtimes/gainspertes/groupesSIREN,
+  bootstrap descriptivecommune ; aucune unionoracle/recettehybride posthoc.
+- RNA V91 `af2af0d0` miroirOFFICIEL publicdatagouv OCT1, archive entière
+  319261881bytes sealedSHA d7fcfd627b25c8a0a42ed8a7e1d546d5f3029cda20883913742e91fb599f00e5.
+  Join échoué ordreparamètresCOPY (session18850exit1), conservé. V93 `f8532d38`
+  reprise NOMMÉE SQL sansredownload, session51364exit0,
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v93/postcutoff_rna_join_20261013_a`.
+  2 314 908RNArows,1 100 198SIRENpublics joints/1 093 821RNAIDs. NamesSHA
+  1f0c89e651c119bb4d70ee49c9268df98774a3fdb1e1e4d54ef06c80671e810e.
+  POSTCUTOFF/mixdates : source_eligibility=false, AUCUNinput V88/V94/V95.
+  titre_court est fréquemment titre tronquéavec..., PASun sigle à présenter
+  commealias complet. EBSNsource contient titre développéNEVERS, pas EBSN
+  explicitement ; pasprétendrerattrapage. Aucuncontact/person/adresseimporté.
+- Audit officielrivals V92 `107bce61`, session9036exit0,
+  `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v92/official_rival_audit_20261013_a`.
+  Tous26ratés retenus, deuxP nonbackfillés. CONVERGENCEMEDIAS :top1 naturel
+  48190475300029 a nom historique ET199RUEHELENEBОUCHER, autre propriétaire
+  que GT39900947100018(INOX,184CHEDESCIGALES). BODACC2008publication primaire
+  corrobore CONVERGENCE481904753 à199 ; 2011/2012 avis montrent domestications
+  chezConvergence au même site. Un rival documentaire est raison deREVUE,
+  PASpreuve GTerroné. Aucunlabelmodifié/retiré ni aliasGTcréé.
+- Ressourcesréelles free72%level1 observé, disqueCATNAT110GiB libres,
+  seuil80 conservé ; neufdirtyintactes. Folds0/1/test4323 etavalgelés.
+  Deadline1791870324 reste07:45:24Paris, pas prolongation ni nouvelagenrextérieur.
