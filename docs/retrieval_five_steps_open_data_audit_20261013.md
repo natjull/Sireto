@@ -5,12 +5,20 @@ Mandat humain renouvelé le 13 octobre 2026. Ce document complète le
 ses budgets, ses automatisations ou les jeux fermés. Il distingue preuve
 documentaire, préparation de source et amélioration mesurée.
 
-## Conclusion provisoire : la priorité est l'information attribuée au bon sujet
+## Conclusion : la priorité est l'information attribuée au bon sujet
 
 La référence V99 retrouve **503/526 SIRET exacts, soit 95,6274 % brut et
 94,7101 % pondéré**. Ce pilote de développement est consommé ; il ne certifie
 ni la performance nationale ni les SLO. Huit gains sans perte par rapport
 à V32 sont réels sur ce panel, mais ne suffisent pas à atteindre 99,2 %.
+
+**Limite supplémentaire importante : le report V99 porte explicitement
+`DIAGNOSTIC_ONLY_NEW_PRIMARY_SOURCES_AND_BAN_SCORE_INELIGIBLE`.** Ses nouvelles
+sources primaires et le score BAN ne sont pas admis par la politique du
+benchmark historique. V115 hérite de cette limite : même un gain apparié
+ne sera pas un score contractuellement certifié au cutoff. La confirmation
+devra reconstruire une recette admissible, ou faire autoriser un nouveau
+contrat temporel sans réécrire les résultats historiques.
 
 La direction proposée n'est pas de remplacer Gemma par un modèle plus gros.
 Elle est de représenter séparément les **noms propres du site**, les **noms
@@ -21,8 +29,12 @@ collecteur national de 100 SIRET, sans créer un pool fixe à reclasser.
 
 La première ablation complète de ce mandat ajoute seulement le contexte
 d'activité historique BODACC à V99, avec modèles et coefficients figés.
-Son résultat sera inscrit ci-dessous après les 526 sorties et l'exit possédé.
-Les autres nouvelles sources ne sont pas encore des gains de recall.
+Elle retrouve **504/526 exacts : 95,8175 % brut et 94,7553 % pondéré**,
+avec **un gain, zéro perte**. Elle récupère BLANCHISSERIE, pas les enseignes
+manquantes. Les autres nouvelles sources ne sont pas encore des gains.
+Il reste 22 ratés : pour atteindre 99,2 % brut sur ce même panel, il faudrait
+encore en récupérer au moins 18 sans perte. Même ce résultat ne certifierait
+pas la généralisation ni l'ensemble des gates.
 
 ## 1. Diagnostic exhaustif des 23 ratés
 
@@ -247,9 +259,9 @@ titulaire ; il ne devient pas son nom propre.
 
 ## Ordre d'action et critères d'arrêt
 
-1. Terminer et comparer V115 à V99 sur les 526 sorties complètes. Si le
-   contexte apporte surtout des concurrents ou des pertes, ne pas élargir
-   son poids pour sauver des exemples connus.
+1. V115 est terminé : contexte activité utile mais marginal, à conserver
+   comme hypothèse de développement, pas comme réponse principale au gap.
+   Ne pas élargir son poids pour sauver les exemples encore connus.
 2. Prioriser **les ponts publiés qui ajoutent réellement une information** :
    enseigne–exploitant et relation publique/groupement. Chaque extraction
    doit publier couverture, subjectivité et temporalité, puis une ablation
@@ -264,7 +276,45 @@ titulaire ; il ne devient pas son nom propre.
 
 ### Résultat du run complet V115
 
-En cours à la rédaction initiale : aucune métrique partielle publiée.
+Les 526 sorties ont été scellées, génération possédée exit 0 et parent
+session 73659 terminé exit 0. V121 vérifie les deux générations complètes,
+leur périmètre, les modèles/calibrateurs/index/panel identiques et les poids
+de chaque unité avant de lire les outcomes. Aucun recall partiel utilisé.
+Contrôle de sortie supplémentaire : 526 requêtes, exactement 100 références
+par requête, aucun doublon SIRET dans une sortie.
+
+| Mesure | V99 | V115 activité |
+|---|---:|---:|
+| SIRET exact | 503/526 | **504/526** |
+| Recall exact brut | 95,6274 % | **95,8175 %** |
+| Recall exact pondéré | 94,7101 % | **94,7553 %** |
+| SIREN | 507/526 | 508/526 |
+| Opérationnel | 504/526 | 505/526 |
+| Wilson 95 % exact brut | [93,5243 ; 97,0689] % | [93,7487 ; 97,2219] % |
+| p50 requête observé | 4,875 s | 5,754 s |
+| p95 requête observé | 11,889 s | 13,392 s |
+| p99 requête observé | 13,450 s | 17,534 s |
+
+Gain exact : requête 1329, BLANCHISSERIE, SIREN 533956942. Aucune perte
+exacte ; un groupe gagné. Gain pondéré **+0,0452 point**. Le bootstrap
+apparié est dégénéré car le seul changement se trouve dans la strate SMALL
+entièrement échantillonnée ; cela ne donne aucune certitude sur de futurs CRM.
+Les communes DENSE restent à **101/111**. L'ajout ne réduit donc pas notre
+principal foyer d'erreurs pondérées.
+
+Les temps excluent la préparation one-shot, ne contrôlent pas froid/chaud
+et ne valident pas les SLO. Les reprises dues au garde RSS sont conservées
+dans les logs/exits ; la projection par requête a évité le chargement global
+du JSON sans changer les références ni les scores.
+
+Le report V115 n'exporte pas le champ `eligibility` de V99 : **ce champ
+manquant n'est pas une admission**. La présente comparaison reste explicitement
+diagnostique, compte tenu des sources et du score BAN hérités de V99.
+Aucun contrat historique modifié, aucun dégel serving/aval.
+
+Décision : **PIVOT_GENERATION**, pas READY_FOR_FOLD1. Le résultat est favorable
+à un canal fonctionnel faible, mais insuffisant pour justifier une nouvelle
+campagne de fine-tuning centrée sur le texte d'activité seul.
 
 ## Traçabilité
 
@@ -274,6 +324,7 @@ En cours à la rédaction initiale : aucune métrique partielle publiée.
 - DECP : `f93772d4`, parseur réel `ece44078`, correction syntaxe `62c2a141`.
 - Sites sectoriels : `5976c505` ; API BANATIC : `6975d167`.
 - Archive du rapport Cegedim : `f7b71fa1`.
+- Note cinq étapes et protocole apparié V121 : `52568389`.
 
 Artefacts immuables sous `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2`, roots
 V111 à V120 datés `20261013_a`. Chaque source possède son manifeste/hashes
