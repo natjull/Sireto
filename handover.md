@@ -18191,7 +18191,7 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   93,4818% pondéré contre93,6717% V32 : huit gains, cinq pertes, donc PAS de
   promotion. SIREN500, opérationnel498 ; Wilson brut95%[92,4141;96,2917].
   Latence p50/p95/p99=4,861/10,497/12,344s. ReportSHA
-  03c24169fc42d4b8c33caf190b1a8a6cf6081f87e25a832828e3.
+  03c24169fc42d4b8c33caf190b1a8d173221036a8a6cf6081f87e25a832828e3.
 - V68 (`46d7e33d`) COMPLETE : session25698 collectée exit0, génération finale
   PID80364 owned exit0. Exact492/526 (93,5361% brut),93,0957% pondéré :
   un gain, quatre pertes vsV32, PAS de promotion. SIREN496, opérationnel493,
