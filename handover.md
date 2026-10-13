@@ -19472,3 +19472,20 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   variantes pré-déclarées ; préparation déjà exit0 réel sautée. Un seul
   natif actif, aucun recalcul historique V140. Troisisolées V134 attendent
   init aprèsV143 complet avant toute éventuelle réutilisation prouvée.
+
+- Audit causal post-seal `2845d5c5`,
+  `v140/source_outcome_audit_20261013_night/report.json`, exit0 réel :
+  EBSN/Nevers retrouve le titre RNA public par un initialisme générique,
+  deux propriétaires nationaux donc corroboration admin nécessaire,
+  incrément0,4617/rang24. NAOS/Villeneuve : relation fournisseur->client et
+  localisation propre du client, incrément0,3778/rang64 ; temporal retrouve
+  le même SIRET/rang65, donc pas un troisième gain à additionner.
+  Les deux gains sont DENSE ; aucun autre segment géographique/fold2 amélioré.
+  NAOS appartient à un panel ancien et à un groupe de contrôle du checkpoint,
+  EBSN non ; tous deux restent développement consommé, pas test indépendant.
+- Continuité adresse gagne seulement un SIREN, pas le SIRET exact ni
+  l'opérationnel ; la cible label conserve son adresse propre différente,
+  aucune adresse/XY copiée. Aucun label erroné démontré sur ces deux gains,
+  aucune correction ou suppression. Direction d'étude : noms officiels
+  désambiguïsés et relations typées couplées au site réel, pas quotasparents
+  ni votes additionnels arbitraires. Poids/variantes géographiques inchangés.
