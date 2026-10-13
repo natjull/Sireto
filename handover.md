@@ -19315,3 +19315,53 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Supplier own-site en cours, puis temporal/address/MAX. Six sorties/exits
   toujours exigés avant labels. V132 run reste en attente ; modèle, sources
   actives et labels inchangés, échéance05:06:08UTC conservée.
+
+#### Jalon 23:18 UTC — source nationale sans seed BAN, pas encore de nouveau recall
+
+- Crossing disque hérité80 réel :79,976GiB libres, V139 en attente de garde.
+  Continuation V140 `73d8b0c9`, module
+  `embeddinggemma2_v140_disk_continuation.py`, root
+  `v140/structural_native_disk_20261013_night`, session96401,
+  parent4909/temporal4912 vérifiés à23:13. Migration51903 exit0 réel : trois
+  générations RNA/BANATIC/supplier own complètes +289shards temporal copiés
+  byte-identiques ; même science, seul reserve80->40 et guard historique
+  aligné dans le processus, code historique intact. V139 parent96829 arrêté
+  vérifié/session64021 exit1 possédé et volontaire, dernier enfant4222 exit75.
+  Aucun calcul dupliqué ou label nouveau ouvert.
+- V141 source BANO complète `715bfc1d`, module
+  `embeddinggemma2_v141_bano_quarantined_source.py`, root
+  `v141/bano_osm_20261013_night_d`, session81818 **exit0 réel**.
+  generation SHA83633ee985e11bd78ce9d02846d64a5adab3849ca46be573d90a9ad39522266a.
+  Archive producteur `full.csv.gz`335708454octets, SHA
+  bdb8416d4fc5ef1a629c8381e3b2a1ca14e06935a2c661070ea9bbab303be59c,
+  LastModified2026-10-13T06:01:04GMT, CRCgzip complet validé. Pas110appels
+  départementaux, scope national entier ; dates lots12/13 non homogènes,
+  égalité à leur union NON démontrée. Archives internes conservées.
+- 26559056records CSV bruts, dont3 fragments mal sérialisés mis en quarantaine
+  par règle uniforme !=8champs, maximum100/taux1e-5 déclarés. **Aucune adresse
+  reconstruite à la main ou fusionnée**, aucun label retiré/corrigé.
+  12125250adressesOSM indexées,14433803BAN exclues. Statut explicite
+  COMPLETE_SCAN_WITH_QUARANTINE_NATIONAL_BANO_OSM_ALL526_CONTEXTS, pas
+  exhaustivité de chaque adresse. Namespace_a cardinalité106 versus110,
+  _b codeBAN producteur inattendu, _c ligneCSV malformée sont préservés avec
+  exits1 ; codes `c554d76d`,`b02b0630`,`5a667c8b`,`6ae25087` historiques.
+- Prépa128,413s/pic316MiB, index1,66GiB/context6,4MiB. Toutes526 représentées,
+  321nuages de rue,205numéros exacts,1requête multi-positions maison. Sur60
+  sansBANcompatible :5rues/1numéro exact, pas5gains de recall. Pas de point
+  BAN comme condition d'entrée ; indépendance historiqueOSM/BAN non garantie.
+  Parent->communes déléguées non expansé, positions non certifiées comme
+  entrées ; outre-mer/conformitéL93 publiés, pas retrait du dénominateur.
+- Complément V142 pré-déclaré **avant tout nouveau outcome**, code `68001040`,
+  module `embeddinggemma2_v142_bano_native_ablation.py`, root futur
+  `v142/bano_native_20261013_night`. Deux variantes : BANOgeo seule versusV115
+  et primaire MAX toutes nouvelles sources +BANO. Même51features/58coefficients,
+  pointsmaison exacts compatibles tous conservés sinon nuagefaible de rue,
+  qualitémax(old,.5/(1+d/300)), mêmes champs5/6/7/16/17/19, MAX des incréments
+  leaf corrélés et MAX RNA/BANATICowner. Pas centroidmaison, fit, pool ou
+  reranking ; deux générations/exits0 ALL526 avant labels, publicmaskeO/uO.
+  V132/V134 complets requis avantinit. Code statique revu, import/--help
+  seulement ; **aucun init/prepare/run**. Attribution incrémentale versusV134
+  demandée PRÉinit en plus deV115, pour ne pas attribuer des gains hérités àBANO.
+- V140 temporal497/526 à23:16, autres sorties prévues inchangées. V132 run
+  toujours en attente du seul worker natif. Score mesuré reste504/526.
+  Jeux fermés, labels, downstream/serving inchangés ; fin05:06:08UTC.
