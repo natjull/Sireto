@@ -53,7 +53,7 @@ def initialize(out):
     if g['status']!='COMPLETE_SEALED_ALL526' or ex['exit_code'] or not ex['own_child_exit_confirmed']:
         raise ValueError('Whole owned frozen baseline')
     verify(g['outputs'])
-    out.mkdir();(out/'calibration').mkdir();(out/'spill').mkdir()
+    out.mkdir(parents=True);(out/'calibration').mkdir();(out/'spill').mkdir()
     io.write(out/'recipe.json',RECIPE)
     launch=dict(io.read(prior/'launch.json'),implementation=record(Path(__file__)),
         recipe=record(out/'recipe.json'),created_unix=time.time(),deadline_unix=time.time()+6*3600,
