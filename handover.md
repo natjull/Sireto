@@ -19611,3 +19611,39 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   URLproducteur : `https://data.economie.gouv.fr/api/datasets/1.0/topo-fichier-des-entites-topographiques/attachments/description_fichier_topo_202602pdf/`.
   Audit schémas complémentaires UAMISSIONS/STRUCTURES/COMPETENCES lancé
   sansGT/nomCRM/contacts/personnes, documentaire borné, pas nouveau retrieval.
+
+#### Jalon 01:20 UTC — protection science et corrections documentaires
+
+- Directive utilisateur réaffirmée : aucun label corrigé, aucun alias ou règle
+  qid spécifique ; les familles pré-déclarées restent figées. ALL526 reste du
+  développement consommé, pas une certification indépendante. Jeux fermés,
+  modèles aval et encoder inchangés. V143 primaire OSM+RNA encore actif,
+ 420/526 à01:19 ; pas métrique partielle, pas calcul natif doublé.
+- Correction du jalon00:48 : STREETV17 contient **douze**, pas treize,
+  développements. Le PDF INSEE ancien est introuvable au fetch actuel(404),
+  le RIL2024 renvoie500 ; une nomenclature exhaustive actuelle n'est pas
+  validée. Aucun normalizer actif modifié.
+- V149 `d500bead`, metadata DGFiP complète/exit0 : TOPO7940051entités sansXY,
+  STRUCTURES59305articles/45champs avec SIRET et parentsUA, exclusivement
+  unités fiscales ; MISSIONS494774/COMPETENCES40809709 décrivent compétences,
+  **pas localisation ni identité**. ManifestSHA
+  df064749637052f59adc5e2175046540b53b867acf03dcdd646997fab1f0646e.
+- Addendum V149 `5b8203ec`/`de3134ea`, session2977 exit0 réel : sept requêtes
+  agrégées558octets, aucune ligne nominative téléchargée.318articles ont
+  liens_fonctionnels/codes_type renseignés,6035unSIRET nonvide/nonzero ; ni
+  unicité ni sémantique des liens certifiées. Notice2024 contredite par
+  schéma2026 : ne pas prétendre champs absents. Aucune activation/crossjoin,
+  UArecodification n'est pas succession SIRET. Source actuelle postcutoff.
+- V151 `8f8fced0`, session98524 exit0 réel,7,19s : contexte ACTIVITY V115
+  est gated **INSEE OU CP**, pas XY/features5/42. L'hypothèse d'une annulation
+  par XYabsent est réfutée. Sur52451candidats publics déjà sortis seulement,
+ 670bonusactifs/105XYabsents/194geo5zero. Ce n'est pas audit exhaustif des
+  distracteurs nationaux. Sur18ratés publics,11annonces mais un seul littéral
+  CRM dans ACTIVITY : CUISINESSCHMIDT/CUISINES reçoit déjà bonus.158664 malgré
+  XYabsent, publicationA20200181917. Pas fallbackgéographique à coder sur
+  cette fausse cause, pas poids augmenté pour un cas connu.
+- Parser source strict :50141539annonces avantcutoff,4726704singleobject,
+ 4566786activités corporate éligibles publiques. Les autres lignes ne sont
+  pas démontrées porteuses d'information utile. Suite documentaire ciblée :
+  audit des structures multi-acteurs et rôles, sans mélange vendeur/acheteur,
+  sans nouveau score/label/alias ; recettes natives prévues inchangées.
