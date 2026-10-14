@@ -90,7 +90,15 @@ def main():
         owner = fact['label_siret'][:9]
         actual_public = next((r for r in fact['same_owner_public_sites_in_query_zone'] if r['siret'] == fact['label_siret']), None)
         if actual_public is None:
-            raise ValueError('Already-sealed both-public corporate target record required')
+            # V122 deliberately excludes EI from corporate-address hydration.
+            # Use ONLY the already-sealed both-public ledger's administrative
+            # code, never fill a person's name/profile from another source.
+            ledger_target = fact['previous_ledger']['public_target']
+            if ledger_target is None:
+                raise ValueError('Existing public label-side administrative record required')
+            actual_public = {k: ledger_target.get(k) for k in ('siret', 'siren', 'state', 'headquarters', 'insee')}
+            actual_public.update(postcode=None, existing_ledger_admin_only=True,
+                                 corporate_profile_not_reconstructed=True)
         q = fact['crm']
         admin = bool((q['crm_insee'] and actual_public['insee'] == q['crm_insee']) or
                      (q['crm_postcode'] and actual_public['postcode'] == q['crm_postcode']))
