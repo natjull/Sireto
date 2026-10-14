@@ -19524,3 +19524,32 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Le bonus BANATIC landais0,04254 relève de MEMBER_OF_GROUP/degré457,
   pas d'une identité juridique ; pas hausse de poids ciblée. Toujours zéro
   erreur humaine prouvée, zéro label corrigé et zéro jeu fermé ouvert.
+
+#### Jalon 00:20 UTC — faisabilité uniforme et source own-address estimée
+
+- Audit V144 `169ceb75`, session8205 exit0 réel,278,98s/RSSfinal220MiB :
+  ALL526/128313036références brutes->5430064sites distincts, endpoints et
+  SIRENE propre présents pour tous, quatre univers numériques vides conservés.
+  1770308sans XY existants compatibles,3659756avec ;1151676des manquants
+  sont publics eO/uO. Adresse propre BANOOSM exacte361330, position unique
+  compatible357962,865ambiguïtés,2503régions unsupported. Disponibilité de
+  20,22% des manquants complets, **pas gain recall**. Aucune donnée restaurée.
+  Rapport V144/feasibility.json
+  SHA01c7a6545a79f70f22cb15e1fbadf113145a7c75735e0e6befec4a6a13982f70.
+- Source sparse estimée V145 `84a247c5`, session12172/PID17818 **exit0 réel**,
+  61,54s/RSSfinal298MiB, recette figée avant scan/inputs réellement rehashés
+  avant et après/outputshashés par parent. ALL5430064/ALL526conservés.
+  **357962points propres** uniques, mêmes adresses primaires publiées eO/uO,
+  même numéro simple+suffixe+voie+INSEE (357961) ou unCPunique (1), projection
+  réelleL93/bornes contrôlées.865multipoints et2503régions refusés, aucune
+  sélection de point favorable ni centroid. Keysuint64/xyfloat64 triés,
+  WGS84/provenance par source_row/BANOid séparés (références techniques,
+  jamais features). Pas alias suffixe ajouté, CRM/parent/voisin non utilisés.
+- Manifest `v145/candidate_own_address_source_20261014_night/manifest.json`,
+  SHA6dfe63e9a6343f3ae0405b84a9a24588a5922ff007786eb6096f8a4deccb7126.
+  Rawpublic manquants :1138508XYbruts absents,13166outremer nonL93,
+  deuxINSEEabsents ; pas défaut de parsing brut supporté constaté.
+  Points explicitement **COMMUNITY_ESTIMATED_NOT_OFFICIAL_OWN_XY**, données
+  canoniques et modèles inchangés. Aucun retrieval/GT/outcome/jeu fermé lu.
+  Disponibilité seule n'autorise ni activation serving ni promesse de recall ;
+  projection éventuelle requerra une nouvelle hypothèse figée et une mesure.
