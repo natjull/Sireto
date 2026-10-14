@@ -1,0 +1,56 @@
+{
+  "status": "COMPLETE_STAGE_A_ALL526_SOURCE_COMPONENTS_NO_LABELS_NOT_RETRIEVAL",
+  "pre_scan_commit": "77796747",
+  "scope": "Whole July statistical-geolocation source followed by all526original query-specific numeric universes; no target lookup, old outcomes, closed sets, model scores or candidate collector. All current XY, source/index/model/labels remain unchanged. Separate study observation, not canonical coordinate repair or QCtransfer.",
+  "whole_source_lookup": {
+    "source_rows": 37575264,
+    "canonical_key_absent": 352,
+    "current_nonpublic_excluded": 15420,
+    "current_public_source_present": 37559492,
+    "other_or_missing_EPSG": 1053409,
+    "public_EPSG2154_supported_study_XY": 36506083,
+    "public_EPSG2154_supported_raw_QC11_or21": 29963867,
+    "source_duplicate_handling": "Duplicate SIRETfails; no last-wins selection. Invalid/noncanonical/nonpublic/unknown-quality/unsupported-CRS classified without reconstructing protected identities. Actual invalid keys0and publicunknownQC0.",
+    "representation": "Read original float32studyXY once into full canonical-key-aligned lookup:351,174,672bytesXY,43,896,946bytesQCflags,175,587,400bytesdistance_precision. Canonical keys are references, never model features. Protected/nonpublic rows keepNaNcoordinates/precision and zeroQCflags.",
+    "point_provenance": "July source attaches one observed/geocoded point to its own SIRET; no own-name/address alias, no site/parent transfer and no physical-site matching. Semantic date2026-07-01/publication2026-07-21 are not certificates that each point was remeasured on that date."
+  },
+  "all526_source_component": {
+    "queries": 526,
+    "numeric_reference_rows": 128313036,
+    "empty_original_numeric_universes": 4,
+    "existing_query_geometry_available": 466,
+    "query_BAN_declared_weak_count": 253,
+    "nonempty_numeric_universes_with_study_QC11_or21_support": 522,
+    "queries_with_geometry_and_study_QC11_or21_support": 466,
+    "study_QC11_or21_supported_reference_rows_across_queries": 97226132,
+    "curve": "Raw float64 .5/(1+distance_m/300), using unchanged V115/V17 query geometry and one July study point per SIRET. Query BANweak/uncertainty metadata are preserved, not probability weights or a newly tuned denominator.",
+    "eligibility": "Canonical key/currenteO_uO/source-present/strictEPSG2154/finite metropolitanL93/rawQC11or21/query geometry required only for this diagnostic component. All other original reference rows remain in their full universe withNaNcomponent; no denominator narrowing or fixed pool.",
+    "packed_format": "14bytes per original numeric row: study_raw float64,flagsuint8,rawQCuint8,distance_precisionfloat32. Flags preserve candidate/current/source/query availability separately. Source12/22/33 and missing/unknown quality remain explicit raw metadata, not certified precise support.",
+    "current_XY": "Current ownXYsupported flag is retained only for later attribution. The component uses separate studyXYeven when currentXYmissing; currentXYarray is neither filled nor overwritten. Quality follows the study observation, never attached to a different current coordinate.",
+    "ranks": "No source ranks against human targets calculated inStageA. Available source candidates/queries are source coverage, not exactSIRETrecall, gain or admission potential."
+  },
+  "official_quality_limits": {
+    "source_document": "https://static.data.gouv.fr/resources/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques/20260123-143212/documentation-geolocalisationetablissements-sirene-pouretudesstatistiques-v8.pdf",
+    "codes": "11/21identify an address number in the quality coding; they do not universally certify a precise current-house coordinate. For CFEcoordinates, the quality code can express fiscal/Sirene address coherence.12/22impute within a street;33imputes in the commune, not necessarily its centroid.",
+    "distance_precision": "Source metadata for positional uncertainty in designated imputation settings, not a universal certified radius or calibrated probability. No new use as a scoring feature.",
+    "independence": "Neither this study observation nor different/equal currentcoordinates establish BANindependence. Sources/as-of/physical-site semantics remain distinct. V170exact/Q32comparison is provenance context, never a target-selection rule here."
+  },
+  "resources_and_integrity": {
+    "elapsed_seconds": 163.06347891688347,
+    "peak_guarded_rss_bytes": 2332082176,
+    "disk_bytes": 2367142514,
+    "one_thread": true,
+    "guards": "RSS2.5GiB,900spreparation/1200stotal,40GiBdiskreserve,free>=25%,pressure0/1/2,nospill and04:55UTCcutoff. No retry or resource relaxation occurred. RSS is sampled at guarded boundaries, not continuously profiled.",
+    "hashes": "Full original study/canonical-input SHA256checked before source values; each original numericNPZfully verified before reading its complete keys. All526orderedkey hashes and components sealed; input fingerprints checked after the whole computation. No51field matrix hydration, model invocation or native collector.",
+    "observed_owned_exit": {"session_id": 82499, "completion_chunk": "66f064", "exit_code": 0}
+  },
+  "stageA_artifacts": {
+    "root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v171/separate_study_geo_components_20261014_night",
+    "source_manifest_sha256": "8bf0c6ea89070339503a27ef1deca83e16b5d0ac849f343da4b982554dacb4c6",
+    "lookup_manifest_sha256": "415e0baead2fea8c46bda16c4f8bc8dfb97b48028480ecdb792aba2de471db88",
+    "recipe_sha256": "36de28920c516acc0d626740fb2fae1cf33b2067f88467b42f198bc9673ca8b9",
+    "owned_exit_sha256": "de6cabb04e9f178b0839c2b99c62007a829a346a1a0d01739c01935225c21a7f",
+    "completion_sha256": "007eacf7b3c370f645ee635113782ee75ccbd7cb0433e4fa17f659cc67f19eca"
+  },
+  "StageB_authority_boundary": "Only after separate root authorization may a label-side process verify the completeStageAseal+owned0and compute ALL526and current19descriptive rank/tie intervals(best1+#greater,worst#greater-or-equal) at50/100. Protected targets skipped before identity lookup and all denominators retained. No ranks/GTopened here and no downstream retrieval improvement or score-causal explanation can be inferred from the future component potential."
+}
