@@ -1,0 +1,75 @@
+{
+  "status": "GLOBAL_QUERY_ONLY_COORDINATE_PROVENANCE_AND_FOOTER_AUDIT_NOT_SOURCE_SCAN_OR_RETRIEVAL",
+  "scope": "Static code, safe manifest projections, three Parquet schemas/footers and site_xy.npy header only; official documentation text. No coordinate/address/person/contact values, GT/member/outcome rows, joins, national source scans, new feature/weight, native scorer run, profiler, training or unit test. V145own-house/V147street-cloud source diagnostics are not repeated. No source added to the pipeline.",
+  "actual_xy_provenance": {
+    "filename": "Current V132/V142/V162 bind site_xy.npy, not a literal l93.npy found in these manifests.",
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/site_xy.npy",
+    "sha256_manifest": "bca5ebff49229f77a0ad2eb60ce3ef2af5631e33e3c790bb036bcdc07c248006",
+    "header_verified_without_values": {"shape": [43896818, 2], "dtype": "float64", "fortran_order": false, "numpy_header_version": [1, 0]},
+    "row_binding": "Sorted endpoint_keys.npy from V96 binds all43,896,818current official SIRET rows. V126 reads official XY into this exact membership without a candidate shortlist.",
+    "source": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+    "source_sha256_manifest": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99",
+    "source_fields": ["siret", "codeCommuneEtablissement", "coordonneeLambertAbscisseEtablissement", "coordonneeLambertOrdonneeEtablissement"],
+    "compiler": "src/xgb_matcher/retrieval_national_layout_v126.py:53-85 uses TRY_CAST, finite XY and metropolitan L93 bounds0<=X<=1300000,6000000<=Y<=7300000; rejects empty/97/98commune codes for this L93 representation. Unsupported/missing XY becomeNaN; all membership rows remain. Morton flooring is layout only, not quantized score coordinates.",
+    "existing_manifest_aggregate_not_recomputed": {"known_xy": 26951280, "unknown_xy": 16945538, "closed_sites_filtered": false, "unknown_geometry_sites_filtered": false},
+    "integrity_limit": "Historical V126 manifest says whole_raw_source_hash_verified=false and its source fingerprint full_input_content_sha256_verified=false; an existing32768row source-coordinate equality sample is not a full geographic-accuracy validation. This audit did not rescan/re-hash the2.2GBsource or702MBarray."
+  },
+  "local_source_quality_availability": {
+    "current_stock_footer": {
+      "rows": 43896818,
+      "row_groups": 355,
+      "present": ["coordonneeLambertAbscisseEtablissement", "coordonneeLambertOrdonneeEtablissement", "identifiantAdresseEtablissement", "codeCommuneEtablissement"],
+      "absent": ["QUALITE_GEO", "qualite_xy", "distance_precision", "geo_type", "geo_score", "geocoder_score", "EPSG_or_epsg"],
+      "interpretation": "Coordinate quality is not an available but silently dropped column of this exact StockEtablissement footer. identifiantAdresseEtablissement is available but not used by the inspected XY compiler/native geographical paths; it is an address/source binding, not an accuracy grade or predictive identifier feature."
+    },
+    "distinct_statistical_geolocation_footer": {
+      "path": "/Volumes/CATNAT_DATA/oubusiness/raw/sirene/geolocalisation_etablissements_2026-07-01.parquet",
+      "rows": 37575264,
+      "fields": ["siret", "x", "y", "qualite_xy", "epsg", "plg_qp24", "plg_iris", "plg_zus", "plg_qp15", "plg_qva", "plg_code_commune", "distance_precision", "qualite_qp24", "qualite_iris", "qualite_zus", "qualite_qp15", "qualite_qva", "y_latitude", "x_longitude"],
+      "types": "qualite_xy/epsg/georeferencing-quality codes are strings; x,y,distance_precision arefloat32 in this local producer Parquet footer.",
+      "receipt": {"source_id": "sirene_geo", "semantic_date": "2026-07-01", "publication_date": "2026-07-21", "retrieved_at": "2026-07-23T16:40:01.902914+00:00", "sha256": "15da7e02003fa4cb203929e0591a2cdbb0a41784c0ac4deb801f56eeb7bdf906"},
+      "current_use": "No reference to this source,qualite_xy or distance_precision exists in the inspected V126/V23/V132/V142/V162 geographic construction. It is a distinct source and month, not the provenance of site_xy.npy. Footer presence does not prove per-row values populated or quality distribution/recall coverage."
+    },
+    "local_nantes_silver_footer_only": {
+      "path": "/Volumes/CATNAT_DATA/oubusiness/silver/sirene_nantes_geo_2026-06-30.parquet",
+      "rows": 101568,
+      "quality_fields_present": ["qualite_xy", "distance_precision", "millesime", "source_id"],
+      "limit": "Confirms preservation of quality fields elsewhere, not a national corpus, a current scorer input or a validated join to AugustXY."
+    }
+  },
+  "official_documentation_mapping_not_applied": {
+    "primary_document": "https://static.data.gouv.fr/resources/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques/20260123-143212/documentation-geolocalisationetablissements-sirene-pouretudesstatistiques-v8.pdf",
+    "retrieval_note": "web fetch failed; the same official185KBPDF was read through curl|pdftotext, with no source-data download or local artifact written. Mapping is from this specific Sirene-statistical document, not copied from BPE quality categories.",
+    "qualite_xy_paraphrased": {
+      "11": "Voie certaine et numéro identifié",
+      "12": "Voie certaine mais position imputée dans la voie",
+      "21": "Voie probable et numéro identifié",
+      "22": "Voie probable avec position imputée dans la voie",
+      "33": "Voie non identifiée et position imputée dans la commune"
+    },
+    "distance_precision": "Maximum positioning error in metres for random placement within a street/locality; not a generic certified radius for everyXY or a probability.",
+    "zonage_quality": "qualite_iris/qp24/zus/qp15/qva describe zonal assignment reliability, with1certain,2probable,3imputed-or-undetermined. They are not another interchangeable site-coordinate accuracy scale.",
+    "CRS": "EPSG is a row/source projection descriptor; metropolitan Lambert93 is2154. Overseas projections differ and cannot be interpreted as metropolitanL93.",
+    "source_and_date_limits": "The statistical geocoder combines RIL, fiscal addresses/cadastre and BAN. Same-commune address corrections can update annually, versus monthly commune changes. It is published for statistical studies, separately from reference stocks. These facts concern this distinct source, not a proven row-level origin/error of current August stockXY.",
+    "no_centroid_claim": "Official code33 means random commune imputation, NOT necessarily the commune centroid. Codes12/22 mean random street placement, not a house point. No particular current candidate was inspected/classified, and no existing coordinate is declared false."
+  },
+  "query_uncertainty_versus_candidate_precision": {
+    "query_BAN": "src/xgb_matcher/retrieval_geo_v16.py:49-68,99-140 defines query-only ban_type_position,ban_source_position,ban_certification_commune,ban_street_similarity,ban_uncertainty_m andban_declared_weak. Radius proxy depends on BAN position type, unknown source, certification and street similarity; bounded5-1000m. This is explicitly a proxy, not an accuracy guarantee.",
+    "query_street_footprint": "V17 structural query fallback marks STREET_FOOTPRINT_NOT_HOUSE,weak=true and uses cloud spread in its query uncertainty/footprint. It does not grade candidate INSEE XY.",
+    "base_candidate_proximity": "V23:229-243 uses candidateXY from V126, query BANweak reliability0.5/1 and denominator300+query ban_uncertainty_m. Field name own_geo_quality is a computed proximity/support signal, NOT a stored INSEE geocoder quality indicator.",
+    "filled_missing_candidate_geography": "V68's separate5filled-own-geo fields can use source reliability and uncertainty from the BAN-derived missing-address atlas. Existing INSEE XY are not overwritten. That quality is not available for all original StockXY and does not make the main coordinate channel independently sourced.",
+    "V132_V142": "Public site+owner mask, membership, finiteXY and metropolitan bounds gate the candidate coordinate. Source-side OSM/BANO house/street compatibility is tracked, but the candidate coordinate'sprecision code is not read. New proximity0.5/(1+distance/300) cannot distinguish precise candidate location from a coarse location using currentXYtable alone.",
+    "V162_confirmed": "scripts/embeddinggemma2_v162_commune_suffix_native.py:107-132 and its launch bind the identical V126XY/publicmask/Stock source. It gates compatible query-source points and finite candidateXY, then uses frozenw6*0.5/(1+distance/300). No candidate qualite_xy/distance_precision input. This is the current embeddingnamespace, not the unrelated older compile_retrieval_v162_address_access workflow."
+  },
+  "stock_address_source_tag_and_independence": {
+    "primary_stock_document": "https://www.sirene.fr/static-resources/documentation/Sirene_4-Onglet-Adresses.pdf",
+    "verified_official_search_excerpt": "The official Sirene4address table documents identifiantAdresseEtablissement as an address identifier whose ending indicates B=BAN or C=Cadastre, or null. Full PDF open failed; no other suffix or exhaustive code mapping is asserted here.",
+    "meaning_limit": "An address source suffix is not a physical precision/error code and does not prove the exact process behind every publishedXY. Conversely, a stock containing officialXY is not thereby BAN-independent. Shared address/reference sources require provenance caution; no value-level suffix lookup was performed. Identifiers remain forbidden as model features."
+  },
+  "diagnostic_conclusion_and_next_authority_boundary": {
+    "result": "Candidate-coordinate precision is UNKNOWN in the actual currentXYrepresentation. Useful official quality fields exist in a separate pre-cutoff local statistical stock, but cannot be transferred to August stockXY solely by SIRET equality without coordinate/date/CRS/process alignment evidence.",
+    "future_data_quality_audit_only_if_authorized": "Define a full-source, label-blind provenance alignment contract before any join: source/as-of,coordinate equality or declared differences,CRS,quality-code version,public diffusion and missingness. Publish source-level availability/precision categories on the whole permitted population, with no targeted GTlookup. This is a future audit suggestion, not an authorized join/scan/feature or guaranteed retrieval gain.",
+    "not_done": "No existingXYchanged, no quality-weight map added, no protected identity reconstructed, no source catalog or scorer changed, no re-evaluation of V145/V147 misses and no coordinate-error/SLO/recall/READY claim."
+  },
+  "primary_dataset_page": "https://www.data.gouv.fr/datasets/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques"
+}
