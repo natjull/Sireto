@@ -1,0 +1,76 @@
+{
+  "metric": "SOURCE_COMPONENT_POTENTIAL_NOT_RETRIEVAL_RECALL",
+  "status": "COMPLETE_WHOLE_SOURCE_THEN_SEPARATE_POSTSEAL_LABEL_SIDE",
+  "recipe_code_commit_before_execution": "5a7f5378",
+  "method": {
+    "baseline": "Frozen numeric column5 only, original float32 precision/ties; not full learned score",
+    "bano": "Unchanged V142 compatible_points: all compatible exact-house points else all compatible street points, 1654 retained points across321/526 queries; raw float64 0.5/(1+minimum_distance_m/300), not MAX baseline",
+    "receiver": "Original full query-specific numeric universe, canonical key present, eO/uO and existing finite supported own L93. No parent/named context, coordinate/address/name fill or restored protected information.",
+    "rank": "best=1+number strictly greater; worst=number greater or equal among eligible candidates. No favorable SIRET/uint tie-break.",
+    "absence": "Protected, unsupported/missing own XY, not numeric and unavailable query components retain original ALL526 and miss-stratum denominators.",
+    "cap_interpretation": "Definitely<=cap iff worst<=cap; possibly<=cap iff best<=cap. These are pure geography component ranks, not a generated candidate pool or an oracle union."
+  },
+  "source_stage_before_labels": {
+    "all_queries": 526,
+    "empty_numeric_universes": 4,
+    "original_reference_rows": 128313036,
+    "packed_bytes": 1668170460,
+    "peak_guarded_rss_bytes": 1269088256,
+    "packed_representation": "13 bytes/row: float32 baseline5 + float64 raw BANO + uint8 flags; keys remain bound by exact original NPZ hash and ordered-key hash",
+    "threads": 1,
+    "label_outcome_reads": false,
+    "source_bindings_rehashed_before_and_after": true,
+    "real_owned_parent_exit": {"exit_code": 0, "session": 23313, "chunk": "ad6f89"},
+    "whole_source_manifest_sha256": "0efb4f4bf59653fb90857f3253a5450040027bde19d1c792b9aebbfaf5f179d7",
+    "source_report_sha256": "2676f050b32310dc686d20f6b072a54082e7a2799a1c2d7b6a988e7644ae88ed",
+    "recipe_sha256": "cbe8341621927aeb447cd780c07454c2f596ad3dcd83490ffedb781a0952551f"
+  },
+  "label_stage": {
+    "exhaustive_component_rehash_before_label_reads": true,
+    "real_owned_parent_exit": {"exit_code": 0, "session": 83415, "chunk": "bc5fd0"},
+    "manifest_sha256": "19b62cfb6926a4ac595172a5373a133f2beb6f86f20a814bc82d23a7cb623f7b",
+    "report_sha256": "a28160f11d67eaf6e5f4fb965394b9d40203c82c407d6be14f699fba7b88e501",
+    "current_stratum": "Existing complete V142 all_new_sources_max_bano exact misses, 19; not selected by source quality",
+    "protected": "Skipped before target ID lookup; no human private identity displayed"
+  },
+  "all526": {
+    "denominator": 526,
+    "public_supported_own_xy_in_query_numeric_universe": 421,
+    "own_xy_missing_or_unsupported": 99,
+    "not_in_query_numeric_universe": 4,
+    "protected_skip": 2,
+    "baseline5": {"available": 389, "absent": 137, "definitely_le50": 252, "possibly_le50": 276, "definitely_le100": 278, "possibly_le100": 289, "best_rank_median": 1, "worst_rank_median": 15},
+    "bano_raw": {"available": 278, "absent": 248, "definitely_le50": 150, "possibly_le50": 164, "definitely_le100": 182, "possibly_le100": 190, "best_rank_median": 9, "worst_rank_median": 38}
+  },
+  "V115_baseline_misses": {
+    "denominator": 22,
+    "public_supported_own_xy": 15,
+    "own_xy_missing_or_unsupported": 5,
+    "protected_skip": 2,
+    "baseline5": {"available": 15, "absent": 7, "definitely_le50": 2, "possibly_le50": 2, "definitely_le100": 2, "possibly_le100": 2, "best_rank_median": 1389, "worst_rank_median": 1456},
+    "bano_raw": {"available": 9, "absent": 13, "definitely_le50": 2, "possibly_le50": 2, "definitely_le100": 2, "possibly_le100": 2, "best_rank_median": 719, "worst_rank_median": 1017}
+  },
+  "current19_exact_misses": {
+    "denominator": 19,
+    "public_supported_own_xy": 12,
+    "own_xy_missing_or_unsupported": 5,
+    "protected_skip": 2,
+    "baseline5": {"available": 12, "absent": 7, "definitely_le50": 1, "possibly_le50": 1, "definitely_le100": 1, "possibly_le100": 1, "best_rank_median": 1496, "worst_rank_median": 1521},
+    "bano_raw": {"available": 7, "absent": 12, "definitely_le50": 2, "possibly_le50": 2, "definitely_le100": 2, "possibly_le100": 2, "best_rank_median": 163, "worst_rank_median": 165},
+    "bano_descriptive_partition": {"supported_own_xy_and_geography_rank_definitely_le50": 2, "supported_own_xy_bano_available_but_best_rank_gt100": 5, "supported_own_xy_but_no_compatible_bano_points": 5, "own_xy_missing_or_unsupported": 5, "protected_skipped": 2},
+    "public_technical_query_examples_only_no_identity_or_rule": [
+      {"query_id": "NEWCRM:1c6805a5f39956c1909201e3e901b453", "baseline5_interval": [1,49], "bano_raw_interval": [1,49], "interpretation": "Already geographically plausible even after retaining all49 tied references; current joint initial100 nevertheless lacks exact target."},
+      {"query_id": "NEWCRM:d6171348a29c3e0781b2dd602f54d06b", "baseline5_interval": [1549,1552], "bano_raw_interval": [7,10], "interpretation": "Independent published BANO address-point component is geographically plausible, while baseline owngeo component is not top100; current exact target still absent."}
+    ]
+  },
+  "conclusion": "A small admission/localization potential exists: two current misses are definitely top50 under raw published BANO geography, one already under baseline field5. This does not demonstrate a retrieval gain or an admissible replacement recipe. Most remaining misses have geography absent or far behind many other candidates; pure geography is generally ambiguous. Existing V142 observed zero gains remains unchanged.",
+  "limits": [
+    "No full native score/candidate competition causal attribution was recomputed; a component rank alone cannot prove how a new joint admission rule would behave.",
+    "No union of geography channels or target-selected points, no favorable tie resolution, no source/model/index/policy/label change.",
+    "Consumed ALL526 and inherited encoder/source-cutoff limitations persist; no national recall, Wilson gate, SLO, READY or label-error claim.",
+    "Only source/label-side diagnostic artifacts and isolated script/doc commits created; handover remains root-owned."
+  ],
+  "artifact_root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v157/geography_component_feasibility_20261014_night",
+  "source_then_label_reports": ["source_report.json", "source_manifest.json", "source_owned_tool_exit.json", "label_side/all526.json", "label_side/report.json", "label_side/manifest.json", "label_side/owned_tool_exit.json"],
+  "implementation_sha256": "292f86d14d302e0cb8e7f71cb24d605327e70d0565ab524ac22663c96da1e4b7"
+}
