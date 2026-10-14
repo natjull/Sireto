@@ -42,5 +42,5 @@
   "no_target_entered_source_constructor": true,
   "no_native_or_index_or_serving_or_label_or_model_change": true,
   "no_recall_gain_claim": true,
-  "decision_for_this_night": "PRESERVE_UNMEASURED_SOURCE_WITHOUT_NEW_NATIVE_RUN_JUSTIFIED_BY_CURRENT_REMAINING_CASES"
+  "recommendation_pending_root_decision": "PRESERVE_MEASURED_SOURCE_COVERAGE_NOT_NATIVE_RETRIEVAL_VALIDATED_NO_CURRENT_MISS_GAIN_EVIDENCE"
 }
