@@ -19746,3 +19746,26 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   **0/18couvert**, pareilau0/18V145exacthouse. Ce n'est pas absence desvoies
   partout enopendata, ni rejetutilité future des58584matches, ni preuve
   d'erreurlabel/recall. Aucun nouveau natif, matchingalternatif ou alias.
+
+#### Jalon 02:03 UTC — OSM mesuré, combinaison globale structurelle lancée
+
+- V143 `0728caba`, ALL7famille complète/scellée avant labels, session66160
+  owned parentexit0 réel/chunkc7ed9f ; receiptowned_tool_exit enregistré.
+  BaselineV115504/526 exact95,81749%/pondéré94,75533%, SIREN508/op505.
+  geometry_only identique(0/0). named_places_only etosm_max505/526 chacun,
+  un gain5130/zéroperte. rna_only505/526 gainEBSN/zéroperte. BANATIC504/526.
+- Primaire pré-déclaré osm_max_rna506/526 exact96,19772%, pondéré95,37113%,
+  SIREN510/op507, deuxgains/zéroperte vsV115 ; osm_max_rna_banatic identique.
+  RawWilson[94,2002%;97,5253%], bootstrappondéré approximatif, ni jeu neuf ni
+  national/99,2%/encoderfullOOF/SLO. Ne pas confondre 'gained' héritée de
+  l'évaluateur avec paired_vs_v115 : seuls paired ici comptent pour incrément.
+- V134 `139225e0`/`96765de3`/`7a30ca0d`/`ae7c3e05`, init réel exit0.
+  Trois variantes isolées inputéquivalentes transférées `d1ee87d6`, session
+ 49149exit0/chunk943db1, 526chacune byte-identiques ; aucun gen/exit copié,
+  runtimehistorique pas SLO nouveau. run4famille actif session29634 depuis
+ 02:02, parent/childcommandes suivies. Variante all_new_sources_max figée,
+  pas oracleunion de succès ni adaptation descoefficients. Pas label avant
+ 4générationscomplètes/childexits réels. ProchainefamilleV142BANOquery inchangée.
+- Audit causal isolé du seulnouveaugainOSM5130 demandé après famillecomplète,
+  géographie/noms/source/control/segments, pas retouche ciblée. Labels,
+  sourcecutoff, adversaires, dénominateur et modèlesaval inchangés.
