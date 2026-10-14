@@ -19553,3 +19553,30 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   canoniques et modèles inchangés. Aucun retrieval/GT/outcome/jeu fermé lu.
   Disponibilité seule n'autorise ni activation serving ni promesse de recall ;
   projection éventuelle requerra une nouvelle hypothèse figée et une mesure.
+
+#### Jalon 00:37 UTC — plafond informatif vérifié avant nouveau run coûteux
+
+- Audit label-side **après sourceV145 complète et V140sixsorties complètes**
+  `2bb18a32`, exit0, `v145/target_coverage_diagnostic_20261014_night/report.json`.
+  Statuts publics vérifiés surALL526,524publics/deuxprotégés non interrogés.
+  Neuf vérités ont leur propre key dansV145, toutes déjà exactes sousV140.
+  **Zéro des18ratés publics restants couvert**. Aucune vérité transmise au
+  constructeur de source, aucune modification label/recette/dénominateur.
+- Hypothèse unique indépendante V146 `03492330`,
+  `embeddinggemma2_v146_own_address_hint.py`, **NON EXÉCUTÉE**, seul CLI/import
+  vérifié. Géométrie CRM/coefficients gelés ; ghint=.5*qrel/(1+d/(300+incertitude)),
+  delta contremax(feature5,42), seuls w12/w13/w14 et SITEinteractions,
+  MAXavecV134, pas propagationparent/coords canoniques. Aucun init/root/
+  prepare/score/run, aucun unit test. NOTE_NIGHT_ORDERING non prédictive.
+- Décision de calcul, pas de politique produit : ne pas dépenser~2h natif
+  pour espérer bonifier une cible absente de cette source SITEONLY. Possible
+  rétention future des neuf déjà-passées sousV134 non exclue ; micro-effets
+  de quantization/ties ne prouveraient pas apport informatif. V145357962points
+  et V146hypothèse conservés, **aucun rejet d'utilité générale** sur cette seule
+  population. Priorité V143 puisV134 puisV142BANOquery pré-déclarés inchangés.
+- Source-level audit supplémentaire V147, candidats publics sans XY/sans
+  numéro simple : disponibilité d'un nuage de points de leur propre voie/lieu
+  exact+commune BANOOSM, ALL5.43Mscope, zéro GT/CRMadresse/outcome, pas source
+  ponctuelle/canonical XY/native/fit. Multiplicité et étendue publiées,
+  jamais centroidmaison. Namespace neuf,1thread/RSS512. Aucune activation
+  déduite de disponibilité ; ce périmètre n'élargit pas les jeux ouverts.
