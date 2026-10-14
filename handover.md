@@ -19692,3 +19692,35 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   DuckDBdisque identiques, seul capRSS2GiB admis carnative8-10GiB etfree62%.
   Parentgarde réelle3s/free25/012/disk40/deadline05:06.14/19années terminées
   à01:35, aucune source partielle admise ni métrique/label/natif nouveau.
+
+#### Jalon 01:51 UTC — source BODACC directe complète, apport au gap non établi
+
+- V154_c a terminé19scans puis OOM DISTINCTtoken_owner128MiB, ownedexit1
+  conservé/peak815Mo. Reprise agrégats `de5b7f60`, source_d session52614exit0
+  réel/child35741exit0,77,48s sans reparse : base/progress19ans byte-identiques
+  migrés, mêmeSQL/parser/formule/cutoff/526, mémoireDuckDB1GiB/capRSS2GiB.
+  Peak2047852544octets, free/diskgardes non déclenchées. Jalon `5a9217a6`.
+- ALL50380026annonces/50141539avantcutoff,5450740activités propres corporate
+  diffusibles(nonEI),2632166ownersdenom/3848742owner-tokenpairs. ALL526shards,
+ 439queriescontext/8511428refs/max526876. GenerationSHA
+  db060d006a81a5a733088c6930f0c755bf8eb7d10211e0a5ca83315bf95fd4c9.
+  Provenance74Mo datepublication/édition/type/famille(si disponible quatreans,
+  sinonNULL), aucune identité/site/alias inféré, aucun label/sourcepartielle.
+- Audit postseal séparé `cb5d3db0`, session35423exit0 réel/9,31s, ALL526.
+ 512corporatediffusibles/12EI horsnouveausource/deuxprotégés skip, dénominateur
+  principal inchangé.257acteursdirects disponibles,35tokensCRMpositifs contre
+ 26V112 ;17nouveauxoldzero TOUSdéjàexactsV140, dont5contrôleencoder.18overlaps/
+ 8oldonly/23confidenceplusfortes. Deuxcompletsdansmêmeannonce déjàhits,
+  neufpositifs sansXY, zéroadminfalse : XYabsent n'annule pas ACTIVITY.
+- Restants20V140 :17corporate/1EI/deuxprotégés ;sixacteursavecactivité mais
+  seulCUISINESpartiel chezCUISINESSCHMIDT, confidence.077054 <ancien.080917,
+  publicationB202401282726. **Zéro nouveau supportpositif oldzero pourratés**.
+  Premier diagnostic_a classification1000 integer/string incorrecte préservé ;
+  correction_b seule éligibilité descriptive, aucunlabel/source/score changé.
+- ClarificationV151 : absence de mots vaut dossiersV52/champsACTIVITYV112,
+  pas totalité brutedesactivités personne. Cette lacune est maintenant lue
+  uniformément, mais aucun gainrecall mesuré. Source utile potentiellement
+  horspanel, pas rejetgénéral. Pas prioriténative cette nuit, pas fit/retouche
+  pourCUISINES. Hypothèsefuture unique : MAXcontextsV112/V154 avecw6/admin
+  inchangés, sansdoublevote ; nonexécutée/nonpromue. V143/V134/V142 prioritaires
+  inchangés. Aucun échec supprimé ni label corrigé, aucun jeufermé ouvert.
