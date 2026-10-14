@@ -19769,3 +19769,28 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Audit causal isolé du seulnouveaugainOSM5130 demandé après famillecomplète,
   géographie/noms/source/control/segments, pas retouche ciblée. Labels,
   sourcecutoff, adversaires, dénominateur et modèlesaval inchangés.
+
+#### Jalon 02:10 UTC — combinaison globale mesurée et famille BANO lancée
+
+- V134 session29634 ownedparentexit0 réel/chunk38f140 ; ALL4complètes avant
+  labels. supplier_own/temporal505/526, mêmegainNAOS/zéroperte. Continuité
+  adresse504/526 exact(0/0), SIREN509/oper505 ; pas erreurlabel corrigée.
+- all_new_sources_max **507/526 exact96,38783%**, pondéré95,67903%,
+  SIREN511/oper508, troisgains GEDIMAT5130/EBSN/NAOS, zéroperte vsV115.
+  RawWilson[94,42750%;97,67552%]. ReportprimaireSHA
+ 57e399dc82d51e9d3627c26071425f7fedf5cc6a814f26a1bef326fd4aaf261d.
+  Le gain RNA est partagé entreV140/V143, ne pas additionner deuxfois.
+  Ce sont sorties d'une recetteglobale figée, pas oracleunion parclient.
+- V142 `scripts/embeddinggemma2_v142_bano_native_ablation.py`, init réellement
+  exit0/chunk86c5a0. runactif session96527 depuis02:10, root
+  `v142/bano_native_20261013_night`. Deuxvariantespré-déclarées : bano_geo_only
+  puis primaireall_new_sources_max_bano, attribution appariée explicitevsV134
+  ETvsV115 aprèsdeuxgénérations526/owned0, aucun recallpartiel.
+  SourceV141_d existanteOSM-only entière/scellée réutilisée sansrescan,
+  nuagesstreet faibles/pascentroidhouse, même51features/58coefficients,
+  originalnumericuniverse/corpusnational/cap100/masquespublics, zérofit.
+  Threads1/RSS10GiB/free25/012/disk40, deadline05:06UTC inchangée.
+- GEDIMAT observé dans auditcausal en cours : SIREThumain public au rang55
+  avecsignalOSMnamed, géométrieseuleinsuffisante. Pas aliases/labels/coord
+  canoniques modifiés ; appartientauxgroupescontrôleencoder, paspristine.
+  Figures source/ranks définitives dans rapport séparé àterminer.
