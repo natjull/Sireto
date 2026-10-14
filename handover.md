@@ -19670,3 +19670,25 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   natif autorisé à ce stade ; sourcecomplète/scellée avant diagnosticlabel-side.
   C'est une lacune structurelle indépendante des cas ratés, pas une retouche
   spécifique de CUISINESSCHMIDT ou d'un autre client connu.
+
+#### Jalon 01:36 UTC — limites de preuve et extraction directe en cours
+
+- Mémo indépendant `732ad791`,
+  `docs/retrieval_scientific_validity_all526_20261014.json`, dix références
+  hashées, lecture documentaire uniquement. ALL526/405SIREN/295communes,
+  Kish343,67 ;151queries dans79groupes contrôlecheckpoint, aucune souscohorte
+  redevenue pristine. Comparaisons descriptives appariées seulement, ni
+  certification nationale, ni encoderfullOOF, ni SLO/READY_FOR_FOLD1.
+- Serving futur doit choisir un vecteur sans SIRENhuman et recalculer TOUS
+  les deltas sous ce vecteur avant l'unique collector100. Mean des cinq ou
+  fitglobal autorisé sont options non départagées, rien activé cette nuit.
+  Cohorte prospective indépendante pré-enregistrée après gel, strates/
+  groupes/date/asof et incertitude respectant le plan ; autorité humaine
+  nécessaire. Aucun962/4323/fold1 ouvert, pas réforme rétroactive des gates.
+- V154 `fbb05649`, source_a session83478exit1 réel avantpremièreannée,
+  RSS588Mo>cap512 ; source_b session88316exit1 réel BinderVIEWpreparedparameter.
+  Artefacts préservés, aucun complet revendiqué. Continuation `5d346884`,
+  source_c session30436/parent31561worker31562, sourceoriginale/science128MiB
+  DuckDBdisque identiques, seul capRSS2GiB admis carnative8-10GiB etfree62%.
+  Parentgarde réelle3s/free25/012/disk40/deadline05:06.14/19années terminées
+  à01:35, aucune source partielle admise ni métrique/label/natif nouveau.
