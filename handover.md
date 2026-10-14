@@ -19489,3 +19489,18 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   aucune correction ou suppression. Direction d'étude : noms officiels
   désambiguïsés et relations typées couplées au site réel, pas quotasparents
   ni votes additionnels arbitraires. Poids/variantes géographiques inchangés.
+
+#### Périmètre supplémentaire 00:05 UTC — coordonnées propres, audit sans GT
+
+- Sous-agent `candidate_own_address` explicitement scoped : faisabilité
+  seulement, ensemble query-only des références numériques des526 dédupliqué,
+  pas les seuls ratés. Chercher pour les sites publics eO/uO sans XY propres
+  une correspondance BANO sourceOSM avec leur **propre** numéro simple+suffixe,
+  voie et commune publiés. Pas adresse CRM substituée, parent/prédécesseur/
+  voisin hérité, non-diffusible restauré, centroidmaison ou interpolation.
+  Garder les multiples points comme ambiguïté ; couverture !=gain recall.
+- Namespace audit futur `v144/candidate_own_address_feasibility_20261014_night`,
+  threads1/RSS<=512MiB, aucun index/natif/fit ou source modifiée, aucun label/
+  outcome/jeu fermé lu. Première conclusion de faisabilité exigée avant
+  décision sur une nouvelle expérience pré-déclarée ; V143 recettes inchangées.
+  V143 geometry_only319/526/52nativement recalculées à00:05UTC, un seul natif.
