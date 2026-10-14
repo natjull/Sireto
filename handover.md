@@ -20062,3 +20062,6 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   après échéance05:06:08UTC/07:06:08Paris ni nouvelle nuit implicite.
   Tous artefacts/checkpoints préservés ; neuf modifications utilisateur
   étrangères et leurs untracked inchangés, aucun nettoyage/push/dépense.
+- 2026-10-14 — Nouveau brief lecture seule « site opérationnel » : contrat pré-mesure `docs/retrieval_site_operational_metric_contract_20261014.md`, commit `fb604665562cb9c4421d6a4ba740fddfae0e0a58` ; aucun nouveau run retrieval ni jeu fermé.
+- Commit résultats « feat: publish read-only CRM site operational metric on all526 » : auto-référence résoluble par `git log -1 --format=%H -- scripts/retrieval_site_operational_metric.py` ; script dédié et `docs/retrieval_site_operational_metric_result_20261014.{json,md}` (526 lignes query_id, folds, Wilson et Hájek).
+- Smoke réel `.venv/bin/python scripts/retrieval_site_operational_metric.py` : exact/SIREN/opérationnel 507/511/508 reproduits ; site 404/526, plats 100/200/500 m 325/373/413 ; 4/19 ratés promus, labels loin 86/507 (440 comparables, 67 non mesurables), 6,59 s, RSS gardée 308 Mio ; métrique secondaire, sources immuables, modifications étrangères intactes, aucun push.
