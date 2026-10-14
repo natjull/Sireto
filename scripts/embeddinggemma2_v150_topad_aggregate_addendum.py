@@ -3,6 +3,7 @@
 Addendum resolves the 2024 notice versus 2026 live-schema presence ambiguity.
 Two preceding diagnostic aggregate requests plus these seven stay below ten.
 """
+import argparse
 import hashlib
 import json
 from pathlib import Path
