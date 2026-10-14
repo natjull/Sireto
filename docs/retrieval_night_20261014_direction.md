@@ -8,6 +8,10 @@ trois gains distincts, zéro perte. Recall brut96,3878%, pondéré95,6790%.
 La vue SIREN est511/526 et l'équivalence opérationnelle508/526 ; elles ne
 remplacent pas le score exact. Il reste19 ratés.
 
+L'encodeur fine-tuné est resté gelé pendant cette nuit. Les gains portent
+sur les preuves accessibles au pipeline complet et leur combinaison ; ils
+ne démontrent pas une amélioration intrinsèque du modèle d'embeddings.
+
 Les trois gains viennent respectivement de lieux nommés OSM, de noms RNA et
 de mentions propres d'un fournisseur. La combinaison des preuves est faite
 avant un unique collecteur initial100, pas par reranking d'un pool2000/500.
