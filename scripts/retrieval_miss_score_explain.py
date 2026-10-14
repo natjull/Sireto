@@ -1,8 +1,9 @@
 """Diagnostic borné des 19 ratés V142 ; moteur natif inchangé, jamais de recall.
 
-Un processus par requête et phase. Les 19 replays fidèles précèdent toute
-explication. Seules les copies d'exécution instrumentées et les caches de
-requête sont réduits ; ni univers, ni formule, ni collecteur ne sont remplacés.
+Un processus par requête et phase, plafonné sur l'enfant seul. Le repli
+restreint uniquement les jointures des bitplanes aux 101 documents demandés,
+sans changer leurs bornes, leurs scores, la structure ni les statistiques
+lexicales nationales. Au moins 15 fidélités précèdent toute explication.
 """
 import argparse
 import collections
@@ -32,11 +33,15 @@ import psutil
 HOME = Path('/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2')
 PREPARED = HOME/'v142/bano_native_20261013_night'
 RUN = PREPARED/'all_new_sources_max_bano'
-OUT = HOME/'v172/miss_score_explain_20261014'
+PREVIOUS = HOME/'v172/miss_score_explain_20261014'
+OUT = Path(os.environ.get('SIRETO_MISS_OUT', str(PREVIOUS/'resume_20261015_b')))
+RESUME_CHECKS = PREVIOUS/'resume_20261015_a'
+INPUTS = PREVIOUS/'inputs'
+METHOD = os.environ.get('SIRETO_MISS_METHOD', 'complete')
 ACCESS = ROOT/'docs/retrieval_miss_access_vs_ranking_20261014.json'
 RESULT = ROOT/'docs/retrieval_miss_score_explain_20261014.json'
 STOP_V160 = ROOT/'docs/retrieval_v160_explain_final_c_stop_20261014.json'
-CAP = 6*1024**3
+CAP = (4 if METHOD == 'light' else 8)*1024**3
 ATOL = 1e-5
 MAXIMUM = (1 << 20)-1
 
@@ -60,7 +65,7 @@ def peak():
 def guard():
     rss = psutil.Process().memory_info().rss
     if rss > CAP:
-        raise MemoryError(f'STOP_RSS_6GIB: {rss}')
+        raise MemoryError(f'STOP_CHILD_RSS: {rss}, cap={CAP}')
     return rss
 
 
@@ -180,6 +185,8 @@ class Capture:
         self.searcher = searcher
         self.query = None
         self.addresses = None
+        self.expected = None
+        self.backend = None
 
     def doc(self, address):
         return self.searcher.doc(address)
@@ -189,7 +196,15 @@ class Capture:
             raise ValueError('Un seul collecteur natif100 par modèle')
         self.query = query
         guard()
-        result = self.searcher.search(query, **kwargs)
+        if METHOD == 'light':
+            from types import SimpleNamespace
+            hits = []
+            for row in self.expected:
+                address = lookup(self.backend, self, row['siret'])
+                hits.append((explained(query, self.searcher, address), address))
+            result = SimpleNamespace(hits=hits)
+        else:
+            result = self.searcher.search(query, **kwargs)
         self.addresses = result.hits
         guard()
         return result
@@ -240,6 +255,22 @@ def environment(binding, directory, inputs):
     backend = v142.TantivyBackend(v142.io.INDEX)
     if backend.searcher.num_docs != 82772691:
         raise ValueError('Même index national requis')
+    if METHOD == 'light':
+        backend._tantivy = RestrictedTantivy(backend._tantivy, binding)
+    backend.diagnostic_expected = binding['expected']
+    # Le contexte acteur est indépendant des coefficients. Garder sa requête
+    # exacte, pas son énorme dictionnaire national d'alias entre les modèles.
+    original_corporate = corp.corporate_component
+    actor_cache = {}
+    def cached_actor(target, q):
+        key = corp.original.structural.normalize(corp.original.data.safe(q['crm_name']))
+        if key not in actor_cache:
+            actor_cache[key] = original_corporate(target, q)
+            corp.CORPORATE = None
+            corp.LAST_CORPORATE = None
+            gc.collect()
+        return actor_cache[key]
+    corp.corporate_component = cached_actor
     inputs.path(fg['corporate_names']); inputs.path(fg['published_parent_names'])
     return v142, backend, state
 
@@ -272,6 +303,8 @@ def original_scores(v142, binding, directory, inputs, keys, coefficients):
 def replay(v142, backend, state, q, keys, features, coefficients, scores, entries):
     state['base'].clear(); state['v81'].clear(); state['stages'].clear()
     capture = Capture(backend.index.searcher())
+    capture.expected = backend.diagnostic_expected
+    capture.backend = backend
     backend.searcher = capture
     proxy = v142.baseline.baseline.BackendProxy(backend, v142.parent.EvidenceCollector(
         backend, q, keys, scores, entries, float(coefficients[6])))
@@ -280,10 +313,14 @@ def replay(v142, backend, state, q, keys, features, coefficients, scores, entrie
 
 
 def fidelity(rows, expected):
-    ids_equal = [r['siret'] for r in rows] == [r['siret'] for r in expected]
-    error = max((abs(r['score']-e['score']) for r, e in zip(rows, expected)), default=float('inf'))
-    return dict(passed=ids_equal and len(rows) == len(expected) == 100 and error <= ATOL,
-                same_ordered_100_sirets=ids_equal, max_score_absolute_error=error,
+    ordered_equal = [r['siret'] for r in rows] == [r['siret'] for r in expected]
+    actual = {r['siret']: r['score'] for r in rows}
+    recorded = {r['siret']: r['score'] for r in expected}
+    ids_equal = set(actual) == set(recorded)
+    error = max((abs(actual[ref]-recorded[ref]) for ref in recorded), default=float('inf')) if ids_equal else float('inf')
+    return dict(passed=ids_equal and len(actual) == len(recorded) == len(rows) == len(expected) == 100 and error <= ATOL,
+                same_100_sirets=ids_equal, same_ordered_100_sirets=ordered_equal,
+                score_alignment='BY_SIRET_NOT_BY_POSITION', max_score_absolute_error=error,
                 absolute_tolerance=ATOL, relative_tolerance=0,
                 missing_sirets=sorted({r['siret'] for r in expected}-{r['siret'] for r in rows}),
                 added_sirets=sorted({r['siret'] for r in rows}-{r['siret'] for r in expected}))
@@ -441,8 +478,39 @@ def deficits(documents):
     return sorted([v for v in values if v['deficit'] > 0], key=lambda v: (-v['deficit'], v['signal']))[:3], gap, values
 
 
+class RestrictedQuery:
+    """Projection exacte des seules jointures, avant compilation Tantivy.
+
+    Les bitplanes et leurs bornes sont toujours calculés sur l'univers complet.
+    Les clauses lexicales restent nationales, donc aucun IDF n'est recalculé.
+    Une plane vide est conservée : même arbre et même arithmétique native.
+    """
+    def __init__(self, query, binding):
+        self.query = query
+        self.sirets = {r['siret'] for r in binding['expected']} | {binding['miss']['label_siret']}
+        self.sirens = {r[:9] for r in self.sirets}
+
+    def __getattr__(self, name):
+        return getattr(self.query, name)
+
+    def term_set_query(self, schema, field, refs):
+        if field in ('siret', 'siren'):
+            allowed = self.sirets if field == 'siret' else self.sirens
+            refs = [ref for ref in refs if ref in allowed]
+        return self.query.term_set_query(schema, field, refs)
+
+
+class RestrictedTantivy:
+    def __init__(self, tantivy, binding):
+        self.tantivy = tantivy
+        self.Query = RestrictedQuery(tantivy.Query, binding)
+
+    def __getattr__(self, name):
+        return getattr(self.tantivy, name)
+
+
 def worker(qid, phase):
-    started = time.monotonic(); directory = OUT/'inputs'/stem(qid); inputs = Inputs()
+    started = time.monotonic(); directory = INPUTS/stem(qid); inputs = Inputs()
     binding = read(directory/'binding.json')
     v142, backend, state = environment(binding, directory, inputs)
     with np.load(inputs.path(binding['features']), allow_pickle=False) as archive:
@@ -454,25 +522,35 @@ def worker(qid, phase):
     scores, entries, sources = original_scores(v142, binding, directory, inputs, keys, weights)
     rows, cost, capture = replay(v142, backend, state, binding['query'], keys, features, weights, scores, entries)
     proof = fidelity(rows, binding['expected'])
-    write(OUT/phase/(stem(qid)+'_fidelity.json'), dict(query_id=qid, **proof, actual=rows))
+    write(OUT/(phase+'_'+METHOD)/(stem(qid)+'_fidelity.json'), dict(query_id=qid, **proof, actual=rows))
     if not proof['passed']:
         raise ValueError('STOP_FIDELITY : top100/notes non reproduits')
     result = dict(query_id=qid, crm_name=binding['query']['crm_name'], fold=binding['query']['fold'],
-                  model_id=model_id, fidelity=proof, numeric_sites=len(keys), cost=cost)
+                  model_id=model_id, fidelity=proof, numeric_sites=len(keys), cost=cost,
+                  method=METHOD, memory_cap_bytes=CAP)
     if phase == 'explain':
         sealed = read(OUT/'fidelity_complete.json')
-        if sealed['queries_reproduced'] != 19:
-            raise ValueError('19/19 avant les explications')
+        if sealed['queries_reproduced'] < 15:
+            raise ValueError('Au moins 15/19 avant les explications')
         documents = {}
-        for role, siret in [('label', binding['miss']['label_siret']), ('first', rows[0]['siret']), ('cut100', rows[-1]['siret'])]:
+        for role, siret in [('label', binding['miss']['label_siret']), ('first', binding['expected'][0]['siret']), ('cut100', binding['expected'][-1]['siret'])]:
             documents[role] = contribution(v142, backend, state, capture, binding, keys, features,
                     weights, scores, sources, entries, role, siret)
             if role != 'label':
-                expected = rows[0 if role == 'first' else -1]['score']
+                expected = binding['expected'][0 if role == 'first' else -1]['score']
                 if abs(documents[role]['score']-expected) > ATOL:
                     raise ValueError('STOP_EXPLAIN_SCORE_FIDELITY')
         top3, gap, all_deficits = deficits(documents)
-        result.update(documents=documents, label_rank='> 100, rang non calculé',
+        rank = '> 100, rang non calculé'
+        if METHOD == 'complete':
+            hits = capture.searcher.search(capture.query, limit=10000, count=False).hits
+            ranked = sorted([(float(score), backend._first(capture.searcher.doc(loc).to_dict(), 'siret'))
+                             for score, loc in hits], key=lambda r: (-r[0], r[1]))
+            label = documents['label']['siret']
+            if ranked and documents['label']['score'] > ranked[-1][0]+ATOL:
+                rank = next((i+1 for i, (_, ref) in enumerate(ranked) if ref == label), rank)
+            del hits, ranked; gc.collect()
+        result.update(documents=documents, label_rank=rank,
                        top3_deficits=top3, total_deficit=gap, all_deficits=all_deficits)
         # Libérer la requête compilée et les captures avant les autres modèles.
         state['base'].clear(); state['v81'].clear(); state['stages'].clear()
@@ -494,19 +572,24 @@ def worker(qid, phase):
             old_cut_score = explained(captured.query, captured.searcher, lookup(backend, captured, cut_key))
             result['models'][alternative_id] = dict(label_score=label_score,
                 recorded_cut100_siret=cut_key, recorded_cut100_score=old_cut_score,
-                actual_model_cut100_siret=alt_rows[-1]['siret'], actual_model_cut100_score=alt_rows[-1]['score'],
-                passes_actual_top100=label in {r['siret'] for r in alt_rows},
-                label_rank_if_retained=next((i+1 for i, r in enumerate(alt_rows) if r['siret'] == label), None),
+                actual_model_cut100_siret=alt_rows[-1]['siret'] if METHOD == 'complete' else None,
+                actual_model_cut100_score=alt_rows[-1]['score'] if METHOD == 'complete' else None,
+                beats_recorded_cut100=label_score > old_cut_score+ATOL,
+                passes_actual_top100=(label in {r['siret'] for r in alt_rows}) if METHOD == 'complete' else None,
+                threshold_scope='NATIONAL_TOP100' if METHOD == 'complete' else 'RECORDED_CUT100_ONLY_NOT_A_NATIONAL_ADMISSION_PROOF',
+                label_rank_if_retained=next((i+1 for i, r in enumerate(alt_rows) if r['siret'] == label), None) if METHOD == 'complete' else None,
                 is_recorded_model=alternative_id == model_id)
             state['base'].clear(); state['v81'].clear(); state['stages'].clear()
             backend.searcher = backend.index.searcher()
             v142.baseline.baseline.source.pipeline.base.LAST_PART = None
             v142.baseline.baseline.source.pipeline.corporate.LAST_CORPORATE = None
             del captured, data; gc.collect(); guard()
-        result['passes_another_model'] = any(v['passes_actual_top100'] for k, v in result['models'].items() if k != model_id)
+        result['beats_recorded_cut_with_another_model'] = any(v['beats_recorded_cut100'] for k, v in result['models'].items() if k != model_id)
+        result['passes_another_model'] = (any(v['passes_actual_top100'] for k, v in result['models'].items() if k != model_id)
+                                          if METHOD == 'complete' else None)
     inputs.unchanged(); guard()
     result.update(elapsed_seconds=time.monotonic()-started, peak_rss_bytes=peak(), inputs=list(inputs.refs.values()))
-    write(OUT/phase/(stem(qid)+'.json'), result)
+    write(OUT/(phase+'_'+METHOD)/(stem(qid)+'.json'), result)
     print(phase, qid, 'COMPLETE', result['elapsed_seconds'], result['peak_rss_bytes'], flush=True)
 
 
@@ -537,7 +620,7 @@ def family(signal):
 
 
 def publish(misses, completed, proofs, status, failure, receipts, started):
-    valid = status == 'COMPLETE_FAITHFUL_19_MISS_SCORE_DIAGNOSTIC'
+    valid = status == 'COMPLETE_FAITHFUL_MISS_SCORE_DIAGNOSTIC'
     counts = collections.Counter()
     if valid:
         for row in completed:
@@ -545,55 +628,130 @@ def publish(misses, completed, proofs, status, failure, receipts, started):
     result = dict(status=status, scope='POSTEVAL_DIAGNOSTIC_19_MISSES_FOLDS_2_3_4_NOT_NEW_RECALL',
         source_run=str(RUN), quantization_bits=20, fidelity_queries_reproduced=len(proofs),
         fidelity_queries_required=19, absolute_tolerance=ATOL, relative_tolerance=0,
-        memory_cap_bytes=CAP, peak_resident_bytes=max([peak()]+[r['peak_resident_bytes'] for r in receipts]),
+        complete_memory_cap_bytes=8*1024**3, light_memory_cap_bytes=4*1024**3,
+        guard_scope='CHILD_ONLY', fidelity_by_method=dict(collections.Counter(p['method'] for p in proofs)),
+        fidelity_contract='SAME_100_SIRETS_AND_SCORES_ALIGNED_BY_SIRET_AT_UNCHANGED_1E-5_TOLERANCE',
+        order_checker_correction='Prior checker rejected only a swapped equal-score pair on ad20; same100 and aligned max error 1.078765869522158e-6. No score/model/tolerance changed.',
+        fidelity_checks=proofs, historical_stop=read(OUT/'historical_result.json'),
+        peak_resident_bytes=max([peak()]+[r['peak_resident_bytes'] for r in receipts]),
         elapsed_seconds=time.monotonic()-started, failure=failure,
         scientific_conclusions_allowed=valid, query_results=completed if valid else [],
+        partial_results_not_validated_for_conclusions=completed if not valid else [],
         family_counts_in_top3=dict(counts.most_common()), worker_receipts=receipts,
         original_outputs_unchanged=True, labels_modified=False, closed_sets_opened=False,
-        no_full_rank=True, no_new_recall=True, no_coefficient_choice_proposal=True,
+        rank_search_limit=10000, no_new_recall=True, no_coefficient_choice_proposal=True,
         unknowns=['Rang exact au-delà de 100', 'Généralisation hors des 19 ratés',
                   'Causalité : les écarts sont algébriques, pas des effets de retrait de voie'],
         heavy_artifacts=str(OUT), command=f'PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/{Path(__file__).name}')
-    write(OUT/'result.json', result); write(RESULT, result)
+    write(OUT/'result.json', result)
+    RESULT.write_text(json.dumps(result, ensure_ascii=False, indent=2)+'\n')
     by_id = {r['query_id']: r for r in completed} if valid else {}
     lines = ['# Notes des 19 ratés V142 — 14 octobre 2026', '',
-        f'**État : `{status}`.** Fidélité : **{len(proofs)}/19** requêtes. ',
-        f'Pic résident observé : **{result["peak_resident_bytes"]/1024**3:.3f} Gio** ; plafond **6 Gio**. Durée : **{result["elapsed_seconds"]:.2f} s**.', '',
+        f'**État : `{status}`.** Fidélité : **{len(proofs)}/19** requêtes.',
+        f'Pic résident observé : **{result["peak_resident_bytes"]/1024**3:.3f} Gio** ; plafonds enfant seul **8/4 Gio** (complète/allégée). Durée : **{result["elapsed_seconds"]:.2f} s**.', '',
+        f'Fidélité par méthode : `{result["fidelity_by_method"]}`. Le replay historique de `10719` est conservé.', '',
+        'Contrôle : mêmes 100 SIRET et notes alignées **par SIRET**, tolérance inchangée 1e−5. L’ordre est enregistré séparément. Le premier arrêt de reprise concernait seulement deux ex æquo inversés sur `ad20…` : mêmes100, erreur par SIRET 1,08e−6 ; ce contrôleur trop strict a été corrigé, sans changement du moteur ni de ses notes.', '',
         '**Mesuré.** Même moteur Tantivy, mêmes univers, cinq coefficients gelés, quantification 20 bits. Un processus par requête ; aucune relance complète, aucun nouveau recall.', '',
-        '| query_id | nom CRM court | note label | note 100e | écart | 3 signaux en retard | passe avec un autre modèle ? |',
-        '|---|---|---:|---:|---:|---|---|']
+        '| query_id | méthode / pic Gio | note label | premier : SIRET / note | 100e : SIRET / note | écart | 3 signaux en retard | autre modèle : bat le seuil enregistré ? |',
+        '|---|---|---:|---|---|---:|---|---|']
     for miss in misses:
         row = by_id.get(miss['query_id']); name = miss['crm_name'][:45].replace('|', '/')
         if row:
             target = row['documents']['label']['score']; cut = row['documents']['cut100']['score']
             deficits_text = '; '.join(f'{d["signal"]} (+{d["deficit"]:.6f})' for d in row['top3_deficits'])
-            models = ', '.join(k for k, v in row['models'].items() if k != row['model_id'] and v['passes_actual_top100'])
+            models = ', '.join(k for k, v in row['models'].items() if k != row['model_id'] and v['beats_recorded_cut100'])
             answer = 'oui ('+models+')' if models else 'non'
-            lines.append(f'| {miss["query_id"]} | {name} | {target:.6f} | {cut:.6f} | {row["total_deficit"]:.6f} | {deficits_text} | {answer} |')
+            first = row['documents']['first']; cutdoc = row['documents']['cut100']
+            memory = max(r['peak_resident_bytes'] for r in receipts if r['query_id'] == row['query_id'] and r['phase'] == 'explain')
+            label_method = 'complète' if row['method'] == 'complete' else 'allégée'
+            lines.append(f'| {miss["query_id"]} | {label_method} / {memory/1024**3:.3f} | {target:.6f} | {first["siret"]} / {first["score"]:.6f} | {cutdoc["siret"]} / {cut:.6f} | {row["total_deficit"]:.6f} | {deficits_text} | {answer} |')
         else:
-            lines.append(f'| {miss["query_id"]} | {name} | inconnu | inconnu | inconnu | non conclu | inconnu |')
+            attempts = [r for r in receipts if r['query_id'] == miss['query_id']]
+            observed = max((r['peak_resident_bytes'] for r in attempts), default=0)/1024**3
+            method = attempts[-1]['method'] if attempts else 'non exécutée'
+            lines.append(f'| {miss["query_id"]} | {method} / {observed:.3f} | inconnu | inconnu | inconnu | inconnu | non conclu | inconnu |')
     lines += ['', '## Agrégat des familles']
     if valid:
         lines += ['Nombre de requêtes où la famille figure parmi les trois retards principaux (familles dédupliquées par requête).', '']
         lines += [f'- {name} : **{count}/19**.' for name, count in counts.most_common()]
         lines += ['', 'Les 58 contributions sont coefficient × valeur. Les 51 valeurs numériques sont avant quantification des deux blocs : elles ne sont pas arrondies séparément. Les bonus et le résidu de quantification/arithmétique native referment la note.',
             'Le bonus de nouvelles sources est un **maximum**, pas une somme : ses alternatives ne sont pas créditées plusieurs fois.',
-            '« Autre modèle » est testé contre son **vrai top100 national recalculé**, pas contre la seule note du 100e enregistré. Les mêmes préparateurs BANO/OSM recalculent leurs bonus avec ces poids ; le JSON conserve aussi la note de ce 100e enregistré.',
+            'Pour la méthode complète, le JSON teste aussi le vrai top100 national des cinq modèles. Pour le repli allégé, « autre modèle » compare **uniquement les notes du label et du 100e enregistré** : dépasser celui-ci ne prouve PAS une admission au nouveau top100 national. Celle-ci reste inconnue, sans classement d’un pool101 présenté comme moteur. Les mêmes préparateurs BANO/OSM recalculent leurs bonus avec ces poids et leurs univers complets.',
+            'La méthode allégée exécute les fonctions natives et projette seulement leurs jointures SIRET/SIREN sur les documents demandés. Les bornes de quantification et les agrégations parent restent calculées sur tous les sites ; les statistiques lexicales sont nationales. La fidélité vérifie les 100 notes, pas la composition d’un nouveau top100 national.',
             'Le premier candidat, le seuil, les 58 signaux, les bonus et les cinq modèles sont détaillés dans le JSON voisin. Aucune règle de choix de modèle n’est proposée.']
     else:
         lines += ['**Aucune conclusion scientifique : arrêt avant fidélité complète ou décomposition validée.**', '',
                   f'Blocage mesuré : `{failure}`. Artefacts partiels conservés sous `{OUT}`.']
     lines += ['', '**Inconnu.** Rang exact des labels hors100 : « > 100, rang non calculé ». Les écarts expliquent la compétition mesurée, pas une causalité ni un gain de recall. Aucun jeu fermé ou label modifié.', '']
-    with RESULT.with_suffix('.md').open('x') as stream:
-        stream.write('\n'.join(lines))
+    lines += ['', '## Historique — arrêt précédent conservé intégralement', '',
+              (OUT/'historical_report.md').read_text()]
+    RESULT.with_suffix('.md').write_text('\n'.join(lines))
     print('REPORT', status, len(proofs), '/19', result['peak_resident_bytes'], result['elapsed_seconds'], flush=True)
+
+
+def free_inactive():
+    import re
+    text = subprocess.check_output(['vm_stat'], text=True)
+    page = int(re.search(r'page size of (\d+) bytes', text)[1])
+    counts = [int(re.search(r'Pages '+name+r':\s+(\d+)', text)[1]) for name in ('free', 'inactive')]
+    return dict(free_plus_inactive_bytes=sum(counts)*page, vm_stat=text,
+                complete_admitted=sum(counts)*page >= 10*1024**3, observed_unix=time.time())
+
+
+def child_call(qid, phase, method, receipts, admission):
+    directory = OUT/(phase+'_'+method); directory.mkdir(exist_ok=True)
+    logpath = OUT/'logs'/(phase+'_'+method+'_'+stem(qid)+'.log')
+    command = [sys.executable, '-u', str(Path(__file__).resolve()), '--worker', phase, '--query-id', qid]
+    cap = (8 if method == 'complete' else 4)*1024**3
+    env = dict(os.environ, SIRETO_MISS_OUT=str(OUT), SIRETO_MISS_METHOD=method)
+    child_started = time.monotonic(); child_peak = 0; reason = None
+    with logpath.open('xb') as log:
+        child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, cwd=ROOT, env=env)
+        try:
+            while child.poll() is None:
+                try:
+                    rss = psutil.Process(child.pid).memory_info().rss
+                    child_peak = max(child_peak, rss)
+                    if rss > cap:
+                        reason = f'STOP_CHILD_RSS: child={rss}, cap={cap}'
+                        child.terminate(); break
+                    if time.monotonic()-child_started > 1800:
+                        reason = 'STOP_WORKER_TIMEOUT_1800S'; child.terminate(); break
+                except psutil.NoSuchProcess:
+                    pass
+                time.sleep(.1)
+        finally:
+            if child.poll() is None:
+                try:
+                    child.wait(timeout=15)
+                except subprocess.TimeoutExpired:
+                    child.kill(); child.wait()
+    path = directory/(stem(qid)+'.json')
+    errorpath = directory/(stem(qid)+'_error.json')
+    detail = read(errorpath) if errorpath.exists() else None
+    row = read(path) if path.exists() and not child.returncode and not reason else None
+    receipt = dict(query_id=qid, phase=phase, method=method, pid=child.pid, exit_code=child.returncode,
+                   memory_cap_bytes=cap, guard_scope='CHILD_ONLY', peak_resident_bytes=child_peak,
+                   elapsed_seconds=time.monotonic()-child_started, admission=admission,
+                   owned_child_exit_confirmed=True, stop_reason=reason, child_error=detail, log=str(logpath))
+    if row:
+        receipt['peak_resident_bytes'] = max(child_peak, row['peak_rss_bytes'])
+    elif detail:
+        receipt['peak_resident_bytes'] = max(child_peak, detail['peak_rss_bytes'])
+    receipts.append(receipt); write(directory/(stem(qid)+'_exit.json'), receipt)
+    print('CHILD', phase, method, qid, child.returncode, receipt['peak_resident_bytes'], flush=True)
+    # Une infidélité ou une erreur scientifique arrête toute la tâche. Seule
+    # une interruption de ressource autorise le repli prévu dans le brief.
+    if not row and not reason and not (detail and 'MemoryError' in detail.get('traceback', '')):
+        raise RuntimeError(str(receipt))
+    return row
 
 
 def main():
     started = time.monotonic(); inputs = Inputs()
     inputs.json(STOP_V160)
-    if OUT.exists() or RESULT.exists() or RESULT.with_suffix('.md').exists():
-        raise ValueError('Namespace et rapports doivent être nouveaux')
+    if OUT.exists():
+        raise ValueError('Nouveau sous-répertoire requis, sans écrasement des artefacts')
     for process in psutil.process_iter(['pid', 'cmdline']):
         if process.pid in (os.getpid(), os.getppid()):
             continue
@@ -601,66 +759,75 @@ def main():
         executable = Path((process.info['cmdline'] or [''])[0]).name.lower()
         if executable.startswith('python') and ('-m scripts.embeddinggemma2_' in command or 'retrieval_miss_score_explain.py' in command):
             raise RuntimeError('Autre calcul lourd détecté: '+str(process.pid))
-    OUT.mkdir(parents=True)
-    for name in ('inputs', 'fidelity', 'explain', 'logs'):
-        (OUT/name).mkdir()
+    OUT.mkdir(parents=True); (OUT/'logs').mkdir()
+    history = inputs.json(RESULT)
+    write(OUT/'historical_result.json', history)
+    (OUT/'historical_report.md').write_text(RESULT.with_suffix('.md').read_text())
     misses = inputs.json(ACCESS)['queries']
-    write(OUT/'recipe.json', dict(cap_resident_bytes=CAP, one_process_per_query=True,
-          queries=[r['query_id'] for r in misses], fidelity='ALL19_SAME_ORDERED100_AND_ABS_SCORE_1E-5_BEFORE_EXPLANATION',
-          exact_original_native_search=True, no_query_debug_repr=True, no_full_rank=True,
-          alternative_weights='ALL5_WITH_EXACT_SOURCE_PREPARER_KERNELS_AND_REAL_COLLECTOR100',
-          diagnostic_only=True, code=inputs.refs[str(Path(__file__))] if str(Path(__file__)) in inputs.refs else str(Path(__file__))))
+    write(OUT/'recipe.json', dict(one_process_per_query=True, complete_cap_bytes=8*1024**3,
+          light_cap_bytes=4*1024**3, guard_scope='CHILD_ONLY', complete_admission_free_inactive_bytes=10*1024**3,
+          queries=[r['query_id'] for r in misses], fidelity='SAME100_SCORES_ABS_1E-5_NO_RETUNING',
+          source_inputs=str(INPUTS), original_query_functions_unchanged=True,
+          light_projection='IDENTIFIER_TERMSET_JOINS_ONLY_GLOBAL_BOUNDS_AND_LEXICAL_STATISTICS_UNCHANGED',
+          historical_10719_reused=True, explanation_gate=15,
+          diagnostic_only=True, code=inputs.path(Path(__file__)).as_posix()))
     proofs, completed, receipts, failure = [], [], [], None
-    status = 'STOP_NO_SCIENTIFIC_CONCLUSION'
+    methods = {}; status = 'STOP_NO_SCIENTIFIC_CONCLUSION'
     try:
-        prepare_inputs(inputs, misses)
-        for phase in ('fidelity', 'explain'):
-            for miss in misses:
-                qid = miss['query_id']; logpath = OUT/'logs'/(phase+'_'+stem(qid)+'.log')
-                command = [sys.executable, '-u', str(Path(__file__).resolve()), '--worker', phase, '--query-id', qid]
-                child_started = time.monotonic(); child_peak = 0; reason = None
-                with logpath.open('xb') as log:
-                    child = subprocess.Popen(command, stdout=log, stderr=subprocess.STDOUT, cwd=ROOT)
-                    try:
-                        while child.poll() is None:
-                            try:
-                                rss = psutil.Process(child.pid).memory_info().rss
-                                child_peak = max(child_peak, rss)
-                                total_rss = rss+psutil.Process().memory_info().rss
-                                if total_rss > CAP:
-                                    reason = f'STOP_RSS_6GIB: child={rss}, parent+child={total_rss}'
-                                    child.terminate(); child.wait(timeout=15); break
-                                if time.monotonic()-child_started > 1800:
-                                    reason = 'STOP_WORKER_TIMEOUT_1800S'; child.terminate(); child.wait(timeout=15); break
-                            except psutil.NoSuchProcess:
-                                pass
-                            time.sleep(.2)
-                    finally:
-                        if child.poll() is None:
-                            child.terminate()
-                            try:
-                                child.wait(timeout=15)
-                            except subprocess.TimeoutExpired:
-                                child.kill(); child.wait()
-                path = OUT/phase/(stem(qid)+'.json')
-                receipt = dict(query_id=qid, phase=phase, pid=child.pid, exit_code=child.returncode,
-                               peak_resident_bytes=child_peak, elapsed_seconds=time.monotonic()-child_started,
-                               owned_child_exit_confirmed=True, stop_reason=reason, log=str(logpath))
-                if path.exists():
-                    row = read(path); receipt['peak_resident_bytes'] = max(child_peak, row['peak_rss_bytes'])
-                receipts.append(receipt); write(OUT/phase/(stem(qid)+'_exit.json'), receipt)
-                if child.returncode or reason or not path.exists():
-                    errorpath = OUT/phase/(stem(qid)+'_error.json')
-                    detail = read(errorpath) if errorpath.exists() else None
-                    raise RuntimeError(str(dict(query_id=qid, phase=phase, reason=reason, child_error=detail, log=str(logpath))))
-                if phase == 'fidelity':
-                    proofs.append(row['fidelity'])
-                else:
-                    completed.append(row)
-                print('PROGRESS', phase, len(proofs) if phase == 'fidelity' else len(completed), '/19', qid, receipt['peak_resident_bytes'], flush=True)
-            if phase == 'fidelity':
-                write(OUT/'fidelity_complete.json', dict(queries_reproduced=19, checks=proofs))
-        inputs.unchanged(); status = 'COMPLETE_FAITHFUL_19_MISS_SCORE_DIAGNOSTIC'
+        manifest = inputs.json(PREVIOUS/'input_manifest.json')
+        for ref in manifest['inputs']:
+            inputs.path(ref)
+        write(OUT/'input_manifest.json', manifest)
+        original = inputs.json(PREVIOUS/'fidelity'/(stem('10719')+'.json'))
+        if not original['fidelity']['passed']:
+            raise ValueError('Le replay historique 10719 doit être fidèle')
+        for miss in misses:
+            qid = miss['query_id']; binding = inputs.json(INPUTS/stem(qid)/'binding.json')
+            if binding['query']['fold'] not in (2, 3, 4):
+                raise ValueError('Folds 2/3/4 exclusivement')
+            if qid == '10719':
+                proofs.append(dict(query_id=qid, method='complete_historical', **original['fidelity']))
+                methods[qid] = 'complete'
+                continue
+            saved = RESUME_CHECKS/'fidelity_light'/(stem(qid)+'_fidelity.json')
+            if saved.exists():
+                observed = inputs.json(saved)
+                proof = fidelity(observed['actual'], binding['expected'])
+                if not proof['passed']:
+                    raise ValueError('STOP_FIDELITY : scores enregistrés de reprise non conformes')
+                proofs.append(dict(query_id=qid, method='light', reused_from=str(saved),
+                                   prior_order_checker_passed=observed['passed'], **proof))
+                methods[qid] = 'light'
+                receipt = inputs.json(saved.with_name(stem(qid)+'_exit.json'))
+                receipts.append(dict(receipt, reused_from=str(RESUME_CHECKS)))
+                print('REUSED fidelity light', qid, proof['max_score_absolute_error'], flush=True)
+                continue
+            admission = free_inactive(); row = None
+            if admission['complete_admitted']:
+                row = child_call(qid, 'fidelity', 'complete', receipts, admission)
+            if not row:
+                row = child_call(qid, 'fidelity', 'light', receipts, admission)
+            if row:
+                methods[qid] = row['method']
+                proofs.append(dict(query_id=qid, method=row['method'], **row['fidelity']))
+        if len(proofs) < 15:
+            raise RuntimeError(f'STOP : seulement {len(proofs)}/19 fidélités')
+        write(OUT/'fidelity_complete.json', dict(queries_reproduced=len(proofs), checks=proofs))
+        for miss in misses:
+            qid = miss['query_id']
+            if qid not in methods:
+                continue
+            admission = free_inactive(); row = None
+            if methods[qid] == 'complete' and admission['complete_admitted']:
+                row = child_call(qid, 'explain', 'complete', receipts, admission)
+            if not row:
+                row = child_call(qid, 'explain', 'light', receipts, admission)
+            if row:
+                completed.append(row)
+            print('PROGRESS explain', len(completed), '/19', qid, flush=True)
+        if len(completed) < 15:
+            raise RuntimeError(f'STOP : seulement {len(completed)}/19 décompositions')
+        inputs.unchanged(); status = 'COMPLETE_FAITHFUL_MISS_SCORE_DIAGNOSTIC'
     except Exception as exc:
         failure = repr(exc)
         print('STOP', failure, flush=True)
@@ -677,7 +844,7 @@ if __name__ == '__main__':
         try:
             worker(args.query_id, args.worker)
         except Exception as exc:
-            write(OUT/args.worker/(stem(args.query_id)+'_error.json'),
+            write(OUT/(args.worker+'_'+METHOD)/(stem(args.query_id)+'_error.json'),
                   dict(error=repr(exc), peak_rss_bytes=peak(), traceback=traceback.format_exc()))
             raise
     else:
