@@ -19899,3 +19899,55 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   score/admission et temporalité de sources, pas nouveau calcul long, tuning
   sur526 ou ouverture de962/4323/folds0/1. Labels humains immuables, métriques
   exact/opérationnel distinctes, aval gelé ; aucun unit test ni dépense externe.
+
+#### Jalon 03:43 UTC — audit architectural et historique, pas de tuning ciblé
+
+- Conclusion corporate post-scellée `57eca507` confirme zéro contexte nouveau
+  positif sur19ratés ; ne pas présenter les110784relations comme un gain.
+- Audit admission `de2a200c` : les poids principaux sont appris, pas tous
+  arbitraires. Qualité faible/uncertainty, IDF, fanout et interactions sont
+  déjà présents. Densité locale/ties/multiplicité de nuage ne calibrent pas
+  la compétition finale. Component-top50 ne prouve pas un mauvais coefficient
+  ni une récupération future ; score complet hors100 actuellement non stocké.
+- Revue primaire `4f35befd`, affinée après code/paramètres par `c459c7fb` :
+  les pipelinesV88/99/115/134/142 partagent EXACTEMENT cinq modèlesV71,
+  7champslexicaux+51numériques=58coefficients,375queriesfit,167169paires
+  inférées descomptes sérialisés. Négatifs déjàgéographiques/top12chaquecol,
+  uniform32, lexical100 et corporate/admin101 TRAIN : PAS lexicalseulement.
+  Ni jointscores actuels enrichis ni nouveaux wrappercanaux ne furent minés
+  pour ce fit. OffsetsbaselineTRAINin-sample explicitement conservésV71 ;
+  correctionnestedV78 est historique, pas nouvelle expérience à rebaptiser.
+- Un refit sur x58seul serait infidèle : BM25indirect, ownerconfidences,
+  deltasgéodépendants deweights, MAX etquantifications fontpartie du scorer.
+  Prioritéfuture : vecteurserving indépendant duSIRENhumain ET scorercomplet,
+  recalcul dechaqueextra ; puis UNEablation deminageTRAIN du scorejoint sous
+  inner/outergroupés, mêmeobjectif/schema/estimator. Pas nouvellegrille,
+  entraînement dense, fanout/IDF renommé, quotasgéo ou nouveau seuil0,5pp.
+  Une transformation strictementmonotone finale ou constanteparquery ne
+  change pas le top100 àdomaine/tiesidentiques. Pasfit/servingmodifié maintenant.
+- Audit temporel `03e41224`, toolchunk49d783exit0, note `64a6f6a5` : revalide
+  gapV117 connu `6e80f66a`, pas breakthrough neuf. Manifests/builders/footers
+  de l'indexnatiffull etde sesdeuxinputscanonicals ne relient pas lesfamilles
+  StockHistoriqueINSEE séparées. AnciennesmentionsBODACC/RNE ETfeaturesdict
+  V129/V130 existent, mots historiquescapés aussi ; ne pas dire aucunhistorique
+  utilisé. Ngrams/exacts sont courants, périodes/rolesaplatis, globalpostings
+  distincts du dictionnairefeatures. IdentitécandidatebulkRNE cohérentfooter/
+  taille/manifeste, pas rehash8,7Go prétendu. Aucunanti-join lourd exécuté.
+- Directionuniformeindex : observationsown-site/parent datées/typed explicites,
+  date_kindpublication distinctperiode, vocabulairehistoriquemêmepropriétaire,
+  successiondirection/date/continuite séparées, pasalias/adressehéritée.
+  Annexecompacte+unionpostings avantONEcollector100, pasclonage98Gio/2pools.
+  Nombrede nouvellespaires/postings/coût etgain humain restentNONMESURÉS.
+- CapacitéEXPLAIN installée etpréflightOP `24a043aa`. AncienauditOPquery-only
+  ALL526 existe : cinqqueries avecoperator surPOImatchés, corporaterésolution
+  exacte parfoisambiguë ; pascompilerdupliquéV160 ni preuveopérateur/site.
+  SourcecurrentOSM pasvéritéofficielle. EXPLAIN APIprésente maisfidélitéquery/
+  score devaitêtreprouvée. Replaydiagnostic TWOpublicV157 autoriséenfreshV160,
+  aucunID ajoutéauqueryscoring, mêmequerycollector100/58coeffs, reproduction
+  IDs/scoresstrictavantexplication cible/head/cut, sinonSTOPsansassouplissement.
+  Pas recalldeuxcas/nouveaurangnational/validationindépendante, budget20min,
+  deadline05:06UTC inchangée. Nouveaupréflight query-onlyqualificationville
+  dansnameOSM auplus10min, sansGT/retrieval ; toutehypothèseresteconsommée.
+- Surcepanel 99,2% exigerait522/526, donc15gainsnets deplus que507 : lesdeux
+  géoplausibles ne suffisentpas. Labels et dénominateurs immuables, aucunjeu
+  fermé lu, aucunsaut de l'exact versl'opérationnel pour annoncerle gate.
