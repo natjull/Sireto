@@ -1,0 +1,133 @@
+{
+  "status": "PRIMARY_LITERATURE_REVIEW_AND_FUTURE_PROTOCOL_NOT_IMPLEMENTATION_OR_NEW_EVALUATION",
+  "date_utc": "2026-10-14",
+  "scope": {
+    "read": ["AGENTS.md", "docs/retrieval_v38_initial_top100_contract.md", "docs/retrieval_scientific_validity_all526_20261014.json", "docs/retrieval_v157_geography_component_result_20261014.json", "docs/retrieval_entity_matching_night_20261013.md", "primary research papers linked below"],
+    "not_done": "No native retrieval, training, unit test, target lookup, raw CRM/private identity/contact read, label correction, new source admission, closed-set opening, downstream model change or paid compute. No source chosen from the 19 misses. This is a proposal, not authorization to execute it.",
+    "resources": "Mac M4 Pro and CATNAT only; no external spending. Corpus/index preparation is distinct from per-query serving cost."
+  },
+  "known_evidence_not_new_measurement": {
+    "latest_result_from_parent_handoff": {"exact_hits": 507, "all_human_denominator": 526, "exact_recall_percent": 96.3878, "geographically_weighted_percent": 95.67903, "paired_vs_V115": "3 gains / 0 losses; V115 504/526"},
+    "population": "405 SIREN groups / 295 communes. ALL526 has been consumed for architecture/source selection. Zero explicit supervised TRAIN overlap does not restore pristine status or establish full encoder OOF.",
+    "current_engine_from_parent_handoff": "Frozen EmbeddingGemma2 V6 best1000; national lexical and query-specific geographic universes; native learned linear score with 58 coefficients / 51 base-feature interactions and typed parent context. A new model's name is not a new evidence source.",
+    "V157": "Two of the 19 current exact misses have raw BANO geography worst-rank <=50. Seven have supported own XY plus BANO, five of those seven have best-rank >100; five other supported own-XY misses have no compatible BANO points; five have missing/unsupported own XY and two protected cases remain skipped. This is component potential, not retrieval recall or a proven admission cause.",
+    "source_limit_from_parent_handoff": "Whole-source SIGLE/direct ACTIVITY/corporate BODACC-administration diagnostics produced zero novel positive context for the current misses. This reduces support for repeating those same source/model ideas, but does not establish information-theoretic impossibility.",
+    "gap": "On this consumed panel, >=99.2% would require at least 522/526 exact hits, hence >=15 net additional hits from 507. Even reaching that count would not validate national generalization or necessarily pass the confidence gate. No method below is claimed to supply those 15 gains."
+  },
+  "primary_sources": [
+    {
+      "id": "sparkly",
+      "title": "Sparkly: A Simple yet Surprisingly Strong TF/IDF Blocker for Entity Matching",
+      "authors_year": "Paulsen, Govind, Doan; VLDB 2023",
+      "url": "https://pages.cs.wisc.edu/~anhai/papers1/sparkly-vldb2023.pdf",
+      "verified_evidence": "The paper evaluates Lucene TF/IDF top-k blocking and automatic attribute/tokenizer selection using discriminativeness. Its large-scale runs use distributed AWS clusters; WDC 26M lacks complete gold for recall. Results justify a strong indexed lexical baseline, not SIRETO recall or Mac SLO transfer.",
+      "SIRETO_inference": "Retain lexical fields and direct top100 collection. Explore label-free view ambiguity as a limited native scoring feature, not Sparkly Auto's unrestricted configuration search or unions of per-view pools."
+    },
+    {
+      "id": "block_max",
+      "title": "Faster Top-k Document Retrieval Using Block-Max Indexes",
+      "authors_year": "Ding, Suel; SIGIR 2011",
+      "url": "https://research.engineering.nyu.edu/~suel/papers/bmw.pdf",
+      "verified_evidence": "The paper develops safe early termination using block score bounds for disjunctive queries, preserving exhaustive top-k results. It explicitly shows that a naive substitution of local block maxima into WAND is not sufficient for correctness.",
+      "SIRETO_inference": "Exact bound-based skipping may reduce scoring work but cannot improve recall of an unchanged score. Applying it to signed interactions, typed relations and query-specific geography requires new valid bounds and equivalence evidence; merely invoking WAND is insufficient."
+    },
+    {
+      "id": "collective_er",
+      "title": "Collective Entity Resolution in Relational Data",
+      "authors_year": "Bhattacharya, Getoor; TKDD 2007",
+      "url": "https://linqs.org/assets/resources/bhattacharya-tkdd07.pdf",
+      "verified_evidence": "Attribute and relational information jointly improve resolution in the paper's relational reference graphs. Its task is collective clustering/resolution, not national SIRET retrieval with an absolute cap100.",
+      "SIRETO_inference": "Relations can supply evidence distinct from literal names. Preserve parent, site and relation role/date rather than merging linked entities or treating a group/customer name as an own-site alias. Bounded typed evidence in a native score is a project hypothesis, not a reproduction of collective clustering."
+    },
+    {
+      "id": "fellegi_sunter",
+      "title": "A Theory for Record Linkage",
+      "authors_year": "Fellegi, Sunter; JASA 1969",
+      "url": "https://nhis.ipums.org/nhis/resources/Fellegi69.pdf",
+      "verified_evidence": "Evidence is compared through match versus nonmatch comparison distributions. The paper allows insufficient-evidence decisions and warns that violated independence assumptions may destroy probabilistic weight interpretations.",
+      "SIRETO_inference": "Chance agreement and ambiguity matter. Parent/site/geo evidence is dependent, so a small regularized reliability correction is preferable to claiming independent likelihood probabilities. No abstention or insufficient-evidence segment may remove a query from the primary retrieval denominator."
+    },
+    {
+      "id": "sc_block",
+      "title": "SC-Block: Supervised Contrastive Blocking within Entity Resolution Pipelines",
+      "authors_year": "Brinkmann, Shraga, Bizer; 2023",
+      "url": "https://arxiv.org/abs/2303.03132",
+      "verified_evidence": "Supervised contrastive embeddings and nearest-neighbour blocking are evaluated, including pipeline runtime at 99.5% pair completeness. Neither an absolute100 SIRET cap nor the SIRETO missing-identity regime is established.",
+      "SIRETO_inference": "Contrastive blockers are a legitimate later comparison when representation evidence exists; the reported completeness does not guarantee our exact@100."
+    },
+    {
+      "id": "sc_block_plus",
+      "title": "SC-Block++: A Blocking Algorithm Based on Adaptive Flood Regularization",
+      "authors_year": "Ning, Frasincar, Robal; SAC 2025",
+      "url": "https://personal.eur.nl/frasincar/papers/SAC2025a/sac2025a.pdf",
+      "verified_evidence": "Adaptive flooding extends SC-Block on three product datasets. The published procedure estimates20 auxiliary networks,20epochs each, with last-three-layer reinitialization from a base auxiliary model that has seen the union of training data.",
+      "SIRETO_inference": "Not an immediate economical Mac experiment. Partial layer reinitialization is not proof of clean outer-fold non-exposure; it cannot be copied as our full encoder-OOF guarantee. Regularization cannot manufacture an undocumented brand-to-operator relation."
+    }
+  ],
+  "three_applicable_methods_contrast": [
+    {
+      "method": "Score-equivalent bounded indexed collection",
+      "purpose": "Latency/resource reduction, not recall gain",
+      "application": "Memory-mapped lexical postings plus compact numeric/spatial blocks, exact admissible bounds for the same unified native score, one heap of at most100 SIRET. Missing-geo records retain access through other views; no hard commune, active-only or fixed-radius identity filter.",
+      "budget_and_failure": "No national dense token-vector rebuild. Begin with bounded sequential blocks if an index is too costly. Signed coefficients require appropriate lower/upper feature bounds; interactions, float precision and tie policy must be preserved. If safe bounds cannot be established, use exact scanning or STOP on SLO; no approximate prepool disguised as indexing.",
+      "proof": "Before labels, compare output hashes to the frozen exhaustive scorer on a predetermined label-free query suite spanning dense communes, weak inputs, many relation targets and missing geography. Record skipped blocks, evaluated rows and cost. Equality proves implementation fidelity only, not new generalization."
+    },
+    {
+      "method": "Typed multi-view reliability and ambiguity within the native score",
+      "purpose": "Potential recall gain from evidence competition rather than more raw text",
+      "application": "Own-site names/addresses, parent names, dated typed relations and own geography remain distinct. Use full-corpus label-free evidence collision counts and source/missingness indicators to learn a small native correction before the sole top100 collector. Do not add blanket headquarters/active bonuses, copy parent addresses, reserve50 geographic candidates or merge five top100 lists.",
+      "budget_and_failure": "Keep the encoder frozen for the first limited hypothesis; compact precomputed evidence statistics and a small regularized correction are plausible on Mac. Novelty is conditional: first compare the proposed statistics with existing51features/58interactions without labels; if already represented equivalently, do not relaunch a relabelled duplicate experiment.",
+      "limits": "A global monotonic calibration of the final scalar score cannot change top100 membership. Only relative view reliability/interactions can affect admission. A small geographically plausible target does not prove that suppressing stronger rivals is correct for unseen queries."
+    },
+    {
+      "method": "Grouped contrastive representation with ambiguity-safe supervision",
+      "purpose": "Later representation improvement, only if missing-evidence diagnosis does not dominate",
+      "application": "Separate site exact identity from parent/entity-name supervision; do not turn identical ambiguous text into falsely decisive negatives. Any future outer encoder starts from unexposed base/official-only initialization; inner selection and checkpoint control are grouped.",
+      "budget_and_failure": "National embeddings/index rebuild and nested outer training have real Mac time/storage cost. SC-Block++20auxiliary-network procedure is not selected. Keep this direction deferred rather than predicting gains from lower contrastive loss.",
+      "limits": "Does not create absent official brand/operator bridges, resolve protected identities or guarantee exact site selection. A benchmark's99.5% pair completeness is not SIRETO99.2%@100."
+    }
+  ],
+  "recommended_one_next_direction": {
+    "name": "PREFLIGHT_THEN_TYPED_AMBIGUITY_NATIVE_RELIABILITY",
+    "decision": "ONE bounded hypothesis: improve evidence competition using typed, ambiguity-aware reliability in the existing national native score; make score-equivalent indexing the engineering SLO companion. Do not start another dense training campaign or source scan selected by the19misses.",
+    "why": "Existing whole-source relation additions have measured gains, but recent repeated channels add no new support. V157 exposes a small potential competition failure and widespread missing/weak geography. A constrained correction is falsifiable and much cheaper than national re-encoding; it has no evidence-backed promise of reaching99.2%.",
+    "bounded_novel_features_proposal": [
+      "Label-free number of corpus entities sharing the normalized evidence value/token signature, separately for own-site and parent views; version and smoothing fixed before training.",
+      "Own-geo compatibility/availability plus full-index count of plausible spatial distractors under a preregistered geometry rule, not a target-dependent radius or per-query chosen BANO point.",
+      "Published typed relation fanout and evidence role/date/support availability, without using SIREN/SIRET magnitude, identity embeddings or CRM alias tables.",
+      "Explicit missingness/unsupported-own-geo and own-site versus parent-supported provenance, not reconstructed coordinates or an address borrowed from a related company."
+    ],
+    "scope_lock": "At most these four statistic families, no new sources/checkpoint, no per-query clauses, one regularized low-capacity correction family. These are proposed specifications, not inferred absent features. Static redundancy audit precedes and may cancel the experiment.",
+    "collection": "Compile the baseline coefficients and the correction into one serving score over the complete national eligible corpus. Only a single native collector emits <=100unique SIRET; no fixed2000/500, per-view50/100 pools, oracle union, downstream rerank or label-side admission. Internal index blocks are traversal units, not candidate pools."
+  },
+  "missing_evidence_vs_score_competition_protocol": {
+    "design": "Preregister on all future evaluation queries, not the19misses. Generation records source/component availability and corpus collision summaries without labels. Entire outputs and bindings are sealed first; a separate official label-side custodian attributes EVERY miss from frozen corpus/evidence and already generated scores. Attribution never feeds candidate generation or recipe selection.",
+    "ordered_taxonomy": [
+      "OFFICIAL_CATALOG_ABSENT: target absent from the authorized as-of corpus; remains an end-to-end error.",
+      "SOURCE_TO_INDEX_GAP: authorized own/typed evidence exists in the frozen official source but is not represented in the index; distinguish from corpus absence and prohibit target-only patching.",
+      "ELIGIBILITY_OR_TRAVERSAL_LOSS: represented target cannot be visited because of an exclusion or an invalid/approximate bound. Safe exact indexing should contribute zero such losses.",
+      "NO_DISCRIMINATIVE_AVAILABLE_EVIDENCE: source/index provides no tested bridge or missing/unsupported own location; absence is scoped to the frozen representation, not a claim that no public evidence exists.",
+      "REPRESENTATION_AMBIGUITY: equal or observationally indistinguishable allowed evidence across many sites/entities; report equivalence-class size and best/worst ranks under the frozen representation. More than100symmetric candidates is a representation-level cap conflict, not proof that future evidence cannot resolve it.",
+      "SCORE_COMPETITION: represented eligible target has informative evidence yet is behind competing candidates under the unified score. Component rank alone is not causal proof; compare the one globally specified correction on all queries and report both rescued and newly lost targets.",
+      "UNATTRIBUTED_OR_PROTECTED: evidence insufficient for the finer attribution, or privacy-protected identity not inspected. Retain all-human denominator and publish counts; no inferred label-error category."
+    ],
+    "causal_limit": "Development may include only preregistered inner-fold global ablations holding the corpus fixed. An improvement from score changes with unchanged index supports competition correction; an index-only equivalent result proves fidelity, not recall gain. Any post-label target diagnostics are explanatory only. No oracle maximum across channels or winning recipe per query.",
+    "labels": "Independent humans annotate prospectively blind to predictions under one fixed labeling policy. Existing labels remain unchanged. Exact and operational results stay separate; alternate operational sites cannot erase exact misses."
+  },
+  "falsifiable_future_protocol_requires_authority": {
+    "not_authorized_now": "This review does not authorize a fit, a retrieval run, annotation, source admissibility change or opening fold0/fold1/control962/test4323. Keep downstream models frozen.",
+    "preregistered_claim_proposal": "Against one frozen baseline with the SAME complete corpus/checkpoint/source policy and a legal serving vector, the one typed-ambiguity correction increases all-human exact@100 by at least0.5percentage point, with a positive lower95%paired design-respecting confidence bound. This is a proposed minimum useful improvement, not a power result or forecast; confirmatory architecture acceptance also requires the unchanged absolute contractual gates.",
+    "development": "Use only authorized folds2/3/4. Group whole SIREN, explicit positives/negatives, duplicate CRM and related exposure controls; no target identifier features. Inner grouped folds alone choose correction regularization and any statistic bins. Outer held-out groups cannot influence coefficients, checkpoint control, source discovery or family selection. All526 stays a consumed descriptive panel, never a pristine validation.",
+    "encoder_scope": "A frozenV6 experiment can support a calibrated-native-score hypothesis under its disclosed provenance, not full encoder-OOF. If any outer group was used to train/controlV6, a claimed fullOOF protocol must train outer encoders from an unexposed base or admissible official-only initialization. ReusingV6 or SC-Block++partial reinitialization is insufficient.",
+    "serving": "Freeze ONE deployment vector independent of human SIREN hash before future generation; explicitly authorize either deterministic coefficient averaging or one global fit on permitted development. Recompute every geo/context delta under that same vector. Do not select OOF vectors from the targetSIREN, or average/fuse candidate lists after collection.",
+    "clean_confirmation": "One prospective incoming-CRM cohort, dated and independently human-annotated blind to frozen predictions, with wholeSIREN groups not consumed for architecture selection and predefined commune/density/weak-input strata. Freeze one baseline and one challenger before any outcome. No optional favorable stopping, adaptive sample enlargement, model switching or refit after opening.",
+    "representativeness": "Sampling plan fixes population, weights, clusters, CRM/time provenance and source as-of. New communes and density strata test geographic transfer; a second CRM organization is necessary to claim inter-CRM transfer. Download dates or query hashes are not temporal holdouts. Related-company dependence is disclosed or clustered.",
+    "statistics": "Preregister sample size/power for rare errors, paired delta and cluster/stratified uncertainty before labels. Report raw exact recall and weighted target-population estimate. Use design-respecting uncertainty for weighted/clustered inference; never Wilson on weighted hits or Kish substituted as binomialn. Retain contractual rawWilson95lower>=99.0 separately; neither it nor a consumed526 replay certifies national transfer.",
+    "contractual_gates_retained": "Exact@100>=99.2%; rawWilson95lower>=99.0%; each authorized outer fold>=98.8%; all-human absence/loss attribution via sealed official sidecar; p95<=1s and p99<=2s. A prospective cohort does not replace fold/one-shotfold1 obligations. No READY_FOR_FOLD1 without every applicable gate and explicit fold1authority.",
+    "SLO": "Measure complete cold/warm end-to-end query work for the actual frozen serving score/corpus on Mac: normalization, numeric-universe access/build, typed view lookup, bounds/scan, and single collector. Fixed label-free query suite includes dense communes, empty/weak names, missing location, many relation targets and large numeric universes. Report p50/p95/p99, peakRSS, diskbytes, swap and exceptions. Precompute/index cost is published separately, not amortized away or excluded if performed perquery.",
+    "guard_proposal": "One worker, compact memory-mapped blocks, <=6GiBRSS and zero new swapout for preflight, subject to main-agent approval and stricter existing guards. Time/resource budget for national index preparation is estimated before launching. If safe exact traversal cannot fit SLO, declare PIVOT_LATENCY rather than shrinking corpus or producing a hidden candidate pool.",
+    "rejection": "Reject the claimed improvement if exactdelta<0.5pp or its preregistered paired lower bound<=0; publish all gained/lost/all-human rows as privacy-safe counts/segments. Retain PIVOT_GENERATION if99.2%not achieved, PIVOT_LATENCY ifSLOfails, STOP for attribution/integrity failure. No manual label fixes, denominator trimming or operational-primary swap to rescue a gate.",
+    "freeze_manifest": "Hash source policy/cutoff, complete corpus/index/typed evidence, normalizers, encoder/tokenizer/checkpoint, feature-statistic schema, sole serving vector, every score interaction/delta, collector precision/ties/cap, split custodian, annotation policy, primary/secondary metrics, sample plan and SLO suite. Commit isolated milestones and cite them in root-owned handover.md."
+  },
+  "bottom_line": "The defensible next research direction is a small, typed, ambiguity-aware native scoring hypothesis with exact indexed execution, followed by one clean future test. Existing measurements do not support99.2%, a blanket geography/seat repair, further targeted source additions or a promise that retraining will recover the missing identities."
+}
