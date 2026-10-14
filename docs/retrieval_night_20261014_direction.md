@@ -55,6 +55,23 @@ précise. Son diagnostic source est séparé du retrieval ; une bonne proximité
 isolée ne prouve pas une place dans le top100 composite. Voir
 [source géographique complète](retrieval_v171_separate_study_geo_source_stageA_20261014.json).
 
+Le diagnostic label-side final, exécuté après le scellement complet et
+terminé avec un exit0 réel, porte toujours sur les526 requêtes. Parmi les19
+ratés,15 ont un composant géographique admissible dans cette source :
+**3 sont certainement dans les100 selon la distance seule**, même avec
+des ties défavorables ; aucun n'est certainement dans les50. Deux de ces
+trois cibles n'avaient pas de XY courant utilisable, la troisième en avait.
+Deux cibles protégées et deux sans code de numéro identifié restent au
+dénominateur. Aucun label, point courant, coefficient ou sortie retrieval
+n'a changé. Le rang est calculé dans l'univers numérique original complet
+de chaque requête, pas dans tous les documents lexicaux nationaux.
+
+Cela apporte une preuve de disponibilité/proximité pour une prochaine
+expérience générique ; **ce n'est ni trois gains de recall ni une solution
+aux19 ratés**. Le total retrieval demeure507/526. Source et composant
+restent distincts des XY courants et des scores composites. Voir
+[report diagnostic scellé](</Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v171/separate_study_geo_components_20261014_night/label_side_b/report.json>).
+
 **L'attribution causale fine reste incomplète.** Deux ratés étaient
 géographiquement plausibles dans un diagnostic antérieur, mais l'essai
 d'explication du score complet a échoué avant validation de fidélité, malgré
