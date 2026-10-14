@@ -19850,3 +19850,52 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   Sourceconservée horsindex/serving, pasnatifciblé ni poids/label/aliasCRM
   modifié. Vérification documentaire administrationcorporate vsactorcontext
   en cours, sans extraction/export de répertoire de personnes.
+
+#### Jalon 03:28 UTC — BANO sans incrément, sources administration et potentiel géo scellés
+
+- V142 famille complète, deux générations ALL526 et child exits0 avant labels ;
+  session96527 exit outil réel0/chunk7a59f2, receipt observé03:13:10UTC.
+  bano_geo_only504/526, zéro gain/perte vsV115. Primaire
+  all_new_sources_max_bano507/526, zéro gain/perte exact ET opérationnel vsV134.
+  Report primaire SHAe2f47a2482fa6c32c3858c9670cdb61f18dcc8aedb245f9fc73cb207e746d451.
+  Meilleur mesuré reste507/526 exact96,38783%/pondéré95,67903%, SIREN511/op508,
+  trois gains/zéroperte vsV115. Pas de gate99,2%, de preuve nationale ou de
+  généralisation ; toutes526 consommées, contrôles encoder exposés conservés.
+- Lineage administration `313890e1` : les acteurs corporate RNE sont déjà
+  exploités avant initial100 ; le texte administration BODACC ne l'est pas
+  comme relation structurée. V158 recette `c3ce7c4b`, runA SQL réservé échoué
+  conservé ; seul alias transient SQL corrigé en namespaceB `21a186b0`.
+  MilestoneB `695cc520`, session28938exit0/chunk6cf87f,19années entières,
+  25076lignes sujet/acteur/nom/rôle,10958absentes de la table pairesRNE.
+  Une mention administrative n'est ni propriété ni identité de site.
+- V159 nouvelle grammaire scientifique `3104884a`, pré-déclarée AVANT labels,
+  seule parenthèse finale entièrement juridique admise, pas permissivité
+  personnes/listes/contacts. Milestone `7f1c865e`, session94528exit0/chunk434cc7,
+  110784lignes typées,57780absentesRNE,367queriescontextebrut/320novel.
+  Générations V158B/V159 complètes/scellées avant toute comparaison labels ;
+  pas nouveaux ranks, coordonnées, alias CRM, index, serving ou gradients.
+- Diagnostic source apparié `8dbb8bc5`, session28144exit0/chunkb06067 :
+  ALL526=512corporate publics/12EI hors scope source/2protégés skip, aucun
+  retrait du dénominateur. V159 troiscontextes positifs au vrai parent, deux
+  depuis pairesabsentesRNE ; tous déjàhits et déjàoverlaplexicalRNE. V158B un,
+  déjàhit aussi. ZÉRO contexte positif sur22V115,20V140 et19V142ratés.
+  Beaucoup de nouvelles relations nationales ne prouvent pas l'apport au gap.
+  Sources conservées, pas de native supplémentaire fondé sur ces absences.
+- Géocomposants `5a7f5378`/résultat `2226834a` : sourcequery-only ALL526,
+  128313036refs originales/4universvides, packed1,554GiB/RSSpeak1,182GiB,
+  sourceexit0 session23313/chunkad6f89 puis séparément labels session83415/
+  chunkbc5fd0 exit0 après rehash exhaustif. Manifestsource
+  0efb4f4bf59653fb90857f3253a5450040027bde19d1c792b9aebbfaf5f179d7.
+  Puregéographie ownXY, aucun parent/nom, aucunecoord ajoutée, ties défavorable
+  conservée ; pas pool produit, pas oracleunion ni nouveau recall.
+- Sur19ratés actuels :12ownXY utilisables/5sansXY/2protégés. Deux cibles
+  sont définitivement top50 du composant BANO brut ([1,49],[7,10]) malgré
+  absence de la sortie jointe100 ; une l'était déjà via owngeo original.
+  Cinq autres composantBANO>100, cinq sanspointcompatible, cinq sansownXY,
+  deuxprotégés. ALL526 owngeo definitely≤100278/526, BANO182/526 ; leur
+  proximité seule est insuffisante/ambiguë. SOURCE_COMPONENT_POTENTIAL,
+  aucun gain inféré ni règle ajustée aux exemples. Le zéroincrémentV142 reste.
+- Fin de plage inchangée05:06UTC/07:06Paris. Investigations finales statiques
+  score/admission et temporalité de sources, pas nouveau calcul long, tuning
+  sur526 ou ouverture de962/4323/folds0/1. Labels humains immuables, métriques
+  exact/opérationnel distinctes, aval gelé ; aucun unit test ni dépense externe.
