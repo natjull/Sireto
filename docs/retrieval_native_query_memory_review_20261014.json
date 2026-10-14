@@ -1,0 +1,76 @@
+{
+  "status": "STATIC_MEMORY_ATTRIBUTION_HYPOTHESES_NOT_PROFILING_OR_SLO_MEASUREMENT",
+  "scope": "Read source code and safe projected reference sizes from existing manifests only. No native run, optimizer, benchmark, GT/candidate/outcome body read, API spending or resource-cap escalation. Diagnostic and source artifacts stay immutable; no fourth EXPLAIN attempt is proposed. Handover is root-owned.",
+  "observations_supplied_by_parent_not_new_measurements": {
+    "first_resource_failure": "Two-query EXPLAIN/replay preflight under6GiB guard reached approximately7.11GiB before its collector boundary; numeric universe1,022,622references x51fields and approximately217MBfeatureNPZ.",
+    "final_attempt": "Resource-only C attempt with8.5GiB cap STOPPED before complete two-query replay. Parent reports memory-pressure/minfree acceptable and swapout count unchanged. No EXPLAIN/DocAddress/score-attribution validation from C and no further attempt authorized.",
+    "critical_limit": "This diagnostic failure is not a production-retrieval SLO failure measurement. Existing native query arithmetic and prior retrieval recall remain unchanged. Neither a cap admission nor absence of swap validates memory/runtime/business correctness."
+  },
+  "manifest_payload_sizes_bytes_not_RSS": {
+    "V88_context_expansion_json": 216799417,
+    "V98_initial_alignment_json": 84917848,
+    "V57_corporate_names_json": 87951656,
+    "V32_published_parent_names_json": 11055635,
+    "V81_indirect_names_json": 32664,
+    "V112_historical_activity_context_json": 3775898778,
+    "V115_compressed_activity_shards_all526_sum": 46345225,
+    "V115_compressed_activity_shard_max": 4188373,
+    "V115_activity_owner_reference_count_all526": 12641678,
+    "V133_supplier_query_extras_json": 80218,
+    "V137_continuity_query_extras_json": 23815,
+    "V130_RNA_context_json": 1949403,
+    "V130_BANATIC_context_json": 1792387,
+    "V115_baseline_outputs_json_reference_only_not_body_read": 18763263,
+    "V134_composite_outputs_json_reference_only_not_body_read": 18762935,
+    "interpretation": "On-disk JSON/NPZ sizes are neither resident object sizes nor simultaneous RSS. io.read uses json.loads(Path.read_text()), so decoded text and nested Python objects can temporarily coexist. Dictionaries/sets/string duplication and native allocations add overhead whose actual multiplier is unmeasured. Manifest projection read only sizes/references; no payload bodies opened."
+  },
+  "execution_path_and_coexistence": [
+    {
+      "stage": "V142.generate inputs and per-query composite evidence",
+      "code": "scripts/embeddinggemma2_v142_bano_native_ablation.py:230-302",
+      "plausible_residents": "Generation loads global source contexts, baseline/upstream output dictionaries and metadata before looping; per-query arrays include numeric keys, BANO delta, upstream geometry/named scores, three projected source vectors and successive MAX results. Global output dictionaries are part of the current diagnostic/reuse scaffolding, not necessarily a necessary fresh-serving input.",
+      "limit": "Their existence is code-established; no measured per-object attribution or maximum coexistence profile is available."
+    },
+    {
+      "stage": "V115 activity projection, then V99 context/initials",
+      "code": "scripts/embeddinggemma2_v115_streamed_activity_ablation.py:80-88; scripts/embeddinggemma2_v99_initial_alignment_native.py:161-168",
+      "plausible_residents": "V115 reads one activity shard'sS9references/float64confidences and builds Python entry dictionaries. V99 caches all-query CONTEXT and INITIAL_DATA globally, retaining their nested Python objects throughout the worker. These are216.8MB and84.9MB JSON payloads before expansion.",
+      "important_exclusion": "V115.native_search does NOT load the3.776GB historical activity JSON whole. That JSON caused the older V114 loading issue and is projected losslessly during V115 preparation, but cannot be named as the current V142 serving allocation without a changed execution path."
+    },
+    {
+      "stage": "V81 native score construction and corporate cache",
+      "code": "scripts/embeddinggemma2_v81_indirect_lexical_query.py:92-125; scripts/embeddinggemma2_v56_corporate_site.py:205-236",
+      "plausible_residents": "V81 first builds the V32 base query, then corporate component and residual numerical query. Corporate initialization loads87.95MBnames JSON and builds alias lists, token-to-alias sets and alias-to-owner sets. It can transiently retain the decoded source and rebuilt structures together; final CORPORATE/LAST_CORPORATE caches persist. Additional indirect lexical views are appended before the same collector.",
+      "limit": "Rebuilt corp dictionaries and query nodes are credible contributors, but no exact RSS contribution or persistence of freed allocator pages is measured."
+    },
+    {
+      "stage": "V32 base numeric score/parent component, then residual",
+      "code": "scripts/embeddinggemma2_v32_native_features.py:77-134; scripts/embeddinggemma2_v81_indirect_lexical_query.py:95-104",
+      "plausible_residents": "lexical_parts evaluates parent_component before the weight test, even though the published-parent coefficient is zero in all five current models. It can still load11.06MBparent JSON, buildPUBLICarrays, compute WRatio and create a cached parent query before the zero-weight component is omitted. Numeric base22fields and residual29fields are copied tofloat64 for dot products; quantized uint32 scores and string reference lists feed20bitplane term-set queries each. Base query native nodes survive while residual nodes are built.",
+      "array_arithmetic_not_profile": "For N=1,022,622 andfloat32,51fields occupy208,614,888bytes plus8,180,976bytes ofuint64keys:216,795,864bytes before headers. Base22float64copy is179,981,472bytes; residual29float64copy is237,248,304bytes. Dot-product copies are transient and not necessarily concurrent with one another, while input features survive. Their arithmetic does not explain7/8.5GiB by itself."
+    },
+    {
+      "stage": "Nested collector wrappers append evidence/owner planes",
+      "code": "scripts/embeddinggemma2_v99_initial_alignment_native.py:103-153; scripts/embeddinggemma2_v114_native_activity_ablation.py:95-121; scripts/embeddinggemma2_v132_local_evidence_ablation.py:236-265",
+      "plausible_residents": "The final query retains base and residual nodes while wrappers add context, initials, per-query activity,20leaf-extra planes and owner context planes. V32/V81 keep one formatted reference list and create selection lists per plane; EvidenceCollector formats new SIRETstrings per plane. Python/Rust boundary conversion may allocate native term containers while earlier query nodes remain alive.",
+      "structural_bound_only": "The three numerical groups base/residual/leafextra each have at most20planes; with Nreferences, at most60*N=61,357,320reference occurrences can be submitted across these groups, excluding parent/corporate/owner branches. This is an upper bound, not observed bit occupancy, term duplication, RSS or evidence that termsets alone cause the peak. A full native Query can be much larger than its input featureNPZ without proving a particular multiplier."
+    }
+  ],
+  "diagnostic_specific_allocation_and_retention": {
+    "code": "scripts/embeddinggemma2_v160_composite_explain_diagnostic.py:65-97,150-173; resource/delegation continuations apply only their declared transformations",
+    "replay": "CaptureSearcher.search checksguard, computes repr(query), encodes that representation forSHA256 and again forrepr_bytes, then deletes it and runsGC before anotherguard. Large repr and encodedbyte strings may transiently coexist. Normal V142.generate does not create this representation. The firstguard may fail beforerepr is attempted, so representation cannot be asserted as the cause of a particular pre-collector failure without its traceback/stage evidence.",
+    "trace": "Injected DIAGNOSTIC_TRACE retains keys,score,entries,model for selected queries; replay captures retains only SHA/repr-size metadata, NOT the nativeQuery. The trace can extend small array/context lifetimes beyond the original loop but is not proven to account for severalGiB.",
+    "EXPLAIN_capture_mode": "Only mode=capture raises Captured(query,searcher,sha,schema); holding that exception may retain the full query and traceback/frame locals while loading features again for arithmetic. That is distinct from the replay stage. Parent says C did not complete replay; no successful EXPLAINcapture is established, so this retention cannot be blamed for C as a measured fact.",
+    "conclusion": "Global caches, float conversions, term/query construction, native allocations, diagnosticrepr and trace retention are plausible contributors or diagnostic overhead. Their causal shares remain unmeasured; do not label this a demonstrated7GiBbitplane defect or a productionSLO result."
+  },
+  "future_score_factory_design_only_not_authorized": {
+    "first_requirement": "Unify score construction behind one target-independent parameterized factory, keeping exact branch domains/admin masks, rawown/site,parent,lexical/typed context, coefficient-dependent MAXdeltas and current20bit quantization separately represented. No training/heuristic change is implied.",
+    "technical_candidate": "A compact query-source score sidecar keyed by immutable internal document ordinal, with sorted sparse scores/memory-mapped arrays, could avoid repeatedly encoding the same lookup references into up to60term-set planes. A native scorer/iterator could combine all national lexical matches with the COMPLETE label-free numeric/source support universe and look up its score while one collector keeps<=100. This is a proposed engine capability, not an existing verified Tantivy API or measured optimization.",
+    "sidecar_distinction": "This source-side query score table contains public computed evidence only; it is NOT the official sealed label-side attribution sidecar. SIREN/SIRET remain reference bindings, not predictive features. No GTseeded rows or fixed candidate shortlist allowed.",
+    "no_two_stage_pool": "Index/source iterators and query sidecar may cover millions of eligible references. They are traversal/storage devices, never a fixed2000/500/101pool filtered and reranked. Native query equivalence must preserve global lexical eligibility, zero numerical scores, owner/site masks and single initial100collection.",
+    "what_might_change": "Streaming per-query contexts, caching compact full-source inverted structures once, avoiding useless zero-weight component construction and releasing temporaries can reduce Python overhead in principle. Sidecar/native scoring may reduce query-node duplication. None has an established memory saving, native-score equality or MacSLO here; do not refactor historical hash-bound code during this task.",
+    "equivalence_fixture_required": "Before any future measured run, freeze a label-free fixture manifest binding the COMPLETE authorized official corpus/index and ordered document map, source cutoff/policy, feature schemas/arrays, typed contexts, all hashes, ONE deployment vector, quantization and ties. Verify score/rank/eligibility equivalence including numeric-only, lexical-only, missing-geo, zero-score, dense and many-owner inputs. Whole-corpus hash bindings and predetermined fixture selection must not be replaced by target-centered samples. Current post-cutoff/community source diagnostics are not thereby production-admitted.",
+    "future_measurement_if_authorized": "Measure fresh production-like factory separately from replayrepr/EXPLAINcapture, with boundedworkers, actualcold/warm memory and end-to-end p95/p99. Attribution would require staged allocations/native statistics, not merely an increasedRSScap. Parent's STOP ends this night's EXPLAIN attempts; this memo does not authorize another profiler or benchmark."
+  },
+  "bottom_line": "The observed resource STOP supports only that the specific diagnostic exceeded its admitted memory guard. Code exposes substantial coexisting JSON caches and query-construction work, but does not establish their causal shares. A sparse source-side native-score table is a plausible future alternative to many term-set masks, contingent on complete-corpus/score/cap equivalence proof, not a promised optimization or a recall/SLO result."
+}
