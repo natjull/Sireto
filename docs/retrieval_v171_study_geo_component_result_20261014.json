@@ -1,0 +1,79 @@
+{
+  "status": "COMPLETE_SEPARATE_STUDY_COMPONENT_POTENTIAL_NOT_RETRIEVAL_RECALL",
+  "scope": "Authorized postseal ALL526label-side diagnostic, then frozen current19descriptive stratum. SourceAcomplete+owned0preceded labels. Current19comes from the existing V157sidecar of frozen V142outcomes, unchanged after V162zero-gain/zero-loss. No new retrieval/scoring model, source rule, label, coordinate or QCtransfer.",
+  "method": {
+    "source": "One own-SIRET July statistical-geolocation observation; originalfloat32 source values, currenteO/uOmask, strictEPSG2154, finite supportedL93 and rawQC11or21. Source12/22/33are separately retained as non-number-identified support, not declared false points.",
+    "component": "Rawfloat64 .5/(1+distance_m/300) against unchanged V115/V17query geometry. BANweak/uncertainty metadata remain visible but are not newly tuned weights. Full original numeric universes are preserved; no target injection or new pool.",
+    "rank": "Within finite source components of each ORIGINAL query-specific numeric universe only: best=1+#strictlygreater,worst=#greaterorequal. Definitely<=cap iff worst<=cap; possibly<=cap iff best<=cap. No favorable identity tie-break and no rank claimed over the national lexical universe.",
+    "absences": "Protected targets skipped BEFORE label-SIRET access/target lookup; source absence, non-number-identifiedQC, unavailable query geography and outside-original-universe remain absences with unchanged ALL526/current19denominators.",
+    "integrity": "Complete lookup/components and all originalNPZSHA256verified before label reads; original ordered-keySHAverified during lookup and Bfingerprints checked. SourceAnumeric refs did not serialize inode/mtime, so those fingerprints are explicitly B-only, not retrospectively attributed to A."
+  },
+  "ALL526": {
+    "denominator": 526,
+    "available_source_component": 421,
+    "absent_source_component": 105,
+    "absence_partition": {"raw_QC_not_number_identified":57,"query_geometry_unavailable":42,"not_in_original_numeric_universe":4,"protected_skipped":2},
+    "definitely_le50": 260,
+    "possibly_le50": 289,
+    "definitely_le100": 297,
+    "possibly_le100": 313,
+    "best_rank_median_when_available": 6,
+    "worst_rank_median_when_available": 18,
+    "current_xy_missing_with_component": {"available":50,"definitely_le50":33,"definitely_le100":37,"possibly_le100":38},
+    "current_xy_supported_with_component": {"available":371,"definitely_le50":227,"definitely_le100":260,"possibly_le100":275},
+    "raw_target_QC_metadata_including_outside_original_universe": {"11":465,"12":36,"21":1,"22":11,"33":11,"protected_not_looked_up":2},
+    "interpretation": "297is a component-rank count, not297retrieval hits or a new pipeline recall. The existing measured pipeline remains507/526exact; this diagnostic does not replace it."
+  },
+  "current19_descriptive_only": {
+    "denominator": 19,
+    "available_source_component": 15,
+    "absent_source_component": 4,
+    "absence_partition": {"protected_skipped":2,"raw_QC_not_number_identified":2},
+    "raw_target_QC": {"11":15,"12":1,"22":1,"protected_not_looked_up":2},
+    "query_geometry_available": 19,
+    "query_BAN_declared_weak": 7,
+    "definitely_le50": 0,
+    "possibly_le50": 2,
+    "definitely_le100": 3,
+    "possibly_le100": 3,
+    "best_rank_median_when_available": 1394,
+    "worst_rank_median_when_available": 1397,
+    "current_xy_missing_with_component": {"available":3,"definitely_le50":0,"definitely_le100":2,"possibly_le100":2},
+    "current_xy_supported_with_component": {"available":12,"definitely_le50":0,"definitely_le100":1,"possibly_le100":1},
+    "three_le100_anonymous_metadata": [
+      {"current_xy_supported":true,"raw_QC":11,"source_distance_precision_m":0.0,"query_BAN_weak":false,"query_BAN_uncertainty_m":30.0,"rank_interval":[1,52],"equal_score_candidates":52},
+      {"current_xy_supported":false,"raw_QC":11,"source_distance_precision_m":null,"query_BAN_weak":true,"query_BAN_uncertainty_m":128.08761437871343,"rank_interval":[52,52],"equal_score_candidates":1},
+      {"current_xy_supported":false,"raw_QC":11,"source_distance_precision_m":null,"query_BAN_weak":true,"query_BAN_uncertainty_m":260.1470871006731,"rank_interval":[2,84],"equal_score_candidates":83}
+    ],
+    "interpretation": "Two current misses without supported currentXYhave a separately publishedJulyobservation whose component worst-rank<=100. One currentXYsupported miss has the same potential. Twelve of the15available misses remain beyond100; even two best-ranks<=50have worst-ranks52/84because of ties. These are neither three recovered candidates nor three causal admission fixes."
+  },
+  "source_precision_and_age_limits": {
+    "source_semantic_date": "2026-07-01",
+    "source_publication_date": "2026-07-21",
+    "last_point_measurement_date": "UNKNOWN",
+    "primary_document": "https://static.data.gouv.fr/resources/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques/20260123-143212/documentation-geolocalisationetablissements-sirene-pouretudesstatistiques-v8.pdf",
+    "qualification": "Raw11/21coding identifies an address number, not a universally certified current-house point. CFE-derived quality can instead measure fiscal/Sirene address coherence. Source33means random commune imputation, not necessarily centroid;12/22impute in a street. distance_precision=0does not by itself certify perfect point accuracy. No quality follows a different canonicalXY.",
+    "independence": "Julyas-of is not each point's latest measurement date; statistical updates may lag same-commune address changes. Shared BAN/fiscal/cadastre references remain possible. No independent-BAN, physical-site identity or current-coordinate-error claim."
+  },
+  "execution_and_preserved_failure": {
+    "original_label_side_commit": "8c14b3c0",
+    "original_attempt": "Namespace label_side preserved with actualownedexit1 after all computations but before result seal: numpybool JSONserialization in target_in_original_numeric_universe. No original incomplete result promoted.",
+    "authorized_representation_only_continuation": "5e7cc89e preserves original codeSHA5735420f84ad9dbc811cd8a6e252c9e167f4967f4a6521f0a2eab28090df74e4; only bool(inside) and fresh label_side_bnamespace differ. No source/metric/rank/tie/privacy/guard change or scientific variant.",
+    "actual_owned_success": {"session_id":89132,"completion_chunk":"9f135e","exit_code":0,"observed_utc":"2026-10-14 04:53:32 UTC"},
+    "successful_elapsed_seconds": 53.496315584052354,
+    "successful_peak_guarded_rss_bytes": 464470016,
+    "last_free_percent": 70,
+    "last_pressure_level": 1,
+    "not_retrieval_SLO": true
+  },
+  "sealed_artifacts": {
+    "root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v171/separate_study_geo_components_20261014_night/label_side_b",
+    "completion_sha256": "be8d35518dd458b73acb9438535476235a5be8df9936b3f211c92f97b90f6333",
+    "manifest_sha256": "0dd5e9bc51cf181ee3e02dab524e7ac624ee92e6cebfcf68ce40cc22625a7000",
+    "owned_exit_sha256": "ae4bb142262f4e3f98ae1e6ea934959c0357404b8e2868673c346d6288dfeb76",
+    "report_sha256": "42b737b1706b9b2b2111d0c2df2bbf4bc953551e9daf8f7a73480302682ddc3a",
+    "all526_privacy_safe_metadata_sha256": "2b8a1f49150589db38da44e46250dc88ee9dcf05038a35dff7e249f2a68b9f68",
+    "sourceA_completion_sha256": "007eacf7b3c370f645ee635113782ee75ccbd7cb0433e4fa17f659cc67f19eca"
+  },
+  "plain_conclusion": "Cette preuve de source est utile mais ne peut être assimilée à une récupération du SIRET par le pipeline. Elle montre un petit potentiel géographique distinct, notamment pour deux cibles sans XY courant supporté, et une ambiguïté persistante. Aucun candidat n'a été nouvellement collecté ; aucune métrique retrieval, correction de label/XY/QC, causalité d'admission, SLO ou READY n'est établi. Dernier calcul terminé ; aucun nouveau test, modèle ou hypothèse lancé."
+}
