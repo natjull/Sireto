@@ -19504,3 +19504,23 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   outcome/jeu fermé lu. Première conclusion de faisabilité exigée avant
   décision sur une nouvelle expérience pré-déclarée ; V143 recettes inchangées.
   V143 geometry_only319/526/52nativement recalculées à00:05UTC, un seul natif.
+
+- Audit20 restants post-seal `9bb4b15b`,
+  `v140/remaining_structure_20261014_night/report.json`, exit0 réel : huit
+  sans nouvelle source pour la requête, cinq source présente mais cible non
+  couverte, quatre SIREN déjà trouvé/site exact absent, deux protégés, un
+  bonus cible positif insuffisant. Catégories exclusives, mécanismes peuvent
+  se chevaucher. Les18 publics sont tous dans l'univers numérique ;17/18
+  n'ont pas de mot CRM dans le portfolio compilé,11 ont néanmoins BODACC.
+  Absence compilée != absence dans tous les payloads/open data. Aucun score
+  lexical+numérique natif ni rang d'une cible absente n'a été inventé.
+- Vérification publique XY `7cdf5ce4`, session62985 exit0,
+  `v140/remaining_xy_20261014_night/report.json` :13/18 coordonnées L93
+  exploitables, cinq absentes/incompatibles (troisNAOS, INFODESCA, SCHMIDT).
+  Les deux protégés non interrogés. Les troisNAOS ont contexte fournisseur
+  existant mais propre/filled_geo0 ; le déficit constaté est celui de la
+  géographie propre. Adresses souvent zone/quartier sans numéro : aucun
+  succès de jointure exacte BANO ne peut être présumé ni point inventé.
+  Le bonus BANATIC landais0,04254 relève de MEMBER_OF_GROUP/degré457,
+  pas d'une identité juridique ; pas hausse de poids ciblée. Toujours zéro
+  erreur humaine prouvée, zéro label corrigé et zéro jeu fermé ouvert.
