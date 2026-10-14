@@ -19951,3 +19951,63 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
 - Surcepanel 99,2% exigerait522/526, donc15gainsnets deplus que507 : lesdeux
   géoplausibles ne suffisentpas. Labels et dénominateurs immuables, aucunjeu
   fermé lu, aucunsaut de l'exact versl'opérationnel pour annoncerle gate.
+
+### Nuit 14 octobre — consolidation 06:47 Paris, garde anti-overfit inchangée
+
+- V160 replay/EXPLAIN : `ddc44c0d` tentative A échoue avant collector
+  (délégation num_docs), continuation d'exécution `7f2a8cc4` B arrêtée au
+  plafond 6 Gio, reçus préservés `e12c9ab6`. Une dernière admission ROOT
+  explicite 8,5 Gio `fc8d5b33`, namespace C distinct, échoue aussi avant
+  replay complet. Session37805/chunk4dba5d parent exit1, enfant terminé et
+  attendu ; code enfant non journalisé, aucun owned0 inventé. Conclusion
+  `35179500` : STOP définitif, pas quatrième essai ni contribution/score/
+  rang causal obtenu. API disponible != instrumentation fidèle validée.
+- Revue mémoire `05462819` : allocations/caches/bitplanes et surcoût repr
+  du diagnostic sont des hypothèses statiques, pas profiling causal/SLO.
+  V115 charge les shards activité, PAS le JSON historique entier 3,776 Go.
+  Complément call-path `35179500` : entrée native réelle V81 héritée,
+  pas remplacement artificiel par une simple matrice x58.
+- Normalisation OSM générique V161 `5b2f8a57`, préflight scellé
+  `127a1a09` : suffixe communal officiel entier uniquement, ancien matching
+  conservé en OR, nom CRM complet intact ailleurs. Aucun label utilisé pour
+  définir villes, poids ou grammaire. Treize nouvelles apparitions de POI
+  sur onze requêtes ne sont PAS treize gains de retrieval.
+- Ablation V162 `7efcaaac`, résultat `b2c30461` : préparation ALL526
+  session38910/chunkc8c40b owned0, run94209/chunke377c6 owned0, enfant93211
+  owned0, RSS9 299 509 248 octets sous10Gio. Les515 sorties réutilisées
+  reposent sur égalité exacte des entrées complètes, jamais sur leurs labels.
+  Whole526 sorties initiales <=100 scellées avant labels ; onze requêtes
+  recalculées étaient toutes déjà exact-hit et le restent. Résultat inchangé
+  vsV142 : exact507/526, pondéré95,67903%, SIREN511, opérationnel508,
+  gains0/pertes0 dans les trois vues. Aucun nouveau SLO ni test indépendant.
+- Schémas XY/qualité `45e52048` puis V170 whole-source `d330a9c3`,
+  résultat `5714ca8d` : source statistique juillet distincte du StockXY août,
+  37 575 264 lignes réellement scannées, session64826/chunka576b7 exit0,
+  61,66s/RSS gardé1,44Go. Deux représentations pré-déclarées : seulement
+  441 égalités strictes float64, 2 811 873 compatibilités stockées float32 ;
+  aucune ne prouve même site/qualité/fraîcheur. 9 806 577 lignes publiques
+  EPSG2154 ont un point source mais pas de XY courant supporté : disponibilité
+  de source, pas taux de réparation ou recall. Aucune qualité transférée.
+- Documentation INSEE v8 PDF lue entièrement et pages qualité rendues/
+  vérifiées visuellement par ROOT, SHA541bec41c2359ad9fe310bf0493ba450bde3c5ff2be538cc5b0ca6114d08a3cf.
+  Codes11/21 identifient un numéro mais ne certifient pas universellement
+  une maison courante (réserve CFE) ;12/22/33 imputent des positions.
+  distance_precision n'est pas un rayon probabiliste universel. Voir notes
+  source pour URL et PDF préservé ; ni coordonnées actuelles ni labels corrigés.
+- Dernier calcul autorisé V171A `77796747`, résultat `e6b1f23a` : source
+  géographique séparée propre au SIRET, pas fill des XY actuels. ALL526 et
+  128 313 036 références originales, quatre univers vides conservés ;
+  source/component entiers scellés sans GT, actual session82499/chunk66f064
+  exit0,163,06s/RSS gardé2,33Go/disque2,37Go. Manifest source
+  8bf0c6ea89070339503a27ef1deca83e16b5d0ac849f343da4b982554dacb4c6.
+  ROOT a lu completion/owned0/note puis autorisé explicitement StageB ALL526
+  post-seal : intervalles de rang composant géographique seulement, statut
+  protégé exclu du lookup AVANT identifiant cible, dénominateur inchangé.
+  StageB n'est ni collector natif, ni score pipeline, ni preuve de gain ;
+  aucune nouvelle recette après ses résultats. Échéance05:06:08UTC inchangée.
+- Bilan retrieval actuel : V134/V142/V162 mesurent les mêmes507/526, non
+  trois réplications indépendantes. Par rapport àV115504 : trois gains exacts
+  distincts / zéro perte, dix-neuf ratés restent. ALL526 consommé et encodeur
+  non full-OOF, sources communautaires/post-cutoff diagnostiques : pas99,2%
+  national, pas READY_FOR_FOLD1, pas nouveau modèle promu. Aucun label humain
+  corrigé, aucun alias CRM/règle client, jeux fermés/aval/serving immuables.
