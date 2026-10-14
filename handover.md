@@ -19724,3 +19724,25 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   pourCUISINES. Hypothèsefuture unique : MAXcontextsV112/V154 avecw6/admin
   inchangés, sansdoublevote ; nonexécutée/nonpromue. V143/V134/V142 prioritaires
   inchangés. Aucun échec supprimé ni label corrigé, aucun jeufermé ouvert.
+
+#### Jalon 01:57 UTC — géographie propre sans numéro, audit négatif confirmé
+
+- V147 label-side `29100bca`/`55a500c9`, originalsession98828exit1 réel
+  RSS1014Mo(guard512) préservé, sans reportpartiel admis. Reprise strictement
+  exécution typedscalarsuint64/releaseMMAP, namespace_b session47265/child37424
+  exit0 réel/RSSfinal216,5MiB. Recette/helpers/hashV17/joins inchangés.
+- Avantlabel, TOUTES23795lignes SQLite comparées au JSONLsource scellé,
+  hashSQLite enregistré/read-only ; pas correctionsource. ManifestSHA
+ 1944c6d27f919e953a9fe7ef21c8477ed59b20f60e192f92096ad67701d4d19b.
+  ALL526conservés/524diffusibles/deuxprotégés skip ; deuxpublicshorsunivers
+  numérique restent erreurs potentielles, pas supprimés du dénominateur.
+- Scopepublicdansunivers :423XYsupportés horsfootprint,32numérossimples
+  exclus,4sansvoiepropre,63éligiblesnohouse =59sanscloud/4aveccloud.425XY
+  supportés comptés surtouspublics incluent les deuxhorsuniversnumérique.
+  Quatrecloudscouverts TOUSdéjàexacthits :3positionsuniques(bbox0m pasmaison
+  certifiée),1cloud8positions/bbox907,87m. Pascentroid/pointcandidat créé.
+- Sur20ratésV140,18diffusibles :13XYpropres supportés horsscope et5sansXY/
+  sanshouse/sameownstreet+commune éligibles, MAISaucuncloudexactscellé.
+  **0/18couvert**, pareilau0/18V145exacthouse. Ce n'est pas absence desvoies
+  partout enopendata, ni rejetutilité future des58584matches, ni preuve
+  d'erreurlabel/recall. Aucun nouveau natif, matchingalternatif ou alias.
