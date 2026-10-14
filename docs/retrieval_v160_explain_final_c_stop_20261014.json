@@ -1,0 +1,31 @@
+{
+  "status": "FINAL_STOP_AUTHORIZED_LAST_RESOURCE_ATTEMPT_C_NO_VALIDATED_REPLAY_SCORES",
+  "supersedes_6GiB_stop_decision_only_by_explicit_authority": "Root authorized one last8.5GiB attempt after observing B7.11GiB/free69%/pressure1; A/B scientific code, data, tolerance and artifacts remained unchanged.",
+  "admission_before_call": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v160/composite_explain_resource_admission_c_20261014_night.json",
+  "code_commit_before_call": "fc8d5b33",
+  "C_namespace": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v160/composite_explain_diagnostic_20261014_night_c",
+  "fixed_C_contract": {"rss_limit_bytes": 9126805504, "stop_utc": "2026-10-14 04:10:00 UTC", "threads": 1, "free_min_percent": 25, "pressure_levels": [0,1,2], "disk_reserve_gib": 40, "atol": 0.00001, "rtol": 0, "exact_output_ids_order": true, "query_repr_hash_method_unchanged": true},
+  "observed_exit": {
+    "actual_parent_exit_code": 1,
+    "session": 37805,
+    "chunk": "4dba5d",
+    "parent_pid": 91787,
+    "owned_child_pid": 91792,
+    "reason": "Parent guard observed child RSS above8.5GiB, then terminate+wait completed; no fourth attempt.",
+    "exact_crossing_rss_not_journaled": true,
+    "last_prior_ps_rss_kib": 8664848,
+    "child_exit_code_not_logged_by_parent_exception_path": true,
+    "child_exit0_not_claimed": true,
+    "postexit_no_diagnostic_process_confirmed_utc": "2026-10-14 03:58:10 UTC",
+    "postexit_inventory_chunk": "eff293"
+  },
+  "swapouts": {"prelaunch_observed_cumulative": 206549649, "during_last_ps_observed": 206549649, "postexit_observed": 206549649, "increase_observed": 0, "counter_measurable": true},
+  "no_scientific_result": [
+    "No two-case replay report/manifest or ownedexit0; no completed fidelity comparison and no score/contribution/margin result claimed.",
+    "No target GT lookup, technical DocAddress lookup, target/head/cut EXPLAIN or StageB execution.",
+    "No new recipe/model/source/index/coordinate/label/tie/precision/tolerance change; no retrieval gain/fullrank/generalization/SLO/READY claim."
+  ],
+  "capacity_conclusion": "Installed Query.explain exists, but this exact-composite reconstruction/capture design did not fit the authorized8.5GiB guard. The crossing was not profiled: existing caches, compiled bitplanes, Query repr hashing and/or native search construction may contribute. Do not attribute8.5GiB solely to the per-document EXPLAIN API or claim it cannot work by another independently authorized faithful instrumentation design.",
+  "decision": "STOP_DEFINITIF_NO_FOURTH_ATTEMPT. Preserve all three namespaces, receipts, original outputs and hashed scripts. Any future instrumentation/resource change needs fresh authority and score/query fidelity proof, not a new scoring engine disguised as explanation.",
+  "handover_changed": false
+}

@@ -1,0 +1,11 @@
+{
+  "status": "STATIC_CALL_PATH_PRECISION_ADDENDUM_NO_NEW_MEASUREMENT",
+  "parent_note_commit": "de2a200c",
+  "verified_actual_path": "V115.native_search -> V99 context/initial wrappers -> V81.native_search -> V114 activity wrapper -> V132/V143 EvidenceCollector -> actual Tantivy searcher",
+  "V81_detail": "V81 preserves the V71 scoring decomposition: V32 base lexical+first22 numerical quantized block, actor coefficient6 branch, other29 numerical residual quantized block. It additionally emits a uniformly predeclared admin-gated published supplier/client-brand indirect lexical branch, using original word/char name coefficients0/1 times weak confidence.5 and a technical public-corporate owner filter.",
+  "correction_scope": "The earlier formula's numeric22+29 decomposition is confirmed. The actual collector-entry implementation is V81, not a call to V71.native_search; the inherited indirect-name lexical branch must be counted explicitly in the dynamic lexical/context residual and any future exact query/explanation replay.",
+  "quality_limit": "This indirect source specificity is real, but remains a fixed source-confidence transfer using global weights, not local-density/tie/ambiguity calibration or a resolved legal-identity/site alias.",
+  "evidence": "scripts/embeddinggemma2_v81_indirect_lexical_query.py:native_search lines90-133",
+  "no_native_or_label_execution": true,
+  "handover_changed": false
+}
