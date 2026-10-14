@@ -20011,3 +20011,54 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   non full-OOF, sources communautaires/post-cutoff diagnostiques : pas99,2%
   national, pas READY_FOR_FOLD1, pas nouveau modèle promu. Aucun label humain
   corrigé, aucun alias CRM/règle client, jeux fermés/aval/serving immuables.
+
+### Nuit 14 octobre — bilan final consolidé 06:59 Paris
+
+- Dernier diagnostic V171B pré-déclaré `8c14b3c0` après autorisation ROOT
+  post-sourceA entière/owned0. Premier namespace label_side ownedexit1 :
+  numpybool non sérialisable en JSON après calcul, avant seal de résultat.
+  Artefacts/STOP/receipt1 conservés. Continuation `5e7cc89e` explicitement
+  autorisée, original codehash figé, seulement bool(inside) et namespace
+  label_side_b ; pas de variante scientifique/masque/rang/poids/guard changé.
+- V171B real owned0 session89132/chunk9f135e à04:53:32UTC,53,50s,
+  RSS gardé464 470 016octets. Note finale `06ecf234` entièrement lue ROOT,
+  receipts/completion/report vérifiés ; reportSHA
+  42b737b1706b9b2b2111d0c2df2bbf4bc953551e9daf8f7a73480302682ddc3a,
+  manifest0dd5e9bc51cf181ee3e02dab524e7ac624ee92e6cebfcf68ce40cc22625a7000.
+  Full composants/lookup/NPZ bindings avant labels et clés ordonnées vérifiées.
+  Inode/mtime ne figuraient PAS dans sourceAref : fingerprints explicitement
+  B-only, jamais vérification rétroactive prétendue.
+- Diagnostic ALL526 inchangé :421 composants source disponibles/105absents,
+ 297definite<=100 selon distance seule dans univers numériques originaux.
+  Sur19 ratés descriptifs :15 disponibles, deux protégés skip avant cible,
+  deux QC ne codant pas de numéro identifié. Trois definite<=100, zéro
+  definite<=50 ; intervalles anonymes[1,52],[52,52],[2,84], pas tie-break
+  identifiant favorable. Parmi trois cibles sans XYcourant mais composant
+  source disponible, deux<=100 ; parmi12 avecXYcourant, une<=100.
+  Numéro identifié/CFE/distance_precision0 ne certifient pas maison exacte.
+  Douze disponibles restent au-delà100 dans ce composant ; aucunrang national
+  lexical, gainpipeline, cause de perte ou erreur de label n'est établi.
+- SOURCE_COMPONENT_POTENTIAL != RETRIEVAL_RECALL. Le pipeline demeure
+  exact507/526 (96,38783% brut/95,67903%pondéré), SIREN511/op508.
+  Pas correction humaine/XY/QC ni nouveau gradient/calibrateur/serving.
+  SOURCEA/B complets, sources protégées jamais reconstruites, dénominateurs
+ 526/19 conservés. Tous calculs de cette nuit terminés, aucun nouveau lancé.
+- Bilan accessible : `docs/retrieval_night_20261014_direction.md`, commits
+  `6f7b4bdc`, `50e69909`, `8e2a5b11`, `2f771dba`. Relecture scientifique
+  indépendante d'agent en lecture seule : pas claimnational/99,2 ni pool
+  intermédiaire dissimulé. Précisions incorporées : exposition aux contrôles
+  checkpoint != chevauchementTRAIN démontré ; scans19années != extraction
+  exhaustiveBODACC ; personnes physiques horspérimètre/non utilisées.
+- Direction suivante non exécutée : ONEscore complet fidèle/vecteurserving
+  indépendant cible, annexe de variantes propres historiques typed/datées
+  avec couverture globale mesurée source-only, UNEablation TRAIN de minage
+  du scorejoint/folds groupés. Une observation géographique alternative doit
+  rester une source distincte et sa recette/asof pré-déclarée, jamais choix
+  de meilleure position au vu du label. Puis UNtest indépendant figé,
+  nonconsommé/annotation aveugle/plan représentatif ; pas peeking ni retuning.
+- Verdict retrieval PIVOT_GENERATION, exact99,2 nonatteint ; ce verdict
+  n'attribue pas toutes les pertes à une cause unique. PasREADY_FOR_FOLD1,
+  certificationnationale/fullOOF/nouveauSLO/promotion. Pas nouveaux calculs
+  après échéance05:06:08UTC/07:06:08Paris ni nouvelle nuit implicite.
+  Tous artefacts/checkpoints préservés ; neuf modifications utilisateur
+  étrangères et leurs untracked inchangés, aucun nettoyage/push/dépense.

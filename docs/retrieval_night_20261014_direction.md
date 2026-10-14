@@ -71,6 +71,8 @@ expérience générique ; **ce n'est ni trois gains de recall ni une solution
 aux19 ratés**. Le total retrieval demeure507/526. Source et composant
 restent distincts des XY courants et des scores composites. Voir
 [report diagnostic scellé](</Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v171/separate_study_geo_components_20261014_night/label_side_b/report.json>).
+Le [bilan V171](retrieval_v171_study_geo_component_result_20261014.json)
+donne les partitions, ties, provenance et limites de qualité.
 
 **L'attribution causale fine reste incomplète.** Deux ratés étaient
 géographiquement plausibles dans un diagnostic antérieur, mais l'essai
