@@ -1,0 +1,34 @@
+{
+  "status": "STOP_DECLARED_RSS_CAP_BEFORE_REAL_COLLECTOR_NO_NEW_SCORE_OR_EXPLANATION",
+  "scope": "Two public V157 geography-plausible queries explicitly selected after evaluation; diagnostic capacity only, not ALL526/new retrieval experiment/validation.",
+  "code_before_execution": "ddc44c0d",
+  "authorized_execution_only_continuation": "7f2a8cc4",
+  "immutable_original_diagnostic_sha256": "e75c04357340a23d9b3e348382b964dad8dd96331056e26798718e163110fd3f",
+  "original_V142_scoring_source_sha256": "568fadfc66f35ff3856290ee8a3a77466993d9ebba0b601d08975958f9cba9d7",
+  "contract": {"exact_ordered_ids": true, "absolute_score_tolerance": 0.00001, "relative_tolerance": 0, "rss_limit_bytes": 6442450944, "preparation_included_budget_start_utc": "2026-10-14 03:36 UTC", "budget_end_utc": "2026-10-14 03:56 UTC", "deadline_utc": "2026-10-14 05:06:08 UTC"},
+  "attemptA": {
+    "namespace": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v160/composite_explain_diagnostic_20261014_night",
+    "real_parent_exit": {"exit_code": 1, "session": 42506, "chunk": "c68d2e"},
+    "reason": "Searcher proxy did not delegate num_docs required by original corpus guard; before any actual collector call.",
+    "preserved": true
+  },
+  "attemptB": {
+    "namespace": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v160/composite_explain_diagnostic_20261014_night_b",
+    "real_parent_exit": {"exit_code": 1, "session": 24260, "chunk": "1d9e03"},
+    "only_changes": "Hash-checked original diagnostic module; __getattr__ delegates to actual searcher; fresh module/namespace. No scoring formula/tolerance/budget change.",
+    "reason": "First final fully composed query reaches RSS7634042880bytes at CaptureSearcher entry, before Query repr/hash and before real search.",
+    "observed_rss_bytes": 7634042880,
+    "free_percent": 69,
+    "pressure_level": 1,
+    "preserved": true
+  },
+  "what_was_not_executed_or_established": [
+    "No real replay collector result, two-case replay completion, score/output fidelity comparison or final Query SHA equality.",
+    "No target-label lookup, DocAddress lookup, target/head/cut EXPLAIN or new composite score/contribution/margin.",
+    "No new retrieval metric, full rank, source improvement, generalization/SLO/READY or label-error claim."
+  ],
+  "capability_limit": "Installed Tantivy0.25.1 Query.explain(searcher,doc_address) exists (24a043aa). Reconstructing the exact currently layered composite query is itself not lightweight under the authorized6GiB cap. This observed resource stop does not establish API fidelity or that explanation would be cheap after construction.",
+  "decision": "STOP_NO_CAP_TOLERANCE_OR_BUDGET_RELAXATION_NO_FURTHER_OPTIMIZATION_NOW. Any future query-construction redesign/resource change would require fresh authority and frozen fidelity protocol; no new scorer or altered query may be substituted under the name EXPLAIN.",
+  "operator_source": "Not compiled/duplicated; prior query-only aggregate audit reused as documented24a043aa.",
+  "handover_changed": false
+}
