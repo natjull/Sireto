@@ -19794,3 +19794,27 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   avecsignalOSMnamed, géométrieseuleinsuffisante. Pas aliases/labels/coord
   canoniques modifiés ; appartientauxgroupescontrôleencoder, paspristine.
   Figures source/ranks définitives dans rapport séparé àterminer.
+
+#### Jalon 02:30 UTC — mécanisme GEDIMAT scellé et fausse lacune parent écartée
+
+- Mémo causal `522c41b2`,
+  `docs/retrieval_v143_osm_gain_5130_causal_audit_20261014.json`, toutes7
+  sorties/owned0 vérifiées, preuvequery-onlylabelsReadFalse. Publics eO/uO,
+  ownXYofficiel inchangé, POI node13052340946 nom/brandGedimat dédupliqués,
+  même matcheralltokens dansune variante. Distancepropre50,0628m ; bonus
+ 1,93768789×.5/(1+50,0628/300)=.83028863, quant20.83028849, rang55/marge.152853.
+- Géométrie seulebonus.11621293 maishors100 ; ranghors100 nonstocké/noninventé.
+  CRMweakSTREET_FOOTPRINT_NOT_HOUSE/200,440m incertitude/rayon601,321m,
+ 9points, cible439,592m du représentant/88,699m desaxesOSM. Maison9012 NON
+  résolue ; pas identitéopérateur/entrée/adjacenceuniverselle certifiée.
+  Foldhumain4/DENSE, groupecontrôlecheckpoint, OSMactuelpostcutoffdiagnostic.
+  TroisgainsglobauxV134 pas preuvepristine/nationale, aucunecoord/alias/label
+  changé. Concordance nom+proximité réellement mesurée, pasgéométrieseule.
+- Vérification statique `7c8405c2`,
+  `docs/retrieval_v143_v142_parent_geometry_mask_static_audit_20261014.json` :
+  suspicionroot de vetoparent parXYmissing REFUTÉE. valid=clé∧eO/uO ; goodXY
+  filtrepos/coords seulement, jamaisvalid. Parent16/17/19 peut déjàbonifier
+  publicsansownXY, own5inchangée. Coefficients24/26 actifs danscinqmodèles58,
+ 23nul0/2 n'annulepascontexte. Protégésdeltafinal0. BaselineparentMAXtypé
+  existe aussi. Aucune nouvellehypothèse/scan/featuresshard/label/natif lancé
+  surcettefaussecause. Pas de secondvote ou decoordinationcopiée àajouter.
