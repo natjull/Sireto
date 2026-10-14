@@ -62,12 +62,14 @@ une dernière admission mémoire explicitement autorisée. Aucun score cible,
 rang complet ou coefficient fautif n'en est déduit. Voir
 [STOP instrumentation](retrieval_v160_explain_final_c_stop_20261014.json).
 
-Enfin les scans complets BODACC activité, sigles et administration de personnes
-morales n'ont pas identifié de preuve contextuelle positive supplémentaire
-sur les19 ratés actuels sous les règles auditées. Cela ne condamne pas tout
-texte BODACC ni la piste des dirigeants ; les personnes physiques n'ont pas
-été testées ici. Ce n'est pas une raison de poursuivre une grille de recettes
-sur ces mêmes19 exemples.
+Enfin les scans complets des19 années BODACC, avec extraction strictement
+limitée aux champs activité/sigles et aux administrations de personnes
+morales publiques admissibles, n'ont pas identifié de preuve contextuelle
+positive supplémentaire sur les19 ratés actuels sous les règles auditées.
+Ce n'est pas une extraction exhaustive de tout texte ou de tout acteur.
+Les personnes physiques sont hors de ce périmètre et n'ont pas été utilisées.
+Ce n'est pas une raison de poursuivre une grille de recettes sur ces
+mêmes19 exemples.
 
 ## Suite recommandée : une architecture, pas dix rustines
 
@@ -93,7 +95,10 @@ sur ces mêmes19 exemples.
    généralisation. Inclure une éventuelle observation géographique séparée
    uniquement après décision d'admissibilité/as-of et recette pré-déclarée,
    pas en choisissant a posteriori la position qui aide les ratés. Les scores
-   hors-échantillon restent requis ; pas refit sur une matrice simplifiée
+   hors-échantillon restent requis, sans apprentissage ni sélection de
+   checkpoint sur les groupes outer de validation. L'absence de chevauchement
+   TRAIN explicite observée ici n'annule pas l'exposition aux contrôles du
+   checkpoint ni l'adaptation de la recette. Pas refit sur une matrice simplifiée
    censée représenter un moteur dont les interactions dépendent des poids.
 
 4. **Geler une version, puis la confronter à une vraie cohorte indépendante.**
