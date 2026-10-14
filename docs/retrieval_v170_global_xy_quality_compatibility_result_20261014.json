@@ -1,0 +1,72 @@
+{
+  "status": "COMPLETE_WHOLE_SOURCE_PUBLIC_XY_COMPATIBILITY_NO_RETRIEVAL_OR_QC_TRANSFER",
+  "method": {
+    "pre_scan_implementation_commit": "d330a9c3",
+    "whole_source": "July statistical-geolocation producerParquet,37,575,264rows,802,036,004bytes,304rowgroups. Six selected columns account for418,839,115compressed bytes; all rows scanned once, no candidate/query/GTselection.",
+    "source_as_of": "Receipt semantic_date2026-07-01,publication_date2026-07-21,retrieved_at2026-07-23. Those distinct dates do not establish every point's latest address/geocoding date. August canonical StockXY is a different source/month.",
+    "canonical": "Exact original V142 ordered endpoint_keys,site_xy float64 and eO/uOpublicmask, unchanged; technical key lookup only. Source and canonical input files fully SHA256verified BEFORE source values, then size/mtime/inode checked after whole-source scan. No people/addresses/contact/labels or query inputs read or exported.",
+    "level1_primary_compatibility": "Strict sourceEPSG string2154; original sourcefloat32 X/Y cast exactly tofloat64, compared by==to canonical float64. No epsilon, metre tolerance or inferred site match.",
+    "level2_separate_diagnostic": "Q32 checks castfloat32(canonicalXY)==original storedfloat32JulyXY under the same domain. This recognizes representation compatibility, not float64 equality, same physical point, current site precision or source identity. No choosing whichever level looks better.",
+    "quality": "Counts per published11/12/21/22/33/MISSING/OTHER_CODE; QC not transferred to any canonical row/model. EPSGoutside2154,currentnonpublic,canonicalkeyabsent and currentmissingXY retained as separate source statuses. Distance-precision statistics are source metadata summaries, not new score/radius features.",
+    "resources": "One thread,65,536rowbatches,2.5GiBRSSguard,600sbudget,40GiBdiskreserve,free>=25%,pressure0/1/2, noDuckDB/nohashjoin/nospill. Actual guarded RSS is sampled at stage/chunk boundaries, not continuous process maximum."
+  },
+  "whole_source_partition": {
+    "rows": 37575264,
+    "canonical_key_absent": 352,
+    "current_non_public_excluded": 15420,
+    "source_other_or_missing_crs": 1053409,
+    "public_epsg2154_current_xy_missing_or_unsupported": 9806577,
+    "public_epsg2154_both_xy_supported_exact_float64": 441,
+    "public_epsg2154_both_xy_supported_different_float64": 26699065,
+    "all_rows_classified": true,
+    "source_xy_nonfinite_or_unsupported_under_public_epsg2154": 0
+  },
+  "separate_Q32_diagnostic": {
+    "public_epsg2154_both_xy_supported": 26699506,
+    "stored_float32_compatible": 2811873,
+    "stored_float32_different": 23887633,
+    "not_same_point_or_precision_proof": true
+  },
+  "precision_codes_within_public_epsg2154": [
+    {"code": "11", "meaning_paraphrased": "Voie certaine, numéro identifié", "exact_float64": 438, "different_float64": 24112383, "current_xy_missing": 5226976, "Q32_compatible": 2807002, "Q32_different": 21305819},
+    {"code": "12", "meaning_paraphrased": "Voie certaine, position imputée dans la voie", "exact_float64": 0, "different_float64": 2198307, "current_xy_missing": 1858192, "Q32_compatible": 225, "Q32_different": 2198082},
+    {"code": "21", "meaning_paraphrased": "Voie probable, numéro identifié", "exact_float64": 3, "different_float64": 231575, "current_xy_missing": 392492, "Q32_compatible": 4645, "Q32_different": 226933},
+    {"code": "22", "meaning_paraphrased": "Voie probable, position imputée dans la voie", "exact_float64": 0, "different_float64": 79901, "current_xy_missing": 426999, "Q32_compatible": 1, "Q32_different": 79900},
+    {"code": "33", "meaning_paraphrased": "Position imputée dans la commune, pas nécessairement centroïde", "exact_float64": 0, "different_float64": 76899, "current_xy_missing": 1901918, "Q32_compatible": 0, "Q32_different": 76899}
+  ],
+  "canonical_public_scope": {
+    "all_current_public_rows": 38301607,
+    "present_in_july_statistical_source": 37559492,
+    "absent_from_july_statistical_source": 742115,
+    "source_public_quality_missing_or_unknown_code": 0,
+    "scope_limit": "Public July source rows not publicly supported by Augustcanonical mask are excluded before coordinate/quality analysis; no protected identities reconstructed. Canonical absent-from-July count includes all current public sites, not a GTor retrieval miss population."
+  },
+  "official_quality_semantics_and_limits": {
+    "primary_pdf": "https://static.data.gouv.fr/resources/geolocalisation-des-etablissements-du-repertoire-sirene-pour-les-etudes-statistiques/20260123-143212/documentation-geolocalisationetablissements-sirene-pouretudesstatistiques-v8.pdf",
+    "pdf_sha256": "541bec41c2359ad9fe310bf0493ba450bde3c5ff2be538cc5b0ca6114d08a3cf",
+    "pdf_preserved_and_render_verified_by_root": "/Users/nathanjullia/Documents/Projets/SIRETO/tmp/pdfs/insee_geo_quality_20261014_kDP4pe/documentation_insee_geo_v8.pdf",
+    "CFE_note": "When coordinates come from CFE, QUALITE_XY describes coherence between fiscal and Sirene addresses; it is not always an independently certified house-position accuracy measure. This qualifies the simple code-label interpretation in the preceding schema memo.",
+    "freshness": "The statistical document describes monthly updates for commune changes and annual updates for within-commune address corrections. Point equality alone cannot certify freshness or the same real establishment/site.",
+    "distance_precision": "Documented for random placement within a street/locality, not a universal posterior/radius for every point. Aggregate availability by code is retained in the sealed report; no candidate uncertainty repaired or assigned.",
+    "independence": "RIL/fiscal/cadastre/BAN/CFE sources can contribute to statistical geocoding. August stock address source tags can indicateBAN/Cadastre. Neither the older quality stock nor exact/Q32coincidence proves BANindependence."
+  },
+  "resources_and_owned_completion": {
+    "elapsed_seconds": 61.65837354073301,
+    "peak_guarded_rss_bytes": 1442054144,
+    "last_free_percent": 72,
+    "last_pressure_level": 1,
+    "owned_session_id": 64826,
+    "completion_chunk_id": "a576b7",
+    "actual_exit_code": 0,
+    "scope": "Source audit only; not cold/warm retrieval timing, model runtime or SLO validation. No zero-swap claim because a source-run baseline/delta was not recorded."
+  },
+  "artifacts": {
+    "root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v170/global_xy_quality_compatibility_20261014_night",
+    "report_sha256": "6ba1d3403fbc7e3b1fd2137016c46c96b01e99e4ff84a5a5feaf7a460c1f6df8",
+    "manifest_sha256": "b0853ac5a4c586e7339d8a5bb6eb3babc245ae9c186018961074a925879f9fde",
+    "owned_exit_sha256": "8316ccbcd5ae0f55c88c84c47171a65d4a96765176f1295fdcae72ea3db79a4a",
+    "implementation_sha256": "a467c723d250e49c553bbb6689ea807d7cec5ab2411d35d1f9feacc220c4a232",
+    "stage_completion": "completion.json binds the sealed manifest and independently observed owned exit0. No future labels authorized by completion."
+  },
+  "conclusion": "The older quality stock is available and diagnostically informative, but nearly all current supportedXY fail strictfloat64coincidence and most fail evenQ32compatibility. This is a provenance/representation difference, not proof that either coordinate is false. No QCtransfer, coordinate fill, matching feature or retrieval gain follows. All526/label-side statistics remain a separate root decision; none computed here."
+}
