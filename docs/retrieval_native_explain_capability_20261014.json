@@ -1,0 +1,40 @@
+{
+  "status": "EXISTING_INSTALLED_EXPLAIN_API_CONFIRMED_REPLAY_NOT_EXECUTED",
+  "scope": "Installed API docstrings/metadata and frozen source code only. No index opened, native search, explain call, label lookup or new scorer implemented.",
+  "installed_api": {
+    "runtime": "/Users/nathanjullia/Documents/Projets/SIRETO/.venv/bin/python",
+    "tantivy_version": "0.25.1",
+    "method": "Query.explain(searcher, doc_address)",
+    "returns": "Explanation with to_json()",
+    "doc_address": "DocAddress(segment_ord, doc)",
+    "binding_extension": "/Users/nathanjullia/Documents/Projets/SIRETO/.venv/lib/python3.14/site-packages/tantivy/tantivy.cpython-314-darwin.so",
+    "binding_bytes": 20187792,
+    "binding_sha256": "339504dd3ccaa5f4e4d5cccb9c047f42befd543a10e2fb217f0970749e7375b7",
+    "scope_note": "Confirmed current installed API, not retrospective proof that an unrecorded historical library binary was identical."
+  },
+  "exactness_requirements": [
+    "Explain the SAME fully composed final Query object, not V32 base query, raw numerical dot product or a new score engine. V115/V134/V142 layer multiple collector wrappers whose final query includes source/MAX/owner branches.",
+    "Current wrappers expose final candidate lists, not a separate serialized full query. A thin isolated interception of the final search call could capture the already-built Query without calling a collector, but it is not currently implemented or authorized for execution by this capacity audit.",
+    "Bind original query inputs, full ordered reference arrays, every raw source/confidence and score shard, exact heldout evaluation vector, quantization bounds, helper hashes, original index segments/schema/global statistics and installed runtime. For future serving experiments use the target-independent vector and recompute every delta instead.",
+    "Resolve existing technical DocAddress by a non-scoring document lookup. A SIRET reference may locate an existing document but must not be added as a positive/scoring feature or synthetic proof. No existing direct canonical-key-to-DocAddress mapping was established in the inspected adapter.",
+    "Check explanation total against already returned native totals and cut100 with the same floating-point/quantization semantics before interpreting an out-of100 target. This fidelity check has NOT been run.",
+    "Protected targets skipped before identity lookup; target outside original numerical universe explicitly recorded/skip under a numeric-diagnosis scope, never expanded or injected. National lexical-only availability is a separate existing branch, not repaired numerical coverage."
+  ],
+  "what_a_validated_postseal_explanation_could_establish": [
+    "Actual complete composite score and grouped contributions for an already indexed eligible target outside100, without rerunning an initial candidate collector or changing outputs.",
+    "Below actual cut100 versus boundary-score tie versus an inconsistent replay; possible branch-level score margin attribution on this already consumed diagnostic population.",
+    "It does NOT supply exact full national rank, tie multiplicity outside100, counterfactual retrieval gains, generalization or a new metric. Those require additional globally complete evidence, not a favorable tie assumption."
+  ],
+  "cost": {
+    "known": "One document explanation need not collect another top100. However building the exact layered query repeats the same full numeric and source bitplanes, model/source loading and global-index weight construction.",
+    "unknown": "No measured time/RSS or total526 replay cost; potentially query-build dominated for large reference universes. Not assumed fast or under1/2GiB merely because only one document is explained.",
+    "decision": "CAPABILITY_AVAILABLE_BUT_FIDELITY_CAPTURE_DOCADDRESS_AND_BUDGET_REQUIRE_A_SEPARATE_EXPLICIT_READ_ONLY_REPLAY_AUTHORIZATION. No replay launched now."
+  },
+  "code_evidence": {
+    "backend": "src/xgb_matcher/hierarchical_retrieval.py:476 adapter uses installed tantivy; opens index/searcher only in constructor, not invoked here",
+    "base_query": "scripts/embeddinggemma2_v32_native_features.py:native_query",
+    "composite_path": "scripts/embeddinggemma2_v71_frozen_residual.py:native_search -> inherited context/initial/activity wrappers -> V132 EvidenceCollector final search query",
+    "admission_note_commit": "de2a200c"
+  },
+  "handover_changed": false
+}

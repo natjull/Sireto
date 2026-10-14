@@ -1,0 +1,47 @@
+{
+  "status": "NO_NEW_SOURCE_COMPILER_PRIOR_AUDIT_REUSED_STATIC_PROTOCOL_ONLY",
+  "prospective_namespace_not_created": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v160/operator_bridge_source_20261014_night",
+  "not_historical_retrieval_V160": true,
+  "scope": "Read existing aggregate query-only audit and its seal, source schema/code and primary operator documentation only. No repeated142718-POI scan, PBF/download, national dictionary compilation, labels/outcomes or native retrieval.",
+  "prior_audit_authority": {
+    "report": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v129/operator_query_only_audit_20261014_night_a/report.json",
+    "sha256_recomputed_this_preflight": "60a03030842da7a9e3955cce1060717666bf82720b638a40a368a0fb3552e8dc",
+    "seal": "report.seal.json",
+    "all_queries": 526,
+    "distinct_pois": 142718,
+    "operator_tag_pois": 15357,
+    "queries_any_operator_in_neighbourhood": 449,
+    "frozen_name_match_queries": 41,
+    "frozen_name_matched_pois": 54,
+    "matched_queries_with_operator": 5,
+    "matched_pois_with_operator": 6,
+    "distinct_matched_operator_strings": 6,
+    "normalized_equal_current_corporate_denomination_cardinalities": [0,0,1,1,1,9],
+    "unique_equal_current_corporate_operator_strings": 3,
+    "official_scope_already_used": "Complete current StockUniteLegale, diffusionO, category!=1000, denominationUniteLegale only; natural-person columns not read",
+    "prior_execution": "Existing official scan exit0/16.759s/215711744bytes; projection scan exit0/6s/235732992bytes. These are prior observed receipts, not a new run.",
+    "important_limit": "Prior audit copied source hashes from sealed manifests rather than rehashing every source; this preflight rehashes only prior aggregate report. No claim of a newly reverified complete source/compiler."
+  },
+  "lineage_and_semantics": {
+    "code": "V129 TAG_KEYS retains operator; names uses only name/brand/alt_name/official_name/short_name/old_name. V132/V143 frozen query-name matcher intentionally excludes operator.",
+    "coverage": "The source retains query-neighbourhood POIs from466 located/526 queries, not every national POI. Frozen all-informative-query-tokens-in-one-name-variant matching yields operator-bearing support for at most5 existing queries under this unchanged predicate.",
+    "operator_is_not_brand_owner_or_official_site_alias": true,
+    "primary_documentation": "https://wiki.openstreetmap.org/wiki/Key:operator",
+    "documentation_paraphrase": "Operator may refer to a company, person or other entity; legal or trade naming and nonunique organization names occur. Operating entity, brand and property owner can differ, including franchises. Exact corporate name equality therefore is not certified operation, ownership or physical site identity.",
+    "post_cutoff_and_unknown_crm_timestamp": "Current community snapshot2026-10-12; diagnostic only, no historical operator/site certification",
+    "without_own_xy": "A community POI operator string can support a separate legal-owner-context hypothesis even when a recipient site's own XY is absent. It cannot supply the recipient's owngeo/address/name or select an exact establishment among that owner's sites without independent own-site evidence."
+  },
+  "unexecuted_uniform_source_protocol_if_later_authorized": [
+    "Freeze whole526 query predicate and source/radius/matcher hashes; reuse every sealed POI and separate published name variants. No case-specific operator/name alias, fuzzy lookup, contact/person field or brand-to-legal-edge inference.",
+    "Resolve FULL normalized operator text by equality against the complete official legal-owner name dictionary plus current corporate legal denominations, filtered uO/category!=1000. Exclude sibling-site aliases from legal-owner name resolution. Preserve zero/one/multiple corporate-owner cardinalities; uniqueness over the full dictionary may be weaker than uniqueness over current denomination alone.",
+    "Keep edges separately typed: query-name↔published POI, POI↔published community operator text, normalized text↔one public corporate name reference, corporate reference↔its own public site records. Technical SIREN/SIRET joins are not features or evidence of the preceding edges' legal truth.",
+    "OwnXY missingness/public site masks are query/source-only recipient availability strata, not labels. No coordinates/name/address copied across branches or restored for protected records; no typed owner context promoted to exact-site evidence.",
+    "No natural-person/operator strings or contacts exported unless safely resolved public corporate organization metadata is explicitly needed; aggregates suffice. Complete source+ownedexit0 must precede any separately authorized label-side diagnostic.",
+    "Thread1/RSS1GiB/15min/free25/pressure012/disk40/deadline05:06, fresh namespace. Preserve on resource/deadline exit rather than widening predicates or admitting fuzzy matches."
+  ],
+  "decision": "DO_NOT_DUPLICATE_AUDIT_OR_BUILD_V160_NOW. Existing corporate-only audit already answers basic availability. Full dictionary could recover historical/trade variants but also introduce collisions; small unchanged five-query source ceiling and unverified legal-role/site semantics do not justify another compiler this night. This is a resource/semantic scope decision, not a decision based on labels or outcomes.",
+  "not_measured": ["Any target/miss coverage or recall gain", "Resolved-owner sites lacking ownXY", "Complete official-dictionary equality cardinalities", "Certified operator/legal/site links"],
+  "no_label_source_feature_recipe_serving_mutation": true,
+  "new_source_generation_owned_exit_claim": "NONE_NO_COMPILER_RUN",
+  "handover_changed": false
+}
