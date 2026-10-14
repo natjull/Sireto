@@ -19580,3 +19580,34 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   ponctuelle/canonical XY/native/fit. Multiplicité et étendue publiées,
   jamais centroidmaison. Namespace neuf,1thread/RSS512. Aucune activation
   déduite de disponibilité ; ce périmètre n'élargit pas les jeux ouverts.
+
+#### Jalon 00:48 UTC — nuages de voies et normalisation officielle
+
+- V147 `c2ba9d20`, session40426/PID19747 exit0 réel,65,48s/RSS251MiB,
+  inputs rehashés avant/après : ALL5430064/526/quatrevides conservés.
+  Publics sansXY1151676 =637plages/listes rejetées +742048numéros simples
+  hors footprint +408991sansnuméro simple. **58584** de ces derniers ont
+  une correspondance exacte voie/commune propre BANOOSM,23795voies distinctes,
+  toutes routées INSEEpropre.9197clouds àune position(nonmaison),49387multi,
+ 1016horsrégionL93. Ce sont des disponibilités, pas des sites localisés.
+- Étendue bbox descriptive pondérée candidats : médiane319,78m/p901336,54m/
+  p993886,72m ; maximum d'une voie25,7km. Aucun centroid/pointcandidat écrit,
+  aucun label/outcome/fit/natif ou nouvelle règle de score. Manifest
+  `v147/candidate_own_street_footprint_feasibility_20261014_night/manifest.json`,
+  SHAa2a2e02703e9bffd30efd69c0abebfe0a4a363951933e4d748bc3012d6946618.
+- Limite systématique relevée dans STREETV17 : treize développements seulement,
+  pas nomenclature exhaustive INSEE. Documentation primaire INSEE types de
+  voie : `https://www.insee.fr/fr/statistiques/fichier/3711695/Description-liste-sirene-fr.pdf`.
+  Rien modifié dans normalizer hashé actif ; défaut de correspondance exacte
+  ne prouve pas absence d'une voie dans toutes les sources.
+- Référence TOPO/TOPAD DGFiP actuelle (FANTOIR remplacédepuis2023), PDF
+  Feb2026 téléchargé1,74Mo et tableauxFRp3-8 inspectés visuellement avecskillPDF,
+  `tmp/pdfs/night_topo_reference_20261014_TyIEDZ/description_fichier_topo_202602.pdf`,
+  SHA0ebf1891d3747b614c7a3b2da8a5885f6b7456c59d548c607174fa85c0530412.
+  Codesdécomposés2026, nature/libellé/type voie(voie/ensembleimmobilier/lieudit/
+  pseudovoie), datescréation/annulation/transition ; entités actives/annulées
+  mais attributs courants, **pas XY ni chaîne complète anciennom->nouveau**
+  prouvée dans schémaFR. Ne pas prétendre géocoder avec ce référentiel seul.
+  URLproducteur : `https://data.economie.gouv.fr/api/datasets/1.0/topo-fichier-des-entites-topographiques/attachments/description_fichier_topo_202602pdf/`.
+  Audit schémas complémentaires UAMISSIONS/STRUCTURES/COMPETENCES lancé
+  sansGT/nomCRM/contacts/personnes, documentaire borné, pas nouveau retrieval.
