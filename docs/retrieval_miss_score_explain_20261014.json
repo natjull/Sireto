@@ -1,0 +1,76 @@
+{
+  "status": "STOP_NO_SCIENTIFIC_CONCLUSION",
+  "scope": "POSTEVAL_DIAGNOSTIC_19_MISSES_FOLDS_2_3_4_NOT_NEW_RECALL",
+  "source_run": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano",
+  "quantization_bits": 20,
+  "fidelity_queries_reproduced": 1,
+  "fidelity_queries_required": 19,
+  "absolute_tolerance": 1e-05,
+  "relative_tolerance": 0,
+  "memory_cap_bytes": 6442450944,
+  "peak_resident_bytes": 6440255488,
+  "peak_parent_plus_child_observed_bytes": 6467813376,
+  "guard_scope": "PARENT_PLUS_ONE_CHILD_RSS_STRICTER_THAN_PER_PROCESS_CAP",
+  "elapsed_seconds": 140.33643566677347,
+  "failure": "RuntimeError(\"{'query_id': '13765', 'phase': 'fidelity', 'reason': 'STOP_RSS_6GIB: child=6440255488, parent+child=6467813376', 'child_error': None, 'log': '/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v172/miss_score_explain_20261014/logs/fidelity_e86c18c2174e40300ec7ec49b849b8c50e881d65a76fb25231ea6ce78fbc6a4b.log'}\")",
+  "scientific_conclusions_allowed": false,
+  "replay_observations_only": [{
+    "query_id": "10719",
+    "same_ordered_100_sirets": true,
+    "max_score_absolute_error": 0.0,
+    "first_siret": "48190475300029",
+    "first_score": 10.986982345581055,
+    "cut100_siret": "78995219900022",
+    "cut100_score": 6.4734578132629395,
+    "label_score": null,
+    "explanation_computed": false
+  }],
+  "uncomputed_score_decompositions": 19,
+  "alternative_models_tested": 0,
+  "second_query_replay_status": "13765_RESOURCE_STOP_BEFORE_FIDELITY_COMPARISON_NOT_A_SCORE_MISMATCH",
+  "query_results": [],
+  "family_counts_in_top3": {},
+  "worker_receipts": [
+    {
+      "query_id": "10719",
+      "phase": "fidelity",
+      "pid": 39987,
+      "exit_code": 0,
+      "peak_resident_bytes": 4191780864,
+      "elapsed_seconds": 27.331824250053614,
+      "owned_child_exit_confirmed": true,
+      "stop_reason": null,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v172/miss_score_explain_20261014/logs/fidelity_e071170e549fa06f725ccb99597617451bab7e29f58faceb193defda38af9b36.log"
+    },
+    {
+      "query_id": "13765",
+      "phase": "fidelity",
+      "pid": 40084,
+      "exit_code": -15,
+      "peak_resident_bytes": 6440255488,
+      "elapsed_seconds": 17.86793841701001,
+      "owned_child_exit_confirmed": true,
+      "stop_reason": "STOP_RSS_6GIB: child=6440255488, parent+child=6467813376",
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v172/miss_score_explain_20261014/logs/fidelity_e86c18c2174e40300ec7ec49b849b8c50e881d65a76fb25231ea6ce78fbc6a4b.log"
+    }
+  ],
+  "post_run_readonly_verification": {
+    "manifest_inputs_stat_unchanged": 82,
+    "original_outputs_sha256_matches_seal": true,
+    "owned_parent_and_children_exited": true,
+    "owned_pids": [39854, 39987, 40084]
+  },
+  "original_outputs_unchanged": true,
+  "labels_modified": false,
+  "closed_sets_opened": false,
+  "no_full_rank": true,
+  "no_new_recall": true,
+  "no_coefficient_choice_proposal": true,
+  "unknowns": [
+    "Rang exact au-delà de 100",
+    "Généralisation hors des 19 ratés",
+    "Causalité : les écarts sont algébriques, pas des effets de retrait de voie"
+  ],
+  "heavy_artifacts": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v172/miss_score_explain_20261014",
+  "command": "PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/retrieval_miss_score_explain.py"
+}
