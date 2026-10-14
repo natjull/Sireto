@@ -1,0 +1,66 @@
+{
+  "status": "STATIC_MASK_GAP_NOT_PRESENT_PARENT_CONTEXT_ALREADY_USED",
+  "audit_scope": "Source code and frozen coefficient/schema metadata only; no labels, outcomes, feature shards, feasibility scan, native query or fitting opened/run for this audit.",
+  "conclusion": "Public candidate sites without supported own XY are NOT zeroed by the final geometric-delta mask in either V143 or V142. They can already receive separate parent16/17/19 context from a supported public sibling of the same legal SIREN. No proposed fix or new hypothesis is justified by the suspected mask gap.",
+  "mask_definitions": {
+    "public_mask": "e.statutDiffusionEtablissement='O' AND u.statutDiffusionUniteLegale='O'; XY availability is absent from its construction",
+    "valid": "Numeric candidate key exists in canonical endpoint_keys AND public_mask is true",
+    "good": "Within valid positions only, own XY finite and 0<=x<=1300000 and 6000000<=y<=7300000",
+    "own_geometry_update_positions": "pos=flatnonzero(valid); then pos=pos[good]",
+    "critical_distinction": "Neither implementation assigns good back into valid. Filtering pos/coords cannot alter the independently stored valid boolean array.",
+    "final_zero_mask": "delta[~valid]=0 removes unmatched-key or non-both-public receivers, NOT public missing/unsupported-XY receivers"
+  },
+  "recipient_cases": [
+    {"case": "MATCHED_eO_uO_SUPPORTED_OWN_XY", "own_geometry_source_update_possible": true, "parent_geometry_update_possible": true, "final_delta_forced_zero": false},
+    {"case": "MATCHED_eO_uO_MISSING_OR_UNSUPPORTED_OWN_XY", "own_geometry_source_update_possible": false, "parent_geometry_update_possible": true, "final_delta_forced_zero": false},
+    {"case": "MATCHED_NOT_BOTH_PUBLIC", "own_geometry_source_update_possible": false, "new_source_delta_forced_zero": true},
+    {"case": "KEY_ABSENT_FROM_CANONICAL_KEYS", "own_geometry_source_update_possible": false, "new_source_delta_forced_zero": true}
+  ],
+  "typed_geometry_path": {
+    "own_numeric_columns": {"5": "own_geo_quality", "6": "site_x_geo = numeric0 * numeric5", "7": "name_x_geo = numeric2 * numeric5"},
+    "parent_numeric_columns": {"16": "parent_geo_quality", "17": "parent_identity_x_parent_geo = numeric1 * numeric16", "19": "parent_portfolio_name_x_geo = numeric18 * numeric16"},
+    "group": "keys//100000 is a technical same-legal-SIREN group reference, not a learned identifier feature or same-site equivalence label",
+    "aggregate": "parents[group] = MAX changed[:,5] within each numeric-universe SIREN; changed[:,16]=MAX(baseline[:,16],parents[group]); interactions17/19 recomputed for every recipient",
+    "missing_xy_own_path": "No new source write to numeric5 for missing/unsupported own XY. Products6/7 are recomputed from unchanged own values; baseline V23 constructs those same products. No coordinates, own names or own addresses are copied.",
+    "parent_only_formula_when_baseline_product_invariants_hold": "DeltaP * (full_weight23 + full_weight24 * numeric1 + full_weight26 * numeric18), DeltaP=changed16-baseline16>=0",
+    "baseline_parent_context": "V23 already broadcasts MAX own_geo to parent16/17/19 on every family leaf independently of recipient own XY. Later source features inherit this baseline.",
+    "public_new_evidence": "New own-geometry values are computed only from both-public supported-XY contributors. Parent MAX also preserves inherited baseline own_geo; this is not a new provenance audit of every historical baseline value.",
+    "source_empty_or_already_weaker": "No source points/lines yields zero extra score; source proximity below inherited parent maximum yields no parent increase. Being eligible is not guaranteed positive delta or top100 admission.",
+    "named_osm_separate": "V143 named bonus uses supported own XY positions only and is not broadcast as parent geometry. Changing that would be a different source-role hypothesis, not correction of this mask; not proposed/authorized here.",
+    "protected_receivers": "Internal vectorized parent values may be formed for all keys, but final extra score is forced zero for eP/uP or other non-both-public receivers. No protected restoration follows."
+  },
+  "frozen_schema_and_coefficients": {
+    "numeric_features": 51,
+    "full_features_coefficients": 58,
+    "lexical_offset": 7,
+    "full23": "parent_geo_quality = numeric16",
+    "full24": "parent_identity_x_parent_geo = numeric17",
+    "full26": "parent_portfolio_name_x_geo = numeric19",
+    "coefficient_order_below": [23, 24, 26],
+    "models": [
+      {"bucket": "0", "coefficients": [0.0, 1.1025511825165504, 0.2713997562521349], "sha256": "e16dd3f7b5c534a66eadb765859e6cf760af40c93518edb2b09e8348c63426be"},
+      {"bucket": "1", "coefficients": [0.3430232252634521, 1.0932541195382377, 0.44224806815046536], "sha256": "41fc94ec31b89a03f0980167fdad447a4e826ad75430a367e5e849ea9cf4431c"},
+      {"bucket": "2", "coefficients": [0.0, 1.1751283597332767, 0.28475812000362005], "sha256": "99d931a6c3c76b7a8b20d25da7ce3ac23bb7a4f3502731cf455bd38fc63755bd"},
+      {"bucket": "3", "coefficients": [0.21665129195548372, 1.4317057790140209, 0.4292707939605039], "sha256": "d161c1e9d5364d66a1cddd170b36bf79ef1beff1be7cc6e39414d98d0f000798"},
+      {"bucket": "4", "coefficients": [0.05128915624604931, 1.1723950639791068, 0.3546245131882421], "sha256": "63b46f6c7f80f35df6de5f1577e22ccd98682e0d6f9a5401fa10e0185e9d5b1c"}
+    ],
+    "verified": "All five models have 58 feature names and 58 coefficients, all listed hashes match sealed calibration references. Parent interaction coefficients24/26 are positive in every model; parent context is not disabled even when direct coefficient23 is zero.",
+    "model_root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration",
+    "v143_calibration_generation_sha256": "97d9d6ec3ce015c14af92c46c7398eab0e4d6723e3bb586a252a16dd790ce2be"
+  },
+  "static_evidence": [
+    {"file": "scripts/embeddinggemma2_v132_local_evidence_ablation.py", "sha256": "58bd94842b7f2565ef20bce85023bb5f082d7bb86b7cdb0571aa78874717eee8", "lines": "141-148 public mask;195-198 valid versus good;206-214 own/parent updates and final public mask;224 named own-position-only"},
+    {"file": "scripts/embeddinggemma2_v143_empty_reference_continuation.py", "sha256": "604a8ccccae2ab66625ea543577f85e6881e37f8495d293f8f3bfc4c5adb2ba9", "lines": "12-32 hash-checks V132 and applies only namespace/module/empty-max transformations; no mask transformation"},
+    {"file": "scripts/embeddinggemma2_v142_bano_native_ablation.py", "sha256": "568fadfc66f35ff3856290ee8a3a77466993d9ebba0b601d08975958f9cba9d7", "lines": "184-194 schema and distinct masks;201-212 own updates, all-family parent aggregation, weights7: and final public mask"},
+    {"file": "scripts/embeddinggemma2_v23_native_features.py", "sha256": "1c63603eeba200bb63e3c85eaf08ae08c91594b4a52b475aad773813dccd1c37", "lines": "31-41 typed schema/context contract;233-250 existing own geometry and parent geometry broadcast"},
+    {"file": "scripts/embeddinggemma2_v71_frozen_residual.py", "sha256": "3d61fe5dd30f5928b8c00b9f33b47cca5a73caae6e1d078eb23175b4b8629e17", "lines": "172-195 baseline numerical first22 includes parent16/17/19; same one initial100 collector, no separate collected baseline pool"}
+  ],
+  "decision": {
+    "new_source_feasibility_scan": "NOT_JUSTIFIED_BY_THIS_FALSE_GAP_AND_NOT_RUN",
+    "new_code_recipe_or_native_edit": "NONE",
+    "labels_or_outcomes_inspected": false,
+    "actual_ALL526_nonzero_parent_recipient_counts": "NOT_MEASURED_STATIC_AUDIT_ONLY",
+    "recall_or_same_site_equivalence_claim": "NONE",
+    "handover_edit": "NONE_ROOT_OWNS_HANDOVER"
+  }
+}
