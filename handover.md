@@ -19818,3 +19818,35 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
  23nul0/2 n'annulepascontexte. Protégésdeltafinal0. BaselineparentMAXtypé
   existe aussi. Aucune nouvellehypothèse/scan/featuresshard/label/natif lancé
   surcettefaussecause. Pas de secondvote ou decoordinationcopiée àajouter.
+
+#### Jalon 02:39 UTC — vrais sigles historiques, couverture du gap nulle
+
+- Auditlineage `0d0a7d9a`, owncorporateBODACCsigle réellement ignoré par
+  canonicalbuilder._bodacc_person_names, allowlistdenomination/nomCommercial/
+  enseigne inchangée depuis12073847 avantindex. CurrentSIRENEsigle etRNE
+  déjàTRADEadmis. StockULHISTORIQUEépingle sanscolonnesigle. NomCommercial
+  BODACC conservéglobalement ; ownerSIGNSUPPORTINGcontext-only sansSIRET
+  explicite, pasaliasnoms physiques sur toussites. IndexSUPPORTINGcap6 mais
+  dictionnaireTRADEcanonicaluncapped ; ne pas attribuer tousratés àcap6.
+  Legacydict perd dates etindex/dict pasasof08-01 : diagnostic ineligible,
+  pasreplaycryptographiqueancienscan sansbuilderSHA parmanifest.
+- V156 sourcepré-déclarée `f4752ac7`, session63546exit0 réel/child44700,
+ 241,52s/RSSpeak892354560, zéroquerylabel. ALL19ans,2702248observationsSIGLE
+  corporatepub strictobj/propreregistration/cutoff,559709owners/582350pairs.
+ 378682pairs déjàdictionary,280090samecurrentSIRENE dontoverlap ;203637
+  nouveauxvsunion(198910owners). Dédup MIXEDdict incluantRNE, pas attribution
+  individuelle ni certificationasof. NomsSIGLEpubliés réels, pasinitialismes
+  synthétiques. ContexteMAXd'UNEchaîne, dates/provenance conservées, thread1.
+- Raw433queries/106349ownerrefs, novel356queries/13362refs ALL526scellés.
+  GenerationSHAa7c72a6dc1b5508067b37504e1441b64f65185bbe1d1801e108ae5daae5d3be8.
+  PostsealALL526 `e7fca331`/`ce095376`, ownedexit0/chunk85eb78 :512corporate
+  publics/12EI horssource/deuxprotégés skip, dénominateur526 inchangé.
+ 67truthownersSIGLEraw/35SIGLEnouveau,22rawcontextepositifs mais3nouveaux
+  pertinents(SLS/IMAP3S/RINTERIM), TOUSdéjàexacthitsV140. SLScontroleencoder,
+  partiels nonégaux identité pourdeuxautres. ZéroXYmissing/adminfalse parmi3.
+- Restants20V140 :unowneravecSIGLErawNDS déjàadmis, zérooverlapCRM etzéro
+  nouveauSIGLE. Aucune nouvelle preuve positive desratés deV134 nonplus
+  (sousensemble des20) ; pasgainrecall mesuré ni rejetutilitéfutureSIGLE.
+  Sourceconservée horsindex/serving, pasnatifciblé ni poids/label/aliasCRM
+  modifié. Vérification documentaire administrationcorporate vsactorcontext
+  en cours, sans extraction/export de répertoire de personnes.
