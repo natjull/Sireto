@@ -1,0 +1,4621 @@
+{
+  "scope": "DIAGNOSTIC_DEVELOPPEMENT_FOLDS_2_3_4_19_RATES_V142",
+  "run": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano",
+  "variant": "learned_native_ooc",
+  "run_exact_hits": 507,
+  "run_queries": 526,
+  "counts": {
+    "siret": {
+      "ABSENT_INDEX": 0,
+      "ACCES": 0,
+      "CLASSEMENT": 19,
+      "INDETERMINE": 0,
+      "RETENU_TOP100": 0
+    },
+    "siren": {
+      "ABSENT_INDEX": 0,
+      "ACCES": 0,
+      "CLASSEMENT": 15,
+      "INDETERMINE": 0,
+      "RETENU_TOP100": 4
+    }
+  },
+  "route_counts": {
+    "registered": 13,
+    "registered_membership": 10,
+    "registered_generation": 8,
+    "registered_support": 2,
+    "shared_scope_only": 3,
+    "unrecorded": 3,
+    "inactive": 1
+  },
+  "routes": {
+    "gemma_commune": {
+      "name": "Gemma : sites de la commune",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "sirets de features_binding.json ; aucun cosinus lu"
+    },
+    "ban_geographie": {
+      "name": "Scan géographique BAN V21",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "clés de geo_sources.json ; aucun score lu"
+    },
+    "familles_successions": {
+      "name": "Familles nationales + succession directe (univers réuni)",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "keys des NPZ du run ; origine famille vs succession non séparée, aucune expansion recalculée"
+    },
+    "relations_rne_bodacc": {
+      "name": "Relations RNE/BODACC",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "SIREN enregistrés + filtre CP/INSEE des documents source indexés"
+    },
+    "activites_bodacc": {
+      "name": "Activités BODACC",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "refs des shards enregistrés + filtre CP/INSEE"
+    },
+    "sigles": {
+      "name": "Initiales officielles",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "parent_initials et own_city_initials enregistrés + filtre CP/INSEE"
+    },
+    "fournisseur_sites": {
+      "name": "Fournisseur : sites propres et succession",
+      "kind": "RENFORCEMENT",
+      "status": "ENREGISTRE",
+      "note": "sous-ensemble de keys déjà enregistré ; aucun nouveau site"
+    },
+    "continuite_adresse": {
+      "name": "Continuité économique + adresse propre",
+      "kind": "RENFORCEMENT",
+      "status": "ENREGISTRE",
+      "note": "sous-ensemble de keys déjà enregistré ; aucun nouveau site"
+    },
+    "rna": {
+      "name": "RNA",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "SIREN du contexte enregistré + filtre CP/INSEE"
+    },
+    "banatic": {
+      "name": "BANATIC",
+      "kind": "GENERATION",
+      "status": "ENREGISTRE",
+      "note": "SIREN du contexte enregistré + filtre CP/INSEE"
+    },
+    "osm": {
+      "name": "OSM : géométrie et lieux nommés",
+      "kind": "RENFORCEMENT",
+      "status": "UNIVERS_COMMUN_ENREGISTRE",
+      "note": "keys partagés ; bonus du label inconnu, aucune collecte autonome"
+    },
+    "bano": {
+      "name": "BANO : observations OSM",
+      "kind": "RENFORCEMENT",
+      "status": "UNIVERS_COMMUN_ENREGISTRE",
+      "note": "keys partagés ; bonus du label inconnu, aucune collecte autonome"
+    },
+    "mere_groupe": {
+      "name": "Mère BODACC / groupe publié (numérique)",
+      "kind": "RENFORCEMENT",
+      "status": "UNIVERS_COMMUN_ENREGISTRE",
+      "note": "univers numérique partagé ; références propres à ce signal non séparées, bonus inconnu"
+    },
+    "texte_national": {
+      "name": "Texte national : nom, adresse, CP/INSEE",
+      "kind": "GENERATION",
+      "status": "NON_ENREGISTRE",
+      "note": "pas de références requête-document avant collector enregistrées ; aucune recherche reconstruite"
+    },
+    "acteur_national": {
+      "name": "Acteur RNE : branche textuelle nationale",
+      "kind": "GENERATION",
+      "status": "NON_ENREGISTRE",
+      "note": "dictionnaire de noms disponible, mais pas les documents touchés par requête"
+    },
+    "fournisseur_lexical": {
+      "name": "Fournisseur : branche lexicale",
+      "kind": "GENERATION",
+      "status": "NON_ENREGISTRE",
+      "note": "marques/owners disponibles, mais pas les documents touchés par requête et texte"
+    },
+    "noms_sectoriels": {
+      "name": "Noms publics sectoriels",
+      "kind": "INACTIVE",
+      "status": "DESACTIVE",
+      "note": "poids nul dans les cinq modèles, établi dans la description du moteur"
+    }
+  },
+  "queries": [
+    {
+      "query_id": "10719",
+      "crm_name": "CONVERGENCE MEDIAS",
+      "fold": 3,
+      "label_siret": "39900947100018",
+      "label_siren": "399009471",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "13765",
+      "crm_name": "FOYER TY BREIZ",
+      "fold": 2,
+      "label_siret": "20000554400073",
+      "label_siren": "200005544",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": true,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "RETENU_TOP100",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 3,
+          "other_same_siren_site_count": 2,
+          "other_same_siren_examples": [
+            "20000554400024",
+            "20000554400032"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "20000554400024"
+          ]
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 7,
+          "other_same_siren_site_count": 6,
+          "other_same_siren_examples": [
+            "20000554400016",
+            "20000554400024",
+            "20000554400032"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "16145",
+      "crm_name": "SIP PLAINE COMMUNE MAISON DES PROJETS",
+      "fold": 4,
+      "label_siret": "30120992000034",
+      "label_siren": "301209920",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 2,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "30120992000026"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 2,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "30120992000026"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "4422",
+      "crm_name": "OPHLM",
+      "fold": 3,
+      "label_siret": "13001281800220",
+      "label_siren": "130012818",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 10,
+          "other_same_siren_site_count": 9,
+          "other_same_siren_examples": [
+            "13001281800014",
+            "13001281800113",
+            "13001281800212"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 4,
+          "other_same_siren_site_count": 3,
+          "other_same_siren_examples": [
+            "13001281800113",
+            "13001281800212",
+            "13001281800600"
+          ]
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 61,
+          "other_same_siren_site_count": 60,
+          "other_same_siren_examples": [
+            "13001281800014",
+            "13001281800022",
+            "13001281800030"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:1c6805a5f39956c1909201e3e901b453",
+      "crm_name": "SAS 5EME ETAGE",
+      "fold": 3,
+      "label_siret": "53535805500049",
+      "label_siren": "535358055",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 2,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "53535805500015"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 4,
+          "other_same_siren_site_count": 3,
+          "other_same_siren_examples": [
+            "53535805500015",
+            "53535805500023",
+            "53535805500031"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:2ca6ec4d142492c19345fa989a83c988",
+      "crm_name": "GROUPAMA SUPPORTS ET SERVICES",
+      "fold": 4,
+      "label_siret": "51493175700033",
+      "label_siren": "514931757",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 5,
+          "other_same_siren_site_count": 4,
+          "other_same_siren_examples": [
+            "51493175700017",
+            "51493175700025",
+            "51493175700066"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:36e9555c94cdb18e4a726cea0dd614e1",
+      "crm_name": "CEGEDIMCLOUD SMARTRX VILLEURBANNE",
+      "fold": 4,
+      "label_siret": "48861258100030",
+      "label_siren": "488612581",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 2,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "48861258100022"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 3,
+          "other_same_siren_site_count": 2,
+          "other_same_siren_examples": [
+            "48861258100014",
+            "48861258100022"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:37fdb9d2e6510a987a11890caa9adf45",
+      "crm_name": "INFODESCA",
+      "fold": 2,
+      "label_siret": "31688191100010",
+      "label_siren": "316881911",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": true,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "RETENU_TOP100",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 2,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "31688191100259"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "31688191100259"
+          ]
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 28,
+          "other_same_siren_site_count": 27,
+          "other_same_siren_examples": [
+            "31688191100044",
+            "31688191100051",
+            "31688191100069"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:486d54cd450122e56cd41661faa6f305",
+      "crm_name": "ATOL",
+      "fold": 2,
+      "label_siret": "53989139000020",
+      "label_siren": "539891390",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 3,
+          "other_same_siren_site_count": 2,
+          "other_same_siren_examples": [
+            "53989139000012",
+            "53989139000053"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "53989139000012"
+          ]
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 4,
+          "other_same_siren_site_count": 3,
+          "other_same_siren_examples": [
+            "53989139000012",
+            "53989139000038",
+            "53989139000053"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:5d3a6e667b24ee373fb8d4840ab19393",
+      "crm_name": "TRESCAL",
+      "fold": 4,
+      "label_siret": "31381896500029",
+      "label_siren": "313818965",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 2,
+          "other_same_siren_site_count": 1,
+          "other_same_siren_examples": [
+            "31381896500045"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 4,
+          "other_same_siren_site_count": 3,
+          "other_same_siren_examples": [
+            "31381896500037",
+            "31381896500045",
+            "31381896500052"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:87d277db7512a10b43cb3231956f584c",
+      "crm_name": "NAOS",
+      "fold": 3,
+      "label_siret": "39922665300281",
+      "label_siren": "399226653",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "fournisseur_sites",
+        "continuite_adresse"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 292,
+          "other_same_siren_site_count": 291,
+          "other_same_siren_examples": [
+            "39922665300018",
+            "39922665300026",
+            "39922665300034"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 193,
+          "other_same_siren_site_count": 193,
+          "other_same_siren_examples": [
+            "39922665300018",
+            "39922665300026",
+            "39922665300034"
+          ]
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 106,
+          "other_same_siren_site_count": 106,
+          "other_same_siren_examples": [
+            "39922665300026",
+            "39922665300034",
+            "39922665300042"
+          ]
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:98eab05da0fcc3139cdbb4fa0c94518b",
+      "crm_name": "NAOS",
+      "fold": 3,
+      "label_siret": "39922665301388",
+      "label_siren": "399226653",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "fournisseur_sites",
+        "continuite_adresse"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 292,
+          "other_same_siren_site_count": 291,
+          "other_same_siren_examples": [
+            "39922665300018",
+            "39922665300026",
+            "39922665300034"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 193,
+          "other_same_siren_site_count": 193,
+          "other_same_siren_examples": [
+            "39922665300018",
+            "39922665300026",
+            "39922665300034"
+          ]
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 106,
+          "other_same_siren_site_count": 106,
+          "other_same_siren_examples": [
+            "39922665300026",
+            "39922665300034",
+            "39922665300042"
+          ]
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:ad20d5983bf6c000ce6b9e1761aa0f6f",
+      "crm_name": "CAPITAL SANTE INSTITUT",
+      "fold": 3,
+      "label_siret": "31493130400096",
+      "label_siren": "314931304",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 3,
+          "other_same_siren_site_count": 2,
+          "other_same_siren_examples": [
+            "31493130400088",
+            "31493130400104"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 8,
+          "other_same_siren_site_count": 7,
+          "other_same_siren_examples": [
+            "31493130400039",
+            "31493130400047",
+            "31493130400054"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:c78d13bc213dcb0d923aaabdf4052dcd",
+      "crm_name": "CERGY PONTOISE RUE DES VERGERS",
+      "fold": 2,
+      "label_siret": "24950010900015",
+      "label_siren": "249500109",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": true,
+      "label_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "RETENU_TOP100",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 13,
+          "other_same_siren_site_count": 12,
+          "other_same_siren_examples": [
+            "24950010900023",
+            "24950010900031",
+            "24950010900049"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 11,
+          "other_same_siren_site_count": 10,
+          "other_same_siren_examples": [
+            "24950010900023",
+            "24950010900049",
+            "24950010900056"
+          ]
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 13,
+          "other_same_siren_site_count": 12,
+          "other_same_siren_examples": [
+            "24950010900023",
+            "24950010900031",
+            "24950010900049"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:d6171348a29c3e0781b2dd602f54d06b",
+      "crm_name": "CAMPHES",
+      "fold": 2,
+      "label_siret": "41434472100157",
+      "label_siren": "414344721",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "relations_rne_bodacc"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "relations_rne_bodacc"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 27,
+          "other_same_siren_site_count": 26,
+          "other_same_siren_examples": [
+            "41434472100017",
+            "41434472100025",
+            "41434472100033"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:d7f022fe5339efeed38937fedae2a511",
+      "crm_name": "ADOS LOISIRS",
+      "fold": 2,
+      "label_siret": "21780224800013",
+      "label_siren": "217802248",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": true,
+      "label_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "ban_geographie",
+        "familles_successions"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "RETENU_TOP100",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 9,
+          "other_same_siren_site_count": 8,
+          "other_same_siren_examples": [
+            "21780224800021",
+            "21780224800039",
+            "21780224800047"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 5,
+          "other_same_siren_site_count": 4,
+          "other_same_siren_examples": [
+            "21780224800062",
+            "21780224800070",
+            "21780224800088"
+          ]
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 9,
+          "other_same_siren_site_count": 8,
+          "other_same_siren_examples": [
+            "21780224800021",
+            "21780224800039",
+            "21780224800047"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:d8f3afc5e08bb3556ca449fb15ba2895",
+      "crm_name": "CUISINES SCHMIDT HAUCONCOURT",
+      "fold": 3,
+      "label_siret": "88753870000014",
+      "label_siren": "887538700",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "activites_bodacc"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "activites_bodacc"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:e59aa4eb6d0f28ef4b5ceccc7b8cd35b",
+      "crm_name": "NAOS",
+      "fold": 3,
+      "label_siret": "39922665302790",
+      "label_siren": "399226653",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "fournisseur_sites",
+        "continuite_adresse"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 1,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 292,
+          "other_same_siren_site_count": 291,
+          "other_same_siren_examples": [
+            "39922665300018",
+            "39922665300026",
+            "39922665300034"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 193,
+          "other_same_siren_site_count": 193,
+          "other_same_siren_examples": [
+            "39922665300018",
+            "39922665300026",
+            "39922665300034"
+          ]
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 106,
+          "other_same_siren_site_count": 106,
+          "other_same_siren_examples": [
+            "39922665300026",
+            "39922665300034",
+            "39922665300042"
+          ]
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    },
+    {
+      "query_id": "NEWCRM:fe1206af413a0560ebdc49be6b534e76",
+      "crm_name": "SYNDICAT MIXTE AGENCE LANDAISE POUR",
+      "fold": 3,
+      "label_siret": "24400088100049",
+      "label_siren": "244000881",
+      "index_siret_document_count": 1,
+      "index_siren_has_site": true,
+      "siret_in_top100": false,
+      "siren_in_top100": false,
+      "label_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "banatic"
+      ],
+      "siren_present_routes": [
+        "gemma_commune",
+        "familles_successions",
+        "banatic"
+      ],
+      "siret_class": "CLASSEMENT",
+      "siren_class": "CLASSEMENT",
+      "unrecorded_routes": [
+        "texte_national",
+        "acteur_national",
+        "fournisseur_lexical"
+      ],
+      "routes": {
+        "gemma_commune": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 4,
+          "other_same_siren_site_count": 3,
+          "other_same_siren_examples": [
+            "24400088100015",
+            "24400088100023",
+            "24400088100056"
+          ]
+        },
+        "ban_geographie": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "familles_successions": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 5,
+          "other_same_siren_site_count": 4,
+          "other_same_siren_examples": [
+            "24400088100015",
+            "24400088100023",
+            "24400088100031"
+          ]
+        },
+        "relations_rne_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "activites_bodacc": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "sigles": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "rna": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "banatic": {
+          "label_siret_present": true,
+          "label_siren_site_present": true,
+          "owner_reference_present": true,
+          "same_siren_site_count": 5,
+          "other_same_siren_site_count": 4,
+          "other_same_siren_examples": [
+            "24400088100015",
+            "24400088100023",
+            "24400088100031"
+          ]
+        },
+        "fournisseur_sites": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "continuite_adresse": {
+          "label_siret_present": false,
+          "label_siren_site_present": false,
+          "owner_reference_present": false,
+          "same_siren_site_count": 0,
+          "other_same_siren_site_count": 0,
+          "other_same_siren_examples": []
+        },
+        "osm": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "bano": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "mere_groupe": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "scope_label_siret_present": true,
+          "scope_label_siren_present": true,
+          "bonus": "INCONNU",
+          "autonomous_collection": false
+        },
+        "texte_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "acteur_national": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "fournisseur_lexical": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "NON_ENREGISTRE"
+        },
+        "noms_sectoriels": {
+          "label_siret_present": null,
+          "label_siren_site_present": null,
+          "status": "DESACTIVE"
+        }
+      }
+    }
+  ],
+  "crosscheck": {
+    "seed": 20261014,
+    "query_ids": [
+      "NEWCRM:8157ebb0fb942079d871376baf0497e2",
+      "NEWCRM:2836cc0263fe9ef7540bed3a8a0d3266",
+      "1604"
+    ],
+    "passed": 3,
+    "requested": 3,
+    "queries": [
+      {
+        "query_id": "1604",
+        "crm_name": "SERIPRIM",
+        "fold": 4,
+        "label_siret": "33955706800048",
+        "label_siren": "339557068",
+        "index_siret_document_count": 1,
+        "index_siren_has_site": true,
+        "siret_in_top100": true,
+        "siren_in_top100": true,
+        "label_present_routes": [
+          "gemma_commune",
+          "familles_successions"
+        ],
+        "siren_present_routes": [
+          "gemma_commune",
+          "ban_geographie",
+          "familles_successions"
+        ],
+        "siret_class": "RETENU_TOP100",
+        "siren_class": "RETENU_TOP100",
+        "unrecorded_routes": [
+          "texte_national",
+          "acteur_national",
+          "fournisseur_lexical"
+        ],
+        "routes": {
+          "gemma_commune": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 2,
+            "other_same_siren_site_count": 1,
+            "other_same_siren_examples": [
+              "33955706800055"
+            ]
+          },
+          "ban_geographie": {
+            "label_siret_present": false,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 1,
+            "other_same_siren_site_count": 1,
+            "other_same_siren_examples": [
+              "33955706800055"
+            ]
+          },
+          "familles_successions": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 4,
+            "other_same_siren_site_count": 3,
+            "other_same_siren_examples": [
+              "33955706800022",
+              "33955706800030",
+              "33955706800055"
+            ]
+          },
+          "relations_rne_bodacc": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "activites_bodacc": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "sigles": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "rna": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "banatic": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "fournisseur_sites": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "continuite_adresse": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "osm": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "bano": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "mere_groupe": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "texte_national": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "acteur_national": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "fournisseur_lexical": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "noms_sectoriels": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "DESACTIVE"
+          }
+        }
+      },
+      {
+        "query_id": "NEWCRM:2836cc0263fe9ef7540bed3a8a0d3266",
+        "crm_name": "CNAM AG CRETEIL DUHAMEL",
+        "fold": 4,
+        "label_siret": "32391414300025",
+        "label_siren": "323914143",
+        "index_siret_document_count": 1,
+        "index_siren_has_site": true,
+        "siret_in_top100": true,
+        "siren_in_top100": true,
+        "label_present_routes": [
+          "gemma_commune",
+          "familles_successions"
+        ],
+        "siren_present_routes": [
+          "gemma_commune",
+          "familles_successions"
+        ],
+        "siret_class": "RETENU_TOP100",
+        "siren_class": "RETENU_TOP100",
+        "unrecorded_routes": [
+          "texte_national",
+          "acteur_national",
+          "fournisseur_lexical"
+        ],
+        "routes": {
+          "gemma_commune": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 2,
+            "other_same_siren_site_count": 1,
+            "other_same_siren_examples": [
+              "32391414300132"
+            ]
+          },
+          "ban_geographie": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "familles_successions": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 12,
+            "other_same_siren_site_count": 11,
+            "other_same_siren_examples": [
+              "32391414300033",
+              "32391414300041",
+              "32391414300058"
+            ]
+          },
+          "relations_rne_bodacc": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "activites_bodacc": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "sigles": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "rna": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "banatic": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "fournisseur_sites": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "continuite_adresse": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "osm": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "bano": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "mere_groupe": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "texte_national": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "acteur_national": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "fournisseur_lexical": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "noms_sectoriels": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "DESACTIVE"
+          }
+        }
+      },
+      {
+        "query_id": "NEWCRM:8157ebb0fb942079d871376baf0497e2",
+        "crm_name": "GROUPAMA SUPPORTS ET SERVICES",
+        "fold": 2,
+        "label_siret": "78965428200019",
+        "label_siren": "789654282",
+        "index_siret_document_count": 1,
+        "index_siren_has_site": true,
+        "siret_in_top100": true,
+        "siren_in_top100": true,
+        "label_present_routes": [
+          "gemma_commune",
+          "ban_geographie",
+          "familles_successions"
+        ],
+        "siren_present_routes": [
+          "gemma_commune",
+          "ban_geographie",
+          "familles_successions"
+        ],
+        "siret_class": "RETENU_TOP100",
+        "siren_class": "RETENU_TOP100",
+        "unrecorded_routes": [
+          "texte_national",
+          "acteur_national",
+          "fournisseur_lexical"
+        ],
+        "routes": {
+          "gemma_commune": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 1,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "ban_geographie": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 1,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "familles_successions": {
+            "label_siret_present": true,
+            "label_siren_site_present": true,
+            "owner_reference_present": true,
+            "same_siren_site_count": 1,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "relations_rne_bodacc": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "activites_bodacc": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "sigles": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "rna": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "banatic": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "fournisseur_sites": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "continuite_adresse": {
+            "label_siret_present": false,
+            "label_siren_site_present": false,
+            "owner_reference_present": false,
+            "same_siren_site_count": 0,
+            "other_same_siren_site_count": 0,
+            "other_same_siren_examples": []
+          },
+          "osm": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "bano": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "mere_groupe": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "scope_label_siret_present": true,
+            "scope_label_siren_present": true,
+            "bonus": "INCONNU",
+            "autonomous_collection": false
+          },
+          "texte_national": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "acteur_national": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "fournisseur_lexical": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "NON_ENREGISTRE"
+          },
+          "noms_sectoriels": {
+            "label_siret_present": null,
+            "label_siren_site_present": null,
+            "status": "DESACTIVE"
+          }
+        }
+      }
+    ]
+  },
+  "method": {
+    "index": "doc_freq(siret, terme exact), aucun search/collector/score",
+    "references": "JSON filtrés en streaming et clés seules des shards NPZ des 22 requêtes",
+    "siren_refs": "présence owner enregistrée ; filtre CP/INSEE sur documents source, sans recherche textuelle",
+    "shared_scope": "OSM/BANO/mère-groupe : univers commun mesuré, bonus et attribution inconnus",
+    "ranking": "CLASSEMENT signifie seulement déjà ramassé et absent des 100 ; aucune cause ni note mesurée",
+    "siren_retained": "RETENU_TOP100 distingue les entreprises déjà dans les 100 des entreprises ratées",
+    "nonrecorded": "INDETERMINE seulement si aucune voie mesurée ne contient la cible et des voies manquent",
+    "no_retrieval_replay": true,
+    "no_new_scores": true,
+    "no_closed_sets": true,
+    "no_label_change": true
+  },
+  "inputs": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/launch.json",
+      "sha256": "2589a45ece53ec7f3eda0fc2434037473fb0a55b3a4efd35af445afaa6d20eed",
+      "size_bytes": 63937,
+      "mtime_ns": 1791943798310677238
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/generation.json",
+      "sha256": "b8d4e77a49008bc8e449a3b19ba0bdb223f4f8ec0b514a384d68bec91b36a12e",
+      "size_bytes": 842,
+      "mtime_ns": 1791947021566884554
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/report.json",
+      "sha256": "7614852c7f162d6dca059e992e1db109213571627d1550e4ca10a3879797e907",
+      "size_bytes": 42604,
+      "mtime_ns": 1791947031515990497
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/outcomes.json",
+      "sha256": "4fa879aada3e0059c0868dadfdeadc45b3b6673872e506e2c96dd315634b1e43",
+      "size_bytes": 500562,
+      "mtime_ns": 1791947031501637339
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/representative_20261008_b/panel.json",
+      "sha256": "41668f7f27c4479d421da8a26f18bb4aba93865d721403c2c3130fa08429cff2",
+      "size_bytes": 129670,
+      "mtime_ns": 1791469415250078442
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/outputs.json",
+      "sha256": "fb691a70311392c103955e1b4fe71ee03fbdabbb2dcc87d2fb32e9bf6c5d3218",
+      "size_bytes": 18762806,
+      "mtime_ns": 1791947021547149218
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v358_postseal_evaluation.json",
+      "sha256": "25c117e698d5faf27c2f4f98cd76ae20bb3194507bf738464c6823b3f3193cc7",
+      "size_bytes": 1018,
+      "mtime_ns": 1791311481681267278
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v122/label_clarification_20261013_b/cases.json",
+      "sha256": "8dfe4be84212c1c26332565857b5061cff353aaf78a3b6ae17bbd129474f7ecd",
+      "size_bytes": 85895,
+      "mtime_ns": 1791890913262014511
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/features_generation.json",
+      "sha256": "f92f62cdb1b848570fc09e1a8a36a8d4d84079abacc5ae70a6bd158d297d3cb8",
+      "size_bytes": 359655,
+      "mtime_ns": 1791943798317193417
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/features_generation.json",
+      "sha256": "f92f62cdb1b848570fc09e1a8a36a8d4d84079abacc5ae70a6bd158d297d3cb8",
+      "size_bytes": 359655,
+      "mtime_ns": 1791875190382785602
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/launch.json",
+      "sha256": "1436d6d03335d2185c47190fc01d42a5040e5b9b61aac3ddb5b09554def389a9",
+      "size_bytes": 100679,
+      "mtime_ns": 1791743465426547233
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/prepared.json",
+      "sha256": "3b0fd64c2f890d48eea4f7c34c8312b93d8640cb5d429e99991c268b554280ae",
+      "size_bytes": 178411,
+      "mtime_ns": 1791934161450558445
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/prepared.json",
+      "sha256": "4ea36cf63d5b33a8ac3295c108b32da5bcac998d9d30d1cf841971acb5d71d72",
+      "size_bytes": 168686,
+      "mtime_ns": 1791943925851941774
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/generation.json",
+      "sha256": "5e186f07a07021036435bdf698f2da1629411a4ed05f3277b7e8866b56b06202",
+      "size_bytes": 3340,
+      "mtime_ns": 1791928222103459262
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/query_extras.json",
+      "sha256": "d5ab2f5f9b311b0df020cd5eded54f9965f6f06d87e6af2b1aa7bfc12b4c8e76",
+      "size_bytes": 80218,
+      "mtime_ns": 1791928221365388429
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v137/continuity_address_source_20261013_night/generation.json",
+      "sha256": "3f4db238b517cebb4f4d66796fe2b497a989aabf4d55d7e81f859e2559a2174f",
+      "size_bytes": 2205,
+      "mtime_ns": 1791928666255631864
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v137/continuity_address_source_20261013_night/query_extras.json",
+      "sha256": "83d97e228487936b610f092e7eefaa23f538435d50485f4b6cb413650c055872",
+      "size_bytes": 23815,
+      "mtime_ns": 1791928666253324996
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/structural_20261013_night/generation.json",
+      "sha256": "24be5250b77dc48d614a68b68cd3d685771db04bf977a3215c72645206f3dd2e",
+      "size_bytes": 19053,
+      "mtime_ns": 1791925916559018735
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/structural_20261013_night/context.json",
+      "sha256": "c1a7461aa492c138242201d07b6feb866aab246a4c5b67ca76cd3e8c473865fd",
+      "size_bytes": 1949403,
+      "mtime_ns": 1791925916525394588
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/banatic_memberships_20261013_night_b/generation.json",
+      "sha256": "c204f73defefd244726e199935b49267ab3d718ed53d719bc1125f356b1947b8",
+      "size_bytes": 2216,
+      "mtime_ns": 1791927270563192160
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/banatic_memberships_20261013_night_b/context.json",
+      "sha256": "b327d704204397b2069f9db80793a9088c99fb3e60eac3d7f69debc131fc9a0e",
+      "size_bytes": 1792387,
+      "mtime_ns": 1791927270555207695
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v88/typed_context_native_20261013_a/context_expansion.json",
+      "sha256": "3bae405e826c3660d07d14f3878f9e0853500ed733562a0a8f9d96820218b648",
+      "size_bytes": 216799417,
+      "mtime_ns": 1791858206845047360
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v98/official_initial_alignment_20261013_b/initial_alignment.json",
+      "sha256": "0656dd8c2f9e94c0b98f3f0ad14fb92adbcc3dca109197885d078d66077d798d",
+      "size_bytes": 84917848,
+      "mtime_ns": 1791862247095824214
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v21/relation_views_20261011_c/geo_sources.json",
+      "sha256": "cced058c5821bd3ccec11b65cdac9e8e365daffdc7258191c7e628142d045d42",
+      "size_bytes": 52106383,
+      "mtime_ns": 1791748382269471775
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/manifest.json",
+      "sha256": "9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e",
+      "size_bytes": 2708,
+      "mtime_ns": 1787143566716776777
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/tantivy/meta.json",
+      "sha256": "42e43acedabdb27468f25ec513fc52a86c09c205789dcea204f0e0886a9341fc",
+      "size_bytes": 16239,
+      "mtime_ns": 1787143566041155073
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/13211/features_binding.json",
+      "sha256": "1022264c4c3854d5dc82ef4b2dca0c2c03d585711f4bf06954428f1a370746b6",
+      "size_bytes": 773755,
+      "mtime_ns": 1791743678095861916
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/14303/features_binding.json",
+      "sha256": "2d6e90023775d67d89cd400295ee658732c11efdbe32bad911db89a0d1f46d50",
+      "size_bytes": 12482,
+      "mtime_ns": 1791743705669952885
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/14437/features_binding.json",
+      "sha256": "f189b93ab4105f5a9d2805ceff55cc1ec966a1e1a85434f623b024e0def55696",
+      "size_bytes": 185006,
+      "mtime_ns": 1791743715569326068
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/16015/features_binding.json",
+      "sha256": "8187f89fd906609aa5ad9f914508aacf4cdac19e47255f4c855fed1dfecc445d",
+      "size_bytes": 796995,
+      "mtime_ns": 1791743758772099973
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/34057/features_binding.json",
+      "sha256": "b3d11b4f7ee14b9e995a4fbd81537d3fdee56bb7232f48e4051a4e89f18820d0",
+      "size_bytes": 465594,
+      "mtime_ns": 1791743890403839955
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/40002/features_binding.json",
+      "sha256": "0c8dedc92a8efc3200059ab114a9212ca7ecfa5545df27109173c9b90adfc58f",
+      "size_bytes": 23284,
+      "mtime_ns": 1791743980325237009
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/44109/features_binding.json",
+      "sha256": "c2e80bdb4794bd6c24e6da17b1fe3289c300cc928ab28cbec869beae680b79eb",
+      "size_bytes": 5605696,
+      "mtime_ns": 1791744266475476671
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/47031/features_binding.json",
+      "sha256": "4ba453f368a82957dbdbabb7b4cddcead6ed7c944ba22b3580be8c8e6666305c",
+      "size_bytes": 104749,
+      "mtime_ns": 1791744286434643409
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/51108/features_binding.json",
+      "sha256": "9e6a66d0c19b418a74d1b7a3a145b2be18abc1e7e96816673405a62fa1701235",
+      "size_bytes": 469156,
+      "mtime_ns": 1791744312145080705
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/57303/features_binding.json",
+      "sha256": "ee467947d6ae77411fa0d0b950aef38f0204f7d4539988ba35f0a8500a9f3244",
+      "size_bytes": 21677,
+      "mtime_ns": 1791744366498289941
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/63009/features_binding.json",
+      "sha256": "9ddca885c66c86a3277d3523a25b0e0db86f204b449eb2a0dcc8f57fb01e3039",
+      "size_bytes": 11267,
+      "mtime_ns": 1791744709051686524
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/64483/features_binding.json",
+      "sha256": "7689a0f5f6172f54a5a7783f273c63950ffc89cd7e0951cd66c9546c284f1b7f",
+      "size_bytes": 362270,
+      "mtime_ns": 1791744725779922971
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/69266/features_binding.json",
+      "sha256": "740250ef09ba8ccdbef7007abcd5f252dd1aa55243d08bf4a0050ecdffdbd147",
+      "size_bytes": 2597229,
+      "mtime_ns": 1791744930577092735
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/72006/features_binding.json",
+      "sha256": "19bd17aac03e7cedb13ac582f8eca885fc3b50bd0f59f8e90e2b4d08dc9d2987",
+      "size_bytes": 20843,
+      "mtime_ns": 1791745055707919284
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/78224/features_binding.json",
+      "sha256": "f5c1bdf0ea07fda3d385dcf7e6105a236808cb2335f378f04415b3eafd67a604",
+      "size_bytes": 59320,
+      "mtime_ns": 1791745425045335422
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/80212/features_binding.json",
+      "sha256": "f6702ffb42085e5b9a2e64e75f1174e19b95428efd60437ddf8c7b924ffa10e5",
+      "size_bytes": 52502,
+      "mtime_ns": 1791745452973108459
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/84019/features_binding.json",
+      "sha256": "93ec3d4d101539f85ecbca97ab038efcd1840c853a64fbc9f5029d7b99640fa3",
+      "size_bytes": 194009,
+      "mtime_ns": 1791745562283762797
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/93072/features_binding.json",
+      "sha256": "89d0bd0e0970b22cbbad5bdb581d88b940a27fce0b218416da46f2f638900f8a",
+      "size_bytes": 396625,
+      "mtime_ns": 1791745798927561065
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/94028/features_binding.json",
+      "sha256": "05910579c262d24183dd2e951b67b11cdcb9d8016579030f5a1d6e3f4ef1963a",
+      "size_bytes": 1146791,
+      "mtime_ns": 1791745853494940693
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v19/proof_engine_20261011_b/zones/95127/features_binding.json",
+      "sha256": "311f8f84d396987ec80229b0e231827589fe715850944b1e40b8c066800223ce",
+      "size_bytes": 907844,
+      "mtime_ns": 1791745891352859165
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/e071170e549fa06f725ccb99597617451bab7e29f58faceb193defda38af9b36.npz",
+      "sha256": "afb605055b37160cb86d4e76b6bbf28931f3711dbe6251e489d406282e6afd97",
+      "size_bytes": 54824982,
+      "mtime_ns": 1791849517901794805
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/e071170e549fa06f725ccb99597617451bab7e29f58faceb193defda38af9b36.npz",
+      "sha256": "60585a1796df675015fa12e3cd2ec578caf7cab14afbf75af02311f7dba23a0f",
+      "size_bytes": 22134,
+      "mtime_ns": 1791875150118657638
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/e071170e549fa06f725ccb99597617451bab7e29f58faceb193defda38af9b36.npz",
+      "sha256": "be0d7e071984116f23ea988783c43d88ba0cbc9caa5206ae2f82743bdc5b7e80",
+      "size_bytes": 520618,
+      "mtime_ns": 1791933711078970793
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/e071170e549fa06f725ccb99597617451bab7e29f58faceb193defda38af9b36.npz",
+      "sha256": "48c36ea48b5c9d26a66a6d78b686299cd2b7e637d51d8b809ef9c4f806d1fbbe",
+      "size_bytes": 518408,
+      "mtime_ns": 1791943808466204659
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/e86c18c2174e40300ec7ec49b849b8c50e881d65a76fb25231ea6ce78fbc6a4b.npz",
+      "sha256": "e95f01b64f73c1b9aad8504ea4c9fa89232b1c509077098dfb4b4465546c180e",
+      "size_bytes": 216796374,
+      "mtime_ns": 1791849661869882144
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/e86c18c2174e40300ec7ec49b849b8c50e881d65a76fb25231ea6ce78fbc6a4b.npz",
+      "sha256": "72bdadd85b913e4eca942b5dd36febcd025808c768528394be0d0fc87042a737",
+      "size_bytes": 6993,
+      "mtime_ns": 1791875156426304050
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/e86c18c2174e40300ec7ec49b849b8c50e881d65a76fb25231ea6ce78fbc6a4b.npz",
+      "sha256": "9697436f99df6a6541a8bf3b0d7d48ae38703a1189edd50655e5b74b29bf36d4",
+      "size_bytes": 7350834,
+      "mtime_ns": 1791934022952651767
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/e86c18c2174e40300ec7ec49b849b8c50e881d65a76fb25231ea6ce78fbc6a4b.npz",
+      "sha256": "7b38963f10cffe00d543946a20d983bff622efd0cd587023a48a5488bee32016",
+      "size_bytes": 2432784,
+      "mtime_ns": 1791943831057416911
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/361603c11612df16fcb9d48b4c22430535c8e53fe3b3c5a6a39bdf7e0543f65c.npz",
+      "sha256": "62f83b8013fd63aa2089e620db0b109681e3931e1c7d10cdf80e5e8d58d47507",
+      "size_bytes": 3575466,
+      "mtime_ns": 1791849715103886685
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/361603c11612df16fcb9d48b4c22430535c8e53fe3b3c5a6a39bdf7e0543f65c.npz",
+      "sha256": "0a61947bd3ce933e818d2f371180e3e3fe508c10eb4d1e241439aac3f8b68a4f",
+      "size_bytes": 394,
+      "mtime_ns": 1791875158732899681
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/361603c11612df16fcb9d48b4c22430535c8e53fe3b3c5a6a39bdf7e0543f65c.npz",
+      "sha256": "0f6b3c6c5ae1bc6c1c66661431feff005b45a0038329072d9fead98dad97c3a4",
+      "size_bytes": 32380,
+      "mtime_ns": 1791934034601995200
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/361603c11612df16fcb9d48b4c22430535c8e53fe3b3c5a6a39bdf7e0543f65c.npz",
+      "sha256": "8b255f689195463ee1e814b88337a62b3efe8a240c5a16a0a1099c8abed92c65",
+      "size_bytes": 31978,
+      "mtime_ns": 1791943839829653936
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/84f6a1dfa605e1ee061d9b786b5195a4d16ef8d9dbdc9c6b4d293414416a4317.npz",
+      "sha256": "e429008c4c9d01aa42ead72054a24c4ba5eae89e3e24d2b1252cf2ff3799ba63",
+      "size_bytes": 50460750,
+      "mtime_ns": 1791849715856371848
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/84f6a1dfa605e1ee061d9b786b5195a4d16ef8d9dbdc9c6b4d293414416a4317.npz",
+      "sha256": "146daafb22cb1a15b5c77b587dfe18a6487a1a60328f9c1fac77e3c6e0fcfc0e",
+      "size_bytes": 223878,
+      "mtime_ns": 1791875158865271662
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/84f6a1dfa605e1ee061d9b786b5195a4d16ef8d9dbdc9c6b4d293414416a4317.npz",
+      "sha256": "996ce6479e3d68f7b119e1017d62441762ac57ae960f0c99189d4912dbe95adb",
+      "size_bytes": 493333,
+      "mtime_ns": 1791934034897014315
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/84f6a1dfa605e1ee061d9b786b5195a4d16ef8d9dbdc9c6b4d293414416a4317.npz",
+      "sha256": "6c09ced7dfd36a5c04f26b208ac30da719f5ceab799b50a73b192da7546cfc79",
+      "size_bytes": 491283,
+      "mtime_ns": 1791943840048626468
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/dc99de4709eb45d5a165a3e243dd75a1f1cfc3afb078211a4c26bc730d0fb241.npz",
+      "sha256": "c961a3a332bc55d2deb24f532d66b58847d5d62a8f3cfc5bc502c8464f0aa42e",
+      "size_bytes": 99999214,
+      "mtime_ns": 1791849796664502108
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/dc99de4709eb45d5a165a3e243dd75a1f1cfc3afb078211a4c26bc730d0fb241.npz",
+      "sha256": "3165059cde2936ef0f443e08fdf3d83621ce8bab42b8eac1266f8efd12edc66b",
+      "size_bytes": 407,
+      "mtime_ns": 1791875161825475384
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/dc99de4709eb45d5a165a3e243dd75a1f1cfc3afb078211a4c26bc730d0fb241.npz",
+      "sha256": "37f6e611b7eb83043300093e3e6f55247f75424871cbb2c65f68ee526fe029ba",
+      "size_bytes": 938580,
+      "mtime_ns": 1791934051542752774
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/dc99de4709eb45d5a165a3e243dd75a1f1cfc3afb078211a4c26bc730d0fb241.npz",
+      "sha256": "d3e01180a3cf70f615f638c41af10013a9bf5c6b878fd34c7f895550f1341a1a",
+      "size_bytes": 934718,
+      "mtime_ns": 1791943851031998411
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/f3ccc6533ab8614758920d97b5767d93ffdadc26ee5f8c099a581654a2cbe3f2.npz",
+      "sha256": "627a3c25dca2563cf1f73525e65404094df472ca9e555d5118093e13e7d54a0a",
+      "size_bytes": 216796374,
+      "mtime_ns": 1791849954765100475
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/f3ccc6533ab8614758920d97b5767d93ffdadc26ee5f8c099a581654a2cbe3f2.npz",
+      "sha256": "96447ef43508afdaec2c7607bd7cc099e8ce2bde4af8afdd6187bc28efdae643",
+      "size_bytes": 4543,
+      "mtime_ns": 1791875170655169463
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/f3ccc6533ab8614758920d97b5767d93ffdadc26ee5f8c099a581654a2cbe3f2.npz",
+      "sha256": "4c682eb2f5a31590d6e9f50611c6633abc95725e490ad0a544b41b706282901a",
+      "size_bytes": 2440930,
+      "mtime_ns": 1791934086927878760
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/f3ccc6533ab8614758920d97b5767d93ffdadc26ee5f8c099a581654a2cbe3f2.npz",
+      "sha256": "7b38963f10cffe00d543946a20d983bff622efd0cd587023a48a5488bee32016",
+      "size_bytes": 2432784,
+      "mtime_ns": 1791943876650850089
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/409c15780f92177430a80d89dd55f83ab0e51f2e972352424321b9d9e9c3263d.npz",
+      "sha256": "d534a5f88351ba12d5fae8c5d0668ebee5ed62111237d33a987d5e4fd51783da",
+      "size_bytes": 110197474,
+      "mtime_ns": 1791849978322289155
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/409c15780f92177430a80d89dd55f83ab0e51f2e972352424321b9d9e9c3263d.npz",
+      "sha256": "ef6295317aed4235abf760e7731b7a4c1b77a13224c3b63ddcb7f5ad556762e9",
+      "size_bytes": 1344,
+      "mtime_ns": 1791875171262318581
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/409c15780f92177430a80d89dd55f83ab0e51f2e972352424321b9d9e9c3263d.npz",
+      "sha256": "50f71037a4d041504237db36d36592d2ba6c68d38a44f14c04a1836a28d071d0",
+      "size_bytes": 1087117,
+      "mtime_ns": 1791934089869338199
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/409c15780f92177430a80d89dd55f83ab0e51f2e972352424321b9d9e9c3263d.npz",
+      "sha256": "73d6a6b5b71d5f394a8a2f1e22d3738f30bea77bba8c00309b0774d893bc0185",
+      "size_bytes": 1082883,
+      "mtime_ns": 1791943878893301601
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/71303e17fca34084a024ec22d500457206f256a66f04b33ef82071696bf03da3.npz",
+      "sha256": "d4cb5d8f36c0b1b88731731b5346e39d1d88092b5e3067ab7cb1cf13028bb952",
+      "size_bytes": 60853202,
+      "mtime_ns": 1791849988493088361
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/71303e17fca34084a024ec22d500457206f256a66f04b33ef82071696bf03da3.npz",
+      "sha256": "9ffe7bd87f1fa70ff3694232ca97298a0784c09c133ae4760d76829d9d34a79f",
+      "size_bytes": 112138,
+      "mtime_ns": 1791875171649763422
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/71303e17fca34084a024ec22d500457206f256a66f04b33ef82071696bf03da3.npz",
+      "sha256": "13f457cab2bf8db16c8e849c5ebe7b8568eabdc0474730769fa90e3a38a80a90",
+      "size_bytes": 542768,
+      "mtime_ns": 1791934090694507833
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/71303e17fca34084a024ec22d500457206f256a66f04b33ef82071696bf03da3.npz",
+      "sha256": "c3f2b74a7aa24b11dc40698c22a3e8aba508b679a3b3291946bc4bf697dcffe1",
+      "size_bytes": 540338,
+      "mtime_ns": 1791943879519580400
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/6cbbc3981dfc06bca3c538f969a5912423635da0ad6b46b16575496de1be9693.npz",
+      "sha256": "650c1ac66dd1621e38859f35d447fbba563eacd4c0f435db148c1227be45405c",
+      "size_bytes": 134324770,
+      "mtime_ns": 1791850008165914827
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/6cbbc3981dfc06bca3c538f969a5912423635da0ad6b46b16575496de1be9693.npz",
+      "sha256": "17a0b5c80ffc16eea1a39d0f1d857cf02b6db983f8ed396131bfd8ba7b39e81b",
+      "size_bytes": 1516,
+      "mtime_ns": 1791875172086272272
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/6cbbc3981dfc06bca3c538f969a5912423635da0ad6b46b16575496de1be9693.npz",
+      "sha256": "f9060b8ff364c9edcc8f264199b17598b8f3aff287ecbc5fb6343abfe8d2ef8e",
+      "size_bytes": 1459225,
+      "mtime_ns": 1791934095288257424
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/6cbbc3981dfc06bca3c538f969a5912423635da0ad6b46b16575496de1be9693.npz",
+      "sha256": "38733030fde23385312b1945e29865eb643df93e35d6ad1f01e5dcd448e722fc",
+      "size_bytes": 1454095,
+      "mtime_ns": 1791943882523037042
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/8c31d8b1dfb16950d92445138adc5564348690400fd1e7cb1d10de43ca9a1a42.npz",
+      "sha256": "f63d70fb62553347e55d0434fa9fc53a56ae3f95348bb1e3fc70ce0cf9f70041",
+      "size_bytes": 58048230,
+      "mtime_ns": 1791850009416852385
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/8c31d8b1dfb16950d92445138adc5564348690400fd1e7cb1d10de43ca9a1a42.npz",
+      "sha256": "0a61947bd3ce933e818d2f371180e3e3fe508c10eb4d1e241439aac3f8b68a4f",
+      "size_bytes": 394,
+      "mtime_ns": 1791875172116846992
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/8c31d8b1dfb16950d92445138adc5564348690400fd1e7cb1d10de43ca9a1a42.npz",
+      "sha256": "01ca7f685ce2f00e3de3de716f25464c7c3b755ffe24ffd0e4e4e6eaa0e74c8e",
+      "size_bytes": 509268,
+      "mtime_ns": 1791934095835865029
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/8c31d8b1dfb16950d92445138adc5564348690400fd1e7cb1d10de43ca9a1a42.npz",
+      "sha256": "9f7421f10484719c110c9dbff8bf5b9b098c0ac6510650f3b4c43466de46cd32",
+      "size_bytes": 501128,
+      "mtime_ns": 1791943882825496228
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/9c644501bb1867f0c888a95fe92a5791266078f9a4baa5d17278ba10920e8e40.npz",
+      "sha256": "64da240c50c03475ca36b34f6b8a37e21ab9a0487c3de86b6334737488bffe03",
+      "size_bytes": 90140790,
+      "mtime_ns": 1791850027017576620
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/9c644501bb1867f0c888a95fe92a5791266078f9a4baa5d17278ba10920e8e40.npz",
+      "sha256": "45dd98bb6a74372a315a56dee7774f4eed5ea9d3d3b61800b08d10f510b70cb5",
+      "size_bytes": 436,
+      "mtime_ns": 1791875173902849553
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/9c644501bb1867f0c888a95fe92a5791266078f9a4baa5d17278ba10920e8e40.npz",
+      "sha256": "e6e813fd46d140c05d2d4b391c4a922c7162b70f859f69b2ff3cfbc4ef723cfe",
+      "size_bytes": 815694,
+      "mtime_ns": 1791934102092449032
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/9c644501bb1867f0c888a95fe92a5791266078f9a4baa5d17278ba10920e8e40.npz",
+      "sha256": "e8ef19834e601ec7020918ca6e8aa01fb478ae64b82a58e3020e92a2db645e13",
+      "size_bytes": 812194,
+      "mtime_ns": 1791943887239276908
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/8f7c4792e7400dc1f5b00d82d7df7bf7611c78fd511768be23538a630a61d110.npz",
+      "sha256": "9db52103050007e6830c5899532bb60ee66c7f6aedb68c38d03298f1e1a29eaa",
+      "size_bytes": 53499558,
+      "mtime_ns": 1791850037713157854
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/8f7c4792e7400dc1f5b00d82d7df7bf7611c78fd511768be23538a630a61d110.npz",
+      "sha256": "0a61947bd3ce933e818d2f371180e3e3fe508c10eb4d1e241439aac3f8b68a4f",
+      "size_bytes": 394,
+      "mtime_ns": 1791875174716768018
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/8f7c4792e7400dc1f5b00d82d7df7bf7611c78fd511768be23538a630a61d110.npz",
+      "sha256": "e8e28f0584cdf6a82d5bf79f416812be8548275639b63037e0c6cb2e69c2bbb6",
+      "size_bytes": 466093,
+      "mtime_ns": 1791934105404693458
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/8f7c4792e7400dc1f5b00d82d7df7bf7611c78fd511768be23538a630a61d110.npz",
+      "sha256": "8e2b3513424fa8a14a6f71e57e0c9b79ae7cf002a79257c499b86b81646f754c",
+      "size_bytes": 463933,
+      "mtime_ns": 1791943889690892454
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/f9e83ecb808309ad39b8a6b399450f047a3ac1998613c2350a064a724aa6d1ea.npz",
+      "sha256": "091d04da97b0895eb3de157501e11e62cc02cb56f9e43ad697f51ee80c191a01",
+      "size_bytes": 6635262,
+      "mtime_ns": 1791850072835489301
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/f9e83ecb808309ad39b8a6b399450f047a3ac1998613c2350a064a724aa6d1ea.npz",
+      "sha256": "9ffe7bd87f1fa70ff3694232ca97298a0784c09c133ae4760d76829d9d34a79f",
+      "size_bytes": 112138,
+      "mtime_ns": 1791875176686389648
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/f9e83ecb808309ad39b8a6b399450f047a3ac1998613c2350a064a724aa6d1ea.npz",
+      "sha256": "ffb75f5eb694c0ab1e9a0d641d608ebc6c23a64434f3e173b1269e6f1f3f1e05",
+      "size_bytes": 57634,
+      "mtime_ns": 1791934118114985307
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/f9e83ecb808309ad39b8a6b399450f047a3ac1998613c2350a064a724aa6d1ea.npz",
+      "sha256": "7abb8d7af0e45f6f9cfb734cb9fcc47f30c347f78e3139dd8eae5d43d9b362d2",
+      "size_bytes": 57188,
+      "mtime_ns": 1791943899402862431
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/78424c2e816a819a0856a6001025c43088abb6450079e6eb10e4744404be4071.npz",
+      "sha256": "9ddaecd6dc4b6e42f773d5ef300e0a85c847c408de4a0106c84d8d07d7e5d801",
+      "size_bytes": 86022902,
+      "mtime_ns": 1791850942512661240
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/78424c2e816a819a0856a6001025c43088abb6450079e6eb10e4744404be4071.npz",
+      "sha256": "4848405f9d2772e3d01a397e2cb653a0a11024a04f8cae5539d6857059717e3b",
+      "size_bytes": 408,
+      "mtime_ns": 1791875178783489020
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/shards/2a4cb18e3fe458080dc604f6eea13eff47d2753556308e6f82e8ba861a7b7747.npz",
+      "sha256": "b10b3121a5d73fce9c24e0e06b9b999028b3c84dbecfb2d937e987e59ff54cbc",
+      "size_bytes": 2642,
+      "mtime_ns": 1791928220211743533
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/shards/d25a08b80cb2062bbe74148c398a2a925b364b87a133ee1567b3e2488dadcf50.npz",
+      "sha256": "394b46c06bb25cc2ab266c4973800a96d27880601041aa993a729489f0659388",
+      "size_bytes": 2317,
+      "mtime_ns": 1791928220212331447
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v137/continuity_address_source_20261013_night/shards/78424c2e816a819a0856a6001025c43088abb6450079e6eb10e4744404be4071.npz",
+      "sha256": "a0bb7bffd3687bd7d29bf46b8fadfc4f64be116825a679823005c6817aa25e8c",
+      "size_bytes": 1779,
+      "mtime_ns": 1791928665298146231
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/78424c2e816a819a0856a6001025c43088abb6450079e6eb10e4744404be4071.npz",
+      "sha256": "479c429b1d37d704bfb3ed1eb573af2e3f46bd81b23796bba52577f90256e3ea",
+      "size_bytes": 835005,
+      "mtime_ns": 1791934119940346767
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/78424c2e816a819a0856a6001025c43088abb6450079e6eb10e4744404be4071.npz",
+      "sha256": "76a715c13882a7824cd59925f19da19facc1d582b9107c196e1e5164f65d2590",
+      "size_bytes": 831655,
+      "mtime_ns": 1791943900537352338
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/6c01d7099255b93b9562294b9d379ae3bdcbfb3791990efa07b00d6bb74a7729.npz",
+      "sha256": "105c00135b0659c4dcca4463f8baf3b7f795ecd77f63d2ab2fbde15f733128f6",
+      "size_bytes": 16822922,
+      "mtime_ns": 1791850943926842486
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/6c01d7099255b93b9562294b9d379ae3bdcbfb3791990efa07b00d6bb74a7729.npz",
+      "sha256": "4848405f9d2772e3d01a397e2cb653a0a11024a04f8cae5539d6857059717e3b",
+      "size_bytes": 408,
+      "mtime_ns": 1791875179819802089
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/shards/dd694310841dfd956e33042691cbb4e7e060823a15ce5e0919cf36c7644361b5.npz",
+      "sha256": "650b52cce24db40fcf67d3682eb40275c2dd17ce32051567048740b9dcd52a34",
+      "size_bytes": 2614,
+      "mtime_ns": 1791928220258813014
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/shards/a75a881306554d386821d8f73ca9837fe3f3c1331f562ae6c3cbd115da5bd52a.npz",
+      "sha256": "6f5b9964e0ad9725e030ec395391718b256f2cd8d436389f959f9a60bfb38baa",
+      "size_bytes": 2291,
+      "mtime_ns": 1791928220259400137
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v137/continuity_address_source_20261013_night/shards/6c01d7099255b93b9562294b9d379ae3bdcbfb3791990efa07b00d6bb74a7729.npz",
+      "sha256": "9b69ae5c2a3e38356c2a5de2780f122cf87c5a142043c8f0fed005d7928dd9f7",
+      "size_bytes": 1765,
+      "mtime_ns": 1791928665332884334
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/6c01d7099255b93b9562294b9d379ae3bdcbfb3791990efa07b00d6bb74a7729.npz",
+      "sha256": "b70df098c8408f8ae6a1b3d01bdf68d86c9ef667d781af9d9c6b99946f1efe57",
+      "size_bytes": 142127,
+      "mtime_ns": 1791934122257788893
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/6c01d7099255b93b9562294b9d379ae3bdcbfb3791990efa07b00d6bb74a7729.npz",
+      "sha256": "8466df1a1a1210ea5a7af8a6d1fdb4c69a6a46439116bbf05cf167fa70ead4fd",
+      "size_bytes": 141307,
+      "mtime_ns": 1791943902017517125
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/1c4d17a5ae4b2a8f3d94d5bdf1bfd13ced171d02a8eb49cdd64bad15931d7989.npz",
+      "sha256": "ff002e163eddc938fac8068e24e6d31321c5f19ead736f9cdb40016fbd6534de",
+      "size_bytes": 216796374,
+      "mtime_ns": 1791850102424423834
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/1c4d17a5ae4b2a8f3d94d5bdf1bfd13ced171d02a8eb49cdd64bad15931d7989.npz",
+      "sha256": "3c30126b1190f26c77b4bd287f67b8f830258115ade4af80dc7e748c227244f6",
+      "size_bytes": 179672,
+      "mtime_ns": 1791875180637491879
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/1c4d17a5ae4b2a8f3d94d5bdf1bfd13ced171d02a8eb49cdd64bad15931d7989.npz",
+      "sha256": "4c682eb2f5a31590d6e9f50611c6633abc95725e490ad0a544b41b706282901a",
+      "size_bytes": 2440930,
+      "mtime_ns": 1791934133426572384
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/1c4d17a5ae4b2a8f3d94d5bdf1bfd13ced171d02a8eb49cdd64bad15931d7989.npz",
+      "sha256": "7b38963f10cffe00d543946a20d983bff622efd0cd587023a48a5488bee32016",
+      "size_bytes": 2432784,
+      "mtime_ns": 1791943908096845637
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/798c0050c32449786b2ed60b555a66711ecf566ea1e42f1cdc7cf3b5ef62d7f6.npz",
+      "sha256": "e451ecd4fa1a358ce970f32f82d68531ed6f494199076c0e9c6434feffbd3e8c",
+      "size_bytes": 95490822,
+      "mtime_ns": 1791850119689874368
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/798c0050c32449786b2ed60b555a66711ecf566ea1e42f1cdc7cf3b5ef62d7f6.npz",
+      "sha256": "870b1ab8ba23b27a5de7aee4d6b48bff214fb467466a66fc78345c156b7a1b6d",
+      "size_bytes": 164080,
+      "mtime_ns": 1791875181871346235
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/798c0050c32449786b2ed60b555a66711ecf566ea1e42f1cdc7cf3b5ef62d7f6.npz",
+      "sha256": "3ad49a7ee3102104c464987c6daa08f31d93b73a3523f140fac767d4ba52ce35",
+      "size_bytes": 962360,
+      "mtime_ns": 1791934142289437680
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/798c0050c32449786b2ed60b555a66711ecf566ea1e42f1cdc7cf3b5ef62d7f6.npz",
+      "sha256": "fab4d816478d77650fe05f7da656d46206b2965ac813c6b6562d1e5a5ea0ac3b",
+      "size_bytes": 910480,
+      "mtime_ns": 1791943912465167147
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/f28f519e5d14cc54ffd9e206bd5b8ca70c4856bc565a2e9b0d3d0c80b7b5120c.npz",
+      "sha256": "72418f0e992d121549fd1814eccd48f62c96210ecde0902c6e383361e1a8767c",
+      "size_bytes": 24808962,
+      "mtime_ns": 1791850126081290100
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/f28f519e5d14cc54ffd9e206bd5b8ca70c4856bc565a2e9b0d3d0c80b7b5120c.npz",
+      "sha256": "0a61947bd3ce933e818d2f371180e3e3fe508c10eb4d1e241439aac3f8b68a4f",
+      "size_bytes": 394,
+      "mtime_ns": 1791875183671469346
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/f28f519e5d14cc54ffd9e206bd5b8ca70c4856bc565a2e9b0d3d0c80b7b5120c.npz",
+      "sha256": "805183523981eaba5819e843daaeb3629e6d4f90dd74aba540b59d077fe6b11c",
+      "size_bytes": 204628,
+      "mtime_ns": 1791934144395631894
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/f28f519e5d14cc54ffd9e206bd5b8ca70c4856bc565a2e9b0d3d0c80b7b5120c.npz",
+      "sha256": "01266f38e458565e08ccd24415fad1fe902e5aecc6a28fd0338f8a340e4d1d03",
+      "size_bytes": 203515,
+      "mtime_ns": 1791943914219933721
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/67362120e4a76ea27d09785e2b6f961dd9e41c58a7dbb6cc9151fe9966f67a4a.npz",
+      "sha256": "8ab3ffe5d162a6e5c51711fdaa5ac59bb7d589574c2ec127f9ae8d7861df9c8a",
+      "size_bytes": 12013702,
+      "mtime_ns": 1791850128656683339
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/67362120e4a76ea27d09785e2b6f961dd9e41c58a7dbb6cc9151fe9966f67a4a.npz",
+      "sha256": "9ae0aea22eb01fbcf73c253d56e61de311f1a5c7357708eb0050f48d30500060",
+      "size_bytes": 92641,
+      "mtime_ns": 1791875183816546922
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/67362120e4a76ea27d09785e2b6f961dd9e41c58a7dbb6cc9151fe9966f67a4a.npz",
+      "sha256": "9f68128de0fa65672b9f11251b6a68613ba5d2450608b6fa08b00ae553bf00cd",
+      "size_bytes": 103646,
+      "mtime_ns": 1791934145118187815
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/67362120e4a76ea27d09785e2b6f961dd9e41c58a7dbb6cc9151fe9966f67a4a.npz",
+      "sha256": "3d186b7ee70ad16dcee1364669d1c14ee12dbf763e1a477557dfa5e86f6be3e5",
+      "size_bytes": 103007,
+      "mtime_ns": 1791943914811909110
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/87fea50f6878a435b6f385d63422c403a0dae944c747cb8a18149aa432f50d07.npz",
+      "sha256": "addaa9d3cc9070223015acf61923de24ec2d8f4ef4b12bba6c31884eef3a5de5",
+      "size_bytes": 17188622,
+      "mtime_ns": 1791850131510743107
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/87fea50f6878a435b6f385d63422c403a0dae944c747cb8a18149aa432f50d07.npz",
+      "sha256": "9e3f97ef8730e53270e8e8da4490aaf7f029772ebd6330482909ce9081321d1a",
+      "size_bytes": 100213,
+      "mtime_ns": 1791875183903571509
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/87fea50f6878a435b6f385d63422c403a0dae944c747cb8a18149aa432f50d07.npz",
+      "sha256": "4aa81a29266486728d6940cffcef42dec6949cbf6066ac1708a671a26f6e3f4c",
+      "size_bytes": 146045,
+      "mtime_ns": 1791934145857156776
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/87fea50f6878a435b6f385d63422c403a0dae944c747cb8a18149aa432f50d07.npz",
+      "sha256": "4866d28f94f14786139e5932b049783809fb7c33845c14157c7da7a137c79b3b",
+      "size_bytes": 145214,
+      "mtime_ns": 1791943915330530055
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/7df69d57957ce835baafc97f38d8347d0fb9a882c3ee1c9d915ae064ca747752.npz",
+      "sha256": "e7fd63bc01fd9d3f5a2e8ebfdefee0f131ecbb15633803fdd4749eb2a790db72",
+      "size_bytes": 72123546,
+      "mtime_ns": 1791850959987545072
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/7df69d57957ce835baafc97f38d8347d0fb9a882c3ee1c9d915ae064ca747752.npz",
+      "sha256": "4848405f9d2772e3d01a397e2cb653a0a11024a04f8cae5539d6857059717e3b",
+      "size_bytes": 408,
+      "mtime_ns": 1791875185069611690
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/shards/21469e06d3fa60c8434f6bfb32d7e7126468f95845e31b8fd6e86cdceb6606e6.npz",
+      "sha256": "ec86c184f0c3905ddfd78d888671e1b1fb5800b1d0a87b8ac39ee9dd10f33ec2",
+      "size_bytes": 2671,
+      "mtime_ns": 1791928220981930349
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v133/supplier_site_context_20261013_night/shards/4bcc55dc571e0d080fcb795da2698ec89443207ff49148bd2edb04f6832d1360.npz",
+      "sha256": "d88719f96bf29600b3930da69f8a46f745f410fcad1a0c60875d514f733b7c58",
+      "size_bytes": 2291,
+      "mtime_ns": 1791928220982563431
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v137/continuity_address_source_20261013_night/shards/7df69d57957ce835baafc97f38d8347d0fb9a882c3ee1c9d915ae064ca747752.npz",
+      "sha256": "f7c643c00f58d00c929354ac0a723b394b1e282dcfa43affdf2a01366bab1ce1",
+      "size_bytes": 1783,
+      "mtime_ns": 1791928665929251147
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/7df69d57957ce835baafc97f38d8347d0fb9a882c3ee1c9d915ae064ca747752.npz",
+      "sha256": "73d344d1563f91317dcca4168b226e6102f32d61be6e6b4a1b7d47d546254991",
+      "size_bytes": 641014,
+      "mtime_ns": 1791934149684274770
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/7df69d57957ce835baafc97f38d8347d0fb9a882c3ee1c9d915ae064ca747752.npz",
+      "sha256": "186101eeee5f9bdf655c445a8e1b15f5f2ebeb89197e8cc9cef5c17a6a43896a",
+      "size_bytes": 634742,
+      "mtime_ns": 1791943918226895971
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v75/published_supplier_context_20261013_a/features/0ebdaf00779ad1954260e6720e0fb82befc4710aa03ae98cacfeafdf0034fcca.npz",
+      "sha256": "61ba0127526d680d6799c1243fdae938d54168fa211cbf56cfb3c501ba8bbc76",
+      "size_bytes": 7587354,
+      "mtime_ns": 1791850176183975465
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v115/streamed_activity_ablation_20261013_a/activity_shards/0ebdaf00779ad1954260e6720e0fb82befc4710aa03ae98cacfeafdf0034fcca.npz",
+      "sha256": "ce0bd88f449889b921effbf64b81c2e8134bb1ffc3317af9aaf56ddd24ae2fbb",
+      "size_bytes": 1269174,
+      "mtime_ns": 1791875189672117102
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/extras/0ebdaf00779ad1954260e6720e0fb82befc4710aa03ae98cacfeafdf0034fcca.npz",
+      "sha256": "5fdc546746304d73d9bd77c0803ba203c95637c508f8fa1ca4c7be25afea1f3e",
+      "size_bytes": 67382,
+      "mtime_ns": 1791934158024398835
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/extras/0ebdaf00779ad1954260e6720e0fb82befc4710aa03ae98cacfeafdf0034fcca.npz",
+      "sha256": "2a19740f9470d904911dcc8d2112ab4f5f1513ccf41a1ee3a5b11b1281759c47",
+      "size_bytes": 66901,
+      "mtime_ns": 1791943924313242500
+    }
+  ],
+  "label_ledger": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet",
+    "sha256": "24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720",
+    "hash_reverified": false,
+    "mtime_ns": 1787572019134117313,
+    "size_bytes": 642497,
+    "filter_query_ids": [
+      "10719",
+      "13765",
+      "1604",
+      "16145",
+      "4422",
+      "NEWCRM:1c6805a5f39956c1909201e3e901b453",
+      "NEWCRM:2836cc0263fe9ef7540bed3a8a0d3266",
+      "NEWCRM:2ca6ec4d142492c19345fa989a83c988",
+      "NEWCRM:36e9555c94cdb18e4a726cea0dd614e1",
+      "NEWCRM:37fdb9d2e6510a987a11890caa9adf45",
+      "NEWCRM:486d54cd450122e56cd41661faa6f305",
+      "NEWCRM:5d3a6e667b24ee373fb8d4840ab19393",
+      "NEWCRM:8157ebb0fb942079d871376baf0497e2",
+      "NEWCRM:87d277db7512a10b43cb3231956f584c",
+      "NEWCRM:98eab05da0fcc3139cdbb4fa0c94518b",
+      "NEWCRM:ad20d5983bf6c000ce6b9e1761aa0f6f",
+      "NEWCRM:c78d13bc213dcb0d923aaabdf4052dcd",
+      "NEWCRM:d6171348a29c3e0781b2dd602f54d06b",
+      "NEWCRM:d7f022fe5339efeed38937fedae2a511",
+      "NEWCRM:d8f3afc5e08bb3556ca449fb15ba2895",
+      "NEWCRM:e59aa4eb6d0f28ef4b5ceccc7b8cd35b",
+      "NEWCRM:fe1206af413a0560ebdc49be6b534e76"
+    ],
+    "filter_folds": [
+      2,
+      3,
+      4
+    ]
+  },
+  "index_site_source": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/siren_dossier_retrieval_v3_full/retrieval_siret_documents.parquet",
+    "sha256": "33d9112bdf7c41640e65023b597754c4d4495ff510324ca6c7aff54e01bd30ef",
+    "size_bytes": 4747299162,
+    "hash_reverified": false,
+    "filter_sirens": [
+      "130012818",
+      "200005544",
+      "217802248",
+      "244000881",
+      "249500109",
+      "301209920",
+      "313818965",
+      "314931304",
+      "316881911",
+      "323914143",
+      "339557068",
+      "399009471",
+      "399226653",
+      "414344721",
+      "488612581",
+      "514931757",
+      "535358055",
+      "539891390",
+      "789654282",
+      "887538700"
+    ],
+    "filtered_rows": 491,
+    "size_observed": 4747299162
+  },
+  "elapsed_seconds": 6.44215454114601,
+  "max_rss_bytes": 370884608
+}
