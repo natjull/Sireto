@@ -19647,3 +19647,26 @@ elle ne vaut PAS autorisation d'un nouveau retry. Modèlesaval/fold1gelés.
   pas démontrées porteuses d'information utile. Suite documentaire ciblée :
   audit des structures multi-acteurs et rôles, sans mélange vendeur/acheteur,
   sans nouveau score/label/alias ; recettes natives prévues inchangées.
+
+#### Jalon 01:30 UTC — vrai champ BODACC omis, hypothèse source uniforme
+
+- V152 `8e23d7e0`, session59532 exit0 réel,4,81s. Schéma primaire DILA
+  https://echanges.dila.gouv.fr/schemabook/bodacc/sor/Bodacc_rediff_all.xsd
+  SHA bb29490b5096908d563c772623bfee6b6cf51d26aeb510310d0b08c8dd63b95b :
+  Personne_Type porte activité et immatriculation ; Etablissement_Type n'a
+  pas de liaison subjectSIREN/SIRET. Jamais de produit cartésien multi-acteurs.
+- Audit systématique borné19ans/29184annonces,28797avantcutoff :4787lignes
+  publiquescorporate couvertes parV112, cinq seulement sole-owner/multisites
+  supplémentaires, une multiacteur ambiguë. **2826annonces/2832ownerrefs** ont
+  personne.activite directement attachée à leur acteur publiccorporate et
+  sont ignorées parV112. Counts de cet échantillon seulement, pas estimation
+  nationale, pas recall ni preuve d'apport aux20ratés. Zéro texte/personne/
+  adresse/identifiant exporté ; aucun CRM/GT lu.
+- Suite V154 autorisée source-only, nouvelle namespace/hash : mêmecutoff,
+ 19ans/all526, objetpersonnepm strict+propreimmatriculation valide/public,
+  champ personne.activite uniquement, arrays comptées/skippées explicitement.
+  Contexteparent daté, pas nom/site/alias ; même formule confidence.5×coverage
+  IDFowners et dédupMAX, aucun poidsfit/topk/positif/label. Aucun nouveau
+  natif autorisé à ce stade ; sourcecomplète/scellée avant diagnosticlabel-side.
+  C'est une lacune structurelle indépendante des cas ratés, pas une retouche
+  spécifique de CUISINESSCHMIDT ou d'un autre client connu.
