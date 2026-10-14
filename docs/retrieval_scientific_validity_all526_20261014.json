@@ -1,0 +1,62 @@
+{
+  "status": "READ_ONLY_SCIENTIFIC_VALIDITY_AUDIT_NOT_NEW_EVALUATION",
+  "scope": "Métadonnées generalization_plan/checkpoint_provenance, contrat v38 et code pré-déclaré seulement. Aucun membre/label/outcome de test4323, control962, fold0 ou fold1 ouvert ; aucun nouveau retrieval, fit, test ou changement de recette/label.",
+  "established_population_facts": {
+    "queries": 526,
+    "siren_groups": 405,
+    "communes": 295,
+    "kish_weight_effective_size": 343.6709440117059,
+    "sampling": "Communes stratifiées en densité ; poids de sélection préexistants. Ni 526, ni405, niKish343.67 ne sont automatiquement des unités futures indépendantes.",
+    "supervised_train_overlap": "Audit existant : zéro chevauchement query/SIREN positif/SIREN négatif explicite avec TRAIN ancêtre/continuation. Ce constat ne couvre pas prétraining ou sélection adaptative.",
+    "checkpoint_control_exposure": "151queries appartenant à79SIREN affectés par l'union des contrôles ancêtres64/actuels256 ; pas151lignes directement contrôlées ni somme64+256. Exclus du fit calibrateur, conservés au dénominateur primaire.",
+    "encoder": "V6 conserve best1000 ; son ancêtre a déjà vu les15035paires TRAIN exploitables. Aucun nouvel apprentissage cette nuit ; encoder non full-OOF.",
+    "recipe_exposure": "Les526, y compris les375hors groupes de contrôle, ont été consommés pour découverte de sources, recettes et audits de pertes. Aucun sous-ensemble n'est redevenu pristine."
+  },
+  "what_all526_can_support": [
+    "Après génération intégrale scellée et owned exits de toute famille : métriques exactes/opérationnelles séparées, dénominateur intégral, différences appariées et segments descriptifs de cette population consommée.",
+    "V140(6variantes), V143(7), V134(4), V142(2) conservent leurs pré-déclarations et restrictions diagnostiques. Pré-déclarer une nouvelle itération ne neutralise pas l'adaptation aux itérations antérieures.",
+    "Une preuve statique d'inputs équivalents et de sorties byte-identiques justifie la réutilisation computationnelle de variantes isolées. Elle ne constitue ni réplication statistique indépendante, ni nouvelles mesures froid/chaud, ni nouvelle preuve de généralisation."
+  ],
+  "what_all526_cannot_support": [
+    "Certification nationale99.2%, garantie externe, full-encoder-OOF, indépendance de CRM/temps/géographie ou promotion production/READY_FOR_FOLD1.",
+    "Choisir les succès d'une variante par requête, supprimer les échecs/absences/statuts difficiles ou corriger manuellement les labels pour franchir un gate.",
+    "Déclarer pristine un replay des375hors contrôle, ou rendre526pristine par refit encoder-OOF rétrospectif. Une architecture sélectionnée sur526 reste sélectionnée sur526."
+  ],
+  "serving_boundary": {
+    "current": "V32 crée assignment par hash du SIREN humain ; V143/V134/V142 choisissent modèles[str(assignment[qid])]. Partition OOF calibrateur valide comme métadonnée d'évaluation, mais impossible règle de serving pour société inconnue.",
+    "future": "Avant tout nouveau test, choisir et hasher UNE politique de vecteur indépendante du target/label. Moyenne déterministe des cinq vecteurs ou fit global sur développement autorisé sont des options, aucune déclarée meilleure ici. Aucun fit/serving maintenant.",
+    "critical": "Recalculer sous ce même vecteur tous les scores, interactions et deltas géo/sources ; ne pas garder des extras pondérés par le modèle OOF label-side. Combiner les coefficients avant l'unique collecteur national100, jamais cinq pools puis fusion/reranking."
+  },
+  "one_clean_future_validation_decision": {
+    "proposal": "Autoriser un protocole prospectif pré-enregistré : UNE architecture serving figée versus UNE baseline figée, sur une cohorte CRM entrante datée et annotée indépendamment en aveugle, avec SIREN non consommés et strates géographiques/densités préfixées. La seule décision confirmatoire est accepter/refuser l'architecture figée pour le périmètre réellement échantillonné ; aucun tuning après ouverture.",
+    "freeze_before_generation": "Source-policy/as-of, corpus complet, normaliseurs, encoder/tokeniseur/checkpoint, vecteur serving, preuves/deltas, collecte initial100, métrique exacte/opérationnelle, sidecar label-side et tous hashes. Sources communautaires/post-cutoff restent diagnostiques sans nouvelle autorité explicite.",
+    "split_custodian": "Séparer les groupes entiers SIREN, positifs/négatifs/contrôles et quasi-doublons ; contrôler liens d'entités apparentées comme limites/strates. Le custodian label-side livre seulement les inputs autorisés à la génération ; aucun target dans le moteur.",
+    "geography_and_time": "Préfixer nouvelles communes et densités, y compris petites et très grandes, inputs absents/faibles. Source observée avant la date de requête pertinente ; dater le CRM réel. Les dates de download ou query_id ne créent pas un holdout temporel. Une autre organisation/source CRM est nécessaire pour une prétention inter-CRM.",
+    "blind_process": "Conserver tous les humains exploitables et publier les absences ; sorties complètes et owned exits avant métriques, labels nouveaux indépendants des prédictions, aucun changement des labels existants. Sources/targets absents restent erreurs end-to-end ; exact et opérationnel non interchangeables.",
+    "single_comparison": "Un primaire exact@100 et une seule comparaison baseline/challenger ; analyses secondaires explicatives déclarées. Pas de meilleur d'une grille, arrêt favorable, peeking, remplacement du primaire ou décision révisée selon les résultats."
+  },
+  "uncertainty_and_gates": {
+    "preserved_contract": "Exact@100>=99.2%, Wilson95bas>=99.0%, chaque fold>=98.8%, p95<=1s/p99<=2s et attribution sidecar officielle exhaustive pour le gate contractuel. Une cohorte prospective ou test4323 ne remplace pas les obligations OOF/fold1.",
+    "sampling": "Publier brut et estimateur pondéré du périmètre déclaré. Préfixer une incertitude respectant le plan de communes et la dépendance SIREN ; ne pas appliquer Wilson à des hits pondérés ou remplacer n parKish comme preuve binomiale.",
+    "precision_only_not_results_or_power": "À proportion nominale99.2%, Wilson95IID bas vaut environ98.005% pour526 et98.887% pour4323. Environ9508observationsIID donneraient99.0% à cette proportion nominale seulement : ni puissance, ni taille suffisante avec clusters, ni garantie. Dimensionner indépendamment puissance/rareté des pertes/strates.",
+    "full_oof": "Pour une preuve encoder/calibrateur-OOF, outer groupes/folds2/3/4 entièrement hors apprentissage et contrôle de checkpoints ; initialisation base ou officielle-only admissible, pas V6 ayant vu ces exemples outer. Choix recettes/hyperparamètres inner-only ; sinon reconnaître l'adaptation et réserver la confirmation à une cohorte non consommée.",
+    "slo": "Mesurer le même modèle servant/corpus complet, froid et chaud contrôlés, coût par requête end-to-end avec construction numérique et grandes communes/inputs faibles. Préparation/indexage séparés ; timings réutilisés ne sont pas une nouvelle certificationSLO."
+  },
+  "requires_explicit_human_authority": [
+    "Périmètre et financement en temps local Mac/CATNAT de la cohorte future, collecte/annotation indépendante, dates/as-of, admissibilité des sources communautaires et post-cutoff.",
+    "Choix et gel de politique serving et éventuel nouveau fit/fullOOF ; plan de taille/power/strates et règle confirmatoire tenant compte du design avant toute génération.",
+    "Aucune ouverture962/4323/fold1 autorisée par ce mémo.962reste validation historique nonpristine sans petites communes ;4323reste réserve conditionnelle du CRM historique, pas holdout externe/temps/géo garanti. Ré-auditer/renouveler l'autorisation4323 si périmètre sources changé ; fold1 nécessite son autorisation one-shot après gates. Fold0 demeure contaminé et interdit."
+  ],
+  "evidence_hashes": {
+    "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/generalization_plan_20261013_night/report.json": "5db2466357e70e6742bfcf808e6defcecfe6886b8971dd83623ec314f9d4f4d8",
+    "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v130/checkpoint_provenance_20261014_night/report.json": "0ac5ff1a988be73660d394c3ac73817f01762b30360ede2104c3ff48f71d6c87",
+    "docs/retrieval_v38_initial_top100_contract.md": "38f460929e5fc24621feefbfdc47bdb894f684e9a525ba0a316d89dcba2b9b14",
+    "scripts/embeddinggemma2_v32_learned_query.py": "d0752de946b19361220d4ab075367e0c7e1f26e98a7bf172174c79c3c49bf8cb",
+    "scripts/embeddinggemma2_v138_structural_native_ablation.py": "7b2658b9f89c853c7101d7b31f3dc1583ba047464b1db92b4e87725697b25093",
+    "scripts/embeddinggemma2_v140_disk_continuation.py": "cf641dfd10710630146b0d3da8b399ffd29ebaaff4849d16a7c1eb7005fb0d5b",
+    "scripts/embeddinggemma2_v132_local_evidence_ablation.py": "58bd94842b7f2565ef20bce85023bb5f082d7bb86b7cdb0571aa78874717eee8",
+    "scripts/embeddinggemma2_v143_empty_reference_continuation.py": "604a8ccccae2ab66625ea543577f85e6881e37f8495d293f8f3bfc4c5adb2ba9",
+    "scripts/embeddinggemma2_v134_supplier_native_ablation.py": "a3e9b98c4564b32258161a21c768cd9500009c10802b8862a15f41289050e59e",
+    "scripts/embeddinggemma2_v142_bano_native_ablation.py": "568fadfc66f35ff3856290ee8a3a77466993d9ebba0b601d08975958f9cba9d7"
+  }
+}
