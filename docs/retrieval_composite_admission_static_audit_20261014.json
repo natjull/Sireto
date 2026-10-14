@@ -1,0 +1,70 @@
+{
+  "status": "READ_ONLY_CODE_AND_PREVIOUS_SEALED_NOTES_NO_NEW_SCORING",
+  "scope": "V115/V134/V142 score construction and one initial100 admission; no new labels/outcomes opened, network, fit, native retrieval, unit tests, coefficients or serving changes.",
+  "conclusion": "The collector correctly receives composite evidence before one unrestricted national initial100. Quality is partly encoded in source features/interactions, but composite competition is not calibrated to query-local density, ties or street-cloud ambiguity. The main tradeoffs are learned global nonnegative linear weights, with later typed-source heuristic parameter transfer and MAX pooling. Calling all weights arbitrary would be incorrect; calling their scores calibrated local confidence/probabilities would also be incorrect.",
+  "composite_score_structure": {
+    "notation": "Q20 denotes the implementation's 20bit floor bitplanes; actual Tantivy floating-point summation is distinct from an exact-real arithmetic sum. Technical reference masks attach computed evidence, never identifier features.",
+    "V115": "Weighted baseline lexical components + Q20(first22 numerical fields dot their frozen weights) + Q20(other29 numerical fields dot residual weights) + inherited typed corporate/initial/activity owner-context branches. All contribute before ONE limit100 collector.",
+    "V134_primary": "V115 composite + Q20(MAX(OSM geometry delta, OSM named bonus, coefficient6*MAX(supplier own, supplier temporal, continuity address))) per leaf + new admin-gated coefficient6*MAX(RNA,BANATIC confidence) per owner.",
+    "V142_primary": "V115 composite + Q20(MAX(V134 leaf increment, BANO geometry delta)) + same new owner-context branches.",
+    "geometry_delta": "MAX(0,(changed51-original51) dot coefficient7:58); only own5/6/7 and typed parent16/17/19 change. Source-proximity MAX is upstream of this weighted difference. Own XY is not copied to siblings.",
+    "source_MAX": "Prevents selected duplicate-source votes but is MAX across already weighted increments with different typed roles/scales, not a learned local confidence comparison or a statistical-independence claim.",
+    "admission": "No mandatory own-geo/name/address dominance rule or local uncertainty gate is applied at the final score boundary. A higher value of one component cannot guarantee a higher composite score.",
+    "tie_boundary": "Code sorts already collected hits by score then SIRET. That post-sort does not define or prove a favorable global boundary tie selection; preserve actual collector/index semantics and report ties honestly."
+  },
+  "quality_and_ambiguity_already_present": [
+    "Baseline owngeo uses reliability .5 for declared weak query geometry, else1, with distance divided by300+query uncertainty. Increased uncertainty broadens distance support; this is a heuristic quality curve, not a measured posterior. Missing unsupported own XY has no owngeo source update.",
+    "V17 street fallback merges normalized names, refuses weak/near-tied street matches and records footprint spread, weak precision and uncertainty. This source-resolution ambiguity guard is real, but is not final candidate-density calibration.",
+    "Own address proof is coherent per complete own alias: numbered .65street+.20number/suffix+.15name, unnumbered .80street+.20name, MAX over aliases. Name and street use bounded fuzzy similarities; downstream interactions include name/address and name/geo. Name thus appears in correlated views, not independent likelihood votes.",
+    "Parent identity, parent geometry and parent portfolio name remain separate typed context. MAX geometry across legal-SIREN siblings is broadcast, not a same-physical-site equivalence or borrowed own address. Public missing-XY receivers already can receive this parent-only evidence.",
+    "Global lexical scores use global index statistics, token-count mean and MAX name/address-field branches. Some relation contexts have admin corroboration, source-degree .5/sqrt(degree) or source-owner IDF shaping. These acknowledge source specificity but are not a local composite calibration."
+  ],
+  "what_is_not_local_composite_calibration": [
+    "No inspected active scoring step conditions its weights on the query's count of geographically plausible public sites, tied coordinates, street-cloud bbox/extent, same-name competitors or sibling crowding.",
+    "V142 exact-house versus fallback street precision and source-point count are recorded as metadata; both use .5/(1+minimum distance/300) and the same inherited numerical weights. There is no additional precision/count/spread-dependent composite weighting.",
+    "New named/supplier/temporal/address/owner confidences use the frozen actor coefficient6 by predeclared role transfer, not a new empirical source-specific probability calibration.",
+    "Five SIREN-cross-fitted calibrators fit nonnegative weighted pairwise logistic loss with train-only pair-difference RMS scaling and L2. They are global vectors within each heldout bucket, not per-query fitted confidence or serving vectors. Some baseline weights stay frozen while residual parameters were fitted with a fixed baseline margin.",
+    "Missing components generally appear as zero/nonexistent branches rather than explicit comprehensive missingness/ambiguity features. Source metadata can distinguish absences, but metadata alone does not adapt admission."
+  ],
+  "established_vs_not_attributed": {
+    "established": [
+      "Sealed ALL526 numerical51 arrays and source score/confidence shards establish component availability, typed source increments and input equality/reuse. Completed paired native outputs establish actual initial100 membership and returned composite scores on this consumed population.",
+      "V157 separately established whole-source pure-own-geography ranks with interval ties: two current misses are definitely raw-BANO top50, one already baseline5 top50. This is SOURCE_COMPONENT_POTENTIAL_NOT_RETRIEVAL_RECALL, not proof of a correct alternative admission rule.",
+      "A component-positive yet absent target is compatible with stronger competitors on other summed components, correlated views, parent evidence, MAX selection and quantization. These are possible mechanisms, not a measured attribution for each miss."
+    ],
+    "not_established": [
+      "There is no recorded exhaustive actual full native score/decomposition for all references outside100. Raw51 dot weights excludes dynamic global lexical and layered owner branches; subtracting one source increment from a returned score is not a generally verified baseline counterfactual.",
+      "Without the target's actual full composite score and component contributions against the same query's actual cut100, one cannot identify the dominant suppressing/compensating branch or its exact margin/rank.",
+      "Zero new exact gains does not imply zero source information; pure geography top50 does not imply a gain if reweighted. Correlation, crowding, other competitors and source eligibility remain unresolved.",
+      "Neither consumed ALL526 nor posthoc source ranks establish independent generalization, optimal weights, serving validity, national99.2, SLO, label error or READY."
+    ]
+  },
+  "minimum_future_query_only_evidence_before_any_labels": {
+    "freeze": "One target-independent serving coefficient policy and one scoring architecture, encoder/index/version/schema/global lexical statistics, normalizers, public source/as-of policy, raw unweighted source confidences and hashes. Recompute EVERY weighted delta under that same serving vector; do not reuse target-fold-selected extras.",
+    "boundary": "For every query, retain exact initial100 returned final scores/count, actual kth score or explicit fewer-than100 status, total source universes, actual collector tie semantics, all quantization bounds and numerical precision. This is logging of the same sole collector, not a second pool or reranker.",
+    "outside100_score_access": "Retain a label-blind full-scoring trace for ALL original numerical references, including final composite score and grouped lexical/own-name-address/owngeo/parent/context/residual/MAX-winning-source contributions; retain returned national lexical-only leaves likewise. Alternatively preserve an immutable full query/index replay capable of verified exact direct-document score explanation after seal, without adding the target to the scoring query or performing another collector. Capability/fidelity/resource cost must be verified before choosing this alternative, not assumed now.",
+    "why_needed": "A threshold plus source-only components is insufficient for out-of100 causal attribution. Final score can identify below-cut versus boundary-tie versus inconsistent scoring; grouped contributions explain what competed. Exact full national rank remains unknown unless separately retained/countable; never invent it from a threshold.",
+    "query_ambiguity": "Keep source precision/weakness/uncertainty, raw and distinct source-position counts, street/house/range/no-number status, cloud extent if already published, eligible-public-ownXY population size, component score/tie distributions and same-legal-owner multiplicity. Also keep published-name match multiplicity and existing relation degrees/IDF. Derive uniformly without labels; aggregate only for protected sources.",
+    "absences": "Explicit canonical-key/numerical-universe/public-status/ownXY/source-empty/query-geography masks, with OWN/PARENT/RELATION roles distinct. Do not restore protected data or drop queries/targets from the denominator.",
+    "seal_then_audit": "Complete every declared query and actual owned exit before custodian labels; compare target score/margin/components postseal only, protected skip before identity lookup. Logging schema, resource budget and completeness criteria are preregistered globally, not chosen for the two examples.",
+    "budget_note": "Full component logging may cost more than V157's1.55GiB; no claimed2GiB solution, latency neutrality or API support. This note authorizes no instrumentation or replay execution."
+  },
+  "generalizable_direction_not_a_recipe": "If human authority permits future model development, treat source quality/ambiguity as query-only information for assessing conditional evidence reliability before the same initial100 collector, while keeping own-site versus parent-context roles explicit. Compare ONE pre-frozen challenger to ONE serving-valid baseline on independent groups/geography/time. Do not impose a geography quota, two-example exception, hard site-equivalence rule or manually chosen coefficient. A global fit or deterministic vector can be valid after prefreeze; no specific vector or conditional architecture is declared better.",
+  "independent_validation_authority": "The commitments of732ad791 remain: fresh independently annotated/as-of cohort, SIREN-group separation/control exposure audit, fixed primary comparison, unchanged exact/op gates, sampling-design uncertainty and frozen sources. No closed set or fold1 opening, source promotion or new fit is authorized by this memo.",
+  "evidence_sha256": {
+    "docs/retrieval_scientific_validity_all526_20261014.json": "a96671efe490838a016a87fdd89a281a5c8ae1824fba3219999ef0a213198b2c",
+    "docs/retrieval_v157_geography_component_result_20261014.json": "9664702a03ad4e0fc0c4dc46b0b7b8c93604e1d0d57e23c1bd2357e10eec969a",
+    "scripts/embeddinggemma2_v115_streamed_activity_ablation.py": "71d68822067668bc01a7714ff98dea424eb637bbd5a62d8ef7a27bf90a11a2af",
+    "scripts/embeddinggemma2_v114_native_activity_ablation.py": "16833b3691832f5a1bf0384e06686692fd938e42ca39fb96cdb43ff70da6b75c",
+    "scripts/embeddinggemma2_v134_supplier_native_ablation.py": "a3e9b98c4564b32258161a21c768cd9500009c10802b8862a15f41289050e59e",
+    "scripts/embeddinggemma2_v142_bano_native_ablation.py": "568fadfc66f35ff3856290ee8a3a77466993d9ebba0b601d08975958f9cba9d7",
+    "scripts/embeddinggemma2_v32_learned_query.py": "d0752de946b19361220d4ab075367e0c7e1f26e98a7bf172174c79c3c49bf8cb",
+    "scripts/embeddinggemma2_v71_frozen_residual.py": "3d61fe5dd30f5928b8c00b9f33b47cca5a73caae6e1d078eb23175b4b8629e17",
+    "scripts/embeddinggemma2_v23_native_features.py": "1c63603eeba200bb63e3c85eaf08ae08c91594b4a52b475aad773813dccd1c37",
+    "scripts/embeddinggemma2_v19_proof_retrieval.py": "dc49ff69e91c428638b868fa6862ef4d931f22fdf6b56666d782618e3e2ee011",
+    "scripts/embeddinggemma2_v17_structural_retrieval.py": "71ddfee9043e0a799a7ad39f76ec60c2f86d3558ce6382de5c044f0ff7ea08ea",
+    "scripts/embeddinggemma2_v88_typed_context_native.py": "b4e71c2f38771a66050bb78a471b748bd45ab78709b54933ba76ac9af48a8844",
+    "scripts/embeddinggemma2_v99_initial_alignment_native.py": "0888e780d146c3ee04fc1a87409283d70155e2db0e0c54c3e1d4315b3b51ee04"
+  },
+  "handover_changed": false
+}
