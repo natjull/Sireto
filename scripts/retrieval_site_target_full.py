@@ -7,6 +7,7 @@ import inspect
 import json
 import os
 from pathlib import Path
+import re
 import resource
 import shutil
 import signal
@@ -96,6 +97,36 @@ def hydraulic():
                     uncertain=True, lima_home=env['LIMA_HOME'])
 
 
+def free_inactive_memory():
+    """Admission evidence only: free + inactive pages, excluding speculative pages."""
+    try:
+        proc = subprocess.run(['vm_stat'], capture_output=True, text=True, check=True, timeout=10)
+        page_size = int(re.search(r'page size of (\d+) bytes', proc.stdout)[1])
+        free = int(re.search(r'^Pages free:\s+(\d+)\.', proc.stdout, re.M)[1])
+        inactive = int(re.search(r'^Pages inactive:\s+(\d+)\.', proc.stdout, re.M)[1])
+        return dict(observed_unix=time.time(), free_inactive_bytes=(free+inactive)*page_size,
+                    page_size_bytes=page_size, free_pages=free, inactive_pages=inactive, vm_stat=proc.stdout)
+    except Exception as error:
+        return dict(observed_unix=time.time(), free_inactive_bytes=None, error=repr(error))
+
+
+def generation_memory_limit(qid):
+    """Persist the single OOM escalation across controller restarts, including old receipts."""
+    first_failure = None
+    for path in sorted((OUT/'attempts').glob('*/receipt.json')):
+        receipt = read(path)
+        command = receipt.get('command', [])
+        if '--worker' not in command or '--query-id' not in command:
+            continue
+        if command[command.index('--worker')+1] != 'generate' or command[command.index('--query-id')+1] != qid:
+            continue
+        if receipt.get('stop_reason') == 'STOP_RSS_13_GIB':
+            raise RuntimeError(f'Generate {qid}: single 13 GiB retry already exceeded its cap; preserve all outputs and STOP')
+        if receipt.get('stop_reason') == 'STOP_RSS_8_GIB' and first_failure is None:
+            first_failure = record(path)
+    return (13*GIB, first_failure) if first_failure else (8*GIB, None)
+
+
 def snapshots(phase, **extra):
     obj = dict(phase=phase, observed_unix=time.time(), storage=storage(), **extra)
     atomic_json(OUT/'progress'/(stamp()+'.json'), obj)
@@ -115,7 +146,16 @@ def plan_run():
             if revision['previous_implementation'] != plan['implementation'] or Path(revision['implementation']['path']).resolve() != Path(__file__).resolve():
                 raise ValueError('Unauthorized supervisor revision')
             record(revision['original_source']['path'], plan['implementation']['sha256'])
-            verified(revision['implementation'])
+            implementation = revision['implementation']
+            if record(Path(__file__))['sha256'] != implementation['sha256']:
+                memory_revision_path = OUT/'supervisor_generate_memory_revision.json'
+                memory_revision = read(memory_revision_path)
+                if memory_revision['previous_implementation'] != implementation or Path(memory_revision['implementation']['path']).resolve() != Path(__file__).resolve():
+                    raise ValueError('Unauthorized generate memory revision')
+                record(memory_revision['original_source']['path'], implementation['sha256'])
+                implementation = memory_revision['implementation']
+                snapshots('RESUME_WITH_AUTHORIZED_GENERATE_MEMORY_REVISION', revision=record(memory_revision_path))
+            verified(implementation)
             snapshots('RESUME_WITH_AUTHORIZED_VM_GUARD_REVISION', revision=record(revision_path))
         for ref in (plan['timing_implementation'], plan['evaluation_implementation'], plan['mapping'], plan['assignment'], plan['panel']):
             verified(ref)
@@ -530,15 +570,28 @@ def supervised(action, stage=None, qid=None, fold=None):
             raise ValueError('Invalid completed receipt')
         verified(done['artifact'])
         return done
+    memory_cap, first_8gib_failure = generation_memory_limit(qid) if action == 'generate' else (8*GIB, None)
     while True:
         if STOP:
             raise InterruptedError('USER_INTERRUPT_CHECKPOINTS_RETAINED')
         if shutil.disk_usage(H).free < 10*GIB:
             raise OSError('STOP_DISK_BELOW_10_GIB')
-        if hydraulic()['status'] == 'Running':
+        vm = hydraulic()
+        if vm['status'] == 'Running':
             snapshots('WAITING_HYDRAULIC', pending_action=action, query_id=qid)
             time.sleep(60)
             continue
+        admission = None
+        if memory_cap == 13*GIB:
+            admission = dict(memory=free_inactive_memory(), hydraulic=vm, required_free_inactive_bytes=15*GIB)
+            available = admission['memory']['free_inactive_bytes']
+            if available is None or available < 15*GIB:
+                snapshots('WAITING_GENERATE_13_GIB_ADMISSION', query_id=qid, admission=admission,
+                          first_8gib_failure=first_8gib_failure, retry_seconds=60)
+                time.sleep(60)
+                continue
+            snapshots('ADMITTED_GENERATE_SINGLE_13_GIB_RETRY', query_id=qid, admission=admission,
+                      first_8gib_failure=first_8gib_failure)
         attempt = OUT/'attempts'/stamp()
         attempt.mkdir(parents=True)
         command = [sys.executable, '-u', str(Path(__file__)), '--worker', action]
@@ -558,8 +611,10 @@ def supervised(action, stage=None, qid=None, fold=None):
                         peak = max(peak, psutil.Process(child.pid).memory_info().rss)
                     except psutil.NoSuchProcess:
                         pass
-                    if peak >= 8*GIB:
-                        reason = 'STOP_RSS_8_GIB'
+                    if peak >= memory_cap:
+                        reason = 'STOP_RSS_13_GIB' if memory_cap == 13*GIB else 'STOP_RSS_8_GIB'
+                        terminate(child)
+                        break
                     if STOP:
                         reason = 'USER_INTERRUPT'
                     if time.monotonic() >= next_check:
@@ -579,8 +634,14 @@ def supervised(action, stage=None, qid=None, fold=None):
                     terminate(child)
         receipt = dict(command=command, pid=child.pid, exit_code=rc, owned_child_exit_confirmed=True,
             started_unix=time.time()-(time.monotonic()-started), elapsed_seconds=time.monotonic()-started,
-            peak_sampled_rss_bytes=peak, minimum_free_bytes=min_free, stop_reason=reason, log=str(attempt/'worker.log'))
+            peak_sampled_rss_bytes=peak, minimum_free_bytes=min_free, stop_reason=reason, log=str(attempt/'worker.log'),
+            memory_cap_bytes=memory_cap, memory_admission=admission)
         atomic_json(attempt/'receipt.json', receipt)
+        if action == 'generate' and reason == 'STOP_RSS_8_GIB':
+            first_8gib_failure = record(attempt/'receipt.json')
+            memory_cap = 13*GIB
+            snapshots('GENERATE_RSS8_SINGLE_ESCALATION_PENDING', query_id=qid, first_8gib_failure=first_8gib_failure)
+            continue
         if reason == 'YIELD_TO_HYDRAULIC':
             snapshots('YIELDED_HYDRAULIC_CHILD_MEMORY_RELEASED', action=action, query_id=qid, receipt=record(attempt/'receipt.json'))
             time.sleep(60)
@@ -639,7 +700,8 @@ def progress_status():
     return dict(generated_queries=n, total_queries=526, learned_models=fit_done, remaining_pair_jobs=pending_pairs,
         elapsed_seconds=age, generation_eta_seconds=eta, mining_eta_seconds=mining_eta,
         total_eta_seconds=eta+mining_eta if eta is not None and mining_eta is not None else None,
-        eta_excludes_future_hydraulic_waits=True, storage=storage(), hydraulic=hydraulic(),
+        eta_excludes_future_hydraulic_waits=True, eta_excludes_memory_admission_waits=True,
+        storage=storage(), hydraulic=hydraulic(),
         evaluation_complete=(OUT/'evaluation_done.json').exists(), commit_complete=(OUT/'commit.json').exists())
 
 
