@@ -120,11 +120,11 @@ def generation_memory_limit(qid):
             continue
         if command[command.index('--worker')+1] != 'generate' or command[command.index('--query-id')+1] != qid:
             continue
-        if receipt.get('stop_reason') == 'STOP_RSS_13_GIB':
-            raise RuntimeError(f'Generate {qid}: single 13 GiB retry already exceeded its cap; preserve all outputs and STOP')
+        if receipt.get('stop_reason') in ('STOP_RSS_12_GIB', 'STOP_RSS_13_GIB'):
+            raise RuntimeError(f'Generate {qid}: single escalated retry already exceeded its cap; preserve all outputs and STOP')
         if receipt.get('stop_reason') == 'STOP_RSS_8_GIB' and first_failure is None:
             first_failure = record(path)
-    return (13*GIB, first_failure) if first_failure else (8*GIB, None)
+    return (12*GIB, first_failure) if first_failure else (8*GIB, None)
 
 
 def snapshots(phase, **extra):
@@ -155,6 +155,14 @@ def plan_run():
                 record(memory_revision['original_source']['path'], implementation['sha256'])
                 implementation = memory_revision['implementation']
                 snapshots('RESUME_WITH_AUTHORIZED_GENERATE_MEMORY_REVISION', revision=record(memory_revision_path))
+                if record(Path(__file__))['sha256'] != implementation['sha256']:
+                    admission_revision_path = OUT/'supervisor_generate_memory_12_9_revision.json'
+                    admission_revision = read(admission_revision_path)
+                    if admission_revision['previous_implementation'] != implementation or Path(admission_revision['implementation']['path']).resolve() != Path(__file__).resolve():
+                        raise ValueError('Unauthorized 12 GiB / 9 GiB admission revision')
+                    record(admission_revision['original_source']['path'], implementation['sha256'])
+                    implementation = admission_revision['implementation']
+                    snapshots('RESUME_WITH_AUTHORIZED_12_GIB_9_GIB_ADMISSION', revision=record(admission_revision_path))
             verified(implementation)
             snapshots('RESUME_WITH_AUTHORIZED_VM_GUARD_REVISION', revision=record(revision_path))
         for ref in (plan['timing_implementation'], plan['evaluation_implementation'], plan['mapping'], plan['assignment'], plan['panel']):
@@ -582,15 +590,15 @@ def supervised(action, stage=None, qid=None, fold=None):
             time.sleep(60)
             continue
         admission = None
-        if memory_cap == 13*GIB:
-            admission = dict(memory=free_inactive_memory(), hydraulic=vm, required_free_inactive_bytes=15*GIB)
+        if memory_cap == 12*GIB:
+            admission = dict(memory=free_inactive_memory(), hydraulic=vm, required_free_inactive_bytes=9*GIB)
             available = admission['memory']['free_inactive_bytes']
-            if available is None or available < 15*GIB:
-                snapshots('WAITING_GENERATE_13_GIB_ADMISSION', query_id=qid, admission=admission,
+            if available is None or available < 9*GIB:
+                snapshots('WAITING_GENERATE_12_GIB_ADMISSION', query_id=qid, admission=admission,
                           first_8gib_failure=first_8gib_failure, retry_seconds=60)
                 time.sleep(60)
                 continue
-            snapshots('ADMITTED_GENERATE_SINGLE_13_GIB_RETRY', query_id=qid, admission=admission,
+            snapshots('ADMITTED_GENERATE_SINGLE_12_GIB_RETRY', query_id=qid, admission=admission,
                       first_8gib_failure=first_8gib_failure)
         attempt = OUT/'attempts'/stamp()
         attempt.mkdir(parents=True)
@@ -612,7 +620,7 @@ def supervised(action, stage=None, qid=None, fold=None):
                     except psutil.NoSuchProcess:
                         pass
                     if peak >= memory_cap:
-                        reason = 'STOP_RSS_13_GIB' if memory_cap == 13*GIB else 'STOP_RSS_8_GIB'
+                        reason = 'STOP_RSS_12_GIB' if memory_cap == 12*GIB else 'STOP_RSS_8_GIB'
                         terminate(child)
                         break
                     if STOP:
@@ -639,7 +647,7 @@ def supervised(action, stage=None, qid=None, fold=None):
         atomic_json(attempt/'receipt.json', receipt)
         if action == 'generate' and reason == 'STOP_RSS_8_GIB':
             first_8gib_failure = record(attempt/'receipt.json')
-            memory_cap = 13*GIB
+            memory_cap = 12*GIB
             snapshots('GENERATE_RSS8_SINGLE_ESCALATION_PENDING', query_id=qid, first_8gib_failure=first_8gib_failure)
             continue
         if reason == 'YIELD_TO_HYDRAULIC':
