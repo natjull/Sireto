@@ -298,7 +298,7 @@ def reconstruct(panel, directory, encoder_panel=None):
         finally:names.close();edges.close_files()
         gen=dict(features=stage_refs,queries=len(panel),labels_used=False,
             family_sources=mini.record(proof_dir/'family_sources.json'),raw_successions=launch['raw_successions'],
-            commune_sites=sum(len(mini.read(ref)) for ref in refs.values()))
+            commune_sites=sum(len(mini.read(mini.verified(ref))) for ref in refs.values()))
         mini.save(proof_dir/'features_generation.json',gen)
         # Execute whole original prepare functions: only authority/input roots,
         # execution guards and output I/O are rebound, not their scientific body.
