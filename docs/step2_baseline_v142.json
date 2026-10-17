@@ -1,0 +1,6891 @@
+{
+  "status": "MEASURED_STEP2_BASELINE_DEVELOPMENT_NOT_CERTIFICATION",
+  "variant": "learned_native_ooc",
+  "queries": 526,
+  "candidate_count": 52600,
+  "output_cap": 100,
+  "source_refs": {
+    "implementation": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_baseline_v142.py",
+      "size_bytes": 13164,
+      "mtime_ns": 1792204665029247745,
+      "inode": 70644755,
+      "sha256": "498bfb25a8ed2b8ecfeb7a8912f069db114de6b42d1a50eae486ed658f47e9f2"
+    },
+    "contract": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_choose_one_contract.md",
+      "size_bytes": 3860,
+      "mtime_ns": 1792204717605100405,
+      "inode": 70644690,
+      "sha256": "de686fe46a4ac2892bebd033a919035e187a429c1ac3e1c8e1d49047dedafcd8"
+    },
+    "metric_rule": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/retrieval_site_operational_metric.py",
+      "size_bytes": 22513,
+      "mtime_ns": 1791983259891659824,
+      "inode": 70133913,
+      "sha256": "10caf80cf0226ba957d17dd74ff752e401d0e91172b61619f0981d9636683007"
+    },
+    "comparison_rule": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/retrieval_site_target_full_evaluate.py",
+      "size_bytes": 18772,
+      "mtime_ns": 1792100345392823499,
+      "inode": 70497387,
+      "sha256": "554a9d454e592f9a5e4433abfea8013ff249d30f530263a103a2ece83b000392"
+    },
+    "full_result": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/retrieval_site_target_full_result_20261016.json",
+      "size_bytes": 637763,
+      "mtime_ns": 1792203961388690024,
+      "inode": 70643606,
+      "sha256": "24a4c683bc41781a4c01cf74be58bf3a3ffe10744c4cf7260af46d1fb236134d"
+    },
+    "previous_metric": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/retrieval_site_operational_metric_result_20261014.json",
+      "size_bytes": 2046788,
+      "mtime_ns": 1791983274336225409,
+      "inode": 70133921,
+      "sha256": "54988149ccfe156c176780c930b0d608b64317024ae7f45022d6aede47836f16"
+    },
+    "generation": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/generation.json",
+      "size_bytes": 842,
+      "mtime_ns": 1791947021566884554,
+      "inode": 4425960,
+      "sha256": "b8d4e77a49008bc8e449a3b19ba0bdb223f4f8ec0b514a384d68bec91b36a12e"
+    },
+    "outputs": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/outputs.json",
+      "size_bytes": 18762806,
+      "mtime_ns": 1791947021547149218,
+      "inode": 4425958,
+      "sha256": "fb691a70311392c103955e1b4fe71ee03fbdabbb2dcc87d2fb32e9bf6c5d3218"
+    },
+    "outcomes": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/outcomes.json",
+      "size_bytes": 500562,
+      "mtime_ns": 1791947031501637339,
+      "inode": 4425977,
+      "sha256": "4fa879aada3e0059c0868dadfdeadc45b3b6673872e506e2c96dd315634b1e43"
+    },
+    "report": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/report.json",
+      "size_bytes": 42604,
+      "mtime_ns": 1791947031515990497,
+      "inode": 4425982,
+      "sha256": "7614852c7f162d6dca059e992e1db109213571627d1550e4ca10a3879797e907"
+    },
+    "panel": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/representative_20261008_b/panel.json",
+      "sha256": "41668f7f27c4479d421da8a26f18bb4aba93865d721403c2c3130fa08429cff2",
+      "size_bytes": 129670
+    },
+    "evaluation_config": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/config/retrieval_v358_postseal_evaluation.json",
+      "size_bytes": 1018,
+      "mtime_ns": 1791311481681267278,
+      "inode": 61176471,
+      "sha256": "25c117e698d5faf27c2f4f98cd76ae20bb3194507bf738464c6823b3f3193cc7"
+    },
+    "evaluation": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/evaluation_resume_20261001/manifest.json",
+      "sha256": "b6d7123d2fb33616c76dc14ed4277552a7696d2bdb17b56f540b7f76edfec3c9"
+    },
+    "label_side": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/evaluation_resume_20261001/label_side_manifest.json",
+      "sha256": "42e15d604624364a59690fffa2a97c50552ac51a61789ed3347e16401bd6bf13",
+      "size_bytes": 1929
+    },
+    "ledger": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet",
+      "sha256": "24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720"
+    },
+    "operational_policy": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/siret_operational_equivalence_policy.md",
+      "sha256": "51690a7e163e95497b3df34fb0b5df6847a3b81e8b86b06c1c1440ab3be2b16b",
+      "size_bytes": 5301
+    },
+    "acceptable_operational": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v34_fast_resume/full_job/evaluation_resume_20261001/acceptable_operational.parquet",
+      "sha256": "262f5a1cfd27cd8d72dc36037464a42e1a04ac24c37de11bebfb688a7b07f97f",
+      "size_bytes": 499148
+    },
+    "geometry": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v17/structural_20261010_a/geo.json",
+      "sha256": "7f7367f7170d33a285d41bb5c4ada299feafa321881684cca8965f4e02f9d93b",
+      "size_bytes": 8078764
+    },
+    "normalizer": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v17_structural_retrieval.py",
+      "size_bytes": 23018,
+      "mtime_ns": 1791664066089738279,
+      "inode": 68616494,
+      "sha256": "71ddfee9043e0a799a7ad39f76ec60c2f86d3558ce6382de5c044f0ff7ea08ea"
+    },
+    "stock": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+      "size_bytes": 2202341459,
+      "mtime_ns": 1786994107608626537,
+      "inode": 1964894,
+      "inherited_sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99",
+      "sha256_recomputed": false
+    },
+    "study": {
+      "path": "/Volumes/CATNAT_DATA/oubusiness/raw/sirene/geolocalisation_etablissements_2026-07-01.parquet",
+      "size_bytes": 802036004,
+      "mtime_ns": 1784824801885563627,
+      "inode": 86516,
+      "inherited_sha256": "15da7e02003fa4cb203929e0591a2cdbb0a41784c0ac4deb801f56eeb7bdf906",
+      "sha256_recomputed": false
+    }
+  },
+  "folds": [
+    2,
+    3,
+    4
+  ],
+  "no_regeneration": true,
+  "no_training": true,
+  "sources_mutated": false,
+  "labels_modified": false,
+  "closed_sets_opened": false,
+  "sur_policy_evaluated": false,
+  "sur_metrics": null,
+  "production_promotion_allowed": false,
+  "totals": {
+    "queries": 526,
+    "exact_rank_distribution": {
+      "1": 353,
+      "2-3": 73,
+      "4-10": 41,
+      "11-30": 17,
+      "31-100": 23,
+      "absent": 19
+    },
+    "top1": {
+      "exact": {
+        "hits": 353,
+        "queries": 526,
+        "percent": 67.11026615969581,
+        "wilson95_percent": [
+          62.98392372735759,
+          70.9885027416165
+        ]
+      },
+      "siren": {
+        "hits": 406,
+        "queries": 526,
+        "percent": 77.18631178707224,
+        "wilson95_percent": [
+          73.41069070847158,
+          80.56772023667618
+        ]
+      },
+      "operational": {
+        "hits": 377,
+        "queries": 526,
+        "percent": 71.67300380228137,
+        "wilson95_percent": [
+          67.67599479324676,
+          75.35574540078707
+        ]
+      },
+      "site_operational": {
+        "hits": 315,
+        "queries": 526,
+        "percent": 59.88593155893536,
+        "wilson95_percent": [
+          55.64028077231833,
+          63.988232298644476
+        ]
+      },
+      "union": {
+        "hits": 391,
+        "queries": 526,
+        "percent": 74.33460076045627,
+        "wilson95_percent": [
+          70.43482938506797,
+          77.88151048191742
+        ]
+      }
+    },
+    "recall100": {
+      "exact": {
+        "hits": 507,
+        "queries": 526,
+        "percent": 96.38783269961978,
+        "wilson95_percent": [
+          94.42750151940193,
+          97.67552135203896
+        ]
+      },
+      "siren": {
+        "hits": 511,
+        "queries": 526,
+        "percent": 97.14828897338403,
+        "wilson95_percent": [
+          95.34856562953094,
+          98.26434286275325
+        ]
+      },
+      "operational": {
+        "hits": 508,
+        "queries": 526,
+        "percent": 96.57794676806084,
+        "wilson95_percent": [
+          94.65588720404008,
+          97.82460707261164
+        ]
+      },
+      "site_operational": {
+        "hits": 404,
+        "queries": 526,
+        "percent": 76.80608365019012,
+        "wilson95_percent": [
+          73.01263260664544,
+          80.21083552808066
+        ]
+      },
+      "union": {
+        "hits": 511,
+        "queries": 526,
+        "percent": 97.14828897338403,
+        "wilson95_percent": [
+          95.34856562953094,
+          98.26434286275325
+        ]
+      }
+    }
+  },
+  "by_fold": {
+    "2": {
+      "queries": 178,
+      "exact_rank_distribution": {
+        "1": 124,
+        "2-3": 21,
+        "4-10": 13,
+        "11-30": 6,
+        "31-100": 8,
+        "absent": 6
+      },
+      "top1": {
+        "exact": {
+          "hits": 124,
+          "queries": 178,
+          "percent": 69.66292134831461,
+          "wilson95_percent": [
+            62.55289991964037,
+            75.94217180601265
+          ]
+        },
+        "siren": {
+          "hits": 137,
+          "queries": 178,
+          "percent": 76.96629213483146,
+          "wilson95_percent": [
+            70.2504108549779,
+            82.54283036877482
+          ]
+        },
+        "operational": {
+          "hits": 131,
+          "queries": 178,
+          "percent": 73.59550561797752,
+          "wilson95_percent": [
+            66.67051320047197,
+            79.52357287031164
+          ]
+        },
+        "site_operational": {
+          "hits": 116,
+          "queries": 178,
+          "percent": 65.1685393258427,
+          "wilson95_percent": [
+            57.91590109303058,
+            71.78029709533034
+          ]
+        },
+        "union": {
+          "hits": 135,
+          "queries": 178,
+          "percent": 75.84269662921348,
+          "wilson95_percent": [
+            69.05153086389703,
+            81.54199197553264
+          ]
+        }
+      },
+      "recall100": {
+        "exact": {
+          "hits": 172,
+          "queries": 178,
+          "percent": 96.62921348314607,
+          "wilson95_percent": [
+            92.84215697242858,
+            98.44615597697714
+          ]
+        },
+        "siren": {
+          "hits": 176,
+          "queries": 178,
+          "percent": 98.87640449438203,
+          "wilson95_percent": [
+            95.99642288984907,
+            99.6913268282027
+          ]
+        },
+        "operational": {
+          "hits": 173,
+          "queries": 178,
+          "percent": 97.19101123595506,
+          "wilson95_percent": [
+            93.59384559064142,
+            98.79432655092583
+          ]
+        },
+        "site_operational": {
+          "hits": 145,
+          "queries": 178,
+          "percent": 81.46067415730337,
+          "wilson95_percent": [
+            75.10872751081858,
+            86.48338725022624
+          ]
+        },
+        "union": {
+          "hits": 176,
+          "queries": 178,
+          "percent": 98.87640449438203,
+          "wilson95_percent": [
+            95.99642288984907,
+            99.6913268282027
+          ]
+        }
+      }
+    },
+    "3": {
+      "queries": 162,
+      "exact_rank_distribution": {
+        "1": 107,
+        "2-3": 21,
+        "4-10": 8,
+        "11-30": 6,
+        "31-100": 11,
+        "absent": 9
+      },
+      "top1": {
+        "exact": {
+          "hits": 107,
+          "queries": 162,
+          "percent": 66.04938271604938,
+          "wilson95_percent": [
+            58.4609552010207,
+            72.89429237686139
+          ]
+        },
+        "siren": {
+          "hits": 119,
+          "queries": 162,
+          "percent": 73.45679012345678,
+          "wilson95_percent": [
+            66.17113535920193,
+            79.65576494693342
+          ]
+        },
+        "operational": {
+          "hits": 113,
+          "queries": 162,
+          "percent": 69.75308641975309,
+          "wilson95_percent": [
+            62.289829312040325,
+            76.3012446299684
+          ]
+        },
+        "site_operational": {
+          "hits": 92,
+          "queries": 162,
+          "percent": 56.79012345679013,
+          "wilson95_percent": [
+            49.09192765944283,
+            64.17375400812267
+          ]
+        },
+        "union": {
+          "hits": 115,
+          "queries": 162,
+          "percent": 70.98765432098766,
+          "wilson95_percent": [
+            63.57750123990664,
+            77.42551482347761
+          ]
+        }
+      },
+      "recall100": {
+        "exact": {
+          "hits": 153,
+          "queries": 162,
+          "percent": 94.44444444444444,
+          "wilson95_percent": [
+            89.77992046951286,
+            97.04999590000673
+          ]
+        },
+        "siren": {
+          "hits": 153,
+          "queries": 162,
+          "percent": 94.44444444444444,
+          "wilson95_percent": [
+            89.77992046951286,
+            97.04999590000673
+          ]
+        },
+        "operational": {
+          "hits": 153,
+          "queries": 162,
+          "percent": 94.44444444444444,
+          "wilson95_percent": [
+            89.77992046951286,
+            97.04999590000673
+          ]
+        },
+        "site_operational": {
+          "hits": 120,
+          "queries": 162,
+          "percent": 74.07407407407408,
+          "wilson95_percent": [
+            66.82353386442115,
+            80.20933750240195
+          ]
+        },
+        "union": {
+          "hits": 153,
+          "queries": 162,
+          "percent": 94.44444444444444,
+          "wilson95_percent": [
+            89.77992046951286,
+            97.04999590000673
+          ]
+        }
+      }
+    },
+    "4": {
+      "queries": 186,
+      "exact_rank_distribution": {
+        "1": 122,
+        "2-3": 31,
+        "4-10": 20,
+        "11-30": 5,
+        "31-100": 4,
+        "absent": 4
+      },
+      "top1": {
+        "exact": {
+          "hits": 122,
+          "queries": 186,
+          "percent": 65.59139784946237,
+          "wilson95_percent": [
+            58.51067898021404,
+            72.04113007155962
+          ]
+        },
+        "siren": {
+          "hits": 150,
+          "queries": 186,
+          "percent": 80.64516129032258,
+          "wilson95_percent": [
+            74.37094375274349,
+            85.67916369384612
+          ]
+        },
+        "operational": {
+          "hits": 133,
+          "queries": 186,
+          "percent": 71.50537634408602,
+          "wilson95_percent": [
+            64.63447378030133,
+            77.50595249800716
+          ]
+        },
+        "site_operational": {
+          "hits": 107,
+          "queries": 186,
+          "percent": 57.526881720430104,
+          "wilson95_percent": [
+            50.341472698245326,
+            64.40767649916265
+          ]
+        },
+        "union": {
+          "hits": 141,
+          "queries": 186,
+          "percent": 75.80645161290323,
+          "wilson95_percent": [
+            69.16997827535396,
+            81.39853325861624
+          ]
+        }
+      },
+      "recall100": {
+        "exact": {
+          "hits": 182,
+          "queries": 186,
+          "percent": 97.84946236559139,
+          "wilson95_percent": [
+            94.60185290842833,
+            99.16059556080808
+          ]
+        },
+        "siren": {
+          "hits": 182,
+          "queries": 186,
+          "percent": 97.84946236559139,
+          "wilson95_percent": [
+            94.60185290842833,
+            99.16059556080808
+          ]
+        },
+        "operational": {
+          "hits": 182,
+          "queries": 186,
+          "percent": 97.84946236559139,
+          "wilson95_percent": [
+            94.60185290842833,
+            99.16059556080808
+          ]
+        },
+        "site_operational": {
+          "hits": 139,
+          "queries": 186,
+          "percent": 74.73118279569893,
+          "wilson95_percent": [
+            68.02899176372608,
+            80.43249845632869
+          ]
+        },
+        "union": {
+          "hits": 182,
+          "queries": 186,
+          "percent": 97.84946236559139,
+          "wilson95_percent": [
+            94.60185290842833,
+            99.16059556080808
+          ]
+        }
+      }
+    }
+  },
+  "per_query": [
+    {
+      "query_id": "10033",
+      "fold": 4,
+      "top1_siret": "82460384900012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1009",
+      "fold": 2,
+      "top1_siret": "40513567400035",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10214",
+      "fold": 2,
+      "top1_siret": "30247504102758",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10222",
+      "fold": 2,
+      "top1_siret": "55208329702107",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10344",
+      "fold": 2,
+      "top1_siret": "84131310900016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10378",
+      "fold": 4,
+      "top1_siret": "41447346200094",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10389",
+      "fold": 2,
+      "top1_siret": "81809136500036",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1059",
+      "fold": 2,
+      "top1_siret": "48226327400037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1064",
+      "fold": 3,
+      "top1_siret": "21300284300018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10719",
+      "fold": 3,
+      "top1_siret": "48190475300029",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "10730",
+      "fold": 2,
+      "top1_siret": "19341600500018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10805",
+      "fold": 4,
+      "top1_siret": "39061361000117",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "10841",
+      "fold": 3,
+      "top1_siret": "66850296600363",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11185",
+      "fold": 4,
+      "top1_siret": "43841763600034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11207",
+      "fold": 2,
+      "top1_siret": "51273485600028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11262",
+      "fold": 2,
+      "top1_siret": "39773214000041",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11488",
+      "fold": 4,
+      "top1_siret": "39997980600029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1149",
+      "fold": 4,
+      "top1_siret": "65382016700050",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1151",
+      "fold": 4,
+      "top1_siret": "35046354300016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11513",
+      "fold": 3,
+      "top1_siret": "44201539200040",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11569",
+      "fold": 3,
+      "top1_siret": "44052248000035",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11742",
+      "fold": 4,
+      "top1_siret": "32092541500012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "11779",
+      "fold": 3,
+      "top1_siret": "32694508600170",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "12005",
+      "fold": 4,
+      "top1_siret": "49163068700029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12073",
+      "fold": 2,
+      "top1_siret": "31742838100170",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12176",
+      "fold": 2,
+      "top1_siret": "34156361700107",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12179",
+      "fold": 4,
+      "top1_siret": "48320938300239",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12196",
+      "fold": 2,
+      "top1_siret": "81234814200025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12203",
+      "fold": 3,
+      "top1_siret": "39998279200067",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12264",
+      "fold": 2,
+      "top1_siret": "34929105400071",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1235",
+      "fold": 2,
+      "top1_siret": "50775564300024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12389",
+      "fold": 3,
+      "top1_siret": "43445381700018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12426",
+      "fold": 2,
+      "top1_siret": "90107309800021",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12434",
+      "fold": 4,
+      "top1_siret": "38398762501173",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12586",
+      "fold": 3,
+      "top1_siret": "44081826800029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12619",
+      "fold": 2,
+      "top1_siret": "40469649400016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12928",
+      "fold": 3,
+      "top1_siret": "18001404502047",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1294",
+      "fold": 2,
+      "top1_siret": "39446656900016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12944",
+      "fold": 4,
+      "top1_siret": "50159212500014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12960",
+      "fold": 2,
+      "top1_siret": "44132040500117",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "12984",
+      "fold": 2,
+      "top1_siret": "83270697200029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13020",
+      "fold": 2,
+      "top1_siret": "30247504102006",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "131",
+      "fold": 2,
+      "top1_siret": "19442029500017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13168",
+      "fold": 2,
+      "top1_siret": "81952269900043",
+      "first_rank": {
+        "exact": 3,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "13200",
+      "fold": 3,
+      "top1_siret": "41913347500014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13216",
+      "fold": 2,
+      "top1_siret": "90139895800016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13239",
+      "fold": 2,
+      "top1_siret": "86180097700022",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1329",
+      "fold": 4,
+      "top1_siret": "77573383500497",
+      "first_rank": {
+        "exact": 6,
+        "siren": 6,
+        "operational": 6,
+        "site_operational": null,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "13337",
+      "fold": 3,
+      "top1_siret": "92221354100019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13367",
+      "fold": 4,
+      "top1_siret": "48882521700067",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1341",
+      "fold": 2,
+      "top1_siret": "87909165000025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13483",
+      "fold": 4,
+      "top1_siret": "52382997600027",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13485",
+      "fold": 2,
+      "top1_siret": "42082444300055",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13517",
+      "fold": 2,
+      "top1_siret": "55208329701901",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13531",
+      "fold": 2,
+      "top1_siret": "38253240600024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13566",
+      "fold": 4,
+      "top1_siret": "50405723300034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13608",
+      "fold": 2,
+      "top1_siret": "26440270200239",
+      "first_rank": {
+        "exact": 19,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13617",
+      "fold": 2,
+      "top1_siret": "87793471100012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1364",
+      "fold": 2,
+      "top1_siret": "53416964400059",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13752",
+      "fold": 2,
+      "top1_siret": "83770427900020",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13763",
+      "fold": 2,
+      "top1_siret": "20000554400032",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13765",
+      "fold": 2,
+      "top1_siret": "20000554400024",
+      "first_rank": {
+        "exact": null,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13799",
+      "fold": 4,
+      "top1_siret": "33153157400019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13857",
+      "fold": 2,
+      "top1_siret": "48967909200028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13931",
+      "fold": 2,
+      "top1_siret": "41865900900058",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13932",
+      "fold": 2,
+      "top1_siret": "99760522500041",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13940",
+      "fold": 3,
+      "top1_siret": "79067258800031",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "13942",
+      "fold": 2,
+      "top1_siret": "78601196500021",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1400",
+      "fold": 3,
+      "top1_siret": "26140100400013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14011",
+      "fold": 4,
+      "top1_siret": "57223241100544",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14040",
+      "fold": 4,
+      "top1_siret": "48855470000028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14553",
+      "fold": 2,
+      "top1_siret": "31081776200019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1461",
+      "fold": 2,
+      "top1_siret": "51057914700016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14688",
+      "fold": 2,
+      "top1_siret": "33453623200039",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14749",
+      "fold": 4,
+      "top1_siret": "50475247800025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14765",
+      "fold": 2,
+      "top1_siret": "80975722200017",
+      "first_rank": {
+        "exact": 38,
+        "siren": 38,
+        "operational": 38,
+        "site_operational": null,
+        "union": 38
+      }
+    },
+    {
+      "query_id": "14782",
+      "fold": 2,
+      "top1_siret": "82290055100018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1483",
+      "fold": 3,
+      "top1_siret": "42154458600033",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14847",
+      "fold": 4,
+      "top1_siret": "20000672400013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "14856",
+      "fold": 2,
+      "top1_siret": "79880165000051",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "15132",
+      "fold": 2,
+      "top1_siret": "84991501200017",
+      "first_rank": {
+        "exact": 3,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": null,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "15215",
+      "fold": 2,
+      "top1_siret": "77570560102279",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "15303",
+      "fold": 2,
+      "top1_siret": "35170529800070",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1542",
+      "fold": 2,
+      "top1_siret": "40878674700027",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "15489",
+      "fold": 3,
+      "top1_siret": "33467070000064",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1571",
+      "fold": 4,
+      "top1_siret": "32173773600264",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "15724",
+      "fold": 4,
+      "top1_siret": "40888093800027",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "15769",
+      "fold": 2,
+      "top1_siret": "43212373500255",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "15862",
+      "fold": 4,
+      "top1_siret": "19753471200124",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "15949",
+      "fold": 2,
+      "top1_siret": "30247504101578",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "16000",
+      "fold": 3,
+      "top1_siret": "69980260900072",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1604",
+      "fold": 4,
+      "top1_siret": "33955706800055",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "16145",
+      "fold": 4,
+      "top1_siret": "48089858400036",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "16261",
+      "fold": 3,
+      "top1_siret": "41054695600260",
+      "first_rank": {
+        "exact": 14,
+        "siren": 14,
+        "operational": 14,
+        "site_operational": null,
+        "union": 14
+      }
+    },
+    {
+      "query_id": "16478",
+      "fold": 2,
+      "top1_siret": "55208329700242",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "16567",
+      "fold": 2,
+      "top1_siret": "52911705300023",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "16580",
+      "fold": 3,
+      "top1_siret": "88359357600019",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "16626",
+      "fold": 3,
+      "top1_siret": "77565769500471",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1663",
+      "fold": 4,
+      "top1_siret": "80457023200012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "16681",
+      "fold": 3,
+      "top1_siret": "94944340200019",
+      "first_rank": {
+        "exact": 95,
+        "siren": 95,
+        "operational": 95,
+        "site_operational": 95,
+        "union": 95
+      }
+    },
+    {
+      "query_id": "16730",
+      "fold": 3,
+      "top1_siret": "98741356400012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "16824",
+      "fold": 2,
+      "top1_siret": "80785623200028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "16848",
+      "fold": 4,
+      "top1_siret": "44872349400036",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "16986",
+      "fold": 3,
+      "top1_siret": "62880040100075",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "171",
+      "fold": 4,
+      "top1_siret": "19440536100024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1719",
+      "fold": 4,
+      "top1_siret": "32421463400028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1731",
+      "fold": 3,
+      "top1_siret": "33217194100013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1763",
+      "fold": 3,
+      "top1_siret": "43221923600010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1770",
+      "fold": 3,
+      "top1_siret": "30265728300024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1782",
+      "fold": 4,
+      "top1_siret": "70380320500037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1808",
+      "fold": 2,
+      "top1_siret": "39773170400037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1840",
+      "fold": 4,
+      "top1_siret": "48192825700023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1869",
+      "fold": 2,
+      "top1_siret": "42864954500012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1895",
+      "fold": 4,
+      "top1_siret": "48352762800026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "1907",
+      "fold": 4,
+      "top1_siret": "79223435300029",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2003",
+      "fold": 4,
+      "top1_siret": "80356435000020",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2137",
+      "fold": 4,
+      "top1_siret": "26590702200015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2167",
+      "fold": 4,
+      "top1_siret": "43491711800029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2289",
+      "fold": 2,
+      "top1_siret": "35203184300035",
+      "first_rank": {
+        "exact": 9,
+        "siren": 9,
+        "operational": 9,
+        "site_operational": 9,
+        "union": 9
+      }
+    },
+    {
+      "query_id": "2350",
+      "fold": 2,
+      "top1_siret": "83224147500017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2355",
+      "fold": 4,
+      "top1_siret": "31186607300043",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2367",
+      "fold": 3,
+      "top1_siret": "47850222200027",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2378",
+      "fold": 2,
+      "top1_siret": "40530518600034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2656",
+      "fold": 3,
+      "top1_siret": "44113550600018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2854",
+      "fold": 3,
+      "top1_siret": "32612715600023",
+      "first_rank": {
+        "exact": 29,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2898",
+      "fold": 4,
+      "top1_siret": "38747536100029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2961",
+      "fold": 3,
+      "top1_siret": "32803724700017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "2964",
+      "fold": 3,
+      "top1_siret": "41948793900284",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3005",
+      "fold": 4,
+      "top1_siret": "79946549700029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 3,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3079",
+      "fold": 4,
+      "top1_siret": "32215133300034",
+      "first_rank": {
+        "exact": 7,
+        "siren": 7,
+        "operational": 7,
+        "site_operational": 7,
+        "union": 7
+      }
+    },
+    {
+      "query_id": "3087",
+      "fold": 3,
+      "top1_siret": "19741488100015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "312",
+      "fold": 4,
+      "top1_siret": "51301498500016",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "3124",
+      "fold": 4,
+      "top1_siret": "21740043100011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3142",
+      "fold": 2,
+      "top1_siret": "39408399200021",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3179",
+      "fold": 4,
+      "top1_siret": "81506103100010",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "3189",
+      "fold": 2,
+      "top1_siret": "38031380900135",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3264",
+      "fold": 4,
+      "top1_siret": "60592030500014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3268",
+      "fold": 3,
+      "top1_siret": "32612715600023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3293",
+      "fold": 3,
+      "top1_siret": "44261928400015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3294",
+      "fold": 4,
+      "top1_siret": "52319354800030",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3436",
+      "fold": 2,
+      "top1_siret": "82364660900037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "349",
+      "fold": 4,
+      "top1_siret": "19770009900025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3580",
+      "fold": 4,
+      "top1_siret": "34323592500017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3613",
+      "fold": 2,
+      "top1_siret": "89796012600018",
+      "first_rank": {
+        "exact": 12,
+        "siren": 12,
+        "operational": 12,
+        "site_operational": null,
+        "union": 12
+      }
+    },
+    {
+      "query_id": "3648",
+      "fold": 3,
+      "top1_siret": "43427476700020",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3657",
+      "fold": 3,
+      "top1_siret": "41107710000021",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3737",
+      "fold": 2,
+      "top1_siret": "44132040500091",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3757",
+      "fold": 2,
+      "top1_siret": "30529100700014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3768",
+      "fold": 2,
+      "top1_siret": "39968758100013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "378",
+      "fold": 3,
+      "top1_siret": "19772331500010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3792",
+      "fold": 4,
+      "top1_siret": "78061242000106",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3807",
+      "fold": 4,
+      "top1_siret": "79823301107802",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3825",
+      "fold": 4,
+      "top1_siret": "89081843800024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3827",
+      "fold": 4,
+      "top1_siret": "43995574100020",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "3845",
+      "fold": 2,
+      "top1_siret": "42044538900026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "389",
+      "fold": 3,
+      "top1_siret": "19771615200016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4062",
+      "fold": 4,
+      "top1_siret": "51278224400010",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "4212",
+      "fold": 2,
+      "top1_siret": "32848966100020",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4223",
+      "fold": 4,
+      "top1_siret": "38947879300067",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4344",
+      "fold": 2,
+      "top1_siret": "78117295200066",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4360",
+      "fold": 4,
+      "top1_siret": "53032135500022",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4371",
+      "fold": 4,
+      "top1_siret": "32859236500063",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4387",
+      "fold": 3,
+      "top1_siret": "33856725800052",
+      "first_rank": {
+        "exact": 8,
+        "siren": 1,
+        "operational": 8,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4422",
+      "fold": 3,
+      "top1_siret": "40278771700022",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "4494",
+      "fold": 3,
+      "top1_siret": "81415371400021",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "4539",
+      "fold": 2,
+      "top1_siret": "53258254100043",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4565",
+      "fold": 2,
+      "top1_siret": "73192023700054",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4598",
+      "fold": 4,
+      "top1_siret": "32506104200025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4627",
+      "fold": 4,
+      "top1_siret": "78393689100093",
+      "first_rank": {
+        "exact": 3,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "4670",
+      "fold": 4,
+      "top1_siret": "35143543300054",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4685",
+      "fold": 3,
+      "top1_siret": "41473319600029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4873",
+      "fold": 3,
+      "top1_siret": "41948793900417",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "4995",
+      "fold": 3,
+      "top1_siret": "50014515600047",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5010",
+      "fold": 3,
+      "top1_siret": "50014515600047",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5053",
+      "fold": 4,
+      "top1_siret": "57675021000378",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5089",
+      "fold": 4,
+      "top1_siret": "41949506400042",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5104",
+      "fold": 4,
+      "top1_siret": "19592611800017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5121",
+      "fold": 4,
+      "top1_siret": "82014321200026",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5130",
+      "fold": 4,
+      "top1_siret": "91348877100019",
+      "first_rank": {
+        "exact": 55,
+        "siren": 55,
+        "operational": 55,
+        "site_operational": 55,
+        "union": 55
+      }
+    },
+    {
+      "query_id": "5230",
+      "fold": 3,
+      "top1_siret": "72562075100026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "526",
+      "fold": 3,
+      "top1_siret": "21770123400023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "527",
+      "fold": 3,
+      "top1_siret": "57645046400101",
+      "first_rank": {
+        "exact": 53,
+        "siren": 53,
+        "operational": 53,
+        "site_operational": null,
+        "union": 53
+      }
+    },
+    {
+      "query_id": "5276",
+      "fold": 4,
+      "top1_siret": "83061509200111",
+      "first_rank": {
+        "exact": 6,
+        "siren": 6,
+        "operational": 6,
+        "site_operational": null,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "5296",
+      "fold": 2,
+      "top1_siret": "42303259800132",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": 4,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "5298",
+      "fold": 3,
+      "top1_siret": "94119483900028",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "5357",
+      "fold": 4,
+      "top1_siret": "44440842100048",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5367",
+      "fold": 2,
+      "top1_siret": "40051900500328",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "5374",
+      "fold": 2,
+      "top1_siret": "49179771800013",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "5413",
+      "fold": 2,
+      "top1_siret": "39934364900030",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5433",
+      "fold": 2,
+      "top1_siret": "55208329702180",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5434",
+      "fold": 4,
+      "top1_siret": "34204352801342",
+      "first_rank": {
+        "exact": 6,
+        "siren": 5,
+        "operational": 6,
+        "site_operational": 19,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "5447",
+      "fold": 4,
+      "top1_siret": "52167577700010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5467",
+      "fold": 2,
+      "top1_siret": "01715120000726",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5475",
+      "fold": 4,
+      "top1_siret": "34001868800028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5486",
+      "fold": 4,
+      "top1_siret": "82582037600010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5490",
+      "fold": 2,
+      "top1_siret": "31439769600167",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "5952",
+      "fold": 4,
+      "top1_siret": "44860247400034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6173",
+      "fold": 2,
+      "top1_siret": "42157582000186",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "6216",
+      "fold": 3,
+      "top1_siret": "41309823700014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6494",
+      "fold": 3,
+      "top1_siret": "78346187400019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6509",
+      "fold": 3,
+      "top1_siret": "44216890200017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6519",
+      "fold": 4,
+      "top1_siret": "53405468900011",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "6551",
+      "fold": 4,
+      "top1_siret": "20003204300016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6573",
+      "fold": 2,
+      "top1_siret": "33815461000111",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6693",
+      "fold": 4,
+      "top1_siret": "21660048600015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "6789",
+      "fold": 2,
+      "top1_siret": "49099101500051",
+      "first_rank": {
+        "exact": 6,
+        "siren": 6,
+        "operational": 6,
+        "site_operational": 6,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "6853",
+      "fold": 4,
+      "top1_siret": "88192714900016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7061",
+      "fold": 3,
+      "top1_siret": "38130763600393",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7154",
+      "fold": 4,
+      "top1_siret": "37833984000035",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "7183",
+      "fold": 3,
+      "top1_siret": "95650677800128",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7504",
+      "fold": 3,
+      "top1_siret": "26850446100115",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7554",
+      "fold": 3,
+      "top1_siret": "39924146200163",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7592",
+      "fold": 2,
+      "top1_siret": "32713989500020",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "7709",
+      "fold": 4,
+      "top1_siret": "38398762501082",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7726",
+      "fold": 2,
+      "top1_siret": "41026960900013",
+      "first_rank": {
+        "exact": 10,
+        "siren": 5,
+        "operational": 10,
+        "site_operational": 5,
+        "union": 5
+      }
+    },
+    {
+      "query_id": "7804",
+      "fold": 4,
+      "top1_siret": "84403377900027",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7820",
+      "fold": 4,
+      "top1_siret": "30664622500046",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7885",
+      "fold": 4,
+      "top1_siret": "39338691700065",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7953",
+      "fold": 4,
+      "top1_siret": "50473106800095",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "7978",
+      "fold": 4,
+      "top1_siret": "33885571100028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8054",
+      "fold": 2,
+      "top1_siret": "94665068600326",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8122",
+      "fold": 3,
+      "top1_siret": "34391364600042",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "830",
+      "fold": 2,
+      "top1_siret": "41983845300027",
+      "first_rank": {
+        "exact": 100,
+        "siren": 100,
+        "operational": 100,
+        "site_operational": 100,
+        "union": 100
+      }
+    },
+    {
+      "query_id": "8409",
+      "fold": 2,
+      "top1_siret": "36780140400404",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8439",
+      "fold": 4,
+      "top1_siret": "50523872500020",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8612",
+      "fold": 4,
+      "top1_siret": "38211975800094",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8637",
+      "fold": 4,
+      "top1_siret": "44538773100018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "864",
+      "fold": 4,
+      "top1_siret": "19692521800014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8708",
+      "fold": 4,
+      "top1_siret": "49144846000023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "8808",
+      "fold": 4,
+      "top1_siret": "81366479400050",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "9166",
+      "fold": 3,
+      "top1_siret": "95950308700063",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9180",
+      "fold": 4,
+      "top1_siret": "41020129700042",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9291",
+      "fold": 2,
+      "top1_siret": "91290132900025",
+      "first_rank": {
+        "exact": 56,
+        "siren": 2,
+        "operational": 56,
+        "site_operational": null,
+        "union": 56
+      }
+    },
+    {
+      "query_id": "9300",
+      "fold": 3,
+      "top1_siret": "34949683600025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9322",
+      "fold": 3,
+      "top1_siret": "41948793900888",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9368",
+      "fold": 3,
+      "top1_siret": "41948793900631",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9395",
+      "fold": 4,
+      "top1_siret": "44122425000056",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "942",
+      "fold": 4,
+      "top1_siret": "17440430100015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9627",
+      "fold": 4,
+      "top1_siret": "48135093200051",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9689",
+      "fold": 3,
+      "top1_siret": "44067120400012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9866",
+      "fold": 4,
+      "top1_siret": "21690244500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "9867",
+      "fold": 4,
+      "top1_siret": "21690244500107",
+      "first_rank": {
+        "exact": 9,
+        "siren": 1,
+        "operational": 9,
+        "site_operational": 4,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "9880",
+      "fold": 3,
+      "top1_siret": "80346212600019",
+      "first_rank": {
+        "exact": 32,
+        "siren": 32,
+        "operational": 32,
+        "site_operational": 32,
+        "union": 32
+      }
+    },
+    {
+      "query_id": "9961",
+      "fold": 4,
+      "top1_siret": "37790734000188",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:00b02039367635ac0374faa6d5f1cf5d",
+      "fold": 4,
+      "top1_siret": "37796951400035",
+      "first_rank": {
+        "exact": 39,
+        "siren": 39,
+        "operational": 39,
+        "site_operational": 39,
+        "union": 39
+      }
+    },
+    {
+      "query_id": "NEWCRM:00d0e5729651fa9f647e258a06956a39",
+      "fold": 3,
+      "top1_siret": "33389261000218",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:017fa60b30ebb5a8685bad1b18e40b4d",
+      "fold": 3,
+      "top1_siret": "42190059800010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:0589da74b622916121c62e7c9b26c221",
+      "fold": 3,
+      "top1_siret": "79978179400042",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:071ef7630fd2144e48d90149ad9e55e6",
+      "fold": 3,
+      "top1_siret": "39922665302238",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:084359a9997f737f3454aa1b8a1ba877",
+      "fold": 3,
+      "top1_siret": "21800725000010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 2,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:0886e8356928e55c0b0c9d34288cf5a7",
+      "fold": 2,
+      "top1_siret": "40779678800013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:0b1180f11a3f5e7265b150593f484ba1",
+      "fold": 3,
+      "top1_siret": "94575441401856",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:0b2f67beb377730de35731aa22185f94",
+      "fold": 3,
+      "top1_siret": "56288147400067",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:0b719cb05e62c5656583747fe742a4c5",
+      "fold": 3,
+      "top1_siret": "85326751600021",
+      "first_rank": {
+        "exact": 51,
+        "siren": 51,
+        "operational": 51,
+        "site_operational": 51,
+        "union": 51
+      }
+    },
+    {
+      "query_id": "NEWCRM:0cfbb5fb4e54efd671b9c26ff8332fca",
+      "fold": 2,
+      "top1_siret": "81290071000037",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:0db7f23510b4f4e8a609ba3253bbc91f",
+      "fold": 3,
+      "top1_siret": "32429719100011",
+      "first_rank": {
+        "exact": 12,
+        "siren": 8,
+        "operational": 12,
+        "site_operational": null,
+        "union": 12
+      }
+    },
+    {
+      "query_id": "NEWCRM:0ea3ccb473cd310291f21bf63c74dd6c",
+      "fold": 2,
+      "top1_siret": "91013363600019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:0f5d5f14475d5236b9bd373dc6c84e09",
+      "fold": 2,
+      "top1_siret": "44941203000016",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:109538eef02435d2a9b06c3df79ce8d7",
+      "fold": 4,
+      "top1_siret": "21690244500107",
+      "first_rank": {
+        "exact": 10,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:10c302694f693bb83de47c07cdee8a8d",
+      "fold": 4,
+      "top1_siret": "21660048600056",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 3,
+        "site_operational": null,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:112cd6a959a0907b57f3da0074f6de0d",
+      "fold": 2,
+      "top1_siret": "37943505000016",
+      "first_rank": {
+        "exact": 39,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:11d7c37ac91f73774272f2af74077403",
+      "fold": 2,
+      "top1_siret": "42466996800044",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:1215255beca06aaf5069cda06fd3f977",
+      "fold": 3,
+      "top1_siret": "94575441402714",
+      "first_rank": {
+        "exact": 3,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:1232537f595095ae8201c756bdac4bb1",
+      "fold": 4,
+      "top1_siret": "33755682300025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:12c75e845505aed3a1caeda0084af4a6",
+      "fold": 4,
+      "top1_siret": "42505055607368",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:13ea8d5a7d96d5034459a57648fe4688",
+      "fold": 4,
+      "top1_siret": "83515651400035",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:15a9b2d94c7e899d96bccc72caadc4d0",
+      "fold": 2,
+      "top1_siret": "21390370100034",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:15c976dd6d8de9da0360b5afa9fe00e4",
+      "fold": 4,
+      "top1_siret": "43198246101688",
+      "first_rank": {
+        "exact": 79,
+        "siren": 79,
+        "operational": 79,
+        "site_operational": 79,
+        "union": 79
+      }
+    },
+    {
+      "query_id": "NEWCRM:1739958f8ebbf4199dd5e9720cd4a7f4",
+      "fold": 4,
+      "top1_siret": "30179387300011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:18ab496b8e04dd9a9b95ecdb506f38cd",
+      "fold": 4,
+      "top1_siret": "78038879900022",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:1931916d2d1243f10de1ad9b32923aac",
+      "fold": 2,
+      "top1_siret": "51017882500038",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:1b8923b0ba654fa8f4e4a7ae41be5705",
+      "fold": 4,
+      "top1_siret": "21690244500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:1b91a9ece88cb7d2cfa9c2bac9cc8902",
+      "fold": 4,
+      "top1_siret": "38484547500019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:1c6805a5f39956c1909201e3e901b453",
+      "fold": 3,
+      "top1_siret": "84287677300016",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:1dcd18e27d7ec93b6b23a355b0f9640d",
+      "fold": 3,
+      "top1_siret": "83317658900038",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:1fce5e87ef8b0882599c5a25b3e87ea6",
+      "fold": 2,
+      "top1_siret": "40051900500302",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:20d3926e946716fc5b1272d9eb35c3cf",
+      "fold": 2,
+      "top1_siret": "50152280900026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2233b866e9685eff31de094d1bedf29d",
+      "fold": 2,
+      "top1_siret": "38783857600024",
+      "first_rank": {
+        "exact": 6,
+        "siren": 5,
+        "operational": 6,
+        "site_operational": 43,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "NEWCRM:2485d147ca9ce3171493d97de1c45f06",
+      "fold": 4,
+      "top1_siret": "38073577900015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:249191b7d76974b52e87cf80c3d9471f",
+      "fold": 2,
+      "top1_siret": "40316312400031",
+      "first_rank": {
+        "exact": 5,
+        "siren": 5,
+        "operational": 5,
+        "site_operational": 5,
+        "union": 5
+      }
+    },
+    {
+      "query_id": "NEWCRM:26532de5284b0c603c2440827a69e337",
+      "fold": 3,
+      "top1_siret": "94575441401625",
+      "first_rank": {
+        "exact": 6,
+        "siren": 6,
+        "operational": 6,
+        "site_operational": null,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "NEWCRM:270cbade2a731db750f01cfae81d8043",
+      "fold": 4,
+      "top1_siret": "77843054600029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:273b44d49c3791f86b4587091badd3d2",
+      "fold": 3,
+      "top1_siret": "90100105700016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:27db23bb36f29ebdd00f1b5c8b03654f",
+      "fold": 3,
+      "top1_siret": "69288013100077",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2836cc0263fe9ef7540bed3a8a0d3266",
+      "fold": 4,
+      "top1_siret": "18003502401908",
+      "first_rank": {
+        "exact": 88,
+        "siren": 88,
+        "operational": 88,
+        "site_operational": null,
+        "union": 88
+      }
+    },
+    {
+      "query_id": "NEWCRM:283d5c1caf4b34c8f3c7e5dcb61faf9d",
+      "fold": 2,
+      "top1_siret": "49837456000015",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:28775cfce11e30916a04a768864efda1",
+      "fold": 4,
+      "top1_siret": "21410223800018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2886ec5079c1cd00393c3934d747e75e",
+      "fold": 2,
+      "top1_siret": "80969050600021",
+      "first_rank": {
+        "exact": 9,
+        "siren": 9,
+        "operational": 9,
+        "site_operational": null,
+        "union": 9
+      }
+    },
+    {
+      "query_id": "NEWCRM:29cec338e992c9ad50ca392a85e76035",
+      "fold": 2,
+      "top1_siret": "92242286000010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2b01b8da986b2f3258aa457e8d5096ed",
+      "fold": 3,
+      "top1_siret": "43479604100011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2ca6ec4d142492c19345fa989a83c988",
+      "fold": 4,
+      "top1_siret": "42761930900037",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:2ce181df33bdb17785fa073f0fd2cb86",
+      "fold": 2,
+      "top1_siret": "90325821800028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2d29f77a1b69b96e6e96db6a249d7c32",
+      "fold": 3,
+      "top1_siret": "38527419600141",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2d7a835c348dd560e089d75818f48aba",
+      "fold": 3,
+      "top1_siret": "40784268100030",
+      "first_rank": {
+        "exact": 78,
+        "siren": 68,
+        "operational": 78,
+        "site_operational": null,
+        "union": 78
+      }
+    },
+    {
+      "query_id": "NEWCRM:2de209ffee45893f5e89305e7af667f2",
+      "fold": 3,
+      "top1_siret": "39976116200011",
+      "first_rank": {
+        "exact": 29,
+        "siren": 29,
+        "operational": 29,
+        "site_operational": 29,
+        "union": 29
+      }
+    },
+    {
+      "query_id": "NEWCRM:2df11ff43944b546e65f0b52bc41d578",
+      "fold": 4,
+      "top1_siret": "33362243900029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2e142b4936e6f3f578f92e7ac61935b8",
+      "fold": 2,
+      "top1_siret": "21510263300033",
+      "first_rank": {
+        "exact": 6,
+        "siren": 1,
+        "operational": 6,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:2f364487762c7d028ec01ad443c97e23",
+      "fold": 4,
+      "top1_siret": "91991544700016",
+      "first_rank": {
+        "exact": 3,
+        "siren": 2,
+        "operational": 3,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:311e310751cd27804b3742e61d13ddff",
+      "fold": 2,
+      "top1_siret": "31742838100162",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:315c425109926297d8bf9d1be6594155",
+      "fold": 3,
+      "top1_siret": "34028104700019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:321ee3f4d681f5e1da4c21ec82bc180b",
+      "fold": 2,
+      "top1_siret": "34081848300117",
+      "first_rank": {
+        "exact": 5,
+        "siren": 1,
+        "operational": 5,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:341cf49a3b9260fc33d9094367faad40",
+      "fold": 4,
+      "top1_siret": "20006443400042",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:36e9555c94cdb18e4a726cea0dd614e1",
+      "fold": 4,
+      "top1_siret": "71980481700067",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:3799884d0577c770f06de831a41f6dc3",
+      "fold": 2,
+      "top1_siret": "38266300300012",
+      "first_rank": {
+        "exact": 7,
+        "siren": 7,
+        "operational": 7,
+        "site_operational": null,
+        "union": 7
+      }
+    },
+    {
+      "query_id": "NEWCRM:37fdb9d2e6510a987a11890caa9adf45",
+      "fold": 2,
+      "top1_siret": "49996975600026",
+      "first_rank": {
+        "exact": null,
+        "siren": 3,
+        "operational": null,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:395f0b265731544a22e6e5120d5694c6",
+      "fold": 4,
+      "top1_siret": "88052387300011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:3ac8233f7524db85a30659a5bd58194c",
+      "fold": 2,
+      "top1_siret": "33495919400013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:3b421680a5d69decbe8bcb3eb1197faa",
+      "fold": 2,
+      "top1_siret": "32173632401243",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:3c1f76f851d6ed6e35937eacb790e0ff",
+      "fold": 3,
+      "top1_siret": "35118653100015",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 3,
+        "site_operational": null,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:3c3a0edbeb5dbeaa4f4cf316533dd047",
+      "fold": 2,
+      "top1_siret": "35232027900081",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:3d7eeb7733f411b4b2705a2f3ea6fb37",
+      "fold": 3,
+      "top1_siret": "82116166800016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:3faa5897339cb5efca83ea537f7dcaec",
+      "fold": 2,
+      "top1_siret": "50123070000012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:40b61ff2e887dae7a9bb0b1ed3b88f19",
+      "fold": 3,
+      "top1_siret": "51850544100023",
+      "first_rank": {
+        "exact": 3,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:40e89cbd67ae64ced223f3d670c2d7b8",
+      "fold": 3,
+      "top1_siret": "33389261000986",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:40ebc46f0bfd4ce261c0d7189bb3e464",
+      "fold": 2,
+      "top1_siret": "21400236200025",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:413367302082d2c1b37b1329564a5f29",
+      "fold": 3,
+      "top1_siret": "38935289900022",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": 4,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:44a74766406a9dc276ffb68e59601b4a",
+      "fold": 3,
+      "top1_siret": "34069054400051",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:45b5e32122784c08f301bfe1159242d8",
+      "fold": 2,
+      "top1_siret": "99401712700014",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:4728823c883655b946da20797a270b75",
+      "fold": 2,
+      "top1_siret": "21510263300017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:4743886158fdbd64a21c2e6fd9cce6fb",
+      "fold": 3,
+      "top1_siret": "39922665301826",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:482d6f9094186e03221df3ebed07d067",
+      "fold": 4,
+      "top1_siret": "17440430100015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:486d54cd450122e56cd41661faa6f305",
+      "fold": 2,
+      "top1_siret": "81968686600024",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:49a6d3a5fb18d7e6b86165b686001a7f",
+      "fold": 2,
+      "top1_siret": "50327290800016",
+      "first_rank": {
+        "exact": 25,
+        "siren": 14,
+        "operational": 25,
+        "site_operational": 14,
+        "union": 14
+      }
+    },
+    {
+      "query_id": "NEWCRM:4a6a39bc21f7e6ce629fe8cc6e779864",
+      "fold": 2,
+      "top1_siret": "20009365600011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:4aa7beedf474f1749cea1d35ffeaf386",
+      "fold": 3,
+      "top1_siret": "50750063500028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:4dbeedc9d514c11fc0316f660adaa200",
+      "fold": 2,
+      "top1_siret": "35011051600019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:4e6c465c860e9e175108de05974befa8",
+      "fold": 3,
+      "top1_siret": "50536802700023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:4f469e7ee22bb84bbb323838b31d19c4",
+      "fold": 4,
+      "top1_siret": "21690244500107",
+      "first_rank": {
+        "exact": 8,
+        "siren": 1,
+        "operational": 8,
+        "site_operational": 6,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "NEWCRM:508a9d66942d893ab589ad817f873739",
+      "fold": 3,
+      "top1_siret": "47250017200029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:53d06ded776712ffc3fb088c6450017d",
+      "fold": 3,
+      "top1_siret": "40014528000014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:53e55f1234737d9c63fe09634e25cb29",
+      "fold": 2,
+      "top1_siret": "31360750900053",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:571063a9e50b32be4de8028d52e853b1",
+      "fold": 3,
+      "top1_siret": "40857817700029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:57ee2411e6b7e9ff82602bfc2a5fa0ef",
+      "fold": 3,
+      "top1_siret": "52851158700024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:589c8b82fc55900a49e6d65d0fd9e677",
+      "fold": 2,
+      "top1_siret": "79897870600025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:58e9008a310b509ce47da72b1aaffd1a",
+      "fold": 4,
+      "top1_siret": "20006443400042",
+      "first_rank": {
+        "exact": 5,
+        "siren": 1,
+        "operational": 5,
+        "site_operational": 16,
+        "union": 5
+      }
+    },
+    {
+      "query_id": "NEWCRM:594dee67e7e2e3ef7b46649e8fe2bf2b",
+      "fold": 3,
+      "top1_siret": "84519033900034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:59988d569d063beb27ebb182311badb8",
+      "fold": 3,
+      "top1_siret": "75080066600331",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:5a12a4db3552e27caeaf972fabdc7606",
+      "fold": 4,
+      "top1_siret": "42505055611337",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:5af9e3fbea630e42d8b29b7d05786b14",
+      "fold": 4,
+      "top1_siret": "43198246101407",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:5b1fe705990fbc483964908fb11ec727",
+      "fold": 3,
+      "top1_siret": "88280858700613",
+      "first_rank": {
+        "exact": 48,
+        "siren": 48,
+        "operational": 48,
+        "site_operational": 48,
+        "union": 48
+      }
+    },
+    {
+      "query_id": "NEWCRM:5d3a6e667b24ee373fb8d4840ab19393",
+      "fold": 4,
+      "top1_siret": "56204705000819",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:5e32afcf4b77124f08a7c3c791821324",
+      "fold": 4,
+      "top1_siret": "21690244500073",
+      "first_rank": {
+        "exact": 10,
+        "siren": 1,
+        "operational": 10,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:5e42109df2de0d671626e59d19285ec7",
+      "fold": 4,
+      "top1_siret": "48352762800026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6155fa9b30c1648df753eaa5a7bf6b05",
+      "fold": 3,
+      "top1_siret": "39922665302196",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6209a481ab594c780ffc8ed150aad13d",
+      "fold": 2,
+      "top1_siret": "53923442700026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:62682920f03a12431dee064c12a1ecc4",
+      "fold": 2,
+      "top1_siret": "31360750900053",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:63cd3a7fc73cbae7dee73884e823e84f",
+      "fold": 4,
+      "top1_siret": "21690244500073",
+      "first_rank": {
+        "exact": 11,
+        "siren": 1,
+        "operational": 11,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:65fb6a2e1f1c372bfc42d621844f4d6d",
+      "fold": 4,
+      "top1_siret": "17710431200141",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6760f48d40bc54ac30e1444894e386eb",
+      "fold": 3,
+      "top1_siret": "26410428200019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:678e34952c2368e30f5f2856c9834d04",
+      "fold": 2,
+      "top1_siret": "83337040600013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:68a8b68ca6397b415c737becffa1a1fb",
+      "fold": 2,
+      "top1_siret": "38497078604190",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:690c0f65673fddfc1c230fcbfc225f75",
+      "fold": 3,
+      "top1_siret": "48202780200040",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:69176738f5bbb99779d256e7a08016a5",
+      "fold": 4,
+      "top1_siret": "21330167400056",
+      "first_rank": {
+        "exact": 29,
+        "siren": 29,
+        "operational": 29,
+        "site_operational": null,
+        "union": 29
+      }
+    },
+    {
+      "query_id": "NEWCRM:6a0b35fdf9242fc705433bd24e159c9a",
+      "fold": 3,
+      "top1_siret": "43015595200046",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6b39723f7aa2e877a49de19e0f3339f4",
+      "fold": 3,
+      "top1_siret": "20005884000071",
+      "first_rank": {
+        "exact": 4,
+        "siren": 1,
+        "operational": 4,
+        "site_operational": 4,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:6b524206ab1d268fb626a0dcd1d49869",
+      "fold": 4,
+      "top1_siret": "39048822900035",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6bd10474375b3210f4305b7e911a2ad3",
+      "fold": 4,
+      "top1_siret": "69480136600204",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6cf48b601806b0ceade7ced2378eb3c0",
+      "fold": 2,
+      "top1_siret": "52144858900023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6d1832aa6ea1091e257a051e3d17eee3",
+      "fold": 4,
+      "top1_siret": "17590131300494",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6e0e8ce749d444e294e615335c49d8f2",
+      "fold": 3,
+      "top1_siret": "38130763600393",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6e64af93f9006055302bd12ed4a9d987",
+      "fold": 2,
+      "top1_siret": "34748139200012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6f7fc8b225cbf7167c3dd1cb9124258b",
+      "fold": 2,
+      "top1_siret": "34537415100024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:6fcf2acdd8cb13aafa51156788396813",
+      "fold": 3,
+      "top1_siret": "92976044500015",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:7056c0e3812f24ea90d13099085b6762",
+      "fold": 2,
+      "top1_siret": "37320051800034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:719ce3b9af04183cd754315045dff56b",
+      "fold": 4,
+      "top1_siret": "21660048600015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:71c66cf6b1d56b065f65f96741367eca",
+      "fold": 4,
+      "top1_siret": "45331581400021",
+      "first_rank": {
+        "exact": 6,
+        "siren": 6,
+        "operational": 6,
+        "site_operational": 6,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "NEWCRM:733dbd3d0cfc19b11322b27e9bc88e5a",
+      "fold": 3,
+      "top1_siret": "30805084800040",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7497f16db0483797ea3e7ad7f21748fc",
+      "fold": 4,
+      "top1_siret": "21170028100028",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:74acfd392b34462b869972024943081d",
+      "fold": 2,
+      "top1_siret": "44301390900017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7746eeadf8bc02088f9e324706471338",
+      "fold": 3,
+      "top1_siret": "56207267800179",
+      "first_rank": {
+        "exact": 4,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7789be6e677f9f4573f33d23306d94ab",
+      "fold": 2,
+      "top1_siret": "31332851000026",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:77a4735fa9892ba314d70973a2801a00",
+      "fold": 3,
+      "top1_siret": "32305708301200",
+      "first_rank": {
+        "exact": 74,
+        "siren": 74,
+        "operational": 74,
+        "site_operational": 74,
+        "union": 74
+      }
+    },
+    {
+      "query_id": "NEWCRM:7a345148d572df1a7162ffc711c483f7",
+      "fold": 4,
+      "top1_siret": "41054695600070",
+      "first_rank": {
+        "exact": 17,
+        "siren": 17,
+        "operational": 17,
+        "site_operational": 17,
+        "union": 17
+      }
+    },
+    {
+      "query_id": "NEWCRM:7a584ca342537db423f31d7c16128813",
+      "fold": 4,
+      "top1_siret": "39065109902732",
+      "first_rank": {
+        "exact": 6,
+        "siren": 6,
+        "operational": 6,
+        "site_operational": 6,
+        "union": 6
+      }
+    },
+    {
+      "query_id": "NEWCRM:7a78403f35c168f79dc6a06dfd031ee4",
+      "fold": 3,
+      "top1_siret": "39922665300471",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7ab985d63f2f9ea8c2d632dd93a6b084",
+      "fold": 3,
+      "top1_siret": "32626059300230",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:7b989dffdf7975cfcdd78ac2dce13545",
+      "fold": 4,
+      "top1_siret": "20007135500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7c3301049ad22372b21c43f70c71fb9a",
+      "fold": 4,
+      "top1_siret": "53897020300013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7d92ccf89904477aad39be1ab49ecdf9",
+      "fold": 4,
+      "top1_siret": "91991544700016",
+      "first_rank": {
+        "exact": 3,
+        "siren": 2,
+        "operational": 3,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:7ea7f673ca3ca57bee3ac8ee01e815e3",
+      "fold": 3,
+      "top1_siret": "57668006000026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:7f9bcc42351ce236e88065a54d5da66e",
+      "fold": 2,
+      "top1_siret": "21780224800039",
+      "first_rank": {
+        "exact": 29,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:803b3525a250be994e57f391f41b6b69",
+      "fold": 3,
+      "top1_siret": "32305708301200",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:8157ebb0fb942079d871376baf0497e2",
+      "fold": 2,
+      "top1_siret": "99434589000010",
+      "first_rank": {
+        "exact": 8,
+        "siren": 8,
+        "operational": 8,
+        "site_operational": 8,
+        "union": 8
+      }
+    },
+    {
+      "query_id": "NEWCRM:8210012f78deca8843bc49948ac0e311",
+      "fold": 4,
+      "top1_siret": "43198246100102",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:82c62087bec1f570e32c631d212a605b",
+      "fold": 2,
+      "top1_siret": "85046319100013",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:839ab839445a41b8c59219652d7a0d53",
+      "fold": 2,
+      "top1_siret": "45218502800019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:83c6f78db686a131bc3e8e00de7b73a0",
+      "fold": 3,
+      "top1_siret": "38350904900193",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:86dacc11bfb43157e635bf2a7c211454",
+      "fold": 2,
+      "top1_siret": "44119425500036",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:87d13ec1332913602d5bc0dc162673d4",
+      "fold": 4,
+      "top1_siret": "41355739800570",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:87d277db7512a10b43cb3231956f584c",
+      "fold": 3,
+      "top1_siret": "30844902412688",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:8c0719af49164cc58a89473b22ea7b67",
+      "fold": 2,
+      "top1_siret": "34396900200025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:8d7654fe1292fdc6acc580ba77014020",
+      "fold": 4,
+      "top1_siret": "43981389000035",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:9173ad97e7d73d7cb489650d2d2cfe6f",
+      "fold": 4,
+      "top1_siret": "21690244500032",
+      "first_rank": {
+        "exact": 5,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:9495f79f3621de6833b6b9151dca8c7b",
+      "fold": 4,
+      "top1_siret": "20007135500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 6,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:949ff76c9db731d3f966e7639af50ad3",
+      "fold": 3,
+      "top1_siret": "21800725000010",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:951a41d82b5052895cb4e0d380524c26",
+      "fold": 3,
+      "top1_siret": "26760193800017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:96c8f09435ec7059c1fc3aace35a4b2a",
+      "fold": 3,
+      "top1_siret": "34987240800076",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:97a699851fd7cb1dfb66771c002257c7",
+      "fold": 3,
+      "top1_siret": "45239148500037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:97f96de4fbe739329cf4a88f8642dd48",
+      "fold": 2,
+      "top1_siret": "83210944100028",
+      "first_rank": {
+        "exact": 31,
+        "siren": 5,
+        "operational": 31,
+        "site_operational": null,
+        "union": 31
+      }
+    },
+    {
+      "query_id": "NEWCRM:985e7bef5b1d3c2500794943aee1ade3",
+      "fold": 2,
+      "top1_siret": "35346470400017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:98d08491df4cccad967b0eaf13e28616",
+      "fold": 3,
+      "top1_siret": "53954205000015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:98eab05da0fcc3139cdbb4fa0c94518b",
+      "fold": 3,
+      "top1_siret": "38497078600313",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:997cb64bda42be41b53e8bf134054a43",
+      "fold": 4,
+      "top1_siret": "78189690700024",
+      "first_rank": {
+        "exact": 8,
+        "siren": 6,
+        "operational": 8,
+        "site_operational": 8,
+        "union": 8
+      }
+    },
+    {
+      "query_id": "NEWCRM:9a36e53253268cef68169de0db776a9d",
+      "fold": 4,
+      "top1_siret": "21660048600023",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:9a48d10fcdfe21537f64405ff75d8afe",
+      "fold": 4,
+      "top1_siret": "21660048600056",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 3,
+        "site_operational": null,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:9af15bcdc9ef47ad89d4952ee2dbc9d1",
+      "fold": 4,
+      "top1_siret": "41355739800141",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:9b06e3b43386ff11df75e55ab8cb76dc",
+      "fold": 3,
+      "top1_siret": "94575441402359",
+      "first_rank": {
+        "exact": 34,
+        "siren": 34,
+        "operational": 34,
+        "site_operational": 34,
+        "union": 34
+      }
+    },
+    {
+      "query_id": "NEWCRM:9b510cd82d99f34ed9bab410b714295e",
+      "fold": 2,
+      "top1_siret": "83887682900022",
+      "first_rank": {
+        "exact": 31,
+        "siren": 31,
+        "operational": 31,
+        "site_operational": 31,
+        "union": 31
+      }
+    },
+    {
+      "query_id": "NEWCRM:9d51e163c5a77ec58d3539eb3540fa66",
+      "fold": 3,
+      "top1_siret": "10182133800015",
+      "first_rank": {
+        "exact": 3,
+        "siren": 3,
+        "operational": 3,
+        "site_operational": 3,
+        "union": 3
+      }
+    },
+    {
+      "query_id": "NEWCRM:9d61c7accf14e246b9d334949f325f3c",
+      "fold": 4,
+      "top1_siret": "21660048600031",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:9f9ed58b38b0c4e191c216b252a93586",
+      "fold": 3,
+      "top1_siret": "94575441401815",
+      "first_rank": {
+        "exact": 15,
+        "siren": 15,
+        "operational": 15,
+        "site_operational": 15,
+        "union": 15
+      }
+    },
+    {
+      "query_id": "NEWCRM:a0d45d59b0f025e01157dce0d8e51c96",
+      "fold": 2,
+      "top1_siret": "83023032200034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a2021302e15f704ae7d12f185ff5a27e",
+      "fold": 3,
+      "top1_siret": "74999278000025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a266c65310ac314c6e476b0b7d6a5ddb",
+      "fold": 2,
+      "top1_siret": "31688191100200",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a29d2243e0712deb4d53d4d0ced748d9",
+      "fold": 3,
+      "top1_siret": "50385724500016",
+      "first_rank": {
+        "exact": 90,
+        "siren": 90,
+        "operational": 90,
+        "site_operational": null,
+        "union": 90
+      }
+    },
+    {
+      "query_id": "NEWCRM:a59bf7aa08af500d9a997be5694f3619",
+      "fold": 4,
+      "top1_siret": "43198246100706",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a6219ae8fb02d323f80ab8b80f52878a",
+      "fold": 4,
+      "top1_siret": "39494568700025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a64a514fe6b9ac9aa84b9a9f3f298d4d",
+      "fold": 3,
+      "top1_siret": "90471351800010",
+      "first_rank": {
+        "exact": 18,
+        "siren": 18,
+        "operational": 18,
+        "site_operational": 18,
+        "union": 18
+      }
+    },
+    {
+      "query_id": "NEWCRM:a6816a71396419c8cb0291fc2539df78",
+      "fold": 2,
+      "top1_siret": "32173632400864",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a702e5b0cb87269eceaa783e08410263",
+      "fold": 4,
+      "top1_siret": "89873854700014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a7c04c0ce82b50509a75483729d25938",
+      "fold": 2,
+      "top1_siret": "52001594200029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a96de7709324bd2645a801dbc4b42154",
+      "fold": 3,
+      "top1_siret": "83323211900028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:a9ea8e8f260c573f5c932ac03ddbf382",
+      "fold": 2,
+      "top1_siret": "21780224800039",
+      "first_rank": {
+        "exact": 68,
+        "siren": 1,
+        "operational": 68,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:aa1a205363e37d58b476577347ea916c",
+      "fold": 4,
+      "top1_siret": "32573016600023",
+      "first_rank": {
+        "exact": 4,
+        "siren": 2,
+        "operational": 4,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:ab3cb65f361ea501d0c76c2afe6723ae",
+      "fold": 2,
+      "top1_siret": "49083975000018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:abd90beae5c83722125fb50652a161d7",
+      "fold": 3,
+      "top1_siret": "94575441402219",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": null,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:ad20d5983bf6c000ce6b9e1761aa0f6f",
+      "fold": 3,
+      "top1_siret": "98946449000071",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:ae351a9b9db66d3ebf67fd01cb6800a0",
+      "fold": 2,
+      "top1_siret": "90756333200010",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ae6602dca03e35991358bc1e5eb55d39",
+      "fold": 2,
+      "top1_siret": "77583380900020",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:b14b2bd96bc88690665f1da628b42258",
+      "fold": 4,
+      "top1_siret": "91970632500017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b1dbd54e8726b214e44b4ab725f3f1ab",
+      "fold": 3,
+      "top1_siret": "40857817700029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b233d0fbf6eefca6cfab9e101a3aef8c",
+      "fold": 2,
+      "top1_siret": "85206832900022",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b2b9337f2e866e04c6d0fea312091d4d",
+      "fold": 3,
+      "top1_siret": "38527419600141",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b2c971005cc22fd0e460bc3259af54fd",
+      "fold": 4,
+      "top1_siret": "21410223800026",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b3726fd48cacdabda7c3f870b4a81610",
+      "fold": 3,
+      "top1_siret": "31924579100029",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b38f9f7fc040bc393760ce781998bcbd",
+      "fold": 4,
+      "top1_siret": "21170028100028",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 3,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b3a112a888aeb48a6309d5f90fea5228",
+      "fold": 3,
+      "top1_siret": "32874692000011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b4ea4149620da9b1db339845d6aa7d37",
+      "fold": 4,
+      "top1_siret": "20006443400109",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b6bf2f7494cf9adeb4c14d9e7ef87072",
+      "fold": 4,
+      "top1_siret": "75352315800016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:b7c5eb3da6e4e15f3e5ebcb8925fd9da",
+      "fold": 3,
+      "top1_siret": "33018902800526",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": null,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:b923e227458d506eef58cf6e57223f73",
+      "fold": 3,
+      "top1_siret": "34300365300023",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ba537927a8ded41fa84d977502486fbe",
+      "fold": 4,
+      "top1_siret": "89509226000036",
+      "first_rank": {
+        "exact": 22,
+        "siren": 22,
+        "operational": 22,
+        "site_operational": null,
+        "union": 22
+      }
+    },
+    {
+      "query_id": "NEWCRM:ba68ccbcdb1d39999360833dd8383500",
+      "fold": 4,
+      "top1_siret": "43198246100581",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:bb1c7df4e281fa2db384406b32f9c0a8",
+      "fold": 2,
+      "top1_siret": "43374453901090",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:bb45e306ac4671ef1250299583cc89f2",
+      "fold": 3,
+      "top1_siret": "39922665301842",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:bb7e0110ff224f1628b8112d1452419e",
+      "fold": 2,
+      "top1_siret": "21510263300033",
+      "first_rank": {
+        "exact": 7,
+        "siren": 1,
+        "operational": 7,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:bd344436b1b078263a5bb68e3eb2e510",
+      "fold": 3,
+      "top1_siret": "44029054200024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:bdd1aafce8e09b7050a2f1a512b87afb",
+      "fold": 2,
+      "top1_siret": "21510263300017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:be4656c8ad05657229861e6324b24e90",
+      "fold": 3,
+      "top1_siret": "94575441402029",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:be487d8ddbf9e17277db567ead0ced5e",
+      "fold": 3,
+      "top1_siret": "48433422200037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:be7907dc9f570fe48717210fd63ad198",
+      "fold": 2,
+      "top1_siret": "31653597000032",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:be7e28c985b158f41cf24d4fed90d3c6",
+      "fold": 3,
+      "top1_siret": "30416470000052",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 2,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:bead59a4ba32bffc4c244e2a144802ce",
+      "fold": 4,
+      "top1_siret": "79910619000025",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:c088bb33aa01819968adc89888cc36d7",
+      "fold": 2,
+      "top1_siret": "21390370100018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:c134b55c3f6221875f0d3d276ec63bff",
+      "fold": 2,
+      "top1_siret": "34385806400029",
+      "first_rank": {
+        "exact": 27,
+        "siren": 27,
+        "operational": 27,
+        "site_operational": 27,
+        "union": 27
+      }
+    },
+    {
+      "query_id": "NEWCRM:c2a0cc827604202fa09bacaf1e2a34b4",
+      "fold": 3,
+      "top1_siret": "34378200900090",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:c3cd5b41cff0ebf06a656cac4f84e811",
+      "fold": 4,
+      "top1_siret": "44283311700017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:c53b0c99e446e34fb22625b58ab5eba7",
+      "fold": 4,
+      "top1_siret": "21690244500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 8,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:c78d13bc213dcb0d923aaabdf4052dcd",
+      "fold": 2,
+      "top1_siret": "34811254100043",
+      "first_rank": {
+        "exact": null,
+        "siren": 82,
+        "operational": null,
+        "site_operational": 82,
+        "union": 82
+      }
+    },
+    {
+      "query_id": "NEWCRM:c79174bc3db8c99f1264cfec5d95b1ea",
+      "fold": 2,
+      "top1_siret": "95315061200018",
+      "first_rank": {
+        "exact": 8,
+        "siren": 7,
+        "operational": 8,
+        "site_operational": 7,
+        "union": 7
+      }
+    },
+    {
+      "query_id": "NEWCRM:c7f8a926b8576a41a52c151c3c67240d",
+      "fold": 4,
+      "top1_siret": "42505055602799",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:cb012d32f2f194eb81495967beab7a36",
+      "fold": 3,
+      "top1_siret": "75232264400028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ccf1ed05ba7efe06d2bc63457cfa08aa",
+      "fold": 3,
+      "top1_siret": "75260465200012",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:cd9fa35a6dcb2c8c400ea66333d3b28f",
+      "fold": 4,
+      "top1_siret": "89934885800015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:cf34020eab3d22b159e5668b762055e7",
+      "fold": 4,
+      "top1_siret": "38073577900015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d2bdc4387d4b67da05ed3b28bef7b38a",
+      "fold": 2,
+      "top1_siret": "21890054600019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d2f6834f0ea0fb61d4c02841e2a9e9bb",
+      "fold": 2,
+      "top1_siret": "21780224800070",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d413d67832f9c3811dabecab15b6c78b",
+      "fold": 2,
+      "top1_siret": "50924601300015",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:d56f61f50e3dd68dc25950b5a78e869e",
+      "fold": 2,
+      "top1_siret": "43780680500028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d6171348a29c3e0781b2dd602f54d06b",
+      "fold": 2,
+      "top1_siret": "50953693400011",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:d726c8c9298539859efae4c1cd87b30c",
+      "fold": 3,
+      "top1_siret": "92241828000025",
+      "first_rank": {
+        "exact": 67,
+        "siren": 67,
+        "operational": 67,
+        "site_operational": 67,
+        "union": 67
+      }
+    },
+    {
+      "query_id": "NEWCRM:d7689b42ad8c952569382b5e9622b945",
+      "fold": 3,
+      "top1_siret": "32814048800011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d7a5ae7bbabc3d1675f8a7ab39e2e085",
+      "fold": 3,
+      "top1_siret": "44216890200017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d7f022fe5339efeed38937fedae2a511",
+      "fold": 2,
+      "top1_siret": "78506433800011",
+      "first_rank": {
+        "exact": null,
+        "siren": 79,
+        "operational": null,
+        "site_operational": 79,
+        "union": 79
+      }
+    },
+    {
+      "query_id": "NEWCRM:d83b771e3de6341c39541ff896e568d2",
+      "fold": 3,
+      "top1_siret": "85130391700013",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d8f3afc5e08bb3556ca449fb15ba2895",
+      "fold": 3,
+      "top1_siret": "48405866400067",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:d935050ba62fd24cd6c7b794dca02d53",
+      "fold": 4,
+      "top1_siret": "21330369600016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:d945714c44103a65712157ec8e0367a1",
+      "fold": 2,
+      "top1_siret": "21700339100018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:da9cf6a2f990b0a788dd05bacbfba3eb",
+      "fold": 2,
+      "top1_siret": "48883256900021",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:dad74221d623ab66379ec3e6aef6bfd5",
+      "fold": 4,
+      "top1_siret": "42505055606592",
+      "first_rank": {
+        "exact": 2,
+        "siren": 1,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:db5e4874e021371c69011789c42a1afa",
+      "fold": 2,
+      "top1_siret": "48850820100016",
+      "first_rank": {
+        "exact": 78,
+        "siren": 78,
+        "operational": 78,
+        "site_operational": null,
+        "union": 78
+      }
+    },
+    {
+      "query_id": "NEWCRM:dbc8d9ab2060c558fd5536e9d029bf1a",
+      "fold": 4,
+      "top1_siret": "48025931600010",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": 6,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:dc8f5a905eb68ed82caeea69690f702d",
+      "fold": 4,
+      "top1_siret": "20007135500016",
+      "first_rank": {
+        "exact": 5,
+        "siren": 1,
+        "operational": 5,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:dd0bc150513dccf648930a71e81680cf",
+      "fold": 2,
+      "top1_siret": "84419662600015",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ddf6f66c5988f7ba8a6ba5090cbb9e12",
+      "fold": 4,
+      "top1_siret": "98472042500011",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:de2cddee252d0afb4bc1883f8734802d",
+      "fold": 2,
+      "top1_siret": "42878265000017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:deb935b4c6a9bed658d5cbd7487f14b9",
+      "fold": 4,
+      "top1_siret": "21690244500107",
+      "first_rank": {
+        "exact": 4,
+        "siren": 1,
+        "operational": 4,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:decd16e2adbf3a2dbbc366da3ceaee45",
+      "fold": 4,
+      "top1_siret": "39942961200019",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:df4fcb69f4a19727cbec3216994c95d3",
+      "fold": 2,
+      "top1_siret": "32173632401151",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:dfdd81cf60782f63b5adfa815739f858",
+      "fold": 4,
+      "top1_siret": "21170028100069",
+      "first_rank": {
+        "exact": 3,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e0e500180b9c0e1ab2a9a5b484e3b5ef",
+      "fold": 2,
+      "top1_siret": "47979216000018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e15e9b9a35a03957ea1a7e22837f6aa9",
+      "fold": 4,
+      "top1_siret": "48504318600025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e1748dc6f5f117730330ed09fe9bdec1",
+      "fold": 3,
+      "top1_siret": "69288013100069",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e22c36f381636cceada039c066ec733b",
+      "fold": 4,
+      "top1_siret": "44860247400034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e275d3b489da776ecec47d5a0e278c94",
+      "fold": 4,
+      "top1_siret": "21390510200025",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": null,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:e2b3b16bd7ac48019da780434640c7c0",
+      "fold": 2,
+      "top1_siret": "21510268200014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e376e740119b11699dbc79e843e4fc87",
+      "fold": 2,
+      "top1_siret": "47910610600129",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e59aa4eb6d0f28ef4b5ceccc7b8cd35b",
+      "fold": 3,
+      "top1_siret": "90271669501114",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:e67936d685e6396cb122e5ff6a4a6871",
+      "fold": 4,
+      "top1_siret": "21690244500040",
+      "first_rank": {
+        "exact": 7,
+        "siren": 1,
+        "operational": 7,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e69876d733d109bf5dedd23f5d9af55b",
+      "fold": 3,
+      "top1_siret": "49366968300028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e70e9088d701c4d1c0ee78806895b488",
+      "fold": 2,
+      "top1_siret": "50273310800018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:e70f2bf3b0b9b7bee365f9d75359559b",
+      "fold": 3,
+      "top1_siret": "34028104700019",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:eaea991a0b7fde73ff793dd35e1a0cf5",
+      "fold": 3,
+      "top1_siret": "52368583200025",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ec3ebd53d39f882d88f007ab7ffca0bd",
+      "fold": 4,
+      "top1_siret": "21690244500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 3,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ecfa30580d19c69684e619b79d2068a8",
+      "fold": 3,
+      "top1_siret": "39198794800034",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:ee998a461ec8ddbdaea67273c3f5d823",
+      "fold": 2,
+      "top1_siret": "43254908700042",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:eee3aad2d761ccb5f6f04cc6db9187dc",
+      "fold": 3,
+      "top1_siret": "94575441402847",
+      "first_rank": {
+        "exact": 64,
+        "siren": 64,
+        "operational": 64,
+        "site_operational": 64,
+        "union": 64
+      }
+    },
+    {
+      "query_id": "NEWCRM:ef8046d4077a662b33655198867b223b",
+      "fold": 3,
+      "top1_siret": "77824602500028",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:effc5c149fcd631b9937d72e5d45856b",
+      "fold": 4,
+      "top1_siret": "78038879900014",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:f034e64ac556a5263132cdeb7a93e8ae",
+      "fold": 2,
+      "top1_siret": "32173632400856",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:f235c735e897b7f250e02747d3222522",
+      "fold": 4,
+      "top1_siret": "47899939400024",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:f2f4a03be0319d2ff969edf869350ddd",
+      "fold": 2,
+      "top1_siret": "21700339100018",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:f496008a0aad93e512a74fcd8b1c345c",
+      "fold": 2,
+      "top1_siret": "70920030700102",
+      "first_rank": {
+        "exact": 2,
+        "siren": 2,
+        "operational": 2,
+        "site_operational": 2,
+        "union": 2
+      }
+    },
+    {
+      "query_id": "NEWCRM:f502899e26b74e5a187a88680ad825fd",
+      "fold": 4,
+      "top1_siret": "42903791400026",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:f68118bd8613a9295a9df6e28c3d2ea8",
+      "fold": 2,
+      "top1_siret": "52144858900031",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:f96cbd94aa4a2378fecd1d2da4aac0a0",
+      "fold": 4,
+      "top1_siret": "21510168400011",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": 4,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:fa30ff5b815294bba9185d87c0c5881f",
+      "fold": 2,
+      "top1_siret": "44301960900017",
+      "first_rank": {
+        "exact": 21,
+        "siren": 21,
+        "operational": 21,
+        "site_operational": 21,
+        "union": 21
+      }
+    },
+    {
+      "query_id": "NEWCRM:fad37ba0254310fb199027f521705e00",
+      "fold": 3,
+      "top1_siret": "82963425200037",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:fc230743afdd839cf93cf7099b064d3a",
+      "fold": 4,
+      "top1_siret": "21690244500016",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:fc29d39c6808ba59a44fe98d14a211b7",
+      "fold": 4,
+      "top1_siret": "72202372800032",
+      "first_rank": {
+        "exact": 16,
+        "siren": 16,
+        "operational": 16,
+        "site_operational": 16,
+        "union": 16
+      }
+    },
+    {
+      "query_id": "NEWCRM:fd677d022a439203558565af3df3e40c",
+      "fold": 3,
+      "top1_siret": "10657441100018",
+      "first_rank": {
+        "exact": 4,
+        "siren": 4,
+        "operational": 4,
+        "site_operational": 4,
+        "union": 4
+      }
+    },
+    {
+      "query_id": "NEWCRM:fd76dea1d399b9fa7b3c56744b253e67",
+      "fold": 4,
+      "top1_siret": "74984369400052",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": null,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:fe04e4136fbda3962c96baba51111b32",
+      "fold": 3,
+      "top1_siret": "98794625800017",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:fe1206af413a0560ebdc49be6b534e76",
+      "fold": 3,
+      "top1_siret": "51041188700043",
+      "first_rank": {
+        "exact": null,
+        "siren": null,
+        "operational": null,
+        "site_operational": null,
+        "union": null
+      }
+    },
+    {
+      "query_id": "NEWCRM:fec7a588d14966c763b95ae427b2e045",
+      "fold": 3,
+      "top1_siret": "39922665300935",
+      "first_rank": {
+        "exact": 1,
+        "siren": 1,
+        "operational": 1,
+        "site_operational": 1,
+        "union": 1
+      }
+    },
+    {
+      "query_id": "NEWCRM:fff779226cebf0e39fde85579465d113",
+      "fold": 4,
+      "top1_siret": "80193539600029",
+      "first_rank": {
+        "exact": 5,
+        "siren": 2,
+        "operational": 5,
+        "site_operational": 2,
+        "union": 2
+      }
+    }
+  ]
+}

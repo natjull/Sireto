@@ -1,3 +1,14 @@
+# Directive du 15 octobre 2026 — Étape 2 : choisir 1 parmi 100
+
+Décision Nathan (« Vas-y. A. ») : V142 est gelé comme référence de recherche
+(507/526 exacts) ; passer au choix d'un SIRET parmi les 100 avec statut
+`SUR` / `A_VERIFIER`. Contrat actif : `docs/step2_choose_one_contract.md`.
+L'objectif99,2 % de l'étape 1 est suspendu, non supprimé et non atteint.
+Les modèles aval sont dégelés pour l'étape 2 uniquement ; ce premier jalon
+reste sans apprentissage. Toutes les protections de données/jeux fermés
+restent inchangées. Cette directive prime sur les gels antérieurs ci-dessous,
+qui sont conservés sans modification comme historique.
+
 # Directive active du 2 octobre 2026 — Recherche initiale à 100
 
 La clarification utilisateur remplace la trajectoire 2000→500→100 ci-dessous :
