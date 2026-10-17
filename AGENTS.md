@@ -1,5 +1,7 @@
 # Directive du 15 octobre 2026 — Étape 2 : choisir 1 parmi 100
 
+Recherche figée définitivement le 17/10/2026 : voir docs/retrieval_frozen_v142.md
+
 Décision Nathan (« Vas-y. A. ») : V142 est gelé comme référence de recherche
 (507/526 exacts) ; passer au choix d'un SIRET parmi les 100 avec statut
 `SUR` / `A_VERIFIER`. Contrat actif : `docs/step2_choose_one_contract.md`.
