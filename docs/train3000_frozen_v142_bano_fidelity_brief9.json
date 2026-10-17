@@ -1,0 +1,52 @@
+{
+  "result": {
+    "status": "PASS",
+    "family": "bano",
+    "queries": 20,
+    "context_matches": 20,
+    "weighted_delta_matches": 20,
+    "max_absolute_error": 0.0,
+    "context_body_sha256": "02038f338ea091bfa292481008b8ca24a5bedc50fad18aa6029fb725dd43f87a",
+    "weighted_body_sha256": "a2a3fa1a5623b62583d482713f89bac250f6844cf211aa5054125f3ef902f9f2",
+    "source": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v141_bano_national_source.py",
+      "size_bytes": 10532,
+      "mtime_ns": 1791932793796020135,
+      "inode": 70039282,
+      "sha256": "bbc819028db034bbbec59a4510be2b0853beb1cf16f960867e87abacbf5a5d14"
+    },
+    "upstream_numeric51": "FROZEN_INPUT_FOR_ISOLATED_BANO_TEST_NOT_REBUILT_HERE",
+    "elapsed_seconds": 7.527694624848664,
+    "peak_rss_bytes": 3477520384,
+    "raw_labels_read": false,
+    "native_queries": 0
+  },
+  "receipt": {
+    "exit_code": 0,
+    "owned_child_exit_confirmed": true,
+    "stop_reason": null,
+    "peak_sampled_child_rss_bytes": 3475832832,
+    "elapsed_seconds": 8.062010833062232
+  },
+  "result_ref": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief9/bano_20261017_135141_05f29fcc/result.json",
+    "size_bytes": 834,
+    "mtime_ns": 1792237909004337373,
+    "inode": 4605875,
+    "sha256": "0ec2f3651729562f453a368783937156afd22a942308bbdf497768cef35d61b5"
+  },
+  "receipt_ref": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief9/bano_20261017_135141_05f29fcc/receipt.json",
+    "size_bytes": 168,
+    "mtime_ns": 1792237909200728115,
+    "inode": 4605879,
+    "sha256": "aee1b083c70cb2dbad813f6cf84d059bcbac546bb755c3a2efcb5190a8410b7b"
+  },
+  "legacy_supervisor_pid61903_cleanly_stopped": true,
+  "raw_labels_read": false,
+  "full_run_started": false,
+  "activity_fidelity_queries": 0,
+  "osm_fidelity_queries": 0,
+  "numeric51_fidelity_queries": 0,
+  "native_smoke_queries": 0
+}
