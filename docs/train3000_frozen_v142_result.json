@@ -1,0 +1,622 @@
+{
+  "status": "STOP_MISSING_FROZEN_QUERY_INPUTS",
+  "observed_unix": 1792235580.976803,
+  "contract_commit": "6a3e3128a6627ecfbf0235aeb123ea305cdec55f",
+  "authorization": "Nathan sireto-site-target-7.md",
+  "freeze_commit": "36c7a476",
+  "frozen_manifest": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/retrieval_frozen_v142.json",
+    "size_bytes": 1334421,
+    "mtime_ns": 1792226528435753879,
+    "inode": 70654100,
+    "sha256": "1ae746dc4890a31d03122335b3bc0fa82f23eb477dff6784c607c9abbd03d6c5"
+  },
+  "implementation": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142.py",
+    "size_bytes": 16960,
+    "mtime_ns": 1792235575939956723,
+    "inode": 70722851,
+    "sha256": "6617e3cdcca8dc4704506e1de5f7fcd3aaec10dc422f7dbd2f7d4e3e2e83a2d9"
+  },
+  "contract": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/train3000_frozen_v142_contract.md",
+    "size_bytes": 3343,
+    "mtime_ns": 1792235268185204095,
+    "inode": 70716761,
+    "sha256": "ec51e82e252e4a99a0475444263ebb76595b51c2afa1db8e1df7fd19d960742b"
+  },
+  "namespace": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017",
+  "oof_coefficient_audit_before_closed_cohort_admission": {
+    "projected_234": 23571,
+    "usable_human_queries": 23571,
+    "invalid_human_queries": 0,
+    "pilot_queries": 526,
+    "pilot_companies": 405,
+    "pilot_company_queries_excluded": 859,
+    "additional_same_pilot_company": 333,
+    "nonpilot_company_queries": 22712,
+    "nonpilot_companies": 15076,
+    "oof_ok": 22712,
+    "oof_failed": 0,
+    "by_model": {
+      "0": {
+        "ok": 4398,
+        "failed": 0
+      },
+      "1": {
+        "ok": 4367,
+        "failed": 0
+      },
+      "2": {
+        "ok": 4385,
+        "failed": 0
+      },
+      "3": {
+        "ok": 4582,
+        "failed": 0
+      },
+      "4": {
+        "ok": 4980,
+        "failed": 0
+      }
+    },
+    "scope": "V32/V71 coefficients only, census not final closed-set-admitted cohort"
+  },
+  "models": {
+    "0": {
+      "v71": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_0.json",
+        "size_bytes": 41633,
+        "mtime_ns": 1791853121749982078,
+        "inode": 4321356,
+        "sha256": "e16dd3f7b5c534a66eadb765859e6cf760af40c93518edb2b09e8348c63426be"
+      },
+      "v32": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_0.json",
+        "size_bytes": 39629,
+        "mtime_ns": 1791774428733899196,
+        "inode": 3079489,
+        "sha256": "6301edfbf7d1914044916ede623704a354116cff6168c8d627c53608b70c3342"
+      },
+      "v71_train_companies": 253,
+      "v32_train_companies": 253
+    },
+    "1": {
+      "v71": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_1.json",
+        "size_bytes": 41466,
+        "mtime_ns": 1791853122175319452,
+        "inode": 4321361,
+        "sha256": "41fc94ec31b89a03f0980167fdad447a4e826ad75430a367e5e849ea9cf4431c"
+      },
+      "v32": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_1.json",
+        "size_bytes": 39463,
+        "mtime_ns": 1791774428933117918,
+        "inode": 3079494,
+        "sha256": "4492eff9d0bf1f91607057a07575cd0156da00c84824f435f26ebf0d84e5bc2c"
+      },
+      "v71_train_companies": 262,
+      "v32_train_companies": 262
+    },
+    "2": {
+      "v71": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_2.json",
+        "size_bytes": 40834,
+        "mtime_ns": 1791853122360355500,
+        "inode": 4321363,
+        "sha256": "99d931a6c3c76b7a8b20d25da7ce3ac23bb7a4f3502731cf455bd38fc63755bd"
+      },
+      "v32": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_2.json",
+        "size_bytes": 38829,
+        "mtime_ns": 1791774429056654677,
+        "inode": 3079497,
+        "sha256": "9be2deb54ffc91e30c9a3c98ac22fccfaf4a91329f4fda087ac429786ae357df"
+      },
+      "v71_train_companies": 266,
+      "v32_train_companies": 266
+    },
+    "3": {
+      "v71": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_3.json",
+        "size_bytes": 41037,
+        "mtime_ns": 1791853122536477006,
+        "inode": 4321365,
+        "sha256": "d161c1e9d5364d66a1cddd170b36bf79ef1beff1be7cc6e39414d98d0f000798"
+      },
+      "v32": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_3.json",
+        "size_bytes": 39045,
+        "mtime_ns": 1791774429168562302,
+        "inode": 3079499,
+        "sha256": "c5be69f6b1cd19ebf38e82633db8bcafe593eeb2258aeef8ea2f155baf51da03"
+      },
+      "v71_train_companies": 255,
+      "v32_train_companies": 255
+    },
+    "4": {
+      "v71": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_4.json",
+        "size_bytes": 42254,
+        "mtime_ns": 1791853122705363861,
+        "inode": 4321367,
+        "sha256": "63b46f6c7f80f35df6de5f1577e22ccd98682e0d6f9a5401fa10e0185e9d5b1c"
+      },
+      "v32": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_4.json",
+        "size_bytes": 40245,
+        "mtime_ns": 1791774429283302064,
+        "inode": 3079503,
+        "sha256": "15633c181a07ab512d748d96676986204afd8904960fc249358886fe8da3fc1e"
+      },
+      "v71_train_companies": 268,
+      "v32_train_companies": 268
+    }
+  },
+  "frozen_query_coverage": {
+    "numeric51": {
+      "sealed_queries": 526,
+      "covered_nonpilot_queries": 0
+    },
+    "activity_shards": {
+      "sealed_queries": 526,
+      "covered_nonpilot_queries": 0
+    },
+    "bano_leaf_shards": {
+      "sealed_queries": 526,
+      "covered_nonpilot_queries": 0
+    },
+    "osm_leaf_shards": {
+      "sealed_queries": 526,
+      "covered_nonpilot_queries": 0
+    }
+  },
+  "ledger": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/retrieval_all_human_v12_label_ledger/1a99b7cb1db5a1692e39/label_ledger.parquet",
+    "size_bytes": 642497,
+    "mtime_ns": 1787572019134117313,
+    "inode": 2176779,
+    "sha256": "24f5928cbf2669b0a79ac00a284d14e5fe2288abb5a4ddcbd77a46677c315720"
+  },
+  "frozen_inventory_files": 3681,
+  "frozen_inventory_sizes_unchanged": true,
+  "sha256_recomputed_files": 58,
+  "sha256_recomputed_bytes": 20783985,
+  "full_frozen_sha256_recheck_complete": false,
+  "sha256_checked": [
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_night.py",
+      "size_bytes": 17773,
+      "mtime_ns": 1791322652887704140,
+      "inode": 61248974,
+      "sha256": "57201a536954899743ece2d7029123f9a9c1500285d9707652c3121ba381f3dd"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v114_native_activity_ablation.py",
+      "size_bytes": 10157,
+      "mtime_ns": 1791874903291300697,
+      "inode": 69963959,
+      "sha256": "16833b3691832f5a1bf0384e06686692fd938e42ca39fb96cdb43ff70da6b75c"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v115_streamed_activity_ablation.py",
+      "size_bytes": 8190,
+      "mtime_ns": 1791875142787131045,
+      "inode": 69964227,
+      "sha256": "71d68822067668bc01a7714ff98dea424eb637bbd5a62d8ef7a27bf90a11a2af"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v125_street_shape_retrieval.py",
+      "size_bytes": 12421,
+      "mtime_ns": 1791921800046834588,
+      "inode": 70000781,
+      "sha256": "1edda1186d8fe5abdb609f34529adf89945af07889458cacbda5479f2c311160"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v128_named_geo_feasibility.py",
+      "size_bytes": 9616,
+      "mtime_ns": 1791923046714329421,
+      "inode": 70005807,
+      "sha256": "359a1cf56cc9652823f2de1ba4c12b1da7eea1a9c16473f37f14ee2424a18446"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v130_banatic_memberships.py",
+      "size_bytes": 10083,
+      "mtime_ns": 1791927193077449430,
+      "inode": 70022363,
+      "sha256": "3befdc044a96c05306938e53950f2fdf6eb9c087b2e90fda93033abd25de0ae0"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v130_structural_evidence.py",
+      "size_bytes": 11111,
+      "mtime_ns": 1791925864563455429,
+      "inode": 70021713,
+      "sha256": "131220899531d9e3a944070df3b65173d4cd5fd48af14b1241afa5e166eb7d87"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v132_local_evidence_ablation.py",
+      "size_bytes": 25981,
+      "mtime_ns": 1791931316187280481,
+      "inode": 70021982,
+      "sha256": "58bd94842b7f2565ef20bce85023bb5f082d7bb86b7cdb0571aa78874717eee8"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v133_supplier_site_context.py",
+      "size_bytes": 11308,
+      "mtime_ns": 1791926333666079684,
+      "inode": 70022069,
+      "sha256": "ba66ea6e89c2a7b74722befa9c39f98572a30a4373a4c86a845309f1575ca9d3"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v134_supplier_native_ablation.py",
+      "size_bytes": 14998,
+      "mtime_ns": 1791934026168019093,
+      "inode": 70036676,
+      "sha256": "a3e9b98c4564b32258161a21c768cd9500009c10802b8862a15f41289050e59e"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v137_continuity_address_source.py",
+      "size_bytes": 12405,
+      "mtime_ns": 1791928608095226897,
+      "inode": 70036612,
+      "sha256": "9873164cbc6c342fa46e44b3d540194425c2fbb379a31664beba6b8aa5004d2e"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v141_bano_quarantined_source.py",
+      "size_bytes": 4613,
+      "mtime_ns": 1791933160336708662,
+      "inode": 70039526,
+      "sha256": "9fdf34ec77c91264d89c1b0402369a1b2e97b44e0def40fa9993ed4ec3dc9fb6"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v142_bano_native_ablation.py",
+      "size_bytes": 26149,
+      "mtime_ns": 1791934026168192052,
+      "inode": 70039646,
+      "sha256": "568fadfc66f35ff3856290ee8a3a77466993d9ebba0b601d08975958f9cba9d7"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v143_empty_reference_continuation.py",
+      "size_bytes": 6369,
+      "mtime_ns": 1791933908286728117,
+      "inode": 70039927,
+      "sha256": "604a8ccccae2ab66625ea543577f85e6881e37f8495d293f8f3bfc4c5adb2ba9"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v14_full_pipeline.py",
+      "size_bytes": 35111,
+      "mtime_ns": 1791465115356549670,
+      "inode": 66154778,
+      "sha256": "3dd0a23b0cf12ac6becc54095679f4f5b5cd45a8213a38d061b01e69d2a4c072"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v17_structural_retrieval.py",
+      "size_bytes": 23018,
+      "mtime_ns": 1791664066089738279,
+      "inode": 68616494,
+      "sha256": "71ddfee9043e0a799a7ad39f76ec60c2f86d3558ce6382de5c044f0ff7ea08ea"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v21_relation_views.py",
+      "size_bytes": 20483,
+      "mtime_ns": 1791748372614714977,
+      "inode": 69782613,
+      "sha256": "b4a86cb2c00686251897bbcdd5f66ff6e89cda7bf7e1f32daa1104f004b7e935"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v23_native_features.py",
+      "size_bytes": 24540,
+      "mtime_ns": 1791760266678571500,
+      "inode": 69810922,
+      "sha256": "1c63603eeba200bb63e3c85eaf08ae08c91594b4a52b475aad773813dccd1c37"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v2_data.py",
+      "size_bytes": 17273,
+      "mtime_ns": 1791398715868366776,
+      "inode": 63322595,
+      "sha256": "52333b450fd2bdedfd457d0b39a058ee81d70fe9f85f5397a9f9e5444f5a3a4b"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v30_native_features.py",
+      "size_bytes": 10369,
+      "mtime_ns": 1791766910136672727,
+      "inode": 69820077,
+      "sha256": "4b5b9056207e9589174988f812fc222e0c1b01c1c41b6b8665eb19a2066c0d2c"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v32_learned_query.py",
+      "size_bytes": 22523,
+      "mtime_ns": 1791768753410125337,
+      "inode": 69822435,
+      "sha256": "d0752de946b19361220d4ab075367e0c7e1f26e98a7bf172174c79c3c49bf8cb"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v32_native_features.py",
+      "size_bytes": 9627,
+      "mtime_ns": 1791768753409225671,
+      "inode": 69822434,
+      "sha256": "02f6adba3e36a25479b1879008b85f0dc8f0a1493b0a4d14d8627e5ea9930eb0"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v49_postseal_bodacc_roles.py",
+      "size_bytes": 11491,
+      "mtime_ns": 1791799246812456002,
+      "inode": 69873992,
+      "sha256": "9b11da20f90590402de75f4ac2fff3bb675d5dd8ebfb682bb44c646b63ca935a"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v56_corporate_site.py",
+      "size_bytes": 16568,
+      "mtime_ns": 1791842102984745274,
+      "inode": 69929879,
+      "sha256": "b2c8a0c06278983a3501e6d9b80e16484a3372f91baf0c83cb83bbdc02f92e6a"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v68_filled_site_geo.py",
+      "size_bytes": 9490,
+      "mtime_ns": 1791844590893347284,
+      "inode": 69931917,
+      "sha256": "b17d4515d9bacc502caeb283919b4fe1f9158d455fd2c9b3c3e7f2efcfdc05af"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v71_frozen_residual.py",
+      "size_bytes": 16230,
+      "mtime_ns": 1791849335188208637,
+      "inode": 69934698,
+      "sha256": "3d61fe5dd30f5928b8c00b9f33b47cca5a73caae6e1d078eb23175b4b8629e17"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v72_corporate_incidence.py",
+      "size_bytes": 8514,
+      "mtime_ns": 1791850162489156965,
+      "inode": 69935290,
+      "sha256": "c1fd078f75d32e05aae0da5f2d4448106b9ab811c24b2115a04ddc2209afd2c7"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v75_published_supplier_context.py",
+      "size_bytes": 13078,
+      "mtime_ns": 1791850696433404417,
+      "inode": 69935697,
+      "sha256": "26f5fa1a24f927e66b5729d17d7d044f83fbb3a6b506de18e24bb1e374b2ac19"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v81_indirect_lexical_query.py",
+      "size_bytes": 11862,
+      "mtime_ns": 1791853046354644612,
+      "inode": 69937165,
+      "sha256": "7576729cb0c2de64a2debf64dd2f7225db2ead1b81fe276368b4d44cb64f9b93"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v98_official_initial_alignment.py",
+      "size_bytes": 7117,
+      "mtime_ns": 1791861829894882598,
+      "inode": 69950791,
+      "sha256": "773cdc6591a2276b40acc6365b2f37e80582a3228a49d03cc296048cd5cd310f"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v99_initial_alignment_native.py",
+      "size_bytes": 13744,
+      "mtime_ns": 1791862231700440605,
+      "inode": 69951000,
+      "sha256": "0888e780d146c3ee04fc1a87409283d70155e2db0e0c54c3e1d4315b3b51ee04"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/retrieval_v38_initial_top100.py",
+      "size_bytes": 16213,
+      "mtime_ns": 1790919215833845549,
+      "inode": 58817862,
+      "sha256": "bdab3273ae844ab1c566b301cff65b258a161fcd5fe5f369c95ed7d806cc8d0d"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_freeze_v142.py",
+      "size_bytes": 7939,
+      "mtime_ns": 1792226358426477799,
+      "inode": 70653995,
+      "sha256": "7eaa081d73eb5cc8676649678f0d376344c459eba79dfe88b0efb140b43d23d2"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/src/xgb_matcher/hierarchical_retrieval.py",
+      "size_bytes": 51332,
+      "mtime_ns": 1787331037920439998,
+      "inode": 52130649,
+      "sha256": "731e078caab0886d00771ea3831f51a6cde8e94af8b2a3e928c2dc6c672617a9"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/src/xgb_matcher/official_sector_evidence.py",
+      "size_bytes": 24141,
+      "mtime_ns": 1787327238391597251,
+      "inode": 53245195,
+      "sha256": "ac5a83a028bbbf111794a8dfe552ec9ee258701f682f030ff154c7506a8ed900"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/generate_exit.json",
+      "size_bytes": 150,
+      "mtime_ns": 1791947029100445616,
+      "inode": 4425964,
+      "sha256": "f7667bf23864507cdcf04aad2417d3b73f97e06cd8d043efc81aa1d3ddf15dc5"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/generation.json",
+      "size_bytes": 842,
+      "mtime_ns": 1791947021566884554,
+      "inode": 4425960,
+      "sha256": "b8d4e77a49008bc8e449a3b19ba0bdb223f4f8ec0b514a384d68bec91b36a12e"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/calibration/generation.json",
+      "size_bytes": 125730,
+      "mtime_ns": 1791943798324263392,
+      "inode": 4417489,
+      "sha256": "97d9d6ec3ce015c14af92c46c7398eab0e4d6723e3bb586a252a16dd790ce2be"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/features_generation.json",
+      "size_bytes": 359655,
+      "mtime_ns": 1791943798317193417,
+      "inode": 4417488,
+      "sha256": "f92f62cdb1b848570fc09e1a8a36a8d4d84079abacc5ae70a6bd158d297d3cb8"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/launch.json",
+      "size_bytes": 63937,
+      "mtime_ns": 1791943798310677238,
+      "inode": 4417487,
+      "sha256": "2589a45ece53ec7f3eda0fc2434037473fb0a55b3a4efd35af445afaa6d20eed"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/prepared.json",
+      "size_bytes": 168686,
+      "mtime_ns": 1791943925851941774,
+      "inode": 4419603,
+      "sha256": "4ea36cf63d5b33a8ac3295c108b32da5bcac998d9d30d1cf841971acb5d71d72"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/recipe.json",
+      "size_bytes": 2094,
+      "mtime_ns": 1791943798307812797,
+      "inode": 4417486,
+      "sha256": "395e456eb737d4755079eab1d36bb9eadbab7fb2c711d2ba117346934f538b42"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/outputs.json",
+      "size_bytes": 18762806,
+      "mtime_ns": 1791947021547149218,
+      "inode": 4425958,
+      "sha256": "fb691a70311392c103955e1b4fe71ee03fbdabbb2dcc87d2fb32e9bf6c5d3218"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/manifest.json",
+      "size_bytes": 2708,
+      "mtime_ns": 1787143566716776777,
+      "inode": 2125842,
+      "sha256": "9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/tantivy/meta.json",
+      "size_bytes": 16239,
+      "mtime_ns": 1787143566041155073,
+      "inode": 2125829,
+      "sha256": "42e43acedabdb27468f25ec513fc52a86c09c205789dcea204f0e0886a9341fc"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/prepared.json",
+      "size_bytes": 178411,
+      "mtime_ns": 1791934161450558445,
+      "inode": 4394486,
+      "sha256": "3b0fd64c2f890d48eea4f7c34c8312b93d8640cb5d429e99991c268b554280ae"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v14/representative_20261008_b/panel.json",
+      "size_bytes": 129670,
+      "mtime_ns": 1791469415250078442,
+      "inode": 2752360,
+      "sha256": "41668f7f27c4479d421da8a26f18bb4aba93865d721403c2c3130fa08429cff2"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_0.json",
+      "size_bytes": 41633,
+      "mtime_ns": 1791853121749982078,
+      "inode": 4321356,
+      "sha256": "e16dd3f7b5c534a66eadb765859e6cf760af40c93518edb2b09e8348c63426be"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_0.json",
+      "size_bytes": 39629,
+      "mtime_ns": 1791774428733899196,
+      "inode": 3079489,
+      "sha256": "6301edfbf7d1914044916ede623704a354116cff6168c8d627c53608b70c3342"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_1.json",
+      "size_bytes": 41466,
+      "mtime_ns": 1791853122175319452,
+      "inode": 4321361,
+      "sha256": "41fc94ec31b89a03f0980167fdad447a4e826ad75430a367e5e849ea9cf4431c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_1.json",
+      "size_bytes": 39463,
+      "mtime_ns": 1791774428933117918,
+      "inode": 3079494,
+      "sha256": "4492eff9d0bf1f91607057a07575cd0156da00c84824f435f26ebf0d84e5bc2c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_2.json",
+      "size_bytes": 40834,
+      "mtime_ns": 1791853122360355500,
+      "inode": 4321363,
+      "sha256": "99d931a6c3c76b7a8b20d25da7ce3ac23bb7a4f3502731cf455bd38fc63755bd"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_2.json",
+      "size_bytes": 38829,
+      "mtime_ns": 1791774429056654677,
+      "inode": 3079497,
+      "sha256": "9be2deb54ffc91e30c9a3c98ac22fccfaf4a91329f4fda087ac429786ae357df"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_3.json",
+      "size_bytes": 41037,
+      "mtime_ns": 1791853122536477006,
+      "inode": 4321365,
+      "sha256": "d161c1e9d5364d66a1cddd170b36bf79ef1beff1be7cc6e39414d98d0f000798"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_3.json",
+      "size_bytes": 39045,
+      "mtime_ns": 1791774429168562302,
+      "inode": 3079499,
+      "sha256": "c5be69f6b1cd19ebf38e82633db8bcafe593eeb2258aeef8ea2f155baf51da03"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/model_4.json",
+      "size_bytes": 42254,
+      "mtime_ns": 1791853122705363861,
+      "inode": 4321367,
+      "sha256": "63b46f6c7f80f35df6de5f1577e22ccd98682e0d6f9a5401fa10e0185e9d5b1c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v32/global_public_parent_names_20261012_a/calibration/model_4.json",
+      "size_bytes": 40245,
+      "mtime_ns": 1791774429283302064,
+      "inode": 3079503,
+      "sha256": "15633c181a07ab512d748d96676986204afd8904960fc249358886fe8da3fc1e"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v71/frozen_residual_20261013_a/calibration/assignment.json",
+      "size_bytes": 16785,
+      "mtime_ns": 1791850184731174812,
+      "inode": 4311222,
+      "sha256": "87c2ad721266499de3634748996e1398fa948bce0b36ad55287e76a3c0d54ca1"
+    }
+  ],
+  "hydraulic": {
+    "name": "hydraulic",
+    "status": "Running",
+    "lima_home": "/Volumes/CATNAT_DATA/catnat-lima"
+  },
+  "generated_queries": 0,
+  "selected_queries": 0,
+  "requested_queries": 3000,
+  "final_closed_set_exclusions_sealed": false,
+  "stratified_sample_sealed": false,
+  "native_smoke_queries": 0,
+  "native_smoke_seconds_per_query": null,
+  "native_smoke_peak_rss_bytes": null,
+  "full_run_started": false,
+  "supervisor_pid": null,
+  "eta_seconds": null,
+  "elapsed_seconds": 0.8824356249533594,
+  "peak_rss_bytes": 206700544,
+  "full_encoder_oof": false,
+  "closed_membership_files_opened": false,
+  "closed_queries_generated": 0,
+  "labels_modified": false,
+  "retrieval_changed": false,
+  "models_trained": 0,
+  "evaluated_queries": 0,
+  "existing_pending_files_touched": false,
+  "source_mutation_observed": false
+}
