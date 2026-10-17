@@ -1,6 +1,9 @@
-"""Brief9: bounded, query-only reconstruction, STOP at the first failed fidelity."""
+"""Brief9: bounded BANO/activity reconstruction, STOP at failed fidelity.
+
+This is not the unimplemented unified3000 supervisor. The activity memory gate
+blocked further family verification; no full-run launch option is exposed.
+"""
 import argparse
-from collections import Counter
 import hashlib
 import json
 import os
@@ -27,7 +30,7 @@ from scripts.retrieval_site_operational_metric import read, record
 OUT = bano.cohort.OUT/'brief9'
 LIMIT = 4*1024**3
 # Keep admission headroom rather than intentionally approach the user's strict cap.
-WATCHDOG = int(3.5*1024**3)
+WATCHDOG = int(3.75*1024**3)
 STOP = False
 
 
@@ -83,9 +86,6 @@ def bano_fidelity(directory):
     for path, sha in bano.HELPERS.items():
         verified(dict(path=str(ROOT/path), sha256=sha))
     build, source, base, kernel_sha = bano.context_builder()
-    # Counter is an original constructor global, absent from the earlier adapter's
-    # restricted compile namespace. Supply it, without changing the source body.
-    build.__globals__['Counter'] = Counter
     with sqlite3.connect(f"file:{verified(bg['index'])}?mode=ro&immutable=1", uri=True) as con:
         con.execute('PRAGMA query_only=ON')
         fresh = build(panel, con)
@@ -193,13 +193,17 @@ def run(family):
 if __name__ == '__main__':
     p = argparse.ArgumentParser(description=__doc__)
     modes = p.add_mutually_exclusive_group(required=True)
-    modes.add_argument('--run', choices=['bano'])
-    modes.add_argument('--worker', choices=['bano'])
+    modes.add_argument('--run', choices=['bano', 'activity'])
+    modes.add_argument('--worker', choices=['bano', 'activity'])
     p.add_argument('--directory', type=Path)
     a = p.parse_args()
     if a.worker:
         if a.directory is None or not a.directory.resolve().is_relative_to(OUT.resolve()):
             raise ValueError('New private v174 worker namespace required')
-        bano_fidelity(a.directory)
+        if a.worker == 'bano':
+            bano_fidelity(a.directory)
+        else:
+            from scripts import train3000_frozen_v142_activity
+            train3000_frozen_v142_activity.fidelity(a.directory)
     else:
         run(a.run)

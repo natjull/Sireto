@@ -4,6 +4,7 @@ This stage is NOT the four-family fidelity gate, the BANO weighted leaf scores,
 Gemma preparation, native smoke, or the full3000 generator.
 """
 import argparse
+from collections import Counter
 import fcntl
 import hashlib
 import inspect
@@ -47,7 +48,7 @@ def context_builder():
     body = text[text.index(start):text.index(end)]
     from scripts import embeddinggemma2_v141_bano_osm_source as base
     from src.xgb_matcher.retrieval_geo_v16 import lonlat_to_l93
-    namespace = dict(base=base, lonlat_to_l93=lonlat_to_l93)
+    namespace = dict(base=base, lonlat_to_l93=lonlat_to_l93, Counter=Counter)
     # Only provide explicit inputs and return value around the unchanged body.
     exec(compile('def build(panel, con):\n'+textwrap.indent(textwrap.dedent(body), '    ')+
         '\n    return context\n', str(SOURCE), 'exec'), namespace)
