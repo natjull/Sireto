@@ -1,7 +1,8 @@
 """Unified v174 controller. --prepare-ready NEVER starts full3000.
 
 The explicit --full command is gated by sealed four-family fidelity and20
-complete new native smokes. Frozen8/12GiB stopped-VM full-run policy retained.
+complete new native smokes. Brief13 authorizes12GiB preparation at9GiB
+free+inactive with stopped hydraulic; generation retains one8->12GiB escalation.
 """
 import argparse
 import fcntl
@@ -44,13 +45,13 @@ def task(phase,inputs,full=False):
                 stat=Path(path).stat()
                 if [stat.st_size,stat.st_mtime_ns,stat.st_ino]!=expected:raise ValueError('Frozen authority changed after SHA audit')
         return saved
-    required=8*GIB if full else 6*GIB
+    required=12*GIB if phase=='prepare' else 8*GIB
     for old in OUT.glob(key+'_*'+'/receipt.json'):
         r=mini.read(old)
         if r['stop_reason']=='WAIT_BRIEF10_RESOURCE_CAP':
-            if r['cap_bytes']>=12*GIB or (r['cap_bytes']>=8*GIB and (not full or phase!='generate')):
+            if r['cap_bytes']>=12*GIB or (r['cap_bytes']>=8*GIB and phase not in ('prepare','generate')):
                 raise RuntimeError('Terminal memory stop; preserve all attempts, no skipped query')
-            required=max(required,12*GIB if full and phase=='generate' else 8*GIB)
+            required=max(required,12*GIB if phase in ('prepare','generate') else 8*GIB)
     while True:
         d=OUT/(key+'_'+uuid.uuid4().hex[:10]);d.mkdir(parents=True)
         if required<=8*GIB:
@@ -60,9 +61,12 @@ def task(phase,inputs,full=False):
             while True:
                 vm=control.resources.hydraulic();mem=control.resources.free_inactive_memory()
                 evidence=dict(hydraulic=vm,memory=mem,required_free_inactive_bytes=9*GIB)
-                with (d/'admission.jsonl').open('a') as f:f.write(json.dumps(dict(evidence,wait_seconds=waited))+'\n')
-                if vm['status']=='Stopped' and not vm.get('uncertain') and (mem['free_inactive_bytes'] or 0)>=9*GIB:break
-                if control.STOP:raise InterruptedError('No worker; interruption during escalation wait')
+                ready=vm['status']=='Stopped' and not vm.get('uncertain') and (mem['free_inactive_bytes'] or 0)>=9*GIB
+                with (d/'admission.jsonl').open('a') as f:f.write(json.dumps(dict(evidence,wait_seconds=waited,admitted=ready,cap_bytes=12*GIB))+'\n')
+                print(json.dumps(dict(phase='ADMITTED_12_GIB' if ready else 'WAIT_MEMORY_60S',directory=str(d),
+                    hydraulic=vm,free_inactive_bytes=mem['free_inactive_bytes'],wait_seconds=waited)),flush=True)
+                if control.STOP:raise InterruptedError('No worker; interruption during12GiB admission wait')
+                if ready:break
                 time.sleep(60);waited+=60
             cap=12*GIB
         refs=sources()
@@ -91,8 +95,8 @@ def task(phase,inputs,full=False):
                         rss=sum(p.memory_info().rss for p in [p,*p.children(recursive=True)] if p.is_running());peak=max(peak,rss)
                     except control.psutil.NoSuchProcess:pass
                     if control.STOP:reason='USER_INTERRUPT'
+                    elif observed[0]['status']!='Stopped' or observed[0].get('uncertain'):reason='WAIT_VM_RE_ADMISSION'
                     elif peak>=cap-control.MARGIN:reason='WAIT_BRIEF10_RESOURCE_CAP'
-                    elif (full or cap>=8*GIB) and (observed[0]['status']!='Stopped' or observed[0].get('uncertain')):reason='WAIT_VM_RE_ADMISSION'
                     elif control.psutil.disk_usage(mini.bano.cohort.preflight.H).free<10*GIB:reason='STOP_DISK_BELOW_10_GIB'
                     if reason:child.terminate();break
                     time.sleep(.05)
@@ -100,17 +104,47 @@ def task(phase,inputs,full=False):
                 except subprocess.TimeoutExpired:child.kill();rc=child.wait()
             finally:
                 if child.poll() is None:child.terminate();child.wait()
-        if (d/'resource_yield.json').exists():reason='WAIT_BRIEF10_RESOURCE_CAP'
+        if reason!='WAIT_VM_RE_ADMISSION' and (d/'resource_yield.json').exists():reason='WAIT_BRIEF10_RESOURCE_CAP'
         mini.save(d/'receipt.json',dict(exit_code=rc,owned_child_exit_confirmed=True,stop_reason=reason,
             peak_sampled_child_rss_bytes=peak,cap_bytes=cap,wait_seconds=waited,elapsed_seconds=time.monotonic()-started))
         print(json.dumps(dict(phase=phase,directory=str(d),exit_code=rc,reason=reason)),flush=True)
         if reason=='WAIT_VM_RE_ADMISSION':continue
         if reason=='WAIT_BRIEF10_RESOURCE_CAP':
             if cap<8*GIB:required=8*GIB;continue
-            if full and phase=='generate' and cap==8*GIB:required=12*GIB;continue
+            if phase=='generate' and cap==8*GIB:required=12*GIB;continue
         if reason or rc:raise RuntimeError('STOP: '+str(d/'worker.log'))
         saved=dict(result=mini.record(d/'result.json'),receipt=mini.record(d/'receipt.json'),sources=refs)
         mini.save(completed,saved);return saved
+
+
+def preparation_eta(pr,process_seconds,smoke,sample):
+    # Actual full-run batching: completed20 outputs are reused, other batches
+    # currently copy frozen communes but do NOT share newly extracted communes.
+    panel=mini.read(mini.bano.cohort.OUT/'queries.json');by_id={q['query_id']:q for q in panel}
+    counts=mini.read(mini.verified(pr['commune_counts_ref']))
+    work=pr['commune_work'];frozen=set(work['frozen_prepared_zones']);historical=set(work['historical_site_bank_zones'])
+    remaining=[qid for qid in sample['selected_query_ids'] if qid not in set(smoke)]
+    batches=[remaining[i:i+20] for i in range(0,len(remaining),20)]
+    def units(ids):
+        zones={by_id[qid]['crm_insee'] for qid in ids}
+        return dict(extract=sum(counts[z] for z in zones-frozen),
+            copy=sum(counts[z] for z in zones & frozen),dense=sum(counts[z] for z in zones-historical))
+    measured=units(smoke);target={name:sum(units(ids)[name] for ids in batches) for name in measured}
+    seconds=dict(extract=0.,copy=0.,dense=sum(r['seconds'] for r in work['dense']))
+    for row in work['prepare']:
+        if counts[row['zone']]!=row['indexed_sites']:raise ValueError('Census differs from frozen index')
+        seconds['copy' if row['frozen_prepared_reuse'] else 'extract']+=row['seconds']
+    projected={}
+    for name in measured:
+        if target[name] and not measured[name]:raise ValueError('No measured commune ETA cost for '+name)
+        projected[name]=seconds[name]*target[name]/measured[name] if measured[name] else 0.
+    other=max(0.,process_seconds-sum(seconds.values()))
+    remaining_seconds=sum(projected.values())+other*len(batches)
+    return dict(total_seconds=process_seconds+remaining_seconds,remaining_seconds=remaining_seconds,
+        measured_units=measured,remaining_units=target,measured_seconds=seconds,
+        other_measured_batch_seconds=other,remaining_batches=len(batches),completed_queries_reused=len(smoke),
+        new_commune_cross_batch_reuse=False,frozen_prepared_communes_reused=True,
+        method='Measured extraction/copy/SITE-encoding seconds per indexed site times actual batch-deduplicated remaining commune exposures; other costs per20-query batch. Descriptive, not SLO; waits excluded.')
 
 
 def automatic_commit(report,full):
@@ -195,12 +229,15 @@ def run(full):
         preparation=preparation_exit['elapsed_seconds'];generation=sum(r['elapsed_seconds'] for r in exits)
         prep_peak=max(pr['peak_rss_bytes'],preparation_exit['peak_sampled_child_rss_bytes'])
         gen_peak=max([r['peak_rss_bytes'] for r in generated]+[r['peak_sampled_child_rss_bytes'] for r in exits])
+        eta=preparation_eta(pr,preparation,smoke,sample)
         smoke_report=dict(queries=20,preparation_seconds=preparation,generation_seconds=generation,
             preparation_worker_seconds=pr['elapsed_seconds'],generation_worker_seconds=sum(r['elapsed_seconds'] for r in generated),
             seconds_per_query_preparation=preparation/20,seconds_per_query_generation=generation/20,
             preparation_peak_rss_bytes=prep_peak,generation_peak_rss_bytes=gen_peak,peak_rss_bytes=max(prep_peak,gen_peak),
-            preparation_eta3000_seconds=preparation*150,generation_eta3000_seconds=generation*150,
-            eta_excludes_unbounded_resource_waits=True,eta_method='Owned exit0 process wall times including startup,20-query batch times150; descriptive extrapolation, not SLO')
+            preparation_eta3000_seconds=eta['total_seconds'],generation_eta3000_seconds=generation*150,
+            preparation_remaining_seconds=eta['remaining_seconds'],generation_remaining_seconds=generation*149,
+            preparation_eta_detail=eta,preparation_batch_linear_eta_seconds=preparation*150,
+            eta_excludes_unbounded_resource_waits=True,eta_method='Commune-aware preparation; owned generation process wall times including startup times150. Remaining full run reuses20 completed tasks; descriptive, not SLO.')
         launch='nohup env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -u scripts/train3000_frozen_v142_supervisor.py --full >> '+str(OUT/'full3000.log')+' 2>&1 < /dev/null &'
         waited=0
         for path in OUT.glob('**/admission.jsonl'):
@@ -208,7 +245,11 @@ def run(full):
             waited+=max((r.get('previous_wait_seconds',r.get('wait_seconds',0)) for r in rows),default=0)
         report=dict(status='READY_FOR_EXPLICIT_FULL_LAUNCH',families=results,bano=bano['result'],smoke=smoke_report,
             completed_60s_wait_seconds=waited,
-            full3000_started=False,launch_command=launch,full_hash_audit=audit,sources=sources())
+            full3000_started=False,launch_command=launch,full_hash_audit=audit,sources=sources(),
+            memory_policy=dict(authority='sireto-site-target-13.md',preparation_cap_bytes=12*GIB,
+                preparation_free_inactive_min_bytes=9*GIB,hydraulic_required='Stopped',wait_step_seconds=60,
+                restart_during_worker='SIGTERM owned worker, collect exit, wait for stopped VM and re-admit',
+                watchdog_margin_bytes=control.MARGIN,generation_single_escalation_cap_bytes=12*GIB))
         if not full:
             mini.save(OUT/'ready.json',report)
             commit=automatic_commit(report,False)

@@ -58,7 +58,26 @@ def prepare(directory,ids):
     del values
     times['activity']=time.monotonic()-before
     before=time.monotonic();numeric_root=directory/'numeric'
-    refs=numeric.reconstruct(panel,numeric_root)
+    work=dict(prepare=[],dense=[],frozen_prepared_zones=[],historical_site_bank_zones=[])
+    original_prepare=numeric.engine.prepare_zone;original_dense=numeric.engine.dense_zone
+    def prepare_zone(out,zone):
+        launch=numeric.engine.authority(out)
+        work['frozen_prepared_zones']=sorted(launch['prepared_corpora'])
+        spec=next(z for z in mini.read(mini.verified(launch['census']))['zones'] if z['zone']==zone)
+        start=time.monotonic();result=original_prepare(out,zone)
+        work['prepare'].append(dict(zone=zone,indexed_sites=spec['indexed_sites'],
+            frozen_prepared_reuse=zone in launch['prepared_corpora'],seconds=time.monotonic()-start))
+        return result
+    def dense_zone(out,zone,variant):
+        start=time.monotonic();result=original_dense(out,zone,variant)
+        work['dense'].append(dict(zone=zone,variant=variant,seconds=time.monotonic()-start))
+        return result
+    for path in (numeric.own.SOURCE/'zones').iterdir():
+        if (path/'v3_official512').exists() or (path/'v3_official512.seal.json').exists():
+            work['historical_site_bank_zones'].append('' if path.name=='UNKNOWN' else path.name)
+    numeric.engine.prepare_zone=prepare_zone;numeric.engine.dense_zone=dense_zone
+    try:refs=numeric.reconstruct(panel,numeric_root)
+    finally:numeric.engine.prepare_zone=original_prepare;numeric.engine.dense_zone=original_dense
     times['numeric51']=time.monotonic()-before
     construction=mini.read(numeric_root/'geometry/geometries.json')
     before=time.monotonic();osm_context,shapes,_=osm.context(panel,construction,directory/'osm')
@@ -92,7 +111,8 @@ def prepare(directory,ids):
         bindings[qid]=mini.record(d/'binding.json')
     mini.save(directory/'result.json',dict(status='COMPLETE_LABEL_FREE_PREPARATION',queries=len(panel),
         bindings=bindings,features_generation=mini.record(directory/'features_generation.json'),
-        launch=mini.record(directory/'launch.json'),stage_seconds=times,elapsed_seconds=time.monotonic()-started,
+        launch=mini.record(directory/'launch.json'),stage_seconds=times,commune_work=work,
+        commune_counts_ref=mini.record(mini.bano.cohort.OUT/'commune_counts.json'),elapsed_seconds=time.monotonic()-started,
         peak_rss_bytes=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,raw_labels_read=False,new_fitting=False))
 
 
