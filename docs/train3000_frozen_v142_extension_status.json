@@ -1,0 +1,106 @@
+{
+  "status": "PARTIAL_SAMPLE_SEALED_WAITING_VM_BANO_ONLY",
+  "observed_unix": 1792237177.551296,
+  "sample_commit": "d54cec2c",
+  "sample": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/train3000_frozen_v142_sample.json",
+    "size_bytes": 304037,
+    "mtime_ns": 1792236502639483007,
+    "inode": 70744123,
+    "sha256": "398952c94bad38e5f0e6571ea64672ba9ff67452852769a00cca24a9ecca222a"
+  },
+  "eligible_queries": 17427,
+  "selected_queries": 3000,
+  "selection_replay_exact": true,
+  "test4323_excluded": 4323,
+  "control962_excluded": 962,
+  "pilot_companies_excluded": 405,
+  "pilot_company_queries_excluded": 859,
+  "coefficient_oof_ok": 17427,
+  "coefficient_oof_failed": 0,
+  "full_encoder_oof": false,
+  "metadata_elapsed_seconds": 8.304403209127486,
+  "metadata_peak_rss_bytes": 442925056,
+  "four_family_fidelity_completed_queries": 0,
+  "native_smoke_queries": 0,
+  "native_generated_queries": 0,
+  "native_seconds_per_query": null,
+  "native_peak_rss_bytes": null,
+  "preparation_eta_seconds": null,
+  "generation_eta_seconds": null,
+  "full_run_started": false,
+  "full_supervisor_pid": null,
+  "bano_context_supervisor_pid": 61903,
+  "bano_context_status": {
+    "status": "WAITING_HYDRAULIC",
+    "stage": "BANO_QUERY_CONTEXTS_ONLY",
+    "full_four_family_fidelity_complete": false,
+    "native_queries": 0,
+    "namespace": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/bano",
+    "latest_event": {
+      "phase": "WAITING_HYDRAULIC",
+      "observed_unix": 1792237174.4397361,
+      "storage": {
+        "free_bytes": 175087423488,
+        "namespace_allocated_bytes": 36864
+      },
+      "pending_action": "prepare",
+      "query_id": null
+    }
+  },
+  "hydraulic": {
+    "name": "hydraulic",
+    "status": "Running",
+    "lima_home": "/Volumes/CATNAT_DATA/catnat-lima"
+  },
+  "bano_implementation": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_bano.py",
+    "size_bytes": 10216,
+    "mtime_ns": 1792237091831998010,
+    "inode": 70744246,
+    "sha256": "f5ed94673201a670d2e8ffd2326a8966fad46323d3df25e1dad56672c56db70f"
+  },
+  "constructor_helpers": [
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v141_bano_osm_source.py",
+      "size_bytes": 12996,
+      "mtime_ns": 1791932623027410423,
+      "inode": 70039018,
+      "sha256": "8b1e2496be9e9d7da57817a892f4e4b0bba4e38d5db0e5d76f26ec36216aa97c"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v129_osm_coverage_audit.py",
+      "size_bytes": 5968,
+      "mtime_ns": 1791931435840135332,
+      "inode": 70038351,
+      "sha256": "5f83be1bdc5a3053db664d6f8a7245b256d64967bee4a235b4c5350fd84befa9"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v17_structural_retrieval.py",
+      "size_bytes": 23018,
+      "mtime_ns": 1791664066089738279,
+      "inode": 68616494,
+      "sha256": "71ddfee9043e0a799a7ad39f76ec60c2f86d3558ce6382de5c044f0ff7ea08ea"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/src/xgb_matcher/retrieval_geo_v16.py",
+      "size_bytes": 9537,
+      "mtime_ns": 1789140198997926229,
+      "inode": 54806543,
+      "sha256": "d8997434c26150607b1bc37072185c98bb5965155a7a99c73b4ffa4aee0665b0"
+    }
+  ],
+  "blockers": [
+    "hydraulic Running: no heavy worker admitted",
+    "numeric51/activity/OSM and other query-context adapters not implemented for v174"
+  ],
+  "remaining": [
+    "full four-family fidelity20",
+    "new20 preparation+native smoke",
+    "measured ETA<=30h gate",
+    "full generator+owned receipts+post-seal evaluation+final automatic commit"
+  ],
+  "full_frozen_sha256_recheck_complete": false,
+  "source_models_labels_or_526_caches_modified": false,
+  "existing_pending_touched": false
+}
