@@ -29,10 +29,13 @@ def selected(ids,verify_source=False):
     if any(set(q)!=set(mini.bano.cohort.old.CRM) or q['fold'] not in (2,3,4) for q in out):
         raise ValueError('Query-only CRM8/folds234 required')
     if verify_source:
+        import pyarrow.parquet as pq
         actual={}
         for ref in sample['query_sources']:
             mini.guard()
-            for q in mini.bano.cohort.projected(mini.verified(ref),mini.bano.cohort.old.CRM,selected=set(ids)):
+            rows=pq.read_table(mini.verified(ref),columns=list(mini.bano.cohort.old.CRM),
+                filters=[('fold','in',[2,3,4]),('query_id','in',sorted(ids))],use_threads=False).to_pylist()
+            for q in rows:
                 if q['query_id'] in actual:raise ValueError('Duplicate original query projection')
                 actual[q['query_id']]=q
         if actual!={q['query_id']:q for q in out}:raise ValueError('CRM cache differs from original query-only source')

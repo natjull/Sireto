@@ -30,7 +30,8 @@ def sources():
 
 
 def task(phase,inputs,full=False):
-    key=phase+'_'+mini.hashlib.sha256(mini.canonical(inputs)).hexdigest()
+    code={Path(ref['path']).name:ref['sha256'] for ref in sources()}
+    key=phase+'_'+mini.hashlib.sha256(mini.canonical(dict(inputs=inputs,code=code))).hexdigest()
     completed=OUT/'completed'/(key+'.json')
     if completed.exists():
         saved=mini.read(completed)
@@ -137,7 +138,7 @@ def automatic_commit(report,full):
             f.write('Écart maximal des vecteurs numérique51 : '+str(error)+'.\n')
             f.write('Smoke natif :20 nouveaux dossiers, aucun label évalué pendant le smoke.\n')
             f.write('Préparation : '+str(smoke['seconds_per_query_preparation'])+'s/requête ; génération : '+str(smoke['seconds_per_query_generation'])+'s/requête.\n')
-            f.write('Pic RSS mesuré : '+str(smoke['peak_rss_bytes'])+'octets.\n')
+            f.write('Pics RSS préparation/génération : '+str(smoke['preparation_peak_rss_bytes'])+'/'+str(smoke['generation_peak_rss_bytes'])+'octets.\n')
             f.write('ETA3000 préparation/génération : '+str(smoke['preparation_eta3000_seconds'])+'/'+str(smoke['generation_eta3000_seconds'])+'s, hors attentes ressources illimitées.\n')
             f.write('Attentes documentées (pas de60s achevés) : '+str(report['completed_60s_wait_seconds'])+'s.\n')
             f.write('Full lancé : '+str(report['full3000_started'])+' ; coefficient-OOF seulement, aucun apprentissage.\n')
@@ -188,12 +189,18 @@ def run(full):
         prep=task('prepare',dict(ids=smoke),full=full)
         pr=mini.read(mini.verified(prep['result']));prepared=Path(prep['result']['path']).parent
         smoke_outputs={qid:task('generate',dict(binding=pr['bindings'][qid],prepared=str(prepared)),full=full) for qid in smoke}
-        generation=sum(mini.read(mini.verified(r['result']))['elapsed_seconds'] for r in smoke_outputs.values())
-        smoke_report=dict(queries=20,preparation_seconds=pr['elapsed_seconds'],generation_seconds=generation,
-            seconds_per_query_preparation=pr['elapsed_seconds']/20,seconds_per_query_generation=generation/20,
-            peak_rss_bytes=max([pr['peak_rss_bytes']]+[mini.read(mini.verified(r['result']))['peak_rss_bytes'] for r in smoke_outputs.values()]),
-            preparation_eta3000_seconds=pr['elapsed_seconds']*150,generation_eta3000_seconds=generation*150,
-            eta_excludes_unbounded_resource_waits=True,eta_method='20-query real batch cost times150; descriptive extrapolation, not SLO')
+        generated=[mini.read(mini.verified(r['result'])) for r in smoke_outputs.values()]
+        exits=[mini.read(mini.verified(r['receipt'])) for r in smoke_outputs.values()]
+        preparation_exit=mini.read(mini.verified(prep['receipt']))
+        preparation=preparation_exit['elapsed_seconds'];generation=sum(r['elapsed_seconds'] for r in exits)
+        prep_peak=max(pr['peak_rss_bytes'],preparation_exit['peak_sampled_child_rss_bytes'])
+        gen_peak=max([r['peak_rss_bytes'] for r in generated]+[r['peak_sampled_child_rss_bytes'] for r in exits])
+        smoke_report=dict(queries=20,preparation_seconds=preparation,generation_seconds=generation,
+            preparation_worker_seconds=pr['elapsed_seconds'],generation_worker_seconds=sum(r['elapsed_seconds'] for r in generated),
+            seconds_per_query_preparation=preparation/20,seconds_per_query_generation=generation/20,
+            preparation_peak_rss_bytes=prep_peak,generation_peak_rss_bytes=gen_peak,peak_rss_bytes=max(prep_peak,gen_peak),
+            preparation_eta3000_seconds=preparation*150,generation_eta3000_seconds=generation*150,
+            eta_excludes_unbounded_resource_waits=True,eta_method='Owned exit0 process wall times including startup,20-query batch times150; descriptive extrapolation, not SLO')
         launch='nohup env PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -u scripts/train3000_frozen_v142_supervisor.py --full >> '+str(OUT/'full3000.log')+' 2>&1 < /dev/null &'
         waited=0
         for path in OUT.glob('**/admission.jsonl'):
