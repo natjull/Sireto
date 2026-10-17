@@ -1,7 +1,7 @@
-"""UNVALIDATED: historical OSM source/V143 deltas, v174-only writes.
+"""Historical OSM source/V143 deltas, v174-only writes; fidelity-gated.
 
-Written while the activity mini was running; not executed or wired to the CLI
-because that preceding stage hit its memory gate. Not a ready full-run adapter.
+Full local PBF reconstruction, never a replacement by the old526 object spool.
+The brief10 controller supplies the resource guard and serial execution.
 """
 import ast
 import gc
@@ -73,6 +73,9 @@ def context(panel, geometries, directory):
         '    recipe=dict(all_queries=526', 'panel,geometry', '\n    return queries\n', dict(vars(original)))
     queries = queries(panel,geometries)
     mini.save(directory/'queries.json', queries)
+    mini.save(root/'launch.json',dict(implementation=binding['source_implementation'],
+        historical_category_policy=binding['implementation'],queries=mini.record(directory/'queries.json'),
+        pbf=download['pbf'],query_only=True,raw_labels_read=False))
     build, handler_sha = _body(text, '    tracker=osmium.IdTracker();nodes=Locations(tracker,resume)\n',
         "    files={n:record(ROOT/(n+'.json'))", 'queries,pbf,resume=False',
         '\n    return shapes\n', namespace)
@@ -91,7 +94,7 @@ def context(panel, geometries, directory):
     mini.save(directory/'construction.json',dict(query_body_sha256=query_sha,handler_body_sha256=handler_sha,
         source=binding['source_implementation'],category_policy=binding['implementation'],pbf=download['pbf'],
         queries=len(panel),raw_labels_read=False,reused_old526_object_spool=False,
-        execution_only_changes=['new v174 root','supplied query-only panel/geometries','under4GiB guard']))
+        execution_only_changes=['new v174 root','supplied query-only panel/geometries','brief10 admitted worker memory guard']))
     return projected,shapes,dict(query=query_sha,handler=handler_sha)
 
 
