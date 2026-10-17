@@ -1,0 +1,212 @@
+{
+  "status": "STOP_SMOKE_QUERY_SOURCE_FORMAT",
+  "code_fix_commit": "3e3c9726",
+  "controller_stop_commit": "4d77e44c",
+  "launch": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief11_20261017_190721_3b3207c6_launch.json",
+    "size_bytes": 668,
+    "mtime_ns": 1792256841335652371,
+    "inode": 4610844,
+    "sha256": "ac76dccaf44f48776805d50f7f196ae40674da713f6c23ecf40d5f632a7c7a38"
+  },
+  "controller_exit": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief11_20261017_190721_3b3207c6_exit.json",
+    "size_bytes": 329,
+    "mtime_ns": 1792257605906812989,
+    "inode": 4625225,
+    "sha256": "0a40fc4bd8a460c4fce899304b9c5928f0fc20f427e7913422412b8ca09a54d5"
+  },
+  "controller_elapsed_seconds": 764.56973904185,
+  "blocking_wait_calls": 1,
+  "agent_short_interval_monitoring": false,
+  "families": {
+    "bano": {
+      "result": {
+        "status": "PASS",
+        "family": "bano",
+        "queries": 20,
+        "context_matches": 20,
+        "weighted_delta_matches": 20,
+        "max_absolute_error": 0.0,
+        "context_body_sha256": "02038f338ea091bfa292481008b8ca24a5bedc50fad18aa6029fb725dd43f87a",
+        "weighted_body_sha256": "a2a3fa1a5623b62583d482713f89bac250f6844cf211aa5054125f3ef902f9f2",
+        "source": {
+          "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/embeddinggemma2_v141_bano_national_source.py",
+          "size_bytes": 10532,
+          "mtime_ns": 1791932793796020135,
+          "inode": 70039282,
+          "sha256": "bbc819028db034bbbec59a4510be2b0853beb1cf16f960867e87abacbf5a5d14"
+        },
+        "upstream_numeric51": "FROZEN_INPUT_FOR_ISOLATED_BANO_TEST_NOT_REBUILT_HERE",
+        "elapsed_seconds": 7.527694624848664,
+        "peak_rss_bytes": 3477520384,
+        "raw_labels_read": false,
+        "native_queries": 0
+      },
+      "result_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief9/bano_20261017_135141_05f29fcc/result.json",
+        "size_bytes": 834,
+        "mtime_ns": 1792237909004337373,
+        "inode": 4605875,
+        "sha256": "0ec2f3651729562f453a368783937156afd22a942308bbdf497768cef35d61b5"
+      },
+      "receipt_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief9/bano_20261017_135141_05f29fcc/receipt.json",
+        "size_bytes": 168,
+        "mtime_ns": 1792237909200728115,
+        "inode": 4605879,
+        "sha256": "aee1b083c70cb2dbad813f6cf84d059bcbac546bb755c3a2efcb5190a8410b7b"
+      }
+    },
+    "activity": {
+      "result": {
+        "status": "PASS",
+        "family": "activity",
+        "queries": 20,
+        "context_matches": 20,
+        "weighted_projection_matches": 20,
+        "bitwise_confidence_matches": 20,
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-07,
+        "context_body_sha256": "a796c297a6d04ffc38ca371a7f03f639fadd1392ec69a680c34e5bbdc7a512fd",
+        "projection_body_sha256": "84e177734170db3f1cdb7deb99db9e05d9555b8362676e27b53179806ac85d97",
+        "elapsed_seconds": 195.19774462515488,
+        "peak_rss_bytes": 4708302848,
+        "raw_labels_read": false,
+        "native_queries": 0
+      },
+      "result_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/activity_20261017_183252_cacf61ff/result.json",
+        "size_bytes": 535,
+        "mtime_ns": 1792254968836143986,
+        "inode": 4606835,
+        "sha256": "48acead94ed3012e82b6223f110313e9d44f0f3ac69891c4a0baba5b0fa5d019"
+      },
+      "receipt_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/activity_20261017_183252_cacf61ff/receipt.json",
+        "size_bytes": 216,
+        "mtime_ns": 1792254968970593128,
+        "inode": 4606841,
+        "sha256": "a59edad0f1c2cecb8f3f4d928762a383e277e3355410c568004648d25a8164f8"
+      }
+    },
+    "osm": {
+      "result": {
+        "status": "PASS",
+        "family": "osm",
+        "queries": 20,
+        "context_matches": 20,
+        "weighted_delta_matches": 20,
+        "max_absolute_error": 0.0,
+        "bodies": {
+          "query": "9b91c4f2e49d7bd9cf265f725be8000f789cb0359dff643d70c79292d69af1c1",
+          "handler": "3062f5490fb98bc2d80025b0bcfaf86b7c4fd688c1b4b4825dddd3e29d526249"
+        },
+        "weighted_body_sha256": "670e52230130045b122d194bb5456e457c0ae4724c32c19c21c4ee6327b60a21",
+        "upstream_numeric51": "FROZEN_INPUT_FOR_ISOLATED_OSM_TEST_NOT_REBUILT_HERE",
+        "elapsed_seconds": 863.0215249578469,
+        "peak_rss_bytes": 3660890112,
+        "raw_labels_read": false,
+        "native_queries": 0
+      },
+      "result_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/osm_20261017_183608_c12f2f15/result.json",
+        "size_bytes": 623,
+        "mtime_ns": 1792255832451032376,
+        "inode": 4607430,
+        "sha256": "b53e4f9c6eeb146770143d3096fb48ec262cf21b70393019b956363883807a1b"
+      },
+      "receipt_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/osm_20261017_183608_c12f2f15/receipt.json",
+        "size_bytes": 216,
+        "mtime_ns": 1792255832626388371,
+        "inode": 4607434,
+        "sha256": "b05a62eb9b8ade5d0df2968de30deae49e5a17409a3b10e05315b9cd39a709c5"
+      }
+    },
+    "numeric51": {
+      "result": {
+        "status": "PASS",
+        "family": "numeric51",
+        "queries": 20,
+        "matches": 20,
+        "max_absolute_error": 0.0,
+        "absolute_tolerance": 1e-07,
+        "bitwise_matches": 20,
+        "elapsed_seconds": 598.3800149168819,
+        "peak_rss_bytes": 3918954496,
+        "raw_labels_read": false,
+        "new_fitting": false
+      },
+      "result_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/numeric51_20261017_190721_767b3f3f/result.json",
+        "size_bytes": 291,
+        "mtime_ns": 1792257440668068389,
+        "inode": 4615530,
+        "sha256": "16213ec591ae066efcc9b63f37a72782ee2799ce14074727ec575eb2d98c793e"
+      },
+      "receipt_ref": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/numeric51_20261017_190721_767b3f3f/receipt.json",
+        "size_bytes": 216,
+        "mtime_ns": 1792257441441508636,
+        "inode": 4615576,
+        "sha256": "b689b195dbcb3fd5952c51f7f11cf78e49e635bcfa6aee1927cfcfede6d661e1"
+      }
+    }
+  },
+  "activity_osm_fidelity_receipts_reused": true,
+  "numeric51_max_vector_difference": 0.0,
+  "numeric51_bitwise_matches": 20,
+  "full_frozen_sha256_audit": {
+    "files": 3681,
+    "bytes": 148479301179,
+    "elapsed_seconds": 162.0567283341661,
+    "result_ref": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/audit_24bc7b8366365cb6d2b2757504b12b597179b7e0b87fef94656f083612d8f2f9_30b5196be9/result.json",
+      "size_bytes": 860606,
+      "mtime_ns": 1792257604343291688,
+      "inode": 4625098,
+      "sha256": "af1d02028665ad4e733e78ddaa50c2b424dfd317e11408986fce51b4c6c4027b"
+    },
+    "receipt_ref": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/audit_24bc7b8366365cb6d2b2757504b12b597179b7e0b87fef94656f083612d8f2f9_30b5196be9/receipt.json",
+      "size_bytes": 216,
+      "mtime_ns": 1792257604426985097,
+      "inode": 4625106,
+      "sha256": "fa395bb8964d42b72fe9c8eaabf04a64783035f73471b7fc183acc7e5fb6f50f"
+    }
+  },
+  "smoke": {
+    "complete_queries": 0,
+    "seconds_per_query_preparation": null,
+    "seconds_per_query_generation": null,
+    "peak_rss_bytes": null,
+    "failed_preparation_receipt": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/prepare_18f080874a78114678fd4fd50edbce383509f29689f372039582032a95f0dd70_0e0a0225cb/receipt.json",
+      "size_bytes": 216,
+      "mtime_ns": 1792257605740281591,
+      "inode": 4625210,
+      "sha256": "03481212719bb761b5a77d90eb944002da9b8b43ea803a426b9430711d9cc326"
+    },
+    "failed_preparation_log": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/prepare_18f080874a78114678fd4fd50edbce383509f29689f372039582032a95f0dd70_0e0a0225cb/worker.log",
+      "size_bytes": 1542,
+      "mtime_ns": 1792257605676027790,
+      "inode": 4625134,
+      "sha256": "d65fd6fe74350ab6b023c86e416747250e1653ef1fa7e6cce6a5b999e2700963"
+    },
+    "failed_preparation_peak_sampled_rss_bytes": 144293888
+  },
+  "preparation_eta3000_seconds": null,
+  "generation_eta3000_seconds": null,
+  "ready_json_created": false,
+  "full_launch_command": null,
+  "full3000_started": false,
+  "blocker": "train3000_frozen_v142_pipeline.selected calls the JSON-only cohort.projected on a verified Parquet query source (PAR1); not a numeric51 fidelity mismatch.",
+  "scientific_recipe_changed": false,
+  "labels_decoded_in_new_preparation": false,
+  "hydraulic_actions": 0,
+  "new_fits": 0,
+  "web_requests": 0,
+  "scope": "Coefficient-OOF only; frozen encoder is not encoder-OOF. No new recall or SLO claim."
+}
