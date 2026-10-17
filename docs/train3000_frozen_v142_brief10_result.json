@@ -1,0 +1,11 @@
+{
+  "status": "STOP_BEFORE_COMPLETION",
+  "error": "RuntimeError('STOP: /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/numeric51_20261017_185032_c95c7c63/worker.log')",
+  "full3000_started": false,
+  "fidelity_failure": null,
+  "native_smoke_complete": false,
+  "smoke": null,
+  "eta3000_seconds": null,
+  "launch_command": null,
+  "explanation": "No unexecuted fidelity or smoke is declared successful; all prior attempts retained"
+}
