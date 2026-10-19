@@ -125,3 +125,31 @@ Négatifs15 seulement pour InfoNCE ; le ranking requiert toujours ses100 candida
 ## Reste / risques
 Amont déjà consommé/non full-OOF ; train in-sample optimiste ;526 descriptifs, aucune validation production.
 Recommandation unique : Conserver S2-BASE, sans promotion de cet adaptateur.
+
+## Vérification finale
+
+Publication `21a464d2`, protocole/implémentation `65db35ba`. Audit indépendant
+passé :2506 références de fichiers vérifiées,20268 vecteurs ranking sérialisés
+et rejoués,18 usages NB sans entreprise partagée, bootstrap reproduit, préfixes
+15 négatifs et échantillonnage entreprise entière vérifiés. Aucun sous-banc
+retenu par budget :17427 dossiers conservés,3405/2297 entreprises évalués.
+
+Budget FINAL publication incluse :21694,736s de calcul,21102,393s Metal,
+90,643s d'attente ressources ; pic5277433856octets=4,915Gio. Rapport automatique
+25lignes généré juste avant la publication ; écart de quelques secondes avec
+le compteur final. Une seule attente bloquante21733,829s. Un yield a terminé
+uniquement notre enfant d'encodage ;19456 vecteurs adaptés (19shards) déjà
+scellés ont été réutilisés après attente, aucun contrôle de VM. BASE :958595
+nouveaux vecteurs/307575 issus des caches BASE scellés ;1266170 textes au total.
+Poids du mini-run jamais repris par le complet. Reçus et post-vérification :
+`H/step2_gemma_finetune_10h_20261019/full/{verification,postverification}.json`.
+
+Cosine seule UNION proper/évaluation : BASE45,69/47,05%, adapté60,32/62,67% ;
+ce diagnostic n'établit pas une absence de mémorisation, mais pas d'excès train
+observé. Le gain de cosine seule ne remplace pas le gain faible/non confirmé
+dans la recette complète. SUR adapté298/302=98,68%, Wilson95[96,64;99,48]% :
+la cible interne98% n'est donc pas une garantie inférieure98%. SUR sur526 reste
+sous98% : marge content127/132=96,21%, stack101/107=94,39%, descriptif seulement.
+La clé historique `calibration.exact_precision` vient du helper de seuil ; ici
+elle mesure UNION (BASE672/685, adapté314/320), pas une précision exacte.
+JSON Git et externe strictement identiques, aucun label/jeu fermé/pool modifié.
