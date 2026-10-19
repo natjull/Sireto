@@ -83,3 +83,37 @@ Calibration Wilson adaptative et corrélations entreprises ne certifient pas98% 
 Recommandation unique : Ne pas promouvoir ce risque sans borne de précision test suffisante.
 
 Détails par CV/fold, courbes97/98/99, IC simultanés, modèles/masques, calibration et faux SUR exhaustifs : JSON et namespace externe.
+
+### Vérification indépendante finale
+
+Avenant `511f1597`, plomberie finale `d65c3dc7`, publication complète `2cf01765` ; STOP intermédiaires `7ea0ca9a`/`1981d81c` conservés. `H/step2_risk_model_v1_20261020_c/full/postverify.py` passé :25 rankers/100 pipelines NB,89765 vecteurs ranking liés à leurs scores SHA et20057 probabilités risque rejouées,60 seuils reproduits indépendamment avec la fonction Wilson contractuelle, bootstrap10000 entreprises reproduit dans les deux comparaisons. Rôles imbriqués sans entreprise test/calibration dans les fits risque ; données Git/externe identiques, aucun label/pool/jeu fermé modifié. Preuve `full/postverification.json`, SHA `cc0aec0c4af9e8c65652854282c74b7f055c9eed8954c302d9511773ea8d24f0`.
+
+Calibration par CV :3777/3141/3638/3379/3434 dossiers, pas des calibrations15/15. Meilleure borne Wilson inférieure du risque parmi TOUS les seuils observés :97,5044/97,9658/97,3056/97,7227/97,6913%. Toutes restent strictement<98%, donc aucun seuil admissible et zéro SUR dans chaque CV. La précision correspondante est **indéfinie**, pas100% ni0%.
+
+| CV entreprise | Scène empirique : corrects UNION/SUR | Précision UNION % | Wilson95 % | Couverture % |
+|---|---:|---:|---|---:|
+| 0 | 1140/1186 | 96,12 | [94,87;97,08] | 34,70 |
+| 1 | 271/274 | 98,91 | [96,83;99,63] | 7,91 |
+| 2 | 143/145 | 98,62 | [95,11;99,62] | 4,17 |
+| 3 | 585/598 | 97,83 | [96,32;98,73] | 17,73 |
+| 4 | 775/796 | 97,36 | [96,00;98,27] | 21,54 |
+
+Risque, marge et scèneWilson :0 SUR dans chacun des cinq CV. Courbe prospective risque objectifs calibration97/98/99% : couvertures25,59/0/0%, précision test97,78% au premier point, indéfinie aux deux autres. Aucune sélection d'un seuil sur le test. Scène empirique cible99% :162/165 UNION=98,18%, couverture0,95% ; ce point prédéclaré n'apporte pas une garantie98% et n'est pas promu.
+
+### Faux SUR du meilleur descriptif — scène empirique
+
+Les85 cas sont tous conservés dans `false_sur.records`/`full/audit/attempt0/errors.json`, avec prédiction, vérité, famille actuelle, famille historique, flags et faits officiels ; aucune correction de label. Trois sites humains non publics restent des erreurs, jamais exclus ; leurs SIREN diffèrent des choix, les prédicats historiques état/siège ne peuvent donc changer leur famille.
+
+| Famille actuelle figée | Faux SUR |
+|---|---:|
+| Autre SIREN même adresse (`colocation`) | 31 |
+| Absence de positif UNION dans les100 | 28 |
+| Même SIREN siège vs secondaire | 9 |
+| Autre | 8 |
+| Label éloigné du CRM, distance typée>500m | 7 |
+| Numéro inexploitable | 2 |
+| **Total** | **85** |
+
+526 sans fit : content moyen5 modèles387exacts/410UNION ; SUR risque/marge/scèneWilson0, scène empirique27/29=93,10%, Wilson[78,04;98,09]%, couverture5,51%. Ni les526 ni les85 erreurs ne servent à retoucher les seuils.
+
+Projection préalable2839,293s=47,32min, aucun sous-banc réduit ni nouveau vecteur BASE. Durée run/publication finale1889,231s=31,49min (tentatives et intervalles de reprise inclus conservativement), contre0,521h au rapport généré juste avant publication. Contrôle final jusqu'à2262,015s=37,70min depuis premier lancement, encore très inférieur10h ; pic4331667456octets=4,03Gio.27lignes au rapport automatique ; une attente effective1230,472s (deux constats antérieurs déjà terminés, attente0s). Aucun worker restant ni contrôle VM/push/fichier étranger/pending touché. **Recommandation unique : ne pas promouvoir ce risque, conserver A_VERIFIER faute de seuil admissible98%.**
