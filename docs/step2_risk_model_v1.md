@@ -48,6 +48,10 @@ Auto-publication et commit isolé `docs/step2_risk_model_v1.{json,md}` + ligne a
 
 Première tentative `511f1597`, STOP conservé `7ea0ca9a` : préparation complète vérifiée, aucun encodage nouveau ; premier fit mini achevé mais pas de reçu final, exception de chemin SHA dans l'assemblage scène. Corriger seulement `read(ref)` en `read(verify(ref))` pour les deux références métadonnées concernées. Même protocole/46features/paramètres/plis/seuils, aucun choix sur score. Namespace neuf `H/step2_risk_model_v1_20261020_b/`, ancien namespace immuable. Réutiliser la préparation candidate-only complète via liens en lecture seule après SHA/validation de son ancien code par Git ; recalculer uniquement les indices de population mini/complet. Coût de la première tentative et intervalle de reprise inclus conservativement dans le budget total10h. Aucun fit partiel sans reçu réutilisé.
 
+### Rejeu du helper Wilson avant poursuite
+
+Deuxième STOP `1981d81c` conservé : dix R3 mini et un risque achevés, arrêt au reporting d'un seuil empirique admissible (`b.wilson` n'est pas exporté). Employer le helper officiel déjà importé `b.metric(...)[wilson95_percent]/100` : formule, sélection des seuils et features inchangées. Rejeu réel du modèle scène sauvegardé sur24 lignes calibration :15/15 acceptés, Wilson[79,61;100]%, égal à la fonction contractuelle ; aucun fit ni donnée synthétique. Namespace neuf `_20261020_c`, dix R3/un risque aux reçus complets réutilisés readonly avec SHA/anciencodeGit, aucun fit incomplet repris. Coûts et intervalles des deux tentatives inclus conservativement dans10h. Ce correctif ne transforme pas le15/15 historique en preuve98%.
+
 ## Résultats
 
 ## Fait

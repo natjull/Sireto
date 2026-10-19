@@ -24,7 +24,7 @@ os.environ.update(PYTHONDONTWRITEBYTECODE='1',HF_HUB_OFFLINE='1',TRANSFORMERS_OF
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from scripts import step2_gemma_finetune as io
 read,write,record,verify=io.read,io.write,io.record,io.verify
-HOME=io.HOME;EARLY=HOME/'step2_risk_model_v1_20261020';OWN=HOME/'step2_risk_model_v1_20261020_b';FT=HOME/'step2_gemma_finetune_10h_20261019/full';PREV=io.PREVIOUS
+HOME=io.HOME;EARLY=HOME/'step2_risk_model_v1_20261020';OWN=HOME/'step2_risk_model_v1_20261020_c';BEFORE=HOME/'step2_risk_model_v1_20261020_b';FT=HOME/'step2_gemma_finetune_10h_20261019/full';PREV=io.PREVIOUS
 SCRIPT=Path(__file__).resolve();DOC=ROOT/'docs/step2_risk_model_v1.md';SEED=20261017
 SIGNALS=['naf_div_logp','naf_group_logp','coloc_div_rank','coloc_group_rank','coloc_div_delta_best','coloc_group_delta_best','naf_missing','gemma_base_cosine','coloc_gemma_delta_best']
 FEATURES=['score_top1','margin12','margin13','entropy_top10','native_rank_top1','same_siren_count_top1','same_address_count_top1','near50_count_top1','same_address_or_near50_count_top1','crm_top1_log_distance','crm_top1_distance_missing']+[n+'_'+suffix for n in SIGNALS for suffix in ('top1','top2','delta12')]+['name_jaro_top1','number_exact_top1','street_jaro_top1','postcode_match_top1','active_top1','closed_top1','siege_top1','commune_log_public_count']
@@ -272,7 +272,7 @@ def threshold(values,y,target=.98,wilson=True):
     else:lower=correct/counts
     valid=np.flatnonzero(ends&(lower>=target))
     if not len(valid):return None,dict(accepted=0,precision=None,wilson95=None,target=target,rule='wilson_lower' if wilson else 'empirical')
-    at=valid[-1];n=int(counts[at]);k=int(correct[at]);return float(v[at]),dict(accepted=n,precision=k/n,wilson95=s.b.wilson(k,n),target=target,rule='wilson_lower' if wilson else 'empirical')
+    at=valid[-1];n=int(counts[at]);k=int(correct[at]);return float(v[at]),dict(accepted=n,precision=k/n,wilson95=[v/100 for v in s.b.metric(k,n)['wilson95_percent']],target=target,rule='wilson_lower' if wilson else 'empirical')
 
 
 def risk(out,directory,cv):
@@ -431,7 +431,13 @@ def publish(out):
 
 
 def execute(out,stage):
-    directory=out/stage;directory.mkdir()
+    directory=out/stage
+    if (directory/'receipt.json').exists():
+        ref=read(directory/'receipt.json')
+        for key in ('predictions','models','model','scene_model','decisions'):
+            if key in ref:verify(ref[key])
+        print('REUSE '+out.name+'/'+stage,flush=True);return
+    directory.mkdir()
     for attempt in range(13):
         work=directory/f'attempt{attempt}';work.mkdir();waiting=admit(work);b=read(OWN/'budget.json');b['wait_seconds']+=waiting;b['compute_seconds']=time.time()-b['started_unix']-b['wait_seconds'];write(OWN/'budget.json',b);check(out)
         with (directory/'worker.log').open('a') as log:
@@ -464,11 +470,24 @@ def projection(out):
 def pipeline():
     if (OWN/'budget.json').exists():raise ValueError('Fresh namespace required; do not duplicate a run')
     OWN.mkdir(parents=True,exist_ok=True)
-    previous=read(EARLY/'budget.json') if (EARLY/'budget.json').exists() else dict(started_unix=time.time(),wait_seconds=0.,history=[])
-    write(OWN/'budget.json',dict(started_unix=previous['started_unix'],compute_seconds=time.time()-previous['started_unix']-previous['wait_seconds'],wait_seconds=previous['wait_seconds'],history=previous['history'],previous_attempt=record(EARLY/'budget.json')));current=OWN/'mini'
+    previous=read(BEFORE/'budget.json') if (BEFORE/'budget.json').exists() else dict(started_unix=time.time(),wait_seconds=0.,history=[])
+    write(OWN/'budget.json',dict(started_unix=previous['started_unix'],compute_seconds=time.time()-previous['started_unix']-previous['wait_seconds'],wait_seconds=previous['wait_seconds'],history=previous['history'],previous_attempt=record(BEFORE/'budget.json')));current=OWN/'mini'
     try:
         for smoke in (True,False):
-            current=OWN/('mini' if smoke else 'full');seal(current,smoke);execute(current,'prepare')
+            current=OWN/('mini' if smoke else 'full');seal(current,smoke)
+            if smoke:
+                source=BEFORE/'mini';old=read(source/'plan.json')
+                for ref in old['implementations']:
+                    if ref['path']==str(SCRIPT):
+                        content=subprocess.check_output(['git','show',old['git_head']+':'+str(SCRIPT.relative_to(ROOT))],cwd=ROOT)
+                        if hashlib.sha256(content).hexdigest()!=ref['sha256']:raise ValueError('Previous mini code custody')
+                    else:verify(ref)
+                copied=[]
+                for path in sorted(source.glob('*/receipt.json')):
+                    if not path.parent.name.startswith(('rank','risk')):continue
+                    (current/path.parent.name).symlink_to(path.parent,target_is_directory=True);copied.append(record(path))
+                write(current/'reused_receipts.json',copied)
+            execute(current,'prepare')
             if not smoke:projection(current)
             for cv in range(5):
                 for kind in ('outer','cal','inner0','inner1','inner2'):execute(current,f'rank{cv}_{kind}')
