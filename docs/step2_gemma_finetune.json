@@ -1,0 +1,27 @@
+{
+  "status": "STOP_INCOMPLETE",
+  "reason": "Measured throughput leaves insufficient Metal for fit plus complete encoding",
+  "completed": [
+    "prepare"
+  ],
+  "labels_changed": false,
+  "candidates_changed": false,
+  "production_allowed": false,
+  "wall_seconds": 38.023935079574585,
+  "metal_seconds": 398.54164845775813,
+  "peak_bytes": 3160932352,
+  "plan": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_20261019/full/plan.json",
+    "size_bytes": 6289,
+    "sha256": "4477ba5a5cc90ce69400377db58a74f831d1055d1ff098830c8c4f316c6b2674"
+  },
+  "cost_plan": {
+    "texts": 1266170,
+    "base_missing": 958595,
+    "projected_encoding_seconds": 16147.89042701017,
+    "reserved_encoding_seconds": 17942.679469711187,
+    "admitted_training_seconds": 0,
+    "throughput_only": true,
+    "not_a_measured_full_runtime": true
+  }
+}

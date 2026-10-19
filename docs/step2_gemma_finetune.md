@@ -117,3 +117,16 @@ Publication automatique `docs/step2_gemma_finetune.{json,md}`, rapport français
 avec `handover.md`. Sur STOP, publier raison/étapes mesurées sans inventer les
 résultats manquants. Sources/implémentations/protocole/config scellés ; journal
 ou livrable tiers sale => arrêt de publication, jamais écrasement. Aucun push.
+
+## Résultats
+
+## Fait
+Statut : STOP_INCOMPLETE. V142/G0 et labels inchangés ; aucune promotion.
+Durée murale réelle : 0.6 min ; Metal cumulé : 6.6 min ; pic RSS+driver : 2.94 Gio.
+## Preuve
+Arrêt : Measured throughput leaves insufficient Metal for fit plus complete encoding. Étapes achevées : ['prepare'].
+Résultats complets/SUR/526 non mesurés.
+## Écarts / choix
+Calibration interne disjointe du gradient ; jamais de métrique partielle présentée comme complète.
+## Reste / risques
+Recommandation unique : conserver S2-BASE tant que cette expérience ne fournit pas de résultat complet.
