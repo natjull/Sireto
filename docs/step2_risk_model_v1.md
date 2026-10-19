@@ -44,6 +44,10 @@ Tableau des faux SUR du meilleur modèle descriptif : priorité aux politiques s
 
 Auto-publication et commit isolé `docs/step2_risk_model_v1.{json,md}` + ligne append-only `handover.md`, après vérification sources/code/modèles/rôles ; refuse chemins tiers sales ou édition concurrente du journal. Rapport français≤35lignes, chiffres uniquement mesurés, STOP explicite si incomplet. Aucune certification≥98% sans mesure suffisante, aucune promotion.
 
+### Correctif de plomberie avant reprise du mini
+
+Première tentative `511f1597`, STOP conservé `7ea0ca9a` : préparation complète vérifiée, aucun encodage nouveau ; premier fit mini achevé mais pas de reçu final, exception de chemin SHA dans l'assemblage scène. Corriger seulement `read(ref)` en `read(verify(ref))` pour les deux références métadonnées concernées. Même protocole/46features/paramètres/plis/seuils, aucun choix sur score. Namespace neuf `H/step2_risk_model_v1_20261020_b/`, ancien namespace immuable. Réutiliser la préparation candidate-only complète via liens en lecture seule après SHA/validation de son ancien code par Git ; recalculer uniquement les indices de population mini/complet. Coût de la première tentative et intervalle de reprise inclus conservativement dans le budget total10h. Aucun fit partiel sans reçu réutilisé.
+
 ## Résultats
 
 ## Fait

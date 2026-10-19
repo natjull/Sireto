@@ -24,7 +24,7 @@ os.environ.update(PYTHONDONTWRITEBYTECODE='1',HF_HUB_OFFLINE='1',TRANSFORMERS_OF
 ROOT=Path(__file__).resolve().parents[1];sys.path.insert(0,str(ROOT))
 from scripts import step2_gemma_finetune as io
 read,write,record,verify=io.read,io.write,io.record,io.verify
-HOME=io.HOME;OWN=HOME/'step2_risk_model_v1_20261020';FT=HOME/'step2_gemma_finetune_10h_20261019/full';PREV=io.PREVIOUS
+HOME=io.HOME;EARLY=HOME/'step2_risk_model_v1_20261020';OWN=HOME/'step2_risk_model_v1_20261020_b';FT=HOME/'step2_gemma_finetune_10h_20261019/full';PREV=io.PREVIOUS
 SCRIPT=Path(__file__).resolve();DOC=ROOT/'docs/step2_risk_model_v1.md';SEED=20261017
 SIGNALS=['naf_div_logp','naf_group_logp','coloc_div_rank','coloc_group_rank','coloc_div_delta_best','coloc_group_delta_best','naf_missing','gemma_base_cosine','coloc_gemma_delta_best']
 FEATURES=['score_top1','margin12','margin13','entropy_top10','native_rank_top1','same_siren_count_top1','same_address_count_top1','near50_count_top1','same_address_or_near50_count_top1','crm_top1_log_distance','crm_top1_distance_missing']+[n+'_'+suffix for n in SIGNALS for suffix in ('top1','top2','delta12')]+['name_jaro_top1','number_exact_top1','street_jaro_top1','postcode_match_top1','active_top1','closed_top1','siege_top1','commune_log_public_count']
@@ -90,6 +90,7 @@ def seal(out,smoke):
 
 
 def prepare(out,directory):
+    if (EARLY/'mini/prepare/receipt.json').exists():return reuse_preparation(out)
     s=modules();np=s.np;p=check(out);s.pinned('9a8ecdd6','docs/step2_g0_bench.json');s.pinned('21a464d2','docs/step2_gemma_finetune_10h.json')
     parent=read(s.bench.OWN/'full/data.json');data=read(FT/'data.json');pilot=read(FT/'pilot.json');n=data['queries']
     if n!=17427 or data['budget_reduced'] or data['ids']!=parent['ids'] or data['groups']!=parent['groups'] or data['folds']!=parent['population_folds']:raise ValueError('Population/row/group custody')
@@ -179,6 +180,27 @@ def prepare(out,directory):
     write(out/'data.json',payload);return dict(data=record(out/'data.json'),cache=record(out/'cache.json'),candidate_only_static_seal=payload['static_features'])
 
 
+def reuse_preparation(out):
+    s=modules();np=s.np;plan=check(out);source=EARLY/'mini';oldplan=read(source/'plan.json');verify(oldplan['protocol'])
+    for ref in oldplan['implementations']:
+        if ref['path']==str(SCRIPT):
+            content=subprocess.check_output(['git','show',oldplan['git_head']+':'+str(SCRIPT.relative_to(ROOT))],cwd=ROOT)
+            if hashlib.sha256(content).hexdigest()!=ref['sha256']:raise ValueError('Historical implementation custody')
+        else:verify(ref)
+    receipt=read(source/'prepare/receipt.json');data=read(verify(receipt['data']))
+    for ref in data['sources']+data['static_features']:verify(ref)
+    for name in ('semantic.npy','neighbours.npy','density.npy'):(out/name).symlink_to(source/name)
+    (out/'cache.json').write_text((source/'cache.json').read_text())
+    ft=read(verify(data['source_data']));pilot=read(verify(data['source_pilot']));parent=read(s.bench.OWN/'full/data.json')
+    origin=np.load(source/'origin.npy') if plan['smoke'] else np.arange(17427);po=np.load(source/'pilot_origin.npy') if plan['smoke'] else np.arange(526)
+    np.save(out/'origin.npy',origin);np.save(out/'pilot_origin.npy',po)
+    data.update(ids=[ft['ids'][i] for i in origin],groups=[ft['groups'][i] for i in origin],partition=np.array(parent['partition'])[origin].tolist(),folds=np.array(ft['folds'])[origin].tolist(),queries=len(origin),companies=len({ft['groups'][i] for i in origin}),pilot_queries=len(po))
+    data['sources']+=[record(source/'prepare/receipt.json'),record(source/'plan.json'),record(source/'cache.json')]
+    data['static_features']=[record(out/name) for name in ('semantic.npy','neighbours.npy','density.npy','origin.npy','pilot_origin.npy')]
+    write(out/'data.json',data)
+    return dict(data=record(out/'data.json'),cache=record(out/'cache.json'),candidate_only_static_seal=data['static_features'],reused_preparation=record(source/'prepare/receipt.json'))
+
+
 def dataset(out):
     s=modules();np=s.np;data=read(out/'data.json');source=read(verify(data['source_data']));pilot=read(verify(data['source_pilot']));origin=np.load(out/'origin.npy');po=np.load(out/'pilot_origin.npy');meta=Path(source['metadata']);n=len(origin)
     from types import SimpleNamespace
@@ -221,7 +243,7 @@ def scene_features(s,ds,rows,pred,nb,out):
     vals.extend(top[:,f[n]] for n in ('name_jaro_max','number_exact','street_jaro','postcode_match','v2_is_active','v2_is_closed','v2_is_siege'));vals.append(ds.density[rows])
     risk=np.column_stack(vals).astype(np.float32)
     if risk.shape!=(len(rows),len(FEATURES)):raise ValueError('Risk feature schema drift')
-    data=read(out/'data.json');source=read(data['source_data']);origin=np.load(out/'origin.npy');po=np.load(out/'pilot_origin.npy')
+    data=read(out/'data.json');source=read(verify(data['source_data']));origin=np.load(out/'origin.npy');po=np.load(out/'pilot_origin.npy')
     base=np.empty((len(rows),100,46),dtype=np.float32);g=rows<ds.n
     base[g]=np.load(source['scenes']['path'],mmap_mode='r')[origin[rows[g]]]
     base[~g]=np.load(FT/'p_pilot_scene.npy',mmap_mode='r')[po[rows[~g]-ds.n]]
@@ -356,7 +378,7 @@ def verify_all(out,directory):
             for rec in model['nb_training']+[u['nb_scoring'] for u in model['uses']]:
                 verify(rec['model']);refs.append(rec['model']);nb+=1
                 # Pilot rows have groups distinct from every admissible training company.
-                source=read(data['source_pilot']);po=np.load(out/'pilot_origin.npy');gg=np.r_[groups,np.array(source['groups'])[po]]
+                source=read(verify(data['source_pilot']));po=np.load(out/'pilot_origin.npy');gg=np.r_[groups,np.array(source['groups'])[po]]
                 assert not set(gg[rec['train_indices']])&set(gg[rec['scored_indices']]) and rec['serialized_replay_equal']
     if models!=25:raise ValueError('Expected25 isolated ranking fits')
     for cv in range(5):
@@ -441,7 +463,9 @@ def projection(out):
 
 def pipeline():
     if (OWN/'budget.json').exists():raise ValueError('Fresh namespace required; do not duplicate a run')
-    OWN.mkdir(parents=True,exist_ok=True);write(OWN/'budget.json',dict(started_unix=time.time(),compute_seconds=0.,wait_seconds=0.,history=[]));current=OWN/'mini'
+    OWN.mkdir(parents=True,exist_ok=True)
+    previous=read(EARLY/'budget.json') if (EARLY/'budget.json').exists() else dict(started_unix=time.time(),wait_seconds=0.,history=[])
+    write(OWN/'budget.json',dict(started_unix=previous['started_unix'],compute_seconds=time.time()-previous['started_unix']-previous['wait_seconds'],wait_seconds=previous['wait_seconds'],history=previous['history'],previous_attempt=record(EARLY/'budget.json')));current=OWN/'mini'
     try:
         for smoke in (True,False):
             current=OWN/('mini' if smoke else 'full');seal(current,smoke);execute(current,'prepare')
