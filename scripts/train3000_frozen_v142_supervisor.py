@@ -23,7 +23,7 @@ from scripts import train3000_frozen_v142_brief10 as control
 mini=control.mini
 GIB=control.GIB
 OUT=control.OUT
-SOURCE_NAMES=('supervisor','pipeline','contexts','numeric','osm','activity','brief10','fidelity','bano')
+SOURCE_NAMES=('supervisor','pipeline','contexts','numeric','osm','activity','brief10','fidelity','bano','covered')
 
 
 def sources():
@@ -49,9 +49,9 @@ def task(phase,inputs,full=False):
     for old in OUT.glob(key+'_*'+'/receipt.json'):
         r=mini.read(old)
         if r['stop_reason']=='WAIT_BRIEF10_RESOURCE_CAP':
-            if r['cap_bytes']>=12*GIB or (r['cap_bytes']>=8*GIB and phase not in ('prepare','generate')):
+            if r['cap_bytes']>=12*GIB or (r['cap_bytes']>=8*GIB and phase not in ('prepare','generate','covered-prepare')):
                 raise RuntimeError('Terminal memory stop; preserve all attempts, no skipped query')
-            required=max(required,12*GIB if phase in ('prepare','generate') else 8*GIB)
+            required=max(required,12*GIB if phase in ('prepare','generate','covered-prepare') else 8*GIB)
     while True:
         d=OUT/(key+'_'+uuid.uuid4().hex[:10]);d.mkdir(parents=True)
         if required<=8*GIB:
@@ -74,7 +74,7 @@ def task(phase,inputs,full=False):
             with (d/Path(ref['path']).name).open('xb') as f:f.write(Path(ref['path']).read_bytes())
         mini.save(d/'input.json',inputs)
         tmp=d/'tmp';tmp.mkdir()
-        interpreter=mini.bano.cohort.preflight.H/'runtime/bin/python' if phase=='prepare' else ROOT/'.venv/bin/python'
+        interpreter=mini.bano.cohort.preflight.H/'runtime/bin/python' if phase in ('prepare','covered-prepare') else ROOT/'.venv/bin/python'
         command=[str(interpreter),'-u',str(Path(__file__).resolve()),'--worker',phase,'--directory',str(d)]
         env=dict(os.environ,SIRETO_BRIEF10_CAP_BYTES=str(cap),SIRETO_BRIEF10_TELEMETRY=str(d/'memory.jsonl'),
             TMPDIR=str(tmp),SQLITE_TMPDIR=str(tmp),HF_HUB_OFFLINE='1',TRANSFORMERS_OFFLINE='1',
@@ -111,7 +111,7 @@ def task(phase,inputs,full=False):
         if reason=='WAIT_VM_RE_ADMISSION':continue
         if reason=='WAIT_BRIEF10_RESOURCE_CAP':
             if cap<8*GIB:required=8*GIB;continue
-            if phase=='generate' and cap==8*GIB:required=12*GIB;continue
+            if phase in ('generate','covered-prepare') and cap==8*GIB:required=12*GIB;continue
         if reason or rc:raise RuntimeError('STOP: '+str(d/'worker.log'))
         saved=dict(result=mini.record(d/'result.json'),receipt=mini.record(d/'receipt.json'),sources=refs)
         mini.save(completed,saved);return saved
@@ -292,7 +292,11 @@ def worker(phase,d):
     from scripts import train3000_frozen_v142_pipeline as pipeline
     args=mini.read(d/'input.json')
     try:
-        if phase=='prepare':pipeline.prepare(d,args['ids'])
+        if phase in ('covered-prepare','covered-evaluate'):
+            from scripts import train3000_frozen_v142_covered as covered
+            if phase=='covered-prepare':covered.prepare(d,args)
+            else:covered.evaluate(d,args['seal'])
+        elif phase=='prepare':pipeline.prepare(d,args['ids'])
         elif phase=='generate':pipeline.generate(d,args['binding'],Path(args['prepared']))
         elif phase=='audit':pipeline.audit(d)
         else:pipeline.evaluate(d,args['seal'])
@@ -305,10 +309,14 @@ if __name__=='__main__':
     mode=parser.add_mutually_exclusive_group(required=True)
     mode.add_argument('--prepare-ready',action='store_true')
     mode.add_argument('--full',action='store_true')
-    mode.add_argument('--worker',choices=['prepare','generate','audit','evaluate'])
+    mode.add_argument('--covered-only',action='store_true',help='Lot A, proved existing commune/SITE/PARENT banks only; never full3000')
+    mode.add_argument('--worker',choices=['prepare','generate','audit','evaluate','covered-prepare','covered-evaluate'])
     parser.add_argument('--directory',type=Path)
     args=parser.parse_args()
     if args.worker:worker(args.worker,args.directory)
+    elif args.covered_only:
+        from scripts import train3000_frozen_v142_covered as covered
+        covered.run(sys.modules[__name__])
     else:
         try:run(args.full)
         except Exception as error:
