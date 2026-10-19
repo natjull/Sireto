@@ -87,6 +87,11 @@ class Guard:
         import psutil
         self.directory, self.metal, self.peak, self.rss_peak, self.driver_peak = directory, metal, 0, 0, 0
         self.process = psutil.Process(); self.stop = threading.Event()
+        self.rss_peak = self.process.memory_info().rss
+        if metal:
+            import torch
+            self.driver_peak = torch.mps.driver_allocated_memory()
+        self.peak = self.rss_peak+self.driver_peak
         threading.Thread(target=self.monitor, daemon=True).start()
 
     def monitor(self):
