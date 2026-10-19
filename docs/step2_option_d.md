@@ -117,7 +117,7 @@ l'amont V142 supervisé n'est pas full-OOF : aucune certification nationale.
 **RUN DÉTACHÉ EN COURS — contenu/empilement/courbe/SUR complets non encore mesurés.**
 
 - G0 mesuré sur526 : présence exacte478/526=90,87%, SIREN486/526 et union486/526=92,40%. V142 reste507/511/511 ; G0 n'est PAS proposé comme remplacement.
-- Intersection moyenne G0∩V142 :44,01/100 ; recherche0,2213s/q, p950,4563s, workers complets0,2513s/q ; pic3044,4Mio (2,97Gio), objectif2s/q atteint sur ce pilote consommé.
+- Intersection moyenne G0∩V142 :44,01/100 ; recherche0,2213s/q, p950,4563s, workers complets0,2513s/q ; pic3044,4Mio (2,97Gio). Moyenne sous2s, mais1/526 requête dépasse2s (maximum2,4523s, p990,7219s) : pas de garantie de latence absolue.
 - 3000 dossiers d'apprentissage réels générés/scellés au checkpoint publié. Population admise17427/11483 entreprises, hors405 entreprises du pilote et jeux fermés ; suite soumise au budget G0 observé≤6h, sans aucun choix sur résultats.
 - Deux smokes réels20 nouveaux/36 pilotes : premier245,54s, second104,19s/1952,2Mio. Optimisation de NN exacte sans changement de pool/poids :56 listes identiques,170000 cellules de features identiques,32 SHA modèles/cibles et288 vecteurs de scores identiques entre exécutions.
 - Rejeu indépendant du second smoke :32 modèles/cibles,54 audits sans entreprise commune,144 vecteurs primaires+144 sorties confiance,12 rôles de cibles union vérifiés ; zéro avertissement.
