@@ -200,17 +200,30 @@ class G0:
         a, radius = self.arrays, 5000.
         x, y = point
         lo, hi = a['block_lo.npy'], a['block_hi.npy']
-        blocks = np.flatnonzero((lo[:, 0] <= x+radius) & (hi[:, 0] >= x-radius) & (lo[:, 1] <= y+radius) & (hi[:, 1] >= y-radius))
-        if not len(blocks):
-            return []
+        dx = np.maximum(np.maximum(lo[:, 0]-x, x-hi[:, 0]), 0.)
+        dy = np.maximum(np.maximum(lo[:, 1]-y, y-hi[:, 1]), 0.)
+        lower = dx**2+dy**2
+        blocks = np.flatnonzero(lower <= radius**2)
+        blocks = blocks[np.argsort(lower[blocks], kind='stable')]
         offsets, sites = a['block_offsets.npy'], a['block_sites.npy']
-        locations = np.concatenate([sites[int(offsets[k]):int(offsets[k+1])] for k in blocks])
-        xy = a['site_xy.npy'][locations]
-        squared = (xy[:, 0]-x)**2+(xy[:, 1]-y)**2
-        keep = np.flatnonzero((squared <= radius**2) & a['public'][locations])
-        keys = a['keys'][locations[keep]]
-        chosen = np.lexsort((keys, squared[keep]))[:100]
-        return [(f'{int(keys[i]):014d}', f'{int(keys[i]):014d}'[:9]) for i in chosen]
+        best_keys, best_squared = np.array([], dtype=np.uint64), np.array([], dtype=np.float64)
+        cutoff = radius**2
+        for start in range(0, len(blocks), 32):
+            selected = blocks[start:start+32]
+            selected = selected[lower[selected] <= cutoff]
+            if not len(selected):
+                break
+            locations = np.concatenate([sites[int(offsets[k]):int(offsets[k+1])] for k in selected])
+            xy = a['site_xy.npy'][locations]
+            squared = (xy[:, 0]-x)**2+(xy[:, 1]-y)**2
+            keep = np.flatnonzero((squared <= cutoff) & a['public'][locations])
+            keys = np.r_[best_keys, a['keys'][locations[keep]]]
+            distances = np.r_[best_squared, squared[keep]]
+            chosen = np.lexsort((keys, distances))[:100]
+            best_keys, best_squared = keys[chosen], distances[chosen]
+            if len(chosen) == 100:
+                cutoff = float(best_squared[-1])
+        return [(f'{int(key):014d}', f'{int(key):014d}'[:9]) for key in best_keys]
 
     def retrieve(self, q, geometry):
         text = normalize_text(b.text(q['crm_name']))
@@ -265,9 +278,9 @@ def generate(out, scope, start, end, directory):
     return dict(queries=len(rows), search_seconds=sum(r['seconds'] for r in rows), candidates=b.record(directory/'candidates.json'))
 
 
-def feature_batch(out, part, directory):
+def feature_batch(out, parts, directory):
     plan = load_plan(out)
-    rows = b.read(b.verified(part['candidates']))
+    rows = [r for part in parts for r in b.read(b.verified(part['candidates']))]
     ids = [r['query_id'] for r in rows]
     queries = b.index(b.read(out/'training_queries.json'))
     panel = {q: queries[q] for q in ids}
@@ -376,7 +389,7 @@ class StackRunner:
         return model.predict(self.X[test].reshape(-1, len(STACK))).reshape(len(test), 100)
 
 
-def evaluate(out, directory):
+def evaluate(out, directory, g0_only=False):
     plan = load_plan(out)
     Xold, y, views, groups, folds, ids, native, refs, outer, _, _ = d.load(plan['smoke'])
     pqueries = b.index(b.read(out/'pilot_queries.json'))
@@ -402,7 +415,7 @@ def evaluate(out, directory):
     r3pred = np.load(b.verified(old_v2['predictions']))['v1_plus_v2'][[pack['query_ids'].tolist().index(q) for q in ids]]
     comparisons = dict(V142=views[:, 0], R3_v2=views[np.arange(len(ids)), b.select_top(r3pred)[0]])
     curves, predictions = {}, {}
-    for fit in b.read(out/'content_parts.json'):
+    for fit in ([] if g0_only else b.read(out/'content_parts.json')):
         n = fit['n']
         pred = np.load(b.verified(fit['scores']))
         if fit['pilot_ids'] != ids.tolist() or not np.isfinite(pred).all():
@@ -443,6 +456,12 @@ def evaluate(out, directory):
         geo_queries=sum(bool(r['geo_count']) for r in G0rows), national_fill_queries=sum(bool(r['national_fill']) for r in G0rows),
         blank_queries=sum(r['blank_text'] for r in G0rows), per_query=[dict(query_id=str(q), overlap=len({c['siret'] for c in G0outputs[q]} & {c['siret'] for c in native[q]}),
             presence={v: bool(gviews[i, :, j].any()) for j, v in enumerate(b.VIEWS)}) for i, q in enumerate(ids)])
+    if g0_only:
+        write(directory/'result.json', dict(status='G0_PILOT_DIAGNOSTIC_ONLY', queries=len(ids), G0=g0,
+            source_plan=b.record(out/'plan.json'), candidate_sources=pilot_parts, ranking_fit=False))
+        print(json.dumps(dict(stage='G0_DIAGNOSTIC', queries=len(ids), presence=g0['presence'],
+            overlap=g0['overlap_mean'], seconds_per_query=g0['search_seconds_per_query'])), flush=True)
+        return dict(result=b.record(directory/'result.json'))
     np.savez_compressed(directory/'predictions.npz', **predictions)
     result = dict(status='MEASURED_DEVELOPMENT_NOT_PRODUCTION', smoke=plan['smoke'], queries=len(ids), source_plan=b.record(out/'plan.json'),
         cohort=b.read(out/'cohort.json'), generation=b.read(out/'generation.json'), G0=g0, curves=curves,
@@ -507,6 +526,7 @@ def run(out, smoke):
     pilot_count = len(b.read(out/'pilot_queries.json'))
     pilot_parts = [execute(out, '_g0', out/f'pilot_{start:05d}', ['--scope', 'pilot', '--start', start, '--end', min(start+BATCH, pilot_count)]) for start in range(0, pilot_count, BATCH)]
     write(out/'pilot_parts.json', pilot_parts)
+    execute(out, '_diagnose', out/'pilot_diagnostic')
     available = len(b.read(out/'training_queries.json'))
     initial = min(3000, available)
     train_parts = [execute(out, '_g0', out/f'train_{start:05d}', ['--scope', 'training', '--start', start, '--end', min(start+BATCH, initial)]) for start in range(0, initial, BATCH)]
@@ -532,7 +552,7 @@ def run(out, smoke):
         pilot_and_training_budget_seconds=b.read(out/'g0_budget.json')['seconds'], extension_stop=extension_stop,
         search_seconds=sum(p['search_seconds'] for p in train_parts), peak_rss_bytes=max(p['peak_rss_bytes'] for p in train_parts))
     write(out/'generation.json', generation)
-    feature_parts = [execute(out, '_features', out/f'features_{i:04d}', ['--part', i]) for i in range(len(train_parts))]
+    feature_parts = [execute(out, '_features', out/f'features_{i:04d}', ['--part', i]) for i in range(0, len(train_parts), 4)]
     X = np.lib.format.open_memmap(out/'features.npy', mode='w+', dtype=np.float32, shape=(n, 100, 85))
     keys = np.lib.format.open_memmap(out/'candidate_keys.npy', mode='w+', dtype='S14', shape=(n, 100))
     cursor, qids = 0, []
@@ -607,7 +627,7 @@ def markdown(r):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('mode', choices=['run', '_prepare', '_g0', '_features', '_content', '_evaluate'])
+    parser.add_argument('mode', choices=['run', '_prepare', '_g0', '_features', '_content', '_diagnose', '_evaluate'])
     parser.add_argument('--output-dir', type=Path)
     parser.add_argument('--directory', type=Path)
     parser.add_argument('--smoke', action='store_true')
@@ -636,11 +656,11 @@ def main():
     elif args.mode == '_g0':
         receipt = generate(out, args.scope, args.start, args.end, args.directory)
     elif args.mode == '_features':
-        receipt = feature_batch(out, b.read(out/'train_parts.json')[args.part], args.directory)
+        receipt = feature_batch(out, b.read(out/'train_parts.json')[args.part:args.part+4], args.directory)
     elif args.mode == '_content':
         receipt = content_fit(out, args.n, args.directory)
     else:
-        receipt = evaluate(out, args.directory)
+        receipt = evaluate(out, args.directory, g0_only=args.mode == '_diagnose')
     guard.stop.set()
     receipt.update(elapsed_seconds=time.monotonic()-started, peak_rss_bytes=guard.peak)
     write(args.directory/'receipt.json', receipt)

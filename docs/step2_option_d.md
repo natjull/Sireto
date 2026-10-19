@@ -17,7 +17,10 @@ rayon FIXE de5000m lorsque la géométrie CRM existe déjà : géométries v17 p
 le pilote, `ban.parquet` historique query-only pour les nouveaux dossiers.
 Aucun nouveau géocodage. Scan exact des blocs Morton officiels v126 dont les
 boîtes intersectent le rayon ; distances sur les coordonnées originales,
-pas de qualité transférée entre sources. Aucun label dans ces interfaces.
+pas de qualité transférée entre sources. Élagage exact par borne inférieure
+point/boîte et meilleur100 courant, égalités conservées ; aucun changement
+des100 voisins par rapport au scan intégral des blocs du rayon. Aucun label
+dans ces interfaces.
 Fusion RRF somme, poids1, k60 ; égalités SIRET lexical, sortie≤100.
 Si moins de100 sites naturels : compléter seulement avec BM25 national
 nom+adresse (pas remplacer/réordonner les sites déjà émis). Pour une entrée
@@ -99,6 +102,8 @@ la politique sur les tests.
 
 Namespace propre `H/step2_option_d_20261017/`, sous-processus séquentiels,
 un thread, DuckDB512Mio, garde RSS5,75Gio (<6Gio), fichiers neufs/scellés.
+G0 par256 requêtes ; hydratation/features regroupées par au plus1024 requêtes
+pour amortir les scans officiels, sans agrégat entre requêtes.
 Avant toute phase susceptible de dépasser2Gio, attendre60s tant que le
 superviseur `train3000_frozen_v142_supervisor.py` OU un descendant a RSS>4Gio.
 Aucun signal ni contrôle envoyé à l'autre agent/VM ; aucune écriture v174.
