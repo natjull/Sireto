@@ -44,4 +44,14 @@ Namespace neuf `H/step2_colocated_signals_20261019/{smoke,full}` ; sources/modè
 
 ## Résultats
 
-PRÉ-DÉCLARÉ — mesures non encore exécutées.
+**CHECKPOINT RUNNING — résultats OOF, deltas et SUR pas encore disponibles.**
+
+- Implémentation scellée `182d7aa1`, protocole `5ba93ebd`. Deux smokes réels118 dossiers/100 entreprises :100 fits chacun,2832 vecteurs ranking et200 usages NB sérialisés/rejoués sans chevauchement entreprise. Toutes prédictions et décisions des4 recettes strictement identiques entre runs ; `smoke_verified/verification.json` passé.11498 textes BASE,10894 hors probe en69,606s,0troncature, pic RSS+driver2,18Gio. Seul changement post-smoke : télémétrie RSS immédiate ;31 fonctions/classes scientifiques AST inchangées, garde réelle vérifiée.
+- Préparation complète terminée en30,75s, pic RSS1,35Gio :17427 dossiers/11483 entreprises. NAF rév.2 disponible pour17375 cibles supervisées et1322009/1742700 paires candidat ; tous les dossiers conservés.
+- Sous-banc retenu intégralement :**3000 dossiers/2454 entreprises**, partitions G0 héritées, aucune réduction. Famille co-adresse FIGÉE :196 cas du sous-banc,1046 sur l'ensemble ; pas de sélection sur ces cas.
+- Probe BASE réel du nouveau texte du brief :**1000 textes (500CRM/500SITE) en5,822s**, chargement1,069s/warmup séparés,0troncature ; pic RSS+driver2,24Gio. Ce débit concerne les textes courts du brief, pas les anciens textes nom+adresse/adaptés.
+- **268697 textes uniques nécessaires**, projection conservatrice1,5×débit :2347,45s (**39,12min**, estimation et non temps final), sous le budget3h ; garde3h réelle active. Encodage complet en cours, puis quatre recettes et S1 complet17427, bootstrap/SUR, confirmation526 conditionnelle seulement.
+- Complet détaché **PID91732** : `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -u scripts/step2_colocated_signals.py run --commit`.
+- Suivi : `tail -f /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full.log` ; progression `full/encode/progress.json`, puis `full/<recette>/worker.log`.
+- À succès : résultats remplacent ce checkpoint, `full/final_report.md`≤30 lignes et `full/publication.json` attestent la publication/son commit. Arrêt plutôt qu'écraser un journal tiers sale ; en cas d'arrêt lire les logs et `resource_stop.json`, ne pas interpréter le checkpoint comme statut vivant.
+- Aucun résultat top1/delta/SUR ni gain V142 complet annoncé. Aucune modification de labels/pools/jeux fermés/v174/VM/étrangers/pending, aucun push. Une seule attente bloquante utilisée pour vérifier la fin du smoke, pas d'attente sur le long run.

@@ -1,0 +1,173 @@
+{
+  "status": "RUNNING_ENCODING_OOF_RESULTS_PENDING",
+  "checkpoint_unix": 1792409128.773002,
+  "implementation_commit": "182d7aa1",
+  "preregistration_commit": "5ba93ebd",
+  "supervisor_pid": 91732,
+  "command": "PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -u scripts/step2_colocated_signals.py run --commit",
+  "output_dir": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full",
+  "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full.log",
+  "queries": 3000,
+  "companies": 2454,
+  "full_s1_queries": 17427,
+  "full_s1_companies": 11483,
+  "selection": {
+    "original_queries": 3000,
+    "queries": 3000,
+    "companies": 2454,
+    "reduced": false,
+    "unique_texts": 268697,
+    "projected_seconds": 2347.4503847109877,
+    "budget_seconds": 10800.0,
+    "indices": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/sub_indices.npy",
+      "size_bytes": 24128,
+      "mtime_ns": 1792408966424944227,
+      "inode": 5006014,
+      "sha256": "a31adc6ccc40018ead0fa4d2d6e2c61d7eb3f42e08eba089165d3269244061e4"
+    },
+    "text_files": {
+      "texts.json": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/selection/texts.json",
+        "size_bytes": 22346123,
+        "mtime_ns": 1792408966410053484,
+        "inode": 5006032,
+        "sha256": "3f0509692edb625ae2354def5aa62ad4c6b542903f7b9e7097273ff8ae949568"
+      },
+      "qtext.npy": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/selection/qtext.npy",
+        "size_bytes": 69836,
+        "mtime_ns": 1792408966419856076,
+        "inode": 5006033,
+        "sha256": "8e0ffa4f147b022c55d5d13945f3d772d9a28b4ad849b1b3011ee03ba18fefe3"
+      },
+      "ctext.npy": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/selection/ctext.npy",
+        "size_bytes": 6970928,
+        "mtime_ns": 1792408966420452079,
+        "inode": 5006034,
+        "sha256": "5b559ce24657ae3fa4ad1154ee2a59ffa2080357ef70c13171eade4427dc366a"
+      }
+    }
+  },
+  "preparation": {
+    "queries": 17427,
+    "initial_subset": 3000,
+    "unique_texts": 268697,
+    "data": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/data.json",
+      "size_bytes": 1612773,
+      "mtime_ns": 1792408951576498338,
+      "inode": 5006018,
+      "sha256": "5f2a351b0c50e21af3d9811935ba1a95f0fd7dc804e82b0b9a4a654ab1d69d88"
+    },
+    "seconds": 30.7484055836685,
+    "peak_rss_bytes": 1445953536
+  },
+  "probe": {
+    "status": "BASE_NO_ADAPTER_PROBE",
+    "items": 1000,
+    "crm": 500,
+    "sites": 500,
+    "seconds": 5.821630083955824,
+    "seconds_per1000": 5.821630083955824,
+    "load_seconds": 1.068576707970351,
+    "warmup_seconds": 0.5434349160641432,
+    "vectors": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/probe/vectors.npy",
+      "size_bytes": 3072128,
+      "mtime_ns": 1792408964277975534,
+      "inode": 5006027,
+      "sha256": "a4a9b3e9093b390232beda60169a37668ec83f3e39c555c727a6601f6677785c"
+    },
+    "texts": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/probe/texts.json",
+      "size_bytes": 69295,
+      "mtime_ns": 1792408964281130133,
+      "inode": 5006028,
+      "sha256": "efbbe8136f8fd086656afadf992f2517c3e81f28e6a35d1409c0619059e5deb6"
+    },
+    "total_texts": 268697,
+    "projected_seconds": 2347.4503847109877,
+    "truncated": 0,
+    "max_raw_tokens": 60,
+    "runtime": {
+      "python": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/runtime/bin/python",
+      "torch": "2.14.1",
+      "transformers": "5.19.0"
+    },
+    "adapter_loaded": false,
+    "peak_rss_bytes": 1226260480,
+    "peak_driver_bytes": 1192984576,
+    "peak_rss_plus_driver_bytes": 2401157120
+  },
+  "smoke_verification": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/smoke_verified/verification.json",
+    "size_bytes": 1391,
+    "mtime_ns": 1792408664255947007,
+    "inode": 5005895,
+    "sha256": "c23117fbc0e5ae064080a10bd5a7d904b4e931cb82bebef54546af69d2af5a56"
+  },
+  "guard_verification": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/guard_smoke/verification.json",
+    "size_bytes": 193,
+    "mtime_ns": 1792408889442583567,
+    "inode": 5005993,
+    "sha256": "364d26371807c264176be47fa00158c68060f383d5478614c07320f4a4780e68"
+  },
+  "family": {
+    "reference": "c37a1a7b",
+    "full_count": 1046,
+    "sub_count": 196
+  },
+  "naf_availability": {
+    "known_supervised": 17375,
+    "known_candidate_pairs": 1322009
+  },
+  "variants": {
+    "base": {
+      "top1": null,
+      "confidence": null
+    },
+    "s1": {
+      "top1": null,
+      "confidence": null
+    },
+    "s2": {
+      "top1": null,
+      "confidence": null
+    },
+    "s1_s2": {
+      "top1": null,
+      "confidence": null
+    }
+  },
+  "deltas": null,
+  "full_s1": null,
+  "confirmation": null,
+  "original_labels_unchanged": true,
+  "candidates_unchanged": true,
+  "closed_sets_opened": false,
+  "production_allowed": false,
+  "data": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/data.json",
+    "size_bytes": 1612773,
+    "mtime_ns": 1792408951576498338,
+    "inode": 5006018,
+    "sha256": "5f2a351b0c50e21af3d9811935ba1a95f0fd7dc804e82b0b9a4a654ab1d69d88"
+  },
+  "plan": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/plan.json",
+    "size_bytes": 3050,
+    "mtime_ns": 1792408919700755080,
+    "inode": 5005998,
+    "sha256": "293fe4e73a697838095ae425e405cae69ab688d70c6ceea854b7cd3dfa494151"
+  },
+  "automatic_publication": {
+    "enabled": true,
+    "receipt": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/publication.json",
+    "final_report": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_colocated_signals_20261019/full/final_report.md",
+    "refuses_foreign_dirty_journal": true
+  },
+  "note": "Checkpoint only, not final inference. Full process sequential and detached; selection retained all3000 after real probe budget. No top1/delta/SUR result yet. Follow log, worker logs and final publication receipt; source code sealed while running."
+}
