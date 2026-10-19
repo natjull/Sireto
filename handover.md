@@ -1,5 +1,7 @@
 # SIRETO Handover - 25 Août 2026
 
+- 2026-10-17 — Audit documentaire janvier2026/étape2 : `docs/legacy_v2_routing_comparability.md` ; commit isolé auto-référencé par `git log -1 --format=%H -- docs/legacy_v2_routing_comparability.md`. Non-comparabilité établie : gold géofiltré, positif réintroduit dans les samples, négatifs même SIREN exclus (`max_same_siren_negatives=0`),1428/2512 scènes top1/top2 identiques ; audit antérieur brut1866/1872=99,679 %, trois erreurs réinterprétées pour99,84 %. Risque cibleSIREN/64 features ; sémantique/rareté/densité à évaluer, aucun gain V142 promis. Recouvrements test4323/control962/folds0/1 non établis, aucun jeu réservé/parquet/modèle chargé ; smoke réel de métadonnées et arithmétique seulement, sans benchmark rejoué, web ou push.
+
 ## Etat des lieux
 
 Mise à jour active du 2 octobre 2026 : objectif **recherche initiale <=100
