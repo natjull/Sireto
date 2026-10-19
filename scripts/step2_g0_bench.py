@@ -57,6 +57,8 @@ def source():
     b.verified(matrix['features']); b.verified(matrix['keys'])
     queries = b.read(SOURCE/'training_queries.json')
     labels = b.read(SOURCE/'label_side.json')
+    if d.digest([q['query_id'] for q in queries]) != matrix['query_ids_sha256'] or matrix['feature_names'] != old.CONTENT:
+        raise ValueError('Cached feature row/column binding changed')
     if len(queries) != 17427 or len({labels[q['query_id']]['human_ground_truth_siren'] for q in queries}) != 11483:
         raise ValueError('Admissible population drift')
     if any(q['fold'] not in (2, 3, 4) for q in queries):
@@ -137,6 +139,8 @@ def prepare(out):
                 {q: {labels[q]['human_ground_truth_siret']}}, geometry, sites, points)
             site[i, [j for j, _ in relevant[q]]] = measured[0, :, b.VIEWS.index('site_operational')]
     views = np.stack([exact, exact | site], axis=2)
+    if not plan['smoke'] and int(exact.sum()) != result['curves']['17427']['fit']['positive_queries']:
+        raise ValueError('Exact targets differ from sealed optionD')
     np.save(out/'views.npy', views)
     splitter = GroupKFold(n_splits=5, shuffle=True, random_state=b.SEED)
     splits = [(train.tolist(), test.tolist()) for train, test in splitter.split(ids, groups=groups)]
@@ -365,7 +369,7 @@ def audit(out, directory):
 
 
 def report(r):
-    lines = ['# Banc G0 à grande échelle — résultats', '', '**Banc de développement, pas précision produit V142.**', '',
+    lines = ['## Résultats', '', '**Banc de développement, pas précision produit V142.**', '',
         f'{r["queries"]} dossiers /{r["companies"]} entreprises ;5 plis par entreprise, mêmes plis pour toutes variantes.',
         f'Présence@100 : exact{r["availability"]["exact_present"]}, union{r["availability"]["union_present"]} ; toutes absences conservées.', '',
         '| Recette | Exact, Wilson95 | Union, Wilson95 | Δ exact, IC95 cluster | Δ union, IC95 cluster |', '|---|---|---|---|---|']
@@ -405,6 +409,9 @@ def summarize(out, directory):
         variants=variants, deltas=deltas, bootstrap_replicates=10000, bootstrap_seed=b.SEED, recommendation=rec,
         data=b.record(out/'data.json'), plan=b.record(out/'plan.json'), fit_count=sum(x['fit_count'] for x in receipts),
         score_vectors_replayed=sum(x['score_vectors_replayed'] for x in receipts),
+        audit=dict(facts=b.record(out/'audit/facts.json'), document=b.record(ROOT/'docs/step2_sur_errors_audit.md'),
+            occurrences=len(b.read(out/'audit/facts.json')), unique_queries=len({p['query_id'] for p in b.read(out/'audit/facts.json')}),
+            manual_unique_verdict_counts={label: (ROOT/'docs/step2_sur_errors_audit.md').read_text().count('**Verdict — '+label+' :**') for label in ('label discutable', 'indéterminé', 'erreur du modèle')}),
         peak_rss_bytes=max(b.read(p)['peak_rss_bytes'] for p in out.glob('*/receipt.json')), seconds=time.time()-plan['started_unix'],
         original_labels_unchanged=True, candidates_unchanged=True, closed_sets_opened=False, production_allowed=False)
     for ref in data['official_refs'].values():
@@ -412,10 +419,64 @@ def summarize(out, directory):
     b.verified(data['source_matrix']); b.verified(data['views'])
     b.write(out/'result.json', result)
     (out/'result.md').write_text(report(result))
+    (out/'final_report.md').write_text(final_report(result))
     if not plan['smoke']:
         b.write(ROOT/'docs/step2_g0_bench.json', result)
         DOC.write_text((out/'preregistered.md').read_text()+'\n'+report(result))
     return dict(result=b.record(out/'result.json'))
+
+
+def final_report(r):
+    lines = ['## Fait', '`scripts/step2_g0_bench.py`, `docs/step2_g0_bench.{json,md}` et `docs/step2_sur_errors_audit.md`.',
+        f'Banc de développement G0 :{r["queries"]} dossiers /{r["companies"]} entreprises,5 plis entreprise,4 recettes figées.', '',
+        '## Preuve', f'{r["fit_count"]} fits ;{r["score_vectors_replayed"]} vecteurs rejoués depuis poids sauvés ; pic{r["peak_rss_bytes"]/1024**3:.2f}Gio ;{r["seconds"]:.1f}s.',
+        '| Recette | Exact %, Wilson95 | Union %, Wilson95 | Δ union, IC95 entreprise |', '|---|---|---|---|']
+    def short(x):
+        if x is None: return 'non définie'
+        a, z = x['wilson95_percent']; return f'{x["percent"]:.2f} [{a:.2f};{z:.2f}]'
+    for name, v in r['variants'].items():
+        delta = r['deltas'].get(name)
+        dd = '—' if not delta else f'{delta["union"]["delta_pp"]:+.3f} {delta["union"]["paired_company_bootstrap95_pp"]}'
+        lines.append(f'| {name} | {short(v["top1"]["exact"])} | {short(v["top1"]["union"])} | {dd} |')
+    lines += ['', '| SUR | Précision union %, Wilson95 | Couverture %, Wilson95 |', '|---|---|---|']
+    for name, v in r['variants'].items():
+        for policy, s in v['confidence']['policies'].items():
+            lines.append(f'| {name}/{policy} | {short(s["precision"]["union"])} | {short(s["coverage"])} |')
+    lines += ['', '## Écarts / choix', 'Poids entreprise appliqués au ranking seulement ; union=exact OU site, sans label ni candidat modifié.',
+        'Audit526 :5 occurrences/4 dossiers ;2 labels discutables,2 indéterminés, aucune correction de label ni de précision.', '',
+        '## Reste / risques', 'G0≠V142 ; Wilson descriptif, bootstrap entreprise10000 réplications, six comparaisons simultanées dans JSON. Pas de promotion.',
+        '**Recommandation unique :** '+r['recommendation']]
+    if len(lines) > 35: raise ValueError('Final report exceeds35 lines')
+    return '\n'.join(lines)+'\n'
+
+
+def publish(out, directory):
+    check(out); r = b.read(b.verified(b.read(out/'summary/receipt.json')['result']))
+    if r['smoke']: raise ValueError('Never publish smoke as full')
+    for ref in (r['audit']['facts'], r['audit']['document']): b.verified(ref)
+    if b.read(ROOT/'docs/step2_g0_bench.json') != r: raise ValueError('Owned result changed')
+    if subprocess.check_output(['git', 'diff', 'HEAD', '--', 'handover.md'], cwd=ROOT).strip():
+        raise ValueError('Foreign uncommitted journal edits; stop publication without overwriting')
+    journal = ROOT/'handover.md'; before = journal.read_text()
+    values = '; '.join(f'{name} exact{v["top1"]["exact"]["hits"]}/union{v["top1"]["union"]["hits"]}' for name, v in r['variants'].items())
+    line = (f'\n- 2026-10-17 — Banc G0 étape2-6 COMPLETE :{r["queries"]} dossiers/{r["companies"]} entreprises,5 plis entreprise, '
+        f'{values}. Quatre recettes pré-déclarées, cibles exact/union et poids query-group entreprise, Wilson95 et bootstrap10000 entreprises '
+        f'IC95/simultanés6 dans `docs/step2_g0_bench.{{json,md}}`. {r["fit_count"]} fits, {r["score_vectors_replayed"]} vecteurs rejoués, '
+        f'pic{r["peak_rss_bytes"]/1024**3:.2f}Gio, {r["seconds"]:.1f}s ; SHA sources/matrices avant/après, aucune entreprise partagée. '
+        f'Audit `docs/step2_sur_errors_audit.md` :5 faux SUR margin/4 dossiers, scores/seuils publiés rejoués ;2 labels discutables/2 indéterminés, '
+        f'aucune vérité modifiée ni erreur retirée (content54/56,stack58/61). Recommandation :{r["recommendation"]} '
+        f'G0≠V142,526 consommés, aucune garantie/promotion/jeu fermé/v174/VM/web/push ; étrangers/pending préservés. '
+        f'Artefacts `H/step2_g0_bench_20261017/full/`, rapport≤35 lignes `final_report.md`. '
+        f'Commit résultats auto-référencé par `git log -1 --format=%H -- docs/step2_g0_bench.json`.\n')
+    with journal.open('a') as stream: stream.write(line)
+    if journal.read_text() != before+line: raise ValueError('Concurrent journal edit; preserve and stop')
+    paths = ['docs/step2_g0_bench.json', 'docs/step2_g0_bench.md', 'docs/step2_sur_errors_audit.md', 'handover.md']
+    subprocess.run(['git', 'add', '--', paths[0]], cwd=ROOT, check=True)
+    subprocess.run(['git', 'diff', '--check', '--', *paths], cwd=ROOT, check=True)
+    subprocess.run(['git', 'commit', '--only', '-m', 'feat: measure grouped G0 benchmark and audit false selective matches', '--', *paths], cwd=ROOT, check=True)
+    commit = subprocess.check_output(['git', 'log', '-1', '--format=%H', '--', paths[0]], cwd=ROOT, text=True).strip()
+    b.write(out/'publication.json', dict(status='VERIFIED_COMMITTED', commit=commit))
+    return dict(commit=commit)
 
 
 def execute(out, phase, directory, extra=()):
@@ -429,9 +490,10 @@ def execute(out, phase, directory, extra=()):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument('phase', choices=['run', '_prepare', '_variant', '_audit', '_summarize'])
+    p.add_argument('phase', choices=['run', '_prepare', '_variant', '_audit', '_summarize', '_publish'])
     p.add_argument('--smoke', action='store_true'); p.add_argument('--output-dir', type=Path)
     p.add_argument('--directory', type=Path); p.add_argument('--variant', choices=VARIANTS)
+    p.add_argument('--commit', action='store_true')
     args = p.parse_args(); out = args.output_dir or OWN/('smoke' if args.smoke else 'full')
     if not out.resolve().is_relative_to(OWN.resolve()) or out.resolve() == OWN.resolve():
         raise ValueError('Fresh owned namespace required')
@@ -446,6 +508,7 @@ def main():
         for name in VARIANTS:
             execute(out, '_variant', out/name, ['--variant', name])
         execute(out, '_summarize', out/'summary')
+        if args.commit: execute(out, '_publish', out/'publication')
         print(json.dumps(dict(stage='COMPLETE', result=str(out/'result.json'))), flush=True)
         return
     if args.directory is None or not args.directory.resolve().is_relative_to(out.resolve()):
@@ -463,7 +526,8 @@ def main():
     if args.phase == '_prepare': value = prepare(out)
     elif args.phase == '_audit': value = audit(out, args.directory)
     elif args.phase == '_variant': value = variant(out, args.variant, args.directory)
-    else: value = summarize(out, args.directory)
+    elif args.phase == '_summarize': value = summarize(out, args.directory)
+    else: value = publish(out, args.directory)
     value.update(seconds=time.monotonic()-began, peak_rss_bytes=guard.peak)
     b.write(args.directory/'receipt.json', value); guard.stop.set()
 
