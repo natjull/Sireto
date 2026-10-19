@@ -114,4 +114,14 @@ l'amont V142 supervisé n'est pas full-OOF : aucune certification nationale.
 
 ## Résultats
 
-En attente du smoke et du run ; aucun chiffre nouveau annoncé à ce stade.
+**RUN DÉTACHÉ EN COURS — contenu/empilement/courbe/SUR complets non encore mesurés.**
+
+- G0 mesuré sur526 : présence exacte478/526=90,87%, SIREN486/526 et union486/526=92,40%. V142 reste507/511/511 ; G0 n'est PAS proposé comme remplacement.
+- Intersection moyenne G0∩V142 :44,01/100 ; recherche0,2213s/q, p950,4563s, workers complets0,2513s/q ; pic3044,4Mio (2,97Gio), objectif2s/q atteint sur ce pilote consommé.
+- 3000 dossiers d'apprentissage réels générés/scellés au checkpoint publié. Population admise17427/11483 entreprises, hors405 entreprises du pilote et jeux fermés ; suite soumise au budget G0 observé≤6h, sans aucun choix sur résultats.
+- Deux smokes réels20 nouveaux/36 pilotes : premier245,54s, second104,19s/1952,2Mio. Optimisation de NN exacte sans changement de pool/poids :56 listes identiques,170000 cellules de features identiques,32 SHA modèles/cibles et288 vecteurs de scores identiques entre exécutions.
+- Rejeu indépendant du second smoke :32 modèles/cibles,54 audits sans entreprise commune,144 vecteurs primaires+144 sorties confiance,12 rôles de cibles union vérifiés ; zéro avertissement.
+- Ces modèles10/20 exemples sont uniquement une preuve technique, PAS la courbe500/1000/3000/tout demandée. Aucun chiffre d'empilement ou de précision SUR complet n'est annoncé avant le run effectif.
+- PID principal55043, logs `H/step2_option_d_20261017/full.log` ; résultats futurs `H/step2_option_d_20261017/full/result.json`. Le pipeline publiera automatiquement les cinq vues/folds/paires/IC/courbe/confiance dans les deux livrables de ce doc après succès complet.
+- Vérification/publication différée : `scripts/step2_option_d_verify.py --watch-pid 55043 --commit` ; rejoue les poids/cibles/partitions sans refit, puis commit isolé des seuls résultats/handover. Refuse un handover tiers non commité ou un document modifié ; jamais de push. Rapport final≤40 lignes produit dans `H/step2_option_d_20261017/full/final_report.md`.
+- Aucun label modifié/positif injecté, jeu fermé ouvert, modèle promu, v174/VM/web touché ; aucune garantie nationale, attente du worker concurrent>4Gio avant phase lourde.

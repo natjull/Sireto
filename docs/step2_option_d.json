@@ -1,0 +1,6044 @@
+{
+  "status": "RUNNING_EXTERNAL_LEARNING_AND_STACKING_PENDING",
+  "observed_unix": 1792395455.989869,
+  "main_pid": 55043,
+  "queries": 526,
+  "G0": {
+    "presence": {
+      "exact": {
+        "hits": 478,
+        "queries": 526,
+        "percent": 90.8745247148289,
+        "wilson95_percent": [
+          88.10831313792839,
+          93.04803898239862
+        ]
+      },
+      "siren": {
+        "hits": 486,
+        "queries": 526,
+        "percent": 92.39543726235742,
+        "wilson95_percent": [
+          89.81019682291785,
+          94.36592653909577
+        ]
+      },
+      "operational": {
+        "hits": 481,
+        "queries": 526,
+        "percent": 91.4448669201521,
+        "wilson95_percent": [
+          88.74390569387063,
+          93.54486064208885
+        ]
+      },
+      "site_operational": {
+        "hits": 393,
+        "queries": 526,
+        "percent": 74.7148288973384,
+        "wilson95_percent": [
+          70.83037089407831,
+          78.24091178332873
+        ]
+      },
+      "union": {
+        "hits": 486,
+        "queries": 526,
+        "percent": 92.39543726235742,
+        "wilson95_percent": [
+          89.81019682291785,
+          94.36592653909577
+        ]
+      }
+    },
+    "v142_presence": {
+      "exact": {
+        "hits": 507,
+        "queries": 526,
+        "percent": 96.38783269961978,
+        "wilson95_percent": [
+          94.42750151940193,
+          97.67552135203896
+        ]
+      },
+      "siren": {
+        "hits": 511,
+        "queries": 526,
+        "percent": 97.14828897338403,
+        "wilson95_percent": [
+          95.34856562953094,
+          98.26434286275325
+        ]
+      },
+      "operational": {
+        "hits": 508,
+        "queries": 526,
+        "percent": 96.57794676806084,
+        "wilson95_percent": [
+          94.65588720404008,
+          97.82460707261164
+        ]
+      },
+      "site_operational": {
+        "hits": 404,
+        "queries": 526,
+        "percent": 76.80608365019012,
+        "wilson95_percent": [
+          73.01263260664544,
+          80.21083552808066
+        ]
+      },
+      "union": {
+        "hits": 511,
+        "queries": 526,
+        "percent": 97.14828897338403,
+        "wilson95_percent": [
+          95.34856562953094,
+          98.26434286275325
+        ]
+      }
+    },
+    "overlap_mean": 44.00570342205323,
+    "search_seconds_per_query": 0.22134644731333897,
+    "search_p95_seconds": 0.4562574273440987,
+    "worker_seconds_per_query": 0.2513406351412303,
+    "peak_rss_bytes": 3192291328,
+    "geo_queries": 466,
+    "national_fill_queries": 15,
+    "blank_queries": 0,
+    "per_query": [
+      {
+        "query_id": "10033",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1009",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10214",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10222",
+        "overlap": 25,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "10344",
+        "overlap": 33,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10378",
+        "overlap": 17,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10389",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1059",
+        "overlap": 59,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1064",
+        "overlap": 63,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10719",
+        "overlap": 12,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "10730",
+        "overlap": 29,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10805",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "10841",
+        "overlap": 29,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11185",
+        "overlap": 26,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11207",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11262",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11488",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1149",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1151",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11513",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11569",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11742",
+        "overlap": 74,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "11779",
+        "overlap": 62,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12005",
+        "overlap": 80,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12073",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12176",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12179",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12196",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12203",
+        "overlap": 8,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12264",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1235",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12389",
+        "overlap": 19,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12426",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12434",
+        "overlap": 17,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12586",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12619",
+        "overlap": 8,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12928",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1294",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12944",
+        "overlap": 51,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12960",
+        "overlap": 14,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "12984",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13020",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "131",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13168",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13200",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13216",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13239",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1329",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13337",
+        "overlap": 64,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13367",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1341",
+        "overlap": 26,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13483",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13485",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13517",
+        "overlap": 18,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13531",
+        "overlap": 15,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13566",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13608",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13617",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1364",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13752",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13763",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13765",
+        "overlap": 26,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13799",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13857",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13931",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13932",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13940",
+        "overlap": 63,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "13942",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1400",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14011",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14040",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14553",
+        "overlap": 72,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1461",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14688",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14749",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14765",
+        "overlap": 34,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "14782",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1483",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14847",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "14856",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15132",
+        "overlap": 60,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "15215",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15303",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1542",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15489",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1571",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15724",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15769",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15862",
+        "overlap": 15,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "15949",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16000",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1604",
+        "overlap": 47,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16145",
+        "overlap": 11,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "16261",
+        "overlap": 13,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "16478",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16567",
+        "overlap": 20,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16580",
+        "overlap": 81,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16626",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1663",
+        "overlap": 50,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16681",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16730",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16824",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16848",
+        "overlap": 72,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "16986",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "171",
+        "overlap": 20,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1719",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1731",
+        "overlap": 80,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1763",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1770",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1782",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1808",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1840",
+        "overlap": 51,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1869",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1895",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "1907",
+        "overlap": 26,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2003",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2137",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2167",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2289",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2350",
+        "overlap": 50,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2355",
+        "overlap": 18,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2367",
+        "overlap": 71,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2378",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2656",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2854",
+        "overlap": 64,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2898",
+        "overlap": 93,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2961",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "2964",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3005",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3079",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3087",
+        "overlap": 79,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "312",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3124",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3142",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3179",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3189",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3264",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3268",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3293",
+        "overlap": 80,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3294",
+        "overlap": 73,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3436",
+        "overlap": 64,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "349",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3580",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3613",
+        "overlap": 69,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "3648",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3657",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3737",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3757",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3768",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "378",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3792",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3807",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3825",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3827",
+        "overlap": 63,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "3845",
+        "overlap": 33,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "389",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4062",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4212",
+        "overlap": 11,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4223",
+        "overlap": 12,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4344",
+        "overlap": 10,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4360",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4371",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4387",
+        "overlap": 35,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4422",
+        "overlap": 7,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "4494",
+        "overlap": 56,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4539",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4565",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4598",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4627",
+        "overlap": 63,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4670",
+        "overlap": 53,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4685",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4873",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "4995",
+        "overlap": 17,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5010",
+        "overlap": 17,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5053",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5089",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5104",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5121",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5130",
+        "overlap": 44,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "5230",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "526",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "527",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5276",
+        "overlap": 23,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5296",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5298",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5357",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5367",
+        "overlap": 23,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5374",
+        "overlap": 15,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5413",
+        "overlap": 18,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5433",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5434",
+        "overlap": 6,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "5447",
+        "overlap": 35,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5467",
+        "overlap": 33,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5475",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5486",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5490",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "5952",
+        "overlap": 71,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6173",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6216",
+        "overlap": 76,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6494",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6509",
+        "overlap": 72,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6519",
+        "overlap": 62,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6551",
+        "overlap": 74,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6573",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6693",
+        "overlap": 76,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6789",
+        "overlap": 59,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "6853",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7061",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7154",
+        "overlap": 62,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7183",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7504",
+        "overlap": 12,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7554",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7592",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7709",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7726",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7804",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7820",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7885",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7953",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "7978",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8054",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8122",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "830",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8409",
+        "overlap": 13,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8439",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8612",
+        "overlap": 51,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8637",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "864",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8708",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "8808",
+        "overlap": 78,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9166",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9180",
+        "overlap": 23,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9291",
+        "overlap": 66,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9300",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9322",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9368",
+        "overlap": 12,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9395",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "942",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9627",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9689",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9866",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9867",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9880",
+        "overlap": 20,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "9961",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:00b02039367635ac0374faa6d5f1cf5d",
+        "overlap": 46,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:00d0e5729651fa9f647e258a06956a39",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:017fa60b30ebb5a8685bad1b18e40b4d",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0589da74b622916121c62e7c9b26c221",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:071ef7630fd2144e48d90149ad9e55e6",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:084359a9997f737f3454aa1b8a1ba877",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0886e8356928e55c0b0c9d34288cf5a7",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0b1180f11a3f5e7265b150593f484ba1",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0b2f67beb377730de35731aa22185f94",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0b719cb05e62c5656583747fe742a4c5",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0cfbb5fb4e54efd671b9c26ff8332fca",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0db7f23510b4f4e8a609ba3253bbc91f",
+        "overlap": 6,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:0ea3ccb473cd310291f21bf63c74dd6c",
+        "overlap": 35,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:0f5d5f14475d5236b9bd373dc6c84e09",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:109538eef02435d2a9b06c3df79ce8d7",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:10c302694f693bb83de47c07cdee8a8d",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:112cd6a959a0907b57f3da0074f6de0d",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:11d7c37ac91f73774272f2af74077403",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1215255beca06aaf5069cda06fd3f977",
+        "overlap": 57,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:1232537f595095ae8201c756bdac4bb1",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:12c75e845505aed3a1caeda0084af4a6",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:13ea8d5a7d96d5034459a57648fe4688",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:15a9b2d94c7e899d96bccc72caadc4d0",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:15c976dd6d8de9da0360b5afa9fe00e4",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1739958f8ebbf4199dd5e9720cd4a7f4",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:18ab496b8e04dd9a9b95ecdb506f38cd",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1931916d2d1243f10de1ad9b32923aac",
+        "overlap": 35,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1b8923b0ba654fa8f4e4a7ae41be5705",
+        "overlap": 59,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1b91a9ece88cb7d2cfa9c2bac9cc8902",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1c6805a5f39956c1909201e3e901b453",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1dcd18e27d7ec93b6b23a355b0f9640d",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:1fce5e87ef8b0882599c5a25b3e87ea6",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:20d3926e946716fc5b1272d9eb35c3cf",
+        "overlap": 51,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2233b866e9685eff31de094d1bedf29d",
+        "overlap": 32,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:2485d147ca9ce3171493d97de1c45f06",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:249191b7d76974b52e87cf80c3d9471f",
+        "overlap": 23,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:26532de5284b0c603c2440827a69e337",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:270cbade2a731db750f01cfae81d8043",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:273b44d49c3791f86b4587091badd3d2",
+        "overlap": 47,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:27db23bb36f29ebdd00f1b5c8b03654f",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2836cc0263fe9ef7540bed3a8a0d3266",
+        "overlap": 12,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:283d5c1caf4b34c8f3c7e5dcb61faf9d",
+        "overlap": 83,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:28775cfce11e30916a04a768864efda1",
+        "overlap": 71,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2886ec5079c1cd00393c3934d747e75e",
+        "overlap": 78,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:29cec338e992c9ad50ca392a85e76035",
+        "overlap": 56,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2b01b8da986b2f3258aa457e8d5096ed",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2ca6ec4d142492c19345fa989a83c988",
+        "overlap": 54,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:2ce181df33bdb17785fa073f0fd2cb86",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2d29f77a1b69b96e6e96db6a249d7c32",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2d7a835c348dd560e089d75818f48aba",
+        "overlap": 29,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:2de209ffee45893f5e89305e7af667f2",
+        "overlap": 76,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2df11ff43944b546e65f0b52bc41d578",
+        "overlap": 19,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2e142b4936e6f3f578f92e7ac61935b8",
+        "overlap": 63,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:2f364487762c7d028ec01ad443c97e23",
+        "overlap": 62,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:311e310751cd27804b3742e61d13ddff",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:315c425109926297d8bf9d1be6594155",
+        "overlap": 85,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:321ee3f4d681f5e1da4c21ec82bc180b",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:341cf49a3b9260fc33d9094367faad40",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:36e9555c94cdb18e4a726cea0dd614e1",
+        "overlap": 24,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:3799884d0577c770f06de831a41f6dc3",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:37fdb9d2e6510a987a11890caa9adf45",
+        "overlap": 68,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": false,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:395f0b265731544a22e6e5120d5694c6",
+        "overlap": 87,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:3ac8233f7524db85a30659a5bd58194c",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:3b421680a5d69decbe8bcb3eb1197faa",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:3c1f76f851d6ed6e35937eacb790e0ff",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:3c3a0edbeb5dbeaa4f4cf316533dd047",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:3d7eeb7733f411b4b2705a2f3ea6fb37",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:3faa5897339cb5efca83ea537f7dcaec",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:40b61ff2e887dae7a9bb0b1ed3b88f19",
+        "overlap": 11,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:40e89cbd67ae64ced223f3d670c2d7b8",
+        "overlap": 5,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:40ebc46f0bfd4ce261c0d7189bb3e464",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:413367302082d2c1b37b1329564a5f29",
+        "overlap": 56,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:44a74766406a9dc276ffb68e59601b4a",
+        "overlap": 7,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:45b5e32122784c08f301bfe1159242d8",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4728823c883655b946da20797a270b75",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4743886158fdbd64a21c2e6fd9cce6fb",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:482d6f9094186e03221df3ebed07d067",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:486d54cd450122e56cd41661faa6f305",
+        "overlap": 9,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": false,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:49a6d3a5fb18d7e6b86165b686001a7f",
+        "overlap": 72,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": false,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4a6a39bc21f7e6ce629fe8cc6e779864",
+        "overlap": 90,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4aa7beedf474f1749cea1d35ffeaf386",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4dbeedc9d514c11fc0316f660adaa200",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4e6c465c860e9e175108de05974befa8",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:4f469e7ee22bb84bbb323838b31d19c4",
+        "overlap": 50,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:508a9d66942d893ab589ad817f873739",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:53d06ded776712ffc3fb088c6450017d",
+        "overlap": 41,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:53e55f1234737d9c63fe09634e25cb29",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:571063a9e50b32be4de8028d52e853b1",
+        "overlap": 47,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:57ee2411e6b7e9ff82602bfc2a5fa0ef",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:589c8b82fc55900a49e6d65d0fd9e677",
+        "overlap": 56,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:58e9008a310b509ce47da72b1aaffd1a",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:594dee67e7e2e3ef7b46649e8fe2bf2b",
+        "overlap": 72,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:59988d569d063beb27ebb182311badb8",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:5a12a4db3552e27caeaf972fabdc7606",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:5af9e3fbea630e42d8b29b7d05786b14",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:5b1fe705990fbc483964908fb11ec727",
+        "overlap": 30,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:5d3a6e667b24ee373fb8d4840ab19393",
+        "overlap": 15,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:5e32afcf4b77124f08a7c3c791821324",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:5e42109df2de0d671626e59d19285ec7",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6155fa9b30c1648df753eaa5a7bf6b05",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6209a481ab594c780ffc8ed150aad13d",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:62682920f03a12431dee064c12a1ecc4",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:63cd3a7fc73cbae7dee73884e823e84f",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:65fb6a2e1f1c372bfc42d621844f4d6d",
+        "overlap": 12,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6760f48d40bc54ac30e1444894e386eb",
+        "overlap": 25,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:678e34952c2368e30f5f2856c9834d04",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:68a8b68ca6397b415c737becffa1a1fb",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:690c0f65673fddfc1c230fcbfc225f75",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:69176738f5bbb99779d256e7a08016a5",
+        "overlap": 24,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:6a0b35fdf9242fc705433bd24e159c9a",
+        "overlap": 81,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6b39723f7aa2e877a49de19e0f3339f4",
+        "overlap": 51,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6b524206ab1d268fb626a0dcd1d49869",
+        "overlap": 29,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6bd10474375b3210f4305b7e911a2ad3",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6cf48b601806b0ceade7ced2378eb3c0",
+        "overlap": 23,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6d1832aa6ea1091e257a051e3d17eee3",
+        "overlap": 20,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6e0e8ce749d444e294e615335c49d8f2",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6e64af93f9006055302bd12ed4a9d987",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6f7fc8b225cbf7167c3dd1cb9124258b",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:6fcf2acdd8cb13aafa51156788396813",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7056c0e3812f24ea90d13099085b6762",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:719ce3b9af04183cd754315045dff56b",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:71c66cf6b1d56b065f65f96741367eca",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:733dbd3d0cfc19b11322b27e9bc88e5a",
+        "overlap": 53,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7497f16db0483797ea3e7ad7f21748fc",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:74acfd392b34462b869972024943081d",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7746eeadf8bc02088f9e324706471338",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7789be6e677f9f4573f33d23306d94ab",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:77a4735fa9892ba314d70973a2801a00",
+        "overlap": 39,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:7a345148d572df1a7162ffc711c483f7",
+        "overlap": 14,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7a584ca342537db423f31d7c16128813",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7a78403f35c168f79dc6a06dfd031ee4",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7ab985d63f2f9ea8c2d632dd93a6b084",
+        "overlap": 26,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7b989dffdf7975cfcdd78ac2dce13545",
+        "overlap": 86,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7c3301049ad22372b21c43f70c71fb9a",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7d92ccf89904477aad39be1ab49ecdf9",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7ea7f673ca3ca57bee3ac8ee01e815e3",
+        "overlap": 22,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:7f9bcc42351ce236e88065a54d5da66e",
+        "overlap": 36,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:803b3525a250be994e57f391f41b6b69",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:8157ebb0fb942079d871376baf0497e2",
+        "overlap": 77,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:8210012f78deca8843bc49948ac0e311",
+        "overlap": 70,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:82c62087bec1f570e32c631d212a605b",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:839ab839445a41b8c59219652d7a0d53",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:83c6f78db686a131bc3e8e00de7b73a0",
+        "overlap": 70,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:86dacc11bfb43157e635bf2a7c211454",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:87d13ec1332913602d5bc0dc162673d4",
+        "overlap": 18,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:87d277db7512a10b43cb3231956f584c",
+        "overlap": 67,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:8c0719af49164cc58a89473b22ea7b67",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:8d7654fe1292fdc6acc580ba77014020",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9173ad97e7d73d7cb489650d2d2cfe6f",
+        "overlap": 50,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9495f79f3621de6833b6b9151dca8c7b",
+        "overlap": 84,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:949ff76c9db731d3f966e7639af50ad3",
+        "overlap": 47,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:951a41d82b5052895cb4e0d380524c26",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:96c8f09435ec7059c1fc3aace35a4b2a",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:97a699851fd7cb1dfb66771c002257c7",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:97f96de4fbe739329cf4a88f8642dd48",
+        "overlap": 34,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:985e7bef5b1d3c2500794943aee1ade3",
+        "overlap": 75,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:98d08491df4cccad967b0eaf13e28616",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:98eab05da0fcc3139cdbb4fa0c94518b",
+        "overlap": 47,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:997cb64bda42be41b53e8bf134054a43",
+        "overlap": 37,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:9a36e53253268cef68169de0db776a9d",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9a48d10fcdfe21537f64405ff75d8afe",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9af15bcdc9ef47ad89d4952ee2dbc9d1",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9b06e3b43386ff11df75e55ab8cb76dc",
+        "overlap": 36,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9b510cd82d99f34ed9bab410b714295e",
+        "overlap": 72,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9d51e163c5a77ec58d3539eb3540fa66",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9d61c7accf14e246b9d334949f325f3c",
+        "overlap": 47,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:9f9ed58b38b0c4e191c216b252a93586",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a0d45d59b0f025e01157dce0d8e51c96",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a2021302e15f704ae7d12f185ff5a27e",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a266c65310ac314c6e476b0b7d6a5ddb",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a29d2243e0712deb4d53d4d0ced748d9",
+        "overlap": 40,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:a59bf7aa08af500d9a997be5694f3619",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a6219ae8fb02d323f80ab8b80f52878a",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a64a514fe6b9ac9aa84b9a9f3f298d4d",
+        "overlap": 42,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a6816a71396419c8cb0291fc2539df78",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a702e5b0cb87269eceaa783e08410263",
+        "overlap": 38,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a7c04c0ce82b50509a75483729d25938",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a96de7709324bd2645a801dbc4b42154",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:a9ea8e8f260c573f5c932ac03ddbf382",
+        "overlap": 35,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": false,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:aa1a205363e37d58b476577347ea916c",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ab3cb65f361ea501d0c76c2afe6723ae",
+        "overlap": 62,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:abd90beae5c83722125fb50652a161d7",
+        "overlap": 18,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:ad20d5983bf6c000ce6b9e1761aa0f6f",
+        "overlap": 18,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:ae351a9b9db66d3ebf67fd01cb6800a0",
+        "overlap": 93,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ae6602dca03e35991358bc1e5eb55d39",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b14b2bd96bc88690665f1da628b42258",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b1dbd54e8726b214e44b4ab725f3f1ab",
+        "overlap": 50,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b233d0fbf6eefca6cfab9e101a3aef8c",
+        "overlap": 40,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b2b9337f2e866e04c6d0fea312091d4d",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b2c971005cc22fd0e460bc3259af54fd",
+        "overlap": 82,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b3726fd48cacdabda7c3f870b4a81610",
+        "overlap": 63,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b38f9f7fc040bc393760ce781998bcbd",
+        "overlap": 35,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b3a112a888aeb48a6309d5f90fea5228",
+        "overlap": 67,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b4ea4149620da9b1db339845d6aa7d37",
+        "overlap": 26,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b6bf2f7494cf9adeb4c14d9e7ef87072",
+        "overlap": 27,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b7c5eb3da6e4e15f3e5ebcb8925fd9da",
+        "overlap": 51,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:b923e227458d506eef58cf6e57223f73",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ba537927a8ded41fa84d977502486fbe",
+        "overlap": 52,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:ba68ccbcdb1d39999360833dd8383500",
+        "overlap": 53,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:bb1c7df4e281fa2db384406b32f9c0a8",
+        "overlap": 15,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:bb45e306ac4671ef1250299583cc89f2",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:bb7e0110ff224f1628b8112d1452419e",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:bd344436b1b078263a5bb68e3eb2e510",
+        "overlap": 50,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:bdd1aafce8e09b7050a2f1a512b87afb",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:be4656c8ad05657229861e6324b24e90",
+        "overlap": 72,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:be487d8ddbf9e17277db567ead0ced5e",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:be7907dc9f570fe48717210fd63ad198",
+        "overlap": 70,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:be7e28c985b158f41cf24d4fed90d3c6",
+        "overlap": 84,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:bead59a4ba32bffc4c244e2a144802ce",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:c088bb33aa01819968adc89888cc36d7",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:c134b55c3f6221875f0d3d276ec63bff",
+        "overlap": 37,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:c2a0cc827604202fa09bacaf1e2a34b4",
+        "overlap": 18,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:c3cd5b41cff0ebf06a656cac4f84e811",
+        "overlap": 79,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:c53b0c99e446e34fb22625b58ab5eba7",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:c78d13bc213dcb0d923aaabdf4052dcd",
+        "overlap": 25,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:c79174bc3db8c99f1264cfec5d95b1ea",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:c7f8a926b8576a41a52c151c3c67240d",
+        "overlap": 59,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:cb012d32f2f194eb81495967beab7a36",
+        "overlap": 58,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ccf1ed05ba7efe06d2bc63457cfa08aa",
+        "overlap": 15,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:cd9fa35a6dcb2c8c400ea66333d3b28f",
+        "overlap": 52,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:cf34020eab3d22b159e5668b762055e7",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d2bdc4387d4b67da05ed3b28bef7b38a",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d2f6834f0ea0fb61d4c02841e2a9e9bb",
+        "overlap": 20,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d413d67832f9c3811dabecab15b6c78b",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d56f61f50e3dd68dc25950b5a78e869e",
+        "overlap": 66,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d6171348a29c3e0781b2dd602f54d06b",
+        "overlap": 24,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:d726c8c9298539859efae4c1cd87b30c",
+        "overlap": 23,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:d7689b42ad8c952569382b5e9622b945",
+        "overlap": 34,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d7a5ae7bbabc3d1675f8a7ab39e2e085",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d7f022fe5339efeed38937fedae2a511",
+        "overlap": 50,
+        "presence": {
+          "exact": false,
+          "siren": true,
+          "operational": false,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d83b771e3de6341c39541ff896e568d2",
+        "overlap": 57,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d8f3afc5e08bb3556ca449fb15ba2895",
+        "overlap": 34,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:d935050ba62fd24cd6c7b794dca02d53",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:d945714c44103a65712157ec8e0367a1",
+        "overlap": 62,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:da9cf6a2f990b0a788dd05bacbfba3eb",
+        "overlap": 74,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:dad74221d623ab66379ec3e6aef6bfd5",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:db5e4874e021371c69011789c42a1afa",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:dbc8d9ab2060c558fd5536e9d029bf1a",
+        "overlap": 44,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:dc8f5a905eb68ed82caeea69690f702d",
+        "overlap": 84,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:dd0bc150513dccf648930a71e81680cf",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ddf6f66c5988f7ba8a6ba5090cbb9e12",
+        "overlap": 46,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:de2cddee252d0afb4bc1883f8734802d",
+        "overlap": 70,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:deb935b4c6a9bed658d5cbd7487f14b9",
+        "overlap": 23,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:decd16e2adbf3a2dbbc366da3ceaee45",
+        "overlap": 31,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:df4fcb69f4a19727cbec3216994c95d3",
+        "overlap": 18,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:dfdd81cf60782f63b5adfa815739f858",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e0e500180b9c0e1ab2a9a5b484e3b5ef",
+        "overlap": 54,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e15e9b9a35a03957ea1a7e22837f6aa9",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e1748dc6f5f117730330ed09fe9bdec1",
+        "overlap": 20,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e22c36f381636cceada039c066ec733b",
+        "overlap": 28,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e275d3b489da776ecec47d5a0e278c94",
+        "overlap": 53,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e2b3b16bd7ac48019da780434640c7c0",
+        "overlap": 87,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e376e740119b11699dbc79e843e4fc87",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e59aa4eb6d0f28ef4b5ceccc7b8cd35b",
+        "overlap": 19,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:e67936d685e6396cb122e5ff6a4a6871",
+        "overlap": 49,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e69876d733d109bf5dedd23f5d9af55b",
+        "overlap": 17,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e70e9088d701c4d1c0ee78806895b488",
+        "overlap": 59,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:e70f2bf3b0b9b7bee365f9d75359559b",
+        "overlap": 85,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:eaea991a0b7fde73ff793dd35e1a0cf5",
+        "overlap": 55,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ec3ebd53d39f882d88f007ab7ffca0bd",
+        "overlap": 30,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ecfa30580d19c69684e619b79d2068a8",
+        "overlap": 48,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:ee998a461ec8ddbdaea67273c3f5d823",
+        "overlap": 18,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:eee3aad2d761ccb5f6f04cc6db9187dc",
+        "overlap": 51,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:ef8046d4077a662b33655198867b223b",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:effc5c149fcd631b9937d72e5d45856b",
+        "overlap": 45,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f034e64ac556a5263132cdeb7a93e8ae",
+        "overlap": 21,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f235c735e897b7f250e02747d3222522",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f2f4a03be0319d2ff969edf869350ddd",
+        "overlap": 65,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f496008a0aad93e512a74fcd8b1c345c",
+        "overlap": 32,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f502899e26b74e5a187a88680ad825fd",
+        "overlap": 46,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f68118bd8613a9295a9df6e28c3d2ea8",
+        "overlap": 24,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:f96cbd94aa4a2378fecd1d2da4aac0a0",
+        "overlap": 77,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fa30ff5b815294bba9185d87c0c5881f",
+        "overlap": 69,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fad37ba0254310fb199027f521705e00",
+        "overlap": 61,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fc230743afdd839cf93cf7099b064d3a",
+        "overlap": 56,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fc29d39c6808ba59a44fe98d14a211b7",
+        "overlap": 16,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fd677d022a439203558565af3df3e40c",
+        "overlap": 53,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fd76dea1d399b9fa7b3c56744b253e67",
+        "overlap": 60,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": false,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fe04e4136fbda3962c96baba51111b32",
+        "overlap": 39,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fe1206af413a0560ebdc49be6b534e76",
+        "overlap": 50,
+        "presence": {
+          "exact": false,
+          "siren": false,
+          "operational": false,
+          "site_operational": false,
+          "union": false
+        }
+      },
+      {
+        "query_id": "NEWCRM:fec7a588d14966c763b95ae427b2e045",
+        "overlap": 68,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      },
+      {
+        "query_id": "NEWCRM:fff779226cebf0e39fde85579465d113",
+        "overlap": 43,
+        "presence": {
+          "exact": true,
+          "siren": true,
+          "operational": true,
+          "site_operational": true,
+          "union": true
+        }
+      }
+    ]
+  },
+  "training_candidates_sealed": 3000,
+  "initial_target": 3000,
+  "eligible_population": 17427,
+  "eligible_companies": 11483,
+  "content_features": [
+    "name_jaro_max",
+    "name_jaro_second",
+    "name_jaro_gap",
+    "name_levenshtein_max",
+    "name_token_overlap",
+    "name_exact",
+    "name_etab_jaro",
+    "name_ul_jaro",
+    "name_sigle_jaro",
+    "name_count",
+    "name_missing",
+    "name_first_token",
+    "street_jaro",
+    "street_tokens",
+    "street_exact",
+    "number_exact",
+    "number_log_diff",
+    "number_missing",
+    "suffix_exact",
+    "postcode_match",
+    "commune_match",
+    "full_address_match",
+    "address_missing",
+    "name_address_interaction",
+    "geo_log_distance",
+    "geo_missing",
+    "geo_both_house",
+    "geo_any_street",
+    "is_active",
+    "state_missing",
+    "is_siege",
+    "site_missing",
+    "candidate_same_siren_count",
+    "unique_siren_count",
+    "same_address_count",
+    "name_gap_best_other",
+    "street_gap_best_other",
+    "v2_number_exact",
+    "v2_number_within2",
+    "v2_number_both_missing",
+    "v2_number_one_missing",
+    "v2_number_log_gap",
+    "v2_suffix_equal",
+    "v2_candidate_range",
+    "v2_street_exact",
+    "v2_street_jaro",
+    "v2_street_token_overlap",
+    "v2_commune_match",
+    "v2_distance_log",
+    "v2_crm_ban_score",
+    "v2_candidate_ban_score",
+    "v2_crm_street_similarity",
+    "v2_crm_log_uncertainty",
+    "v2_candidate_log_distance_precision",
+    "v2_crm_house",
+    "v2_crm_street",
+    "v2_crm_commune",
+    "v2_candidate_house",
+    "v2_candidate_street",
+    "v2_candidate_commune",
+    "v2_crm_declared_weak",
+    "v2_geo_missing",
+    "v2_geo_admissible",
+    "v2_enseigne_jaro_max",
+    "v2_usual_jaro",
+    "v2_site_best_jaro",
+    "v2_site_name_present",
+    "v2_site_name_exact",
+    "v2_enseigne_token_overlap",
+    "v2_usual_token_overlap",
+    "v2_enseigne_other_count",
+    "v2_site_name_gap_same_siren",
+    "v2_site_vs_ul_jaro_gap",
+    "v2_is_active",
+    "v2_is_closed",
+    "v2_is_siege",
+    "v2_closure_age_log_days",
+    "v2_closure_recency_vs_siren_days",
+    "v2_closure_missing",
+    "v2_active_same_siren_pool_count",
+    "v2_active_same_siren_crm_commune_count",
+    "v2_state_missing",
+    "v2_siren_candidate_count",
+    "v2_siren_is_nearest",
+    "v2_siren_distance_excess_log"
+  ],
+  "stack_features": [
+    "v142_rank",
+    "v142_reciprocal_rank",
+    "v142_score",
+    "v142_score_relative",
+    "v142_delta_best",
+    "v142_delta_next",
+    "v142_top1_top2_gap",
+    "content_rank",
+    "content_reciprocal_rank",
+    "content_score",
+    "content_score_relative",
+    "content_delta_best",
+    "content_delta_next",
+    "content_top1_top2_gap",
+    "candidate_same_siren_count",
+    "same_siren_as_native_top1",
+    "native_top1_siren_count",
+    "unique_siren_count",
+    "same_address_count",
+    "name_gap_best_other",
+    "street_gap_best_other"
+  ],
+  "diagnostic": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/pilot_diagnostic/result.json",
+    "size_bytes": 141515,
+    "mtime_ns": 1792394602344626954,
+    "inode": 4972405,
+    "sha256": "4e23a38545f6dd45607cb136a3b70dd04ed5477816120be4ac6e50b34ce1a747"
+  },
+  "source_plan": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/plan.json",
+    "size_bytes": 99261,
+    "mtime_ns": 1792394441654312432,
+    "inode": 4972113,
+    "sha256": "9ad01ccbb090f6f38d6f678728f845e627dc188290f3c9514f14eebba749aeb2"
+  },
+  "smoke_verification": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/smoke_verification.json",
+    "size_bytes": 283,
+    "mtime_ns": 1792394434498333618,
+    "inode": 4972092,
+    "sha256": "32a6899fb101e0ef5ff9457226dc6baa49ec55d4b20f183d10efaffd00b46281"
+  },
+  "independent_smoke_replay": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/smoke_verified/verification.json",
+    "size_bytes": 573,
+    "mtime_ns": 1792394927990746505,
+    "inode": 4973383,
+    "sha256": "f8d40a9c9a51b07acfb551a5c401af09668987503ed75b54ad2b44907e6bb5fe"
+  },
+  "production_promotion_allowed": false,
+  "labels_changed": false,
+  "retrieval_v142_changed": false,
+  "closed_sets_opened": false
+}
