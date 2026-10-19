@@ -97,3 +97,31 @@ plus12, mémoire plafonnée déterministe => STOP plutôt que répétition inuti
 Publication automatique isolée `docs/step2_gemma_finetune_10h.{json,md}` et
 `handover.md`, rapport français<=30lignes, y compris STOP avec raison exacte.
 Une seule attente bloquante de l'agent, jusqu'à la fin du superviseur détaché.
+
+## Résultats
+
+## Fait
+Statut COMPLETE_DEVELOPMENT_NOT_PRODUCTION ; aucune promotion, labels et candidats inchangés.
+Durée réelle calcul total : 6.024 h (mini inclus), Metal 5.862 h ; mur 6.050 h.
+Pic worker RSS+driver 4.91 Gio (<8) ; attente ressources 1.5 min.
+## Preuve
+Rôles retenus : {'evaluation': {'queries': 3405, 'companies': 2297}, 'proper': {'queries': 11224, 'companies': 7348}, 'calibration': {'queries': 2798, 'companies': 1838}, 'training': {'queries': 14022, 'companies': 9186}}.
+Gradient : 638 pas, 1époque, 10205/10205 paires exposées, jusqu’à15 négatifs sûrs.
+Projection préalable : 7.88 h ; réduction de budget : False.
+base exact 2449/3405=71.92% ; UNION 2691/3405=79.03%.
+base SUR : précision UNION 732/752=97.34% ; couverture 752/3405=22.09% (cible interne98%, non garantie).
+base écart train−évaluation UNION -1.60 points (train in-sample).
+base526 descriptifs : content exact/UNION 386/408 ; stack 388/416.
+adapted exact 2458/3405=72.19% ; UNION 2702/3405=79.35%.
+adapted SUR : précision UNION 298/302=98.68% ; couverture 302/3405=8.87% (cible interne98%, non garantie).
+adapted écart train−évaluation UNION -0.58 points (train in-sample).
+adapted526 descriptifs : content exact/UNION 382/406 ; stack 391/420.
+Δ UNION adapté−BASE +0.323 points, IC95 entreprises [-0.5675072257507658, 1.2433009521977485].
+Δ exact +0.264 points, IC95 entreprises [-0.6065935576405904, 1.1884710114669952].
+Même adresse : 194 cas ; Δ UNION/IC95 {'delta_pp': 8.762886597938147, 'paired_company_bootstrap95_pp': [2.5641025641025643, 15.228426395939087], 'simultaneous95_pp': [1.5957446808510638, 16.25630494732129], 'gains': 26, 'losses': 9}.
+## Écarts / choix
+Split entreprise initial80/20 conservé ; calibration16% totale hors gradient, évaluation et pilote hors gradient.
+Négatifs15 seulement pour InfoNCE ; le ranking requiert toujours ses100 candidats. Dernier checkpoint, aucun réglage par score.
+## Reste / risques
+Amont déjà consommé/non full-OOF ; train in-sample optimiste ;526 descriptifs, aucune validation production.
+Recommandation unique : Conserver S2-BASE, sans promotion de cet adaptateur.
