@@ -1,0 +1,88 @@
+{
+  "status": "STOP",
+  "error": "RuntimeError('STOP: /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/covered-prepare_b3e6d80cc1ef3704171eb02cca5a03cbec376bab457efe43231bc62d25a2f836_4184dc5b95/worker.log')",
+  "generated": 36,
+  "selection_counts": {
+    "total": 3000,
+    "cache_covered": 440,
+    "missing_preparation": 2560,
+    "excluded_budget": 389,
+    "excluded_total": 2949,
+    "retained": 51,
+    "already_generated": 20
+  },
+  "source_refs": [
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_supervisor.py",
+      "size_bytes": 23304,
+      "mtime_ns": 1792393081514985572,
+      "inode": 70749129,
+      "sha256": "220f67f326de430358c1778a0d765acdf432a559febc5450a1a7c288a6af8022"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_pipeline.py",
+      "size_bytes": 15735,
+      "mtime_ns": 1792259300634416692,
+      "inode": 70749082,
+      "sha256": "df6b594c05891f220687dc3237cd1f986bc998efa121f4333ab9cfdbd4756168"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_contexts.py",
+      "size_bytes": 7644,
+      "mtime_ns": 1792241772013330772,
+      "inode": 70749021,
+      "sha256": "cd379d1ec48f11b9774eba0adb7c682870120960094e54ed3ad952136a755fcb"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_numeric.py",
+      "size_bytes": 21189,
+      "mtime_ns": 1792256748975288816,
+      "inode": 70748775,
+      "sha256": "cf0d1f40b3712c22017bddf67ddfd8cb35417b82193c09f3d03273e20dc76f5d"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_osm.py",
+      "size_bytes": 9890,
+      "mtime_ns": 1792239992663243049,
+      "inode": 70748060,
+      "sha256": "a13579b4fa7374c9d0404ee663aa9ced3519d20b06070c6c178f017e62d5ce55"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_activity.py",
+      "size_bytes": 8383,
+      "mtime_ns": 1792238228702470658,
+      "inode": 70747979,
+      "sha256": "a7d3ee26fd55d39c2e6d045bec5141173e931e78ee01e91cfb709c5b736ef1af"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_brief10.py",
+      "size_bytes": 11809,
+      "mtime_ns": 1792242787504975472,
+      "inode": 70748816,
+      "sha256": "924d871b68f2079be3cbddfd0bad3e23deea0480fb8a24651b465b418930a58a"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_fidelity.py",
+      "size_bytes": 9180,
+      "mtime_ns": 1792239081751598681,
+      "inode": 70747851,
+      "sha256": "b73ab4a699553a5e8bdf862ba117750c7dfc2c8ece2b5a7ec570c2a8ef6d6a5f"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_bano.py",
+      "size_bytes": 10265,
+      "mtime_ns": 1792239081751591389,
+      "inode": 70744246,
+      "sha256": "bc8a7a484ec7bf011caf996996480f8ad9285f7e4567ab3fd1b01e6b2764df14"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/train3000_frozen_v142_covered.py",
+      "size_bytes": 27187,
+      "mtime_ns": 1792393428718843274,
+      "inode": 73463147,
+      "sha256": "f228c28cd8f1554a09411d8e35cbbada2603e514e25d52c98c96606bd9ceec38"
+    }
+  ],
+  "full3000_started": false,
+  "labels_not_used_to_select": true
+}
