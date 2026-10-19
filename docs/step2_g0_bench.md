@@ -76,30 +76,42 @@ plis avant fits. Smoke réel :100 entreprises entières sélectionnées par SHA
 indépendamment des résultats, puis complet17427. Pas de tests unitaires,
 web/installation/Gemma/VM/push. Travaux tiers et pending préservés.
 
+
 ## Résultats
 
-Statut **RUNNING_GROUPED_CV_RESULTS_PENDING** ; implémentation `a4b346e1`,
-protocole initial `a4a4d451`. Le complet est lancé détaché, PID70288 :
-`PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -u scripts/step2_g0_bench.py run --commit`.
+**Banc de développement, pas précision produit V142.**
 
-- Préparation complète vérifiée :17427 dossiers /11483 entreprises,
-  présence dans les100 G0 **15956 exacts /16325 union**,8150 candidats
-  supplémentaires positifs union. Ce sont des présences, **pas le top1**.
-- Deux smokes réels indépendants :100 entreprises /134 dossiers,100 fits
-  chacun ;100 modèles/cibles et3216 vecteurs vérifiés, mêmes octets modèles,
-  features/cibles et décisions confiance dans les deux runs ; zéro écart.
-  Second smoke57,67s, pic641957888octets (0,60Gio), rapport31 lignes généré.
-- Audit complet reproduit :5 faux SUR /4 dossiers, faits SHA
-  `892166e52c6e979829af2664443c21362875088fd577540de175d6e7999d1daf` identique
-  entre les deux smokes et le complet ; voir `docs/step2_sur_errors_audit.md`.
-- **Non encore mesurés/publiés** : top1 OOF complet base/3 variantes,
-  SUR complet, deltas bootstrap/IC, recommandation issue du grand banc.
-  Le calcul exécute les4 recettes sans choix sur les résultats partiels.
+17427 dossiers /11483 entreprises ;5 plis par entreprise, mêmes plis pour toutes variantes.
+Présence@100 : exact15956, union16325 ; toutes absences conservées.
 
-Suivi : `tail -f H/step2_g0_bench_20261017/full.log`, et progression CV dans
-`full/<recette>/worker.log`. À succès, le script remplace ce checkpoint par
-les résultats complets JSON/Markdown, produit `full/final_report.md` (≤35
-lignes) et crée un commit docs/handover isolé ; `full/publication.json`
-atteste le commit effectif. Si le journal partagé est modifié par un tiers,
-la publication s'arrête sans écraser ces modifications. Aucun succès final
-ni commit final n'est annoncé avant leurs artefacts.
+| Recette | Exact, Wilson95 | Union, Wilson95 | Δ exact, IC95 cluster | Δ union, IC95 cluster |
+|---|---|---|---|---|
+| base | 11824/17427 (67.85 %, IC95 [67.15;68.54]) | 12889/17427 (73.96 %, IC95 [73.30;74.61]) | — | — |
+| plus_g0 | 11861/17427 (68.06 %, IC95 [67.36;68.75]) | 12964/17427 (74.39 %, IC95 [73.74;75.03]) | +0.212 [-0.355;+0.734]pt | +0.430 [-0.140;+0.946]pt |
+| company_weight | 11790/17427 (67.65 %, IC95 [66.96;68.34]) | 12853/17427 (73.75 %, IC95 [73.09;74.40]) | -0.195 [-0.537;+0.158]pt | -0.207 [-0.547;+0.162]pt |
+| union_target | 11528/17427 (66.15 %, IC95 [65.44;66.85]) | 12953/17427 (74.33 %, IC95 [73.67;74.97]) | -1.699 [-2.194;-1.208]pt | +0.367 [+0.011;+0.737]pt |
+
+## Confiance union98% interne, évaluée sur entreprises externes
+
+| Recette/politique | SUR | Précision union, Wilson95 | Exact mêmes SUR | Couverture, Wilson95 |
+|---|---:|---|---|---|
+| base/margin | 1682 | 1627/1682 (96.73 %, IC95 [95.77;97.48]) | 1622/1682 (96.43 %, IC95 [95.44;97.22]) | 1682/17427 (9.65 %, IC95 [9.22;10.10]) |
+| base/scene_isotonic | 1228 | 1194/1228 (97.23 %, IC95 [96.16;98.01]) | 1173/1228 (95.52 %, IC95 [94.22;96.54]) | 1228/17427 (7.05 %, IC95 [6.68;7.44]) |
+| plus_g0/margin | 1183 | 1149/1183 (97.13 %, IC95 [96.01;97.94]) | 1140/1183 (96.37 %, IC95 [95.14;97.29]) | 1183/17427 (6.79 %, IC95 [6.42;7.17]) |
+| plus_g0/scene_isotonic | 1287 | 1240/1287 (96.35 %, IC95 [95.18;97.24]) | 1201/1287 (93.32 %, IC95 [91.82;94.56]) | 1287/17427 (7.39 %, IC95 [7.01;7.78]) |
+| company_weight/margin | 1471 | 1433/1471 (97.42 %, IC95 [96.47;98.11]) | 1430/1471 (97.21 %, IC95 [96.24;97.94]) | 1471/17427 (8.44 %, IC95 [8.04;8.86]) |
+| company_weight/scene_isotonic | 491 | 482/491 (98.17 %, IC95 [96.55;99.03]) | 481/491 (97.96 %, IC95 [96.29;98.89]) | 491/17427 (2.82 %, IC95 [2.58;3.07]) |
+| union_target/margin | 1651 | 1600/1651 (96.91 %, IC95 [95.96;97.64]) | 1591/1651 (96.37 %, IC95 [95.35;97.17]) | 1651/17427 (9.47 %, IC95 [9.05;9.92]) |
+| union_target/scene_isotonic | 592 | 578/592 (97.64 %, IC95 [96.07;98.59]) | 560/592 (94.59 %, IC95 [92.47;96.15]) | 592/17427 (3.40 %, IC95 [3.14;3.68]) |
+
+- Socle des SUR = proper60%, distinct du ranking80% ci-dessus ; tous les seuils sont internes, cible union pour scène/isotonique/seuil.98% calibration ≠ garantie test.
+- Pondération entreprise appliquée seulement au ranking, métriques query-weighted. Cible union=exact OU site, aucun label/candidat modifié.
+- Bootstrap10000 entreprises entières, IC95 marginaux ci-dessus ; IC simultanés six comparaisons et plis dans JSON. Wilson descriptif sans correction cluster ; consommation du développement et changement de générateur empêchent une certification.
+
+## Recommandation unique
+
+Ne pas départager ces recettes sur le bruit ; rechercher un signal distinctif du site plutôt que promouvoir une variante non confirmée.
+
+- 100 fits, 418248 vecteurs effectivement rejoués depuis poids sauvés ; garde5,5Gio, pic5.16Gio, temps2879.1s. Sources/matrices vérifiées avant/après.
+- Audit séparé : `docs/step2_sur_errors_audit.md`. Aucun accès v174/VM/web/jeu fermé, changement V142 ou push. Les526 V142 restent un contrôle de transfert consommé, pas une validation indépendante.
+- Reproduction : `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/step2_g0_bench.py run --output-dir <dossier_neuf_sous_H/step2_g0_bench_20261017>` ; `--smoke`100 entreprises réelles.
