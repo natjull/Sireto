@@ -112,16 +112,74 @@ unitaires. Sources SHA avant/après, modèles/cibles/partitions tracés, aucune
 promotion production. Le pilote et les choix de features sont consommés,
 l'amont V142 supervisé n'est pas full-OOF : aucune certification nationale.
 
+
 ## Résultats
 
-**RUN DÉTACHÉ EN COURS — contenu/empilement/courbe/SUR complets non encore mesurés.**
+**Développement, pas production ; aucune modification du retrieval V142.**
 
-- G0 mesuré sur526 : présence exacte478/526=90,87%, SIREN486/526 et union486/526=92,40%. V142 reste507/511/511 ; G0 n'est PAS proposé comme remplacement.
-- Intersection moyenne G0∩V142 :44,01/100 ; recherche0,2213s/q, p950,4563s, workers complets0,2513s/q ; pic3044,4Mio (2,97Gio). Moyenne sous2s, mais1/526 requête dépasse2s (maximum2,4523s, p990,7219s) : pas de garantie de latence absolue.
-- 3000 dossiers d'apprentissage réels générés/scellés au checkpoint publié. Population admise17427/11483 entreprises, hors405 entreprises du pilote et jeux fermés ; suite soumise au budget G0 observé≤6h, sans aucun choix sur résultats.
-- Deux smokes réels20 nouveaux/36 pilotes : premier245,54s, second104,19s/1952,2Mio. Optimisation de NN exacte sans changement de pool/poids :56 listes identiques,170000 cellules de features identiques,32 SHA modèles/cibles et288 vecteurs de scores identiques entre exécutions.
-- Rejeu indépendant du second smoke :32 modèles/cibles,54 audits sans entreprise commune,144 vecteurs primaires+144 sorties confiance,12 rôles de cibles union vérifiés ; zéro avertissement.
-- Ces modèles10/20 exemples sont uniquement une preuve technique, PAS la courbe500/1000/3000/tout demandée. Aucun chiffre d'empilement ou de précision SUR complet n'est annoncé avant le run effectif.
-- PID principal55043, logs `H/step2_option_d_20261017/full.log` ; résultats futurs `H/step2_option_d_20261017/full/result.json`. Le pipeline publiera automatiquement les cinq vues/folds/paires/IC/courbe/confiance dans les deux livrables de ce doc après succès complet.
-- Vérification/publication différée : `scripts/step2_option_d_verify.py --watch-pid 55043 --commit` ; rejoue les poids/cibles/partitions sans refit, puis commit isolé des seuls résultats/handover. Refuse un handover tiers non commité ou un document modifié ; jamais de push. Rapport final≤40 lignes produit dans `H/step2_option_d_20261017/full/final_report.md`.
-- Aucun label modifié/positif injecté, jeu fermé ouvert, modèle promu, v174/VM/web touché ; aucune garantie nationale, attente du worker concurrent>4Gio avant phase lourde.
+- G0 sur526 pilotes : exact 478, siren 486, operational 481, site_operational 393, union 486.
+- Intersection moyenne avec V142 :44.01/100 ; recherche0.2213s/q, p950.4563s ; workers complets0.2513s/q ; pic3044.4Mio.
+- Apprentissage :17427/17427 dossiers générés ; G0 workers4586.2s, projection préalable avec marge25%5832.7s ; extension=True.
+
+| Volume | Méthode | Exact | SIREN | Opérationnel | Site | Union |
+|---:|---|---:|---:|---:|---:|---:|
+| — | V142 | 353 | 406 | 377 | 315 | 391 |
+| — | R3_v2 | 368 | 419 | 392 | 326 | 407 |
+| 500 | content | 359 | 397 | 378 | 301 | 384 |
+| 500 | stack | 378 | 420 | 403 | 325 | 413 |
+| 1000 | content | 358 | 398 | 378 | 296 | 383 |
+| 1000 | stack | 379 | 420 | 406 | 323 | 414 |
+| 3000 | content | 361 | 403 | 380 | 301 | 386 |
+| 3000 | stack | 385 | 424 | 407 | 323 | 415 |
+| 17427 | content | 363 | 408 | 382 | 298 | 389 |
+| 17427 | stack | 373 | 414 | 394 | 315 | 405 |
+
+### Positifs réellement disponibles
+
+- 500 :454 positifs présents ;46 groupes sans positif, conservés dans les mesures/fit, sans injection.
+- 1000 :915 positifs présents ;85 groupes sans positif, conservés dans les mesures/fit, sans injection.
+- 3000 :2740 positifs présents ;260 groupes sans positif, conservés dans les mesures/fit, sans injection.
+- 17427 :15956 positifs présents ;1471 groupes sans positif, conservés dans les mesures/fit, sans injection.
+
+### Confiance, cible union98% en calibration seulement
+
+| Volume/méthode | Politique | SUR | Union, Wilson95 | Exact, Wilson95 | Couverture, Wilson95 |
+|---|---|---:|---|---|---|
+| 500/content | margin | 37 | 36/37 (97.30 %, IC95 [86.18;99.52]) | 36/37 (97.30 %, IC95 [86.18;99.52]) | 37/526 (7.03 %, IC95 [5.15;9.55]) |
+| 500/content | scene_isotonic | 0 | non définie | non définie | 0/526 (0.00 %, IC95 [0.00;0.73]) |
+| 500/stack | margin | 89 | 83/89 (93.26 %, IC95 [86.06;96.87]) | 83/89 (93.26 %, IC95 [86.06;96.87]) | 89/526 (16.92 %, IC95 [13.96;20.36]) |
+| 500/stack | scene_isotonic | 37 | 35/37 (94.59 %, IC95 [82.30;98.50]) | 35/37 (94.59 %, IC95 [82.30;98.50]) | 37/526 (7.03 %, IC95 [5.15;9.55]) |
+| 1000/content | margin | 39 | 38/39 (97.44 %, IC95 [86.82;99.55]) | 38/39 (97.44 %, IC95 [86.82;99.55]) | 39/526 (7.41 %, IC95 [5.47;9.98]) |
+| 1000/content | scene_isotonic | 59 | 57/59 (96.61 %, IC95 [88.46;99.07]) | 56/59 (94.92 %, IC95 [86.08;98.26]) | 59/526 (11.22 %, IC95 [8.80;14.20]) |
+| 1000/stack | margin | 63 | 61/63 (96.83 %, IC95 [89.14;99.13]) | 61/63 (96.83 %, IC95 [89.14;99.13]) | 63/526 (11.98 %, IC95 [9.47;15.03]) |
+| 1000/stack | scene_isotonic | 27 | 25/27 (92.59 %, IC95 [76.63;97.94]) | 23/27 (85.19 %, IC95 [67.52;94.08]) | 27/526 (5.13 %, IC95 [3.55;7.37]) |
+| 3000/content | margin | 69 | 67/69 (97.10 %, IC95 [90.03;99.20]) | 67/69 (97.10 %, IC95 [90.03;99.20]) | 69/526 (13.12 %, IC95 [10.50;16.27]) |
+| 3000/content | scene_isotonic | 19 | 18/19 (94.74 %, IC95 [75.36;99.06]) | 17/19 (89.47 %, IC95 [68.61;97.06]) | 19/526 (3.61 %, IC95 [2.32;5.57]) |
+| 3000/stack | margin | 111 | 103/111 (92.79 %, IC95 [86.42;96.30]) | 102/111 (91.89 %, IC95 [85.31;95.68]) | 111/526 (21.10 %, IC95 [17.83;24.79]) |
+| 3000/stack | scene_isotonic | 20 | 18/20 (90.00 %, IC95 [69.90;97.21]) | 16/20 (80.00 %, IC95 [58.40;91.93]) | 20/526 (3.80 %, IC95 [2.47;5.80]) |
+| 17427/content | margin | 56 | 54/56 (96.43 %, IC95 [87.88;99.02]) | 54/56 (96.43 %, IC95 [87.88;99.02]) | 56/526 (10.65 %, IC95 [8.29;13.57]) |
+| 17427/content | scene_isotonic | 39 | 37/39 (94.87 %, IC95 [83.11;98.58]) | 37/39 (94.87 %, IC95 [83.11;98.58]) | 39/526 (7.41 %, IC95 [5.47;9.98]) |
+| 17427/stack | margin | 61 | 58/61 (95.08 %, IC95 [86.51;98.31]) | 58/61 (95.08 %, IC95 [86.51;98.31]) | 61/526 (11.60 %, IC95 [9.13;14.62]) |
+| 17427/stack | scene_isotonic | 30 | 28/30 (93.33 %, IC95 [78.68;98.15]) | 26/30 (86.67 %, IC95 [70.32;94.69]) | 30/526 (5.70 %, IC95 [4.02;8.03]) |
+
+### Paires finales et limites
+
+- content vs V142 : exact +53/−43 p=0.3584, Holm=1, union +41/−43 p=0.9132, Holm=1.
+- content vs R3_v2 : exact +36/−41 p=0.64879, Holm=1, union +24/−42 p=0.035583, Holm=0.74724.
+- stack vs V142 : exact +41/−21 p=0.015134, Holm=0.33295, union +34/−20 p=0.075905, Holm=1.
+- stack vs R3_v2 : exact +27/−22 p=0.56817, Holm=1, union +16/−18 p=0.86417, Holm=1.
+
+### Recommandation unique
+
+Ne pas promouvoir cet empilement ; privilégier ensuite un signal sémantique propre au site plutôt qu’augmenter encore ce même apprentissage de contenu.
+
+- Cinq vues, folds, Wilson, McNemar et tous volumes publiés dans le JSON. Holm ne corrige pas la dépendance intra-entreprise ni la consommation du pilote. Pas de sous-ensemble choisi après résultats.
+- Content reste externe à toutes les405 entreprises ; empilement et calibration sans entreprise partagée entre fit/calibration/test. Risque de décalage G0→V142 conservé, pas masqué.
+- BAN ancien query-only réutilisé, aucun géocodage nouveau ; v17 pilote conservé. Dates et agrégats officiels identiques à v2. Les deux scores BAN probabilistes sont NaN.
+- Pas de Gemma/BANO/OSM/activité dans G0, aucune écriture v174, VM/web/installation/positif injecté/jeu fermé. Index segments contrôlés par empreintes avant/après (pas nouveau SHA intégral98Gio), manifestes et sources de features/layout par SHA.
+- Total5360.8s ; pic maximum des workers3342.1Mio ; sources et gel vérifiés avant/après. Poids, matrices, cibles et rôles scellés dans `H/step2_option_d_20261017/`.
+- Reproduction : `PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/step2_option_d.py run --output-dir <dossier_neuf_sous_H/step2_option_d_20261017>` ; ajouter `--smoke` pour20 nouveaux/36 pilotes.
+
+## Rejeu indépendant
+
+{"passed": true, "model_hashes_and_original_targets": 64, "company_fit_score_audits": 108, "primary_query_score_vectors_replayed": 4208, "confidence_queries_replayed": 4208, "union_target_role_records_verified": 24, "smoke_full_matching_feature_cells": 170000, "warnings": [], "implementation": {"path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_option_d_verify.py", "size_bytes": 17602, "mtime_ns": 1792395193076738880, "inode": 73464404, "sha256": "0e9d60729cb2ae0cac002958945b5633e77d260690edd271284873b79dd7aad6"}}
