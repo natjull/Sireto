@@ -25,5 +25,8 @@
   "encoding_batch_size": 4,
   "encoding_shard_size": 1024,
   "bootstrap_replicates": 10000,
-  "max_resource_restarts": 12
+  "max_resource_restarts": 12,
+  "encoding_reserve_multiplier": 1.1,
+  "encoding_reserve_seconds": 180,
+  "minimum_training_seconds": 120
 }

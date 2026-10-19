@@ -330,13 +330,15 @@ def semantic(out,directory):
     qi=np.r_[np.load(meta/'qtext.npy'),np.load(out/'pilot_qtext.npy')];ci=np.concatenate([np.load(meta/'ctext.npy'),np.load(out/'pilot_ctext.npy')]);addresses=np.concatenate([np.load(meta/'addresses.npy'),np.load(out/'p_addresses.npy')])
     artifacts=[]
     for variant in ('base','adapted'):
-        receipt=read(out/('adapted_encode' if variant=='adapted' else 'base_encode')/'receipt.json');size=receipt['shard_size'];cache={}
+        receipt=read(out/('adapted_encode' if variant=='adapted' else 'base_encode')/'receipt.json');size=receipt['shard_size'];cache={};verified=set()
         def vectors(indices):
             result=np.empty((len(indices),768),dtype=np.float32)
             for shard in np.unique(indices//size):
                 if int(shard) not in cache:
                     if len(cache)>32:cache.clear()
-                    cache[int(shard)]=np.load(verify(receipt['shards'][int(shard)]),mmap_mode='r')
+                    ref=receipt['shards'][int(shard)]
+                    if int(shard) not in verified:verify(ref);verified.add(int(shard))
+                    cache[int(shard)]=np.load(ref['path'],mmap_mode='r')
                 mask=indices//size==shard;result[mask]=cache[int(shard)][indices[mask]%size]
             return result
         cosine=np.full((n+m,100),np.nan,dtype=np.float32)
@@ -393,7 +395,16 @@ def evaluate(out,directory,variant):
     for f,a,z in outer:stacked[z]=stack.score(a,z,list(range(len(s.old.STACK))),f'outer{f}')
     fixed=Stack(SX,y,pg,pi,directory/'fixed_content',fixed=pilotpred);confidence={}
     for name,scorer in [('content',fixed),('stack',stack)]:
-        confidence[name],_=s.old.v2.confidence(scorer,outer,scene[pilot_indices],pv,pg,pf,pi,list(range(len(s.old.STACK))),directory,name)
+        confidence[name],common=s.old.v2.confidence(scorer,outer,scene[pilot_indices],pv,pg,pf,pi,list(range(len(s.old.STACK))),directory,name)
+        import pickle
+        published=s.b.index(confidence[name]['per_query'])
+        for ref,role in zip(confidence[name]['model_refs'],confidence[name]['receipts']):
+            with verify(ref).open('rb') as stream:classifier,iso=pickle.load(stream)
+            test=np.array([p['ids'].index(q) for q in role['test_queries']])
+            replay=iso.predict(s.d.probability(classifier,s.d.scene(common[test].astype(np.float32),scene[pilot_indices][test])))
+            expected=np.array([published[str(pi[i])]['scores']['scene_isotonic'] for i in test])
+            if not np.array_equal(replay,expected):raise ValueError('Pilot scene/isotonic replay mismatch')
+            role['serialized_replay_equal']=True
     pilot_result=dict(status='DESCRIPTIVE_ALREADY_CONSUMED526' if m==526 else 'SMOKE_DESCRIPTIVE',queries=m,
         content={v:s.b.metric(int(pv[np.arange(m),s.b.select_top(pilotpred)[0],j].sum()),m) for j,v in enumerate(s.b.VIEWS)},
         stack={v:s.b.metric(int(pv[np.arange(m),s.b.select_top(stacked)[0],j].sum()),m) for j,v in enumerate(s.b.VIEWS)},confidence=confidence,stack_models=stack.receipts)
@@ -417,7 +428,7 @@ def summarize(out,directory):
         variants=variants,deltas=delta,family=dict(queries=int(family.sum()),deltas=fd,top1={k:s.bench.metrics(h[family]) for k,h in hits.items()} if family.any() else None),
         bootstrap_replicates=10000,bootstrap_seed=s.SEED,labels_changed=False,candidates_changed=False,closed_sets_opened=False,production_allowed=False,
         recommendation='Poursuivre un audit indépendant hors production.' if delta['adapted']['union']['paired_company_bootstrap95_pp'][0]>0 else 'Conserver S2-BASE, sans promotion de cet adaptateur.')
-    write(out/'result.json',r);return dict(result=record(out/'result.json'))
+    write(directory/'result.json',r);write(out/'result.json',r);return dict(result=record(directory/'result.json'))
 
 
 def report(r):
@@ -446,6 +457,8 @@ def report(r):
 def publish(out,directory):
     plan=check(out);r=read(out/'result.json');budget=read(out/'budget.json');r.update(wall_seconds=time.time()-plan['started_unix'],metal_seconds=budget['metal_seconds'],
         peak_bytes=max([read(p).get('peak_bytes',0) for p in out.glob('*/receipt.json')]+[read(p).get('peak_bytes',0) for p in out.glob('*/resource_stop.json')]+[0]),plan=record(out/'plan.json'))
+    if (out/'verification.json').exists():r['verification']=record(out/'verification.json')
+    if (out/'cost_plan.json').exists():r['cost_plan']=read(out/'cost_plan.json')
     write(out/'result.json',r);text=report(r);(out/'final_report.md').write_text(text)
     if plan['smoke']:return dict(smoke=True,report=record(out/'final_report.md'))
     for ref in read(out/'data.json')['sources'] if (out/'data.json').exists() else []:verify(ref)
@@ -465,7 +478,7 @@ def run(out, smoke=False, resume=False):
     if not resume:
         out.mkdir(parents=True,exist_ok=False);(out/'protocol.md').write_text(DOC.read_text().split('\n## Résultats\n')[0]);cfg=read(CONFIG)
         from scripts import step2_colocated_signals as s
-        implementations=[SCRIPT,Path(s.__file__),Path(s.bench.__file__),Path(s.old.__file__),Path(s.b.__file__),Path(s.d.__file__),Path(s.old.v2.__file__),ROOT/'scripts/embeddinggemma2_v2_fit.py']
+        implementations=[SCRIPT,ROOT/'scripts/step2_gemma_finetune_verify.py',Path(s.__file__),Path(s.bench.__file__),Path(s.old.__file__),Path(s.b.__file__),Path(s.d.__file__),Path(s.old.v2.__file__),ROOT/'scripts/embeddinggemma2_v2_fit.py']
         head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()
         for path in [SCRIPT,CONFIG,DOC]:
             if subprocess.check_output(['git','diff','HEAD','--',str(path)],cwd=ROOT).strip():raise ValueError('Commit protocol/code/config before any training')
@@ -513,7 +526,25 @@ def run(out, smoke=False, resume=False):
             while True:
                 wait_resources(out);check(out)
                 remaining=plan['cfg']['max_metal_seconds']-budget['metal_seconds']
-                seconds=min(remaining,plan['cfg']['max_training_seconds']-budget['training_seconds']) if stage=='train' else remaining
+                train_limit=plan['cfg']['max_training_seconds']
+                if stage=='train' and not plan['smoke']:
+                    # Admission is based only on measured throughput, never on scores.
+                    cost_path=out/'cost_plan.json'
+                    if not cost_path.exists():
+                        texts=read(out/'texts.json');cached=set()
+                        for name in ('encode','confirmation_encode'):
+                            cached.update(read(verify(read(PREVIOUS/name/'result.json')['texts'])))
+                        base_probe=read(OWN/'smoke/base_encode/receipt.json');adapted_probe=read(OWN/'smoke/adapted_encode/receipt.json')
+                        missing=sum(t not in cached for t in texts)
+                        projected=base_probe['seconds']*missing/max(1,base_probe['new_this_attempt'])+adapted_probe['seconds']*len(texts)/adapted_probe['items']
+                        reserve=plan['cfg']['encoding_reserve_multiplier']*projected+plan['cfg']['encoding_reserve_seconds']
+                        train_limit=min(train_limit,max(0,remaining-reserve))
+                        write(cost_path,dict(texts=len(texts),base_missing=missing,projected_encoding_seconds=projected,reserved_encoding_seconds=reserve,
+                            admitted_training_seconds=train_limit,throughput_only=True,not_a_measured_full_runtime=True))
+                        del texts,cached;gc.collect()
+                    train_limit=read(cost_path)['admitted_training_seconds']
+                    if train_limit<plan['cfg']['minimum_training_seconds']:raise TimeoutError('Measured throughput leaves insufficient Metal for fit plus complete encoding')
+                seconds=min(remaining,train_limit-budget['training_seconds']) if stage=='train' else remaining
                 if metal and seconds<10:raise TimeoutError('Metal budget exhausted')
                 write(out/'state.json',dict(status='RUNNING',stage=stage,completed=completed,budget=budget,pid=os.getpid()))
                 start=time.monotonic()
@@ -540,6 +571,8 @@ def run(out, smoke=False, resume=False):
                 if code==75 and attempts<plan['cfg']['max_resource_restarts']:
                     attempts+=1;time.sleep(30);continue
                 raise RuntimeError(f'{stage} failed exit={code} reason={reason}; see {directory}/worker.log')
+        with (out/'verification.log').open('a') as log:
+            subprocess.run([str(CPU),'-u',str(ROOT/'scripts/step2_gemma_finetune_verify.py'),'--output-dir',str(out)],cwd=ROOT,stdout=log,stderr=subprocess.STDOUT,check=True)
         publish_dir=out/'publication';publish_dir.mkdir(exist_ok=True);publication=publish(out,publish_dir);write(publish_dir/'receipt.json',publication)
         write(out/'state.json',dict(status='COMPLETE',completed=completed,publication=read(out/'publication.json') if (out/'publication.json').exists() else None))
     except BaseException as exc:

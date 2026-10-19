@@ -69,6 +69,21 @@ réelles ; ses poids ne sont jamais repris par le run complet. Pas de tests
 unitaires, aucune installation. Une seule attente bloquante du smoke, calcul
 complet détaché. Namespace `H/step2_gemma_finetune_20261019`.
 
+### Addendum d'exécution avant le premier fit complet
+
+Smoke initial `ee233035` terminé :69 dossiers/60 entreprises,2pas réels,
+49372 textes (les textes des526 sont conservés, seuls36 dossiers pilotes sont
+scorés), aucune troncature,6,6min Metal. Ce smoke sert uniquement à vérifier
+le code et le débit, jamais à choisir un hyperparamètre sur ses résultats.
+Avant le fit complet, réserver aux encodages 1,10×(débit BASE mesuré×textes
+manquants + débit adapté mesuré×tous textes) +180s ; fit plafonné par le
+reliquat et1h, minimum120s sinon STOP avant fit. Cette projection conditionnelle
+n'est pas une durée complète mesurée. Budget global4h inchangé, aucun changement
+de LR/perte/rang/epochs/split. Cache de vérification SHA des shards CPU pour
+éviter de rehasher le même shard à chaque cache miss ; aucun vecteur modifié.
+Rejeu des modèles scène/isotonique526 ajouté, audit indépendant des reçus,
+masques, groupes, labels et bootstrap avant publication. Poids smoke exclus.
+
 ### Évaluation et décision figées
 
 Recette85+S1+S2, mêmes paramètres ranking R3 que le banc ; seule substitution
