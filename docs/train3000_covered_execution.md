@@ -51,3 +51,20 @@ Rapport automatique `docs/train3000_covered_result.{json,md}` + ligne handover +
 limité à ces chemins, sans absorber code/index/handover non committé de l'autre agent.
 Aucun --full, re-tirage3000, fit, web, nouvelle dépendance, modification526/pending/labels.
 Un lancement détaché, une attente bloquante jusqu'à terminaison, sans polling agent.
+
+## Correction de couverture après le premier arrêt (sans labels)
+Le premier lancement a validé le replay20/20 et généré16 nouveaux dossiers avant
+le contrôle de complétude V14 : le cache de zone vide contient0 site alors que le
+même prédicat national en trouve370532. Aucun corpus n'a été complété/pruné/forcé.
+Le filtre vérifie désormais pour TOUTE zone candidate le nombre réel de documents
+par streaming et le census exact Tantivy (limit1/count), sans extraire la commune.
+Inventaire v2 :435 couverts/120 zones,2565 exclus préparation,385 exclus budget,
+50 retenus (20 repris +30 nouveaux),2950 exclus total ; estimation19442s≈5,40h.
+`covered/selection.json` initial et tous les échecs/reçus restent immuables ; la
+sélection corrigée est `selection_v2.json`. Le filtre exclut une zone incomplète
+quelle qu'elle soit, pas une règle de score pour un cas particulier.
+Reprise des succès sous hash/input vérifiés et AST des trois workers scientifiques
+identiques (préparation, banque PARENT, audit) ; tous les autres helpers/données
+restent SHA-identiques. Seuls sélection/orchestration/validation de couverture changent.
+Un second lancement est nécessaire : une attente bloquante par lancement, sans
+polling agent ; cet écart au lancement unique prévu est publié explicitement.

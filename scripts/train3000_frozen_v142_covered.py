@@ -24,7 +24,35 @@ def prior(refs,directory):
     for ref in refs:
         # The supervisor gains a mode; all scientific/data worker bytes stay fixed.
         path=directory/Path(ref['path']).name if Path(ref['path']).name=='train3000_frozen_v142_supervisor.py' else Path(ref['path'])
-        mini.record(path,ref['sha256'])
+        if Path(ref['path']).name=='train3000_frozen_v142_covered.py' and mini.record(path)['sha256']!=ref['sha256']:
+            import ast
+            archived=mini.record(directory/path.name,ref['sha256'])
+            def bodies(p):
+                tree=ast.parse(Path(p).read_text())
+                return {n.name:ast.dump(n,include_attributes=False) for n in tree.body
+                    if isinstance(n,(ast.FunctionDef,ast.ClassDef)) and n.name in ('ExistingIdentityBank','prepare','evaluate')}
+            if bodies(archived['path'])!=bodies(path):raise ValueError('Scientific worker code changed; reuse refused')
+        else:mini.record(path,ref['sha256'])
+
+
+def adopt(supervisor,phase,args):
+    # Selection-only coverage correction: preserve successful owned work when
+    # the worker bodies, exact inputs and all data dependencies are unchanged.
+    for path in sorted((supervisor.OUT/'completed').glob(phase+'_*.json')):
+        saved=mini.read(path);d=Path(saved['result']['path']).parent
+        old=mini.read(d/'input.json');old.pop('selection',None)
+        wanted=dict(args);wanted.pop('selection',None)
+        if old!=wanted:continue
+        prior(saved['sources'],d)
+        ex=mini.read(mini.verified(saved['receipt']))
+        if ex['exit_code'] or not ex['owned_child_exit_confirmed']:continue
+        mini.verified(saved['result'])
+        if phase=='audit':
+            for p,expected in mini.read(saved['result']['path'])['signatures'].items():
+                stat=Path(p).stat()
+                if [stat.st_size,stat.st_mtime_ns,stat.st_ino]!=expected:raise ValueError('Frozen authority changed')
+        return dict(saved,compatible_selection_only_resume=True,original_completion=mini.record(path))
+    return supervisor.task(phase,args)
 
 
 def inventory():
@@ -51,7 +79,7 @@ def inventory():
         receipt=mini.read(mini.verified(item['receipt']))
         if receipt['exit_code'] or not receipt['owned_child_exit_confirmed']:continue
         result=mini.read(mini.verified(item['result']))
-        if result['status'] not in ('COMPLETE_LABEL_FREE_PREPARATION','COMPLETE_NATIVE100'):continue
+        if result['status'] not in ('COMPLETE_LABEL_FREE_PREPARATION','COMPLETE_NATIVE100') or d.name.startswith('covered-prepare_'):continue
         prior(item['sources'],d)
         if result['status']=='COMPLETE_LABEL_FREE_PREPARATION':preparations.append((item,result,d))
         elif result['status']=='COMPLETE_NATIVE100':outputs[result['query']['query_id']]=item
@@ -80,7 +108,24 @@ def inventory():
         binding=mini.read(Path(value['site_bank'])/'binding.json')
         if binding['adapter']['sha256']!=cache['adapter']['sha256']:raise ValueError('Same original SITE encoder')
         value['site_binding']=mini.record(Path(value['site_bank'])/'texts_binding.json')
-    return dict(zones=zones,reference_preparation=proof,reference_root=str(root),reference_bindings=prepared['bindings'],
+    # File existence is insufficient: the frozen UNKNOWN cache, for example,
+    # may be empty despite non-empty current index scope. Never force its count.
+    import ijson
+    from src.xgb_matcher.hierarchical_retrieval import TantivyBackend
+    wanted={q['crm_insee'] for q in pipeline.selected(mini.read(mini.bano.cohort.OUT/'sample.json')['selected_query_ids'])}
+    backend=TantivyBackend(numeric.engine.io.INDEX);rejected=[]
+    if backend.searcher.num_docs!=82772691:raise ValueError('Original national index')
+    for zone in list(zones):
+        if zone not in wanted:continue
+        indexed=backend.searcher.search(numeric.engine.old.zone_query(backend,zone),limit=1,count=True).count
+        cached=0
+        with mini.verified(zones[zone]['corpus']).open('rb') as stream:
+            for prefix,event,value in ijson.parse(stream,use_float=True):
+                if prefix=='item' and event=='end_map':cached+=1
+        if cached!=indexed:
+            rejected.append(dict(zone=zone,cached_sites=cached,indexed_sites=indexed,reason='incomplete_prepared_corpus'))
+            del zones[zone]
+    return dict(zones=zones,rejected_incomplete_zones=rejected,reference_preparation=proof,reference_root=str(root),reference_bindings=prepared['bindings'],
         existing_outputs=outputs,ready_ref=mini.record(pipeline.control.OUT/'ready.json'),
         family_sources='Original full official activity/BANO/OSM and collector authorities; query-conditioned projections are recomputed, never borrowed from another query.')
 
@@ -312,21 +357,21 @@ def run(supervisor):
             print('ALREADY_COMPLETE_COVERED',flush=True);return
         outputs={};selection=None;preps=[];started=time.monotonic()
         try:
-            selection_path=OUT/'selection.json'
+            selection_path=OUT/'selection_v2.json'
             if not selection_path.exists():mini.save(selection_path,plan())
             selection=mini.read(selection_path);selection_ref=mini.record(selection_path)
             print(json.dumps(dict(phase='SEALED_COVERED_SELECTION',counts=selection['counts'],estimated_seconds=selection['estimated_active_seconds'],
                 estimated_all_covered_seconds=selection['estimated_all_covered_active_seconds'])),flush=True)
-            audit=supervisor.task('audit',dict(frozen_manifest=mini.record(mini.bano.cohort.preflight.FROZEN),mode='covered'))
+            audit=adopt(supervisor,'audit',dict(frozen_manifest=mini.record(mini.bano.cohort.preflight.FROZEN),mode='covered'))
             smoke=selection['reference_query_ids']
-            replay=supervisor.task('covered-prepare',dict(selection=selection_ref,ids=smoke,companions=smoke,reference_replay=True));preps.append(replay)
+            replay=adopt(supervisor,'covered-prepare',dict(selection=selection_ref,ids=smoke,companions=smoke,reference_replay=True));preps.append(replay)
             proof=Path(replay['result']['path']).parent/'cache_only_fidelity.json'
             mini.verified(mini.record(proof))
             for qid in smoke:outputs[qid]=selection['inventory']['existing_outputs'][qid]
             for batch in selection['batches']:
-                prepared=supervisor.task('covered-prepare',dict(selection=selection_ref,ids=batch['ids'],companions=batch['companions']))
+                prepared=adopt(supervisor,'covered-prepare',dict(selection=selection_ref,ids=batch['ids'],companions=batch['companions']))
                 preps.append(prepared);result=mini.read(mini.verified(prepared['result']));root=Path(prepared['result']['path']).parent
-                for qid in batch['ids']:outputs[qid]=supervisor.task('generate',dict(binding=result['bindings'][qid],prepared=str(root)))
+                for qid in batch['ids']:outputs[qid]=adopt(supervisor,'generate',dict(binding=result['bindings'][qid],prepared=str(root)))
             if set(outputs)!=set(selection['selected_query_ids']):raise ValueError('No partial retained-lot seal')
             seal=OUT/'generation_seal.json'
             if not seal.exists():mini.save(seal,dict(kind='COVERED_COMPLETE_NO_LABELS',selection=selection_ref,outputs=outputs,raw_labels_read=False))
