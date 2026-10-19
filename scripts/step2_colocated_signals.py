@@ -110,7 +110,13 @@ class Guard:
 
 def check(out):
     plan = read(out/'plan.json')
-    for ref in plan['implementations']+[plan['preregistration']]: verify(ref)
+    for ref in plan['implementations']+[plan['preregistration']]:
+        if ref['path']==str(Path(__file__).resolve()) and (out/'resume.json').exists():
+            resume=read(out/'resume.json');verify(resume['original_plan'])
+            snapshot=verify(plan['implementation_snapshot'])
+            if record(snapshot)['sha256']!=ref['sha256']:raise ValueError('Original implementation custody lost')
+            verify(resume['implementation'])
+        else:verify(ref)
     return plan
 
 
@@ -449,12 +455,16 @@ class Runner:
                 features.append(s1)
             if use_s2:features.append(ds.semantic[train])
             X=np.concatenate(features,axis=2) if len(features)>1 else features[0];target=ds.views[train,:,0].astype(np.float32)
+            # The concatenation owns its data; do not retain its large inputs during fit.
+            del features
+            if use_s1:del s1,value
+            gc.collect()
             model=xgb.XGBRanker(**old.PARAMS);began=time.monotonic()
             model.fit(X.reshape(-1,X.shape[2]),target.reshape(-1),group=np.full(len(train),100))
             path=folder/'model.json';model.save_model(path)
             receipt=dict(model=record(path),train_indices=train.tolist(),target_sha256=bench.sha(target),features_sha256=bench.sha(X),
                 seconds=time.monotonic()-began,zero_positive_queries=int((target.sum(1)==0).sum()),nb_training=nb,uses=[])
-            self.models[key]=(model,receipt);self.receipts.append(receipt);del X,features;gc.collect()
+            self.models[key]=(model,receipt);self.receipts.append(receipt);del X,target;gc.collect()
         model,receipt=self.models[key];features=[ds.X[test]]
         if use_s1:
             folder=self.directory/key;value,nbr=nb_features(ds,train,test,folder,'score_'+str(len(receipt['uses'])));features.append(value)
@@ -470,10 +480,10 @@ class Runner:
         return pred
 
 
-def evaluate(ds,name,directory):
+def evaluate(ds,name,directory,cv_only=None):
     runner=Runner(ds,name,directory/'models');n=len(ds.ids);pred=np.full((n,100),np.nan,dtype=np.float32);common=np.full_like(pred,np.nan)
     selected={k:np.zeros(n,dtype=bool) for k in ('margin','scene_isotonic')};receipts=[];metarefs=[]
-    for cv in range(5):
+    for cv in (range(5) if cv_only is None else [cv_only]):
         train=np.flatnonzero(ds.partition!=cv);test=np.flatnonzero(ds.partition==cv)
         pred[test]=runner.score(train,test,f'outer{cv}')
         companies=np.random.default_rng(SEED+100+cv).permutation(np.array(sorted(set(ds.groups[train]))));count=max(1,math.ceil(.2*len(companies)))
@@ -497,14 +507,44 @@ def evaluate(ds,name,directory):
             limits[policy]=dict(threshold=threshold,calibration_union=stats)
         receipts.append(dict(cv=cv,proper=proper.tolist(),isotonic=iso_rows.tolist(),threshold=limit.tolist(),test=test.tolist(),company_overlap=0,limits=limits));metarefs.append(record(path))
         print(json.dumps(dict(stage='CV_COMPLETE',recipe=name,cv=cv,queries=len(test))),flush=True)
+    if cv_only is not None:
+        np.savez_compressed(directory/'predictions.npz',predictions=pred,common=common,**{k+'_sur':v for k,v in selected.items()})
+        result=dict(cv=cv_only,params=old.PARAMS,ids_sha256=bench.sha(ds.ids),partition_sha256=bench.sha(ds.partition),models=runner.receipts,
+            confidence=dict(receipts=receipts,models=metarefs),predictions=record(directory/'predictions.npz'))
+        write(directory/'result.json',result);return dict(result=record(directory/'result.json'),fit_count=len(runner.receipts))
+    return evaluation_result(ds,name,directory,pred,common,selected,receipts,metarefs,runner.receipts)
+
+
+def evaluation_result(ds,name,directory,pred,common,selected,receipts,metarefs,models):
+    n=len(ds.ids)
+    if not np.isfinite(pred).all() or not np.isfinite(common).all():raise ValueError('Incomplete fold coverage')
     top=b.select_top(pred)[0];hits=ds.views[np.arange(n),top];commonhits=ds.views[np.arange(n),b.select_top(common)[0]]
     np.savez_compressed(directory/'predictions.npz',predictions=pred,hits=hits,common=common,common_hits=commonhits,**{k+'_sur':v for k,v in selected.items()})
     result=dict(recipe=name,queries=n,companies=len(set(ds.groups)),features=old.CONTENT+(S1 if 's1' in name else [])+(S2 if 's2' in name else []),params=old.PARAMS,
         top1=bench.metrics(hits),by_cv={str(cv):bench.metrics(hits[ds.partition==cv]) for cv in range(5)},by_population_fold={str(f):bench.metrics(hits[ds.folds==f]) for f in (2,3,4)},
         availability=dict(exact=int(ds.views[:,:,0].any(1).sum()),union=int(ds.views[:,:,1].any(1).sum())),
         confidence=dict(common_top1=bench.metrics(commonhits),policies={p:bench.metrics(commonhits,mask) for p,mask in selected.items()},receipts=receipts,models=metarefs),
-        models=runner.receipts,fit_count=len(runner.receipts),predictions=record(directory/'predictions.npz'),all_vectors_replayed=sum(len(u['scored_indices']) for r in runner.receipts for u in r['uses']))
-    write(directory/'result.json',result);return dict(result=record(directory/'result.json'),fit_count=len(runner.receipts))
+        models=models,fit_count=len(models),predictions=record(directory/'predictions.npz'),all_vectors_replayed=sum(len(u['scored_indices']) for r in models for u in r['uses']))
+    write(directory/'result.json',result);return dict(result=record(directory/'result.json'),fit_count=len(models))
+
+
+def full_fold(out,directory,cv):
+    check(out);ds=Dataset(out,np.arange(read(out/'data.json')['queries']))
+    return evaluate(ds,'s1',directory,cv_only=cv)
+
+
+def combine_full(out,directory):
+    check(out);ds=Dataset(out,np.arange(read(out/'data.json')['queries']));n=len(ds.ids)
+    pred=np.full((n,100),np.nan,dtype=np.float32);common=np.full_like(pred,np.nan)
+    selected={k:np.zeros(n,dtype=bool) for k in ('margin','scene_isotonic')};receipts=[];metarefs=[];models=[]
+    for cv in range(5):
+        receipt=read(out/f'full_s1_cv{cv}/receipt.json');r=read(verify(receipt['result']));pack=np.load(verify(r['predictions']));mask=ds.partition==cv
+        if r['cv']!=cv or r['params']!=old.PARAMS or r['ids_sha256']!=bench.sha(ds.ids) or r['partition_sha256']!=bench.sha(ds.partition):raise ValueError('Fold custody drift')
+        if len(r['models'])!=5 or not np.isnan(pack['predictions'][~mask]).all():raise ValueError('Unexpected isolated fold fit/score scope')
+        pred[mask]=pack['predictions'][mask];common[mask]=pack['common'][mask]
+        for k in selected:selected[k][mask]=pack[k+'_sur'][mask]
+        receipts.extend(r['confidence']['receipts']);metarefs.extend(r['confidence']['models']);models.extend(r['models'])
+    return evaluation_result(ds,'s1',directory,pred,common,selected,receipts,metarefs,models)
 
 
 def variant_worker(out,directory,name,full=False):
@@ -639,28 +679,42 @@ def report(r):
 
 
 def final_report(r):
-    lines=['## Fait',f'Banc{r["queries"]} dossiers/{r["companies"]} entreprises,4 recettes ; statut{r["status"]}.',
-        '`scripts/step2_colocated_signals.py`, `docs/step2_colocated_signals.{json,md}`, `handover.md`.',
-        '## Preuve','| Recette | Exact % | UNION % | Δ UNION, IC95 entreprise |','|---|---:|---:|---|']
+    def delta(d):
+        lo,hi=d['paired_company_bootstrap95_pp']
+        return f'{d["delta_pp"]:+.2f} [{lo:+.2f};{hi:+.2f}]'
+    def sur(s):
+        p=s['precision']['union'];return ('indéf.' if p is None else f'{p["percent"]:.2f}')+f' / {s["coverage"]["percent"]:.2f}'
+    lines=['## Fait',f'Banc terminé :{r["queries"]} dossiers/{r["companies"]} entreprises ; code et docs`step2_colocated_signals`, journal`handover.md`.',
+        '## Preuve',f'Deltas en points, IC95 bootstrap10000 entreprises ; famille même adresse figée n={r["family"]["count"]}.',
+        '| Recette | Exact % | UNION % | Δ exact [IC] | Δ UNION [IC] | Δ famille UNION [IC] |', '|---|---:|---:|---|---|---|']
     for n,v in r['variants'].items():
-        x=r['deltas'].get(n);dd='—' if x is None else f'{x["union"]["delta_pp"]:+.3f} {x["union"]["paired_company_bootstrap95_pp"]}'
-        lines.append(f'| {n} | {v["top1"]["exact"]["percent"]:.2f} | {v["top1"]["union"]["percent"]:.2f} | {dd} |')
-    lines+=['| SUR marge | Précision UNION % | Couverture % |','|---|---:|---:|']
+        dlt=r['deltas'].get(n);fd=r['family']['deltas'].get(n) if r['family']['deltas'] else None
+        lines.append(f'| {n} | {v["top1"]["exact"]["percent"]:.2f} | {v["top1"]["union"]["percent"]:.2f} | '+
+            ('— | — | — |' if dlt is None else f'{delta(dlt["exact"])} | {delta(dlt["union"])} | {delta(fd["union"]) if fd else "indéf."} |'))
+    lines+=['| SUR | Marge : précision UNION / couverture % | Scène+iso : précision UNION / couverture % |','|---|---:|---:|']
     for n,v in r['variants'].items():
-        s=v['confidence']['policies']['margin'];p=s['precision']['union'];lines.append(f'| {n} | {p["percent"] if p else "non définie"} | {s["coverage"]["percent"]:.2f} |')
-    lines += [f'Famille co-adresse figée :{r["family"]["count"]} cas ; deltas/gains/pertes et IC dans JSON.',
-        f'S1 complet :{r["full_s1"]["deltas"] if r["full_s1"] else "non exécuté dans smoke"}.',
-        f'S2 :{r["encoding"]["full"]["items"]} textes BASE ;{r["encoding"]["full"]["seconds"]:.1f}s ; aucun adapter.',
-        '## Écarts / choix','S1 recrossfitté à chaque fit, libellés NAF INSEE locaux ; règles/paramètres figés, aucun label/candidat modifié.',
-        '## Reste / risques','Mesures de développement, Wilson descriptif,526 déjà consommés ; aucune promotion.',
-        ('Confirmation526 descriptive effectuée, détails dans JSON.' if r['confirmation'] else 'Confirmation526 non déclenchée sans IC UNION positif.'),
-        '**Recommandation unique :** '+('Conserver la recette gagnante pour audit, sans promotion sur ces jeux consommés.' if r['winner'] else 'Ne pas promouvoir ces signaux sans gain UNION confirmé.')]
+        s=v['confidence']['policies'];lines.append(f'| {n} | {sur(s["margin"])} | {sur(s["scene_isotonic"])} |')
+    f=r['full_s1']
+    if f:
+        lines += [f'S1 sur17427 : exact{f["base"]["exact"]["hits"]}→{f["variant"]["top1"]["exact"]["hits"]}, UNION{f["base"]["union"]["hits"]}→{f["variant"]["top1"]["union"]["hits"]}.',
+            f'Δ exact{delta(f["deltas"]["s1"]["exact"])}, UNION{delta(f["deltas"]["s1"]["union"])} ; famille1046 :{delta(f["family_deltas"]["s1"]["union"])}.',
+            'S1 complet SUR P/C : marge'+sur(f['variant']['confidence']['policies']['margin'])+' ; scène+iso'+sur(f['variant']['confidence']['policies']['scene_isotonic'])+'.']
+    c=r['confirmation']
+    lines += [f'Confirmation526 descriptive ({r["winner"]}) : content exact/UNION{c["content"]["exact"]["hits"]}/{c["content"]["union"]["hits"]}, stack{c["stack"]["exact"]["hits"]}/{c["stack"]["union"]["hits"]}.' if c else 'Confirmation526 non déclenchée : aucun IC95 UNION positif.',
+        f'S2 :{r["encoding"]["full"]["items"]} textes déjà encodés, non réencodés lors de la reprise ; reçus des4 recettes réutilisés.',
+        '## Écarts / choix','Correction mémoire seulement : copies temporaires libérées, plis en processus neufs ; protocole, paramètres, données et labels inchangés.',
+        '## Reste / risques','Développement sur jeux consommés ;98% est la cible interne du seuil, pas la précision test garantie. Wilson/IC simultanés dans JSON ; aucune promotion.',
+        '**Recommandation unique :** '+('Conserver '+str(r['winner'])+' pour audit indépendant, sans promotion sur ces jeux consommés.' if r['winner'] else 'Ne pas promouvoir ces signaux sans gain UNION confirmé.')]
     if len(lines)>30:raise ValueError('Final report over30 lines')
     return '\n'.join(lines)+'\n'
 
 
 def publish(out,directory):
     check(out);r=read(out/'result.json')
+    if (out/'resume.json').exists():
+        r['resumption']=read(out/'resume.json');r['resumption_verification']=read(out/'resume_verification.json')
+        r['failed_attempt_peak_bytes']=read(verify(r['resumption']['failure']))['peak']
+        r['elapsed_wall_includes_interruption']=True
     if r['smoke']:raise ValueError('Do not publish smoke')
     for ref in r['source_refs']:verify(ref)
     for ref in read(out/'data.json')['sources']:verify(ref)
@@ -719,10 +773,60 @@ def verify_smoke(out):
     write(out/'verification.json',proof);print(json.dumps(proof),flush=True)
 
 
+def resume_run(out,commit):
+    if (out/'resume.json').exists():raise ValueError('Resume already established; inspect existing receipt before another launch')
+    plan=read(out/'plan.json');snapshot=verify(plan['implementation_snapshot'])
+    for ref in plan['implementations']+[plan['preregistration']]:
+        if ref['path']==str(Path(__file__).resolve()):
+            if record(snapshot)['sha256']!=ref['sha256']:raise ValueError('Original script snapshot mismatch')
+        else:verify(ref)
+    if plan['smoke']:raise ValueError('Full resume requires full population')
+    logged={}
+    for line in (out.parent/'full.log').read_text().splitlines():
+        if line.startswith('{'):
+            item=json.loads(line)
+            if 'receipt' in item:logged[item['directory']]=item['receipt']
+    reused=[]
+    for name in ('preparation','probe','selection','encode','semantic')+VARIANTS:
+        ref=logged[name];payload=read(verify(ref));reused.append(ref)
+        if name in VARIANTS:
+            result=read(verify(payload['result']));verify(result['predictions'])
+            if result['params']!=plan['params'] or result['fit_count']!=25:raise ValueError('Existing variant protocol drift')
+            for model in result['models']:
+                verify(model['model'])
+                for use in model['uses']:
+                    if not use['replay_equal']:raise ValueError('Existing ranker replay missing')
+                for nb in model['nb_training']+[u['nb_scoring'] for u in model['uses'] if u['nb_scoring']]:verify(nb['model'])
+            for model in result['confidence']['models']:verify(model)
+    encoded=read(out/'encode/result.json');reused.extend([encoded['vectors'],encoded['texts'],record(out/'semantic.npy'),record(out/'data.json'),record(out/'selection.json')])
+    for ref in reused:verify(ref)
+    failed=out/'full_s1';stop=read(failed/'resource_stop.json')
+    if stop['status']!='STOP_RSS_PLUS_DRIVER_5_75GIB' or (failed/'receipt.json').exists():raise ValueError('Unexpected failure; preserve and stop')
+    archive=out/'full_s1.failed_memory';failed.rename(archive)
+    (out/'resume_implementation.py').write_text(Path(__file__).read_text())
+    manifest=dict(status='RESUMING_MEMORY_PLUMBING_ONLY',started_unix=time.time(),original_plan=record(out/'plan.json'),implementation=record(Path(__file__)),
+        implementation_snapshot=record(out/'resume_implementation.py'),reused=reused,failure=record(archive/'resource_stop.json'),
+        original_log=record(out.parent/'full.log'),encoding_repeated=False,protocol_changed=False,fold_process_isolation=True)
+    write(out/'resume.json',manifest);check(out)
+    for cv in range(5):execute(out,'_full_fold',out/f'full_s1_cv{cv}',['--cv',str(cv)])
+    execute(out,'_combine_full',out/'full_s1');execute(out,'_summarize',out/'summary');r=read(out/'result.json')
+    if r['winner']:
+        execute(out,'_confirm_prepare',out/'confirmation_prepare')
+        if 's2' in r['winner']:execute(out,'_encode',out/'confirmation_encode',metal=True)
+        execute(out,'_confirm',out/'confirmation')
+    for ref in reused:verify(ref)
+    write(out/'resume_verification.json',dict(passed=True,reused_files_unchanged=len(reused),encoding_repeated=False,full_fits=25,
+        folds=5,guard_gib=5.75,protocol_changed=False,resume_manifest=record(out/'resume.json')))
+    if commit:execute(out,'_publish',out/'publication')
+    print(json.dumps(dict(stage='RESUME_COMPLETE',output=str(out))),flush=True)
+
+
 def main():
-    p=argparse.ArgumentParser();p.add_argument('phase',choices=['run','_prepare','_select','_semantic','_variant','_summarize','_confirm_prepare','_confirm','_publish']);p.add_argument('--output-dir',type=Path);p.add_argument('--directory',type=Path);p.add_argument('--smoke',action='store_true');p.add_argument('--variant',choices=VARIANTS);p.add_argument('--full',action='store_true');p.add_argument('--commit',action='store_true')
+    p=argparse.ArgumentParser();p.add_argument('phase',choices=['run','resume','_prepare','_select','_semantic','_variant','_full_fold','_combine_full','_summarize','_confirm_prepare','_confirm','_publish']);p.add_argument('--output-dir',type=Path);p.add_argument('--directory',type=Path);p.add_argument('--smoke',action='store_true');p.add_argument('--variant',choices=VARIANTS);p.add_argument('--full',action='store_true');p.add_argument('--cv',type=int,choices=range(5));p.add_argument('--commit',action='store_true')
     args=p.parse_args();out=args.output_dir or OWN/('smoke' if args.smoke else 'full')
     if not out.resolve().is_relative_to(OWN) or out.resolve()==OWN:raise ValueError('Fresh owned namespace required')
+    if args.phase=='resume':
+        resume_run(out,args.commit);return
     if args.phase=='run':
         out.mkdir(parents=True,exist_ok=False);prereg=DOC.read_text().split('\n## Résultats\n')[0]+'\n';(out/'preregistered.md').write_text(prereg)
         (out/'implementation.py').write_text(Path(__file__).read_text())
@@ -732,7 +836,9 @@ def main():
             implementations=[record(Path(__file__).resolve()),record(Path(bench.__file__)),record(Path(old.__file__)),record(Path(b.__file__)),record(Path(d.__file__)),record(Path(old.v2.__file__))]))
         execute(out,'_prepare',out/'preparation');execute(out,'_probe',out/'probe',metal=True);execute(out,'_select',out/'selection');execute(out,'_encode',out/'encode',metal=True);execute(out,'_semantic',out/'semantic')
         for n in VARIANTS:execute(out,'_variant',out/n,['--variant',n])
-        if not args.smoke:execute(out,'_variant',out/'full_s1',['--variant','s1','--full'])
+        if not args.smoke:
+            for cv in range(5):execute(out,'_full_fold',out/f'full_s1_cv{cv}',['--cv',str(cv)])
+            execute(out,'_combine_full',out/'full_s1')
         execute(out,'_summarize',out/'summary');r=read(out/'result.json')
         if r['winner'] and not args.smoke:
             execute(out,'_confirm_prepare',out/'confirmation_prepare')
@@ -748,6 +854,8 @@ def main():
     elif args.phase=='_select':value=select_subset(out,args.directory)
     elif args.phase=='_semantic':value=semantic_features(out,args.directory)
     elif args.phase=='_variant':value=variant_worker(out,args.directory,args.variant,args.full)
+    elif args.phase=='_full_fold':value=full_fold(out,args.directory,args.cv)
+    elif args.phase=='_combine_full':value=combine_full(out,args.directory)
     elif args.phase=='_summarize':value=summarize(out,args.directory)
     elif args.phase=='_confirm_prepare':value=confirm_prepare(out,args.directory)
     elif args.phase=='_confirm':value=confirm(out,args.directory)
