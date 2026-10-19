@@ -55,13 +55,31 @@ Deuxième STOP `1981d81c` conservé : dix R3 mini et un risque achevés, arrêt 
 ## Résultats
 
 ## Fait
-Statut STOP_INCOMPLETE, aucune promotion ; `scripts/step2_risk_model_v1.py`, docs `step2_risk_model_v1`, `handover.md`.
-Durée réelle calcul 0.118h ; mur 0.119h ; pic 0.29Gio.
+Statut COMPLETE_DEVELOPMENT_NOT_PRODUCTION, aucune promotion ; `scripts/step2_risk_model_v1.py`, docs `step2_risk_model_v1`, `handover.md`.
+Durée réelle calcul 0.521h ; mur 0.521h ; pic 4.03Gio.
 ## Preuve
-Arrêt : risk1 exit1; /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_b/mini/risk1/worker.log. Aucun résultat complet top1/SUR/526 validé.
+17427 dossiers/11483 entreprises ;5CV entreprise ; IC95 bootstrap10000 entreprises.
+| Top1 | Exact % | UNION % | Δ UNION vs base [IC95] | Δ UNION vs S1 [IC95] |
+|---|---:|---:|---|---|
+| base | 67.85 | 73.96 | — | — |
+| s1 | 68.85 | 75.07 | +1.11 [0.26, 1.73] | — |
+| s1_s2_base | 70.44 | 76.79 | +2.83 [2.29, 3.4] | +1.72 [0.95, 2.84] |
+| SUR | Précision UNION, Wilson95 | Précision exacte % | Couverture % |
+|---|---|---:|---:|
+| risk | indéfinie | indéf. | 0.00 |
+| margin | indéfinie | indéf. | 0.00 |
+| scene_legacy | 2914/2999=97.17% [96.51;97.70] | 93.33111037012337 | 17.21 |
+| scene_wilson | indéfinie | indéf. | 0.00 |
+Δ exact S1S2 vs base +2.59 [2.06, 3.14] ; vs S1 +1.58 [0.83, 2.65].
+Couverture@98% (seuil calibration Wilson, pas choix test) : risk=0.00%, margin=0.00%, scene_wilson=0.00%.
+Faux SUR meilleur descriptif scene_legacy : 85, familles {'label_far': 7, 'pool_union_absent': 28, 'colocation': 31, 'same_siren_siege': 9, 'other': 8, 'no_number': 2}.
+526 descriptifs : exact 387/526=73.57% [69.64;77.16] ; UNION 410/526=77.95% [74.21;81.28].
+526 SUR risque : indéfinie, couverture 0.00% ; consensus5modèles, aucun fit sur526.
+Cache BASE : 1266170 clés couvertes, 0 nouveau texte ; modèles sérialisés/rejoués, rôles et SHA vérifiés.
 ## Écarts / choix
-Aucun résultat partiel présenté comme complet.
+Empilement réellement imbriqué hors entreprises test/calibration ; rang natif G0 (V142 sur526), densité proxy compte public, BASE sans adapter.
 ## Reste / risques
-Recommandation unique : conserver les modèles antérieurs sans promotion.
+Calibration Wilson adaptative et corrélations entreprises ne certifient pas98% ; transport proper→refit explicite,526 consommés, aucune promotion.
+Recommandation unique : Ne pas promouvoir ce risque sans borne de précision test suffisante.
 
 Détails par CV/fold, courbes97/98/99, IC simultanés, modèles/masques, calibration et faux SUR exhaustifs : JSON et namespace externe.
