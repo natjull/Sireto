@@ -43,3 +43,17 @@ Tableau des faux SUR du meilleur modèle descriptif : priorité aux politiques s
 526 déjà consommés, exclus de tout fit/calibration G0, aucune sélection sur ces526. Mêmes cinq modèles R3 externes appliqués aux526 et mêmes cinq modèles risque/logistique/iso/seuils sans refit. Top1 = argmax de la moyenne des cinq vecteurs R3 ; SUR seulement si les cinq top1 sont identiques et les cinq politiques acceptent leur top1 (sinon A_VERIFIER). Cette agrégation conservatrice est figée avant lecture des résultats. Rapporter aussi chaque paire de modèles séparément. Aucun empilement appris sur526 dans ce jalon.
 
 Auto-publication et commit isolé `docs/step2_risk_model_v1.{json,md}` + ligne append-only `handover.md`, après vérification sources/code/modèles/rôles ; refuse chemins tiers sales ou édition concurrente du journal. Rapport français≤35lignes, chiffres uniquement mesurés, STOP explicite si incomplet. Aucune certification≥98% sans mesure suffisante, aucune promotion.
+
+## Résultats
+
+## Fait
+Statut STOP_INCOMPLETE, aucune promotion ; `scripts/step2_risk_model_v1.py`, docs `step2_risk_model_v1`, `handover.md`.
+Durée réelle calcul 0.044h ; mur 0.044h ; pic 1.59Gio.
+## Preuve
+Arrêt : rank0_outer exit1; /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020/mini/rank0_outer/worker.log. Aucun résultat complet top1/SUR/526 validé.
+## Écarts / choix
+Aucun résultat partiel présenté comme complet.
+## Reste / risques
+Recommandation unique : conserver les modèles antérieurs sans promotion.
+
+Détails par CV/fold, courbes97/98/99, IC simultanés, modèles/masques, calibration et faux SUR exhaustifs : JSON et namespace externe.

@@ -1,0 +1,16 @@
+{
+  "status": "STOP_INCOMPLETE",
+  "reason": "rank0_outer exit1; /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020/mini/rank0_outer/worker.log",
+  "labels_changed": false,
+  "pools_changed": false,
+  "production_allowed": false,
+  "compute_seconds": 159.3800614681095,
+  "wall_seconds": 159.5301651954651,
+  "wait_seconds": 0.06362454034388065,
+  "peak_bytes": 1703346176,
+  "plan": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020/full/plan.json",
+    "size_bytes": 4672,
+    "sha256": "60ce78348175c54f27f180cf4550cc8e98a1fa8207d66c1854252fa2a303a968"
+  }
+}
