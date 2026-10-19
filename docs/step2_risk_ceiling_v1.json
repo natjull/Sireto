@@ -1,0 +1,4062 @@
+{
+  "status": "COMPLETE_DIAGNOSTIC_NOT_PRODUCTION",
+  "queries": 17427,
+  "companies": 11483,
+  "features": [
+    "score_top1",
+    "margin12",
+    "margin13",
+    "entropy_top10",
+    "native_rank_top1",
+    "same_siren_count_top1",
+    "same_address_count_top1",
+    "near50_count_top1",
+    "same_address_or_near50_count_top1",
+    "crm_top1_log_distance",
+    "crm_top1_distance_missing",
+    "naf_div_logp_top1",
+    "naf_div_logp_top2",
+    "naf_div_logp_delta12",
+    "naf_group_logp_top1",
+    "naf_group_logp_top2",
+    "naf_group_logp_delta12",
+    "coloc_div_rank_top1",
+    "coloc_div_rank_top2",
+    "coloc_div_rank_delta12",
+    "coloc_group_rank_top1",
+    "coloc_group_rank_top2",
+    "coloc_group_rank_delta12",
+    "coloc_div_delta_best_top1",
+    "coloc_div_delta_best_top2",
+    "coloc_div_delta_best_delta12",
+    "coloc_group_delta_best_top1",
+    "coloc_group_delta_best_top2",
+    "coloc_group_delta_best_delta12",
+    "naf_missing_top1",
+    "naf_missing_top2",
+    "naf_missing_delta12",
+    "gemma_base_cosine_top1",
+    "gemma_base_cosine_top2",
+    "gemma_base_cosine_delta12",
+    "coloc_gemma_delta_best_top1",
+    "coloc_gemma_delta_best_top2",
+    "coloc_gemma_delta_best_delta12",
+    "name_jaro_top1",
+    "number_exact_top1",
+    "street_jaro_top1",
+    "postcode_match_top1",
+    "active_top1",
+    "closed_top1",
+    "siege_top1",
+    "commune_log_public_count"
+  ],
+  "params": {
+    "objective": "binary:logistic",
+    "max_depth": 3,
+    "eta": 0.05,
+    "min_child_weight": 10,
+    "reg_lambda": 10,
+    "reg_alpha": 1,
+    "subsample": 1.0,
+    "colsample_bytree": 1.0,
+    "tree_method": "hist",
+    "max_bin": 128,
+    "seed": 20261017,
+    "nthread": 1,
+    "verbosity": 0,
+    "base_score": 0.5,
+    "eval_metric": "logloss",
+    "monotone_constraints": [
+      0,
+      1,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0
+    ]
+  },
+  "source_refs": [
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_risk_model_v1.json",
+      "size_bytes": 2605661,
+      "sha256": "8f51b8860278febde8ea7d6deeccdca09c74c6943a042275904155a483898807"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_risk_model_v1.md",
+      "size_bytes": 15563,
+      "sha256": "29863b0eba3274779ec1c9225038b432ab487c0ace79b1b12dfda42dc6817d49"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/data.json",
+      "size_bytes": 1429598,
+      "sha256": "4cf8121fe2687d616cb87c4f6c064374bb5814decef210a74da7919ad6c18202"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/result.json",
+      "size_bytes": 2605661,
+      "sha256": "8f51b8860278febde8ea7d6deeccdca09c74c6943a042275904155a483898807"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/verification.json",
+      "size_bytes": 66857,
+      "sha256": "eec0ddfd919b495ac91e09fe69a80808e8cf6e3cec0de87326e1178ec25be49a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/plan.json",
+      "size_bytes": 4674,
+      "sha256": "e4828be9685c585dbacb91af1ddec385b0765e3e1c200b9df710152f45af4e87"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/postverification.json",
+      "size_bytes": 2072,
+      "sha256": "cc0aec0c4af9e8c65652854282c74b7f055c9eed8954c302d9511773ea8d24f0"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/data.json",
+      "size_bytes": 1884848,
+      "sha256": "c0b75f4ab9ca1384eb88247d11bf93c7bf801e0d25fede5dd30550ca0781635a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/pilot.json",
+      "size_bytes": 63634,
+      "sha256": "ea658b49240a2af6852bf1b9d60fb7abe270f75e17c0e2bf4146ff6d647d19ae"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/keys.npy",
+      "size_bytes": 24397928,
+      "sha256": "836f234c66cca28f005f6eb3c749a7fa983cf81d5e2c0b355ded754387a30f6b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/family.npy",
+      "size_bytes": 17555,
+      "sha256": "86b0672f375dfdd6cb990e803d947ae873b4ad2889717a89ae3ade79090f923f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/views.npy",
+      "size_bytes": 3485528,
+      "sha256": "727be75053b883acb5efe97802ec44da2589eee553f268d28b9657636f3e2cf2"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/p_pilot_views.npy",
+      "size_bytes": 263128,
+      "sha256": "64b0c6312d70dbcd582a204004949b0732da9df16e5099ff1a636230a21c8fcb"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/label_side.json",
+      "size_bytes": 4026634,
+      "sha256": "bb72d7ffb5f060972f93450af81c18ae512c2ed5378c78f4dfafcbf04a9b9e75"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/label_side.json",
+      "size_bytes": 4026634,
+      "mtime_ns": 1792394447484065892,
+      "inode": 4972133,
+      "sha256": "bb72d7ffb5f060972f93450af81c18ae512c2ed5378c78f4dfafcbf04a9b9e75"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v142/bano_native_20261013_night/all_new_sources_max_bano/outputs.json",
+      "size_bytes": 18762806,
+      "mtime_ns": 1791947021547149218,
+      "inode": 4425958,
+      "sha256": "fb691a70311392c103955e1b4fe71ee03fbdabbb2dcc87d2fb32e9bf6c5d3218"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_error_families_g0.json",
+      "size_bytes": 3476338,
+      "sha256": "e7f0778c07eb21403da0e0ec2f29c1c731208f68aa59e0ec6fc84e92f68229f7"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk0/receipt.json",
+      "size_bytes": 348438,
+      "sha256": "7b3065aba464116d5afc424af9daf869aadab4d56eba47657b1b1258a8af4eb1"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk0/attempt0/risk.json",
+      "size_bytes": 234717,
+      "sha256": "5608cf2157b8fabe7a7810899b728047e4623a5faec76c3ce757047261123a35"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk0/attempt0/decisions.npz",
+      "size_bytes": 53661,
+      "sha256": "12c4a46803bf9c632d6b177252b8a9258c3e2838460a24757d68489f3fb32a6a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_outer/receipt.json",
+      "size_bytes": 187130,
+      "sha256": "b9047d202e6a82310b092c12650d005f3413aa3bdd1adfba46ca3698d866946c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_outer/attempt0/predictions.npz",
+      "size_bytes": 1793674,
+      "sha256": "22bfce4c41eabfa820d625d0cb20d7090b8a2d2f778c29f6b60121ad9c80b525"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_outer/attempt0/models.json",
+      "size_bytes": 1259742,
+      "sha256": "4c56d9ad24f63ed04d74f0bfb9d464553236aa0e8283df72a9131e42763c2571"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_cal/receipt.json",
+      "size_bytes": 145855,
+      "sha256": "db01efb8921a791c701a98e3f4dc720b054e56094eca9837db006585885271d0"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_cal/attempt0/predictions.npz",
+      "size_bytes": 1752560,
+      "sha256": "f4bd37409a94b202e8cd824c4a0ab254e34bd6937ee1d8a112db39719cbb91f2"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_cal/attempt0/models.json",
+      "size_bytes": 951621,
+      "sha256": "137033902c34a306d183eebaa6705764a48e33cf9995018efd0d7b61cfed2564"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner0/receipt.json",
+      "size_bytes": 106704,
+      "sha256": "23bebb73614f09fcfef1355ec6d111c51ddc7e7f2b57031a747f99157186903a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner0/attempt0/predictions.npz",
+      "size_bytes": 1676151,
+      "sha256": "8c86e37842e3529c2f3ef060eff5a784b5e973435638e367ac594a16df2d3c9f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner0/attempt0/models.json",
+      "size_bytes": 657477,
+      "sha256": "e5459e2c63e285167abbf883d38cd853aa39be67cf90c1d448a2bcddc7b3cad7"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner1/receipt.json",
+      "size_bytes": 106703,
+      "sha256": "e032f3c0ed38767c878e7d8c5280b40cfe38b44846df8ff08924c59f892e697b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner1/attempt0/predictions.npz",
+      "size_bytes": 1539175,
+      "sha256": "fc637c50060e9c34acda893ed97a87ff44e6b4aedd5651b7e3fa247ae4a01a54"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner1/attempt0/models.json",
+      "size_bytes": 668219,
+      "sha256": "810cf531a8872923a2cc91fb3d4de71fcce68f86e4603f91a67a99babf456bc1"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner2/receipt.json",
+      "size_bytes": 106705,
+      "sha256": "a658fa4ecb4d06d2c0e99e86016d981ac498494e9b0fd4d6828890e0ffebd5ef"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner2/attempt0/predictions.npz",
+      "size_bytes": 1494437,
+      "sha256": "f803701238ad13b33c3024b03aefe8d9405c8da390ad7cd46e0a15d534bf05f3"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank0_inner2/attempt0/models.json",
+      "size_bytes": 674548,
+      "sha256": "a257594fa487b44c5c700e85b57cd761e7f956da71363b91b58b2355d75c9b2d"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk1/receipt.json",
+      "size_bytes": 355558,
+      "sha256": "4f71da78e4aff44e734158b43411f846a0e3f5d2ecf02cbb527fd9012e306c93"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk1/attempt0/risk.json",
+      "size_bytes": 232058,
+      "sha256": "47f6e71aae528972e02a4529be45331e7359a2ba8d71b55be25509f63f4ce32d"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk1/attempt0/decisions.npz",
+      "size_bytes": 53458,
+      "sha256": "845bea1b63edff36e8199e32fdc9372f15cf3c9c0e56c59230892f4c21734049"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_outer/receipt.json",
+      "size_bytes": 187131,
+      "sha256": "7414c00cc1e58c05b9d16b47596dc20ab9fe2dd8a9740df00dffa0532e57a0eb"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_outer/attempt0/predictions.npz",
+      "size_bytes": 1814537,
+      "sha256": "f74a8b0494396c04ac2974847dc2292fbc146e7d295d1815c12be9b98f3d0492"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_outer/attempt0/models.json",
+      "size_bytes": 1257877,
+      "sha256": "028d105dfe06fb2ae30a66701655dce846ee1655cb057a6c475ba7fb9a6edc63"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_cal/receipt.json",
+      "size_bytes": 145456,
+      "sha256": "95a10ece5edb026366bc3b041f6feef99ad8390c3998e73656252a3df0e11913"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_cal/attempt0/predictions.npz",
+      "size_bytes": 1433201,
+      "sha256": "839d4f7b2f9c5b5cad1c7a1fcf899b5e8668fabc6fce159ad74cefcc09e32069"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_cal/attempt0/models.json",
+      "size_bytes": 977005,
+      "sha256": "6fe818a5465ec60c3d6c92cf3502080ea9290cfb946192a35aab6553f39842a9"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner0/receipt.json",
+      "size_bytes": 112912,
+      "sha256": "a42baa299cc99ac670f7f7dae66458c061d997378342f220aeea71eee1bd64f4"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner0/attempt0/predictions.npz",
+      "size_bytes": 1621690,
+      "sha256": "2866d1a70d8206cbe6eab380f99b916446e218b539aae89e08d2cb913017828d"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner0/attempt0/models.json",
+      "size_bytes": 706567,
+      "sha256": "419bcdff27888a898bb1e0cf6b4ba62c510a22fee9f93604cc30b2a2309b777a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner1/receipt.json",
+      "size_bytes": 112912,
+      "sha256": "6d2fb99ebd99e3faa0068b3affcc6e86241d53fd74ede18c55d5f7e46337815f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner1/attempt0/predictions.npz",
+      "size_bytes": 1585091,
+      "sha256": "3fe56112f9787870e8cde53935d71e7793885cc87355427a5a265de5b29d8f95"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner1/attempt0/models.json",
+      "size_bytes": 711627,
+      "sha256": "b2f97e3c0816aadf214ded929945b743f5eb1e32fb0809920162392269fc27d7"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner2/receipt.json",
+      "size_bytes": 112911,
+      "sha256": "8d12ee6215622ced154b2d06383685794b45ddfa0ee59021f5ba1caea8428478"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner2/attempt0/predictions.npz",
+      "size_bytes": 1681222,
+      "sha256": "98798691ea851d3ec7bc7c46da3f49e0ec182fb3dd973e61ff4e5740625d6387"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank1_inner2/attempt0/models.json",
+      "size_bytes": 697695,
+      "sha256": "1825f1a4c38feda914f46423e69cec68e2856f22365cf2efe1028bc019ad1a04"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk2/receipt.json",
+      "size_bytes": 349366,
+      "sha256": "b3db62d818a5cacde7a1d883f0723298d1fdbb8ad26b86b91c3b675c36ddede1"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk2/attempt0/risk.json",
+      "size_bytes": 227192,
+      "sha256": "2d91363f979563ccb11f39e2a988d486a9ce2cda35dc7c1600b0bbd82259bf78"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk2/attempt0/decisions.npz",
+      "size_bytes": 53571,
+      "sha256": "8706314fb329f56960bb30423336a51d3874aeaadcd5aefa967ce70c5c94121f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_outer/receipt.json",
+      "size_bytes": 187131,
+      "sha256": "c6e101f516ba0055ff182a182bc915e126684a2b6d26ddbfd234f1ea5aca305f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_outer/attempt0/predictions.npz",
+      "size_bytes": 1789793,
+      "sha256": "f88257734c877241c9eb76f1901377504dde78c629dd3c5f163cc8028c105abf"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_outer/attempt0/models.json",
+      "size_bytes": 1257290,
+      "sha256": "c060eb74e62c55a7552551a26db0eb80100a8e7108add5c9d0b99128285ea463"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_cal/receipt.json",
+      "size_bytes": 145297,
+      "sha256": "e365c8add2fa1d6bc804c966c787fbcd571fe3b4d45dcbd26a3ff5226ea485ec"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_cal/attempt0/predictions.npz",
+      "size_bytes": 1636342,
+      "sha256": "bdad084de7d3f89208cd2d3c2b940d0c6e096294759d7437cd17dcb6832035ce"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_cal/attempt0/models.json",
+      "size_bytes": 953654,
+      "sha256": "e91272d007af4170c1e0270b4216fbaa96d4c22362ff843fe3339b32b861ba75"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner0/receipt.json",
+      "size_bytes": 107628,
+      "sha256": "b33b3b8337190bd24d0d04083001a37b7bab13e782379a988f4c3abe2df21345"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner0/attempt0/predictions.npz",
+      "size_bytes": 1646573,
+      "sha256": "75c387f08ec25968e51053eeaf3287a373c3e975ae479913a46a3f8d4cc38ab6"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner0/attempt0/models.json",
+      "size_bytes": 664193,
+      "sha256": "676ff855cd226eb88e76f80cab6c31b06560480ea61bd3ed3f688b20e5a84ff3"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner1/receipt.json",
+      "size_bytes": 107626,
+      "sha256": "2b654dc8c29a3eaa6160c14b9a610a01b075e600af25fe22d8f9c23373c68165"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner1/attempt0/predictions.npz",
+      "size_bytes": 1600871,
+      "sha256": "88791dcc78822989eb3deaa146cf64eceba7fc5b6363ff25f3c0873e03ece030"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner1/attempt0/models.json",
+      "size_bytes": 668573,
+      "sha256": "1451a8956d8ba5db260856df8c1a9abaf691e80ce122710b9b4f4be548bd86a7"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner2/receipt.json",
+      "size_bytes": 107628,
+      "sha256": "049ced2cc08f1307168c3186a0b56e98eb61e733b278a2ca871db03dc527a626"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner2/attempt0/predictions.npz",
+      "size_bytes": 1401775,
+      "sha256": "de729d00f07e639c5a909555daf59121b1ba9f31a676d91b5c1e7b6f268d3218"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank2_inner2/attempt0/models.json",
+      "size_bytes": 684364,
+      "sha256": "bd5babfdad16453c2e6471d16fbdc7a1037e4a42b2832facc3eafb860ed10588"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk3/receipt.json",
+      "size_bytes": 353834,
+      "sha256": "ba61c543264d4188d49b69f841588a4a7b2eb48388ece96da761365ef842c53e"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk3/attempt0/risk.json",
+      "size_bytes": 231828,
+      "sha256": "9041cec1d328aebead8ed8ca0355eb26c0f87b3e90b031dc1930dbd117fd050e"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk3/attempt0/decisions.npz",
+      "size_bytes": 53810,
+      "sha256": "98aaea18f0cccedebe283ad630b8922cbbed55fd38d3b69587514568cadfb81e"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_outer/receipt.json",
+      "size_bytes": 187130,
+      "sha256": "e9a1bb96f368308990ea9f5f72561548a79a1ef26cc3342404f6626c99803a94"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_outer/attempt0/predictions.npz",
+      "size_bytes": 1749803,
+      "sha256": "765c589230fa087a63019ff4c765dc99cafecf9c68e47145b95c13c2f4ec58c2"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_outer/attempt0/models.json",
+      "size_bytes": 1262094,
+      "sha256": "d8ea002a3185b566dff61987d840ce90e5d42ae6fa807862da2a71e32af2575d"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_cal/receipt.json",
+      "size_bytes": 146428,
+      "sha256": "2ffa566146985c0dbe9848e3da5f96800cfbf557972412e29c008941e8cb9592"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_cal/attempt0/predictions.npz",
+      "size_bytes": 1521355,
+      "sha256": "7a2b10c03ec8ef4086aae71ce12a05668e678ce8495efde830d8da3636df3e7f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_cal/attempt0/models.json",
+      "size_bytes": 973646,
+      "sha256": "fe83f43c1ad728c93d95b7bf821661f1649274b028ff578f5341772ee8bd1836"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner0/receipt.json",
+      "size_bytes": 111388,
+      "sha256": "5126a17f106ba06764efe3f400cc80ea53945c95606236fdf603539d5b49ed50"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner0/attempt0/predictions.npz",
+      "size_bytes": 1449159,
+      "sha256": "87ca6ccceb5434938f770df7a7aa1004ed020d099a19f23adeeee11d805e608f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner0/attempt0/models.json",
+      "size_bytes": 711917,
+      "sha256": "d08c6532e22f87ee921da3035aebf590a0c3d69243859a47ade1a2e9dca05d18"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner1/receipt.json",
+      "size_bytes": 111386,
+      "sha256": "0a224839b5ae087cb28a72335856b7e4882401171942be7f6629998e05add666"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner1/attempt0/predictions.npz",
+      "size_bytes": 1696046,
+      "sha256": "61f5e33f52a3d622c0589f253b8f9131c12a8d9e2b49b16b2b585c905649db28"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner1/attempt0/models.json",
+      "size_bytes": 689874,
+      "sha256": "8eb408799ca54b8d84b9923dda18194c39f358f7d35dc1a5c58aeb52facb4d73"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner2/receipt.json",
+      "size_bytes": 111385,
+      "sha256": "63f80305c1a833eb192427036476e8655a3032dc36413b9d8f038cf3b1c419a9"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner2/attempt0/predictions.npz",
+      "size_bytes": 1693150,
+      "sha256": "3995be03a1e71ef729e81421ca3d0581a86129d582d493109a57cdec1ecd159b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank3_inner2/attempt0/models.json",
+      "size_bytes": 685646,
+      "sha256": "6833df90afc551cdc08689307544364c74e98d84b3abf89682b786885c973b7a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk4/receipt.json",
+      "size_bytes": 349175,
+      "sha256": "f4910386f30acb150156f39ed573f223bd862984fc748b176b2f918951c4a2fb"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk4/attempt0/risk.json",
+      "size_bytes": 236076,
+      "sha256": "b6aa16bc3b3a3d87f1fb1e592ea325b07b29f4b9eeb9f8f1bcd6eed2f1993777"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk4/attempt0/decisions.npz",
+      "size_bytes": 57031,
+      "sha256": "a221df3f384e7257fc5055a41544d7a0f1f3855ea1bd17fc389658aa14fd5787"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_outer/receipt.json",
+      "size_bytes": 187130,
+      "sha256": "b4ffe0f3ee86425e1752b5eac6ae0d924d05bc4a5aaaf8b63ac22b3c23c31f13"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_outer/attempt0/predictions.npz",
+      "size_bytes": 1912154,
+      "sha256": "3063d75c678ffb838108b2738a8a26ce53b13bc57f10f61d3fa73517054eab7a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_outer/attempt0/models.json",
+      "size_bytes": 1247474,
+      "sha256": "967cf553bc162600ddb8687f8b5fe75d60d6ab2a50bf3c30cb8d189d12cb8741"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_cal/receipt.json",
+      "size_bytes": 143063,
+      "sha256": "954f89e4e4c4c954bae591766721adfcf30d8e14dfcb2b694427ed784cce4e52"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_cal/attempt0/predictions.npz",
+      "size_bytes": 1555479,
+      "sha256": "0c7e3b2b39278523669d3e2ce88d1ebd528e41db1fcd2a17c8d0c646d44cdd41"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_cal/attempt0/models.json",
+      "size_bytes": 945367,
+      "sha256": "c198cbe2880d8729833d8ec054202e304c32301468e09437cf21805222aaf4d1"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner0/receipt.json",
+      "size_bytes": 107476,
+      "sha256": "3b078a3e6fa14957f2c7b86e5d612867363176c0c837a24a95051f888fc6e427"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner0/attempt0/predictions.npz",
+      "size_bytes": 1552367,
+      "sha256": "94f36514bffcf66f14b1930d38346cff5fa8caee2c556be41fe0c37bd168eec4"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner0/attempt0/models.json",
+      "size_bytes": 671237,
+      "sha256": "136d6ee613ffd75d51d7ee1238dfda6f130a641de4f2013178476e3e42755a3b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner1/receipt.json",
+      "size_bytes": 107477,
+      "sha256": "5e3720b28e6fb39c11d7ccd4b3cb4923e2543c177502c2925404ec08a7bb5a5b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner1/attempt0/predictions.npz",
+      "size_bytes": 1440314,
+      "sha256": "c3564c723144b4f980b074895f302cdb4f5aed6926cd9ddab5a853f7aec58d82"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner1/attempt0/models.json",
+      "size_bytes": 682282,
+      "sha256": "8e52039708baf184635d72875171d28fa91248713c70645c27905a99357f026b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner2/receipt.json",
+      "size_bytes": 107475,
+      "sha256": "bc7477bdc7d134b914aa3ed80053c81739a0401a6e347a7a4f216071b618d2f2"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner2/attempt0/predictions.npz",
+      "size_bytes": 1646993,
+      "sha256": "3fc9e8a3d2377aa4a853ba69548b1e541d61cb235223d80511d8e31cb19cbbf6"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/rank4_inner2/attempt0/models.json",
+      "size_bytes": 660528,
+      "sha256": "2173ebcfd91acb441f9b37890c76449a7e606fcfb4461a048e8d2febeda684ba"
+    }
+  ],
+  "thresholds": {
+    "0": {
+      "siren": {
+        "98": {
+          "threshold": 0.9651089310646057,
+          "calibration": {
+            "accepted": 897,
+            "precision": 0.9899665551839465,
+            "wilson95": [
+              0.9810418570660553,
+              0.9947125238998396
+            ],
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9831190227378162
+        },
+        "99": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.99,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9831190227378162
+        }
+      },
+      "union": {
+        "96": {
+          "threshold": 0.904380738735199,
+          "calibration": {
+            "accepted": 1685,
+            "precision": 0.96973293768546,
+            "wilson95": [
+              0.960424109534981,
+              0.9769048456088592
+            ],
+            "target": 0.96,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9750435624173902
+        },
+        "97": {
+          "threshold": 0.9498870968818665,
+          "calibration": {
+            "accepted": 1031,
+            "precision": 0.9806013579049466,
+            "wilson95": [
+              0.9702268416731457,
+              0.9874077713905252
+            ],
+            "target": 0.97,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9750435624173902
+        },
+        "97.5": {
+          "threshold": 0.969567060470581,
+          "calibration": {
+            "accepted": 574,
+            "precision": 0.9878048780487805,
+            "wilson95": [
+              0.9750435624173902,
+              0.9940803926946115
+            ],
+            "target": 0.975,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9750435624173902
+        },
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9750435624173902
+        }
+      },
+      "oracle_refit": {
+        "98": {
+          "threshold": 0.9440863132476807,
+          "calibration": {
+            "accepted": 1319,
+            "precision": 0.9878695981804397,
+            "wilson95": [
+              0.9803860663698238,
+              0.992519637044819
+            ],
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9888513037409866
+        }
+      },
+      "oracle_frozen": {
+        "threshold": 0.951778769493103,
+        "calibration": {
+          "accepted": 984,
+          "precision": 0.9888211382113821,
+          "wilson95": [
+            0.9800938834843734,
+            0.9937465960885894
+          ],
+          "target": 0.98,
+          "rule": "wilson_lower"
+        },
+        "maximum_calibration_lower95": 0.9860800889048483
+      }
+    },
+    "1": {
+      "siren": {
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9793806542450413
+        },
+        "99": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.99,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9793806542450413
+        }
+      },
+      "union": {
+        "96": {
+          "threshold": 0.9107728004455566,
+          "calibration": {
+            "accepted": 1418,
+            "precision": 0.9703808180535967,
+            "wilson95": [
+              0.9602066853950035,
+              0.9780132488488948
+            ],
+            "target": 0.96,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9796577571223828
+        },
+        "97": {
+          "threshold": 0.962949812412262,
+          "calibration": {
+            "accepted": 613,
+            "precision": 0.9836867862969005,
+            "wilson95": [
+              0.970233837614481,
+              0.9911152927337367
+            ],
+            "target": 0.97,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9796577571223828
+        },
+        "97.5": {
+          "threshold": 0.9640942215919495,
+          "calibration": {
+            "accepted": 587,
+            "precision": 0.9880749574105622,
+            "wilson95": [
+              0.9755915495518009,
+              0.9942117563023528
+            ],
+            "target": 0.975,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9796577571223828
+        },
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9796577571223828
+        }
+      },
+      "oracle_refit": {
+        "98": {
+          "threshold": 0.9799378514289856,
+          "calibration": {
+            "accepted": 335,
+            "precision": 0.9970149253731343,
+            "wilson95": [
+              0.9832876290580406,
+              0.9994728665406246
+            ],
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9863216106452903
+        }
+      },
+      "oracle_frozen": {
+        "threshold": 0.9517969489097595,
+        "calibration": {
+          "accepted": 859,
+          "precision": 0.989522700814901,
+          "wilson95": [
+            0.9802083745858112,
+            0.9944782163314281
+          ],
+          "target": 0.98,
+          "rule": "wilson_lower"
+        },
+        "maximum_calibration_lower95": 0.9908719572651922
+      }
+    },
+    "2": {
+      "siren": {
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9743348269530735
+        },
+        "99": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.99,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9743348269530735
+        }
+      },
+      "union": {
+        "96": {
+          "threshold": 0.9310740232467651,
+          "calibration": {
+            "accepted": 1363,
+            "precision": 0.9706529713866471,
+            "wilson95": [
+              0.9602854439841674,
+              0.9783749922503084
+            ],
+            "target": 0.96,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9730556686464478
+        },
+        "97": {
+          "threshold": 0.9702779650688171,
+          "calibration": {
+            "accepted": 537,
+            "precision": 0.9851024208566108,
+            "wilson95": [
+              0.9708814639075115,
+              0.9924322604804848
+            ],
+            "target": 0.97,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9730556686464478
+        },
+        "97.5": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.975,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9730556686464478
+        },
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9730556686464478
+        }
+      },
+      "oracle_refit": {
+        "98": {
+          "threshold": 0.9741962552070618,
+          "calibration": {
+            "accepted": 613,
+            "precision": 0.9918433931484503,
+            "wilson95": [
+              0.981049653936002,
+              0.9965110974973456
+            ],
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9848068475849985
+        }
+      },
+      "oracle_frozen": {
+        "threshold": 0.9702779650688171,
+        "calibration": {
+          "accepted": 533,
+          "precision": 0.9924953095684803,
+          "wilson95": [
+            0.9808645397877577,
+            0.9970778142794806
+          ],
+          "target": 0.98,
+          "rule": "wilson_lower"
+        },
+        "maximum_calibration_lower95": 0.9818624323003026
+      }
+    },
+    "3": {
+      "siren": {
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9777999642730592
+        },
+        "99": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.99,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9777999642730592
+        }
+      },
+      "union": {
+        "96": {
+          "threshold": 0.9267981648445129,
+          "calibration": {
+            "accepted": 1337,
+            "precision": 0.9708302169035153,
+            "wilson95": [
+              0.9603735005948438,
+              0.9785891125595289
+            ],
+            "target": 0.96,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9772268482259652
+        },
+        "97": {
+          "threshold": 0.9472571611404419,
+          "calibration": {
+            "accepted": 974,
+            "precision": 0.9815195071868583,
+            "wilson95": [
+              0.9709769903025893,
+              0.9882787167843816
+            ],
+            "target": 0.97,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9772268482259652
+        },
+        "97.5": {
+          "threshold": 0.9630324840545654,
+          "calibration": {
+            "accepted": 628,
+            "precision": 0.9872611464968153,
+            "wilson95": [
+              0.9750662126531415,
+              0.9935311964853352
+            ],
+            "target": 0.975,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9772268482259652
+        },
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9772268482259652
+        }
+      },
+      "oracle_refit": {
+        "98": {
+          "threshold": 0.9764335751533508,
+          "calibration": {
+            "accepted": 444,
+            "precision": 0.9932432432432432,
+            "wilson95": [
+              0.9803251948063001,
+              0.9976994864132329
+            ],
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9822622957015316
+        }
+      },
+      "oracle_frozen": {
+        "threshold": 0.9632217884063721,
+        "calibration": {
+          "accepted": 623,
+          "precision": 0.9919743178170144,
+          "wilson95": [
+            0.981351548128272,
+            0.99656717657329
+          ],
+          "target": 0.98,
+          "rule": "wilson_lower"
+        },
+        "maximum_calibration_lower95": 0.9828866272754606
+      }
+    },
+    "4": {
+      "siren": {
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9752715836089835
+        },
+        "99": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.99,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9752715836089835
+        }
+      },
+      "union": {
+        "96": {
+          "threshold": 0.9092207551002502,
+          "calibration": {
+            "accepted": 1556,
+            "precision": 0.9697943444730077,
+            "wilson95": [
+              0.9600653328260961,
+              0.9772094086116226
+            ],
+            "target": 0.96,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9769132498792235
+        },
+        "97": {
+          "threshold": 0.948235809803009,
+          "calibration": {
+            "accepted": 1028,
+            "precision": 0.980544747081712,
+            "wilson95": [
+              0.97014051557778,
+              0.9873709233686632
+            ],
+            "target": 0.97,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9769132498792235
+        },
+        "97.5": {
+          "threshold": 0.9725069999694824,
+          "calibration": {
+            "accepted": 441,
+            "precision": 0.9909297052154195,
+            "wilson95": [
+              0.9769132498792235,
+              0.9964672465068674
+            ],
+            "target": 0.975,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9769132498792235
+        },
+        "98": {
+          "threshold": null,
+          "calibration": {
+            "accepted": 0,
+            "precision": null,
+            "wilson95": null,
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9769132498792235
+        }
+      },
+      "oracle_refit": {
+        "98": {
+          "threshold": 0.9569319486618042,
+          "calibration": {
+            "accepted": 1045,
+            "precision": 0.9885167464114832,
+            "wilson95": [
+              0.9800359836351827,
+              0.993419052312768
+            ],
+            "target": 0.98,
+            "rule": "wilson_lower"
+          },
+          "maximum_calibration_lower95": 0.9872401665954721
+        }
+      },
+      "oracle_frozen": {
+        "threshold": 0.948235809803009,
+        "calibration": {
+          "accepted": 1019,
+          "precision": 0.9892051030421982,
+          "wilson95": [
+            0.9807738629238301,
+            0.9939617536296006
+          ],
+          "target": 0.98,
+          "rule": "wilson_lower"
+        },
+        "maximum_calibration_lower95": 0.9848921539992713
+      }
+    }
+  },
+  "siren": {
+    "98": {
+      "pooled": {
+        "count": 834,
+        "queries": 17427,
+        "coverage": {
+          "hits": 834,
+          "queries": 17427,
+          "percent": 4.785677397142365,
+          "wilson95_percent": [
+            4.4785928776502395,
+            5.112690840753823
+          ]
+        },
+        "precision": {
+          "siren": {
+            "hits": 809,
+            "queries": 834,
+            "percent": 97.00239808153478,
+            "wilson95_percent": [
+              95.61231897627125,
+              97.96147016320643
+            ]
+          },
+          "exact": {
+            "hits": 754,
+            "queries": 834,
+            "percent": 90.40767386091127,
+            "wilson95_percent": [
+              88.21978820810999,
+              92.22502541434915
+            ]
+          },
+          "union": {
+            "hits": 800,
+            "queries": 834,
+            "percent": 95.92326139088729,
+            "wilson95_percent": [
+              94.35723676616836,
+              97.06817456143358
+            ]
+          }
+        },
+        "false_union": 34
+      },
+      "by_cv": {
+        "0": {
+          "count": 834,
+          "queries": 3418,
+          "coverage": {
+            "hits": 834,
+            "queries": 3418,
+            "percent": 24.400234055002926,
+            "wilson95_percent": [
+              22.98963785453159,
+              25.868308340231
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 809,
+              "queries": 834,
+              "percent": 97.00239808153478,
+              "wilson95_percent": [
+                95.61231897627125,
+                97.96147016320643
+              ]
+            },
+            "exact": {
+              "hits": 754,
+              "queries": 834,
+              "percent": 90.40767386091127,
+              "wilson95_percent": [
+                88.21978820810999,
+                92.22502541434915
+              ]
+            },
+            "union": {
+              "hits": 800,
+              "queries": 834,
+              "percent": 95.92326139088729,
+              "wilson95_percent": [
+                94.35723676616836,
+                97.06817456143358
+              ]
+            }
+          },
+          "false_union": 34
+        },
+        "1": {
+          "count": 0,
+          "queries": 3466,
+          "coverage": {
+            "hits": 0,
+            "queries": 3466,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11070992338652079
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "2": {
+          "count": 0,
+          "queries": 3474,
+          "coverage": {
+            "hits": 0,
+            "queries": 3474,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11045525985525317
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "3": {
+          "count": 0,
+          "queries": 3373,
+          "coverage": {
+            "hits": 0,
+            "queries": 3373,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11375893323803514
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "4": {
+          "count": 0,
+          "queries": 3696,
+          "coverage": {
+            "hits": 0,
+            "queries": 3696,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.10382766027813989
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 302,
+          "queries": 5763,
+          "coverage": {
+            "hits": 302,
+            "queries": 5763,
+            "percent": 5.240326218983168,
+            "wilson95_percent": [
+              4.6942343000505105,
+              5.846049547894849
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 290,
+              "queries": 302,
+              "percent": 96.02649006622516,
+              "wilson95_percent": [
+                93.18415309403562,
+                97.71261449004238
+              ]
+            },
+            "exact": {
+              "hits": 273,
+              "queries": 302,
+              "percent": 90.39735099337749,
+              "wilson95_percent": [
+                86.54921913258055,
+                93.23067759589078
+              ]
+            },
+            "union": {
+              "hits": 288,
+              "queries": 302,
+              "percent": 95.36423841059603,
+              "wilson95_percent": [
+                92.37011785155596,
+                97.21878257303891
+              ]
+            }
+          },
+          "false_union": 14
+        },
+        "3": {
+          "count": 259,
+          "queries": 6028,
+          "coverage": {
+            "hits": 259,
+            "queries": 6028,
+            "percent": 4.296615792966158,
+            "wilson95_percent": [
+              3.8131547076172554,
+              4.838290500007966
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 254,
+              "queries": 259,
+              "percent": 98.06949806949807,
+              "wilson95_percent": [
+                95.56125809534446,
+                99.17265531283803
+              ]
+            },
+            "exact": {
+              "hits": 231,
+              "queries": 259,
+              "percent": 89.1891891891892,
+              "wilson95_percent": [
+                84.81906008306535,
+                92.41380908103525
+              ]
+            },
+            "union": {
+              "hits": 249,
+              "queries": 259,
+              "percent": 96.13899613899613,
+              "wilson95_percent": [
+                93.03985041610791,
+                97.8894881564046
+              ]
+            }
+          },
+          "false_union": 10
+        },
+        "4": {
+          "count": 273,
+          "queries": 5636,
+          "coverage": {
+            "hits": 273,
+            "queries": 5636,
+            "percent": 4.843860894251242,
+            "wilson95_percent": [
+              4.3134638481022,
+              5.435772240099249
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 265,
+              "queries": 273,
+              "percent": 97.06959706959707,
+              "wilson95_percent": [
+                94.32512666205517,
+                98.50778972799135
+              ]
+            },
+            "exact": {
+              "hits": 250,
+              "queries": 273,
+              "percent": 91.57509157509158,
+              "wilson95_percent": [
+                87.6757969498962,
+                94.32059223508652
+              ]
+            },
+            "union": {
+              "hits": 263,
+              "queries": 273,
+              "percent": 96.33699633699634,
+              "wilson95_percent": [
+                93.38967399412206,
+                97.99837210191595
+              ]
+            }
+          },
+          "false_union": 10
+        }
+      }
+    },
+    "99": {
+      "pooled": {
+        "count": 0,
+        "queries": 17427,
+        "coverage": {
+          "hits": 0,
+          "queries": 17427,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            0.022038286733141017
+          ]
+        },
+        "precision": {
+          "siren": null,
+          "exact": null,
+          "union": null
+        },
+        "false_union": 0
+      },
+      "by_cv": {
+        "0": {
+          "count": 0,
+          "queries": 3418,
+          "coverage": {
+            "hits": 0,
+            "queries": 3418,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.1122629106848816
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "1": {
+          "count": 0,
+          "queries": 3466,
+          "coverage": {
+            "hits": 0,
+            "queries": 3466,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11070992338652079
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "2": {
+          "count": 0,
+          "queries": 3474,
+          "coverage": {
+            "hits": 0,
+            "queries": 3474,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11045525985525317
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "3": {
+          "count": 0,
+          "queries": 3373,
+          "coverage": {
+            "hits": 0,
+            "queries": 3373,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11375893323803514
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "4": {
+          "count": 0,
+          "queries": 3696,
+          "coverage": {
+            "hits": 0,
+            "queries": 3696,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.10382766027813989
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 0,
+          "queries": 5763,
+          "coverage": {
+            "hits": 0,
+            "queries": 5763,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.0666128737563681
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "3": {
+          "count": 0,
+          "queries": 6028,
+          "coverage": {
+            "hits": 0,
+            "queries": 6028,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.06368633603717401
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "4": {
+          "count": 0,
+          "queries": 5636,
+          "coverage": {
+            "hits": 0,
+            "queries": 5636,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.0681128866607783
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        }
+      }
+    }
+  },
+  "union": {
+    "96": {
+      "pooled": {
+        "count": 7635,
+        "queries": 17427,
+        "coverage": {
+          "hits": 7635,
+          "queries": 17427,
+          "percent": 43.8113272508177,
+          "wilson95_percent": [
+            43.07613261917483,
+            44.549249637351444
+          ]
+        },
+        "precision": {
+          "siren": {
+            "hits": 7401,
+            "queries": 7635,
+            "percent": 96.93516699410608,
+            "wilson95_percent": [
+              96.52431827028164,
+              97.29880973460907
+            ]
+          },
+          "exact": {
+            "hits": 6863,
+            "queries": 7635,
+            "percent": 89.88867059593976,
+            "wilson95_percent": [
+              89.19224477043485,
+              90.54497759286765
+            ]
+          },
+          "union": {
+            "hits": 7361,
+            "queries": 7635,
+            "percent": 96.41126391617551,
+            "wilson95_percent": [
+              95.97014427747877,
+              96.80570449755407
+            ]
+          }
+        },
+        "false_union": 274
+      },
+      "by_cv": {
+        "0": {
+          "count": 1647,
+          "queries": 3418,
+          "coverage": {
+            "hits": 1647,
+            "queries": 3418,
+            "percent": 48.18607372732592,
+            "wilson95_percent": [
+              46.51392877283068,
+              49.862291414683924
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1597,
+              "queries": 1647,
+              "percent": 96.96417729204614,
+              "wilson95_percent": [
+                96.02007327352801,
+                97.68971283186367
+              ]
+            },
+            "exact": {
+              "hits": 1462,
+              "queries": 1647,
+              "percent": 88.76745598057073,
+              "wilson95_percent": [
+                87.15136076222825,
+                90.20312977208667
+              ]
+            },
+            "union": {
+              "hits": 1578,
+              "queries": 1647,
+              "percent": 95.81056466302368,
+              "wilson95_percent": [
+                94.73165259467906,
+                96.67627709700552
+              ]
+            }
+          },
+          "false_union": 69
+        },
+        "1": {
+          "count": 1600,
+          "queries": 3466,
+          "coverage": {
+            "hits": 1600,
+            "queries": 3466,
+            "percent": 46.16272360069244,
+            "wilson95_percent": [
+              44.508217965055664,
+              47.82572572785282
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1539,
+              "queries": 1600,
+              "percent": 96.1875,
+              "wilson95_percent": [
+                95.13316835492974,
+                97.0205786299359
+              ]
+            },
+            "exact": {
+              "hits": 1438,
+              "queries": 1600,
+              "percent": 89.875,
+              "wilson95_percent": [
+                88.30007385279983,
+                91.25891204211798
+              ]
+            },
+            "union": {
+              "hits": 1533,
+              "queries": 1600,
+              "percent": 95.8125,
+              "wilson95_percent": [
+                94.71635669006734,
+                96.68918666569246
+              ]
+            }
+          },
+          "false_union": 67
+        },
+        "2": {
+          "count": 1288,
+          "queries": 3474,
+          "coverage": {
+            "hits": 1288,
+            "queries": 3474,
+            "percent": 37.07541738629821,
+            "wilson95_percent": [
+              35.484366045583016,
+              38.69502048963576
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1254,
+              "queries": 1288,
+              "percent": 97.36024844720497,
+              "wilson95_percent": [
+                96.33393535254659,
+                98.1048978084299
+              ]
+            },
+            "exact": {
+              "hits": 1179,
+              "queries": 1288,
+              "percent": 91.53726708074534,
+              "wilson95_percent": [
+                89.89099154330866,
+                92.93650967164612
+              ]
+            },
+            "union": {
+              "hits": 1250,
+              "queries": 1288,
+              "percent": 97.04968944099379,
+              "wilson95_percent": [
+                95.97650502740152,
+                97.84305709645382
+              ]
+            }
+          },
+          "false_union": 38
+        },
+        "3": {
+          "count": 1442,
+          "queries": 3373,
+          "coverage": {
+            "hits": 1442,
+            "queries": 3373,
+            "percent": 42.75126000592944,
+            "wilson95_percent": [
+              41.09089362621906,
+              44.42811856422074
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1414,
+              "queries": 1442,
+              "percent": 98.05825242718447,
+              "wilson95_percent": [
+                97.20793959129759,
+                98.65319314524021
+              ]
+            },
+            "exact": {
+              "hits": 1318,
+              "queries": 1442,
+              "percent": 91.4008321775312,
+              "wilson95_percent": [
+                89.84157663089213,
+                92.74009183045429
+              ]
+            },
+            "union": {
+              "hits": 1412,
+              "queries": 1442,
+              "percent": 97.91955617198336,
+              "wilson95_percent": [
+                97.04560380781535,
+                98.5388734229893
+              ]
+            }
+          },
+          "false_union": 30
+        },
+        "4": {
+          "count": 1658,
+          "queries": 3696,
+          "coverage": {
+            "hits": 1658,
+            "queries": 3696,
+            "percent": 44.85930735930736,
+            "wilson95_percent": [
+              43.26205886321491,
+              46.46723077718165
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1597,
+              "queries": 1658,
+              "percent": 96.32086851628468,
+              "wilson95_percent": [
+                95.3024048228577,
+                97.12518457487006
+              ]
+            },
+            "exact": {
+              "hits": 1466,
+              "queries": 1658,
+              "percent": 88.41978287092883,
+              "wilson95_percent": [
+                86.78995116747394,
+                89.8719947262143
+              ]
+            },
+            "union": {
+              "hits": 1588,
+              "queries": 1658,
+              "percent": 95.77804583835947,
+              "wilson95_percent": [
+                94.69963877640876,
+                96.64481480806435
+              ]
+            }
+          },
+          "false_union": 70
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 2608,
+          "queries": 5763,
+          "coverage": {
+            "hits": 2608,
+            "queries": 5763,
+            "percent": 45.2542078778414,
+            "wilson95_percent": [
+              43.97271790109102,
+              46.54202047162193
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 2523,
+              "queries": 2608,
+              "percent": 96.74079754601227,
+              "wilson95_percent": [
+                95.98760937877697,
+                97.35649432883523
+              ]
+            },
+            "exact": {
+              "hits": 2336,
+              "queries": 2608,
+              "percent": 89.57055214723927,
+              "wilson95_percent": [
+                88.33874548590698,
+                90.6859592115957
+              ]
+            },
+            "union": {
+              "hits": 2514,
+              "queries": 2608,
+              "percent": 96.3957055214724,
+              "wilson95_percent": [
+                95.60936989842817,
+                97.04556487286858
+              ]
+            }
+          },
+          "false_union": 94
+        },
+        "3": {
+          "count": 2558,
+          "queries": 6028,
+          "coverage": {
+            "hits": 2558,
+            "queries": 6028,
+            "percent": 42.43530192435302,
+            "wilson95_percent": [
+              41.19282760725446,
+              43.68741159952491
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 2499,
+              "queries": 2558,
+              "percent": 97.6935105551212,
+              "wilson95_percent": [
+                97.0363381051819,
+                98.20765100268497
+              ]
+            },
+            "exact": {
+              "hits": 2322,
+              "queries": 2558,
+              "percent": 90.77404222048476,
+              "wilson95_percent": [
+                89.59061482434181,
+                91.83518897853126
+              ]
+            },
+            "union": {
+              "hits": 2477,
+              "queries": 2558,
+              "percent": 96.83346364347146,
+              "wilson95_percent": [
+                96.08153663144387,
+                97.44493791874017
+              ]
+            }
+          },
+          "false_union": 81
+        },
+        "4": {
+          "count": 2469,
+          "queries": 5636,
+          "coverage": {
+            "hits": 2469,
+            "queries": 5636,
+            "percent": 43.80766501064585,
+            "wilson95_percent": [
+              42.51699975883467,
+              45.10676581868292
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 2379,
+              "queries": 2469,
+              "percent": 96.35479951397326,
+              "wilson95_percent": [
+                95.54062278463903,
+                97.02495564478568
+              ]
+            },
+            "exact": {
+              "hits": 2205,
+              "queries": 2469,
+              "percent": 89.30741190765492,
+              "wilson95_percent": [
+                88.02685383522166,
+                90.46584504267847
+              ]
+            },
+            "union": {
+              "hits": 2370,
+              "queries": 2469,
+              "percent": 95.99027946537059,
+              "wilson95_percent": [
+                95.14229067833308,
+                96.69538018808174
+              ]
+            }
+          },
+          "false_union": 99
+        }
+      }
+    },
+    "97": {
+      "pooled": {
+        "count": 4459,
+        "queries": 17427,
+        "coverage": {
+          "hits": 4459,
+          "queries": 17427,
+          "percent": 25.586733230045333,
+          "wilson95_percent": [
+            24.94432012363827,
+            26.239906867915767
+          ]
+        },
+        "precision": {
+          "siren": {
+            "hits": 4368,
+            "queries": 4459,
+            "percent": 97.95918367346938,
+            "wilson95_percent": [
+              97.50102617167921,
+              98.33477797831173
+            ]
+          },
+          "exact": {
+            "hits": 4151,
+            "queries": 4459,
+            "percent": 93.09262166405024,
+            "wilson95_percent": [
+              92.31063289293019,
+              93.80042517310098
+            ]
+          },
+          "union": {
+            "hits": 4360,
+            "queries": 4459,
+            "percent": 97.779771249159,
+            "wilson95_percent": [
+              97.30441148540292,
+              98.17287667992593
+            ]
+          }
+        },
+        "false_union": 99
+      },
+      "by_cv": {
+        "0": {
+          "count": 1045,
+          "queries": 3418,
+          "coverage": {
+            "hits": 1045,
+            "queries": 3418,
+            "percent": 30.573434757167934,
+            "wilson95_percent": [
+              29.051424366038415,
+              32.139062803472854
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1017,
+              "queries": 1045,
+              "percent": 97.32057416267942,
+              "wilson95_percent": [
+                96.15473568815814,
+                98.13978248544845
+              ]
+            },
+            "exact": {
+              "hits": 959,
+              "queries": 1045,
+              "percent": 91.77033492822966,
+              "wilson95_percent": [
+                89.94716128385905,
+                93.2875347379393
+              ]
+            },
+            "union": {
+              "hits": 1012,
+              "queries": 1045,
+              "percent": 96.84210526315789,
+              "wilson95_percent": [
+                95.59838983231154,
+                97.74269539717365
+              ]
+            }
+          },
+          "false_union": 33
+        },
+        "1": {
+          "count": 704,
+          "queries": 3466,
+          "coverage": {
+            "hits": 704,
+            "queries": 3466,
+            "percent": 20.311598384304673,
+            "wilson95_percent": [
+              19.005425761357436,
+              21.683507020618748
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 695,
+              "queries": 704,
+              "percent": 98.7215909090909,
+              "wilson95_percent": [
+                97.588364742183,
+                99.32599248449266
+              ]
+            },
+            "exact": {
+              "hits": 682,
+              "queries": 704,
+              "percent": 96.875,
+              "wilson95_percent": [
+                95.3138362162273,
+                97.92738210681345
+              ]
+            },
+            "union": {
+              "hits": 694,
+              "queries": 704,
+              "percent": 98.57954545454545,
+              "wilson95_percent": [
+                97.40516911422235,
+                99.22663896601989
+              ]
+            }
+          },
+          "false_union": 10
+        },
+        "2": {
+          "count": 525,
+          "queries": 3474,
+          "coverage": {
+            "hits": 525,
+            "queries": 3474,
+            "percent": 15.112262521588946,
+            "wilson95_percent": [
+              13.95980852379815,
+              16.34178720155854
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 518,
+              "queries": 525,
+              "percent": 98.66666666666667,
+              "wilson95_percent": [
+                97.27364770821733,
+                99.35266467272191
+              ]
+            },
+            "exact": {
+              "hits": 504,
+              "queries": 525,
+              "percent": 96.0,
+              "wilson95_percent": [
+                93.96262994079514,
+                97.36908998091454
+              ]
+            },
+            "union": {
+              "hits": 518,
+              "queries": 525,
+              "percent": 98.66666666666667,
+              "wilson95_percent": [
+                97.27364770821733,
+                99.35266467272191
+              ]
+            }
+          },
+          "false_union": 7
+        },
+        "3": {
+          "count": 1092,
+          "queries": 3373,
+          "coverage": {
+            "hits": 1092,
+            "queries": 3373,
+            "percent": 32.37474058701453,
+            "wilson95_percent": [
+              30.81650591286,
+              33.97307587534635
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1074,
+              "queries": 1092,
+              "percent": 98.35164835164835,
+              "wilson95_percent": [
+                97.40947381230998,
+                98.9548306680507
+              ]
+            },
+            "exact": {
+              "hits": 1005,
+              "queries": 1092,
+              "percent": 92.03296703296704,
+              "wilson95_percent": [
+                90.2756400699101,
+                93.49560189313073
+              ]
+            },
+            "union": {
+              "hits": 1073,
+              "queries": 1092,
+              "percent": 98.26007326007326,
+              "wilson95_percent": [
+                97.29847335297124,
+                98.88332297496451
+              ]
+            }
+          },
+          "false_union": 19
+        },
+        "4": {
+          "count": 1093,
+          "queries": 3696,
+          "coverage": {
+            "hits": 1093,
+            "queries": 3696,
+            "percent": 29.57251082251082,
+            "wilson95_percent": [
+              28.123044551837296,
+              31.06439586131746
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1064,
+              "queries": 1093,
+              "percent": 97.34675205855444,
+              "wilson95_percent": [
+                96.2154835670286,
+                98.14637626937974
+              ]
+            },
+            "exact": {
+              "hits": 1001,
+              "queries": 1093,
+              "percent": 91.58279963403477,
+              "wilson95_percent": [
+                89.78761188365786,
+                93.08671719005729
+              ]
+            },
+            "union": {
+              "hits": 1063,
+              "queries": 1093,
+              "percent": 97.25526075022873,
+              "wilson95_percent": [
+                96.10879331914754,
+                98.07072475912283
+              ]
+            }
+          },
+          "false_union": 30
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 1434,
+          "queries": 5763,
+          "coverage": {
+            "hits": 1434,
+            "queries": 5763,
+            "percent": 24.882873503383653,
+            "wilson95_percent": [
+              23.783647256195664,
+              26.015562230100493
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1400,
+              "queries": 1434,
+              "percent": 97.62900976290098,
+              "wilson95_percent": [
+                96.70512517808545,
+                98.29839496803568
+              ]
+            },
+            "exact": {
+              "hits": 1326,
+              "queries": 1434,
+              "percent": 92.46861924686192,
+              "wilson95_percent": [
+                90.98640571835418,
+                93.72390726698664
+              ]
+            },
+            "union": {
+              "hits": 1400,
+              "queries": 1434,
+              "percent": 97.62900976290098,
+              "wilson95_percent": [
+                96.70512517808545,
+                98.29839496803568
+              ]
+            }
+          },
+          "false_union": 34
+        },
+        "3": {
+          "count": 1529,
+          "queries": 6028,
+          "coverage": {
+            "hits": 1529,
+            "queries": 6028,
+            "percent": 25.364963503649633,
+            "wilson95_percent": [
+              24.282517092557494,
+              26.47878821899367
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1502,
+              "queries": 1529,
+              "percent": 98.23413996075867,
+              "wilson95_percent": [
+                97.44293197792906,
+                98.78358848262822
+              ]
+            },
+            "exact": {
+              "hits": 1430,
+              "queries": 1529,
+              "percent": 93.5251798561151,
+              "wilson95_percent": [
+                92.17937544466679,
+                94.65282708618183
+              ]
+            },
+            "union": {
+              "hits": 1496,
+              "queries": 1529,
+              "percent": 97.84172661870504,
+              "wilson95_percent": [
+                96.98454685166033,
+                98.45911378142124
+              ]
+            }
+          },
+          "false_union": 33
+        },
+        "4": {
+          "count": 1496,
+          "queries": 5636,
+          "coverage": {
+            "hits": 1496,
+            "queries": 5636,
+            "percent": 26.543647977288856,
+            "wilson95_percent": [
+              25.40709711207677,
+              27.71215243943691
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1466,
+              "queries": 1496,
+              "percent": 97.99465240641712,
+              "wilson95_percent": [
+                97.15170610458006,
+                98.59174674870405
+              ]
+            },
+            "exact": {
+              "hits": 1395,
+              "queries": 1496,
+              "percent": 93.24866310160428,
+              "wilson95_percent": [
+                91.86325209838874,
+                94.41253341146476
+              ]
+            },
+            "union": {
+              "hits": 1464,
+              "queries": 1496,
+              "percent": 97.86096256684492,
+              "wilson95_percent": [
+                96.99597255350257,
+                98.48078544503703
+              ]
+            }
+          },
+          "false_union": 32
+        }
+      }
+    },
+    "97.5": {
+      "pooled": {
+        "count": 2369,
+        "queries": 17427,
+        "coverage": {
+          "hits": 2369,
+          "queries": 17427,
+          "percent": 13.59384862569576,
+          "wilson95_percent": [
+            13.093025813839674,
+            14.110718021608589
+          ]
+        },
+        "precision": {
+          "siren": {
+            "hits": 2324,
+            "queries": 2369,
+            "percent": 98.10046433094132,
+            "wilson95_percent": [
+              97.46784677887838,
+              98.57733953258578
+            ]
+          },
+          "exact": {
+            "hits": 2245,
+            "queries": 2369,
+            "percent": 94.76572393414943,
+            "wilson95_percent": [
+              93.79420256849835,
+              95.5923003567388
+            ]
+          },
+          "union": {
+            "hits": 2322,
+            "queries": 2369,
+            "percent": 98.0160405234276,
+            "wilson95_percent": [
+              97.37186176525022,
+              98.50475028327149
+            ]
+          }
+        },
+        "false_union": 47
+      },
+      "by_cv": {
+        "0": {
+          "count": 558,
+          "queries": 3418,
+          "coverage": {
+            "hits": 558,
+            "queries": 3418,
+            "percent": 16.325336454066704,
+            "wilson95_percent": [
+              15.124205730937689,
+              17.60207549211573
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 541,
+              "queries": 558,
+              "percent": 96.95340501792114,
+              "wilson95_percent": [
+                95.17544455366756,
+                98.0892997569208
+              ]
+            },
+            "exact": {
+              "hits": 518,
+              "queries": 558,
+              "percent": 92.831541218638,
+              "wilson95_percent": [
+                90.38562737556323,
+                94.69175388485897
+              ]
+            },
+            "union": {
+              "hits": 540,
+              "queries": 558,
+              "percent": 96.7741935483871,
+              "wilson95_percent": [
+                94.95882632230006,
+                97.94994568175935
+              ]
+            }
+          },
+          "false_union": 18
+        },
+        "1": {
+          "count": 676,
+          "queries": 3466,
+          "coverage": {
+            "hits": 676,
+            "queries": 3466,
+            "percent": 19.503750721292555,
+            "wilson95_percent": [
+              18.218702190803644,
+              20.856324000205905
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 668,
+              "queries": 676,
+              "percent": 98.81656804733728,
+              "wilson95_percent": [
+                97.68231511978703,
+                99.39914283437884
+              ]
+            },
+            "exact": {
+              "hits": 655,
+              "queries": 676,
+              "percent": 96.89349112426035,
+              "wilson95_percent": [
+                95.29772158184974,
+                97.95931530139444
+              ]
+            },
+            "union": {
+              "hits": 667,
+              "queries": 676,
+              "percent": 98.66863905325444,
+              "wilson95_percent": [
+                97.48925791990047,
+                99.29801379804063
+              ]
+            }
+          },
+          "false_union": 9
+        },
+        "2": {
+          "count": 0,
+          "queries": 3474,
+          "coverage": {
+            "hits": 0,
+            "queries": 3474,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11045525985525317
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "3": {
+          "count": 678,
+          "queries": 3373,
+          "coverage": {
+            "hits": 678,
+            "queries": 3373,
+            "percent": 20.100800474355175,
+            "wilson95_percent": [
+              18.782715695936375,
+              21.486911273628145
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 666,
+              "queries": 678,
+              "percent": 98.23008849557522,
+              "wilson95_percent": [
+                96.93203680930924,
+                98.98468863169747
+              ]
+            },
+            "exact": {
+              "hits": 636,
+              "queries": 678,
+              "percent": 93.80530973451327,
+              "wilson95_percent": [
+                91.7323786681491,
+                95.38464719111388
+              ]
+            },
+            "union": {
+              "hits": 666,
+              "queries": 678,
+              "percent": 98.23008849557522,
+              "wilson95_percent": [
+                96.93203680930924,
+                98.98468863169747
+              ]
+            }
+          },
+          "false_union": 12
+        },
+        "4": {
+          "count": 457,
+          "queries": 3696,
+          "coverage": {
+            "hits": 457,
+            "queries": 3696,
+            "percent": 12.364718614718615,
+            "wilson95_percent": [
+              11.342385717297573,
+              13.465203176342522
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 449,
+              "queries": 457,
+              "percent": 98.24945295404814,
+              "wilson95_percent": [
+                96.5841546862384,
+                99.11036054434243
+              ]
+            },
+            "exact": {
+              "hits": 436,
+              "queries": 457,
+              "percent": 95.40481400437636,
+              "wilson95_percent": [
+                93.07757078978275,
+                96.97509093514026
+              ]
+            },
+            "union": {
+              "hits": 449,
+              "queries": 457,
+              "percent": 98.24945295404814,
+              "wilson95_percent": [
+                96.5841546862384,
+                99.11036054434243
+              ]
+            }
+          },
+          "false_union": 8
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 757,
+          "queries": 5763,
+          "coverage": {
+            "hits": 757,
+            "queries": 5763,
+            "percent": 13.135519694603506,
+            "wilson95_percent": [
+              12.287916432223744,
+              14.032235936436821
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 736,
+              "queries": 757,
+              "percent": 97.22589167767504,
+              "wilson95_percent": [
+                95.7963850402832,
+                98.17851494850706
+              ]
+            },
+            "exact": {
+              "hits": 708,
+              "queries": 757,
+              "percent": 93.52708058124175,
+              "wilson95_percent": [
+                91.54524020386606,
+                95.06938789769026
+              ]
+            },
+            "union": {
+              "hits": 736,
+              "queries": 757,
+              "percent": 97.22589167767504,
+              "wilson95_percent": [
+                95.7963850402832,
+                98.17851494850706
+              ]
+            }
+          },
+          "false_union": 21
+        },
+        "3": {
+          "count": 810,
+          "queries": 6028,
+          "coverage": {
+            "hits": 810,
+            "queries": 6028,
+            "percent": 13.437292634372927,
+            "wilson95_percent": [
+              12.599577753672076,
+              14.321578412428105
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 802,
+              "queries": 810,
+              "percent": 99.01234567901234,
+              "wilson95_percent": [
+                98.0632916778394,
+                99.49870782394987
+              ]
+            },
+            "exact": {
+              "hits": 777,
+              "queries": 810,
+              "percent": 95.92592592592592,
+              "wilson95_percent": [
+                94.33376713149774,
+                97.08452963088413
+              ]
+            },
+            "union": {
+              "hits": 800,
+              "queries": 810,
+              "percent": 98.76543209876543,
+              "wilson95_percent": [
+                97.74245651336862,
+                99.32804676926804
+              ]
+            }
+          },
+          "false_union": 10
+        },
+        "4": {
+          "count": 802,
+          "queries": 5636,
+          "coverage": {
+            "hits": 802,
+            "queries": 5636,
+            "percent": 14.229950319375444,
+            "wilson95_percent": [
+              13.342221244310192,
+              15.166407421235629
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 786,
+              "queries": 802,
+              "percent": 98.00498753117208,
+              "wilson95_percent": [
+                96.78396735098835,
+                98.76832666064688
+              ]
+            },
+            "exact": {
+              "hits": 760,
+              "queries": 802,
+              "percent": 94.76309226932668,
+              "wilson95_percent": [
+                92.99688928641928,
+                96.1025225322224
+              ]
+            },
+            "union": {
+              "hits": 786,
+              "queries": 802,
+              "percent": 98.00498753117208,
+              "wilson95_percent": [
+                96.78396735098835,
+                98.76832666064688
+              ]
+            }
+          },
+          "false_union": 16
+        }
+      }
+    },
+    "98": {
+      "pooled": {
+        "count": 0,
+        "queries": 17427,
+        "coverage": {
+          "hits": 0,
+          "queries": 17427,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            0.022038286733141017
+          ]
+        },
+        "precision": {
+          "siren": null,
+          "exact": null,
+          "union": null
+        },
+        "false_union": 0
+      },
+      "by_cv": {
+        "0": {
+          "count": 0,
+          "queries": 3418,
+          "coverage": {
+            "hits": 0,
+            "queries": 3418,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.1122629106848816
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "1": {
+          "count": 0,
+          "queries": 3466,
+          "coverage": {
+            "hits": 0,
+            "queries": 3466,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11070992338652079
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "2": {
+          "count": 0,
+          "queries": 3474,
+          "coverage": {
+            "hits": 0,
+            "queries": 3474,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11045525985525317
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "3": {
+          "count": 0,
+          "queries": 3373,
+          "coverage": {
+            "hits": 0,
+            "queries": 3373,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.11375893323803514
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "4": {
+          "count": 0,
+          "queries": 3696,
+          "coverage": {
+            "hits": 0,
+            "queries": 3696,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.10382766027813989
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 0,
+          "queries": 5763,
+          "coverage": {
+            "hits": 0,
+            "queries": 5763,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.0666128737563681
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "3": {
+          "count": 0,
+          "queries": 6028,
+          "coverage": {
+            "hits": 0,
+            "queries": 6028,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.06368633603717401
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        },
+        "4": {
+          "count": 0,
+          "queries": 5636,
+          "coverage": {
+            "hits": 0,
+            "queries": 5636,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0.0,
+              0.0681128866607783
+            ]
+          },
+          "precision": {
+            "siren": null,
+            "exact": null,
+            "union": null
+          },
+          "false_union": 0
+        }
+      }
+    }
+  },
+  "generator": {
+    "eligible": 16325,
+    "absent": 1102,
+    "frozen": {
+      "pooled": {
+        "count": 4304,
+        "queries": 16325,
+        "coverage": {
+          "hits": 4304,
+          "queries": 16325,
+          "percent": 26.36447166921899,
+          "wilson95_percent": [
+            25.694200703716163,
+            27.045863437017193
+          ]
+        },
+        "precision": {
+          "siren": {
+            "hits": 4237,
+            "queries": 4304,
+            "percent": 98.44330855018588,
+            "wilson95_percent": [
+              98.02792576301634,
+              98.77229401901738
+            ]
+          },
+          "exact": {
+            "hits": 4038,
+            "queries": 4304,
+            "percent": 93.81970260223048,
+            "wilson95_percent": [
+              93.06049806191243,
+              94.50075589919817
+            ]
+          },
+          "union": {
+            "hits": 4230,
+            "queries": 4304,
+            "percent": 98.28066914498142,
+            "wilson95_percent": [
+              97.84705625612776,
+              98.62817477843633
+            ]
+          }
+        },
+        "false_union": 74
+      },
+      "by_cv": {
+        "0": {
+          "count": 1008,
+          "queries": 3212,
+          "coverage": {
+            "hits": 1008,
+            "queries": 3212,
+            "percent": 31.382316313823164,
+            "wilson95_percent": [
+              29.80056078032709,
+              33.00855107064724
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 989,
+              "queries": 1008,
+              "percent": 98.11507936507937,
+              "wilson95_percent": [
+                97.07480325446937,
+                98.79001741917047
+              ]
+            },
+            "exact": {
+              "hits": 934,
+              "queries": 1008,
+              "percent": 92.65873015873017,
+              "wilson95_percent": [
+                90.88161843489968,
+                94.11193391492536
+              ]
+            },
+            "union": {
+              "hits": 985,
+              "queries": 1008,
+              "percent": 97.71825396825396,
+              "wilson95_percent": [
+                96.59937118907655,
+                98.47481178828585
+              ]
+            }
+          },
+          "false_union": 23
+        },
+        "1": {
+          "count": 1018,
+          "queries": 3252,
+          "coverage": {
+            "hits": 1018,
+            "queries": 3252,
+            "percent": 31.303813038130382,
+            "wilson95_percent": [
+              29.732845385744877,
+              32.918898706227885
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1005,
+              "queries": 1018,
+              "percent": 98.7229862475442,
+              "wilson95_percent": [
+                97.82743375648778,
+                99.25220530463096
+              ]
+            },
+            "exact": {
+              "hits": 967,
+              "queries": 1018,
+              "percent": 94.9901768172888,
+              "wilson95_percent": [
+                93.47285153816578,
+                96.16923453036723
+              ]
+            },
+            "union": {
+              "hits": 1002,
+              "queries": 1018,
+              "percent": 98.42829076620825,
+              "wilson95_percent": [
+                97.4621916095771,
+                99.03027221528487
+              ]
+            }
+          },
+          "false_union": 16
+        },
+        "2": {
+          "count": 523,
+          "queries": 3241,
+          "coverage": {
+            "hits": 523,
+            "queries": 3241,
+            "percent": 16.136994754705338,
+            "wilson95_percent": [
+              14.91069946334746,
+              17.443468595213062
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 518,
+              "queries": 523,
+              "percent": 99.04397705544933,
+              "wilson95_percent": [
+                97.78177451846155,
+                99.59097233185706
+              ]
+            },
+            "exact": {
+              "hits": 504,
+              "queries": 523,
+              "percent": 96.36711281070745,
+              "wilson95_percent": [
+                94.39593677785173,
+                97.66211823658203
+              ]
+            },
+            "union": {
+              "hits": 518,
+              "queries": 523,
+              "percent": 99.04397705544933,
+              "wilson95_percent": [
+                97.78177451846155,
+                99.59097233185706
+              ]
+            }
+          },
+          "false_union": 5
+        },
+        "3": {
+          "count": 669,
+          "queries": 3179,
+          "coverage": {
+            "hits": 669,
+            "queries": 3179,
+            "percent": 21.044353570305127,
+            "wilson95_percent": [
+              19.662750032037188,
+              22.49585183931939
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 662,
+              "queries": 669,
+              "percent": 98.95366218236174,
+              "wilson95_percent": [
+                97.8560928821133,
+                99.49224845642945
+              ]
+            },
+            "exact": {
+              "hits": 632,
+              "queries": 669,
+              "percent": 94.46935724962631,
+              "wilson95_percent": [
+                92.469776907657,
+                95.96115911743146
+              ]
+            },
+            "union": {
+              "hits": 662,
+              "queries": 669,
+              "percent": 98.95366218236174,
+              "wilson95_percent": [
+                97.8560928821133,
+                99.49224845642945
+              ]
+            }
+          },
+          "false_union": 7
+        },
+        "4": {
+          "count": 1086,
+          "queries": 3441,
+          "coverage": {
+            "hits": 1086,
+            "queries": 3441,
+            "percent": 31.56059285091543,
+            "wilson95_percent": [
+              30.029028157110087,
+              33.13328235356204
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1063,
+              "queries": 1086,
+              "percent": 97.88213627992633,
+              "wilson95_percent": [
+                96.84205449310306,
+                98.58466942005884
+              ]
+            },
+            "exact": {
+              "hits": 1001,
+              "queries": 1086,
+              "percent": 92.17311233885819,
+              "wilson95_percent": [
+                90.42290586343441,
+                93.62601635238897
+              ]
+            },
+            "union": {
+              "hits": 1063,
+              "queries": 1086,
+              "percent": 97.88213627992633,
+              "wilson95_percent": [
+                96.84205449310306,
+                98.58466942005884
+              ]
+            }
+          },
+          "false_union": 23
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 1424,
+          "queries": 5359,
+          "coverage": {
+            "hits": 1424,
+            "queries": 5359,
+            "percent": 26.572121664489643,
+            "wilson95_percent": [
+              25.4065753112459,
+              27.77123128100461
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1401,
+              "queries": 1424,
+              "percent": 98.38483146067416,
+              "wilson95_percent": [
+                97.5879705079338,
+                98.92134370809548
+              ]
+            },
+            "exact": {
+              "hits": 1338,
+              "queries": 1424,
+              "percent": 93.96067415730337,
+              "wilson95_percent": [
+                92.60116207450106,
+                95.08364300421349
+              ]
+            },
+            "union": {
+              "hits": 1400,
+              "queries": 1424,
+              "percent": 98.31460674157303,
+              "wilson95_percent": [
+                97.5044070041562,
+                98.8648356382649
+              ]
+            }
+          },
+          "false_union": 24
+        },
+        "3": {
+          "count": 1416,
+          "queries": 5678,
+          "coverage": {
+            "hits": 1416,
+            "queries": 5678,
+            "percent": 24.93835857696372,
+            "wilson95_percent": [
+              23.83019061693671,
+              26.080414586913747
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1395,
+              "queries": 1416,
+              "percent": 98.51694915254237,
+              "wilson95_percent": [
+                97.74340093596217,
+                99.02796684345388
+              ]
+            },
+            "exact": {
+              "hits": 1329,
+              "queries": 1416,
+              "percent": 93.85593220338983,
+              "wilson95_percent": [
+                92.4825837568866,
+                94.99197139743274
+              ]
+            },
+            "union": {
+              "hits": 1391,
+              "queries": 1416,
+              "percent": 98.23446327683615,
+              "wilson95_percent": [
+                97.40662980863064,
+                98.8012947813856
+              ]
+            }
+          },
+          "false_union": 25
+        },
+        "4": {
+          "count": 1464,
+          "queries": 5288,
+          "coverage": {
+            "hits": 1464,
+            "queries": 5288,
+            "percent": 27.68532526475038,
+            "wilson95_percent": [
+              26.495872111983292,
+              28.90717579932101
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1441,
+              "queries": 1464,
+              "percent": 98.42896174863388,
+              "wilson95_percent": [
+                97.65356097177188,
+                98.95087757156112
+              ]
+            },
+            "exact": {
+              "hits": 1371,
+              "queries": 1464,
+              "percent": 93.64754098360656,
+              "wilson95_percent": [
+                92.28034387160801,
+                94.78627986490793
+              ]
+            },
+            "union": {
+              "hits": 1439,
+              "queries": 1464,
+              "percent": 98.29234972677595,
+              "wilson95_percent": [
+                97.49124458009271,
+                98.8406849687598
+              ]
+            }
+          },
+          "false_union": 25
+        }
+      },
+      "diagnostic_only": true,
+      "full_population_coverage_percent": 24.697308773741895
+    },
+    "refit": {
+      "pooled": {
+        "count": 3929,
+        "queries": 16325,
+        "coverage": {
+          "hits": 3929,
+          "queries": 16325,
+          "percent": 24.067381316998468,
+          "wilson95_percent": [
+            23.417763057342523,
+            24.72920118777725
+          ]
+        },
+        "precision": {
+          "siren": {
+            "hits": 3861,
+            "queries": 3929,
+            "percent": 98.26927971494018,
+            "wilson95_percent": [
+              97.81183007360708,
+              98.63243394555255
+            ]
+          },
+          "exact": {
+            "hits": 3701,
+            "queries": 3929,
+            "percent": 94.19699669127004,
+            "wilson95_percent": [
+              93.42185132776342,
+              94.88580196476005
+            ]
+          },
+          "union": {
+            "hits": 3856,
+            "queries": 3929,
+            "percent": 98.1420208704505,
+            "wilson95_percent": [
+              97.67035634848764,
+              98.51963858546462
+            ]
+          }
+        },
+        "false_union": 73
+      },
+      "by_cv": {
+        "0": {
+          "count": 1319,
+          "queries": 3212,
+          "coverage": {
+            "hits": 1319,
+            "queries": 3212,
+            "percent": 41.064757160647574,
+            "wilson95_percent": [
+              39.375107406198275,
+              42.77575396709543
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1291,
+              "queries": 1319,
+              "percent": 97.87717968157695,
+              "wilson95_percent": [
+                96.94903407042436,
+                98.52725990103595
+              ]
+            },
+            "exact": {
+              "hits": 1214,
+              "queries": 1319,
+              "percent": 92.03942380591357,
+              "wilson95_percent": [
+                90.45358618576788,
+                93.38110107816678
+              ]
+            },
+            "union": {
+              "hits": 1286,
+              "queries": 1319,
+              "percent": 97.4981046247157,
+              "wilson95_percent": [
+                96.5073042467011,
+                98.21304123725754
+              ]
+            }
+          },
+          "false_union": 33
+        },
+        "1": {
+          "count": 420,
+          "queries": 3252,
+          "coverage": {
+            "hits": 420,
+            "queries": 3252,
+            "percent": 12.915129151291513,
+            "wilson95_percent": [
+              11.806094200879658,
+              14.111674507868955
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 415,
+              "queries": 420,
+              "percent": 98.80952380952381,
+              "wilson95_percent": [
+                97.2438268146536,
+                99.49045707083346
+              ]
+            },
+            "exact": {
+              "hits": 412,
+              "queries": 420,
+              "percent": 98.0952380952381,
+              "wilson95_percent": [
+                96.2869231625972,
+                99.03173705627296
+              ]
+            },
+            "union": {
+              "hits": 415,
+              "queries": 420,
+              "percent": 98.80952380952381,
+              "wilson95_percent": [
+                97.2438268146536,
+                99.49045707083346
+              ]
+            }
+          },
+          "false_union": 5
+        },
+        "2": {
+          "count": 600,
+          "queries": 3241,
+          "coverage": {
+            "hits": 600,
+            "queries": 3241,
+            "percent": 18.51280468991052,
+            "wilson95_percent": [
+              17.213174834733376,
+              19.886987811062536
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 592,
+              "queries": 600,
+              "percent": 98.66666666666667,
+              "wilson95_percent": [
+                97.39126318293849,
+                99.32286458506134
+              ]
+            },
+            "exact": {
+              "hits": 576,
+              "queries": 600,
+              "percent": 96.0,
+              "wilson95_percent": [
+                94.11722643439472,
+                97.29749707234483
+              ]
+            },
+            "union": {
+              "hits": 592,
+              "queries": 600,
+              "percent": 98.66666666666667,
+              "wilson95_percent": [
+                97.39126318293849,
+                99.32286458506134
+              ]
+            }
+          },
+          "false_union": 8
+        },
+        "3": {
+          "count": 504,
+          "queries": 3179,
+          "coverage": {
+            "hits": 504,
+            "queries": 3179,
+            "percent": 15.854042151620007,
+            "wilson95_percent": [
+              14.625685294514815,
+              17.164822398432026
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 499,
+              "queries": 504,
+              "percent": 99.0079365079365,
+              "wilson95_percent": [
+                97.69892651151568,
+                99.57552625710298
+              ]
+            },
+            "exact": {
+              "hits": 487,
+              "queries": 504,
+              "percent": 96.62698412698413,
+              "wilson95_percent": [
+                94.6650040186524,
+                97.88356440493214
+              ]
+            },
+            "union": {
+              "hits": 499,
+              "queries": 504,
+              "percent": 99.0079365079365,
+              "wilson95_percent": [
+                97.69892651151568,
+                99.57552625710298
+              ]
+            }
+          },
+          "false_union": 5
+        },
+        "4": {
+          "count": 1086,
+          "queries": 3441,
+          "coverage": {
+            "hits": 1086,
+            "queries": 3441,
+            "percent": 31.56059285091543,
+            "wilson95_percent": [
+              30.029028157110087,
+              33.13328235356204
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1064,
+              "queries": 1086,
+              "percent": 97.97421731123389,
+              "wilson95_percent": [
+                96.95178692463425,
+                98.65844991912994
+              ]
+            },
+            "exact": {
+              "hits": 1012,
+              "queries": 1086,
+              "percent": 93.18600368324125,
+              "wilson95_percent": [
+                91.5300195976062,
+                94.53754485484176
+              ]
+            },
+            "union": {
+              "hits": 1064,
+              "queries": 1086,
+              "percent": 97.97421731123389,
+              "wilson95_percent": [
+                96.95178692463425,
+                98.65844991912994
+              ]
+            }
+          },
+          "false_union": 22
+        }
+      },
+      "by_population_fold": {
+        "2": {
+          "count": 1272,
+          "queries": 5359,
+          "coverage": {
+            "hits": 1272,
+            "queries": 5359,
+            "percent": 23.73577159917895,
+            "wilson95_percent": [
+              22.615720597056264,
+              24.89344927836595
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1250,
+              "queries": 1272,
+              "percent": 98.27044025157232,
+              "wilson95_percent": [
+                97.39511995659036,
+                98.85508350795953
+              ]
+            },
+            "exact": {
+              "hits": 1197,
+              "queries": 1272,
+              "percent": 94.10377358490567,
+              "wilson95_percent": [
+                92.67164787047767,
+                95.27031327547103
+              ]
+            },
+            "union": {
+              "hits": 1249,
+              "queries": 1272,
+              "percent": 98.19182389937107,
+              "wilson95_percent": [
+                97.30131079007172,
+                98.79213338544798
+              ]
+            }
+          },
+          "false_union": 23
+        },
+        "3": {
+          "count": 1330,
+          "queries": 5678,
+          "coverage": {
+            "hits": 1330,
+            "queries": 5678,
+            "percent": 23.423740753786543,
+            "wilson95_percent": [
+              22.34033044806142,
+              24.54308715742723
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1309,
+              "queries": 1330,
+              "percent": 98.42105263157895,
+              "wilson95_percent": [
+                97.59822381090675,
+                98.96497652167065
+              ]
+            },
+            "exact": {
+              "hits": 1255,
+              "queries": 1330,
+              "percent": 94.3609022556391,
+              "wilson95_percent": [
+                92.98863571394489,
+                95.47765030503132
+              ]
+            },
+            "union": {
+              "hits": 1305,
+              "queries": 1330,
+              "percent": 98.1203007518797,
+              "wilson95_percent": [
+                97.2398363630182,
+                98.72359253892208
+              ]
+            }
+          },
+          "false_union": 25
+        },
+        "4": {
+          "count": 1327,
+          "queries": 5288,
+          "coverage": {
+            "hits": 1327,
+            "queries": 5288,
+            "percent": 25.094553706505295,
+            "wilson95_percent": [
+              23.944363360709247,
+              26.28090282504311
+            ]
+          },
+          "precision": {
+            "siren": {
+              "hits": 1302,
+              "queries": 1327,
+              "percent": 98.11605124340618,
+              "wilson95_percent": [
+                97.2336298613222,
+                98.72069974992954
+              ]
+            },
+            "exact": {
+              "hits": 1249,
+              "queries": 1327,
+              "percent": 94.12207987942728,
+              "wilson95_percent": [
+                92.724624754056,
+                95.26481923558833
+              ]
+            },
+            "union": {
+              "hits": 1302,
+              "queries": 1327,
+              "percent": 98.11605124340618,
+              "wilson95_percent": [
+                97.2336298613222,
+                98.72069974992954
+              ]
+            }
+          },
+          "false_union": 25
+        }
+      },
+      "diagnostic_only": true,
+      "full_population_coverage_percent": 22.54547541171745
+    },
+    "deployable": false
+  },
+  "colocation": {
+    "dans": {
+      "count": 35,
+      "queries": 1046,
+      "coverage": {
+        "hits": 35,
+        "queries": 1046,
+        "percent": 3.3460803059273423,
+        "wilson95_percent": [
+          2.4156400926818136,
+          4.6179418067834215
+        ]
+      },
+      "precision": {
+        "siren": {
+          "hits": 1,
+          "queries": 35,
+          "percent": 2.857142857142857,
+          "wilson95_percent": [
+            0.5061491855444202,
+            14.533087233613672
+          ]
+        },
+        "exact": {
+          "hits": 1,
+          "queries": 35,
+          "percent": 2.857142857142857,
+          "wilson95_percent": [
+            0.5061491855444202,
+            14.533087233613672
+          ]
+        },
+        "union": {
+          "hits": 1,
+          "queries": 35,
+          "percent": 2.857142857142857,
+          "wilson95_percent": [
+            0.5061491855444202,
+            14.533087233613672
+          ]
+        }
+      },
+      "false_union": 34,
+      "global_coverage_percent": 0.20083778045561484
+    },
+    "hors": {
+      "count": 4424,
+      "queries": 16381,
+      "coverage": {
+        "hits": 4424,
+        "queries": 16381,
+        "percent": 27.006898235760943,
+        "wilson95_percent": [
+          26.33242995998864,
+          27.692148068841476
+        ]
+      },
+      "precision": {
+        "siren": {
+          "hits": 4367,
+          "queries": 4424,
+          "percent": 98.71157323688969,
+          "wilson95_percent": [
+            98.3344608232284,
+            99.00416433043554
+          ]
+        },
+        "exact": {
+          "hits": 4150,
+          "queries": 4424,
+          "percent": 93.80650994575045,
+          "wilson95_percent": [
+            93.05752435688423,
+            94.47948517805808
+          ]
+        },
+        "union": {
+          "hits": 4359,
+          "queries": 4424,
+          "percent": 98.53074141048825,
+          "wilson95_percent": [
+            98.1317507666293,
+            98.84552450247347
+          ]
+        }
+      },
+      "false_union": 65,
+      "global_coverage_percent": 25.385895449589718
+    },
+    "total": {
+      "count": 4459,
+      "queries": 17427,
+      "coverage": {
+        "hits": 4459,
+        "queries": 17427,
+        "percent": 25.586733230045333,
+        "wilson95_percent": [
+          24.94432012363827,
+          26.239906867915767
+        ]
+      },
+      "precision": {
+        "siren": {
+          "hits": 4368,
+          "queries": 4459,
+          "percent": 97.95918367346938,
+          "wilson95_percent": [
+            97.50102617167921,
+            98.33477797831173
+          ]
+        },
+        "exact": {
+          "hits": 4151,
+          "queries": 4459,
+          "percent": 93.09262166405024,
+          "wilson95_percent": [
+            92.31063289293019,
+            93.80042517310098
+          ]
+        },
+        "union": {
+          "hits": 4360,
+          "queries": 4459,
+          "percent": 97.779771249159,
+          "wilson95_percent": [
+            97.30441148540292,
+            98.17287667992593
+          ]
+        }
+      },
+      "false_union": 99
+    },
+    "false_share_inside_percent": 34.343434343434346
+  },
+  "confirmation_siren526": {
+    "98": {
+      "count": 0,
+      "coverage": {
+        "hits": 0,
+        "queries": 526,
+        "percent": 0.0,
+        "wilson95_percent": [
+          0.0,
+          0.7250204295534619
+        ]
+      },
+      "precision_siren": null,
+      "site_status": "A_VERIFIER",
+      "by_model": {
+        "0": {
+          "count": 172,
+          "precision_siren": {
+            "hits": 171,
+            "queries": 172,
+            "percent": 99.4186046511628,
+            "wilson95_percent": [
+              96.78070122483096,
+              99.89729561398583
+            ]
+          }
+        },
+        "1": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "2": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "3": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "4": {
+          "count": 0,
+          "precision_siren": null
+        }
+      }
+    },
+    "99": {
+      "count": 0,
+      "coverage": {
+        "hits": 0,
+        "queries": 526,
+        "percent": 0.0,
+        "wilson95_percent": [
+          0.0,
+          0.7250204295534619
+        ]
+      },
+      "precision_siren": null,
+      "site_status": "A_VERIFIER",
+      "by_model": {
+        "0": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "1": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "2": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "3": {
+          "count": 0,
+          "precision_siren": null
+        },
+        "4": {
+          "count": 0,
+          "precision_siren": null
+        }
+      }
+    }
+  },
+  "independent_cutoffs_reproduced": 40,
+  "signal_fits": 0,
+  "closed_sets_opened": false,
+  "labels_changed": false,
+  "pools_changed": false,
+  "production_allowed": false,
+  "decisions": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_ceiling_v1_20261020/decisions.npz",
+    "size_bytes": 23755,
+    "sha256": "003619410b0efaa92877d4c2757caa6fc5d7940d278d145edfaa03dee9eaf27a"
+  },
+  "elapsed_seconds": 26.25648283958435,
+  "wait_seconds": 0.7147341258823872,
+  "peak_bytes": 412631040,
+  "verification": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_ceiling_v1_20261020/verification.json",
+    "size_bytes": 4976,
+    "sha256": "ed8f4be075a308dd45b9eb045d58f4047b0406bc272beb8e982e83eeedab6143"
+  },
+  "plan": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_ceiling_v1_20261020/plan.json",
+    "size_bytes": 4290,
+    "sha256": "f02e9bfe29f7ab6553178018e2c29fb88c098c406d128027c6390a16e09506d0"
+  },
+  "recommendation": "Conserver A_VERIFIER ; ne pas promouvoir de statut SUR sur ces jeux consommés."
+}

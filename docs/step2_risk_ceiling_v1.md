@@ -18,3 +18,55 @@ Smokes réels CV0 pour chacune des deux nouvelles cibles, entraînement sur100 e
 Namespace neuf `H/step2_risk_ceiling_v1_20261020`. Un worker CPU détaché à la fois, threads1, pas de Metal/encodage/DuckDB nécessaire. Budget7200s total hors attentes documentées, inclut smokes/IO/publication ; réserve publication60s. Garde habituelle reprise sans modification :7,75Gio si aucune VM identifiée,5,5 sinon, attente60s si VM active et free+inactive<8Gio ou superviseur V142/descendant>4Gio ; jamais toucher `hydraulic`. Stop CATNAT libre<10Gio, aucune suppression. Si résultat incomplet, STOP explicite, aucun partiel promu.
 
 Publication automatique isolée `docs/step2_risk_ceiling_v1.{json,md}` + ligne append-only `handover.md`, refuse chemins de publication sales/concurrence. Sources historiques et fichiers étrangers/`*.pending.*` intouchés, aucun push. Rapport français<=30lignes, exactement3tableaux, une recommandation ; détails par CV/fold dans JSON et annexe Markdown. Wilson descriptif, pas garantie98/99%, pas de nouveau jeu indépendant, pas de déploiement.
+
+## Résultats
+
+## Fait
+G0 17427 dossiers/11483 entreprises, mêmes5CV/OOF/46features ; aucun signal réentraîné.
+Fichiers `scripts/step2_risk_ceiling_v1.py`, `docs/step2_risk_ceiling_v1.{json,md}`, `handover.md`.
+## Preuve
+Durée 26.3s, pic 0.38Gio ;12fits risque avec smokes,40seuils Wilson indépendants/rejeux/SHA/groupes vérifiés.
+| Cible SIREN, Wilson calibration | SUR | Précision test %, Wilson95 | Couverture % |
+|---|---:|---|---:|
+| 98% | 834 | 97.00 [95.61;97.96] | 4.79 |
+| 99% | 0 | indéf. | 0.00 |
+526 descriptifs entreprise98/99 : 98%=0SUR, P=indéf., C=0.00%, 99%=0SUR, P=indéf., C=0.00% ; site A_VERIFIER.
+| UNION, cible Wilson calibration | SUR | Précision test %, Wilson95 | Couverture % |
+|---|---:|---|---:|
+| Complet 96% | 7635 | 96.41 [95.97;96.81] | 43.81 |
+| Complet 97% | 4459 | 97.78 [97.30;98.17] | 25.59 |
+| Complet 97.5% | 2369 | 98.02 [97.37;98.50] | 13.59 |
+| Complet 98% | 0 | indéf. | 0.00 |
+| Oracle présence98% frozen | 4304 | 98.28 [97.85;98.63] | 26.36 |
+| Oracle présence98% refit | 3929 | 98.14 [97.67;98.52] | 24.07 |
+| Co-adresse historique, risque UNION97% | SUR/N groupe | Précision %, Wilson95 | Couverture groupe % |
+|---|---:|---|---:|
+| dans | 35/1046 | 2.86 [0.51;14.53] | 3.35 |
+| hors | 4424/16381 | 98.53 [98.13;98.85] | 27.01 |
+| total | 4459/17427 | 97.78 [97.30;98.17] | 25.59 |
+Co-adresse : 34/99 fauxSUR ; masque historique1046, pas une mesure causale.
+## Écarts / choix
+Présence UNION :16325/17427. Oracle filtre proper/cal/test ; contraste poids figés. Couvertures oracle conditionnelles, jamais end-to-end.
+## Reste / risques
+Wilson descriptif/adaptatif, entreprise corrélée,526 consommés ; aucune promotion. Détails par CV/fold publiés.
+Recommandation unique : Conserver A_VERIFIER ; ne pas promouvoir de statut SUR sur ces jeux consommés.
+
+### SIREN98% par CV entreprise
+
+| CV | SUR | Précision SIREN %, Wilson95 | Couverture % |
+|---|---:|---|---:|
+| 0 | 834 | 97.0024 [95.61231897627125, 97.96147016320643] | 24.4002 |
+| 1 | 0 | indéfinie | 0.0000 |
+| 2 | 0 | indéfinie | 0.0000 |
+| 3 | 0 | indéfinie | 0.0000 |
+| 4 | 0 | indéfinie | 0.0000 |
+
+### SIREN99% par CV entreprise
+
+| CV | SUR | Précision SIREN %, Wilson95 | Couverture % |
+|---|---:|---|---:|
+| 0 | 0 | indéfinie | 0.0000 |
+| 1 | 0 | indéfinie | 0.0000 |
+| 2 | 0 | indéfinie | 0.0000 |
+| 3 | 0 | indéfinie | 0.0000 |
+| 4 | 0 | indéfinie | 0.0000 |
