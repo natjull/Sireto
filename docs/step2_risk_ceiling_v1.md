@@ -39,6 +39,7 @@ Durée 26.3s, pic 0.38Gio ;12fits risque avec smokes,40seuils Wilson indépendan
 | Complet 98% | 0 | indéf. | 0.00 |
 | Oracle présence98% frozen | 4304 | 98.28 [97.85;98.63] | 26.36 |
 | Oracle présence98% refit | 3929 | 98.14 [97.67;98.52] | 24.07 |
+
 | Co-adresse historique, risque UNION97% | SUR/N groupe | Précision %, Wilson95 | Couverture groupe % |
 |---|---:|---|---:|
 | dans | 35/1046 | 2.86 [0.51;14.53] | 3.35 |
@@ -50,6 +51,18 @@ Présence UNION :16325/17427. Oracle filtre proper/cal/test ; contraste poids fi
 ## Reste / risques
 Wilson descriptif/adaptatif, entreprise corrélée,526 consommés ; aucune promotion. Détails par CV/fold publiés.
 Recommandation unique : Conserver A_VERIFIER ; ne pas promouvoir de statut SUR sur ces jeux consommés.
+
+### Lecture scientifique et attestation finale
+
+Avenant/code figés `8841d541`, publication automatique `a5ab226d`. `H/step2_risk_ceiling_v1_20261020/postverify.py` passé sans fit :12 modèles risque/44846 vecteurs test-pilote rejoués depuis les entrées OOF scellées,107 références SHA vérifiées,40 seuils indépendants, rôles entreprise disjoints, cibles exactes/UNION d'origine et politique97% précédente inchangées. Preuve `postverification.json` SHA `ca8a6a5bdc2d685d41cb8169f406279985f41098868478386ec93afe0ab84996`. Run/publication26,345s ; jusqu'au contrôle complémentaire321,670s depuis lancement, toujours<2h ; pic412631040octets=0,3843Gio. Aucun signal réentraîné,12 seuls fits risque (deux smokes inclus), aucun worker restant ni VM/jeu fermé/label/pool/fichier étranger/pending/push touché. Une ligne vide de présentation sépare les tableaux2/3 : rapport externe30lignes et3tableaux, code scientifique et métriques inchangés.
+
+**Niveau de cible** : SIREN98% ne produit des SUR que dans le CV entreprise0 (distinct du fold population0 fermé). Calibration888/897, Wilson inférieur98,10%, mais test809/834=97,00%, Wilson[95,61;97,96]%. Les quatre autres CV et les cinq CV à99% s'abstiennent. Abaisser la granularité au SIREN ne valide donc pas ici un statut entreprise98%. Les526 donnent0SUR avec consensus des cinq modèles aux deux cibles, sans aucune adaptation sur eux.
+
+**Générateur** : sur16325 éligibles (1102 absences conservées dans le bilan principal), les cinq CV admettent un seuil98% après conditionnement. Poids UNION figés :4230/4304, précision98,28%, couverture conditionnelle26,36% (4304/17427=24,70% si rapportée au banc initial). Risque conditionnel réappris :3856/3929,98,14%, couverture conditionnelle24,07% (22,55% du banc initial). Ces taux rapportés au banc initial restent eux-mêmes oracles, pas des couvertures produit. Les bornes Wilson test inférieures sont respectivement97,85% et97,67%, **pas98%**. Conditionner les données sur la présence rend le seuil admissible en calibration, sans prouver ce que donnerait un générateur modifié, ni suffire à valider98% sur test.
+
+**Niveau de confiance et co-adresse** : la cible calibration97,5% donne2322/2369=98,02% test, mais borne97,37%, donc pas de certification98%. À97%, les1046 erreurs co-adresse historiques contiennent35SUR, dont1correct/34faux, soit34,34% des99fauxSUR pour0,78% des4459SUR. Hors masque :4359/4424=98,53%, Wilson[98,13;98,85]%, contre4360/4459=97,78% au total, écart descriptif+0,751point. Couvertures rapportées au banc entier :0,2008% dans/25,3859% hors (la table affiche les couvertures internes aux groupes). La définition du masque connaît les erreurs de l'ancienne base : cela ne prouve ni un effet causal général de la co-adresse ni une règle de rejet utilisable sans label.
+
+**Conclusion** : présence des bons candidats et ambiguïtés d'une sous-famille contribuent au plafond observé ; le niveau SIREN seul ne lève pas la difficulté, et aucune politique demandée ne valide une borne test98% sur tout le banc. Le sous-groupe hors masque n'est pas une politique disponible. **Recommandation unique : conserver A_VERIFIER, sans promouvoir un SUR à98% sur ces jeux consommés.**
 
 ### SIREN98% par CV entreprise
 
