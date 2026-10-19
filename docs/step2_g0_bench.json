@@ -1,0 +1,53 @@
+{
+  "status": "RUNNING_GROUPED_CV_RESULTS_PENDING",
+  "queries": 17427,
+  "companies": 11483,
+  "source_option_d_commit": "7b0005a8",
+  "implementation_commit": "a4b346e1",
+  "population_folds": [
+    2,
+    3,
+    4
+  ],
+  "cv_folds": 5,
+  "variants": [
+    "base",
+    "plus_g0",
+    "company_weight",
+    "union_target"
+  ],
+  "pool_presence": {
+    "exact_present": 15956,
+    "union_present": 16325,
+    "extra_union_positive_candidates": 8150
+  },
+  "top1_results": null,
+  "selective_results": null,
+  "paired_deltas": null,
+  "smoke_verification": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/smoke_verification.json",
+    "size_bytes": 581,
+    "mtime_ns": 1792401682220102729,
+    "inode": 4995405,
+    "sha256": "9ce6ba1eae89b4eb6a67bbfda40c0d61d7a22547e5ea6d2617d19789cdcaba89"
+  },
+  "audit_facts": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/audit/facts.json",
+    "size_bytes": 15318,
+    "mtime_ns": 1792401712189476177,
+    "inode": 4995467,
+    "sha256": "892166e52c6e979829af2664443c21362875088fd577540de175d6e7999d1daf"
+  },
+  "audit_document": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_sur_errors_audit.md",
+    "size_bytes": 7003,
+    "mtime_ns": 1792401250784459604,
+    "inode": 73467640,
+    "sha256": "8f7a171f41a8b7d2a230ce952abb70bc3eaae8e490635e36a8e1f784552d7b64"
+  },
+  "owned_run_pid": 70288,
+  "run_directory": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full",
+  "final_report_expected": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/final_report.md",
+  "publication": "--commit enabled; only owned docs and handover; stop if foreign journal dirty",
+  "production_allowed": false
+}

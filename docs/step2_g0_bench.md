@@ -78,4 +78,28 @@ web/installation/Gemma/VM/push. Travaux tiers et pending préservés.
 
 ## Résultats
 
-En attente du smoke et du run ; aucun résultat nouveau annoncé.
+Statut **RUNNING_GROUPED_CV_RESULTS_PENDING** ; implémentation `a4b346e1`,
+protocole initial `a4a4d451`. Le complet est lancé détaché, PID70288 :
+`PYTHONDONTWRITEBYTECODE=1 .venv/bin/python -u scripts/step2_g0_bench.py run --commit`.
+
+- Préparation complète vérifiée :17427 dossiers /11483 entreprises,
+  présence dans les100 G0 **15956 exacts /16325 union**,8150 candidats
+  supplémentaires positifs union. Ce sont des présences, **pas le top1**.
+- Deux smokes réels indépendants :100 entreprises /134 dossiers,100 fits
+  chacun ;100 modèles/cibles et3216 vecteurs vérifiés, mêmes octets modèles,
+  features/cibles et décisions confiance dans les deux runs ; zéro écart.
+  Second smoke57,67s, pic641957888octets (0,60Gio), rapport31 lignes généré.
+- Audit complet reproduit :5 faux SUR /4 dossiers, faits SHA
+  `892166e52c6e979829af2664443c21362875088fd577540de175d6e7999d1daf` identique
+  entre les deux smokes et le complet ; voir `docs/step2_sur_errors_audit.md`.
+- **Non encore mesurés/publiés** : top1 OOF complet base/3 variantes,
+  SUR complet, deltas bootstrap/IC, recommandation issue du grand banc.
+  Le calcul exécute les4 recettes sans choix sur les résultats partiels.
+
+Suivi : `tail -f H/step2_g0_bench_20261017/full.log`, et progression CV dans
+`full/<recette>/worker.log`. À succès, le script remplace ce checkpoint par
+les résultats complets JSON/Markdown, produit `full/final_report.md` (≤35
+lignes) et crée un commit docs/handover isolé ; `full/publication.json`
+atteste le commit effectif. Si le journal partagé est modifié par un tiers,
+la publication s'arrête sans écraser ces modifications. Aucun succès final
+ni commit final n'est annoncé avant leurs artefacts.
