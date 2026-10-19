@@ -52,9 +52,9 @@ Première tentative `511f1597`, STOP conservé `7ea0ca9a` : préparation complè
 
 ## Fait
 Statut STOP_INCOMPLETE, aucune promotion ; `scripts/step2_risk_model_v1.py`, docs `step2_risk_model_v1`, `handover.md`.
-Durée réelle calcul 0.044h ; mur 0.044h ; pic 1.59Gio.
+Durée réelle calcul 0.118h ; mur 0.119h ; pic 0.29Gio.
 ## Preuve
-Arrêt : rank0_outer exit1; /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020/mini/rank0_outer/worker.log. Aucun résultat complet top1/SUR/526 validé.
+Arrêt : risk1 exit1; /Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_b/mini/risk1/worker.log. Aucun résultat complet top1/SUR/526 validé.
 ## Écarts / choix
 Aucun résultat partiel présenté comme complet.
 ## Reste / risques
