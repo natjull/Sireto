@@ -1,5 +1,19 @@
 {
   "status": "COMPLETE",
+  "post_run_verification": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v174/train3000_frozen_v142_20261017/extension_20261017/brief10/covered/verification.json",
+    "sha256": "029a611b9af8a4f5b86a56e8eedb7ab214057433364bcc80f42dfb1ddde1c0c9",
+    "controller_launches": 2,
+    "blocking_waits_per_launch": 1,
+    "total_controller_wall_seconds": 10913.532489125151,
+    "current_worker_attempt_seconds": 10887.682411412708,
+    "new_generation_peak_rss_bytes": 9332473856,
+    "new_generation_retry_seconds": 94.99426820641384,
+    "verified_native_outputs": 50,
+    "verified_candidates": 5000,
+    "exact_top1": 35,
+    "maximum_observed_exact_rank": 16
+  },
   "selection_counts": {
     "total": 3000,
     "cache_covered": 435,
