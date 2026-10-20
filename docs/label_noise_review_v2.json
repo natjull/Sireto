@@ -1,7 +1,317 @@
 {
-  "status": "PREREGISTERED_BEFORE_V2_DRAW",
+  "status": "READY_V2_REVIEW_PENDING",
   "protocol_markdown": "# Jugement des labels — avenant v2 préenregistré avant tirage\n\n## Statut et périmètre\n\nLe criblage `c8b9e405` reste inchangé : 17427 G0, folds population2/3/4, FORT95/FAIBLE50/AUCUN17282, SUR4459. La fiche v1 est archivée sur place, NON UTILISÉE ; aucun de ses fichiers n'est modifié. Sources locales officielles et artefacts G0 scellés uniquement, aucun apprentissage/web/jeu fermé/VM. Écritures : ce nouvel avenant et son JSON, une ligne append-only handover, namespace neuf `$H/label_noise_review_20261020/v2/`. Aucun fichier tiers/pending touché. Mémoire gardée à3,75Gio, DuckDB1thread/512Mio sans spill, longs runs détachés avec journal.\n\n## Tirage et options préenregistrés\n\n100 dossiers sans remise : **50 FORT,25 FAIBLE,25 AUCUN**. Listes d'indices G0 croissants ; `random.Random(20261023).shuffle` successivement FORT/FAIBLE/AUCUN. Parcourir chaque permutation jusqu'au quota, en sautant uniquement les dossiers sans alternative publique nommée non UNION ou indiscernables sur tous les champs affichés. Publier tous les effectifs éligibles/exclus et le nombre de remplacements rencontrés dans les préfixes tirés ; pas de transfert de quota. Strate insuffisante : STOP.\n\nFORT/FAIBLE : concurrent figé du criblage. AUCUN : parmi les100 candidats G0 publics disposant d'un nom officiel, choisir le **maximum Jaro-Winkler** du nom CRM, sous masque UNION=False et SIRET différent du label ; égalités départagées par SIRET lexical uniquement. Aucun score/rang modèle ni préférence actif n'intervient dans ce choix. Pas de substitution du deuxième concurrent si la paire choisie est indiscernable : passer au dossier suivant de la strate.\n\nChamps montrés identiquement dans CSV et HTML : dénomination, enseignes/autres noms officiels, état, siège/secondaire, création, fermeture administrative, numéro/suffixe et voie séparés, complément, code postal/commune, distance typée au point CRM/qualité, NAF. Date de fermeture = dernier début de période historique F avec changement d'état attesté, uniquement si le stock courant est F ; inconnue sinon, sans assimiler arbitrairement dateDebut à une fermeture. Pour un actif : sans objet. Données absentes explicitement inconnues, jamais zéro. Distances affichées à0,01m. La comparaison d'indiscernabilité porte sur ces valeurs réellement affichées après harmonisation casse/espaces, pas les identifiants cachés.\n\nOrdre des fiches : graine20261024 ; ordre des options : graine20261025 ; IDs opaques : graine20261026. Aucun identifiant SIREN/SIRET/query, strate, rôle, score ni provenance modèle dans les supports juge. Clé séparée `v2/private/review_key.json`, dossier0700/fichier0600, SHA256 public. Un autre compte ou le partage des seuls HTML/CSV est nécessaire : chmod ne protège pas du compte propriétaire.\n\n## Poids et estimation inchangée, exclusions explicites\n\nPopulation N=17427 et poids de strates N_h/N inchangés :95/17427,50/17427,17282/17427. Recenser l'éligibilité sur toute la population AVANT tirage. Si exclusions, ne pas extrapoler silencieusement les répondants éligibles aux exclus : E_h/n_h est le poids d'expansion des éligibles ; les N_h−E_h exclus restent inconnus dans le dénominateur17427, avec bornes0/1. Publier N_h,E_h,n_h, poids d'expansion et probabilités d'inclusion, ainsi que SUR éligibles/exclus. Sans exclusion, cela reproduit exactement N_h/n_h.\n\nRéponses : Option 1 / Option 2 / Les deux / Aucune / Je ne sais pas. Primaire Y=1 si concurrent seul choisi,0 si label choisi/Les deux/Aucune ; Aucune est publiée séparément comme rejet des deux, pas confondue avec un concurrent choisi. Non-réponse/JNS = inconnus, jamais suppression de dénominateur. Le taux primaire est un proxy de label non-occupant par choix concurrent, pas une mesure exhaustive. Publier aussi le rejet explicite du label (concurrent seul OU Aucune), clairement secondaire. Pour la précision SUR occupant : Horvitz–Thompson sur les4459 SUR, Z=1 si top1 est une option reconnue occupante,0 si montré mais rejeté ; inconnu si non montré/JNS/manquant. Laisser la précision hors[0,1] éventuelle de l'estimateur HT brute signalée plutôt que la masquer. Bornes avec inconnus, pas de point fabriqué si non résolu.\n\nBootstrap stratifié10000, graine20261023, rééchantillonnage de dossiers dans chaque strate, poids fixes ; strate entièrement recensée fixée. Percentiles95%, pour les deux extrémités si inconnus. Aucune modification de label/statut/pool. Toujours publier les références officielles à côté : UNION4360/4459=97,7798%, exact4151/4459=93,0926%. `score_review.py` refuse IDs/réponses invalides, doublons, clés incohérentes et données sans aucune réponse ; les réponses manquantes deviennent inconnues. Valider le script avec réponses fictives aléatoires dans un répertoire temporaire privé puis supprimer uniquement ces fichiers de simulation, jamais les publier comme résultats.\n\n## Application locale et mesure de temps\n\n`jugement.html` : un seul fichier autonome sans ressource réseau, CSP bloquant les connexions ; lecture d'un dossier à la fois, gros caractères,5 boutons, commentaire, précédent/suivant, progression, sauvegarde locale avec avertissement si indisponible, export CSV UTF-8 des100 IDs (réponses vides si non jugées). Gestion des champs comme texte, échappement CSV/formules, pas d'injection HTML. Le navigateur ne reçoit jamais la clé. Aucun télémétrage/envoi ; localStorage contient des données locales sensibles, ne pas utiliser une session partagée. Tester navigation, sauvegarde/rechargement et export sur la page réelle avec WebKit local si disponible, sans dépendance réseau.\n\nLecture chronométrée de5 fiches choisies au hasard, graine20261027, depuis le support juge uniquement, sans ouvrir la clé pendant cette lecture. Rapporter les secondes réellement écoulées et l'extrapolation100 fiches, en distinguant **lecture agent** de **jugement humain Nathan**, non mesuré ; aucune durée humaine inventée. Les lectures de l'agent ne remplissent pas les réponses réelles.\n\n## Exécution et résultats\n\nEN ATTENTE : avenant à commiter AVANT création/tirage des fiches v2.\n",
   "protocol_sha256": "ef62d1541a1bb79df1af01032429d227e0a84cbf76304f5eea9c8c0880deca7c",
   "preregistered_utc": "2026-10-20T07:00:14.782491+00:00",
-  "draw_executed": false
+  "draw_executed": true,
+  "published_utc": "2026-10-20T07:19:02.503307+00:00",
+  "receipts": {
+    "manifest": {
+      "status": "READY_V2_NO_HUMAN_ANSWERS",
+      "preregistration_commit": "b7379b48cc18e11bb21ff3126d1d0317416b94e0",
+      "protocol_sha256": "ef62d1541a1bb79df1af01032429d227e0a84cbf76304f5eea9c8c0880deca7c",
+      "population_n": 17427,
+      "populations": {
+        "FORT": {
+          "N": 95,
+          "E": 95,
+          "sample_n": 50,
+          "sur_total": 31,
+          "eligible_sur": 31,
+          "excluded_unknown_sur": 0,
+          "exclusions": {},
+          "population_weight": 0.005451311183795261,
+          "eligible_weight": 0.005451311183795261,
+          "expansion_weight": 1.9,
+          "inclusion_probability": 0.5263157894736842
+        },
+        "FAIBLE": {
+          "N": 50,
+          "E": 50,
+          "sample_n": 25,
+          "sur_total": 10,
+          "eligible_sur": 10,
+          "excluded_unknown_sur": 0,
+          "exclusions": {},
+          "population_weight": 0.0028691111493659265,
+          "eligible_weight": 0.0028691111493659265,
+          "expansion_weight": 2.0,
+          "inclusion_probability": 0.5
+        },
+        "AUCUN": {
+          "N": 17282,
+          "E": 17281,
+          "sample_n": 25,
+          "sur_total": 4418,
+          "eligible_sur": 4418,
+          "excluded_unknown_sur": 0,
+          "exclusions": {
+            "indistinguishable": 1
+          },
+          "population_weight": 0.9916795776668388,
+          "eligible_weight": 0.9916221954438514,
+          "expansion_weight": 691.24,
+          "inclusion_probability": 0.0014466755396099762
+        }
+      },
+      "quotas": {
+        "FORT": 50,
+        "FAIBLE": 25,
+        "AUCUN": 25
+      },
+      "replacements_encountered": {
+        "FORT": {},
+        "FAIBLE": {},
+        "AUCUN": {}
+      },
+      "indistinguishable_replacements": 0,
+      "sources": [
+        {
+          "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/label_noise_review_v2.json",
+          "size_bytes": 6483,
+          "mtime_ns": 1792479614782887652,
+          "inode": 77438628,
+          "sha256": "4b9827b1bbb43bab6579dbb59e6d18958f1cdee960dcc33b25c486d550e8647e"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/screen_result.json",
+          "size_bytes": 37395,
+          "mtime_ns": 1792479090609828351,
+          "inode": 5156121,
+          "sha256": "941fcdadeddf05e08b427bacd0a510fa41b3660da0db153b977a9de7f3ccab99"
+        },
+        {
+          "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/label_noise_screen_v1.md",
+          "size_bytes": 17825,
+          "mtime_ns": 1792479160411446176,
+          "inode": 77434854,
+          "sha256": "6491cec219c3e8949ea1cc5fd2a8b948efb6e1052c066ca8cf04368ecee14074"
+        },
+        {
+          "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/label_noise_screen_v1.json",
+          "size_bytes": 108986,
+          "mtime_ns": 1792479160412065137,
+          "inode": 77434862,
+          "sha256": "044f26385c52e0cd0144e8260933a6dd3b94e8e7afc1045acc85398e791fc96a"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/review_sheet.csv",
+          "size_bytes": 56451,
+          "mtime_ns": 1792479088016258296,
+          "inode": 5156117,
+          "sha256": "62cd4229b37388bcc26311e82fe4f019006b0ace06b0cbcc866e125b26bacf76"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/private/review_key.json",
+          "size_bytes": 105492,
+          "mtime_ns": 1792479088016999340,
+          "inode": 5156118,
+          "sha256": "9dd1bdcfdae62652ef8f4553e4b56df230be8abd5617bc8c8f3f5e6c23d10188"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/private/full_screen.jsonl",
+          "size_bytes": 64006279,
+          "mtime_ns": 1792479087979268446,
+          "inode": 5147332,
+          "sha256": "deb35a379fc54cac39e2d26861aa965c8da56c98247594c9dbecc551374947c6"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/matrix.json",
+          "size_bytes": 646342,
+          "mtime_ns": 1792399663476733646,
+          "inode": 4989392,
+          "sha256": "633e7e1bcbe9b91f7f6b149962d9b5a9bb291b6a1ff587c361dec2b5d9fd1bd4"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/data.json",
+          "size_bytes": 2353624,
+          "mtime_ns": 1792401700078035753,
+          "inode": 4995433,
+          "sha256": "7a225fcd857ab5f199cfd817815ca7ea433ccc076a9eef63bbba1009b74d55bb"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/candidate_keys.npy",
+          "size_bytes": 24397928,
+          "mtime_ns": 1792399663162502988,
+          "inode": 4989391,
+          "sha256": "836f234c66cca28f005f6eb3c749a7fa983cf81d5e2c0b355ded754387a30f6b"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/views.npy",
+          "size_bytes": 3485528,
+          "mtime_ns": 1792401700034616050,
+          "inode": 4995432,
+          "sha256": "727be75053b883acb5efe97802ec44da2589eee553f268d28b9657636f3e2cf2"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+          "size_bytes": 2202341459,
+          "mtime_ns": 1786994107608626537,
+          "inode": 1964894,
+          "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet",
+          "size_bytes": 705090270,
+          "mtime_ns": 1786994089878172521,
+          "inode": 1964895,
+          "sha256": "fdbc02abbe47339c7fbe56728667868ff42d938da8b213aa4276ad266751b30e"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/oubusiness/raw/sirene/geolocalisation_etablissements_2026-07-01.parquet",
+          "size_bytes": 802036004,
+          "mtime_ns": 1784824801885563627,
+          "inode": 86516,
+          "sha256": "15da7e02003fa4cb203929e0591a2cdbb0a41784c0ac4deb801f56eeb7bdf906"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementHistorique.parquet",
+          "size_bytes": 870319380,
+          "mtime_ns": 1786994116874694340,
+          "inode": 1964896,
+          "sha256": "711fed8260526ee61cbd2f8cdb9d655f67ca4ceba8d2b578e78c110e13f9b08d"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/template.html",
+          "size_bytes": 8971,
+          "mtime_ns": 1792479852993272246,
+          "inode": 5171073,
+          "sha256": "8dc2fed651b54a5dbcaa5c58d9a3bfd55615a579cf880b264f76d6c2ed46ed16"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/score_review.py",
+          "size_bytes": 8555,
+          "mtime_ns": 1792479911609727040,
+          "inode": 5171711,
+          "sha256": "6aeebcaf406757b51c856d3a3498e669d6cd7bc7709db09f13e13a289ed69470"
+        },
+        {
+          "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/build_review.py",
+          "size_bytes": 14414,
+          "mtime_ns": 1792480379408495675,
+          "inode": 5171040,
+          "sha256": "222320fec31ccc1da864cc7a7c82cb9d6f6c0a87334410b811cb8edb2789be6a"
+        }
+      ],
+      "v1_unchanged": true,
+      "draw_seed": 20261023,
+      "rows": 100,
+      "distinct_option_pairs": 100,
+      "ranked_union_rejects": 23927,
+      "review_sheet": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/review_sheet.csv",
+        "size_bytes": 42989,
+        "mtime_ns": 1792480473166800137,
+        "inode": 5174004,
+        "sha256": "f17dd1414792bf2d29e3ec182bc27d3ec70013f95c77520b86a762bbaef70a01"
+      },
+      "key": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/private/review_key.json",
+        "size_bytes": 32956,
+        "mtime_ns": 1792480473167277472,
+        "inode": 5174005,
+        "sha256": "a691b688c377b20d593b79ed15039b7148078703315adf7ade17daf4853157b7"
+      },
+      "html": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/jugement.html",
+        "size_bytes": 137253,
+        "mtime_ns": 1792480473170051399,
+        "inode": 5174007,
+        "sha256": "3d998cd2fdcdd13f4b77cca4d4ae7e50438e69f0dd3b763036998253aad70404"
+      },
+      "script": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/v2/score_review.py",
+        "size_bytes": 8555,
+        "mtime_ns": 1792479911609727040,
+        "inode": 5171711,
+        "sha256": "6aeebcaf406757b51c856d3a3498e669d6cd7bc7709db09f13e13a289ed69470"
+      },
+      "seconds": 57.063986166380346,
+      "peak_rss_bytes": 2029420544,
+      "actual_human_answers": 0
+    },
+    "pair_verification": {
+      "passed": true,
+      "real_review_rows": 100,
+      "draw_and_option_order_reproduced": true,
+      "distinct_pairs": 100,
+      "aucun_best_non_union_replayed": 25,
+      "aucun_pool_candidates_checked": 2500,
+      "html_csv_equal": true,
+      "no_role_identifiers": true,
+      "permissions_verified": true,
+      "source_sha_before_after_equal": true,
+      "source_refs_rehashed": 18,
+      "v1_unchanged": true,
+      "actual_human_answers": 0,
+      "option_naf_dates_verified": 200,
+      "known_naf_options": 200
+    },
+    "browser_smoke": {
+      "actual_export_button_blob_captured": true,
+      "choice_buttons": 5,
+      "click_navigation_save_reload": true,
+      "download_name": "reponses.csv",
+      "engine": "macOS WebKit WKWebView",
+      "ephemeral_store": true,
+      "font_min_px": 20,
+      "no_external_resources": true,
+      "passed": true,
+      "real_page_rows": 100,
+      "saved_simulated_answers_restored": 2,
+      "simulation_only": true,
+      "export_csv_parser_rows": 100,
+      "export_quotes_newlines_formula_escaping_verified": true,
+      "simulation_csv_removed": true,
+      "simulation_browser_storage_cleared": true,
+      "actual_human_answers": 0
+    },
+    "score_smoke": {
+      "passed": true,
+      "random_fictitious_rows": 100,
+      "scenarios": 8,
+      "bootstrap_replicates": 10000,
+      "weighted_formula_recomputed": true,
+      "partial_unknown_denominator_preserved": true,
+      "excluded_case_unknown_preserved": true,
+      "official_metrics_unchanged": true,
+      "temporary_simulation_files_removed": true,
+      "simulation_estimates_retained": false,
+      "actual_human_answers": 0
+    },
+    "reading_time": {
+      "kind": "AGENT_READING_NOT_HUMAN_JUDGMENT",
+      "case_count": 5,
+      "seed": 20261027,
+      "seconds_total": 26.557523958,
+      "seconds_per_case": 5.3115047916,
+      "extrapolated_100_case_seconds": 531.15047916,
+      "start_utc": "2026-10-20T07:15:12.617607+00:00",
+      "end_utc": "2026-10-20T07:15:39.176519+00:00",
+      "source": "review_sheet.csv only; all final visible fields",
+      "source_sha256": "f17dd1414792bf2d29e3ec182bc27d3ec70013f95c77520b86a762bbaef70a01",
+      "key_not_opened_during_read": true,
+      "actual_human_answers": 0,
+      "human_nathan_time_measured": false,
+      "includes_tool_display_latency": true,
+      "final_enriched_view_reread": true,
+      "first_read_before_naf_fix_seconds_per_case": 5.9474724918,
+      "limitation": "Agent reread of familiar five cases after NAF hydration fix; not a human completion-time measurement or guarantee."
+    }
+  },
+  "code": {
+    "score_review.py": "#!/usr/bin/env python3\n\"\"\"Score the blinded v2 CSV against its private key; never alter labels or official metrics.\"\"\"\nimport os\nfor k in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','VECLIB_MAXIMUM_THREADS'):\n    os.environ[k]='1'\nimport argparse,csv,json,hashlib,sys\nfrom pathlib import Path\nimport numpy as np\nANSWERS={'Option 1','Option 2','Les deux','Aucune','Je ne sais pas',''}\nLEVELS=('FORT','FAIBLE','AUCUN')\n\ndef sha(path):return hashlib.sha256(Path(path).read_bytes()).hexdigest()\ndef validate(key):\n    if key.get('schema')!='sireto-review-v2' or key.get('population_n')!=17427 or key.get('sur_n')!=4459:raise ValueError('Clé/cohorte inattendue')\n    rows=key['entries'];p=key['populations']\n    if len(rows)!=100 or len({r['review_id'] for r in rows})!=100:raise ValueError('Il faut100 clés uniques')\n    if set(p)!=set(LEVELS):raise ValueError('Strates invalides')\n    for h in LEVELS:\n        meta=p[h];sample=[r for r in rows if r['stratum']==h]\n        if meta['sample_n']!=len(sample) or not 0<len(sample)<=meta['E']<=meta['N']:raise ValueError('Effectifs incohérents')\n        if meta['eligible_sur']+meta['excluded_unknown_sur']!=meta['sur_total'] or not 0<=meta['eligible_sur']<=meta['E'] or not 0<=meta['excluded_unknown_sur']<=meta['N']-meta['E']:raise ValueError('Domaine SUR incohérent')\n    if sum(v['N'] for v in p.values())!=17427 or sum(v['sur_total'] for v in p.values())!=4459:raise ValueError('Dénominateur altéré')\n    if key['official']!=dict(union_correct=4360,exact_correct=4151,sur_n=4459):raise ValueError('Référence officielle altérée')\n    for r in rows:\n        if r['label_option'] not in (1,2) or not isinstance(r['sur97'],bool) or r['option_1_siret']==r['option_2_siret']:raise ValueError('Correspondance invalide')\n        if not all(isinstance(r[k],str) and len(r[k])==14 and r[k].isdigit() for k in ('option_1_siret','option_2_siret','top1_siret')):raise ValueError('Identifiants privés invalides')\n    return rows,p\n\ndef load_responses(path,rows):\n    allowed={r['review_id'] for r in rows};seen={}\n    with Path(path).open(encoding='utf-8-sig',newline='') as stream:\n        reader=csv.DictReader(stream)\n        if reader.fieldnames is None or not {'review_id','reponse','commentaire'}<=set(reader.fieldnames) or len(reader.fieldnames)!=len(set(reader.fieldnames)):raise ValueError('Colonnes review_id,reponse,commentaire requises, sans doublon')\n        for a in reader:\n            if None in a or any(a.get(k) is None for k in ('review_id','reponse','commentaire')):raise ValueError('Ligne CSV mal formée')\n            rid=a['review_id'].strip();answer=a['reponse'].strip()\n            if rid not in allowed or rid in seen:raise ValueError('ID inconnu ou répété')\n            if answer not in ANSWERS:raise ValueError('Réponse hors des cinq options')\n            seen[rid]=answer\n    if not any(seen.values()):raise ValueError('Aucune réponse : aucun résultat humain à calculer')\n    return seen\n\ndef indicators(row,answer):\n    # NaN is unknown; it never disappears from any denominator.\n    if answer in ('','Je ne sais pas'):return [np.nan,np.nan,np.nan,np.nan]\n    chosen=1 if answer=='Option 1' else 2 if answer=='Option 2' else None\n    competitor=int(chosen is not None and chosen!=row['label_option'])\n    neither=int(answer=='Aucune');rejected_label=int(bool(competitor or neither))\n    matching=[j for j in (1,2) if row[f'option_{j}_siret']==row['top1_siret']]\n    z=np.nan if not matching else float(answer=='Les deux' or chosen in matching)\n    return [float(competitor),float(rejected_label),float(neither),z]\n\ndef score(key,responses,simulation=False):\n    rows,p=validate(key);rng=np.random.default_rng(key['bootstrap_seed']);B=key['bootstrap_replicates']\n    if B!=10000:raise ValueError('Bootstrap préenregistré10000 requis')\n    names=('concurrent_chosen_proxy','label_explicitly_rejected_secondary','both_rejected_secondary','sur_occupant_precision_ht')\n    lows=np.zeros(4);ups=np.zeros(4);bootlow=np.zeros((B,4));bootup=np.zeros((B,4));unknowns=np.zeros(4,dtype=int);details={}\n    for h in LEVELS:\n        rr=[r for r in rows if r['stratum']==h];values=np.array([indicators(r,responses.get(r['review_id'],'')) for r in rr]);domain=np.array([r['sur97'] for r in rr],dtype=float)\n        v=values.copy();v[:,3]=np.where(domain==1,v[:,3],0)\n        lower=np.nan_to_num(v,nan=0);upper=np.where(np.isnan(v),1,v);lower[:,3]*=domain;upper[:,3]*=domain\n        denom=np.array([17427,17427,17427,4459]);weight=p[h]['E']/len(rr)/denom\n        excluded=np.array([p[h]['N']-p[h]['E']]*3+[p[h]['excluded_unknown_sur']])/denom\n        lows+=weight*lower.sum(0);ups+=weight*upper.sum(0)+excluded\n        unknowns+=np.isnan(v).sum(0)+np.array([p[h]['N']-p[h]['E']]*3+[p[h]['excluded_unknown_sur']])\n        if len(rr)==p[h]['E']:\n            bootlow+=weight*lower.sum(0);bootup+=weight*upper.sum(0)+excluded\n        else:\n            ix=rng.integers(0,len(rr),size=(B,len(rr)));bootlow+=weight*lower[ix].sum(1);bootup+=weight*upper[ix].sum(1)+excluded\n        details[h]=dict(population=p[h]['N'],eligible=p[h]['E'],reviewed=len(rr),answers_present=sum(bool(responses.get(r['review_id'],'')) for r in rr),unknown_answer_count=sum(responses.get(r['review_id'],'') in ('','Je ne sais pas') for r in rr),sur_reviewed=int(domain.sum()),sur_top1_not_shown=sum(r['sur97'] and r['top1_siret'] not in (r['option_1_siret'],r['option_2_siret']) for r in rr),expansion_weight=p[h]['E']/len(rr),census=len(rr)==p[h]['E'])\n    outputs={}\n    for j,name in enumerate(names):\n        known=not unknowns[j];point=float(lows[j]) if known else None\n        outputs[name]=dict(estimate=point,unknown_count_sample_plus_excluded=int(unknowns[j]),estimated_unknown_endpoints=[float(lows[j]),float(ups[j])],bootstrap95_percentile_for_lower_endpoint=np.quantile(bootlow[:,j],[.025,.975]).tolist(),bootstrap95_percentile_for_upper_endpoint=np.quantile(bootup[:,j],[.025,.975]).tolist(),bootstrap95_envelope=[float(np.quantile(bootlow[:,j],.025)),float(np.quantile(bootup[:,j],.975))],status='POINT_DESCRIPTIVE' if known else 'UNKNOWN_REMAINS_NO_POINT',outside_unit_interval=bool(lows[j]<0 or ups[j]>1+1e-12))\n    return dict(schema='sireto-review-score-v2',input_kind='SIMULATION_NOT_A_RESULT' if simulation else 'RESPONSES_NOT_INDEPENDENTLY_VERIFIED',population_n=17427,sur_n=4459,answers_provided=sum(bool(a) for a in responses.values()),design=details,estimates=outputs,official=dict(union=dict(correct=4360,total=4459,precision=4360/4459),exact=dict(correct=4151,total=4459,precision=4151/4459)),bootstrap=dict(replicates=B,seed=key['bootstrap_seed'],stratified=True,census_fixed=True),limitations=['Concurrent chosen is a proxy, not exhaustive label noise; Aucune is separate secondary evidence.','Unknown answers, excluded pairs and unshown top1 are never removed from denominators.','SUR endpoints are uncalibrated Horvitz-Thompson estimated endpoints, not guaranteed logical population bounds; domain sampling may put them outside[0,1]. They are reported raw, never silently clipped.','Bootstrap is descriptive, not a guarantee, and does not model judge error or unseen rare events.','No ground truth, official precision, candidate pool or SUR status is modified.'])\n\ndef main():\n    ap=argparse.ArgumentParser(description=__doc__);ap.add_argument('responses',type=Path);ap.add_argument('key',type=Path);ap.add_argument('--out',type=Path);ap.add_argument('--key-sha256');ap.add_argument('--simulation',action='store_true');args=ap.parse_args()\n    expected=args.key_sha256;manifest=Path(__file__).resolve().with_name('manifest.json')\n    if expected is None and manifest.exists():expected=json.loads(manifest.read_text())['key']['sha256']\n    if expected is not None and sha(args.key)!=expected:raise ValueError('SHA256 de clé incorrect')\n    key=json.loads(args.key.read_text());rows,_=validate(key);responses=load_responses(args.responses,rows);result=score(key,responses,args.simulation);result['input_sha256']=sha(args.responses);result['key_sha256']=sha(args.key)\n    data=json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)+'\\n'\n    if args.out:\n        if args.out.resolve() in (args.key.resolve(),args.responses.resolve()):raise ValueError('Sortie identique à une entrée interdite')\n        with args.out.open('x') as stream:stream.write(data)\n    else:print(data,end='')\n\nif __name__=='__main__':\n    try:main()\n    except (ValueError,KeyError,TypeError,OSError,json.JSONDecodeError) as exc:\n        print('STOP: '+str(exc),file=sys.stderr);sys.exit(2)\n",
+    "build_review.py": "\"\"\"Frozen G0 screen -> shorter blinded local review. No model score used in pairing.\"\"\"\nimport os\nfor k in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS','VECLIB_MAXIMUM_THREADS'):\n    os.environ[k]='1'\nos.environ['PYTHONDONTWRITEBYTECODE']='1'\nimport sys,json,csv,time,random,hashlib,threading,traceback,subprocess,re\nfrom pathlib import Path\nfrom collections import Counter\nimport psutil,numpy as np,duckdb,pyarrow as pa\nROOT=Path('/Users/nathanjullia/Documents/Projets/SIRETO');sys.path.insert(0,str(ROOT))\nfrom scripts import step2_g0_bench as m\nb=m.b;NS=Path(__file__).resolve().parent;OLD=NS.parent;PRIVATE=NS/'private';START=time.monotonic();DONE=threading.Event();PEAK=0;REFS={}\nQUOTAS={'FORT':50,'FAIBLE':25,'AUCUN':25}\nFIELDS=['denomination','enseigne','autres_noms','etat','implantation','creation','fermeture','numero','suffixe','voie','complement','code_postal','commune','distance_crm','precision','naf']\ndef dump(path,value):Path(path).write_text(json.dumps(value,ensure_ascii=False,indent=2,allow_nan=False)+'\\n')\ndef guard():\n    global PEAK\n    p=psutil.Process()\n    while not DONE.wait(.2):\n        PEAK=max(PEAK,p.memory_info().rss)\n        if PEAK>=3.75*1024**3 or time.monotonic()-START>=7140:\n            dump(NS/'stop.json',dict(peak_rss_bytes=PEAK,seconds=time.monotonic()-START));os._exit(75)\nthreading.Thread(target=guard,daemon=True).start()\ndef track(path,sha=None):\n    path=Path(path);assert '.pending.' not in str(path)\n    if str(path) not in REFS:REFS[str(path)]=b.record(path)\n    if sha:assert REFS[str(path)]['sha256']==sha\n    return path\ndef load(path):return json.loads(track(path).read_text())\ndef ref(r):return track(r['path'],r['sha256'])\ndef safe(value):\n    value=str(value if value is not None else '');return \"'\"+value if value.lstrip().startswith(('=','+','-','@')) else value\n\ndef main():\n    protocol=load(ROOT/'docs/label_noise_review_v2.json');assert protocol['status']=='PREREGISTERED_BEFORE_V2_DRAW'\n    assert hashlib.sha256(protocol['protocol_markdown'].encode()).hexdigest()==protocol['protocol_sha256']\n    commit=subprocess.check_output(['git','log','-1','--format=%H','--','docs/label_noise_review_v2.json'],cwd=ROOT,text=True).strip()\n    assert subprocess.check_output(['git','show',commit+':docs/label_noise_review_v2.md'],cwd=ROOT)==protocol['protocol_markdown'].encode()\n    old=load(OLD/'screen_result.json');track(ROOT/'docs/label_noise_screen_v1.md');track(ROOT/'docs/label_noise_screen_v1.json');track(OLD/'review_sheet.csv');track(OLD/'private/review_key.json')\n    records=[json.loads(line) for line in ref(old['private_records']).open()];assert len(records)==17427\n    assert Counter(r['level'] for r in records)==Counter({'FORT':95,'FAIBLE':50,'AUCUN':17282}) and all(r['fold'] in (2,3,4) for r in records)\n    matrix=load(m.SOURCE/'matrix.json');base=load(m.OWN/'full/data.json');keys=np.load(ref(matrix['keys']),mmap_mode='r');views=np.load(ref(base['views']),mmap_mode='r');assert keys.shape==(17427,100)\n    assert all(np.array_equal(keys[i]==r['label']['siret'].encode(),views[i,:,0]) for i,r in enumerate(records))\n    official=base['official_refs'];[ref(v) for v in official.values()]\n    history=track(Path(official['stock']['path']).with_name('StockEtablissementHistorique.parquet'))\n    con=duckdb.connect(':memory:',config={'threads':'1','memory_limit':'512MB','max_temp_directory_size':'0B'});con.execute('SET enable_progress_bar=false')\n    wanted=np.unique(keys).astype(str).tolist();con.register('wanted',pa.table({'siret':wanted}));con.register('parents',pa.table({'siren':sorted({s[:9] for s in wanted})}))\n    sql='SELECT '+','.join('u.'+c for c in b.UL_COLUMNS)+' FROM read_parquet(?) u SEMI JOIN parents USING(siren)'\n    units={}\n    for batch in con.execute(sql,[official['legal_units']['path']]).fetch_record_batch(4096):\n        for u in batch.to_pylist():\n            if u.get('statutDiffusionUniteLegale')=='O':units[u['siren']]=u\n    name_columns=['siret','siren','statutDiffusionEtablissement','enseigne1Etablissement','enseigne2Etablissement','enseigne3Etablissement','denominationUsuelleEtablissement']\n    name_cache={}\n    for batch in con.execute('SELECT '+','.join('s.'+c for c in name_columns)+' FROM read_parquet(?) s SEMI JOIN wanted USING(siret)',[official['stock']['path']]).fetch_record_batch(4096):\n        for s in batch.to_pylist():\n            if s['statutDiffusionEtablissement']!='O':continue\n            u=units.get(s['siren'],{})\n            fields=dict(enseigne1=s.get('enseigne1Etablissement'),enseigne2=s.get('enseigne2Etablissement'),enseigne3=s.get('enseigne3Etablissement'),denomination=s.get('denominationUsuelleEtablissement'),sigle_ul=u.get('sigleUniteLegale'),denomination_ul=u.get('denominationUniteLegale'),denomination_usuelle_ul=u.get('denominationUsuelle1UniteLegale'),nom_ul=u.get('nomUniteLegale'),prenom_usuel_ul=u.get('prenomUsuelUniteLegale'),cj_ul=u.get('categorieJuridiqueUniteLegale'))\n            names=[x.text for x in b.build_candidate_names({k:b.text(v) for k,v in fields.items()})]\n            if names:name_cache[s['siret']]=names\n    print('PUBLIC_NAME_CACHE',len(name_cache),'RSS',psutil.Process().memory_info().rss,flush=True)\n    del units\n    pairs={};ranked_union_rejects=0\n    for i,r in enumerate(records):\n        assert r['g0_index']==i\n        if r['level']!='AUCUN':pairs[i]=r['concurrent']['entity']['siret'];continue\n        name=b.normalize_name(b.text(r['crm']['crm_name']));candidates=[]\n        if name:\n            for j,key in enumerate(keys[i]):\n                s=key.decode()\n                if views[i,j,1] or s==r['label']['siret']:ranked_union_rejects+=1;continue\n                names=name_cache.get(s)\n                if names:candidates.append((-max(b.jaro(name,n) for n in names),s))\n        pairs[i]=min(candidates)[1] if candidates else None\n        if i%2000==0:print('PAIRS',i,flush=True)\n    del name_cache,wanted\n    all_sites=sorted({r['label']['siret'] for r in records}|{s for s in pairs.values() if s})\n    con.unregister('wanted');con.unregister('parents');con.register('wanted',pa.table({'siret':all_sites}));con.register('parents',pa.table({'siren':sorted({s[:9] for s in all_sites})}))\n    columns=b.STOCK_COLUMNS+['dateCreationEtablissement','libelleCommuneEtablissement','complementAdresseEtablissement','activitePrincipaleEtablissement']\n    def fetch(file,cols,table,ident):\n        rows=con.execute('SELECT '+','.join('s.'+c for c in cols)+f' FROM read_parquet(?) s SEMI JOIN {table} USING({ident})',[str(file)]).fetch_arrow_table().to_pylist()\n        return b.index(rows,ident)\n    sites=fetch(official['stock']['path'],columns,'wanted','siret');units=fetch(official['legal_units']['path'],b.UL_COLUMNS,'parents','siren');points=fetch(official['study']['path'],['siret','x','y','qualite_xy','epsg','distance_precision'],'wanted','siret')\n    closures=dict(con.execute(\"SELECT siret,max(dateDebut) FROM read_parquet(?) h SEMI JOIN wanted USING(siret) WHERE etatAdministratifEtablissement='F' AND changementEtatAdministratifEtablissement=true AND dateDebut<=DATE '2026-08-01' GROUP BY siret\",[str(history)]).fetchall());con.close()\n    def text(v):return str(v) if v is not None and str(v).strip() else 'Inconnu'\n    def option(siret,crm_point):\n        raw=sites.get(siret,{});s=raw if raw.get('statutDiffusionEtablissement')=='O' else {};u=units.get(siret[:9],{});u=u if u.get('statutDiffusionUniteLegale')=='O' else {}\n        den=u.get('denominationUniteLegale') or u.get('denominationUsuelle1UniteLegale') or s.get('denominationUsuelleEtablissement') or ' '.join(str(u.get(k) or '') for k in ('prenomUsuelUniteLegale','nomUniteLegale')).strip()\n        enseigne=' / '.join(str(s[k]) for k in ('enseigne1Etablissement','enseigne2Etablissement','enseigne3Etablissement') if s.get(k))\n        other=' / '.join(dict.fromkeys(str(v) for v in (s.get('denominationUsuelleEtablissement'),u.get('sigleUniteLegale'),u.get('denominationUsuelle1UniteLegale')) if v and v not in (den,enseigne)))\n        point=b.candidate_point(points.get(siret) if s else None);d=b.distance(crm_point,point);tol=b.threshold(crm_point,point)\n        closure='Sans objet (actif)' if s.get('etatAdministratifEtablissement')=='A' else text(closures.get(siret)) if s.get('etatAdministratifEtablissement')=='F' else 'Inconnue'\n        return dict(denomination=text(den),enseigne=text(enseigne),autres_noms=text(other),etat={'A':'Actif','F':'Fermé'}.get(s.get('etatAdministratifEtablissement'),'Inconnu'),implantation='Siège' if s.get('etablissementSiege') is True else 'Secondaire' if s.get('etablissementSiege') is False else 'Inconnu',creation=text(s.get('dateCreationEtablissement')),fermeture=closure,numero=text(s.get('numeroVoieEtablissement')),suffixe=str(s.get('indiceRepetitionEtablissement') or ''),voie=text(' '.join(str(s.get(k) or '') for k in ('typeVoieEtablissement','libelleVoieEtablissement')).strip()),complement=text(s.get('complementAdresseEtablissement')),code_postal=text(s.get('codePostalEtablissement')),commune=text(s.get('libelleCommuneEtablissement') or s.get('codeCommuneEtablissement')),distance_crm=f'{d:.2f} m' if d is not None and tol is not None else 'Inconnue',precision=text(point['precision']),naf=text(s.get('activitePrincipaleEtablissement')))\n    canonical=lambda o:tuple(' '.join(str(o[f]).split()).casefold() for f in FIELDS)\n    population={level:dict(N=0,E=0,sample_n=n,sur_total=0,eligible_sur=0,excluded_unknown_sur=0,exclusions={}) for level,n in QUOTAS.items()};eligibility={};display={}\n    for i,r in enumerate(records):\n        meta=population[r['level']];meta['N']+=1;meta['sur_total']+=int(r['sur97']);alt=pairs[i]\n        if alt is None:reason='no_public_named_non_union_alternative'\n        else:\n            left=option(r['label']['siret'],r['crm_point']);right=option(alt,r['crm_point']);reason='indistinguishable' if canonical(left)==canonical(right) else None\n            if reason is None:display[i]=(left,right)\n        eligibility[i]=reason\n        if reason:meta['exclusions'][reason]=meta['exclusions'].get(reason,0)+1;meta['excluded_unknown_sur']+=int(r['sur97'])\n        else:meta['E']+=1;meta['eligible_sur']+=int(r['sur97'])\n    for level,meta in population.items():\n        assert meta['E']>=meta['sample_n'],(level,meta)\n        meta.update(population_weight=meta['N']/17427,eligible_weight=meta['E']/17427,expansion_weight=meta['E']/meta['sample_n'],inclusion_probability=meta['sample_n']/meta['E'])\n    rng=random.Random(20261023);chosen=[];replacements={};skipped=[]\n    for level,need in QUOTAS.items():\n        queue=[i for i,r in enumerate(records) if r['level']==level];rng.shuffle(queue);selected=[];reasons=Counter()\n        for i in queue:\n            if eligibility[i]:reasons[eligibility[i]]+=1;skipped.append(dict(g0_index=i,stratum=level,reason=eligibility[i]));continue\n            selected.append(i)\n            if len(selected)==need:break\n        assert len(selected)==need;chosen+=selected;replacements[level]=dict(reasons)\n    random.Random(20261024).shuffle(chosen);opts=random.Random(20261025);ids=random.Random(20261026);rows=[];entries=[]\n    columns=['review_id','crm_nom','crm_adresse']+[f'option_{j}_{f}' for j in (1,2) for f in FIELDS]+['reponse','commentaire']\n    for i in chosen:\n        r=records[i];rid=f'R{ids.getrandbits(96):024x}';left,right=display[i];label_option=1 if opts.getrandbits(1) else 2;osites=[r['label']['siret'],pairs[i]];options=[left,right]\n        if label_option==2:options.reverse();osites.reverse()\n        q=r['crm'];addr=' '.join(str(q.get(k) or '') for k in ('crm_number','crm_suffix','crm_street','crm_postcode','crm_insee')).strip();row=dict(review_id=rid,crm_nom=q['crm_name'],crm_adresse=addr,reponse='',commentaire='')\n        for j,o in enumerate(options,1):row.update({f'option_{j}_{f}':o[f] for f in FIELDS})\n        rows.append(row);entries.append(dict(review_id=rid,g0_index=i,stratum=r['level'],label_option=label_option,option_1_siret=osites[0],option_2_siret=osites[1],top1_siret=r['top1']['siret'],sur97=r['sur97'],company_group=r['label']['siren']))\n        assert canonical(options[0])!=canonical(options[1]) and osites[0]!=osites[1]\n        if r['level']=='AUCUN':\n            j=list(keys[i]).index(pairs[i].encode());assert not views[i,j,1]\n    with (NS/'review_sheet.csv').open('x',encoding='utf-8-sig',newline='') as stream:\n        writer=csv.DictWriter(stream,fieldnames=columns);writer.writeheader();writer.writerows({k:safe(v) for k,v in row.items()} for row in rows)\n    key=dict(schema='sireto-review-v2',population_n=17427,sur_n=4459,bootstrap_seed=20261023,bootstrap_replicates=10000,populations=population,entries=entries,official=dict(union_correct=4360,exact_correct=4151,sur_n=4459),review_sheet_sha256=b.record(NS/'review_sheet.csv')['sha256'])\n    dump(PRIVATE/'review_key.json',key);(PRIVATE/'review_key.json').chmod(0o600);dump(PRIVATE/'draw_skips.json',skipped)\n    template=track(NS/'template.html').read_text();dataset=json.dumps(rows,ensure_ascii=False).replace('<','\\\\u003c').replace('\\u2028','\\\\u2028').replace('\\u2029','\\\\u2029');fingerprint=hashlib.sha256(dataset.encode()).hexdigest()\n    (NS/'jugement.html').write_text(template.replace('__ROWS_JSON__',dataset).replace('__STORAGE_ID__',fingerprint))\n    track(NS/'score_review.py');track(Path(__file__));\n    for path,rec in list(REFS.items()):assert b.record(path,rec['sha256'])==rec\n    manifest=dict(status='READY_V2_NO_HUMAN_ANSWERS',preregistration_commit=commit,protocol_sha256=protocol['protocol_sha256'],population_n=17427,populations=population,quotas=QUOTAS,replacements_encountered=replacements,indistinguishable_replacements=sum(c.get('indistinguishable',0) for c in replacements.values()),sources=list(REFS.values()),v1_unchanged=True,draw_seed=20261023,rows=100,distinct_option_pairs=100,ranked_union_rejects=ranked_union_rejects,review_sheet=b.record(NS/'review_sheet.csv'),key=b.record(PRIVATE/'review_key.json'),html=b.record(NS/'jugement.html'),script=b.record(NS/'score_review.py'),seconds=time.monotonic()-START,peak_rss_bytes=PEAK,actual_human_answers=0)\n    dump(NS/'manifest.json',manifest);DONE.set();print(json.dumps(manifest,ensure_ascii=False,indent=2),flush=True)\n\nif __name__=='__main__':\n    try:main()\n    except BaseException:\n        dump(NS/f'failure_{time.time_ns()}.json',dict(traceback=traceback.format_exc(),seconds=time.monotonic()-START,peak_rss_bytes=PEAK));raise\n",
+    "template.html": "<!doctype html>\n<html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<meta http-equiv=\"Content-Security-Policy\" content=\"default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; img-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'\">\n<title>Jugement local — établissements</title>\n<style>\n:root{color-scheme:light;font:20px/1.45 -apple-system,BlinkMacSystemFont,\"Segoe UI\",sans-serif;color:#17263a;background:#edf2f7}*{box-sizing:border-box}body{max-width:1440px;margin:auto;padding:24px}h1{font-size:1.6rem;margin:0 0 10px}h2{font-size:1.2rem;margin:0}p{margin:10px 0}header,.crm,.option,.actions,.notes{background:white;border-radius:14px;padding:20px;margin-bottom:16px;border:1px solid #cbd5e1}.hint{font-size:.85rem;color:#41536a}#storage-warning{background:#fff0b8;color:#6c3500;padding:12px;font-weight:650}#progress{font-weight:700}.options{display:grid;grid-template-columns:1fr 1fr;gap:16px}.option{overflow-wrap:anywhere;margin-bottom:0}.option.selected{border:3px solid #175bc1;padding:18px}dl{display:grid;grid-template-columns:185px 1fr;gap:7px 12px;margin:12px 0 0}dt{color:#41536a;font-size:.85rem}dd{margin:0;font-size:1rem}dd.name{font-weight:700;font-size:1.12rem}button{font:inherit;padding:13px 17px;border-radius:10px;border:1px solid #8b9ab0;background:#f7fafc;color:#17263a;cursor:pointer;min-height:54px}button:hover{background:#e5efff}button:focus-visible,textarea:focus-visible{outline:3px solid #175bc1;outline-offset:3px}button[aria-pressed=true]{background:#175bc1;color:white;border-color:#175bc1}button:disabled{opacity:.4;cursor:default}#choices{display:flex;gap:10px;flex-wrap:wrap;margin:18px 0}textarea{font:inherit;width:100%;min-height:85px;border-radius:9px;padding:10px;border:1px solid #8b9ab0}.nav{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap}.primary{background:#175bc1;color:white}#saved{font-size:.85rem}progress{width:100%;height:14px}.field{white-space:pre-wrap}.notes{margin-top:16px}@media(max-width:850px){.options{grid-template-columns:1fr}body{padding:12px}dl{grid-template-columns:140px 1fr}}\n</style></head><body>\n<header><h1>Quel établissement occupe le site CRM ?</h1><p class=\"hint\">Comparez les deux options à l’adresse CRM. Stock officiel au 1er août 2026 ; date CRM non attestée. Les indices locaux ne prouvent pas une occupation fibre. En cas d’incertitude, choisissez « Je ne sais pas ».</p><div class=\"nav\"><span id=\"progress\"></span><button id=\"export\" class=\"primary\">Exporter mes réponses</button></div><progress id=\"bar\" max=\"100\" value=\"0\" aria-label=\"Dossiers renseignés\"></progress><p id=\"saved\" role=\"status\" aria-live=\"polite\"></p><p id=\"storage-warning\" hidden>La sauvegarde du navigateur est indisponible. Gardez cette page ouverte et exportez régulièrement vos réponses ; elles restent seulement en mémoire.</p></header>\n<section class=\"crm\"><h2>Votre dossier CRM</h2><p id=\"crm-name\"></p><p id=\"crm-address\"></p></section>\n<div class=\"options\"><section id=\"option-1\" class=\"option\"><h2>Option 1</h2><dl id=\"fields-1\"></dl></section><section id=\"option-2\" class=\"option\"><h2>Option 2</h2><dl id=\"fields-2\"></dl></section></div>\n<section class=\"notes\"><h2>Votre choix</h2><div id=\"choices\" role=\"group\" aria-label=\"Réponse\"><button data-answer=\"Option 1\">Option 1</button><button data-answer=\"Option 2\">Option 2</button><button data-answer=\"Les deux\">Les deux</button><button data-answer=\"Aucune\">Aucune</button><button data-answer=\"Je ne sais pas\">Je ne sais pas</button></div><label for=\"comment\">Commentaire facultatif</label><textarea id=\"comment\" placeholder=\"Ambiguïté de date, d’adresse ou d’activité…\"></textarea><div class=\"nav\"><button id=\"previous\">← Précédent</button><span id=\"position\"></span><button id=\"next\">Suivant →</button></div></section>\n<p class=\"hint\">100 dossiers, sans envoi en ligne. Réponses conservées dans ce navigateur pour ce fichier ; exportez avant de changer de navigateur, d’ordinateur ou d’effacer ses données. Évitez une session partagée. Aucune réponse n’est transmise automatiquement.</p>\n<script id=\"review-data\" type=\"application/json\">__ROWS_JSON__</script>\n<script>\n'use strict';\nconst rows=JSON.parse(document.getElementById('review-data').textContent);\nconst STORAGE='sireto-local-review-__STORAGE_ID__';\nconst answers=['Option 1','Option 2','Les deux','Aucune','Je ne sais pas'];\nconst fields=[['denomination','Dénomination'],['enseigne','Enseigne'],['autres_noms','Autres noms officiels'],['etat','État au stock'],['implantation','Siège / secondaire'],['creation','Création'],['fermeture','Fermeture administrative'],['numero','Numéro'],['suffixe','Suffixe'],['voie','Voie'],['complement','Complément'],['code_postal','Code postal'],['commune','Commune'],['distance_crm','Distance au point CRM'],['precision','Qualité du point'],['naf','NAF']];\nconst byId=new Map(rows.map(r=>[r.review_id,r]));let state={position:0,responses:{}};let storageOK=true;\ntry{const saved=localStorage.getItem(STORAGE);if(saved){const parsed=JSON.parse(saved);if(parsed&&typeof parsed.responses==='object'&&parsed.responses){for(const [id,value] of Object.entries(parsed.responses)){if(byId.has(id)&&value&&typeof value.commentaire==='string'&&(answers.includes(value.reponse)||value.reponse==='')){state.responses[id]={reponse:value.reponse,commentaire:value.commentaire};}}if(Number.isInteger(parsed.position)){state.position=Math.max(0,Math.min(rows.length-1,parsed.position));}}}}catch(e){storageOK=false;}\nfunction persist(){try{localStorage.setItem(STORAGE,JSON.stringify(state));storageOK=true;}catch(e){storageOK=false;}document.getElementById('storage-warning').hidden=storageOK;document.getElementById('saved').textContent=storageOK?'Sauvegarde automatique locale effectuée.':'Exportez pour conserver vos réponses.';}\nfunction render(){const row=rows[state.position];const a=state.responses[row.review_id]||{reponse:'',commentaire:''};document.getElementById('crm-name').textContent=row.crm_nom;document.getElementById('crm-address').textContent=row.crm_adresse;for(const j of [1,2]){const list=document.getElementById('fields-'+j);list.replaceChildren();for(const [field,title] of fields){const dt=document.createElement('dt');dt.textContent=title;const dd=document.createElement('dd');dd.className='field'+(field==='denomination'?' name':'');dd.textContent=row['option_'+j+'_'+field]||'—';list.append(dt,dd);}document.getElementById('option-'+j).classList.toggle('selected',a.reponse==='Option '+j||a.reponse==='Les deux');}document.getElementById('comment').value=a.commentaire;for(const button of document.querySelectorAll('[data-answer]')){button.setAttribute('aria-pressed',String(button.dataset.answer===a.reponse));}const complete=Object.values(state.responses).filter(v=>answers.includes(v.reponse)).length;document.getElementById('progress').textContent=complete+' / '+rows.length+' dossiers renseignés';document.getElementById('bar').max=rows.length;document.getElementById('bar').value=complete;document.getElementById('position').textContent='Dossier '+(state.position+1)+' / '+rows.length;document.getElementById('previous').disabled=state.position===0;document.getElementById('next').disabled=state.position===rows.length-1;document.getElementById('storage-warning').hidden=storageOK;}\nfor(const button of document.querySelectorAll('[data-answer]')){button.addEventListener('click',()=>{const id=rows[state.position].review_id;state.responses[id]={reponse:button.dataset.answer,commentaire:document.getElementById('comment').value};persist();render();});}\ndocument.getElementById('comment').addEventListener('input',()=>{const id=rows[state.position].review_id;const old=state.responses[id]||{reponse:''};state.responses[id]={reponse:old.reponse,commentaire:document.getElementById('comment').value};persist();});\nfor(const [id,delta] of [['previous',-1],['next',1]]){document.getElementById(id).addEventListener('click',()=>{state.position=Math.max(0,Math.min(rows.length-1,state.position+delta));persist();render();});}\nfunction csvCell(value){let s=String(value??'');if(/^[\\s]*[=+\\-@]/.test(s)){s=\"'\"+s;}return '\"'+s.replaceAll('\"','\"\"')+'\"';}\nfunction exportCSV(){const lines=[['review_id','reponse','commentaire'],...rows.map(row=>{const a=state.responses[row.review_id]||{reponse:'',commentaire:''};return [row.review_id,a.reponse,a.commentaire];})];return '\\uFEFF'+lines.map(line=>line.map(csvCell).join(',')).join('\\r\\n')+'\\r\\n';}\ndocument.getElementById('export').addEventListener('click',()=>{persist();const blob=new Blob([exportCSV()],{type:'text/csv;charset=utf-8'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='reponses.csv';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000);});\nrender();persist();\n</script></body></html>\n"
+  },
+  "code_sha256": {
+    "score_review.py": "6aeebcaf406757b51c856d3a3498e669d6cd7bc7709db09f13e13a289ed69470",
+    "build_review.py": "222320fec31ccc1da864cc7a7c82cb9d6f6c0a87334410b811cb8edb2789be6a",
+    "template.html": "8dc2fed651b54a5dbcaa5c58d9a3bfd55615a579cf880b264f76d6c2ed46ed16"
+  },
+  "human_answers": 0,
+  "simulation_estimates_published": false,
+  "v1_usage": "ARCHIVED_NOT_USED_UNCHANGED",
+  "label_noise_estimate": null,
+  "occupant_precision_estimate": null
 }
