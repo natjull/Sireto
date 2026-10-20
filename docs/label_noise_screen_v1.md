@@ -1,0 +1,48 @@
+# Bruit des labels G0 — avenant v1 préenregistré avant exécution
+
+## Périmètre et ressources
+
+17427 dossiers G0, folds population2/3/4, mêmes100 candidats, vérités et cinq CV entreprise. Objectif métier de Nathan : occupant actif à l'adresse fibre CRM ; cette vue secondaire ne change aucune cible officielle. Aucun jeu fermé, web, fit, VM ni fichier tiers/pending touché. Deux heures depuis lancement, garde RSS3,75Gio (<4), CPU/DuckDB1thread/512Mio, pas de spill ; worker séquentiel détaché et journal. Écritures autorisées : ces deux docs, une ligne handover, namespace neuf `$H/label_noise_review_20261020/` pour code/reçus/log/fiches et clé privée. Si namespace préexistant : STOP, ne pas écraser.
+
+## 1. Grille sans modèle figée
+
+Sources locales officielles août2026, géométrie juillet2026/BAN G0 ; données publiques seulement. Pour chaque dossier, examiner les100 SIRET G0 et les établissements actifs publics du stock à l'adresse CRM : jointure de présélection INSEE/numéro, puis confirmation stricte numéro/suffixe/voie normalisée identique à la grille `step2_sur_label_audit`. Ni score ni rang appris ne servent à cette sélection.
+
+N = maximum Jaro-Winkler entre nom CRM et noms publics site/UL courants, mêmes normalisations historiques ; N≥0,92, N label connu. Concurrent actif obligatoire. Site admissible = adresse stricte OU distance typée≤tolérance UNION (200m si deux points au numéro,500m sinon voie ; aucune coordonnée communale/inconnue). Distance typée concurrent>500m bloque même une adresse textuelle exacte. Un concurrent déjà correct UNION ne crée aucun conflit : exact ou même SIREN ET (adresse stricte OU distance admissible). Les masques UNION G0 scellés restent la référence pour les100 ; même définition appliquée aux ajouts diagnostic, jamais injectés dans le pool.
+
+Dominance héritée : (adresse concurrente strictement meilleure ET N concurrent≥N label) OU (deux adresses strictes ET N concurrent−N label≥0,08). Adresse meilleure = candidat strict et contradiction label connue sur les champs complets numéro/suffixe/voie/INSEE, OU concurrent≤50m et label typé>500m. Extension BAN expressément demandée : un candidat seulement proche, sans adresse stricte, peut dominer uniquement si le label typé est à>500m et le candidat dans la tolérance UNION ; il faut toujours N concurrent≥N label. Absence de nom ou d'adresse/point n'est jamais une contradiction connue.
+
+Niveaux exclusifs :
+- **FORT** : concurrent dominant ET (adresse meilleure ET gain nom≥0,08, OU label fermé, OU label typé>500m).
+- **FAIBLE** : concurrent dominant restant (gain sur un axe, autre axe non inférieur).
+- **AUCUN** : aucun concurrent satisfaisant ; cela ne prouve pas un label correct.
+
+Plusieurs concurrents : FORT avant FAIBLE, puis gain N décroissant, adresse stricte d'abord, distance typée croissante (inconnue après connue), SIRET lexical pour égalité uniquement. Aucun score du modèle, NAF, statut siège ou identifiant n'est une feature du criblage. NAF et état sont montrés au juge ; dates CRM/occupation/filiation non attestées. Comptes distincts G0 seul et G0+co-adresse, absences/non-publics et UNION exclus publiés.
+
+## 2. Criblage modèle et accord
+
+Limite préconstatée dans le code risque v1 : une probabilité OOF de correction UNION du top1, pas de probabilités par SIRET. Aucun nouveau fit pour en fabriquer. Publier séparément `risk_probability_top1_union` et poids relatifs du reclasseur `w_j=softmax(score_j)` à température1 fixe. `w_label` uniquement si label exact dans100 ; absent = non disponible, jamais zéro. Ces poids ne sont PAS des probabilités calibrées ni une implémentation validée de confident learning.
+
+Signal modèle prédéclaré : top1 non UNION, label exact présent, rapport `w_top1/w_label≥4` (écart score≥ln4), risque OOF acceptant le top1 au seuil calibration97 déjà gelé. Sinon NON ; label absent = INDISPONIBLE. Publier aussi le rapport continu et la probabilité risque, sans sélection sur erreurs. Rejouer les masques97 et l'ordre des scores depuis les artefacts ; aucun réglage sur G0. Accord entre criblage sans modèle (FORT ou FAIBLE) et ce signal : matrice2×2, accord brut, Cohen kappa, Jaccard, recouvrement par niveau ; dénominateur disponible explicite et absents séparés. C'est un contraste avec un signal de rejet très sélectif, pas deux estimateurs indépendants du bruit réel.
+
+Taux FORT/FAIBLE/AUCUN et Wilson bilatéral95 descriptif : global, folds2/3/4, SUR97/non-SUR, dix familles historiques scellées ; groupes complémentaires `pool_union_absent_base` et `hors_erreurs_base` pour couvrir tout le banc sans rebaptiser les familles. Publier n/N et ne jamais retirer une ligne.
+
+## 3. Tirage humain en aveugle
+
+`random.Random(20261020)`, listes par strate en indices G0 croissants, sans remise :100 FORT,50 FAIBLE,50 AUCUN. Si strate trop petite : prendre toute la strate et signaler le déficit, sans remplacement ni transfert. Ordre des fiches et options aléatoire indépendant, graine20261021 ; identifiants de revue opaques graine20261022. Deux options : label humain et concurrent choisi ; AUCUN : label et top1 OOF. Deux SIRET identiques restent identiques, jamais remplacés pour embellir le témoin.
+
+CSV juge : CRM nom/adresse puis options1/2 (dénomination, enseigne, adresse, actif/fermé, distance typée/qualité, NAF), réponse vide et commentaire. Valeurs permises : `Option 1 / Option 2 / Les deux / Aucune / Je ne sais pas`. Anonymisation des rôles, identifiants SIREN/SIRET/query, modèle/strate/scores ; les textes métier officiels nécessaires au jugement sont conservés, pas pseudonymisés arbitrairement. Aucun ordre label/concurrent déductible des colonnes. Aucune formule CSV active (préfixer les champs commençant par =,+,-,@).
+
+Clé de décodage et résultats individuels dans `private/` mode0700, clé mode0600 ; SHA256 publié, aucune correspondance option→label dans les docs ni la fiche. Ne transmettre au juge que `review_sheet.csv`, jamais le namespace ni les docs privés. Ces permissions protègent un autre compte ; un juge utilisant le même compte propriétaire peut techniquement lire la clé : séparation organisationnelle requise, non garantie par un chmod. Temps de remplissage à estimer comme hypothèse1–2min/dossier, pas un temps mesuré.
+
+## 4. Estimation après jugement, préenregistrée
+
+Aucune réponse fabriquée et aucun taux de bruit humain annoncé avant retour des fiches. Strates h, poids W_h=N_h/17427. Indicateur primaire Y=1 si concurrent différent du label choisi seul,0 si label/Les deux ; `Aucune` indique les deux options non occupantes mais pas « concurrent choisi » : taux secondaire séparé. `Je ne sais pas`/manquant = inconnu, jamais supprimé du dénominateur. Publier somme W_h×moyenne(Y) si toutes les réponses sont déterminées ; sinon bornes avec inconnus0/1, pas un point prétendument mesuré. Le taux « concurrent choisi » est un proxy du label non-occupant, non exhaustif ; signaler séparément les AUCUN sans alternative et les options identiques. Ne pas considérer un concurrent identique au label comme un désaccord de vérité.
+
+IC : bootstrap stratifié10000 rééchantillonnages de dossiers dans chaque strate, graine20261020, poids population fixes, percentiles2,5/97,5. Strate entièrement recensée : composante fixée, pas de variance d'échantillonnage. Pas de correction artificielle de labels ; IC descriptif sans erreur de juge modélisée, sensibilité cluster entreprise en complément si jugements disponibles.
+
+Vue précision SUR occupant : estimation Horvitz–Thompson `somme_h (N_h/n_h) somme_revue_h 1_SUR × Z /4459`, à côté des précisions officielles exacte et UNION inchangées. Z=1 si top1 correspond à une option reconnue occupante ; Z=0 si top1 est montré mais rejeté au profit de l'autre seule ou de Aucune ; Z inconnu si top1 non montré, réponse inconnue, ou cas temporel non résolu. Publier des bornes en affectant inconnus0/1 plutôt que supposer que tout concurrent correct vaut top1 correct. Même bootstrap stratifié ; pas de précision « corrigée » effective tant que la fiche est vide.
+
+## Exécution et résultats
+
+À mesurer après commit de cet avenant. Code et reçus seront conservés dans le namespace autorisé ; livrables de synthèse `docs/label_noise_screen_v1.{md,json}` et une ligne append-only handover dans un commit résultats isolé.
