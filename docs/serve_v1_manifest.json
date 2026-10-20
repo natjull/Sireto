@@ -564,5 +564,31 @@
     ]
   },
   "fit_queries": 17427,
-  "validation_on_unlabeled_target": false
+  "validation_on_unlabeled_target": false,
+  "training_code_commit": "1cfc2ecb",
+  "initial_publication_commit": "052e51b9",
+  "private_layout": {
+    "canonical_root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000",
+    "fidelity_alias": "fidelity_200 -> pilot_2000/fidelity_200",
+    "new_text_cache_alias": "shared_new_texts.json -> pilot_2000/shared_new_texts.json",
+    "directories_mode": "0700",
+    "outputs_mode": "0600"
+  },
+  "policy_file": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/policy.json",
+    "size_bytes": 3180,
+    "sha256": "036c61319520b5ede4e173fc18020314fa75e7c7f5281a8b442f50d6b3f08685"
+  },
+  "training_receipts": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fit_rank.json",
+      "size_bytes": 756515,
+      "sha256": "e5295ed8864c18e824e901b8db496a03c955dda17e6b212a17518ad441049e2c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fit_risk.json",
+      "size_bytes": 2874,
+      "sha256": "cb03da64cde3005a2822f9e35212b57ea29763bf083794499b322467ee556a56"
+    }
+  ]
 }

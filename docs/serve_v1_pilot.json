@@ -461,7 +461,32 @@
       "size_bytes": 32682,
       "sha256": "3496b37628ca400095b6374cd99977bd46f984967a562ad0ebe9e30e927e5662"
     },
-    "responses_filled": 0
+    "responses_filled": 0,
+    "sampling": {
+      "A_VERIFIER": {
+        "population": 1002,
+        "sample": 20,
+        "inclusion_probability": 0.01996007984031936,
+        "expansion_weight": 50.1
+      },
+      "PROBABLE": {
+        "population": 719,
+        "sample": 20,
+        "inclusion_probability": 0.027816411682892908,
+        "expansion_weight": 35.95
+      },
+      "SUR": {
+        "population": 279,
+        "sample": 20,
+        "inclusion_probability": 0.07168458781362007,
+        "expansion_weight": 13.95
+      }
+    },
+    "private_key": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/review_60/private_key.json",
+      "size_bytes": 12211,
+      "sha256": "360d6029b7e79e799607bdb2b0e1808d4951fef8a0bbd482c74e44dca5543dcb"
+    }
   },
   "costs": {
     "preparation": {
@@ -1064,6 +1089,156 @@
       ]
     },
     "fit_queries": 17427,
-    "validation_on_unlabeled_target": false
+    "validation_on_unlabeled_target": false,
+    "training_code_commit": "1cfc2ecb",
+    "initial_publication_commit": "052e51b9",
+    "private_layout": {
+      "canonical_root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000",
+      "fidelity_alias": "fidelity_200 -> pilot_2000/fidelity_200",
+      "new_text_cache_alias": "shared_new_texts.json -> pilot_2000/shared_new_texts.json",
+      "directories_mode": "0700",
+      "outputs_mode": "0600"
+    },
+    "policy_file": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/policy.json",
+      "size_bytes": 3180,
+      "sha256": "036c61319520b5ede4e173fc18020314fa75e7c7f5281a8b442f50d6b3f08685"
+    },
+    "training_receipts": [
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fit_rank.json",
+        "size_bytes": 756515,
+        "sha256": "e5295ed8864c18e824e901b8db496a03c955dda17e6b212a17518ad441049e2c"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fit_risk.json",
+        "size_bytes": 2874,
+        "sha256": "cb03da64cde3005a2822f9e35212b57ea29763bf083794499b322467ee556a56"
+      }
+    ]
+  },
+  "manifest_ref": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/manifest.json",
+    "size_bytes": 20537,
+    "sha256": "1f18d94f9e0cc566eb41c7532e0ede324e1edbaa1717b3051c5d88cfde139cee"
+  },
+  "postverification": {
+    "passed": true,
+    "rank_vectors_replayed": 2000,
+    "risk_vectors_replayed": 2000,
+    "top4_outputs_verified": 2000,
+    "query_unique_candidate_counts_verified": 2000,
+    "model_rounds": {
+      "ranker": 200,
+      "risk": 200
+    },
+    "csv_cli_smoke": {
+      "queries": 10,
+      "rank_max_abs_error": 0.0,
+      "risk_max_abs_error": 0.0,
+      "top4_and_status_equal": true,
+      "new_gemma_vectors": 0,
+      "input": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/cli_input_10.csv",
+        "size_bytes": 880,
+        "sha256": "2808adbb084d6f186154cf9e17f2a9637c12ea93dbf928c4832a0e0b74c85c00"
+      }
+    },
+    "calibration_wilson": {
+      "A_VERIFIER": {
+        "count": 5711,
+        "correct_union": 2547,
+        "precision": 0.44598143932761336,
+        "wilson95": [
+          0.4331302621394786,
+          0.458905237979658
+        ]
+      },
+      "PROBABLE": {
+        "count": 8091,
+        "correct_union": 7282,
+        "precision": 0.900012359411692,
+        "wilson95": [
+          0.8932848388430878,
+          0.9063602231298771
+        ]
+      },
+      "SUR": {
+        "count": 3625,
+        "correct_union": 3553,
+        "precision": 0.9801379310344828,
+        "wilson95": [
+          0.9750616717512604,
+          0.9841976509558994
+        ]
+      }
+    },
+    "review": {
+      "cards": 60,
+      "radio_buttons": 180,
+      "preselected_answers": 0,
+      "launched": false,
+      "per_status": {
+        "SUR": 20,
+        "A_VERIFIER": 20,
+        "PROBABLE": 20
+      },
+      "stratum_weights": {
+        "A_VERIFIER": {
+          "population": 1002,
+          "sample": 20,
+          "inclusion_probability": 0.01996007984031936,
+          "expansion_weight": 50.1
+        },
+        "PROBABLE": {
+          "population": 719,
+          "sample": 20,
+          "inclusion_probability": 0.027816411682892908,
+          "expansion_weight": 35.95
+        },
+        "SUR": {
+          "population": 279,
+          "sample": 20,
+          "inclusion_probability": 0.07168458781362007,
+          "expansion_weight": 13.95
+        }
+      }
+    },
+    "private_layout": {
+      "canonical_root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000",
+      "fidelity_alias": "fidelity_200 -> pilot_2000/fidelity_200",
+      "new_text_cache_alias": "shared_new_texts.json -> pilot_2000/shared_new_texts.json",
+      "directories_mode": "0700",
+      "outputs_mode": "0600"
+    },
+    "additional_population_rates": {
+      "number_missing": {
+        "bank": 0.269925981760025,
+        "pilot": 0.1720000058412552
+      },
+      "geo_missing": {
+        "bank": 0.16365410387516022,
+        "pilot": 0.1914999932050705
+      },
+      "typed_distance_median_m": {
+        "bank": 39.98183822631836,
+        "pilot": 23.259653091430664
+      }
+    },
+    "model_hashes_unchanged": true,
+    "source_hashes_unchanged": true,
+    "wall_seconds_through_verification": 2962.919738292694,
+    "manifest": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/manifest.json",
+      "size_bytes": 20537,
+      "sha256": "1f18d94f9e0cc566eb41c7532e0ede324e1edbaa1717b3051c5d88cfde139cee"
+    },
+    "disk_allocated_after_checks_bytes": 1288609792,
+    "disk_free_after_checks_bytes": 17168039936
+  },
+  "postverification_ref": {
+    "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/postverification.json",
+    "size_bytes": 3078,
+    "sha256": "318fc1b92a5fcb52d4e295abf6aa96db3716f3ebac6de82e249d7f054547d3d0"
   }
 }

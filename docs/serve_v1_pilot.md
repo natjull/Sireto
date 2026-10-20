@@ -51,3 +51,25 @@ Revue préparée NON lancée : `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serv
 | crm_name_length | 0.3433 | 0.2275525621162564 | 19.0 / 13.0 |
 
 Parts de statuts ≠ précision. OOF poolé calibré sur lui-même, transport vers full-fit et décalage de population : aucune garantie98,23% sur les sans-SIRET. Recommandation : faire juger les60 fiches avant automatisation ; ne pas écraser les SIRET existants.
+
+## Attestation finale et entrée CSV réelle
+
+Avenant avant fit `b47b1390`, implémentation `1cfc2ecb`, auto-publication `052e51b9`. Vérification réelle supplémentaire sans fit :2000 vecteurs R3 et2000 risques rejoués depuis les poids sérialisés,2000 top4/SIREN/statuts/CSV et100 candidats uniques par dossier vérifiés ; poids200arbres et SHA des modèles/sources référencées inchangés. `H/serve_v1/postverification.json`, référence SHA et preuve intégrale dans le JSON public. Contrôle jusqu’à2962,920s=49,38min depuis lancement, sous3h ; run principal2680,411s=44,67min. Aucun calcul de précision sur le pilote non labellisé.
+
+**Smoke de l’entrée CSV réelle** : dix premières lignes du pilote, export11colonnes, commande `serve` avec nouveau dossier privé. Identité stricte des dix classements100, scores de risque, top4 et statuts avec le run2000 ; écarts max R3/risque0,1003 textes réutilisés/0 nouveau vecteur. Références/agrégats dans `postverification.csv_cli_smoke`, nominatif uniquement sous `pilot_2000/cli_csv_smoke10`. Les anciens poids OOF sont différents des poids full-fit : l’écart non nul annoncé plus haut n’est pas une erreur de fidélité ni un gain de précision.
+
+Seuils score figés : SUR **0,9629830718040466**, PROBABLE **0,7579634189605713** (bande sous SUR). Calibration poolée : SUR3553/3625=98,0138%, Wilson[97,5062;98,4198] ; PROBABLE7282/8091=90,0012%, Wilson[89,3285;90,6360]. Ces chiffres sont calculés sur les dossiers ayant servi à choisir les seuils, jamais une validation indépendante ni un transfert des98,23% historiques.
+
+Décalage complémentaire : numéro inexploitable côté CRM OU candidat27,00% banc/17,20% pilote ; distance manquante16,37%/19,15% ; distance typée médiane40,0m/23,3m parmi les mesurables. Les adresses ne sont donc pas uniformément moins bonnes : noms plus courts/moins proches et transport du modèle contribuent aux observations, sans attribution causale prouvée.
+
+Confidentialité : toutes les données nominatives produites (pilote, fixtures fidélité, cache des nouveaux textes, revue) résident **physiquement sous `H/serve_v1/pilot_2000`**,0700/0600. Deux liens de compatibilité sans contenu nominatif à la racine (`fidelity_200`, `shared_new_texts.json`) conservent les références scellées et pointent dans ce répertoire ; aucun poids/cache étranger déplacé ni aucune donnée supprimée. Modèles et métadonnées agrégées restent à la racine autorisée. Espace après smoke/contrôles :**1,200Gio** alloués,**15,989Gio libres**, au-dessus de12Gio.
+
+Revue non lancée :60cartes/180boutons,aucune réponse précochée,20cas distincts/statut ; clé privée et poids de sondage sous `review_60/private_key.json`. Poids d’expansion vers le pilote :SUR13,95/PROBABLE35,95/A_VERIFIER50,10 ; aucune réponse remplie. Ne partager que le HTML, pas la clé ;20cas par statut ne suffiront pas à certifier98% même si tous sont jugés corrects.
+
+Usage (un lot à la fois, dossier neuf ; sorties `proposals.csv` et `proposals.jsonl`, ordre d’entrée conservé, `SERVE:n`=indice de ligne) :
+```bash
+H=/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2
+PYTHONDONTWRITEBYTECODE=1 .venv/bin/python scripts/sireto_serve_v1.py serve \
+  --input /chemin/export.csv --output-dir "$H/serve_v1/pilot_2000/lot_neuf"
+```
+Le manifeste figé `docs/serve_v1_manifest.json` est identique au manifeste privé : trois poids SHA, paramètres,49features risque/94features ranking, seuils, reçus de fit et sources. Aucun réentraînement implicite par `serve`, aucun écrasement CRM.
