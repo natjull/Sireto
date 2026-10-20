@@ -38,3 +38,85 @@ Pour chaque statut :n/N, couverture, précision UNION et exacte/Wilson, pooled/p
 Namespace neuf `H/step2_crm_columns_tiers_20261020`, CPU un worker séquentiel, threads1/offline, DuckDB256/512Mio sans spill ; aucun cache Gemma ni gros cache neuf. Garde8Gio RSS sans VM détectée/5,75 sinon, métadonnées process uniquement, ne jamais agir sur hydraulic. Attente si grosV142>4Gio/VM+freeinactive<8Gio ; tout temps d'attente compte dans les3h. CATNAT arrêt propre<12Gio, aucune suppression. Budget strict10800s depuis lancement, réserve publication120s, projection conservatrice après1erfit complet, STOP si hors budget sans réduire le banc. Code/avenant commis avant fits ; sources/labels/pools/vocabulaires/rôles/features/cibles/models SHA avant/après, modèles rejoués, smokes réels, aucun test unitaire.
 
 Publication automatique `docs/step2_crm_columns_tiers.{json,md}` et ligne append-only `handover.md`, commit isolé explicite, aucun push. Refus chemins sales/concurrents/JSONpréexistant, fichiers étrangers etpending intouchés. STOP explicite, jamais un partiel promu. Rapport final<=25lignes :anti-fuite/tableauA/tableau3statuts/durée/commits/une recommandation ; tableaux complets A SUR/déciles/catégories dans les rapports détaillés. Une réussite ici reste développement sur jeux consommés ; validation indépendante et vérification temporelle restent nécessaires avant production.
+
+## Résultats
+
+**Fait** —17427/11483, mêmes5CV/OOF ; `scripts/step2_crm_columns_tiers.py`, rapports `docs/step2_crm_columns_tiers.{json,md}`, handover.
+**Anti-fuite** —Jointure non ambiguë ; V maximal folds/CV=0.073. Présence label raw selon état : terminated 26.04%, active 41.93% ; temporalité non vérifiée.
+
+| A | Exact % [IC95 entreprise] | UNION % [IC95 entreprise] | ΔUNION points [IC95 apparié] |
+|---|---|---|---|
+| base | 70.44 [69.15, 71.73] | 76.79 [75.51, 78.04] | — |
+| rank_crm | 70.51 [69.21, 71.81] | 76.84 [75.55, 78.11] | +0.05 [-0.05, 0.16] |
+| risk_crm | 70.44 [69.15, 71.73] | 76.79 [75.51, 78.04] | +0.00 [0.0, 0.0] |
+
+| B statut | n / part % | Précision UNION % [Wilson95] | Précision exacte % [Wilson95] |
+|---|---|---|---|
+| SUR | 2658 / 15.25 | 98.23 [97.66, 98.67] | 95.22 [94.34, 95.97] |
+| PROBABLE | 9774 / 56.09 | 89.12 [88.49, 89.73] | 80.07 [79.27, 80.85] |
+| A_VERIFIER | 4995 / 28.66 | 41.20 [39.84, 42.57] | 38.38 [37.04, 39.74] |
+
+**Écarts / choix** —B choisie par CV sur calibration seulement, jamais gagnant global OOF ; PROBABLE calibré en bande exclusive. Historiques7530=MISSING.
+**Preuve** —`run` puis vérification réelle25LTR/10risques+2smokes/90seuils, top4 des17427 ; 61.85min, pic4.63Gio.
+526 descriptifs seuls ; courbes A96/97/97,5/98, déciles et catégories détaillés dans les rapports ; labels/pools/jeuxfermés/VM/tiers intacts.
+**Reste / risques** —Jeux consommés, sélection/calibration adaptatives, temporalité et validation indépendante manquent ; aucun déploiement.
+Recommandation unique : conserver la référence en production non certifiée/A_VERIFIER ; traiter les trois statuts comme politique de développement à valider indépendamment.
+
+## Courbes A — précision UNION / couverture %
+
+| Cible Wilson calibration | base | rank_crm | risk_crm |
+|---|---|---|---|
+| 96 | 96.49 / 42.17 | 96.63 / 42.96 | 96.56 / 40.90 |
+| 97 | 97.81 / 25.45 | 97.49 / 25.84 | 97.71 / 24.05 |
+| 97.5 | 98.50 / 11.06 | 97.88 / 7.85 | 98.49 / 11.81 |
+| 98 | 99.26 / 1.55 | 98.06 / 2.96 | 98.68 / 3.04 |
+
+## Courbe B — seuils déciles de calibration, cumuls et bandes disjointes
+
+| Préfixe calibration % | Couverture test % | UNION cumul % | Exact cumul % | n bande | UNION bande % |
+|---|---|---|---|---|---|
+| 10 | 10.78 | 98.46 | 96.49 | 1879 | 98.46 |
+| 20 | 20.86 | 97.99 | 94.53 | 1756 | 97.49 |
+| 30 | 31.33 | 97.38 | 92.49 | 1825 | 96.16 |
+| 40 | 41.33 | 96.58 | 90.41 | 1742 | 94.09 |
+| 50 | 51.07 | 95.76 | 88.69 | 1698 | 92.29 |
+| 60 | 61.11 | 93.91 | 86.29 | 1749 | 84.45 |
+| 70 | 70.65 | 91.41 | 83.59 | 1664 | 75.42 |
+| 80 | 80.40 | 88.10 | 80.67 | 1698 | 64.13 |
+| 90 | 90.43 | 83.15 | 76.25 | 1748 | 43.48 |
+| 100 | 99.98 | 76.80 | 70.45 | 1664 | 16.59 |
+| below_calibration_min | — | — | — | 4 | 0.00 |
+
+## B par catégorie produit brute — toutes cellules, historiques séparés
+
+| Catégorie | Statut | n | Part interne % | UNION % [Wilson95] | Exact % [Wilson95] |
+|---|---|---|---|---|---|
+| ADSL | SUR | 24 | 3.09 | 95.83 [79.76, 99.26] | 95.83 [79.76, 99.26] |
+| ADSL | PROBABLE | 385 | 49.61 | 89.09 [85.58, 91.83] | 82.34 [78.21, 85.82] |
+| ADSL | A_VERIFIER | 367 | 47.29 | 44.96 [39.95, 50.07] | 43.87 [38.88, 48.98] |
+| Fibre Confort | SUR | 14 | 19.44 | 100.00 [78.47, 100.0] | 100.00 [78.47, 100.0] |
+| Fibre Confort | PROBABLE | 42 | 58.33 | 85.71 [72.16, 93.28] | 76.19 [61.47, 86.52] |
+| Fibre Confort | A_VERIFIER | 16 | 22.22 | 62.50 [38.64, 81.52] | 56.25 [33.18, 76.9] |
+| Fibre Essentiel | SUR | 902 | 14.30 | 97.56 [96.33, 98.38] | 93.46 [91.65, 94.9] |
+| Fibre Essentiel | PROBABLE | 3684 | 58.41 | 89.01 [87.96, 89.98] | 78.50 [77.15, 79.8] |
+| Fibre Essentiel | A_VERIFIER | 1721 | 27.29 | 43.87 [41.54, 46.23] | 40.73 [38.43, 43.07] |
+| Fibre Premium | SUR | 3 | 9.38 | 66.67 [20.77, 93.85] | 66.67 [20.77, 93.85] |
+| Fibre Premium | PROBABLE | 16 | 50.00 | 93.75 [71.67, 98.89] | 93.75 [71.67, 98.89] |
+| Fibre Premium | A_VERIFIER | 13 | 40.62 | 30.77 [12.68, 57.63] | 30.77 [12.68, 57.63] |
+| Revente ADSL | SUR | 62 | 5.76 | 100.00 [94.17, 100.0] | 98.39 [91.41, 99.71] |
+| Revente ADSL | PROBABLE | 561 | 52.14 | 82.35 [78.98, 85.28] | 77.18 [73.53, 80.46] |
+| Revente ADSL | A_VERIFIER | 453 | 42.10 | 41.72 [37.27, 46.31] | 39.96 [35.55, 44.53] |
+| Revente Fibre Essentiel AI | SUR | 283 | 18.08 | 98.59 [96.42, 99.45] | 96.47 [93.62, 98.07] |
+| Revente Fibre Essentiel AI | PROBABLE | 864 | 55.21 | 89.70 [87.49, 91.55] | 82.18 [79.48, 84.58] |
+| Revente Fibre Essentiel AI | A_VERIFIER | 418 | 26.71 | 34.69 [30.28, 39.37] | 31.34 [27.08, 35.94] |
+| Revente Fibre Premium AI | SUR | 0 | 0.00 | indéf. | indéf. |
+| Revente Fibre Premium AI | PROBABLE | 0 | 0.00 | indéf. | indéf. |
+| Revente Fibre Premium AI | A_VERIFIER | 4 | 100.00 | 0.00 [0.0, 48.99] | 0.00 [0.0, 48.99] |
+| SDSL | SUR | 4 | 6.15 | 100.00 [51.01, 100.0] | 100.00 [51.01, 100.0] |
+| SDSL | PROBABLE | 40 | 61.54 | 87.50 [73.89, 94.54] | 82.50 [68.05, 91.25] |
+| SDSL | A_VERIFIER | 21 | 32.31 | 52.38 [32.37, 71.66] | 42.86 [24.47, 63.45] |
+| __MISSING__ | SUR | 1366 | 18.14 | 98.61 [97.84, 99.11] | 95.97 [94.8, 96.89] |
+| __MISSING__ | PROBABLE | 4182 | 55.54 | 90.05 [89.11, 90.92] | 81.16 [79.94, 82.31] |
+| __MISSING__ | A_VERIFIER | 1982 | 26.32 | 39.30 [37.18, 41.47] | 36.38 [34.29, 38.52] |
+
+Les déciles ne coupent pas les ex aequo et ne garantissent pas10% de dossiers test par bande ; la queue sous le minimum calibration est publiée séparément. Les IC de couverture sont descriptifs. Les JSON incluent tous n/N, Wilson, associations anti-fuite, résultats parCV/fold et politiques fixes. Propositions privées et modèles/reçus : `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_crm_columns_tiers_20261020`. Choix calibration parCV : `{'0': 'rank_crm', '1': 'base', '2': 'risk_crm', '3': 'risk_crm', '4': 'risk_crm'}`.
