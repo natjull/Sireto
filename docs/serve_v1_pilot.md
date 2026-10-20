@@ -24,3 +24,30 @@ Sorties nominatives exclusivement `H/serve_v1/pilot_2000/`, permissions0700/0600
 
 ## Budget, arrêt et publication
 Budget10800s depuis lancement, attentes incluses, réserve publication120s. Worker CPU/Metal séquentiel, threads1, DuckDB512Mio sans spill, gardeRSS+driver5,75Gio (<6), pause si un autre Gemma est actif, ne jamais contrôler hydraulic niPID8288. Arrêt propre CATNAT<12Gio ou projection hors budget ; aucun nettoyage/suppression/installation/web/push, fichiers étrangers/pending intacts. Namespace neuf, reprise seulement après reçus complets et SHA, pas de fit incomplet réutilisé. STOP publié explicitement si partiel, aucun faux succès. Auto-publication agrégats/manifeste SHA `docs/serve_v1_pilot.{json,md}` + ligne handover, commit isolé après contrôle de non-concurrence du journal. Aucun déploiement CRM ni écrasement de SIRET existant.
+
+## Résultats
+Statut **COMPLETE_PILOT_NOT_PRECISION_CERTIFIED**, mur2680.4s, pic3.889Gio.
+
+| Statut | Pilote sans SIRET n/% | Banc référence, calibration OOF poolée % | Politique adaptative historique % |
+|---|---:|---:|---:|
+| SUR | 279/13.95 | 20.80 | 15.25 |
+| PROBABLE | 719/35.95 | 46.43 | 56.09 |
+| A_VERIFIER | 1002/50.10 | 32.77 | 28.66 |
+
+Fidélité full-fit200 : R3 max0.0, risque max0.0, top1200/200. L’écart aux anciens poids OOF est distinct : ranking2.359623432159424, risque0.531751275062561.
+Sélection :{'raw_without_siret': 88465, 'eligible': 86420, 'exclusions': {'fingerprint_excluded': 322, 'service_excluded': 1723}, 'selected': 2000, 'seed': 20261022, 'selected_distinct_services': 1989, 'population_rows': 37218, 'closed_fold0': 7009, 'closed_fold1': 6622, 'test4323_membership': 4323, 'validation2212_superset_control962': 2212, 'overlap_fold0': 0, 'overlap_fold1': 0, 'overlap_test4323': 0, 'overlap_control962': 0, 'overlap_g0': 0, 'method': 'Exclude all37218 population records by service OR canonical CRM fingerprint; test+validation query_id projections verified subsets. control962 documented subset of validation2212, all excluded.', 'no_company_disjointness_claim': True}. Aucun label fermé utilisé ; exclusion par entreprise non revendiquée. Les noms/empreintes d’exclusion ne servent pas aux features.
+Coûts :{'preparation': {'queries': 2000, 'seconds': 552.4641490001231, 'stages_seconds': {'ban_geocoding': 14.47747949976474, 'generation_initialization': 0.32443662360310555, 'generation': 455.38100434746593, 'content85_hydration_features': 44.66875604074448, 'candidate_metadata_neighbours_density': 16.88610575068742}, 'generation_p95_seconds': 0.4664861921221018, 'new_labels_read': False}, 'cache': {'texts': 189614, 'new_texts': 147627, 'reused': 41987, 'base_shards_verified': 1233, 'seconds': 9.12648204062134}, 'encoding': {'new_vectors': 147627, 'seconds': 1848.9359632916749, 'load_seconds': 2.323321125470102, 'truncated': 0, 'peak_bytes': 2982821888, 'adapter': None}, 'semantic': {'seconds': 3.148016417399049}}. Inférence :{'s1_load_and_inference': 2.03758158441633, 'ranker_load_and_inference': 0.4324531676247716, 'risk_features_load_inference': 0.6395126255229115}. Disque namespace1.196Gio, libre16.041Gio.
+Revue préparée NON lancée : `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/review_60/jugement.html`, 60 fiches, {'SUR': 20, 'PROBABLE': 20, 'A_VERIFIER': 20}. Statut/score cachés, aucune réponse préremplie. Aucun navigateur ni jugement lancé.
+
+| Variable | PSI | KS | Médiane banc / pilote |
+|---|---:|---:|---|
+| risk_score | 0.2629 | 0.20296557066620763 | 0.8930219411849976 / 0.7548013925552368 |
+| name_similarity | 0.3231 | 0.17539602341194696 | 0.9090909361839294 / 0.8615384697914124 |
+| street_similarity | 0.0590 | 0.10506745280312157 | 1.0 / 1.0 |
+| log_distance | 0.0714 | 0.13259681917363858 | 3.7131290435791016 / 3.188814640045166 |
+| distance_missing | 0.0053 | 0.027845900040167515 | 0.0 / 0.0 |
+| number_missing | 0.0565 | 0.09792597693234628 | 0.0 / 0.0 |
+| candidate_count | 0.0000 | 0.0 | 100.0 / 100.0 |
+| crm_name_length | 0.3433 | 0.2275525621162564 | 19.0 / 13.0 |
+
+Parts de statuts ≠ précision. OOF poolé calibré sur lui-même, transport vers full-fit et décalage de population : aucune garantie98,23% sur les sans-SIRET. Recommandation : faire juger les60 fiches avant automatisation ; ne pas écraser les SIRET existants.

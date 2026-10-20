@@ -1,0 +1,1069 @@
+{
+  "status": "COMPLETE_PILOT_NOT_PRECISION_CERTIFIED",
+  "error": null,
+  "wall_seconds": 2680.410834312439,
+  "budget_seconds": 10800,
+  "outputs_confidential_root": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000",
+  "closed_labels_used": false,
+  "closed_pools_opened": false,
+  "vm_or_8288_controlled": false,
+  "script": {
+    "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/sireto_serve_v1.py",
+    "size_bytes": 51862,
+    "sha256": "1824fe65b3bc7df959e8300fcd6081fb39d5cdba4bc04eb98c4d111a8bc1ff31"
+  },
+  "protocol_commit": "b47b1390",
+  "bank_pooled_calibration": {
+    "policy": {
+      "sur": 0.9629830718040466,
+      "probable": 0.7579634189605713
+    },
+    "source": "BASE49 pooled external company-OOF development predictions",
+    "calibration_metrics_not_test": true,
+    "statuses": {
+      "A_VERIFIER": {
+        "count": 5711,
+        "percent": 32.77098754805761,
+        "union_correct": 2547,
+        "exact_correct": 2358
+      },
+      "PROBABLE": {
+        "count": 8091,
+        "percent": 46.42795661903942,
+        "union_correct": 7282,
+        "exact_correct": 6497
+      },
+      "SUR": {
+        "count": 3625,
+        "percent": 20.801055832902968,
+        "union_correct": 3553,
+        "exact_correct": 3420
+      }
+    },
+    "original_adaptive_reference_percent": {
+      "SUR": 15.25,
+      "PROBABLE": 56.09,
+      "A_VERIFIER": 28.66
+    },
+    "sources": [
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk0/receipt.json",
+        "size_bytes": 765490,
+        "sha256": "fa7a9046b65b2b4aa78b8e3fbb5d40273ca6a993ba4627a1587e44c0896e3d3a"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk0/base.npz",
+        "size_bytes": 40244,
+        "sha256": "bea0845af1d47b9ccea906b3908e7a1a0a3f798b1bca1f3a79421c78d6448989"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk1/receipt.json",
+        "size_bytes": 765894,
+        "sha256": "b54fc99ef091e234a7a04cb7bd045d9bffb98ce64f8213555b392cd62c7591ef"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk1/base.npz",
+        "size_bytes": 39465,
+        "sha256": "36e22db0f3fd3b97428395f787a36ba46c4b60296559a312d02528170b24d99f"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk2/receipt.json",
+        "size_bytes": 765245,
+        "sha256": "2f5fec9aa2e7e92a0dc2582585d7fb2ed5c0c58412cc1b61ec543a7bb85145f2"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk2/base.npz",
+        "size_bytes": 40443,
+        "sha256": "5a52489fa1e132b02c4fc0c6ccb993d38300938b0b430fcfc601d67d7352e0c1"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk3/receipt.json",
+        "size_bytes": 765816,
+        "sha256": "3ecf6112847bfd853ecf3773d0374d44cd24a77b876f8a071f4cb3b07d598e5d"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk3/base.npz",
+        "size_bytes": 39293,
+        "sha256": "1a595bbb94e865c6894cbd9e33f356ac43cecc41a26ea07c2300b72e62650d4a"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk4/receipt.json",
+        "size_bytes": 765690,
+        "sha256": "fa7883f10296f3438262b81c11be0006da9a0b6337d4d095558fc5d26ced5f05"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020/risk4/base.npz",
+        "size_bytes": 41699,
+        "sha256": "9b9198031a04d52b3e814ab81875d480e7cf0826366267e5327725f7e52769f4"
+      }
+    ],
+    "score_sha256": "42b628d33c91c25d3885d2cb93d33ac3990fd80c627eaf788b46792ca59251cf"
+  },
+  "fidelity": {
+    "queries": 200,
+    "candidate_keys_equal": true,
+    "content85_equal": true,
+    "nb_equal": true,
+    "semantic_equal": true,
+    "risk49_equal": true,
+    "rank_max_abs_error": 0.0,
+    "risk_max_abs_error": 0.0,
+    "risk_feature_max_abs_error": 0.0,
+    "top1_equal": 200,
+    "fullfit_vs_old_oof_rank_max_abs_difference": 2.359623432159424,
+    "fullfit_vs_old_oof_risk_max_abs_difference": 0.531751275062561,
+    "note": "Fidelity uses identical NEW full-fit weights, old OOF weights deliberately different; no assertion of identical OOF/full-fit predictions."
+  },
+  "population_shift": {
+    "metrics": {
+      "risk_score": {
+        "psi": 0.2628982813407711,
+        "ks_statistic": 0.20296557066620763,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          0.02813909202814102,
+          0.31710913181304934,
+          0.8930219411849976,
+          0.9754019021987915,
+          0.9915136694908142
+        ],
+        "pilot_quantiles": [
+          0.02494046278297901,
+          0.10433195680379867,
+          0.7548013925552368,
+          0.9699605405330658,
+          0.9888413548469543
+        ]
+      },
+      "name_similarity": {
+        "psi": 0.3230627202014454,
+        "ks_statistic": 0.17539602341194696,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          0.0,
+          0.6262488722801208,
+          0.9090909361839294,
+          1.0,
+          1.0
+        ],
+        "pilot_quantiles": [
+          0.0,
+          0.5106446862220764,
+          0.8615384697914124,
+          1.0,
+          1.0
+        ]
+      },
+      "street_similarity": {
+        "psi": 0.05895538796766275,
+        "ks_statistic": 0.10506745280312157,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          0.0,
+          0.575117552280426,
+          1.0,
+          1.0,
+          1.0
+        ],
+        "pilot_quantiles": [
+          0.0,
+          0.6221237182617188,
+          1.0,
+          1.0,
+          1.0
+        ]
+      },
+      "log_distance": {
+        "psi": 0.07140999441867467,
+        "ks_statistic": 0.13259681917363858,
+        "bank_missing": 2852,
+        "pilot_missing": 383,
+        "bank_quantiles": [
+          0.00516150426119566,
+          0.6455056428909302,
+          3.7131290435791016,
+          7.268321895599366,
+          9.73947811126709
+        ],
+        "pilot_quantiles": [
+          0.009008364751935005,
+          0.4952665209770204,
+          3.188814640045166,
+          6.950392627716065,
+          9.58169937133789
+        ]
+      },
+      "distance_missing": {
+        "psi": 0.005318409836970771,
+        "ks_statistic": 0.027845900040167515,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "pilot_quantiles": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "number_missing": {
+        "psi": 0.05645633406609979,
+        "ks_statistic": 0.09792597693234628,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ],
+        "pilot_quantiles": [
+          0.0,
+          0.0,
+          0.0,
+          1.0,
+          1.0
+        ]
+      },
+      "candidate_count": {
+        "psi": 0.0,
+        "ks_statistic": 0.0,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ],
+        "pilot_quantiles": [
+          100.0,
+          100.0,
+          100.0,
+          100.0,
+          100.0
+        ]
+      },
+      "crm_name_length": {
+        "psi": 0.34330587651915,
+        "ks_statistic": 0.2275525621162564,
+        "bank_missing": 0,
+        "pilot_missing": 0,
+        "bank_quantiles": [
+          2.0,
+          7.0,
+          19.0,
+          36.0,
+          74.0
+        ],
+        "pilot_quantiles": [
+          0.0,
+          5.0,
+          13.0,
+          27.0,
+          50.0
+        ]
+      }
+    },
+    "interpretation": "Descriptive shift, no occupation precision or inference from missing SIRET; bank risk/top1 OOF vs pilot full-fit, so model transport also contributes."
+  },
+  "selection": {
+    "raw_without_siret": 88465,
+    "eligible": 86420,
+    "exclusions": {
+      "fingerprint_excluded": 322,
+      "service_excluded": 1723
+    },
+    "selected": 2000,
+    "seed": 20261022,
+    "selected_distinct_services": 1989,
+    "population_rows": 37218,
+    "closed_fold0": 7009,
+    "closed_fold1": 6622,
+    "test4323_membership": 4323,
+    "validation2212_superset_control962": 2212,
+    "overlap_fold0": 0,
+    "overlap_fold1": 0,
+    "overlap_test4323": 0,
+    "overlap_control962": 0,
+    "overlap_g0": 0,
+    "method": "Exclude all37218 population records by service OR canonical CRM fingerprint; test+validation query_id projections verified subsets. control962 documented subset of validation2212, all excluded.",
+    "no_company_disjointness_claim": true
+  },
+  "peak_rss_plus_driver_bytes": 4175708160,
+  "workers": [
+    {
+      "phase": "select",
+      "seconds": 1.0874557914212346,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/select.log",
+      "peak_bytes": 328695808
+    },
+    {
+      "phase": "calibrate",
+      "seconds": 2.3483600839972496,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/calibrate.log",
+      "peak_bytes": 284360704
+    },
+    {
+      "phase": "fit_rank",
+      "seconds": 101.90526316687465,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fit_rank.log",
+      "peak_bytes": 4175708160
+    },
+    {
+      "phase": "fit_risk",
+      "seconds": 1.686413625255227,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fit_risk.log",
+      "peak_bytes": 272678912
+    },
+    {
+      "phase": "prepare_fidelity",
+      "seconds": 88.0528351245448,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/prepare_fidelity_fidelity_200.log",
+      "peak_bytes": 3177742336
+    },
+    {
+      "phase": "cache",
+      "seconds": 8.077381708659232,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/cache_fidelity_200.log",
+      "peak_bytes": 994492416
+    },
+    {
+      "phase": "encode",
+      "seconds": 6.491835500113666,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/encode_fidelity_200.log",
+      "peak_bytes": 430686208
+    },
+    {
+      "phase": "semantic",
+      "seconds": 1.379626332782209,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/semantic_fidelity_200.log",
+      "peak_bytes": 309641216
+    },
+    {
+      "phase": "infer",
+      "seconds": 1.5384791661053896,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/infer_fidelity_200.log",
+      "peak_bytes": 335626240
+    },
+    {
+      "phase": "fidelity",
+      "seconds": 2.2073494996875525,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/fidelity.log",
+      "peak_bytes": 1614135296
+    },
+    {
+      "phase": "prepare",
+      "seconds": 553.8357335003093,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/prepare_pilot_2000.log",
+      "peak_bytes": 3127885824
+    },
+    {
+      "phase": "cache",
+      "seconds": 9.22984083276242,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/cache_pilot_2000.log",
+      "peak_bytes": 2066366464
+    },
+    {
+      "phase": "encode",
+      "seconds": 1856.4740532506257,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/encode_pilot_2000.log",
+      "peak_bytes": 2982821888
+    },
+    {
+      "phase": "semantic",
+      "seconds": 4.567583207972348,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/semantic_pilot_2000.log",
+      "peak_bytes": 1558396928
+    },
+    {
+      "phase": "infer",
+      "seconds": 4.652877791784704,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/infer_pilot_2000.log",
+      "peak_bytes": 639008768
+    },
+    {
+      "phase": "distribution",
+      "seconds": 5.152047500014305,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/distribution_pilot_2000.log",
+      "peak_bytes": 615776256
+    },
+    {
+      "phase": "review",
+      "seconds": 11.973174416460097,
+      "exit_code": 0,
+      "log": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/review_pilot_2000.log",
+      "peak_bytes": 412139520
+    }
+  ],
+  "pilot": {
+    "queries": 2000,
+    "statuses": {
+      "A_VERIFIER": {
+        "count": 1002,
+        "percent": 50.1
+      },
+      "PROBABLE": {
+        "count": 719,
+        "percent": 35.949999999999996
+      },
+      "SUR": {
+        "count": 279,
+        "percent": 13.950000000000001
+      }
+    },
+    "seconds": 3.30766558367759,
+    "stages_seconds": {
+      "s1_load_and_inference": 2.03758158441633,
+      "ranker_load_and_inference": 0.4324531676247716,
+      "risk_features_load_inference": 0.6395126255229115
+    }
+  },
+  "review_60": {
+    "prepared_not_launched": true,
+    "seed": 20261023,
+    "selected": 60,
+    "per_status": {
+      "SUR": 20,
+      "PROBABLE": 20,
+      "A_VERIFIER": 20
+    },
+    "html": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/review_60/jugement.html",
+      "size_bytes": 32682,
+      "sha256": "3496b37628ca400095b6374cd99977bd46f984967a562ad0ebe9e30e927e5662"
+    },
+    "responses_filled": 0
+  },
+  "costs": {
+    "preparation": {
+      "queries": 2000,
+      "seconds": 552.4641490001231,
+      "stages_seconds": {
+        "ban_geocoding": 14.47747949976474,
+        "generation_initialization": 0.32443662360310555,
+        "generation": 455.38100434746593,
+        "content85_hydration_features": 44.66875604074448,
+        "candidate_metadata_neighbours_density": 16.88610575068742
+      },
+      "generation_p95_seconds": 0.4664861921221018,
+      "new_labels_read": false
+    },
+    "cache": {
+      "texts": 189614,
+      "new_texts": 147627,
+      "reused": 41987,
+      "base_shards_verified": 1233,
+      "seconds": 9.12648204062134
+    },
+    "encoding": {
+      "new_vectors": 147627,
+      "seconds": 1848.9359632916749,
+      "load_seconds": 2.323321125470102,
+      "truncated": 0,
+      "peak_bytes": 2982821888,
+      "adapter": null
+    },
+    "semantic": {
+      "seconds": 3.148016417399049
+    }
+  },
+  "disk_allocated_bytes": 1284657152,
+  "disk_free_bytes": 17224200192,
+  "manifest": {
+    "version": "serve_v1",
+    "recipe": "Frozen G0 content85 + company-crossfit S1(7) + BASE S2(2), full-fit R3 and risk49",
+    "models": [
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/models/ranker.json",
+        "size_bytes": 247198,
+        "sha256": "4efd40796ad1dd86ea786b0e5e6d2c71f437da8ad2363538c253dc8c16f1eb50"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/models/nb.pkl.gz",
+        "size_bytes": 412657,
+        "sha256": "2cf65452aed3f5f004f34bfe1fc5b7cbfa86aad98844644583f4da9363156eb1"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/models/risk.json",
+        "size_bytes": 235645,
+        "sha256": "ba91114b4489e3c59ac7b02431dabc43586efe641bd3eb27bd72077b6034091e"
+      }
+    ],
+    "policy": {
+      "sur": 0.9629830718040466,
+      "probable": 0.7579634189605713
+    },
+    "rank_features": [
+      "name_jaro_max",
+      "name_jaro_second",
+      "name_jaro_gap",
+      "name_levenshtein_max",
+      "name_token_overlap",
+      "name_exact",
+      "name_etab_jaro",
+      "name_ul_jaro",
+      "name_sigle_jaro",
+      "name_count",
+      "name_missing",
+      "name_first_token",
+      "street_jaro",
+      "street_tokens",
+      "street_exact",
+      "number_exact",
+      "number_log_diff",
+      "number_missing",
+      "suffix_exact",
+      "postcode_match",
+      "commune_match",
+      "full_address_match",
+      "address_missing",
+      "name_address_interaction",
+      "geo_log_distance",
+      "geo_missing",
+      "geo_both_house",
+      "geo_any_street",
+      "is_active",
+      "state_missing",
+      "is_siege",
+      "site_missing",
+      "candidate_same_siren_count",
+      "unique_siren_count",
+      "same_address_count",
+      "name_gap_best_other",
+      "street_gap_best_other",
+      "v2_number_exact",
+      "v2_number_within2",
+      "v2_number_both_missing",
+      "v2_number_one_missing",
+      "v2_number_log_gap",
+      "v2_suffix_equal",
+      "v2_candidate_range",
+      "v2_street_exact",
+      "v2_street_jaro",
+      "v2_street_token_overlap",
+      "v2_commune_match",
+      "v2_distance_log",
+      "v2_crm_ban_score",
+      "v2_candidate_ban_score",
+      "v2_crm_street_similarity",
+      "v2_crm_log_uncertainty",
+      "v2_candidate_log_distance_precision",
+      "v2_crm_house",
+      "v2_crm_street",
+      "v2_crm_commune",
+      "v2_candidate_house",
+      "v2_candidate_street",
+      "v2_candidate_commune",
+      "v2_crm_declared_weak",
+      "v2_geo_missing",
+      "v2_geo_admissible",
+      "v2_enseigne_jaro_max",
+      "v2_usual_jaro",
+      "v2_site_best_jaro",
+      "v2_site_name_present",
+      "v2_site_name_exact",
+      "v2_enseigne_token_overlap",
+      "v2_usual_token_overlap",
+      "v2_enseigne_other_count",
+      "v2_site_name_gap_same_siren",
+      "v2_site_vs_ul_jaro_gap",
+      "v2_is_active",
+      "v2_is_closed",
+      "v2_is_siege",
+      "v2_closure_age_log_days",
+      "v2_closure_recency_vs_siren_days",
+      "v2_closure_missing",
+      "v2_active_same_siren_pool_count",
+      "v2_active_same_siren_crm_commune_count",
+      "v2_state_missing",
+      "v2_siren_candidate_count",
+      "v2_siren_is_nearest",
+      "v2_siren_distance_excess_log",
+      "naf_div_logp",
+      "naf_group_logp",
+      "coloc_div_rank",
+      "coloc_group_rank",
+      "coloc_div_delta_best",
+      "coloc_group_delta_best",
+      "naf_missing",
+      "gemma_base_cosine",
+      "coloc_gemma_delta_best"
+    ],
+    "risk_features": [
+      "score_top1",
+      "margin12",
+      "margin13",
+      "entropy_top10",
+      "native_rank_top1",
+      "same_siren_count_top1",
+      "same_address_count_top1",
+      "near50_count_top1",
+      "same_address_or_near50_count_top1",
+      "crm_top1_log_distance",
+      "crm_top1_distance_missing",
+      "naf_div_logp_top1",
+      "naf_div_logp_top2",
+      "naf_div_logp_delta12",
+      "naf_group_logp_top1",
+      "naf_group_logp_top2",
+      "naf_group_logp_delta12",
+      "coloc_div_rank_top1",
+      "coloc_div_rank_top2",
+      "coloc_div_rank_delta12",
+      "coloc_group_rank_top1",
+      "coloc_group_rank_top2",
+      "coloc_group_rank_delta12",
+      "coloc_div_delta_best_top1",
+      "coloc_div_delta_best_top2",
+      "coloc_div_delta_best_delta12",
+      "coloc_group_delta_best_top1",
+      "coloc_group_delta_best_top2",
+      "coloc_group_delta_best_delta12",
+      "naf_missing_top1",
+      "naf_missing_top2",
+      "naf_missing_delta12",
+      "gemma_base_cosine_top1",
+      "gemma_base_cosine_top2",
+      "gemma_base_cosine_delta12",
+      "coloc_gemma_delta_best_top1",
+      "coloc_gemma_delta_best_top2",
+      "coloc_gemma_delta_best_delta12",
+      "name_jaro_top1",
+      "number_exact_top1",
+      "street_jaro_top1",
+      "postcode_match_top1",
+      "active_top1",
+      "closed_top1",
+      "siege_top1",
+      "commune_log_public_count",
+      "group_name_max_delta_best_top1",
+      "group_naf_group_delta_best_top1",
+      "group_gemma_base_delta_best_top1"
+    ],
+    "implementation": {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/sireto_serve_v1.py",
+      "size_bytes": 51862,
+      "sha256": "1824fe65b3bc7df959e8300fcd6081fb39d5cdba4bc04eb98c4d111a8bc1ff31"
+    },
+    "protocol_commit": "b47b1390",
+    "protocol_sha256": "71da13359ea2975cc06f5e65fd4577df1eed993f702b69345f9c841c94587bc5",
+    "source_refs": [
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/plan.json",
+        "size_bytes": 99261,
+        "sha256": "9ad01ccbb090f6f38d6f678728f845e627dc188290f3c9514f14eebba749aeb2"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/training_queries.json",
+        "size_bytes": 4346169,
+        "sha256": "f8876e5abf4c3f10a97489876672ca1b28a57d1c424d223915ae68b44a93947c"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/data.json",
+        "size_bytes": 1884848,
+        "sha256": "c0b75f4ab9ca1384eb88247d11bf93c7bf801e0d25fede5dd30550ca0781635a"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/data.json",
+        "size_bytes": 1429598,
+        "sha256": "4cf8121fe2687d616cb87c4f6c064374bb5814decef210a74da7919ad6c18202"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/sireto_serve_v1.py",
+        "size_bytes": 51862,
+        "sha256": "1824fe65b3bc7df959e8300fcd6081fb39d5cdba4bc04eb98c4d111a8bc1ff31"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_risk_model_v1.py",
+        "size_bytes": 51723,
+        "sha256": "b9ac64287fe012006452a0665db628ec681a96b7750767bba99c6a99927bf81b"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_colocated_signals.py",
+        "size_bytes": 68762,
+        "sha256": "2149d65b6da97ccc7d8b335c99d19e80985c0f4a560df3c058672d2051d912ec"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_g0_bench.py",
+        "size_bytes": 36194,
+        "sha256": "304b9d9905c4be9a83e9951d9827cb5411d3fa87a8155b463d09eb99fa46962b"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_option_d.py",
+        "size_bytes": 41214,
+        "sha256": "195334d468732141b42ec965e3fa0294d6141e014d2deda3df32edf4ac7a1367"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_xgb_ranker_v1.py",
+        "size_bytes": 39102,
+        "sha256": "a02bb89baa7f320ab144807724404c2af86bbef806600b970d074f026862bf4c"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_diagnostic_v1.py",
+        "size_bytes": 42000,
+        "sha256": "93333e9ecd8e9352424fdc0756c283f16e83ad1c631b92d09917a9c2bfda7c54"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_features_v2.py",
+        "size_bytes": 36419,
+        "sha256": "a841b17de208c683bef7021e42cf6bc0f66bf1e2900f26f7cc1755b732d8735b"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_gemma_finetune.py",
+        "size_bytes": 47354,
+        "sha256": "ef61d9d0566fbe51a52b72045b2c0977caf485de5a41edd7919face63d38431d"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_option_d.py",
+        "size_bytes": 41214,
+        "sha256": "195334d468732141b42ec965e3fa0294d6141e014d2deda3df32edf4ac7a1367"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_ranker_v3_group.py",
+        "size_bytes": 33176,
+        "sha256": "ccd1dc4c0695118f2e63082f7181baa3a159219cc635762f9820b8d9d0fed760"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/step2_crm_columns_tiers.py",
+        "size_bytes": 39574,
+        "sha256": "0c80f54f74a87dcc680082acf5f4be64ef0794383fd4520454090d7f27dea81c"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_new_data_20260817/source/plateforme_new_data_to_cure.csv",
+        "size_bytes": 14954776,
+        "sha256": "829cee816839bd7c24962127e2d35784923bc0d0c5ecbe12ce34e45a1439f7da"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_gt_v2_commercial_certified_population/73328b7611f37a06/queries.parquet",
+        "size_bytes": 3722146,
+        "sha256": "449406955977cd5d693e35f9fa05ce9948f6a7ab67432b804fe3ad0d38fa1670"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+        "size_bytes": 2202341459,
+        "mtime_ns": 1786994107608626537,
+        "inode": 1964894,
+        "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet",
+        "size_bytes": 705090270,
+        "mtime_ns": 1786994089878172521,
+        "inode": 1964895,
+        "sha256": "fdbc02abbe47339c7fbe56728667868ff42d938da8b213aa4276ad266751b30e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/oubusiness/raw/sirene/geolocalisation_etablissements_2026-07-01.parquet",
+        "size_bytes": 802036004,
+        "mtime_ns": 1784824801885563627,
+        "inode": 86516,
+        "sha256": "15da7e02003fa4cb203929e0591a2cdbb0a41784c0ac4deb801f56eeb7bdf906"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementHistorique.parquet",
+        "size_bytes": 870319380,
+        "mtime_ns": 1786994116874694340,
+        "inode": 1964896,
+        "sha256": "711fed8260526ee61cbd2f8cdb9d655f67ca4ceba8d2b578e78c110e13f9b08d"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/block_lo.npy",
+        "sha256": "c3dfb54de2436707dd7494c9767aea3af7763c50955b32b7527e67c908ca6af0",
+        "size_bytes": 5487248
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/block_hi.npy",
+        "sha256": "846d16b6839f6bfb0c2e358ba0919bd09680646984cfc7fdd8e2f6652f5b9950",
+        "size_bytes": 5487248
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/block_offsets.npy",
+        "sha256": "71fd4ef21e461bbd0616ab8952020dc4fcadd08df446a3682d61c6ebdf907a08",
+        "size_bytes": 2743696
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/block_sites.npy",
+        "sha256": "31c4a07b671a99852a807e2b14eb45e30fab0c05ddda5776ff93ad400f9e1775",
+        "size_bytes": 175587400
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v126_national_layout/compile_20261003_a/site_xy.npy",
+        "sha256": "bca5ebff49229f77a0ad2eb60ce3ef2af5631e33e3c790bb036bcdc07c248006",
+        "size_bytes": 702349216
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/audits/retrieval_v96_national_membership/compile_20261003_a/endpoint_keys.npy",
+        "sha256": "79781463fa1407a59c7e4a266c50c416d20e3768aed54341f18d71065ba57b27",
+        "size_bytes": 351174672
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/v143/local_evidence_empty_recovery_20261013_night/public_mask.npy",
+        "sha256": "e5a96d8e49947df75d2d8223d5ba5b4b9de4f02f4229c8ef15ba3e7bc7e1704e",
+        "size_bytes": 43896946
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/manifest.json",
+        "size_bytes": 2708,
+        "mtime_ns": 1787143566716776777,
+        "inode": 2125842,
+        "sha256": "9275f519508dca1c5a0738356faaa0e693b59bd80c9f8bacf2c214db6d95af9e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/indexes/hierarchical_retrieval_v3/4b332899d8698354/tantivy/meta.json",
+        "size_bytes": 16239,
+        "mtime_ns": 1787143566041155073,
+        "inode": 2125829,
+        "sha256": "42e43acedabdb27468f25ec513fc52a86c09c205789dcea204f0e0886a9341fc"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/.gitattributes",
+        "size_bytes": 1301,
+        "sha256": "bcdccfaa66bc1240c7192dbd374cfb39b695bb1d8ff6b7ce0113aa5e9ac21a44"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/README.md",
+        "size_bytes": 21730,
+        "sha256": "b677a0ee2818c36f091b65fd3d9b4baea9f04d53b02b49cae916c74bf9682037"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/chat_template.jinja",
+        "size_bytes": 1016,
+        "sha256": "4b852efc0b9960283e735363331e6f325b33bc74bdbaa076f595bc4e9b94d85e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/config.json",
+        "size_bytes": 4455,
+        "sha256": "b8f1e9931b57fbc054acdb445c41765d55b0074c58d145fa82839941ad1b5bb3"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/config_sentence_transformers.json",
+        "size_bytes": 1565,
+        "sha256": "031e56a498d33c349ab489a21885bcfe25b4fcba841149dc99e1e90d4a7c28f5"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/model.safetensors",
+        "size_bytes": 1488915288,
+        "sha256": "197a32965d4b1105faf060417baa899e193fb73cd401f42ec9295234d5553d79"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/modules.json",
+        "size_bytes": 413,
+        "sha256": "3d02572a0455b832de67fb8e63a54981bc7e8b46e337c95e917bd8122a533bfd"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/preprocessor_config.json",
+        "size_bytes": 511,
+        "sha256": "ea2ae257e901064abdd98dceb19f2b0da06af600bed15e0f99f5c85c37ee9d78"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/processor_config.json",
+        "size_bytes": 1788,
+        "sha256": "168f6a08522f3ce5dea596d94d003af2fd691742d4f41fe1f9d8cce76bfbf69c"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/sentence_bert_config.json",
+        "size_bytes": 747,
+        "sha256": "b1bcd9f2dce3ae863b359e87d0710b5dbc3314a59ecb4e2f97c7778fc8e4b228"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/tokenizer.json",
+        "size_bytes": 32170510,
+        "sha256": "4d777ef5bdc1aa36227abdfb77c3e49e7b9c892d16e1b6bda41c393504828be4"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/tokenizer.model",
+        "size_bytes": 4689013,
+        "sha256": "e594c8a90eb08d8bda498ff4747977dc827ae0c3c56b5c0d41a605a22d02ef03"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/tokenizer_config.json",
+        "size_bytes": 1599,
+        "sha256": "17bd5d6e9364ca49a534e1502076593317c298d4a663623091ed45388f004874"
+      }
+    ],
+    "base_files": [
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/.gitattributes",
+        "size_bytes": 1301,
+        "sha256": "bcdccfaa66bc1240c7192dbd374cfb39b695bb1d8ff6b7ce0113aa5e9ac21a44"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/README.md",
+        "size_bytes": 21730,
+        "sha256": "b677a0ee2818c36f091b65fd3d9b4baea9f04d53b02b49cae916c74bf9682037"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/chat_template.jinja",
+        "size_bytes": 1016,
+        "sha256": "4b852efc0b9960283e735363331e6f325b33bc74bdbaa076f595bc4e9b94d85e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/config.json",
+        "size_bytes": 4455,
+        "sha256": "b8f1e9931b57fbc054acdb445c41765d55b0074c58d145fa82839941ad1b5bb3"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/config_sentence_transformers.json",
+        "size_bytes": 1565,
+        "sha256": "031e56a498d33c349ab489a21885bcfe25b4fcba841149dc99e1e90d4a7c28f5"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/model.safetensors",
+        "size_bytes": 1488915288,
+        "sha256": "197a32965d4b1105faf060417baa899e193fb73cd401f42ec9295234d5553d79"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/modules.json",
+        "size_bytes": 413,
+        "sha256": "3d02572a0455b832de67fb8e63a54981bc7e8b46e337c95e917bd8122a533bfd"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/preprocessor_config.json",
+        "size_bytes": 511,
+        "sha256": "ea2ae257e901064abdd98dceb19f2b0da06af600bed15e0f99f5c85c37ee9d78"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/processor_config.json",
+        "size_bytes": 1788,
+        "sha256": "168f6a08522f3ce5dea596d94d003af2fd691742d4f41fe1f9d8cce76bfbf69c"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/sentence_bert_config.json",
+        "size_bytes": 747,
+        "sha256": "b1bcd9f2dce3ae863b359e87d0710b5dbc3314a59ecb4e2f97c7778fc8e4b228"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/tokenizer.json",
+        "size_bytes": 32170510,
+        "sha256": "4d777ef5bdc1aa36227abdfb77c3e49e7b9c892d16e1b6bda41c393504828be4"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/tokenizer.model",
+        "size_bytes": 4689013,
+        "sha256": "e594c8a90eb08d8bda498ff4747977dc827ae0c3c56b5c0d41a605a22d02ef03"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/base/tokenizer_config.json",
+        "size_bytes": 1599,
+        "sha256": "17bd5d6e9364ca49a534e1502076593317c298d4a663623091ed45388f004874"
+      }
+    ],
+    "rank_params": {
+      "objective": "rank:ndcg",
+      "n_estimators": 200,
+      "max_depth": 3,
+      "learning_rate": 0.05,
+      "min_child_weight": 10,
+      "reg_lambda": 10,
+      "reg_alpha": 1,
+      "subsample": 1.0,
+      "colsample_bytree": 1.0,
+      "tree_method": "hist",
+      "max_bin": 128,
+      "lambdarank_pair_method": "mean",
+      "lambdarank_num_pair_per_sample": 8,
+      "random_state": 20261017,
+      "n_jobs": 1,
+      "verbosity": 0
+    },
+    "risk_params": {
+      "objective": "binary:logistic",
+      "max_depth": 3,
+      "eta": 0.05,
+      "min_child_weight": 10,
+      "reg_lambda": 10,
+      "reg_alpha": 1,
+      "subsample": 1.0,
+      "colsample_bytree": 1.0,
+      "tree_method": "hist",
+      "max_bin": 128,
+      "seed": 20261017,
+      "nthread": 1,
+      "verbosity": 0,
+      "base_score": 0.5,
+      "eval_metric": "logloss",
+      "monotone_constraints": [
+        0,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ]
+    },
+    "fit_queries": 17427,
+    "validation_on_unlabeled_target": false
+  }
+}
