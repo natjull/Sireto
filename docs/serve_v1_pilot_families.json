@@ -1,0 +1,1940 @@
+{
+  "status": "COMPLETE_READ_ONLY_DESCRIPTIVE",
+  "rules": {
+    "normalization_sql": "trim(regexp_replace(upper(strip_accents(coalesce({field},''))), '[^A-Z0-9]+', ' ', 'g'))",
+    "admin_tokens": "MAIRIE COMMUNE COMMUNAL COMMUNALE MUNICIPAL MUNICIPALE ECOLE SCOLAIRE COLLEGE LYCEE UNIVERSITE SYNDIC SYNDICAT COPROPRIETE COPROPRIETAIRES COPRO RESIDENCE HOPITAL CHU CHRU CCAS CIAS EHPAD CONSEIL DEPARTEMENT PREFECTURE GENDARMERIE CASERNE SERVICE SERVICES ADMINISTRATION CENTRE SALLE GYMNASE STADE MEDIATHEQUE BIBLIOTHEQUE COMMUNAUTE AGGLOMERATION METROPOLE ASSOCIATION",
+    "technical_phrases": [
+      "SITE",
+      "LOCAL",
+      "LOCAL TECHNIQUE",
+      "LOCAL TECH",
+      "BATIMENT",
+      "IMMEUBLE",
+      "COMPTE",
+      "CLIENT",
+      "TEST",
+      "INCONNU",
+      "SANS NOM",
+      "NON RENSEIGNE",
+      "N A",
+      "NEANT",
+      "NC",
+      "RAS",
+      "DIVERS",
+      "A DEFINIR",
+      "A COMPLETER",
+      "POINT TECHNIQUE",
+      "ANTENNE TECHNIQUE",
+      "ARMOIRE",
+      "NRO",
+      "PM",
+      "PMZ"
+    ],
+    "titles": "M MR MME MLLE MONSIEUR MADAME MADEMOISELLE DR DOCTEUR ME MAITRE",
+    "first_names": "JEAN PIERRE PAUL JACQUES MICHEL ANDRE PHILIPPE ALAIN BERNARD CLAUDE DANIEL GERARD PATRICK NICOLAS FRANCOIS LAURENT CHRISTOPHE THIERRY OLIVIER ERIC STEPHANE FREDERIC DIDIER BRUNO PASCAL DOMINIQUE CHRISTIAN SERGE LOUIS MARC MAXIME JULIEN THOMAS ANTOINE MATHIEU MATTHIEU DAVID SEBASTIEN SEBASTIEN FABRICE GUILLAUME RICHARD RENE HENRI ROBERT ROGER LUCIEN JOSEPH GEORGES CHARLES VINCENT XAVIER ARNAUD CEDRIC FABIEN YANN YVES DENIS PATRICE HERVE GILLES KEVIN ALEXANDRE ALEXIS BENJAMIN ROMAIN SYLVAIN SAMUEL RAPHAEL VICTOR LUC LUCAS MARTIN HUGO MARIE ANNE JEANNE FRANCOISE MONIQUE NICOLE SYLVIE ISABELLE CATHERINE CHRISTINE PATRICIA MARTINE NATHALIE SANDRINE VALERIE VERONIQUE SOPHIE STEPHANIE FLORENCE LAURENCE CORINNE BRIGITTE CHANTAL EVELYNE JACQUELINE ELISABETH HELENE CLAIRE JULIE JULIETTE EMILIE AMELIE SARAH LAURA LEA EMMA LOUISE ALICE MANON CAMILLE PAULINE CAROLINE AURELIE CELINE ESTELLE AGNES BEATRICE CHLOE CHARLOTTE MELANIE AUDREY SEVERINE SONIA SABRINA KARINE KARIM MOHAMED MOHAMMED AHMED ALI OMAR HASSAN HASSANE RACHID ABDULLAH ABDALLAH YOUSSEF IBRAHIM AMINA FATIMA LEILA NADIA SAMIRA NORA INES YASMINE",
+    "organization_tokens": "SARL SAS SASU SA SCI EURL SNC SCM SCOP EARL GAEC SELARL SELAS SCP ENTREPRISE ENTREPRISES SOCIETE GROUPE HOLDING ETS ETABLISSEMENTS ETABLISSEMENT ASSOC ASSOCIATION CABINET ATELIER PHARMACIE BOULANGERIE RESTAURANT HOTEL CAMPING GARAGE TRANSPORT TRANSPORTS IMMOBILIER IMMOBILIERE IMMOBILIERS IMMOBILIERES CONSTRUCTION CONSTRUCTIONS BATIMENT TRAVAUX COMMERCE CONSEIL CONSEILS ETUDE ETUDES BUREAU BUREAUX SERVICES SERVICE SASP MUTUELLE BANQUE ASSURANCE ASSURANCES",
+    "generic_brand_extra_tokens": "DE DU DES LA LE LES L D ET AU AUX EN A SUR SOUS POUR UN UNE CHEZ MATERNELLE PRIMAIRE ELEMENTAIRE PUBLIQUE PUBLIC PRIVE PRIVEE CANTINE LOCAUX FRANCE FRANCAIS FRANCAISE GENERAL GENERALE GENERAUX TECHNIQUE TECHNIQUES COMMERCIAL COMMERCIALE CENTRE CENTRES MAISON MAISONS ECOLES RESIDENCES SYNDICS SYNDICATS PHARMACIES BOULANGERIES HOTELS RESTAURANTS POSTE",
+    "brand_min_distinct_sites": 50,
+    "density_quantile": 0.95,
+    "density_quantile_method": "higher",
+    "bank_good_union": 0.85,
+    "bank_bad_union_below": 0.7,
+    "bank_low_risk_recovery_union": 0.8,
+    "minimum_low_risk_cases": 30,
+    "primary_priority": [
+      "technique_vide",
+      "generique_administratif",
+      "enseigne_frequente",
+      "sigle_abreviation",
+      "personne_probable",
+      "autre"
+    ],
+    "family_order": [
+      "generique_administratif",
+      "personne_probable",
+      "sigle_abreviation",
+      "enseigne_frequente",
+      "adresse_sans_numero",
+      "commune_dense",
+      "technique_vide",
+      "autre"
+    ]
+  },
+  "preregistered_protocol_sha256": "4ce6c4550e19530fd29419936132dbad126e67effaf20183848b9f08a4ac96c0",
+  "rules_sha256": "bfbe7482bd0c35f8d00fbba435fad4c5aa07ee5cdbf4cf262394d9d6a95fa713",
+  "classification_bound_before_status_utc": "2026-10-20T13:38:22.244724+00:00",
+  "classification_binding": {
+    "pilot": {
+      "rows": 2000,
+      "flags_sha256": "6fb6e58d1a1b2a7be9b111bc4ff899a425a49e73ef71277bbc38c23a547f6aa9",
+      "primary_sha256": "8b1fad8987487b2233da9578ef4c6a2e76966fa184d91a0ecc01b1ec9b4f643e"
+    },
+    "bank": {
+      "rows": 17427,
+      "flags_sha256": "35a1b2213a2e9518f3957d046e9f6b0e2da0aa3992b5bdf3f1612448e338d65e",
+      "primary_sha256": "4e0220589ba128eee2550b3a5f049d75e74821c733da2bd42b334a5081567b1e"
+    }
+  },
+  "sources": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/training_queries.json",
+      "size_bytes": 4346169,
+      "sha256": "f8876e5abf4c3f10a97489876672ca1b28a57d1c424d223915ae68b44a93947c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/queries.json",
+      "size_bytes": 460790,
+      "sha256": "bc234791e44d5bd022f577e2d3394282f0ed8b3760aac5d9e74b74786b4ba27f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+      "size_bytes": 2202341459,
+      "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pooled_oof.npz",
+      "size_bytes": 7355102,
+      "sha256": "1cb33cf9999dd31529ec1be2be841744dab4ae770c2bc44718073a997ffe87b3"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/scored.npz",
+      "size_bytes": 1758821,
+      "sha256": "460f19638666288b2ee020973a9faa274e6a8578a4d99b1a99751328a8057aba"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/pilot_2000/keys.npy",
+      "size_bytes": 2800128,
+      "sha256": "1bae905aba785a96e128fdbae5959f98cbcd8895d962f6b0102c359b273fc369"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/keys.npy",
+      "size_bytes": 24397928,
+      "sha256": "836f234c66cca28f005f6eb3c749a7fa983cf81d5e2c0b355ded754387a30f6b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/serve_v1/policy.json",
+      "size_bytes": 3180,
+      "sha256": "036c61319520b5ede4e173fc18020314fa75e7c7f5281a8b442f50d6b3f08685"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/data.json",
+      "size_bytes": 1429598,
+      "sha256": "4cf8121fe2687d616cb87c4f6c064374bb5814decef210a74da7919ad6c18202"
+    }
+  ],
+  "denominators": {
+    "pilot": 2000,
+    "bank": 17427
+  },
+  "families_overlap": true,
+  "families": {
+    "generique_administratif": {
+      "label": "Générique / administratif",
+      "pilot": {
+        "n": 78,
+        "share": 0.039,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 28,
+            "within_family": 0.358974358974359,
+            "share_of_status": 0.027944111776447105
+          },
+          "PROBABLE": {
+            "n": 32,
+            "within_family": 0.41025641025641024,
+            "share_of_status": 0.04450625869262865
+          },
+          "SUR": {
+            "n": 18,
+            "within_family": 0.23076923076923078,
+            "share_of_status": 0.06451612903225806
+          }
+        },
+        "risk_median": 0.9243554472923279
+      },
+      "bank": {
+        "n": 3274,
+        "share": 0.18786939806048086,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 939,
+            "within_family": 0.28680513133781305,
+            "share_of_status": 0.16441954123621083,
+            "union_correct": 413,
+            "union_accuracy": 0.4398296059637913,
+            "union_wilson95": [
+              0.40839046476716273,
+              0.4717590567214868
+            ],
+            "exact_correct": 379,
+            "exact_accuracy": 0.4036208732694356
+          },
+          "PROBABLE": {
+            "n": 1759,
+            "within_family": 0.5372632864996946,
+            "share_of_status": 0.21740205166234086,
+            "union_correct": 1578,
+            "union_accuracy": 0.8971006253553155,
+            "union_wilson95": [
+              0.8820259085162944,
+              0.9104446752732233
+            ],
+            "exact_correct": 1415,
+            "exact_accuracy": 0.8044343376918703
+          },
+          "SUR": {
+            "n": 576,
+            "within_family": 0.17593158216249236,
+            "share_of_status": 0.15889655172413794,
+            "union_correct": 566,
+            "union_accuracy": 0.9826388888888888,
+            "union_wilson95": [
+              0.9683398336369505,
+              0.9905429636207964
+            ],
+            "exact_correct": 544,
+            "exact_accuracy": 0.9444444444444444
+          }
+        },
+        "risk_median": 0.9004758596420288,
+        "union_correct": 2557,
+        "union_accuracy": 0.7810018326206475,
+        "exact_correct": 2338,
+        "exact_accuracy": 0.7141111789859499,
+        "union_wilson95": [
+          0.7665107332555565,
+          0.7948342930722261
+        ]
+      },
+      "representation_ratio": 0.20759102015882713,
+      "pilot_minus_bank_averifier_contribution_pp": -3.9881907385092097,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Ajouter le gestionnaire/exploitant et un libellé distinctif : un équipement ou une copropriété ne désigne pas forcément son entité juridique.",
+      "masked_examples": [
+        "***** ******… ***** ** **** ******…",
+        "***** ******",
+        "******… ****** ##"
+      ]
+    },
+    "personne_probable": {
+      "label": "Personne probable",
+      "pilot": {
+        "n": 18,
+        "share": 0.009,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 6,
+            "within_family": 0.3333333333333333,
+            "share_of_status": 0.005988023952095809
+          },
+          "PROBABLE": {
+            "n": 8,
+            "within_family": 0.4444444444444444,
+            "share_of_status": 0.011126564673157162
+          },
+          "SUR": {
+            "n": 4,
+            "within_family": 0.2222222222222222,
+            "share_of_status": 0.014336917562724014
+          }
+        },
+        "risk_median": 0.940971851348877
+      },
+      "bank": {
+        "n": 348,
+        "share": 0.01996901359958685,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 90,
+            "within_family": 0.25862068965517243,
+            "share_of_status": 0.015759061460339695,
+            "union_correct": 39,
+            "union_accuracy": 0.43333333333333335,
+            "union_wilson95": [
+              0.33576572531248783,
+              0.5363590247627558
+            ],
+            "exact_correct": 37,
+            "exact_accuracy": 0.4111111111111111
+          },
+          "PROBABLE": {
+            "n": 196,
+            "within_family": 0.5632183908045977,
+            "share_of_status": 0.024224446916326782,
+            "union_correct": 177,
+            "union_accuracy": 0.9030612244897959,
+            "union_wilson95": [
+              0.8535664938205492,
+              0.9370602406538224
+            ],
+            "exact_correct": 160,
+            "exact_accuracy": 0.8163265306122449
+          },
+          "SUR": {
+            "n": 62,
+            "within_family": 0.1781609195402299,
+            "share_of_status": 0.01710344827586207,
+            "union_correct": 62,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.9416559278986275,
+              0.9999999999999999
+            ],
+            "exact_correct": 59,
+            "exact_accuracy": 0.9516129032258065
+          }
+        },
+        "risk_median": 0.9106564521789551,
+        "union_correct": 278,
+        "union_accuracy": 0.7988505747126436,
+        "exact_correct": 256,
+        "exact_accuracy": 0.735632183908046,
+        "union_wilson95": [
+          0.7535749865585227,
+          0.8376003703683629
+        ]
+      },
+      "representation_ratio": 0.4506982758620689,
+      "pilot_minus_bank_averifier_contribution_pp": -0.21644000688586673,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Préciser raison sociale/activité et occupant plutôt que propriétaire ; un particulier sans établissement professionnel identifiable ne devient pas siretisable avec son seul nom.",
+      "masked_examples": [
+        "** ******… ** ******…",
+        "****** ****** ******…",
+        "**"
+      ]
+    },
+    "sigle_abreviation": {
+      "label": "Sigle / abréviation",
+      "pilot": {
+        "n": 176,
+        "share": 0.088,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 86,
+            "within_family": 0.48863636363636365,
+            "share_of_status": 0.08582834331337326
+          },
+          "PROBABLE": {
+            "n": 62,
+            "within_family": 0.3522727272727273,
+            "share_of_status": 0.08623087621696801
+          },
+          "SUR": {
+            "n": 28,
+            "within_family": 0.1590909090909091,
+            "share_of_status": 0.1003584229390681
+          }
+        },
+        "risk_median": 0.7674041986465454
+      },
+      "bank": {
+        "n": 974,
+        "share": 0.055890285189648246,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 289,
+            "within_family": 0.29671457905544146,
+            "share_of_status": 0.05060409735597969,
+            "union_correct": 122,
+            "union_accuracy": 0.42214532871972316,
+            "union_wilson95": [
+              0.36658922984070347,
+              0.4797440039123992
+            ],
+            "exact_correct": 114,
+            "exact_accuracy": 0.3944636678200692
+          },
+          "PROBABLE": {
+            "n": 433,
+            "within_family": 0.44455852156057496,
+            "share_of_status": 0.05351625262637499,
+            "union_correct": 385,
+            "union_accuracy": 0.8891454965357968,
+            "union_wilson95": [
+              0.856084474315317,
+              0.9153624504105823
+            ],
+            "exact_correct": 341,
+            "exact_accuracy": 0.7875288683602771
+          },
+          "SUR": {
+            "n": 252,
+            "within_family": 0.2587268993839836,
+            "share_of_status": 0.06951724137931034,
+            "union_correct": 245,
+            "union_accuracy": 0.9722222222222222,
+            "union_wilson95": [
+              0.9437829988023249,
+              0.9864806148319366
+            ],
+            "exact_correct": 235,
+            "exact_accuracy": 0.9325396825396826
+          }
+        },
+        "risk_median": 0.9050108194351196,
+        "union_correct": 752,
+        "union_accuracy": 0.7720739219712526,
+        "exact_correct": 690,
+        "exact_accuracy": 0.7084188911704312,
+        "union_wilson95": [
+          0.7446903504591289,
+          0.7973198038650657
+        ]
+      },
+      "representation_ratio": 1.5745133470225872,
+      "pilot_minus_bank_averifier_contribution_pp": 2.641653755666494,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Développer le sigle et fournir nom commercial/raison sociale ; la courte chaîne seule ne justifie pas de relâcher le seuil.",
+      "masked_examples": [
+        "*****",
+        "****##",
+        "*****#…"
+      ]
+    },
+    "enseigne_frequente": {
+      "label": "Enseigne ≥50 sites",
+      "pilot": {
+        "n": 283,
+        "share": 0.1415,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 141,
+            "within_family": 0.49823321554770317,
+            "share_of_status": 0.1407185628742515
+          },
+          "PROBABLE": {
+            "n": 101,
+            "within_family": 0.3568904593639576,
+            "share_of_status": 0.1404728789986092
+          },
+          "SUR": {
+            "n": 41,
+            "within_family": 0.14487632508833923,
+            "share_of_status": 0.14695340501792115
+          }
+        },
+        "risk_median": 0.7713788747787476
+      },
+      "bank": {
+        "n": 4464,
+        "share": 0.2561542434153899,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1682,
+            "within_family": 0.3767921146953405,
+            "share_of_status": 0.29451934862545964,
+            "union_correct": 796,
+            "union_accuracy": 0.47324613555291317,
+            "union_wilson95": [
+              0.44947355865970934,
+              0.49714063834612404
+            ],
+            "exact_correct": 749,
+            "exact_accuracy": 0.44530321046373367
+          },
+          "PROBABLE": {
+            "n": 2103,
+            "within_family": 0.47110215053763443,
+            "share_of_status": 0.25991842788283276,
+            "union_correct": 1890,
+            "union_accuracy": 0.8987161198288159,
+            "union_wilson95": [
+              0.8850857356751238,
+              0.9108925250425581
+            ],
+            "exact_correct": 1688,
+            "exact_accuracy": 0.8026628625772706
+          },
+          "SUR": {
+            "n": 679,
+            "within_family": 0.1521057347670251,
+            "share_of_status": 0.1873103448275862,
+            "union_correct": 666,
+            "union_accuracy": 0.9808541973490427,
+            "union_wilson95": [
+              0.9675206008803375,
+              0.9887775142454897
+            ],
+            "exact_correct": 645,
+            "exact_accuracy": 0.9499263622974963
+          }
+        },
+        "risk_median": 0.8601032495498657,
+        "union_correct": 3352,
+        "union_accuracy": 0.7508960573476703,
+        "exact_correct": 3082,
+        "exact_accuracy": 0.6904121863799283,
+        "union_wilson95": [
+          0.7379967448305399,
+          0.7633639280236079
+        ]
+      },
+      "representation_ratio": 0.5524015456989247,
+      "pilot_minus_bank_averifier_contribution_pp": -2.6016899064669765,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Identifier le franchisé/exploitant local et le site exact ; enseigne fréquente ne signifie pas propriétaire ou SIREN unique, surtout pour les libellés génériques.",
+      "masked_examples": [
+        "****** **** *****",
+        "*****",
+        "* ****** *** ** ****"
+      ]
+    },
+    "adresse_sans_numero": {
+      "label": "Adresse sans numéro",
+      "pilot": {
+        "n": 196,
+        "share": 0.098,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 133,
+            "within_family": 0.6785714285714286,
+            "share_of_status": 0.13273453093812376
+          },
+          "PROBABLE": {
+            "n": 55,
+            "within_family": 0.28061224489795916,
+            "share_of_status": 0.07649513212795549
+          },
+          "SUR": {
+            "n": 8,
+            "within_family": 0.04081632653061224,
+            "share_of_status": 0.02867383512544803
+          }
+        },
+        "risk_median": 0.36021703481674194
+      },
+      "bank": {
+        "n": 2775,
+        "share": 0.1592356687898089,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1365,
+            "within_family": 0.4918918918918919,
+            "share_of_status": 0.2390124321484854,
+            "union_correct": 552,
+            "union_accuracy": 0.4043956043956044,
+            "union_wilson95": [
+              0.3786636978532042,
+              0.43066411120887615
+            ],
+            "exact_correct": 550,
+            "exact_accuracy": 0.40293040293040294
+          },
+          "PROBABLE": {
+            "n": 1166,
+            "within_family": 0.42018018018018016,
+            "share_of_status": 0.14411074032876034,
+            "union_correct": 1009,
+            "union_accuracy": 0.8653516295025729,
+            "union_wilson95": [
+              0.844554584240163,
+              0.8837492329787043
+            ],
+            "exact_correct": 1009,
+            "exact_accuracy": 0.8653516295025729
+          },
+          "SUR": {
+            "n": 244,
+            "within_family": 0.08792792792792793,
+            "share_of_status": 0.0673103448275862,
+            "union_correct": 240,
+            "union_accuracy": 0.9836065573770492,
+            "union_wilson95": [
+              0.9586147210280338,
+              0.9936069174458542
+            ],
+            "exact_correct": 240,
+            "exact_accuracy": 0.9836065573770492
+          }
+        },
+        "risk_median": 0.7688584923744202,
+        "union_correct": 1801,
+        "union_accuracy": 0.649009009009009,
+        "exact_correct": 1799,
+        "exact_accuracy": 0.6482882882882883,
+        "union_wilson95": [
+          0.6310562704124857,
+          0.6665497687427558
+        ]
+      },
+      "representation_ratio": 0.6154400000000001,
+      "pilot_minus_bank_averifier_contribution_pp": -1.1826734377689787,
+      "bank_assessment": "mauvais",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Ajouter numéro/suffixe ou position du site certifiée ; un numéro absent peut laisser hésiter les sites sans invalider nécessairement l’entreprise.",
+      "masked_examples": [
+        "** ****",
+        "******…",
+        "*****"
+      ]
+    },
+    "commune_dense": {
+      "label": "Commune dense",
+      "pilot": {
+        "n": 1567,
+        "share": 0.7835,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 754,
+            "within_family": 0.48117421825143586,
+            "share_of_status": 0.7524950099800399
+          },
+          "PROBABLE": {
+            "n": 578,
+            "within_family": 0.3688576898532227,
+            "share_of_status": 0.803894297635605
+          },
+          "SUR": {
+            "n": 235,
+            "within_family": 0.1499680918953414,
+            "share_of_status": 0.8422939068100358
+          }
+        },
+        "risk_median": 0.7793437242507935
+      },
+      "bank": {
+        "n": 13613,
+        "share": 0.7811442015263671,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 4484,
+            "within_family": 0.32939102328656433,
+            "share_of_status": 0.7851514620907022,
+            "union_correct": 2018,
+            "union_accuracy": 0.45004460303300625,
+            "union_wilson95": [
+              0.4355320109495765,
+              0.4646427157847043
+            ],
+            "exact_correct": 1859,
+            "exact_accuracy": 0.41458519179304193
+          },
+          "PROBABLE": {
+            "n": 6385,
+            "within_family": 0.4690369499742893,
+            "share_of_status": 0.789148436534421,
+            "union_correct": 5733,
+            "union_accuracy": 0.8978856695379797,
+            "union_wilson95": [
+              0.8902176720156313,
+              0.9050751886304825
+            ],
+            "exact_correct": 5052,
+            "exact_accuracy": 0.791229444009397
+          },
+          "SUR": {
+            "n": 2744,
+            "within_family": 0.2015720267391464,
+            "share_of_status": 0.7569655172413793,
+            "union_correct": 2689,
+            "union_accuracy": 0.9799562682215743,
+            "union_wilson95": [
+              0.974002346590652,
+              0.9845682403494138
+            ],
+            "exact_correct": 2570,
+            "exact_accuracy": 0.9365889212827988
+          }
+        },
+        "risk_median": 0.8915360569953918,
+        "union_correct": 10440,
+        "union_accuracy": 0.7669139792845074,
+        "exact_correct": 9481,
+        "exact_accuracy": 0.6964666127965915,
+        "union_wilson95": [
+          0.759736923822203,
+          0.7739404360836505
+        ]
+      },
+      "representation_ratio": 1.0030158304561816,
+      "pilot_minus_bank_averifier_contribution_pp": 11.96981121248637,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Compléter bâtiment/voie/numéro et exploitant ; densité et colocalisation réclament une preuve plus distinctive, pas un seuil plus permissif.",
+      "masked_examples": [
+        "******…",
+        "*****",
+        "****** **** *****"
+      ]
+    },
+    "technique_vide": {
+      "label": "Vide / technique",
+      "pilot": {
+        "n": 43,
+        "share": 0.0215,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 41,
+            "within_family": 0.9534883720930233,
+            "share_of_status": 0.04091816367265469
+          },
+          "PROBABLE": {
+            "n": 1,
+            "within_family": 0.023255813953488372,
+            "share_of_status": 0.0013908205841446453
+          },
+          "SUR": {
+            "n": 1,
+            "within_family": 0.023255813953488372,
+            "share_of_status": 0.0035842293906810036
+          }
+        },
+        "risk_median": 0.11776362359523773
+      },
+      "bank": {
+        "n": 7,
+        "share": 0.00040167556091122973,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 5,
+            "within_family": 0.7142857142857143,
+            "share_of_status": 0.0008755034144633164,
+            "union_correct": 2,
+            "union_accuracy": 0.4,
+            "union_wilson95": [
+              0.11762077423264783,
+              0.769275718723987
+            ],
+            "exact_correct": 2,
+            "exact_accuracy": 0.4
+          },
+          "PROBABLE": {
+            "n": 1,
+            "within_family": 0.14285714285714285,
+            "share_of_status": 0.00012359411692003462,
+            "union_correct": 1,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.20654931437723745,
+              1.0
+            ],
+            "exact_correct": 1,
+            "exact_accuracy": 1.0
+          },
+          "SUR": {
+            "n": 1,
+            "within_family": 0.14285714285714285,
+            "share_of_status": 0.00027586206896551725,
+            "union_correct": 1,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.20654931437723745,
+              1.0
+            ],
+            "exact_correct": 1,
+            "exact_accuracy": 1.0
+          }
+        },
+        "risk_median": 0.3888195753097534,
+        "union_correct": 4,
+        "union_accuracy": 0.5714285714285714,
+        "exact_correct": 4,
+        "exact_accuracy": 0.5714285714285714,
+        "union_wilson95": [
+          0.2504583645276572,
+          0.8417801447485302
+        ]
+      },
+      "representation_ratio": 53.5257857142857,
+      "pilot_minus_bank_averifier_contribution_pp": 2.021308888506341,
+      "bank_assessment": "mauvais",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Remplacer code/équipement par occupant/exploitant ; une fiche limitée à un local technique sans entité juridique n’est pas siretisable avec cet export seul.",
+      "masked_examples": [
+        "[vide]",
+        "**##",
+        "**###"
+      ]
+    },
+    "autre": {
+      "label": "Autre nom",
+      "pilot": {
+        "n": 1453,
+        "share": 0.7265,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 717,
+            "within_family": 0.49346180316586374,
+            "share_of_status": 0.7155688622754491
+          },
+          "PROBABLE": {
+            "n": 541,
+            "within_family": 0.3723331039229181,
+            "share_of_status": 0.7524339360222532
+          },
+          "SUR": {
+            "n": 195,
+            "within_family": 0.13420509291121818,
+            "share_of_status": 0.6989247311827957
+          }
+        },
+        "risk_median": 0.764468789100647
+      },
+      "bank": {
+        "n": 9965,
+        "share": 0.5718138520686291,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 3246,
+            "within_family": 0.32574009031610635,
+            "share_of_status": 0.5683768166695851,
+            "union_correct": 1399,
+            "union_accuracy": 0.43099199014171286,
+            "union_wilson95": [
+              0.4140474372900798,
+              0.44809968413824647
+            ],
+            "exact_correct": 1289,
+            "exact_accuracy": 0.3971041281577326
+          },
+          "PROBABLE": {
+            "n": 4393,
+            "within_family": 0.4408429503261415,
+            "share_of_status": 0.542948955629712,
+            "union_correct": 3963,
+            "union_accuracy": 0.9021170043250626,
+            "union_wilson95": [
+              0.8929752551289362,
+              0.9105561055282229
+            ],
+            "exact_correct": 3506,
+            "exact_accuracy": 0.7980878670612338
+          },
+          "SUR": {
+            "n": 2326,
+            "within_family": 0.23341695935775214,
+            "share_of_status": 0.6416551724137931,
+            "union_correct": 2278,
+            "union_accuracy": 0.9793637145313844,
+            "union_wilson95": [
+              0.9727468627423917,
+              0.9843998098594294
+            ],
+            "exact_correct": 2191,
+            "exact_accuracy": 0.9419604471195185
+          }
+        },
+        "risk_median": 0.9003168940544128,
+        "union_correct": 7640,
+        "union_accuracy": 0.7666833918715504,
+        "exact_correct": 6986,
+        "exact_accuracy": 0.7010536879076769,
+        "union_wilson95": [
+          0.75827753400892,
+          0.7748837186757788
+        ]
+      },
+      "representation_ratio": 1.2705183642749625,
+      "pilot_minus_bank_averifier_contribution_pp": 17.223730418316404,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Pas de signal unique : contrôler nom officiel/nom d’usage actuel et adresse, puis auditer erreurs de génération ou de classement sans inventer de vérité.",
+      "masked_examples": [
+        "******…",
+        "** ****",
+        "******"
+      ]
+    }
+  },
+  "exclusive_name_partition": {
+    "technique_vide": {
+      "label": "Vide / technique",
+      "pilot": {
+        "n": 43,
+        "share": 0.0215,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 41,
+            "within_family": 0.9534883720930233,
+            "share_of_status": 0.04091816367265469
+          },
+          "PROBABLE": {
+            "n": 1,
+            "within_family": 0.023255813953488372,
+            "share_of_status": 0.0013908205841446453
+          },
+          "SUR": {
+            "n": 1,
+            "within_family": 0.023255813953488372,
+            "share_of_status": 0.0035842293906810036
+          }
+        },
+        "risk_median": 0.11776362359523773
+      },
+      "bank": {
+        "n": 7,
+        "share": 0.00040167556091122973,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 5,
+            "within_family": 0.7142857142857143,
+            "share_of_status": 0.0008755034144633164,
+            "union_correct": 2,
+            "union_accuracy": 0.4,
+            "union_wilson95": [
+              0.11762077423264783,
+              0.769275718723987
+            ],
+            "exact_correct": 2,
+            "exact_accuracy": 0.4
+          },
+          "PROBABLE": {
+            "n": 1,
+            "within_family": 0.14285714285714285,
+            "share_of_status": 0.00012359411692003462,
+            "union_correct": 1,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.20654931437723745,
+              1.0
+            ],
+            "exact_correct": 1,
+            "exact_accuracy": 1.0
+          },
+          "SUR": {
+            "n": 1,
+            "within_family": 0.14285714285714285,
+            "share_of_status": 0.00027586206896551725,
+            "union_correct": 1,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.20654931437723745,
+              1.0
+            ],
+            "exact_correct": 1,
+            "exact_accuracy": 1.0
+          }
+        },
+        "risk_median": 0.3888195753097534,
+        "union_correct": 4,
+        "union_accuracy": 0.5714285714285714,
+        "exact_correct": 4,
+        "exact_accuracy": 0.5714285714285714,
+        "union_wilson95": [
+          0.2504583645276572,
+          0.8417801447485302
+        ]
+      },
+      "representation_ratio": 53.5257857142857,
+      "pilot_minus_bank_averifier_contribution_pp": 2.021308888506341,
+      "bank_assessment": "mauvais",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Remplacer code/équipement par occupant/exploitant ; une fiche limitée à un local technique sans entité juridique n’est pas siretisable avec cet export seul.",
+      "masked_examples": [
+        "[vide]",
+        "**##",
+        "**###"
+      ]
+    },
+    "generique_administratif": {
+      "label": "Générique / administratif",
+      "pilot": {
+        "n": 78,
+        "share": 0.039,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 28,
+            "within_family": 0.358974358974359,
+            "share_of_status": 0.027944111776447105
+          },
+          "PROBABLE": {
+            "n": 32,
+            "within_family": 0.41025641025641024,
+            "share_of_status": 0.04450625869262865
+          },
+          "SUR": {
+            "n": 18,
+            "within_family": 0.23076923076923078,
+            "share_of_status": 0.06451612903225806
+          }
+        },
+        "risk_median": 0.9243554472923279
+      },
+      "bank": {
+        "n": 3274,
+        "share": 0.18786939806048086,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 939,
+            "within_family": 0.28680513133781305,
+            "share_of_status": 0.16441954123621083,
+            "union_correct": 413,
+            "union_accuracy": 0.4398296059637913,
+            "union_wilson95": [
+              0.40839046476716273,
+              0.4717590567214868
+            ],
+            "exact_correct": 379,
+            "exact_accuracy": 0.4036208732694356
+          },
+          "PROBABLE": {
+            "n": 1759,
+            "within_family": 0.5372632864996946,
+            "share_of_status": 0.21740205166234086,
+            "union_correct": 1578,
+            "union_accuracy": 0.8971006253553155,
+            "union_wilson95": [
+              0.8820259085162944,
+              0.9104446752732233
+            ],
+            "exact_correct": 1415,
+            "exact_accuracy": 0.8044343376918703
+          },
+          "SUR": {
+            "n": 576,
+            "within_family": 0.17593158216249236,
+            "share_of_status": 0.15889655172413794,
+            "union_correct": 566,
+            "union_accuracy": 0.9826388888888888,
+            "union_wilson95": [
+              0.9683398336369505,
+              0.9905429636207964
+            ],
+            "exact_correct": 544,
+            "exact_accuracy": 0.9444444444444444
+          }
+        },
+        "risk_median": 0.9004758596420288,
+        "union_correct": 2557,
+        "union_accuracy": 0.7810018326206475,
+        "exact_correct": 2338,
+        "exact_accuracy": 0.7141111789859499,
+        "union_wilson95": [
+          0.7665107332555565,
+          0.7948342930722261
+        ]
+      },
+      "representation_ratio": 0.20759102015882713,
+      "pilot_minus_bank_averifier_contribution_pp": -3.9881907385092097,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Ajouter le gestionnaire/exploitant et un libellé distinctif : un équipement ou une copropriété ne désigne pas forcément son entité juridique.",
+      "masked_examples": [
+        "***** ******… ***** ** **** ******…",
+        "***** ******",
+        "******… ****** ##"
+      ]
+    },
+    "enseigne_frequente": {
+      "label": "Enseigne ≥50 sites",
+      "pilot": {
+        "n": 249,
+        "share": 0.1245,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 131,
+            "within_family": 0.5261044176706827,
+            "share_of_status": 0.13073852295409183
+          },
+          "PROBABLE": {
+            "n": 83,
+            "within_family": 0.3333333333333333,
+            "share_of_status": 0.11543810848400557
+          },
+          "SUR": {
+            "n": 35,
+            "within_family": 0.14056224899598393,
+            "share_of_status": 0.12544802867383512
+          }
+        },
+        "risk_median": 0.7129120826721191
+      },
+      "bank": {
+        "n": 2936,
+        "share": 0.1684742066907672,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1174,
+            "within_family": 0.39986376021798364,
+            "share_of_status": 0.2055682017159867,
+            "union_correct": 588,
+            "union_accuracy": 0.5008517887563884,
+            "union_wilson95": [
+              0.4722945443087693,
+              0.5294034770887812
+            ],
+            "exact_correct": 553,
+            "exact_accuracy": 0.47103918228279384
+          },
+          "PROBABLE": {
+            "n": 1344,
+            "within_family": 0.45776566757493187,
+            "share_of_status": 0.1661104931405265,
+            "union_correct": 1206,
+            "union_accuracy": 0.8973214285714286,
+            "union_wilson95": [
+              0.8799447513060681,
+              0.9124333084506455
+            ],
+            "exact_correct": 1099,
+            "exact_accuracy": 0.8177083333333334
+          },
+          "SUR": {
+            "n": 418,
+            "within_family": 0.14237057220708446,
+            "share_of_status": 0.1153103448275862,
+            "union_correct": 411,
+            "union_accuracy": 0.9832535885167464,
+            "union_wilson95": [
+              0.965840893363533,
+              0.9918648786803719
+            ],
+            "exact_correct": 398,
+            "exact_accuracy": 0.9521531100478469
+          }
+        },
+        "risk_median": 0.8486346006393433,
+        "union_correct": 2205,
+        "union_accuracy": 0.7510217983651226,
+        "exact_correct": 2050,
+        "exact_accuracy": 0.6982288828337875,
+        "union_wilson95": [
+          0.735059122820335,
+          0.766328459009091
+        ]
+      },
+      "representation_ratio": 0.7389855245231607,
+      "pilot_minus_bank_averifier_contribution_pp": -0.18667297871119565,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Identifier le franchisé/exploitant local et le site exact ; enseigne fréquente ne signifie pas propriétaire ou SIREN unique, surtout pour les libellés génériques.",
+      "masked_examples": [
+        "****** **** *****",
+        "*****",
+        "* ****** *** ** ****"
+      ]
+    },
+    "sigle_abreviation": {
+      "label": "Sigle / abréviation",
+      "pilot": {
+        "n": 162,
+        "share": 0.081,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 81,
+            "within_family": 0.5,
+            "share_of_status": 0.08083832335329341
+          },
+          "PROBABLE": {
+            "n": 55,
+            "within_family": 0.3395061728395062,
+            "share_of_status": 0.07649513212795549
+          },
+          "SUR": {
+            "n": 26,
+            "within_family": 0.16049382716049382,
+            "share_of_status": 0.0931899641577061
+          }
+        },
+        "risk_median": 0.7564162015914917
+      },
+      "bank": {
+        "n": 908,
+        "share": 0.052103058472485225,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 262,
+            "within_family": 0.28854625550660795,
+            "share_of_status": 0.04587637891787778,
+            "union_correct": 110,
+            "union_accuracy": 0.4198473282442748,
+            "union_wilson95": [
+              0.36166708175050355,
+              0.4803440169460006
+            ],
+            "exact_correct": 102,
+            "exact_accuracy": 0.3893129770992366
+          },
+          "PROBABLE": {
+            "n": 403,
+            "within_family": 0.44383259911894274,
+            "share_of_status": 0.04980842911877394,
+            "union_correct": 362,
+            "union_accuracy": 0.8982630272952854,
+            "union_wilson95": [
+              0.8648879283249126,
+              0.9241172063299438
+            ],
+            "exact_correct": 320,
+            "exact_accuracy": 0.794044665012407
+          },
+          "SUR": {
+            "n": 243,
+            "within_family": 0.26762114537444937,
+            "share_of_status": 0.06703448275862069,
+            "union_correct": 236,
+            "union_accuracy": 0.9711934156378601,
+            "union_wilson95": [
+              0.9417435525005013,
+              0.9859774271682578
+            ],
+            "exact_correct": 228,
+            "exact_accuracy": 0.9382716049382716
+          }
+        },
+        "risk_median": 0.9081723093986511,
+        "union_correct": 708,
+        "union_accuracy": 0.7797356828193832,
+        "exact_correct": 650,
+        "exact_accuracy": 0.7158590308370044,
+        "union_wilson95": [
+          0.7516325123576072,
+          0.8054818797177522
+        ]
+      },
+      "representation_ratio": 1.5546112334801763,
+      "pilot_minus_bank_averifier_contribution_pp": 2.5465857577322546,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Développer le sigle et fournir nom commercial/raison sociale ; la courte chaîne seule ne justifie pas de relâcher le seuil.",
+      "masked_examples": [
+        "*****",
+        "****##",
+        "*****#…"
+      ]
+    },
+    "personne_probable": {
+      "label": "Personne probable",
+      "pilot": {
+        "n": 15,
+        "share": 0.0075,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 4,
+            "within_family": 0.26666666666666666,
+            "share_of_status": 0.003992015968063872
+          },
+          "PROBABLE": {
+            "n": 7,
+            "within_family": 0.4666666666666667,
+            "share_of_status": 0.009735744089012517
+          },
+          "SUR": {
+            "n": 4,
+            "within_family": 0.26666666666666666,
+            "share_of_status": 0.014336917562724014
+          }
+        },
+        "risk_median": 0.9419593811035156
+      },
+      "bank": {
+        "n": 337,
+        "share": 0.019337809146726344,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 85,
+            "within_family": 0.2522255192878338,
+            "share_of_status": 0.014883558045876379,
+            "union_correct": 35,
+            "union_accuracy": 0.4117647058823529,
+            "union_wilson95": [
+              0.31317005505324164,
+              0.5179898538551204
+            ],
+            "exact_correct": 33,
+            "exact_accuracy": 0.38823529411764707
+          },
+          "PROBABLE": {
+            "n": 191,
+            "within_family": 0.5667655786350149,
+            "share_of_status": 0.02360647633172661,
+            "union_correct": 172,
+            "union_accuracy": 0.900523560209424,
+            "union_wilson95": [
+              0.8498657435144613,
+              0.9353880773409892
+            ],
+            "exact_correct": 156,
+            "exact_accuracy": 0.8167539267015707
+          },
+          "SUR": {
+            "n": 61,
+            "within_family": 0.18100890207715134,
+            "share_of_status": 0.01682758620689655,
+            "union_correct": 61,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.9407561321018871,
+              1.0
+            ],
+            "exact_correct": 58,
+            "exact_accuracy": 0.9508196721311475
+          }
+        },
+        "risk_median": 0.9114910364151001,
+        "union_correct": 268,
+        "union_accuracy": 0.7952522255192879,
+        "exact_correct": 247,
+        "exact_accuracy": 0.7329376854599406,
+        "union_wilson95": [
+          0.7489570639651255,
+          0.8348920977200076
+        ]
+      },
+      "representation_ratio": 0.3878412462908012,
+      "pilot_minus_bank_averifier_contribution_pp": -0.2877488953922075,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Préciser raison sociale/activité et occupant plutôt que propriétaire ; un particulier sans établissement professionnel identifiable ne devient pas siretisable avec son seul nom.",
+      "masked_examples": [
+        "** ******… ** ******…",
+        "****** ****** ******…",
+        "**"
+      ]
+    },
+    "autre": {
+      "label": "Autre nom",
+      "pilot": {
+        "n": 1453,
+        "share": 0.7265,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 717,
+            "within_family": 0.49346180316586374,
+            "share_of_status": 0.7155688622754491
+          },
+          "PROBABLE": {
+            "n": 541,
+            "within_family": 0.3723331039229181,
+            "share_of_status": 0.7524339360222532
+          },
+          "SUR": {
+            "n": 195,
+            "within_family": 0.13420509291121818,
+            "share_of_status": 0.6989247311827957
+          }
+        },
+        "risk_median": 0.764468789100647
+      },
+      "bank": {
+        "n": 9965,
+        "share": 0.5718138520686291,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 3246,
+            "within_family": 0.32574009031610635,
+            "share_of_status": 0.5683768166695851,
+            "union_correct": 1399,
+            "union_accuracy": 0.43099199014171286,
+            "union_wilson95": [
+              0.4140474372900798,
+              0.44809968413824647
+            ],
+            "exact_correct": 1289,
+            "exact_accuracy": 0.3971041281577326
+          },
+          "PROBABLE": {
+            "n": 4393,
+            "within_family": 0.4408429503261415,
+            "share_of_status": 0.542948955629712,
+            "union_correct": 3963,
+            "union_accuracy": 0.9021170043250626,
+            "union_wilson95": [
+              0.8929752551289362,
+              0.9105561055282229
+            ],
+            "exact_correct": 3506,
+            "exact_accuracy": 0.7980878670612338
+          },
+          "SUR": {
+            "n": 2326,
+            "within_family": 0.23341695935775214,
+            "share_of_status": 0.6416551724137931,
+            "union_correct": 2278,
+            "union_accuracy": 0.9793637145313844,
+            "union_wilson95": [
+              0.9727468627423917,
+              0.9843998098594294
+            ],
+            "exact_correct": 2191,
+            "exact_accuracy": 0.9419604471195185
+          }
+        },
+        "risk_median": 0.9003168940544128,
+        "union_correct": 7640,
+        "union_accuracy": 0.7666833918715504,
+        "exact_correct": 6986,
+        "exact_accuracy": 0.7010536879076769,
+        "union_wilson95": [
+          0.75827753400892,
+          0.7748837186757788
+        ]
+      },
+      "representation_ratio": 1.2705183642749625,
+      "pilot_minus_bank_averifier_contribution_pp": 17.223730418316404,
+      "bank_assessment": "intermédiaire",
+      "good_top1_low_risk_candidate": false,
+      "advice": "Pas de signal unique : contrôler nom officiel/nom d’usage actuel et adresse, puis auditer erreurs de génération ou de classement sans inventer de vérité.",
+      "masked_examples": [
+        "******…",
+        "** ****",
+        "******"
+      ]
+    }
+  },
+  "decomposition": {
+    "bank_averifier": 0.3277098754805761,
+    "pilot_averifier": 0.501,
+    "gap_pp": 17.32901245194239,
+    "expected_with_pilot_family_mix": 0.3382396948318018,
+    "composition_pp": 1.0529819351225655,
+    "within_family_and_model_transport_residual_pp": 16.276030516819823,
+    "causal": false
+  },
+  "same_siren_top1_top2": {
+    "pilot": {
+      "all": {
+        "n": 2000,
+        "share": 1.0,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1002,
+            "within_family": 0.501,
+            "share_of_status": 1.0
+          },
+          "PROBABLE": {
+            "n": 719,
+            "within_family": 0.3595,
+            "share_of_status": 1.0
+          },
+          "SUR": {
+            "n": 279,
+            "within_family": 0.1395,
+            "share_of_status": 1.0
+          }
+        },
+        "risk_median": 0.7548013925552368,
+        "same_siren": 309,
+        "rate": 0.1545
+      },
+      "same_parent": {
+        "n": 309,
+        "share": 0.1545,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 84,
+            "within_family": 0.27184466019417475,
+            "share_of_status": 0.08383233532934131
+          },
+          "PROBABLE": {
+            "n": 159,
+            "within_family": 0.5145631067961165,
+            "share_of_status": 0.2211404728789986
+          },
+          "SUR": {
+            "n": 66,
+            "within_family": 0.21359223300970873,
+            "share_of_status": 0.23655913978494625
+          }
+        },
+        "risk_median": 0.9205394387245178
+      },
+      "different_parent": {
+        "n": 1691,
+        "share": 0.8455,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 918,
+            "within_family": 0.5428740390301596,
+            "share_of_status": 0.9161676646706587
+          },
+          "PROBABLE": {
+            "n": 560,
+            "within_family": 0.33116499112950915,
+            "share_of_status": 0.7788595271210014
+          },
+          "SUR": {
+            "n": 213,
+            "within_family": 0.12596096984033117,
+            "share_of_status": 0.7634408602150538
+          }
+        },
+        "risk_median": 0.6736631989479065
+      },
+      "by_status": {
+        "A_VERIFIER": {
+          "n": 1002,
+          "same_siren": 84,
+          "rate": 0.08383233532934131
+        },
+        "PROBABLE": {
+          "n": 719,
+          "same_siren": 159,
+          "rate": 0.2211404728789986
+        },
+        "SUR": {
+          "n": 279,
+          "same_siren": 66,
+          "rate": 0.23655913978494625
+        }
+      }
+    },
+    "bank": {
+      "all": {
+        "n": 17427,
+        "share": 1.0,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 5711,
+            "within_family": 0.3277098754805761,
+            "share_of_status": 1.0,
+            "union_correct": 2547,
+            "union_accuracy": 0.44598143932761336,
+            "union_wilson95": [
+              0.4331302621394786,
+              0.458905237979658
+            ],
+            "exact_correct": 2358,
+            "exact_accuracy": 0.41288741026090003
+          },
+          "PROBABLE": {
+            "n": 8091,
+            "within_family": 0.46427956619039423,
+            "share_of_status": 1.0,
+            "union_correct": 7282,
+            "union_accuracy": 0.900012359411692,
+            "union_wilson95": [
+              0.8932848388430878,
+              0.9063602231298771
+            ],
+            "exact_correct": 6497,
+            "exact_accuracy": 0.8029909776294648
+          },
+          "SUR": {
+            "n": 3625,
+            "within_family": 0.20801055832902968,
+            "share_of_status": 1.0,
+            "union_correct": 3553,
+            "union_accuracy": 0.9801379310344828,
+            "union_wilson95": [
+              0.9750616717512604,
+              0.9841976509558994
+            ],
+            "exact_correct": 3420,
+            "exact_accuracy": 0.9434482758620689
+          }
+        },
+        "risk_median": 0.8930219411849976,
+        "union_correct": 13382,
+        "union_accuracy": 0.7678889080162965,
+        "exact_correct": 12275,
+        "exact_accuracy": 0.704366787169335,
+        "union_wilson95": [
+          0.7615622113713056,
+          0.7740975284099376
+        ],
+        "same_siren": 5148,
+        "rate": 0.2954036839387158
+      },
+      "same_parent": {
+        "n": 5148,
+        "share": 0.2954036839387158,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1165,
+            "within_family": 0.2263014763014763,
+            "share_of_status": 0.20399229556995271,
+            "union_correct": 667,
+            "union_accuracy": 0.5725321888412017,
+            "union_wilson95": [
+              0.5439317793948225,
+              0.6006558365941869
+            ],
+            "exact_correct": 574,
+            "exact_accuracy": 0.4927038626609442
+          },
+          "PROBABLE": {
+            "n": 2977,
+            "within_family": 0.5782828282828283,
+            "share_of_status": 0.367939686070943,
+            "union_correct": 2736,
+            "union_accuracy": 0.9190460194827007,
+            "union_wilson95": [
+              0.9086992209403907,
+              0.9283127551970766
+            ],
+            "exact_correct": 2138,
+            "exact_accuracy": 0.7181726570372858
+          },
+          "SUR": {
+            "n": 1006,
+            "within_family": 0.19541569541569542,
+            "share_of_status": 0.27751724137931033,
+            "union_correct": 992,
+            "union_accuracy": 0.9860834990059643,
+            "union_wilson95": [
+              0.9767764768036759,
+              0.991692376853928
+            ],
+            "exact_correct": 871,
+            "exact_accuracy": 0.8658051689860835
+          }
+        },
+        "risk_median": 0.9131786823272705,
+        "union_correct": 4395,
+        "union_accuracy": 0.8537296037296037,
+        "exact_correct": 3583,
+        "exact_accuracy": 0.695998445998446,
+        "union_wilson95": [
+          0.8438127325335906,
+          0.8631189595828995
+        ]
+      },
+      "different_parent": {
+        "n": 12279,
+        "share": 0.7045963160612843,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 4546,
+            "within_family": 0.37022558840296443,
+            "share_of_status": 0.7960077044300473,
+            "union_correct": 1880,
+            "union_accuracy": 0.4135503739551254,
+            "union_wilson95": [
+              0.39931351083195626,
+              0.4279332169685925
+            ],
+            "exact_correct": 1784,
+            "exact_accuracy": 0.39243290805103387
+          },
+          "PROBABLE": {
+            "n": 5114,
+            "within_family": 0.4164834269891685,
+            "share_of_status": 0.6320603139290569,
+            "union_correct": 4546,
+            "union_accuracy": 0.8889323425889715,
+            "union_wilson95": [
+              0.8800268547680102,
+              0.897253964110004
+            ],
+            "exact_correct": 4359,
+            "exact_accuracy": 0.8523660539694955
+          },
+          "SUR": {
+            "n": 2619,
+            "within_family": 0.21329098460786708,
+            "share_of_status": 0.7224827586206897,
+            "union_correct": 2561,
+            "union_accuracy": 0.9778541428025964,
+            "union_wilson95": [
+              0.9714791727650123,
+              0.9828293660078273
+            ],
+            "exact_correct": 2549,
+            "exact_accuracy": 0.9732722413134784
+          }
+        },
+        "risk_median": 0.8773351311683655,
+        "union_correct": 8987,
+        "union_accuracy": 0.7318999918560143,
+        "exact_correct": 8692,
+        "exact_accuracy": 0.7078752341395879,
+        "union_wilson95": [
+          0.7239933208731618,
+          0.7396616093881289
+        ]
+      },
+      "by_status": {
+        "A_VERIFIER": {
+          "n": 5711,
+          "same_siren": 1165,
+          "rate": 0.20399229556995271,
+          "same": {
+            "n": 1165,
+            "union_correct": 667,
+            "union_accuracy": 0.5725321888412017,
+            "union_wilson95": [
+              0.5439317793948225,
+              0.6006558365941869
+            ]
+          },
+          "different": {
+            "n": 4546,
+            "union_correct": 1880,
+            "union_accuracy": 0.4135503739551254,
+            "union_wilson95": [
+              0.39931351083195626,
+              0.4279332169685925
+            ]
+          }
+        },
+        "PROBABLE": {
+          "n": 8091,
+          "same_siren": 2977,
+          "rate": 0.367939686070943,
+          "same": {
+            "n": 2977,
+            "union_correct": 2736,
+            "union_accuracy": 0.9190460194827007,
+            "union_wilson95": [
+              0.9086992209403907,
+              0.9283127551970766
+            ]
+          },
+          "different": {
+            "n": 5114,
+            "union_correct": 4546,
+            "union_accuracy": 0.8889323425889715,
+            "union_wilson95": [
+              0.8800268547680102,
+              0.897253964110004
+            ]
+          }
+        },
+        "SUR": {
+          "n": 3625,
+          "same_siren": 1006,
+          "rate": 0.27751724137931033,
+          "same": {
+            "n": 1006,
+            "union_correct": 992,
+            "union_accuracy": 0.9860834990059643,
+            "union_wilson95": [
+              0.9767764768036759,
+              0.991692376853928
+            ]
+          },
+          "different": {
+            "n": 2619,
+            "union_correct": 2561,
+            "union_accuracy": 0.9778541428025964,
+            "union_wilson95": [
+              0.9714791727650123,
+              0.9828293660078273
+            ]
+          }
+        }
+      }
+    }
+  },
+  "official_brand_proxy": {
+    "min_distinct_sites": 50,
+    "matched_frequent_enseigne_strings": 596,
+    "candidate_substrings": 80533,
+    "matched_non_generic_strings": 551,
+    "not_unique_company_or_current_national_network": true
+  },
+  "density": {
+    "public_sites": 37937120,
+    "communes": 36914,
+    "cutoff_sites": 2918,
+    "dense_communes": 1846,
+    "dense_commune_share": 0.05000812699788698,
+    "active_and_closed": true
+  },
+  "secondary": {
+    "pilot": {
+      "non_generic_brand": {
+        "n": 229,
+        "share": 0.1145,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 124,
+            "within_family": 0.5414847161572053,
+            "share_of_status": 0.12375249500998003
+          },
+          "PROBABLE": {
+            "n": 74,
+            "within_family": 0.3231441048034934,
+            "share_of_status": 0.10292072322670376
+          },
+          "SUR": {
+            "n": 31,
+            "within_family": 0.13537117903930132,
+            "share_of_status": 0.1111111111111111
+          }
+        },
+        "risk_median": 0.6973800659179688
+      },
+      "commune_unrecognized": {
+        "n": 1,
+        "share": 0.0005,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1,
+            "within_family": 1.0,
+            "share_of_status": 0.000998003992015968
+          },
+          "PROBABLE": {
+            "n": 0,
+            "within_family": 0.0,
+            "share_of_status": 0.0
+          },
+          "SUR": {
+            "n": 0,
+            "within_family": 0.0,
+            "share_of_status": 0.0
+          }
+        },
+        "risk_median": 0.6408002376556396
+      }
+    },
+    "bank": {
+      "non_generic_brand": {
+        "n": 3083,
+        "share": 0.17690939346990303,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 1306,
+            "within_family": 0.4236133636068764,
+            "share_of_status": 0.22868149185781825,
+            "union_correct": 632,
+            "union_accuracy": 0.48392036753445633,
+            "union_wilson95": [
+              0.4569039796403685,
+              0.5110310710352953
+            ],
+            "exact_correct": 595,
+            "exact_accuracy": 0.4555895865237366
+          },
+          "PROBABLE": {
+            "n": 1392,
+            "within_family": 0.4515082711644502,
+            "share_of_status": 0.17204301075268819,
+            "union_correct": 1245,
+            "union_accuracy": 0.8943965517241379,
+            "union_wilson95": [
+              0.8771520828962088,
+              0.909470203654635
+            ],
+            "exact_correct": 1132,
+            "exact_accuracy": 0.8132183908045977
+          },
+          "SUR": {
+            "n": 385,
+            "within_family": 0.12487836522867338,
+            "share_of_status": 0.10620689655172413,
+            "union_correct": 380,
+            "union_accuracy": 0.987012987012987,
+            "union_wilson95": [
+              0.9699630251780045,
+              0.994440310663103
+            ],
+            "exact_correct": 364,
+            "exact_accuracy": 0.9454545454545454
+          }
+        },
+        "risk_median": 0.8276097774505615,
+        "union_correct": 2257,
+        "union_accuracy": 0.7320791436912099,
+        "exact_correct": 2091,
+        "exact_accuracy": 0.6782354849172884,
+        "union_wilson95": [
+          0.7161643449327588,
+          0.7474163148095474
+        ]
+      },
+      "commune_unrecognized": {
+        "n": 37,
+        "share": 0.0021231422505307855,
+        "by_status": {
+          "A_VERIFIER": {
+            "n": 18,
+            "within_family": 0.4864864864864865,
+            "share_of_status": 0.003151812292067939,
+            "union_correct": 4,
+            "union_accuracy": 0.2222222222222222,
+            "union_wilson95": [
+              0.09000928108601694,
+              0.45214584316212625
+            ],
+            "exact_correct": 4,
+            "exact_accuracy": 0.2222222222222222
+          },
+          "PROBABLE": {
+            "n": 18,
+            "within_family": 0.4864864864864865,
+            "share_of_status": 0.002224694104560623,
+            "union_correct": 17,
+            "union_accuracy": 0.9444444444444444,
+            "union_wilson95": [
+              0.7424269921812741,
+              0.990124809021697
+            ],
+            "exact_correct": 17,
+            "exact_accuracy": 0.9444444444444444
+          },
+          "SUR": {
+            "n": 1,
+            "within_family": 0.02702702702702703,
+            "share_of_status": 0.00027586206896551725,
+            "union_correct": 1,
+            "union_accuracy": 1.0,
+            "union_wilson95": [
+              0.20654931437723745,
+              1.0
+            ],
+            "exact_correct": 1,
+            "exact_accuracy": 1.0
+          }
+        },
+        "risk_median": 0.7590091824531555,
+        "union_correct": 22,
+        "union_accuracy": 0.5945945945945946,
+        "exact_correct": 22,
+        "exact_accuracy": 0.5945945945945946,
+        "union_wilson95": [
+          0.43485964730229365,
+          0.7365348180798572
+        ]
+      }
+    }
+  },
+  "controls": {
+    "no_fit": true,
+    "no_gemma": true,
+    "no_web": true,
+    "closed_sets_accessed": false,
+    "vm_or_pid8288_accessed": false,
+    "source_hashes_unchanged": true,
+    "nominal_assignments_persisted": false
+  },
+  "resources": {
+    "wall_seconds": 9.963387000374496,
+    "peak_rss_bytes": 315637760,
+    "limit_bytes": 4294967296,
+    "duckdb_limit_bytes": 536870912,
+    "spill": false
+  },
+  "reproduction": {
+    "command": ".venv/bin/python -c \"import json; p=json.load(open('docs/serve_v1_pilot_families.json')); exec(p['reproduction_program'], {'PROGRAM':p['reproduction_program']})\"",
+    "note": "Writes only these two aggregate reports; sources read only, scientific rules unchanged."
+  },
+  "reproduction_program": "\nimport os,time,json,hashlib,re,math,threading,datetime,resource\nfrom pathlib import Path\nfrom collections import Counter\nimport psutil\nimport numpy as np\nimport duckdb\nimport pyarrow as pa\nSTART=time.monotonic();PEAK=0;DONE=threading.Event()\nROOT=Path.cwd();MD=ROOT/'docs/serve_v1_pilot_families.md';OUT=ROOT/'docs/serve_v1_pilot_families.json'\nH=Path('/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2');SERVE=H/'serve_v1';PILOT=SERVE/'pilot_2000';G0=H/'step2_option_d_20261017/full';FT=H/'step2_gemma_finetune_10h_20261019/full'\ndef read(p):return json.loads(Path(p).read_text())\ndef sha(p):\n with Path(p).open('rb') as f:return hashlib.file_digest(f,'sha256').hexdigest()\ndef ref(p):return dict(path=str(p),size_bytes=Path(p).stat().st_size,sha256=sha(p))\ndef watch():\n global PEAK\n proc=psutil.Process()\n while not DONE.wait(.1):\n  PEAK=max(PEAK,proc.memory_info().rss)\n  if PEAK>3.75*1024**3 or time.monotonic()-START>3500:\n   print('STOP_RESOURCE',PEAK,time.monotonic()-START,flush=True);os._exit(75)\nthreading.Thread(target=watch,daemon=True).start()\nconfig=read(OUT);rules=config['rules'];protocol=MD.read_text().split('\\n## Résultats\\n')[0]\nprotocol_sha=hashlib.sha256(protocol.encode()).hexdigest();assert protocol_sha=='4ce6c4550e19530fd29419936132dbad126e67effaf20183848b9f08a4ac96c0'\nrules_sha=hashlib.sha256(json.dumps(rules,sort_keys=True).encode()).hexdigest()\nqueries={'pilot':read(PILOT/'queries.json'),'bank':read(G0/'training_queries.json')}\nassert len(queries['pilot'])==2000 and len(queries['bank'])==17427 and {q['fold'] for q in queries['bank']}=={2,3,4}\nplan=read(G0/'plan.json');stock=plan['official']['stock'];assert sha(stock['path'])==stock['sha256']\nsource_paths=[G0/'training_queries.json',PILOT/'queries.json',Path(stock['path']),SERVE/'pooled_oof.npz',PILOT/'scored.npz',PILOT/'keys.npy',FT/'keys.npy',SERVE/'policy.json',H/'step2_risk_model_v1_20261020_c/full/data.json']\nrefs=[ref(p) for p in source_paths]\ncon=duckdb.connect(':memory:',config={'threads':'1','memory_limit':'512MB','max_temp_directory_size':'0B'})\nflat=[q for name in ('pilot','bank') for q in queries[name]]\ncon.register('crm_surface',pa.table({'ordinal':np.arange(len(flat)),'name':[q['crm_name'] for q in flat]}))\nnormexpr=lambda name:rules['normalization_sql'].format(field=name)\nnames=[r[0] for r in con.execute('SELECT '+normexpr('name')+' FROM crm_surface ORDER BY ordinal').fetchall()]\nprint('INPUTS_QUERY_ONLY_VERIFIED',len(flat),flush=True)\n# Exhaustive token-substrings: only matching enseignes are needed, not a national dictionary dump.\nngramset=set()\nfor name in names:\n words=name.split()\n for a in range(len(words)):\n  for z in range(a+1,len(words)+1):ngramset.add(' '.join(words[a:z]))\ncon.register('wanted_brands',pa.table({'brand':sorted(ngramset)}))\nparts=[f\"SELECT siret,{column} enseigne FROM read_parquet(?) WHERE statutDiffusionEtablissement='O' AND {column} IS NOT NULL AND trim({column})<>''\" for column in ('enseigne1Etablissement','enseigne2Etablissement','enseigne3Etablissement')]\nsql=\"WITH e AS (\"+' UNION ALL '.join(parts)+\"), normalized AS (SELECT siret,\"+normexpr('enseigne')+\" brand FROM e) SELECT brand,count(DISTINCT siret) sites FROM normalized SEMI JOIN wanted_brands USING(brand) GROUP BY brand HAVING count(DISTINCT siret)>=?\"\nbrand_counts=dict(con.execute(sql,[stock['path']]*3+[rules['brand_min_distinct_sites']]).fetchall());brandset=set(brand_counts)\nprint('ENSEIGNE_SCAN_DONE',len(ngramset),len(brandset),'seconds',time.monotonic()-START,flush=True)\ndensity=dict(con.execute(\"SELECT codeCommuneEtablissement,count(*) FROM read_parquet(?) WHERE statutDiffusionEtablissement='O' AND codeCommuneEtablissement IS NOT NULL AND trim(codeCommuneEtablissement)<>'' GROUP BY 1\",[stock['path']]).fetchall());con.close()\ncutoff=int(np.quantile(list(density.values()),rules['density_quantile'],method=rules['density_quantile_method']));dense={k for k,v in density.items() if v>=cutoff}\nadmin=set(rules['admin_tokens'].split());org=set(rules['organization_tokens'].split());first=set(rules['first_names'].split());titles=set(rules['titles'].split());technical=set(rules['technical_phrases'])\ngeneric=admin|org|set(rules['generic_brand_extra_tokens'].split())|set(' '.join(technical).split())\nnon_generic={b for b in brandset if not set(b.split())<=generic}\nlabels={'generique_administratif':'Générique / administratif','personne_probable':'Personne probable','sigle_abreviation':'Sigle / abréviation','enseigne_frequente':'Enseigne ≥50 sites','adresse_sans_numero':'Adresse sans numéro','commune_dense':'Commune dense','technique_vide':'Vide / technique','autre':'Autre nom'}\nclassification={};primary={};extra={};masked={};off=0\nfor cohort in ('pilot','bank'):\n rows=queries[cohort];flags=[];prim=[];secondary=[];examples={f:[] for f in rules['family_order']}\n for q,name in zip(rows,names[off:off+len(rows)]):\n  tokens=name.split();letters=''.join(c for c in name if 'A'<=c<='Z');digits=sum(c.isdigit() for c in name)\n  tech=not name or name in technical or (len(tokens)==1 and len(name)>=4 and digits>=len(letters) and digits>0)\n  if not tech:\n   for phrase in technical:\n    if name.startswith(phrase+' ') and all(any(c.isdigit() for c in word) for word in name[len(phrase)+1:].split()):tech=True;break\n    if re.fullmatch(re.escape(phrase)+r'[0-9][A-Z0-9]*',name):tech=True;break\n  matched=set()\n  for a in range(len(tokens)):\n   for z in range(a+1,len(tokens)+1):\n    value=' '.join(tokens[a:z])\n    if value in brandset:matched.add(value)\n  is_admin=bool(set(tokens)&admin);is_brand=bool(matched)\n  person=bool(tokens and tokens[0] in titles) or bool(2<=len(tokens)<=4 and all(x.isalpha() for x in tokens) and set(tokens)&first and not(set(tokens)&(admin|org|set(' '.join(technical).split()))) and not is_brand)\n  sigle=bool(not tech and letters and (len(letters)<=5 or (len(letters)>=2 and q['crm_name'].isupper() and not any(c in 'AEIOUY' for c in letters))))\n  missing=not bool(re.match(r'\\s*0*[1-9][0-9]*',str(q.get('crm_number') or '')))\n  f=dict(generique_administratif=is_admin,personne_probable=person,sigle_abreviation=sigle,enseigne_frequente=is_brand,adresse_sans_numero=missing,commune_dense=q.get('crm_insee') in dense,technique_vide=bool(tech))\n  f['autre']=not any(f[x] for x in ('generique_administratif','personne_probable','sigle_abreviation','enseigne_frequente','technique_vide'))\n  flags.append([bool(f[k]) for k in rules['family_order']]);prim.append(next(k for k in rules['primary_priority'] if f[k]));secondary.append([bool(matched&non_generic),q.get('crm_insee') not in density])\n  shape='[vide]' if not tokens else ' '.join(''.join('#' if c.isdigit() else '*' for c in word[:6])+('…' if len(word)>6 else '') for word in tokens[:6])+(' …' if len(tokens)>6 else '')\n  for family in f:\n   if f[family] and len(examples[family])<3 and shape not in examples[family]:examples[family].append(shape)\n classification[cohort]=np.array(flags,dtype=bool);primary[cohort]=np.array(prim);extra[cohort]=np.array(secondary,dtype=bool);masked[cohort]=examples;off+=len(rows)\nbinding={name:dict(rows=len(queries[name]),flags_sha256=hashlib.sha256(classification[name].tobytes()).hexdigest(),primary_sha256=hashlib.sha256(json.dumps(primary[name].tolist()).encode()).hexdigest()) for name in queries}\nclassification_time=datetime.datetime.now(datetime.timezone.utc).isoformat();print('CLASSIFICATION_FROZEN_BEFORE_INDIVIDUAL_STATUSES',classification_time,binding,flush=True)\n# First individual statuses/hits access is strictly below the classification binding.\nmeta=read(H/'step2_risk_model_v1_20261020_c/full/data.json');assert meta['ids']==[q['query_id'] for q in queries['bank']] and set(meta['folds'])=={2,3,4}\npolicy=read(SERVE/'policy.json')['policy'];pooled=np.load(SERVE/'pooled_oof.npz');pilot=np.load(PILOT/'scored.npz');bhits=pooled['hits'];assert bhits.shape==(17427,2) and np.all(~bhits[:,0]|bhits[:,1])\nscores={'bank':pooled['score'],'pilot':pilot['score']}\ndef tier(values):\n out=np.zeros(len(values),dtype=np.int8)\n if policy['probable'] is not None:out[values>=policy['probable']]=1\n if policy['sur'] is not None:out[values>=policy['sur']]=2\n return out\nstatuses={name:tier(scores[name]) for name in queries};assert np.array_equal(statuses['pilot'],pilot['tier'])\nstatus_names=['A_VERIFIER','PROBABLE','SUR']\nassert Counter(statuses['pilot'])=={0:1002,1:719,2:279} and Counter(statuses['bank'])=={0:5711,1:8091,2:3625}\ndef wilson(k,n):\n if not n:return None\n z=1.959963984540054;p=k/n;d=1+z*z/n;c=(p+z*z/(2*n))/d;h=z*math.sqrt(p*(1-p)/n+z*z/(4*n*n))/d;return [c-h,c+h]\ndef stats(cohort,mask):\n n=int(mask.sum());total=len(mask);z=statuses[cohort];values=scores[cohort][mask]\n result=dict(n=n,share=n/total,by_status={name:dict(n=int((mask&(z==i)).sum()),within_family=float((z[mask]==i).mean()) if n else None,share_of_status=int((mask&(z==i)).sum())/int((z==i).sum())) for i,name in enumerate(status_names)},risk_median=float(np.median(values)) if n else None)\n if cohort=='bank':\n  result.update(union_correct=int(bhits[mask,1].sum()),union_accuracy=float(bhits[mask,1].mean()) if n else None,exact_correct=int(bhits[mask,0].sum()),exact_accuracy=float(bhits[mask,0].mean()) if n else None,union_wilson95=wilson(int(bhits[mask,1].sum()),n))\n  for i,name in enumerate(status_names):\n   part=mask&(z==i);nn=int(part.sum());k=int(bhits[part,1].sum());result['by_status'][name].update(union_correct=k,union_accuracy=k/nn if nn else None,union_wilson95=wilson(k,nn),exact_correct=int(bhits[part,0].sum()),exact_accuracy=float(bhits[part,0].mean()) if nn else None)\n return result\nadvice={\n 'generique_administratif':'Ajouter le gestionnaire/exploitant et un libellé distinctif : un équipement ou une copropriété ne désigne pas forcément son entité juridique.',\n 'personne_probable':'Préciser raison sociale/activité et occupant plutôt que propriétaire ; un particulier sans établissement professionnel identifiable ne devient pas siretisable avec son seul nom.',\n 'sigle_abreviation':'Développer le sigle et fournir nom commercial/raison sociale ; la courte chaîne seule ne justifie pas de relâcher le seuil.',\n 'enseigne_frequente':'Identifier le franchisé/exploitant local et le site exact ; enseigne fréquente ne signifie pas propriétaire ou SIREN unique, surtout pour les libellés génériques.',\n 'adresse_sans_numero':'Ajouter numéro/suffixe ou position du site certifiée ; un numéro absent peut laisser hésiter les sites sans invalider nécessairement l’entreprise.',\n 'commune_dense':'Compléter bâtiment/voie/numéro et exploitant ; densité et colocalisation réclament une preuve plus distinctive, pas un seuil plus permissif.',\n 'technique_vide':'Remplacer code/équipement par occupant/exploitant ; une fiche limitée à un local technique sans entité juridique n’est pas siretisable avec cet export seul.',\n 'autre':'Pas de signal unique : contrôler nom officiel/nom d’usage actuel et adresse, puis auditer erreurs de génération ou de classement sans inventer de vérité.'}\ndef family_record(name,pm,bm):\n a=stats('pilot',pm);b=stats('bank',bm);av=b['by_status']['A_VERIFIER'];accuracy=b['union_accuracy'];qual='non mesurable' if accuracy is None else 'bon' if accuracy>=rules['bank_good_union'] else 'mauvais' if accuracy<rules['bank_bad_union_below'] else 'intermédiaire'\n lowrisk=av['n']>=rules['minimum_low_risk_cases'] and av['union_accuracy']>=rules['bank_low_risk_recovery_union']\n return dict(label=labels[name],pilot=a,bank=b,representation_ratio=a['share']/b['share'] if b['share'] else None,pilot_minus_bank_averifier_contribution_pp=100*(a['by_status']['A_VERIFIER']['n']/2000-b['by_status']['A_VERIFIER']['n']/17427),bank_assessment=qual,good_top1_low_risk_candidate=lowrisk,advice=advice[name],masked_examples=masked['pilot'][name])\nfamilies={name:family_record(name,classification['pilot'][:,j],classification['bank'][:,j]) for j,name in enumerate(rules['family_order'])}\npartition={name:family_record(name,primary['pilot']==name,primary['bank']==name) for name in rules['primary_priority']}\nassert sum(x['pilot']['n'] for x in partition.values())==2000 and sum(x['bank']['n'] for x in partition.values())==17427\nexpected=sum(x['pilot']['share']*x['bank']['by_status']['A_VERIFIER']['within_family'] for x in partition.values() if x['bank']['n'])\nmissing_partition_mass=sum(x['pilot']['share'] for x in partition.values() if not x['bank']['n']);assert missing_partition_mass==0\nbank_av=float((statuses['bank']==0).mean());pilot_av=float((statuses['pilot']==0).mean())\ndecomposition=dict(bank_averifier=bank_av,pilot_averifier=pilot_av,gap_pp=100*(pilot_av-bank_av),expected_with_pilot_family_mix=expected,composition_pp=100*(expected-bank_av),within_family_and_model_transport_residual_pp=100*(pilot_av-expected),causal=False)\nsame_siren={}\nfor cohort,path in [('pilot',PILOT/'keys.npy'),('bank',FT/'keys.npy')]:\n keys=np.load(path,mmap_mode='r');assert keys.shape==(len(queries[cohort]),100)\n order=pilot['top4'][:,:2] if cohort=='pilot' else np.argsort(-pooled['ranking'],axis=1,kind='stable')[:,:2]\n if cohort=='bank':assert np.array_equal(order[:,0],pooled['top'])\n idx=np.arange(len(keys));top=keys[idx,order[:,0]];second=keys[idx,order[:,1]];assert np.all(top!=second)\n same=np.array([bytes(a)[:9]==bytes(b)[:9] for a,b in zip(top,second)],dtype=bool)\n same_siren[cohort]=dict(all=stats(cohort,np.ones(len(keys),dtype=bool)),same_parent=stats(cohort,same),different_parent=stats(cohort,~same),by_status={})\n for i,name in enumerate(status_names):\n  part=statuses[cohort]==i;nn=int(part.sum());kk=int((part&same).sum());obj=dict(n=nn,same_siren=kk,rate=kk/nn)\n  if cohort=='bank':\n   for tag,mask in [('same',part&same),('different',part&~same)]:\n    count=int(mask.sum());correct=int(bhits[mask,1].sum());obj[tag]=dict(n=count,union_correct=correct,union_accuracy=correct/count if count else None,union_wilson95=wilson(correct,count))\n  same_siren[cohort]['by_status'][name]=obj\n same_siren[cohort]['all']['same_siren']=int(same.sum());same_siren[cohort]['all']['rate']=float(same.mean())\nsecondary={name:dict(non_generic_brand=stats(name,extra[name][:,0]),commune_unrecognized=stats(name,extra[name][:,1])) for name in queries}\nfor r in refs:assert sha(r['path'])==r['sha256']\nDONE.set();PEAK=max(PEAK,resource.getrusage(resource.RUSAGE_SELF).ru_maxrss);elapsed=time.monotonic()-START\nresult=dict(status='COMPLETE_READ_ONLY_DESCRIPTIVE',rules=rules,preregistered_protocol_sha256=protocol_sha,rules_sha256=rules_sha,classification_bound_before_status_utc=classification_time,classification_binding=binding,\n sources=refs,denominators=dict(pilot=2000,bank=17427),families_overlap=True,families=families,exclusive_name_partition=partition,decomposition=decomposition,same_siren_top1_top2=same_siren,\n official_brand_proxy=dict(min_distinct_sites=50,matched_frequent_enseigne_strings=len(brandset),candidate_substrings=len(ngramset),matched_non_generic_strings=len(non_generic),not_unique_company_or_current_national_network=True),\n density=dict(public_sites=sum(density.values()),communes=len(density),cutoff_sites=cutoff,dense_communes=len(dense),dense_commune_share=len(dense)/len(density),active_and_closed=True),secondary=secondary,\n controls=dict(no_fit=True,no_gemma=True,no_web=True,closed_sets_accessed=False,vm_or_pid8288_accessed=False,source_hashes_unchanged=True,nominal_assignments_persisted=False),resources=dict(wall_seconds=elapsed,peak_rss_bytes=PEAK,limit_bytes=4*1024**3,duckdb_limit_bytes=512*1024**2,spill=False),\n reproduction=dict(command='.venv/bin/python -c \"import json; p=json.load(open(\\'docs/serve_v1_pilot_families.json\\')); exec(p[\\'reproduction_program\\'], {\\'PROGRAM\\':p[\\'reproduction_program\\']})\"',note='Writes only these two aggregate reports; sources read only, scientific rules unchanged.'),reproduction_program=PROGRAM)\nOUT.write_text(json.dumps(result,ensure_ascii=False,indent=2,allow_nan=False)+'\\n')\nfmt=lambda v:'—' if v is None else f'{100*v:.2f}%'\nlines=['## Résultats','',f'Run réel readonly : {elapsed:.2f}s, pic RSS {PEAK/2**30:.3f}Gio ; sans Gemma/web/fit, hashes des {len(refs)} sources inchangés. Protocole avant croisement SHA `{protocol_sha}` ; règles SHA `{rules_sha}`. Affectations figées à {classification_time}, avant lecture des statuts individuels, hashes dans le JSON.','',\n '| Famille (recouvrements) | Pilote n / part | Banc n / part | UNION top1 banc | Exact banc | AV dans famille pilote | Part des1002 AV pilote | UNION banc parmi AV |',\n '|---|---:|---:|---:|---:|---:|---:|---:|']\nfor name,row in families.items():\n a=row['pilot'];b=row['bank'];av=a['by_status']['A_VERIFIER'];lines.append(f\"| {row['label']} | {a['n']} / {fmt(a['share'])} | {b['n']} / {fmt(b['share'])} | {fmt(b['union_accuracy'])} | {fmt(b['exact_accuracy'])} | {av['n']} / {fmt(av['within_family'])} | {fmt(av['share_of_status'])} | {fmt(b['by_status']['A_VERIFIER']['union_accuracy'])} |\")\nlines+=['','### Partition exclusive et coût descriptif','', '| Type primaire | Pilote n | Banc n | AV pilote | AV banc | UNION banc |','|---|---:|---:|---:|---:|---:|']\nfor name,row in partition.items():lines.append(f\"| {row['label']} | {row['pilot']['n']} | {row['bank']['n']} | {fmt(row['pilot']['by_status']['A_VERIFIER']['within_family'])} | {fmt(row['bank']['by_status']['A_VERIFIER']['within_family'])} | {fmt(row['bank']['union_accuracy'])} |\")\nlines+=['',f\"Écart AV {decomposition['gap_pp']:.2f}points ; avec uniquement le mélange de types de nom du pilote et les taux AV du banc, attendu {fmt(expected)} : composition {decomposition['composition_pp']:+.2f}points, résidu intra-famille/transport {decomposition['within_family_and_model_transport_residual_pp']:+.2f}points. Non causal : modèles OOF/full-fit et contenus intra-famille différents. Ces contributions utilisent la partition exclusive, pas les8indicateurs chevauchants.\",\n '',f\"Enseignes : {len(brandset)} expressions ≥50 sites correspondent à au moins un nom des cohortes ; {len(non_generic)} après débruitage lexical secondaire. Ce n'est pas le nombre total d'enseignes nationales. L'indicateur principal conserve les génériques conformément au critère brut demandé ; sous-vue non générique : pilote {secondary['pilot']['non_generic_brand']['n']}/2000, banc {secondary['bank']['non_generic_brand']['n']}/17427.\",\n f\"Densité officielle : {len(density)} communes, {sum(density.values())} sites publics avec code commune, seuil {cutoff}sites, {len(dense)}communes ({100*len(dense)/len(density):.3f}%) avec ex aequo. Commune CRM non reconnue : pilote{secondary['pilot']['commune_unrecognized']['n']}, banc{secondary['bank']['commune_unrecognized']['n']} ; conservées au dénominateur.\",\n '', '### Que pourrait-on récupérer ?','']\nfor name,row in families.items():\n b=row['bank'];av=b['by_status']['A_VERIFIER'];hint='Piste de risque trop conservateur selon règle préfixée' if row['good_top1_low_risk_candidate'] else 'Pas de justification pour un relâchement automatique selon règle préfixée'\n lines.append(f\"- **{row['label']}** : banc {row['bank_assessment']}, UNION {fmt(b['union_accuracy'])} ; parmi ses AV, {av['union_correct']}/{av['n']} corrects ({fmt(av['union_accuracy'])}). {hint}. {row['advice']}\")\nlines+=['','### Même SIREN top1/top2','', '| Statut pilote | Même SIREN / n | Taux | Banc UNION quand même SIREN | Banc UNION quand SIREN différents |','|---|---:|---:|---:|---:|']\nfor name in ['SUR','PROBABLE','A_VERIFIER']:\n a=same_siren['pilot']['by_status'][name];b=same_siren['bank']['by_status'][name];lines.append(f\"| {name} | {a['same_siren']}/{a['n']} | {fmt(a['rate'])} | {b['same']['union_correct']}/{b['same']['n']} ({fmt(b['same']['union_accuracy'])}) | {b['different']['union_correct']}/{b['different']['n']} ({fmt(b['different']['union_accuracy'])}) |\")\nallp=same_siren['pilot']['all'];lines += ['',f\"Total pilote {allp['same_siren']}/2000={fmt(allp['rate'])}. Deux sites du même SIREN ne prouvent ni entreprise correcte ni équivalence physique ; ils ne suffisent donc pas à remplir automatiquement le SIRET. Les hits UNION existants du banc sont la contre-vérification, pas une nouvelle vérité pour le pilote.\",\n '', '### Exemples masqués de formes, pas des labels','']\nfor name,row in families.items():lines.append('- '+row['label']+' : '+', '.join('`'+x+'`' for x in row['masked_examples'])+'.')\nlines += ['', '### Limites et reproduction','', 'Personne probable et enseigne fréquente sont des heuristiques textuelles, pas des identités juridiques. Le lexique de prénoms manque les prénoms non listés et les patronymes seuls. Une enseigne≥50 peut être générique ou appartenir à plusieurs franchisés ; sa fréquence ne prouve pas une marque nationale. La densité inclut les fermés. Un nom technique n’est pas une preuve d’absence d’entreprise à cette adresse. Aucun chiffre de justesse du pilote n’est mesuré sans revue humaine. Les Wilson du JSON sont descriptifs sur le banc de développement, pas des gates ni une validation indépendante de nombreuses sous-familles.',\n 'Le JSON contient tous les croisements SUR/PROBABLE/A_VERIFIER, hits exact/UNION, effectifs, Wilson, scores médians, surreprésentations, coûts descriptifs et programme autonome. Commande de reproduction (mêmes règles et sources, sans fichier nominatif généré) :', '```bash',result['reproduction']['command'],'```','Log technique agrégé du run initial : `/tmp/sireto-prod3-families.log`. Seuls les deux rapports et la ligne handover sont des livrables ; aucun fichier source ou étranger modifié.']\nMD.write_text(protocol+'\\n## Résultats\\n'+'\\n'.join(lines[1:])+'\\n')\nprint('COMPLETE',elapsed,PEAK,'families',len(families),'status2000',dict(Counter(statuses['pilot'])),'decomposition',decomposition,flush=True)\n",
+  "verification": {
+    "real_reproduction_equal": true,
+    "compared_scientific_sections": 10,
+    "rows_verified": 19427,
+    "family_cohort_rows_verified": 16,
+    "previous_run": {
+      "wall_seconds": 9.979818625375628,
+      "peak_rss_bytes": 336527360,
+      "limit_bytes": 4294967296,
+      "duckdb_limit_bytes": 536870912,
+      "spill": false
+    },
+    "reproduced_run": {
+      "wall_seconds": 9.963387000374496,
+      "peak_rss_bytes": 315637760,
+      "limit_bytes": 4294967296,
+      "duckdb_limit_bytes": 536870912,
+      "spill": false
+    },
+    "protocol_hash_unchanged": true,
+    "no_serialized_query_id_values_in_public_reports": true,
+    "privacy_check": "Quoted exact identifier values, not substrings of numeric counts/hashes; bank IDs can be 1–5 digit strings.",
+    "no_unit_tests": true,
+    "initial_run": {
+      "wall_seconds": 9.773329209536314,
+      "peak_rss_bytes": 336986112
+    },
+    "total_three_measured_passes_seconds": 29.71653483528644,
+    "maximum_observed_peak_rss_bytes": 336986112,
+    "initial_log_sha256": "48bd75685252f3aec47f5abeafe6959c90483c90f1a6bad6be4af15897cc8119"
+  }
+}
