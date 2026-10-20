@@ -33,3 +33,30 @@ Top1 exact/UNION n/N, Wilson et IC bootstrap cluster entreprise10000, seed202610
 Namespace neuf `H/step2_ranker_v3_group_20261020`, un worker CPU séquentiel détaché, threads1, DuckDB512Mio/aucun spill, pas de Metal. Garde RSS stricte8Gio sans VM identifiée,5,75 sinon ; inspection de métadonnées seulement, jamais contrôle de hydraulic. Attente60s si gros workerV142>4Gio ou VM active et free+inactive<8Gio. Autre agent production léger<=4Gio et tous fichiers étrangers/pending intouchés. Arrêt propre CATNAT libre<12Gio, aucune suppression, estimation écriture<1,5Gio et vérification disque continue. Budget14400s depuis lancement hors attentes documentées, smokes/IO/rejeux/bootstraps/publication inclus ; réserve publication120s. Projection prudente après premier fit représentatif, STOP si hors budget ; pas réduction silencieuse du banc. Modèles et packs compacts, adjacency packbits, aucune nouvelle banque Gemma.
 
 Code/avenant commis avant fit. SHA/liaisons sources/modèles/OOF/features avant/après, rejoués, rôles entreprise disjoints et poids inspectés ; smokes réels, pas tests synthétiques. Publication automatique et commit isolé `docs/step2_ranker_v3_group.{json,md}` + append-only `handover.md`, aucun push, refuse chemins étrangers sales/concurrents. En cas de STOP, rapport incomplet explicite, pas résultats partiels promus. Rapport final<=25lignes, tableau top1 trois variantes/IC, gains co-adresse/siège, tableauSUR quatre cibles, durée/commits/une recommandation. Développement exploratoire : Wilson adaptatif et corrélations entreprise ne certifient pas98% produit.
+
+## Résultats
+
+**Fait** —17427 dossiers/11483 entreprises, mêmes5CV/OOF ; docs/script `step2_ranker_v3_group`, `handover.md`.
+**Preuve** —50LTR+15risques+2smokes,60seuils indépendants/rejeux/SHA/groupes ; durée 100.63min, pic 4.92Gio.
+
+| Top1 | Exact %, IC95 entreprise | UNION %, IC95 entreprise | Δ exact [IC95] | Δ UNION [IC95] |
+|---|---|---|---|---|
+| base | 70.44 [69.15, 71.73] | 76.79 [75.51, 78.04] | — | — |
+| group | 70.41 [69.11, 71.71] | 76.79 [75.51, 78.07] | -0.03 [-0.23, 0.17] | +0.01 [-0.18, 0.19] |
+| noise | 70.45 [69.15, 71.74] | 76.85 [75.56, 78.11] | +0.01 [-0.18, 0.2] | +0.06 [-0.12, 0.23] |
+
+Familles historiques, ΔUNION group/noise vsbase : colocation n=1046 : -0.19 [-1.29, 0.88] / +0.19 [-0.87, 1.26]; same_siren_siege n=267 : +1.50 [-0.7, 4.05] / +2.25 [0.0, 4.76].
+
+| Cible Wilson calibration | base P UNION / couverture % | +groupe P/C % | +groupe+bruit P/C % |
+|---|---|---|---|
+| 96% | 96.49 / 42.17 | 96.17 / 43.43 | 96.60 / 43.09 |
+| 97% | 97.81 / 25.45 | 97.22 / 25.61 | 97.66 / 24.82 |
+| 97.5% | 98.50 / 11.06 | 97.82 / 14.47 | 98.24 / 16.27 |
+| 98% | 99.26 / 1.55 | 98.24 / 8.47 | 98.44 / 7.34 |
+
+526 descriptifs, top1 exact/UNION : base 387/410; group 382/405; noise 381/404.
+**Écarts / choix** —3features risque choisies a priori (nom/S1/S2),49 pour les3recettes ; bruit poids0 des95FORT en train LTR/risque seulement, NB figés.
+**Reste / risques** —Tout le banc évalué, labels/pools/jeux fermés/VM/tiers inchangés ; IC exploratoires, pas garantie98% ni promotion.
+Recommandation unique : conserver la référence S1+S2-BASE, aucun gain UNION confirmé.
+
+Détails par CV/fold, familles complètes, n/N, Wilson, gains/pertes et confirmation526 dans le JSON ; reçus/modèles/rejeux dans `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020`.
