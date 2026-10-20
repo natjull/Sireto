@@ -1,0 +1,1140 @@
+{
+  "status": "MEASURED_DIAGNOSTIC_NOT_PRODUCTION",
+  "measured_at": "2026-10-20T10:44:45.523096+00:00",
+  "schema": {
+    "latest": {
+      "rows": 131749,
+      "columns": [
+        {
+          "column": "stc_service_id",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "99999",
+          "used": "non (jointure seulement)",
+          "interest_risk": "Dédupliquer les services avant décision collective ; identifiant technique, pas un compte et jamais feature."
+        },
+        {
+          "column": "stc_reference",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "A999999_99999",
+          "used": "non",
+          "interest_risk": "Jointure/doublons seulement tant que la sémantique client/contrat est inconnue ; identifiant instable, pas feature."
+        },
+        {
+          "column": "stc_categorie_produit",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "AAAAA AAAAAAAAA",
+          "used": "non",
+          "interest_risk": "Stratifier erreurs et routage par offre ; risque de proxy métier/temps et de faible transférabilité."
+        },
+        {
+          "column": "stc_state",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "AAAAAAAAAA",
+          "used": "non",
+          "interest_risk": "Stratifier le cycle de vie du service ; risque de fuite si statut postérieur au rattachement."
+        },
+        {
+          "column": "client_final",
+          "filled": {
+            "n": 129962,
+            "denominator": 131749,
+            "percent": 98.64363296875119
+          },
+          "example_masked": "AAAAA AAAAAAAA",
+          "used": "oui (nom)",
+          "interest_risk": "Clé de groupe exacte normalisée, sans alias ; homonymes, franchises et noms génériques mélangent des SIREN."
+        },
+        {
+          "column": "stc_zipcode",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "99999",
+          "used": "oui",
+          "interest_risk": "Adresse et filtrage géographique déjà utilisés."
+        },
+        {
+          "column": "stc_city",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "AAAAAA",
+          "used": "amont seulement, pas entrée directe G0",
+          "interest_risk": "Contexte commune conservé en population ; G0 reçoit INSEE, CP, numéro et voie, pas la ville."
+        },
+        {
+          "column": "order_siret",
+          "filled": {
+            "n": 43284,
+            "denominator": 131749,
+            "percent": 32.85338029131151
+          },
+          "example_masked": "[label/validation masqué ; présence seule]",
+          "used": "non (vérité en amont pour les lignes admises)",
+          "interest_risk": "Ancre vérifiée possible en production, pas feature ; fuite directe si vérité de la cible ou sœur fermée."
+        },
+        {
+          "column": "stc_street_number",
+          "filled": {
+            "n": 131453,
+            "denominator": 131749,
+            "percent": 99.7753303630388
+          },
+          "example_masked": "99",
+          "used": "oui",
+          "interest_risk": "Numéro et suffixe déjà utilisés."
+        },
+        {
+          "column": "stc_street_name",
+          "filled": {
+            "n": 131749,
+            "denominator": 131749,
+            "percent": 100.0
+          },
+          "example_masked": "AAAAAA AA AAAA AA AAAA",
+          "used": "oui",
+          "interest_risk": "Voie déjà utilisée."
+        },
+        {
+          "column": "stc_insee_commune",
+          "filled": {
+            "n": 131586,
+            "denominator": 131749,
+            "percent": 99.87627989586258
+          },
+          "example_masked": "99999",
+          "used": "oui",
+          "interest_risk": "Commune déjà utilisée."
+        }
+      ]
+    },
+    "historical": {
+      "rows": 17054,
+      "columns": [
+        {
+          "column": "crm_name",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "AAAAAAAA",
+          "used": "oui",
+          "interest_risk": "Nom historique."
+        },
+        {
+          "column": "crm_cp",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "99999",
+          "used": "oui",
+          "interest_risk": "CP historique."
+        },
+        {
+          "column": "crm_insee",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "99999",
+          "used": "oui",
+          "interest_risk": "Commune historique."
+        },
+        {
+          "column": "crm_id",
+          "filled": {
+            "n": 16620,
+            "denominator": 17054,
+            "percent": 97.45514248856573
+          },
+          "example_masked": "AA999999",
+          "used": "non (jointure seulement)",
+          "interest_risk": "Identifiant historique, pas compte client démontré."
+        },
+        {
+          "column": "crm_commune",
+          "filled": {
+            "n": 17053,
+            "denominator": 17054,
+            "percent": 99.99413627301513
+          },
+          "example_masked": "AAAAAAAA AAAAAAA",
+          "used": "amont seulement",
+          "interest_risk": "Ville historique, pas entrée directe G0."
+        },
+        {
+          "column": "gt_siret",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "[label/validation masqué ; présence seule]",
+          "used": "non (label)",
+          "interest_risk": "Vérité historique ; présence agrégée uniquement dans cet inventaire."
+        },
+        {
+          "column": "crm_adresse",
+          "filled": {
+            "n": 17030,
+            "denominator": 17054,
+            "percent": 99.85927055236309
+          },
+          "example_masked": "99 AAA AAAAAA",
+          "used": "oui",
+          "interest_risk": "Adresse historique parsée en numéro/suffixe/voie."
+        },
+        {
+          "column": "SITE_CLI_COMMUNE",
+          "filled": {
+            "n": 17053,
+            "denominator": 17054,
+            "percent": 99.99413627301513
+          },
+          "example_masked": "AAAAAAAA AAAAAAA",
+          "used": "non directement",
+          "interest_risk": "Champ commune auxiliaire ; redondance probable, sémantique à confirmer, jamais vérité officielle."
+        },
+        {
+          "column": "sirene_insee",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "[label/validation masqué ; présence seule]",
+          "used": "non côté CRM",
+          "interest_risk": "Enrichissement de validation label-side, interdit comme nouveau signal de la cible."
+        },
+        {
+          "column": "sirene_cp",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "[label/validation masqué ; présence seule]",
+          "used": "non côté CRM",
+          "interest_risk": "Enrichissement de validation label-side, risque de fuite."
+        },
+        {
+          "column": "sirene_etat",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "[label/validation masqué ; présence seule]",
+          "used": "non côté CRM",
+          "interest_risk": "État du label, pas du service ; état candidat officiel déjà utilisé, risque de fuite directe ici."
+        },
+        {
+          "column": "loc_match_type",
+          "filled": {
+            "n": 17054,
+            "denominator": 17054,
+            "percent": 100.0
+          },
+          "example_masked": "[label/validation masqué ; présence seule]",
+          "used": "non (qualification)",
+          "interest_risk": "Qualification issue de la comparaison au label ; audit uniquement, fuite si feature."
+        }
+      ]
+    }
+  },
+  "raw_groups": {
+    "rows": 131749,
+    "siret_present": 43284,
+    "siret_absent": 88465,
+    "distinct_raw_query_inputs": 102495,
+    "distinct_product_categories": 8,
+    "distinct_service_states": 2,
+    "service": {
+      "groups": 105351,
+      "rows": 131749,
+      "singleton_groups": 81022,
+      "multi_groups": 24329,
+      "rows_in_multi_groups": 50727,
+      "quantiles": {
+        "min": 1.0,
+        "p50": 1.0,
+        "p90": 2.0,
+        "p95": 2.0,
+        "p99": 3.0,
+        "max": 6.0
+      },
+      "missing_siret_with_present_sister_inventory_only": {
+        "n": 2594,
+        "denominator": 88465,
+        "percent": 2.932233086531397
+      }
+    },
+    "reference": {
+      "groups": 105351,
+      "rows": 131749,
+      "singleton_groups": 81022,
+      "multi_groups": 24329,
+      "rows_in_multi_groups": 50727,
+      "quantiles": {
+        "min": 1.0,
+        "p50": 1.0,
+        "p90": 2.0,
+        "p95": 2.0,
+        "p99": 3.0,
+        "max": 6.0
+      },
+      "missing_siret_with_present_sister_inventory_only": {
+        "n": 2594,
+        "denominator": 88465,
+        "percent": 2.932233086531397
+      }
+    },
+    "name_norm": {
+      "groups": 70760,
+      "rows": 129954,
+      "singleton_groups": 46239,
+      "multi_groups": 24521,
+      "rows_in_multi_groups": 83715,
+      "quantiles": {
+        "min": 1.0,
+        "p50": 1.0,
+        "p90": 2.0,
+        "p95": 3.0,
+        "p99": 9.0,
+        "max": 2609.0
+      },
+      "missing_siret_with_present_sister_inventory_only": {
+        "n": 4303,
+        "denominator": 88465,
+        "percent": 4.864070536370316
+      }
+    },
+    "reference_relation": {
+      "services_with_multiple_references": 0,
+      "references_with_multiple_services": 0
+    }
+  },
+  "raw_missing_reach_permitted_g0_donors": {
+    "name_norm": {
+      "n": 2368,
+      "denominator": 88465,
+      "percent": 2.676764822246086
+    },
+    "service": {
+      "n": 785,
+      "denominator": 88465,
+      "percent": 0.887356581698977
+    },
+    "reference": {
+      "n": 785,
+      "denominator": 88465,
+      "percent": 0.887356581698977
+    }
+  },
+  "g0": {
+    "queries": 17427,
+    "companies": 11483,
+    "by_origin": {
+      "REAL_CRM_20260817": 9897,
+      "REAL_CRM_HISTORICAL": 7530
+    },
+    "scored_queries": 17427,
+    "baseline_exact": {
+      "n": 12275,
+      "denominator": 17427,
+      "percent": 70.4366787169335
+    },
+    "baseline_union": {
+      "n": 13382,
+      "denominator": 17427,
+      "percent": 76.78889080162965
+    }
+  },
+  "coherence": {
+    "name_norm": {
+      "groups": 14389,
+      "rows": 17427,
+      "singleton_groups": 13601,
+      "multi_groups": 788,
+      "rows_in_multi_groups": 3826,
+      "quantiles": {
+        "min": 1.0,
+        "p50": 1.0,
+        "p90": 1.0,
+        "p95": 2.0,
+        "p99": 5.0,
+        "max": 248.0
+      },
+      "same_siren_pairs": {
+        "n": 22831,
+        "denominator": 60896,
+        "percent": 37.49178928008408
+      },
+      "same_siret_same_address_pairs": {
+        "n": 29,
+        "denominator": 31,
+        "percent": 93.54838709677419
+      },
+      "groups_multiple_siren": 173,
+      "groups_cross_population_folds": 122,
+      "rows_cross_population_folds": 1153,
+      "groups_cross_cv": 150,
+      "rows_cross_cv": 1311
+    },
+    "service": {
+      "groups": 9897,
+      "rows": 9897,
+      "singleton_groups": 9897,
+      "multi_groups": 0,
+      "rows_in_multi_groups": 0,
+      "quantiles": {
+        "min": 1.0,
+        "p50": 1.0,
+        "p90": 1.0,
+        "p95": 1.0,
+        "p99": 1.0,
+        "max": 1.0
+      },
+      "same_siren_pairs": {
+        "n": 0,
+        "denominator": 0,
+        "percent": null
+      },
+      "same_siret_same_address_pairs": {
+        "n": 0,
+        "denominator": 0,
+        "percent": null
+      },
+      "groups_multiple_siren": 0,
+      "groups_cross_population_folds": 0,
+      "rows_cross_population_folds": 0,
+      "groups_cross_cv": 0,
+      "rows_cross_cv": 0
+    },
+    "reference": {
+      "groups": 9897,
+      "rows": 9897,
+      "singleton_groups": 9897,
+      "multi_groups": 0,
+      "rows_in_multi_groups": 0,
+      "quantiles": {
+        "min": 1.0,
+        "p50": 1.0,
+        "p90": 1.0,
+        "p95": 1.0,
+        "p99": 1.0,
+        "max": 1.0
+      },
+      "same_siren_pairs": {
+        "n": 0,
+        "denominator": 0,
+        "percent": null
+      },
+      "same_siret_same_address_pairs": {
+        "n": 0,
+        "denominator": 0,
+        "percent": null
+      },
+      "groups_multiple_siren": 0,
+      "groups_cross_population_folds": 0,
+      "rows_cross_population_folds": 0,
+      "groups_cross_cv": 0,
+      "rows_cross_cv": 0
+    }
+  },
+  "potential": {
+    "name_norm": {
+      "loo_all": {
+        "mode": "loo_all",
+        "known_siren": {
+          "n": 3653,
+          "denominator": 17427,
+          "percent": 20.96172605726746
+        },
+        "known_siren_accuracy": {
+          "n": 2839,
+          "denominator": 3653,
+          "percent": 77.71694497673145
+        },
+        "tied_majority": 173,
+        "candidate_siren_available": 2840,
+        "no_candidate_fallback": 813,
+        "changed": 349,
+        "top1_exact": {
+          "n": 12468,
+          "denominator": 17427,
+          "percent": 71.54415562058874
+        },
+        "top1_union": {
+          "n": 13605,
+          "denominator": 17427,
+          "percent": 78.06851437424686
+        },
+        "union_gains": 255,
+        "union_losses": 32,
+        "decisions_sha256": "ba89e4ff8786447299b06ca177fb24afe4d617a8f06ba5b129b28d535a9e01ba"
+      },
+      "other_record": {
+        "mode": "other_record",
+        "known_siren": {
+          "n": 3653,
+          "denominator": 17427,
+          "percent": 20.96172605726746
+        },
+        "known_siren_accuracy": {
+          "n": 2839,
+          "denominator": 3653,
+          "percent": 77.71694497673145
+        },
+        "tied_majority": 173,
+        "candidate_siren_available": 2840,
+        "no_candidate_fallback": 813,
+        "changed": 349,
+        "top1_exact": {
+          "n": 12468,
+          "denominator": 17427,
+          "percent": 71.54415562058874
+        },
+        "top1_union": {
+          "n": 13605,
+          "denominator": 17427,
+          "percent": 78.06851437424686
+        },
+        "union_gains": 255,
+        "union_losses": 32,
+        "decisions_sha256": "ba89e4ff8786447299b06ca177fb24afe4d617a8f06ba5b129b28d535a9e01ba"
+      },
+      "cross_cv_only": {
+        "mode": "cross_cv_only",
+        "known_siren": {
+          "n": 1144,
+          "denominator": 17427,
+          "percent": 6.5645263097492395
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 1144,
+          "percent": 0.0
+        },
+        "tied_majority": 167,
+        "candidate_siren_available": 129,
+        "no_candidate_fallback": 1015,
+        "changed": 81,
+        "top1_exact": {
+          "n": 12246,
+          "denominator": 17427,
+          "percent": 70.27027027027027
+        },
+        "top1_union": {
+          "n": 13343,
+          "denominator": 17427,
+          "percent": 76.56510013197911
+        },
+        "union_gains": 0,
+        "union_losses": 39,
+        "decisions_sha256": "7c10dbb1def32c870533d33aed7e4e03c2f3e390a816c9bf22da7bacb52a3697"
+      }
+    },
+    "service": {
+      "loo_all": {
+        "mode": "loo_all",
+        "known_siren": {
+          "n": 0,
+          "denominator": 17427,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 12275,
+          "denominator": 17427,
+          "percent": 70.4366787169335
+        },
+        "top1_union": {
+          "n": 13382,
+          "denominator": 17427,
+          "percent": 76.78889080162965
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "3f6f272f0c1434452bb52bbce2102c7dd4f953163dbcc3d5f112e67ddc87773b"
+      },
+      "other_record": {
+        "mode": "other_record",
+        "known_siren": {
+          "n": 0,
+          "denominator": 17427,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 12275,
+          "denominator": 17427,
+          "percent": 70.4366787169335
+        },
+        "top1_union": {
+          "n": 13382,
+          "denominator": 17427,
+          "percent": 76.78889080162965
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "3f6f272f0c1434452bb52bbce2102c7dd4f953163dbcc3d5f112e67ddc87773b"
+      },
+      "cross_cv_only": {
+        "mode": "cross_cv_only",
+        "known_siren": {
+          "n": 0,
+          "denominator": 17427,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 12275,
+          "denominator": 17427,
+          "percent": 70.4366787169335
+        },
+        "top1_union": {
+          "n": 13382,
+          "denominator": 17427,
+          "percent": 76.78889080162965
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "3f6f272f0c1434452bb52bbce2102c7dd4f953163dbcc3d5f112e67ddc87773b"
+      }
+    },
+    "reference": {
+      "loo_all": {
+        "mode": "loo_all",
+        "known_siren": {
+          "n": 0,
+          "denominator": 17427,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 12275,
+          "denominator": 17427,
+          "percent": 70.4366787169335
+        },
+        "top1_union": {
+          "n": 13382,
+          "denominator": 17427,
+          "percent": 76.78889080162965
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "3f6f272f0c1434452bb52bbce2102c7dd4f953163dbcc3d5f112e67ddc87773b"
+      },
+      "other_record": {
+        "mode": "other_record",
+        "known_siren": {
+          "n": 0,
+          "denominator": 17427,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 12275,
+          "denominator": 17427,
+          "percent": 70.4366787169335
+        },
+        "top1_union": {
+          "n": 13382,
+          "denominator": 17427,
+          "percent": 76.78889080162965
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "3f6f272f0c1434452bb52bbce2102c7dd4f953163dbcc3d5f112e67ddc87773b"
+      },
+      "cross_cv_only": {
+        "mode": "cross_cv_only",
+        "known_siren": {
+          "n": 0,
+          "denominator": 17427,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 12275,
+          "denominator": 17427,
+          "percent": 70.4366787169335
+        },
+        "top1_union": {
+          "n": 13382,
+          "denominator": 17427,
+          "percent": 76.78889080162965
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "3f6f272f0c1434452bb52bbce2102c7dd4f953163dbcc3d5f112e67ddc87773b"
+      }
+    }
+  },
+  "smoke_replay": {
+    "name_norm": {
+      "loo_all": {
+        "mode": "loo_all",
+        "known_siren": {
+          "n": 18,
+          "denominator": 100,
+          "percent": 18.0
+        },
+        "known_siren_accuracy": {
+          "n": 11,
+          "denominator": 18,
+          "percent": 61.111111111111114
+        },
+        "tied_majority": 1,
+        "candidate_siren_available": 13,
+        "no_candidate_fallback": 5,
+        "changed": 3,
+        "top1_exact": {
+          "n": 68,
+          "denominator": 100,
+          "percent": 68.0
+        },
+        "top1_union": {
+          "n": 78,
+          "denominator": 100,
+          "percent": 78.0
+        },
+        "union_gains": 0,
+        "union_losses": 2,
+        "decisions_sha256": "55ffdbd170029ee57373b4ec48318697223fa09966e0cc3d036cbf5891aea4e4"
+      },
+      "other_record": {
+        "mode": "other_record",
+        "known_siren": {
+          "n": 18,
+          "denominator": 100,
+          "percent": 18.0
+        },
+        "known_siren_accuracy": {
+          "n": 11,
+          "denominator": 18,
+          "percent": 61.111111111111114
+        },
+        "tied_majority": 1,
+        "candidate_siren_available": 13,
+        "no_candidate_fallback": 5,
+        "changed": 3,
+        "top1_exact": {
+          "n": 68,
+          "denominator": 100,
+          "percent": 68.0
+        },
+        "top1_union": {
+          "n": 78,
+          "denominator": 100,
+          "percent": 78.0
+        },
+        "union_gains": 0,
+        "union_losses": 2,
+        "decisions_sha256": "55ffdbd170029ee57373b4ec48318697223fa09966e0cc3d036cbf5891aea4e4"
+      },
+      "cross_cv_only": {
+        "mode": "cross_cv_only",
+        "known_siren": {
+          "n": 10,
+          "denominator": 100,
+          "percent": 10.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 10,
+          "percent": 0.0
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 2,
+        "no_candidate_fallback": 8,
+        "changed": 2,
+        "top1_exact": {
+          "n": 68,
+          "denominator": 100,
+          "percent": 68.0
+        },
+        "top1_union": {
+          "n": 78,
+          "denominator": 100,
+          "percent": 78.0
+        },
+        "union_gains": 0,
+        "union_losses": 2,
+        "decisions_sha256": "e3ab2fbbf35c0c158a62b0323f2c86f640895d5d05c620fb5d5d7a29f19156cb"
+      }
+    },
+    "service": {
+      "loo_all": {
+        "mode": "loo_all",
+        "known_siren": {
+          "n": 0,
+          "denominator": 100,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 70,
+          "denominator": 100,
+          "percent": 70.0
+        },
+        "top1_union": {
+          "n": 80,
+          "denominator": 100,
+          "percent": 80.0
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "27bfcce71f8e6a1db7efa851b7b013bbadd5d6bf985f694b7f80bfff11118e2c"
+      },
+      "other_record": {
+        "mode": "other_record",
+        "known_siren": {
+          "n": 0,
+          "denominator": 100,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 70,
+          "denominator": 100,
+          "percent": 70.0
+        },
+        "top1_union": {
+          "n": 80,
+          "denominator": 100,
+          "percent": 80.0
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "27bfcce71f8e6a1db7efa851b7b013bbadd5d6bf985f694b7f80bfff11118e2c"
+      },
+      "cross_cv_only": {
+        "mode": "cross_cv_only",
+        "known_siren": {
+          "n": 0,
+          "denominator": 100,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 70,
+          "denominator": 100,
+          "percent": 70.0
+        },
+        "top1_union": {
+          "n": 80,
+          "denominator": 100,
+          "percent": 80.0
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "27bfcce71f8e6a1db7efa851b7b013bbadd5d6bf985f694b7f80bfff11118e2c"
+      }
+    },
+    "reference": {
+      "loo_all": {
+        "mode": "loo_all",
+        "known_siren": {
+          "n": 0,
+          "denominator": 100,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 70,
+          "denominator": 100,
+          "percent": 70.0
+        },
+        "top1_union": {
+          "n": 80,
+          "denominator": 100,
+          "percent": 80.0
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "27bfcce71f8e6a1db7efa851b7b013bbadd5d6bf985f694b7f80bfff11118e2c"
+      },
+      "other_record": {
+        "mode": "other_record",
+        "known_siren": {
+          "n": 0,
+          "denominator": 100,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 70,
+          "denominator": 100,
+          "percent": 70.0
+        },
+        "top1_union": {
+          "n": 80,
+          "denominator": 100,
+          "percent": 80.0
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "27bfcce71f8e6a1db7efa851b7b013bbadd5d6bf985f694b7f80bfff11118e2c"
+      },
+      "cross_cv_only": {
+        "mode": "cross_cv_only",
+        "known_siren": {
+          "n": 0,
+          "denominator": 100,
+          "percent": 0.0
+        },
+        "known_siren_accuracy": {
+          "n": 0,
+          "denominator": 0,
+          "percent": null
+        },
+        "tied_majority": 0,
+        "candidate_siren_available": 0,
+        "no_candidate_fallback": 0,
+        "changed": 0,
+        "top1_exact": {
+          "n": 70,
+          "denominator": 100,
+          "percent": 70.0
+        },
+        "top1_union": {
+          "n": 80,
+          "denominator": 100,
+          "percent": 80.0
+        },
+        "union_gains": 0,
+        "union_losses": 0,
+        "decisions_sha256": "27bfcce71f8e6a1db7efa851b7b013bbadd5d6bf985f694b7f80bfff11118e2c"
+      }
+    }
+  },
+  "closed_counts_only": {
+    "population_fold_counts": {
+      "0": 7009,
+      "1": 6622,
+      "2": 7775,
+      "3": 7970,
+      "4": 7842
+    },
+    "test4323": 4323,
+    "control962": 962,
+    "other_excluded_pilot_company_queries": 859
+  },
+  "custody": {
+    "label_universe": "17427 G0 only; folds2/3/4; closed sets and pilot excluded by sealed cohort",
+    "raw_siret_values_returned": false,
+    "raw_presence_not_label_sisters": true,
+    "human_siren_cross_cv": 0,
+    "human_siren_cross_population_folds": 0,
+    "new_fits": 0,
+    "label_changes": 0
+  },
+  "sources": [
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_new_data_20260817/source/plateforme_new_data_to_cure.csv",
+      "size_bytes": 14954776,
+      "sha256": "829cee816839bd7c24962127e2d35784923bc0d0c5ecbe12ce34e45a1439f7da"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/data/crm_ok_gt.csv",
+      "size_bytes": 2101458,
+      "sha256": "2e624326bdc96ea5ffb963ed765351e5ecb94d0720dfa403132bf7b742d883e4"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_gt_v2_commercial_certified_population/73328b7611f37a06/queries.parquet",
+      "size_bytes": 3722146,
+      "sha256": "449406955977cd5d693e35f9fa05ce9948f6a7ab67432b804fe3ad0d38fa1670"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_gt_v2_commercial_certified_population/73328b7611f37a06/manifest.json",
+      "size_bytes": 1859,
+      "sha256": "d30a00b7f4aa542b0e342a2681598b00f44291ef2f87231adb366f411948d01a"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/cohort.json",
+      "size_bytes": 399122,
+      "sha256": "2ec7a3f40eb35319f0a105dd28211f689581d7c6ee572ac90f3bb92eff5c12c5"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/matrix.json",
+      "size_bytes": 646342,
+      "sha256": "633e7e1bcbe9b91f7f6b149962d9b5a9bb291b6a1ff587c361dec2b5d9fd1bd4"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/data.json",
+      "size_bytes": 1429598,
+      "sha256": "4cf8121fe2687d616cb87c4f6c064374bb5814decef210a74da7919ad6c18202"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/data.json",
+      "size_bytes": 2353624,
+      "sha256": "7a225fcd857ab5f199cfd817815ca7ea433ccc076a9eef63bbba1009b74d55bb"
+    },
+    {
+      "path": "/Users/nathanjullia/Documents/Projets/SIRETO/scripts/crm_structure_audit.py",
+      "size_bytes": 31527,
+      "sha256": "ed97a95b85197195f2044e8c3ed840b6bce27acc7500879d9d8d6ed38fd329e3"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/datasets/crm_new_data_20260817/location_triage_v1/manifest.json",
+      "size_bytes": 3975,
+      "sha256": "e9ac9fbde826e2a3cd8ef236aad4eaa3f5c59d77d0653cf1f72bf7099b4fb36b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/training_queries.json",
+      "size_bytes": 4346169,
+      "sha256": "f8876e5abf4c3f10a97489876672ca1b28a57d1c424d223915ae68b44a93947c"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/label_side.json",
+      "size_bytes": 4026634,
+      "sha256": "bb72d7ffb5f060972f93450af81c18ae512c2ed5378c78f4dfafcbf04a9b9e75"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/candidate_keys.npy",
+      "size_bytes": 24397928,
+      "sha256": "836f234c66cca28f005f6eb3c749a7fa983cf81d5e2c0b355ded754387a30f6b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/result.json",
+      "size_bytes": 2605661,
+      "sha256": "8f51b8860278febde8ea7d6deeccdca09c74c6943a042275904155a483898807"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/predictions.npz",
+      "size_bytes": 5866385,
+      "sha256": "4ce8394c8c7ce4263d48a3dd6ef1c135aabb2faf42fa24772a8c608b5e3edb4f"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/views.npy",
+      "size_bytes": 3485528,
+      "sha256": "727be75053b883acb5efe97802ec44da2589eee553f268d28b9657636f3e2cf2"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/keys.npy",
+      "size_bytes": 24397928,
+      "sha256": "836f234c66cca28f005f6eb3c749a7fa983cf81d5e2c0b355ded754387a30f6b"
+    },
+    {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_gemma_finetune_10h_20261019/full/views.npy",
+      "size_bytes": 3485528,
+      "sha256": "727be75053b883acb5efe97802ec44da2589eee553f268d28b9657636f3e2cf2"
+    }
+  ],
+  "elapsed_seconds": 9.393234125338495,
+  "peak_rss_bytes": 445956096
+}
