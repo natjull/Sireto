@@ -59,4 +59,20 @@ Familles historiques, ΔUNION group/noise vsbase : colocation n=1046 : -0.19 [-1
 **Reste / risques** —Tout le banc évalué, labels/pools/jeux fermés/VM/tiers inchangés ; IC exploratoires, pas garantie98% ni promotion.
 Recommandation unique : conserver la référence S1+S2-BASE, aucun gain UNION confirmé.
 
+## Attestation et interprétation finale
+
+Avenant/code AVANT FIT `be26eab2`, auto-publication `b90c4bc9`. Run/publication6040,231s=100,67min, contrôles d'admission1,588s au total (aucune attente60s nécessaire), pic5282086912octets=4,92Gio. Contrôle complémentaire jusqu'à6456,695s=107,61min depuis lancement, toujours<4h, pic audit3,21Gio. Projection initiale13971,417s conservatrice, banc entier conservé. Disque constaté18,969Gio avant/17,718Gio après ; aucune nouvelle banque Gemma, arrêt12Gio jamais déclenché. Aucun contrôle VM, jeu fermé, label, pool, fichier tiers/pending ou push.
+
+`H/step2_ranker_v3_group_20261020/postverify.py` passé sans fit :50reclasseurs/179530vecteurs ranking et leurs49features risque/cibles rejoués,50hashes de poids query recomposés,95FORT conservés dans chacune des évaluations17427, métriques top1/SUR recomposées. Audit20dossiers réels choisis SHA sans regard aux erreurs :200000paires de voisins vérifiées indépendamment depuis les sources officielles, rangs/deltas noms/Gemma/états/comptes de SIREN revérifiés.1382références source SHA, protocoles/code avant/après et liaison Git-externe vérifiés. Preuve `postverification.json` SHA `40a371fd64893d272b6ea71c4d254c6d1530f3ffa1a28e754c22876139db7f9c`. Le contrôle principal avait déjà rejoué les15risques et leurs60seuils via Wilson contractuel, sans entreprises communes entre apprentissage/calibration/test. Les deux smokes ont précédé les fits complets ; leurs poids bruit étaient tous1 sur les100entreprises tirées, puis le premier pli complet a bien exercé78poids0.
+
+**Top1 sans gain confirmé** : base12275exacts/13382UNION ; groupe12270/13383 ; groupe+bruit12277/13392, toujours/17427. Groupe :UNION126gains/125pertes=+1 ; bruit127/117=+10. Les IC95 appariés incluent0, de même les IC simultanés. Contraste bruit vsgroupe :UNION+0,0516point[-0,0834;0,1925], lui aussi non concluant. Les absences restent erreurs. Les11familles historiques non vides et leurs compléments couvrent17427 ; `generic_name` a0cas et n'est pas estimable.
+
+**Familles ciblées** : co-adresse1046, groupe16gains/18pertes (−2), bruit18/16 (+2) ; siège267, groupe6/2 (+4), bruit7/1 (+6). Le bruit sur siège atteint seulement une borne ordinaire0, et la borne simultanée est négative : pas de gain statistiquement confirmé. Ces familles sont définies sur les anciennes erreurs base85, pas toutes les scènes de cette nature ni les erreurs nouvelles recalculées. Les indicateurs de siège « ailleurs » sont des proxies hors voisinage observé/non-concordance CRM, pas une preuve physique quand des champs sont manquants ; aucune règle de choix forcée n'a été ajoutée.
+
+Les trois ajouts de confiance sont trois familles de signaux distinctes mais corrélées ; le mot « indépendantes » dans la motivation initiale ne signifie aucune indépendance statistique démontrée. Ils ont été fixés a priori, pas sélectionnés comme les meilleurs après évaluation.
+
+**Confiance, pas certification** : à cible Wilson calibration98%, risque49 base268/270=99,26%[97,34;99,80], couverture1,55% ; groupe1450/1476=98,24%[97,43;98,80],8,47% ; bruit1259/1279=98,44%[97,60;98,99],7,34%. Toutes les bornes inférieures test restent<98%. La base49 profite des trois nouvelles features de confiance et ne doit pas être assimilée à l'ancien risque46/0SUR98. Le surcroît descriptif de couverture ne constitue pas un gain top1 confirmé ni un gate produit.526 :base387/410,groupe382/405,bruit381/404 exact/UNION, consommés et sans aucun fit/sélection.
+
+**Recommandation unique : conserver la référence top1 S1+S2-BASE, avec A_VERIFIER ; aucun gain UNION confirmé pour promouvoir le reclasseur v3.**
+
 Détails par CV/fold, familles complètes, n/N, Wilson, gains/pertes et confirmation526 dans le JSON ; reçus/modèles/rejeux dans `/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_ranker_v3_group_20261020`.
