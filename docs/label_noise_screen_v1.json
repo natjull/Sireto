@@ -1,10 +1,3939 @@
 {
-  "status": "PREREGISTERED_BEFORE_SCREEN",
+  "status": "COMPLETE_SCREEN_REVIEW_PENDING",
   "registered_utc": "2026-10-20T06:38:08.524794+00:00",
   "protocol_markdown": "# Bruit des labels G0 — avenant v1 préenregistré avant exécution\n\n## Périmètre et ressources\n\n17427 dossiers G0, folds population2/3/4, mêmes100 candidats, vérités et cinq CV entreprise. Objectif métier de Nathan : occupant actif à l'adresse fibre CRM ; cette vue secondaire ne change aucune cible officielle. Aucun jeu fermé, web, fit, VM ni fichier tiers/pending touché. Deux heures depuis lancement, garde RSS3,75Gio (<4), CPU/DuckDB1thread/512Mio, pas de spill ; worker séquentiel détaché et journal. Écritures autorisées : ces deux docs, une ligne handover, namespace neuf `$H/label_noise_review_20261020/` pour code/reçus/log/fiches et clé privée. Si namespace préexistant : STOP, ne pas écraser.\n\n## 1. Grille sans modèle figée\n\nSources locales officielles août2026, géométrie juillet2026/BAN G0 ; données publiques seulement. Pour chaque dossier, examiner les100 SIRET G0 et les établissements actifs publics du stock à l'adresse CRM : jointure de présélection INSEE/numéro, puis confirmation stricte numéro/suffixe/voie normalisée identique à la grille `step2_sur_label_audit`. Ni score ni rang appris ne servent à cette sélection.\n\nN = maximum Jaro-Winkler entre nom CRM et noms publics site/UL courants, mêmes normalisations historiques ; N≥0,92, N label connu. Concurrent actif obligatoire. Site admissible = adresse stricte OU distance typée≤tolérance UNION (200m si deux points au numéro,500m sinon voie ; aucune coordonnée communale/inconnue). Distance typée concurrent>500m bloque même une adresse textuelle exacte. Un concurrent déjà correct UNION ne crée aucun conflit : exact ou même SIREN ET (adresse stricte OU distance admissible). Les masques UNION G0 scellés restent la référence pour les100 ; même définition appliquée aux ajouts diagnostic, jamais injectés dans le pool.\n\nDominance héritée : (adresse concurrente strictement meilleure ET N concurrent≥N label) OU (deux adresses strictes ET N concurrent−N label≥0,08). Adresse meilleure = candidat strict et contradiction label connue sur les champs complets numéro/suffixe/voie/INSEE, OU concurrent≤50m et label typé>500m. Extension BAN expressément demandée : un candidat seulement proche, sans adresse stricte, peut dominer uniquement si le label typé est à>500m et le candidat dans la tolérance UNION ; il faut toujours N concurrent≥N label. Absence de nom ou d'adresse/point n'est jamais une contradiction connue.\n\nNiveaux exclusifs :\n- **FORT** : concurrent dominant ET (adresse meilleure ET gain nom≥0,08, OU label fermé, OU label typé>500m).\n- **FAIBLE** : concurrent dominant restant (gain sur un axe, autre axe non inférieur).\n- **AUCUN** : aucun concurrent satisfaisant ; cela ne prouve pas un label correct.\n\nPlusieurs concurrents : FORT avant FAIBLE, puis gain N décroissant, adresse stricte d'abord, distance typée croissante (inconnue après connue), SIRET lexical pour égalité uniquement. Aucun score du modèle, NAF, statut siège ou identifiant n'est une feature du criblage. NAF et état sont montrés au juge ; dates CRM/occupation/filiation non attestées. Comptes distincts G0 seul et G0+co-adresse, absences/non-publics et UNION exclus publiés.\n\n## 2. Criblage modèle et accord\n\nLimite préconstatée dans le code risque v1 : une probabilité OOF de correction UNION du top1, pas de probabilités par SIRET. Aucun nouveau fit pour en fabriquer. Publier séparément `risk_probability_top1_union` et poids relatifs du reclasseur `w_j=softmax(score_j)` à température1 fixe. `w_label` uniquement si label exact dans100 ; absent = non disponible, jamais zéro. Ces poids ne sont PAS des probabilités calibrées ni une implémentation validée de confident learning.\n\nSignal modèle prédéclaré : top1 non UNION, label exact présent, rapport `w_top1/w_label≥4` (écart score≥ln4), risque OOF acceptant le top1 au seuil calibration97 déjà gelé. Sinon NON ; label absent = INDISPONIBLE. Publier aussi le rapport continu et la probabilité risque, sans sélection sur erreurs. Rejouer les masques97 et l'ordre des scores depuis les artefacts ; aucun réglage sur G0. Accord entre criblage sans modèle (FORT ou FAIBLE) et ce signal : matrice2×2, accord brut, Cohen kappa, Jaccard, recouvrement par niveau ; dénominateur disponible explicite et absents séparés. C'est un contraste avec un signal de rejet très sélectif, pas deux estimateurs indépendants du bruit réel.\n\nTaux FORT/FAIBLE/AUCUN et Wilson bilatéral95 descriptif : global, folds2/3/4, SUR97/non-SUR, dix familles historiques scellées ; groupes complémentaires `pool_union_absent_base` et `hors_erreurs_base` pour couvrir tout le banc sans rebaptiser les familles. Publier n/N et ne jamais retirer une ligne.\n\n## 3. Tirage humain en aveugle\n\n`random.Random(20261020)`, listes par strate en indices G0 croissants, sans remise :100 FORT,50 FAIBLE,50 AUCUN. Si strate trop petite : prendre toute la strate et signaler le déficit, sans remplacement ni transfert. Ordre des fiches et options aléatoire indépendant, graine20261021 ; identifiants de revue opaques graine20261022. Deux options : label humain et concurrent choisi ; AUCUN : label et top1 OOF. Deux SIRET identiques restent identiques, jamais remplacés pour embellir le témoin.\n\nCSV juge : CRM nom/adresse puis options1/2 (dénomination, enseigne, adresse, actif/fermé, distance typée/qualité, NAF), réponse vide et commentaire. Valeurs permises : `Option 1 / Option 2 / Les deux / Aucune / Je ne sais pas`. Anonymisation des rôles, identifiants SIREN/SIRET/query, modèle/strate/scores ; les textes métier officiels nécessaires au jugement sont conservés, pas pseudonymisés arbitrairement. Aucun ordre label/concurrent déductible des colonnes. Aucune formule CSV active (préfixer les champs commençant par =,+,-,@).\n\nClé de décodage et résultats individuels dans `private/` mode0700, clé mode0600 ; SHA256 publié, aucune correspondance option→label dans les docs ni la fiche. Ne transmettre au juge que `review_sheet.csv`, jamais le namespace ni les docs privés. Ces permissions protègent un autre compte ; un juge utilisant le même compte propriétaire peut techniquement lire la clé : séparation organisationnelle requise, non garantie par un chmod. Temps de remplissage à estimer comme hypothèse1–2min/dossier, pas un temps mesuré.\n\n## 4. Estimation après jugement, préenregistrée\n\nAucune réponse fabriquée et aucun taux de bruit humain annoncé avant retour des fiches. Strates h, poids W_h=N_h/17427. Indicateur primaire Y=1 si concurrent différent du label choisi seul,0 si label/Les deux ; `Aucune` indique les deux options non occupantes mais pas « concurrent choisi » : taux secondaire séparé. `Je ne sais pas`/manquant = inconnu, jamais supprimé du dénominateur. Publier somme W_h×moyenne(Y) si toutes les réponses sont déterminées ; sinon bornes avec inconnus0/1, pas un point prétendument mesuré. Le taux « concurrent choisi » est un proxy du label non-occupant, non exhaustif ; signaler séparément les AUCUN sans alternative et les options identiques. Ne pas considérer un concurrent identique au label comme un désaccord de vérité.\n\nIC : bootstrap stratifié10000 rééchantillonnages de dossiers dans chaque strate, graine20261020, poids population fixes, percentiles2,5/97,5. Strate entièrement recensée : composante fixée, pas de variance d'échantillonnage. Pas de correction artificielle de labels ; IC descriptif sans erreur de juge modélisée, sensibilité cluster entreprise en complément si jugements disponibles.\n\nVue précision SUR occupant : estimation Horvitz–Thompson `somme_h (N_h/n_h) somme_revue_h 1_SUR × Z /4459`, à côté des précisions officielles exacte et UNION inchangées. Z=1 si top1 correspond à une option reconnue occupante ; Z=0 si top1 est montré mais rejeté au profit de l'autre seule ou de Aucune ; Z inconnu si top1 non montré, réponse inconnue, ou cas temporel non résolu. Publier des bornes en affectant inconnus0/1 plutôt que supposer que tout concurrent correct vaut top1 correct. Même bootstrap stratifié ; pas de précision « corrigée » effective tant que la fiche est vide.\n\n## Exécution et résultats\n\nÀ mesurer après commit de cet avenant. Code et reçus seront conservés dans le namespace autorisé ; livrables de synthèse `docs/label_noise_screen_v1.{md,json}` et une ligne append-only handover dans un commit résultats isolé.\n",
   "protocol_sha256": "186cf96156a9a56291e408e177ea761de622c6a131467c1ec6c7822e53246400",
   "sampling_seed": 20261020,
   "order_seed": 20261021,
   "review_id_seed": 20261022,
-  "screen_executed": false
+  "screen_executed": true,
+  "review_quota_shortfall": {
+    "FORT": 5,
+    "FAIBLE": 0,
+    "AUCUN": 0
+  },
+  "sampling_deviation": "Only95 FORT dossiers exist: all95 are reviewed; no duplicates or transfer. Final sheet195=95 FORT+50 FAIBLE+50 AUCUN, not the infeasible200 requested.",
+  "result": {
+    "status": "COMPLETE_SCREEN_REVIEW_PENDING",
+    "preregistration_commit": "2b222a38a63d47c446bfccdc554118d400ca4aad",
+    "protocol_sha256": "186cf96156a9a56291e408e177ea761de622c6a131467c1ec6c7822e53246400",
+    "queries": 17427,
+    "source_refs": [
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/label_noise_screen_v1.json",
+        "size_bytes": 8879,
+        "mtime_ns": 1792478288525056679,
+        "inode": 77434862,
+        "sha256": "e911acefa9390f59f6a3aef77376237d821372936b253c9df9e87de0e99814a1"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/label_noise_screen_v1.md",
+        "size_bytes": 8500,
+        "mtime_ns": 1792478280829400359,
+        "inode": 77434854,
+        "sha256": "186cf96156a9a56291e408e177ea761de622c6a131467c1ec6c7822e53246400"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/run_screen.py",
+        "size_bytes": 24110,
+        "mtime_ns": 1792478541636040195,
+        "inode": 5147264,
+        "sha256": "62f5fcff478e24f43e3a9e3de37354f1b2a4692155f7fd861b1b396d41c12841"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/data.json",
+        "size_bytes": 1429598,
+        "mtime_ns": 1792440265417505090,
+        "inode": 5042164,
+        "sha256": "4cf8121fe2687d616cb87c4f6c064374bb5814decef210a74da7919ad6c18202"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/data.json",
+        "size_bytes": 2353624,
+        "mtime_ns": 1792401700078035753,
+        "inode": 4995433,
+        "sha256": "7a225fcd857ab5f199cfd817815ca7ea433ccc076a9eef63bbba1009b74d55bb"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/matrix.json",
+        "size_bytes": 646342,
+        "mtime_ns": 1792399663476733646,
+        "inode": 4989392,
+        "sha256": "633e7e1bcbe9b91f7f6b149962d9b5a9bb291b6a1ff587c361dec2b5d9fd1bd4"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_risk_model_v1.json",
+        "size_bytes": 2605661,
+        "mtime_ns": 1792441441794727894,
+        "inode": 77341062,
+        "sha256": "8f51b8860278febde8ea7d6deeccdca09c74c6943a042275904155a483898807"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_risk_ceiling_v1.json",
+        "size_bytes": 118278,
+        "mtime_ns": 1792442820038683522,
+        "inode": 77348509,
+        "sha256": "1f386d97d48ca3ac8ce96ca2f8ebda26b1a7bf96b63521b5bf59ebc0c2a2dd99"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/result.json",
+        "size_bytes": 2605661,
+        "mtime_ns": 1792441427070637425,
+        "inode": 5043344,
+        "sha256": "8f51b8860278febde8ea7d6deeccdca09c74c6943a042275904155a483898807"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_ceiling_v1_20261020/result.json",
+        "size_bytes": 118278,
+        "mtime_ns": 1792442820036359577,
+        "inode": 5065126,
+        "sha256": "1f386d97d48ca3ac8ce96ca2f8ebda26b1a7bf96b63521b5bf59ebc0c2a2dd99"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/candidate_keys.npy",
+        "size_bytes": 24397928,
+        "mtime_ns": 1792399663162502988,
+        "inode": 4989391,
+        "sha256": "836f234c66cca28f005f6eb3c749a7fa983cf81d5e2c0b355ded754387a30f6b"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/views.npy",
+        "size_bytes": 3485528,
+        "mtime_ns": 1792401700034616050,
+        "inode": 4995432,
+        "sha256": "727be75053b883acb5efe97802ec44da2589eee553f268d28b9657636f3e2cf2"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/predictions.npz",
+        "size_bytes": 5866385,
+        "mtime_ns": 1792441386724877511,
+        "inode": 5043315,
+        "sha256": "4ce8394c8c7ce4263d48a3dd6ef1c135aabb2faf42fa24772a8c608b5e3edb4f"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_ceiling_v1_20261020/decisions.npz",
+        "size_bytes": 23755,
+        "mtime_ns": 1792442817940688464,
+        "inode": 5065117,
+        "sha256": "003619410b0efaa92877d4c2757caa6fc5d7940d278d145edfaa03dee9eaf27a"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/training_queries.json",
+        "size_bytes": 4346169,
+        "mtime_ns": 1792394447352349212,
+        "inode": 4972130,
+        "sha256": "f8876e5abf4c3f10a97489876672ca1b28a57d1c424d223915ae68b44a93947c"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/label_side.json",
+        "size_bytes": 4026634,
+        "mtime_ns": 1792394447484065892,
+        "inode": 4972133,
+        "sha256": "bb72d7ffb5f060972f93450af81c18ae512c2ed5378c78f4dfafcbf04a9b9e75"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_option_d_20261017/full/geometry.json",
+        "size_bytes": 18526885,
+        "mtime_ns": 1792394447454820232,
+        "inode": 4972132,
+        "sha256": "912e95cd1244c5e515e663ad2eb1cfc7bf0089ca74fcb94f8af7d5c0ab54b230"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_error_families_g0.json",
+        "size_bytes": 3476338,
+        "mtime_ns": 1792406562956720795,
+        "inode": 73475030,
+        "sha256": "e7f0778c07eb21403da0e0ec2f29c1c731208f68aa59e0ec6fc84e92f68229f7"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_option_d.json",
+        "size_bytes": 10141155,
+        "mtime_ns": 1792399843522456349,
+        "inode": 73464730,
+        "sha256": "590b9ea81f2f9ca96ce0b7ed42070d8cc7d716d8ea153b483d130b2991475fbe"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk0/receipt.json",
+        "size_bytes": 348438,
+        "mtime_ns": 1792440489140886746,
+        "inode": 5042382,
+        "sha256": "7b3065aba464116d5afc424af9daf869aadab4d56eba47657b1b1258a8af4eb1"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk0/attempt0/decisions.npz",
+        "size_bytes": 53661,
+        "mtime_ns": 1792440489139445370,
+        "inode": 5042381,
+        "sha256": "12c4a46803bf9c632d6b177252b8a9258c3e2838460a24757d68489f3fb32a6a"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk1/receipt.json",
+        "size_bytes": 355558,
+        "mtime_ns": 1792440720082295721,
+        "inode": 5042624,
+        "sha256": "4f71da78e4aff44e734158b43411f846a0e3f5d2ecf02cbb527fd9012e306c93"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk1/attempt0/decisions.npz",
+        "size_bytes": 53458,
+        "mtime_ns": 1792440720080835219,
+        "inode": 5042623,
+        "sha256": "845bea1b63edff36e8199e32fdc9372f15cf3c9c0e56c59230892f4c21734049"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk2/receipt.json",
+        "size_bytes": 349366,
+        "mtime_ns": 1792440937210844884,
+        "inode": 5042848,
+        "sha256": "b3db62d818a5cacde7a1d883f0723298d1fdbb8ad26b86b91c3b675c36ddede1"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk2/attempt0/decisions.npz",
+        "size_bytes": 53571,
+        "mtime_ns": 1792440937209407382,
+        "inode": 5042847,
+        "sha256": "8706314fb329f56960bb30423336a51d3874aeaadcd5aefa967ce70c5c94121f"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk3/receipt.json",
+        "size_bytes": 353834,
+        "mtime_ns": 1792441160095800903,
+        "inode": 5043081,
+        "sha256": "ba61c543264d4188d49b69f841588a4a7b2eb48388ece96da761365ef842c53e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk3/attempt0/decisions.npz",
+        "size_bytes": 53810,
+        "mtime_ns": 1792441160093635068,
+        "inode": 5043080,
+        "sha256": "98aaea18f0cccedebe283ad630b8922cbbed55fd38d3b69587514568cadfb81e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk4/receipt.json",
+        "size_bytes": 349175,
+        "mtime_ns": 1792441384969899963,
+        "inode": 5043308,
+        "sha256": "f4910386f30acb150156f39ed573f223bd862984fc748b176b2f918951c4a2fb"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_risk_model_v1_20261020_c/full/risk4/attempt0/decisions.npz",
+        "size_bytes": 57031,
+        "mtime_ns": 1792441384968407462,
+        "inode": 5043307,
+        "sha256": "a221df3f384e7257fc5055a41544d7a0f1f3855ea1bd17fc389658aa14fd5787"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_g0_bench.json",
+        "size_bytes": 31141693,
+        "mtime_ns": 1792404568324399249,
+        "inode": 73468513,
+        "sha256": "475ac99639e7f26623b38422c0db81a7b3cec118f171c874befd1634357a4abe"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/step2_g0_bench_20261017/full/base/predictions.npz",
+        "size_bytes": 10861853,
+        "mtime_ns": 1792402374758996006,
+        "inode": 4996200,
+        "sha256": "3b2aca45132879930bffd1d81497ae81a83226adf2bf674fa47c9cd913487422"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissement.parquet",
+        "size_bytes": 2202341459,
+        "mtime_ns": 1786994107608626537,
+        "inode": 1964894,
+        "sha256": "48e917d76c5f3845eb18bea99297fb2bc095c3976e9157dbd9565d24b93cda99"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockUniteLegale.parquet",
+        "size_bytes": 705090270,
+        "mtime_ns": 1786994089878172521,
+        "inode": 1964895,
+        "sha256": "fdbc02abbe47339c7fbe56728667868ff42d938da8b213aa4276ad266751b30e"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/oubusiness/raw/sirene/geolocalisation_etablissements_2026-07-01.parquet",
+        "size_bytes": 802036004,
+        "mtime_ns": 1784824801885563627,
+        "inode": 86516,
+        "sha256": "15da7e02003fa4cb203929e0591a2cdbb0a41784c0ac4deb801f56eeb7bdf906"
+      },
+      {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_RECALL100/sources/sirene/2026-08-01/StockEtablissementHistorique.parquet",
+        "size_bytes": 870319380,
+        "mtime_ns": 1786994116874694340,
+        "inode": 1964896,
+        "sha256": "711fed8260526ee61cbd2f8cdb9d655f67ca4ceba8d2b578e78c110e13f9b08d"
+      },
+      {
+        "path": "/Users/nathanjullia/Documents/Projets/SIRETO/docs/step2_sur_label_audit.md",
+        "size_bytes": 10386,
+        "mtime_ns": 1792443866251172895,
+        "inode": 77349798,
+        "sha256": "08824c82f42de17526e621a377b907450860073c5f59260a19a1045642ee86a7"
+      }
+    ],
+    "source_sha_before_after_equal": true,
+    "tables": {
+      "global": {
+        "n": 17427,
+        "FORT": {
+          "count": 95,
+          "denominator": 17427,
+          "percent": 0.545131118379526,
+          "wilson95_percent": [
+            0.44617998308694573,
+            0.6658802652873673
+          ]
+        },
+        "FAIBLE": {
+          "count": 50,
+          "denominator": 17427,
+          "percent": 0.28691111493659266,
+          "wilson95_percent": [
+            0.21771142948369746,
+            0.37802262653427093
+          ]
+        },
+        "AUCUN": {
+          "count": 17282,
+          "denominator": 17427,
+          "percent": 99.16795776668388,
+          "wilson95_percent": [
+            99.02183847574872,
+            99.29240550659213
+          ]
+        }
+      },
+      "SUR97": {
+        "n": 4459,
+        "FORT": {
+          "count": 31,
+          "denominator": 4459,
+          "percent": 0.695223144202736,
+          "wilson95_percent": [
+            0.4902210828629634,
+            0.9851048821802297
+          ]
+        },
+        "FAIBLE": {
+          "count": 10,
+          "denominator": 4459,
+          "percent": 0.22426553038797936,
+          "wilson95_percent": [
+            0.12186469151970303,
+            0.4123568137854447
+          ]
+        },
+        "AUCUN": {
+          "count": 4418,
+          "denominator": 4459,
+          "percent": 99.08051132540929,
+          "wilson95_percent": [
+            98.75506240968434,
+            99.32146664444481
+          ]
+        }
+      },
+      "non_SUR": {
+        "n": 12968,
+        "FORT": {
+          "count": 64,
+          "denominator": 12968,
+          "percent": 0.4935225169648365,
+          "wilson95_percent": [
+            0.3867011819950929,
+            0.6296653781361486
+          ]
+        },
+        "FAIBLE": {
+          "count": 40,
+          "denominator": 12968,
+          "percent": 0.30845157310302285,
+          "wilson95_percent": [
+            0.22661247159168177,
+            0.41972181399799424
+          ]
+        },
+        "AUCUN": {
+          "count": 12864,
+          "denominator": 12968,
+          "percent": 99.19802590993214,
+          "wilson95_percent": [
+            99.02927696681357,
+            99.33763601548593
+          ]
+        }
+      },
+      "fold_2": {
+        "n": 5763,
+        "FORT": {
+          "count": 34,
+          "denominator": 5763,
+          "percent": 0.5899705014749262,
+          "wilson95_percent": [
+            0.4225066257723708,
+            0.8232612583231552
+          ]
+        },
+        "FAIBLE": {
+          "count": 20,
+          "denominator": 5763,
+          "percent": 0.34704147145583897,
+          "wilson95_percent": [
+            0.2247746095089167,
+            0.5354588585646031
+          ]
+        },
+        "AUCUN": {
+          "count": 5709,
+          "denominator": 5763,
+          "percent": 99.06298802706924,
+          "wilson95_percent": [
+            98.77950636792725,
+            99.28110515366005
+          ]
+        }
+      },
+      "fold_3": {
+        "n": 6028,
+        "FORT": {
+          "count": 31,
+          "denominator": 6028,
+          "percent": 0.5142667551426675,
+          "wilson95_percent": [
+            0.3625432989892082,
+            0.7290215120256857
+          ]
+        },
+        "FAIBLE": {
+          "count": 16,
+          "denominator": 6028,
+          "percent": 0.26542800265428,
+          "wilson95_percent": [
+            0.16345139433863246,
+            0.43075286426768733
+          ]
+        },
+        "AUCUN": {
+          "count": 5981,
+          "denominator": 6028,
+          "percent": 99.22030524220305,
+          "wilson95_percent": [
+            98.96479050929338,
+            99.41312675712261
+          ]
+        }
+      },
+      "fold_4": {
+        "n": 5636,
+        "FORT": {
+          "count": 30,
+          "denominator": 5636,
+          "percent": 0.5322924059616749,
+          "wilson95_percent": [
+            0.3731177791198189,
+            0.758854800017956
+          ]
+        },
+        "FAIBLE": {
+          "count": 14,
+          "denominator": 5636,
+          "percent": 0.248403122782115,
+          "wilson95_percent": [
+            0.14803028470060603,
+            0.41655045844943744
+          ]
+        },
+        "AUCUN": {
+          "count": 5592,
+          "denominator": 5636,
+          "percent": 99.21930447125621,
+          "wilson95_percent": [
+            98.95365009285435,
+            99.41790947151861
+          ]
+        }
+      },
+      "family_colocation": {
+        "n": 1046,
+        "FORT": {
+          "count": 25,
+          "denominator": 1046,
+          "percent": 2.390057361376673,
+          "wilson95_percent": [
+            1.6240593447205944,
+            3.504473003504175
+          ]
+        },
+        "FAIBLE": {
+          "count": 47,
+          "denominator": 1046,
+          "percent": 4.493307839388145,
+          "wilson95_percent": [
+            3.395704515275777,
+            5.9239368456780195
+          ]
+        },
+        "AUCUN": {
+          "count": 974,
+          "denominator": 1046,
+          "percent": 93.11663479923519,
+          "wilson95_percent": [
+            91.41932130012759,
+            94.49841346081742
+          ]
+        }
+      },
+      "family_homonym_elsewhere": {
+        "n": 23,
+        "FORT": {
+          "count": 8,
+          "denominator": 23,
+          "percent": 34.78260869565217,
+          "wilson95_percent": [
+            18.81127593879773,
+            55.109664622737
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 23,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            14.311661845042686
+          ]
+        },
+        "AUCUN": {
+          "count": 15,
+          "denominator": 23,
+          "percent": 65.21739130434783,
+          "wilson95_percent": [
+            44.890335377263,
+            81.18872406120227
+          ]
+        }
+      },
+      "family_hors_erreurs_base": {
+        "n": 12889,
+        "FORT": {
+          "count": 5,
+          "denominator": 12889,
+          "percent": 0.03879276902785321,
+          "wilson95_percent": [
+            0.01657105445956617,
+            0.0907866514806122
+          ]
+        },
+        "FAIBLE": {
+          "count": 1,
+          "denominator": 12889,
+          "percent": 0.007758553805570642,
+          "wilson95_percent": [
+            0.0013695883864165842,
+            0.043938180574766644
+          ]
+        },
+        "AUCUN": {
+          "count": 12883,
+          "denominator": 12889,
+          "percent": 99.95344867716658,
+          "wilson95_percent": [
+            99.89846638968636,
+            99.97866342012871
+          ]
+        }
+      },
+      "family_label_far": {
+        "n": 463,
+        "FORT": {
+          "count": 22,
+          "denominator": 463,
+          "percent": 4.751619870410368,
+          "wilson95_percent": [
+            3.158557987048983,
+            7.089344789527086
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 463,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            0.8228615407033856
+          ]
+        },
+        "AUCUN": {
+          "count": 441,
+          "denominator": 463,
+          "percent": 95.24838012958963,
+          "wilson95_percent": [
+            92.91065521047292,
+            96.84144201295102
+          ]
+        }
+      },
+      "family_no_number": {
+        "n": 443,
+        "FORT": {
+          "count": 0,
+          "denominator": 443,
+          "percent": 0.0,
+          "wilson95_percent": [
+            8.673617379884035e-17,
+            0.8596916747234062
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 443,
+          "percent": 0.0,
+          "wilson95_percent": [
+            8.673617379884035e-17,
+            0.8596916747234062
+          ]
+        },
+        "AUCUN": {
+          "count": 443,
+          "denominator": 443,
+          "percent": 100.0,
+          "wilson95_percent": [
+            99.14030832527658,
+            99.99999999999997
+          ]
+        }
+      },
+      "family_other": {
+        "n": 1074,
+        "FORT": {
+          "count": 17,
+          "denominator": 1074,
+          "percent": 1.5828677839851024,
+          "wilson95_percent": [
+            0.9905839874820839,
+            2.520271761386386
+          ]
+        },
+        "FAIBLE": {
+          "count": 2,
+          "denominator": 1074,
+          "percent": 0.186219739292365,
+          "wilson95_percent": [
+            0.051083032387650495,
+            0.6764320169289487
+          ]
+        },
+        "AUCUN": {
+          "count": 1055,
+          "denominator": 1074,
+          "percent": 98.23091247672254,
+          "wilson95_percent": [
+            97.25347144602227,
+            98.86456071183567
+          ]
+        }
+      },
+      "family_pool_union_absent_base": {
+        "n": 1102,
+        "FORT": {
+          "count": 18,
+          "denominator": 1102,
+          "percent": 1.633393829401089,
+          "wilson95_percent": [
+            1.0356627561128355,
+            2.567155577645637
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 1102,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            0.3473788028159827
+          ]
+        },
+        "AUCUN": {
+          "count": 1084,
+          "denominator": 1102,
+          "percent": 98.36660617059891,
+          "wilson95_percent": [
+            97.43284442235436,
+            98.96433724388717
+          ]
+        }
+      },
+      "family_same_siren_near": {
+        "n": 37,
+        "FORT": {
+          "count": 0,
+          "denominator": 37,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            9.405782583720251
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 37,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            9.405782583720251
+          ]
+        },
+        "AUCUN": {
+          "count": 37,
+          "denominator": 37,
+          "percent": 100.0,
+          "wilson95_percent": [
+            90.59421741627975,
+            100.0
+          ]
+        }
+      },
+      "family_same_siren_other": {
+        "n": 42,
+        "FORT": {
+          "count": 0,
+          "denominator": 42,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            8.37987908657039
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 42,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            8.37987908657039
+          ]
+        },
+        "AUCUN": {
+          "count": 42,
+          "denominator": 42,
+          "percent": 100.0,
+          "wilson95_percent": [
+            91.6201209134296,
+            99.99999999999999
+          ]
+        }
+      },
+      "family_same_siren_siege": {
+        "n": 267,
+        "FORT": {
+          "count": 0,
+          "denominator": 267,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            1.4183422425136532
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 267,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            1.4183422425136532
+          ]
+        },
+        "AUCUN": {
+          "count": 267,
+          "denominator": 267,
+          "percent": 100.0,
+          "wilson95_percent": [
+            98.58165775748635,
+            100.0
+          ]
+        }
+      },
+      "family_same_siren_state": {
+        "n": 41,
+        "FORT": {
+          "count": 0,
+          "denominator": 41,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            8.566757018443186
+          ]
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 41,
+          "percent": 0.0,
+          "wilson95_percent": [
+            0.0,
+            8.566757018443186
+          ]
+        },
+        "AUCUN": {
+          "count": 41,
+          "denominator": 41,
+          "percent": 100.0,
+          "wilson95_percent": [
+            91.4332429815568,
+            99.99999999999999
+          ]
+        }
+      },
+      "family_generic_name": {
+        "n": 0,
+        "FORT": {
+          "count": 0,
+          "denominator": 0,
+          "percent": null,
+          "wilson95_percent": null
+        },
+        "FAIBLE": {
+          "count": 0,
+          "denominator": 0,
+          "percent": null,
+          "wilson95_percent": null
+        },
+        "AUCUN": {
+          "count": 0,
+          "denominator": 0,
+          "percent": null,
+          "wilson95_percent": null
+        }
+      }
+    },
+    "agreement": {
+      "available": 15956,
+      "unavailable": 1471,
+      "matrix": {
+        "both_signal": 30,
+        "facts_only": 88,
+        "model_only": 37,
+        "neither": 15801
+      },
+      "agreement_percent": 99.2165956380045,
+      "cohen_kappa": 0.32068549288022336,
+      "jaccard": 0.1935483870967742,
+      "by_level": {
+        "FORT": {
+          "NON": 48,
+          "INDISPONIBLE": 27,
+          "OUI": 20
+        },
+        "FAIBLE": {
+          "NON": 40,
+          "OUI": 10
+        },
+        "AUCUN": {
+          "NON": 15801,
+          "INDISPONIBLE": 1444,
+          "OUI": 37
+        }
+      }
+    },
+    "coverage": {
+      "g0_only": {
+        "AUCUN": 17283,
+        "FORT": 94,
+        "FAIBLE": 50
+      },
+      "extended": {
+        "AUCUN": 17282,
+        "FORT": 95,
+        "FAIBLE": 50
+      },
+      "level_changed_by_same_address": 1,
+      "extra_same_address_pairs": 59892,
+      "geo_only_selected": 17,
+      "selected_from_outside_g0": 1,
+      "total_examined_pairs": 1802592,
+      "union_excluded_pairs": 6462,
+      "missing_pairs": 0,
+      "nonpublic_pairs": 5127
+    },
+    "review": {
+      "population": {
+        "FORT": 95,
+        "FAIBLE": 50,
+        "AUCUN": 17282
+      },
+      "sampled": {
+        "FORT": 95,
+        "FAIBLE": 50,
+        "AUCUN": 50
+      },
+      "n": 195,
+      "label_option_counts": {
+        "2": 99,
+        "1": 96
+      },
+      "identical_options": 44,
+      "responses_completed": 0,
+      "ready": true,
+      "sheet": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/review_sheet.csv",
+        "size_bytes": 56451,
+        "mtime_ns": 1792479088016258296,
+        "inode": 5156117,
+        "sha256": "62cd4229b37388bcc26311e82fe4f019006b0ace06b0cbcc866e125b26bacf76"
+      },
+      "key": {
+        "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/private/review_key.json",
+        "size_bytes": 105492,
+        "mtime_ns": 1792479088016999340,
+        "inode": 5156118,
+        "sha256": "9dd1bdcfdae62652ef8f4553e4b56df230be8abd5617bc8c8f3f5e6c23d10188"
+      },
+      "key_mode": "0o600",
+      "private_mode": "0o700",
+      "estimated_minutes_assumption": [
+        195,
+        390
+      ],
+      "judge_time_measured": false
+    },
+    "batches": [
+      {
+        "begin": 0,
+        "end": 500,
+        "seconds": 14.980008291080594,
+        "io": {
+          "extra_preselected": 123308,
+          "rich_sites": 49843,
+          "stock_sites_found": 49843
+        },
+        "levels": {
+          "AUCUN": 494,
+          "FORT": 4,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 736165888
+      },
+      {
+        "begin": 500,
+        "end": 1000,
+        "seconds": 15.02834941726178,
+        "io": {
+          "extra_preselected": 126860,
+          "rich_sites": 50785,
+          "stock_sites_found": 50785
+        },
+        "levels": {
+          "AUCUN": 497,
+          "FORT": 1,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 801636352
+      },
+      {
+        "begin": 1000,
+        "end": 1500,
+        "seconds": 14.986365959048271,
+        "io": {
+          "extra_preselected": 122121,
+          "rich_sites": 51276,
+          "stock_sites_found": 51276
+        },
+        "levels": {
+          "AUCUN": 498,
+          "FORT": 1,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 826638336
+      },
+      {
+        "begin": 1500,
+        "end": 2000,
+        "seconds": 15.237190917134285,
+        "io": {
+          "extra_preselected": 136850,
+          "rich_sites": 52485,
+          "stock_sites_found": 52485
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 2,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 838205440
+      },
+      {
+        "begin": 2000,
+        "end": 2500,
+        "seconds": 15.114192792214453,
+        "io": {
+          "extra_preselected": 131332,
+          "rich_sites": 51119,
+          "stock_sites_found": 51119
+        },
+        "levels": {
+          "AUCUN": 498,
+          "FORT": 1,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 846577664
+      },
+      {
+        "begin": 2500,
+        "end": 3000,
+        "seconds": 15.0187794174999,
+        "io": {
+          "extra_preselected": 121466,
+          "rich_sites": 52230,
+          "stock_sites_found": 52230
+        },
+        "levels": {
+          "AUCUN": 497,
+          "FAIBLE": 1,
+          "FORT": 2
+        },
+        "peak_rss_bytes": 858488832
+      },
+      {
+        "begin": 3000,
+        "end": 3500,
+        "seconds": 14.85361179150641,
+        "io": {
+          "extra_preselected": 113793,
+          "rich_sites": 50306,
+          "stock_sites_found": 50306
+        },
+        "levels": {
+          "AUCUN": 492,
+          "FORT": 6,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 865288192
+      },
+      {
+        "begin": 3500,
+        "end": 4000,
+        "seconds": 14.755239584483206,
+        "io": {
+          "extra_preselected": 99252,
+          "rich_sites": 52794,
+          "stock_sites_found": 52794
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 3,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 874004480
+      },
+      {
+        "begin": 4000,
+        "end": 4500,
+        "seconds": 14.832453707233071,
+        "io": {
+          "extra_preselected": 112244,
+          "rich_sites": 51088,
+          "stock_sites_found": 51088
+        },
+        "levels": {
+          "AUCUN": 495,
+          "FORT": 4,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 876707840
+      },
+      {
+        "begin": 4500,
+        "end": 5000,
+        "seconds": 15.096773584373295,
+        "io": {
+          "extra_preselected": 130735,
+          "rich_sites": 50179,
+          "stock_sites_found": 50179
+        },
+        "levels": {
+          "AUCUN": 493,
+          "FAIBLE": 3,
+          "FORT": 4
+        },
+        "peak_rss_bytes": 877428736
+      },
+      {
+        "begin": 5000,
+        "end": 5500,
+        "seconds": 14.852724708616734,
+        "io": {
+          "extra_preselected": 108457,
+          "rich_sites": 51546,
+          "stock_sites_found": 51546
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 4
+        },
+        "peak_rss_bytes": 878231552
+      },
+      {
+        "begin": 5500,
+        "end": 6000,
+        "seconds": 14.63395524956286,
+        "io": {
+          "extra_preselected": 88700,
+          "rich_sites": 50786,
+          "stock_sites_found": 50786
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 1,
+          "FAIBLE": 3
+        },
+        "peak_rss_bytes": 879640576
+      },
+      {
+        "begin": 6000,
+        "end": 6500,
+        "seconds": 14.763594624586403,
+        "io": {
+          "extra_preselected": 104486,
+          "rich_sites": 51221,
+          "stock_sites_found": 51221
+        },
+        "levels": {
+          "AUCUN": 498,
+          "FORT": 2
+        },
+        "peak_rss_bytes": 884867072
+      },
+      {
+        "begin": 6500,
+        "end": 7000,
+        "seconds": 14.859800749458373,
+        "io": {
+          "extra_preselected": 117338,
+          "rich_sites": 49976,
+          "stock_sites_found": 49976
+        },
+        "levels": {
+          "AUCUN": 500
+        },
+        "peak_rss_bytes": 887144448
+      },
+      {
+        "begin": 7000,
+        "end": 7500,
+        "seconds": 14.845117125660181,
+        "io": {
+          "extra_preselected": 110633,
+          "rich_sites": 50927,
+          "stock_sites_found": 50927
+        },
+        "levels": {
+          "AUCUN": 495,
+          "FAIBLE": 3,
+          "FORT": 2
+        },
+        "peak_rss_bytes": 887144448
+      },
+      {
+        "begin": 7500,
+        "end": 8000,
+        "seconds": 15.24912937451154,
+        "io": {
+          "extra_preselected": 118410,
+          "rich_sites": 55150,
+          "stock_sites_found": 55150
+        },
+        "levels": {
+          "AUCUN": 494,
+          "FAIBLE": 4,
+          "FORT": 2
+        },
+        "peak_rss_bytes": 887144448
+      },
+      {
+        "begin": 8000,
+        "end": 8500,
+        "seconds": 14.33851341623813,
+        "io": {
+          "extra_preselected": 123053,
+          "rich_sites": 49792,
+          "stock_sites_found": 49792
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 3,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 887144448
+      },
+      {
+        "begin": 8500,
+        "end": 9000,
+        "seconds": 14.878735875710845,
+        "io": {
+          "extra_preselected": 111518,
+          "rich_sites": 50116,
+          "stock_sites_found": 50116
+        },
+        "levels": {
+          "AUCUN": 493,
+          "FORT": 6,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 889716736
+      },
+      {
+        "begin": 9000,
+        "end": 9500,
+        "seconds": 15.207625125534832,
+        "io": {
+          "extra_preselected": 127325,
+          "rich_sites": 50604,
+          "stock_sites_found": 50604
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FAIBLE": 1,
+          "FORT": 3
+        },
+        "peak_rss_bytes": 889716736
+      },
+      {
+        "begin": 9500,
+        "end": 10000,
+        "seconds": 15.210739249363542,
+        "io": {
+          "extra_preselected": 125331,
+          "rich_sites": 52603,
+          "stock_sites_found": 52603
+        },
+        "levels": {
+          "AUCUN": 495,
+          "FORT": 3,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 893517824
+      },
+      {
+        "begin": 10000,
+        "end": 10500,
+        "seconds": 15.064006250351667,
+        "io": {
+          "extra_preselected": 114339,
+          "rich_sites": 50653,
+          "stock_sites_found": 50653
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 2,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 893517824
+      },
+      {
+        "begin": 10500,
+        "end": 11000,
+        "seconds": 15.033164125867188,
+        "io": {
+          "extra_preselected": 109919,
+          "rich_sites": 50882,
+          "stock_sites_found": 50882
+        },
+        "levels": {
+          "AUCUN": 495,
+          "FORT": 3,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 893517824
+      },
+      {
+        "begin": 11000,
+        "end": 11500,
+        "seconds": 14.975886957719922,
+        "io": {
+          "extra_preselected": 96849,
+          "rich_sites": 51609,
+          "stock_sites_found": 51609
+        },
+        "levels": {
+          "AUCUN": 497,
+          "FORT": 2,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 893517824
+      },
+      {
+        "begin": 11500,
+        "end": 12000,
+        "seconds": 15.201077333651483,
+        "io": {
+          "extra_preselected": 130429,
+          "rich_sites": 50860,
+          "stock_sites_found": 50859
+        },
+        "levels": {
+          "AUCUN": 494,
+          "FAIBLE": 3,
+          "FORT": 3
+        },
+        "peak_rss_bytes": 893517824
+      },
+      {
+        "begin": 12000,
+        "end": 12500,
+        "seconds": 15.160596917383373,
+        "io": {
+          "extra_preselected": 116624,
+          "rich_sites": 50833,
+          "stock_sites_found": 50833
+        },
+        "levels": {
+          "AUCUN": 497,
+          "FAIBLE": 2,
+          "FORT": 1
+        },
+        "peak_rss_bytes": 893517824
+      },
+      {
+        "begin": 12500,
+        "end": 13000,
+        "seconds": 14.711422457359731,
+        "io": {
+          "extra_preselected": 79824,
+          "rich_sites": 51446,
+          "stock_sites_found": 51446
+        },
+        "levels": {
+          "AUCUN": 495,
+          "FORT": 3,
+          "FAIBLE": 2
+        },
+        "peak_rss_bytes": 898138112
+      },
+      {
+        "begin": 13000,
+        "end": 13500,
+        "seconds": 15.203329124487936,
+        "io": {
+          "extra_preselected": 123019,
+          "rich_sites": 52595,
+          "stock_sites_found": 52595
+        },
+        "levels": {
+          "AUCUN": 500
+        },
+        "peak_rss_bytes": 902152192
+      },
+      {
+        "begin": 13500,
+        "end": 14000,
+        "seconds": 15.252497125416994,
+        "io": {
+          "extra_preselected": 125482,
+          "rich_sites": 50417,
+          "stock_sites_found": 50417
+        },
+        "levels": {
+          "AUCUN": 493,
+          "FORT": 6,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 914554880
+      },
+      {
+        "begin": 14000,
+        "end": 14500,
+        "seconds": 15.22379512526095,
+        "io": {
+          "extra_preselected": 138042,
+          "rich_sites": 50232,
+          "stock_sites_found": 50232
+        },
+        "levels": {
+          "AUCUN": 499,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 914571264
+      },
+      {
+        "begin": 14500,
+        "end": 15000,
+        "seconds": 15.07495779171586,
+        "io": {
+          "extra_preselected": 118458,
+          "rich_sites": 51326,
+          "stock_sites_found": 51326
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FORT": 4
+        },
+        "peak_rss_bytes": 922599424
+      },
+      {
+        "begin": 15000,
+        "end": 15500,
+        "seconds": 14.81721237488091,
+        "io": {
+          "extra_preselected": 99234,
+          "rich_sites": 50833,
+          "stock_sites_found": 50833
+        },
+        "levels": {
+          "AUCUN": 498,
+          "FORT": 1,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 926793728
+      },
+      {
+        "begin": 15500,
+        "end": 16000,
+        "seconds": 14.956937459297478,
+        "io": {
+          "extra_preselected": 117218,
+          "rich_sites": 50401,
+          "stock_sites_found": 50401
+        },
+        "levels": {
+          "AUCUN": 495,
+          "FAIBLE": 1,
+          "FORT": 4
+        },
+        "peak_rss_bytes": 930332672
+      },
+      {
+        "begin": 16000,
+        "end": 16500,
+        "seconds": 14.846580917015672,
+        "io": {
+          "extra_preselected": 101968,
+          "rich_sites": 50331,
+          "stock_sites_found": 50331
+        },
+        "levels": {
+          "AUCUN": 496,
+          "FAIBLE": 1,
+          "FORT": 3
+        },
+        "peak_rss_bytes": 930349056
+      },
+      {
+        "begin": 16500,
+        "end": 17000,
+        "seconds": 15.067771499976516,
+        "io": {
+          "extra_preselected": 128921,
+          "rich_sites": 50175,
+          "stock_sites_found": 50175
+        },
+        "levels": {
+          "AUCUN": 493,
+          "FAIBLE": 1,
+          "FORT": 6
+        },
+        "peak_rss_bytes": 930349056
+      },
+      {
+        "begin": 17000,
+        "end": 17427,
+        "seconds": 14.058507749810815,
+        "io": {
+          "extra_preselected": 75674,
+          "rich_sites": 43464,
+          "stock_sites_found": 43464
+        },
+        "levels": {
+          "AUCUN": 423,
+          "FORT": 3,
+          "FAIBLE": 1
+        },
+        "peak_rss_bytes": 935739392
+      }
+    ],
+    "smoke_count": 20,
+    "smoke_reproduced": 20,
+    "seconds": 542.9186932500452,
+    "total_namespace_wall_seconds": 780.147962808609,
+    "peak_rss_bytes": 935739392,
+    "official": {
+      "sur_count": 4459,
+      "union_correct": 4360,
+      "union_precision": {
+        "count": 4360,
+        "denominator": 4459,
+        "percent": 97.779771249159,
+        "wilson95_percent": [
+          97.30441148540292,
+          98.17287667992593
+        ]
+      },
+      "exact_correct": 4151,
+      "exact_precision": {
+        "count": 4151,
+        "denominator": 4459,
+        "percent": 93.09262166405024,
+        "wilson95_percent": [
+          92.31063289293019,
+          93.80042517310098
+        ]
+      }
+    },
+    "human_label_noise_estimate": null,
+    "occupant_sur_precision_estimate": null,
+    "reason_estimates_unavailable": "Review sheet has no human answers; risk weights are not calibrated label probabilities.",
+    "closed_sets_opened": false,
+    "labels_changed": false,
+    "pools_changed": false,
+    "statuses_changed": false,
+    "fit_count": 0,
+    "web_used": false,
+    "vm_controlled": false,
+    "private_records": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/private/full_screen.jsonl",
+      "size_bytes": 64006279,
+      "mtime_ns": 1792479087979268446,
+      "inode": 5147332,
+      "sha256": "deb35a379fc54cac39e2d26861aa965c8da56c98247594c9dbecc551374947c6"
+    },
+    "script": {
+      "path": "/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/label_noise_review_20261020/run_screen.py",
+      "size_bytes": 24110,
+      "mtime_ns": 1792478541636040195,
+      "inode": 5147264,
+      "sha256": "62f5fcff478e24f43e3a9e3de37354f1b2a4692155f7fd861b1b396d41c12841"
+    },
+    "by_fold_family_sur": [
+      {
+        "fold": 2,
+        "family": "same_siren_siege",
+        "sur97": false,
+        "n": 89,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 89,
+            "percent": 0.0,
+            "wilson95_percent": [
+              3.469446951953614e-16,
+              4.137654523625252
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 89,
+            "percent": 0.0,
+            "wilson95_percent": [
+              3.469446951953614e-16,
+              4.137654523625252
+            ]
+          },
+          "AUCUN": {
+            "count": 89,
+            "denominator": 89,
+            "percent": 100.0,
+            "wilson95_percent": [
+              95.86234547637477,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_siege",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_state",
+        "sur97": false,
+        "n": 7,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 7,
+            "percent": 0.0,
+            "wilson95_percent": [
+              5.551115123125783e-15,
+              35.433043506668746
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 7,
+            "percent": 0.0,
+            "wilson95_percent": [
+              5.551115123125783e-15,
+              35.433043506668746
+            ]
+          },
+          "AUCUN": {
+            "count": 7,
+            "denominator": 7,
+            "percent": 100.0,
+            "wilson95_percent": [
+              64.56695649333126,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_state",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_near",
+        "sur97": false,
+        "n": 6,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 6,
+            "percent": 0.0,
+            "wilson95_percent": [
+              2.7755575615628914e-15,
+              39.033428790216526
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 6,
+            "percent": 0.0,
+            "wilson95_percent": [
+              2.7755575615628914e-15,
+              39.033428790216526
+            ]
+          },
+          "AUCUN": {
+            "count": 6,
+            "denominator": 6,
+            "percent": 100.0,
+            "wilson95_percent": [
+              60.96657120978346,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_near",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_other",
+        "sur97": false,
+        "n": 17,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 17,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              18.43181350088518
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 17,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              18.43181350088518
+            ]
+          },
+          "AUCUN": {
+            "count": 17,
+            "denominator": 17,
+            "percent": 100.0,
+            "wilson95_percent": [
+              81.56818649911483,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "same_siren_other",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "colocation",
+        "sur97": false,
+        "n": 321,
+        "rates": {
+          "FORT": {
+            "count": 6,
+            "denominator": 321,
+            "percent": 1.8691588785046727,
+            "wilson95_percent": [
+              0.8593980303873359,
+              4.0172759256418695
+            ]
+          },
+          "FAIBLE": {
+            "count": 14,
+            "denominator": 321,
+            "percent": 4.361370716510903,
+            "wilson95_percent": [
+              2.6154824735911633,
+              7.186671148145267
+            ]
+          },
+          "AUCUN": {
+            "count": 301,
+            "denominator": 321,
+            "percent": 93.76947040498442,
+            "wilson95_percent": [
+              90.57290438949792,
+              95.93083223948523
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "colocation",
+        "sur97": true,
+        "n": 16,
+        "rates": {
+          "FORT": {
+            "count": 6,
+            "denominator": 16,
+            "percent": 37.5,
+            "wilson95_percent": [
+              18.481232558863635,
+              61.358959454497274
+            ]
+          },
+          "FAIBLE": {
+            "count": 6,
+            "denominator": 16,
+            "percent": 37.5,
+            "wilson95_percent": [
+              18.481232558863635,
+              61.358959454497274
+            ]
+          },
+          "AUCUN": {
+            "count": 4,
+            "denominator": 16,
+            "percent": 25.0,
+            "wilson95_percent": [
+              10.182067491213049,
+              49.49831653550877
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "homonym_elsewhere",
+        "sur97": false,
+        "n": 7,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 7,
+            "percent": 28.57142857142857,
+            "wilson95_percent": [
+              8.221892400405679,
+              64.10655481673808
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 7,
+            "percent": 0.0,
+            "wilson95_percent": [
+              5.551115123125783e-15,
+              35.433043506668746
+            ]
+          },
+          "AUCUN": {
+            "count": 5,
+            "denominator": 7,
+            "percent": 71.42857142857143,
+            "wilson95_percent": [
+              35.89344518326193,
+              91.77810759959432
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "homonym_elsewhere",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "label_far",
+        "sur97": false,
+        "n": 151,
+        "rates": {
+          "FORT": {
+            "count": 7,
+            "denominator": 151,
+            "percent": 4.635761589403973,
+            "wilson95_percent": [
+              2.263443345238309,
+              9.258960897513289
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 151,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.480898106974387
+            ]
+          },
+          "AUCUN": {
+            "count": 144,
+            "denominator": 151,
+            "percent": 95.36423841059603,
+            "wilson95_percent": [
+              90.74103910248671,
+              97.7365566547617
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "label_far",
+        "sur97": true,
+        "n": 2,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 2,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              65.76197724933469
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 2,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              65.76197724933469
+            ]
+          },
+          "AUCUN": {
+            "count": 2,
+            "denominator": 2,
+            "percent": 100.0,
+            "wilson95_percent": [
+              34.2380227506653,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "no_number",
+        "sur97": false,
+        "n": 132,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 132,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.827898679860847
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 132,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.827898679860847
+            ]
+          },
+          "AUCUN": {
+            "count": 132,
+            "denominator": 132,
+            "percent": 100.0,
+            "wilson95_percent": [
+              97.17210132013918,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "no_number",
+        "sur97": true,
+        "n": 1,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "AUCUN": {
+            "count": 1,
+            "denominator": 1,
+            "percent": 100.0,
+            "wilson95_percent": [
+              20.654931437723747,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "generic_name",
+        "sur97": false,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "generic_name",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "other",
+        "sur97": false,
+        "n": 338,
+        "rates": {
+          "FORT": {
+            "count": 5,
+            "denominator": 338,
+            "percent": 1.4792899408284024,
+            "wilson95_percent": [
+              0.6334759605734606,
+              3.415611259111726
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 338,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              1.1237545129682716
+            ]
+          },
+          "AUCUN": {
+            "count": 333,
+            "denominator": 338,
+            "percent": 98.5207100591716,
+            "wilson95_percent": [
+              96.58438874088829,
+              99.36652403942654
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "other",
+        "sur97": true,
+        "n": 4,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 4,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              48.98908364545973
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 4,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              48.98908364545973
+            ]
+          },
+          "AUCUN": {
+            "count": 4,
+            "denominator": 4,
+            "percent": 100.0,
+            "wilson95_percent": [
+              51.01091635454027,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "pool_union_absent_base",
+        "sur97": false,
+        "n": 393,
+        "rates": {
+          "FORT": {
+            "count": 4,
+            "denominator": 393,
+            "percent": 1.0178117048346056,
+            "wilson95_percent": [
+              0.3964990549528211,
+              2.5874277897583515
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 393,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.9680084414843918
+            ]
+          },
+          "AUCUN": {
+            "count": 389,
+            "denominator": 393,
+            "percent": 98.9821882951654,
+            "wilson95_percent": [
+              97.41257221024165,
+              99.60350094504719
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "pool_union_absent_base",
+        "sur97": true,
+        "n": 11,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 11,
+            "percent": 18.181818181818183,
+            "wilson95_percent": [
+              5.136768974608513,
+              47.69805619608442
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 11,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              25.88329669680317
+            ]
+          },
+          "AUCUN": {
+            "count": 9,
+            "denominator": 11,
+            "percent": 81.81818181818183,
+            "wilson95_percent": [
+              52.3019438039156,
+              94.86323102539149
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "hors_erreurs_base",
+        "sur97": false,
+        "n": 2868,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 2868,
+            "percent": 0.0697350069735007,
+            "wilson95_percent": [
+              0.019125937699332657,
+              0.2539204310899172
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 2868,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.1337629139970561
+            ]
+          },
+          "AUCUN": {
+            "count": 2866,
+            "denominator": 2868,
+            "percent": 99.9302649930265,
+            "wilson95_percent": [
+              99.74607956891009,
+              99.98087406230067
+            ]
+          }
+        }
+      },
+      {
+        "fold": 2,
+        "family": "hors_erreurs_base",
+        "sur97": true,
+        "n": 1400,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 1400,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.2736390777289885
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1400,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.2736390777289885
+            ]
+          },
+          "AUCUN": {
+            "count": 1400,
+            "denominator": 1400,
+            "percent": 100.0,
+            "wilson95_percent": [
+              99.72636092227101,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_siege",
+        "sur97": false,
+        "n": 93,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 93,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              3.966750261173514
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 93,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              3.966750261173514
+            ]
+          },
+          "AUCUN": {
+            "count": 93,
+            "denominator": 93,
+            "percent": 100.0,
+            "wilson95_percent": [
+              96.0332497388265,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_siege",
+        "sur97": true,
+        "n": 6,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 6,
+            "percent": 0.0,
+            "wilson95_percent": [
+              2.7755575615628914e-15,
+              39.033428790216526
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 6,
+            "percent": 0.0,
+            "wilson95_percent": [
+              2.7755575615628914e-15,
+              39.033428790216526
+            ]
+          },
+          "AUCUN": {
+            "count": 6,
+            "denominator": 6,
+            "percent": 100.0,
+            "wilson95_percent": [
+              60.96657120978346,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_state",
+        "sur97": false,
+        "n": 16,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 16,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              19.36076805344365
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 16,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              19.36076805344365
+            ]
+          },
+          "AUCUN": {
+            "count": 16,
+            "denominator": 16,
+            "percent": 100.0,
+            "wilson95_percent": [
+              80.63923194655636,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_state",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_near",
+        "sur97": false,
+        "n": 15,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 15,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              20.388330103584863
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 15,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              20.388330103584863
+            ]
+          },
+          "AUCUN": {
+            "count": 15,
+            "denominator": 15,
+            "percent": 100.0,
+            "wilson95_percent": [
+              79.61166989641515,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_near",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_other",
+        "sur97": false,
+        "n": 10,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 10,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              27.75327998628892
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 10,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              27.75327998628892
+            ]
+          },
+          "AUCUN": {
+            "count": 10,
+            "denominator": 10,
+            "percent": 100.0,
+            "wilson95_percent": [
+              72.24672001371107,
+              99.99999999999999
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "same_siren_other",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "colocation",
+        "sur97": false,
+        "n": 378,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 378,
+            "percent": 0.5291005291005291,
+            "wilson95_percent": [
+              0.14521857030208135,
+              1.90837164091077
+            ]
+          },
+          "FAIBLE": {
+            "count": 13,
+            "denominator": 378,
+            "percent": 3.439153439153439,
+            "wilson95_percent": [
+              2.020687376840132,
+              5.794456351360198
+            ]
+          },
+          "AUCUN": {
+            "count": 363,
+            "denominator": 378,
+            "percent": 96.03174603174604,
+            "wilson95_percent": [
+              93.55662688973865,
+              97.58067419715421
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "colocation",
+        "sur97": true,
+        "n": 9,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 9,
+            "percent": 22.22222222222222,
+            "wilson95_percent": [
+              6.322510711784671,
+              54.74110308930111
+            ]
+          },
+          "FAIBLE": {
+            "count": 2,
+            "denominator": 9,
+            "percent": 22.22222222222222,
+            "wilson95_percent": [
+              6.322510711784671,
+              54.74110308930111
+            ]
+          },
+          "AUCUN": {
+            "count": 5,
+            "denominator": 9,
+            "percent": 55.55555555555556,
+            "wilson95_percent": [
+              26.665129349549304,
+              81.12214789023355
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "homonym_elsewhere",
+        "sur97": false,
+        "n": 7,
+        "rates": {
+          "FORT": {
+            "count": 1,
+            "denominator": 7,
+            "percent": 14.285714285714285,
+            "wilson95_percent": [
+              2.5679624344743552,
+              51.31278292743189
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 7,
+            "percent": 0.0,
+            "wilson95_percent": [
+              5.551115123125783e-15,
+              35.433043506668746
+            ]
+          },
+          "AUCUN": {
+            "count": 6,
+            "denominator": 7,
+            "percent": 85.71428571428571,
+            "wilson95_percent": [
+              48.68721707256811,
+              97.43203756552565
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "homonym_elsewhere",
+        "sur97": true,
+        "n": 1,
+        "rates": {
+          "FORT": {
+            "count": 1,
+            "denominator": 1,
+            "percent": 100.0,
+            "wilson95_percent": [
+              20.654931437723747,
+              100
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "label_far",
+        "sur97": false,
+        "n": 169,
+        "rates": {
+          "FORT": {
+            "count": 9,
+            "denominator": 169,
+            "percent": 5.325443786982249,
+            "wilson95_percent": [
+              2.826714707905532,
+              9.809986561407683
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 169,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.2225332087015413
+            ]
+          },
+          "AUCUN": {
+            "count": 160,
+            "denominator": 169,
+            "percent": 94.67455621301775,
+            "wilson95_percent": [
+              90.1900134385923,
+              97.17328529209446
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "label_far",
+        "sur97": true,
+        "n": 5,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 5,
+            "percent": 40.0,
+            "wilson95_percent": [
+              11.762077423264783,
+              76.9275718723987
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 5,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              43.44824647831748
+            ]
+          },
+          "AUCUN": {
+            "count": 3,
+            "denominator": 5,
+            "percent": 60.0,
+            "wilson95_percent": [
+              23.07242812760128,
+              88.2379225767352
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "no_number",
+        "sur97": false,
+        "n": 169,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 169,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.2225332087015413
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 169,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.2225332087015413
+            ]
+          },
+          "AUCUN": {
+            "count": 169,
+            "denominator": 169,
+            "percent": 100.0,
+            "wilson95_percent": [
+              97.77746679129847,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "no_number",
+        "sur97": true,
+        "n": 1,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "AUCUN": {
+            "count": 1,
+            "denominator": 1,
+            "percent": 100.0,
+            "wilson95_percent": [
+              20.654931437723747,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "generic_name",
+        "sur97": false,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "generic_name",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "other",
+        "sur97": false,
+        "n": 367,
+        "rates": {
+          "FORT": {
+            "count": 4,
+            "denominator": 367,
+            "percent": 1.08991825613079,
+            "wilson95_percent": [
+              0.4246416154731593,
+              2.7684907970545347
+            ]
+          },
+          "FAIBLE": {
+            "count": 1,
+            "denominator": 367,
+            "percent": 0.2724795640326975,
+            "wilson95_percent": [
+              0.04811553787498957,
+              1.5270747979818577
+            ]
+          },
+          "AUCUN": {
+            "count": 362,
+            "denominator": 367,
+            "percent": 98.63760217983652,
+            "wilson95_percent": [
+              96.85085493170624,
+              99.41669863020913
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "other",
+        "sur97": true,
+        "n": 5,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 5,
+            "percent": 40.0,
+            "wilson95_percent": [
+              11.762077423264783,
+              76.9275718723987
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 5,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              43.44824647831748
+            ]
+          },
+          "AUCUN": {
+            "count": 3,
+            "denominator": 5,
+            "percent": 60.0,
+            "wilson95_percent": [
+              23.07242812760128,
+              88.2379225767352
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "pool_union_absent_base",
+        "sur97": false,
+        "n": 343,
+        "rates": {
+          "FORT": {
+            "count": 4,
+            "denominator": 343,
+            "percent": 1.1661807580174928,
+            "wilson95_percent": [
+              0.45441382943590314,
+              2.959670190668446
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 343,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              1.1075546832710204
+            ]
+          },
+          "AUCUN": {
+            "count": 339,
+            "denominator": 343,
+            "percent": 98.83381924198251,
+            "wilson95_percent": [
+              97.04032980933157,
+              99.54558617056409
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "pool_union_absent_base",
+        "sur97": true,
+        "n": 7,
+        "rates": {
+          "FORT": {
+            "count": 3,
+            "denominator": 7,
+            "percent": 42.857142857142854,
+            "wilson95_percent": [
+              15.821985525146975,
+              74.95416354723427
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 7,
+            "percent": 0.0,
+            "wilson95_percent": [
+              5.551115123125783e-15,
+              35.433043506668746
+            ]
+          },
+          "AUCUN": {
+            "count": 4,
+            "denominator": 7,
+            "percent": 57.14285714285714,
+            "wilson95_percent": [
+              25.04583645276572,
+              84.17801447485303
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "hors_erreurs_base",
+        "sur97": false,
+        "n": 2932,
+        "rates": {
+          "FORT": {
+            "count": 1,
+            "denominator": 2932,
+            "percent": 0.034106412005457026,
+            "wilson95_percent": [
+              0.00602087292815006,
+              0.19294964038562396
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 2932,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.1308469436982885
+            ]
+          },
+          "AUCUN": {
+            "count": 2931,
+            "denominator": 2932,
+            "percent": 99.96589358799454,
+            "wilson95_percent": [
+              99.80705035961438,
+              99.99397912707185
+            ]
+          }
+        }
+      },
+      {
+        "fold": 3,
+        "family": "hors_erreurs_base",
+        "sur97": true,
+        "n": 1495,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 1495,
+            "percent": 0.0,
+            "wilson95_percent": [
+              2.168404344971009e-17,
+              0.2562952070805828
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1495,
+            "percent": 0.0,
+            "wilson95_percent": [
+              2.168404344971009e-17,
+              0.2562952070805828
+            ]
+          },
+          "AUCUN": {
+            "count": 1495,
+            "denominator": 1495,
+            "percent": 100.0,
+            "wilson95_percent": [
+              99.74370479291943,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_siege",
+        "sur97": false,
+        "n": 78,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 78,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              4.693780971219429
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 78,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              4.693780971219429
+            ]
+          },
+          "AUCUN": {
+            "count": 78,
+            "denominator": 78,
+            "percent": 100.0,
+            "wilson95_percent": [
+              95.30621902878059,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_siege",
+        "sur97": true,
+        "n": 1,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              79.34506856227625
+            ]
+          },
+          "AUCUN": {
+            "count": 1,
+            "denominator": 1,
+            "percent": 100.0,
+            "wilson95_percent": [
+              20.654931437723747,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_state",
+        "sur97": false,
+        "n": 18,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 18,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              17.587922364665765
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 18,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              17.587922364665765
+            ]
+          },
+          "AUCUN": {
+            "count": 18,
+            "denominator": 18,
+            "percent": 100.0,
+            "wilson95_percent": [
+              82.41207763533424,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_state",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_near",
+        "sur97": false,
+        "n": 16,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 16,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              19.36076805344365
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 16,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              19.36076805344365
+            ]
+          },
+          "AUCUN": {
+            "count": 16,
+            "denominator": 16,
+            "percent": 100.0,
+            "wilson95_percent": [
+              80.63923194655636,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_near",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_other",
+        "sur97": false,
+        "n": 15,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 15,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              20.388330103584863
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 15,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              20.388330103584863
+            ]
+          },
+          "AUCUN": {
+            "count": 15,
+            "denominator": 15,
+            "percent": 100.0,
+            "wilson95_percent": [
+              79.61166989641515,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "same_siren_other",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "colocation",
+        "sur97": false,
+        "n": 312,
+        "rates": {
+          "FORT": {
+            "count": 4,
+            "denominator": 312,
+            "percent": 1.282051282051282,
+            "wilson95_percent": [
+              0.49966368041426384,
+              3.2495144246098207
+            ]
+          },
+          "FAIBLE": {
+            "count": 10,
+            "denominator": 312,
+            "percent": 3.205128205128205,
+            "wilson95_percent": [
+              1.750107439358365,
+              5.798445214151612
+            ]
+          },
+          "AUCUN": {
+            "count": 298,
+            "denominator": 312,
+            "percent": 95.51282051282051,
+            "wilson95_percent": [
+              92.60998554363485,
+              97.30854543719792
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "colocation",
+        "sur97": true,
+        "n": 10,
+        "rates": {
+          "FORT": {
+            "count": 5,
+            "denominator": 10,
+            "percent": 50.0,
+            "wilson95_percent": [
+              23.6593090512564,
+              76.3406909487436
+            ]
+          },
+          "FAIBLE": {
+            "count": 2,
+            "denominator": 10,
+            "percent": 20.0,
+            "wilson95_percent": [
+              5.668215145437519,
+              50.983752846335825
+            ]
+          },
+          "AUCUN": {
+            "count": 3,
+            "denominator": 10,
+            "percent": 30.0,
+            "wilson95_percent": [
+              10.7791267406301,
+              60.322185253885465
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "homonym_elsewhere",
+        "sur97": false,
+        "n": 8,
+        "rates": {
+          "FORT": {
+            "count": 4,
+            "denominator": 8,
+            "percent": 50.0,
+            "wilson95_percent": [
+              21.521606221387756,
+              78.47839377861224
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 8,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              32.440756488388026
+            ]
+          },
+          "AUCUN": {
+            "count": 4,
+            "denominator": 8,
+            "percent": 50.0,
+            "wilson95_percent": [
+              21.521606221387756,
+              78.47839377861224
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "homonym_elsewhere",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "label_far",
+        "sur97": false,
+        "n": 132,
+        "rates": {
+          "FORT": {
+            "count": 1,
+            "denominator": 132,
+            "percent": 0.7575757575757576,
+            "wilson95_percent": [
+              0.1338561355018031,
+              4.166347109815698
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 132,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              2.827898679860847
+            ]
+          },
+          "AUCUN": {
+            "count": 131,
+            "denominator": 132,
+            "percent": 99.24242424242425,
+            "wilson95_percent": [
+              95.83365289018431,
+              99.8661438644982
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "label_far",
+        "sur97": true,
+        "n": 4,
+        "rates": {
+          "FORT": {
+            "count": 3,
+            "denominator": 4,
+            "percent": 75.0,
+            "wilson95_percent": [
+              30.064184258240186,
+              95.44127391902994
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 4,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              48.98908364545973
+            ]
+          },
+          "AUCUN": {
+            "count": 1,
+            "denominator": 4,
+            "percent": 25.0,
+            "wilson95_percent": [
+              4.558726080970055,
+              69.93581574175981
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "no_number",
+        "sur97": false,
+        "n": 138,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 138,
+            "percent": 0.0,
+            "wilson95_percent": [
+              1.734723475976807e-16,
+              2.7082764465572957
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 138,
+            "percent": 0.0,
+            "wilson95_percent": [
+              1.734723475976807e-16,
+              2.7082764465572957
+            ]
+          },
+          "AUCUN": {
+            "count": 138,
+            "denominator": 138,
+            "percent": 100.0,
+            "wilson95_percent": [
+              97.29172355344272,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "no_number",
+        "sur97": true,
+        "n": 2,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 2,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              65.76197724933469
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 2,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              65.76197724933469
+            ]
+          },
+          "AUCUN": {
+            "count": 2,
+            "denominator": 2,
+            "percent": 100.0,
+            "wilson95_percent": [
+              34.2380227506653,
+              100
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "generic_name",
+        "sur97": false,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "generic_name",
+        "sur97": true,
+        "n": 0,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          },
+          "AUCUN": {
+            "count": 0,
+            "denominator": 0,
+            "percent": null,
+            "wilson95_percent": null
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "other",
+        "sur97": false,
+        "n": 353,
+        "rates": {
+          "FORT": {
+            "count": 4,
+            "denominator": 353,
+            "percent": 1.13314447592068,
+            "wilson95_percent": [
+              0.4415157913736343,
+              2.8768931344917394
+            ]
+          },
+          "FAIBLE": {
+            "count": 1,
+            "denominator": 353,
+            "percent": 0.28328611898017,
+            "wilson95_percent": [
+              0.050024471452441835,
+              1.5869654792105903
+            ]
+          },
+          "AUCUN": {
+            "count": 348,
+            "denominator": 353,
+            "percent": 98.58356940509914,
+            "wilson95_percent": [
+              96.72760986741284,
+              99.39350821498766
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "other",
+        "sur97": true,
+        "n": 7,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 7,
+            "percent": 28.57142857142857,
+            "wilson95_percent": [
+              8.221892400405679,
+              64.10655481673808
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 7,
+            "percent": 0.0,
+            "wilson95_percent": [
+              5.551115123125783e-15,
+              35.433043506668746
+            ]
+          },
+          "AUCUN": {
+            "count": 5,
+            "denominator": 7,
+            "percent": 71.42857142857143,
+            "wilson95_percent": [
+              35.89344518326193,
+              91.77810759959432
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "pool_union_absent_base",
+        "sur97": false,
+        "n": 338,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 338,
+            "percent": 0.591715976331361,
+            "wilson95_percent": [
+              0.16242012840905345,
+              2.131467467245984
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 338,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              1.1237545129682716
+            ]
+          },
+          "AUCUN": {
+            "count": 336,
+            "denominator": 338,
+            "percent": 99.40828402366864,
+            "wilson95_percent": [
+              97.86853253275402,
+              99.83757987159095
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "pool_union_absent_base",
+        "sur97": true,
+        "n": 10,
+        "rates": {
+          "FORT": {
+            "count": 3,
+            "denominator": 10,
+            "percent": 30.0,
+            "wilson95_percent": [
+              10.7791267406301,
+              60.322185253885465
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 10,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              27.75327998628892
+            ]
+          },
+          "AUCUN": {
+            "count": 7,
+            "denominator": 10,
+            "percent": 70.0,
+            "wilson95_percent": [
+              39.677814746114535,
+              89.2208732593699
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "hors_erreurs_base",
+        "sur97": false,
+        "n": 2732,
+        "rates": {
+          "FORT": {
+            "count": 2,
+            "denominator": 2732,
+            "percent": 0.07320644216691069,
+            "wilson95_percent": [
+              0.020078143065507682,
+              0.26654149256477655
+            ]
+          },
+          "FAIBLE": {
+            "count": 1,
+            "denominator": 2732,
+            "percent": 0.036603221083455345,
+            "wilson95_percent": [
+              0.006461659550125788,
+              0.20705432478663222
+            ]
+          },
+          "AUCUN": {
+            "count": 2729,
+            "denominator": 2732,
+            "percent": 99.89019033674963,
+            "wilson95_percent": [
+              99.67762877864087,
+              99.96264793443532
+            ]
+          }
+        }
+      },
+      {
+        "fold": 4,
+        "family": "hors_erreurs_base",
+        "sur97": true,
+        "n": 1462,
+        "rates": {
+          "FORT": {
+            "count": 0,
+            "denominator": 1462,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.2620650956198683
+            ]
+          },
+          "FAIBLE": {
+            "count": 0,
+            "denominator": 1462,
+            "percent": 0.0,
+            "wilson95_percent": [
+              0,
+              0.2620650956198683
+            ]
+          },
+          "AUCUN": {
+            "count": 1462,
+            "denominator": 1462,
+            "percent": 100.0,
+            "wilson95_percent": [
+              99.73793490438011,
+              99.99999999999999
+            ]
+          }
+        }
+      }
+    ]
+  },
+  "verification": {
+    "passed": true,
+    "real_records_recomputed": 17427,
+    "source_replay_cases": 20,
+    "source_refs_rehashed": 36,
+    "pair_coverage_equal": true,
+    "selected_non_union_conflicts": 145,
+    "selected_geo_only": 17,
+    "review_rows_verified": 195,
+    "review_answers_empty": true,
+    "sampling_reproduced": true,
+    "permissions_verified": true,
+    "same_address_number_prefilter_omissions": 0,
+    "seconds": 15.638782666064799,
+    "grid_unchanged": true
+  },
+  "number_prefilter_verification": {
+    "active_public_number_numeric_prefix_not_integer": 986,
+    "historical_parser_accepts": 291,
+    "missed_strict_address_pairs": [],
+    "passed": true,
+    "scope": "all17427 CRM against all986 active public noninteger numbered stock sites"
+  },
+  "examples_anonymized": [
+    {
+      "level": "FORT",
+      "crm_name_pseudonym": "Site Alpha",
+      "concurrent_name_pseudonym": "Enseigne Alpha",
+      "label_name_pseudonym": "Entité Bêta",
+      "N_concurrent": 1.0,
+      "N_label": 0.8588235294117647,
+      "strict_concurrent": true,
+      "strict_label": false,
+      "distance_concurrent_m": 13.931626506094776,
+      "distance_label_m": 156.33271276268857,
+      "concurrent_state": "A",
+      "label_state": "A",
+      "address_better": true,
+      "label_closed": false,
+      "label_far": false
+    },
+    {
+      "level": "FAIBLE",
+      "crm_name_pseudonym": "Site Gamma",
+      "concurrent_name_pseudonym": "Enseigne Gamma",
+      "label_name_pseudonym": "Entité Delta",
+      "N_concurrent": 1.0,
+      "N_label": 0.8884615384615385,
+      "strict_concurrent": true,
+      "strict_label": true,
+      "distance_concurrent_m": 38.79140489810519,
+      "distance_label_m": 38.79140489810519,
+      "concurrent_state": "A",
+      "label_state": "A",
+      "address_better": false,
+      "label_closed": false,
+      "label_far": false
+    }
+  ],
+  "published_utc": "2026-10-20T06:52:40.410995+00:00",
+  "total_wall_to_publication_seconds": 850.0231168270111,
+  "model_probability_limitation": "Risk v1 provides probability of top1 UNION correctness only, no probability of the exact label. Softmax rank weights at temperature1 are descriptive, uncalibrated, not confident-learning posterior probabilities.",
+  "review_blindness": "Roles and IDs removed; names and addresses retained for judgment. Share only review_sheet.csv and judge instructions. Key is0700/0600, inaccessible to other ordinary OS accounts but not to its owner.",
+  "individual_records_in_git": false,
+  "field_notes": {
+    "private_record_rank_label": "native G0 pool position, not sorted model rank",
+    "batch_stock_sites_found": "All found stock rows, public or nonpublic; historical raw log key public_sites meant this count."
+  },
+  "estimation_pending_reason": "No human answers. FORT/FAIBLE are flags, not measured label-error rates. No occupant-corrected precision has been computed.",
+  "plumbing_notes": [
+    "First launch stopped before smoke: enable_progress_bar is a connection SET, not a global connect option. Fixed only that setting, same grid and sources; original code/failure retained in namespace.",
+    "Prefilter robustness checked:986 active public noninteger numeric-prefix house numbers,291 accepted by the historical parser, zero strict matches with the17427 CRM addresses omitted by the integer coarse join."
+  ]
 }
