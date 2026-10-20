@@ -60,7 +60,45 @@ Publication automatique `docs/step2_crm_columns_tiers.{json,md}` et ligne append
 **Preuve** —`run` puis vérification réelle25LTR/10risques+2smokes/90seuils, top4 des17427 ; 61.85min, pic4.63Gio.
 526 descriptifs seuls ; courbes A96/97/97,5/98, déciles et catégories détaillés dans les rapports ; labels/pools/jeuxfermés/VM/tiers intacts.
 **Reste / risques** —Jeux consommés, sélection/calibration adaptatives, temporalité et validation indépendante manquent ; aucun déploiement.
-Recommandation unique : conserver la référence en production non certifiée/A_VERIFIER ; traiter les trois statuts comme politique de développement à valider indépendamment.
+Recommandation unique : conserver S1+S2-BASE et réserver PROBABLE à la revue ; ne pas automatiser cette politique avant validation temporelle et indépendante.
+
+## Attestation, anti-fuite et limites
+
+Avenant/code AVANT FIT `0936dc48`, auto-publication `eaa66765`. Run+publication3711,470s=61,86min ; contrôle complémentaire achevé3808,354s=63,47min depuis lancement, sous10800s, pic4970921984octets=4,63Gio. La projection prudente initiale8508,927s n'a pas imposé de réduction. Aucun nouveau cache Gemma, label/pool/jeu fermé/source modifié, VM contrôlée, fichier tiers/pending touché ou push. Les deux smokes réels et25LTR+10risques nouveaux ont abouti du premier lancement ; la référence25R3/5risques49 reste scellée/réutilisée. Toutes les entreprises apprentissage/calibration/test sont disjointes selon les groupes officiels.
+
+Contrôle principal :25LTR/89765vecteurs ranking et leurs49features risque/cibles rejoués,15risques (10nouveaux/5réutilisés),90contrôles de seuils par Wilson contractuel (60préfixes A et30statuts, SUR97,5 étant aussi revérifié),1450référencesSHA. `H/step2_crm_columns_tiers_20261020/postverify.py` passé sans fit :25encoders recalculés indépendamment,500requêtes réelles/1500croisements candidat contrôlés,15politiques de bandes calibration vérifiées, tous déciles et comptes produit recomposés,19531sorties top4/statuts vérifiées (17427G0+4×526descriptifs), code/protocole et sourceGit-externe identiques. Preuve `postverification.json` SHA `ed9d480105cc58eac45cd29129bb2e084eb49773dec4a04cd21c1905af45325d`.
+
+### Présence brute `order_siret` par modalité — audit seulement
+
+| Colonne / modalité | Lignes raw | Label non vide | Présence % |
+|---|---:|---:|---:|
+| Catégorie : Fibre Essentiel | 69865 | 27473 | 39,32 |
+| Catégorie : ADSL | 24106 | 3926 | 16,29 |
+| Catégorie : Revente ADSL | 21412 | 4945 | 23,09 |
+| Catégorie : Revente Fibre Essentiel AI | 13467 | 5984 | 44,43 |
+| Catégorie : SDSL | 2027 | 433 | 21,36 |
+| Catégorie : Fibre Confort | 568 | 262 | 46,13 |
+| Catégorie : Fibre Premium | 283 | 244 | 86,22 |
+| Catégorie : Revente Fibre Premium AI | 21 | 17 | 80,95 |
+| État : terminated | 75239 | 19590 | 26,04 |
+| État : active | 56510 | 23694 | 41,93 |
+
+Aucune valeur SIRET raw n'a été extraite ; ce booléen est seulement non-vide, pas une validation de qualité du label. Association de présence : Vcatégorie0,22419/Vétat0,16746, **donc les colonnes ne sont pas indépendantes de la disponibilité du label**. Ceci peut refléter le processus métier/sélection, et ne prouve ni l'absence ni la présence d'une fuite temporelle. Les catégories Premium rares àforte présence ne doivent pas être présentées comme une preuve de qualité du modèle. Dans G0,100% des dossiers ont un label humain par construction ; les taux exact/UNION parmi100 parmodalité, plus instructifs ici, sont dans le JSON.7530historiques sontMISSING, sans renseignement fictif depuis une autre source.
+
+| V de Cramer | CV G0 | Fold population G0 | CV récents seuls | Fold récents seuls |
+|---|---:|---:|---:|---:|
+| Catégorie produit | 0,05991 | 0,05088 | 0,07346 | 0,06464 |
+| État service | 0,04327 | 0,02520 | 0,05737 | 0,03848 |
+
+Pas de proxy parfait commun de fold ni deV>=0,5 observé, jointures sansambiguïté. L'absence de dates reste un **blocage de certification temporelle**, pas résolu par cesV faibles. L'encodage n'a utilisé que les requêtes du train de chaque fit ; ni le test ni526 n'ont servi à déterminer les modalités ou les seuils.
+
+### Ce que les résultats permettent de conclure
+
+A :12275/13382exacts/UNION référence ;12287/13391avec colonnes au reclasseur (+12/+9), soitUNION47gains/38pertes et+0,05164point[-0,05115;0,15723]. IC ordinaire et simultané incluent0 ; **aucun gain top1 confirmé**. Usage risque seul :mêmes propositions/classement qu'avant, n/N inchangés. Àciblecal97,5 :risque seul2027/2058UNION=98,4937%,C11,8093%,contre1899/1928=98,4959%,C11,0633%pourréférence ; effet descriptif, pas certification de gain produit.
+
+B :choix uniquement sur calibration de chaqueCV :0=rank_crm,1=base,2/3/4=risk_crm. Ce n'est PAS un gagnant global sélectionné sur les tests. SUR2611/2658UNION=98,23%[97,66;98,67],2531/2658exacts95,22%,C15,25% ; la borne Wilson brute test dépasse97,5 mais reste descriptive sur ces jeux consommés et corrélés. PROBABLE8711/9774UNION=89,12%[88,49;89,73],7826exacts80,07%,C56,09% : **les90% de calibration ne se transportent pas au test**, même si la borne test dépasse88%. A_VERIFIER2058/4995UNION41,20%,1917exacts38,38%,C28,66%. La somme couvre17427, tous avec4propositions ; SUR+PROBABLE=12432dossiers/71,34%, ce qui n'autorise pas à appeler71,34%desrattachements fiables/automatiques.
+
+526, politique sélectionnée parCV puis appliquée descriptivement :387exacts/410UNION ;SUR63/63UNION100%[94,25;100],61/63exacts ;PROBABLE267/289UNION92,39%[88,74;94,92] ;A_VERIFIER80/174UNION45,98%. Le63/63 n'est pas une précision produit garantie, et n'a modifié aucun paramètre. Les scores dans les sorties sont des scores de risque, pas une probabilité certifiée d'occupation fibre. Aucun module/contrat de production existant n'a été changé : les propositions/statuts de ce jalon sont des sorties de développement.
 
 ## Courbes A — précision UNION / couverture %
 
