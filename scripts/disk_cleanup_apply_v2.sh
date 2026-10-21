@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Proposition seulement. Jamais exécuté pendant l'audit, même en dry-run.
-# Arrêter les écritures SIRETO avant toute utilisation ultérieure autorisée.
+# B autorisé par Nathan ; reprise bornée du 22/10/2026 après arrêt PermissionError.
+# Le plan historique reste inchangé ; l'état restant réaudité est signé ci-dessous.
 set -euo pipefail
 REPO="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd -P)"
 exec python3 - "$REPO" "$@" <<'PY'
@@ -17,8 +17,11 @@ REPO = Path(sys.argv[1])
 PLAN = REPO / 'docs/disk_cleanup_plan_v2.json'
 PLAN_SHA256 = 'e905191c50046c167a600d6839a39af1fb33dc103066e59b2469e2002379ec9d'
 HANDOVER_SHA256 = '4dbba45e3ba22171eb4fc5fd86dffdb27ca44a618810762bb77afb2e975cf97c'
+RESUME = Path('/Volumes/CATNAT_DATA/SIRETO_EMBEDDINGGEMMA2/cleanup_resume_20261022.json')
+RESUME_SHA256 = '06b3b2f717c8c81e4c1520be4adb6064627fd1aacc196aba241657d82bfb5311'
 OWN = {'docs/disk_cleanup_plan_v2.md', 'docs/disk_cleanup_plan_v2.json',
-       'scripts/disk_cleanup_apply_v2.sh', 'handover.md'}
+       'scripts/disk_cleanup_apply_v2.sh', 'handover.md',
+       'docs/disk_cleanup_execution_20261022.md'}
 # Allowlist explicite, sans glob : le JSON signé doit donner exactement ces unités.
 EXPLICIT_B_TARGETS = [
   [
@@ -2407,9 +2410,17 @@ else:
 if sha(PLAN) != PLAN_SHA256:
     fail('plan modifié : refaire l’audit')
 plan = json.loads(PLAN.read_text())
-if sha(REPO / 'handover.md') != HANDOVER_SHA256:
-    fail('handover modifié : refaire l’audit')
-base = plan['reference_git_head']
+if sha(RESUME) != RESUME_SHA256:
+    fail('état restant réaudité modifié : refaire l’audit')
+resume = json.loads(RESUME.read_text())
+if resume['original_plan_sha256'] != PLAN_SHA256:
+    fail('reprise ne correspondant pas au plan original')
+allowlist_sha = hashlib.sha256(json.dumps(EXPLICIT_B_TARGETS, separators=(',', ':')).encode()).hexdigest()
+if resume['original_allowlist_sha256'] != allowlist_sha:
+    fail('allowlist originale modifiée')
+if sha(REPO / 'handover.md') != resume['handover_sha256']:
+    fail('handover modifié depuis le réaudit de reprise')
+base = resume['reference_git_head']
 if subprocess.call(['git', 'merge-base', '--is-ancestor', base, 'HEAD'], cwd=REPO):
     fail('HEAD ne descend plus du commit audité')
 changed = set(git('diff', '--name-only', base, 'HEAD').decode().splitlines())
@@ -2447,10 +2458,17 @@ def info(path):
     except FileNotFoundError:
         return dict(exists=False)
 
-# Autorités exactes : mêmes inode/tailles/epochs, y compris l'absence V142 déjà signalée.
+# Seuls nlink (alias B supprimés) et le journal autorisé diffèrent du plan original.
 for authority in plan['exact_A_files']:
-    if info(Path(authority['path'])) != authority['snapshot']:
-        fail('autorité A changée : ' + authority['path'])
+    path = authority['path']
+    expected = resume['A_authority_snapshots'][path]
+    if path != str(REPO / 'handover.md'):
+        original = {k: v for k, v in authority['snapshot'].items() if k != 'nlink'}
+        audited = {k: v for k, v in expected.items() if k != 'nlink'}
+        if audited != original:
+            fail('reprise altérant une autorité A : ' + path)
+    if info(Path(path)) != expected:
+        fail('autorité A changée depuis le réaudit : ' + path)
 
 def metadata_inventory():
     entries = []
@@ -2466,14 +2484,27 @@ def metadata_inventory():
                     entries.append([str(p), info(p)])
     return hashlib.sha256(json.dumps(sorted(entries), sort_keys=True, separators=(',', ':')).encode()).hexdigest()
 
-if metadata_inventory() != plan['guards']['A3_metadata_inventory_sha256']:
-    fail('métadonnées/bindings étape2 ajoutés ou modifiés : refaire la trace')
-rows = [r for r in plan['rows'] if r.get('apply_eligible')]
-actual = [(r['path'], r['scope']) for r in rows]
+if metadata_inventory() != resume['A3_metadata_inventory_sha256']:
+    fail('métadonnées/bindings étape2 modifiés depuis le réaudit de reprise')
+original_rows = [r for r in plan['rows'] if r.get('apply_eligible')]
+actual = [(r['path'], r['scope']) for r in original_rows]
 if actual != [tuple(item) for item in EXPLICIT_B_TARGETS] or len(set(actual)) != len(actual):
-    fail('allowlist B incohérente')
-if sum(r['B_bytes'] for r in rows) != plan['totals_bytes']['B']:
-    fail('total B incohérent')
+    fail('allowlist B originale incohérente')
+original_by_path = {(r['path'], r['scope']): r for r in original_rows}
+rows = []
+seen_rows = set()
+for audited in resume['rows']:
+    key = (audited['path'], audited['scope'])
+    if key not in original_by_path or key in seen_rows:
+        fail('reprise élargissant/dupliquant les unités B')
+    seen_rows.add(key)
+    original = original_by_path[key]
+    if audited['scan']['C_exceptions'] != original['scan']['C_exceptions']:
+        fail('exceptions C modifiées par la reprise : ' + key[0])
+    rows.append(dict(original, scan=audited['scan'], B_bytes=audited['B_bytes']))
+B_TOTAL = resume['total_B_bytes']
+if sum(r['B_bytes'] for r in rows) != B_TOTAL:
+    fail('total B restant incohérent')
 
 # Les liens physiques retirés par CE processus ne sont pas des écritures tierces.
 REMOVED_LINKS = {}
@@ -2558,7 +2589,7 @@ for row in rows:
     candidates, _ = scan(row)
     print(('APPLY_CANDIDATE' if apply else 'DRY_RUN'), row['path'],
           'scope=' + row['scope'], 'B_bytes=' + str(row['B_bytes']), 'files=' + str(len(candidates)), flush=True)
-print('B total:', plan['totals_bytes']['B'], 'octets alloués attribués ; gain physique non garanti.', flush=True)
+print('B total:', B_TOTAL, 'octets alloués restants recensés ; gain physique non garanti.', flush=True)
 if not apply:
     print('Aucun fichier supprimé. Application : --apply --confirmed-by-nathan')
     raise SystemExit(0)
